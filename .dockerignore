@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+target
+docs
+fuzz
+lean4
+proofs
+GAP_ANALYSIS_REPORT.md
+INSIGHT_LOG.md
+TODO.md
+EXECUTION_PLAN.md
+

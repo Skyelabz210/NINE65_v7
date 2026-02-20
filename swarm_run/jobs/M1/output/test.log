@@ -1,0 +1,122 @@
+   Compiling nine65 v0.1.0 (/home/acid/Projects/NINE65/v5/crates/nine65)
+warning: unused import: `q_fits_u128`
+  --> crates/nine65/src/arithmetic/mod.rs:51:61
+   |
+51 | pub(crate) use rns::{U256, compute_delta_rns_overflow_safe, q_fits_u128};
+   |                                                             ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: function `q_fits_u128` is never used
+   --> crates/nine65/src/arithmetic/rns.rs:253:15
+    |
+253 | pub(crate) fn q_fits_u128(level: usize, primes: &[u64]) -> bool {
+    |               ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: function `sci_notation_i128` is never used
+  --> crates/nine65/src/ops/rns_fhe.rs:67:4
+   |
+67 | fn sci_notation_i128(val: i128) -> String {
+   |    ^^^^^^^^^^^^^^^^^
+
+warning: function `sci_notation_u256` is never used
+  --> crates/nine65/src/ops/rns_fhe.rs:78:4
+   |
+78 | fn sci_notation_u256(val: U256) -> String {
+   |    ^^^^^^^^^^^^^^^^^
+
+warning: function `isqrt_u64` is never used
+   --> crates/nine65/src/ops/rns_fhe.rs:105:4
+    |
+105 | fn isqrt_u64(n: u64) -> u64 {
+    |    ^^^^^^^^^
+
+warning: function `ilog2_u128` is never used
+   --> crates/nine65/src/ops/rns_fhe.rs:122:4
+    |
+122 | fn ilog2_u128(n: u128) -> u32 {
+    |    ^^^^^^^^^^
+
+warning: function `ratio_str` is never used
+   --> crates/nine65/src/ops/rns_fhe.rs:130:4
+    |
+130 | fn ratio_str(a: u128, b: u128) -> String {
+    |    ^^^^^^^^^
+
+warning: function `ratio_str_precise` is never used
+   --> crates/nine65/src/ops/rns_fhe.rs:140:4
+    |
+140 | fn ratio_str_precise(a: u128, b: u128) -> String {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: function `ilog2_q16` is never used
+   --> crates/nine65/src/ops/rns_fhe.rs:151:4
+    |
+151 | fn ilog2_q16(n: u128) -> u64 {
+    |    ^^^^^^^^^
+
+warning: function `q16_to_str` is never used
+   --> crates/nine65/src/ops/rns_fhe.rs:164:4
+    |
+164 | fn q16_to_str(val: u64) -> String {
+    |    ^^^^^^^^^^
+
+warning: constant `Q32_HALF` is never used
+   --> crates/nine65/src/noise/mod.rs:464:7
+    |
+464 | const Q32_HALF: i64 = 1i64 << 31;
+    |       ^^^^^^^^
+
+warning: unused variable: `a3_product`
+    --> crates/nine65/src/ops/rns_fhe.rs:6977:13
+     |
+6977 |         let a3_product: u128 = ctx.dual_rns.anchor.primes[0..3].iter()
+     |             ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_a3_product`
+     |
+     = note: `#[warn(unused_variables)]` on by default
+
+warning: `nine65` (lib) generated 11 warnings (run `cargo fix --lib -p nine65` to apply 1 suggestion)
+warning: unused doc comment
+ --> crates/nine65/tests/random_encrypt.rs:4:1
+  |
+4 | /// Property-based test: encryption then decryption returns the original message.
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ rustdoc does not generate documentation for macro invocations
+  |
+  = help: to document an item produced by a macro, the macro must produce the documentation as part of its expansion
+  = note: `#[warn(unused_doc_comments)]` on by default
+
+warning: `nine65` (test "random_encrypt") generated 1 warning
+warning: `nine65` (lib test) generated 9 warnings (8 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.88s
+     Running unittests src/lib.rs (target/debug/deps/nine65-39c66eb48bf5e606)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 424 filtered out; finished in 0.00s
+
+     Running unittests src/bin/fhe_demo.rs (target/debug/deps/fhe_demo-99eca20857ca0c9f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/formalization_invariants.rs (target/debug/deps/formalization_invariants-bbf0d71a4847cc5f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/random_encrypt.rs (target/debug/deps/random_encrypt-f31fc72df484b799)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/security_integration.rs (target/debug/deps/security_integration-effa9be473ef5ee7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+

@@ -1,0 +1,12 @@
+[package]
+name = "nexgen_rational"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Exact i128 rational arithmetic — zero floating-point"
+
+[dependencies]
+# Zero dependencies — pure integer arithmetic
+
+[dev-dependencies]
+proptest = { workspace = true }

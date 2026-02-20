@@ -1,0 +1,10 @@
+name = "ExactTranscendentals"
+version = "0.1.0"
+defaultTargets = ["exacttranscendentals"]
+
+[[lean_lib]]
+name = "ExactTranscendentals"
+
+[[lean_exe]]
+name = "exacttranscendentals"
+root = "Main"

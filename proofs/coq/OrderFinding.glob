@@ -1,0 +1,2065 @@
+DIGEST 4f560d800d7ba4bcc2a07f6570a3a6c2
+FNine65.OrderFinding
+R225:229 Coq.Arith.Arith <> <> lib
+R247:249 Coq.micromega.Lia <> <> lib
+R267:269 Coq.Init.Nat <> <> lib
+R287:292 Coq.ZArith.ZArith <> <> lib
+R310:319 Coq.ZArith.Znumtheory <> <> lib
+R337:346 Coq.ZArith.Zpow_facts <> <> lib
+R364:367 Coq.Lists.List <> <> lib
+R385:393 Coq.Logic.Classical <> <> lib
+R403:415 Coq.Lists.List ListNotations <> mod
+def 928:935 <> is_order
+R946:948 Coq.Init.Datatypes <> nat ind
+binder 938:938 <> a:1
+binder 940:940 <> N:2
+binder 942:942 <> r:3
+R968:973 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R964:966 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R963:963 Nine65.OrderFinding <> r:3 var
+R995:1000 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R991:993 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R985:989 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R974:980 Coq.Arith.PeanoNat Nat pow def
+R982:982 Nine65.OrderFinding <> a:1 var
+R984:984 Nine65.OrderFinding <> r:3 var
+R990:990 Nine65.OrderFinding <> N:2 var
+binder 1008:1008 <> k:4
+R1020:1023 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1012:1014 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R1016:1018 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R1015:1015 Nine65.OrderFinding <> k:4 var
+R1015:1015 Nine65.OrderFinding <> k:4 var
+R1019:1019 Nine65.OrderFinding <> r:3 var
+R1041:1044 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1035:1039 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R1024:1030 Coq.Arith.PeanoNat Nat pow def
+R1032:1032 Nine65.OrderFinding <> a:1 var
+R1034:1034 Nine65.OrderFinding <> k:4 var
+R1040:1040 Nine65.OrderFinding <> N:2 var
+def 1088:1098 <> order_bound
+R1107:1109 Coq.Init.Datatypes <> nat ind
+binder 1101:1101 <> a:5
+binder 1103:1103 <> N:6
+R1114:1116 Coq.Init.Datatypes <> nat ind
+R1122:1124 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R1121:1121 Nine65.OrderFinding <> N:6 var
+def 1163:1169 <> coprime
+R1178:1180 Coq.Init.Datatypes <> nat ind
+binder 1172:1172 <> a:7
+binder 1174:1174 <> N:8
+R1204:1206 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1193:1199 Coq.Arith.PeanoNat Nat gcd def
+R1201:1201 Nine65.OrderFinding <> a:7 var
+R1203:1203 Nine65.OrderFinding <> N:8 var
+def 1289:1296 <> is_prime
+R1303:1305 Coq.Init.Datatypes <> nat ind
+binder 1299:1299 <> p:9
+R1325:1328 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R1321:1323 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1320:1320 Nine65.OrderFinding <> p:9 var
+R1340:1342 Coq.Init.Datatypes <> nat ind
+binder 1336:1336 <> d:10
+R1359:1362 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1345:1354 Coq.Arith.PeanoNat Nat divide def
+R1356:1356 Nine65.OrderFinding <> d:10 var
+R1358:1358 Nine65.OrderFinding <> p:9 var
+R1368:1371 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R1364:1366 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1363:1363 Nine65.OrderFinding <> d:10 var
+R1373:1375 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1372:1372 Nine65.OrderFinding <> d:10 var
+R1376:1376 Nine65.OrderFinding <> p:9 var
+prf 1950:1968 <> coprime_pow_nonzero
+R1987:1989 Coq.Init.Datatypes <> nat ind
+binder 1979:1979 <> a:11
+binder 1981:1981 <> N:12
+binder 1983:1983 <> k:13
+R1999:2002 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1995:1997 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1994:1994 Nine65.OrderFinding <> N:12 var
+R2014:2019 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2003:2009 Nine65.OrderFinding <> coprime def
+R2011:2011 Nine65.OrderFinding <> a:11 var
+R2013:2013 Nine65.OrderFinding <> N:12 var
+R2037:2039 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R2031:2035 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R2020:2026 Coq.Arith.PeanoNat Nat pow def
+R2028:2028 Nine65.OrderFinding <> a:11 var
+R2030:2030 Nine65.OrderFinding <> k:13 var
+R2036:2036 Nine65.OrderFinding <> N:12 var
+R2187:2190 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2181:2185 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R2170:2176 Coq.Arith.PeanoNat Nat pow def
+R2187:2190 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R2181:2185 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R2170:2176 Coq.Arith.PeanoNat Nat pow def
+R2231:2240 Coq.Arith.PeanoNat Nat divide def
+R2245:2251 Coq.Arith.PeanoNat Nat pow def
+R2231:2240 Coq.Arith.PeanoNat Nat divide def
+R2245:2251 Coq.Arith.PeanoNat Nat pow def
+R2273:2277 Coq.Init.Logic <> proj1 thm
+R2280:2298 Coq.Arith.PeanoNat Nat.Lcm0 mod_divide thm
+R2301:2307 Coq.Arith.PeanoNat Nat pow def
+R2273:2277 Coq.Init.Logic <> proj1 thm
+R2280:2298 Coq.Arith.PeanoNat Nat.Lcm0 mod_divide thm
+R2301:2307 Coq.Arith.PeanoNat Nat pow def
+binder 2365:2366 <> k0:14
+R2396:2399 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2369:2378 Coq.Arith.PeanoNat Nat divide def
+R2383:2389 Coq.Arith.PeanoNat Nat pow def
+R2393:2394 Nine65.OrderFinding <> k0:14 var
+R2401:2403 Coq.Init.Logic <> ::type_scope:x_'='_x not
+binder 2365:2366 <> k0:15
+R2396:2399 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2369:2378 Coq.Arith.PeanoNat Nat divide def
+R2383:2389 Coq.Arith.PeanoNat Nat pow def
+R2393:2394 Nine65.OrderFinding <> k0:15 var
+R2401:2403 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2486:2499 Coq.Arith.PeanoNat Nat divide_1_r def
+R2486:2499 Coq.Arith.PeanoNat Nat divide_1_r def
+R2576:2578 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2565:2571 Coq.Arith.PeanoNat Nat gcd def
+R2594:2605 Coq.Arith.PeanoNat Nat gcd_comm def
+R2576:2578 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2565:2571 Coq.Arith.PeanoNat Nat gcd def
+R2594:2605 Coq.Arith.PeanoNat Nat gcd_comm def
+R2594:2605 Coq.Arith.PeanoNat Nat gcd_comm def
+R2635:2643 Coq.Arith.PeanoNat Nat gauss thm
+R2635:2643 Coq.Arith.PeanoNat Nat gauss thm
+R2725:2727 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2725:2727 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2789:2793 Coq.Init.Logic <> proj1 thm
+R2796:2809 Coq.Arith.PeanoNat Nat neq_0_lt_0 thm
+R2789:2793 Coq.Init.Logic <> proj1 thm
+R2796:2809 Coq.Arith.PeanoNat Nat neq_0_lt_0 thm
+prf 2930:2950 <> coprime_pow_collision
+R2971:2973 Coq.Init.Datatypes <> nat ind
+binder 2961:2961 <> a:16
+binder 2963:2963 <> N:17
+binder 2965:2965 <> i:18
+binder 2967:2967 <> j:19
+R2983:2986 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2979:2981 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R2978:2978 Nine65.OrderFinding <> N:17 var
+R2998:3001 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2987:2993 Nine65.OrderFinding <> coprime def
+R2995:2995 Nine65.OrderFinding <> a:16 var
+R2997:2997 Nine65.OrderFinding <> N:17 var
+R3007:3012 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3003:3005 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R3002:3002 Nine65.OrderFinding <> i:18 var
+R3006:3006 Nine65.OrderFinding <> j:19 var
+R3050:3055 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3030:3032 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3024:3028 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3013:3019 Coq.Arith.PeanoNat Nat pow def
+R3021:3021 Nine65.OrderFinding <> a:16 var
+R3023:3023 Nine65.OrderFinding <> i:18 var
+R3029:3029 Nine65.OrderFinding <> N:17 var
+R3044:3048 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3033:3039 Coq.Arith.PeanoNat Nat pow def
+R3041:3041 Nine65.OrderFinding <> a:16 var
+R3043:3043 Nine65.OrderFinding <> j:19 var
+R3049:3049 Nine65.OrderFinding <> N:17 var
+R3079:3081 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3073:3077 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3056:3062 Coq.Arith.PeanoNat Nat pow def
+R3064:3064 Nine65.OrderFinding <> a:16 var
+R3068:3070 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3067:3067 Nine65.OrderFinding <> j:19 var
+R3071:3071 Nine65.OrderFinding <> i:18 var
+R3078:3078 Nine65.OrderFinding <> N:17 var
+R3203:3206 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R3203:3206 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R3246:3252 Nine65.OrderFinding <> coprime def
+R3276:3282 Coq.Arith.PeanoNat Nat gcd def
+R3314:3324 Coq.Arith.PeanoNat Nat gcd_0_l def
+R3276:3282 Coq.Arith.PeanoNat Nat gcd def
+R3314:3324 Coq.Arith.PeanoNat Nat gcd_0_l def
+R3435:3438 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R3424:3430 Coq.Arith.PeanoNat Nat pow def
+R3439:3445 Coq.Arith.PeanoNat Nat pow def
+R3435:3438 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R3424:3430 Coq.Arith.PeanoNat Nat pow def
+R3439:3445 Coq.Arith.PeanoNat Nat pow def
+R3463:3479 Coq.Arith.PeanoNat Nat pow_le_mono_r thm
+R3463:3479 Coq.Arith.PeanoNat Nat pow_le_mono_r thm
+R3585:3587 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3574:3580 Coq.Arith.PeanoNat Nat pow def
+R3599:3601 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R3588:3594 Coq.Arith.PeanoNat Nat pow def
+R3602:3608 Coq.Arith.PeanoNat Nat pow def
+R3614:3616 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3585:3587 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3574:3580 Coq.Arith.PeanoNat Nat pow def
+R3599:3601 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R3588:3594 Coq.Arith.PeanoNat Nat pow def
+R3602:3608 Coq.Arith.PeanoNat Nat pow def
+R3614:3616 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3643:3646 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3652:3652 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3648:3650 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3643:3646 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3652:3652 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3648:3650 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3675:3687 Coq.Arith.PeanoNat Nat pow_add_r thm
+R3675:3687 Coq.Arith.PeanoNat Nat pow_add_r thm
+R3675:3687 Coq.Arith.PeanoNat Nat pow_add_r thm
+R3714:3716 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3704:3707 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3713:3713 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3709:3711 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3727:3729 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3714:3716 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3704:3707 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3713:3713 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3709:3711 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3727:3729 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3842:3851 Coq.Arith.PeanoNat Nat divide def
+R3867:3869 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3856:3862 Coq.Arith.PeanoNat Nat pow def
+R3870:3876 Coq.Arith.PeanoNat Nat pow def
+R3842:3851 Coq.Arith.PeanoNat Nat divide def
+R3867:3869 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3856:3862 Coq.Arith.PeanoNat Nat pow def
+R3870:3876 Coq.Arith.PeanoNat Nat pow def
+R3910:3914 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3899:3905 Coq.Arith.PeanoNat Nat pow def
+R3910:3914 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3899:3905 Coq.Arith.PeanoNat Nat pow def
+R3945:3947 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R3934:3940 Coq.Arith.PeanoNat Nat pow def
+R3945:3947 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R3934:3940 Coq.Arith.PeanoNat Nat pow def
+R3978:3980 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R3967:3973 Coq.Arith.PeanoNat Nat pow def
+R3978:3980 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R3967:3973 Coq.Arith.PeanoNat Nat pow def
+R3999:4001 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3999:4001 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4023:4036 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R4039:4045 Coq.Arith.PeanoNat Nat pow def
+R4023:4036 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R4039:4045 Coq.Arith.PeanoNat Nat pow def
+R4078:4091 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R4094:4100 Coq.Arith.PeanoNat Nat pow def
+R4078:4091 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R4094:4100 Coq.Arith.PeanoNat Nat pow def
+R4169:4173 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R4158:4164 Coq.Arith.PeanoNat Nat pow def
+R4169:4173 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R4158:4164 Coq.Arith.PeanoNat Nat pow def
+R4230:4234 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R4219:4225 Coq.Arith.PeanoNat Nat pow def
+R4230:4234 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R4219:4225 Coq.Arith.PeanoNat Nat pow def
+R4291:4293 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4280:4286 Coq.Arith.PeanoNat Nat pow def
+R4291:4293 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4280:4286 Coq.Arith.PeanoNat Nat pow def
+R4351:4353 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4340:4346 Coq.Arith.PeanoNat Nat pow def
+R4351:4353 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4340:4346 Coq.Arith.PeanoNat Nat pow def
+R4411:4413 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4400:4406 Coq.Arith.PeanoNat Nat pow def
+R4411:4413 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4400:4406 Coq.Arith.PeanoNat Nat pow def
+R4465:4467 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4454:4460 Coq.Arith.PeanoNat Nat pow def
+R4465:4467 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4454:4460 Coq.Arith.PeanoNat Nat pow def
+R4595:4598 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4595:4598 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4631:4650 Coq.Arith.PeanoNat Nat.Div0 div_le_mono thm
+R4631:4650 Coq.Arith.PeanoNat Nat.Div0 div_le_mono thm
+R4692:4695 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4687:4689 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4697:4699 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4692:4695 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4687:4689 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4697:4699 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4717:4733 Coq.Arith.PeanoNat Nat mul_le_mono_l thm
+R4717:4733 Coq.Arith.PeanoNat Nat mul_le_mono_l thm
+R4795:4797 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4780:4783 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4794:4794 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4776:4778 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4771:4773 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4790:4792 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4785:4787 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4804:4806 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4799:4801 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4808:4810 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4795:4797 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4780:4783 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4794:4794 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4776:4778 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4771:4773 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4790:4792 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4785:4787 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4804:4806 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4799:4801 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4808:4810 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4830:4846 Coq.Arith.PeanoNat Nat sub_add_distr thm
+R4830:4846 Coq.Arith.PeanoNat Nat sub_add_distr thm
+R4830:4846 Coq.Arith.PeanoNat Nat sub_add_distr thm
+R4863:4878 Coq.Arith.PeanoNat Nat add_sub_swap thm
+R4863:4878 Coq.Arith.PeanoNat Nat add_sub_swap thm
+R4863:4878 Coq.Arith.PeanoNat Nat add_sub_swap thm
+R4910:4920 Coq.Arith.PeanoNat Nat add_sub thm
+R4910:4920 Coq.Arith.PeanoNat Nat add_sub thm
+R4910:4920 Coq.Arith.PeanoNat Nat add_sub thm
+R4969:4980 Coq.Arith.PeanoNat Nat mul_comm thm
+R4969:4980 Coq.Arith.PeanoNat Nat mul_comm thm
+R4969:4980 Coq.Arith.PeanoNat Nat mul_comm thm
+R4996:5007 Coq.Arith.PeanoNat Nat mul_comm thm
+R4996:5007 Coq.Arith.PeanoNat Nat mul_comm thm
+R4996:5007 Coq.Arith.PeanoNat Nat mul_comm thm
+R5041:5059 Coq.Arith.PeanoNat Nat mul_sub_distr_r thm
+R5041:5059 Coq.Arith.PeanoNat Nat mul_sub_distr_r thm
+R5169:5188 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5155:5157 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5144:5150 Coq.Arith.PeanoNat Nat pow def
+R5158:5164 Coq.Arith.PeanoNat Nat pow def
+R5200:5203 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5225:5225 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5189:5195 Coq.Arith.PeanoNat Nat pow def
+R5221:5223 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5204:5210 Coq.Arith.PeanoNat Nat pow def
+R5216:5218 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5169:5188 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5155:5157 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5144:5150 Coq.Arith.PeanoNat Nat pow def
+R5158:5164 Coq.Arith.PeanoNat Nat pow def
+R5200:5203 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5225:5225 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5189:5195 Coq.Arith.PeanoNat Nat pow def
+R5221:5223 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5204:5210 Coq.Arith.PeanoNat Nat pow def
+R5216:5218 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5276:5285 Coq.Arith.PeanoNat Nat divide def
+R5301:5304 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5326:5326 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5290:5296 Coq.Arith.PeanoNat Nat pow def
+R5322:5324 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5305:5311 Coq.Arith.PeanoNat Nat pow def
+R5317:5319 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5276:5285 Coq.Arith.PeanoNat Nat divide def
+R5301:5304 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5326:5326 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5290:5296 Coq.Arith.PeanoNat Nat pow def
+R5322:5324 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5305:5311 Coq.Arith.PeanoNat Nat pow def
+R5317:5319 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5457:5459 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5446:5452 Coq.Arith.PeanoNat Nat gcd def
+R5457:5459 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5446:5452 Coq.Arith.PeanoNat Nat gcd def
+R5476:5487 Coq.Arith.PeanoNat Nat gcd_comm def
+R5476:5487 Coq.Arith.PeanoNat Nat gcd_comm def
+R5476:5487 Coq.Arith.PeanoNat Nat gcd_comm def
+binder 5531:5531 <> k:20
+binder 5533:5533 <> X:21
+R5566:5569 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5536:5545 Coq.Arith.PeanoNat Nat divide def
+R5561:5563 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5550:5556 Coq.Arith.PeanoNat Nat pow def
+R5560:5560 Nine65.OrderFinding <> k:20 var
+R5564:5564 Nine65.OrderFinding <> X:21 var
+R5570:5579 Coq.Arith.PeanoNat Nat divide def
+R5583:5583 Nine65.OrderFinding <> X:21 var
+binder 5531:5531 <> k:22
+binder 5533:5533 <> X:23
+R5566:5569 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5536:5545 Coq.Arith.PeanoNat Nat divide def
+R5561:5563 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5550:5556 Coq.Arith.PeanoNat Nat pow def
+R5560:5560 Nine65.OrderFinding <> k:22 var
+R5564:5564 Nine65.OrderFinding <> X:23 var
+R5570:5579 Coq.Arith.PeanoNat Nat divide def
+R5583:5583 Nine65.OrderFinding <> X:23 var
+R5660:5670 Coq.Arith.PeanoNat Nat add_0_r thm
+R5660:5670 Coq.Arith.PeanoNat Nat add_0_r thm
+R5660:5670 Coq.Arith.PeanoNat Nat add_0_r thm
+R5731:5743 Coq.Arith.PeanoNat Nat mul_assoc thm
+R5731:5743 Coq.Arith.PeanoNat Nat mul_assoc thm
+R5731:5743 Coq.Arith.PeanoNat Nat mul_assoc thm
+R5766:5774 Coq.Arith.PeanoNat Nat gauss thm
+R5766:5774 Coq.Arith.PeanoNat Nat gauss thm
+R5848:5857 Coq.Arith.PeanoNat Nat divide def
+R5879:5881 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5862:5868 Coq.Arith.PeanoNat Nat pow def
+R5874:5876 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5848:5857 Coq.Arith.PeanoNat Nat divide def
+R5879:5881 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5862:5868 Coq.Arith.PeanoNat Nat pow def
+R5874:5876 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5926:5928 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5909:5915 Coq.Arith.PeanoNat Nat pow def
+R5921:5923 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5926:5928 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5909:5915 Coq.Arith.PeanoNat Nat pow def
+R5921:5923 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6056:6058 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R6059:6065 Coq.Arith.PeanoNat Nat pow def
+R6071:6073 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6056:6058 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R6059:6065 Coq.Arith.PeanoNat Nat pow def
+R6071:6073 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6090:6094 Coq.Init.Logic <> proj1 thm
+R6097:6110 Coq.Arith.PeanoNat Nat neq_0_lt_0 thm
+R6090:6094 Coq.Init.Logic <> proj1 thm
+R6097:6110 Coq.Arith.PeanoNat Nat neq_0_lt_0 thm
+R6127:6141 Coq.Arith.PeanoNat Nat pow_nonzero thm
+R6127:6141 Coq.Arith.PeanoNat Nat pow_nonzero thm
+R6186:6189 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R6190:6196 Coq.Arith.PeanoNat Nat pow def
+R6202:6204 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6186:6189 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R6190:6196 Coq.Arith.PeanoNat Nat pow def
+R6202:6204 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6254:6256 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R6237:6243 Coq.Arith.PeanoNat Nat pow def
+R6249:6251 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6257:6257 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R6279:6282 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R6275:6277 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6258:6264 Coq.Arith.PeanoNat Nat pow def
+R6270:6272 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6254:6256 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R6237:6243 Coq.Arith.PeanoNat Nat pow def
+R6249:6251 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6257:6257 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R6279:6282 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R6275:6277 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6258:6264 Coq.Arith.PeanoNat Nat pow def
+R6270:6272 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R6307:6317 Coq.Arith.PeanoNat Nat sub_add thm
+R6307:6317 Coq.Arith.PeanoNat Nat sub_add thm
+R6381:6396 Coq.Arith.PeanoNat Nat.Div0 add_mod thm
+R6381:6396 Coq.Arith.PeanoNat Nat.Div0 add_mod thm
+R6381:6396 Coq.Arith.PeanoNat Nat.Div0 add_mod thm
+R6409:6424 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R6409:6424 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R6409:6424 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R6437:6453 Coq.Arith.PeanoNat Nat.Div0 mod_same thm
+R6437:6453 Coq.Arith.PeanoNat Nat.Div0 mod_same thm
+R6437:6453 Coq.Arith.PeanoNat Nat.Div0 mod_same thm
+R6466:6476 Coq.Arith.PeanoNat Nat mul_0_r thm
+R6466:6476 Coq.Arith.PeanoNat Nat mul_0_r thm
+R6466:6476 Coq.Arith.PeanoNat Nat mul_0_r thm
+R6489:6504 Coq.Arith.PeanoNat Nat.Div0 mod_0_l thm
+R6489:6504 Coq.Arith.PeanoNat Nat.Div0 mod_0_l thm
+R6489:6504 Coq.Arith.PeanoNat Nat.Div0 mod_0_l thm
+R6517:6527 Coq.Arith.PeanoNat Nat add_0_l thm
+R6517:6527 Coq.Arith.PeanoNat Nat add_0_l thm
+R6517:6527 Coq.Arith.PeanoNat Nat add_0_l thm
+R6540:6555 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R6540:6555 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R6540:6555 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R6566:6578 Coq.Arith.PeanoNat Nat mod_small def
+R6566:6578 Coq.Arith.PeanoNat Nat mod_small def
+prf 6653:6672 <> exists_dup_nth_error
+R6687:6690 Coq.Init.Datatypes <> list ind
+R6692:6694 Coq.Init.Datatypes <> nat ind
+binder 6683:6683 <> l:24
+R6708:6713 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6699:6700 Coq.Init.Logic <> ::type_scope:'~'_x not
+R6701:6705 Coq.Lists.List <> NoDup ind
+R6707:6707 Nine65.OrderFinding <> l:24 var
+R6714:6720 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R6724:6729 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 6721:6721 <> i:25
+binder 6723:6723 <> j:26
+R6742:6749 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R6731:6733 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R6730:6730 Nine65.OrderFinding <> i:25 var
+R6734:6739 Coq.Init.Datatypes <> length def
+R6741:6741 Nine65.OrderFinding <> l:24 var
+R6756:6763 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R6751:6754 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R6750:6750 Nine65.OrderFinding <> i:25 var
+R6755:6755 Nine65.OrderFinding <> j:26 var
+R6777:6779 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R6764:6772 Coq.Lists.List <> nth_error def
+R6776:6776 Nine65.OrderFinding <> i:25 var
+R6774:6774 Nine65.OrderFinding <> l:24 var
+R6780:6788 Coq.Lists.List <> nth_error def
+R6792:6792 Nine65.OrderFinding <> j:26 var
+R6790:6790 Nine65.OrderFinding <> l:24 var
+R6829:6832 Coq.Logic.Classical_Prop <> NNPP thm
+R6829:6832 Coq.Logic.Classical_Prop <> NNPP thm
+R6871:6875 Coq.Init.Logic <> proj2 thm
+R6878:6892 Coq.Lists.List <> NoDup_nth_error thm
+R6871:6875 Coq.Init.Logic <> proj2 thm
+R6878:6892 Coq.Lists.List <> NoDup_nth_error thm
+R6932:6941 Coq.Arith.PeanoNat Nat eq_dec thm
+R6932:6941 Coq.Arith.PeanoNat Nat eq_dec thm
+prf 7111:7128 <> pow_list_nth_error
+R7147:7149 Coq.Init.Datatypes <> nat ind
+binder 7139:7139 <> a:27
+binder 7141:7141 <> N:28
+binder 7143:7143 <> i:29
+R7159:7164 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7155:7157 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R7154:7154 Nine65.OrderFinding <> i:29 var
+R7158:7158 Nine65.OrderFinding <> N:28 var
+R7221:7227 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7165:7173 Coq.Lists.List <> nth_error def
+R7220:7220 Nine65.OrderFinding <> i:29 var
+R7176:7178 Coq.Lists.List <> map def
+R7210:7212 Coq.Lists.List <> seq def
+R7216:7216 Nine65.OrderFinding <> N:28 var
+binder 7185:7185 <> k:30
+R7201:7205 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7190:7196 Coq.Arith.PeanoNat Nat pow def
+R7198:7198 Nine65.OrderFinding <> a:27 var
+R7200:7200 Nine65.OrderFinding <> k:30 var
+R7206:7206 Nine65.OrderFinding <> N:28 var
+R7228:7231 Coq.Init.Datatypes <> Some constr
+R7245:7249 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7234:7240 Coq.Arith.PeanoNat Nat pow def
+R7242:7242 Nine65.OrderFinding <> a:27 var
+R7244:7244 Nine65.OrderFinding <> i:29 var
+R7250:7250 Nine65.OrderFinding <> N:28 var
+R7290:7302 Coq.Lists.List <> nth_error_map thm
+R7290:7302 Coq.Lists.List <> nth_error_map thm
+R7290:7302 Coq.Lists.List <> nth_error_map thm
+R7315:7327 Coq.Lists.List <> nth_error_seq thm
+R7315:7327 Coq.Lists.List <> nth_error_seq thm
+R7315:7327 Coq.Lists.List <> nth_error_seq thm
+R7353:7355 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7348:7351 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R7356:7359 Coq.Init.Datatypes <> true constr
+R7372:7381 Coq.Arith.PeanoNat Nat ltb_lt thm
+R7353:7355 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7348:7351 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R7356:7359 Coq.Init.Datatypes <> true constr
+R7372:7381 Coq.Arith.PeanoNat Nat ltb_lt thm
+prf 7493:7514 <> pow_collision_in_range
+R7531:7533 Coq.Init.Datatypes <> nat ind
+binder 7525:7525 <> a:31
+binder 7527:7527 <> N:32
+R7543:7546 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7539:7541 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R7538:7538 Nine65.OrderFinding <> N:32 var
+R7558:7563 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7547:7553 Nine65.OrderFinding <> coprime def
+R7555:7555 Nine65.OrderFinding <> a:31 var
+R7557:7557 Nine65.OrderFinding <> N:32 var
+R7564:7570 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R7574:7579 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 7571:7571 <> i:33
+binder 7573:7573 <> j:34
+R7585:7588 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R7581:7583 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R7580:7580 Nine65.OrderFinding <> i:33 var
+R7584:7584 Nine65.OrderFinding <> j:34 var
+R7594:7601 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R7590:7592 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R7589:7589 Nine65.OrderFinding <> j:34 var
+R7593:7593 Nine65.OrderFinding <> N:32 var
+R7619:7621 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7613:7617 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7602:7608 Coq.Arith.PeanoNat Nat pow def
+R7610:7610 Nine65.OrderFinding <> a:31 var
+R7612:7612 Nine65.OrderFinding <> i:33 var
+R7618:7618 Nine65.OrderFinding <> N:32 var
+R7633:7637 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7622:7628 Coq.Arith.PeanoNat Nat pow def
+R7630:7630 Nine65.OrderFinding <> a:31 var
+R7632:7632 Nine65.OrderFinding <> j:34 var
+R7638:7638 Nine65.OrderFinding <> N:32 var
+R7685:7687 Coq.Lists.List <> map def
+R7719:7721 Coq.Lists.List <> seq def
+binder 7694:7694 <> k:35
+R7710:7714 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7699:7705 Coq.Arith.PeanoNat Nat pow def
+R7709:7709 Nine65.OrderFinding <> k:35 var
+R7685:7687 Coq.Lists.List <> map def
+R7719:7721 Coq.Lists.List <> seq def
+binder 7694:7694 <> k:36
+R7710:7714 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7699:7705 Coq.Arith.PeanoNat Nat pow def
+R7709:7709 Nine65.OrderFinding <> k:36 var
+R7758:7760 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7747:7752 Coq.Init.Datatypes <> length def
+R7758:7760 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7747:7752 Coq.Init.Datatypes <> length def
+R7790:7799 Coq.Lists.List <> length_map thm
+R7790:7799 Coq.Lists.List <> length_map thm
+R7790:7799 Coq.Lists.List <> length_map thm
+R7810:7819 Coq.Lists.List <> length_seq thm
+R7810:7819 Coq.Lists.List <> length_seq thm
+R7810:7819 Coq.Lists.List <> length_seq thm
+R7855:7858 Coq.Lists.List <> incl def
+R7866:7868 Coq.Lists.List <> seq def
+R7874:7876 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R7855:7858 Coq.Lists.List <> incl def
+R7866:7868 Coq.Lists.List <> seq def
+R7874:7876 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R7933:7942 Coq.Lists.List <> in_map_iff thm
+R7933:7942 Coq.Lists.List <> in_map_iff thm
+R7993:7998 Coq.Lists.List <> in_seq thm
+R7993:7998 Coq.Lists.List <> in_seq thm
+R8084:8086 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R8078:8082 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8067:8073 Coq.Arith.PeanoNat Nat pow def
+R8084:8086 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R8078:8082 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8067:8073 Coq.Arith.PeanoNat Nat pow def
+R8103:8121 Nine65.OrderFinding <> coprime_pow_nonzero thm
+R8103:8121 Nine65.OrderFinding <> coprime_pow_nonzero thm
+R8186:8188 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8180:8184 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8169:8175 Coq.Arith.PeanoNat Nat pow def
+R8202:8220 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R8186:8188 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8180:8184 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8169:8175 Coq.Arith.PeanoNat Nat pow def
+R8202:8220 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R8239:8244 Coq.Lists.List <> in_seq thm
+R8239:8244 Coq.Lists.List <> in_seq thm
+R8273:8274 Coq.Init.Logic <> ::type_scope:'~'_x not
+R8275:8279 Coq.Lists.List <> NoDup ind
+R8273:8274 Coq.Init.Logic <> ::type_scope:'~'_x not
+R8275:8279 Coq.Lists.List <> NoDup ind
+R8319:8335 Coq.Lists.List <> NoDup_incl_length thm
+R8356:8358 Coq.Lists.List <> seq def
+R8364:8366 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R8319:8335 Coq.Lists.List <> NoDup_incl_length thm
+R8356:8358 Coq.Lists.List <> seq def
+R8364:8366 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R8431:8440 Coq.Lists.List <> length_seq thm
+R8431:8440 Coq.Lists.List <> length_seq thm
+R8431:8440 Coq.Lists.List <> length_seq thm
+R8475:8494 Nine65.OrderFinding <> exists_dup_nth_error thm
+R8475:8494 Nine65.OrderFinding <> exists_dup_nth_error thm
+R8557:8559 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8560:8565 Coq.Init.Datatypes <> length def
+R8557:8559 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8560:8565 Coq.Init.Datatypes <> length def
+R8585:8589 Coq.Init.Logic <> proj1 thm
+R8592:8605 Coq.Lists.List <> nth_error_Some thm
+R8585:8589 Coq.Init.Logic <> proj1 thm
+R8592:8605 Coq.Lists.List <> nth_error_Some thm
+R8649:8653 Coq.Init.Logic <> proj2 thm
+R8656:8669 Coq.Lists.List <> nth_error_Some thm
+R8649:8653 Coq.Init.Logic <> proj2 thm
+R8656:8669 Coq.Lists.List <> nth_error_Some thm
+R8714:8716 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8714:8716 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8772:8774 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8772:8774 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8847:8849 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8841:8845 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8830:8836 Coq.Arith.PeanoNat Nat pow def
+R8861:8865 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8850:8856 Coq.Arith.PeanoNat Nat pow def
+R8847:8849 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8841:8845 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8830:8836 Coq.Arith.PeanoNat Nat pow def
+R8861:8865 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R8850:8856 Coq.Arith.PeanoNat Nat pow def
+R8908:8925 Nine65.OrderFinding <> pow_list_nth_error thm
+R8908:8925 Nine65.OrderFinding <> pow_list_nth_error thm
+R8908:8925 Nine65.OrderFinding <> pow_list_nth_error thm
+R8960:8977 Nine65.OrderFinding <> pow_list_nth_error thm
+R8960:8977 Nine65.OrderFinding <> pow_list_nth_error thm
+R8960:8977 Nine65.OrderFinding <> pow_list_nth_error thm
+R9046:9060 Coq.Arith.PeanoNat Nat lt_ge_cases thm
+R9046:9060 Coq.Arith.PeanoNat Nat lt_ge_cases thm
+R9174:9176 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9174:9176 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+prf 9401:9417 <> nat_well_ordering
+R9435:9438 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9432:9434 Coq.Init.Datatypes <> nat ind
+binder 9428:9428 <> P:37
+R9447:9447 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9461:9467 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9448:9454 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R9456:9457 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 9455:9455 <> n:38
+R9458:9458 Nine65.OrderFinding <> P:37 var
+R9460:9460 Nine65.OrderFinding <> n:38 var
+R9468:9474 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R9476:9477 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 9475:9475 <> m:39
+R9481:9484 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R9478:9478 Nine65.OrderFinding <> P:37 var
+R9480:9480 Nine65.OrderFinding <> m:39 var
+binder 9492:9492 <> k:40
+R9498:9501 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9495:9495 Nine65.OrderFinding <> P:37 var
+R9497:9497 Nine65.OrderFinding <> k:40 var
+R9503:9506 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9502:9502 Nine65.OrderFinding <> m:39 var
+R9507:9507 Nine65.OrderFinding <> k:40 var
+R9649:9670 Coq.Init.Wf <> well_founded_induction thm
+R9672:9676 Coq.Arith.Wf_nat <> lt_wf thm
+R9649:9670 Coq.Init.Wf <> well_founded_induction thm
+R9672:9676 Coq.Arith.Wf_nat <> lt_wf thm
+R9703:9709 Coq.Logic.Classical_Prop <> classic prfax
+R9712:9718 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R9720:9721 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 9719:9719 <> m:41
+R9727:9730 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R9723:9725 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9722:9722 Nine65.OrderFinding <> m:41 var
+R9733:9733 Nine65.OrderFinding <> m:41 var
+R9703:9709 Coq.Logic.Classical_Prop <> classic prfax
+R9712:9718 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R9720:9721 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 9719:9719 <> m:42
+R9727:9730 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R9723:9725 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9722:9722 Nine65.OrderFinding <> m:42 var
+R9733:9733 Nine65.OrderFinding <> m:42 var
+R9916:9930 Coq.Arith.PeanoNat Nat lt_ge_cases thm
+R9916:9930 Coq.Arith.PeanoNat Nat lt_ge_cases thm
+prf 10204:10217 <> lagrange_bound
+R10234:10236 Coq.Init.Datatypes <> nat ind
+binder 10228:10228 <> a:43
+binder 10230:10230 <> N:44
+R10246:10249 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R10242:10244 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R10241:10241 Nine65.OrderFinding <> N:44 var
+R10261:10266 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R10250:10256 Nine65.OrderFinding <> coprime def
+R10258:10258 Nine65.OrderFinding <> a:43 var
+R10260:10260 Nine65.OrderFinding <> N:44 var
+binder 10274:10274 <> r:45
+R10291:10294 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R10277:10284 Nine65.OrderFinding <> is_order def
+R10286:10286 Nine65.OrderFinding <> a:43 var
+R10288:10288 Nine65.OrderFinding <> N:44 var
+R10290:10290 Nine65.OrderFinding <> r:45 var
+R10296:10299 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R10295:10295 Nine65.OrderFinding <> r:45 var
+R10301:10303 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R10300:10300 Nine65.OrderFinding <> N:44 var
+R10603:10617 Coq.Arith.PeanoNat Nat le_gt_cases thm
+R10623:10625 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R10603:10617 Coq.Arith.PeanoNat Nat le_gt_cases thm
+R10623:10625 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R10967:10969 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10961:10965 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R10950:10956 Coq.Arith.PeanoNat Nat pow def
+R10990:11002 Coq.Arith.PeanoNat Nat mod_small def
+R10967:10969 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10961:10965 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R10950:10956 Coq.Arith.PeanoNat Nat pow def
+R10990:11002 Coq.Arith.PeanoNat Nat mod_small def
+binder 11114:11114 <> k:46
+R11126:11129 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11118:11120 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R11122:11124 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R11121:11121 Nine65.OrderFinding <> k:46 var
+R11121:11121 Nine65.OrderFinding <> k:46 var
+R11147:11150 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R11141:11145 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R11130:11136 Coq.Arith.PeanoNat Nat pow def
+R11140:11140 Nine65.OrderFinding <> k:46 var
+binder 11114:11114 <> k:47
+R11126:11129 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11118:11120 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R11122:11124 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R11121:11121 Nine65.OrderFinding <> k:47 var
+R11121:11121 Nine65.OrderFinding <> k:47 var
+R11147:11150 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R11141:11145 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R11130:11136 Coq.Arith.PeanoNat Nat pow def
+R11140:11140 Nine65.OrderFinding <> k:47 var
+R11444:11465 Nine65.OrderFinding <> pow_collision_in_range thm
+R11444:11465 Nine65.OrderFinding <> pow_collision_in_range thm
+R11522:11524 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R11522:11524 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R11549:11551 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11549:11551 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11594:11596 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11594:11596 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11634:11654 Nine65.OrderFinding <> coprime_pow_collision thm
+R11634:11654 Nine65.OrderFinding <> coprime_pow_collision thm
+R11717:11720 Coq.Init.Logic <> conj constr
+R11717:11720 Coq.Init.Logic <> conj constr
+prf 11823:11834 <> order_exists
+R11851:11853 Coq.Init.Datatypes <> nat ind
+binder 11845:11845 <> a:48
+binder 11847:11847 <> N:49
+R11863:11866 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11859:11861 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R11858:11858 Nine65.OrderFinding <> N:49 var
+R11878:11883 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11867:11873 Nine65.OrderFinding <> coprime def
+R11875:11875 Nine65.OrderFinding <> a:48 var
+R11877:11877 Nine65.OrderFinding <> N:49 var
+R11884:11890 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R11892:11893 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 11891:11891 <> r:50
+R11894:11901 Nine65.OrderFinding <> is_order def
+R11903:11903 Nine65.OrderFinding <> a:48 var
+R11905:11905 Nine65.OrderFinding <> N:49 var
+R11907:11907 Nine65.OrderFinding <> r:50 var
+R12298:12304 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R12306:12307 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 12305:12305 <> k:51
+R12313:12316 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R12309:12311 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R12308:12308 Nine65.OrderFinding <> k:51 var
+R12334:12336 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R12328:12332 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R12317:12323 Coq.Arith.PeanoNat Nat pow def
+R12327:12327 Nine65.OrderFinding <> k:51 var
+R12298:12304 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R12306:12307 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 12305:12305 <> k:52
+R12313:12316 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R12309:12311 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R12308:12308 Nine65.OrderFinding <> k:52 var
+R12334:12336 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R12328:12332 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R12317:12323 Coq.Arith.PeanoNat Nat pow def
+R12327:12327 Nine65.OrderFinding <> k:52 var
+R12355:12376 Nine65.OrderFinding <> pow_collision_in_range thm
+R12355:12376 Nine65.OrderFinding <> pow_collision_in_range thm
+R12431:12433 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R12431:12433 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R12468:12488 Nine65.OrderFinding <> coprime_pow_collision thm
+R12468:12488 Nine65.OrderFinding <> coprime_pow_collision thm
+R12577:12593 Nine65.OrderFinding <> nat_well_ordering thm
+binder 12600:12600 <> k:53
+R12610:12613 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R12606:12608 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R12605:12605 Nine65.OrderFinding <> k:53 var
+R12631:12633 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R12625:12629 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R12614:12620 Coq.Arith.PeanoNat Nat pow def
+R12624:12624 Nine65.OrderFinding <> k:53 var
+R12577:12593 Nine65.OrderFinding <> nat_well_ordering thm
+binder 12600:12600 <> k:54
+R12610:12613 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R12606:12608 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R12605:12605 Nine65.OrderFinding <> k:54 var
+R12631:12633 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R12625:12629 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R12614:12620 Coq.Arith.PeanoNat Nat pow def
+R12624:12624 Nine65.OrderFinding <> k:54 var
+R12704:12711 Nine65.OrderFinding <> is_order def
+R12888:12891 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R12888:12891 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+prf 13006:13016 <> pow_mod_one
+R13035:13037 Coq.Init.Datatypes <> nat ind
+binder 13027:13027 <> x:55
+binder 13029:13029 <> N:56
+binder 13031:13031 <> k:57
+R13047:13052 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13043:13045 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R13042:13042 Nine65.OrderFinding <> N:56 var
+R13064:13069 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13060:13062 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13054:13058 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R13053:13053 Nine65.OrderFinding <> x:55 var
+R13059:13059 Nine65.OrderFinding <> N:56 var
+R13087:13089 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13081:13085 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R13070:13076 Coq.Arith.PeanoNat Nat pow def
+R13078:13078 Nine65.OrderFinding <> x:55 var
+R13080:13080 Nine65.OrderFinding <> k:57 var
+R13086:13086 Nine65.OrderFinding <> N:56 var
+R13168:13180 Coq.Arith.PeanoNat Nat mod_small def
+R13168:13180 Coq.Arith.PeanoNat Nat mod_small def
+R13211:13226 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R13211:13226 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R13211:13226 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R13309:13321 Coq.Arith.PeanoNat Nat mod_small def
+R13309:13321 Coq.Arith.PeanoNat Nat mod_small def
+prf 13389:13404 <> pow_mod_multiple
+R13425:13427 Coq.Init.Datatypes <> nat ind
+binder 13415:13415 <> a:58
+binder 13417:13417 <> N:59
+binder 13419:13419 <> r:60
+binder 13421:13421 <> q:61
+R13437:13442 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13433:13435 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R13432:13432 Nine65.OrderFinding <> N:59 var
+R13464:13469 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13460:13462 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13454:13458 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R13443:13449 Coq.Arith.PeanoNat Nat pow def
+R13451:13451 Nine65.OrderFinding <> a:58 var
+R13453:13453 Nine65.OrderFinding <> r:60 var
+R13459:13459 Nine65.OrderFinding <> N:59 var
+R13493:13495 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13487:13491 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R13470:13476 Coq.Arith.PeanoNat Nat pow def
+R13478:13478 Nine65.OrderFinding <> a:58 var
+R13482:13484 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R13481:13481 Nine65.OrderFinding <> q:61 var
+R13485:13485 Nine65.OrderFinding <> r:60 var
+R13492:13492 Nine65.OrderFinding <> N:59 var
+R13542:13553 Coq.Arith.PeanoNat Nat mul_comm thm
+R13542:13553 Coq.Arith.PeanoNat Nat mul_comm thm
+R13542:13553 Coq.Arith.PeanoNat Nat mul_comm thm
+R13566:13578 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R13566:13578 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R13566:13578 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R13589:13599 Nine65.OrderFinding <> pow_mod_one thm
+R13589:13599 Nine65.OrderFinding <> pow_mod_one thm
+prf 13676:13688 <> order_divides
+R13710:13712 Coq.Init.Datatypes <> nat ind
+binder 13699:13699 <> a:62
+binder 13701:13701 <> N:63
+binder 13703:13703 <> r:64
+binder 13705:13706 <> r':65
+R13722:13727 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13718:13720 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R13717:13717 Nine65.OrderFinding <> N:63 var
+R13743:13748 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13728:13735 Nine65.OrderFinding <> is_order def
+R13737:13737 Nine65.OrderFinding <> a:62 var
+R13739:13739 Nine65.OrderFinding <> N:63 var
+R13741:13742 Nine65.OrderFinding <> r':65 var
+R13770:13775 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R13766:13768 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13760:13764 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R13749:13755 Coq.Arith.PeanoNat Nat pow def
+R13757:13757 Nine65.OrderFinding <> a:62 var
+R13759:13759 Nine65.OrderFinding <> r:64 var
+R13765:13765 Nine65.OrderFinding <> N:63 var
+R13776:13785 Coq.Arith.PeanoNat Nat divide def
+R13787:13788 Nine65.OrderFinding <> r':65 var
+R13790:13790 Nine65.OrderFinding <> r:64 var
+R13870:13872 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R13870:13872 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R13891:13895 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R13891:13895 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R13918:13920 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13927:13929 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R13922:13924 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R13918:13920 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R13927:13929 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R13922:13924 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R13959:13970 Coq.Arith.PeanoNat Nat mul_comm thm
+R13959:13970 Coq.Arith.PeanoNat Nat mul_comm thm
+R13959:13970 Coq.Arith.PeanoNat Nat mul_comm thm
+R13979:13992 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R13979:13992 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R14039:14041 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14033:14037 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14015:14021 Coq.Arith.PeanoNat Nat pow def
+R14027:14029 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R14039:14041 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14033:14037 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14015:14021 Coq.Arith.PeanoNat Nat pow def
+R14027:14029 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R14056:14071 Nine65.OrderFinding <> pow_mod_multiple thm
+R14056:14071 Nine65.OrderFinding <> pow_mod_multiple thm
+R14127:14129 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14121:14125 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14110:14116 Coq.Arith.PeanoNat Nat pow def
+R14127:14129 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14121:14125 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14110:14116 Coq.Arith.PeanoNat Nat pow def
+R14174:14186 Coq.Arith.PeanoNat Nat pow_add_r thm
+R14174:14186 Coq.Arith.PeanoNat Nat pow_add_r thm
+R14174:14186 Coq.Arith.PeanoNat Nat pow_add_r thm
+R14211:14226 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R14211:14226 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R14211:14226 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R14311:14321 Coq.Arith.PeanoNat Nat add_0_r thm
+R14311:14321 Coq.Arith.PeanoNat Nat add_0_r thm
+R14311:14321 Coq.Arith.PeanoNat Nat add_0_r thm
+R14378:14380 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14353:14353 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14371:14376 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14365:14369 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14354:14360 Coq.Arith.PeanoNat Nat pow def
+R14392:14396 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14381:14387 Coq.Arith.PeanoNat Nat pow def
+R14416:14431 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R14378:14380 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14353:14353 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14371:14376 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14365:14369 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14354:14360 Coq.Arith.PeanoNat Nat pow def
+R14392:14396 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R14381:14387 Coq.Arith.PeanoNat Nat pow def
+R14416:14431 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R14503:14505 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R14530:14548 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R14503:14505 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R14530:14548 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R14569:14578 Coq.Arith.PeanoNat Nat eq_dec thm
+R14617:14635 Coq.Arith.PeanoNat Nat.Lcm0 mod_divide thm
+R14689:14691 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R14569:14578 Coq.Arith.PeanoNat Nat eq_dec thm
+R14617:14635 Coq.Arith.PeanoNat Nat.Lcm0 mod_divide thm
+R14689:14691 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+prf 14790:14801 <> order_unique
+R14824:14826 Coq.Init.Datatypes <> nat ind
+binder 14812:14812 <> a:66
+binder 14814:14814 <> N:67
+binder 14816:14817 <> r1:68
+binder 14819:14820 <> r2:69
+R14846:14849 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14831:14838 Nine65.OrderFinding <> is_order def
+R14840:14840 Nine65.OrderFinding <> a:66 var
+R14842:14842 Nine65.OrderFinding <> N:67 var
+R14844:14845 Nine65.OrderFinding <> r1:68 var
+R14865:14868 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R14850:14857 Nine65.OrderFinding <> is_order def
+R14859:14859 Nine65.OrderFinding <> a:66 var
+R14861:14861 Nine65.OrderFinding <> N:67 var
+R14863:14864 Nine65.OrderFinding <> r2:69 var
+R14871:14873 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R14869:14870 Nine65.OrderFinding <> r1:68 var
+R14874:14875 Nine65.OrderFinding <> r2:69 var
+R15030:15046 Coq.Arith.PeanoNat Nat lt_trichotomy thm
+R15030:15046 Coq.Arith.PeanoNat Nat lt_trichotomy thm
+def 15659:15668 <> bsgs_bound
+R15675:15677 Coq.Init.Datatypes <> nat ind
+binder 15671:15671 <> N:70
+R15682:15684 Coq.Init.Datatypes <> nat ind
+R15690:15692 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R15689:15689 Nine65.OrderFinding <> N:70 var
+def 15744:15752 <> baby_step
+R15763:15765 Coq.Init.Datatypes <> nat ind
+binder 15755:15755 <> a:71
+binder 15757:15757 <> N:72
+binder 15759:15759 <> j:73
+R15770:15772 Coq.Init.Datatypes <> nat ind
+R15788:15792 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R15777:15783 Coq.Arith.PeanoNat Nat pow def
+R15785:15785 Nine65.OrderFinding <> a:71 var
+R15787:15787 Nine65.OrderFinding <> j:73 var
+R15793:15793 Nine65.OrderFinding <> N:72 var
+def 15953:15962 <> giant_step
+R15975:15977 Coq.Init.Datatypes <> nat ind
+binder 15965:15965 <> a:74
+binder 15967:15967 <> N:75
+binder 15969:15969 <> m:76
+binder 15971:15971 <> k:77
+R15991:15993 Coq.Init.Datatypes <> nat ind
+binder 15981:15987 <> a_inv_m:78
+R15998:16000 Coq.Init.Datatypes <> nat ind
+R16024:16028 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R16007:16013 Coq.Arith.PeanoNat Nat pow def
+R16015:16021 Nine65.OrderFinding <> a_inv_m:78 var
+R16023:16023 Nine65.OrderFinding <> k:77 var
+R16029:16029 Nine65.OrderFinding <> N:75 var
+prf 17338:17350 <> fermat_little
+R17367:17369 Coq.Init.Datatypes <> nat ind
+binder 17361:17361 <> a:79
+binder 17363:17363 <> p:80
+R17384:17387 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R17374:17381 Nine65.OrderFinding <> is_prime def
+R17383:17383 Nine65.OrderFinding <> p:80 var
+R17399:17404 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R17388:17394 Nine65.OrderFinding <> coprime def
+R17396:17396 Nine65.OrderFinding <> a:79 var
+R17398:17398 Nine65.OrderFinding <> p:80 var
+R17428:17430 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17422:17426 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R17405:17411 Coq.Arith.PeanoNat Nat pow def
+R17413:17413 Nine65.OrderFinding <> a:79 var
+R17417:17419 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R17416:17416 Nine65.OrderFinding <> p:80 var
+R17427:17427 Nine65.OrderFinding <> p:80 var
+prf 17890:17901 <> mod_mul_cong
+R17922:17924 Coq.Init.Datatypes <> nat ind
+binder 17912:17912 <> a:81
+binder 17914:17914 <> b:82
+binder 17916:17916 <> c:83
+binder 17918:17918 <> N:84
+R17934:17937 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R17930:17932 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R17929:17929 Nine65.OrderFinding <> N:84 var
+R17955:17960 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R17945:17947 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17939:17943 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R17938:17938 Nine65.OrderFinding <> a:81 var
+R17944:17944 Nine65.OrderFinding <> N:84 var
+R17949:17953 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R17948:17948 Nine65.OrderFinding <> b:82 var
+R17954:17954 Nine65.OrderFinding <> N:84 var
+R17974:17976 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R17961:17961 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R17967:17972 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R17963:17965 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R17962:17962 Nine65.OrderFinding <> a:81 var
+R17966:17966 Nine65.OrderFinding <> c:83 var
+R17973:17973 Nine65.OrderFinding <> N:84 var
+R17977:17977 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R17983:17988 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R17979:17981 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R17978:17978 Nine65.OrderFinding <> b:82 var
+R17982:17982 Nine65.OrderFinding <> c:83 var
+R17989:17989 Nine65.OrderFinding <> N:84 var
+R18035:18050 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18035:18050 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18035:18050 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18080:18095 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18080:18095 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18080:18095 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+prf 18204:18214 <> pow_mod_pow
+R18233:18235 Coq.Init.Datatypes <> nat ind
+binder 18225:18225 <> a:85
+binder 18227:18227 <> N:86
+binder 18229:18229 <> k:87
+R18245:18250 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R18241:18243 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R18240:18240 Nine65.OrderFinding <> N:86 var
+R18276:18278 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18270:18274 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18251:18257 Coq.Arith.PeanoNat Nat pow def
+R18261:18265 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18260:18260 Nine65.OrderFinding <> a:85 var
+R18266:18266 Nine65.OrderFinding <> N:86 var
+R18269:18269 Nine65.OrderFinding <> k:87 var
+R18275:18275 Nine65.OrderFinding <> N:86 var
+R18290:18294 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18279:18285 Coq.Arith.PeanoNat Nat pow def
+R18287:18287 Nine65.OrderFinding <> a:85 var
+R18289:18289 Nine65.OrderFinding <> k:87 var
+R18295:18295 Nine65.OrderFinding <> N:86 var
+R18543:18563 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18511:18511 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18536:18541 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18519:18521 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R18513:18517 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18522:18522 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18530:18533 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18524:18528 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18564:18564 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18605:18610 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18580:18583 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R18604:18604 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R18565:18565 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18573:18578 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18567:18571 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18598:18602 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18584:18584 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18592:18595 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18586:18590 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18543:18563 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18511:18511 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18536:18541 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18519:18521 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R18513:18517 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18522:18522 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18530:18533 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18524:18528 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18564:18564 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18605:18610 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18580:18583 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R18604:18604 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R18565:18565 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18573:18578 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18567:18571 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18598:18602 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18584:18584 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18592:18595 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R18586:18590 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18627:18642 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18627:18642 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18808:18810 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18793:18793 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18801:18806 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18795:18799 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18812:18816 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18830:18845 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R18808:18810 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R18793:18793 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18801:18806 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18795:18799 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18812:18816 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R18830:18845 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R18965:18980 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R18965:18980 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+prf 19235:19256 <> bsgs_correctness_prime
+R19279:19281 Coq.Init.Datatypes <> nat ind
+binder 19267:19267 <> a:88
+binder 19269:19269 <> p:89
+binder 19271:19271 <> m:90
+binder 19273:19273 <> j:91
+binder 19275:19275 <> k:92
+R19296:19299 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19286:19293 Nine65.OrderFinding <> is_prime def
+R19295:19295 Nine65.OrderFinding <> p:89 var
+R19311:19314 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19300:19306 Nine65.OrderFinding <> coprime def
+R19308:19308 Nine65.OrderFinding <> a:88 var
+R19310:19310 Nine65.OrderFinding <> p:89 var
+R19320:19323 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19316:19318 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R19315:19315 Nine65.OrderFinding <> m:90 var
+R19334:19339 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19325:19328 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R19324:19324 Nine65.OrderFinding <> m:90 var
+R19330:19332 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19329:19329 Nine65.OrderFinding <> p:89 var
+R19406:19411 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R19355:19357 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19340:19348 Nine65.OrderFinding <> baby_step def
+R19350:19350 Nine65.OrderFinding <> a:88 var
+R19352:19352 Nine65.OrderFinding <> p:89 var
+R19354:19354 Nine65.OrderFinding <> j:91 var
+R19358:19367 Nine65.OrderFinding <> giant_step def
+R19369:19369 Nine65.OrderFinding <> a:88 var
+R19371:19371 Nine65.OrderFinding <> p:89 var
+R19373:19373 Nine65.OrderFinding <> m:90 var
+R19375:19375 Nine65.OrderFinding <> k:92 var
+R19399:19403 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19378:19384 Coq.Arith.PeanoNat Nat pow def
+R19386:19386 Nine65.OrderFinding <> a:88 var
+R19394:19396 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19390:19392 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19389:19389 Nine65.OrderFinding <> p:89 var
+R19397:19397 Nine65.OrderFinding <> m:90 var
+R19404:19404 Nine65.OrderFinding <> p:89 var
+R19439:19441 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19433:19437 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19412:19418 Coq.Arith.PeanoNat Nat pow def
+R19420:19420 Nine65.OrderFinding <> a:88 var
+R19424:19426 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R19423:19423 Nine65.OrderFinding <> j:91 var
+R19428:19430 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19427:19427 Nine65.OrderFinding <> m:90 var
+R19431:19431 Nine65.OrderFinding <> k:92 var
+R19438:19438 Nine65.OrderFinding <> p:89 var
+R19517:19519 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R19517:19519 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R19578:19586 Nine65.OrderFinding <> baby_step def
+R19589:19598 Nine65.OrderFinding <> giant_step def
+R19620:19630 Nine65.OrderFinding <> pow_mod_pow thm
+R19620:19630 Nine65.OrderFinding <> pow_mod_pow thm
+R19620:19630 Nine65.OrderFinding <> pow_mod_pow thm
+R19620:19630 Nine65.OrderFinding <> pow_mod_pow thm
+R19664:19676 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R19664:19676 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R19664:19676 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R19731:19733 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19725:19729 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19704:19710 Coq.Arith.PeanoNat Nat pow def
+R19716:19718 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R19720:19722 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19769:19773 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19734:19740 Coq.Arith.PeanoNat Nat pow def
+R19760:19762 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R19745:19745 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19755:19758 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19751:19753 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19747:19749 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19764:19766 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19731:19733 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19725:19729 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19704:19710 Coq.Arith.PeanoNat Nat pow def
+R19716:19718 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R19720:19722 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19769:19773 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19734:19740 Coq.Arith.PeanoNat Nat pow def
+R19760:19762 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R19745:19745 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19755:19758 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19751:19753 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19747:19749 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19764:19766 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19835:19855 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19796:19796 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19828:19833 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19808:19810 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19797:19803 Coq.Arith.PeanoNat Nat pow def
+R19811:19817 Coq.Arith.PeanoNat Nat pow def
+R19823:19825 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19856:19856 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19904:19909 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19884:19886 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19857:19863 Coq.Arith.PeanoNat Nat pow def
+R19868:19868 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19878:19881 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19874:19876 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19870:19872 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19887:19893 Coq.Arith.PeanoNat Nat pow def
+R19899:19901 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19835:19855 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R19796:19796 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19828:19833 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19808:19810 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19797:19803 Coq.Arith.PeanoNat Nat pow def
+R19811:19817 Coq.Arith.PeanoNat Nat pow def
+R19823:19825 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19856:19856 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19904:19909 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R19884:19886 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19857:19863 Coq.Arith.PeanoNat Nat pow def
+R19868:19868 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19878:19881 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19874:19876 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19870:19872 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R19887:19893 Coq.Arith.PeanoNat Nat pow def
+R19899:19901 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R19926:19937 Nine65.OrderFinding <> mod_mul_cong thm
+R19926:19937 Nine65.OrderFinding <> mod_mul_cong thm
+R19978:19990 Coq.Arith.PeanoNat Nat pow_add_r thm
+R19978:19990 Coq.Arith.PeanoNat Nat pow_add_r thm
+R19978:19990 Coq.Arith.PeanoNat Nat pow_add_r thm
+R20016:20028 Coq.Arith.PeanoNat Nat pow_add_r thm
+R20016:20028 Coq.Arith.PeanoNat Nat pow_add_r thm
+R20016:20028 Coq.Arith.PeanoNat Nat pow_add_r thm
+R20113:20115 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20105:20107 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R20090:20090 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20100:20103 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20096:20098 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20092:20094 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20109:20111 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20116:20116 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20122:20125 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20118:20120 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20113:20115 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20105:20107 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R20090:20090 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20100:20103 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20096:20098 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20092:20094 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20109:20111 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20116:20116 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20122:20125 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20118:20120 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20142:20160 Coq.Arith.PeanoNat Nat mul_sub_distr_r thm
+R20142:20160 Coq.Arith.PeanoNat Nat mul_sub_distr_r thm
+R20142:20160 Coq.Arith.PeanoNat Nat mul_sub_distr_r thm
+R20175:20185 Coq.Arith.PeanoNat Nat sub_add thm
+R20175:20185 Coq.Arith.PeanoNat Nat sub_add thm
+R20175:20185 Coq.Arith.PeanoNat Nat sub_add thm
+R20175:20185 Coq.Arith.PeanoNat Nat sub_add thm
+R20214:20230 Coq.Arith.PeanoNat Nat mul_le_mono_r thm
+R20214:20230 Coq.Arith.PeanoNat Nat mul_le_mono_r thm
+R20278:20290 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R20278:20290 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R20278:20290 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R20301:20311 Nine65.OrderFinding <> pow_mod_one thm
+R20301:20311 Nine65.OrderFinding <> pow_mod_one thm
+R20331:20343 Nine65.OrderFinding <> fermat_little prfax
+R20331:20343 Nine65.OrderFinding <> fermat_little prfax
+prf 20552:20578 <> bsgs_correctness_with_order
+R20603:20605 Coq.Init.Datatypes <> nat ind
+binder 20589:20589 <> a:93
+binder 20591:20591 <> N:94
+binder 20593:20593 <> m:95
+binder 20595:20595 <> j:96
+binder 20597:20597 <> k:97
+binder 20599:20599 <> r:98
+R20615:20618 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20611:20613 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R20610:20610 Nine65.OrderFinding <> N:94 var
+R20630:20633 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20619:20625 Nine65.OrderFinding <> coprime def
+R20627:20627 Nine65.OrderFinding <> a:93 var
+R20629:20629 Nine65.OrderFinding <> N:94 var
+R20639:20644 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20635:20637 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R20634:20634 Nine65.OrderFinding <> m:95 var
+R20659:20664 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20645:20652 Nine65.OrderFinding <> is_order def
+R20654:20654 Nine65.OrderFinding <> a:93 var
+R20656:20656 Nine65.OrderFinding <> N:94 var
+R20658:20658 Nine65.OrderFinding <> r:98 var
+R20735:20740 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R20680:20682 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R20665:20673 Nine65.OrderFinding <> baby_step def
+R20675:20675 Nine65.OrderFinding <> a:93 var
+R20677:20677 Nine65.OrderFinding <> N:94 var
+R20679:20679 Nine65.OrderFinding <> j:96 var
+R20683:20692 Nine65.OrderFinding <> giant_step def
+R20694:20694 Nine65.OrderFinding <> a:93 var
+R20696:20696 Nine65.OrderFinding <> N:94 var
+R20698:20698 Nine65.OrderFinding <> m:95 var
+R20700:20700 Nine65.OrderFinding <> k:97 var
+R20728:20732 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R20703:20709 Coq.Arith.PeanoNat Nat pow def
+R20711:20711 Nine65.OrderFinding <> a:93 var
+R20715:20718 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20726:20726 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R20714:20714 Nine65.OrderFinding <> r:98 var
+R20720:20724 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R20719:20719 Nine65.OrderFinding <> m:95 var
+R20725:20725 Nine65.OrderFinding <> r:98 var
+R20733:20733 Nine65.OrderFinding <> N:94 var
+R20741:20750 Coq.Arith.PeanoNat Nat divide def
+R20752:20752 Nine65.OrderFinding <> r:98 var
+R20756:20758 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R20755:20755 Nine65.OrderFinding <> j:96 var
+R20760:20762 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R20759:20759 Nine65.OrderFinding <> m:95 var
+R20763:20763 Nine65.OrderFinding <> k:97 var
+R20876:20880 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R20876:20880 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R20898:20900 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R20898:20900 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R20914:20922 Nine65.OrderFinding <> baby_step def
+R20925:20934 Nine65.OrderFinding <> giant_step def
+R20956:20966 Nine65.OrderFinding <> pow_mod_pow thm
+R20956:20966 Nine65.OrderFinding <> pow_mod_pow thm
+R20956:20966 Nine65.OrderFinding <> pow_mod_pow thm
+R20956:20966 Nine65.OrderFinding <> pow_mod_pow thm
+R21000:21012 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R21000:21012 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R21000:21012 Coq.Arith.PeanoNat Nat pow_mul_r thm
+R21067:21085 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21061:21065 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21040:21046 Coq.Arith.PeanoNat Nat pow def
+R21052:21054 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21056:21058 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21117:21121 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21086:21092 Coq.Arith.PeanoNat Nat pow def
+R21108:21110 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21097:21097 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21103:21106 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21099:21101 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R21112:21114 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21067:21085 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21061:21065 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21040:21046 Coq.Arith.PeanoNat Nat pow def
+R21052:21054 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21056:21058 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21117:21121 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21086:21092 Coq.Arith.PeanoNat Nat pow def
+R21108:21110 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21097:21097 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21103:21106 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21099:21101 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R21112:21114 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21183:21203 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21144:21144 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21176:21181 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21156:21158 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21145:21151 Coq.Arith.PeanoNat Nat pow def
+R21159:21165 Coq.Arith.PeanoNat Nat pow def
+R21171:21173 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21204:21204 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21248:21253 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21228:21230 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21205:21211 Coq.Arith.PeanoNat Nat pow def
+R21216:21216 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21222:21225 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21218:21220 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R21231:21237 Coq.Arith.PeanoNat Nat pow def
+R21243:21245 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21183:21203 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21144:21144 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21176:21181 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21156:21158 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21145:21151 Coq.Arith.PeanoNat Nat pow def
+R21159:21165 Coq.Arith.PeanoNat Nat pow def
+R21171:21173 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21204:21204 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21248:21253 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21228:21230 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21205:21211 Coq.Arith.PeanoNat Nat pow def
+R21216:21216 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21222:21225 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21218:21220 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R21231:21237 Coq.Arith.PeanoNat Nat pow def
+R21243:21245 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21270:21281 Nine65.OrderFinding <> mod_mul_cong thm
+R21270:21281 Nine65.OrderFinding <> mod_mul_cong thm
+R21322:21334 Coq.Arith.PeanoNat Nat pow_add_r thm
+R21322:21334 Coq.Arith.PeanoNat Nat pow_add_r thm
+R21322:21334 Coq.Arith.PeanoNat Nat pow_add_r thm
+R21360:21372 Coq.Arith.PeanoNat Nat pow_add_r thm
+R21360:21372 Coq.Arith.PeanoNat Nat pow_add_r thm
+R21360:21372 Coq.Arith.PeanoNat Nat pow_add_r thm
+R21419:21421 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21427:21429 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21423:21425 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21419:21421 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21427:21429 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21423:21425 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21459:21470 Coq.Arith.PeanoNat Nat mul_comm thm
+R21459:21470 Coq.Arith.PeanoNat Nat mul_comm thm
+R21459:21470 Coq.Arith.PeanoNat Nat mul_comm thm
+R21479:21492 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R21479:21492 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R21515:21517 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R21541:21559 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R21515:21517 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R21541:21559 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R21581:21581 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21587:21590 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21583:21585 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21581:21581 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21587:21590 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21583:21585 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21630:21632 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21622:21624 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21611:21611 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21617:21620 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21613:21615 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R21626:21628 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21635:21637 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21630:21632 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21622:21624 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21611:21611 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21617:21620 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21613:21615 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R21626:21628 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21635:21637 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21721:21723 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21715:21719 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21694:21700 Coq.Arith.PeanoNat Nat pow def
+R21706:21708 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21710:21712 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21721:21723 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R21715:21719 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R21694:21700 Coq.Arith.PeanoNat Nat pow def
+R21706:21708 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21710:21712 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21774:21789 Nine65.OrderFinding <> pow_mod_multiple thm
+R21774:21789 Nine65.OrderFinding <> pow_mod_multiple thm
+R21869:21881 Nine65.OrderFinding <> order_divides thm
+R21889:21891 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21893:21895 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21869:21881 Nine65.OrderFinding <> order_divides thm
+R21889:21891 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R21893:21895 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R21928:21935 Nine65.OrderFinding <> is_order def
+def 22216:22231 <> is_minimal_order
+R22242:22244 Coq.Init.Datatypes <> nat ind
+binder 22234:22234 <> a:99
+binder 22236:22236 <> N:100
+binder 22238:22238 <> r:101
+R22264:22269 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R22260:22262 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R22259:22259 Nine65.OrderFinding <> r:101 var
+R22291:22296 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R22287:22289 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R22281:22285 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R22270:22276 Coq.Arith.PeanoNat Nat pow def
+R22278:22278 Nine65.OrderFinding <> a:99 var
+R22280:22280 Nine65.OrderFinding <> r:101 var
+R22286:22286 Nine65.OrderFinding <> N:100 var
+binder 22304:22304 <> p:102
+R22317:22320 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R22307:22314 Nine65.OrderFinding <> is_prime def
+R22316:22316 Nine65.OrderFinding <> p:102 var
+R22335:22338 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R22321:22330 Coq.Arith.PeanoNat Nat divide def
+R22332:22332 Nine65.OrderFinding <> p:102 var
+R22334:22334 Nine65.OrderFinding <> r:101 var
+R22362:22365 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R22356:22360 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R22339:22345 Coq.Arith.PeanoNat Nat pow def
+R22347:22347 Nine65.OrderFinding <> a:99 var
+R22351:22353 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R22350:22350 Nine65.OrderFinding <> r:101 var
+R22354:22354 Nine65.OrderFinding <> p:102 var
+R22361:22361 Nine65.OrderFinding <> N:100 var
+prf 22419:22438 <> minimization_correct
+R22457:22459 Coq.Init.Datatypes <> nat ind
+binder 22449:22449 <> a:103
+binder 22451:22451 <> N:104
+binder 22453:22453 <> r:105
+R22469:22472 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R22465:22467 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R22464:22464 Nine65.OrderFinding <> N:104 var
+R22484:22487 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R22473:22479 Nine65.OrderFinding <> coprime def
+R22481:22481 Nine65.OrderFinding <> a:103 var
+R22483:22483 Nine65.OrderFinding <> N:104 var
+R22493:22498 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R22489:22491 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R22488:22488 Nine65.OrderFinding <> r:105 var
+R22520:22525 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R22516:22518 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R22510:22514 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R22499:22505 Coq.Arith.PeanoNat Nat pow def
+R22507:22507 Nine65.OrderFinding <> a:103 var
+R22509:22509 Nine65.OrderFinding <> r:105 var
+R22515:22515 Nine65.OrderFinding <> N:104 var
+R22526:22532 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R22535:22536 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 22533:22534 <> r':106
+R22543:22546 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R22539:22541 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R22537:22538 Nine65.OrderFinding <> r':106 var
+R22562:22565 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R22547:22556 Coq.Arith.PeanoNat Nat divide def
+R22558:22559 Nine65.OrderFinding <> r':106 var
+R22561:22561 Nine65.OrderFinding <> r:105 var
+R22566:22573 Nine65.OrderFinding <> is_order def
+R22575:22575 Nine65.OrderFinding <> a:103 var
+R22577:22577 Nine65.OrderFinding <> N:104 var
+R22579:22580 Nine65.OrderFinding <> r':106 var
+R22693:22704 Nine65.OrderFinding <> order_exists thm
+R22693:22704 Nine65.OrderFinding <> order_exists thm
+R22880:22892 Nine65.OrderFinding <> order_divides thm
+R22880:22892 Nine65.OrderFinding <> order_divides thm
+R22945:22952 Nine65.OrderFinding <> is_order def
+R22998:23005 Nine65.OrderFinding <> is_order def
+def 23420:23442 <> uses_factorization_of_N
+R23454:23458 Coq.Init.Logic <> False ind
+prf 23470:23484 <> non_circularity
+R23541:23541 Coq.Init.Logic <> ::type_scope:'~'_x not
+R23542:23564 Nine65.OrderFinding <> uses_factorization_of_N def
+R23583:23605 Nine65.OrderFinding <> uses_factorization_of_N def
+def 23939:23949 <> shor_factor
+R23960:23962 Coq.Init.Datatypes <> nat ind
+binder 23952:23952 <> a:107
+binder 23954:23954 <> N:108
+binder 23956:23956 <> r:109
+R23967:23972 Coq.Init.Datatypes <> option ind
+R23978:23980 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R23975:23977 Coq.Init.Datatypes <> nat ind
+R23981:23983 Coq.Init.Datatypes <> nat ind
+R23994:24001 Coq.Arith.PeanoNat Nat even def
+R24003:24003 Nine65.OrderFinding <> r:109 var
+R24348:24351 Coq.Init.Datatypes <> None constr
+R24047:24051 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R24030:24036 Coq.Arith.PeanoNat Nat pow def
+R24038:24038 Nine65.OrderFinding <> a:107 var
+R24042:24044 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R24041:24041 Nine65.OrderFinding <> r:109 var
+R24052:24052 Nine65.OrderFinding <> N:108 var
+binder 24018:24025 <> half_exp:110
+R24064:24070 Coq.Arith.PeanoNat Nat eqb def
+R24072:24079 Nine65.OrderFinding <> half_exp:110 var
+R24083:24085 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R24082:24082 Nine65.OrderFinding <> N:108 var
+R24143:24149 Coq.Arith.PeanoNat Nat gcd def
+R24160:24162 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R24152:24159 Nine65.OrderFinding <> half_exp:110 var
+R24166:24166 Nine65.OrderFinding <> N:108 var
+binder 24138:24138 <> p:111
+R24186:24192 Coq.Arith.PeanoNat Nat gcd def
+R24203:24205 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R24195:24202 Nine65.OrderFinding <> half_exp:110 var
+R24209:24209 Nine65.OrderFinding <> N:108 var
+binder 24181:24181 <> q:112
+R24223:24226 Coq.Init.Datatypes <> andb def
+R24239:24242 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R24238:24238 Nine65.OrderFinding <> p:111 var
+R24243:24243 Nine65.OrderFinding <> N:108 var
+R24230:24233 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R24234:24234 Nine65.OrderFinding <> p:111 var
+R24281:24284 Coq.Init.Datatypes <> andb def
+R24297:24300 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R24296:24296 Nine65.OrderFinding <> q:112 var
+R24301:24301 Nine65.OrderFinding <> N:108 var
+R24288:24291 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R24292:24292 Nine65.OrderFinding <> q:112 var
+R24336:24339 Coq.Init.Datatypes <> None constr
+R24309:24312 Coq.Init.Datatypes <> Some constr
+R24314:24314 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R24316:24317 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R24323:24323 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R24315:24315 Nine65.OrderFinding <> q:112 var
+R24319:24321 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R24318:24318 Nine65.OrderFinding <> N:108 var
+R24322:24322 Nine65.OrderFinding <> q:112 var
+R24251:24254 Coq.Init.Datatypes <> Some constr
+R24256:24256 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R24258:24259 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R24265:24265 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R24257:24257 Nine65.OrderFinding <> p:111 var
+R24261:24263 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R24260:24260 Nine65.OrderFinding <> N:108 var
+R24264:24264 Nine65.OrderFinding <> p:111 var
+R24094:24097 Coq.Init.Datatypes <> None constr
+prf 24397:24418 <> shor_reduction_correct
+R24441:24443 Coq.Init.Datatypes <> nat ind
+binder 24429:24429 <> a:113
+binder 24431:24431 <> N:114
+binder 24433:24433 <> r:115
+binder 24435:24435 <> p:116
+binder 24437:24437 <> q:117
+R24453:24456 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24449:24451 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R24448:24448 Nine65.OrderFinding <> N:114 var
+R24468:24473 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24457:24463 Nine65.OrderFinding <> coprime def
+R24465:24465 Nine65.OrderFinding <> a:113 var
+R24467:24467 Nine65.OrderFinding <> N:114 var
+R24488:24493 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24474:24481 Nine65.OrderFinding <> is_order def
+R24483:24483 Nine65.OrderFinding <> a:113 var
+R24485:24485 Nine65.OrderFinding <> N:114 var
+R24487:24487 Nine65.OrderFinding <> r:115 var
+R24511:24516 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24504:24506 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R24494:24501 Coq.Arith.PeanoNat Nat even def
+R24503:24503 Nine65.OrderFinding <> r:115 var
+R24507:24510 Coq.Init.Datatypes <> true constr
+R24550:24554 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R24533:24539 Coq.Arith.PeanoNat Nat pow def
+R24541:24541 Nine65.OrderFinding <> a:113 var
+R24545:24547 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R24544:24544 Nine65.OrderFinding <> r:115 var
+R24555:24555 Nine65.OrderFinding <> N:114 var
+binder 24521:24528 <> half_exp:118
+R24579:24584 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24570:24573 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R24562:24569 Nine65.OrderFinding <> half_exp:118 var
+R24575:24577 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R24574:24574 Nine65.OrderFinding <> N:114 var
+R24585:24585 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24646:24652 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24614:24617 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R24587:24589 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R24586:24586 Nine65.OrderFinding <> p:116 var
+R24590:24596 Coq.Arith.PeanoNat Nat gcd def
+R24607:24609 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R24599:24606 Nine65.OrderFinding <> half_exp:118 var
+R24613:24613 Nine65.OrderFinding <> N:114 var
+R24619:24621 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R24618:24618 Nine65.OrderFinding <> p:116 var
+R24622:24628 Coq.Arith.PeanoNat Nat gcd def
+R24639:24641 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R24631:24638 Nine65.OrderFinding <> half_exp:118 var
+R24645:24645 Nine65.OrderFinding <> N:114 var
+R24662:24667 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R24654:24656 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R24658:24660 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R24657:24657 Nine65.OrderFinding <> p:116 var
+R24657:24657 Nine65.OrderFinding <> p:116 var
+R24661:24661 Nine65.OrderFinding <> N:114 var
+R24668:24677 Coq.Arith.PeanoNat Nat divide def
+R24679:24679 Nine65.OrderFinding <> p:116 var
+R24681:24681 Nine65.OrderFinding <> N:114 var
+R24810:24825 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+R24810:24825 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+R24850:24865 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+R24850:24865 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+rec 25255:25265 <> KRecurrence
+proj 25274:25277 <> base
+proj 25288:25288 <> n
+proj 25299:25303 <> a_ref
+proj 25359:25359 <> t
+proj 25370:25372 <> v_t
+proj 25416:25418 <> k_t
+R25281:25283 Coq.Init.Datatypes <> nat ind
+R25292:25294 Coq.Init.Datatypes <> nat ind
+R25307:25309 Coq.Init.Datatypes <> nat ind
+R25363:25365 Coq.Init.Datatypes <> nat ind
+R25376:25378 Coq.Init.Datatypes <> nat ind
+R25422:25424 Coq.Init.Datatypes <> nat ind
+def 25519:25524 <> k_step
+R25532:25542 Nine65.OrderFinding <> KRecurrence rec
+binder 25527:25528 <> kr:126
+R25547:25557 Nine65.OrderFinding <> KRecurrence rec
+R25587:25589 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R25583:25585 Nine65.OrderFinding <> v_t proj
+R25579:25580 Nine65.OrderFinding <> kr:126 var
+R25594:25597 Nine65.OrderFinding <> base proj
+R25590:25591 Nine65.OrderFinding <> kr:126 var
+binder 25568:25574 <> product:127
+R25625:25627 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R25618:25624 Nine65.OrderFinding <> product:127 var
+R25632:25632 Nine65.OrderFinding <> n proj
+R25628:25629 Nine65.OrderFinding <> kr:126 var
+binder 25609:25613 <> carry:128
+R25647:25650 Nine65.OrderFinding <> base proj
+R25647:25650 Nine65.OrderFinding <> base proj
+R25647:25650 Nine65.OrderFinding <> base proj
+R25670:25670 Nine65.OrderFinding <> n proj
+R25670:25670 Nine65.OrderFinding <> n proj
+R25687:25691 Nine65.OrderFinding <> a_ref proj
+R25687:25691 Nine65.OrderFinding <> a_ref proj
+R25712:25712 Nine65.OrderFinding <> t proj
+R25712:25712 Nine65.OrderFinding <> t proj
+R25733:25735 Nine65.OrderFinding <> v_t proj
+R25733:25735 Nine65.OrderFinding <> v_t proj
+R25764:25766 Nine65.OrderFinding <> k_t proj
+R25764:25766 Nine65.OrderFinding <> k_t proj
+R25659:25662 Nine65.OrderFinding <> base proj
+R25655:25656 Nine65.OrderFinding <> kr:126 var
+R25679:25679 Nine65.OrderFinding <> n proj
+R25675:25676 Nine65.OrderFinding <> kr:126 var
+R25700:25704 Nine65.OrderFinding <> a_ref proj
+R25696:25697 Nine65.OrderFinding <> kr:126 var
+R25723:25725 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R25721:25721 Nine65.OrderFinding <> t proj
+R25717:25718 Nine65.OrderFinding <> kr:126 var
+R25747:25751 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R25740:25746 Nine65.OrderFinding <> product:127 var
+R25756:25756 Nine65.OrderFinding <> n proj
+R25752:25753 Nine65.OrderFinding <> kr:126 var
+R25771:25771 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R25800:25805 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R25792:25794 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R25781:25783 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R25776:25779 Nine65.OrderFinding <> base proj
+R25772:25773 Nine65.OrderFinding <> kr:126 var
+R25788:25790 Nine65.OrderFinding <> k_t proj
+R25784:25785 Nine65.OrderFinding <> kr:126 var
+R25795:25799 Nine65.OrderFinding <> carry:128 var
+R25810:25814 Nine65.OrderFinding <> a_ref proj
+R25806:25807 Nine65.OrderFinding <> kr:126 var
+def 25857:25862 <> k_init
+R25873:25875 Coq.Init.Datatypes <> nat ind
+binder 25865:25865 <> b:129
+binder 25867:25867 <> N:130
+binder 25869:25869 <> A:131
+R25880:25890 Nine65.OrderFinding <> KRecurrence rec
+R25904:25907 Nine65.OrderFinding <> base proj
+R25904:25907 Nine65.OrderFinding <> base proj
+R25904:25907 Nine65.OrderFinding <> base proj
+R25919:25919 Nine65.OrderFinding <> n proj
+R25919:25919 Nine65.OrderFinding <> n proj
+R25931:25935 Nine65.OrderFinding <> a_ref proj
+R25931:25935 Nine65.OrderFinding <> a_ref proj
+R25947:25947 Nine65.OrderFinding <> t proj
+R25947:25947 Nine65.OrderFinding <> t proj
+R25959:25961 Nine65.OrderFinding <> v_t proj
+R25959:25961 Nine65.OrderFinding <> v_t proj
+R25973:25975 Nine65.OrderFinding <> k_t proj
+R25973:25975 Nine65.OrderFinding <> k_t proj
+R25912:25912 Nine65.OrderFinding <> b:129 var
+R25924:25924 Nine65.OrderFinding <> N:130 var
+R25940:25940 Nine65.OrderFinding <> A:131 var
+def 26031:26041 <> k_invariant
+R26049:26059 Nine65.OrderFinding <> KRecurrence rec
+binder 26044:26045 <> kr:132
+R26084:26089 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R26080:26082 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R26078:26078 Nine65.OrderFinding <> n proj
+R26074:26075 Nine65.OrderFinding <> kr:132 var
+R26104:26109 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R26100:26102 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R26094:26098 Nine65.OrderFinding <> a_ref proj
+R26090:26091 Nine65.OrderFinding <> kr:132 var
+R26135:26140 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R26110:26116 Nine65.OrderFinding <> coprime def
+R26122:26122 Nine65.OrderFinding <> n proj
+R26118:26119 Nine65.OrderFinding <> kr:132 var
+R26129:26133 Nine65.OrderFinding <> a_ref proj
+R26125:26126 Nine65.OrderFinding <> kr:132 var
+R26149:26151 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R26145:26147 Nine65.OrderFinding <> v_t proj
+R26141:26142 Nine65.OrderFinding <> kr:132 var
+R26176:26180 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R26152:26158 Coq.Arith.PeanoNat Nat pow def
+R26164:26167 Nine65.OrderFinding <> base proj
+R26160:26161 Nine65.OrderFinding <> kr:132 var
+R26174:26174 Nine65.OrderFinding <> t proj
+R26170:26171 Nine65.OrderFinding <> kr:132 var
+R26185:26185 Nine65.OrderFinding <> n proj
+R26181:26182 Nine65.OrderFinding <> kr:132 var
+prf 26238:26263 <> k_step_preserves_invariant
+R26279:26289 Nine65.OrderFinding <> KRecurrence rec
+binder 26274:26275 <> kr:133
+R26308:26311 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R26294:26304 Nine65.OrderFinding <> k_invariant def
+R26306:26307 Nine65.OrderFinding <> kr:133 var
+R26312:26322 Nine65.OrderFinding <> k_invariant def
+R26325:26330 Nine65.OrderFinding <> k_step def
+R26332:26333 Nine65.OrderFinding <> kr:133 var
+R26386:26391 Nine65.OrderFinding <> k_step def
+R26394:26404 Nine65.OrderFinding <> k_invariant def
+R26740:26755 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R26740:26755 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R26740:26755 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R26777:26792 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R26777:26792 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R26777:26792 Coq.Arith.PeanoNat Nat.Div0 mod_mod thm
+R26817:26832 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R26817:26832 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R26817:26832 Coq.Arith.PeanoNat Nat.Div0 mul_mod thm
+R26969:26980 Coq.Arith.PeanoNat Nat mul_comm thm
+R26969:26980 Coq.Arith.PeanoNat Nat mul_comm thm
+R26969:26980 Coq.Arith.PeanoNat Nat mul_comm thm
+R27022:27032 Coq.Arith.PeanoNat Nat add_1_r thm
+R27022:27032 Coq.Arith.PeanoNat Nat add_1_r thm
+R27022:27032 Coq.Arith.PeanoNat Nat add_1_r thm
+R27048:27062 Coq.Arith.PeanoNat Nat pow_succ_r' thm
+R27048:27062 Coq.Arith.PeanoNat Nat pow_succ_r' thm
+R27048:27062 Coq.Arith.PeanoNat Nat pow_succ_r' thm
+def 27140:27153 <> verify_order_k
+R27166:27168 Coq.Init.Datatypes <> nat ind
+binder 27156:27156 <> b:134
+binder 27158:27158 <> N:135
+binder 27160:27160 <> A:136
+binder 27162:27162 <> r:137
+R27173:27176 Coq.Init.Datatypes <> bool ind
+R27193:27198 Nine65.OrderFinding <> k_init def
+R27200:27200 Nine65.OrderFinding <> b:134 var
+R27202:27202 Nine65.OrderFinding <> N:135 var
+R27204:27204 Nine65.OrderFinding <> A:136 var
+binder 27187:27188 <> kr:138
+R27227:27234 Coq.Arith.PeanoNat Nat iter def
+R27245:27246 Nine65.OrderFinding <> kr:138 var
+R27238:27243 Nine65.OrderFinding <> k_step def
+R27236:27236 Nine65.OrderFinding <> r:137 var
+binder 27215:27222 <> kr_final:139
+R27253:27259 Coq.Arith.PeanoNat Nat eqb def
+R27271:27273 Nine65.OrderFinding <> v_t proj
+R27261:27268 Nine65.OrderFinding <> kr_final:139 var
+prf 27320:27335 <> k_init_invariant
+R27354:27356 Coq.Init.Datatypes <> nat ind
+binder 27346:27346 <> b:140
+binder 27348:27348 <> N:141
+binder 27350:27350 <> A:142
+R27366:27369 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R27362:27364 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R27361:27361 Nine65.OrderFinding <> N:141 var
+R27375:27378 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R27371:27373 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R27370:27370 Nine65.OrderFinding <> A:142 var
+R27390:27395 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R27379:27385 Nine65.OrderFinding <> coprime def
+R27387:27387 Nine65.OrderFinding <> N:141 var
+R27389:27389 Nine65.OrderFinding <> A:142 var
+R27396:27406 Nine65.OrderFinding <> k_invariant def
+R27409:27414 Nine65.OrderFinding <> k_init def
+R27416:27416 Nine65.OrderFinding <> b:140 var
+R27418:27418 Nine65.OrderFinding <> N:141 var
+R27420:27420 Nine65.OrderFinding <> A:142 var
+R27467:27472 Nine65.OrderFinding <> k_init def
+R27475:27485 Nine65.OrderFinding <> k_invariant def
+R27633:27645 Coq.Arith.PeanoNat Nat mod_small def
+R27633:27645 Coq.Arith.PeanoNat Nat mod_small def
+prf 27702:27717 <> k_iter_invariant
+R27733:27735 Coq.Init.Datatypes <> nat ind
+binder 27729:27729 <> r:143
+R27745:27755 Nine65.OrderFinding <> KRecurrence rec
+binder 27739:27741 <> kr0:144
+R27776:27781 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R27761:27771 Nine65.OrderFinding <> k_invariant def
+R27773:27775 Nine65.OrderFinding <> kr0:144 var
+R27782:27792 Nine65.OrderFinding <> k_invariant def
+R27795:27802 Coq.Arith.PeanoNat Nat iter def
+R27813:27815 Nine65.OrderFinding <> kr0:144 var
+R27806:27811 Nine65.OrderFinding <> k_step def
+R27804:27804 Nine65.OrderFinding <> r:143 var
+R27910:27935 Nine65.OrderFinding <> k_step_preserves_invariant thm
+R27910:27935 Nine65.OrderFinding <> k_step_preserves_invariant thm
+prf 28005:28012 <> k_iter_t
+R28033:28035 Coq.Init.Datatypes <> nat ind
+binder 28023:28023 <> r:145
+binder 28025:28025 <> b:146
+binder 28027:28027 <> N:147
+binder 28029:28029 <> A:148
+R28078:28080 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R28076:28076 Nine65.OrderFinding <> t proj
+R28041:28048 Coq.Arith.PeanoNat Nat iter def
+R28060:28065 Nine65.OrderFinding <> k_init def
+R28067:28067 Nine65.OrderFinding <> b:146 var
+R28069:28069 Nine65.OrderFinding <> N:147 var
+R28071:28071 Nine65.OrderFinding <> A:148 var
+R28052:28057 Nine65.OrderFinding <> k_step def
+R28050:28050 Nine65.OrderFinding <> r:145 var
+R28081:28081 Nine65.OrderFinding <> r:145 var
+R28174:28179 Nine65.OrderFinding <> k_step def
+prf 28265:28272 <> k_iter_n
+R28293:28295 Coq.Init.Datatypes <> nat ind
+binder 28283:28283 <> r:149
+binder 28285:28285 <> b:150
+binder 28287:28287 <> N:151
+binder 28289:28289 <> A:152
+R28338:28340 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R28336:28336 Nine65.OrderFinding <> n proj
+R28301:28308 Coq.Arith.PeanoNat Nat iter def
+R28320:28325 Nine65.OrderFinding <> k_init def
+R28327:28327 Nine65.OrderFinding <> b:150 var
+R28329:28329 Nine65.OrderFinding <> N:151 var
+R28331:28331 Nine65.OrderFinding <> A:152 var
+R28312:28317 Nine65.OrderFinding <> k_step def
+R28310:28310 Nine65.OrderFinding <> r:149 var
+R28341:28341 Nine65.OrderFinding <> N:151 var
+R28434:28439 Nine65.OrderFinding <> k_step def
+prf 28536:28546 <> k_iter_base
+R28567:28569 Coq.Init.Datatypes <> nat ind
+binder 28557:28557 <> r:153
+binder 28559:28559 <> b:154
+binder 28561:28561 <> N:155
+binder 28563:28563 <> A:156
+R28615:28617 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R28610:28613 Nine65.OrderFinding <> base proj
+R28575:28582 Coq.Arith.PeanoNat Nat iter def
+R28594:28599 Nine65.OrderFinding <> k_init def
+R28601:28601 Nine65.OrderFinding <> b:154 var
+R28603:28603 Nine65.OrderFinding <> N:155 var
+R28605:28605 Nine65.OrderFinding <> A:156 var
+R28586:28591 Nine65.OrderFinding <> k_step def
+R28584:28584 Nine65.OrderFinding <> r:153 var
+R28618:28618 Nine65.OrderFinding <> b:154 var
+R28711:28716 Nine65.OrderFinding <> k_step def
+prf 28804:28825 <> k_verification_correct
+R28846:28848 Coq.Init.Datatypes <> nat ind
+binder 28836:28836 <> b:157
+binder 28838:28838 <> N:158
+binder 28840:28840 <> A:159
+binder 28842:28842 <> r:160
+R28858:28861 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R28854:28856 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R28853:28853 Nine65.OrderFinding <> N:158 var
+R28867:28870 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R28863:28865 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R28862:28862 Nine65.OrderFinding <> A:159 var
+R28882:28885 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R28871:28877 Nine65.OrderFinding <> coprime def
+R28879:28879 Nine65.OrderFinding <> N:158 var
+R28881:28881 Nine65.OrderFinding <> A:159 var
+R28897:28902 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R28886:28892 Nine65.OrderFinding <> coprime def
+R28894:28894 Nine65.OrderFinding <> b:157 var
+R28896:28896 Nine65.OrderFinding <> N:158 var
+R28917:28922 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R28903:28910 Nine65.OrderFinding <> is_order def
+R28912:28912 Nine65.OrderFinding <> b:157 var
+R28914:28914 Nine65.OrderFinding <> N:158 var
+R28916:28916 Nine65.OrderFinding <> r:160 var
+R28945:28947 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R28923:28936 Nine65.OrderFinding <> verify_order_k def
+R28938:28938 Nine65.OrderFinding <> b:157 var
+R28940:28940 Nine65.OrderFinding <> N:158 var
+R28942:28942 Nine65.OrderFinding <> A:159 var
+R28944:28944 Nine65.OrderFinding <> r:160 var
+R28948:28951 Coq.Init.Datatypes <> true constr
+R29035:29048 Nine65.OrderFinding <> verify_order_k def
+R29113:29120 Coq.Arith.PeanoNat Nat iter def
+R29132:29137 Nine65.OrderFinding <> k_init def
+R29124:29129 Nine65.OrderFinding <> k_step def
+R29113:29120 Coq.Arith.PeanoNat Nat iter def
+R29132:29137 Nine65.OrderFinding <> k_init def
+R29124:29129 Nine65.OrderFinding <> k_step def
+R29231:29241 Nine65.OrderFinding <> k_invariant def
+R29231:29241 Nine65.OrderFinding <> k_invariant def
+R29281:29296 Nine65.OrderFinding <> k_iter_invariant thm
+R29281:29296 Nine65.OrderFinding <> k_iter_invariant thm
+R29305:29320 Nine65.OrderFinding <> k_init_invariant thm
+R29305:29320 Nine65.OrderFinding <> k_init_invariant thm
+R29467:29469 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R29465:29465 Nine65.OrderFinding <> t proj
+R29500:29507 Nine65.OrderFinding <> k_iter_t thm
+R29467:29469 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R29465:29465 Nine65.OrderFinding <> t proj
+R29500:29507 Nine65.OrderFinding <> k_iter_t thm
+R29543:29545 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R29538:29541 Nine65.OrderFinding <> base proj
+R29576:29586 Nine65.OrderFinding <> k_iter_base thm
+R29543:29545 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R29538:29541 Nine65.OrderFinding <> base proj
+R29576:29586 Nine65.OrderFinding <> k_iter_base thm
+R29616:29618 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R29614:29614 Nine65.OrderFinding <> n proj
+R29649:29656 Nine65.OrderFinding <> k_iter_n thm
+R29616:29618 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R29614:29614 Nine65.OrderFinding <> n proj
+R29649:29656 Nine65.OrderFinding <> k_iter_n thm
+R29740:29749 Coq.Arith.PeanoNat Nat eqb_eq thm
+R29740:29749 Coq.Arith.PeanoNat Nat eqb_eq thm
+def 30425:30432 <> ord_15_2
+R30454:30456 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R30447:30451 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R30436:30442 Coq.Arith.PeanoNat Nat pow def
+def 30532:30539 <> ord_21_2
+R30561:30563 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R30554:30558 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R30543:30549 Coq.Arith.PeanoNat Nat pow def
+def 30640:30647 <> ord_35_2
+R30670:30672 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R30663:30667 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R30651:30657 Coq.Arith.PeanoNat Nat pow def

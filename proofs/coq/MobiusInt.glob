@@ -1,0 +1,774 @@
+DIGEST 2fe0a4714f0bb7e33c4319c58d2af62a
+FNine65.MobiusInt
+R190:194 Coq.Arith.Arith <> <> lib
+R212:214 Coq.micromega.Lia <> <> lib
+R232:234 Coq.Init.Nat <> <> lib
+rec 668:683 <> SymmetricResidue
+proj 692:699 <> sr_value
+proj 710:719 <> sr_modulus
+R703:705 Coq.Init.Datatypes <> nat ind
+R723:725 Coq.Init.Datatypes <> nat ind
+def 743:754 <> half_modulus
+R761:763 Coq.Init.Datatypes <> nat ind
+binder 757:757 <> m:4
+R768:770 Coq.Init.Datatypes <> nat ind
+R776:778 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R775:775 Nine65.MobiusInt <> m:4 var
+def 794:804 <> is_negative
+R812:827 Nine65.MobiusInt <> SymmetricResidue rec
+binder 807:808 <> sr:5
+R832:835 Coq.Init.Datatypes <> bool ind
+R842:848 Coq.Arith.PeanoNat Nat ltb def
+R851:862 Nine65.MobiusInt <> half_modulus def
+R868:877 Nine65.MobiusInt <> sr_modulus proj
+R864:865 Nine65.MobiusInt <> sr:5 var
+R885:892 Nine65.MobiusInt <> sr_value proj
+R881:882 Nine65.MobiusInt <> sr:5 var
+def 908:926 <> to_signed_magnitude
+R934:949 Nine65.MobiusInt <> SymmetricResidue rec
+binder 929:930 <> sr:6
+R954:956 Coq.Init.Datatypes <> nat ind
+R966:976 Nine65.MobiusInt <> is_negative def
+R978:979 Nine65.MobiusInt <> sr:6 var
+R1031:1038 Nine65.MobiusInt <> sr_value proj
+R1027:1028 Nine65.MobiusInt <> sr:6 var
+R1003:1005 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R992:1001 Nine65.MobiusInt <> sr_modulus proj
+R988:989 Nine65.MobiusInt <> sr:6 var
+R1010:1017 Nine65.MobiusInt <> sr_value proj
+R1006:1007 Nine65.MobiusInt <> sr:6 var
+prf 1051:1067 <> magnitude_bounded
+R1083:1098 Nine65.MobiusInt <> SymmetricResidue rec
+binder 1078:1079 <> sr:7
+R1122:1127 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1118:1120 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1107:1116 Nine65.MobiusInt <> sr_modulus proj
+R1103:1104 Nine65.MobiusInt <> sr:7 var
+R1159:1164 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1141:1143 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1132:1139 Nine65.MobiusInt <> sr_value proj
+R1128:1129 Nine65.MobiusInt <> sr:7 var
+R1148:1157 Nine65.MobiusInt <> sr_modulus proj
+R1144:1145 Nine65.MobiusInt <> sr:7 var
+R1187:1190 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R1165:1183 Nine65.MobiusInt <> to_signed_magnitude def
+R1185:1186 Nine65.MobiusInt <> sr:7 var
+R1191:1202 Nine65.MobiusInt <> half_modulus def
+R1208:1217 Nine65.MobiusInt <> sr_modulus proj
+R1204:1205 Nine65.MobiusInt <> sr:7 var
+R1256:1274 Nine65.MobiusInt <> to_signed_magnitude def
+R1277:1287 Nine65.MobiusInt <> is_negative def
+R1290:1301 Nine65.MobiusInt <> half_modulus def
+R1316:1327 Coq.Arith.PeanoNat Nat ltb_spec thm
+R1345:1347 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R1334:1343 Nine65.MobiusInt <> sr_modulus proj
+R1355:1362 Nine65.MobiusInt <> sr_value proj
+R1316:1327 Coq.Arith.PeanoNat Nat ltb_spec thm
+R1345:1347 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R1334:1343 Nine65.MobiusInt <> sr_modulus proj
+R1355:1362 Nine65.MobiusInt <> sr_value proj
+R1527:1536 Nine65.MobiusInt <> sr_modulus proj
+R1527:1536 Nine65.MobiusInt <> sr_modulus proj
+R1559:1566 Nine65.MobiusInt <> sr_value proj
+R1559:1566 Nine65.MobiusInt <> sr_value proj
+R1643:1656 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R1643:1656 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R1702:1705 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R1698:1700 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1692:1696 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1713:1715 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1707:1711 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1702:1705 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R1698:1700 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1692:1696 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1713:1715 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1707:1711 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1737:1741 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1737:1741 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1853:1855 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1847:1851 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1869:1887 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R1853:1855 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1847:1851 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R1869:1887 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R2004:2014 Coq.Arith.PeanoNat Nat add_0_r thm
+R2004:2014 Coq.Arith.PeanoNat Nat add_0_r thm
+R2004:2014 Coq.Arith.PeanoNat Nat add_0_r thm
+def 2550:2555 <> sr_add
+R2564:2579 Nine65.MobiusInt <> SymmetricResidue rec
+binder 2558:2558 <> a:8
+binder 2560:2560 <> b:9
+R2584:2599 Nine65.MobiusInt <> SymmetricResidue rec
+R2609:2616 Nine65.MobiusInt <> sr_value proj
+R2609:2616 Nine65.MobiusInt <> sr_value proj
+R2609:2616 Nine65.MobiusInt <> sr_value proj
+R2676:2685 Nine65.MobiusInt <> sr_modulus proj
+R2676:2685 Nine65.MobiusInt <> sr_modulus proj
+R2621:2621 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R2649:2654 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R2634:2636 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2625:2632 Nine65.MobiusInt <> sr_value proj
+R2622:2622 Nine65.MobiusInt <> a:8 var
+R2640:2647 Nine65.MobiusInt <> sr_value proj
+R2637:2637 Nine65.MobiusInt <> b:9 var
+R2658:2667 Nine65.MobiusInt <> sr_modulus proj
+R2655:2655 Nine65.MobiusInt <> a:8 var
+R2693:2702 Nine65.MobiusInt <> sr_modulus proj
+R2690:2690 Nine65.MobiusInt <> a:8 var
+def 2721:2726 <> sr_neg
+R2733:2748 Nine65.MobiusInt <> SymmetricResidue rec
+binder 2729:2729 <> a:10
+R2753:2768 Nine65.MobiusInt <> SymmetricResidue rec
+R2778:2785 Nine65.MobiusInt <> sr_value proj
+R2778:2785 Nine65.MobiusInt <> sr_value proj
+R2778:2785 Nine65.MobiusInt <> sr_value proj
+R2847:2856 Nine65.MobiusInt <> sr_modulus proj
+R2847:2856 Nine65.MobiusInt <> sr_modulus proj
+R2790:2790 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R2820:2825 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R2805:2807 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R2794:2803 Nine65.MobiusInt <> sr_modulus proj
+R2791:2791 Nine65.MobiusInt <> a:10 var
+R2811:2818 Nine65.MobiusInt <> sr_value proj
+R2808:2808 Nine65.MobiusInt <> a:10 var
+R2829:2838 Nine65.MobiusInt <> sr_modulus proj
+R2826:2826 Nine65.MobiusInt <> a:10 var
+R2864:2873 Nine65.MobiusInt <> sr_modulus proj
+R2861:2861 Nine65.MobiusInt <> a:10 var
+prf 2889:2902 <> neg_involutive
+R2917:2932 Nine65.MobiusInt <> SymmetricResidue rec
+binder 2913:2913 <> a:11
+R2955:2960 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2951:2953 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R2940:2949 Nine65.MobiusInt <> sr_modulus proj
+R2937:2937 Nine65.MobiusInt <> a:11 var
+R2990:2995 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2973:2975 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R2964:2971 Nine65.MobiusInt <> sr_value proj
+R2961:2961 Nine65.MobiusInt <> a:11 var
+R2979:2988 Nine65.MobiusInt <> sr_modulus proj
+R2976:2976 Nine65.MobiusInt <> a:11 var
+R3012:3017 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3008:3010 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R2999:3006 Nine65.MobiusInt <> sr_value proj
+R2996:2996 Nine65.MobiusInt <> a:11 var
+R3048:3050 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3039:3046 Nine65.MobiusInt <> sr_value proj
+R3019:3024 Nine65.MobiusInt <> sr_neg def
+R3027:3032 Nine65.MobiusInt <> sr_neg def
+R3034:3034 Nine65.MobiusInt <> a:11 var
+R3054:3061 Nine65.MobiusInt <> sr_value proj
+R3051:3051 Nine65.MobiusInt <> a:11 var
+R3104:3109 Nine65.MobiusInt <> sr_neg def
+R3294:3296 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3244:3244 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R3274:3279 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R3259:3261 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3248:3257 Nine65.MobiusInt <> sr_modulus proj
+R3265:3272 Nine65.MobiusInt <> sr_value proj
+R3283:3292 Nine65.MobiusInt <> sr_modulus proj
+R3311:3313 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3300:3309 Nine65.MobiusInt <> sr_modulus proj
+R3317:3324 Nine65.MobiusInt <> sr_value proj
+R3294:3296 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3244:3244 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R3274:3279 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R3259:3261 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3248:3257 Nine65.MobiusInt <> sr_modulus proj
+R3265:3272 Nine65.MobiusInt <> sr_value proj
+R3283:3292 Nine65.MobiusInt <> sr_modulus proj
+R3311:3313 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3300:3309 Nine65.MobiusInt <> sr_modulus proj
+R3317:3324 Nine65.MobiusInt <> sr_value proj
+R3339:3351 Coq.Arith.PeanoNat Nat mod_small def
+R3339:3351 Coq.Arith.PeanoNat Nat mod_small def
+R3496:3498 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3462:3465 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3495:3495 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3451:3460 Nine65.MobiusInt <> sr_modulus proj
+R3480:3482 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3469:3478 Nine65.MobiusInt <> sr_modulus proj
+R3486:3493 Nine65.MobiusInt <> sr_value proj
+R3502:3509 Nine65.MobiusInt <> sr_value proj
+R3496:3498 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3462:3465 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3495:3495 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3451:3460 Nine65.MobiusInt <> sr_modulus proj
+R3480:3482 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3469:3478 Nine65.MobiusInt <> sr_modulus proj
+R3486:3493 Nine65.MobiusInt <> sr_value proj
+R3502:3509 Nine65.MobiusInt <> sr_value proj
+R3543:3555 Coq.Arith.PeanoNat Nat mod_small def
+R3543:3555 Coq.Arith.PeanoNat Nat mod_small def
+def 3715:3722 <> sign_bit
+R3730:3745 Nine65.MobiusInt <> SymmetricResidue rec
+binder 3725:3726 <> sr:12
+R3750:3752 Coq.Init.Datatypes <> nat ind
+R3762:3772 Nine65.MobiusInt <> is_negative def
+R3774:3775 Nine65.MobiusInt <> sr:12 var
+prf 3801:3824 <> sign_consistent_with_neg
+R3839:3854 Nine65.MobiusInt <> SymmetricResidue rec
+binder 3835:3835 <> a:13
+R3877:3882 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3873:3875 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3862:3871 Nine65.MobiusInt <> sr_modulus proj
+R3859:3859 Nine65.MobiusInt <> a:13 var
+R3899:3904 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3895:3897 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3886:3893 Nine65.MobiusInt <> sr_value proj
+R3883:3883 Nine65.MobiusInt <> a:13 var
+R3934:3939 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3917:3919 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R3908:3915 Nine65.MobiusInt <> sr_value proj
+R3905:3905 Nine65.MobiusInt <> a:13 var
+R3923:3932 Nine65.MobiusInt <> sr_modulus proj
+R3920:3920 Nine65.MobiusInt <> a:13 var
+R3974:3979 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3952:3955 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R3943:3950 Nine65.MobiusInt <> sr_value proj
+R3940:3940 Nine65.MobiusInt <> a:13 var
+R3970:3972 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R3959:3968 Nine65.MobiusInt <> sr_modulus proj
+R3956:3956 Nine65.MobiusInt <> a:13 var
+R3999:4001 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3980:3987 Nine65.MobiusInt <> sign_bit def
+R3990:3995 Nine65.MobiusInt <> sr_neg def
+R3997:3997 Nine65.MobiusInt <> a:13 var
+R4003:4005 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4006:4013 Nine65.MobiusInt <> sign_bit def
+R4015:4015 Nine65.MobiusInt <> a:13 var
+R4064:4071 Nine65.MobiusInt <> sr_value proj
+R4073:4082 Nine65.MobiusInt <> sr_modulus proj
+R4100:4107 Nine65.MobiusInt <> sign_bit def
+R4110:4115 Nine65.MobiusInt <> sr_neg def
+R4118:4128 Nine65.MobiusInt <> is_negative def
+R4131:4142 Nine65.MobiusInt <> half_modulus def
+R4152:4159 Nine65.MobiusInt <> sr_value proj
+R4161:4170 Nine65.MobiusInt <> sr_modulus proj
+R4192:4194 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R4192:4194 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R4228:4230 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4215:4215 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4221:4226 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4217:4219 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4232:4234 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4228:4230 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4215:4215 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4221:4226 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4217:4219 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4232:4234 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4249:4261 Coq.Arith.PeanoNat Nat mod_small def
+R4249:4261 Coq.Arith.PeanoNat Nat mod_small def
+R4274:4283 Coq.Arith.PeanoNat Nat sub_lt thm
+R4274:4283 Coq.Arith.PeanoNat Nat sub_lt thm
+R4298:4311 Coq.Arith.PeanoNat Nat lt_le_incl thm
+R4298:4311 Coq.Arith.PeanoNat Nat lt_le_incl thm
+R4356:4362 Coq.Arith.PeanoNat Nat ltb def
+R4356:4362 Coq.Arith.PeanoNat Nat ltb def
+R4447:4456 Coq.Arith.PeanoNat Nat ltb_lt thm
+R4447:4456 Coq.Arith.PeanoNat Nat ltb_lt thm
+R4488:4491 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4484:4486 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4488:4491 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4484:4486 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4546:4550 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4546:4550 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4589:4591 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4598:4600 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4593:4595 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4589:4591 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4598:4600 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4593:4595 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4631:4644 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R4631:4644 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R4668:4671 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4668:4671 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4711:4713 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R4705:4709 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4727:4745 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R4711:4713 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R4705:4709 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4727:4745 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R4783:4785 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R4783:4785 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R4855:4858 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4851:4853 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4847:4849 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4842:4844 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4855:4858 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4851:4853 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4847:4849 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R4842:4844 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R4939:4942 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4926:4926 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4932:4937 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4928:4930 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4939:4942 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4926:4926 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4932:4937 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R4928:4930 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4994:5000 Coq.Arith.PeanoNat Nat ltb def
+R5005:5005 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5011:5016 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5007:5009 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R4994:5000 Coq.Arith.PeanoNat Nat ltb def
+R5005:5005 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5011:5016 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5007:5009 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5043:5052 Coq.Arith.PeanoNat Nat ltb_lt thm
+R5043:5052 Coq.Arith.PeanoNat Nat ltb_lt thm
+R5141:5150 Coq.Arith.PeanoNat Nat ltb_ge thm
+R5141:5150 Coq.Arith.PeanoNat Nat ltb_ge thm
+R5178:5180 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5178:5180 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5201:5215 Coq.Arith.PeanoNat Nat lt_ge_cases thm
+R5201:5215 Coq.Arith.PeanoNat Nat lt_ge_cases thm
+R5292:5306 Coq.Arith.PeanoNat Nat le_antisymm thm
+R5292:5306 Coq.Arith.PeanoNat Nat le_antisymm thm
+R5341:5343 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5345:5347 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5341:5343 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5345:5347 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5402:5406 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5402:5406 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5445:5447 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5454:5456 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R5449:5451 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5445:5447 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5454:5456 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R5449:5451 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5487:5500 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R5487:5500 Coq.Arith.PeanoNat Nat div_mod_eq thm
+R5524:5527 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5524:5527 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5567:5569 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5561:5565 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5583:5601 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R5567:5569 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5561:5565 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5583:5601 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R5638:5640 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5638:5640 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5699:5701 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5712:5714 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5708:5710 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R5703:5705 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5699:5701 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5712:5714 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5708:5710 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R5703:5705 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R5782:5784 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5785:5785 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5791:5796 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5787:5789 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5782:5784 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R5785:5785 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5791:5796 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5787:5789 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5848:5854 Coq.Arith.PeanoNat Nat ltb def
+R5859:5859 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5865:5870 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5861:5863 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5848:5854 Coq.Arith.PeanoNat Nat ltb def
+R5859:5859 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5865:5870 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R5861:5863 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5916:5925 Coq.Arith.PeanoNat Nat ltb_ge thm
+R5916:5925 Coq.Arith.PeanoNat Nat ltb_ge thm
+def 5983:5988 <> sr_mul
+R5997:6012 Nine65.MobiusInt <> SymmetricResidue rec
+binder 5991:5991 <> a:14
+binder 5993:5993 <> b:15
+R6017:6032 Nine65.MobiusInt <> SymmetricResidue rec
+R6042:6049 Nine65.MobiusInt <> sr_value proj
+R6042:6049 Nine65.MobiusInt <> sr_value proj
+R6042:6049 Nine65.MobiusInt <> sr_value proj
+R6109:6118 Nine65.MobiusInt <> sr_modulus proj
+R6109:6118 Nine65.MobiusInt <> sr_modulus proj
+R6054:6054 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R6082:6087 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R6067:6069 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R6058:6065 Nine65.MobiusInt <> sr_value proj
+R6055:6055 Nine65.MobiusInt <> a:14 var
+R6073:6080 Nine65.MobiusInt <> sr_value proj
+R6070:6070 Nine65.MobiusInt <> b:15 var
+R6091:6100 Nine65.MobiusInt <> sr_modulus proj
+R6088:6088 Nine65.MobiusInt <> a:14 var
+R6126:6135 Nine65.MobiusInt <> sr_modulus proj
+R6123:6123 Nine65.MobiusInt <> a:14 var
+prf 6151:6163 <> mul_sign_rule
+R6180:6195 Nine65.MobiusInt <> SymmetricResidue rec
+binder 6174:6174 <> a:16
+binder 6176:6176 <> b:17
+R6231:6236 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6214:6216 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R6203:6212 Nine65.MobiusInt <> sr_modulus proj
+R6200:6200 Nine65.MobiusInt <> a:16 var
+R6220:6229 Nine65.MobiusInt <> sr_modulus proj
+R6217:6217 Nine65.MobiusInt <> b:17 var
+R6255:6305 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6251:6253 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R6240:6249 Nine65.MobiusInt <> sr_modulus proj
+R6237:6237 Nine65.MobiusInt <> a:16 var
+R6306:6309 Coq.Init.Logic <> True ind
+def 6402:6414 <> near_boundary
+R6422:6437 Nine65.MobiusInt <> SymmetricResidue rec
+binder 6417:6418 <> sr:18
+R6450:6452 Coq.Init.Datatypes <> nat ind
+binder 6441:6446 <> margin:19
+R6457:6460 Coq.Init.Datatypes <> bool ind
+R6476:6487 Nine65.MobiusInt <> half_modulus def
+R6493:6502 Nine65.MobiusInt <> sr_modulus proj
+R6489:6490 Nine65.MobiusInt <> sr:18 var
+binder 6471:6471 <> h:20
+R6522:6540 Nine65.MobiusInt <> to_signed_magnitude def
+R6542:6543 Nine65.MobiusInt <> sr:18 var
+binder 6514:6517 <> dist:21
+R6550:6556 Coq.Arith.PeanoNat Nat ltb def
+R6558:6558 Nine65.MobiusInt <> h:20 var
+R6565:6567 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R6561:6564 Nine65.MobiusInt <> dist:21 var
+R6568:6573 Nine65.MobiusInt <> margin:19 var
+prf 6586:6611 <> boundary_detection_correct
+R6634:6636 Coq.Init.Datatypes <> nat ind
+binder 6622:6623 <> sr:22
+binder 6625:6630 <> margin:23
+R6655:6670 Nine65.MobiusInt <> SymmetricResidue rec
+binder 6648:6651 <> srec:24
+R6696:6701 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6692:6694 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R6681:6690 Nine65.MobiusInt <> sr_modulus proj
+R6675:6678 Nine65.MobiusInt <> srec:24 var
+R6737:6742 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6717:6719 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R6708:6715 Nine65.MobiusInt <> sr_value proj
+R6702:6705 Nine65.MobiusInt <> srec:24 var
+R6726:6735 Nine65.MobiusInt <> sr_modulus proj
+R6720:6723 Nine65.MobiusInt <> srec:24 var
+R6775:6780 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6768:6770 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R6743:6755 Nine65.MobiusInt <> near_boundary def
+R6757:6760 Nine65.MobiusInt <> srec:24 var
+R6762:6767 Nine65.MobiusInt <> margin:23 var
+R6771:6774 Coq.Init.Datatypes <> true constr
+R6814:6816 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R6805:6807 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R6781:6799 Nine65.MobiusInt <> to_signed_magnitude def
+R6801:6804 Nine65.MobiusInt <> srec:24 var
+R6808:6813 Nine65.MobiusInt <> margin:23 var
+R6817:6828 Nine65.MobiusInt <> half_modulus def
+R6836:6845 Nine65.MobiusInt <> sr_modulus proj
+R6830:6833 Nine65.MobiusInt <> srec:24 var
+R6902:6914 Nine65.MobiusInt <> near_boundary def
+R6934:6943 Coq.Arith.PeanoNat Nat ltb_lt thm
+R6934:6943 Coq.Arith.PeanoNat Nat ltb_lt thm
+rec 7461:7474 <> FactoredMobius
+proj 7483:7493 <> fm_mantissa
+proj 7535:7542 <> fm_exp10
+proj 7578:7584 <> fm_sign
+R7497:7499 Coq.Init.Datatypes <> nat ind
+R7546:7548 Coq.Init.Datatypes <> nat ind
+R7588:7591 Coq.Init.Datatypes <> bool ind
+def 7680:7686 <> fm_make
+R7693:7695 Coq.Init.Datatypes <> nat ind
+binder 7689:7689 <> m:29
+R7703:7705 Coq.Init.Datatypes <> nat ind
+binder 7699:7699 <> e:30
+R7710:7723 Nine65.MobiusInt <> FactoredMobius rec
+R7733:7743 Nine65.MobiusInt <> fm_mantissa proj
+R7733:7743 Nine65.MobiusInt <> fm_mantissa proj
+R7733:7743 Nine65.MobiusInt <> fm_mantissa proj
+R7751:7758 Nine65.MobiusInt <> fm_exp10 proj
+R7751:7758 Nine65.MobiusInt <> fm_exp10 proj
+R7766:7772 Nine65.MobiusInt <> fm_sign proj
+R7766:7772 Nine65.MobiusInt <> fm_sign proj
+R7748:7748 Nine65.MobiusInt <> m:29 var
+R7763:7763 Nine65.MobiusInt <> e:30 var
+R7777:7781 Coq.Init.Datatypes <> false constr
+def 7849:7853 <> pow10
+R7860:7862 Coq.Init.Datatypes <> nat ind
+binder 7856:7856 <> n:31
+R7867:7869 Coq.Init.Datatypes <> nat ind
+R7882:7882 Nine65.MobiusInt <> n:31 var
+R7904:7904 Coq.Init.Datatypes <> S constr
+R7914:7916 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R7917:7921 Nine65.MobiusInt <> pow10:32 def
+def 7989:7999 <> speedup_60k
+R8003:8016 Nine65.MobiusInt <> FactoredMobius rec
+R8021:8027 Nine65.MobiusInt <> fm_make def
+def 8069:8078 <> speedup_2k
+R8082:8095 Nine65.MobiusInt <> FactoredMobius rec
+R8100:8106 Nine65.MobiusInt <> fm_make def
+def 8172:8176 <> fm_lt
+R8185:8198 Nine65.MobiusInt <> FactoredMobius rec
+binder 8179:8179 <> a:34
+binder 8181:8181 <> b:35
+R8240:8246 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R8311:8311 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R8225:8227 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8216:8223 Nine65.MobiusInt <> fm_exp10 proj
+R8213:8213 Nine65.MobiusInt <> a:34 var
+R8231:8238 Nine65.MobiusInt <> fm_exp10 proj
+R8228:8228 Nine65.MobiusInt <> b:35 var
+R8274:8277 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R8259:8261 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8250:8257 Nine65.MobiusInt <> fm_exp10 proj
+R8247:8247 Nine65.MobiusInt <> a:34 var
+R8265:8272 Nine65.MobiusInt <> fm_exp10 proj
+R8262:8262 Nine65.MobiusInt <> b:35 var
+R8293:8295 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8281:8291 Nine65.MobiusInt <> fm_mantissa proj
+R8278:8278 Nine65.MobiusInt <> a:34 var
+R8299:8309 Nine65.MobiusInt <> fm_mantissa proj
+R8296:8296 Nine65.MobiusInt <> b:35 var
+def 8326:8330 <> fm_le
+R8339:8352 Nine65.MobiusInt <> FactoredMobius rec
+binder 8333:8333 <> a:36
+binder 8335:8335 <> b:37
+R8376:8380 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R8445:8445 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R8367:8371 Nine65.MobiusInt <> fm_lt def
+R8373:8373 Nine65.MobiusInt <> a:36 var
+R8375:8375 Nine65.MobiusInt <> b:37 var
+R8408:8411 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R8393:8395 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8384:8391 Nine65.MobiusInt <> fm_exp10 proj
+R8381:8381 Nine65.MobiusInt <> a:36 var
+R8399:8406 Nine65.MobiusInt <> fm_exp10 proj
+R8396:8396 Nine65.MobiusInt <> b:37 var
+R8427:8429 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8415:8425 Nine65.MobiusInt <> fm_mantissa proj
+R8412:8412 Nine65.MobiusInt <> a:36 var
+R8433:8443 Nine65.MobiusInt <> fm_mantissa proj
+R8430:8430 Nine65.MobiusInt <> b:37 var
+prf 8511:8527 <> speedup_2k_lt_60k
+R8531:8535 Nine65.MobiusInt <> fm_lt def
+R8537:8546 Nine65.MobiusInt <> speedup_2k def
+R8548:8558 Nine65.MobiusInt <> speedup_60k def
+R8577:8581 Nine65.MobiusInt <> fm_lt def
+R8584:8593 Nine65.MobiusInt <> speedup_2k def
+R8596:8606 Nine65.MobiusInt <> speedup_60k def
+R8609:8615 Nine65.MobiusInt <> fm_make def
+prf 8686:8694 <> pow10_pos
+binder 8705:8705 <> n:38
+R8715:8717 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R8708:8712 Nine65.MobiusInt <> pow10 def
+R8714:8714 Nine65.MobiusInt <> n:38 var
+prf 8767:8776 <> pow10_mono
+binder 8787:8787 <> n:39
+binder 8789:8789 <> m:40
+R8797:8800 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8793:8795 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8792:8792 Nine65.MobiusInt <> n:39 var
+R8796:8796 Nine65.MobiusInt <> m:40 var
+R8808:8810 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R8801:8805 Nine65.MobiusInt <> pow10 def
+R8807:8807 Nine65.MobiusInt <> n:39 var
+R8811:8815 Nine65.MobiusInt <> pow10 def
+R8817:8817 Nine65.MobiusInt <> m:40 var
+R8881:8889 Nine65.MobiusInt <> pow10_pos thm
+R8881:8889 Nine65.MobiusInt <> pow10_pos thm
+R8923:8931 Nine65.MobiusInt <> pow10_pos thm
+R8923:8931 Nine65.MobiusInt <> pow10_pos thm
+prf 9015:9027 <> fm_lt_correct
+R9052:9054 Coq.Init.Datatypes <> nat ind
+binder 9038:9039 <> m1:41
+binder 9041:9042 <> e1:42
+binder 9044:9045 <> m2:43
+binder 9047:9048 <> e2:44
+R9065:9068 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9061:9063 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R9059:9060 Nine65.MobiusInt <> m1:41 var
+R9075:9078 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9071:9073 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R9069:9070 Nine65.MobiusInt <> m2:43 var
+R9086:9089 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9081:9083 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9079:9080 Nine65.MobiusInt <> m1:41 var
+R9097:9102 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9092:9094 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9090:9091 Nine65.MobiusInt <> m2:43 var
+R9140:9145 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9103:9107 Nine65.MobiusInt <> fm_lt def
+R9110:9116 Nine65.MobiusInt <> fm_make def
+R9118:9119 Nine65.MobiusInt <> m1:41 var
+R9121:9122 Nine65.MobiusInt <> e1:42 var
+R9126:9132 Nine65.MobiusInt <> fm_make def
+R9134:9135 Nine65.MobiusInt <> m2:43 var
+R9137:9138 Nine65.MobiusInt <> e2:44 var
+R9159:9161 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9148:9150 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9146:9147 Nine65.MobiusInt <> m1:41 var
+R9151:9155 Nine65.MobiusInt <> pow10 def
+R9157:9158 Nine65.MobiusInt <> e1:42 var
+R9164:9166 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9162:9163 Nine65.MobiusInt <> m2:43 var
+R9167:9171 Nine65.MobiusInt <> pow10 def
+R9173:9174 Nine65.MobiusInt <> e2:44 var
+R9237:9241 Nine65.MobiusInt <> fm_lt def
+R9244:9250 Nine65.MobiusInt <> fm_make def
+R9368:9377 Nine65.MobiusInt <> pow10_mono thm
+R9368:9377 Nine65.MobiusInt <> pow10_mono thm
+R9416:9424 Nine65.MobiusInt <> pow10_pos thm
+R9416:9424 Nine65.MobiusInt <> pow10_pos thm
+R9454:9462 Nine65.MobiusInt <> pow10_pos thm
+R9454:9462 Nine65.MobiusInt <> pow10_pos thm
+R9590:9593 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9579:9581 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9582:9586 Nine65.MobiusInt <> pow10 def
+R9595:9597 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9598:9602 Nine65.MobiusInt <> pow10 def
+R9590:9593 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9579:9581 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9582:9586 Nine65.MobiusInt <> pow10 def
+R9595:9597 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9598:9602 Nine65.MobiusInt <> pow10 def
+R9644:9646 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9633:9635 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9636:9640 Nine65.MobiusInt <> pow10 def
+R9647:9651 Nine65.MobiusInt <> pow10 def
+R9654:9654 Coq.Init.Datatypes <> S constr
+R9644:9646 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R9633:9635 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9636:9640 Nine65.MobiusInt <> pow10 def
+R9647:9651 Nine65.MobiusInt <> pow10 def
+R9654:9654 Coq.Init.Datatypes <> S constr
+R9706:9709 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9694:9698 Nine65.MobiusInt <> pow10 def
+R9701:9701 Coq.Init.Datatypes <> S constr
+R9710:9714 Nine65.MobiusInt <> pow10 def
+R9706:9709 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9694:9698 Nine65.MobiusInt <> pow10 def
+R9701:9701 Coq.Init.Datatypes <> S constr
+R9710:9714 Nine65.MobiusInt <> pow10 def
+R9737:9746 Coq.Arith.PeanoNat Nat eq_dec thm
+R9749:9749 Coq.Init.Datatypes <> S constr
+R9737:9746 Coq.Arith.PeanoNat Nat eq_dec thm
+R9749:9749 Coq.Init.Datatypes <> S constr
+R9816:9829 Coq.Arith.PeanoNat Nat lt_le_incl thm
+R9816:9829 Coq.Arith.PeanoNat Nat lt_le_incl thm
+R9838:9847 Nine65.MobiusInt <> pow10_mono thm
+R9838:9847 Nine65.MobiusInt <> pow10_mono thm
+R9881:9884 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9873:9877 Nine65.MobiusInt <> pow10 def
+R9887:9889 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9890:9894 Nine65.MobiusInt <> pow10 def
+R9881:9884 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9873:9877 Nine65.MobiusInt <> pow10 def
+R9887:9889 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9890:9894 Nine65.MobiusInt <> pow10 def
+R9977:9985 Nine65.MobiusInt <> pow10_pos thm
+R9977:9985 Nine65.MobiusInt <> pow10_pos thm
+def 10072:10077 <> fm_add
+R10086:10099 Nine65.MobiusInt <> FactoredMobius rec
+binder 10080:10080 <> a:45
+binder 10082:10082 <> b:46
+R10104:10117 Nine65.MobiusInt <> FactoredMobius rec
+R10186:10192 Coq.Arith.PeanoNat Nat eqb def
+R10197:10204 Nine65.MobiusInt <> fm_exp10 proj
+R10194:10194 Nine65.MobiusInt <> a:45 var
+R10210:10217 Nine65.MobiusInt <> fm_exp10 proj
+R10207:10207 Nine65.MobiusInt <> b:46 var
+R10291:10291 Nine65.MobiusInt <> a:45 var
+R10227:10233 Nine65.MobiusInt <> fm_make def
+R10251:10253 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R10239:10249 Nine65.MobiusInt <> fm_mantissa proj
+R10236:10236 Nine65.MobiusInt <> a:45 var
+R10257:10267 Nine65.MobiusInt <> fm_mantissa proj
+R10254:10254 Nine65.MobiusInt <> b:46 var
+R10274:10281 Nine65.MobiusInt <> fm_exp10 proj
+R10271:10271 Nine65.MobiusInt <> a:45 var
+prf 10346:10360 <> fm_add_same_exp
+R10381:10383 Coq.Init.Datatypes <> nat ind
+binder 10371:10372 <> m1:47
+binder 10374:10375 <> m2:48
+binder 10377:10377 <> e:49
+R10440:10442 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10428:10438 Nine65.MobiusInt <> fm_mantissa proj
+R10389:10394 Nine65.MobiusInt <> fm_add def
+R10397:10403 Nine65.MobiusInt <> fm_make def
+R10405:10406 Nine65.MobiusInt <> m1:47 var
+R10408:10408 Nine65.MobiusInt <> e:49 var
+R10412:10418 Nine65.MobiusInt <> fm_make def
+R10420:10421 Nine65.MobiusInt <> m2:48 var
+R10423:10423 Nine65.MobiusInt <> e:49 var
+R10445:10447 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R10443:10444 Nine65.MobiusInt <> m1:47 var
+R10448:10449 Nine65.MobiusInt <> m2:48 var
+R10486:10491 Nine65.MobiusInt <> fm_add def
+R10494:10500 Nine65.MobiusInt <> fm_make def
+R10520:10531 Coq.Arith.PeanoNat Nat eqb_refl thm
+R10520:10531 Coq.Arith.PeanoNat Nat eqb_refl thm
+R10520:10531 Coq.Arith.PeanoNat Nat eqb_refl thm
+def 10659:10666 <> fm_to_sr
+R10674:10687 Nine65.MobiusInt <> FactoredMobius rec
+binder 10669:10670 <> fm:50
+R10701:10703 Coq.Init.Datatypes <> nat ind
+binder 10691:10697 <> modulus:51
+R10708:10723 Nine65.MobiusInt <> SymmetricResidue rec
+R10733:10740 Nine65.MobiusInt <> sr_value proj
+R10733:10740 Nine65.MobiusInt <> sr_value proj
+R10733:10740 Nine65.MobiusInt <> sr_value proj
+R10804:10813 Nine65.MobiusInt <> sr_modulus proj
+R10804:10813 Nine65.MobiusInt <> sr_modulus proj
+R10745:10745 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R10784:10789 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R10762:10764 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R10750:10760 Nine65.MobiusInt <> fm_mantissa proj
+R10746:10747 Nine65.MobiusInt <> fm:50 var
+R10765:10769 Nine65.MobiusInt <> pow10 def
+R10775:10782 Nine65.MobiusInt <> fm_exp10 proj
+R10771:10772 Nine65.MobiusInt <> fm:50 var
+R10790:10796 Nine65.MobiusInt <> modulus:51 var
+R10818:10824 Nine65.MobiusInt <> modulus:51 var
+def 10932:10943 <> safe_mod_exp
+R10947:10949 Coq.Init.Datatypes <> nat ind
+def 10968:10982 <> safe_mod_offset
+R10986:10988 Coq.Init.Datatypes <> nat ind
+def 11007:11018 <> safe_modulus
+R11022:11024 Coq.Init.Datatypes <> nat ind
+R11047:11049 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R11029:11033 Nine65.MobiusInt <> pow10 def
+R11035:11046 Nine65.MobiusInt <> safe_mod_exp def
+R11050:11064 Nine65.MobiusInt <> safe_mod_offset def
+prf 11076:11093 <> safe_modulus_value
+R11109:11111 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11097:11108 Nine65.MobiusInt <> safe_modulus def
+R11119:11121 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R11112:11116 Nine65.MobiusInt <> pow10 def
+prf 11209:11234 <> mobius_bounded_computation
+R11251:11266 Nine65.MobiusInt <> SymmetricResidue rec
+binder 11245:11245 <> a:52
+binder 11247:11247 <> b:53
+R11302:11307 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11285:11287 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R11274:11283 Nine65.MobiusInt <> sr_modulus proj
+R11271:11271 Nine65.MobiusInt <> a:52 var
+R11291:11300 Nine65.MobiusInt <> sr_modulus proj
+R11288:11288 Nine65.MobiusInt <> b:53 var
+R11326:11331 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11322:11324 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R11311:11320 Nine65.MobiusInt <> sr_modulus proj
+R11308:11308 Nine65.MobiusInt <> a:52 var
+R11361:11366 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11344:11346 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11335:11342 Nine65.MobiusInt <> sr_value proj
+R11332:11332 Nine65.MobiusInt <> a:52 var
+R11350:11359 Nine65.MobiusInt <> sr_modulus proj
+R11347:11347 Nine65.MobiusInt <> a:52 var
+R11396:11401 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R11379:11381 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11370:11377 Nine65.MobiusInt <> sr_value proj
+R11367:11367 Nine65.MobiusInt <> b:53 var
+R11385:11394 Nine65.MobiusInt <> sr_modulus proj
+R11382:11382 Nine65.MobiusInt <> b:53 var
+R11425:11427 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11416:11423 Nine65.MobiusInt <> sr_value proj
+R11403:11408 Nine65.MobiusInt <> sr_add def
+R11410:11410 Nine65.MobiusInt <> a:52 var
+R11412:11412 Nine65.MobiusInt <> b:53 var
+R11431:11440 Nine65.MobiusInt <> sr_modulus proj
+R11428:11428 Nine65.MobiusInt <> a:52 var
+R11489:11494 Nine65.MobiusInt <> sr_add def
+R11512:11530 Coq.Arith.PeanoNat Nat mod_upper_bound def
+R11512:11530 Coq.Arith.PeanoNat Nat mod_upper_bound def

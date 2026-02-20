@@ -1,0 +1,480 @@
+{
+  "schema_version": "1.1",
+  "main_goal": "Apply formalized works (Coq/Lean proofs) to the NINE65 v5 FHE implementation by mapping proofs to Rust modules, integrating theorem references, and validating key artifacts, excluding quantum aspects for this build.",
+  "constraints": [
+    "integer_only",
+    "no_network",
+    "no_quantum_scope"
+  ],
+  "assumptions": [
+    "A1",
+    "A2",
+    "A3"
+  ],
+  "acceptance_checks": [
+    "AC1",
+    "AC2",
+    "AC3",
+    "AC4"
+  ],
+  "nodes": [
+    {
+      "id": "A1",
+      "label": "Integer-only discipline",
+      "type": "assumption",
+      "statement": "All formalization-derived statements, tests, and docs remain integer-only (no floating-point reasoning).",
+      "dependencies": [],
+      "status": "verified",
+      "assigned_to": "orchestrator",
+      "confidence": 0.9,
+      "artifacts": [],
+      "evidence": {}
+    },
+    {
+      "id": "A2",
+      "label": "Existing proof artifacts are authoritative",
+      "type": "assumption",
+      "statement": "Coq proofs in proofs/coq and Lean proofs in lean4/KElimination are treated as correct references for implementation mapping.",
+      "dependencies": [],
+      "status": "verified",
+      "assigned_to": "orchestrator",
+      "confidence": 0.7,
+      "artifacts": [
+        "swarm_run/seed_bundle.json"
+      ],
+      "evidence": {}
+    },
+    {
+      "id": "AC1",
+      "label": "Blueprint acceptance check",
+      "type": "acceptance_check",
+      "statement": "state/blueprint.json exists, is DAG-valid, and contains assumption + acceptance_check nodes.",
+      "dependencies": [
+        "A1",
+        "A2"
+      ],
+      "status": "verified",
+      "assigned_to": "orchestrator",
+      "confidence": 0.9,
+      "artifacts": [
+        "state/blueprint.json"
+      ],
+      "evidence": {
+        "blueprint_valid": true
+      }
+    },
+    {
+      "id": "L1",
+      "label": "Map proofs to implementation",
+      "type": "librarian",
+      "statement": "Enumerate proof files and map them to Rust modules/tests; record gaps.",
+      "dependencies": [
+        "A1",
+        "A2"
+      ],
+      "status": "verified",
+      "assigned_to": "lambda",
+      "confidence": 0.45,
+      "artifacts": [
+        "swarm_run/jobs/L1/output/library_plan.md",
+        "swarm_run/jobs/L1/output/result.md",
+        "swarm_run/jobs/L1/output/critique.md"
+      ],
+      "evidence": {
+        "critic_severity": "MINOR"
+      }
+    },
+    {
+      "id": "P1",
+      "label": "Integrate formalization references",
+      "type": "prover",
+      "statement": "Update Rust module docs and repository docs to reference corresponding formal proofs.",
+      "dependencies": [
+        "L1"
+      ],
+      "status": "verified",
+      "assigned_to": "pi",
+      "confidence": 0.45,
+      "artifacts": [
+        "swarm_run/jobs/P1/output/result.md",
+        "docs/FORMALIZATION_INDEX.md",
+        "README.md",
+        "swarm_run/jobs/P1/output/critique.md"
+      ],
+      "evidence": {
+        "critic_severity": "MINOR"
+      }
+    },
+    {
+      "id": "M1",
+      "label": "Formalization invariant tests",
+      "type": "simulator",
+      "statement": "Add or catalog deterministic tests that exercise proof-aligned invariants.",
+      "dependencies": [
+        "L1"
+      ],
+      "status": "verified",
+      "assigned_to": "mu",
+      "confidence": 0.55,
+      "artifacts": [
+        "crates/nine65/tests/formalization_invariants.rs",
+        "swarm_run/jobs/M1/output/tests.json",
+        "swarm_run/jobs/M1/output/report.md",
+        "swarm_run/jobs/M1/output/critique.md"
+      ],
+      "evidence": {
+        "tests_passed": true,
+        "test_log": "swarm_run/jobs/M1/output/test.log",
+        "critic_severity": "CLEAN"
+      }
+    },
+    {
+      "id": "S1",
+      "label": "Lean KElimination build evidence",
+      "type": "verifier",
+      "statement": "Run lake build in lean4/KElimination and record compilation evidence.",
+      "dependencies": [
+        "L1",
+        "S2"
+      ],
+      "status": "verified",
+      "assigned_to": "sigma",
+      "confidence": 0.55,
+      "artifacts": [
+        "swarm_run/jobs/S1/output/lean.log",
+        "swarm_run/jobs/S1/output/evidence.json",
+        "swarm_run/jobs/S1/output/report.md",
+        "swarm_run/jobs/S1/output/critique.md"
+      ],
+      "evidence": {
+        "lean_compiled": true,
+        "critic_severity": "CLEAN",
+        "warning_as_error": true
+      },
+      "rework_count": 2
+    },
+    {
+      "id": "K1",
+      "label": "Critique integration artifacts",
+      "type": "critic",
+      "statement": "Adversarial review of P1/M1/S1 artifacts for gaps and inconsistencies.",
+      "dependencies": [
+        "P1",
+        "M1",
+        "S1"
+      ],
+      "status": "verified",
+      "assigned_to": "kappa",
+      "confidence": 0.7,
+      "artifacts": [
+        "swarm_run/jobs/K1/output/critique.md",
+        "swarm_run/jobs/K1/output/result.md"
+      ],
+      "evidence": {
+        "critic_severity": "CLEAN"
+      }
+    },
+    {
+      "id": "O1",
+      "label": "Synthesis checkpoint",
+      "type": "synthesizer",
+      "statement": "Summarize verified proof-to-code mapping and remaining gaps.",
+      "dependencies": [
+        "K1"
+      ],
+      "status": "verified",
+      "assigned_to": "omega",
+      "confidence": 0.6,
+      "artifacts": [
+        "swarm_run/jobs/O1/output/theorem_stack.md",
+        "swarm_run/jobs/O1/output/conflict_log.md"
+      ],
+      "evidence": {
+        "note": "Synthesis updated; no outstanding gaps; quantum exclusions documented."
+      }
+    },
+    {
+      "id": "A3",
+      "label": "Quantum scope excluded",
+      "type": "assumption",
+      "statement": "Quantum aspects (e.g., EncryptedQuantum.v) are excluded from this build; no quantum implementation is required.",
+      "dependencies": [],
+      "status": "verified",
+      "assigned_to": "orchestrator",
+      "confidence": 0.9,
+      "artifacts": [
+        "docs/FORMALIZATION_INDEX.md"
+      ],
+      "evidence": {
+        "scope": "no_quantum"
+      }
+    },
+    {
+      "id": "AC2",
+      "label": "Lean build passes",
+      "type": "acceptance_check",
+      "statement": "lean4/KElimination builds successfully and evidence is recorded.",
+      "dependencies": [
+        "S1"
+      ],
+      "status": "verified",
+      "assigned_to": "orchestrator",
+      "confidence": 0.6,
+      "artifacts": [
+        "swarm_run/jobs/S1/output/lean.log"
+      ],
+      "evidence": {
+        "lean_compiled": true
+      }
+    },
+    {
+      "id": "AC3",
+      "label": "StateCompression scope resolved",
+      "type": "acceptance_check",
+      "statement": "StateCompression.v is either mapped to an implementation module or explicitly excluded with documentation.",
+      "dependencies": [
+        "SC1"
+      ],
+      "status": "verified",
+      "assigned_to": "orchestrator",
+      "confidence": 0.8,
+      "artifacts": [
+        "docs/FORMALIZATION_INDEX.md"
+      ],
+      "evidence": {
+        "state_compression": "excluded"
+      }
+    },
+    {
+      "id": "SC1",
+      "label": "StateCompression disposition",
+      "type": "librarian",
+      "statement": "Determine whether StateCompression.v maps to existing Rust modules or is out of scope; update formalization index accordingly.",
+      "dependencies": [
+        "L1",
+        "A3"
+      ],
+      "status": "verified",
+      "assigned_to": "lambda",
+      "confidence": 0.8,
+      "artifacts": [
+        "swarm_run/jobs/SC1/output/result.md",
+        "swarm_run/jobs/SC1/output/critique.md",
+        "docs/FORMALIZATION_INDEX.md",
+        "swarm_run/jobs/L1/output/library_plan.md"
+      ],
+      "evidence": {
+        "critic_severity": "CLEAN",
+        "disposition": "excluded"
+      }
+    },
+    {
+      "id": "S2",
+      "label": "Repair Lean KElimination proof",
+      "type": "prover",
+      "statement": "Fix KElimination.lean proof errors (unsolved goals and List.take_length misuse) and prepare for rerun.",
+      "dependencies": [
+        "A1",
+        "A2"
+      ],
+      "status": "verified",
+      "assigned_to": "pi",
+      "confidence": 0.6,
+      "artifacts": [
+        "swarm_run/jobs/S2/output/result.md",
+        "swarm_run/jobs/S2/output/critique.md",
+        "lean4/KElimination/KElimination.lean"
+      ],
+      "evidence": {
+        "critic_severity": "CLEAN",
+        "deferred_proofs": false
+      }
+    },
+    {
+      "id": "K2",
+      "label": "Critique refined integration",
+      "type": "critic",
+      "statement": "Adversarial review of S1/SC1 outputs after refinement.",
+      "dependencies": [
+        "S1",
+        "SC1"
+      ],
+      "status": "verified",
+      "assigned_to": "kappa",
+      "confidence": 0.7,
+      "artifacts": [
+        "swarm_run/jobs/K2/output/critique.md",
+        "swarm_run/jobs/K2/output/result.md"
+      ],
+      "evidence": {
+        "critic_severity": "CLEAN"
+      }
+    },
+    {
+      "id": "O2",
+      "label": "Synthesis checkpoint (refined)",
+      "type": "synthesizer",
+      "statement": "Summarize refined implementation mapping and remaining gaps after K2.",
+      "dependencies": [
+        "K2"
+      ],
+      "status": "verified",
+      "assigned_to": "omega",
+      "confidence": 0.6,
+      "artifacts": [
+        "swarm_run/jobs/O2/output/theorem_stack.md",
+        "swarm_run/jobs/O2/output/conflict_log.md"
+      ],
+      "evidence": {
+        "note": "Synthesis updated; no outstanding gaps; quantum exclusions documented."
+      }
+    },
+    {
+      "id": "H1",
+      "label": "Key serialization + validation hardening",
+      "type": "prover",
+      "statement": "Add validated serialization helpers for PublicKey/EvaluationKey and RingPolynomial::validate to prevent malformed key DoS.",
+      "dependencies": [
+        "A1",
+        "A2"
+      ],
+      "status": "verified",
+      "assigned_to": "pi",
+      "confidence": 0.55,
+      "artifacts": [
+        "crates/nine65/src/ring/polynomial.rs",
+        "crates/nine65/src/keys/mod.rs",
+        "swarm_run/jobs/H1/output/result.md"
+      ],
+      "evidence": {
+        "critic_severity": "CLEAN"
+      }
+    },
+    {
+      "id": "M2",
+      "label": "Key serialization tests",
+      "type": "simulator",
+      "statement": "Add serde roundtrip tests for PublicKey/EvaluationKey validated deserialization.",
+      "dependencies": [
+        "H1"
+      ],
+      "status": "verified",
+      "assigned_to": "mu",
+      "confidence": 0.55,
+      "artifacts": [
+        "crates/nine65/src/keys/mod.rs",
+        "swarm_run/jobs/M2/output/tests.json",
+        "swarm_run/jobs/M2/output/report.md"
+      ],
+      "evidence": {
+        "tests_passed": true,
+        "critic_severity": "CLEAN"
+      }
+    },
+    {
+      "id": "S3",
+      "label": "Release test run (post-hardening)",
+      "type": "verifier",
+      "statement": "Run release tests for workspace and serde-enabled nine65 to validate new helpers.",
+      "dependencies": [
+        "M2"
+      ],
+      "status": "verified",
+      "assigned_to": "sigma",
+      "confidence": 0.6,
+      "artifacts": [
+        "swarm_run/jobs/S3/output/test.log",
+        "swarm_run/jobs/S3/output/report.md"
+      ],
+      "evidence": {
+        "tests_passed": true,
+        "serde_tests_passed": true,
+        "test_log": "swarm_run/jobs/S3/output/test.log",
+        "critic_severity": "CLEAN"
+      }
+    },
+    {
+      "id": "K3",
+      "label": "Critique hardening artifacts",
+      "type": "critic",
+      "statement": "Adversarial review of H1/M2/S3 outputs for gaps and inconsistencies.",
+      "dependencies": [
+        "H1",
+        "M2",
+        "S3"
+      ],
+      "status": "verified",
+      "assigned_to": "kappa",
+      "confidence": 0.7,
+      "artifacts": [
+        "swarm_run/jobs/K3/output/critique.md",
+        "swarm_run/jobs/K3/output/result.md"
+      ],
+      "evidence": {
+        "critic_severity": "CLEAN"
+      }
+    },
+    {
+      "id": "O3",
+      "label": "Synthesis checkpoint (hardening)",
+      "type": "synthesizer",
+      "statement": "Summarize hardening changes and remaining gaps after K3.",
+      "dependencies": [
+        "K3"
+      ],
+      "status": "verified",
+      "assigned_to": "omega",
+      "confidence": 0.6,
+      "artifacts": [
+        "swarm_run/jobs/O3/output/theorem_stack.md",
+        "swarm_run/jobs/O3/output/conflict_log.md",
+        "docs/NINE65_V5_FHE_DEEP_ANALYSIS_TEST_REPORT.md"
+      ],
+      "evidence": {
+        "note": "Hardening complete; key serialization validated; no quantum scope."
+      }
+    },
+    {
+      "id": "AC4",
+      "label": "Key serialization acceptance",
+      "type": "acceptance_check",
+      "statement": "Validated serialization for PublicKey/EvaluationKey exists and tests pass.",
+      "dependencies": [
+        "H1",
+        "S3"
+      ],
+      "status": "verified",
+      "assigned_to": "orchestrator",
+      "confidence": 0.8,
+      "artifacts": [
+        "crates/nine65/src/keys/mod.rs",
+        "swarm_run/jobs/S3/output/test.log"
+      ],
+      "evidence": {
+        "keys_serialized": true
+      }
+    }
+  ],
+  "migration_log": [
+    {
+      "timestamp": "2026-02-05T00:17:47.275374Z",
+      "note": "Scope update: EncryptedQuantum.v excluded from this build (no quantum implementation)."
+    },
+    {
+      "timestamp": "2026-02-05T00:20:37.930648+00:00",
+      "note": "Refined blueprint for implementation: added quantum exclusion assumption, StateCompression disposition node, Lean repair node, and new acceptance checks."
+    },
+    {
+      "timestamp": "2026-02-05T00:30:59.144868+00:00",
+      "note": "StateCompression.v excluded (quantum scope). Lean build unblocked with deferred proofs."
+    },
+    {
+      "timestamp": "2026-02-05T01:40:53Z",
+      "note": "Lean KElimination proofs fully discharged; warnings-as-error enabled; artifacts updated."
+    },
+    {
+      "timestamp": "2026-02-05T03:42:51.578968+00:00",
+      "note": "Hardening update: added validated serialization for BFV PublicKey/EvaluationKey and serde-gated roundtrip tests; reran release + serde test suites."
+    }
+  ]
+}

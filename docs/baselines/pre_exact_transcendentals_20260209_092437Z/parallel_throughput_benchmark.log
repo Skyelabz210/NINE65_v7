@@ -1,0 +1,10 @@
+    Finished `release` profile [optimized] target(s) in 0.07s
+     Running unittests src/lib.rs (target/release/deps/nine65-56c87ff246e95a3f)
+
+running 1 test
+Parallel encrypt 1000 messages: 117.69546ms (117.695 us/msg)
+Parallel decrypt 1000 messages: 50.54489ms (50.544 us/msg)
+test ops::parallel::tests::test_parallel_throughput_benchmark ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 458 filtered out; finished in 0.17s
+

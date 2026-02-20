@@ -1,0 +1,105 @@
+[package]
+name = "nine65"
+description = "QMNF-Accelerated BFV FHE with AHOP Quantum Simulation"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[features]
+default = ["ntt_fft", "parallel"]
+
+# The default feature set no longer includes "accelerated". Users who wish
+# to enable acceleration via proprietary crates (mana/unhal) should explicitly
+# enable the "accelerated" feature (e.g., `--features accelerated`). This
+# change improves buildability for users without access to those crates.
+secure-keygen = []
+ntt_fft = []
+wassan = ["shadow-entropy"]
+v2 = ["ntt_fft", "wassan"]
+accelerated = ["mana", "unhal"]
+parallel = ["rayon"]
+# Enables secure_seed_from_os() convenience function for seeding ShadowHarvester from OS CSPRNG
+secure_seed = []
+# Enables verbose debug output during DualRNS multiplication (K-Elimination rescaling)
+debug_dual_mul = []
+# Enables serialization via serde (JSON + bincode support)
+serde = ["dep:serde", "dep:serde_json", "dep:bincode"]
+# Shadow entropy extensions (CRT shadow, WASSAN noise field)
+shadow-entropy = []
+# Allow use of insecure test configurations in release builds (NOT RECOMMENDED)
+allow_insecure = []
+# Enable slow/expensive tests (opt-in)
+slow_tests = []
+# Enable benchmark-only helpers (opt-in)
+benchmarks = []
+deterministic_rng = ["dep:rand_chacha", "dep:rand_core"]
+exact_rational = ["nexgen_rational"]
+clockwork = ["clockwork-core", "crc32fast"]
+# Use exact_transcendentals CORDIC/AGM backend for transcendental ops.
+exact_transcendentals_backend = ["dep:exact_transcendentals"]
+# Enable adaptive threading based on entropy monitoring (defaults to fixed 4 threads)
+adaptive-threading = ["shadow-entropy"]
+# Enable sequential execution (no Rayon)
+sequential = []
+# Enable generic Rayon with fixed thread count (no adaptive entropy monitoring)
+generic-rayon = ["rayon"]
+
+[dependencies]
+mana = { path = "../mana", optional = true }
+unhal = { path = "../unhal", optional = true }
+rayon = { workspace = true, optional = true }
+zeroize = { workspace = true }
+getrandom = { workspace = true }
+subtle = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+bincode = { version = "2.0", optional = true }
+rand_core = { workspace = true, optional = true }
+rand_chacha = { workspace = true, optional = true }
+nexgen_rational = { path = "../nexgen_rational", optional = true }
+clockwork-core = { path = "../clockwork-core", optional = true }
+crc32fast = { version = "1.3", optional = true }
+exact_transcendentals = { path = "../exact_transcendentals", optional = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+proptest = { workspace = true }
+rand_core = { workspace = true }
+rand_chacha = { workspace = true }
+
+[[bin]]
+name = "nine65_bench"
+path = "src/bin/nine65_bench.rs"
+required-features = ["serde"]
+
+[[bench]]
+name = "fhe_scaling"
+harness = false
+
+[[bench]]
+name = "nine65_vs_seal_comparison"
+harness = false
+
+[[bench]]
+name = "throughput"
+harness = false
+required-features = ["parallel"]
+
+[[bench]]
+name = "adaptive_rayon"
+harness = false
+required-features = ["parallel"]
+
+[[bench]]
+name = "timing"
+harness = false
+required-features = ["benchmarks"]
+
+[[example]]
+name = "thread_comparison_benchmark"
+path = "../../thread_comparison_benchmark.rs"
+
+[[example]]
+name = "test_mod_switch"

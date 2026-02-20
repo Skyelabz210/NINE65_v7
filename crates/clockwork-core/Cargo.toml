@@ -1,0 +1,17 @@
+[package]
+name = "clockwork-core"
+version = "0.1.0"
+edition = "2021"
+description = "Formal-spec-compliant Clockwork RNS arithmetic for RLWE FHE — no floating point, ever"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+# Constant-time operations for secret-dependent paths (T16 requirement)
+subtle = "2.5"
+# CRC32 for integrity checks (D22, T14)
+crc32fast = "1.3"
+# Fast modular arithmetic
+# (We implement our own to guarantee no-float invariant)
+
+[dev-dependencies]
+rand = "0.8"

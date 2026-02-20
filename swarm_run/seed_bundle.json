@@ -1,0 +1,14 @@
+{
+  "main_goal": "Apply all formalized works (Coq/Lean proofs) to the NINE65 v5 FHE implementation by mapping proofs to Rust modules, integrating theorem references, and validating key artifacts.",
+  "context": {
+    "repo_root": "/home/acid/Projects/NINE65/v5",
+    "proofs": ["proofs/coq", "lean4/KElimination"],
+    "implementation": "crates/nine65"
+  },
+  "seeds": [
+    {"kind": "proofs", "path": "proofs/coq"},
+    {"kind": "lean", "path": "lean4/KElimination"},
+    {"kind": "rust", "path": "crates/nine65/src"}
+  ],
+  "constraints": ["integer_only", "no_network"]
+}

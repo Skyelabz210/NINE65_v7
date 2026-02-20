@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EvaluationJobStatus {
+  queued
+  running
+  completed
+  failed
+}
+
+enum KeyVersionStatus {
+  active
+  retiring
+  retired
+}
+
+enum ModelStatus {
+  active
+  shadow
+  retired
+}
+
+enum ActorType {
+  user
+  service
+}
+
+enum ResourceType {
+  pii
+  telemetry
+  keys
+  model
+}
+
+enum AccessDecision {
+  allow
+  deny
+}
+
+model TelemetryEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id")
+  eventId           String   @map("event_id") @db.Uuid
+  idempotencyKey    String   @map("idempotency_key")
+  subjectId         String   @map("subject_id")
+  deviceId          String   @map("device_id")
+  capturedAt        DateTime @map("captured_at") @db.Timestamptz(6)
+  receivedAt        DateTime @map("received_at") @db.Timestamptz(6)
+  sequenceNo        BigInt   @map("sequence_no")
+  signalType        String   @map("signal_type")
+  ciphertextPayload Bytes    @map("ciphertext_payload")
+  keyId             String   @map("key_id")
+  modelVersion      String   @map("model_version")
+  metadata          Json     @default("{}")
+
+  evaluations EvaluationJob[]
+
+  @@unique([tenantId, eventId], map: "uq_telemetry_tenant_event")
+  @@unique([tenantId, idempotencyKey], map: "uq_telemetry_tenant_idempotency")
+  @@index([tenantId, subjectId], map: "ix_telemetry_tenant_subject")
+  @@index([tenantId, capturedAt], map: "ix_telemetry_tenant_captured_at")
+  @@index([keyId], map: "ix_telemetry_key_id")
+  @@map("telemetry_events")
+}
+
+model EvaluationJob {
+  id               String              @id @default(uuid()) @db.Uuid
+  requestId        String              @unique(map: "uq_eval_request_id") @map("request_id")
+  tenantId         String              @map("tenant_id")
+  eventRef         String?             @map("event_ref") @db.Uuid
+  operation        String
+  status           EvaluationJobStatus
+  noiseBudgetBits  Int?                @map("noise_budget_bits")
+  latencyMs        Int?                @map("latency_ms")
+  resultCiphertext Bytes?              @map("result_ciphertext")
+  errorCode        String?             @map("error_code")
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  telemetryEvent TelemetryEvent? @relation(fields: [eventRef], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status], map: "ix_eval_tenant_status")
+  @@index([createdAt], map: "ix_eval_created_at")
+  @@map("evaluation_jobs")
+}
+
+model FheKeyVersion {
+  keyId         String           @id @map("key_id")
+  algorithm     String
+  configName    String           @map("config_name")
+  publicKey     Bytes            @map("public_key")
+  privateKeyRef String           @map("private_key_ref")
+  status        KeyVersionStatus
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  activateAt    DateTime         @map("activate_at") @db.Timestamptz(6)
+  retireAt      DateTime?        @map("retire_at") @db.Timestamptz(6)
+
+  @@index([status, activateAt], map: "ix_fhe_keys_status_activate_at")
+  @@map("fhe_key_versions")
+}
+
+model ModelRegistry {
+  modelVersion  String     @id @map("model_version")
+  modelHash     String     @map("model_hash")
+  schemaVersion String     @map("schema_version")
+  status        ModelStatus
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([status], map: "ix_model_registry_status")
+  @@map("model_registry")
+}
+
+model PiiIdentityMap {
+  subjectId    String   @id @map("subject_id")
+  tenantId     String   @map("tenant_id")
+  fullName     String   @map("full_name")
+  dob          DateTime @db.Date
+  contactEmail String   @map("contact_email")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([tenantId], map: "ix_pii_tenant")
+  @@map("pii_identity_map")
+}
+
+model AuditLog {
+  id           String         @id @default(uuid()) @db.Uuid
+  actorId      String         @map("actor_id")
+  actorType    ActorType      @map("actor_type")
+  action       String
+  resourceType ResourceType   @map("resource_type")
+  resourceId   String         @map("resource_id")
+  decision     AccessDecision
+  reason       String
+  timestamp    DateTime       @default(now()) @db.Timestamptz(6)
+  requestId    String         @map("request_id")
+
+  @@index([timestamp], map: "ix_audit_timestamp")
+  @@index([resourceType, resourceId], map: "ix_audit_resource")
+  @@index([actorId, timestamp], map: "ix_audit_actor_time")
+  @@map("audit_log")
+}

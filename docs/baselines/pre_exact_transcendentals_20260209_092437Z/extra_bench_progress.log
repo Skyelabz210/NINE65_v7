@@ -1,0 +1,8 @@
+[RUN] crt_shadow_throughput
+[RUN] crt_shadow_signature_overhead
+[RUN] wassan_vs_shadow
+[RUN] ntt_benchmark_1024
+[RUN] persistent_montgomery_benchmark
+[RUN] parallel_throughput_benchmark
+[RUN] entropy_during_fhe
+[RUN] full_system_integration

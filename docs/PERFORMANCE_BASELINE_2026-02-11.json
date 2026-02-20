@@ -1,0 +1,26 @@
+{
+  "generated_at_utc": "2026-02-11T16:31:32Z",
+  "profile_class": "secure",
+  "source_files": {
+    "markdown_report": "docs/PERFORMANCE_BASELINE_2026-02-11.md",
+    "criterion_summary": "docs/PERFORMANCE_BASELINE_2026-02-11_criterion.json"
+  },
+  "fhe_ops_ms": {
+    "secure_128": {
+      "encrypt": 23.56,
+      "add": 0.83,
+      "mul": 152.13,
+      "decrypt": 11.06
+    },
+    "secure_192": {
+      "encrypt": 61.59,
+      "add": 2.10,
+      "mul": 459.02,
+      "decrypt": 29.00
+    }
+  },
+  "depth_total_seconds": {
+    "secure_128": 6.29,
+    "secure_192": 10.10
+  }
+}

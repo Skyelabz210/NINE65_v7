@@ -1,0 +1,539 @@
+DIGEST 1b3a87c90e0f6c86679448f212ff1fbd
+FGSOFHE
+R222:226 Coq.Arith.Arith <> <> lib
+R244:246 Coq.micromega.Lia <> <> lib
+R264:266 Coq.Init.Nat <> <> lib
+R284:289 Coq.ZArith.ZArith <> <> lib
+R307:310 Coq.Lists.List <> <> lib
+R320:332 Coq.Lists.List ListNotations <> mod
+rec 1280:1292 <> NoiseEstimate
+proj 1301:1308 <> distance
+proj 1358:1365 <> basin_id
+proj 1424:1432 <> mul_depth
+proj 1482:1495 <> collapse_count
+R1312:1314 Coq.Init.Datatypes <> nat ind
+R1369:1371 Coq.Init.Datatypes <> nat ind
+R1436:1438 Coq.Init.Datatypes <> nat ind
+R1499:1501 Coq.Init.Datatypes <> nat ind
+rec 1574:1587 <> AttractorBasin
+proj 1596:1597 <> id
+proj 1608:1615 <> center_x
+proj 1624:1631 <> center_y
+proj 1640:1645 <> radius
+R1601:1603 Coq.Init.Datatypes <> nat ind
+R1619:1619 Coq.Numbers.BinNums <> Z ind
+R1635:1635 Coq.Numbers.BinNums <> Z ind
+R1649:1651 Coq.Init.Datatypes <> nat ind
+rec 1736:1744 <> GSOConfig
+proj 1753:1764 <> basin_radius
+proj 1775:1792 <> collapse_threshold
+proj 1846:1854 <> max_depth
+R1768:1770 Coq.Init.Datatypes <> nat ind
+R1796:1798 Coq.Init.Datatypes <> nat ind
+R1858:1860 Coq.Init.Datatypes <> nat ind
+def 1932:1940 <> noise_add
+R1949:1961 GSOFHE <> NoiseEstimate rec
+binder 1943:1943 <> a:15
+binder 1945:1945 <> b:16
+R1966:1978 GSOFHE <> NoiseEstimate rec
+R1988:1995 GSOFHE <> distance proj
+R1988:1995 GSOFHE <> distance proj
+R1988:1995 GSOFHE <> distance proj
+R2034:2041 GSOFHE <> basin_id proj
+R2034:2041 GSOFHE <> basin_id proj
+R2090:2098 GSOFHE <> mul_depth proj
+R2090:2098 GSOFHE <> mul_depth proj
+R2141:2154 GSOFHE <> collapse_count proj
+R2141:2154 GSOFHE <> collapse_count proj
+R2012:2014 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2003:2010 GSOFHE <> distance proj
+R2000:2000 GSOFHE <> a:15 var
+R2018:2025 GSOFHE <> distance proj
+R2015:2015 GSOFHE <> b:16 var
+R2049:2056 GSOFHE <> basin_id proj
+R2046:2046 GSOFHE <> a:15 var
+R2103:2105 Coq.Init.Nat <> max def
+R2110:2118 GSOFHE <> mul_depth proj
+R2107:2107 GSOFHE <> a:15 var
+R2124:2132 GSOFHE <> mul_depth proj
+R2121:2121 GSOFHE <> b:16 var
+R2177:2179 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2162:2175 GSOFHE <> collapse_count proj
+R2159:2159 GSOFHE <> a:15 var
+R2183:2196 GSOFHE <> collapse_count proj
+R2180:2180 GSOFHE <> b:16 var
+def 2271:2279 <> noise_mul
+R2288:2300 GSOFHE <> NoiseEstimate rec
+binder 2282:2282 <> a:17
+binder 2284:2284 <> b:18
+R2313:2321 GSOFHE <> GSOConfig rec
+binder 2304:2309 <> config:19
+R2326:2338 GSOFHE <> NoiseEstimate rec
+R2421:2423 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2388:2408 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2373:2375 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R2364:2371 GSOFHE <> distance proj
+R2361:2361 GSOFHE <> a:17 var
+R2379:2386 GSOFHE <> distance proj
+R2376:2376 GSOFHE <> b:18 var
+R2412:2419 GSOFHE <> distance proj
+R2409:2409 GSOFHE <> a:17 var
+R2427:2434 GSOFHE <> distance proj
+R2424:2424 GSOFHE <> b:18 var
+binder 2349:2356 <> new_dist:20
+R2445:2452 GSOFHE <> distance proj
+R2445:2452 GSOFHE <> distance proj
+R2445:2452 GSOFHE <> distance proj
+R2472:2479 GSOFHE <> basin_id proj
+R2472:2479 GSOFHE <> basin_id proj
+R2503:2511 GSOFHE <> mul_depth proj
+R2503:2511 GSOFHE <> mul_depth proj
+R2558:2571 GSOFHE <> collapse_count proj
+R2558:2571 GSOFHE <> collapse_count proj
+R2457:2464 GSOFHE <> new_dist:20 var
+R2487:2494 GSOFHE <> basin_id proj
+R2484:2484 GSOFHE <> a:17 var
+R2516:2516 Coq.Init.Datatypes <> S constr
+R2519:2521 Coq.Init.Nat <> max def
+R2526:2534 GSOFHE <> mul_depth proj
+R2523:2523 GSOFHE <> a:17 var
+R2540:2548 GSOFHE <> mul_depth proj
+R2537:2537 GSOFHE <> b:18 var
+R2594:2596 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2579:2592 GSOFHE <> collapse_count proj
+R2576:2576 GSOFHE <> a:17 var
+R2600:2613 GSOFHE <> collapse_count proj
+R2597:2597 GSOFHE <> b:18 var
+def 3133:3146 <> needs_collapse
+R3155:3167 GSOFHE <> NoiseEstimate rec
+binder 3149:3151 <> est:21
+R3180:3188 GSOFHE <> GSOConfig rec
+binder 3171:3176 <> config:22
+R3193:3196 Coq.Init.Datatypes <> bool ind
+R3230:3233 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R3211:3228 GSOFHE <> collapse_threshold proj
+R3203:3208 GSOFHE <> config:22 var
+R3239:3246 GSOFHE <> distance proj
+R3234:3236 GSOFHE <> est:21 var
+def 3262:3277 <> perform_collapse
+R3286:3298 GSOFHE <> NoiseEstimate rec
+binder 3280:3282 <> est:23
+R3311:3319 GSOFHE <> GSOConfig rec
+binder 3302:3307 <> config:24
+R3324:3336 GSOFHE <> NoiseEstimate rec
+R3346:3353 GSOFHE <> distance proj
+R3346:3353 GSOFHE <> distance proj
+R3346:3353 GSOFHE <> distance proj
+R3395:3402 GSOFHE <> basin_id proj
+R3395:3402 GSOFHE <> basin_id proj
+R3428:3436 GSOFHE <> mul_depth proj
+R3428:3436 GSOFHE <> mul_depth proj
+R3463:3476 GSOFHE <> collapse_count proj
+R3463:3476 GSOFHE <> collapse_count proj
+R3412:3419 GSOFHE <> basin_id proj
+R3407:3409 GSOFHE <> est:23 var
+R3446:3454 GSOFHE <> mul_depth proj
+R3441:3443 GSOFHE <> est:23 var
+R3481:3481 Coq.Init.Datatypes <> S constr
+R3488:3501 GSOFHE <> collapse_count proj
+R3483:3485 GSOFHE <> est:23 var
+def 3548:3561 <> maybe_collapse
+R3570:3582 GSOFHE <> NoiseEstimate rec
+binder 3564:3566 <> est:25
+R3595:3603 GSOFHE <> GSOConfig rec
+binder 3586:3591 <> config:26
+R3608:3620 GSOFHE <> NoiseEstimate rec
+R3630:3643 GSOFHE <> needs_collapse def
+R3645:3647 GSOFHE <> est:25 var
+R3649:3654 GSOFHE <> config:26 var
+R3704:3706 GSOFHE <> est:25 var
+R3665:3680 GSOFHE <> perform_collapse def
+R3682:3684 GSOFHE <> est:25 var
+R3686:3691 GSOFHE <> config:26 var
+prf 3947:3959 <> noise_bounded
+R3977:3989 GSOFHE <> NoiseEstimate rec
+binder 3971:3973 <> est:27
+R4002:4010 GSOFHE <> GSOConfig rec
+binder 3993:3998 <> config:28
+R4028:4041 GSOFHE <> maybe_collapse def
+R4043:4045 GSOFHE <> est:27 var
+R4047:4052 GSOFHE <> config:28 var
+binder 4020:4023 <> est':29
+R4074:4077 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R4065:4072 GSOFHE <> distance proj
+R4059:4062 GSOFHE <> est':29 var
+R4086:4103 GSOFHE <> collapse_threshold proj
+R4078:4083 GSOFHE <> config:28 var
+R4144:4157 GSOFHE <> maybe_collapse def
+R4160:4173 GSOFHE <> needs_collapse def
+R4176:4191 GSOFHE <> perform_collapse def
+R4233:4236 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R4214:4231 GSOFHE <> collapse_threshold proj
+R4242:4249 GSOFHE <> distance proj
+R4233:4236 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R4214:4231 GSOFHE <> collapse_threshold proj
+R4242:4249 GSOFHE <> distance proj
+R4403:4412 Coq.Arith.PeanoNat Nat ltb_ge thm
+R4403:4412 Coq.Arith.PeanoNat Nat ltb_ge thm
+def 4710:4723 <> depth_sequence
+R4730:4732 Coq.Init.Datatypes <> nat ind
+binder 4726:4726 <> d:30
+R4742:4754 GSOFHE <> NoiseEstimate rec
+binder 4736:4738 <> est:31
+R4767:4775 GSOFHE <> GSOConfig rec
+binder 4758:4763 <> config:32
+R4782:4794 GSOFHE <> NoiseEstimate rec
+R4807:4807 GSOFHE <> d:30 var
+R4823:4825 GSOFHE <> est:31 var
+R4831:4831 Coq.Init.Datatypes <> S constr
+R4857:4865 GSOFHE <> noise_mul def
+R4867:4869 GSOFHE <> est:31 var
+R4871:4873 GSOFHE <> est:31 var
+R4875:4880 GSOFHE <> config:32 var
+binder 4849:4852 <> est1:35
+R4903:4916 GSOFHE <> maybe_collapse def
+R4918:4921 GSOFHE <> est1:35 var
+R4923:4928 GSOFHE <> config:32 var
+binder 4895:4898 <> est2:36
+R4939:4952 GSOFHE <> depth_sequence:33 def
+R4962:4967 GSOFHE <> config:32 var
+R4957:4960 GSOFHE <> est2:36 var
+prf 5180:5201 <> depth_sequence_bounded
+R5217:5219 Coq.Init.Datatypes <> nat ind
+binder 5213:5213 <> d:37
+R5232:5240 GSOFHE <> GSOConfig rec
+binder 5223:5228 <> config:38
+R5251:5263 GSOFHE <> NoiseEstimate rec
+binder 5244:5247 <> init:39
+R5315:5320 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5284:5287 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5275:5282 GSOFHE <> distance proj
+R5269:5272 GSOFHE <> init:39 var
+R5296:5313 GSOFHE <> collapse_threshold proj
+R5288:5293 GSOFHE <> config:38 var
+R5334:5347 GSOFHE <> depth_sequence def
+R5349:5349 GSOFHE <> d:37 var
+R5351:5354 GSOFHE <> init:39 var
+R5356:5361 GSOFHE <> config:38 var
+binder 5325:5329 <> final:40
+R5384:5387 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5375:5382 GSOFHE <> distance proj
+R5368:5372 GSOFHE <> final:40 var
+R5396:5413 GSOFHE <> collapse_threshold proj
+R5388:5393 GSOFHE <> config:38 var
+R5675:5687 GSOFHE <> noise_bounded thm
+R5675:5687 GSOFHE <> noise_bounded thm
+prf 5775:5792 <> depth_S_achievable
+R5808:5810 Coq.Init.Datatypes <> nat ind
+binder 5804:5804 <> d:41
+R5823:5831 GSOFHE <> GSOConfig rec
+binder 5814:5819 <> config:42
+R5842:5854 GSOFHE <> NoiseEstimate rec
+binder 5835:5838 <> init:43
+R5873:5886 GSOFHE <> depth_sequence def
+R5889:5889 Coq.Init.Datatypes <> S constr
+R5891:5891 GSOFHE <> d:41 var
+R5894:5897 GSOFHE <> init:43 var
+R5899:5904 GSOFHE <> config:42 var
+binder 5864:5868 <> final:44
+R5927:5930 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5918:5925 GSOFHE <> distance proj
+R5911:5915 GSOFHE <> final:44 var
+R5939:5956 GSOFHE <> collapse_threshold proj
+R5931:5936 GSOFHE <> config:42 var
+R6008:6029 GSOFHE <> depth_sequence_bounded thm
+R6008:6029 GSOFHE <> depth_sequence_bounded thm
+R6040:6052 GSOFHE <> noise_bounded thm
+R6040:6052 GSOFHE <> noise_bounded thm
+prf 6096:6114 <> depth_50_achievable
+R6135:6143 GSOFHE <> GSOConfig rec
+binder 6126:6131 <> config:45
+R6154:6166 GSOFHE <> NoiseEstimate rec
+binder 6147:6150 <> init:46
+R6203:6208 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6199:6201 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R6180:6197 GSOFHE <> collapse_threshold proj
+R6172:6177 GSOFHE <> config:45 var
+R6222:6235 GSOFHE <> depth_sequence def
+R6240:6243 GSOFHE <> init:46 var
+R6245:6250 GSOFHE <> config:45 var
+binder 6213:6217 <> final:47
+R6273:6276 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R6264:6271 GSOFHE <> distance proj
+R6257:6261 GSOFHE <> final:47 var
+R6285:6302 GSOFHE <> collapse_threshold proj
+R6277:6282 GSOFHE <> config:45 var
+R6397:6414 GSOFHE <> depth_S_achievable thm
+R6397:6414 GSOFHE <> depth_S_achievable thm
+prf 6823:6842 <> maybe_collapse_count
+binder 6853:6855 <> est:48
+binder 6857:6862 <> config:49
+R6911:6914 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R6896:6909 GSOFHE <> collapse_count proj
+R6868:6881 GSOFHE <> maybe_collapse def
+R6883:6885 GSOFHE <> est:48 var
+R6887:6892 GSOFHE <> config:49 var
+R6915:6915 Coq.Init.Datatypes <> S constr
+R6922:6935 GSOFHE <> collapse_count proj
+R6917:6919 GSOFHE <> est:48 var
+R6976:6989 GSOFHE <> maybe_collapse def
+R6992:7005 GSOFHE <> needs_collapse def
+R7008:7023 GSOFHE <> perform_collapse def
+R7065:7068 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R7046:7063 GSOFHE <> collapse_threshold proj
+R7074:7081 GSOFHE <> distance proj
+R7065:7068 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R7046:7063 GSOFHE <> collapse_threshold proj
+R7074:7081 GSOFHE <> distance proj
+prf 7161:7186 <> maybe_collapse_count_cases
+binder 7197:7199 <> est:50
+binder 7201:7206 <> config:51
+R7278:7283 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R7255:7257 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7240:7253 GSOFHE <> collapse_count proj
+R7212:7225 GSOFHE <> maybe_collapse def
+R7227:7229 GSOFHE <> est:50 var
+R7231:7236 GSOFHE <> config:51 var
+R7263:7276 GSOFHE <> collapse_count proj
+R7258:7260 GSOFHE <> est:50 var
+R7328:7330 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7313:7326 GSOFHE <> collapse_count proj
+R7285:7298 GSOFHE <> maybe_collapse def
+R7300:7302 GSOFHE <> est:50 var
+R7304:7309 GSOFHE <> config:51 var
+R7331:7331 Coq.Init.Datatypes <> S constr
+R7338:7351 GSOFHE <> collapse_count proj
+R7333:7335 GSOFHE <> est:50 var
+R7392:7405 GSOFHE <> maybe_collapse def
+R7408:7421 GSOFHE <> needs_collapse def
+R7424:7439 GSOFHE <> perform_collapse def
+R7481:7484 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R7462:7479 GSOFHE <> collapse_threshold proj
+R7490:7497 GSOFHE <> distance proj
+R7481:7484 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R7462:7479 GSOFHE <> collapse_threshold proj
+R7490:7497 GSOFHE <> distance proj
+prf 7580:7603 <> noise_mul_collapse_count
+binder 7614:7614 <> a:52
+binder 7616:7616 <> b:53
+binder 7618:7623 <> config:54
+R7667:7669 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7652:7665 GSOFHE <> collapse_count proj
+R7629:7637 GSOFHE <> noise_mul def
+R7639:7639 GSOFHE <> a:52 var
+R7641:7641 GSOFHE <> b:53 var
+R7643:7648 GSOFHE <> config:54 var
+R7688:7690 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R7673:7686 GSOFHE <> collapse_count proj
+R7670:7670 GSOFHE <> a:52 var
+R7694:7707 GSOFHE <> collapse_count proj
+R7691:7691 GSOFHE <> b:53 var
+R7735:7743 GSOFHE <> noise_mul def
+prf 8271:8292 <> collapse_count_general
+R8308:8310 Coq.Init.Datatypes <> nat ind
+binder 8304:8304 <> d:55
+R8323:8331 GSOFHE <> GSOConfig rec
+binder 8314:8319 <> config:56
+R8342:8354 GSOFHE <> NoiseEstimate rec
+binder 8335:8338 <> init:57
+R8373:8386 GSOFHE <> depth_sequence def
+R8388:8388 GSOFHE <> d:55 var
+R8390:8393 GSOFHE <> init:57 var
+R8395:8400 GSOFHE <> config:56 var
+binder 8364:8368 <> final:58
+R8429:8432 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R8414:8427 GSOFHE <> collapse_count proj
+R8407:8411 GSOFHE <> final:58 var
+R8470:8472 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R8433:8433 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R8459:8463 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R8469:8469 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R8455:8457 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R8440:8453 GSOFHE <> collapse_count proj
+R8434:8437 GSOFHE <> init:57 var
+R8465:8467 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R8468:8468 GSOFHE <> d:55 var
+R8732:8752 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8717:8730 GSOFHE <> collapse_count proj
+R8688:8696 GSOFHE <> noise_mul def
+R8774:8776 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R8759:8772 GSOFHE <> collapse_count proj
+R8783:8796 GSOFHE <> collapse_count proj
+R8732:8752 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8717:8730 GSOFHE <> collapse_count proj
+R8688:8696 GSOFHE <> noise_mul def
+R8774:8776 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R8759:8772 GSOFHE <> collapse_count proj
+R8783:8796 GSOFHE <> collapse_count proj
+R8814:8822 GSOFHE <> noise_mul def
+R8902:8915 GSOFHE <> maybe_collapse def
+R8918:8926 GSOFHE <> noise_mul def
+R8902:8915 GSOFHE <> maybe_collapse def
+R8918:8926 GSOFHE <> noise_mul def
+R8991:8994 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R8976:8989 GSOFHE <> collapse_count proj
+R9040:9042 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R9025:9038 GSOFHE <> collapse_count proj
+R8996:9004 GSOFHE <> noise_mul def
+R8991:8994 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R8976:8989 GSOFHE <> collapse_count proj
+R9040:9042 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R9025:9038 GSOFHE <> collapse_count proj
+R8996:9004 GSOFHE <> noise_mul def
+R9082:9101 GSOFHE <> maybe_collapse_count thm
+R9104:9112 GSOFHE <> noise_mul def
+R9082:9101 GSOFHE <> maybe_collapse_count thm
+R9104:9112 GSOFHE <> noise_mul def
+R9322:9325 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9318:9320 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R9303:9316 GSOFHE <> collapse_count proj
+R9327:9330 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9356:9356 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9352:9354 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R9337:9350 GSOFHE <> collapse_count proj
+R9322:9325 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9318:9320 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R9303:9316 GSOFHE <> collapse_count proj
+R9327:9330 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9356:9356 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R9352:9354 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R9337:9350 GSOFHE <> collapse_count proj
+R9384:9395 Coq.Arith.PeanoNat Nat le_trans thm
+R9384:9395 Coq.Arith.PeanoNat Nat le_trans thm
+R9422:9438 Coq.Arith.PeanoNat Nat sub_le_mono_r thm
+R9422:9438 Coq.Arith.PeanoNat Nat sub_le_mono_r thm
+prf 9721:9748 <> collapse_count_bounded_fresh
+R9764:9766 Coq.Init.Datatypes <> nat ind
+binder 9760:9760 <> d:59
+R9779:9787 GSOFHE <> GSOConfig rec
+binder 9770:9775 <> config:60
+R9798:9810 GSOFHE <> NoiseEstimate rec
+binder 9791:9794 <> init:61
+R9841:9846 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R9837:9839 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R9822:9835 GSOFHE <> collapse_count proj
+R9816:9819 GSOFHE <> init:61 var
+R9860:9873 GSOFHE <> depth_sequence def
+R9875:9875 GSOFHE <> d:59 var
+R9877:9880 GSOFHE <> init:61 var
+R9882:9887 GSOFHE <> config:60 var
+binder 9851:9855 <> final:62
+R9916:9919 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R9901:9914 GSOFHE <> collapse_count proj
+R9894:9898 GSOFHE <> final:62 var
+R9925:9927 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R9921:9923 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R9924:9924 GSOFHE <> d:59 var
+R9991:10012 GSOFHE <> collapse_count_general thm
+R9991:10012 GSOFHE <> collapse_count_general thm
+R10106:10108 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R10102:10104 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R10098:10100 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R10123:10125 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R10119:10121 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R10106:10108 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R10102:10104 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R10098:10100 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+R10123:10125 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R10119:10121 Coq.Arith.PeanoNat <> ::nat_scope:x_'^'_x not
+def 10295:10303 <> pow10_gso
+R10310:10312 Coq.Init.Datatypes <> nat ind
+binder 10306:10306 <> n:63
+R10317:10319 Coq.Init.Datatypes <> nat ind
+R10332:10332 GSOFHE <> n:63 var
+R10354:10354 Coq.Init.Datatypes <> S constr
+R10364:10366 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R10367:10375 GSOFHE <> pow10_gso:64 def
+def 10460:10476 <> bootstrap_time_us
+R10480:10482 Coq.Init.Datatypes <> nat ind
+R10488:10490 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R10491:10499 GSOFHE <> pow10_gso def
+def 10571:10586 <> collapse_time_us
+R10590:10592 Coq.Init.Datatypes <> nat ind
+R10597:10605 GSOFHE <> pow10_gso def
+def 10656:10671 <> collapse_speedup
+R10675:10677 Coq.Init.Datatypes <> nat ind
+R10699:10701 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R10682:10698 GSOFHE <> bootstrap_time_us def
+R10702:10717 GSOFHE <> collapse_time_us def
+prf 10846:10857 <> speedup_500x
+R10879:10881 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R10863:10878 GSOFHE <> collapse_speedup def
+R10903:10918 GSOFHE <> collapse_speedup def
+R10921:10937 GSOFHE <> bootstrap_time_us def
+R10940:10955 GSOFHE <> collapse_time_us def
+def 11132:11158 <> traditional_depth50_time_ms
+R11162:11164 Coq.Init.Datatypes <> nat ind
+R11171:11173 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+def 11251:11269 <> gso_depth50_time_ms
+R11273:11275 Coq.Init.Datatypes <> nat ind
+R11287:11289 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R11282:11284 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R11291:11293 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+prf 11306:11323 <> gso_faster_depth50
+R11348:11350 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R11329:11347 GSOFHE <> gso_depth50_time_ms def
+R11351:11377 GSOFHE <> traditional_depth50_time_ms def
+R11396:11414 GSOFHE <> gso_depth50_time_ms def
+R11417:11443 GSOFHE <> traditional_depth50_time_ms def
+def 11517:11531 <> depth50_speedup
+R11535:11537 Coq.Init.Datatypes <> nat ind
+R11569:11571 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R11542:11568 GSOFHE <> traditional_depth50_time_ms def
+R11572:11590 GSOFHE <> gso_depth50_time_ms def
+prf 11602:11619 <> depth50_speedup_6x
+R11640:11643 Coq.Init.Peano <> ::nat_scope:x_'>='_x not
+R11625:11639 GSOFHE <> depth50_speedup def
+R11663:11677 GSOFHE <> depth50_speedup def
+R11680:11706 GSOFHE <> traditional_depth50_time_ms def
+R11709:11727 GSOFHE <> gso_depth50_time_ms def
+def 12138:12156 <> basin_for_plaintext
+R12167:12169 Coq.Init.Datatypes <> nat ind
+binder 12159:12159 <> m:66
+binder 12161:12161 <> t:67
+binder 12163:12163 <> q:68
+R12174:12187 GSOFHE <> AttractorBasin rec
+R12208:12210 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R12207:12207 GSOFHE <> q:68 var
+R12211:12211 GSOFHE <> t:67 var
+binder 12198:12202 <> delta:69
+R12243:12244 GSOFHE <> id proj
+R12243:12244 GSOFHE <> id proj
+R12243:12244 GSOFHE <> id proj
+R12257:12264 GSOFHE <> center_x proj
+R12257:12264 GSOFHE <> center_x proj
+R12296:12303 GSOFHE <> center_y proj
+R12296:12303 GSOFHE <> center_y proj
+R12318:12323 GSOFHE <> radius proj
+R12318:12323 GSOFHE <> radius proj
+R12249:12249 GSOFHE <> m:66 var
+R12269:12276 Coq.ZArith.BinInt Z of_nat def
+R12280:12282 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R12279:12279 GSOFHE <> m:66 var
+R12283:12287 GSOFHE <> delta:69 var
+R12333:12335 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R12328:12332 GSOFHE <> delta:69 var
+prf 12398:12415 <> decryption_correct
+R12440:12442 Coq.Init.Datatypes <> nat ind
+binder 12426:12426 <> m:70
+binder 12428:12428 <> t:71
+binder 12430:12430 <> q:72
+binder 12432:12436 <> noise:73
+R12452:12455 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R12448:12450 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R12447:12447 GSOFHE <> t:71 var
+R12461:12466 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R12457:12459 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R12456:12456 GSOFHE <> q:72 var
+R12460:12460 GSOFHE <> t:71 var
+R12480:12498 GSOFHE <> basin_for_plaintext def
+R12500:12500 GSOFHE <> m:70 var
+R12502:12502 GSOFHE <> t:71 var
+R12504:12504 GSOFHE <> q:72 var
+binder 12471:12475 <> basin:74
+R12533:12582 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R12516:12518 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R12511:12515 GSOFHE <> noise:73 var
+R12526:12531 GSOFHE <> radius proj
+R12519:12523 GSOFHE <> basin:74 var
+R12583:12586 Coq.Init.Logic <> True ind

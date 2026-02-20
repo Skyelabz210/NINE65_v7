@@ -1,0 +1,597 @@
+DIGEST a6bd943c25ca549c3015e2bca112a78d
+FQMNF.OrderFinding
+R225:229 Coq.Arith.Arith <> <> lib
+R247:249 Coq.micromega.Lia <> <> lib
+R267:269 Coq.Init.Nat <> <> lib
+R287:292 Coq.ZArith.ZArith <> <> lib
+R310:319 Coq.ZArith.Znumtheory <> <> lib
+R337:340 Coq.Lists.List <> <> lib
+R350:362 Coq.Lists.List ListNotations <> mod
+def 875:882 <> is_order
+R893:895 Coq.Init.Datatypes <> nat ind
+binder 885:885 <> a:1
+binder 887:887 <> N:2
+binder 889:889 <> r:3
+R915:920 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R911:913 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R910:910 QMNF.OrderFinding <> r:3 var
+R942:947 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R938:940 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R932:936 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R921:927 Coq.Arith.PeanoNat Nat pow def
+R929:929 QMNF.OrderFinding <> a:1 var
+R931:931 QMNF.OrderFinding <> r:3 var
+R937:937 QMNF.OrderFinding <> N:2 var
+binder 955:955 <> k:4
+R967:970 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R959:961 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R963:965 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R962:962 QMNF.OrderFinding <> k:4 var
+R962:962 QMNF.OrderFinding <> k:4 var
+R966:966 QMNF.OrderFinding <> r:3 var
+R988:991 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R982:986 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R971:977 Coq.Arith.PeanoNat Nat pow def
+R979:979 QMNF.OrderFinding <> a:1 var
+R981:981 QMNF.OrderFinding <> k:4 var
+R987:987 QMNF.OrderFinding <> N:2 var
+def 1035:1045 <> order_bound
+R1054:1056 Coq.Init.Datatypes <> nat ind
+binder 1048:1048 <> a:5
+binder 1050:1050 <> N:6
+R1061:1063 Coq.Init.Datatypes <> nat ind
+R1069:1071 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R1068:1068 QMNF.OrderFinding <> N:6 var
+def 1110:1116 <> coprime
+R1125:1127 Coq.Init.Datatypes <> nat ind
+binder 1119:1119 <> a:7
+binder 1121:1121 <> N:8
+R1151:1153 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1140:1146 Coq.Arith.PeanoNat Nat gcd def
+R1148:1148 QMNF.OrderFinding <> a:7 var
+R1150:1150 QMNF.OrderFinding <> N:8 var
+ax 1541:1554 <> lagrange_bound
+R1571:1573 Coq.Init.Datatypes <> nat ind
+binder 1565:1565 <> a:9
+binder 1567:1567 <> N:10
+R1583:1586 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1579:1581 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1578:1578 QMNF.OrderFinding <> N:10 var
+R1598:1603 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1587:1593 QMNF.OrderFinding <> coprime def
+R1595:1595 QMNF.OrderFinding <> a:9 var
+R1597:1597 QMNF.OrderFinding <> N:10 var
+binder 1611:1611 <> r:11
+R1628:1631 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1614:1621 QMNF.OrderFinding <> is_order def
+R1623:1623 QMNF.OrderFinding <> a:9 var
+R1625:1625 QMNF.OrderFinding <> N:10 var
+R1627:1627 QMNF.OrderFinding <> r:11 var
+R1633:1636 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R1632:1632 QMNF.OrderFinding <> r:11 var
+R1638:1640 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R1637:1637 QMNF.OrderFinding <> N:10 var
+ax 1692:1703 <> order_exists
+R1720:1722 Coq.Init.Datatypes <> nat ind
+binder 1714:1714 <> a:14
+binder 1716:1716 <> N:15
+R1732:1735 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1728:1730 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1727:1727 QMNF.OrderFinding <> N:15 var
+R1747:1752 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1736:1742 QMNF.OrderFinding <> coprime def
+R1744:1744 QMNF.OrderFinding <> a:14 var
+R1746:1746 QMNF.OrderFinding <> N:15 var
+R1753:1759 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R1761:1762 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 1760:1760 <> r:16
+R1763:1770 QMNF.OrderFinding <> is_order def
+R1772:1772 QMNF.OrderFinding <> a:14 var
+R1774:1774 QMNF.OrderFinding <> N:15 var
+R1776:1776 QMNF.OrderFinding <> r:16 var
+prf 1811:1822 <> order_unique
+R1845:1847 Coq.Init.Datatypes <> nat ind
+binder 1833:1833 <> a:19
+binder 1835:1835 <> N:20
+binder 1837:1838 <> r1:21
+binder 1840:1841 <> r2:22
+R1867:1870 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1852:1859 QMNF.OrderFinding <> is_order def
+R1861:1861 QMNF.OrderFinding <> a:19 var
+R1863:1863 QMNF.OrderFinding <> N:20 var
+R1865:1866 QMNF.OrderFinding <> r1:21 var
+R1886:1889 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1871:1878 QMNF.OrderFinding <> is_order def
+R1880:1880 QMNF.OrderFinding <> a:19 var
+R1882:1882 QMNF.OrderFinding <> N:20 var
+R1884:1885 QMNF.OrderFinding <> r2:22 var
+R1892:1894 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1890:1891 QMNF.OrderFinding <> r1:21 var
+R1895:1896 QMNF.OrderFinding <> r2:22 var
+R2051:2067 Coq.Arith.PeanoNat Nat lt_trichotomy thm
+R2051:2067 Coq.Arith.PeanoNat Nat lt_trichotomy thm
+def 2680:2689 <> bsgs_bound
+R2696:2698 Coq.Init.Datatypes <> nat ind
+binder 2692:2692 <> N:23
+R2703:2705 Coq.Init.Datatypes <> nat ind
+R2711:2713 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R2710:2710 QMNF.OrderFinding <> N:23 var
+def 2765:2773 <> baby_step
+R2784:2786 Coq.Init.Datatypes <> nat ind
+binder 2776:2776 <> a:24
+binder 2778:2778 <> N:25
+binder 2780:2780 <> j:26
+R2791:2793 Coq.Init.Datatypes <> nat ind
+R2809:2813 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R2798:2804 Coq.Arith.PeanoNat Nat pow def
+R2806:2806 QMNF.OrderFinding <> a:24 var
+R2808:2808 QMNF.OrderFinding <> j:26 var
+R2814:2814 QMNF.OrderFinding <> N:25 var
+def 2974:2983 <> giant_step
+R2996:2998 Coq.Init.Datatypes <> nat ind
+binder 2986:2986 <> a:27
+binder 2988:2988 <> N:28
+binder 2990:2990 <> m:29
+binder 2992:2992 <> k:30
+R3012:3014 Coq.Init.Datatypes <> nat ind
+binder 3002:3008 <> a_inv_m:31
+R3019:3021 Coq.Init.Datatypes <> nat ind
+R3045:3049 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3028:3034 Coq.Arith.PeanoNat Nat pow def
+R3036:3042 QMNF.OrderFinding <> a_inv_m:31 var
+R3044:3044 QMNF.OrderFinding <> k:30 var
+R3050:3050 QMNF.OrderFinding <> N:28 var
+prf 3140:3155 <> bsgs_correctness
+R3178:3180 Coq.Init.Datatypes <> nat ind
+binder 3166:3166 <> a:32
+binder 3168:3168 <> N:33
+binder 3170:3170 <> m:34
+binder 3172:3172 <> j:35
+binder 3174:3174 <> k:36
+R3190:3193 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3186:3188 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3185:3185 QMNF.OrderFinding <> N:33 var
+R3205:3208 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3194:3200 QMNF.OrderFinding <> coprime def
+R3202:3202 QMNF.OrderFinding <> a:32 var
+R3204:3204 QMNF.OrderFinding <> N:33 var
+R3214:3219 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3210:3212 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3209:3209 QMNF.OrderFinding <> m:34 var
+R3286:3348 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3235:3237 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3220:3228 QMNF.OrderFinding <> baby_step def
+R3230:3230 QMNF.OrderFinding <> a:32 var
+R3232:3232 QMNF.OrderFinding <> N:33 var
+R3234:3234 QMNF.OrderFinding <> j:35 var
+R3238:3247 QMNF.OrderFinding <> giant_step def
+R3249:3249 QMNF.OrderFinding <> a:32 var
+R3251:3251 QMNF.OrderFinding <> N:33 var
+R3253:3253 QMNF.OrderFinding <> m:34 var
+R3255:3255 QMNF.OrderFinding <> k:36 var
+R3279:3283 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3258:3264 Coq.Arith.PeanoNat Nat pow def
+R3266:3266 QMNF.OrderFinding <> a:32 var
+R3274:3276 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3270:3272 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3269:3269 QMNF.OrderFinding <> N:33 var
+R3277:3277 QMNF.OrderFinding <> m:34 var
+R3284:3284 QMNF.OrderFinding <> N:33 var
+R3376:3378 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3370:3374 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3349:3355 Coq.Arith.PeanoNat Nat pow def
+R3357:3357 QMNF.OrderFinding <> a:32 var
+R3361:3363 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R3360:3360 QMNF.OrderFinding <> j:35 var
+R3365:3367 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R3364:3364 QMNF.OrderFinding <> m:34 var
+R3368:3368 QMNF.OrderFinding <> k:36 var
+R3375:3375 QMNF.OrderFinding <> N:33 var
+def 3812:3819 <> is_prime
+R3826:3828 Coq.Init.Datatypes <> nat ind
+binder 3822:3822 <> p:37
+R3848:3851 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R3844:3846 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3843:3843 QMNF.OrderFinding <> p:37 var
+R3863:3865 Coq.Init.Datatypes <> nat ind
+binder 3859:3859 <> d:38
+R3882:3885 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3868:3877 Coq.Arith.PeanoNat Nat divide def
+R3879:3879 QMNF.OrderFinding <> d:38 var
+R3881:3881 QMNF.OrderFinding <> p:37 var
+R3891:3894 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R3887:3889 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3886:3886 QMNF.OrderFinding <> d:38 var
+R3896:3898 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3895:3895 QMNF.OrderFinding <> d:38 var
+R3899:3899 QMNF.OrderFinding <> p:37 var
+def 3914:3929 <> is_minimal_order
+R3940:3942 Coq.Init.Datatypes <> nat ind
+binder 3932:3932 <> a:39
+binder 3934:3934 <> N:40
+binder 3936:3936 <> r:41
+R3962:3967 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R3958:3960 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3957:3957 QMNF.OrderFinding <> r:41 var
+R3989:3994 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R3985:3987 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3979:3983 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R3968:3974 Coq.Arith.PeanoNat Nat pow def
+R3976:3976 QMNF.OrderFinding <> a:39 var
+R3978:3978 QMNF.OrderFinding <> r:41 var
+R3984:3984 QMNF.OrderFinding <> N:40 var
+binder 4002:4002 <> p:42
+R4015:4018 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4005:4012 QMNF.OrderFinding <> is_prime def
+R4014:4014 QMNF.OrderFinding <> p:42 var
+R4033:4036 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4019:4028 Coq.Arith.PeanoNat Nat divide def
+R4030:4030 QMNF.OrderFinding <> p:42 var
+R4032:4032 QMNF.OrderFinding <> r:41 var
+R4060:4063 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R4054:4058 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R4037:4043 Coq.Arith.PeanoNat Nat pow def
+R4045:4045 QMNF.OrderFinding <> a:39 var
+R4049:4051 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R4048:4048 QMNF.OrderFinding <> r:41 var
+R4052:4052 QMNF.OrderFinding <> p:42 var
+R4059:4059 QMNF.OrderFinding <> N:40 var
+prf 4117:4136 <> minimization_correct
+R4155:4157 Coq.Init.Datatypes <> nat ind
+binder 4147:4147 <> a:43
+binder 4149:4149 <> N:44
+binder 4151:4151 <> r:45
+R4167:4170 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4163:4165 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R4162:4162 QMNF.OrderFinding <> N:44 var
+R4182:4185 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4171:4177 QMNF.OrderFinding <> coprime def
+R4179:4179 QMNF.OrderFinding <> a:43 var
+R4181:4181 QMNF.OrderFinding <> N:44 var
+R4191:4196 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4187:4189 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R4186:4186 QMNF.OrderFinding <> r:45 var
+R4218:4223 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4214:4216 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4208:4212 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R4197:4203 Coq.Arith.PeanoNat Nat pow def
+R4205:4205 QMNF.OrderFinding <> a:43 var
+R4207:4207 QMNF.OrderFinding <> r:45 var
+R4213:4213 QMNF.OrderFinding <> N:44 var
+R4224:4230 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+R4233:4234 Coq.Init.Logic <> ::type_scope:'exists'_x_'..'_x_','_x not
+binder 4231:4232 <> r':46
+R4241:4244 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4237:4239 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R4235:4236 QMNF.OrderFinding <> r':46 var
+R4260:4263 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R4245:4254 Coq.Arith.PeanoNat Nat divide def
+R4256:4257 QMNF.OrderFinding <> r':46 var
+R4259:4259 QMNF.OrderFinding <> r:45 var
+R4264:4271 QMNF.OrderFinding <> is_order def
+R4273:4273 QMNF.OrderFinding <> a:43 var
+R4275:4275 QMNF.OrderFinding <> N:44 var
+R4277:4278 QMNF.OrderFinding <> r':46 var
+def 4766:4788 <> uses_factorization_of_N
+R4800:4804 Coq.Init.Logic <> False ind
+prf 4816:4830 <> non_circularity
+R4887:4887 Coq.Init.Logic <> ::type_scope:'~'_x not
+R4888:4910 QMNF.OrderFinding <> uses_factorization_of_N def
+R4929:4951 QMNF.OrderFinding <> uses_factorization_of_N def
+def 5285:5295 <> shor_factor
+R5306:5308 Coq.Init.Datatypes <> nat ind
+binder 5298:5298 <> a:47
+binder 5300:5300 <> N:48
+binder 5302:5302 <> r:49
+R5313:5318 Coq.Init.Datatypes <> option ind
+R5324:5326 Coq.Init.Datatypes <> ::type_scope:x_'*'_x not
+R5321:5323 Coq.Init.Datatypes <> nat ind
+R5327:5329 Coq.Init.Datatypes <> nat ind
+R5340:5347 Coq.Arith.PeanoNat Nat even def
+R5349:5349 QMNF.OrderFinding <> r:49 var
+R5694:5697 Coq.Init.Datatypes <> None constr
+R5393:5397 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R5376:5382 Coq.Arith.PeanoNat Nat pow def
+R5384:5384 QMNF.OrderFinding <> a:47 var
+R5388:5390 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R5387:5387 QMNF.OrderFinding <> r:49 var
+R5398:5398 QMNF.OrderFinding <> N:48 var
+binder 5364:5371 <> half_exp:50
+R5410:5416 Coq.Arith.PeanoNat Nat eqb def
+R5418:5425 QMNF.OrderFinding <> half_exp:50 var
+R5429:5431 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5428:5428 QMNF.OrderFinding <> N:48 var
+R5489:5495 Coq.Arith.PeanoNat Nat gcd def
+R5506:5508 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5498:5505 QMNF.OrderFinding <> half_exp:50 var
+R5512:5512 QMNF.OrderFinding <> N:48 var
+binder 5484:5484 <> p:51
+R5532:5538 Coq.Arith.PeanoNat Nat gcd def
+R5549:5551 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R5541:5548 QMNF.OrderFinding <> half_exp:50 var
+R5555:5555 QMNF.OrderFinding <> N:48 var
+binder 5527:5527 <> q:52
+R5569:5572 Coq.Init.Datatypes <> andb def
+R5585:5588 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R5584:5584 QMNF.OrderFinding <> p:51 var
+R5589:5589 QMNF.OrderFinding <> N:48 var
+R5576:5579 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R5580:5580 QMNF.OrderFinding <> p:51 var
+R5627:5630 Coq.Init.Datatypes <> andb def
+R5643:5646 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R5642:5642 QMNF.OrderFinding <> q:52 var
+R5647:5647 QMNF.OrderFinding <> N:48 var
+R5634:5637 Coq.Arith.PeanoNat <> ::nat_scope:x_'<?'_x not
+R5638:5638 QMNF.OrderFinding <> q:52 var
+R5682:5685 Coq.Init.Datatypes <> None constr
+R5655:5658 Coq.Init.Datatypes <> Some constr
+R5660:5660 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5662:5663 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5669:5669 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5661:5661 QMNF.OrderFinding <> q:52 var
+R5665:5667 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R5664:5664 QMNF.OrderFinding <> N:48 var
+R5668:5668 QMNF.OrderFinding <> q:52 var
+R5597:5600 Coq.Init.Datatypes <> Some constr
+R5602:5602 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5604:5605 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5611:5611 Coq.Init.Datatypes <> ::core_scope:'('_x_','_x_','_'..'_','_x_')' not
+R5603:5603 QMNF.OrderFinding <> p:51 var
+R5607:5609 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R5606:5606 QMNF.OrderFinding <> N:48 var
+R5610:5610 QMNF.OrderFinding <> p:51 var
+R5440:5443 Coq.Init.Datatypes <> None constr
+prf 5743:5764 <> shor_reduction_correct
+R5787:5789 Coq.Init.Datatypes <> nat ind
+binder 5775:5775 <> a:53
+binder 5777:5777 <> N:54
+binder 5779:5779 <> r:55
+binder 5781:5781 <> p:56
+binder 5783:5783 <> q:57
+R5799:5802 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5795:5797 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R5794:5794 QMNF.OrderFinding <> N:54 var
+R5814:5819 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5803:5809 QMNF.OrderFinding <> coprime def
+R5811:5811 QMNF.OrderFinding <> a:53 var
+R5813:5813 QMNF.OrderFinding <> N:54 var
+R5834:5839 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5820:5827 QMNF.OrderFinding <> is_order def
+R5829:5829 QMNF.OrderFinding <> a:53 var
+R5831:5831 QMNF.OrderFinding <> N:54 var
+R5833:5833 QMNF.OrderFinding <> r:55 var
+R5857:5862 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5850:5852 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5840:5847 Coq.Arith.PeanoNat Nat even def
+R5849:5849 QMNF.OrderFinding <> r:55 var
+R5853:5856 Coq.Init.Datatypes <> true constr
+R5896:5900 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R5879:5885 Coq.Arith.PeanoNat Nat pow def
+R5887:5887 QMNF.OrderFinding <> a:53 var
+R5891:5893 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R5890:5890 QMNF.OrderFinding <> r:55 var
+R5901:5901 QMNF.OrderFinding <> N:54 var
+binder 5867:5874 <> half_exp:58
+R5925:5930 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5916:5919 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R5908:5915 QMNF.OrderFinding <> half_exp:58 var
+R5921:5923 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5920:5920 QMNF.OrderFinding <> N:54 var
+R5931:5931 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5992:5998 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5960:5963 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R5933:5935 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5932:5932 QMNF.OrderFinding <> p:56 var
+R5936:5942 Coq.Arith.PeanoNat Nat gcd def
+R5953:5955 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R5945:5952 QMNF.OrderFinding <> half_exp:58 var
+R5959:5959 QMNF.OrderFinding <> N:54 var
+R5965:5967 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R5964:5964 QMNF.OrderFinding <> p:56 var
+R5968:5974 Coq.Arith.PeanoNat Nat gcd def
+R5985:5987 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R5977:5984 QMNF.OrderFinding <> half_exp:58 var
+R5991:5991 QMNF.OrderFinding <> N:54 var
+R6008:6013 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6000:6002 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R6004:6006 Coq.Init.Peano <> ::nat_scope:x_'<'_x_'<'_x not
+R6003:6003 QMNF.OrderFinding <> p:56 var
+R6003:6003 QMNF.OrderFinding <> p:56 var
+R6007:6007 QMNF.OrderFinding <> N:54 var
+R6014:6023 Coq.Arith.PeanoNat Nat divide def
+R6025:6025 QMNF.OrderFinding <> p:56 var
+R6027:6027 QMNF.OrderFinding <> N:54 var
+R6156:6171 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+R6156:6171 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+R6196:6211 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+R6196:6211 Coq.Arith.PeanoNat Nat gcd_divide_r thm
+rec 6601:6611 <> KRecurrence
+proj 6620:6623 <> base
+proj 6634:6634 <> n
+proj 6645:6649 <> a_ref
+proj 6705:6705 <> t
+proj 6716:6718 <> v_t
+proj 6762:6764 <> k_t
+R6627:6629 Coq.Init.Datatypes <> nat ind
+R6638:6640 Coq.Init.Datatypes <> nat ind
+R6653:6655 Coq.Init.Datatypes <> nat ind
+R6709:6711 Coq.Init.Datatypes <> nat ind
+R6722:6724 Coq.Init.Datatypes <> nat ind
+R6768:6770 Coq.Init.Datatypes <> nat ind
+def 6865:6870 <> k_step
+R6878:6888 QMNF.OrderFinding <> KRecurrence rec
+binder 6873:6874 <> kr:66
+R6893:6903 QMNF.OrderFinding <> KRecurrence rec
+R6933:6935 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R6929:6931 QMNF.OrderFinding <> v_t proj
+R6925:6926 QMNF.OrderFinding <> kr:66 var
+R6940:6943 QMNF.OrderFinding <> base proj
+R6936:6937 QMNF.OrderFinding <> kr:66 var
+binder 6914:6920 <> product:67
+R6971:6973 Coq.Arith.PeanoNat <> ::nat_scope:x_'/'_x not
+R6964:6970 QMNF.OrderFinding <> product:67 var
+R6978:6978 QMNF.OrderFinding <> n proj
+R6974:6975 QMNF.OrderFinding <> kr:66 var
+binder 6955:6959 <> carry:68
+R6993:6996 QMNF.OrderFinding <> base proj
+R6993:6996 QMNF.OrderFinding <> base proj
+R6993:6996 QMNF.OrderFinding <> base proj
+R7016:7016 QMNF.OrderFinding <> n proj
+R7016:7016 QMNF.OrderFinding <> n proj
+R7033:7037 QMNF.OrderFinding <> a_ref proj
+R7033:7037 QMNF.OrderFinding <> a_ref proj
+R7058:7058 QMNF.OrderFinding <> t proj
+R7058:7058 QMNF.OrderFinding <> t proj
+R7079:7081 QMNF.OrderFinding <> v_t proj
+R7079:7081 QMNF.OrderFinding <> v_t proj
+R7110:7112 QMNF.OrderFinding <> k_t proj
+R7110:7112 QMNF.OrderFinding <> k_t proj
+R7005:7008 QMNF.OrderFinding <> base proj
+R7001:7002 QMNF.OrderFinding <> kr:66 var
+R7025:7025 QMNF.OrderFinding <> n proj
+R7021:7022 QMNF.OrderFinding <> kr:66 var
+R7046:7050 QMNF.OrderFinding <> a_ref proj
+R7042:7043 QMNF.OrderFinding <> kr:66 var
+R7069:7071 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R7067:7067 QMNF.OrderFinding <> t proj
+R7063:7064 QMNF.OrderFinding <> kr:66 var
+R7093:7097 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7086:7092 QMNF.OrderFinding <> product:67 var
+R7102:7102 QMNF.OrderFinding <> n proj
+R7098:7099 QMNF.OrderFinding <> kr:66 var
+R7117:7117 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7146:7151 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7138:7140 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R7127:7129 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R7122:7125 QMNF.OrderFinding <> base proj
+R7118:7119 QMNF.OrderFinding <> kr:66 var
+R7134:7136 QMNF.OrderFinding <> k_t proj
+R7130:7131 QMNF.OrderFinding <> kr:66 var
+R7141:7145 QMNF.OrderFinding <> carry:68 var
+R7156:7160 QMNF.OrderFinding <> a_ref proj
+R7152:7153 QMNF.OrderFinding <> kr:66 var
+def 7203:7208 <> k_init
+R7219:7221 Coq.Init.Datatypes <> nat ind
+binder 7211:7211 <> b:69
+binder 7213:7213 <> N:70
+binder 7215:7215 <> A:71
+R7226:7236 QMNF.OrderFinding <> KRecurrence rec
+R7250:7253 QMNF.OrderFinding <> base proj
+R7250:7253 QMNF.OrderFinding <> base proj
+R7250:7253 QMNF.OrderFinding <> base proj
+R7265:7265 QMNF.OrderFinding <> n proj
+R7265:7265 QMNF.OrderFinding <> n proj
+R7277:7281 QMNF.OrderFinding <> a_ref proj
+R7277:7281 QMNF.OrderFinding <> a_ref proj
+R7293:7293 QMNF.OrderFinding <> t proj
+R7293:7293 QMNF.OrderFinding <> t proj
+R7305:7307 QMNF.OrderFinding <> v_t proj
+R7305:7307 QMNF.OrderFinding <> v_t proj
+R7319:7321 QMNF.OrderFinding <> k_t proj
+R7319:7321 QMNF.OrderFinding <> k_t proj
+R7258:7258 QMNF.OrderFinding <> b:69 var
+R7270:7270 QMNF.OrderFinding <> N:70 var
+R7286:7286 QMNF.OrderFinding <> A:71 var
+def 7377:7387 <> k_invariant
+R7395:7405 QMNF.OrderFinding <> KRecurrence rec
+binder 7390:7391 <> kr:72
+R7430:7435 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R7426:7428 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R7424:7424 QMNF.OrderFinding <> n proj
+R7420:7421 QMNF.OrderFinding <> kr:72 var
+R7450:7455 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R7446:7448 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R7440:7444 QMNF.OrderFinding <> a_ref proj
+R7436:7437 QMNF.OrderFinding <> kr:72 var
+R7481:7486 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R7456:7462 QMNF.OrderFinding <> coprime def
+R7468:7468 QMNF.OrderFinding <> n proj
+R7464:7465 QMNF.OrderFinding <> kr:72 var
+R7475:7479 QMNF.OrderFinding <> a_ref proj
+R7471:7472 QMNF.OrderFinding <> kr:72 var
+R7495:7497 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R7491:7493 QMNF.OrderFinding <> v_t proj
+R7487:7488 QMNF.OrderFinding <> kr:72 var
+R7522:7526 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R7498:7504 Coq.Arith.PeanoNat Nat pow def
+R7510:7513 QMNF.OrderFinding <> base proj
+R7506:7507 QMNF.OrderFinding <> kr:72 var
+R7520:7520 QMNF.OrderFinding <> t proj
+R7516:7517 QMNF.OrderFinding <> kr:72 var
+R7531:7531 QMNF.OrderFinding <> n proj
+R7527:7528 QMNF.OrderFinding <> kr:72 var
+prf 7584:7609 <> k_step_preserves_invariant
+R7625:7635 QMNF.OrderFinding <> KRecurrence rec
+binder 7620:7621 <> kr:73
+R7654:7657 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R7640:7650 QMNF.OrderFinding <> k_invariant def
+R7652:7653 QMNF.OrderFinding <> kr:73 var
+R7658:7668 QMNF.OrderFinding <> k_invariant def
+R7671:7676 QMNF.OrderFinding <> k_step def
+R7678:7679 QMNF.OrderFinding <> kr:73 var
+R7732:7737 QMNF.OrderFinding <> k_step def
+def 8006:8019 <> verify_order_k
+R8032:8034 Coq.Init.Datatypes <> nat ind
+binder 8022:8022 <> b:74
+binder 8024:8024 <> N:75
+binder 8026:8026 <> A:76
+binder 8028:8028 <> r:77
+R8039:8042 Coq.Init.Datatypes <> bool ind
+R8059:8064 QMNF.OrderFinding <> k_init def
+R8066:8066 QMNF.OrderFinding <> b:74 var
+R8068:8068 QMNF.OrderFinding <> N:75 var
+R8070:8070 QMNF.OrderFinding <> A:76 var
+binder 8053:8054 <> kr:78
+R8093:8100 Coq.Arith.PeanoNat Nat iter def
+R8111:8112 QMNF.OrderFinding <> kr:78 var
+R8104:8109 QMNF.OrderFinding <> k_step def
+R8102:8102 QMNF.OrderFinding <> r:77 var
+binder 8081:8088 <> kr_final:79
+R8119:8125 Coq.Arith.PeanoNat Nat eqb def
+R8137:8139 QMNF.OrderFinding <> v_t proj
+R8127:8134 QMNF.OrderFinding <> kr_final:79 var
+prf 8188:8209 <> k_verification_correct
+R8230:8232 Coq.Init.Datatypes <> nat ind
+binder 8220:8220 <> b:80
+binder 8222:8222 <> N:81
+binder 8224:8224 <> A:82
+binder 8226:8226 <> r:83
+R8242:8245 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8238:8240 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R8237:8237 QMNF.OrderFinding <> N:81 var
+R8251:8254 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8247:8249 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R8246:8246 QMNF.OrderFinding <> A:82 var
+R8266:8269 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8255:8261 QMNF.OrderFinding <> coprime def
+R8263:8263 QMNF.OrderFinding <> N:81 var
+R8265:8265 QMNF.OrderFinding <> A:82 var
+R8281:8286 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8270:8276 QMNF.OrderFinding <> coprime def
+R8278:8278 QMNF.OrderFinding <> b:80 var
+R8280:8280 QMNF.OrderFinding <> N:81 var
+R8301:8306 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R8287:8294 QMNF.OrderFinding <> is_order def
+R8296:8296 QMNF.OrderFinding <> b:80 var
+R8298:8298 QMNF.OrderFinding <> N:81 var
+R8300:8300 QMNF.OrderFinding <> r:83 var
+R8329:8331 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R8307:8320 QMNF.OrderFinding <> verify_order_k def
+R8322:8322 QMNF.OrderFinding <> b:80 var
+R8324:8324 QMNF.OrderFinding <> N:81 var
+R8326:8326 QMNF.OrderFinding <> A:82 var
+R8328:8328 QMNF.OrderFinding <> r:83 var
+R8332:8335 Coq.Init.Datatypes <> true constr
+R8419:8432 QMNF.OrderFinding <> verify_order_k def
+def 9195:9202 <> ord_15_2
+R9224:9226 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R9217:9221 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R9206:9212 Coq.Arith.PeanoNat Nat pow def
+def 9302:9309 <> ord_21_2
+R9331:9333 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R9324:9328 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R9313:9319 Coq.Arith.PeanoNat Nat pow def
+def 9410:9417 <> ord_35_2
+R9440:9442 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R9433:9437 Coq.Arith.PeanoNat <> ::nat_scope:x_'mod'_x not
+R9421:9427 Coq.Arith.PeanoNat Nat pow def

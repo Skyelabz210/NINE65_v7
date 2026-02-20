@@ -1,0 +1,24 @@
+[package]
+name = "mana"
+description = "Modular Anchored Number Arithmetic - FHE Stream Accelerator"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[features]
+default = ["parallel"]
+# simd = ["wide"]  # Disabled: counterproductive for modular arithmetic
+parallel = ["rayon"]
+
+[dependencies]
+wide = { workspace = true, optional = true }
+rayon = { workspace = true, optional = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+proptest = { workspace = true }
+
+# [[bench]]
+# name = "lane_ops"
+# harness = false

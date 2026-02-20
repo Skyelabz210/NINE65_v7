@@ -1,0 +1,314 @@
+DIGEST 4f9978dda941fa5fac28b930f2215a19
+FNine65.IntegerSoftmax
+R181:185 Coq.Arith.Arith <> <> lib
+R203:205 Coq.micromega.Lia <> <> lib
+R223:225 Coq.Init.Nat <> <> lib
+R243:246 Coq.Lists.List <> <> lib
+R256:268 Coq.Lists.List ListNotations <> mod
+def 802:813 <> scale_factor
+R817:819 Coq.Init.Datatypes <> nat ind
+R825:825 Coq.Init.Nat <> ::nat_scope:x_'^'_x not
+rec 881:890 <> IntSoftmax
+proj 899:906 <> is_probs
+proj 922:929 <> is_scale
+R910:913 Coq.Init.Datatypes <> list ind
+R915:917 Coq.Init.Datatypes <> nat ind
+R933:935 Coq.Init.Datatypes <> nat ind
+def 953:961 <> sum_probs
+R972:975 Coq.Init.Datatypes <> list ind
+R977:979 Coq.Init.Datatypes <> nat ind
+binder 964:968 <> probs:4
+R984:986 Coq.Init.Datatypes <> nat ind
+R993:1001 Coq.Lists.List <> fold_left def
+R1011:1015 Nine65.IntegerSoftmax <> probs:4 var
+R1003:1009 Coq.Arith.PeanoNat Nat add def
+def 1032:1040 <> exact_sum
+R1048:1057 Nine65.IntegerSoftmax <> IntSoftmax rec
+binder 1043:1044 <> is:5
+R1095:1097 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1072:1080 Nine65.IntegerSoftmax <> sum_probs def
+R1086:1093 Nine65.IntegerSoftmax <> is_probs proj
+R1082:1083 Nine65.IntegerSoftmax <> is:5 var
+R1102:1109 Nine65.IntegerSoftmax <> is_scale proj
+R1098:1099 Nine65.IntegerSoftmax <> is:5 var
+def 1287:1306 <> distribute_remainder
+R1317:1320 Coq.Init.Datatypes <> list ind
+R1322:1324 Coq.Init.Datatypes <> nat ind
+binder 1309:1313 <> probs:6
+R1337:1339 Coq.Init.Datatypes <> nat ind
+binder 1328:1333 <> target:7
+R1344:1347 Coq.Init.Datatypes <> list ind
+R1349:1351 Coq.Init.Datatypes <> nat ind
+R1373:1381 Nine65.IntegerSoftmax <> sum_probs def
+R1383:1387 Nine65.IntegerSoftmax <> probs:6 var
+binder 1362:1368 <> current:8
+R1415:1417 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R1409:1414 Nine65.IntegerSoftmax <> target:7 var
+R1418:1424 Nine65.IntegerSoftmax <> current:8 var
+binder 1398:1404 <> deficit:9
+binder 1489:1489 <> l:10
+binder 1491:1491 <> d:11
+R1509:1509 Nine65.IntegerSoftmax <> d:11 var
+R1506:1506 Nine65.IntegerSoftmax <> l:10 var
+R1522:1523 Coq.Lists.List ListNotations ::list_scope:'['_']' not
+R1531:1532 Coq.Lists.List ListNotations ::list_scope:'['_']' not
+R1541:1544 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1554:1557 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1567:1570 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1574:1574 Coq.Init.Datatypes <> S constr
+R1582:1582 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1588:1592 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1584:1586 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R1593:1599 Nine65.IntegerSoftmax <> add_one:12 var
+binder 1481:1487 <> add_one:15
+R1619:1625 Nine65.IntegerSoftmax <> add_one:15 var
+R1633:1639 Nine65.IntegerSoftmax <> deficit:9 var
+R1627:1631 Nine65.IntegerSoftmax <> probs:6 var
+prf 1649:1661 <> fold_add_cons
+binder 1672:1672 <> h:16
+binder 1674:1674 <> t:17
+binder 1676:1678 <> acc:18
+R1713:1715 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1683:1691 Coq.Lists.List <> fold_left def
+R1710:1712 Nine65.IntegerSoftmax <> acc:18 var
+R1703:1706 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R1702:1702 Nine65.IntegerSoftmax <> h:16 var
+R1707:1707 Nine65.IntegerSoftmax <> t:17 var
+R1693:1699 Coq.Arith.PeanoNat Nat add def
+R1716:1724 Coq.Lists.List <> fold_left def
+R1740:1742 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R1737:1739 Nine65.IntegerSoftmax <> acc:18 var
+R1743:1743 Nine65.IntegerSoftmax <> h:16 var
+R1734:1734 Nine65.IntegerSoftmax <> t:17 var
+R1726:1732 Coq.Arith.PeanoNat Nat add def
+prf 1796:1812 <> fold_left_add_acc
+binder 1823:1823 <> l:19
+binder 1825:1827 <> acc:20
+R1855:1857 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R1832:1840 Coq.Lists.List <> fold_left def
+R1852:1854 Nine65.IntegerSoftmax <> acc:20 var
+R1850:1850 Nine65.IntegerSoftmax <> l:19 var
+R1842:1848 Coq.Arith.PeanoNat Nat add def
+R1861:1863 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R1858:1860 Nine65.IntegerSoftmax <> acc:20 var
+R1864:1872 Coq.Lists.List <> fold_left def
+R1882:1882 Nine65.IntegerSoftmax <> l:19 var
+R1874:1880 Coq.Arith.PeanoNat Nat add def
+prf 2016:2029 <> sum_probs_cons
+binder 2040:2040 <> h:21
+binder 2042:2042 <> t:22
+R2065:2067 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2047:2055 Nine65.IntegerSoftmax <> sum_probs def
+R2059:2062 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R2058:2058 Nine65.IntegerSoftmax <> h:21 var
+R2063:2063 Nine65.IntegerSoftmax <> t:22 var
+R2069:2071 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2068:2068 Nine65.IntegerSoftmax <> h:21 var
+R2072:2080 Nine65.IntegerSoftmax <> sum_probs def
+R2082:2082 Nine65.IntegerSoftmax <> t:22 var
+R2115:2123 Nine65.IntegerSoftmax <> sum_probs def
+R2145:2161 Nine65.IntegerSoftmax <> fold_left_add_acc thm
+R2145:2161 Nine65.IntegerSoftmax <> fold_left_add_acc thm
+R2145:2161 Nine65.IntegerSoftmax <> fold_left_add_acc thm
+prf 2181:2191 <> sum_add_one
+binder 2202:2202 <> l:23
+binder 2204:2204 <> d:24
+R2222:2227 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2210:2213 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R2209:2209 Nine65.IntegerSoftmax <> d:24 var
+R2214:2219 Coq.Init.Datatypes <> length def
+R2221:2221 Nine65.IntegerSoftmax <> l:23 var
+R2404:2406 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2228:2236 Nine65.IntegerSoftmax <> sum_probs def
+binder 2257:2258 <> l0:25
+binder 2260:2261 <> d0:26
+R2282:2283 Nine65.IntegerSoftmax <> d0:26 var
+R2278:2279 Nine65.IntegerSoftmax <> l0:25 var
+R2298:2299 Coq.Lists.List ListNotations ::list_scope:'['_']' not
+R2307:2308 Coq.Lists.List ListNotations ::list_scope:'['_']' not
+R2319:2322 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R2332:2335 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R2347:2350 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R2354:2354 Coq.Init.Datatypes <> S constr
+R2362:2362 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R2368:2372 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R2364:2366 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2373:2379 Nine65.IntegerSoftmax <> add_one:27 var
+R2397:2397 Nine65.IntegerSoftmax <> l:23 var
+R2399:2399 Nine65.IntegerSoftmax <> d:24 var
+R2418:2420 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2407:2415 Nine65.IntegerSoftmax <> sum_probs def
+R2417:2417 Nine65.IntegerSoftmax <> l:23 var
+R2421:2421 Nine65.IntegerSoftmax <> d:24 var
+R2541:2543 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2541:2543 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2575:2583 Nine65.IntegerSoftmax <> sum_probs def
+R2670:2683 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R2670:2683 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R2670:2683 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R2694:2707 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R2694:2707 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R2694:2707 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R2744:2747 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R2748:2753 Coq.Init.Datatypes <> length def
+R2744:2747 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R2748:2753 Coq.Init.Datatypes <> length def
+prf 2816:2841 <> distribute_maintains_bound
+R2860:2863 Coq.Init.Datatypes <> list ind
+R2865:2867 Coq.Init.Datatypes <> nat ind
+binder 2852:2856 <> probs:30
+R2886:2888 Coq.Init.Datatypes <> nat ind
+binder 2877:2882 <> target:31
+R2918:2923 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2908:2911 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R2893:2901 Nine65.IntegerSoftmax <> sum_probs def
+R2903:2907 Nine65.IntegerSoftmax <> probs:30 var
+R2912:2917 Nine65.IntegerSoftmax <> target:31 var
+R2964:2969 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2948:2951 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R2930:2932 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R2924:2929 Nine65.IntegerSoftmax <> target:31 var
+R2933:2941 Nine65.IntegerSoftmax <> sum_probs def
+R2943:2947 Nine65.IntegerSoftmax <> probs:30 var
+R2952:2957 Coq.Init.Datatypes <> length def
+R2959:2963 Nine65.IntegerSoftmax <> probs:30 var
+R3015:3017 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R2970:2978 Nine65.IntegerSoftmax <> sum_probs def
+R2981:3000 Nine65.IntegerSoftmax <> distribute_remainder def
+R3002:3006 Nine65.IntegerSoftmax <> probs:30 var
+R3008:3013 Nine65.IntegerSoftmax <> target:31 var
+R3018:3023 Nine65.IntegerSoftmax <> target:31 var
+R3075:3094 Nine65.IntegerSoftmax <> distribute_remainder def
+R3107:3117 Nine65.IntegerSoftmax <> sum_add_one thm
+R3107:3117 Nine65.IntegerSoftmax <> sum_add_one thm
+R3107:3117 Nine65.IntegerSoftmax <> sum_add_one thm
+def 3188:3193 <> argmax
+R3204:3207 Coq.Init.Datatypes <> list ind
+R3209:3211 Coq.Init.Datatypes <> nat ind
+binder 3196:3200 <> probs:32
+R3216:3218 Coq.Init.Datatypes <> nat ind
+binder 3242:3242 <> l:33
+binder 3244:3246 <> idx:34
+binder 3248:3255 <> best_idx:35
+binder 3257:3264 <> best_val:36
+R3279:3279 Nine65.IntegerSoftmax <> l:33 var
+R3292:3293 Coq.Lists.List ListNotations ::list_scope:'['_']' not
+R3298:3305 Nine65.IntegerSoftmax <> best_idx:35 var
+R3314:3317 Coq.Init.Datatypes <> ::list_scope:x_'::'_x not
+R3332:3338 Coq.Arith.PeanoNat Nat ltb def
+R3340:3347 Nine65.IntegerSoftmax <> best_val:36 var
+R3398:3405 Nine65.IntegerSoftmax <> find_max:37 var
+R3426:3433 Nine65.IntegerSoftmax <> best_val:36 var
+R3417:3424 Nine65.IntegerSoftmax <> best_idx:35 var
+R3410:3410 Coq.Init.Datatypes <> S constr
+R3412:3414 Nine65.IntegerSoftmax <> idx:34 var
+R3362:3369 Nine65.IntegerSoftmax <> find_max:37 var
+R3381:3383 Nine65.IntegerSoftmax <> idx:34 var
+R3374:3374 Coq.Init.Datatypes <> S constr
+R3376:3378 Nine65.IntegerSoftmax <> idx:34 var
+binder 3233:3240 <> find_max:39
+R3448:3455 Nine65.IntegerSoftmax <> find_max:39 var
+R3457:3461 Nine65.IntegerSoftmax <> probs:32 var
+prf 3479:3494 <> argmax_invariant
+R3513:3516 Coq.Init.Datatypes <> list ind
+R3518:3520 Coq.Init.Datatypes <> nat ind
+binder 3505:3509 <> probs:40
+R3539:3541 Coq.Init.Datatypes <> nat ind
+binder 3530:3535 <> target:41
+R3571:3576 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3561:3564 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R3546:3554 Nine65.IntegerSoftmax <> sum_probs def
+R3556:3560 Nine65.IntegerSoftmax <> probs:40 var
+R3565:3570 Nine65.IntegerSoftmax <> target:41 var
+R3617:3708 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3601:3604 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R3583:3585 Coq.Init.Nat <> ::nat_scope:x_'-'_x not
+R3577:3582 Nine65.IntegerSoftmax <> target:41 var
+R3586:3594 Nine65.IntegerSoftmax <> sum_probs def
+R3596:3600 Nine65.IntegerSoftmax <> probs:40 var
+R3605:3610 Coq.Init.Datatypes <> length def
+R3612:3616 Nine65.IntegerSoftmax <> probs:40 var
+R3709:3712 Coq.Init.Logic <> True ind
+def 3791:3811 <> max_entropy_numerator
+R3818:3820 Coq.Init.Datatypes <> nat ind
+binder 3814:3814 <> n:42
+R3825:3827 Coq.Init.Datatypes <> nat ind
+R3832:3832 Nine65.IntegerSoftmax <> n:42 var
+def 3877:3899 <> max_entropy_denominator
+R3906:3908 Coq.Init.Datatypes <> nat ind
+binder 3902:3902 <> n:43
+R3913:3915 Coq.Init.Datatypes <> nat ind
+R3920:3920 Nine65.IntegerSoftmax <> n:43 var
+prf 3932:3946 <> entropy_bounded
+R3962:3971 Nine65.IntegerSoftmax <> IntSoftmax rec
+binder 3957:3958 <> is:44
+R4000:4005 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3996:3998 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3976:3981 Coq.Init.Datatypes <> length def
+R3987:3994 Nine65.IntegerSoftmax <> is_probs proj
+R3983:3984 Nine65.IntegerSoftmax <> is:44 var
+R4018:4060 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4006:4014 Nine65.IntegerSoftmax <> exact_sum def
+R4016:4017 Nine65.IntegerSoftmax <> is:44 var
+R4061:4064 Coq.Init.Logic <> True ind
+def 4353:4369 <> float_error_bound
+R4373:4375 Coq.Init.Datatypes <> nat ind
+def 4426:4438 <> integer_error
+R4442:4444 Coq.Init.Datatypes <> nat ind
+prf 4461:4473 <> integer_exact
+R4490:4492 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R4477:4489 Nine65.IntegerSoftmax <> integer_error def
+prf 4530:4543 <> integer_better
+R4560:4562 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R4547:4559 Nine65.IntegerSoftmax <> integer_error def
+R4563:4579 Nine65.IntegerSoftmax <> float_error_bound def
+R4598:4610 Nine65.IntegerSoftmax <> integer_error def
+R4613:4629 Nine65.IntegerSoftmax <> float_error_bound def
+def 4956:4964 <> is_stable
+R4972:4981 Nine65.IntegerSoftmax <> IntSoftmax rec
+binder 4967:4968 <> is:45
+binder 5003:5003 <> p:46
+R5024:5027 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5006:5007 Coq.Lists.List <> In def
+R5015:5022 Nine65.IntegerSoftmax <> is_probs proj
+R5011:5012 Nine65.IntegerSoftmax <> is:45 var
+R5009:5009 Nine65.IntegerSoftmax <> p:46 var
+R5029:5032 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5028:5028 Nine65.IntegerSoftmax <> p:46 var
+R5037:5044 Nine65.IntegerSoftmax <> is_scale proj
+R5033:5034 Nine65.IntegerSoftmax <> is:45 var
+prf 5055:5069 <> sum_probs_bound
+binder 5080:5080 <> l:47
+binder 5082:5082 <> p:48
+R5093:5096 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5087:5088 Coq.Lists.List <> In def
+R5092:5092 Nine65.IntegerSoftmax <> l:47 var
+R5090:5090 Nine65.IntegerSoftmax <> p:48 var
+R5098:5101 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5097:5097 Nine65.IntegerSoftmax <> p:48 var
+R5102:5110 Nine65.IntegerSoftmax <> sum_probs def
+R5112:5112 Nine65.IntegerSoftmax <> l:47 var
+R5250:5263 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R5250:5263 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R5250:5263 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R5285:5298 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R5285:5298 Nine65.IntegerSoftmax <> sum_probs_cons thm
+R5285:5298 Nine65.IntegerSoftmax <> sum_probs_cons thm
+prf 5344:5367 <> stability_from_exactness
+R5383:5392 Nine65.IntegerSoftmax <> IntSoftmax rec
+binder 5378:5379 <> is:49
+R5409:5412 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5397:5405 Nine65.IntegerSoftmax <> exact_sum def
+R5407:5408 Nine65.IntegerSoftmax <> is:49 var
+R5413:5421 Nine65.IntegerSoftmax <> is_stable def
+R5423:5424 Nine65.IntegerSoftmax <> is:49 var
+R5463:5471 Nine65.IntegerSoftmax <> is_stable def
+R5499:5507 Nine65.IntegerSoftmax <> exact_sum def
+R5606:5609 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5610:5618 Nine65.IntegerSoftmax <> sum_probs def
+R5624:5631 Nine65.IntegerSoftmax <> is_probs proj
+R5645:5659 Nine65.IntegerSoftmax <> sum_probs_bound thm
+R5606:5609 Coq.Init.Peano <> ::nat_scope:x_'<='_x not
+R5610:5618 Nine65.IntegerSoftmax <> sum_probs def
+R5624:5631 Nine65.IntegerSoftmax <> is_probs proj
+R5645:5659 Nine65.IntegerSoftmax <> sum_probs_bound thm

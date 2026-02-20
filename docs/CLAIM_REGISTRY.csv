@@ -1,0 +1,7 @@
+claim_id,visibility,profile_class,artifact_path
+readme.depth50_symmetric_secure,public,secure,docs/PERFORMANCE_BASELINE_2026-02-11.md
+readme.fhe_ops_secure_128_192,public,secure,docs/PERFORMANCE_BASELINE_2026-02-11.md
+readme.bootstrap_zero_symmetric,public,secure,docs/PERFORMANCE_BASELINE_2026-02-11.md
+readme.lwe_estimator_secure_configs,public,secure,docs/LATTICE_ESTIMATOR_BASELINE_2026-02-09.md
+readme.public_mode_depth_baseline,public,secure,docs/PUBLIC_MODE_DEPTH_BASELINE_2026-01-27.md
+docs.fhe_benchmark_comparison_context,internal,exploratory,docs/FHE_BENCHMARK_COMPARISON.md

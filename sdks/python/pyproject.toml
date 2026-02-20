@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "nine65-sdk"
+version = "0.1.0"
+description = "Pure-Python HTTP client SDK for the NINE65 FHE microservice"
+requires-python = ">=3.8"
+dependencies = ["requests"]
+
+# This SDK is part of the NINE65 project.
+# NINE65 is proprietary software. This SDK component is provided under the
+# NINE65 project license. See the top-level LICENSE file for terms.
+license = {text = "Proprietary - NINE65 Project"}
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["nine65_sdk*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: requires a running NINE65 FHE service at localhost:8080",
+]

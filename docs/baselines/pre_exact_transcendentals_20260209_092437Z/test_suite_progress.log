@@ -1,0 +1,5 @@
+[RUN] nine65_core_tests
+[RUN] mana_tests
+[RUN] clockwork_core_tests
+[RUN] nexgen_rational_tests
+[RUN] unhal_tests

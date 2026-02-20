@@ -1,0 +1,51 @@
+[package]
+name = "nine65-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1.3", features = ["derive"] }
+
+[dependencies.nine65]
+path = "../crates/nine65"
+features = ["serde"]
+
+[[bin]]
+name = "fuzz_deserialize"
+path = "fuzz_targets/fuzz_deserialize.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_encrypt_decrypt"
+path = "fuzz_targets/fuzz_encrypt_decrypt.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_homomorphic"
+path = "fuzz_targets/fuzz_homomorphic.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_k_elimination"
+path = "fuzz_targets/fuzz_k_elimination.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_ntt"
+path = "fuzz_targets/fuzz_ntt.rs"
+test = false
+doc = false
+bench = false

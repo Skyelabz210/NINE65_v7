@@ -1,0 +1,94 @@
+warning: function `are_pairwise_coprime` is never used
+  --> crates/clockwork-core/src/basis.rs:36:4
+   |
+36 | fn are_pairwise_coprime(moduli: &[u64]) -> bool {
+   |    ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: field `time_step` is never read
+  --> crates/clockwork-core/src/gro.rs:46:5
+   |
+34 | pub struct GroGate {
+   |            ------- field in this struct
+...
+46 |     time_step: u64,
+   |     ^^^^^^^^^
+   |
+   = note: `GroGate` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: `clockwork-core` (lib) generated 2 warnings
+warning: unused variable: `basis`
+   --> crates/clockwork-core/src/garner.rs:258:13
+    |
+258 |         let basis = RnsBasis::new(moduli.clone()).unwrap();
+    |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_basis`
+    |
+    = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `inv_7_mod_13`
+   --> crates/clockwork-core/src/garner.rs:262:13
+    |
+262 |         let inv_7_mod_13 = mod_inverse(7, 13).unwrap();
+    |             ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_inv_7_mod_13`
+
+warning: `clockwork-core` (lib test) generated 4 warnings (2 duplicates)
+    Finished `release` profile [optimized] target(s) in 0.07s
+     Running unittests src/lib.rs (target/release/deps/clockwork_core-bbf2c6f687c333bb)
+
+running 46 tests
+test basis::tests::centered_lift_properties ... ok
+test basis::tests::rejects_degenerate ... ok
+test basis::tests::rejects_empty ... ok
+test basis::tests::ct01_roundtrip_exhaustive_small ... ok
+test basis::tests::rejects_non_coprime ... ok
+test bound_tracker::tests::addition_bound_correct ... ok
+test bound_tracker::tests::bound_from_value ... ok
+test bound_tracker::tests::dot_product_bound_tighter_than_chain ... ok
+test bound_tracker::tests::multiplication_bound_correct ... ok
+test bound_tracker::tests::promotion_policy ... ok
+test decode_to_q::tests::invariant_q_never_changes ... ok
+test decode_to_q::tests::ct05_roundtrip_centered_exhaustive ... ok
+test decode_to_q::tests::ct05_roundtrip_unsigned_exhaustive ... ok
+test decode_to_q::tests::rejects_insufficient_basis - should panic ... ok
+test garner::tests::ct02_k_eliminate_vs_crt ... ok
+test decode_to_q::tests::ct05_multiple_bases ... ok
+test gearstack::tests::ct03_bound_tracker_never_underestimates ... ok
+test garner::tests::garner_decompose_roundtrip_exhaustive ... ok
+test basis::tests::t1_ring_homomorphism_add ... ok
+test basis::tests::t1_ring_homomorphism_mul ... ok
+test gearstack::tests::insufficient_capacity_detected ... ok
+test gro::tests::golden_ratio_approximation ... ok
+test gro::tests::golden_ratio_maximal_period ... ok
+test gro::tests::gt01_maximal_period_with_odd_difference ... ok
+test gro::tests::gt02_window_equidistribution ... ok
+test gro::tests::windows_exist ... ok
+test integrity::tests::it01_single_copy_corruption_recovery ... ok
+test integrity::tests::it02_double_corruption_fails ... ok
+test garner::tests::ct02_k_eliminate_large_random ... ok
+test integrity::tests::repair_restores_redundancy ... ok
+test integrity::tests::tier_state_corruption_recovery ... ok
+test integrity::tests::tier_state_integrity ... ok
+test key_lifecycle::tests::kt01_multiple_reshares ... ok
+test basis::tests::ct04_promote_demote_roundtrip ... ok
+test key_lifecycle::tests::kt02_memory_zeroing ... ok
+test key_lifecycle::tests::kt03_lifecycle_state_machine ... ok
+test key_lifecycle::tests::kt01_reshare_preserves_secret ... ok
+test key_lifecycle::tests::rejects_double_init ... ok
+test key_lifecycle::tests::rejects_reshare_before_init ... ok
+test gearstack::tests::ct06_lane_add_matches_ring ... ok
+test key_lifecycle::tests::kt04_share_distribution_uniformity ... ok
+test integrity::tests::it03_crc_catches_corruption ... ok
+test gearstack::tests::ct06_lane_mul_matches_ring ... ok
+test garner::tests::garner_decompose_ct_matches_standard ... ok
+test gearstack::tests::ct03_bound_tracker_soundness ... ok
+test basis::tests::ct01_roundtrip_medium_random ... ok
+
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+   Doc-tests clockwork_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

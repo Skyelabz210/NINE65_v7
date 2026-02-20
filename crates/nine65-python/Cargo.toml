@@ -1,0 +1,24 @@
+[package]
+name = "nine65-python"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+name = "nine65_python"
+crate-type = ["cdylib"]
+required-features = ["python"]
+
+[features]
+python = ["dep:pyo3", "nine65/serde"]
+allow_insecure = ["nine65/allow_insecure"]
+
+[dependencies]
+nine65 = { path = "../nine65" }
+
+pyo3 = { version = "0.28", optional = true, features = ["extension-module"] }
+bincode = "1.3"
+
+[package.metadata.maturin]
+name = "nine65_python"

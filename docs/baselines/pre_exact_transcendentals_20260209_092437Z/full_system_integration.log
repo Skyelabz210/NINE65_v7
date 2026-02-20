@@ -1,0 +1,30 @@
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running unittests src/lib.rs (target/release/deps/nine65-c3c5577b7eb6e698)
+
+running 1 test
+
+╔══════════════════════════════════════════════════════════════╗
+║              FULL SYSTEM INTEGRATION BENCHMARK               ║
+╚══════════════════════════════════════════════════════════════╝
+
+Running 20 FHE multiplications with entropy harvesting...
+
+Depth  5: noise=0.0%, collapses=0, entropy sample=0xaf4bc3f8c7c1711d
+Depth 10: noise=0.0%, collapses=0, entropy sample=0xbaf3e0c5f063d4c4
+Depth 15: noise=0.0%, collapses=0, entropy sample=0xff785a63f27e80b2
+Depth 20: noise=0.0%, collapses=0, entropy sample=0x5e068b43c96ab18d
+
+═══════════════════════════════════════════════════════════════
+RESULTS:
+  FHE depth achieved:     20
+  FHE collapses:          0
+  FHE noise ratio:        0.0%
+  Shadow ops:             20
+  Entropy harvested:      640 bits
+  Total time:             530.964381ms
+═══════════════════════════════════════════════════════════════
+
+test ops::gso_fhe::depth_benchmarks::benchmark_full_system_integration ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 499 filtered out; finished in 0.56s
+

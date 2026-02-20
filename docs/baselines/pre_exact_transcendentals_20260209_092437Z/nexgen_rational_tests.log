@@ -1,0 +1,109 @@
+    Finished `release` profile [optimized] target(s) in 0.06s
+     Running unittests src/lib.rs (target/release/deps/nexgen_rational-1137724516b0247c)
+
+running 95 tests
+test binary_gcd::tests::t1_base_case_both_zero ... ok
+test binary_gcd::tests::t1_base_case_zero_u ... ok
+test binary_gcd::tests::t1_commutative ... ok
+test binary_gcd::tests::t1_coprime ... ok
+test binary_gcd::tests::t1_base_case_zero_v ... ok
+test binary_gcd::tests::t1_divisibility_property ... ok
+test binary_gcd::tests::t1_equal_inputs ... ok
+test binary_gcd::tests::t1_example_48_18 ... ok
+test binary_gcd::tests::t1_large_values ... ok
+test binary_gcd::tests::t1_maximality_property ... ok
+test binary_gcd::tests::t1_negative_inputs ... ok
+test binary_gcd::tests::t1_one_input ... ok
+test binary_gcd::tests::t1_positivity_property ... ok
+test binary_gcd::tests::t1_powers_of_two ... ok
+test exact_coeff::tests::checked_add_overflow ... ok
+test exact_coeff::tests::checked_mul_overflow ... ok
+test exact_coeff::tests::checked_neg_min ... ok
+test exact_coeff::tests::t2_addition_associative ... ok
+test exact_coeff::tests::t2_addition_commutative ... ok
+test exact_coeff::tests::t2_additive_identity ... ok
+test exact_coeff::tests::t2_additive_inverse ... ok
+test exact_coeff::tests::t2_distributive ... ok
+test exact_coeff::tests::t2_multiplication_associative ... ok
+test exact_coeff::tests::t2_multiplicative_identity ... ok
+test exact_coeff::tests::t2_multiplication_commutative ... ok
+test rat_ng::error::tests::error_display_divide_by_zero ... ok
+test rat_ng::normalize::tests::i3_asymmetric_sizes ... ok
+test rat_ng::error::tests::error_display_overflow ... ok
+test rat_ng::normalize::tests::i3_bit_width_accuracy ... ok
+test rat_ng::normalize::tests::i3_deterministic ... ok
+test rat_ng::normalize::tests::i3_large_numbers_do_normalize ... ok
+test rat_ng::normalize::tests::i3_small_numbers_no_normalize ... ok
+test rat_ng::normalize::tests::i3_threshold_boundary_below ... ok
+test rat_ng::normalize::tests::i3_threshold_boundary_at ... ok
+test rat_ng::normalize::tests::i3_zero_numerator ... ok
+test rat_ng::normalize::tests::i3_zero_numerator_large_den ... ok
+test rat_ng::normalize::tests::normalize_already_coprime ... ok
+test rat_ng::normalize::tests::normalize_large_values ... ok
+test rat_ng::normalize::tests::normalize_idempotent ... ok
+test rat_ng::normalize::tests::normalize_preserves_value ... ok
+test rat_ng::normalize::tests::normalize_reduces_fraction ... ok
+test rat_ng::normalize::tests::scheduler_default ... ok
+test rat_ng::normalize::tests::normalize_zero_numerator ... ok
+test rat_ng::normalize::tests::scheduler_ema_update ... ok
+test rat_ng::normalize::tests::scheduler_normalization_rate ... ok
+test rat_ng::ops::tests::add_basic ... ok
+test rat_ng::normalize::tests::scheduler_threshold_check ... ok
+test rat_ng::ops::tests::add_negative ... ok
+test rat_ng::ops::tests::add_same_denominator ... ok
+test rat_ng::ops::tests::add_to_zero ... ok
+test rat_ng::ops::tests::add_zero_identity ... ok
+test rat_ng::ops::tests::addition_associative ... ok
+test rat_ng::ops::tests::addition_commutative ... ok
+test rat_ng::ops::tests::distributive_law ... ok
+test rat_ng::ops::tests::div_basic ... ok
+test rat_ng::ops::tests::div_by_zero_error ... ok
+test rat_ng::ops::tests::div_self_is_one ... ok
+test rat_ng::ops::tests::i3_small_operations_skip_normalization ... ok
+test rat_ng::ops::tests::i4_add_overflow_detected ... ok
+test rat_ng::ops::tests::i4_mul_overflow_detected ... ok
+test rat_ng::ops::tests::i4_safe_large_operations ... ok
+test rat_ng::ops::tests::mul_basic ... ok
+test rat_ng::ops::tests::mul_by_one ... ok
+test rat_ng::ops::tests::mul_by_zero ... ok
+test rat_ng::ops::tests::multiplication_associative ... ok
+test rat_ng::ops::tests::multiplication_commutative ... ok
+test rat_ng::ops::tests::neg_basic ... ok
+test rat_ng::ops::tests::neg_double_is_identity ... ok
+test rat_ng::ops::tests::sub_basic ... ok
+test rat_ng::ops::tests::sub_self_is_zero ... ok
+test rat_ng::policy::tests::divide_by_zero_error ... ok
+test rat_ng::policy::tests::division_algorithm_holds_exhaustive ... ok
+test rat_ng::policy::tests::exact_inverse_negative_one ... ok
+test rat_ng::policy::tests::exact_inverse_positive_one ... ok
+test rat_ng::policy::tests::i1_exact_afc_basic ... ok
+test rat_ng::policy::tests::i1_exact_afc_both_negative ... ok
+test rat_ng::policy::tests::i1_exact_afc_large_values ... ok
+test rat_ng::policy::tests::i1_exact_afc_negative_dividend ... ok
+test rat_ng::policy::tests::i1_exact_afc_negative_divisor ... ok
+test rat_ng::policy::tests::i1_exact_afc_zero_dividend ... ok
+test rat_ng::policy::tests::i2_fpd_basic ... ok
+test rat_ng::policy::tests::i2_fpd_both_negative ... ok
+test rat_ng::policy::tests::i2_fpd_negative_dividend ... ok
+test rat_ng::policy::tests::i2_fpd_negative_divisor ... ok
+test rat_ng::policy::tests::i4_overflow_min_div_neg_one ... ok
+test rat_ng::policy::tests::i2_fpd_remainder_bounded ... ok
+test rat_ng::types::tests::display_fraction ... ok
+test rat_ng::types::tests::display_integer ... ok
+test rat_ng::types::tests::divout_exact_inverse ... ok
+test rat_ng::types::tests::divout_fpd ... ok
+test rat_ng::types::tests::equality_cross_multiply ... ok
+test rat_ng::types::tests::new_basic ... ok
+test rat_ng::types::tests::new_negative_denominator_flips ... ok
+test rat_ng::types::tests::try_new_zero_denominator ... ok
+test rat_ng::types::tests::new_zero_denominator_panics - should panic ... ok
+
+test result: ok. 95 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests nexgen_rational
+
+running 1 test
+test crates/nexgen_rational/src/rat_ng/normalize.rs - rat_ng::normalize (line 6) ... ignored
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

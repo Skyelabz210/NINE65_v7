@@ -1,0 +1,26 @@
+    Finished `release` profile [optimized] target(s) in 0.05s
+     Running unittests src/lib.rs (target/release/deps/unhal-595d904cf71150bd)
+
+running 10 tests
+test accelerator::tests::test_accelerator_auto ... ok
+test accelerator::tests::test_add_streams ... ok
+test accelerator::tests::test_sum_streams ... ok
+test batch::tests::test_batch_add ... ok
+test batch::tests::test_broadcast_add ... ok
+test batch::tests::test_reduce_add ... ok
+test pipeline::tests::test_pipeline_add ... ok
+test pipeline::tests::test_pipeline_chain ... ok
+test pipeline::tests::test_pipeline_negate ... ok
+test batch::tests::test_reduce_add_par ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests unhal
+
+running 3 tests
+test crates/unhal/src/accelerator.rs - accelerator (line 10) ... ignored
+test crates/unhal/src/lib.rs - (line 31) ... ignored
+test crates/unhal/src/pipeline.rs - pipeline (line 7) ... ignored
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

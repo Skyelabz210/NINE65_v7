@@ -1,0 +1,401 @@
+openapi: 3.1.0
+info:
+  title: NINE65 Telemetry FHE API
+  version: 1.0.0
+  description: >
+    API contract for ciphertext-only telemetry ingestion and homomorphic
+    evaluation with NINE65 v5 (`SecureConfig::secure_192()`).
+servers:
+  - url: https://api.example.com
+    description: Production placeholder
+  - url: https://staging-api.example.com
+    description: Staging placeholder
+tags:
+  - name: system
+  - name: telemetry
+  - name: fhe
+paths:
+  /healthz:
+    get:
+      tags: [system]
+      summary: Liveness and readiness probe
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/version:
+    get:
+      tags: [system]
+      summary: Build and runtime version metadata
+      operationId: getVersion
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Version metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/metrics:
+    get:
+      tags: [system]
+      summary: Prometheus metrics endpoint
+      operationId: getMetrics
+      security:
+        - serviceJwt: []
+          mutualTLS: []
+      responses:
+        '200':
+          description: Prometheus text format
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/fhe/public-key:
+    get:
+      tags: [fhe]
+      summary: Fetch active FHE public key and metadata
+      operationId: getPublicKey
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active public key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicKeyResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/telemetry/events:
+    post:
+      tags: [telemetry]
+      summary: Ingest encrypted telemetry event
+      operationId: ingestTelemetryEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Key-Id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelemetryEventRequest'
+      responses:
+        '202':
+          description: Accepted for asynchronous processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryAcceptedResponse'
+        '409':
+          description: Duplicate idempotency key or duplicate event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /v1/fhe/evaluate:
+    post:
+      tags: [fhe]
+      summary: Run homomorphic evaluation against ciphertext inputs
+      operationId: evaluateCiphertext
+      security:
+        - serviceJwt: []
+          mutualTLS: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FheEvaluateRequest'
+      responses:
+        '200':
+          description: Evaluation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FheEvaluateResponse'
+        '422':
+          description: Noise budget policy violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    serviceJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    mutualTLS:
+      type: mutualTLS
+
+  responses:
+    ErrorResponse:
+      description: Standard error envelope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        timestamp:
+          type: string
+          format: date-time
+
+    VersionResponse:
+      type: object
+      required: [service, version, git_sha, key_id, config]
+      properties:
+        service:
+          type: string
+          example: fhe-service
+        version:
+          type: string
+          example: 1.0.0
+        git_sha:
+          type: string
+          example: 75c103d
+        key_id:
+          type: string
+          example: fhekey_2026_02
+        config:
+          type: string
+          example: SecureConfig::secure_192()
+
+    PublicKeyResponse:
+      type: object
+      required:
+        [key_id, algorithm, config, public_key_b64, created_at, expires_at]
+      properties:
+        key_id:
+          type: string
+          example: fhekey_2026_02
+        algorithm:
+          type: string
+          example: BFV
+        config:
+          type: string
+          example: SecureConfig::secure_192()
+        public_key_b64:
+          type: string
+          contentEncoding: base64
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+    TelemetryMetadata:
+      type: object
+      additionalProperties: true
+      properties:
+        firmware:
+          type: string
+        sampling_hz:
+          type: integer
+          minimum: 1
+
+    TelemetryEventRequest:
+      type: object
+      required:
+        - event_id
+        - tenant_id
+        - subject_id
+        - device_id
+        - captured_at
+        - signal_type
+        - sequence_no
+        - ciphertext_payload_b64
+        - key_id
+        - model_version
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        subject_id:
+          type: string
+          description: Pseudonymized subject identifier
+        device_id:
+          type: string
+        captured_at:
+          type: string
+          format: date-time
+        signal_type:
+          type: string
+          enum: [hr, hrv, gait, respiration, custom]
+        sequence_no:
+          type: integer
+          format: int64
+          minimum: 0
+        ciphertext_payload_b64:
+          type: string
+          contentEncoding: base64
+        key_id:
+          type: string
+        model_version:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/TelemetryMetadata'
+
+    TelemetryAcceptedResponse:
+      type: object
+      required: [status, event_id, ingest_id, received_at]
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+        event_id:
+          type: string
+          format: uuid
+        ingest_id:
+          type: string
+        received_at:
+          type: string
+          format: date-time
+
+    FheEvaluatePolicy:
+      type: object
+      required: [max_depth, min_noise_budget_bits]
+      properties:
+        max_depth:
+          type: integer
+          minimum: 1
+          maximum: 64
+        min_noise_budget_bits:
+          type: integer
+          minimum: 1
+
+    FheEvaluateRequest:
+      type: object
+      required:
+        - request_id
+        - tenant_id
+        - key_id
+        - model_version
+        - operation
+        - ciphertexts
+        - policy
+      properties:
+        request_id:
+          type: string
+        tenant_id:
+          type: string
+        key_id:
+          type: string
+        model_version:
+          type: string
+        operation:
+          type: string
+          example: risk_score
+        ciphertexts:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            contentEncoding: base64
+        policy:
+          $ref: '#/components/schemas/FheEvaluatePolicy'
+
+    FheEvaluateResponse:
+      type: object
+      required:
+        - request_id
+        - status
+        - result_ciphertext_b64
+        - noise_budget_bits
+        - latency_ms
+        - model_version
+      properties:
+        request_id:
+          type: string
+        status:
+          type: string
+          enum: [completed]
+        result_ciphertext_b64:
+          type: string
+          contentEncoding: base64
+        noise_budget_bits:
+          type: integer
+          minimum: 0
+        latency_ms:
+          type: integer
+          minimum: 0
+        model_version:
+          type: string
+
+    ErrorDetail:
+      type: object
+      required: [code, message, request_id, retryable]
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_PAYLOAD
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - NOT_FOUND
+            - CONFLICT_IDEMPOTENCY
+            - RATE_LIMITED
+            - NOISE_BUDGET_EXCEEDED
+            - INTERNAL_ERROR
+            - UPSTREAM_UNAVAILABLE
+        message:
+          type: string
+        request_id:
+          type: string
+        retryable:
+          type: boolean
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'

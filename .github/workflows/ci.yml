@@ -1,0 +1,449 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run timing tests every Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-git-
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-${{ matrix.rust }}-
+
+      - name: Build (debug)
+        run: cargo build --verbose
+
+      - name: Build (release)
+        run: cargo build --release --verbose
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-test-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run library tests
+        run: cargo test --lib --verbose
+
+      - name: Run all tests
+        run: cargo test --verbose
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-clippy-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run security audit
+        run: cargo audit
+
+  deny:
+    name: Cargo Deny
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install cargo-deny
+        run: cargo install cargo-deny
+
+      - name: Check licenses and advisories
+        run: cargo deny check
+
+  timing-tests:
+    name: Timing Regression Tests
+    runs-on: ubuntu-latest
+    # Run weekly to catch timing regressions without blocking PRs
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[timing]')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-timing-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run constant-time verification tests
+        run: cargo test -p nine65 --lib --release -- --ignored --test-threads=1 2>&1 | tee timing-results.txt
+        env:
+          # Reduce system noise for timing tests
+          RUST_TEST_THREADS: 1
+
+      - name: Upload timing results
+        uses: actions/upload-artifact@v4
+        with:
+          name: timing-results
+          path: timing-results.txt
+
+  claim-drift-check:
+    name: Claim Drift Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate claim registry
+        run: bash scripts/check_claim_registry.sh
+
+      - name: Detect stale claims
+        run: bash scripts/check_stale_claims.sh
+
+  benchmark-check:
+    name: Benchmark Regression Check
+    runs-on: ubuntu-latest
+    # Tiered gate: PRs are advisory, schedule/main pushes are enforced.
+    if: github.event_name == 'pull_request' || github.event_name == 'schedule' || github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for baseline comparison
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-bench-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Select benchmark gate mode
+        id: gate_mode
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            echo "mode=advisory" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=enforced" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Selected benchmark gate mode: $(cat "$GITHUB_OUTPUT")"
+
+      - name: Validate claim registry
+        continue-on-error: ${{ steps.gate_mode.outputs.mode == 'advisory' }}
+        run: bash scripts/check_claim_registry.sh
+
+      - name: Run benchmarks
+        continue-on-error: ${{ steps.gate_mode.outputs.mode == 'advisory' }}
+        run: |
+          cargo bench -p nine65 -- --noplot --save-baseline current 2>&1 | tee bench-results.txt
+          # Extract timing summary
+          echo "=== BENCHMARK SUMMARY ===" >> bench-summary.txt
+          grep -E "time:.*\[" bench-results.txt | tail -20 >> bench-summary.txt || true
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            bench-results.txt
+            bench-summary.txt
+            target/criterion/
+
+      - name: Check for major regressions
+        continue-on-error: ${{ steps.gate_mode.outputs.mode == 'advisory' }}
+        env:
+          BENCHMARK_GATE_MODE: ${{ steps.gate_mode.outputs.mode }}
+        run: |
+          # Criterion emits "Performance has regressed" when baseline comparison fails.
+          if grep -q "Performance has regressed" bench-results.txt; then
+            echo "Performance regression marker detected"
+            grep -B2 "Performance has regressed" bench-results.txt
+            if [[ "${BENCHMARK_GATE_MODE}" == "enforced" ]]; then
+              echo "Enforced mode active: failing benchmark gate"
+              exit 1
+            fi
+            echo "::warning::Benchmark regression marker detected (advisory mode)"
+          fi
+
+  # ═══════════════════════════════════════════════════════════════
+  # NINE65 v6 Quality Gates (added Phase 3, Segment E)
+  # ═══════════════════════════════════════════════════════════════
+
+  no-panics:
+    name: No-Panics Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan for panic patterns
+        run: bash scripts/check_no_panics.sh
+
+  no-floats:
+    name: No-Floats Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan for float usage
+        run: bash scripts/check_no_floats_runtime.sh
+
+  clockwork-tests:
+    name: Clockwork Feature Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-clockwork-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build with clockwork feature
+        run: cargo build -p nine65 --features clockwork
+
+      - name: Run clockwork tests (GRO gates, CT enforcement)
+        run: cargo test -p nine65 --lib --features clockwork -- --test-threads=2
+
+  formalization-check:
+    name: Formalization Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify formalization index completeness
+        run: |
+          # Check that every Coq proof file has a mapping in FORMALIZATION_INDEX.md
+          MISSING=0
+          if [ -d "proofs/coq" ]; then
+            for proof in proofs/coq/*.v; do
+              basename=$(basename "$proof")
+              if ! grep -q "$basename" docs/FORMALIZATION_INDEX.md 2>/dev/null; then
+                echo "MISSING: $basename not in FORMALIZATION_INDEX.md"
+                MISSING=$((MISSING + 1))
+              fi
+            done
+          fi
+          if [ -d "lean4/KElimination" ]; then
+            for proof in lean4/KElimination/*.lean lean4/KElimination/KElimination/*.lean; do
+              if [ -f "$proof" ]; then
+                basename=$(basename "$proof")
+                if ! grep -q "$basename" docs/FORMALIZATION_INDEX.md 2>/dev/null; then
+                  echo "MISSING: $basename not in FORMALIZATION_INDEX.md"
+                  MISSING=$((MISSING + 1))
+                fi
+              fi
+            done
+          fi
+          if [ "$MISSING" -gt 0 ]; then
+            echo "WARNING: $MISSING proof files not in formalization index"
+          else
+            echo "All proof files mapped in formalization index"
+          fi
+
+  error-coverage:
+    name: Error Variant Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-errors-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run error variant coverage tests
+        run: cargo test -p nine65 --test error_variant_coverage
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    # Run on PRs to main
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-coverage-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Generate coverage report
+        run: |
+          cargo tarpaulin -p nine65 --out Xml --out Html --output-dir coverage/ --timeout 300
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/cobertura.xml
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/

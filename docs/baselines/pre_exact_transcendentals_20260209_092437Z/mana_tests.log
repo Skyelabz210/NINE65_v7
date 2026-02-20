@@ -1,0 +1,44 @@
+    Finished `release` profile [optimized] target(s) in 0.07s
+     Running unittests src/lib.rs (target/release/deps/mana-28611ba08510e2f2)
+
+running 30 tests
+test anchor::tests::test_exact_division ... ok
+test anchor::tests::test_fhe_anchor ... ok
+test anchor::tests::test_k_anchor_basic ... ok
+test gso::tests::test_agent_luciferin_update ... ok
+test anchor::tests::test_scale_and_round ... ok
+test gso::tests::test_gso_swarm_iteration ... ok
+test gso::tests::test_qbit_measure_deterministic ... ok
+test gso::tests::test_qbit_rotation ... ok
+test gso::tests::test_qbit_uniform ... ok
+test lane::tests::test_lane_add ... ok
+test lane::tests::test_lane_mul ... ok
+test lane::tests::test_lane_sub ... ok
+test lane::tests::test_lane_neg ... ok
+test lane::tests::test_lane_sub_wrap ... ok
+test lane::tests::test_montgomery_mul ... ok
+test lane::tests::test_montgomery_roundtrip ... ok
+test lane::tests::test_persistent_lane_add ... ok
+test lane::tests::test_persistent_lane_chain ... ok
+test lane::tests::test_persistent_lane_mul ... ok
+test lane::tests::test_persistent_vs_regular_mul ... ok
+test stream::tests::test_large_value_reconstruction ... ok
+test stream::tests::test_crt_reconstruction ... ok
+test stream::tests::test_stream_add ... ok
+test stream::tests::test_stream_mul ... ok
+test parallel::tests::test_parallel_add ... ok
+test parallel::tests::test_parallel_ntt ... ok
+test parallel::tests::test_parallel_mul ... ok
+test parallel::tests::test_parallel_vs_sequential ... ok
+test parallel::tests::test_batch_operations ... ok
+test lane::tests::test_persistent_lane_benchmark ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests mana
+
+running 1 test
+test crates/mana/src/parallel.rs - parallel (line 14) ... ignored
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

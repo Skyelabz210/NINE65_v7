@@ -1,0 +1,11 @@
+crt_shadow_throughput	0
+crt_shadow_signature_overhead	0
+wassan_vs_shadow	0
+ntt_benchmark_1024	0
+persistent_montgomery_benchmark	0
+parallel_throughput_benchmark	0
+entropy_during_fhe	0
+full_system_integration	0
+entropy_during_fhe	0
+full_system_integration	0
+wassan_vs_shadow_perf	0

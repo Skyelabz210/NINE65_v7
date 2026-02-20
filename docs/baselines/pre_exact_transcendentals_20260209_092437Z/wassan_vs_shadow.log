@@ -1,0 +1,11 @@
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running unittests src/lib.rs (target/release/deps/nine65-c3c5577b7eb6e698)
+
+running 1 test
+WASSAN 1M samples: 12.050701ms
+Per sample: 12ns
+Sum (prevent optimization): 4358661000324574365
+test entropy::wassan_noise::tests::test_benchmark_vs_shadow ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 499 filtered out; finished in 0.01s
+

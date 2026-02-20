@@ -1,0 +1,4 @@
+target/
+.git/
+*.cache
+float_scan_results.txt

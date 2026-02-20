@@ -1,0 +1,181 @@
+DIGEST 69b538626c55247bd3e30ad9c35f69e9
+FQMNF.CRTShadowEntropy
+R174:178 Coq.Arith.Arith <> <> lib
+R196:198 Coq.micromega.Lia <> <> lib
+R216:218 Coq.Init.Nat <> <> lib
+def 769:774 <> shadow
+R785:787 Coq.Init.Datatypes <> nat ind
+binder 777:777 <> a:1
+binder 779:779 <> b:2
+binder 781:781 <> m:3
+R792:794 Coq.Init.Datatypes <> nat ind
+R799:799 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R805:808 Coq.Init.Nat <> ::nat_scope:x_'/'_x not
+R801:803 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R800:800 QMNF.CRTShadowEntropy <> a:1 var
+R804:804 QMNF.CRTShadowEntropy <> b:2 var
+R809:809 QMNF.CRTShadowEntropy <> m:3 var
+def 823:828 <> result
+R839:841 Coq.Init.Datatypes <> nat ind
+binder 831:831 <> a:4
+binder 833:833 <> b:5
+binder 835:835 <> m:6
+R846:848 Coq.Init.Datatypes <> nat ind
+R853:853 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R859:864 Coq.Init.Nat <> ::nat_scope:x_'mod'_x not
+R855:857 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R854:854 QMNF.CRTShadowEntropy <> a:4 var
+R858:858 QMNF.CRTShadowEntropy <> b:5 var
+R865:865 QMNF.CRTShadowEntropy <> m:6 var
+prf 922:942 <> shadow_reconstruction
+R961:963 Coq.Init.Datatypes <> nat ind
+binder 953:953 <> a:7
+binder 955:955 <> b:8
+binder 957:957 <> m:9
+R973:976 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R969:971 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R968:968 QMNF.CRTShadowEntropy <> m:9 var
+R982:984 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R978:980 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R977:977 QMNF.CRTShadowEntropy <> a:7 var
+R981:981 QMNF.CRTShadowEntropy <> b:8 var
+R1001:1003 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R997:999 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R985:990 QMNF.CRTShadowEntropy <> shadow def
+R992:992 QMNF.CRTShadowEntropy <> a:7 var
+R994:994 QMNF.CRTShadowEntropy <> b:8 var
+R996:996 QMNF.CRTShadowEntropy <> m:9 var
+R1000:1000 QMNF.CRTShadowEntropy <> m:9 var
+R1004:1009 QMNF.CRTShadowEntropy <> result def
+R1011:1011 QMNF.CRTShadowEntropy <> a:7 var
+R1013:1013 QMNF.CRTShadowEntropy <> b:8 var
+R1015:1015 QMNF.CRTShadowEntropy <> m:9 var
+R1053:1058 QMNF.CRTShadowEntropy <> shadow def
+R1061:1066 QMNF.CRTShadowEntropy <> result def
+R1192:1195 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1192:1195 Coq.Init.Logic <> ::type_scope:x_'<>'_x not
+R1221:1231 Coq.Arith.PeanoNat Nat div_mod thm
+R1235:1237 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R1221:1231 Coq.Arith.PeanoNat Nat div_mod thm
+R1235:1237 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+prf 1461:1474 <> shadow_bounded
+R1493:1495 Coq.Init.Datatypes <> nat ind
+binder 1485:1485 <> a:10
+binder 1487:1487 <> b:11
+binder 1489:1489 <> m:12
+R1505:1508 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1501:1503 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1500:1500 QMNF.CRTShadowEntropy <> m:12 var
+R1514:1517 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1510:1512 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1509:1509 QMNF.CRTShadowEntropy <> a:10 var
+R1513:1513 QMNF.CRTShadowEntropy <> m:12 var
+R1523:1526 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1519:1521 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1518:1518 QMNF.CRTShadowEntropy <> b:11 var
+R1522:1522 QMNF.CRTShadowEntropy <> m:12 var
+R1539:1541 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1527:1532 QMNF.CRTShadowEntropy <> shadow def
+R1534:1534 QMNF.CRTShadowEntropy <> a:10 var
+R1536:1536 QMNF.CRTShadowEntropy <> b:11 var
+R1538:1538 QMNF.CRTShadowEntropy <> m:12 var
+R1542:1542 QMNF.CRTShadowEntropy <> m:12 var
+R1586:1591 QMNF.CRTShadowEntropy <> shadow def
+R1665:1686 Coq.Arith.PeanoNat Nat div_lt_upper_bound abbrev
+R1665:1686 Coq.Arith.PeanoNat Nat div_lt_upper_bound abbrev
+R1744:1746 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1740:1742 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R1748:1750 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R1744:1746 Coq.Init.Peano <> ::nat_scope:x_'<'_x not
+R1740:1742 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R1748:1750 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R1767:1781 Coq.Arith.PeanoNat Nat mul_lt_mono thm
+R1767:1781 Coq.Arith.PeanoNat Nat mul_lt_mono thm
+def 1885:1903 <> shadow_entropy_bits
+R1910:1912 Coq.Init.Datatypes <> nat ind
+binder 1906:1906 <> m:13
+R1917:1919 Coq.Init.Datatypes <> nat ind
+R1924:1931 Coq.Arith.PeanoNat Nat log2 def
+R1933:1933 QMNF.CRTShadowEntropy <> m:13 var
+prf 1945:1958 <> entropy_per_op
+R1973:1975 Coq.Init.Datatypes <> nat ind
+binder 1969:1969 <> m:14
+R1985:1988 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1981:1983 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1980:1980 QMNF.CRTShadowEntropy <> m:14 var
+R2010:2012 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R1989:2007 QMNF.CRTShadowEntropy <> shadow_entropy_bits def
+R2009:2009 QMNF.CRTShadowEntropy <> m:14 var
+R2047:2065 QMNF.CRTShadowEntropy <> shadow_entropy_bits def
+R2076:2087 Coq.Arith.PeanoNat Nat log2_pos thm
+R2076:2087 Coq.Arith.PeanoNat Nat log2_pos thm
+def 2185:2195 <> mix_shadows
+R2215:2217 Coq.Init.Datatypes <> nat ind
+binder 2198:2200 <> acc:15
+binder 2202:2211 <> new_shadow:16
+R2222:2224 Coq.Init.Datatypes <> nat ind
+R2234:2236 Coq.Init.Nat <> ::nat_scope:x_'+'_x not
+R2231:2233 QMNF.CRTShadowEntropy <> acc:15 var
+R2237:2246 QMNF.CRTShadowEntropy <> new_shadow:16 var
+prf 2332:2348 <> accumulator_grows
+R2367:2369 Coq.Init.Datatypes <> nat ind
+binder 2359:2361 <> acc:17
+binder 2363:2363 <> s:18
+R2379:2382 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2375:2377 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R2374:2374 QMNF.CRTShadowEntropy <> s:18 var
+R2400:2402 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R2383:2393 QMNF.CRTShadowEntropy <> mix_shadows def
+R2395:2397 QMNF.CRTShadowEntropy <> acc:17 var
+R2399:2399 QMNF.CRTShadowEntropy <> s:18 var
+R2403:2405 QMNF.CRTShadowEntropy <> acc:17 var
+R2443:2453 QMNF.CRTShadowEntropy <> mix_shadows def
+def 2765:2779 <> bits_per_shadow
+R2783:2785 Coq.Init.Datatypes <> nat ind
+def 2805:2825 <> operations_per_second
+R2829:2831 Coq.Init.Datatypes <> nat ind
+def 2871:2878 <> channels
+R2882:2884 Coq.Init.Datatypes <> nat ind
+def 2904:2915 <> entropy_rate
+R2919:2921 Coq.Init.Datatypes <> nat ind
+R2965:2967 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R2941:2943 Coq.Init.Nat <> ::nat_scope:x_'*'_x not
+R2926:2940 QMNF.CRTShadowEntropy <> bits_per_shadow def
+R2944:2964 QMNF.CRTShadowEntropy <> operations_per_second def
+R2968:2975 QMNF.CRTShadowEntropy <> channels def
+prf 3162:3180 <> entropy_significant
+R3196:3198 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3184:3195 QMNF.CRTShadowEntropy <> entropy_rate def
+rec 3689:3705 <> QuotientSignature
+proj 3714:3722 <> qs_shadow
+proj 3733:3742 <> qs_modulus
+R3726:3728 Coq.Init.Datatypes <> nat ind
+R3746:3748 Coq.Init.Datatypes <> nat ind
+def 3766:3782 <> magnitude_greater
+R3791:3807 QMNF.CRTShadowEntropy <> QuotientSignature rec
+binder 3785:3785 <> a:22
+binder 3787:3787 <> b:23
+R3812:3815 Coq.Init.Datatypes <> bool ind
+R3822:3828 Coq.Arith.PeanoNat Nat ltb def
+R3833:3841 QMNF.CRTShadowEntropy <> qs_shadow proj
+R3830:3830 QMNF.CRTShadowEntropy <> b:23 var
+R3847:3855 QMNF.CRTShadowEntropy <> qs_shadow proj
+R3844:3844 QMNF.CRTShadowEntropy <> a:22 var
+prf 3868:3892 <> comparison_reflects_order
+R3909:3925 QMNF.CRTShadowEntropy <> QuotientSignature rec
+binder 3903:3903 <> a:24
+binder 3905:3905 <> b:25
+R3958:3961 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3951:3953 Coq.Init.Logic <> ::type_scope:x_'='_x not
+R3930:3946 QMNF.CRTShadowEntropy <> magnitude_greater def
+R3948:3948 QMNF.CRTShadowEntropy <> a:24 var
+R3950:3950 QMNF.CRTShadowEntropy <> b:25 var
+R3954:3957 Coq.Init.Datatypes <> true constr
+R3975:3977 Coq.Init.Peano <> ::nat_scope:x_'>'_x not
+R3965:3973 QMNF.CRTShadowEntropy <> qs_shadow proj
+R3962:3962 QMNF.CRTShadowEntropy <> a:24 var
+R3981:3989 QMNF.CRTShadowEntropy <> qs_shadow proj
+R3978:3978 QMNF.CRTShadowEntropy <> b:25 var
+R4025:4041 QMNF.CRTShadowEntropy <> magnitude_greater def
+R4057:4066 Coq.Arith.PeanoNat Nat ltb_lt thm
+R4057:4066 Coq.Arith.PeanoNat Nat ltb_lt thm

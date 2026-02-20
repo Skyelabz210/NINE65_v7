@@ -1,0 +1,13 @@
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running unittests src/lib.rs (target/release/deps/nine65-c3c5577b7eb6e698)
+
+running 1 test
+
+=== Signature Overhead Benchmark (100000 ops) ===
+  Without signature: 11.794977ms
+  With signature: 10.107893ms
+  Overhead: 0.0%
+test entropy::crt_shadow::tests::test_benchmark_signature_overhead ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 499 filtered out; finished in 0.02s
+
