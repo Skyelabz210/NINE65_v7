@@ -143,7 +143,7 @@ impl RnsBasis {
         // Precompute CRT reconstruction coefficients
         // For each i: M_i = M_k / p_i, then coeff_i = M_i * (M_i^{-1} mod p_i)
         let mut crt_coeffs = Vec::with_capacity(moduli.len());
-        for (_i, &p_i) in moduli.iter().enumerate() {
+        for &p_i in &moduli {
             let m_i = capacity / (p_i as u128);
             let m_i_mod_pi = (m_i % (p_i as u128)) as i128;
             let inv = mod_inverse(m_i_mod_pi, p_i as i128)

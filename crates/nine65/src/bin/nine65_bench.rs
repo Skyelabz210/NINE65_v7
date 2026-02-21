@@ -8,7 +8,6 @@
 ///
 /// Build:
 ///   cargo build --release -p nine65 --bin nine65_bench --features serde
-
 use nine65::prelude::*;
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use serde_json::{json, Value};
@@ -413,6 +412,7 @@ fn main() {
 }
 
 /// Run a scale test workload and return JSON summary
+#[allow(clippy::too_many_arguments)]
 fn run_scale_test(
     config: &FHEConfig,
     _ntt: &NTTEngine,

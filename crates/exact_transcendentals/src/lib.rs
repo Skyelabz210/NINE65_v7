@@ -856,7 +856,7 @@ mod cross_validation {
 
         // sin(pi/6) — should be 0.5
         // pi/6 at 30-bit scale
-        let pi_6_30 = precision_30::PI as i64 / 6;
+        let pi_6_30 = precision_30::PI / 6;
         let sin_cordic = engine.sin(pi_6_30) as i128;
 
         // Taylor sin at 20-bit scale, then rescale
@@ -1306,7 +1306,7 @@ mod truth_perturber {
 
         for &angle in &test_angles {
             let sin_base = engine.sin(angle) as i128;
-            let sin_wrapped = engine.sin(angle + TWO_PI as i64) as i128;
+            let sin_wrapped = engine.sin(angle + TWO_PI) as i128;
 
             let diff = (sin_base - sin_wrapped).abs();
             // Integer periodicity: exact wrapping depends on 2π representation precision
@@ -1329,7 +1329,7 @@ mod truth_perturber {
 
         let angle = HALF_PI / 3; // pi/6
         let sin_x = engine.sin(angle) as i128;
-        let sin_x_plus_pi = engine.sin(angle + PI as i64) as i128;
+        let sin_x_plus_pi = engine.sin(angle + PI) as i128;
 
         // sin(x + π) + sin(x) should be ~0
         let sum = sin_x + sin_x_plus_pi;

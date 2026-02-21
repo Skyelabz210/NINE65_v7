@@ -2348,7 +2348,7 @@ mod tests {
         // Verify bit-length is in expected range (~204 bits for these 7 primes)
         let bl = product.bitlen();
         assert!(
-            bl >= 200 && bl <= 210,
+            (200..=210).contains(&bl),
             "secure_256 product bit-length {} outside expected range 200..210",
             bl
         );

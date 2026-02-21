@@ -1330,8 +1330,8 @@ mod tests {
         let t = 65537u128;
         let q_min_half = q_min / 2;
 
-        // x=0 → 0
-        let result_0 = ((0u128 * t + q_min_half) / q_min) % t;
+        // x=0 → modswitch formula gives (0 + q_min_half) / q_min = 0
+        let result_0 = (q_min_half / q_min) % t;
         assert_eq!(result_0, 0, "modswitch(0) should be 0");
 
         // x=Q_min-1: round((Q-1)*t/Q) ≈ t, so %t = 0 (wraps around)
@@ -1378,7 +1378,8 @@ mod tests {
         let q_min: u128 = 998244353u128 * 985661441u128;
         let t = 65537u128;
         let q_min_half = q_min / 2;
-        let result = ((0u128 * t + q_min_half) / q_min) % t;
+        // x=0: modswitch formula gives (0 + q_min_half) / q_min = 0
+        let result = (q_min_half / q_min) % t;
         assert_eq!(result, 0, "modswitch(0) must be 0");
     }
 
@@ -2264,7 +2265,7 @@ mod tests {
 
         for (label, cfg) in configs {
             // Construction succeeds (assert_boot_invariants runs inside new())
-            let boot = ClockworkBootstrap::new(&cfg).expect(&format!("{}: boot", label));
+            let boot = ClockworkBootstrap::new(&cfg).unwrap_or_else(|_| panic!("{}: boot", label));
 
             // Structural: subset + single drop prime
             for &wp in &cfg.primes {
@@ -2317,7 +2318,7 @@ mod tests {
             let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
             let fresh = boot
                 .bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk)
-                .expect(&format!("bootstrap m={}", m));
+                .unwrap_or_else(|_| panic!("bootstrap m={}", m));
             let dec = ctx.decrypt_dual(&fresh, &keys.secret_key);
             assert_eq!(dec, m, "roundtrip fail m={} got={}", m, dec);
         }

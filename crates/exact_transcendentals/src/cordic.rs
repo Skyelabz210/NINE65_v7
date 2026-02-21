@@ -168,6 +168,7 @@ impl CordicEngine {
     /// Input: angle in scaled radians (angle × 2^30)
     /// Output: (cos × 2^30, sin × 2^30)
     #[inline]
+    #[allow(clippy::needless_range_loop)] // i used for both indexing and bit shifts (>> i)
     pub fn sincos(&self, mut angle: i64) -> (i64, i64) {
         // O(1) range reduction to [-π, π] using modular arithmetic.
         // The while-loop approach was O(n) for large accumulated angles
@@ -281,6 +282,7 @@ impl CordicEngine {
     /// Input: y/x ratio as scaled integer
     /// Output: angle in scaled radians
     #[inline]
+    #[allow(clippy::needless_range_loop)] // i used for both indexing and bit shifts (>> i)
     pub fn atan(&self, ratio: i64) -> i64 {
         // Vectoring mode: start with (x, y) = (SCALE, ratio), drive y to 0
         let mut x = SCALE;
@@ -830,7 +832,7 @@ mod tests {
         let error = (product - exp_sum).abs() as f64 / SCALE as f64;
         println!(
             "exp(0.25)×exp(0.25) = {:.6}, exp(0.5) = {:.6}, error = {:.2e}",
-            from_scaled(product as i64),
+            from_scaled(product),
             from_scaled(exp_sum),
             error
         );

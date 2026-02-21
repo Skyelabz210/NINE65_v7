@@ -1138,7 +1138,7 @@ fn test_noise_budget_analysis() {
     let delta_bits = q_boot_bits - t_bits;
 
     let eta_bits = 64 - (config.eta as u64).leading_zeros();
-    let n_half_bits = (config.n.trailing_zeros() + 1) / 2;
+    let n_half_bits = config.n.trailing_zeros().div_ceil(2);
     let noise_bits = t_bits + eta_bits + n_half_bits;
 
     let margin = delta_bits - noise_bits;

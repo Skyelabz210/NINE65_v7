@@ -642,7 +642,7 @@ mod tests {
             // Allow variance due to integer rounding and hybrid attack complexity
             // Expected: ~900/1000 (10% reduction), Allow range: 850-950 (5-15%)
             assert!(
-                reduction_ratio >= 850 && reduction_ratio <= 950,
+                (850..=950).contains(&reduction_ratio),
                 "{}: ratio {}/1000 should be near 900 (got {})",
                 desc,
                 reduction_ratio,

@@ -120,7 +120,7 @@ fn bench_sign_detection(c: &mut Criterion) {
     let relu = MQReLU::new(modulus);
 
     let positive = 123456u64;
-    let negative = modulus - 123456u64;
+    let _negative = modulus - 123456u64;
 
     group.bench_function("MobiusInt sign", |bencher| {
         bencher.iter(|| {
@@ -224,7 +224,7 @@ fn bench_transcendentals(c: &mut Criterion) {
 
     // Scaled integer inputs (uses i128)
     let x: i128 = 1 << 19; // 0.5 in scaled form
-    let x_large: i128 = 1 << 20; // 1.0 in scaled form
+    let _x_large: i128 = 1 << 20; // 1.0 in scaled form
 
     group.bench_function("Padé exp", |bencher| {
         bencher.iter(|| {
