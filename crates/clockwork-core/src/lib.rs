@@ -18,9 +18,9 @@
 
 // NOTE: unsafe is used ONLY in key_lifecycle::zero_u64 for volatile memory zeroing (A4).
 // All other code is safe Rust.
-// NOTE: In production, enable these:
-// #![deny(clippy::float_arithmetic)]
-// #![deny(clippy::float_cmp)]
+#![deny(unsafe_code)]
+#![deny(clippy::float_arithmetic)]
+#![deny(clippy::float_cmp)]
 
 pub mod basis;
 pub mod bound_tracker;

@@ -32,7 +32,8 @@ impl ExactNoiseTracker {
     pub fn new(budget_bits: u32) -> Self {
         let total = RationalBridge::from_integer(budget_bits as i128);
         // Initial noise after encryption: ~3.2 bits = 16/5
-        let initial_noise = RationalBridge::new(16, 5).unwrap();
+        let initial_noise = RationalBridge::new(16, 5)
+            .expect("16/5 is a valid rational constant");
         Self {
             total_budget: total,
             current_noise: initial_noise,
@@ -89,10 +90,16 @@ impl ExactNoiseTracker {
         self.flush_additions();
 
         // Noise doubles + log2(t) + small constant
-        let doubled = self.current_noise.add(&self.current_noise).unwrap();
+        let doubled = self
+            .current_noise
+            .add(&self.current_noise)
+            .unwrap_or(self.current_noise.clone());
         let log2_t = RationalBridge::from_integer(ilog2_exact(plaintext_modulus));
         let constant = RationalBridge::from_integer(1);
-        self.current_noise = doubled.add(&log2_t).unwrap().add(&constant).unwrap();
+        self.current_noise = doubled
+            .add(&log2_t)
+            .and_then(|v| v.add(&constant))
+            .unwrap_or(doubled);
         self.mul_count += 1;
     }
 

@@ -263,19 +263,17 @@ impl Drop for KeyLifecycle {
 
 // ─── Memory zeroing (A4) ────────────────────────────────────────────────────
 
-/// Zero a u64 value using volatile write to prevent compiler optimization.
+/// Zero a u64 value using the `zeroize` crate's compiler-barrier-backed zeroing.
 ///
 /// **Formal Spec A4**: Memory zeroing primitive that completes in
 /// time independent of the prior contents.
+///
+/// Uses the `zeroize` crate which provides volatile writes with proper
+/// compiler barriers and inline assembly where available, preventing
+/// dead-store elimination across all supported platforms.
 fn zero_u64(val: &mut u64) {
-    // Safety: we're writing a known value to a valid, aligned location.
-    // Using core volatile to prevent dead-store elimination.
-    // In a real implementation, use platform-specific secure zeroing.
-    unsafe {
-        core::ptr::write_volatile(val as *mut u64, 0u64);
-    }
-    // Compiler fence to prevent reordering
-    core::sync::atomic::fence(core::sync::atomic::Ordering::SeqCst);
+    use zeroize::Zeroize;
+    val.zeroize();
 }
 
 // ─── Tests: Formal Spec Test Obligations KT-01 through KT-04 ───────────────

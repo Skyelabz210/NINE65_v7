@@ -1532,7 +1532,6 @@ impl RNSFHEContext {
     ///
     /// This is the fallback method when K-Elimination is too slow.
     /// Uses per-limb scaling which gives approximate results with bounded error.
-    #[allow(dead_code)]
     fn approx_rescale(&self, poly: &RNSPolynomial) -> RNSPolynomial {
         let poly_standard = self.convert_from_montgomery_form(poly);
         let mut result_limbs: Vec<Vec<u64>> = vec![vec![0u64; self.n]; self.rns.num_primes()];
@@ -3502,89 +3501,10 @@ impl RNSFHEContext {
         self.dual_poly_add(a_ntt, b_ntt) // Same as coefficient-domain add
     }
 
-    /// K-Elimination rescale in NTT DOMAIN (Q² bound)
-    ///
-    /// ⚠️ DEPRECATED: NTT-domain K-Elimination is INVALID for multi-prime RNS.
-    ///
-    /// K-Elimination requires coefficients to represent the SAME value mod different primes.
-    /// In NTT domain, different primes use different primitive roots:
-    ///   NTT_{p1}(poly)[i] ≠ NTT_{p2}(poly)[i] as algebraic values
-    ///
-    /// Use `k_elim_rescale_dual` in coefficient domain instead.
-    /// This function is kept only for reference/single-prime edge cases.
-    #[allow(dead_code)]
-    #[deprecated(note = "Use k_elim_rescale_dual in coefficient domain instead")]
-    fn k_elim_rescale_ntt_domain(&self, _poly_ntt: &DualRNSPoly) -> DualRNSPoly {
-        panic!(
-            "k_elim_rescale_ntt_domain is invalid for multi-prime RNS. \
-                K-Elim requires coefficient domain. Use k_elim_rescale_dual instead."
-        );
-
-        // Original implementation commented out for reference:
-        /*
-        let delta = self.q_product / self.t as u128;
-        let m_product = self.dual_rns.main_product;
-        let a_product = self.dual_rns.anchor_product;
-        let m_inv_a = self.dual_rns.main_inv_anchor;
-
-        let mut result_main: Vec<Vec<u64>> = vec![vec![0u64; self.n]; self.config.primes.len()];
-        let mut result_anchor: Vec<Vec<u64>> = vec![vec![0u64; self.n]; self.dual_rns.anchor.primes.len()];
-
-        for i in 0..self.n {
-            // Each NTT point is independent, bounded by Q² (single product)
-            // vs coefficient domain Q²×N (sum of N products)
-
-            // Reconstruct v_m from main RNS (mod M)
-            let main_residues: Vec<u64> = poly_ntt.main.iter().map(|limb| limb[i]).collect();
-            let v_m = self.rns.to_int(&main_residues);
-
-            // Reconstruct v_a from anchor RNS (mod A)
-            let anchor_residues: Vec<u64> = poly_ntt.anchor.iter().map(|limb| limb[i]).collect();
-            let v_a = self.dual_rns.anchor.to_int(&anchor_residues);
-
-            // K-Elimination: compute k such that exact_value = v_m + k*M
-            // k = ((v_a - v_m mod A) × M⁻¹) mod A
-            //
-            // Key insight: actual k ≤ Q²/M ≈ Q (fits in u64) because exact_value < Q²
-            // But intermediate computation can overflow, so use modular multiplication
-            let v_m_mod_a = v_m % a_product;
-            let diff = if v_a >= v_m_mod_a {
-                v_a - v_m_mod_a
-            } else {
-                a_product - v_m_mod_a + v_a
-            };
-
-            // Use modular multiplication to avoid overflow: (diff * m_inv_a) mod a_product
-            let k = mul_mod_u128(diff, m_inv_a, a_product);
-
-            // Reconstruct exact NTT point value
-            // Since exact_value < Q² and v_m < M, k < Q²/M = Q, so k * m_product < Q² × M
-            // which still might overflow u128 for large Q. Use checked arithmetic.
-            let k_times_m = k.checked_mul(m_product).unwrap_or_else(|| {
-                // For very large k, use modular approach: k * m_product mod (large_value)
-                // But actually if this happens, the value wouldn't fit anyway.
-                // In practice with correct NTT point bounds, this shouldn't overflow.
-                panic!("K-Elimination overflow: k={}, m_product={}", k, m_product);
-            });
-            let exact_value = v_m.saturating_add(k_times_m);
-
-            // Divide by Δ (round to nearest) - this is the rescaling
-            let scaled = (exact_value + delta / 2) / delta;
-
-            // Re-encode to main RNS (stays in "NTT form" - same representation)
-            for (j, &p) in self.config.primes.iter().enumerate() {
-                result_main[j][i] = (scaled % p as u128) as u64;
-            }
-
-            // Re-encode to anchor RNS
-            for (j, &p) in self.dual_rns.anchor.primes.iter().enumerate() {
-                result_anchor[j][i] = (scaled % p as u128) as u64;
-            }
-        }
-
-        DualRNSPoly { main: result_main, anchor: result_anchor, n: self.n }
-        */
-    }
+    // NOTE: k_elim_rescale_ntt_domain was removed during audit hardening.
+    // NTT-domain K-Elimination is INVALID for multi-prime RNS because
+    // different primes use different primitive roots. Use k_elim_rescale_dual
+    // in coefficient domain instead. See mul_ntt_domain() for the correct approach.
 
     /// Full NTT-domain CT×CT multiplication
     ///
@@ -3729,7 +3649,6 @@ impl RNSFHEContext {
     // ========================================================================
 
     /// Convert coefficient vector to main RNS form
-    #[allow(dead_code)]
     fn to_main_rns(&self, coeffs: &[u64]) -> Vec<Vec<u64>> {
         self.config
             .primes

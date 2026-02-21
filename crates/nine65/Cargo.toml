@@ -98,8 +98,4 @@ harness = false
 required-features = ["benchmarks"]
 
 [[example]]
-name = "thread_comparison_benchmark"
-path = "../../thread_comparison_benchmark.rs"
-
-[[example]]
 name = "test_mod_switch"

@@ -848,6 +848,23 @@ impl DualRNSContext {
         }
     }
 
+    /// Canonical anchor primes for a given polynomial degree N.
+    ///
+    /// Returns the deterministic set of NTT-compatible anchor primes used by
+    /// both work and boot contexts. This is the single source of truth —
+    /// `for_fhe()` delegates here, and bootstrap invariant checks compare
+    /// against this list to detect anchor drift.
+    ///
+    /// All primes satisfy (p-1) % (2*n) == 0 for supported n values and are
+    /// > 2×10^9 (above max rescaled coefficient ~1.3×10^9).
+    pub fn canonical_anchor_primes_for_n(_n: usize) -> Vec<u64> {
+        // 2013265921 = 15 × 2^27 + 1, works for n up to 2^26
+        // 2281701377 = 17 × 2^27 + 1, works for n up to 2^26
+        // 2483027969 = 37 × 2^26 + 1, works for n up to 2^25
+        // IMPORTANT: Need at least 3 primes for k reconstruction in extract_k_rns
+        vec![2013265921, 2281701377, 2483027969]
+    }
+
     /// Create optimized dual-RNS for FHE
     ///
     /// Uses the provided main primes and selects appropriate NTT-compatible anchor primes.
@@ -856,14 +873,7 @@ impl DualRNSContext {
     /// For n=1024: anchor primes with (p-1) % 2048 == 0
     /// CRITICAL: All anchor primes must be > max rescaled coefficient (~1.3×10^9)
     pub fn for_fhe(main_primes: &[u64], n: usize) -> Self {
-        // Use NTT-compatible anchor primes > 2×10^9
-        // These satisfy (p-1) % 2n == 0 for all supported n values
-        // 2013265921 = 15 × 2^27 + 1, works for n up to 2^26
-        // 2281701377 = 17 × 2^27 + 1, works for n up to 2^26
-        // 2483027969 = 37 × 2^26 + 1, works for n up to 2^25
-        // IMPORTANT: Need at least 3 primes for k reconstruction in extract_k_rns
-        let anchor_primes = vec![2013265921, 2281701377, 2483027969];
-
+        let anchor_primes = Self::canonical_anchor_primes_for_n(n);
         Self::new(main_primes.to_vec(), anchor_primes, n)
     }
 

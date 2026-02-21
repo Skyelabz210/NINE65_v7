@@ -177,6 +177,7 @@ dependencies = [
  "crc32fast",
  "rand 0.8.5",
  "subtle",
+ "zeroize",
 ]
 
 [[package]]
