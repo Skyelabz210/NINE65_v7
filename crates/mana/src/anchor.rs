@@ -195,7 +195,8 @@ impl AnchorContext {
         for (lane_offset, &p) in primes.iter().enumerate() {
             let lane_idx = lane_start + lane_offset;
             let mi = product / p as u128;
-            let mi_inv = mod_inverse_u128(mi % p as u128, p as u128).unwrap();
+            let mi_inv = mod_inverse_u128(mi % p as u128, p as u128)
+                .expect("RNS primes must be pairwise coprime");
             let coeff = stream.lanes[lane_idx].coeffs[coeff_idx] as u128;
             let term = (coeff * mi_inv) % p as u128;
             let contribution = (term * mi) % product;

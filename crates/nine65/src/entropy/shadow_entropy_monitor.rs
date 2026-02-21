@@ -176,7 +176,7 @@ impl ShadowEntropyMonitor {
     /// Record performance for a specific batch size to determine optimal thread count
     #[cfg(feature = "adaptive-threading")]
     pub fn record_performance(&self, batch_size: usize, duration: std::time::Duration) {
-        let mut history = self.performance_history.lock().unwrap();
+        let mut history = self.performance_history.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         history.push((batch_size, duration));
 
         // Keep only the last 20 records to prevent unbounded growth
@@ -195,7 +195,7 @@ impl ShadowEntropyMonitor {
     /// Determine the optimal thread count based on performance history and workload
     #[cfg(feature = "adaptive-threading")]
     fn determine_optimal_threads(&self, current_batch_size: usize) -> u64 {
-        let history = self.performance_history.lock().unwrap();
+        let history = self.performance_history.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         // If we don't have enough data, use heuristics based on current batch size
         if history.len() < 5 {
@@ -409,13 +409,13 @@ impl AdaptiveFHEContext {
                 
                 // Only proceed with mutex if the recommendation actually changed
                 if cached_threads != recommended_threads {
-                    let current_pool = self.thread_pool.lock().unwrap();
+                    let current_pool = self.thread_pool.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
                     // Double-check after acquiring lock (in case another thread updated it)
                     if current_pool.current_num_threads() != recommended_threads {
                         drop(current_pool); // Release lock before expensive recreation
 
-                        let mut pool_guard = self.thread_pool.lock().unwrap();
+                        let mut pool_guard = self.thread_pool.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
                         *pool_guard = Arc::new(Self::create_thread_pool(recommended_threads));
                         
                         // Update the cached value
@@ -488,7 +488,7 @@ impl AdaptiveFHEContext {
             self.update_thread_pool_if_needed(batch_size);
 
             // Clone Arc to existing pool (cheap operation)
-            let pool = self.thread_pool.lock().unwrap().clone();
+            let pool = self.thread_pool.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).clone();
 
             let result = pool.install(|| {
                 messages
@@ -582,7 +582,7 @@ impl AdaptiveFHEContext {
             self.update_thread_pool_if_needed(batch_size);
 
             // Reuse persistent pool
-            let pool = self.thread_pool.lock().unwrap().clone();
+            let pool = self.thread_pool.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).clone();
 
             let result = pool.install(|| {
                 ciphertexts
@@ -638,7 +638,7 @@ impl AdaptiveFHEContext {
         self.update_thread_pool_if_needed(batch_size);
 
         // Reuse persistent pool
-        let pool = self.thread_pool.lock().unwrap().clone();
+        let pool = self.thread_pool.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).clone();
 
         let result = pool.install(|| {
             ct1_list
@@ -696,7 +696,7 @@ impl AdaptiveFHEContext {
         self.update_thread_pool_if_needed(batch_size);
 
         // Reuse persistent pool
-        let pool = self.thread_pool.lock().unwrap().clone();
+        let pool = self.thread_pool.lock().unwrap_or_else(|poisoned| poisoned.into_inner()).clone();
 
         let result = pool.install(|| {
             ct1_list
