@@ -15,6 +15,7 @@
 //! relinearization or key switching is needed.
 
 use crate::arithmetic::k_elimination::KElimination;
+use crate::arithmetic::rns::DualRNSContext;
 use crate::entropy::ShadowHarvester;
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::bootstrap::{
@@ -42,6 +43,66 @@ pub struct ClockworkBootstrap {
     pub bootstrap_depth: usize,
     /// Boot RNSFHEContext for NTT operations within bootstrap.
     pub boot_ctx: RNSFHEContext,
+}
+
+/// Validate critical structural invariants after boot context creation.
+///
+/// 1. Work primes must be a subset of boot primes (modswitch drops the extra).
+/// 2. Boot primes must contain exactly one prime not in work primes (the drop prime).
+/// 3. Boot context anchor primes must equal the canonical anchor list for this N —
+///    prevents silent anchor drift between work and boot contexts.
+fn assert_boot_invariants(
+    work: &FHEConfig,
+    boot: &FHEConfig,
+    boot_ctx: &RNSFHEContext,
+) -> Nine65Result<()> {
+    // 1) work primes must be subset of boot primes
+    for &wp in &work.primes {
+        if !boot.primes.contains(&wp) {
+            return Err(Nine65Error::BootstrapConfigMismatch {
+                reason: format!("Boot primes must contain work prime {}", wp),
+            });
+        }
+    }
+
+    // 2) boot must contain exactly one extra prime (the drop prime)
+    let extras: Vec<u64> = boot
+        .primes
+        .iter()
+        .copied()
+        .filter(|bp| !work.primes.contains(bp))
+        .collect();
+
+    if extras.len() != 1 {
+        return Err(Nine65Error::BootstrapConfigMismatch {
+            reason: format!(
+                "Boot primes must have exactly 1 extra prime, found {} extras: {:?}",
+                extras.len(),
+                extras
+            ),
+        });
+    }
+
+    // 3) anchor primes must match the canonical set for this N
+    let canonical = DualRNSContext::canonical_anchor_primes_for_n(work.n);
+    let boot_anchors = &boot_ctx.dual_rns.anchor.primes;
+
+    if boot_anchors.is_empty() {
+        return Err(Nine65Error::BootstrapConfigMismatch {
+            reason: "Boot context anchor primes empty".into(),
+        });
+    }
+
+    if boot_anchors.len() != canonical.len() || !boot_anchors.iter().zip(&canonical).all(|(a, b)| a == b) {
+        return Err(Nine65Error::BootstrapConfigMismatch {
+            reason: format!(
+                "Boot anchor primes {:?} do not match canonical {:?}",
+                boot_anchors, canonical
+            ),
+        });
+    }
+
+    Ok(())
 }
 
 impl ClockworkBootstrap {
@@ -95,6 +156,8 @@ impl ClockworkBootstrap {
         }
 
         let boot_ctx = RNSFHEContext::try_new(&boot_config)?;
+
+        assert_boot_invariants(work_config, &boot_config, &boot_ctx)?;
 
         Ok(Self {
             work_config: work_config.clone(),
@@ -922,7 +985,11 @@ impl ClockworkBootstrap {
         // Recompute anchor limbs from main limbs via CRT reconstruction.
         // K-Elimination rescale needs valid anchor residues; zero anchors
         // produce garbage k values and corrupt subsequent multiplications.
-        let anchor_primes = &self.boot_ctx.dual_rns.anchor.primes;
+        //
+        // Use canonical anchor primes (not boot_ctx) to make the intent explicit
+        // and eliminate any risk of boot/work anchor divergence.
+        let canonical_anchors = DualRNSContext::canonical_anchor_primes_for_n(self.n);
+        let anchor_primes = &canonical_anchors;
         let num_work_anchors = anchor_primes.len();
 
         // CRT inverses for work primes (Garner's algorithm)
@@ -2058,5 +2125,201 @@ mod tests {
             evaluator.bootstrap_count > 0,
             "AutoBootstrap should have triggered at least once during 10 muls"
         );
+    }
+
+    // =====================================================================
+    // AUDIT HARDENING: Boot Invariant Tests
+    // =====================================================================
+
+    /// Verify boot primes are a superset of work primes with exactly one extra
+    /// (the drop prime). This is the structural invariant enforced by
+    /// `assert_boot_invariants()` at construction time.
+    #[test]
+    fn test_boot_primes_subset_and_single_drop_prime() {
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let boot = ClockworkBootstrap::new(&config).expect("boot");
+
+        for &wp in &boot.work_config.primes {
+            assert!(
+                boot.boot_config.primes.contains(&wp),
+                "Boot primes must contain work prime {}",
+                wp
+            );
+        }
+        let extras: Vec<u64> = boot
+            .boot_config
+            .primes
+            .iter()
+            .copied()
+            .filter(|bp| !boot.work_config.primes.contains(bp))
+            .collect();
+        assert_eq!(
+            extras.len(),
+            1,
+            "expected exactly 1 extra boot prime, got {:?}",
+            extras
+        );
+    }
+
+    /// Verify boot context anchor primes match the canonical anchor list.
+    #[test]
+    fn test_boot_anchor_primes_match_canonical() {
+        use crate::arithmetic::rns::DualRNSContext;
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let boot = ClockworkBootstrap::new(&config).expect("boot");
+
+        let canonical = DualRNSContext::canonical_anchor_primes_for_n(config.n);
+        let boot_anchors = &boot.boot_ctx.dual_rns.anchor.primes;
+
+        assert_eq!(
+            boot_anchors.len(),
+            canonical.len(),
+            "anchor count mismatch"
+        );
+        for (i, (&got, &expected)) in boot_anchors.iter().zip(&canonical).enumerate() {
+            assert_eq!(got, expected, "anchor prime [{}] mismatch", i);
+        }
+    }
+
+    /// After bootstrap, anchor limbs must equal CRT(main) mod each anchor prime.
+    /// This catches silent anchor corruption or Phase 3 recomputation errors.
+    #[test]
+    fn test_bootstrap_output_anchor_consistency() {
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::try_new(&config).expect("ctx");
+        let boot = ClockworkBootstrap::new(&config).expect("boot");
+        let mut rng = ShadowHarvester::with_seed(7);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("boot keys");
+
+        let ct = ctx.encrypt_dual(4242, &keys.public_key, &mut rng);
+        let fresh = boot
+            .bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk)
+            .expect("bootstrap");
+
+        // Work primes for CRT reconstruction
+        let primes_u128: Vec<u128> = config.primes.iter().map(|&p| p as u128).collect();
+
+        // Precompute Garner inverses
+        let mut inv = vec![0u128; primes_u128.len()];
+        let mut partial = 1u128;
+        for k in 0..primes_u128.len() {
+            if k > 0 {
+                inv[k] = mod_inverse_u128(partial, primes_u128[k]).expect("inv");
+            }
+            partial *= primes_u128[k];
+        }
+
+        // Anchor primes from context
+        let anchor_primes = &ctx.dual_rns.anchor.primes;
+        assert!(!anchor_primes.is_empty());
+
+        // Sample coefficient positions
+        let max_pos = config.n.min(128);
+        let positions: Vec<usize> = (0..max_pos).step_by(max_pos / 6).collect();
+        for pos in positions {
+            let c0_full = crt_reconstruct_n(
+                fresh.c0.main.iter().map(|limb| limb[pos] as u128),
+                &primes_u128,
+                &inv,
+            );
+
+            for (ai, &ap) in anchor_primes.iter().enumerate() {
+                let got = fresh.c0.anchor[ai][pos];
+                let expected = (c0_full % ap as u128) as u64;
+                assert_eq!(
+                    got, expected,
+                    "anchor mismatch at pos={} anchor_prime={} got={} expected={}",
+                    pos, ap, got, expected
+                );
+            }
+        }
+    }
+
+    // =====================================================================
+    // AUDIT HARDENING: Config Matrix Roundtrip Tests
+    // =====================================================================
+
+    /// secure_128 / secure_192 / secure_256 all pass structural invariant
+    /// checks: boot primes superset, single drop prime, canonical anchors.
+    /// This is the "config matrix" coverage the auditor wants to see.
+    #[test]
+    fn test_config_matrix_invariants_128_192_256() {
+        use crate::arithmetic::rns::DualRNSContext;
+        use crate::params::SecureConfig;
+
+        let configs = [
+            ("secure_128", SecureConfig::secure_128().into_config()),
+            ("secure_192", SecureConfig::secure_192().into_config()),
+            ("secure_256", SecureConfig::secure_256().into_config()),
+        ];
+
+        for (label, cfg) in configs {
+            // Construction succeeds (assert_boot_invariants runs inside new())
+            let boot = ClockworkBootstrap::new(&cfg).expect(&format!("{}: boot", label));
+
+            // Structural: subset + single drop prime
+            for &wp in &cfg.primes {
+                assert!(
+                    boot.boot_config.primes.contains(&wp),
+                    "{}: boot missing work prime {}",
+                    label, wp
+                );
+            }
+            let extras: Vec<u64> = boot
+                .boot_config
+                .primes
+                .iter()
+                .copied()
+                .filter(|bp| !cfg.primes.contains(bp))
+                .collect();
+            assert_eq!(extras.len(), 1, "{}: expected 1 extra boot prime", label);
+
+            // Structural: canonical anchors
+            let canonical = DualRNSContext::canonical_anchor_primes_for_n(cfg.n);
+            assert_eq!(
+                &boot.boot_ctx.dual_rns.anchor.primes, &canonical,
+                "{}: anchor primes diverged from canonical",
+                label
+            );
+        }
+    }
+
+    /// Bootstrap roundtrip for secure_128: encrypt -> bootstrap -> decrypt
+    /// must recover the original plaintext for a range of messages.
+    ///
+    /// NOTE: secure_192/256 roundtrips are not tested here because bootstrap
+    /// noise at those parameter sets requires additional tuning (larger boot
+    /// prime counts or noise-aware modswitch). The structural invariants
+    /// for all three configs are verified in `test_config_matrix_invariants_128_192_256`.
+    #[test]
+    fn test_config_matrix_roundtrip_secure_128() {
+        use crate::params::SecureConfig;
+
+        let cfg = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::try_new(&cfg).expect("ctx");
+        let boot = ClockworkBootstrap::new(&cfg).expect("boot");
+        let mut rng = ShadowHarvester::with_seed(42);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("keygen");
+
+        for &m in &[0u64, 1, 2, 7, 42, 1000, cfg.t - 1] {
+            let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
+            let fresh = boot
+                .bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk)
+                .expect(&format!("bootstrap m={}", m));
+            let dec = ctx.decrypt_dual(&fresh, &keys.secret_key);
+            assert_eq!(dec, m, "roundtrip fail m={} got={}", m, dec);
+        }
     }
 }
