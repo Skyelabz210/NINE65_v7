@@ -52,8 +52,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(DEFAULT_MAX_CONNECTIONS);
 
     let listener = TcpListener::bind(&bind_addr)?;
+    let store = match env::var("FHE_SESSION_TTL").ok().and_then(|v| v.parse().ok()) {
+        Some(ttl) => SessionStore::new_with_ttl(max_sessions, ttl),
+        None => SessionStore::new(max_sessions),
+    };
     let state = Arc::new(AppState {
-        store: SessionStore::new(max_sessions),
+        store,
         metrics: handlers::AppMetrics::new(),
         active_connections: AtomicUsize::new(0),
         max_connections,
@@ -72,7 +76,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     eprintln!(
-        "{SERVICE_NAME} listening on {bind_addr} (max_sessions={max_sessions}, max_connections={max_connections})"
+        "{SERVICE_NAME} listening on {bind_addr} (max_sessions={max_sessions}, ttl={}s, max_connections={max_connections})",
+        state.store.ttl_seconds()
     );
 
     for stream in listener.incoming() {
@@ -813,5 +818,14 @@ mod tests {
         let err: Value = serde_json::from_slice(&resp.body).unwrap();
         assert_eq!(err["error"]["code"], "DECRYPT_FAILED");
         assert_eq!(err["error"]["message"], "operation failed");
+    }
+
+    // --- Session store TTL configuration ---
+
+    #[test]
+    fn session_store_custom_ttl() {
+        let store = SessionStore::new_with_ttl(16, 7200);
+        assert_eq!(store.ttl_seconds(), 7200);
+        assert_eq!(store.count(), 0);
     }
 }

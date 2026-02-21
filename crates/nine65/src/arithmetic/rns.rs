@@ -1450,8 +1450,7 @@ impl DualRNSPolynomial {
     /// Full K-Elimination rescaling with CRT reconstruction (for small moduli)
     ///
     /// This version reconstructs the full value using CRT, which requires
-    /// M × A to fit in u128. Use k_elim_rescale for large moduli.
-    #[allow(dead_code)]
+    /// M × A to fit in u128. Use `k_elim_rescale` for large moduli.
     pub fn k_elim_rescale_full(&self, ctx: &DualRNSContext, q_last: u64) -> Self {
         let num_main = ctx.main.num_primes();
         let mut result_main = vec![vec![0u64; self.n]; num_main];

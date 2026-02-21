@@ -1528,62 +1528,6 @@ impl RNSFHEContext {
         })
     }
 
-    /// Alternative rescaling: per-limb approximation (faster but less accurate)
-    ///
-    /// This is the fallback method when K-Elimination is too slow.
-    /// Uses per-limb scaling which gives approximate results with bounded error.
-    fn approx_rescale(&self, poly: &RNSPolynomial) -> RNSPolynomial {
-        let poly_standard = self.convert_from_montgomery_form(poly);
-        let mut result_limbs: Vec<Vec<u64>> = vec![vec![0u64; self.n]; self.rns.num_primes()];
-
-        // Precompute per-limb scaling factors
-        let mut scale_factors: Vec<u64> = Vec::with_capacity(self.config.primes.len());
-        for (i, &q_i) in self.config.primes.iter().enumerate() {
-            let q_i_others: u128 = self
-                .config
-                .primes
-                .iter()
-                .enumerate()
-                .filter(|&(j, _)| j != i)
-                .fold(1u128, |acc, (_, &p)| acc * p as u128);
-
-            let q_i_others_mod = (q_i_others % q_i as u128) as u64;
-            let q_i_others_inv = mod_inverse(q_i_others_mod, q_i);
-            let scale = ((self.t as u128 * q_i_others_inv as u128) % q_i as u128) as u64;
-            scale_factors.push(scale);
-        }
-
-        for coeff_idx in 0..self.n {
-            for (limb_idx, &q_i) in self.config.primes.iter().enumerate() {
-                let coeff = poly_standard.limbs[limb_idx][coeff_idx];
-                let q_i_half = q_i / 2;
-
-                let (is_neg, abs_coeff) = if coeff > q_i_half {
-                    (true, q_i - coeff)
-                } else {
-                    (false, coeff)
-                };
-
-                let scaled_abs = ((abs_coeff as u128 * scale_factors[limb_idx] as u128
-                    + q_i_half as u128)
-                    / q_i as u128) as u64;
-
-                let scaled = if is_neg && scaled_abs > 0 {
-                    q_i - (scaled_abs % q_i)
-                } else {
-                    scaled_abs % q_i
-                };
-
-                result_limbs[limb_idx][coeff_idx] = scaled;
-            }
-        }
-
-        self.to_montgomery_form(&RNSPolynomial {
-            limbs: result_limbs,
-            n: self.n,
-        })
-    }
-
     /// Relinearization: convert degree-2 ciphertext to degree-1
     fn relinearize(
         &self,
@@ -3647,15 +3591,6 @@ impl RNSFHEContext {
     // ========================================================================
     // DUAL-TRACK POLYNOMIAL HELPERS
     // ========================================================================
-
-    /// Convert coefficient vector to main RNS form
-    fn to_main_rns(&self, coeffs: &[u64]) -> Vec<Vec<u64>> {
-        self.config
-            .primes
-            .iter()
-            .map(|&p| coeffs.iter().map(|&c| c % p).collect())
-            .collect()
-    }
 
     /// Convert coefficient vector to main RNS form (with u128 precision for encoded value)
     ///

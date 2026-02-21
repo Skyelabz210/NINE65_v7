@@ -42,8 +42,7 @@ pub struct GroGate {
     acc_mask: u64,
     /// Window width parameter W: coincidence when |θ_A - θ_B| < W
     window_width: u64,
-    /// Current time step (reserved for future GRO sequencing)
-    #[allow(dead_code)]
+    /// Current time step for stateful GRO sequencing
     time_step: u64,
 }
 
@@ -277,6 +276,18 @@ impl GroGate {
     /// Get phase increment B
     pub fn delta_phi_b(&self) -> u64 {
         self.delta_phi_b
+    }
+
+    /// Get the current time step
+    pub fn current_step(&self) -> u64 {
+        self.time_step
+    }
+
+    /// Advance the GRO by one time step, returning whether the new step
+    /// falls inside a coincidence window.
+    pub fn advance(&mut self) -> bool {
+        self.time_step = self.time_step.wrapping_add(1);
+        self.is_window(self.time_step)
     }
 }
 

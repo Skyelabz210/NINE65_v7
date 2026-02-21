@@ -33,8 +33,7 @@ pub fn mod_inverse(a: i128, m: i128) -> Option<u64> {
 }
 
 /// Pairwise coprimality check. Required precondition for all CRT operations.
-#[allow(dead_code)]
-fn are_pairwise_coprime(moduli: &[u64]) -> bool {
+pub fn are_pairwise_coprime(moduli: &[u64]) -> bool {
     for i in 0..moduli.len() {
         for j in (i + 1)..moduli.len() {
             let (g, _, _) = extended_gcd(moduli[i] as i128, moduli[j] as i128);
@@ -117,15 +116,18 @@ impl RnsBasis {
         }
 
         // Enforce pairwise coprimality (D1 precondition)
-        for i in 0..moduli.len() {
-            for j in (i + 1)..moduli.len() {
-                let (g, _, _) = extended_gcd(moduli[i] as i128, moduli[j] as i128);
-                if g != 1 {
-                    return Err(BasisError::NotCoprime {
-                        i,
-                        j,
-                        gcd: g as u64,
-                    });
+        if !are_pairwise_coprime(&moduli) {
+            // Find the specific pair for the error message
+            for i in 0..moduli.len() {
+                for j in (i + 1)..moduli.len() {
+                    let (g, _, _) = extended_gcd(moduli[i] as i128, moduli[j] as i128);
+                    if g != 1 {
+                        return Err(BasisError::NotCoprime {
+                            i,
+                            j,
+                            gcd: g as u64,
+                        });
+                    }
                 }
             }
         }

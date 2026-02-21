@@ -614,7 +614,7 @@ impl HyperbolicCordic {
         note = "Use crate::sqrt::isqrt_newton or sqrt_scaled instead. \
         CORDIC sqrt has limited precision compared to Newton-Raphson."
     )]
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Retained as reference implementation alongside #[deprecated]
     pub(crate) fn sqrt(&self, x: i64) -> i64 {
         if x < 0 {
             return 0;

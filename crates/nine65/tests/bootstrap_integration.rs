@@ -25,23 +25,6 @@ use nine65::params::secure_configs::SecureConfig;
 // HELPERS
 // =========================================================================
 
-#[allow(dead_code)]
-fn mod_pow(mut base: u128, mut exp: u128, modulus: u128) -> u128 {
-    if modulus == 1 {
-        return 0;
-    }
-    let mut result = 1u128;
-    base %= modulus;
-    while exp > 0 {
-        if exp % 2 == 1 {
-            result = result * base % modulus;
-        }
-        exp /= 2;
-        base = base * base % modulus;
-    }
-    result
-}
-
 fn setup_bootstrap() -> Nine65Result<(
     RNSFHEContext,
     ClockworkBootstrap,
