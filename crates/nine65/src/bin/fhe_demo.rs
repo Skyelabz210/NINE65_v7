@@ -169,7 +169,7 @@ fn main() {
 
     let ct_sum = evaluator.add(&ct_a, &ct_b);
     let sum = decryptor.decrypt(&ct_sum);
-    expect_eq("add", sum, a + b);
+    expect_eq("add", sum, (a + b) % config.t);
 
     let ct_diff = evaluator.sub(&ct_a, &ct_b);
     let diff = decryptor.decrypt(&ct_diff);
@@ -182,7 +182,7 @@ fn main() {
 
     let ct_add_plain = evaluator.add_plain(&ct_a, 10);
     let add_plain = decryptor.decrypt(&ct_add_plain);
-    expect_eq("add_plain", add_plain, a + 10);
+    expect_eq("add_plain", add_plain, (a + 10) % config.t);
 
     let ct_mul_plain = evaluator.mul_plain(&ct_a, 3);
     let mul_plain = decryptor.decrypt(&ct_mul_plain);
