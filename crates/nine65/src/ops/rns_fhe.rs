@@ -205,7 +205,10 @@ impl RNSCiphertext {
 // This enables EXACT rescaling even when Δ² >> Q.
 
 /// Dual-track RNS polynomial: main + anchor residues for K-Elimination
-#[derive(Clone, Debug, Zeroize)]
+///
+/// `Debug` is intentionally redacted to prevent accidental leakage
+/// of secret polynomial residues via logging or panic messages.
+#[derive(Clone, Zeroize)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", derive(bincode::Encode, bincode::Decode))]
 pub struct DualRNSPoly {
@@ -215,6 +218,16 @@ pub struct DualRNSPoly {
     pub anchor: Vec<Vec<u64>>,
     /// Polynomial degree
     pub n: usize,
+}
+
+impl std::fmt::Debug for DualRNSPoly {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DualRNSPoly")
+            .field("n", &self.n)
+            .field("main_limbs", &self.main.len())
+            .field("anchor_limbs", &self.anchor.len())
+            .finish()
+    }
 }
 
 /// Dual-track ciphertext with K-Elimination support

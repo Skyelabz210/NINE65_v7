@@ -10,6 +10,7 @@ use crate::arithmetic::NTTEngineFFT as NTTEngine;
 use crate::arithmetic::NTTEngine;
 use crate::entropy::{FheRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
+use std::fmt;
 use zeroize::Zeroize;
 
 const MAX_RING_POLY_DEGREE: usize = 32768;
@@ -23,7 +24,10 @@ const MAX_RING_POLY_DEGREE: usize = 32768;
 /// inside the NTT engine and RNS limbs.
 ///
 /// Implements `Zeroize` for secure memory clearing of sensitive data.
-#[derive(Clone, Debug)]
+///
+/// `Debug` is intentionally redacted to prevent accidental leakage
+/// of secret key coefficients via logging or panic messages.
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", derive(bincode::Encode, bincode::Decode))]
 pub struct RingPolynomial {
@@ -31,6 +35,15 @@ pub struct RingPolynomial {
     pub coeffs: Vec<u64>,
     /// The modulus
     pub q: u64,
+}
+
+impl fmt::Debug for RingPolynomial {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RingPolynomial")
+            .field("degree", &self.coeffs.len())
+            .field("q", &self.q)
+            .finish()
+    }
 }
 
 impl Zeroize for RingPolynomial {

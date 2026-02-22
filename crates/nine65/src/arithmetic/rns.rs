@@ -589,13 +589,25 @@ impl RNSContext {
 }
 
 /// RNS Polynomial - coefficients stored as parallel limbs
-#[derive(Clone, Debug, Zeroize)]
+///
+/// `Debug` is intentionally redacted to prevent accidental leakage
+/// of secret polynomial residues via logging or panic messages.
+#[derive(Clone, Zeroize)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RNSPolynomial {
     /// Limbs: limbs[i] is the polynomial mod primes[i]
     pub limbs: Vec<Vec<u64>>,
     /// Polynomial degree
     pub n: usize,
+}
+
+impl std::fmt::Debug for RNSPolynomial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RNSPolynomial")
+            .field("n", &self.n)
+            .field("limbs", &self.limbs.len())
+            .finish()
+    }
 }
 
 impl RNSPolynomial {
