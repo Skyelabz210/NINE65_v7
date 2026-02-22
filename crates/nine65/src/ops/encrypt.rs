@@ -338,7 +338,7 @@ impl<'a> BFVEncryptor<'a> {
     /// production code to avoid panics from untrusted input.
     pub fn encrypt(&self, m: u64, harvester: &mut ShadowHarvester) -> Ciphertext {
         self.try_encrypt(m, harvester)
-            .unwrap_or_else(|e| panic!("encrypt(m={}): {}", m, e))
+            .unwrap_or_else(|e| panic!("encrypt: {}", e))
     }
 
     /// Fallible encryption: returns error if message out of bounds
@@ -414,7 +414,7 @@ impl<'a> BFVEncryptor<'a> {
     /// production code to avoid panics from untrusted input.
     pub fn encrypt_with_rng<R: FheRng>(&self, m: u64, rng: &mut R) -> Ciphertext {
         self.try_encrypt_with_rng(m, rng)
-            .unwrap_or_else(|e| panic!("encrypt_with_rng(m={}): {}", m, e))
+            .unwrap_or_else(|e| panic!("encrypt_with_rng: {}", e))
     }
 
     /// Fallible encryption with generic RNG
@@ -439,7 +439,7 @@ impl<'a> BFVEncryptor<'a> {
     /// production code to avoid panics from untrusted input.
     pub fn encrypt_secure(&self, m: u64) -> Ciphertext {
         self.try_encrypt_secure(m)
-            .unwrap_or_else(|e| panic!("encrypt_secure(m={}): {}", m, e))
+            .unwrap_or_else(|e| panic!("encrypt_secure: {}", e))
     }
 
     /// Fallible secure encryption (RECOMMENDED FOR PRODUCTION)

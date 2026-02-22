@@ -103,7 +103,11 @@ impl IntegerSoftmax {
     }
 
     fn find_max(&self, values: &[i128]) -> i128 {
-        values.iter().copied().max().unwrap_or(0)
+        values
+            .iter()
+            .copied()
+            .max()
+            .expect("find_max called on non-empty slice")
     }
 
     /// Exponential approximation for softmax.
@@ -151,7 +155,7 @@ impl IntegerSoftmax {
             .enumerate()
             .max_by_key(|(_, &v)| v)
             .map(|(i, _)| i)
-            .unwrap_or(0);
+            .expect("adjust_sum_exact called on non-empty slice");
 
         if current_sum < self.output_scale {
             values[max_idx] += self.output_scale - current_sum;
@@ -177,13 +181,16 @@ impl IntegerSoftmax {
 
     /// Temperature-scaled softmax
     pub fn compute_with_temperature(&self, logits: &[i128], temperature: i128) -> Vec<u128> {
+        if logits.is_empty() {
+            return vec![];
+        }
         if temperature == 0 {
             let max_idx = logits
                 .iter()
                 .enumerate()
                 .max_by_key(|(_, &v)| v)
                 .map(|(i, _)| i)
-                .unwrap_or(0);
+                .expect("non-empty logits");
             let mut result = vec![0u128; logits.len()];
             result[max_idx] = self.output_scale;
             return result;
@@ -198,6 +205,9 @@ impl IntegerSoftmax {
 
     /// Top-k softmax (zero out all but top k)
     pub fn compute_top_k(&self, logits: &[i128], k: usize) -> Vec<u128> {
+        if k == 0 || logits.is_empty() {
+            return vec![0u128; logits.len()];
+        }
         if k >= logits.len() {
             return self.compute(logits);
         }
@@ -271,5 +281,54 @@ mod tests {
         let logits = vec![100i128, 100, 100, 100];
         let result = softmax.compute(&logits);
         assert_eq!(result.iter().sum::<u128>(), SOFTMAX_SCALE);
+    }
+
+    // ── Edge case tests ──────────────────────────────────────────────
+
+    #[test]
+    fn test_softmax_empty() {
+        let softmax = IntegerSoftmax::new();
+        assert!(softmax.compute(&[]).is_empty());
+    }
+
+    #[test]
+    fn test_softmax_all_negative() {
+        let softmax = IntegerSoftmax::new();
+        let logits = vec![-500_000i128, -600_000, -700_000];
+        let result = softmax.compute(&logits);
+        assert_eq!(result.iter().sum::<u128>(), SOFTMAX_SCALE);
+        // Most-negative logit should have smallest probability
+        assert!(result[0] >= result[1]);
+        assert!(result[1] >= result[2]);
+    }
+
+    #[test]
+    fn test_softmax_all_zero() {
+        let softmax = IntegerSoftmax::new();
+        let logits = vec![0i128, 0, 0];
+        let result = softmax.compute(&logits);
+        assert_eq!(result.iter().sum::<u128>(), SOFTMAX_SCALE);
+    }
+
+    #[test]
+    fn test_softmax_temperature_empty() {
+        let softmax = IntegerSoftmax::new();
+        assert!(softmax.compute_with_temperature(&[], 1000).is_empty());
+        assert!(softmax.compute_with_temperature(&[], 0).is_empty());
+    }
+
+    #[test]
+    fn test_softmax_top_k_zero() {
+        let softmax = IntegerSoftmax::new();
+        let logits = vec![100i128, 200, 300];
+        let result = softmax.compute_top_k(&logits, 0);
+        // k=0 should produce all zeros
+        assert_eq!(result, vec![0u128; 3]);
+    }
+
+    #[test]
+    fn test_softmax_top_k_empty() {
+        let softmax = IntegerSoftmax::new();
+        assert!(softmax.compute_top_k(&[], 3).is_empty());
     }
 }

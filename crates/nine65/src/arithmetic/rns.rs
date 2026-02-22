@@ -10,7 +10,7 @@
 use super::montgomery::MontgomeryContext;
 #[cfg(feature = "ntt_fft")]
 use super::ntt_fft::NTTEngineFFT as NTTEngine;
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(not(feature = "ntt_fft"))]
 use super::ntt::NTTEngine;
@@ -609,6 +609,14 @@ impl std::fmt::Debug for RNSPolynomial {
             .finish()
     }
 }
+
+impl Drop for RNSPolynomial {
+    fn drop(&mut self) {
+        self.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for RNSPolynomial {}
 
 impl RNSPolynomial {
     /// Create from a single-modulus polynomial

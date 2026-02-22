@@ -1400,6 +1400,78 @@ mod tests {
         }
     }
 
+    /// CRT reconstruction must be correct at every prime boundary value
+    /// and at stride-crossing points where residues wrap independently.
+    #[test]
+    fn test_crt_boundary_exhaustive() {
+        let p0 = 998244353u128;
+        let p1 = 985661441u128;
+        let p0_inv = mod_inverse_u128(p0, p1).expect("Inverse");
+        let product = p0 * p1;
+
+        // Test every prime-boundary neighborhood: 0, p0-1, p0, p0+1, p1-1, p1, p1+1
+        let boundary_values: Vec<u128> = vec![
+            0, 1, 2,
+            p0 - 2, p0 - 1, p0, p0 + 1, p0 + 2,
+            p1 - 2, p1 - 1, p1, p1 + 1, p1 + 2,
+            // Values near the product boundary
+            product - 3, product - 2, product - 1,
+            // Values near half the product (center of the range)
+            product / 2 - 1, product / 2, product / 2 + 1,
+            // Multiples of each prime (residue = 0 for one limb)
+            p0 * 2, p0 * 3, p1 * 2, p1 * 3,
+            // Near-multiples of each prime
+            p0 * 2 - 1, p0 * 2 + 1, p1 * 2 - 1, p1 * 2 + 1,
+        ];
+
+        for &x in &boundary_values {
+            if x >= product {
+                continue;
+            }
+            let r0 = x % p0;
+            let r1 = x % p1;
+            let reconstructed = crt_reconstruct_2(r0, r1, p0, p1, p0_inv);
+            assert_eq!(reconstructed, x, "CRT-2 boundary fail x={}", x);
+        }
+    }
+
+    /// CRT-N reconstruction must be correct at boundaries for 3-prime configurations
+    #[test]
+    fn test_crt_n_boundary_exhaustive() {
+        let primes = [998244353u128, 985661441u128, 754974721u128];
+        let q_full: u128 = primes.iter().product();
+
+        let mut crt_inverses = vec![0u128; 3];
+        let mut partial = 1u128;
+        for k in 0..3 {
+            if k > 0 {
+                crt_inverses[k] = mod_inverse_u128(partial, primes[k]).expect("Inverse");
+            }
+            partial *= primes[k];
+        }
+
+        let boundary_values: Vec<u128> = vec![
+            0, 1,
+            primes[0] - 1, primes[0], primes[0] + 1,
+            primes[1] - 1, primes[1], primes[1] + 1,
+            primes[2] - 1, primes[2], primes[2] + 1,
+            primes[0] * primes[1] - 1, primes[0] * primes[1], primes[0] * primes[1] + 1,
+            primes[0] * primes[2] - 1, primes[0] * primes[2], primes[0] * primes[2] + 1,
+            primes[1] * primes[2] - 1, primes[1] * primes[2], primes[1] * primes[2] + 1,
+            q_full / 2 - 1, q_full / 2, q_full / 2 + 1,
+            q_full - 3, q_full - 2, q_full - 1,
+        ];
+
+        for &x in &boundary_values {
+            if x >= q_full {
+                continue;
+            }
+            let residues = primes.iter().map(|&p| x % p);
+            let reconstructed = crt_reconstruct_n(residues, &primes, &crt_inverses);
+            assert_eq!(reconstructed, x, "CRT-N boundary fail x={}", x);
+        }
+    }
+
     #[test]
     fn test_modswitch_exact_rounding() {
         let q_min: u128 = 998244353u128 * 985661441u128;

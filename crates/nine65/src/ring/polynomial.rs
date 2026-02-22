@@ -11,7 +11,7 @@ use crate::arithmetic::NTTEngine;
 use crate::entropy::{FheRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
 use std::fmt;
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 const MAX_RING_POLY_DEGREE: usize = 32768;
 
@@ -51,6 +51,14 @@ impl Zeroize for RingPolynomial {
         self.coeffs.zeroize();
     }
 }
+
+impl Drop for RingPolynomial {
+    fn drop(&mut self) {
+        self.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for RingPolynomial {}
 
 impl RingPolynomial {
     /// Create a zero polynomial

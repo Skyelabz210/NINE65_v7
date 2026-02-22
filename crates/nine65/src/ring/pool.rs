@@ -187,10 +187,10 @@ impl PooledPolynomial {
         }
     }
 
-    /// Create from RingPolynomial (takes ownership)
-    pub fn from_ring_polynomial(poly: super::RingPolynomial) -> Self {
+    /// Create from RingPolynomial (takes ownership, zeroing the source)
+    pub fn from_ring_polynomial(mut poly: super::RingPolynomial) -> Self {
         Self {
-            coeffs: poly.coeffs,
+            coeffs: std::mem::take(&mut poly.coeffs),
             q: poly.q,
         }
     }
