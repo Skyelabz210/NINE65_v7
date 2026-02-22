@@ -70,6 +70,10 @@ rand_core = { workspace = true }
 rand_chacha = { workspace = true }
 
 [[bin]]
+name = "nine65_v7_demo"
+path = "src/bin/nine65_v7_demo.rs"
+
+[[bin]]
 name = "nine65_bench"
 path = "src/bin/nine65_bench.rs"
 required-features = ["serde"]
