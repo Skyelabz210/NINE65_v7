@@ -142,6 +142,8 @@ pub mod security; // LWE security estimation // Bootstrap-free FHE circuit compi
 #[cfg(feature = "accelerated")]
 pub mod accelerated; // MANA/UNHAL acceleration layer
 
+pub mod kiosk; // Kiosk Architecture: self-destructing FHE computation units
+
 #[cfg(test)]
 mod v2_integration_tests;
 
