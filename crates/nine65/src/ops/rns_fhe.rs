@@ -592,6 +592,7 @@ impl DualRNSCiphertext {
         since = "0.1.0",
         note = "Use from_json_validated() for untrusted input"
     )]
+    #[doc(hidden)]
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(s)
     }
@@ -626,11 +627,16 @@ impl DualRNSCiphertext {
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 
-    /// Deserialize from binary format (unchecked)
+    /// Deserialize from binary format (**unvalidated**).
     ///
     /// # Security Warning
     /// This does not validate the deserialized data. Use `from_bytes_validated`
     /// when deserializing untrusted input.
+    #[deprecated(
+        since = "0.1.0",
+        note = "Use from_bytes_validated() for untrusted input"
+    )]
+    #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
@@ -670,7 +676,12 @@ impl DualRNSKeySet {
         serde_json::to_string(self)
     }
 
-    /// Deserialize from JSON string
+    /// Deserialize from JSON string (**unvalidated**).
+    #[deprecated(
+        since = "0.1.0",
+        note = "Use from_json_validated() for untrusted input"
+    )]
+    #[doc(hidden)]
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(s)
     }
@@ -699,7 +710,12 @@ impl DualRNSKeySet {
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 
-    /// Deserialize from binary format (bincode)
+    /// Deserialize from binary format (**unvalidated**).
+    #[deprecated(
+        since = "0.1.0",
+        note = "Use from_bytes_validated() for untrusted input"
+    )]
+    #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;

@@ -252,7 +252,7 @@ impl Ciphertext {
         serde_json::to_string(self)
     }
 
-    /// Deserialize from JSON string
+    /// Deserialize from JSON string (**unvalidated**).
     ///
     /// # Security Warning
     /// This method does NOT validate the deserialized ciphertext.
@@ -262,6 +262,7 @@ impl Ciphertext {
         since = "0.1.0",
         note = "Use from_json_validated() for untrusted input"
     )]
+    #[doc(hidden)]
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(s)
     }
@@ -272,7 +273,7 @@ impl Ciphertext {
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 
-    /// Deserialize from bincode bytes
+    /// Deserialize from bincode bytes (**unvalidated**).
     ///
     /// # Security Warning
     /// This method does NOT validate the deserialized ciphertext.
@@ -282,6 +283,7 @@ impl Ciphertext {
         since = "0.1.0",
         note = "Use from_bytes_validated() for untrusted input"
     )]
+    #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;

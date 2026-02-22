@@ -516,6 +516,13 @@ impl MobiusPolynomial {
             return MobiusInt::zero();
         }
 
+        assert!(
+            self.degree < self.coeffs.len(),
+            "MobiusPolynomial invariant violated: degree {} >= coeffs.len() {}",
+            self.degree,
+            self.coeffs.len()
+        );
+
         let mut result = self.coeffs[self.degree];
         for i in (0..self.degree).rev() {
             result = result.mul(&x).add(&self.coeffs[i]);
