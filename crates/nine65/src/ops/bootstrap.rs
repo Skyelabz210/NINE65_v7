@@ -1297,8 +1297,10 @@ pub fn crt_reconstruct_2(
 /// # Safety
 ///
 /// Callers must ensure the total product of `primes` fits in u128.
-/// The modswitch and key_switch methods validate this before calling.
-/// Debug builds assert on overflow; release builds assume the invariant holds.
+/// The modswitch and key_switch methods validate this before calling, but
+/// we enforce the invariant here with a hard assert (not debug_assert) to
+/// prevent silent u128 overflow from corrupting CRT reconstruction in
+/// release builds.
 pub fn crt_reconstruct_n(
     residues: impl Iterator<Item = u128>,
     primes: &[u128],
@@ -1320,9 +1322,10 @@ pub fn crt_reconstruct_n(
             };
             let coeff = (diff * crt_inverses[k]) % primes[k];
             x += coeff * m;
-            debug_assert!(
+            assert!(
                 m.checked_mul(primes[k]).is_some(),
-                "crt_reconstruct_n: running product overflows u128 at prime[{}]={}",
+                "crt_reconstruct_n: running product overflows u128 at prime[{}]={} — \
+                 caller should use crt_reconstruct_u256 for >4 primes",
                 k, primes[k]
             );
             m *= primes[k];

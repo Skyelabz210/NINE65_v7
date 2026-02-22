@@ -113,6 +113,83 @@ pub struct RNSCiphertext {
     pub num_primes: usize,
 }
 
+impl RNSCiphertext {
+    /// Validate structural integrity of this ciphertext.
+    ///
+    /// Checks:
+    /// - c0 and c1 have matching polynomial degree
+    /// - Both have the expected number of RNS limbs
+    /// - Polynomial degree matches `expected_n`
+    /// - All limbs have the correct length
+    ///
+    /// Use after deserialization to prevent DoS via malformed ciphertexts.
+    pub fn validate(&self, expected_n: usize, expected_num_primes: usize) -> Nine65Result<()> {
+        if self.c0.n != expected_n {
+            return Err(Nine65Error::InvalidPolynomialDegree {
+                got: self.c0.n,
+                expected: expected_n,
+            });
+        }
+        if self.c1.n != expected_n {
+            return Err(Nine65Error::InvalidPolynomialDegree {
+                got: self.c1.n,
+                expected: expected_n,
+            });
+        }
+        if self.c0.limbs.len() != expected_num_primes {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "RNSCiphertext: c0 has {} limbs, expected {}",
+                    self.c0.limbs.len(),
+                    expected_num_primes
+                ),
+            });
+        }
+        if self.c1.limbs.len() != expected_num_primes {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "RNSCiphertext: c1 has {} limbs, expected {}",
+                    self.c1.limbs.len(),
+                    expected_num_primes
+                ),
+            });
+        }
+        if self.num_primes != expected_num_primes {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "RNSCiphertext: num_primes {} != expected {}",
+                    self.num_primes, expected_num_primes
+                ),
+            });
+        }
+        for (i, limb) in self.c0.limbs.iter().enumerate() {
+            if limb.len() != expected_n {
+                return Err(Nine65Error::ConfigError {
+                    message: format!(
+                        "RNSCiphertext: c0.limbs[{}] has length {}, expected {}",
+                        i,
+                        limb.len(),
+                        expected_n
+                    ),
+                });
+            }
+        }
+        for (i, limb) in self.c1.limbs.iter().enumerate() {
+            if limb.len() != expected_n {
+                return Err(Nine65Error::ConfigError {
+                    message: format!(
+                        "RNSCiphertext: c1.limbs[{}] has length {}, expected {}",
+                        i,
+                        limb.len(),
+                        expected_n
+                    ),
+                });
+            }
+        }
+        Ok(())
+    }
+}
+
 // ============================================================================
 // DUAL-TRACK RNS CIPHERTEXT FOR K-ELIMINATION
 // ============================================================================
