@@ -161,13 +161,14 @@ fn main() {
 
     let sc = SecureConfig::secure_128();
     let config_rns = sc.into_config();
-    println!("  Config:  secure_128 (n={}, t={}, {} primes)",
+    println!("  Config:  secure_128 (n={}, t={}, {} main primes)",
         config_rns.n, config_rns.t, config_rns.primes.len());
 
     let t0 = Instant::now();
     let ctx = RNSFHEContext::try_new(&config_rns).expect("RNSFHEContext creation failed");
     let ctx_us = t0.elapsed().as_micros();
-    println!("  Context: {}us", ctx_us);
+    println!("  Context: {}us ({} main + {} anchor primes)",
+        ctx_us, ctx.dual_rns.main.primes.len(), ctx.dual_rns.anchor.primes.len());
 
     let t0 = Instant::now();
     let dual_keys = ctx.generate_keys_dual_full(&mut rng);
