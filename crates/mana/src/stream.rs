@@ -30,10 +30,14 @@ pub struct ManaStream {
     pub product_cache: u128,
 }
 
-/// Compute product of primes once
+/// Compute product of primes once.
+/// Returns 0 as overflow sentinel if the product exceeds u128.
 #[inline]
 fn compute_product(primes: &[u64]) -> u128 {
-    primes.iter().fold(1u128, |acc, &p| acc * p as u128)
+    primes
+        .iter()
+        .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
+        .unwrap_or(0) // 0 = overflow sentinel
 }
 
 impl ManaStream {

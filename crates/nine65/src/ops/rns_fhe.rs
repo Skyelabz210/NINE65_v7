@@ -113,6 +113,83 @@ pub struct RNSCiphertext {
     pub num_primes: usize,
 }
 
+impl RNSCiphertext {
+    /// Validate structural integrity of this ciphertext.
+    ///
+    /// Checks:
+    /// - c0 and c1 have matching polynomial degree
+    /// - Both have the expected number of RNS limbs
+    /// - Polynomial degree matches `expected_n`
+    /// - All limbs have the correct length
+    ///
+    /// Use after deserialization to prevent DoS via malformed ciphertexts.
+    pub fn validate(&self, expected_n: usize, expected_num_primes: usize) -> Nine65Result<()> {
+        if self.c0.n != expected_n {
+            return Err(Nine65Error::InvalidPolynomialDegree {
+                got: self.c0.n,
+                expected: expected_n,
+            });
+        }
+        if self.c1.n != expected_n {
+            return Err(Nine65Error::InvalidPolynomialDegree {
+                got: self.c1.n,
+                expected: expected_n,
+            });
+        }
+        if self.c0.limbs.len() != expected_num_primes {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "RNSCiphertext: c0 has {} limbs, expected {}",
+                    self.c0.limbs.len(),
+                    expected_num_primes
+                ),
+            });
+        }
+        if self.c1.limbs.len() != expected_num_primes {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "RNSCiphertext: c1 has {} limbs, expected {}",
+                    self.c1.limbs.len(),
+                    expected_num_primes
+                ),
+            });
+        }
+        if self.num_primes != expected_num_primes {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "RNSCiphertext: num_primes {} != expected {}",
+                    self.num_primes, expected_num_primes
+                ),
+            });
+        }
+        for (i, limb) in self.c0.limbs.iter().enumerate() {
+            if limb.len() != expected_n {
+                return Err(Nine65Error::ConfigError {
+                    message: format!(
+                        "RNSCiphertext: c0.limbs[{}] has length {}, expected {}",
+                        i,
+                        limb.len(),
+                        expected_n
+                    ),
+                });
+            }
+        }
+        for (i, limb) in self.c1.limbs.iter().enumerate() {
+            if limb.len() != expected_n {
+                return Err(Nine65Error::ConfigError {
+                    message: format!(
+                        "RNSCiphertext: c1.limbs[{}] has length {}, expected {}",
+                        i,
+                        limb.len(),
+                        expected_n
+                    ),
+                });
+            }
+        }
+        Ok(())
+    }
+}
+
 // ============================================================================
 // DUAL-TRACK RNS CIPHERTEXT FOR K-ELIMINATION
 // ============================================================================
@@ -128,7 +205,10 @@ pub struct RNSCiphertext {
 // This enables EXACT rescaling even when Δ² >> Q.
 
 /// Dual-track RNS polynomial: main + anchor residues for K-Elimination
-#[derive(Clone, Debug, Zeroize)]
+///
+/// `Debug` is intentionally redacted to prevent accidental leakage
+/// of secret polynomial residues via logging or panic messages.
+#[derive(Clone, Zeroize)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", derive(bincode::Encode, bincode::Decode))]
 pub struct DualRNSPoly {
@@ -138,6 +218,16 @@ pub struct DualRNSPoly {
     pub anchor: Vec<Vec<u64>>,
     /// Polynomial degree
     pub n: usize,
+}
+
+impl std::fmt::Debug for DualRNSPoly {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DualRNSPoly")
+            .field("n", &self.n)
+            .field("main_limbs", &self.main.len())
+            .field("anchor_limbs", &self.anchor.len())
+            .finish()
+    }
 }
 
 /// Dual-track ciphertext with K-Elimination support
@@ -502,6 +592,7 @@ impl DualRNSCiphertext {
         since = "0.1.0",
         note = "Use from_json_validated() for untrusted input"
     )]
+    #[doc(hidden)]
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(s)
     }
@@ -536,11 +627,16 @@ impl DualRNSCiphertext {
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 
-    /// Deserialize from binary format (unchecked)
+    /// Deserialize from binary format (**unvalidated**).
     ///
     /// # Security Warning
     /// This does not validate the deserialized data. Use `from_bytes_validated`
     /// when deserializing untrusted input.
+    #[deprecated(
+        since = "0.1.0",
+        note = "Use from_bytes_validated() for untrusted input"
+    )]
+    #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
@@ -580,7 +676,12 @@ impl DualRNSKeySet {
         serde_json::to_string(self)
     }
 
-    /// Deserialize from JSON string
+    /// Deserialize from JSON string (**unvalidated**).
+    #[deprecated(
+        since = "0.1.0",
+        note = "Use from_json_validated() for untrusted input"
+    )]
+    #[doc(hidden)]
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(s)
     }
@@ -609,7 +710,12 @@ impl DualRNSKeySet {
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
     }
 
-    /// Deserialize from binary format (bincode)
+    /// Deserialize from binary format (**unvalidated**).
+    #[deprecated(
+        since = "0.1.0",
+        note = "Use from_bytes_validated() for untrusted input"
+    )]
+    #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
         let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
@@ -1512,62 +1618,6 @@ impl RNSFHEContext {
                 let scaled_abs = ((numerator + q_i_half as u128) / q_i as u128) as u64;
 
                 // Apply sign and reduce mod q_i
-                let scaled = if is_neg && scaled_abs > 0 {
-                    q_i - (scaled_abs % q_i)
-                } else {
-                    scaled_abs % q_i
-                };
-
-                result_limbs[limb_idx][coeff_idx] = scaled;
-            }
-        }
-
-        self.to_montgomery_form(&RNSPolynomial {
-            limbs: result_limbs,
-            n: self.n,
-        })
-    }
-
-    /// Alternative rescaling: per-limb approximation (faster but less accurate)
-    ///
-    /// This is the fallback method when K-Elimination is too slow.
-    /// Uses per-limb scaling which gives approximate results with bounded error.
-    fn approx_rescale(&self, poly: &RNSPolynomial) -> RNSPolynomial {
-        let poly_standard = self.convert_from_montgomery_form(poly);
-        let mut result_limbs: Vec<Vec<u64>> = vec![vec![0u64; self.n]; self.rns.num_primes()];
-
-        // Precompute per-limb scaling factors
-        let mut scale_factors: Vec<u64> = Vec::with_capacity(self.config.primes.len());
-        for (i, &q_i) in self.config.primes.iter().enumerate() {
-            let q_i_others: u128 = self
-                .config
-                .primes
-                .iter()
-                .enumerate()
-                .filter(|&(j, _)| j != i)
-                .fold(1u128, |acc, (_, &p)| acc * p as u128);
-
-            let q_i_others_mod = (q_i_others % q_i as u128) as u64;
-            let q_i_others_inv = mod_inverse(q_i_others_mod, q_i);
-            let scale = ((self.t as u128 * q_i_others_inv as u128) % q_i as u128) as u64;
-            scale_factors.push(scale);
-        }
-
-        for coeff_idx in 0..self.n {
-            for (limb_idx, &q_i) in self.config.primes.iter().enumerate() {
-                let coeff = poly_standard.limbs[limb_idx][coeff_idx];
-                let q_i_half = q_i / 2;
-
-                let (is_neg, abs_coeff) = if coeff > q_i_half {
-                    (true, q_i - coeff)
-                } else {
-                    (false, coeff)
-                };
-
-                let scaled_abs = ((abs_coeff as u128 * scale_factors[limb_idx] as u128
-                    + q_i_half as u128)
-                    / q_i as u128) as u64;
-
                 let scaled = if is_neg && scaled_abs > 0 {
                     q_i - (scaled_abs % q_i)
                 } else {
@@ -2731,6 +2781,11 @@ impl RNSFHEContext {
         ct2: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
     ) -> DualRNSCiphertext {
+        debug_assert_eq!(
+            ct1.level, ct2.level,
+            "mul_dual_symmetric: level mismatch ({} vs {}) — ciphertexts must be at the same level",
+            ct1.level, ct2.level
+        );
         #[cfg(feature = "debug_dual_mul")]
         eprintln!("[DEBUG mul_dual_symmetric] ct1.level={}, ct2.level={}, n={}, main_primes={}, anchor_primes={}",
             ct1.level, ct2.level, self.n, self.dual_rns.main.primes.len(), self.dual_rns.anchor.primes.len());
@@ -2869,6 +2924,11 @@ impl RNSFHEContext {
     ///
     /// No noise growth from addition (aside from small accumulation).
     pub fn add_dual(&self, ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> DualRNSCiphertext {
+        debug_assert_eq!(
+            ct1.level, ct2.level,
+            "add_dual: level mismatch ({} vs {}) — ciphertexts should be at the same level",
+            ct1.level, ct2.level
+        );
         let c0_new = self.dual_poly_add(&ct1.c0, &ct2.c0);
         let c1_new = self.dual_poly_add(&ct1.c1, &ct2.c1);
         DualRNSCiphertext {
@@ -3647,15 +3707,6 @@ impl RNSFHEContext {
     // ========================================================================
     // DUAL-TRACK POLYNOMIAL HELPERS
     // ========================================================================
-
-    /// Convert coefficient vector to main RNS form
-    fn to_main_rns(&self, coeffs: &[u64]) -> Vec<Vec<u64>> {
-        self.config
-            .primes
-            .iter()
-            .map(|&p| coeffs.iter().map(|&c| c % p).collect())
-            .collect()
-    }
 
     /// Convert coefficient vector to main RNS form (with u128 precision for encoded value)
     ///
@@ -7467,7 +7518,7 @@ mod tests {
         let fhe_config = &secure_config.config;
         let ctx = RNSFHEContext::try_new(fhe_config).unwrap();
 
-        // secure_256 uses 7 primes -> Q exceeds u128 -> q_product = 0 sentinel
+        // secure_256 uses 6 primes (~177 bits) -> Q exceeds u128 -> q_product = 0 sentinel
         assert_eq!(
             ctx.q_product, 0,
             "expected overflow sentinel for secure_256"

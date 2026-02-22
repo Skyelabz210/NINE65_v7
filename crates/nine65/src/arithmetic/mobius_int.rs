@@ -276,33 +276,49 @@ impl MobiusInt {
     }
 
     /// Divide (integer division)
+    ///
+    /// # Panics
+    /// Panics on division by zero. Use `checked_div()` for fallible version.
     pub fn div(&self, other: &Self) -> Self {
+        self.checked_div(other).expect("MobiusInt: division by zero")
+    }
+
+    /// Checked division: returns `None` on division by zero.
+    pub fn checked_div(&self, other: &Self) -> Option<Self> {
         if other.is_zero() {
-            panic!("Division by zero");
+            return None;
         }
         if self.is_zero() {
-            return Self::zero();
+            return Some(Self::zero());
         }
 
-        Self {
+        Some(Self {
             residue: self.residue / other.residue,
             polarity: self.polarity.xor(other.polarity),
-        }
+        })
     }
 
     /// Modulo (with sign of dividend)
+    ///
+    /// # Panics
+    /// Panics on modulo by zero. Use `checked_rem()` for fallible version.
     pub fn rem(&self, other: &Self) -> Self {
+        self.checked_rem(other).expect("MobiusInt: modulo by zero")
+    }
+
+    /// Checked remainder: returns `None` on modulo by zero.
+    pub fn checked_rem(&self, other: &Self) -> Option<Self> {
         if other.is_zero() {
-            panic!("Modulo by zero");
+            return None;
         }
         if self.is_zero() {
-            return Self::zero();
+            return Some(Self::zero());
         }
 
-        Self {
+        Some(Self {
             residue: self.residue % other.residue,
             polarity: self.polarity, // Sign follows dividend
-        }
+        })
     }
 
     /// Compare magnitudes
@@ -499,6 +515,13 @@ impl MobiusPolynomial {
         if self.coeffs.is_empty() {
             return MobiusInt::zero();
         }
+
+        assert!(
+            self.degree < self.coeffs.len(),
+            "MobiusPolynomial invariant violated: degree {} >= coeffs.len() {}",
+            self.degree,
+            self.coeffs.len()
+        );
 
         let mut result = self.coeffs[self.degree];
         for i in (0..self.degree).rev() {
@@ -731,5 +754,30 @@ mod tests {
         let result2 = p.eval(y);
         // 1 + 2*(-1) + 3*1 = 1 - 2 + 3 = 2
         assert_eq!(result2.spinor_value(), 2);
+    }
+
+    #[test]
+    fn test_checked_div_rem() {
+        let a = MobiusInt::from_i64(10);
+        let b = MobiusInt::from_i64(3);
+        let zero = MobiusInt::zero();
+
+        // Normal division
+        let q = a.checked_div(&b);
+        assert!(q.is_some());
+        assert_eq!(q.unwrap().spinor_value(), 3);
+
+        // Normal remainder
+        let r = a.checked_rem(&b);
+        assert!(r.is_some());
+        assert_eq!(r.unwrap().spinor_value(), 1);
+
+        // Division by zero returns None
+        assert!(a.checked_div(&zero).is_none());
+        assert!(a.checked_rem(&zero).is_none());
+
+        // Zero divided by non-zero
+        assert_eq!(zero.checked_div(&b).unwrap().spinor_value(), 0);
+        assert_eq!(zero.checked_rem(&b).unwrap().spinor_value(), 0);
     }
 }

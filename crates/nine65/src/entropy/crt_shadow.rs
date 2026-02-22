@@ -228,7 +228,8 @@ impl CRTShadowContext {
 
         let product: u128 = primes
             .iter()
-            .fold(1u128, |acc, &p| acc.saturating_mul(p as u128));
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
+            .expect("CRTShadowContext: prime product overflows u128 — use fewer or smaller primes");
 
         // Precompute CRT values
         let crt_values: Vec<_> = primes

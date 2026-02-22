@@ -122,7 +122,7 @@ impl LatticeSecurityEstimator {
         // At HE boundary: security ≈ 3.36 * (n / log(q))
         // Using millibits: base_security_mb = 3360 * n / log_q
 
-        // Ternary secret penalty (vs Gaussian)
+        // Ternary secret penalty (vs Gaussian) — used for flat hybrid estimate
         // 850/1000 = 0.85 for ternary, 800/1000 = 0.80 for binary
         let ternary_penalty_per_mille: u32 = match secret_distribution {
             SecretDistribution::Ternary => 850, // ~15% reduction due to MITM
@@ -158,16 +158,26 @@ impl LatticeSecurityEstimator {
             CostModel::MATZOV => 900, // MATZOV is ~10% more aggressive
         };
 
-        // Classical bits = base_security * model_factor / 1000 / 1000 (convert mb to bits)
-        // = base_security_mb * model_factor / 1_000_000
+        // Classical bits (pure BKZ attack, no secret distribution penalty)
         let classical_bits_mb = (base_security_mb * model_factor_per_mille as u64) / 1000;
         let classical_bits = (classical_bits_mb / 1000) as u32;
 
-        // Hybrid bits = base_security * ternary_penalty * model_factor
+        // BKZ block size from classical security (attacker's required block size)
+        let beta = ((classical_bits as u64 * 1000) / 292) as u32;
+
+        // BKZ cost using dedicated cost model methods
+        let (_bkz_cost_mb, bkz_iterations) = match self.cost_model {
+            CostModel::CoreSVP => self.core_svp_cost(beta),
+            CostModel::MATZOV => self.matzov_cost(beta),
+        };
+
+        // Hybrid security: take the tighter of flat-penalty and detailed MITM analysis
         let hybrid_bits_mb =
             (base_security_mb * ternary_penalty_per_mille as u64 * model_factor_per_mille as u64)
                 / 1_000_000;
-        let hybrid_bits = (hybrid_bits_mb / 1000) as u32;
+        let hybrid_bits_flat = (hybrid_bits_mb / 1000) as u32;
+        let hybrid_bits_detailed = self.hybrid_attack_cost(n, log_q, beta, secret_distribution);
+        let hybrid_bits = hybrid_bits_flat.min(hybrid_bits_detailed);
 
         // Quantum bits ≈ hybrid * 0.67 (Grover speedup)
         // Using 670/1000 = 0.67
@@ -176,13 +186,6 @@ impl LatticeSecurityEstimator {
         // Effective security is the binding constraint
         let effective_bits = classical_bits.min(hybrid_bits);
 
-        // Estimate BKZ block size: beta ≈ effective_bits / 0.292
-        // Using integer: beta = effective_bits * 1000 / 292
-        let beta = ((effective_bits as u64 * 1000) / 292) as u32;
-
-        // BKZ iterations ≈ 8 * beta^2
-        let bkz_iterations = 8 * (beta as u64) * (beta as u64);
-
         let meets_claim = effective_bits >= claimed_security;
 
         // Compute ratio as integer (n * 10 / log_q for one decimal place)
@@ -190,9 +193,15 @@ impl LatticeSecurityEstimator {
         let ratio_int = ratio_x10 / 10;
         let ratio_frac = ratio_x10 % 10;
 
+        let cost_model_name = match self.cost_model {
+            CostModel::CoreSVP => "Core-SVP",
+            CostModel::MATZOV => "MATZOV",
+        };
+
         let analysis = format!(
             "Ring-LWE n={}, log(q)={}, secret={:?}\n\
              n/log(q) ratio: {}.{}\n\
+             Cost model: {} (BKZ-{}, {} iters)\n\
              Classical: {} bits\n\
              Hybrid (ternary): {} bits\n\
              Quantum: {} bits\n\
@@ -202,6 +211,9 @@ impl LatticeSecurityEstimator {
             secret_distribution,
             ratio_int,
             ratio_frac,
+            cost_model_name,
+            beta,
+            bkz_iterations,
             classical_bits,
             hybrid_bits,
             quantum_bits,
@@ -256,9 +268,8 @@ impl LatticeSecurityEstimator {
     /// Convert Hermite factor δ to BKZ block size β (integer approximation)
     ///
     /// Uses lookup table for common values, interpolation for others.
-    /// Reserved for future advanced security analysis.
-    #[allow(dead_code)]
-    fn delta_to_beta(&self, delta_millionths: u64) -> u32 {
+    /// The Hermite factor δ is provided as millionths (1_000_000 = 1.0).
+    pub fn delta_to_beta(&self, delta_millionths: u64) -> u32 {
         // delta is provided as millionths (1_000_000 = 1.0)
         // Approximation based on GSA: β ≈ -log(δ) / 0.0085
         // For delta near 1.0, small differences matter
@@ -289,7 +300,6 @@ impl LatticeSecurityEstimator {
     /// Core-SVP BKZ cost model (integer)
     /// Cost = 2^(0.292·β + o(β)) for classical
     /// Returns (log_cost_millibits, iterations)
-    #[allow(dead_code)]
     fn core_svp_cost(&self, beta: u32) -> (u64, u64) {
         // log_cost = 0.292 * beta → log_cost_mb = 292 * beta
         let log_cost_mb = 292 * beta as u64;
@@ -299,7 +309,6 @@ impl LatticeSecurityEstimator {
 
     /// MATZOV cost model (more aggressive, integer)
     /// Returns (log_cost_millibits, iterations)
-    #[allow(dead_code)]
     fn matzov_cost(&self, beta: u32) -> (u64, u64) {
         // MATZOV gives about 20% speedup over Core-SVP
         // log_cost = 0.265 * beta → log_cost_mb = 265 * beta
@@ -310,8 +319,8 @@ impl LatticeSecurityEstimator {
 
     /// Hybrid attack combining BKZ with meet-in-the-middle (integer)
     ///
-    /// Reserved for future advanced security analysis.
-    #[allow(dead_code)]
+    /// Computes the optimal split between MITM guessing and BKZ reduction
+    /// for structured secret distributions (ternary/binary).
     fn hybrid_attack_cost(
         &self,
         n: usize,
@@ -602,7 +611,7 @@ mod tests {
         let test_params = [
             (4096, 90, "secure_128 params"),
             (8192, 150, "secure_192 params"),
-            (16384, 240, "secure_256 params"),
+            (16384, 177, "secure_256 params"),
             (2048, 54, "HE Standard boundary"),
         ];
 
@@ -633,7 +642,7 @@ mod tests {
             // Allow variance due to integer rounding and hybrid attack complexity
             // Expected: ~900/1000 (10% reduction), Allow range: 850-950 (5-15%)
             assert!(
-                reduction_ratio >= 850 && reduction_ratio <= 950,
+                (850..=950).contains(&reduction_ratio),
                 "{}: ratio {}/1000 should be near 900 (got {})",
                 desc,
                 reduction_ratio,
@@ -693,7 +702,7 @@ mod tests {
         let configs = [
             ("secure_128", SecureConfig::secure_128(), 115), // Measured: 116 bits
             ("secure_192", SecureConfig::secure_192(), 140), // Measured: 143 bits
-            ("secure_256", SecureConfig::secure_256(), 170), // To be measured
+            ("secure_256", SecureConfig::secure_256(), 230), // 6 primes, log_q=177
         ];
 
         for (name, sec_config, min_expected_bits) in configs {
@@ -883,7 +892,7 @@ mod tests {
         let configs = [
             ("secure_128", SecureConfig::secure_128(), 128, 115), // CoreSVP: 129, MATZOV: 116
             ("secure_192", SecureConfig::secure_192(), 155, 140), // CoreSVP: 159, MATZOV: 143
-            ("secure_256", SecureConfig::secure_256(), 185, 170), // To be measured
+            ("secure_256", SecureConfig::secure_256(), 260, 230), // 6 primes, log_q=177
         ];
 
         for (name, sec_config, core_min, matzov_min) in configs {

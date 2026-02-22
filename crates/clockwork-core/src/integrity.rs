@@ -346,9 +346,8 @@ mod tests {
             tr.corrupt_a(corrupted_a);
             tr.corrupt_b(corrupted_b);
 
-            match tr.read() {
-                VoteResult::Failed => detected += 1,
-                _ => {} // CRC collision — should be extremely rare
+            if tr.read() == VoteResult::Failed {
+                detected += 1;
             }
         }
 

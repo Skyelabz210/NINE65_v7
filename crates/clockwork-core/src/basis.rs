@@ -33,8 +33,7 @@ pub fn mod_inverse(a: i128, m: i128) -> Option<u64> {
 }
 
 /// Pairwise coprimality check. Required precondition for all CRT operations.
-#[allow(dead_code)]
-fn are_pairwise_coprime(moduli: &[u64]) -> bool {
+pub fn are_pairwise_coprime(moduli: &[u64]) -> bool {
     for i in 0..moduli.len() {
         for j in (i + 1)..moduli.len() {
             let (g, _, _) = extended_gcd(moduli[i] as i128, moduli[j] as i128);
@@ -117,15 +116,18 @@ impl RnsBasis {
         }
 
         // Enforce pairwise coprimality (D1 precondition)
-        for i in 0..moduli.len() {
-            for j in (i + 1)..moduli.len() {
-                let (g, _, _) = extended_gcd(moduli[i] as i128, moduli[j] as i128);
-                if g != 1 {
-                    return Err(BasisError::NotCoprime {
-                        i,
-                        j,
-                        gcd: g as u64,
-                    });
+        if !are_pairwise_coprime(&moduli) {
+            // Find the specific pair for the error message
+            for i in 0..moduli.len() {
+                for j in (i + 1)..moduli.len() {
+                    let (g, _, _) = extended_gcd(moduli[i] as i128, moduli[j] as i128);
+                    if g != 1 {
+                        return Err(BasisError::NotCoprime {
+                            i,
+                            j,
+                            gcd: g as u64,
+                        });
+                    }
                 }
             }
         }
@@ -141,7 +143,7 @@ impl RnsBasis {
         // Precompute CRT reconstruction coefficients
         // For each i: M_i = M_k / p_i, then coeff_i = M_i * (M_i^{-1} mod p_i)
         let mut crt_coeffs = Vec::with_capacity(moduli.len());
-        for (_i, &p_i) in moduli.iter().enumerate() {
+        for &p_i in &moduli {
             let m_i = capacity / (p_i as u128);
             let m_i_mod_pi = (m_i % (p_i as u128)) as i128;
             let inv = mod_inverse(m_i_mod_pi, p_i as i128)

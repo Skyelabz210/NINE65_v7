@@ -42,8 +42,7 @@ pub struct GroGate {
     acc_mask: u64,
     /// Window width parameter W: coincidence when |θ_A - θ_B| < W
     window_width: u64,
-    /// Current time step (reserved for future GRO sequencing)
-    #[allow(dead_code)]
+    /// Current time step for stateful GRO sequencing
     time_step: u64,
 }
 
@@ -81,7 +80,7 @@ impl GroGate {
     ///
     /// Returns None if validation fails.
     pub fn new(params: GroParams) -> Option<Self> {
-        if params.n_acc < 8 || params.n_acc > 63 {
+        if !(8..=63).contains(&params.n_acc) {
             return None;
         }
         if params.delta_phi_a == 0 || params.delta_phi_b == 0 {
@@ -114,7 +113,7 @@ impl GroGate {
     /// With large Fibonacci numbers, the approximation error is < 10^{-18}.
     pub fn golden_ratio(n_acc: u32, delta_phi_a: u64, window_width: u64) -> Option<Self> {
         // Guard: n_acc must be in valid range (same as GroGate::new)
-        if n_acc < 8 || n_acc > 63 {
+        if !(8..=63).contains(&n_acc) {
             return None;
         }
 
@@ -135,11 +134,7 @@ impl GroGate {
         let delta_phi_b = delta_phi_b_128 as u64;
 
         // Ensure the difference is odd (for T9: maximal period)
-        let diff = if delta_phi_b > delta_phi_a {
-            delta_phi_b - delta_phi_a
-        } else {
-            delta_phi_a - delta_phi_b
-        };
+        let diff = delta_phi_b.abs_diff(delta_phi_a);
 
         if diff & 1 == 0 {
             // Nudge by 1 to make it odd (minimal perturbation to φ approximation)
@@ -179,9 +174,9 @@ impl GroGate {
     pub fn phase_diff(&self, t: u64) -> u64 {
         let a = self.phase_a(t);
         let b = self.phase_b(t);
-        let raw_diff = if a >= b { a - b } else { b - a };
+        let raw_diff = a.abs_diff(b);
 
-        let half = (self.acc_mask + 1) / 2;
+        let half = self.acc_mask.div_ceil(2);
         if raw_diff > half {
             self.acc_mask + 1 - raw_diff
         } else {
@@ -277,6 +272,18 @@ impl GroGate {
     /// Get phase increment B
     pub fn delta_phi_b(&self) -> u64 {
         self.delta_phi_b
+    }
+
+    /// Get the current time step
+    pub fn current_step(&self) -> u64 {
+        self.time_step
+    }
+
+    /// Advance the GRO by one time step, returning whether the new step
+    /// falls inside a coincidence window.
+    pub fn advance(&mut self) -> bool {
+        self.time_step = self.time_step.wrapping_add(1);
+        self.is_window(self.time_step)
     }
 }
 
@@ -374,11 +381,7 @@ mod tests {
         // χ² test: each bin should have approximately total_windows/num_bins
         // For a rough check: no bin should deviate by more than 3× from expected
         for (bin, &count) in bin_counts.iter().enumerate() {
-            let deviation = if count > expected_per_bin {
-                count - expected_per_bin
-            } else {
-                expected_per_bin - count
-            };
+            let deviation = count.abs_diff(expected_per_bin);
 
             // Allow up to 50% deviation (generous for a simple test)
             let max_deviation = expected_per_bin / 2 + 1;
@@ -406,11 +409,7 @@ mod tests {
         // φ * 10^9 ≈ 1_618_033_988
         let phi_scaled: u128 = 1_618_033_988;
 
-        let error = if ratio_scaled > phi_scaled {
-            ratio_scaled - phi_scaled
-        } else {
-            phi_scaled - ratio_scaled
-        };
+        let error = ratio_scaled.abs_diff(phi_scaled);
 
         // Allow relative error < 10^{-6} (generous for integer division)
         assert!(

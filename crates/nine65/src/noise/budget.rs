@@ -280,13 +280,30 @@ impl NoiseBudget {
     }
 
     /// Reset budget after successful bootstrap.
-    /// Post-bootstrap noise is t * eta * sqrt(N), so we deduct that from fresh budget.
+    ///
+    /// Post-bootstrap noise is approximately `t × η × √N`, so the
+    /// remaining budget is `log2(Q/t) − log2(t × η × √N)`, i.e.
+    /// `log2(Q) − 2·log2(t) − log2(η) − log2(N)/2`.
     pub fn reset_after_bootstrap(&mut self, config: &FHEConfig) {
-        let fresh = Self::from_config(config);
+        let log_q_bits: i64 = config
+            .primes
+            .iter()
+            .map(|&p| (64 - p.leading_zeros()) as i64)
+            .sum();
         let t_bits = (64 - config.t.leading_zeros()) as i64;
-        // Bootstrap penalty: plaintext-ct multiply scales noise by t
-        let bootstrap_penalty_mb = t_bits * 1000;
-        self.remaining_mb = fresh.initial_mb.saturating_sub(bootstrap_penalty_mb);
+        let eta_bits = if config.eta > 0 {
+            (64 - (config.eta as u64).leading_zeros()) as i64
+        } else {
+            1
+        };
+        let n_half_bits = (config.n.trailing_zeros() / 2) as i64;
+
+        // budget = delta_bits − bootstrap_noise_bits
+        //        = (log_Q − log_t) − (log_t + log_η + log_√N)
+        //        = log_Q − 2·log_t − log_η − log_√N
+        let post_bootstrap_mb =
+            (log_q_bits - 2 * t_bits - eta_bits - n_half_bits).max(0) * 1000;
+        self.remaining_mb = post_bootstrap_mb;
         self.operations.push(NoiseOperation {
             op_type: NoiseOpType::Bootstrap,
             cost_mb: 0,

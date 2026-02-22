@@ -134,7 +134,6 @@ impl BootstrapKey {
     }
 
     /// Access to the secret key polynomial (pub(crate) for mask contribution).
-    #[allow(dead_code)]
     pub(crate) fn secret_key_poly(&self) -> &RingPolynomial {
         &self.sk.s
     }
@@ -210,13 +209,14 @@ impl ClockworkBootstrap {
         // -- Step 1: Decrypt the MASKED ciphertext --
         // raw_masked = (c0+r0) + (c1+r1)*s = delta*m + e + (r0 + r1*s)
         // Memory contains: masked ciphertext (safe), raw_masked (masked by r0+r1*s)
-        let c1_s = masked_ct.c1.mul(&bsk.sk.s, ntt);
+        let sk_poly = bsk.secret_key_poly();
+        let c1_s = masked_ct.c1.mul(sk_poly, ntt);
         let raw_masked = masked_ct.c0.add(&c1_s, ntt);
 
         // -- Step 2: Compute mask contribution --
         // mask_poly = r0 + r1*s (using known mask values and secret key)
         // This is NOT the plaintext -- it's the mask's algebraic effect
-        let mask_poly = mask.decrypt_contribution(&bsk.sk.s, ntt);
+        let mask_poly = mask.decrypt_contribution(sk_poly, ntt);
 
         // -- Step 3: Algebraic mask removal (constant-time subtraction) --
         // raw_clean = raw_masked - mask_poly = delta*m + e
@@ -325,6 +325,8 @@ mod tests {
         let (config, ntt, keys, _, _) = setup();
         let bsk = BootstrapKey::generate(&config, &ntt, &keys.secret_key);
         assert_eq!(bsk.len(), config.n);
+        // Verify secret key polynomial accessor returns correct dimension
+        assert_eq!(bsk.secret_key_poly().coeffs.len(), config.n);
     }
 
     #[test]

@@ -119,11 +119,7 @@ fn run_trials(
         let ct_boot = boot.bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk)?;
         let decrypted_boot = ctx.decrypt_dual(&ct_boot, &keys.secret_key);
 
-        let error = if decrypted_boot >= m {
-            decrypted_boot - m
-        } else {
-            m - decrypted_boot
-        };
+        let error = decrypted_boot.abs_diff(m);
         // Also check wraparound error (mod t)
         let wrap_error = if decrypted_boot > m {
             config.t - decrypted_boot + m
@@ -426,6 +422,7 @@ fn explore_h4_noise_parameter() {
 /// correct decrypt-then-round approach. This isolates whether the issue
 /// is noise or algorithmic (rounding doesn't distribute over poly mul).
 #[test]
+#[allow(clippy::needless_range_loop)] // k used for both indexing and arithmetic (j-k negacyclic)
 fn explore_h5_modswitch_distribution_error() {
     println!("\n\n========== H5: MODSWITCH DISTRIBUTION ERROR ==========");
     println!("Hypothesis: rounding before poly-mul introduces systematic error.\n");
@@ -524,18 +521,13 @@ fn explore_h5_modswitch_distribution_error() {
         let m_bootstrap_sim = result_bootstrap[0] as u64;
 
         // Step 2c: Measure the distributed rounding error
-        let error_correct = if m_correct >= m { m_correct - m } else { m - m_correct };
-        let error_bootstrap = if m_bootstrap_sim >= m {
-            m_bootstrap_sim - m
-        } else {
-            m - m_bootstrap_sim
-        };
+        let error_correct = m_correct.abs_diff(m);
+        let error_bootstrap = m_bootstrap_sim.abs_diff(m);
 
         println!(
-            "m={:>6}: decrypt={:>6} | phase_round={:>6} (err={}) | bootstrap_sim={:>6} (err={}) | actual_boot={}",
+            "m={:>6}: decrypt={:>6} | phase_round={:>6} (err={}) | bootstrap_sim={:>6} (err={}) | actual_boot=TBD",
             m, decrypted_correct, m_correct, error_correct,
             m_bootstrap_sim, error_bootstrap,
-            "TBD" // actual bootstrap result from Phase 2+3
         );
     }
 
@@ -1061,7 +1053,7 @@ fn cleartext_phase_eval(
 
 /// Distance in Z_t (circular): min(|a-b|, t-|a-b|)
 fn mod_distance(a: u64, b: u64, t: u64) -> u64 {
-    let diff = if a >= b { a - b } else { b - a };
+    let diff = a.abs_diff(b);
     diff.min(t - diff)
 }
 

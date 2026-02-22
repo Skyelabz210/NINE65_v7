@@ -202,11 +202,22 @@ impl ModulusChain {
     pub fn new(primes: Vec<u64>) -> Self {
         let level = primes.len() - 1;
 
-        // Precompute partial products
+        // Precompute partial products.
+        // Use checked_mul to detect overflow; store 0 as sentinel for levels
+        // whose cumulative product exceeds u128.
         let mut level_products = Vec::with_capacity(primes.len());
         let mut product = 1u128;
+        let mut overflowed = false;
         for &p in &primes {
-            product = product.saturating_mul(p as u128);
+            if !overflowed {
+                match product.checked_mul(p as u128) {
+                    Some(v) => product = v,
+                    None => {
+                        overflowed = true;
+                        product = 0;
+                    }
+                }
+            }
             level_products.push(product);
         }
 

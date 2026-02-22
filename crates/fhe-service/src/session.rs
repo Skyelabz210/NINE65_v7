@@ -164,15 +164,12 @@ pub struct SessionStore {
 }
 
 impl SessionStore {
+    /// Create a new session store with a default 1-hour TTL.
     pub fn new(max_sessions: usize) -> Self {
-        Self {
-            sessions: RwLock::new(HashMap::new()),
-            max_sessions,
-            ttl_seconds: 3600, // Default 1 hour TTL
-        }
+        Self::new_with_ttl(max_sessions, 3600)
     }
 
-    #[allow(dead_code)]
+    /// Create a new session store with custom TTL (time-to-live) for sessions.
     pub fn new_with_ttl(max_sessions: usize, ttl_seconds: u64) -> Self {
         Self {
             sessions: RwLock::new(HashMap::new()),
@@ -260,8 +257,7 @@ impl SessionStore {
         removed_count
     }
 
-    /// Get the TTL for sessions
-    #[allow(dead_code)]
+    /// Get the TTL for sessions (in seconds).
     pub fn ttl_seconds(&self) -> u64 {
         self.ttl_seconds
     }

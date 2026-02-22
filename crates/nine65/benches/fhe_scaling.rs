@@ -27,16 +27,18 @@ fn bench_homo_mul_scaling(c: &mut Criterion) {
     for (name, config) in configs.iter() {
         let ntt = NTTEngine::new(config.q, config.n);
         let mut rng = ShadowHarvester::with_seed(0xDEADBEEF);
-        let keys = KeySet::generate(&config, &ntt, &mut rng);
-        let encoder = BFVEncoder::new(&config);
+        let keys = KeySet::generate(config, &ntt, &mut rng);
+        let encoder = BFVEncoder::new(config);
 
         let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
+        #[allow(deprecated)]
         let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
 
         let ct1 = encryptor.encrypt(42, &mut rng);
         let ct2 = encryptor.encrypt(17, &mut rng);
 
         group.bench_with_input(BenchmarkId::new("parallel", name), &name, |b, _| {
+            #[allow(deprecated)]
             b.iter(|| black_box(evaluator.mul(&ct1, &ct2)))
         });
     }
@@ -91,8 +93,8 @@ fn bench_encrypt_decrypt_scaling(c: &mut Criterion) {
     for (n, config) in configs.iter() {
         let ntt = NTTEngine::new(config.q, config.n);
         let mut rng = ShadowHarvester::with_seed(42);
-        let keys = KeySet::generate(&config, &ntt, &mut rng);
-        let encoder = BFVEncoder::new(&config);
+        let keys = KeySet::generate(config, &ntt, &mut rng);
+        let encoder = BFVEncoder::new(config);
 
         let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
         let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);

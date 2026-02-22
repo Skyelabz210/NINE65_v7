@@ -178,7 +178,7 @@ mod tests {
     #[test]
     fn ct05_multiple_bases() {
         // Test with 5 different basis choices (CT-05 requirement)
-        let bases = vec![
+        let bases = [
             RnsBasis::new(vec![7, 11, 13, 17, 19]).unwrap(),
             RnsBasis::new(vec![251, 509]).unwrap(),
             RnsBasis::new(vec![1021, 1031, 1033]).unwrap(),

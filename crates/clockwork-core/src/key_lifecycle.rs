@@ -402,14 +402,14 @@ mod tests {
             let r = next_rng(&mut rng) % TEST_Q;
             let shares = KeySharePair::split(s, r, TEST_Q);
 
-            let bin = (shares.share_a() as u64 * num_bins / TEST_Q) as usize;
+            let bin = (shares.share_a() * num_bins / TEST_Q) as usize;
             let bin = bin.min(num_bins as usize - 1);
             bin_counts[bin] += 1;
         }
 
         // Simple χ² test: expect ~num_samples/num_bins per bin
         // Integer-only: scale by 1000 to avoid floating-point
-        let expected_x1000 = (num_samples as u64 * 1000) / num_bins as u64;
+        let expected_x1000 = (num_samples as u64 * 1000) / num_bins;
 
         let chi_sq_x1000: u64 = bin_counts
             .iter()

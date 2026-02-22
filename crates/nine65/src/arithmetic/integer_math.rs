@@ -479,7 +479,9 @@ mod tests {
     fn test_golden_angle_q30() {
         // 2.399963229... * 2^30 ≈ 2_576_980_378
         // Verify it's in the right ballpark
-        assert!(GOLDEN_ANGLE_Q30 > 2_500_000_000);
-        assert!(GOLDEN_ANGLE_Q30 < 2_700_000_000);
+        assert!(
+            (2_500_000_000..2_700_000_000).contains(&GOLDEN_ANGLE_Q30),
+            "GOLDEN_ANGLE_Q30 out of expected range"
+        );
     }
 }

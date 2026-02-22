@@ -434,13 +434,12 @@ mod adversarial_tests {
             r#"{{"c0":{{"coeffs":[{}],"q":{}}},"c1":{{"coeffs":[{}],"q":{}}}}}"#,
             // First coefficient is q+1 (invalid!)
             std::iter::once(config.q + 1)
-                .chain(std::iter::repeat(1).take(config.n - 1))
+                .chain(std::iter::repeat_n(1, config.n - 1))
                 .map(|x| x.to_string())
                 .collect::<Vec<_>>()
                 .join(","),
             config.q,
-            std::iter::repeat(1)
-                .take(config.n)
+            std::iter::repeat_n(1, config.n)
                 .map(|x| x.to_string())
                 .collect::<Vec<_>>()
                 .join(","),

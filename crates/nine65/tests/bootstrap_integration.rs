@@ -25,23 +25,6 @@ use nine65::params::secure_configs::SecureConfig;
 // HELPERS
 // =========================================================================
 
-#[allow(dead_code)]
-fn mod_pow(mut base: u128, mut exp: u128, modulus: u128) -> u128 {
-    if modulus == 1 {
-        return 0;
-    }
-    let mut result = 1u128;
-    base %= modulus;
-    while exp > 0 {
-        if exp % 2 == 1 {
-            result = result * base % modulus;
-        }
-        exp /= 2;
-        base = base * base % modulus;
-    }
-    result
-}
-
 fn setup_bootstrap() -> Nine65Result<(
     RNSFHEContext,
     ClockworkBootstrap,
@@ -1155,7 +1138,7 @@ fn test_noise_budget_analysis() {
     let delta_bits = q_boot_bits - t_bits;
 
     let eta_bits = 64 - (config.eta as u64).leading_zeros();
-    let n_half_bits = (config.n.trailing_zeros() + 1) / 2;
+    let n_half_bits = config.n.trailing_zeros().div_ceil(2);
     let noise_bits = t_bits + eta_bits + n_half_bits;
 
     let margin = delta_bits - noise_bits;

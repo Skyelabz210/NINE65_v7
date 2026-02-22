@@ -10,21 +10,40 @@ use crate::arithmetic::NTTEngineFFT as NTTEngine;
 use crate::arithmetic::NTTEngine;
 use crate::entropy::{FheRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
-use zeroize::Zeroize;
+use std::fmt;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 const MAX_RING_POLY_DEGREE: usize = 32768;
 
 /// Polynomial in R_q = Z_q[X]/(X^N + 1)
 ///
+/// # Domain Invariant
+/// `RingPolynomial` is **always** in the coefficient domain. The NTT
+/// transform is applied and removed internally by the NTT engine within
+/// `mul()` and `mul_ct()`. NTT-domain data lives as bare `Vec<u64>`
+/// inside the NTT engine and RNS limbs.
+///
 /// Implements `Zeroize` for secure memory clearing of sensitive data.
-#[derive(Clone, Debug)]
+///
+/// `Debug` is intentionally redacted to prevent accidental leakage
+/// of secret key coefficients via logging or panic messages.
+#[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", derive(bincode::Encode, bincode::Decode))]
 pub struct RingPolynomial {
-    /// Coefficients in standard form (not NTT)
+    /// Coefficients in standard (coefficient) form — never NTT domain.
     pub coeffs: Vec<u64>,
     /// The modulus
     pub q: u64,
+}
+
+impl fmt::Debug for RingPolynomial {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RingPolynomial")
+            .field("degree", &self.coeffs.len())
+            .field("q", &self.q)
+            .finish()
+    }
 }
 
 impl Zeroize for RingPolynomial {
@@ -32,6 +51,14 @@ impl Zeroize for RingPolynomial {
         self.coeffs.zeroize();
     }
 }
+
+impl Drop for RingPolynomial {
+    fn drop(&mut self) {
+        self.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for RingPolynomial {}
 
 impl RingPolynomial {
     /// Create a zero polynomial
@@ -114,13 +141,23 @@ impl RingPolynomial {
     }
 
     /// Add two polynomials
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match — catches mixed-parameter errors.
     pub fn add(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::add: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::add: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.add(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
 
     /// Subtract two polynomials
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
     pub fn sub(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::sub: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::sub: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.sub(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
@@ -132,7 +169,12 @@ impl RingPolynomial {
     }
 
     /// Multiply two polynomials using NTT
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
     pub fn mul(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::mul: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::mul: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.multiply(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
@@ -141,7 +183,12 @@ impl RingPolynomial {
     ///
     /// Uses constant-time Barrett reduction to prevent timing side-channels.
     /// Use this variant when one or both operands depend on secret data.
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
     pub fn mul_ct(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::mul_ct: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::mul_ct: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.multiply_ct(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }

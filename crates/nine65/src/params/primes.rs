@@ -14,6 +14,7 @@ pub const PRIMES_1024: [u64; 4] = [
     167772161, // 2^25 * 5 + 1
 ];
 
+/// NTT-friendly primes for N=4096 polynomial degree
 pub const PRIMES_4096: [u64; 4] = [
     998244353, 985661441, 754974721, 469762049, // 2^26 * 7 + 1
 ];

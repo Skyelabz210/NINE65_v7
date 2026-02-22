@@ -567,7 +567,7 @@ mod tests {
         let engine = AgmEngine::default();
 
         // Test across a range of values above 1
-        let test_values: &[f64] = &[1.5, 2.0, 2.718281828, 4.0, 8.0, 16.0];
+        let test_values: &[f64] = &[1.5, 2.0, std::f64::consts::E, 4.0, 8.0, 16.0];
 
         for &val in test_values {
             let x = to_scaled(val);
@@ -612,7 +612,7 @@ mod tests {
                 continue;
             } // Skip if exp overflowed
 
-            let result = engine.ln(exp_x as u128);
+            let result = engine.ln(exp_x);
             let actual = result as f64 / AGM_SCALE as f64;
 
             let abs_error = (actual - val).abs();

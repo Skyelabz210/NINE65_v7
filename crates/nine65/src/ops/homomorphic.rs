@@ -80,8 +80,13 @@ impl<'a> BFVEvaluator<'a> {
     }
 
     /// Add plaintext to ciphertext
+    ///
+    /// # Panics
+    /// Panics if `m >= t` (plaintext modulus). Prefer `try_add_plain()` on
+    /// `TrackedEvaluator` for untrusted input.
     pub fn add_plain(&self, ct: &Ciphertext, m: u64) -> Ciphertext {
-        let plain = self.encoder.encode(m);
+        let plain = self.encoder.try_encode(m)
+            .unwrap_or_else(|e| panic!("add_plain: {}", e));
         Ciphertext {
             c0: ct.c0.add(&plain, self.ntt),
             c1: ct.c1.clone(),
@@ -89,6 +94,9 @@ impl<'a> BFVEvaluator<'a> {
     }
 
     /// Multiply ciphertext by plaintext scalar
+    ///
+    /// Note: `m` is used as a raw scalar multiplier, not encoded via Δ.
+    /// Values >= t are valid here (they scale coefficients mod q).
     pub fn mul_plain(&self, ct: &Ciphertext, m: u64) -> Ciphertext {
         Ciphertext {
             c0: ct.c0.scalar_mul(m, self.ntt),

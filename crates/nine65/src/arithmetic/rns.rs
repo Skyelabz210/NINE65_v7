@@ -10,7 +10,7 @@
 use super::montgomery::MontgomeryContext;
 #[cfg(feature = "ntt_fft")]
 use super::ntt_fft::NTTEngineFFT as NTTEngine;
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(not(feature = "ntt_fft"))]
 use super::ntt::NTTEngine;
@@ -43,8 +43,8 @@ impl U256 {
             hi: 0,
         }
     }
-    #[cfg(test)]
     #[inline]
+    #[allow(dead_code)] // Available for bootstrap U256 paths
     pub(crate) const fn from_u128(x: u128) -> Self {
         Self { lo: x, hi: 0 }
     }
@@ -282,6 +282,34 @@ impl U256 {
         } else {
             m.sub(other.sub(self))
         }
+    }
+
+    /// Divide self by modulus, returning (quotient, remainder).
+    /// Uses bitwise long division; 256 steps worst case.
+    pub(crate) fn div_mod_u256(self, modulus: Self) -> (Self, Self) {
+        assert!(!modulus.is_zero(), "division by zero");
+        if self.lt(modulus) {
+            return (Self::zero(), self);
+        }
+        let mut quotient = Self::zero();
+        let mut rem = Self::zero();
+        let bl = self.bitlen();
+        for i in (0..bl).rev() {
+            rem = rem.shl1();
+            if self.get_bit(i) == 1 {
+                rem.lo |= 1;
+            }
+            if rem.ge(modulus) {
+                rem = rem.sub(modulus);
+                // Set bit i in quotient
+                if i < 128 {
+                    quotient.lo |= 1u128 << i;
+                } else {
+                    quotient.hi |= 1u128 << (i - 128);
+                }
+            }
+        }
+        (quotient, rem)
     }
 
     /// Product of a slice of u64s (exact as long as the true product fits in 256 bits).
@@ -561,7 +589,10 @@ impl RNSContext {
 }
 
 /// RNS Polynomial - coefficients stored as parallel limbs
-#[derive(Clone, Debug, Zeroize)]
+///
+/// `Debug` is intentionally redacted to prevent accidental leakage
+/// of secret polynomial residues via logging or panic messages.
+#[derive(Clone, Zeroize)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RNSPolynomial {
     /// Limbs: limbs[i] is the polynomial mod primes[i]
@@ -569,6 +600,23 @@ pub struct RNSPolynomial {
     /// Polynomial degree
     pub n: usize,
 }
+
+impl std::fmt::Debug for RNSPolynomial {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RNSPolynomial")
+            .field("n", &self.n)
+            .field("limbs", &self.limbs.len())
+            .finish()
+    }
+}
+
+impl Drop for RNSPolynomial {
+    fn drop(&mut self) {
+        self.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for RNSPolynomial {}
 
 impl RNSPolynomial {
     /// Create from a single-modulus polynomial
@@ -681,7 +729,7 @@ impl RNSPolynomial {
 /// Reconstruct an integer from CRT residues into U256 using iterative CRT.
 ///
 /// Assumes primes are pairwise coprime and the true value is in [0, Π p_i).
-fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
+pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     assert!(!primes.is_empty(), "need primes");
     assert!(residues.len() >= primes.len(), "residue length mismatch");
 
@@ -703,7 +751,7 @@ fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     x
 }
 
-fn mod_inverse(a: u64, m: u64) -> u64 {
+pub(crate) fn mod_inverse(a: u64, m: u64) -> u64 {
     let mut mn = (m as i128, a as i128);
     let mut xy = (0i128, 1i128);
 
@@ -720,7 +768,7 @@ fn mod_inverse(a: u64, m: u64) -> u64 {
 }
 
 /// Modular inverse for u128
-fn mod_inverse_u128(a: u128, m: u128) -> u128 {
+pub(crate) fn mod_inverse_u128(a: u128, m: u128) -> u128 {
     let mut mn = (m as i128, (a % (1u128 << 127)) as i128);
     let mut xy = (0i128, 1i128);
 
@@ -1450,8 +1498,7 @@ impl DualRNSPolynomial {
     /// Full K-Elimination rescaling with CRT reconstruction (for small moduli)
     ///
     /// This version reconstructs the full value using CRT, which requires
-    /// M × A to fit in u128. Use k_elim_rescale for large moduli.
-    #[allow(dead_code)]
+    /// M × A to fit in u128. Use `k_elim_rescale` for large moduli.
     pub fn k_elim_rescale_full(&self, ctx: &DualRNSContext, q_last: u64) -> Self {
         let num_main = ctx.main.num_primes();
         let mut result_main = vec![vec![0u64; self.n]; num_main];
@@ -2328,9 +2375,9 @@ mod tests {
     }
 
     #[test]
-    fn test_product_u64s_secure_256_primes() {
-        // Verify product_u64s correctly computes the modulus product for secure_256
-        // (7 primes, ~237 bits total). This exercises mul_u64 iteratively.
+    fn test_product_u64s_large_prime_set() {
+        // Verify product_u64s correctly computes the product of 7 NTT primes
+        // (~207 bits total). This exercises mul_u64 iteratively.
         let primes: &[u64] = &[
             998244353, 985661441, 754974721, 469762049, 167772161, 595591169, 645922817,
         ];
@@ -2349,8 +2396,8 @@ mod tests {
         // Verify bit-length is in expected range (~204 bits for these 7 primes)
         let bl = product.bitlen();
         assert!(
-            bl >= 200 && bl <= 210,
-            "secure_256 product bit-length {} outside expected range 200..210",
+            (200..=210).contains(&bl),
+            "7-prime product bit-length {} outside expected range 200..210",
             bl
         );
     }
@@ -2463,5 +2510,62 @@ mod tests {
         let residues: Vec<u64> = primes[..level].iter().map(|&p| 42 % p).collect();
         let result = rns.try_to_int_level(&residues, level);
         assert!(result.is_some(), "4 primes (120 bits) should fit in u128");
+    }
+
+    // =====================================================================
+    // U256 div_mod_u256 tests
+    // =====================================================================
+
+    #[test]
+    fn test_u256_div_mod_u256_basic() {
+        // 100 / 7 = 14 remainder 2
+        let a = U256::from_u128(100);
+        let b = U256::from_u128(7);
+        let (q, r) = a.div_mod_u256(b);
+        assert_eq!(q.lo, 14);
+        assert_eq!(q.hi, 0);
+        assert_eq!(r.lo, 2);
+        assert_eq!(r.hi, 0);
+    }
+
+    #[test]
+    fn test_u256_div_mod_u256_large() {
+        // Simulate a modswitch rounding: (val * t + q/2) / q
+        // where val and q exceed u128
+        let primes: &[u64] = &[998244353, 985661441, 754974721, 469762049, 167772161];
+        let q = U256::product_u64s(primes);
+        let t = U256::from_u64(65537);
+        let q_half = q.shr1();
+
+        // val = 42 (small, to verify correctness)
+        let val = U256::from_u64(42);
+        let numerator = val.mul_low(t).add(q_half);
+        let (quotient, _) = numerator.div_mod_u256(q);
+        let result = quotient.rem_u256(t);
+        // round(42 * 65537 / Q) should be 0 since 42 << Q
+        assert_eq!(result.lo, 0, "small val / large Q should round to 0");
+    }
+
+    #[test]
+    fn test_u256_div_mod_u256_self() {
+        // Q / Q = 1 remainder 0
+        let primes: &[u64] = &[998244353, 985661441, 754974721, 469762049, 167772161];
+        let q = U256::product_u64s(primes);
+        let (quotient, remainder) = q.div_mod_u256(q);
+        assert_eq!(quotient.lo, 1);
+        assert_eq!(quotient.hi, 0);
+        assert!(remainder.is_zero());
+    }
+
+    #[test]
+    fn test_crt_reconstruct_u256_roundtrip() {
+        // Verify CRT reconstruction via U256 matches u128 path for small products
+        let primes: &[u64] = &[998244353, 985661441, 754974721];
+        let test_val: u64 = 123456789;
+        let residues: Vec<u64> = primes.iter().map(|&p| test_val % p).collect();
+
+        let result_u256 = crt_reconstruct_u256(&residues, primes);
+        assert_eq!(result_u256.lo, test_val as u128);
+        assert_eq!(result_u256.hi, 0);
     }
 }
