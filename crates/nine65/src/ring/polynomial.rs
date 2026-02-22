@@ -14,14 +14,37 @@ use zeroize::Zeroize;
 
 const MAX_RING_POLY_DEGREE: usize = 32768;
 
+/// Domain tag for polynomial representation.
+///
+/// Prevents accidental mixed-domain arithmetic. NTT-domain polynomials must
+/// be inverse-transformed before coefficient-domain operations, and vice versa.
+///
+/// # Invariant
+/// `RingPolynomial` is **always** in `Coefficient` domain. NTT-domain data
+/// lives as bare `Vec<u64>` inside the NTT engine and RNS limbs. This enum
+/// exists for use in higher-level wrappers and RNS domain tracking.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PolyDomain {
+    /// Standard coefficient representation in Z_q[X]/(X^N + 1)
+    Coefficient,
+    /// Number Theoretic Transform (evaluation) domain
+    Ntt,
+}
+
 /// Polynomial in R_q = Z_q[X]/(X^N + 1)
+///
+/// # Domain Invariant
+/// `RingPolynomial` is **always** in the coefficient domain. The NTT
+/// transform is applied and removed internally by the NTT engine within
+/// `mul()` and `mul_ct()`. If you need to track NTT-domain data, use
+/// the `PolyDomain` enum with bare `Vec<u64>` representations.
 ///
 /// Implements `Zeroize` for secure memory clearing of sensitive data.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", derive(bincode::Encode, bincode::Decode))]
 pub struct RingPolynomial {
-    /// Coefficients in standard form (not NTT)
+    /// Coefficients in standard (coefficient) form — never NTT domain.
     pub coeffs: Vec<u64>,
     /// The modulus
     pub q: u64,
@@ -114,13 +137,23 @@ impl RingPolynomial {
     }
 
     /// Add two polynomials
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match — catches mixed-parameter errors.
     pub fn add(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::add: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::add: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.add(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
 
     /// Subtract two polynomials
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
     pub fn sub(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::sub: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::sub: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.sub(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
@@ -132,7 +165,12 @@ impl RingPolynomial {
     }
 
     /// Multiply two polynomials using NTT
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
     pub fn mul(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::mul: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::mul: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.multiply(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
@@ -141,7 +179,12 @@ impl RingPolynomial {
     ///
     /// Uses constant-time Barrett reduction to prevent timing side-channels.
     /// Use this variant when one or both operands depend on secret data.
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
     pub fn mul_ct(&self, other: &Self, ntt: &NTTEngine) -> Self {
+        debug_assert_eq!(self.q, other.q, "RingPolynomial::mul_ct: modulus mismatch ({} vs {})", self.q, other.q);
+        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::mul_ct: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
         let coeffs = ntt.multiply_ct(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }

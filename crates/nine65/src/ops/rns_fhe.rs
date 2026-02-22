@@ -2675,6 +2675,11 @@ impl RNSFHEContext {
         ct2: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
     ) -> DualRNSCiphertext {
+        debug_assert_eq!(
+            ct1.level, ct2.level,
+            "mul_dual_symmetric: level mismatch ({} vs {}) — ciphertexts must be at the same level",
+            ct1.level, ct2.level
+        );
         #[cfg(feature = "debug_dual_mul")]
         eprintln!("[DEBUG mul_dual_symmetric] ct1.level={}, ct2.level={}, n={}, main_primes={}, anchor_primes={}",
             ct1.level, ct2.level, self.n, self.dual_rns.main.primes.len(), self.dual_rns.anchor.primes.len());
@@ -2813,6 +2818,11 @@ impl RNSFHEContext {
     ///
     /// No noise growth from addition (aside from small accumulation).
     pub fn add_dual(&self, ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> DualRNSCiphertext {
+        debug_assert_eq!(
+            ct1.level, ct2.level,
+            "add_dual: level mismatch ({} vs {}) — ciphertexts should be at the same level",
+            ct1.level, ct2.level
+        );
         let c0_new = self.dual_poly_add(&ct1.c0, &ct2.c0);
         let c1_new = self.dual_poly_add(&ct1.c1, &ct2.c1);
         DualRNSCiphertext {
