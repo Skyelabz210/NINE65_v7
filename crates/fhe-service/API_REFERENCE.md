@@ -148,6 +148,8 @@ Destroy a session and its key material.
 
 Encrypt plaintext values. Each value must be `< t` (65537).
 
+**Note on precision**: Due to BFV rounding (`delta = floor(q/t)`), values near `t` (roughly `> t - 5`) may exhibit small decode errors (typically ±3). For guaranteed exact roundtrip, keep plaintext values below `t - 10`. This is an inherent property of single-prime BFV encoding, not a bug.
+
 **Request**:
 ```json
 {
@@ -182,7 +184,7 @@ Decrypt ciphertexts back to plaintext values.
 }
 ```
 
-**Limits**: Max 1024 ciphertexts, max 512KB per ciphertext, max 64MB total.
+**Limits**: Max 1024 ciphertexts, max 512KB per ciphertext, max 10MB request body.
 
 **Response** `200`:
 ```json
@@ -217,7 +219,7 @@ Execute homomorphic operations on ciphertexts.
 }
 ```
 
-**Limits**: Max 256 operations per request, max 4 inputs per operation, max 512KB per ciphertext input, max 64MB total allocation.
+**Limits**: Max 256 operations per request, max 4 inputs per operation, max 512KB per ciphertext input, max 10MB request body.
 
 **Supported Operations**:
 
@@ -229,6 +231,8 @@ Execute homomorphic operations on ciphertexts.
 | `add_plain` | 1 ciphertext | required, < t | ct + scalar | 100 mb |
 | `mul_plain` | 1 ciphertext | required, < t | ct * scalar | ~17000 mb |
 | `mul` | 2 ciphertexts | - | ct * ct (tensor + relin) | ~30000 mb |
+
+**Important**: The `mul` (ct×ct) operation uses single-modulus tensor product + relinearization. For `secure_128` (single 30-bit prime), this path may produce incorrect results due to scaling constraints. Correct ct×ct multiplication requires the DualRNS K-Elimination path (available in the core library but not yet wired through the service API). Use `mul_plain` for scalar multiplication, which is fully correct.
 
 **Response** `200`:
 ```json
@@ -294,8 +298,10 @@ All errors follow a consistent format:
 
 ```json
 {
-  "error": "ERROR_CODE",
-  "message": "human-readable description"
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "human-readable description"
+  }
 }
 ```
 
@@ -308,5 +314,5 @@ Error messages are intentionally generic to prevent information leakage (no plai
 - Error messages are uniform to prevent oracle attacks
 - Session TTL and max-session limits prevent resource exhaustion
 - Connection limits (503 SERVICE_BUSY) prevent DoS
-- Request body size is bounded (max 64MB total allocation per request)
+- Request body size is bounded (max 10MB per request)
 - Panics in handlers are caught and returned as 500 without leaking state
