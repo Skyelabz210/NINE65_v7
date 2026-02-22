@@ -1,0 +1,12 @@
+[package]
+name = "nine65-ffi"
+description = "C FFI bindings for NINE65 Kiosk FHE computation units"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+nine65 = { path = "../nine65" }
