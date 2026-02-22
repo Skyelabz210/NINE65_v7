@@ -649,8 +649,16 @@ impl ClockworkBootstrap {
             .map(|&p| p as u128)
             .collect();
 
-        // Compute Q_level = product of all primes at this level
-        let q_level: u128 = primes.iter().product();
+        // Compute Q_level = product of all primes at this level (checked)
+        let q_level: u128 = primes
+            .iter()
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p))
+            .ok_or_else(|| Nine65Error::BootstrapOverflow {
+                operation: format!(
+                    "Q_level product of {} primes overflows u128 — too many or too large primes for modswitch",
+                    ct_level
+                ),
+            })?;
         let q_level_half = q_level / 2;
 
         // Precompute CRT inverse chain for iterative reconstruction
@@ -668,6 +676,8 @@ impl ClockworkBootstrap {
             } else {
                 crt_inverses.push(0); // unused for first prime
             }
+            // partial_product only accumulates up to k primes; overflow is
+            // impossible here because we already proved the full product fits.
             partial_product *= primes[k];
         }
 
@@ -747,8 +757,16 @@ impl ClockworkBootstrap {
             .map(|&p| p as u128)
             .collect();
 
-        // Compute Q_level = product of all primes at this level
-        let q_level: u128 = primes.iter().product();
+        // Compute Q_level = product of all primes at this level (checked)
+        let q_level: u128 = primes
+            .iter()
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p))
+            .ok_or_else(|| Nine65Error::BootstrapOverflow {
+                operation: format!(
+                    "Q_level product of {} primes overflows u128 in verified modswitch",
+                    ct_level
+                ),
+            })?;
         let q_level_half = q_level / 2;
 
         // Verify Q_level fits in K-Elimination capacity
@@ -992,8 +1010,19 @@ impl ClockworkBootstrap {
         let anchor_primes = &canonical_anchors;
         let num_work_anchors = anchor_primes.len();
 
-        // CRT inverses for work primes (Garner's algorithm)
+        // CRT inverses for work primes (Garner's algorithm).
+        // Guard: the work-prime product must fit in u128 for CRT reconstruction.
         let work_primes_u128: Vec<u128> = self.work_config.primes.iter().map(|&p| p as u128).collect();
+        let _work_product: u128 = work_primes_u128
+            .iter()
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p))
+            .ok_or_else(|| Nine65Error::BootstrapOverflow {
+                operation: format!(
+                    "Work prime product ({} primes) overflows u128 — CRT anchor recomputation requires bigint",
+                    work_num_primes
+                ),
+            })?;
+
         let mut work_crt_inv = Vec::with_capacity(work_num_primes);
         let mut partial = 1u128;
         for k in 0..work_num_primes {
@@ -1070,6 +1099,18 @@ impl ClockworkBootstrap {
         // captured ~30 bits of a ~120-bit coefficient, causing key-switch
         // corruption for multi-prime boot ciphertexts.
         let boot_primes: Vec<u128> = self.boot_config.primes.iter().map(|&p| p as u128).collect();
+
+        // Guard: boot prime product must fit in u128 for CRT reconstruction
+        let _boot_product: u128 = boot_primes
+            .iter()
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p))
+            .ok_or_else(|| Nine65Error::BootstrapOverflow {
+                operation: format!(
+                    "Boot prime product ({} primes) overflows u128 — key_switch CRT requires bigint",
+                    num_boot_primes
+                ),
+            })?;
+
         let mut crt_inverses = Vec::with_capacity(num_boot_primes);
         let mut partial_product = 1u128;
         for k in 0..num_boot_primes {
@@ -2296,11 +2337,6 @@ mod tests {
 
     /// Bootstrap roundtrip for secure_128: encrypt -> bootstrap -> decrypt
     /// must recover the original plaintext for a range of messages.
-    ///
-    /// NOTE: secure_192/256 roundtrips are not tested here because bootstrap
-    /// noise at those parameter sets requires additional tuning (larger boot
-    /// prime counts or noise-aware modswitch). The structural invariants
-    /// for all three configs are verified in `test_config_matrix_invariants_128_192_256`.
     #[test]
     fn test_config_matrix_roundtrip_secure_128() {
         use crate::params::SecureConfig;
@@ -2322,5 +2358,77 @@ mod tests {
             let dec = ctx.decrypt_dual(&fresh, &keys.secret_key);
             assert_eq!(dec, m, "roundtrip fail m={} got={}", m, dec);
         }
+    }
+
+    // =====================================================================
+    // AUDIT HARDENING: u128 Overflow Detection Tests
+    // =====================================================================
+
+    /// secure_192 bootstrap construction succeeds (structural invariants hold),
+    /// but bootstrap execution correctly detects that Q_level (5 × ~30-bit primes
+    /// ≈ 150 bits) overflows u128, producing an explicit BootstrapOverflow error.
+    ///
+    /// This is the correct behavior: the u128 CRT ceiling is enforced, not
+    /// silently wrapped. A future bigint CRT path will enable full roundtrip
+    /// for these larger parameter sets.
+    #[test]
+    fn test_secure_192_bootstrap_detects_u128_overflow() {
+        use crate::params::SecureConfig;
+
+        let cfg = SecureConfig::secure_192().into_config();
+        let ctx = RNSFHEContext::try_new(&cfg).expect("ctx");
+        let boot = ClockworkBootstrap::new(&cfg).expect("boot construction must succeed");
+
+        let mut rng = ShadowHarvester::with_seed(192);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("keygen");
+
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let result = boot.bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk);
+
+        assert!(
+            result.is_err(),
+            "secure_192 bootstrap should fail with BootstrapOverflow (Q_level > u128)"
+        );
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(
+            err_msg.contains("overflows u128") || err_msg.contains("Overflow"),
+            "Error should mention u128 overflow, got: {}",
+            err_msg
+        );
+    }
+
+    /// secure_256 bootstrap construction succeeds (structural invariants hold),
+    /// but bootstrap execution correctly detects the u128 overflow (7 × ~30-bit
+    /// primes ≈ 210 bits).
+    #[test]
+    fn test_secure_256_bootstrap_detects_u128_overflow() {
+        use crate::params::SecureConfig;
+
+        let cfg = SecureConfig::secure_256().into_config();
+        let ctx = RNSFHEContext::try_new(&cfg).expect("ctx");
+        let boot = ClockworkBootstrap::new(&cfg).expect("boot construction must succeed");
+
+        let mut rng = ShadowHarvester::with_seed(256);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("keygen");
+
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let result = boot.bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk);
+
+        assert!(
+            result.is_err(),
+            "secure_256 bootstrap should fail with BootstrapOverflow (Q_level > u128)"
+        );
+        let err_msg = format!("{}", result.unwrap_err());
+        assert!(
+            err_msg.contains("overflows u128") || err_msg.contains("Overflow"),
+            "Error should mention u128 overflow, got: {}",
+            err_msg
+        );
     }
 }
