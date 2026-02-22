@@ -20,7 +20,7 @@ pub mod comprehensive_benchmarks {
         };
 
         let config = secure_config.into_config();
-        let inner = RNSFHEContext::new_coeff_domain(&config);
+        let inner = RNSFHEContext::new(&config);
         let ctx = GSOFHEContext::new(inner);
 
         // Generate full keys for public-mode operations in this benchmark module.

@@ -110,8 +110,8 @@ impl RNSEvaluator {
 
         let rns = RNSContext::new(config.primes.clone(), config.n);
 
-        // Create DualRNS context with anchor primes sized for coefficient-domain K-Elimination
-        let dual_rns = DualRNSContext::for_fhe_coeff_domain(&config.primes, config.n);
+        // Create DualRNS context with 5 anchor primes for ct×ct capacity
+        let dual_rns = DualRNSContext::for_fhe(&config.primes, config.n);
 
         // NTT engines for main primes
         let main_ntt: Vec<NTTEngine> = config

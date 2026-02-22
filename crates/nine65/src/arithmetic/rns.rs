@@ -906,73 +906,48 @@ impl DualRNSContext {
     /// All primes satisfy (p-1) % (2*n) == 0 for supported n values and are
     /// > 2×10^9 (above max rescaled coefficient ~1.3×10^9).
     pub fn canonical_anchor_primes_for_n(_n: usize) -> Vec<u64> {
-        // 2013265921 = 15 × 2^27 + 1, works for n up to 2^26
-        // 2281701377 = 17 × 2^27 + 1, works for n up to 2^26
-        // 2483027969 = 37 × 2^26 + 1, works for n up to 2^25
-        // IMPORTANT: Need at least 3 primes for k reconstruction in extract_k_rns
-        vec![2013265921, 2281701377, 2483027969]
-    }
-
-    /// Create optimized dual-RNS for FHE
-    ///
-    /// Uses the provided main primes and selects appropriate NTT-compatible anchor primes.
-    /// Anchor primes must satisfy: (p-1) % 2n == 0 for NTT compatibility.
-    ///
-    /// For n=1024: anchor primes with (p-1) % 2048 == 0
-    /// CRITICAL: All anchor primes must be > max rescaled coefficient (~1.3×10^9)
-    pub fn for_fhe(main_primes: &[u64], n: usize) -> Self {
-        let anchor_primes = Self::canonical_anchor_primes_for_n(n);
-        Self::new(main_primes.to_vec(), anchor_primes, n)
-    }
-
-    /// Create dual-RNS for coefficient-domain K-Elimination
-    ///
-    /// CRITICAL: NTT-domain K-Elimination is INVALID because different primes
-    /// use different roots of unity, so NTT point i represents different values.
-    /// K-Elimination MUST be done in coefficient domain.
-    ///
-    /// COEFFICIENT-DOMAIN BOUND: After tensor product, coefficients are O(Q²×N)
-    /// For 2 main primes (Q ≈ 10^18) and N=1024:
-    ///   Q²×N ≈ 10^39
-    ///   Need ANCHOR CAPACITY A > Q²×N for correct NTT multiplication
-    ///   With 5 anchor primes: A ≈ 1.3×10^44 >> Q²×N ≈ 10^39 ✓
-    ///
-    /// Note: 5 primes make A > u128::MAX, so we use RNS-domain K-Elimination.
-    /// The k value is computed per-limb, then reconstructed using first 3 primes
-    /// (product ≈ 6×10^25 >> k_max ≈ 10^21).
-    pub fn for_fhe_coeff_domain(main_primes: &[u64], n: usize) -> Self {
-        // 5 NTT-compatible anchor primes for Q²×N capacity
+        // 5 NTT-compatible anchor primes for Q²×N capacity (ct×ct multiplication)
         // All satisfy: (p-1) % 2n == 0 for NTT compatibility
+        // All > 2×10^9 (above max rescaled coefficient ~1.3×10^9)
         //
-        // These are distinct from main primes and from each other
-        // CRITICAL: All anchor primes must be > max rescaled coefficient
-        // After rescale, coefficients can be ~1.3×10^9, so all primes must be > 2×10^9
-        let anchor_primes = vec![
+        // Capacity: M×A ≈ 246 bits for secure_128 > N×Q² ≈ 191 bits  (55-bit margin)
+        // k reconstruction uses first 3 primes: product ≈ 1.14×10^28 >> k_max ≈ 10^21
+        vec![
             2013265921, // 15 × 2^27 + 1    (~31 bits)
             2281701377, // 17 × 2^27 + 1    (~31 bits)
             2483027969, // 37 × 2^26 + 1    (~32 bits)
             2885681153, // 43 × 2^26 + 1    (~32 bits)
             3221225473, // 3 × 2^30 + 1     (~32 bits)
-        ];
-        // A ≈ 1.1 × 10^47 >> Q²×N ≈ 10^39 ✓
-        // A does NOT fit in u128, so anchor_product will be 0
-        // k reconstruction uses first 3 primes: 2013265921 × 2281701377 × 2483027969
-        //   = 1.14×10^28 >> k_max ≈ 10^21 ✓
-        //
-        // All primes are NTT-compatible: (p-1) % 2048 == 0 for N=1024
+        ]
+    }
 
+    /// Create optimized dual-RNS for FHE with full ct×ct capacity
+    ///
+    /// Uses 5 NTT-compatible anchor primes providing M×A ≈ 246-bit capacity,
+    /// sufficient for ct×ct tensor products up to N×Q² ≈ 191 bits (secure_128).
+    ///
+    /// Anchor primes satisfy: (p-1) % 2n == 0 for NTT compatibility.
+    /// All anchor primes > 2×10^9 (above max rescaled coefficient ~1.3×10^9).
+    ///
+    /// k reconstruction uses first 3 primes: product ≈ 1.14×10^28 >> k_max.
+    /// Anchor product does NOT fit in u128 — K-Elimination uses RNS-domain path.
+    pub fn for_fhe(main_primes: &[u64], n: usize) -> Self {
+        let anchor_primes = Self::canonical_anchor_primes_for_n(n);
         Self::new(main_primes.to_vec(), anchor_primes, n)
     }
 
-    /// DEPRECATED: NTT-domain K-Elimination is mathematically invalid
-    ///
-    /// NTT uses different roots of unity for different moduli:
-    ///   NTT_{p1}(poly)[i] ≠ NTT_{p2}(poly)[i] (different underlying values!)
-    ///
-    /// K-Elimination requires SAME integer with different residues.
-    /// Use `for_fhe_coeff_domain` instead.
-    #[deprecated(note = "NTT-domain K-Elimination is invalid. Use for_fhe_coeff_domain")]
+    /// DEPRECATED: `for_fhe()` now uses 5 anchors with full ct×ct capacity.
+    /// Use `for_fhe()` directly.
+    #[deprecated(note = "for_fhe() now uses 5 anchors. Use for_fhe() directly.")]
+    pub fn for_fhe_coeff_domain(main_primes: &[u64], n: usize) -> Self {
+        Self::for_fhe(main_primes, n)
+    }
+
+    /// DEPRECATED: NTT-domain K-Elimination is mathematically invalid.
+    /// Use `for_fhe()` instead (now uses 5 anchors with full ct×ct capacity).
+    #[deprecated(note = "NTT-domain K-Elimination is invalid. Use for_fhe()")]
     pub fn for_fhe_ntt_domain(main_primes: &[u64], n: usize) -> Self {
+        #[allow(deprecated)]
         Self::for_fhe_coeff_domain(main_primes, n)
     }
 

@@ -136,6 +136,15 @@ fn main() {
         }
     };
 
+    if a >= config.t {
+        eprintln!("ERROR: --a ({}) must be less than plaintext modulus t ({})", a, config.t);
+        std::process::exit(2);
+    }
+    if b >= config.t {
+        eprintln!("ERROR: --b ({}) must be less than plaintext modulus t ({})", b, config.t);
+        std::process::exit(2);
+    }
+
     println!("NINE65 FHE demo");
     println!("Note: demo uses deterministic Shadow Entropy unless --os-seed is set.");
 
@@ -162,9 +171,10 @@ fn main() {
     let sum = decryptor.decrypt(&ct_sum);
     expect_eq("add", sum, a + b);
 
-    let ct_diff = evaluator.sub(&ct_b, &ct_a);
+    let ct_diff = evaluator.sub(&ct_a, &ct_b);
     let diff = decryptor.decrypt(&ct_diff);
-    expect_eq("sub", diff, b - a);
+    let expected_diff = if a >= b { a - b } else { config.t - (b - a) };
+    expect_eq("sub", diff, expected_diff);
 
     let ct_neg = evaluator.negate(&ct_a);
     let neg = decryptor.decrypt(&ct_neg);
@@ -185,7 +195,7 @@ fn main() {
     println!("Keygen: {} ms", keygen_ms);
     println!("Results:");
     println!("  {} + {} = {}", a, b, sum);
-    println!("  {} - {} = {}", b, a, diff);
+    println!("  {} - {} = {} (mod {})", a, b, diff, config.t);
     println!("  -{} = {} (mod {})", a, neg, config.t);
     println!("  {} + 10 = {}", a, add_plain);
     println!("  {} * 3 = {}", a, mul_plain);

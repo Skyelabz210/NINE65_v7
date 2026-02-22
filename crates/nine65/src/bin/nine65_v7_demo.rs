@@ -161,13 +161,14 @@ fn main() {
 
     let sc = SecureConfig::secure_128();
     let config_rns = sc.into_config();
-    println!("  Config:  secure_128 (n={}, t={}, {} primes)",
+    println!("  Config:  secure_128 (n={}, t={}, {} main primes)",
         config_rns.n, config_rns.t, config_rns.primes.len());
 
     let t0 = Instant::now();
     let ctx = RNSFHEContext::try_new(&config_rns).expect("RNSFHEContext creation failed");
     let ctx_us = t0.elapsed().as_micros();
-    println!("  Context: {}us", ctx_us);
+    println!("  Context: {}us ({} main + {} anchor primes)",
+        ctx_us, ctx.dual_rns.main.primes.len(), ctx.dual_rns.anchor.primes.len());
 
     let t0 = Instant::now();
     let dual_keys = ctx.generate_keys_dual_full(&mut rng);
@@ -205,9 +206,9 @@ fn main() {
     let expected_mul = (m1 as u128 * m2 as u128 % t_val as u128) as u64;
     check(&format!("{m1} * {m2} = {dec_mul} (expected {expected_mul}) [K-Elimination]"), dec_mul == expected_mul);
 
-    // Depth-2 chain requires more primes — secure_128 has 3 primes (depth-1 max).
-    // The multiplication may succeed structurally but noise corruption will
-    // cause incorrect decryption. This demonstrates the noise boundary.
+    // Depth-2 chain: secure_128 has 3 main primes → depth-1 noise budget.
+    // Anchor capacity is sufficient (5 anchors, 158-bit product), but noise
+    // budget is exhausted after 1 multiplication. Use bootstrap for deeper circuits.
     let depth2_result = ctx.mul_dual_public(&ct_mul, &ct1, &dual_keys.eval_key);
     match depth2_result {
         Ok(ct_chain) => {
@@ -217,12 +218,13 @@ fn main() {
                 check(&format!("({m1}*{m2})*{m1} = {dec_chain} [depth-2 correct]"), true);
             } else {
                 println!("  Depth-2 chain: decrypted={dec_chain}, expected={expected_chain}");
-                println!("  -> Noise corruption expected for 3-prime config (max depth=1)");
+                println!("  -> Noise budget exceeded at depth 2 (expected — use bootstrap for deeper circuits)");
                 check("Depth-2 noise boundary demonstrated correctly", true);
             }
         }
         Err(e) => {
-            println!("  Depth-2 chain: {e} (expected for 3-prime config)");
+            println!("  Depth-2 chain: {e}");
+            println!("  -> Noise budget exceeded at depth 2 (expected — use bootstrap for deeper circuits)");
             check("Depth-2 noise exhaustion handled gracefully", true);
         }
     }

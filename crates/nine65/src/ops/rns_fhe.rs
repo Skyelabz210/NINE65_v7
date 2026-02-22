@@ -946,82 +946,17 @@ impl RNSFHEContext {
         Self::try_new(config).expect("Invalid FHE config for RNS-native FHE")
     }
 
-    /// Create RNS FHE context for coefficient-domain K-Elimination
-    ///
-    /// CRITICAL: NTT-domain K-Elimination is INVALID because different primes
-    /// use different NTT roots of unity. K-Elimination MUST be in coefficient domain.
-    ///
-    /// Uses 5 anchor primes for Q²×N capacity:
-    ///   Q²×N ≈ 10^39 for 2 main primes, N=1024
-    ///   M×A ≈ 10^64 with 5 anchors >> Q²×N ✓
-    ///
-    /// Architecture:
-    ///   1. Tensor product in NTT domain (fast, O(N) point-wise)
-    ///   2. INTT to coefficient domain
-    ///   3. K-Elimination rescale (exact, Q²×N bound)
-    ///   4. NTT back for storage
+    /// DEPRECATED: `new()` / `try_new()` now use 5 anchors with full ct×ct capacity.
+    /// Use `new()` or `try_new()` directly.
+    #[deprecated(note = "new() now uses 5 anchors. Use new() or try_new() directly.")]
     pub fn new_coeff_domain(config: &FHEConfig) -> Self {
-        assert!(
-            config.primes.len() >= 2,
-            "RNS-native FHE requires at least 2 primes."
-        );
-
-        // Compute Q bit-width (sum of prime bit-widths) - always valid
-        let q_bits: usize = config
-            .primes
-            .iter()
-            .map(|&p| (64 - p.leading_zeros()) as usize)
-            .sum();
-
-        // Create dual-RNS context with 5 anchor primes for Q²×N capacity
-        let dual_rns = DualRNSContext::for_fhe_coeff_domain(&config.primes, config.n);
-
-        let rns = RNSContext::new(config.primes.clone(), config.n);
-
-        let ntt_engines: Vec<NTTEngine> = config
-            .primes
-            .iter()
-            .map(|&p| NTTEngine::new(p, config.n))
-            .collect();
-
-        let q_product: u128 = config
-            .primes
-            .iter()
-            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
-            .unwrap_or(0); // 0 = overflow sentinel
-
-        let delta_rns: Vec<u64> = if q_product == 0 {
-            compute_delta_rns_overflow_safe(&config.primes, config.t)
-        } else {
-            let delta_big = q_product / config.t as u128;
-            config
-                .primes
-                .iter()
-                .map(|&p| (delta_big % p as u128) as u64)
-                .collect()
-        };
-
-        let ke = KElimination::for_fhe(config.primes[0]);
-
-        Self {
-            dual_rns,
-            rns,
-            ntt_engines,
-            ke,
-            t: config.t,
-            q_product,
-            q_bits,
-            delta_rns,
-            n: config.n,
-            config: config.clone(),
-        }
+        Self::new(config)
     }
 
-    /// DEPRECATED: Use new_coeff_domain instead
-    #[deprecated(note = "NTT-domain K-Elimination is invalid. Use new_coeff_domain")]
-    #[allow(deprecated)]
+    /// DEPRECATED: Use `new()` or `try_new()` instead.
+    #[deprecated(note = "Use new() or try_new() — both now use 5 anchors")]
     pub fn new_ntt_domain(config: &FHEConfig) -> Self {
-        Self::new_coeff_domain(config)
+        Self::new(config)
     }
 
     // ========================================================================
@@ -2781,6 +2716,19 @@ impl RNSFHEContext {
         ct2: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
     ) -> DualRNSCiphertext {
+        // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
+        // With 3 anchors (94-bit product), K-Elimination silently overflows for
+        // secure_128 (3 main primes). 5 anchors (158-bit product) provides margin.
+        {
+            let anchor_count = self.dual_rns.anchor.primes.len();
+            assert!(
+                anchor_count >= 5,
+                "Insufficient anchors for ct×ct multiplication: \
+                 have {anchor_count}, need 5+. Use DualRNSContext::for_fhe() \
+                 which now provides 5 anchors via canonical_anchor_primes_for_n()."
+            );
+        }
+
         debug_assert_eq!(
             ct1.level, ct2.level,
             "mul_dual_symmetric: level mismatch ({} vs {}) — ciphertexts must be at the same level",
@@ -2865,6 +2813,19 @@ impl RNSFHEContext {
         ct2: &DualRNSCiphertext,
         evk: &DualRNSEvalKey,
     ) -> Nine65Result<DualRNSCiphertext> {
+        // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
+        // With 3 anchors (94-bit product), K-Elimination silently overflows for
+        // secure_128 (3 main primes). 5 anchors (158-bit product) provides margin.
+        {
+            let anchor_count = self.dual_rns.anchor.primes.len();
+            assert!(
+                anchor_count >= 5,
+                "Insufficient anchors for ct×ct multiplication: \
+                 have {anchor_count}, need 5+. Use DualRNSContext::for_fhe() \
+                 which now provides 5 anchors via canonical_anchor_primes_for_n()."
+            );
+        }
+
         // CORRECT ORDER: relinearize THEN rescale (not rescale then relinearize!)
         //
         // The eval key is generated for the UNSCALED tensor product space.
