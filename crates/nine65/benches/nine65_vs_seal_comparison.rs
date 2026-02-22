@@ -294,7 +294,7 @@ fn bench_fhe_operations(c: &mut Criterion) {
 
     // Setup context with light_rns_exact (3 main primes + anchors)
     let config = SecureConfig::secure_128().into_config();
-    let ctx = RNSFHEContext::new_coeff_domain(&config);
+    let ctx = RNSFHEContext::new(&config);
     let mut rng = ShadowHarvester::with_seed(42);
     let keys = ctx.generate_keys_dual(&mut rng);
 
@@ -344,7 +344,7 @@ fn bench_fhe_key_generation(c: &mut Criterion) {
     group.measurement_time(Duration::from_secs(10));
 
     let config = SecureConfig::secure_128().into_config();
-    let ctx = RNSFHEContext::new_coeff_domain(&config);
+    let ctx = RNSFHEContext::new(&config);
 
     group.bench_function("keygen_dual", |bencher| {
         let mut rng = ShadowHarvester::with_seed(42);
