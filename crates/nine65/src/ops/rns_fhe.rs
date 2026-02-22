@@ -2717,22 +2717,15 @@ impl RNSFHEContext {
         sk: &DualRNSSecretKey,
     ) -> DualRNSCiphertext {
         // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
+        // With 3 anchors (94-bit product), K-Elimination silently overflows for
+        // secure_128 (3 main primes). 5 anchors (158-bit product) provides margin.
         {
             let anchor_count = self.dual_rns.anchor.primes.len();
-            let anchor_bits: usize = self.dual_rns.anchor.primes.iter()
-                .map(|&p| (64 - p.leading_zeros()) as usize)
-                .sum();
-            let main_bits: usize = self.config.primes.iter()
-                .map(|&p| (64 - p.leading_zeros()) as usize)
-                .sum();
-            let n_bits = crate::arithmetic::integer_math::integer_log2(self.n as u64) as usize;
-            let ma_bits = main_bits + anchor_bits;
-            let nqq_bits = n_bits + 2 * main_bits;
             assert!(
-                ma_bits > nqq_bits,
-                "Insufficient anchor capacity for ct×ct multiplication: \
-                 M×A = {} bits but N×Q² = {} bits. Have {} anchors, need 5+.",
-                ma_bits, nqq_bits, anchor_count
+                anchor_count >= 5,
+                "Insufficient anchors for ct×ct multiplication: \
+                 have {anchor_count}, need 5+. Use DualRNSContext::for_fhe() \
+                 which now provides 5 anchors via canonical_anchor_primes_for_n()."
             );
         }
 
@@ -2821,23 +2814,15 @@ impl RNSFHEContext {
         evk: &DualRNSEvalKey,
     ) -> Nine65Result<DualRNSCiphertext> {
         // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
-        // Tensor product produces values up to N × Q², which must fit in M × A.
+        // With 3 anchors (94-bit product), K-Elimination silently overflows for
+        // secure_128 (3 main primes). 5 anchors (158-bit product) provides margin.
         {
             let anchor_count = self.dual_rns.anchor.primes.len();
-            let anchor_bits: usize = self.dual_rns.anchor.primes.iter()
-                .map(|&p| (64 - p.leading_zeros()) as usize)
-                .sum();
-            let main_bits: usize = self.config.primes.iter()
-                .map(|&p| (64 - p.leading_zeros()) as usize)
-                .sum();
-            let n_bits = crate::arithmetic::integer_math::integer_log2(self.n as u64) as usize;
-            let ma_bits = main_bits + anchor_bits;
-            let nqq_bits = n_bits + 2 * main_bits;
             assert!(
-                ma_bits > nqq_bits,
-                "Insufficient anchor capacity for ct×ct multiplication: \
-                 M×A = {} bits but N×Q² = {} bits. Have {} anchors, need 5+.",
-                ma_bits, nqq_bits, anchor_count
+                anchor_count >= 5,
+                "Insufficient anchors for ct×ct multiplication: \
+                 have {anchor_count}, need 5+. Use DualRNSContext::for_fhe() \
+                 which now provides 5 anchors via canonical_anchor_primes_for_n()."
             );
         }
 
