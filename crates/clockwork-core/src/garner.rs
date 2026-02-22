@@ -115,14 +115,23 @@ impl GarnerDigits {
     /// X = d_0 + d_1·p_0 + d_2·p_0·p_1 + ... + d_k·∏_{j<k} p_j
     ///
     /// All integer arithmetic. No floating point.
+    ///
+    /// # Panics
+    /// Panics if the running product of moduli overflows u128.
     pub fn reconstruct(&self) -> u128 {
         let mut result: u128 = 0;
         let mut weight: u128 = 1; // ∏_{j=0}^{i-1} p_j
 
         for (i, &d_i) in self.digits.iter().enumerate() {
-            result += (d_i as u128) * weight;
+            result = result
+                .checked_add((d_i as u128).checked_mul(weight).expect(
+                    "Garner reconstruct: digit × weight overflows u128",
+                ))
+                .expect("Garner reconstruct: accumulator overflows u128");
             if i < self.moduli.len() - 1 {
-                weight *= self.moduli[i] as u128;
+                weight = weight
+                    .checked_mul(self.moduli[i] as u128)
+                    .expect("Garner reconstruct: weight product overflows u128");
             }
         }
         result
