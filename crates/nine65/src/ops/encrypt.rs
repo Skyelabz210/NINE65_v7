@@ -332,10 +332,11 @@ impl<'a> BFVEncryptor<'a> {
     /// Encrypt a message
     ///
     /// # Panics
-    /// Panics if m >= plaintext modulus. Use `try_encrypt()` for fallible encryption.
+    /// Panics if `m >= t` (plaintext modulus). Prefer `try_encrypt()` in
+    /// production code to avoid panics from untrusted input.
     pub fn encrypt(&self, m: u64, harvester: &mut ShadowHarvester) -> Ciphertext {
         self.try_encrypt(m, harvester)
-            .expect("Failed to encrypt message")
+            .unwrap_or_else(|e| panic!("encrypt(m={}): {}", m, e))
     }
 
     /// Fallible encryption: returns error if message out of bounds
@@ -407,10 +408,11 @@ impl<'a> BFVEncryptor<'a> {
     /// ```
     ///
     /// # Panics
-    /// Panics if message >= plaintext modulus. Use `try_encrypt_with_rng()` for fallible.
+    /// Panics if `m >= t` (plaintext modulus). Prefer `try_encrypt_with_rng()` in
+    /// production code to avoid panics from untrusted input.
     pub fn encrypt_with_rng<R: FheRng>(&self, m: u64, rng: &mut R) -> Ciphertext {
         self.try_encrypt_with_rng(m, rng)
-            .expect("Failed to encrypt message")
+            .unwrap_or_else(|e| panic!("encrypt_with_rng(m={}): {}", m, e))
     }
 
     /// Fallible encryption with generic RNG
@@ -431,10 +433,11 @@ impl<'a> BFVEncryptor<'a> {
     /// ```
     ///
     /// # Panics
-    /// Panics if message >= plaintext modulus. Use `try_encrypt_secure()` for fallible.
+    /// Panics if `m >= t` (plaintext modulus). Prefer `try_encrypt_secure()` in
+    /// production code to avoid panics from untrusted input.
     pub fn encrypt_secure(&self, m: u64) -> Ciphertext {
         self.try_encrypt_secure(m)
-            .expect("Failed to encrypt message")
+            .unwrap_or_else(|e| panic!("encrypt_secure(m={}): {}", m, e))
     }
 
     /// Fallible secure encryption (RECOMMENDED FOR PRODUCTION)
