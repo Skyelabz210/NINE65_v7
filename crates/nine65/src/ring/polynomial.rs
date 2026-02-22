@@ -14,30 +14,13 @@ use zeroize::Zeroize;
 
 const MAX_RING_POLY_DEGREE: usize = 32768;
 
-/// Domain tag for polynomial representation.
-///
-/// Prevents accidental mixed-domain arithmetic. NTT-domain polynomials must
-/// be inverse-transformed before coefficient-domain operations, and vice versa.
-///
-/// # Invariant
-/// `RingPolynomial` is **always** in `Coefficient` domain. NTT-domain data
-/// lives as bare `Vec<u64>` inside the NTT engine and RNS limbs. This enum
-/// exists for use in higher-level wrappers and RNS domain tracking.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PolyDomain {
-    /// Standard coefficient representation in Z_q[X]/(X^N + 1)
-    Coefficient,
-    /// Number Theoretic Transform (evaluation) domain
-    Ntt,
-}
-
 /// Polynomial in R_q = Z_q[X]/(X^N + 1)
 ///
 /// # Domain Invariant
 /// `RingPolynomial` is **always** in the coefficient domain. The NTT
 /// transform is applied and removed internally by the NTT engine within
-/// `mul()` and `mul_ct()`. If you need to track NTT-domain data, use
-/// the `PolyDomain` enum with bare `Vec<u64>` representations.
+/// `mul()` and `mul_ct()`. NTT-domain data lives as bare `Vec<u64>`
+/// inside the NTT engine and RNS limbs.
 ///
 /// Implements `Zeroize` for secure memory clearing of sensitive data.
 #[derive(Clone, Debug)]

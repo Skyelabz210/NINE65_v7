@@ -7489,7 +7489,7 @@ mod tests {
         let fhe_config = &secure_config.config;
         let ctx = RNSFHEContext::try_new(fhe_config).unwrap();
 
-        // secure_256 uses 7 primes -> Q exceeds u128 -> q_product = 0 sentinel
+        // secure_256 uses 6 primes (~177 bits) -> Q exceeds u128 -> q_product = 0 sentinel
         assert_eq!(
             ctx.q_product, 0,
             "expected overflow sentinel for secure_256"

@@ -2471,9 +2471,8 @@ mod tests {
 
     /// secure_256 bootstrap roundtrip via U256 CRT fallback.
     ///
-    /// Q_level (7 × ~30-bit primes ≈ 210 bits) overflows u128. The U256
+    /// Q_level (6 × ~30-bit primes ≈ 177 bits) overflows u128. The U256
     /// CRT reconstruction path handles this, enabling full roundtrip.
-    /// Note: secure_256 security validation is relaxed in test mode.
     #[test]
     fn test_secure_256_bootstrap_roundtrip_u256() {
         use crate::params::SecureConfig;

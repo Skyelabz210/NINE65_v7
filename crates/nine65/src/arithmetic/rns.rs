@@ -2355,9 +2355,9 @@ mod tests {
     }
 
     #[test]
-    fn test_product_u64s_secure_256_primes() {
-        // Verify product_u64s correctly computes the modulus product for secure_256
-        // (7 primes, ~237 bits total). This exercises mul_u64 iteratively.
+    fn test_product_u64s_large_prime_set() {
+        // Verify product_u64s correctly computes the product of 7 NTT primes
+        // (~207 bits total). This exercises mul_u64 iteratively.
         let primes: &[u64] = &[
             998244353, 985661441, 754974721, 469762049, 167772161, 595591169, 645922817,
         ];
@@ -2377,7 +2377,7 @@ mod tests {
         let bl = product.bitlen();
         assert!(
             (200..=210).contains(&bl),
-            "secure_256 product bit-length {} outside expected range 200..210",
+            "7-prime product bit-length {} outside expected range 200..210",
             bl
         );
     }

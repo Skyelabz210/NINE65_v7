@@ -28,12 +28,10 @@ fn test_bootstrap_secure_192_roundtrip() {
     }
 }
 
-/// secure_256 bootstrap roundtrip requires `allow_insecure` feature
-/// because the security estimator rejects the current parameter set
-/// (226 hybrid bits < 230 minimum for 256-bit claim) outside of
-/// unit test builds.
+/// secure_256 bootstrap roundtrip: 6 primes (log_q=177), N=16384.
+/// With 6 primes the estimator reports 264 hybrid bits, safely above
+/// the 230-bit threshold (256 × 90%).
 #[test]
-#[cfg(feature = "allow_insecure")]
 fn test_bootstrap_secure_256_roundtrip() {
     println!("\n=== Testing secure_256 bootstrap (U256 CRT path) ===");
     let config = SecureConfig::secure_256().into_config();

@@ -10,9 +10,9 @@
 //!
 //! | Config | N | log(Q) | Classical | Quantum | Hybrid |
 //! |--------|---|--------|-----------|---------|--------|
-//! | `secure_128` | 4096 | 109 | 128-bit | 85-bit | 128-bit |
-//! | `secure_192` | 8192 | 152 | 192-bit | 128-bit | 192-bit |
-//! | `secure_256` | 16384 | 237 | 256-bit | 170-bit | 256-bit |
+//! | `secure_128` | 4096 | 90 | 129-bit | 86-bit | 129-bit |
+//! | `secure_192` | 16384 | 147 | 374-bit | 213-bit | 318-bit |
+//! | `secure_256` | 16384 | 177 | 311-bit | 177-bit | 264-bit |
 //!
 //! # Usage
 //!
@@ -214,11 +214,23 @@ impl SecureConfig {
     ///
     /// For highest security requirements.
     /// Note: Significantly slower than lower security configs.
+    ///
+    /// # Security Analysis
+    /// - N=16384, log(Q)=177 (6 primes)
+    /// - Classical BKZ: 311 bits
+    /// - Hybrid MITM+BKZ: 264 bits (well above 230 = 256×0.9 threshold)
+    /// - Quantum: 177 bits
+    /// - HE Standard v1.1: compliant (max log(Q) for N=16384 at 256-bit = 237)
+    ///
+    /// Uses 6 primes rather than 7 to keep log(Q) below the estimator's
+    /// hybrid-attack threshold. With 7 primes (log_q=207), the ternary-secret
+    /// MITM penalty reduces hybrid security to 226 bits, which is below the
+    /// 230-bit minimum (256 × 90%).
     pub fn secure_256() -> Self {
         Self::new_verified(
             16384,
             vec![
-                998244353, 985661441, 754974721, 469762049, 167772161, 595591169, 645922817,
+                998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
             ],
             65537,
             5,

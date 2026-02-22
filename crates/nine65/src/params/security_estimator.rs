@@ -611,7 +611,7 @@ mod tests {
         let test_params = [
             (4096, 90, "secure_128 params"),
             (8192, 150, "secure_192 params"),
-            (16384, 240, "secure_256 params"),
+            (16384, 177, "secure_256 params"),
             (2048, 54, "HE Standard boundary"),
         ];
 
@@ -702,7 +702,7 @@ mod tests {
         let configs = [
             ("secure_128", SecureConfig::secure_128(), 115), // Measured: 116 bits
             ("secure_192", SecureConfig::secure_192(), 140), // Measured: 143 bits
-            ("secure_256", SecureConfig::secure_256(), 170), // To be measured
+            ("secure_256", SecureConfig::secure_256(), 230), // 6 primes, log_q=177
         ];
 
         for (name, sec_config, min_expected_bits) in configs {
@@ -892,7 +892,7 @@ mod tests {
         let configs = [
             ("secure_128", SecureConfig::secure_128(), 128, 115), // CoreSVP: 129, MATZOV: 116
             ("secure_192", SecureConfig::secure_192(), 155, 140), // CoreSVP: 159, MATZOV: 143
-            ("secure_256", SecureConfig::secure_256(), 185, 170), // To be measured
+            ("secure_256", SecureConfig::secure_256(), 260, 230), // 6 primes, log_q=177
         ];
 
         for (name, sec_config, core_min, matzov_min) in configs {

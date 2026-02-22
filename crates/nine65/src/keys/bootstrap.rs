@@ -26,7 +26,7 @@ pub const BOOTSTRAP_PRIMES: [u64; 8] = [
     167772161,  // 2^25 * 5 + 1          (work prime 5, secure_192)
     1811939329, // 27 * 2^26 + 1         (extra for secure_192 modswitch)
     595591169,  // NTT-friendly 30-bit   (work prime 6, secure_256)
-    645922817,  // NTT-friendly 30-bit   (work prime 7, secure_256)
+    645922817,  // NTT-friendly 30-bit   (extra for secure_256 modswitch)
 ];
 
 /// Number of anchor primes for K-Elimination in bootstrap context.
