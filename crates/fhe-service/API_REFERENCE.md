@@ -148,7 +148,7 @@ Destroy a session and its key material.
 
 Encrypt plaintext values. Each value must be `< t` (65537).
 
-**Note on precision**: Due to BFV rounding (`delta = floor(q/t)`), values near `t` (roughly `> t - 5`) may exhibit small decode errors (typically ±3). For guaranteed exact roundtrip, keep plaintext values below `t - 10`. This is an inherent property of single-prime BFV encoding, not a bug.
+**Note on precision**: Due to BFV rounding (`delta = floor(q/t)`), values near `t` may exhibit small decode errors (typically ±1–3). For guaranteed exact roundtrip, keep plaintext values below `t - 100`. Values above roughly `t - 50` are in the "drift zone" where decode accuracy depends on noise state. This is an inherent property of BFV encoding, not a bug.
 
 **Request**:
 ```json
@@ -232,7 +232,7 @@ Execute homomorphic operations on ciphertexts.
 | `mul_plain` | 1 ciphertext | required, < t | ct * scalar | ~17000 mb |
 | `mul` | 2 ciphertexts | - | ct * ct (tensor + relin) | ~30000 mb |
 
-**Important**: The `mul` (ct×ct) operation uses single-modulus tensor product + relinearization. For `secure_128` (single 30-bit prime), this path may produce incorrect results due to scaling constraints. Correct ct×ct multiplication requires the DualRNS K-Elimination path (available in the core library but not yet wired through the service API). Use `mul_plain` for scalar multiplication, which is fully correct.
+**Important**: The `mul` (ct×ct) operation uses single-modulus tensor product + relinearization. This path produces incorrect results on **all** configurations served by this HTTP API due to scaling constraints inherent in the single-modulus approach. Correct ct×ct multiplication requires the DualRNS K-Elimination path (available in the core library but not yet wired through the service API). Use `mul_plain` for scalar multiplication, which is fully correct.
 
 **Response** `200`:
 ```json
