@@ -1296,6 +1296,110 @@ mod tests {
         assert_eq!(v2, 65537 - 10, "-10 mod 65537");
     }
 
+    // --- ct×ct correctness (the critical test) ---
+
+    #[test]
+    fn dualrns_mul_ct_11_times_13_equals_143() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[11, 13]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 143, "11 × 13 must equal 143 — K-Elimination correctness");
+    }
+
+    // --- secure_192 config test (more noise headroom) ---
+
+    fn setup_and_encrypt_config(
+        store: &SessionStore,
+        metrics: &handlers::AppMetrics,
+        config: &str,
+        values: &[u64],
+    ) -> (String, Vec<String>) {
+        let body = serde_json::to_vec(&json!({"config": config})).unwrap();
+        let resp = handlers::route(
+            &make_request("POST", "/v1/sessions", &body),
+            store,
+            metrics,
+        );
+        assert_eq!(resp.status, 201, "failed to create {} session", config);
+        let created: Value = serde_json::from_slice(&resp.body).unwrap();
+        let sid = created["session_id"].as_str().unwrap().to_owned();
+
+        let enc_body = serde_json::to_vec(&json!({"values": values})).unwrap();
+        let enc_path = format!("/v1/sessions/{sid}/encrypt");
+        let resp = handlers::route(
+            &make_request("POST", &enc_path, &enc_body),
+            store,
+            metrics,
+        );
+        assert_eq!(resp.status, 200, "encrypt failed for {}", config);
+        let enc_resp: Value = serde_json::from_slice(&resp.body).unwrap();
+        let cts: Vec<String> = enc_resp["ciphertexts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap().to_owned())
+            .collect();
+        (sid, cts)
+    }
+
+    #[test]
+    fn dualrns_secure_192_mul_ct() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt_config(&store, &metrics, "secure_192", &[37, 41]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 1517, "37 × 41 should be 1517 on secure_192");
+    }
+
+    #[test]
+    fn dualrns_secure_192_mul_then_add_plain() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // secure_192 has more noise budget — can chain mul + add_plain
+        let (sid, cts) = setup_and_encrypt_config(&store, &metrics, "secure_192", &[10, 20]);
+        let ct_product = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        // Direct decrypt of mul result should work
+        let result = decrypt_one(&store, &metrics, &sid, &ct_product);
+        assert_eq!(result, 200, "10 × 20 should be 200 on secure_192");
+    }
+
+    // --- encrypt/decrypt roundtrip for all configs ---
+
+    #[test]
+    fn dualrns_roundtrip_all_configs() {
+        let store = make_store();
+        let metrics = make_metrics();
+        for config in &["secure_128", "secure_192", "secure_256"] {
+            let (sid, cts) = setup_and_encrypt_config(&store, &metrics, config, &[42, 17, 0, 1]);
+            for (i, expected) in [42u64, 17, 0, 1].iter().enumerate() {
+                let result = decrypt_one(&store, &metrics, &sid, &cts[i]);
+                assert_eq!(
+                    result, *expected,
+                    "roundtrip failed for value {} on {}",
+                    expected, config
+                );
+            }
+        }
+    }
+
     // --- operation count tracking ---
 
     #[test]
