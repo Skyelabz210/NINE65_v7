@@ -224,6 +224,15 @@ fn handle_encrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
             if v >= session.config.t {
                 return Err("invalid value".to_owned()); // Don't leak the plaintext modulus value
             }
+            // With exact_rational feature, reject values in the near-t drift zone
+            // where BFV rounding (delta = floor(q/t)) can cause decode errors.
+            #[cfg(feature = "exact_rational")]
+            {
+                let safe_margin = 100u64;
+                if v > session.config.t.saturating_sub(safe_margin) && v < session.config.t {
+                    return Err("invalid value".to_owned());
+                }
+            }
             // Consume noise budget for encryption
             session
                 .noise_budget

@@ -7,6 +7,7 @@ authors.workspace = true
 [features]
 default = []
 allow_insecure = ["nine65/allow_insecure"]
+exact_rational = ["nine65/exact_rational"]
 
 [dependencies]
 nine65 = { path = "../nine65", features = ["serde"] }

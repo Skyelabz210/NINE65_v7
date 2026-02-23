@@ -980,6 +980,8 @@ mod tests {
         }
     }
 
+    // Near-t values are rejected when exact_rational feature is enabled (drift zone guard).
+    #[cfg(not(feature = "exact_rational"))]
     #[test]
     fn dualrns_mul_ct_near_t() {
         let store = make_store();
@@ -995,6 +997,60 @@ mod tests {
         let result = decrypt_one(&store, &metrics, &sid, &ct_result);
         let expected = (65536u128 * 2 % 65537) as u64;
         assert_eq!(result, expected, "65536 × 2 mod 65537 should be {}", expected);
+    }
+
+    // When exact_rational is enabled, near-t values are rejected by the drift zone guard.
+    #[cfg(feature = "exact_rational")]
+    #[test]
+    fn exact_rational_rejects_near_t_values() {
+        let store = make_store();
+        let metrics = make_metrics();
+
+        let body = serde_json::to_vec(&json!({"config": "secure_128"})).unwrap();
+        let resp = handlers::route(
+            &make_request("POST", "/v1/sessions", &body),
+            &store,
+            &metrics,
+        );
+        let created: Value = serde_json::from_slice(&resp.body).unwrap();
+        let sid = created["session_id"].as_str().unwrap();
+
+        // 65536 is in the drift zone (t - 100 = 65437 < 65536 < 65537)
+        let enc_body = serde_json::to_vec(&json!({"values": [65536]})).unwrap();
+        let enc_path = format!("/v1/sessions/{sid}/encrypt");
+        let resp = handlers::route(
+            &make_request("POST", &enc_path, &enc_body),
+            &store,
+            &metrics,
+        );
+        assert_eq!(resp.status, 400, "near-t value should be rejected");
+
+        // 65437 is the boundary (t - 100) — should also be rejected (> t - safe_margin)
+        let enc_body = serde_json::to_vec(&json!({"values": [65438]})).unwrap();
+        let resp = handlers::route(
+            &make_request("POST", &enc_path, &enc_body),
+            &store,
+            &metrics,
+        );
+        assert_eq!(resp.status, 400, "boundary value should be rejected");
+
+        // 65437 is at the edge — should be accepted (= t - safe_margin)
+        let enc_body = serde_json::to_vec(&json!({"values": [65437]})).unwrap();
+        let resp = handlers::route(
+            &make_request("POST", &enc_path, &enc_body),
+            &store,
+            &metrics,
+        );
+        assert_eq!(resp.status, 200, "value at safe margin should be accepted");
+
+        // Small values are always accepted
+        let enc_body = serde_json::to_vec(&json!({"values": [42]})).unwrap();
+        let resp = handlers::route(
+            &make_request("POST", &enc_path, &enc_body),
+            &store,
+            &metrics,
+        );
+        assert_eq!(resp.status, 200, "small value should be accepted");
     }
 
     #[test]
