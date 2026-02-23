@@ -10617,4 +10617,64 @@ mod tests {
         let result = ctx.decrypt_dual(&ct_result, &keys.secret_key);
         assert_eq!(result, 5, "-10 + 15 should be 5, got {}", result);
     }
+
+    // --- serialization tests ---
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_dual_ct_serialization_roundtrip() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let bytes = ct.to_bytes().expect("serialization should succeed");
+        let ct2 = DualRNSCiphertext::from_bytes_validated(&bytes)
+            .expect("deserialization should succeed");
+        let val = ctx.decrypt_dual(&ct2, &keys.secret_key);
+        assert_eq!(val, 42, "roundtrip should preserve value, got {}", val);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_dual_ct_serialization_after_operations() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // Serialize after add
+        let ct_a = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(20, &keys.public_key, &mut rng);
+        let ct_sum = ctx.add_dual(&ct_a, &ct_b);
+        let bytes = ct_sum.to_bytes().expect("serialization should succeed");
+        let ct_restored = DualRNSCiphertext::from_bytes_validated(&bytes)
+            .expect("deserialization should succeed");
+        let val = ctx.decrypt_dual(&ct_restored, &keys.secret_key);
+        assert_eq!(val, 30, "serialized sum should decrypt to 30, got {}", val);
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_dual_ct_serialization_corrupt_data_rejected() {
+        // Corrupted bytes should fail deserialization
+        let garbage = vec![0u8, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let result = DualRNSCiphertext::from_bytes_validated(&garbage);
+        assert!(result.is_err(), "corrupted data should fail deserialization");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_dual_ct_serialization_empty_bytes_rejected() {
+        let result = DualRNSCiphertext::from_bytes_validated(&[]);
+        assert!(result.is_err(), "empty bytes should fail deserialization");
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_dual_ct_serialization_multiple_values() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let test_values = [0u64, 1, 42, 1000, 65536];
+        for &v in &test_values {
+            let ct = ctx.encrypt_dual(v, &keys.public_key, &mut rng);
+            let bytes = ct.to_bytes().expect("serialization should succeed");
+            let ct2 = DualRNSCiphertext::from_bytes_validated(&bytes)
+                .expect("deserialization should succeed");
+            let result = ctx.decrypt_dual(&ct2, &keys.secret_key);
+            assert_eq!(result, v, "roundtrip for {} failed, got {}", v, result);
+        }
+    }
 }
