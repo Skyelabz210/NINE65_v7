@@ -1,6 +1,6 @@
 # FHE Service API Reference
 
-HTTP microservice for session-based BFV homomorphic encryption. Key material never leaves the server; only opaque ciphertexts travel over the wire.
+HTTP microservice for session-based BFV homomorphic encryption using the DualRNS pipeline with 5-anchor K-Elimination for correct ct×ct multiplication. Key material never leaves the server; only opaque ciphertexts travel over the wire.
 
 ## Quick Start
 
@@ -148,7 +148,7 @@ Destroy a session and its key material.
 
 Encrypt plaintext values. Each value must be `< t` (65537).
 
-**Note on precision**: Due to BFV rounding (`delta = floor(q/t)`), values near `t` may exhibit small decode errors (typically ±1–3). For guaranteed exact roundtrip, keep plaintext values below `t - 100`. Values above roughly `t - 50` are in the "drift zone" where decode accuracy depends on noise state. This is an inherent property of BFV encoding, not a bug.
+**Ciphertext format**: Ciphertexts are DualRNS-encoded, containing both main RNS limbs and 5 anchor limbs for K-Elimination. They are larger than single-modulus ciphertexts (up to ~4MB for `secure_256`).
 
 **Request**:
 ```json
@@ -184,7 +184,7 @@ Decrypt ciphertexts back to plaintext values.
 }
 ```
 
-**Limits**: Max 1024 ciphertexts, max 512KB per ciphertext, max 10MB request body.
+**Limits**: Max 1024 ciphertexts, max 4MB per ciphertext, max 64MB total request allocation.
 
 **Response** `200`:
 ```json
@@ -219,7 +219,7 @@ Execute homomorphic operations on ciphertexts.
 }
 ```
 
-**Limits**: Max 256 operations per request, max 4 inputs per operation, max 512KB per ciphertext input, max 10MB request body.
+**Limits**: Max 256 operations per request, max 4 inputs per operation, max 4MB per ciphertext input, max 64MB total request allocation.
 
 **Supported Operations**:
 
@@ -230,9 +230,9 @@ Execute homomorphic operations on ciphertexts.
 | `negate` | 1 ciphertext | - | -ct | 1000 mb |
 | `add_plain` | 1 ciphertext | required, < t | ct + scalar | 100 mb |
 | `mul_plain` | 1 ciphertext | required, < t | ct * scalar | ~17000 mb |
-| `mul` | 2 ciphertexts | - | ct * ct (tensor + relin) | ~30000 mb |
+| `mul` | 2 ciphertexts | - | ct × ct (DualRNS K-Elimination) | ~30000 mb |
 
-**Important**: The `mul` (ct×ct) operation uses single-modulus tensor product + relinearization. This path produces incorrect results on **all** configurations served by this HTTP API due to scaling constraints inherent in the single-modulus approach. Correct ct×ct multiplication requires the DualRNS K-Elimination path (available in the core library but not yet wired through the service API). Use `mul_plain` for scalar multiplication, which is fully correct.
+The `mul` (ct×ct) operation uses the DualRNS pipeline with 5-anchor K-Elimination for exact rescaling. This produces correct results on all configurations. Note that `secure_128` has limited noise budget — a single ct×ct mul consumes most of it, leaving room only for `mul_plain` or direct decrypt afterward.
 
 **Response** `200`:
 ```json
