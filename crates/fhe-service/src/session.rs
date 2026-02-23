@@ -1,14 +1,8 @@
 //! Session management — FHE key material and state per client session.
 
-// nine65 re-exports the correct NTTEngine via its own feature gate.
-// With default features (ntt_fft), this is NTTEngineFFT.
-use nine65::arithmetic::NTTEngine;
-
 #[cfg(test)]
 use nine65::entropy::ShadowHarvester;
-use nine65::keys::{EvaluationKey, KeySet, PublicKey, SecretKey};
 use nine65::noise::budget::NoiseBudget;
-use nine65::ops::encrypt::{BFVEncoder, Ciphertext};
 use nine65::ops::rns_fhe::{DualRNSCiphertext, DualRNSFullKeySet, RNSFHEContext};
 use nine65::params::secure_configs::SecureConfig;
 use nine65::params::FHEConfig;
@@ -34,21 +28,16 @@ fn generate_session_id() -> Result<String, &'static str> {
     Ok(hex)
 }
 
-/// Server-side FHE session holding all key material.
+/// Server-side FHE session holding DualRNS key material.
 ///
 /// The secret key NEVER leaves the server. Ciphertexts travel over the wire.
 ///
-/// Sessions hold both the legacy single-modulus BFV keys (for backward compat)
-/// and the DualRNS context + keys for correct ct×ct multiplication.
+/// Uses the DualRNS context with 5-anchor K-Elimination for correct ct×ct
+/// multiplication. All encrypt/decrypt/evaluate operations use DualRNS.
 pub struct Session {
     pub session_id: String,
     pub config_name: String,
     pub config: FHEConfig,
-    pub ntt: NTTEngine,
-    pub encoder: BFVEncoder,
-    pub secret_key: SecretKey,
-    pub public_key: PublicKey,
-    pub eval_key: EvaluationKey,
     pub noise_budget: NoiseBudget,
     pub operation_count: u64,
     pub created_at: u64,
@@ -63,7 +52,6 @@ impl Session {
     /// Create a new session with full keygen.
     ///
     /// Uses OS CSPRNG for production security.
-    /// Generates both legacy single-modulus keys and DualRNS keys.
     pub fn new(config_name: &str) -> Result<Self, &'static str> {
         let secure_config = match config_name {
             "secure_128" => SecureConfig::secure_128(),
@@ -73,26 +61,16 @@ impl Session {
         };
 
         let config = secure_config.into_config();
-        let ntt = NTTEngine::new(config.q, config.n);
-        let keys = KeySet::try_generate_secure(&config, &ntt)
-            .map_err(|_| "secure key generation failed")?;
-        let encoder = BFVEncoder::new(&config);
         let noise_budget = NoiseBudget::from_config(&config);
 
-        // Create DualRNS context and keys for correct ct×ct multiplication
-        let rns_ctx = RNSFHEContext::try_new(&config)
-            .map_err(|_| "RNS context creation failed")?;
+        let rns_ctx =
+            RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
         let dual_keys = rns_ctx.generate_keys_dual_full_secure();
 
         Ok(Self {
             session_id: generate_session_id()?,
             config_name: config_name.to_owned(),
             config,
-            ntt,
-            encoder,
-            secret_key: keys.secret_key,
-            public_key: keys.public_key,
-            eval_key: keys.eval_key,
             noise_budget,
             operation_count: 0,
             created_at: crate::unix_now_seconds(),
@@ -114,26 +92,17 @@ impl Session {
         };
 
         let config = secure_config.into_config();
-        let ntt = NTTEngine::new(config.q, config.n);
-        let mut harvester = ShadowHarvester::with_seed(seed);
-        let keys = KeySet::generate(&config, &ntt, &mut harvester);
-        let encoder = BFVEncoder::new(&config);
         let noise_budget = NoiseBudget::from_config(&config);
 
-        // Create DualRNS context and keys with deterministic RNG
-        let rns_ctx = RNSFHEContext::try_new(&config)
-            .map_err(|_| "RNS context creation failed")?;
+        let rns_ctx =
+            RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
+        let mut harvester = ShadowHarvester::with_seed(seed);
         let dual_keys = rns_ctx.generate_keys_dual_full(&mut harvester);
 
         Ok(Self {
             session_id: generate_session_id()?,
             config_name: config_name.to_owned(),
             config,
-            ntt,
-            encoder,
-            secret_key: keys.secret_key,
-            public_key: keys.public_key,
-            eval_key: keys.eval_key,
             noise_budget,
             operation_count: 0,
             created_at: crate::unix_now_seconds(),
@@ -157,25 +126,6 @@ impl Session {
             t: self.config.t,
             security_bits: self.config.security_bits,
         }
-    }
-
-    /// Serialize a single-modulus ciphertext to base64-encoded bincode.
-    pub fn ct_to_b64(&self, ct: &Ciphertext) -> Result<String, String> {
-        let bytes = ct
-            .to_bytes()
-            .map_err(|e| format!("bincode serialize: {}", e))?;
-        Ok(base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            &bytes,
-        ))
-    }
-
-    /// Deserialize a single-modulus ciphertext from base64-encoded bincode with validation.
-    pub fn ct_from_b64(&self, b64: &str) -> Result<Ciphertext, String> {
-        let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, b64)
-            .map_err(|e| format!("base64 decode: {}", e))?;
-        Ciphertext::from_bytes_validated(&bytes, self.config.n, self.config.q)
-            .map_err(|e| format!("ciphertext validation: {}", e))
     }
 
     /// Serialize a DualRNS ciphertext to base64-encoded bincode.

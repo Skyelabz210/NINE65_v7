@@ -11,8 +11,6 @@ use crate::wire::{
 };
 
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
-use nine65::ops::encrypt::{BFVDecryptor, BFVEncryptor};
-use nine65::ops::homomorphic::BFVEvaluator;
 
 use serde_json::json;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -208,10 +206,9 @@ fn handle_encrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
     }
 
     // Pre-validate response size to prevent oversized responses
-    // Each ciphertext for N=4096 with 3 primes is ~100KB in bincode → ~133KB in base64
-    // Estimate response size: each base64 encoded ciphertext is roughly 4/3 the size of raw bytes
-    // plus JSON overhead
-    let estimated_ct_size = 133 * 1024; // Rough estimate for N=4096 ciphertext
+    // DualRNS ciphertexts are larger: 2 × (main_primes + 5 anchors) × N × 8 bytes × 4/3 base64
+    // Worst case secure_256 (N=16384, 11 limbs): ~3.8 MB per ciphertext
+    let estimated_ct_size = 4 * 1024 * 1024; // 4 MB worst-case (secure_256)
     let estimated_response_size = req.values.len() * estimated_ct_size;
     if estimated_response_size > MAX_RESPONSE_BYTES {
         return error_response(
@@ -222,13 +219,6 @@ fn handle_encrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
     }
 
     match store.with_session_mut(session_id, |session| {
-        let encryptor = BFVEncryptor::new(
-            &session.public_key,
-            &session.encoder,
-            &session.ntt,
-            session.config.eta,
-        );
-
         let mut ciphertexts = Vec::with_capacity(req.values.len());
         for &v in &req.values {
             if v >= session.config.t {
@@ -242,11 +232,11 @@ fn handle_encrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
                     NoiseBudget::encrypt_cost(&session.config),
                 )
                 .map_err(|e| format!("noise exhausted: {}", e))?;
-            // Use secure encryption for production
-            let ct = encryptor
-                .try_encrypt_secure(v)
-                .map_err(|_| "encryption failed".to_owned())?;
-            let b64 = session.ct_to_b64(&ct)?;
+            // DualRNS encryption — supports correct ct×ct multiplication via K-Elimination
+            let ct = session
+                .rns_ctx
+                .encrypt_dual_secure(v, &session.dual_keys.public_key);
+            let b64 = session.dual_ct_to_b64(&ct)?;
             ciphertexts.push(b64);
         }
 
@@ -289,12 +279,12 @@ fn handle_decrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
     }
 
     match store.with_session_mut(session_id, |session| -> Result<DecryptResponse, String> {
-        let decryptor = BFVDecryptor::new(&session.secret_key, &session.encoder, &session.ntt);
-
         let mut values = Vec::with_capacity(req.ciphertexts.len());
         for ct_b64 in &req.ciphertexts {
-            let ct = session.ct_from_b64(ct_b64)?;
-            let v = decryptor.decrypt(&ct);
+            let ct = session.dual_ct_from_b64(ct_b64)?;
+            let v = session
+                .rns_ctx
+                .decrypt_dual(&ct, &session.dual_keys.secret_key);
             values.push(v);
         }
 
@@ -328,10 +318,8 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
     }
 
     // Pre-validate response size to prevent oversized responses
-    // Each result ciphertext for N=4096 with 3 primes is ~100KB in bincode → ~133KB in base64
-    // Estimate response size: each base64 encoded ciphertext is roughly 4/3 the size of raw bytes
-    // plus JSON overhead
-    let estimated_ct_size = 133 * 1024; // Rough estimate for N=4096 ciphertext
+    // DualRNS ciphertexts: worst case secure_256 ≈ 3.8 MB per ciphertext
+    let estimated_ct_size = 4 * 1024 * 1024;
     let estimated_response_size = req.operations.len() * estimated_ct_size;
     if estimated_response_size > MAX_RESPONSE_BYTES {
         return error_response(
@@ -342,15 +330,13 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
     }
 
     match store.with_session_mut(session_id, |session| {
-        let evaluator = BFVEvaluator::new(&session.ntt, &session.encoder, Some(&session.eval_key));
-
         let mut results = Vec::with_capacity(req.operations.len());
 
         for op in &req.operations {
-            // Deserialize inputs
+            // Deserialize DualRNS ciphertext inputs
             let mut cts = Vec::with_capacity(op.inputs.len());
             for input_b64 in &op.inputs {
-                let ct = session.ct_from_b64(input_b64)?;
+                let ct = session.dual_ct_from_b64(input_b64)?;
                 cts.push(ct);
             }
 
@@ -359,12 +345,11 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                     if cts.len() != 2 {
                         return Err("add requires exactly 2 inputs".to_owned());
                     }
-                    // Track noise (HVT-1)
                     session
                         .noise_budget
                         .consume(NoiseOpType::Add, NoiseBudget::add_cost())
                         .map_err(|e| format!("noise exhausted: {}", e))?;
-                    evaluator.add(&cts[0], &cts[1])
+                    session.rns_ctx.add_dual(&cts[0], &cts[1])
                 }
                 "sub" => {
                     if cts.len() != 2 {
@@ -374,7 +359,7 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                         .noise_budget
                         .consume(NoiseOpType::Add, NoiseBudget::add_cost())
                         .map_err(|e| format!("noise exhausted: {}", e))?;
-                    evaluator.sub(&cts[0], &cts[1])
+                    session.rns_ctx.sub_dual(&cts[0], &cts[1])
                 }
                 "negate" => {
                     if cts.len() != 1 {
@@ -384,7 +369,7 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                         .noise_budget
                         .consume(NoiseOpType::Add, NoiseBudget::add_cost())
                         .map_err(|e| format!("noise exhausted: {}", e))?;
-                    evaluator.negate(&cts[0])
+                    session.rns_ctx.negate_dual(&cts[0])
                 }
                 "add_plain" => {
                     if cts.len() != 1 {
@@ -394,13 +379,13 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                         .scalar
                         .ok_or_else(|| "add_plain requires scalar".to_owned())?;
                     if scalar >= session.config.t {
-                        return Err("invalid scalar".to_owned()); // Don't leak scalar or modulus values
+                        return Err("invalid scalar".to_owned());
                     }
                     session
                         .noise_budget
                         .consume(NoiseOpType::AddPlain, NoiseBudget::add_plain_cost())
                         .map_err(|e| format!("noise exhausted: {}", e))?;
-                    evaluator.add_plain(&cts[0], scalar)
+                    session.rns_ctx.add_plain_dual(&cts[0], scalar)
                 }
                 "mul_plain" => {
                     if cts.len() != 1 {
@@ -410,7 +395,7 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                         .scalar
                         .ok_or_else(|| "mul_plain requires scalar".to_owned())?;
                     if scalar >= session.config.t {
-                        return Err("invalid scalar".to_owned()); // Don't leak scalar or modulus values
+                        return Err("invalid scalar".to_owned());
                     }
                     session
                         .noise_budget
@@ -419,13 +404,13 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                             NoiseBudget::mul_plain_cost(&session.config),
                         )
                         .map_err(|e| format!("noise exhausted: {}", e))?;
-                    evaluator.mul_plain(&cts[0], scalar)
+                    session.rns_ctx.mul_plain_dual(&cts[0], scalar)
                 }
                 "mul" => {
                     if cts.len() != 2 {
                         return Err("mul requires exactly 2 inputs".to_owned());
                     }
-                    // Track both mul + relin cost
+                    // Track mul + relin + rescale noise costs
                     session
                         .noise_budget
                         .consume(
@@ -437,9 +422,6 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                         .noise_budget
                         .consume(NoiseOpType::Relin, NoiseBudget::relin_cost(&session.config))
                         .map_err(|e| format!("noise exhausted: {}", e))?;
-
-                    // Apply rescale credit (gain) if K-Elimination rescaling occurs in core evaluator
-                    // Rescale reduces noise, so it's a negative cost (positive gain to budget)
                     session
                         .noise_budget
                         .consume(
@@ -448,17 +430,18 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                         )
                         .map_err(|e| format!("noise exhausted: {}", e))?;
 
-                    // Use tensor product + degree-2 approach (no deprecated mul)
-                    let (d0, d1, d2) = evaluator.mul_no_relin(&cts[0], &cts[1]);
-                    // Relinearize back to degree-1
-                    evaluator.relinearize(&d0, &d1, &d2)
+                    // DualRNS ct×ct multiplication with 5-anchor K-Elimination
+                    session
+                        .rns_ctx
+                        .mul_dual_public(&cts[0], &cts[1], &session.dual_keys.eval_key)
+                        .map_err(|e| format!("mul failed: {}", e))?
                 }
                 other => {
                     return Err(format!("unknown operation: {}", other));
                 }
             };
 
-            let b64 = session.ct_to_b64(&result_ct)?;
+            let b64 = session.dual_ct_to_b64(&result_ct)?;
             results.push(b64);
             session.operation_count += 1;
         }

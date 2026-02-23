@@ -828,4 +828,442 @@ mod tests {
         assert_eq!(store.ttl_seconds(), 7200);
         assert_eq!(store.count(), 0);
     }
+
+    // ========================================================================
+    // DualRNS quality tests — verifying correct ct×ct multiplication
+    // and all operations through the DualRNS pipeline
+    // ========================================================================
+
+    /// Helper: create session, encrypt values, return (session_id, ciphertext_b64_strings)
+    fn setup_and_encrypt(
+        store: &SessionStore,
+        metrics: &handlers::AppMetrics,
+        values: &[u64],
+    ) -> (String, Vec<String>) {
+        let body = serde_json::to_vec(&json!({"config": "secure_128"})).unwrap();
+        let resp = handlers::route(
+            &make_request("POST", "/v1/sessions", &body),
+            store,
+            metrics,
+        );
+        assert_eq!(resp.status, 201);
+        let created: Value = serde_json::from_slice(&resp.body).unwrap();
+        let sid = created["session_id"].as_str().unwrap().to_owned();
+
+        let enc_body = serde_json::to_vec(&json!({"values": values})).unwrap();
+        let enc_path = format!("/v1/sessions/{sid}/encrypt");
+        let resp = handlers::route(
+            &make_request("POST", &enc_path, &enc_body),
+            store,
+            metrics,
+        );
+        assert_eq!(resp.status, 200, "encrypt failed");
+        let enc_resp: Value = serde_json::from_slice(&resp.body).unwrap();
+        let cts: Vec<String> = enc_resp["ciphertexts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap().to_owned())
+            .collect();
+        (sid, cts)
+    }
+
+    /// Helper: evaluate a single operation, return result ciphertext b64
+    fn eval_op(
+        store: &SessionStore,
+        metrics: &handlers::AppMetrics,
+        sid: &str,
+        op: Value,
+    ) -> String {
+        let eval_body = serde_json::to_vec(&json!({"operations": [op]})).unwrap();
+        let eval_path = format!("/v1/sessions/{sid}/evaluate");
+        let resp = handlers::route(
+            &make_request("POST", &eval_path, &eval_body),
+            store,
+            metrics,
+        );
+        assert_eq!(
+            resp.status, 200,
+            "evaluate failed: {}",
+            String::from_utf8_lossy(&resp.body)
+        );
+        let eval_resp: Value = serde_json::from_slice(&resp.body).unwrap();
+        eval_resp["results"][0].as_str().unwrap().to_owned()
+    }
+
+    /// Helper: decrypt a ciphertext, return plaintext value
+    fn decrypt_one(
+        store: &SessionStore,
+        metrics: &handlers::AppMetrics,
+        sid: &str,
+        ct_b64: &str,
+    ) -> u64 {
+        let dec_body = serde_json::to_vec(&json!({"ciphertexts": [ct_b64]})).unwrap();
+        let dec_path = format!("/v1/sessions/{sid}/decrypt");
+        let resp = handlers::route(
+            &make_request("POST", &dec_path, &dec_body),
+            store,
+            metrics,
+        );
+        assert_eq!(
+            resp.status, 200,
+            "decrypt failed: {}",
+            String::from_utf8_lossy(&resp.body)
+        );
+        let dec_resp: Value = serde_json::from_slice(&resp.body).unwrap();
+        dec_resp["values"][0].as_u64().unwrap()
+    }
+
+    // --- ct×ct multiplication (THE key test) ---
+
+    #[test]
+    fn dualrns_mul_ct_basic() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[7, 8]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 56, "7 × 8 should be 56");
+    }
+
+    #[test]
+    fn dualrns_mul_ct_by_one() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[42, 1]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 42, "42 × 1 should be 42");
+    }
+
+    #[test]
+    fn dualrns_mul_ct_by_zero() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[42, 0]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 0, "42 × 0 should be 0");
+    }
+
+    #[test]
+    fn dualrns_mul_ct_small_values() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // Test several small multiplications
+        for (a, b) in &[(2, 3), (5, 11), (13, 17), (100, 200)] {
+            let (sid, cts) = setup_and_encrypt(&store, &metrics, &[*a, *b]);
+            let ct_result = eval_op(
+                &store,
+                &metrics,
+                &sid,
+                json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+            );
+            let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+            let expected = ((*a as u128) * (*b as u128) % 65537) as u64;
+            assert_eq!(result, expected, "{} × {} should be {} (mod t)", a, b, expected);
+        }
+    }
+
+    #[test]
+    fn dualrns_mul_ct_near_t() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // Values near t=65537 that will wrap: 65536 × 2 = 131072 mod 65537 = 65535
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[65536, 2]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        let expected = (65536u128 * 2 % 65537) as u64;
+        assert_eq!(result, expected, "65536 × 2 mod 65537 should be {}", expected);
+    }
+
+    #[test]
+    fn dualrns_mul_ct_larger_values() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // 255 × 256 = 65280
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[255, 256]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 65280, "255 × 256 should be 65280");
+    }
+
+    // --- sub operation ---
+
+    #[test]
+    fn dualrns_sub_basic() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[50, 17]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "sub", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 33, "50 - 17 should be 33");
+    }
+
+    #[test]
+    fn dualrns_sub_underflow_wraps() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // 5 - 10 mod 65537 = 65532
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[5, 10]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "sub", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        let expected = (65537 + 5 - 10) as u64; // 65532
+        assert_eq!(result, expected, "5 - 10 mod 65537 should be {}", expected);
+    }
+
+    // --- negate operation ---
+
+    #[test]
+    fn dualrns_negate_basic() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[42]);
+        let ct_neg = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "negate", "inputs": [cts[0]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_neg);
+        let expected = 65537 - 42;
+        assert_eq!(result, expected, "-42 mod 65537 should be {}", expected);
+    }
+
+    #[test]
+    fn dualrns_negate_then_add_is_zero() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[42]);
+        let ct_neg = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "negate", "inputs": [cts[0]]}),
+        );
+        let ct_sum = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "add", "inputs": [cts[0], ct_neg]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_sum);
+        assert_eq!(result, 0, "x + (-x) should be 0");
+    }
+
+    // --- mul_plain operation ---
+
+    #[test]
+    fn dualrns_mul_plain_basic() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[7]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul_plain", "inputs": [cts[0]], "scalar": 6}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 42, "7 × 6 should be 42");
+    }
+
+    #[test]
+    fn dualrns_mul_plain_by_zero() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[42]);
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul_plain", "inputs": [cts[0]], "scalar": 0}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 0, "42 × 0 should be 0");
+    }
+
+    // --- chained operations ---
+
+    #[test]
+    fn dualrns_chained_add_then_mul_plain() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // (10 + 20) × 3 = 90
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[10, 20]);
+        let ct_sum = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "add", "inputs": [cts[0], cts[1]]}),
+        );
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul_plain", "inputs": [ct_sum], "scalar": 3}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 90, "(10 + 20) × 3 should be 90");
+    }
+
+    #[test]
+    fn dualrns_mul_ct_then_decrypt() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // After ct×ct mul, verify the result decrypts correctly on its own.
+        // Note: add_plain after mul requires level-aware delta encoding (future work).
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[5, 6]);
+        let ct_product = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_product);
+        assert_eq!(result, 30, "5 × 6 should be 30");
+    }
+
+    #[test]
+    fn dualrns_chained_mul_ct_then_mul_plain() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // (3 × 4) × 2_plain = 24
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[3, 4]);
+        let ct_product = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
+        );
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul_plain", "inputs": [ct_product], "scalar": 2}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 24, "(3 × 4) × 2_plain should be 24");
+    }
+
+    #[test]
+    fn dualrns_chained_add_plain_then_mul_ct() {
+        let store = make_store();
+        let metrics = make_metrics();
+        // (3 + 7_plain) × 5 = 50
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[3, 5]);
+        let ct_sum = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "add_plain", "inputs": [cts[0]], "scalar": 7}),
+        );
+        let ct_result = eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "mul", "inputs": [ct_sum, cts[1]]}),
+        );
+        let result = decrypt_one(&store, &metrics, &sid, &ct_result);
+        assert_eq!(result, 50, "(3 + 7) × 5 should be 50");
+    }
+
+    // --- batch operations (multiple ops in one evaluate call) ---
+
+    #[test]
+    fn dualrns_batch_operations() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[10, 20, 30]);
+
+        // Batch: add(ct0, ct1), sub(ct2, ct1), negate(ct0)
+        let eval_body = serde_json::to_vec(&json!({
+            "operations": [
+                {"op": "add", "inputs": [cts[0], cts[1]]},
+                {"op": "sub", "inputs": [cts[2], cts[1]]},
+                {"op": "negate", "inputs": [cts[0]]}
+            ]
+        }))
+        .unwrap();
+        let eval_path = format!("/v1/sessions/{sid}/evaluate");
+        let resp = handlers::route(
+            &make_request("POST", &eval_path, &eval_body),
+            &store,
+            &metrics,
+        );
+        assert_eq!(resp.status, 200);
+        let eval_resp: Value = serde_json::from_slice(&resp.body).unwrap();
+        let results = eval_resp["results"].as_array().unwrap();
+        assert_eq!(results.len(), 3);
+
+        let v0 = decrypt_one(&store, &metrics, &sid, results[0].as_str().unwrap());
+        let v1 = decrypt_one(&store, &metrics, &sid, results[1].as_str().unwrap());
+        let v2 = decrypt_one(&store, &metrics, &sid, results[2].as_str().unwrap());
+
+        assert_eq!(v0, 30, "10 + 20 = 30");
+        assert_eq!(v1, 10, "30 - 20 = 10");
+        assert_eq!(v2, 65537 - 10, "-10 mod 65537");
+    }
+
+    // --- operation count tracking ---
+
+    #[test]
+    fn dualrns_operation_count_tracks() {
+        let store = make_store();
+        let metrics = make_metrics();
+        let (sid, cts) = setup_and_encrypt(&store, &metrics, &[1, 2]);
+
+        // 2 encrypts → op_count = 2
+        let path = format!("/v1/sessions/{sid}");
+        let resp = handlers::route(&make_request("GET", &path, &[]), &store, &metrics);
+        let info: Value = serde_json::from_slice(&resp.body).unwrap();
+        assert_eq!(info["operation_count"].as_u64().unwrap(), 2);
+
+        // 1 evaluate (add) → op_count = 3
+        eval_op(
+            &store,
+            &metrics,
+            &sid,
+            json!({"op": "add", "inputs": [cts[0], cts[1]]}),
+        );
+
+        let resp = handlers::route(&make_request("GET", &path, &[]), &store, &metrics);
+        let info: Value = serde_json::from_slice(&resp.body).unwrap();
+        assert_eq!(info["operation_count"].as_u64().unwrap(), 3);
+    }
 }

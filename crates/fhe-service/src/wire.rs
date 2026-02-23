@@ -6,8 +6,9 @@ use serde::{Deserialize, Serialize};
 const MAX_STRING_FIELD_LEN: usize = 1024;
 
 /// Maximum length of a single ciphertext field.
-/// N=16384 (secure_256) with 2 polynomials × 16384 × 8 bytes × 4/3 base64 ≈ 350 KB.
-const MAX_CIPHERTEXT_FIELD_LEN: usize = 512 * 1024;
+/// DualRNS ciphertexts include both main + anchor limbs:
+/// N=16384 (secure_256) with 2 polys × (6 main + 5 anchor) × 16384 × 8 bytes × 4/3 base64 ≈ 3.8 MB.
+const MAX_CIPHERTEXT_FIELD_LEN: usize = 4 * 1024 * 1024;
 
 /// Maximum total allocation per request to prevent memory amplification attacks.
 /// Limits total ciphertext data per request to prevent 512MB+ allocations.
