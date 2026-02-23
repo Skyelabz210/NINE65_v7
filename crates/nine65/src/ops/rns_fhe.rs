@@ -3406,6 +3406,171 @@ impl RNSFHEContext {
         Ok(self.add_dual(ct1, ct2))
     }
 
+    // ========================================================================
+    // SERVICE-FACING DUAL-TRACK OPERATIONS
+    // ========================================================================
+    //
+    // These operations mirror the single-modulus BFVEvaluator API but operate
+    // on DualRNSCiphertext, enabling the fhe-service to use the full RNS
+    // pipeline with exact K-Elimination rescaling.
+
+    /// Subtract two dual-track ciphertexts: ct1 - ct2
+    pub fn sub_dual(
+        &self,
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+    ) -> DualRNSCiphertext {
+        debug_assert_eq!(
+            ct1.level, ct2.level,
+            "sub_dual: level mismatch ({} vs {})",
+            ct1.level, ct2.level
+        );
+        let neg = self.negate_dual(ct2);
+        self.add_dual(ct1, &neg)
+    }
+
+    /// Negate a dual-track ciphertext: -ct (mod each prime)
+    pub fn negate_dual(&self, ct: &DualRNSCiphertext) -> DualRNSCiphertext {
+        DualRNSCiphertext {
+            c0: self.dual_poly_negate(&ct.c0),
+            c1: self.dual_poly_negate(&ct.c1),
+            level: ct.level,
+        }
+    }
+
+    /// Add a plaintext scalar to a dual-track ciphertext.
+    ///
+    /// Encodes the scalar as Δ·m in dual-RNS form (same encoding as encrypt_dual)
+    /// and adds it to c0. c1 is unchanged.
+    pub fn add_plain_dual(
+        &self,
+        ct: &DualRNSCiphertext,
+        scalar: u64,
+    ) -> DualRNSCiphertext {
+        assert!(scalar < self.t, "scalar must be < t");
+        let encoded = self.encode_scalar_as_delta_dual(scalar);
+        DualRNSCiphertext {
+            c0: self.dual_poly_add(&ct.c0, &encoded),
+            c1: ct.c1.clone(),
+            level: ct.level,
+        }
+    }
+
+    /// Multiply a dual-track ciphertext by a plaintext scalar.
+    ///
+    /// Multiplies both c0 and c1 by the raw scalar value (NOT delta-encoded).
+    /// This is the standard BFV scalar multiplication: Enc(m) * k = Enc(m·k).
+    pub fn mul_plain_dual(
+        &self,
+        ct: &DualRNSCiphertext,
+        scalar: u64,
+    ) -> DualRNSCiphertext {
+        assert!(scalar < self.t, "scalar must be < t");
+        let scalar_poly = self.scalar_to_constant_dual_poly(scalar);
+        DualRNSCiphertext {
+            c0: self.dual_poly_mul(&ct.c0, &scalar_poly),
+            c1: self.dual_poly_mul(&ct.c1, &scalar_poly),
+            level: ct.level,
+        }
+    }
+
+    /// Negate a DualRNSPoly: (p_i - coeff) for each prime
+    fn dual_poly_negate(&self, poly: &DualRNSPoly) -> DualRNSPoly {
+        let main: Vec<Vec<u64>> = poly
+            .main
+            .iter()
+            .enumerate()
+            .map(|(i, limb)| {
+                let p = self.config.primes[i];
+                limb.iter()
+                    .map(|&c| if c == 0 { 0 } else { p - c })
+                    .collect()
+            })
+            .collect();
+        let anchor: Vec<Vec<u64>> = poly
+            .anchor
+            .iter()
+            .enumerate()
+            .map(|(i, limb)| {
+                let p = self.dual_rns.anchor.primes[i];
+                limb.iter()
+                    .map(|&c| if c == 0 { 0 } else { p - c })
+                    .collect()
+            })
+            .collect();
+        DualRNSPoly {
+            main,
+            anchor,
+            n: poly.n,
+        }
+    }
+
+    /// Encode a scalar m as Δ·m in dual-RNS form (constant polynomial).
+    ///
+    /// Uses the same delta computation as encrypt_dual: Δ = floor(Q/t) where
+    /// Q is the product of all main primes. The result is reduced mod each
+    /// main and anchor prime.
+    fn encode_scalar_as_delta_dual(&self, m: u64) -> DualRNSPoly {
+        // Compute encoded = Δ * m where Δ = floor(Q / t)
+        // Then reduce mod each prime to get RNS form.
+        // This must match encrypt_dual's encoding exactly.
+        let zero_coeffs = vec![0u64; self.n];
+        let (main, anchor) = if self.q_product == 0 {
+            // Q overflows u128, use U256
+            let q = U256::product_u64s(&self.config.primes);
+            let (delta, _) = q.div_mod_u64(self.t);
+            let encoded = delta.mul_u64(m);
+            (
+                self.to_main_rns_u256(&zero_coeffs, encoded),
+                self.to_anchor_rns_u256(&zero_coeffs, encoded),
+            )
+        } else {
+            let delta_big = self.q_product / self.t as u128;
+            let encoded = m as u128 * delta_big;
+            (
+                self.to_main_rns_u128(&zero_coeffs, encoded),
+                self.to_anchor_rns_u128(&zero_coeffs, encoded),
+            )
+        };
+        DualRNSPoly {
+            main,
+            anchor,
+            n: self.n,
+        }
+    }
+
+    /// Create a constant DualRNSPoly with raw value `scalar` (NOT delta-encoded).
+    ///
+    /// Used for mul_plain where we multiply ct components by the raw scalar.
+    fn scalar_to_constant_dual_poly(&self, scalar: u64) -> DualRNSPoly {
+        let main: Vec<Vec<u64>> = self
+            .config
+            .primes
+            .iter()
+            .map(|&p| {
+                let mut coeffs = vec![0u64; self.n];
+                coeffs[0] = scalar % p;
+                coeffs
+            })
+            .collect();
+        let anchor: Vec<Vec<u64>> = self
+            .dual_rns
+            .anchor
+            .primes
+            .iter()
+            .map(|&p| {
+                let mut coeffs = vec![0u64; self.n];
+                coeffs[0] = scalar % p;
+                coeffs
+            })
+            .collect();
+        DualRNSPoly {
+            main,
+            anchor,
+            n: self.n,
+        }
+    }
+
     /// Get the FHE config for external noise budget calculations
     pub fn fhe_config(&self) -> &FHEConfig {
         &self.config
@@ -10139,5 +10304,317 @@ mod tests {
 
         // This should panic because the eval key has fewer limbs than the ciphertext
         let _result = ctx.mul_dual_public(&ct1, &ct2, &truncated_evk).unwrap();
+    }
+
+    // ========================================================================
+    // SERVICE-FACING DUAL-TRACK OPERATION TESTS
+    // ========================================================================
+    //
+    // These tests validate sub_dual, negate_dual, add_plain_dual, mul_plain_dual
+    // with extensive edge cases to ensure quality for fhe-service integration.
+
+    /// Helper: create ctx + keys for service-facing tests
+    fn service_test_setup() -> (RNSFHEContext, DualRNSFullKeySet, ShadowHarvester) {
+        let config = FHEConfig::standard_128();
+        let ctx = RNSFHEContext::new(&config);
+        let mut rng = ShadowHarvester::with_seed(42);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        (ctx, keys, ShadowHarvester::with_seed(99))
+    }
+
+    // --- negate_dual tests ---
+
+    #[test]
+    fn test_negate_dual_basic() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_neg = ctx.negate_dual(&ct);
+        let result = ctx.decrypt_dual(&ct_neg, &keys.secret_key);
+        // -10 mod 65537 = 65527
+        assert_eq!(result, ctx.t - 10, "negate(10) should be t-10={}, got {}", ctx.t - 10, result);
+    }
+
+    #[test]
+    fn test_negate_dual_zero() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(0, &keys.public_key, &mut rng);
+        let ct_neg = ctx.negate_dual(&ct);
+        let result = ctx.decrypt_dual(&ct_neg, &keys.secret_key);
+        assert_eq!(result, 0, "negate(0) should be 0, got {}", result);
+    }
+
+    #[test]
+    fn test_negate_dual_one() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
+        let ct_neg = ctx.negate_dual(&ct);
+        let result = ctx.decrypt_dual(&ct_neg, &keys.secret_key);
+        assert_eq!(result, ctx.t - 1, "negate(1) should be t-1={}, got {}", ctx.t - 1, result);
+    }
+
+    #[test]
+    fn test_negate_dual_double_negate_identity() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let ct_neg = ctx.negate_dual(&ct);
+        let ct_neg_neg = ctx.negate_dual(&ct_neg);
+        let result = ctx.decrypt_dual(&ct_neg_neg, &keys.secret_key);
+        assert_eq!(result, 42, "double negate should be identity, got {}", result);
+    }
+
+    #[test]
+    fn test_negate_dual_add_to_zero() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(100, &keys.public_key, &mut rng);
+        let ct_neg = ctx.negate_dual(&ct);
+        let ct_sum = ctx.add_dual(&ct, &ct_neg);
+        let result = ctx.decrypt_dual(&ct_sum, &keys.secret_key);
+        assert_eq!(result, 0, "x + (-x) should be 0, got {}", result);
+    }
+
+    // --- sub_dual tests ---
+
+    #[test]
+    fn test_sub_dual_basic() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct_a = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(3, &keys.public_key, &mut rng);
+        let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
+        let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
+        assert_eq!(result, 7, "10 - 3 should be 7, got {}", result);
+    }
+
+    #[test]
+    fn test_sub_dual_same_value() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct_a = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
+        let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
+        assert_eq!(result, 0, "42 - 42 should be 0, got {}", result);
+    }
+
+    #[test]
+    fn test_sub_dual_underflow_wraps() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // 3 - 10 = -7 mod t = t - 7
+        let ct_a = ctx.encrypt_dual(3, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
+        let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
+        assert_eq!(result, ctx.t - 7, "3 - 10 should be t-7={}, got {}", ctx.t - 7, result);
+    }
+
+    #[test]
+    fn test_sub_dual_from_zero() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct_a = ctx.encrypt_dual(0, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
+        let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
+        let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
+        assert_eq!(result, ctx.t - 5, "0 - 5 should be t-5={}, got {}", ctx.t - 5, result);
+    }
+
+    #[test]
+    fn test_sub_dual_multiple_values() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let test_cases: Vec<(u64, u64, u64)> = vec![
+            (100, 50, 50),
+            (1000, 1, 999),
+            (65536, 65536, 0),
+            (1, 0, 1),
+            (0, 0, 0),
+        ];
+        for (a, b, expected) in test_cases {
+            let ct_a = ctx.encrypt_dual(a, &keys.public_key, &mut rng);
+            let ct_b = ctx.encrypt_dual(b, &keys.public_key, &mut rng);
+            let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
+            let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
+            assert_eq!(result, expected, "{} - {} should be {}, got {}", a, b, expected, result);
+        }
+    }
+
+    // --- add_plain_dual tests ---
+
+    #[test]
+    fn test_add_plain_dual_basic() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_add = ctx.add_plain_dual(&ct, 5);
+        let result = ctx.decrypt_dual(&ct_add, &keys.secret_key);
+        assert_eq!(result, 15, "10 + 5 should be 15, got {}", result);
+    }
+
+    #[test]
+    fn test_add_plain_dual_zero() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let ct_add = ctx.add_plain_dual(&ct, 0);
+        let result = ctx.decrypt_dual(&ct_add, &keys.secret_key);
+        assert_eq!(result, 42, "42 + 0 should be 42, got {}", result);
+    }
+
+    #[test]
+    fn test_add_plain_dual_to_zero() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(0, &keys.public_key, &mut rng);
+        let ct_add = ctx.add_plain_dual(&ct, 100);
+        let result = ctx.decrypt_dual(&ct_add, &keys.secret_key);
+        assert_eq!(result, 100, "0 + 100 should be 100, got {}", result);
+    }
+
+    #[test]
+    fn test_add_plain_dual_wrap_mod_t() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // (t-1) + 2 = 1 mod t
+        let ct = ctx.encrypt_dual(ctx.t - 1, &keys.public_key, &mut rng);
+        let ct_add = ctx.add_plain_dual(&ct, 2);
+        let result = ctx.decrypt_dual(&ct_add, &keys.secret_key);
+        assert_eq!(result, 1, "(t-1) + 2 should be 1, got {}", result);
+    }
+
+    #[test]
+    fn test_add_plain_dual_multiple_additions() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct2 = ctx.add_plain_dual(&ct, 20);
+        let ct3 = ctx.add_plain_dual(&ct2, 30);
+        let result = ctx.decrypt_dual(&ct3, &keys.secret_key);
+        assert_eq!(result, 60, "10 + 20 + 30 should be 60, got {}", result);
+    }
+
+    #[test]
+    fn test_add_plain_dual_matches_ct_add() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // Enc(10) + plain(5) should equal Enc(10) + Enc(5)
+        let ct = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_plain = ctx.add_plain_dual(&ct, 5);
+        let r_plain = ctx.decrypt_dual(&ct_plain, &keys.secret_key);
+
+        let ct_b = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
+        let ct_ct = ctx.add_dual(&ct, &ct_b);
+        let r_ct = ctx.decrypt_dual(&ct_ct, &keys.secret_key);
+
+        assert_eq!(r_plain, r_ct, "add_plain and add_dual should give same result: plain={} ct={}", r_plain, r_ct);
+    }
+
+    // --- mul_plain_dual tests ---
+
+    #[test]
+    fn test_mul_plain_dual_basic() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+        let ct_mul = ctx.mul_plain_dual(&ct, 6);
+        let result = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
+        assert_eq!(result, 42, "7 * 6 should be 42, got {}", result);
+    }
+
+    #[test]
+    fn test_mul_plain_dual_by_zero() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let ct_mul = ctx.mul_plain_dual(&ct, 0);
+        let result = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
+        assert_eq!(result, 0, "42 * 0 should be 0, got {}", result);
+    }
+
+    #[test]
+    fn test_mul_plain_dual_by_one() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+        let ct_mul = ctx.mul_plain_dual(&ct, 1);
+        let result = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
+        assert_eq!(result, 42, "42 * 1 should be 42, got {}", result);
+    }
+
+    #[test]
+    fn test_mul_plain_dual_wrap_mod_t() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // 1000 * 100 = 100000, which is > t (65537), so result = 100000 mod 65537
+        let ct = ctx.encrypt_dual(1000, &keys.public_key, &mut rng);
+        let ct_mul = ctx.mul_plain_dual(&ct, 100);
+        let result = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
+        let expected = (1000u64 * 100) % ctx.t;
+        assert_eq!(result, expected, "1000 * 100 mod t should be {}, got {}", expected, result);
+    }
+
+    #[test]
+    fn test_mul_plain_dual_small_values() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        let test_cases: Vec<(u64, u64)> = vec![
+            (1, 1),
+            (2, 3),
+            (11, 13),
+            (100, 200),
+            (255, 256),
+        ];
+        for (m, k) in test_cases {
+            let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
+            let ct_mul = ctx.mul_plain_dual(&ct, k);
+            let result = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
+            let expected = (m * k) % ctx.t;
+            assert_eq!(result, expected, "{} * {} should be {}, got {}", m, k, expected, result);
+        }
+    }
+
+    #[test]
+    fn test_mul_plain_dual_chained() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // 2 * 3 * 5 * 7 = 210
+        let ct = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
+        let ct2 = ctx.mul_plain_dual(&ct, 3);
+        let ct3 = ctx.mul_plain_dual(&ct2, 5);
+        let ct4 = ctx.mul_plain_dual(&ct3, 7);
+        let result = ctx.decrypt_dual(&ct4, &keys.secret_key);
+        assert_eq!(result, 210, "2*3*5*7 should be 210, got {}", result);
+    }
+
+    // --- mixed operation tests ---
+
+    #[test]
+    fn test_mixed_add_sub_dual() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // (10 + 20) - 5 = 25
+        let ct_a = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(20, &keys.public_key, &mut rng);
+        let ct_c = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
+        let ct_sum = ctx.add_dual(&ct_a, &ct_b);
+        let ct_result = ctx.sub_dual(&ct_sum, &ct_c);
+        let result = ctx.decrypt_dual(&ct_result, &keys.secret_key);
+        assert_eq!(result, 25, "(10+20)-5 should be 25, got {}", result);
+    }
+
+    #[test]
+    fn test_mixed_mul_plain_then_add() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // (7 * 6) + 8 = 50
+        let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+        let ct_mul = ctx.mul_plain_dual(&ct, 6);
+        let ct_result = ctx.add_plain_dual(&ct_mul, 8);
+        let result = ctx.decrypt_dual(&ct_result, &keys.secret_key);
+        assert_eq!(result, 50, "(7*6)+8 should be 50, got {}", result);
+    }
+
+    #[test]
+    fn test_mixed_sub_then_mul_plain() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // (10 - 3) * 5 = 35
+        let ct_a = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(3, &keys.public_key, &mut rng);
+        let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
+        let ct_result = ctx.mul_plain_dual(&ct_sub, 5);
+        let result = ctx.decrypt_dual(&ct_result, &keys.secret_key);
+        assert_eq!(result, 35, "(10-3)*5 should be 35, got {}", result);
+    }
+
+    #[test]
+    fn test_negate_then_add_plain() {
+        let (ctx, keys, mut rng) = service_test_setup();
+        // -10 + 15 = 5
+        let ct = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
+        let ct_neg = ctx.negate_dual(&ct);
+        let ct_result = ctx.add_plain_dual(&ct_neg, 15);
+        let result = ctx.decrypt_dual(&ct_result, &keys.secret_key);
+        assert_eq!(result, 5, "-10 + 15 should be 5, got {}", result);
     }
 }
