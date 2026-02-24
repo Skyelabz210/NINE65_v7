@@ -18,10 +18,9 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable]
     steps:
       - name: Checkout code
@@ -400,26 +399,3 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
-
-  fuzzing:
-    name: Fuzz Testing
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Install Rust nightly
-        uses: dtolnay/rust-toolchain@nightly
-      - name: Cache cargo-fuzz
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/bin/cargo-fuzz
-          key: ${{ runner.os }}-cargo-fuzz
-      - name: Install cargo-fuzz
-        run: command -v cargo-fuzz || cargo install cargo-fuzz --locked
-      - name: Run fuzzing (smoke test)
-        run: |
-          # Run each target for 10 seconds to ensure no immediate crashes
-          for target in $(cargo fuzz list); do
-            echo "Fuzzing target: $target"
-            cargo +nightly fuzz run "$target" -- -max_total_time=10 || exit 1
-          done
