@@ -127,8 +127,8 @@ fn main() {
             eprintln!("Build with: cargo build --release --features allow_insecure");
             std::process::exit(3);
         }
-        "standard_128" | "standard-128" => FHEConfig::standard_128(),
-        "high_192" | "high-192" => FHEConfig::high_192(),
+        "standard_128" | "standard-128" => FHEConfig::standard_128_insecure(),
+        "high_192" | "high-192" => FHEConfig::high_192_insecure(),
         other => {
             eprintln!("Unknown config: {other}");
             print_usage();

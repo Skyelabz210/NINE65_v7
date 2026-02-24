@@ -1189,7 +1189,7 @@ mod tests {
     fn test_k_elim_trivial_ciphertext() {
         // Test K-Elimination on trivial ciphertexts (c0 = Δ×m, c1 = 0)
         // This isolates the K-Elimination logic from BFV encryption complexity
-        let config = FHEConfig::standard_128();
+        let config = FHEConfig::standard_128_insecure();
 
         let rns_eval = RNSEvaluator::new(&config);
         let delta = rns_eval.delta as u128;

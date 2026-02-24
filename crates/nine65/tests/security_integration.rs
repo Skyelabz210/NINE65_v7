@@ -52,7 +52,7 @@ fn test_secure_192_meets_security_claims() {
     );
 }
 
-// Note: test_fast_insecure() is only available in unit tests (lib) due to cfg attributes.
+// Note: test_fast() is only available in unit tests (lib) due to cfg attributes.
 // This test verifies the secure configs meet their security claims instead.
 #[test]
 fn test_secure_config_security_levels() {

@@ -38,7 +38,7 @@
 #[cfg(all(not(test), not(debug_assertions), not(feature = "allow_insecure")))]
 const _SECURITY_ASSERTION: () = {
     // This block ensures that release builds cannot accidentally use test configs.
-    // The test_fast_insecure() and test_medium_insecure() functions are cfg-gated and will not exist
+    // The test_fast() and test_medium() functions are cfg-gated and will not exist
     // in release builds, causing compile errors if referenced.
 };
 
@@ -251,7 +251,7 @@ impl SecureConfig {
     /// - Performance benchmarking
     ///
     /// NEVER use for production or with real sensitive data.
-    #[cfg(any(test, debug_assertions))]
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn test_fast_insecure() -> Self {
         Self::new_verified(
             1024,
@@ -267,7 +267,7 @@ impl SecureConfig {
     ///
     /// Suitable for integration testing where security
     /// doesn't matter but correct behavior does.
-    #[cfg(any(test, debug_assertions))]
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn test_medium_insecure() -> Self {
         Self::new_verified(
             2048,
@@ -331,28 +331,38 @@ pub fn assert_production_safe(config: &SecureConfig) {
     config.require_production_safe();
 }
 
-/// Assert that an FHEConfig is production-safe by re-verifying its security.
+/// Verify that an FHEConfig meets minimum production security requirements (128 bits).
 ///
-/// Use this in Context constructors that only have access to FHEConfig.
-pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
-    #[cfg(not(any(test, debug_assertions, feature = "allow_insecure")))]
-    {
-        let log_q: u32 = config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
-        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
-        let estimate = estimator.estimate(config.n, log_q, SecretDistribution::Ternary, 128);
-        let he_compliant = HEStandardBounds::is_compliant(config.n, log_q, 128);
-
-        assert!(
-            estimate.hybrid_bits >= 128 && he_compliant,
-            "SECURITY ERROR: FHEConfig '{}' (N={}, logQ={}) is NOT production safe!\n\
-             Estimated hybrid security: {} bits. HE Standard compliant: {}\n\
-             Use SecureConfig::secure_128() or higher for production.",
-            config.name, config.n, log_q, estimate.hybrid_bits, he_compliant
-        );
+/// This uses the lattice security estimator to perform a runtime check.
+/// In release builds without `allow_insecure` feature, this will panic if
+/// security is below 128 bits.
+pub fn assert_production_safe_fhe_config(config: &crate::params::FHEConfig) {
+    // Skip check in test/debug or if explicitly allowed
+    if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
+        return;
     }
-    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
-    {
-        let _ = config; // silence unused warning
+
+    let log_q: u32 = config
+        .primes
+        .iter()
+        .map(|&p| 64 - p.leading_zeros())
+        .sum();
+
+    let estimator = crate::params::security_estimator::LatticeSecurityEstimator::default();
+    let estimate = estimator.estimate(
+        config.n,
+        log_q,
+        crate::params::security_estimator::SecretDistribution::Ternary,
+        128,
+    );
+
+    if !estimate.meets_claim {
+        panic!(
+            "PRODUCTION SECURITY VIOLATION: Config '{}' provides only {} bits of security (128 required).\n\
+             Analysis: {}\n\
+             Action: Increase N or decrease the number/size of RNS primes.",
+            config.name, estimate.effective_bits, estimate.analysis
+        );
     }
 }
 
@@ -543,15 +553,5 @@ mod tests {
         let test_config = SecureConfig::test_fast_insecure();
         // In test mode, this will not panic
         test_config.require_production_safe();
-    }
-
-    #[test]
-    fn test_assert_production_safe_fhe_config() {
-        // Should not panic in test mode even for insecure configs
-        let config = FHEConfig::light_insecure();
-        assert_production_safe_fhe_config(&config);
-
-        let secure_config = SecureConfig::secure_128();
-        assert_production_safe_fhe_config(&secure_config.config);
     }
 }

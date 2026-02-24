@@ -50,7 +50,7 @@
 //!
 //! // 1. Use SecureConfig for production (128-bit+ security guaranteed)
 //! let secure = SecureConfig::secure_128();
-//! let config = FHEConfig::standard_128();  // Or derive from SecureConfig
+//! let config = FHEConfig::standard_128_insecure();  // Or derive from SecureConfig
 //! let ntt = NTTEngine::new(config.q, config.n);
 //!
 //! // 2. Generate keys with OS CSPRNG (PRODUCTION)
@@ -75,7 +75,7 @@
 //! use nine65::prelude::*;
 //!
 //! // Use deterministic parameters for reproducible tests
-//! // Note: light_insecure() requires `allow_insecure` feature for testing only
+//! // Note: light() requires `allow_insecure` feature for testing only
 //! #[cfg(feature = "allow_insecure")]
 //! let config = FHEConfig::light_insecure();
 //! let ntt = NTTEngine::new(config.q, config.n);
@@ -98,8 +98,8 @@
 //! | `SecureConfig::secure_192()` | 8192 | 192-bit | High security |
 //! | `standard_128()` | 4096 | 128-bit | Production (FHEConfig) |
 //! | `high_192()` | 8192 | 192-bit | High security (FHEConfig) |
-//! | `light_insecure()` | 1024 | ~36-bit | Testing only (`allow_insecure`) |
-//! | `he_standard_128_insecure()` | 2048 | ~56-bit | Testing only (`allow_insecure`) |
+//! | `light()` | 1024 | ~36-bit | Testing only (`allow_insecure`) |
+//! | `he_standard_128()` | 2048 | ~56-bit | Testing only (`allow_insecure`) |
 //!
 //! ## Module Overview
 //!

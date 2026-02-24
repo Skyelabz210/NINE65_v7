@@ -202,7 +202,7 @@ Ran `cargo check --workspace --release` and found:
 ### 3.2 Insecure Features (Analysis)
 
 #### `allow_insecure` (test-only)
-- **Gates**: `FHEConfig::light_insecure()` (N=1024, ~36-bit security)
+- **Gates**: `FHEConfig::light()` (N=1024, ~36-bit security)
 - **Impact**: Allows fast tests but **NEVER production-safe**
 - **Tests**: ✅ Only enabled in `dev-dependencies`
 - **Risk**: If accidentally enabled in production, catastrophic security failure

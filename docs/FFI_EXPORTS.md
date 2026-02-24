@@ -11,7 +11,7 @@ This document defines the canonical export surface for the `nine65-python` PyO3 
 - `SecureConfig.secure_128()`
 - `SecureConfig.secure_192()`
 - `SecureConfig.secure_256()`
-- `SecureConfig.test_fast_insecure()`
+- `SecureConfig.test_fast()`
 
 Config accessors:
 - `name()`

@@ -24,7 +24,7 @@
 #[cfg(all(not(test), not(debug_assertions), not(feature = "allow_insecure")))]
 const _SECURITY_ASSERTION: () = {
     // This block ensures that release builds cannot accidentally use test configs.
-    // The test_fast_insecure() and test_medium_insecure() functions are cfg-gated and will not exist
+    // The test_fast() and test_medium() functions are cfg-gated and will not exist
     // in release builds, causing compile errors if referenced.
 };
 ```

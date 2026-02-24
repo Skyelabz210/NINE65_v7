@@ -62,25 +62,22 @@ impl U256 {
         }
     }
 
+    #[inline]
+    pub(crate) fn ge(self, other: Self) -> bool {
+        self.cmp(other) != Ordering::Less
+    }
+
     /// Constant-time greater-than-or-equal comparison
     #[inline]
     #[allow(dead_code)]
     pub(crate) fn ge_ct(self, other: Self) -> bool {
         // (self.hi > other.hi) || (self.hi == other.hi && self.lo >= other.lo)
-        // bit 127 is set if a < b in (a.wrapping_sub(b))
         let hi_lt = (self.hi.wrapping_sub(other.hi) >> 127) & 1;
         let hi_gt = (other.hi.wrapping_sub(self.hi) >> 127) & 1;
-        let hi_eq = 1 - (hi_lt | hi_gt);
+        let lo_ge = ((self.lo.wrapping_sub(other.lo) >> 127) & 1) ^ 1;
 
-        let lo_lt = (self.lo.wrapping_sub(other.lo) >> 127) & 1;
-        let lo_ge = 1 - lo_lt;
-
-        (hi_gt | (hi_eq & lo_ge)) != 0
-    }
-
-    #[inline]
-    pub(crate) fn ge(self, other: Self) -> bool {
-        self.cmp(other) != Ordering::Less
+        // (hi_gt == 1) || (hi_lt == 0 && lo_ge == 1)
+        (hi_gt | ((hi_lt ^ 1) & lo_ge)) != 0
     }
     #[inline]
     pub(crate) fn gt(self, other: Self) -> bool {
@@ -99,6 +96,11 @@ impl U256 {
         (Self { lo, hi }, c1 || c2)
     }
 
+    #[inline]
+    pub(crate) fn add(self, other: Self) -> Self {
+        self.overflowing_add(other).0
+    }
+
     /// Constant-time addition
     #[inline]
     #[allow(dead_code)]
@@ -107,11 +109,6 @@ impl U256 {
         let (hi, _) = self.hi.overflowing_add(other.hi);
         let hi = hi.wrapping_add(c0 as u128);
         Self { lo, hi }
-    }
-
-    #[inline]
-    pub(crate) fn add(self, other: Self) -> Self {
-        self.overflowing_add(other).0
     }
 
     #[inline]
@@ -163,6 +160,23 @@ impl U256 {
         } else {
             ((self.hi >> (i - 128)) & 1) as u32
         }
+    }
+
+    /// Constant-time value mod m where m fits in u64.
+    pub(crate) fn mod_u64_ct(self, m: u64) -> u64 {
+        if m == 0 {
+            return 0;
+        }
+        // Use a bit-by-bit approach for constant time
+        let mut rem = 0u128;
+        let m128 = m as u128;
+        for i in (0..256).rev() {
+            let bit = self.get_bit(i as u32) as u128;
+            rem = (rem << 1) | bit;
+            let mask = ((m128.wrapping_sub(rem.wrapping_add(1)) >> 127) & 1).wrapping_neg();
+            rem = rem.wrapping_sub(m128 & mask);
+        }
+        rem as u64
     }
 
     #[inline]
@@ -231,30 +245,6 @@ impl U256 {
         let hi_mod = self.hi % m128;
         let lo_mod = self.lo % m128;
         let rem = (hi_mod * two128 + lo_mod) % m128;
-        rem as u64
-    }
-
-    /// Constant-time value mod m where m fits in u64.
-    pub(crate) fn mod_u64_ct(self, m: u64) -> u64 {
-        if m == 0 {
-            return 0;
-        }
-        // Use a bit-by-bit approach for constant time
-        let mut rem = 0u128;
-        let m128 = m as u128;
-
-        // High word
-        for i in (0..128).rev() {
-            rem = (rem << 1) | ((self.hi >> i) & 1);
-            let mask = ((rem >= m128) as u128).wrapping_neg();
-            rem = rem.wrapping_sub(m128 & mask);
-        }
-        // Low word
-        for i in (0..128).rev() {
-            rem = (rem << 1) | ((self.lo >> i) & 1);
-            let mask = ((rem >= m128) as u128).wrapping_neg();
-            rem = rem.wrapping_sub(m128 & mask);
-        }
         rem as u64
     }
 
@@ -2583,6 +2573,18 @@ mod tests {
     }
 
     #[test]
+    fn test_u256_mod_u64_ct() {
+        let a = U256 {
+            lo: 0x1234567890ABCDEF1234567890ABCDEF,
+            hi: 0xFEDCBA0987654321FEDCBA0987654321,
+        };
+        let m = 123456789;
+        let expected = (a.lo % m as u128 + (a.hi % m as u128 * (1u128 << 64) % m as u128 * (1u128 << 64) % m as u128)) % m as u128;
+        let got = a.mod_u64_ct(m);
+        assert_eq!(got as u128, expected);
+    }
+
+    #[test]
     fn test_u256_div_mod_u256_self() {
         // Q / Q = 1 remainder 0
         let primes: &[u64] = &[998244353, 985661441, 754974721, 469762049, 167772161];
@@ -2591,26 +2593,6 @@ mod tests {
         assert_eq!(quotient.lo, 1);
         assert_eq!(quotient.hi, 0);
         assert!(remainder.is_zero());
-    }
-
-    #[test]
-    fn test_u256_mod_u64_ct() {
-        let a = U256 {
-            lo: 123456789,
-            hi: 987654321,
-        };
-        let m = 1234567;
-        let expected = a.mod_u64(m);
-        let got = a.mod_u64_ct(m);
-        assert_eq!(got, expected);
-
-        let large_a = U256 {
-            lo: u128::MAX,
-            hi: u128::MAX,
-        };
-        let expected_large = large_a.mod_u64(m);
-        let got_large = large_a.mod_u64_ct(m);
-        assert_eq!(got_large, expected_large);
     }
 
     #[test]

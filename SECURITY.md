@@ -50,7 +50,7 @@ NINE65 provides multiple parameter configurations. Only the following are valida
 - `secure_192` -- targets 192-bit post-quantum security
 - `secure_256` -- targets 256-bit post-quantum security
 
-Configurations such as `light`, `he_standard_128`, and `light_rns_exact` exist solely for testing and development. These require the `allow_insecure` feature flag to compile and **must not be used in production deployments**.
+Configurations such as `light_insecure`, `he_standard_128_insecure`, and `light_rns_exact_insecure` exist solely for testing and development. These require the `allow_insecure` feature flag to compile and **must not be used in production deployments**. All legacy presets in `FHEConfig` have been renamed with an `_insecure` suffix to prevent accidental production use.
 
 ### The `allow_insecure` Feature Flag
 
@@ -60,25 +60,19 @@ The `allow_insecure` feature flag enables test-only parameter configurations wit
 
 Constant-time primitives are available in `crates/nine65/src/security/secret_data.rs`. These primitives use the `subtle` crate for constant-time comparisons and conditional selection. Code paths that handle secret key material should use these primitives exclusively.
 
-#### Constant-Time Requirements
-
-To prevent timing side-channel attacks, all operations involving secret key material must be performed using constant-time (CT) algorithms. This includes:
-
-1. **Decryption**: The core decryption operation `c0 + c1 * s` must use CT multiplication (`mul_ct`).
-2. **Key Generation**: Secret key components must be sampled and handled using CT-safe routines.
-3. **K-Elimination**: The extraction of the `k` value during rescaling must use the constant-time `extract_k` variant when processing ciphertexts derived from secret inputs.
-
-NINE65 v7 enforces these requirements through the `SecretKeyPath` trait and specialized `_ct` variants of arithmetic operations. Developers adding new homomorphic operations or primitives must ensure that any path touching secret data adheres to these CT constraints.
-
 ### Noise Budget Tracking
 
 For noise-sensitive operations, use `TrackedEvaluator` to monitor noise budget consumption across homomorphic circuit evaluations. This helps detect unexpected noise growth that could compromise correctness or security margins before it becomes critical.
 
+### Production Safety Assertions
+
+As of v5.0.0, all core FHE Context constructors (`RNSFHEContext`, etc.) perform mandatory production safety checks via `assert_production_safe_fhe_config()`. This ensures that any configuration providing less than 128-bit security will cause a panic in release builds unless the `allow_insecure` feature is explicitly enabled.
+
 ## Known Limitations
 
 - **Public-mode depth**: Symmetric mode supports 50+ levels. Public mode has automatic modulus switching at level 3+ (since 2026-02-06) which extends depth beyond the original 4-5 level baseline, but remains shallower than symmetric mode.
-- **Timing side-channel hardening**: Constant-time hardening for Montgomery multiplication and K-Elimination paths is ongoing. Deployment in adversarial timing-observation environments is not recommended until this work is complete.
-- **Security estimator validation**: The built-in lattice security estimator provides rough Core-SVP + GSA estimates. These outputs should be validated against current lattice attack literature (e.g., lattice-estimator, recent IACR publications) before relying on them for security claims.
+- **Timing side-channel hardening**: Constant-time hardening for Montgomery multiplication and K-Elimination paths is COMPLETE. All secret-key paths now use branchless arithmetic.
+- **Security estimator validation**: The built-in lattice security estimator provides conservative Core-SVP and realistic MATZOV estimates. These should still be periodically cross-validated against the latest lattice attack literature.
 
 ## Scope
 

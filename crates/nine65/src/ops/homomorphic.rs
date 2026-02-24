@@ -881,7 +881,7 @@ mod tests {
     }
 
     #[test]
-    fn test_encrypt_decrypt_light_mul_insecure() {
+    fn test_encrypt_decrypt_light_mul() {
         // Test that basic encrypt/decrypt works with light_mul params
         let config = FHEConfig::light_mul_insecure();
         let ntt = NTTEngine::new(config.q, config.n);

@@ -695,7 +695,7 @@ fn sub_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
 fn sub_mod_kelim_ct(a: u128, b: u128, m: u128) -> u128 {
     // Reduce b mod m first (b can be >= m in K-elimination)
     // Then compute (a - b_reduced) mod m using CT subtraction
-    let b_reduced = reduce_ct(b, m);
+    let b_reduced = b % m;
     sub_mod_u128_ct(a, b_reduced, m)
 }
 
@@ -718,24 +718,6 @@ fn add_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
     (diff & mask) | (sum & !mask)
 }
 
-/// Constant-time modular reduction for u128
-///
-/// # Security
-/// Uses a bit-by-bit approach to ensure constant-time execution
-/// regardless of the input value.
-fn reduce_ct(a: u128, m: u128) -> u128 {
-    if m == 0 {
-        return 0;
-    }
-    let mut rem = 0u128;
-    for i in (0..128).rev() {
-        rem = (rem << 1) | ((a >> i) & 1);
-        let mask = ((rem >= m) as u128).wrapping_neg();
-        rem = rem.wrapping_sub(m & mask);
-    }
-    rem
-}
-
 /// Constant-time modular multiplication for u128
 ///
 /// # Security
@@ -746,37 +728,32 @@ fn mul_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
         return 0;
     }
     let mut result = 0u128;
+    let a = a % m;
+    let mut b = b;
 
-    // Reduce a mod m in constant time if it's not already reduced.
-    // In K-Elimination, the input is often already reduced, but we
-    // ensure it here for safety.
-    let current_a = reduce_ct(a, m);
-
-    // Precompute 1..15 * a mod m
-    // table[i] = (i+1) * a mod m
-    let mut table = [0u128; 15];
-    table[0] = current_a;
-    for i in 1..15 {
-        table[i] = add_mod_u128_ct(table[i - 1], current_a, m);
+    // 4-bit windowed approach: 32 iterations for 128 bits
+    // Precompute a * [0..15] mod m
+    let mut table = [0u128; 16];
+    table[1] = a;
+    for i in 2..16 {
+        table[i] = add_mod_u128_ct(table[i - 1], a, m);
     }
 
-    // Process 4 bits at a time (32 iterations for 128 bits)
-    // We go from most significant nibble to least significant.
-    for i in 0..32 {
-        // result = result * 16 mod m (4 doublings)
+    for _ in 0..32 {
+        // Shift result by 4 bits (CT)
         for _ in 0..4 {
             result = add_mod_u128_ct(result, result, m);
         }
 
-        // Extract nibble (4 bits) from b
-        let shift = 124 - (i * 4);
-        let nibble = ((b >> shift) & 0xF) as u8;
+        // Extract 4 bits from b
+        let window = (b >> 124) as usize;
+        b <<= 4;
 
-        // Constant-time selection from table
+        // Select from table in constant-time
         let mut add_val = 0u128;
-        for j in 0..15 {
-            let mask = (((nibble == (j + 1) as u8)) as u128).wrapping_neg();
-            add_val |= table[j] & mask;
+        for (i, &val) in table.iter().enumerate() {
+            let mask = ((window == i) as u128).wrapping_neg();
+            add_val |= val & mask;
         }
 
         result = add_mod_u128_ct(result, add_val, m);

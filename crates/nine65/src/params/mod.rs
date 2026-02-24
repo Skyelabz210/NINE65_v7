@@ -28,7 +28,7 @@
 //!
 //! ## Legacy Configs (Testing Only)
 //!
-//! The `light_insecure()`, `he_standard_128_insecure()`, etc. functions are retained for
+//! The `light()`, `he_standard_128()`, etc. functions are retained for
 //! backward compatibility and testing but should NOT be used in production.
 
 pub mod primes;
@@ -43,9 +43,7 @@ pub mod exact_params;
 pub use exact_params::ExactDelta;
 
 pub use primes::*;
-pub use secure_configs::{
-    assert_production_safe, assert_production_safe_fhe_config, ProductionSafe, SecureConfig,
-};
+pub use secure_configs::{assert_production_safe, ProductionSafe, SecureConfig};
 pub use security_estimator::{
     CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution, SecurityEstimate,
 };
@@ -90,8 +88,9 @@ impl FHEConfig {
     #[cfg(any(test, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
-        note = "INSECURE: light_insecure() has only ~36-bit security. Use SecureConfig::secure_128() for production."
+        note = "INSECURE: light() has only ~36-bit security. Use SecureConfig::secure_128() for production."
     )]
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn light_insecure() -> Self {
         Self {
             n: 1024,
@@ -106,7 +105,8 @@ impl FHEConfig {
 
     /// Configuration for ct×ct multiplication using large single modulus
     /// Uses 60-bit prime so Δ² fits without overflow
-    pub fn large_single() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn large_single_insecure() -> Self {
         // Use a 60-bit NTT-compatible prime
         // q must satisfy: q ≡ 1 (mod 2N) for NTT
         // For N=4096: q ≡ 1 (mod 8192)
@@ -135,7 +135,7 @@ impl FHEConfig {
             t: 1099511627777, // ~2^40, gives Δ ≈ 2^20
             eta: 3,
             security_bits: 128,
-            name: "large_single",
+            name: "large_single_insecure",
         }
     }
 
@@ -230,11 +230,11 @@ impl FHEConfig {
     ///
     /// NOTE: This config requires K-Elimination rescaling in RNSFHEContext.
     /// Standard Bajard rescaling will fail because Δ² > Q.
-    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
-        note = "INSECURE: light_rns_exact_insecure() has only ~80-bit security (n=1024). Use SecureConfig::secure_128() for production."
+        note = "INSECURE: light_rns_exact() has only ~80-bit security (n=1024). Use SecureConfig::secure_128() for production."
     )]
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn light_rns_exact_insecure() -> Self {
         Self {
             n: 1024,
@@ -291,7 +291,8 @@ impl FHEConfig {
     ///
     /// Suitable for applications where 96-bit security is acceptable
     /// and performance is prioritized over maximum security margin.
-    pub fn standard_128() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn standard_128_insecure() -> Self {
         Self {
             n: 4096,
             // 3 primes required for RNS multiplication: Q > N × q²
@@ -302,7 +303,7 @@ impl FHEConfig {
             t: 65537,
             eta: 3,
             security_bits: 96, // CORRECTED: actual hybrid attack security
-            name: "standard_128",
+            name: "standard_128_insecure",
         }
     }
 
@@ -312,7 +313,8 @@ impl FHEConfig {
     /// applications requiring long-term security guarantees.
     ///
     /// For exact 192-bit security, use `SecureConfig::secure_192()`.
-    pub fn high_192() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn high_192_insecure() -> Self {
         Self {
             n: 8192,
             primes: vec![998244353, 985661441, 754974721],
@@ -320,12 +322,13 @@ impl FHEConfig {
             t: 65537,
             eta: 3,
             security_bits: 176, // CORRECTED: actual hybrid attack security
-            name: "high_192",
+            name: "high_192_insecure",
         }
     }
 
     /// Deep circuit configuration (larger N for more noise budget)
-    pub fn deep_128() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn deep_128_insecure() -> Self {
         Self {
             n: 16384,
             primes: vec![998244353, 985661441, 754974721, 469762049],
@@ -333,14 +336,15 @@ impl FHEConfig {
             t: 65537,
             eta: 3,
             security_bits: 128,
-            name: "deep_128",
+            name: "deep_128_insecure",
         }
     }
 
     /// Batched/SIMD configuration (small t for slot packing)
     ///
     /// Uses 3 primes for RNS multiplication capacity.
-    pub fn batched() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn batched_insecure() -> Self {
         Self {
             n: 4096,
             primes: vec![998244353, 985661441, 754974721],
@@ -348,7 +352,7 @@ impl FHEConfig {
             t: 257, // Small prime for efficient batching
             eta: 3,
             security_bits: 128,
-            name: "batched",
+            name: "batched_insecure",
         }
     }
 
@@ -375,8 +379,9 @@ impl FHEConfig {
     #[cfg(any(test, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
-        note = "INSECURE: he_standard_128_insecure() has only ~56-bit security with ternary secrets. Use SecureConfig::secure_128()."
+        note = "INSECURE: he_standard_128() has only ~56-bit security with ternary secrets. Use SecureConfig::secure_128()."
     )]
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn he_standard_128_insecure() -> Self {
         // Validate at construction time
         let config = Self {
@@ -393,7 +398,7 @@ impl FHEConfig {
         let result = validate_params(config.n, config.q, config.t);
         debug_assert!(
             result.orbital_safe,
-            "he_standard_128_insecure config fails orbital bounds check"
+            "he_standard_128 config fails orbital bounds check"
         );
 
         config
@@ -403,7 +408,8 @@ impl FHEConfig {
     ///
     /// Same security as `he_standard_128` but with smaller Δ for
     /// more noise budget. Trade-off: smaller maximum plaintext values.
-    pub fn he_standard_128_deep() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn he_standard_128_deep_insecure() -> Self {
         Self {
             n: 2048,
             primes: vec![998244353],
@@ -411,7 +417,7 @@ impl FHEConfig {
             t: 4096, // Larger t = smaller Δ = more noise budget
             eta: 3,
             security_bits: 128,
-            name: "he_standard_128_deep",
+            name: "he_standard_128_deep_insecure",
         }
     }
 
@@ -579,7 +585,8 @@ impl FHEConfig {
     ///
     /// Supports: fresh → mul+mod_switch → mul+mod_switch → decrypt
     /// Prime chain: 4 → 3 → 2 (final level)
-    pub fn depth2_128() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn depth2_128_insecure() -> Self {
         Self {
             n: 4096,
             primes: vec![998244353, 985661441, 754974721, 469762049],
@@ -587,12 +594,13 @@ impl FHEConfig {
             t: 65537,
             eta: 3,
             security_bits: 96,
-            name: "depth2_128",
+            name: "depth2_128_insecure",
         }
     }
 
     /// 5-prime configuration for depth-3 circuits
-    pub fn depth3_128() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn depth3_128_insecure() -> Self {
         Self {
             n: 8192,
             primes: vec![998244353, 985661441, 754974721, 469762049, 1638350849],
@@ -600,12 +608,13 @@ impl FHEConfig {
             t: 65537,
             eta: 3,
             security_bits: 128,
-            name: "depth3_128",
+            name: "depth3_128_insecure",
         }
     }
 
     /// 8-prime configuration for depth-6 circuits (uses all PRIMES_8192)
-    pub fn deep_circuit() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn deep_circuit_insecure() -> Self {
         Self {
             n: 8192,
             primes: PRIMES_8192.to_vec(),
@@ -613,7 +622,7 @@ impl FHEConfig {
             t: 65537,
             eta: 3,
             security_bits: 176,
-            name: "deep_circuit",
+            name: "deep_circuit_insecure",
         }
     }
 
@@ -658,11 +667,11 @@ mod tests {
             SecureConfig::test_medium_insecure().into_config(),
             FHEConfig::light_mul_insecure(),
             FHEConfig::light_rns_insecure(),
-            FHEConfig::standard_128(),
-            FHEConfig::high_192(),
-            FHEConfig::deep_128(),
-            FHEConfig::batched(),
-            FHEConfig::he_standard_128_deep(),
+            FHEConfig::standard_128_insecure(),
+            FHEConfig::high_192_insecure(),
+            FHEConfig::deep_128_insecure(),
+            FHEConfig::batched_insecure(),
+            FHEConfig::he_standard_128_deep_insecure(),
         ];
 
         for config in configs {
@@ -760,8 +769,8 @@ mod tests {
 
     #[test]
     fn test_estimated_depth() {
-        let light = FHEConfig::standard_128();
-        let deep = FHEConfig::deep_128();
+        let light = FHEConfig::standard_128_insecure();
+        let deep = FHEConfig::deep_128_insecure();
 
         // Deep config should have more depth
         assert!(

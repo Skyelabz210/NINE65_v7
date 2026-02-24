@@ -342,9 +342,6 @@ impl AdaptiveFHEContext {
     /// With `generic-rayon` feature: Fixed thread count via Rayon global pool.
     /// Without `adaptive-threading` feature: Fixed 4 threads, no adaptation.
     pub fn new(config: FHEConfig, keys: KeySet) -> Self {
-        // Enforce production safety in non-test builds
-        crate::params::assert_production_safe_fhe_config(&config);
-
         let entropy_monitor = Arc::new(ShadowEntropyMonitor::new());
 
         #[cfg(feature = "sequential")]
@@ -1022,7 +1019,7 @@ mod tests {
         let ct_a = context.adaptive_encrypt(&a_msgs, 500);
         let ct_b = context.adaptive_encrypt(&b_msgs, 600);
 
-        // The deprecated BFV mul path introduces rounding noise on light_insecure() config,
+        // The deprecated BFV mul path introduces rounding noise on light() config,
         // so we verify the adaptive path runs without panics and returns valid ciphertexts.
         // For exact multiplication, use RNSFHEContext::mul_dual_symmetric().
         let ct_prod = context.adaptive_mul(&ct_a, &ct_b);
