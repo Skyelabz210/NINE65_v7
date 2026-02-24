@@ -66,6 +66,19 @@ impl U256 {
     pub(crate) fn ge(self, other: Self) -> bool {
         self.cmp(other) != Ordering::Less
     }
+
+    /// Constant-time greater-than-or-equal comparison
+    #[inline]
+    #[allow(dead_code)]
+    pub(crate) fn ge_ct(self, other: Self) -> bool {
+        // (self.hi > other.hi) || (self.hi == other.hi && self.lo >= other.lo)
+        let hi_lt = (self.hi.wrapping_sub(other.hi) >> 127) & 1;
+        let hi_gt = (other.hi.wrapping_sub(self.hi) >> 127) & 1;
+        let lo_ge = ((self.lo.wrapping_sub(other.lo) >> 127) & 1) ^ 1;
+
+        // (hi_gt == 1) || (hi_lt == 0 && lo_ge == 1)
+        (hi_gt | ((hi_lt ^ 1) & lo_ge)) != 0
+    }
     #[inline]
     pub(crate) fn gt(self, other: Self) -> bool {
         self.cmp(other) == Ordering::Greater
@@ -88,11 +101,30 @@ impl U256 {
         self.overflowing_add(other).0
     }
 
+    /// Constant-time addition
+    #[inline]
+    #[allow(dead_code)]
+    pub(crate) fn add_ct(self, other: Self) -> Self {
+        let (lo, c0) = self.lo.overflowing_add(other.lo);
+        let (hi, _) = self.hi.overflowing_add(other.hi);
+        let hi = hi.wrapping_add(c0 as u128);
+        Self { lo, hi }
+    }
+
     #[inline]
     pub(crate) fn sub(self, other: Self) -> Self {
         debug_assert!(self.ge(other), "U256 underflow");
         let (lo, b0) = self.lo.overflowing_sub(other.lo);
         let hi = self.hi - other.hi - if b0 { 1 } else { 0 };
+        Self { lo, hi }
+    }
+
+    /// Constant-time subtraction (assumes self >= other)
+    #[inline]
+    #[allow(dead_code)]
+    pub(crate) fn sub_ct(self, other: Self) -> Self {
+        let (lo, b0) = self.lo.overflowing_sub(other.lo);
+        let hi = self.hi.wrapping_sub(other.hi).wrapping_sub(b0 as u128);
         Self { lo, hi }
     }
 
@@ -128,6 +160,23 @@ impl U256 {
         } else {
             ((self.hi >> (i - 128)) & 1) as u32
         }
+    }
+
+    /// Constant-time value mod m where m fits in u64.
+    pub(crate) fn mod_u64_ct(self, m: u64) -> u64 {
+        if m == 0 {
+            return 0;
+        }
+        // Use a bit-by-bit approach for constant time
+        let mut rem = 0u128;
+        let m128 = m as u128;
+        for i in (0..256).rev() {
+            let bit = self.get_bit(i as u32) as u128;
+            rem = (rem << 1) | bit;
+            let mask = ((m128.wrapping_sub(rem.wrapping_add(1)) >> 127) & 1).wrapping_neg();
+            rem = rem.wrapping_sub(m128 & mask);
+        }
+        rem as u64
     }
 
     #[inline]
@@ -497,7 +546,9 @@ impl RNSContext {
 
         for i in 1..level {
             let p = primes[i];
-            let x_mod_p = x.mod_u64(p);
+            // Use CT mod for secret data x
+            let x_mod_p = x.mod_u64_ct(p);
+            // m_prod is public, can use variable time mod
             let m_mod_p = m_prod.mod_u64(p);
             let diff = (rns[i] + p - x_mod_p) % p;
             let inv = mod_inverse(m_mod_p, p);
@@ -2519,6 +2570,18 @@ mod tests {
         let result = quotient.rem_u256(t);
         // round(42 * 65537 / Q) should be 0 since 42 << Q
         assert_eq!(result.lo, 0, "small val / large Q should round to 0");
+    }
+
+    #[test]
+    fn test_u256_mod_u64_ct() {
+        let a = U256 {
+            lo: 0x1234567890ABCDEF1234567890ABCDEF,
+            hi: 0xFEDCBA0987654321FEDCBA0987654321,
+        };
+        let m = 123456789;
+        let expected = (a.lo % m as u128 + (a.hi % m as u128 * (1u128 << 64) % m as u128 * (1u128 << 64) % m as u128)) % m as u128;
+        let got = a.mod_u64_ct(m);
+        assert_eq!(got as u128, expected);
     }
 
     #[test]

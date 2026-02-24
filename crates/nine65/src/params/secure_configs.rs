@@ -251,15 +251,15 @@ impl SecureConfig {
     /// - Performance benchmarking
     ///
     /// NEVER use for production or with real sensitive data.
-    #[cfg(any(test, debug_assertions))]
-    pub fn test_fast() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn test_fast_insecure() -> Self {
         Self::new_verified(
             1024,
             vec![998244353],
             65537,
             2,
             40, // Honest about low security
-            "test_fast",
+            "test_fast_insecure",
         )
     }
 
@@ -267,15 +267,15 @@ impl SecureConfig {
     ///
     /// Suitable for integration testing where security
     /// doesn't matter but correct behavior does.
-    #[cfg(any(test, debug_assertions))]
-    pub fn test_medium() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn test_medium_insecure() -> Self {
         Self::new_verified(
             2048,
             vec![998244353, 985661441],
             65537,
             2,
             80,
-            "test_medium",
+            "test_medium_insecure",
         )
     }
 }
@@ -329,6 +329,41 @@ impl ProductionSafe for SecureConfig {
 #[inline]
 pub fn assert_production_safe(config: &SecureConfig) {
     config.require_production_safe();
+}
+
+/// Verify that an FHEConfig meets minimum production security requirements (128 bits).
+///
+/// This uses the lattice security estimator to perform a runtime check.
+/// In release builds without `allow_insecure` feature, this will panic if
+/// security is below 128 bits.
+pub fn assert_production_safe_fhe_config(config: &crate::params::FHEConfig) {
+    // Skip check in test/debug or if explicitly allowed
+    if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
+        return;
+    }
+
+    let log_q: u32 = config
+        .primes
+        .iter()
+        .map(|&p| 64 - p.leading_zeros())
+        .sum();
+
+    let estimator = crate::params::security_estimator::LatticeSecurityEstimator::default();
+    let estimate = estimator.estimate(
+        config.n,
+        log_q,
+        crate::params::security_estimator::SecretDistribution::Ternary,
+        128,
+    );
+
+    if !estimate.meets_claim {
+        panic!(
+            "PRODUCTION SECURITY VIOLATION: Config '{}' provides only {} bits of security (128 required).\n\
+             Analysis: {}\n\
+             Action: Increase N or decrease the number/size of RNS primes.",
+            config.name, estimate.effective_bits, estimate.analysis
+        );
+    }
 }
 
 /// Verify security level meets production requirements
@@ -422,7 +457,7 @@ mod tests {
 
     #[test]
     fn test_test_configs_not_production_safe() {
-        let config = SecureConfig::test_fast();
+        let config = SecureConfig::test_fast_insecure();
         assert!(
             !config.is_production_safe(),
             "test_fast should NOT be production safe"
@@ -457,8 +492,8 @@ mod tests {
         println!("\n=== Security Level Comparison ===\n");
 
         let configs = [
-            ("test_fast", SecureConfig::test_fast()),
-            ("test_medium", SecureConfig::test_medium()),
+            ("test_fast", SecureConfig::test_fast_insecure()),
+            ("test_medium", SecureConfig::test_medium_insecure()),
             ("secure_128", SecureConfig::secure_128()),
             ("secure_192", SecureConfig::secure_192()),
         ];
@@ -501,10 +536,10 @@ mod tests {
         assert!(verify_production_safety(&secure_256).is_ok());
 
         // Test configs should fail
-        let test_fast = SecureConfig::test_fast();
+        let test_fast = SecureConfig::test_fast_insecure();
         assert!(verify_production_safety(&test_fast).is_err());
 
-        let test_medium = SecureConfig::test_medium();
+        let test_medium = SecureConfig::test_medium_insecure();
         assert!(verify_production_safety(&test_medium).is_err());
     }
 
@@ -515,7 +550,7 @@ mod tests {
         config.require_production_safe();
 
         // Test configs have the trait but will panic in release
-        let test_config = SecureConfig::test_fast();
+        let test_config = SecureConfig::test_fast_insecure();
         // In test mode, this will not panic
         test_config.require_production_safe();
     }

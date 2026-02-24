@@ -36,21 +36,21 @@ impl PyFHEConfig {
     #[staticmethod]
     fn standard_128() -> Self {
         Self {
-            inner: FHEConfig::standard_128(),
+            inner: FHEConfig::standard_128_insecure(),
         }
     }
 
     #[staticmethod]
     fn high_192() -> Self {
         Self {
-            inner: FHEConfig::high_192(),
+            inner: FHEConfig::high_192_insecure(),
         }
     }
 
     #[staticmethod]
     fn large_single() -> Self {
         Self {
-            inner: FHEConfig::large_single(),
+            inner: FHEConfig::large_single_insecure(),
         }
     }
 
@@ -58,7 +58,7 @@ impl PyFHEConfig {
     #[staticmethod]
     fn light() -> Self {
         Self {
-            inner: FHEConfig::light(),
+            inner: FHEConfig::light_insecure(),
         }
     }
 
@@ -120,7 +120,7 @@ impl PySecureConfig {
     #[staticmethod]
     fn test_fast() -> Self {
         Self {
-            inner: SecureConfig::test_fast(),
+            inner: SecureConfig::test_fast_insecure(),
         }
     }
 

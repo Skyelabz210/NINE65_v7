@@ -393,8 +393,8 @@ mod tests {
         let configs = [
             ("secure_128", SecureConfig::secure_128().into_config()),
             ("secure_192", SecureConfig::secure_192().into_config()),
-            ("standard_128", FHEConfig::standard_128()), // Keep this one for now, it's not deprecated
-            ("high_192", FHEConfig::high_192()), // Keep this one for now, it's not deprecated
+            ("standard_128", FHEConfig::standard_128_insecure()), // Keep this one for now, it's not deprecated
+            ("high_192", FHEConfig::high_192_insecure()), // Keep this one for now, it's not deprecated
         ];
 
         for (name, config) in configs {

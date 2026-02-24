@@ -18,7 +18,7 @@ struct HomomorphicInput {
 // - sub(E(a), E(b)) decrypts to (a - b) mod t
 // - mul_plain(E(a), c) decrypts to (a * c) mod t
 fuzz_target!(|input: HomomorphicInput| {
-    let config = FHEConfig::standard_128();
+    let config = FHEConfig::standard_128_insecure();
     let t = config.t;
 
     // Bound inputs to valid range

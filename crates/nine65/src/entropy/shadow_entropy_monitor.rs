@@ -750,7 +750,7 @@ mod tests {
         use crate::arithmetic::NTTEngine;
 
         #[allow(deprecated)]
-        let config = FHEConfig::light();
+        let config = FHEConfig::light_insecure();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let keys = KeySet::generate(&config, &ntt, &mut harvester);

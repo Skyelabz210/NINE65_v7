@@ -554,7 +554,7 @@ mod tests {
     use crate::params::FHEConfig;
 
     fn test_ctx() -> GSOFHEContext {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let inner = RNSFHEContext::new_coeff_domain(&config);
         GSOFHEContext::new(inner)
     }
@@ -803,7 +803,7 @@ mod depth_benchmarks {
         println!("║        GSO-FHE SYMMETRIC MODE - MAX DEPTH BENCHMARK          ║");
         println!("╚══════════════════════════════════════════════════════════════╝\n");
 
-        let mut ctx = bench_ctx(FHEConfig::light_rns_exact());
+        let mut ctx = bench_ctx(FHEConfig::light_rns_exact_insecure());
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
 
@@ -971,7 +971,7 @@ mod depth_benchmarks {
         println!("╚══════════════════════════════════════════════════════════════╝\n");
 
         // FHE Context
-        let mut ctx = bench_ctx(FHEConfig::light_rns_exact());
+        let mut ctx = bench_ctx(FHEConfig::light_rns_exact_insecure());
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
 
@@ -1261,7 +1261,7 @@ mod arithmetic_benchmarks {
         println!("│  FHE OPERATIONS (GSO-FHE)                                  │");
         println!("└────────────────────────────────────────────────────────────┘");
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let inner = RNSFHEContext::new_coeff_domain(&config);
         let mut fhe_ctx = GSOFHEContext::new(inner);
         let mut rng = ShadowHarvester::new();

@@ -91,7 +91,7 @@ fn main() {
     // ─── Section 1: BFV Core ─────────────────────────────────────────────
     section("1. BFV Core — Single-Modulus Encrypt / Decrypt / Eval");
 
-    let config_128 = FHEConfig::standard_128();
+    let config_128 = FHEConfig::standard_128_insecure();
     println!("  Config:  standard_128 (n={}, q={}, t={}, eta={})",
         config_128.n, config_128.q, config_128.t, config_128.eta);
     println!("  Primes:  {} (log2Q ~ {} bits)",

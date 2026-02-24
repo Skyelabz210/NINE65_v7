@@ -10,11 +10,11 @@ fn main() {
 
     // Test 1: Standard 3-prime config (depth-1 only)
     println!("--- Test 1: standard_128 (3 primes, max depth-1) ---");
-    test_depth(&FHEConfig::standard_128(), 1);
+    test_depth(&FHEConfig::standard_128_insecure(), 1);
 
     // Test 2: New 4-prime config (depth-2)
     println!("\n--- Test 2: depth2_128 (4 primes, max depth-2) ---");
-    test_depth(&FHEConfig::depth2_128(), 2);
+    test_depth(&FHEConfig::depth2_128_insecure(), 2);
 
     // Test 3: Note on depth-3+ limitation
     // depth3_128 has 5 primes (~150 bits total), exceeding u128 capacity.
@@ -27,19 +27,19 @@ fn main() {
     println!("\n--- Test 4: max_mod_switch_depth API ---");
     println!(
         "  standard_128: max depth = {}",
-        FHEConfig::standard_128().max_mod_switch_depth()
+        FHEConfig::standard_128_insecure().max_mod_switch_depth()
     );
     println!(
         "  depth2_128: max depth = {}",
-        FHEConfig::depth2_128().max_mod_switch_depth()
+        FHEConfig::depth2_128_insecure().max_mod_switch_depth()
     );
     println!(
         "  depth3_128: max depth = {}",
-        FHEConfig::depth3_128().max_mod_switch_depth()
+        FHEConfig::depth3_128_insecure().max_mod_switch_depth()
     );
     println!(
         "  deep_circuit: max depth = {}",
-        FHEConfig::deep_circuit().max_mod_switch_depth()
+        FHEConfig::deep_circuit_insecure().max_mod_switch_depth()
     );
 }
 

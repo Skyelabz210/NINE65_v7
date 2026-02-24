@@ -81,7 +81,7 @@ fn test_secure_config_security_levels() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn setup_fhe() -> (FHEConfig, NTTEngine, KeySet, BFVEncoder) {
-    let config = FHEConfig::light_rns();
+    let config = FHEConfig::light_rns_insecure();
     let ntt = NTTEngine::new(config.q, config.n);
     let mut harvester = ShadowHarvester::with_seed(42);
     let keys = KeySet::generate(&config, &ntt, &mut harvester);
@@ -149,7 +149,7 @@ fn test_rng_trait_secure_vs_deterministic() {
 
 #[test]
 fn test_fallible_encoding_success() {
-    let config = FHEConfig::light_rns();
+    let config = FHEConfig::light_rns_insecure();
     let encoder = BFVEncoder::new(&config);
 
     let result = encoder.try_encode(42);
@@ -158,7 +158,7 @@ fn test_fallible_encoding_success() {
 
 #[test]
 fn test_fallible_encoding_out_of_bounds() {
-    let config = FHEConfig::light_rns();
+    let config = FHEConfig::light_rns_insecure();
     let encoder = BFVEncoder::new(&config);
 
     // Message >= t should fail
@@ -299,7 +299,7 @@ fn test_full_secure_pipeline() {
     // 4. Perform homomorphic operations
     // 5. Decrypt correctly
 
-    let config = FHEConfig::light_rns(); // Using light_rns for test speed
+    let config = FHEConfig::light_rns_insecure(); // Using light_rns for test speed
     let ntt = NTTEngine::new(config.q, config.n);
 
     // Key generation with secure entropy
@@ -405,7 +405,7 @@ mod adversarial_tests {
 
     #[test]
     fn test_ciphertext_validation_rejects_wrong_degree() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
 
         // Create a ciphertext with wrong polynomial degree
         let wrong_n = config.n / 2; // Half the expected size
@@ -423,7 +423,7 @@ mod adversarial_tests {
 
     #[test]
     fn test_ciphertext_validation_rejects_coefficient_overflow() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
 
         // Note: RingPolynomial::from_coeffs reduces coefficients mod q,
         // which is safe-by-design. This test verifies that malformed JSON
@@ -455,7 +455,7 @@ mod adversarial_tests {
 
     #[test]
     fn test_ciphertext_validation_rejects_modulus_mismatch() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
         let wrong_q = config.q - 1;
 
         let ct = Ciphertext {
@@ -490,7 +490,7 @@ mod adversarial_tests {
 
     #[test]
     fn test_malformed_json_rejected() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
 
         // Completely malformed JSON
         let result = Ciphertext::from_json_validated("{}", config.n, config.q);
