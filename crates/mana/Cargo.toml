@@ -6,9 +6,17 @@ edition.workspace = true
 authors.workspace = true
 
 [features]
-default = ["parallel"]
-# simd = ["wide"]  # Disabled: counterproductive for modular arithmetic
+# MANA defaults to no external parallelism. Its lane-parallel acceleration
+# is purpose-built for this system's RNS/integer-only architecture and does
+# not use Rayon's general-purpose work-stealing thread pool.
+default = []
+
+# Rayon opt-in only. In practice, MANA's own lane scheduling outperforms
+# Rayon for this workload. Available for benchmarking comparison only.
 parallel = ["rayon"]
+
+# SIMD disabled: counterproductive for modular arithmetic with carry chains.
+# simd = ["wide"]
 
 [dependencies]
 wide = { workspace = true, optional = true }
