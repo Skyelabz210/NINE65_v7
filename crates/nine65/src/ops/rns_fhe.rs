@@ -1,5 +1,10 @@
 //! RNS-Native FHE Operations with K-Elimination
 //!
+//! # Security
+//! All decryption operations in this module use constant-time (CT) arithmetic
+//! to prevent timing side-channels. Secret key material is handled using
+//! `multiply_ct` and other CT-safe primitives.
+//!
 //! Clockwork Bootstrap FHE implementation based on the QMNF papers:
 //! - Paper1: K-Elimination for exact division
 //! - Paper2: Persistent Montgomery (values stay in Montgomery form)
@@ -864,10 +869,13 @@ impl RNSFHEContext {
     /// - Plaintext modulus is zero
     #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(config: &FHEConfig) -> Nine65Result<Self> {
+        // Enforce production safety in non-test builds
+        crate::params::assert_production_safe_fhe_config(config);
+
         if config.primes.len() < 2 {
             return Err(Nine65Error::ConfigError {
                 message: format!(
-                    "RNS-native FHE requires at least 2 primes, got {}. Use light_rns or higher.",
+                    "RNS-native FHE requires at least 2 primes, got {}. Use light_rns_insecure or higher.",
                     config.primes.len()
                 ),
             });
@@ -944,6 +952,13 @@ impl RNSFHEContext {
     /// Use `try_new()` for fallible construction.
     pub fn new(config: &FHEConfig) -> Self {
         Self::try_new(config).expect("Invalid FHE config for RNS-native FHE")
+    }
+
+    /// Higher-level convenience method for key generation.
+    ///
+    /// Uses OS CSPRNG for randomness.
+    pub fn keygen(&self) -> DualRNSFullKeySet {
+        self.generate_keys_dual_full_secure()
     }
 
     /// DEPRECATED: `new()` / `try_new()` now use 5 anchors with full ct×ct capacity.
@@ -2460,6 +2475,33 @@ impl RNSFHEContext {
         }
     }
 
+    /// Constant-time level-aware polynomial multiplication
+    fn dual_poly_mul_level_ct(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
+        let level = a.main.len().min(b.main.len());
+
+        // Main limbs: NTT multiply_ct for each prime at this level
+        let main: Vec<Vec<u64>> = (0..level)
+            .map(|limb_idx| {
+                self.ntt_engines[limb_idx].multiply_ct(&a.main[limb_idx], &b.main[limb_idx])
+            })
+            .collect();
+
+        // Anchor: use full CT multiplication
+        let anchor: Vec<Vec<u64>> = a
+            .anchor
+            .iter()
+            .zip(&b.anchor)
+            .zip(self.dual_rns.anchor.ntt_engines.iter())
+            .map(|((a_limb, b_limb), ntt)| ntt.multiply_ct(a_limb, b_limb))
+            .collect();
+
+        DualRNSPoly {
+            main,
+            anchor,
+            n: a.n,
+        }
+    }
+
     /// Level-aware polynomial addition
     fn dual_poly_add_level(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
         let level = a.main.len().min(b.main.len());
@@ -2498,6 +2540,31 @@ impl RNSFHEContext {
                     })
                     .collect()
             })
+            .collect();
+
+        DualRNSPoly {
+            main,
+            anchor,
+            n: a.n,
+        }
+    }
+
+    /// Constant-time dual polynomial multiplication
+    fn dual_poly_mul_ct(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
+        let main: Vec<Vec<u64>> = a
+            .main
+            .iter()
+            .zip(&b.main)
+            .zip(self.ntt_engines.iter())
+            .map(|((a_limb, b_limb), ntt)| ntt.multiply_ct(a_limb, b_limb))
+            .collect();
+
+        let anchor: Vec<Vec<u64>> = a
+            .anchor
+            .iter()
+            .zip(&b.anchor)
+            .zip(self.dual_rns.anchor.ntt_engines.iter())
+            .map(|((a_limb, b_limb), ntt)| ntt.multiply_ct(a_limb, b_limb))
             .collect();
 
         DualRNSPoly {
@@ -2551,15 +2618,16 @@ impl RNSFHEContext {
         let sk_level = sk.s.main.len();
 
         // inner = c0 + c1 * s (level-aware)
+        // Use constant-time multiplication for secret key material
         let inner = if ct_level < sk_level {
             // Ciphertext has been modulus-switched - project sk down
             let sk_projected = self.project_poly_to_level(&sk.s, ct_level);
-            let c1_s = self.dual_poly_mul_level(&ct.c1, &sk_projected);
+            let c1_s = self.dual_poly_mul_level_ct(&ct.c1, &sk_projected);
             let inner = self.dual_poly_add_level(&ct.c0, &c1_s);
             inner
         } else {
             // Standard case: ct and sk have same level
-            let c1_s = self.dual_poly_mul(&ct.c1, &sk.s);
+            let c1_s = self.dual_poly_mul_ct(&ct.c1, &sk.s);
             self.dual_poly_add(&ct.c0, &c1_s)
         };
 
@@ -2642,14 +2710,15 @@ impl RNSFHEContext {
         let sk_level = sk.s.main.len();
 
         // inner = c0 + c1 * s (level-aware)
+        // Use constant-time multiplication for secret key material
         let inner = if ct_level < sk_level {
             // Ciphertext has been modulus-switched - project sk down
             let sk_projected = self.project_poly_to_level(&sk.s, ct_level);
-            let c1_s = self.dual_poly_mul_level(&ct.c1, &sk_projected);
+            let c1_s = self.dual_poly_mul_level_ct(&ct.c1, &sk_projected);
             self.dual_poly_add_level(&ct.c0, &c1_s)
         } else {
             // Standard case: ct and sk have same level
-            let c1_s = self.dual_poly_mul(&ct.c1, &sk.s);
+            let c1_s = self.dual_poly_mul_ct(&ct.c1, &sk.s);
             self.dual_poly_add(&ct.c0, &c1_s)
         };
 
@@ -3537,6 +3606,22 @@ impl RNSFHEContext {
             anchor,
             n: self.n,
         }
+    }
+
+    /// Higher-level convenience method for secure encryption directly to bytes.
+    ///
+    /// Uses OS CSPRNG for randomness.
+    #[cfg(feature = "serde")]
+    pub fn encrypt_to_bytes(&self, m: u64, pk: &DualRNSPublicKey) -> Vec<u8> {
+        let ct = self.encrypt_dual_secure(m, pk);
+        ct.to_bytes().expect("Serialization failed")
+    }
+
+    /// Higher-level convenience method for decryption directly from bytes.
+    #[cfg(feature = "serde")]
+    pub fn decrypt_from_bytes(&self, bytes: &[u8], sk: &DualRNSSecretKey) -> Nine65Result<u64> {
+        let ct = DualRNSCiphertext::from_bytes_validated(bytes)?;
+        Ok(self.decrypt_dual(&ct, sk))
     }
 
     /// Create a constant DualRNSPoly with raw value `scalar` (NOT delta-encoded).
@@ -4595,7 +4680,7 @@ mod tests {
         //
         // IMPORTANT: Public relinearization adds noise per operation.
         // For deep circuits, use symmetric mode OR implement modulus switching/bootstrapping.
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -4943,7 +5028,7 @@ mod tests {
         // Detailed diagnostic test for public mode multiplication
         // Traces centered coefficients and phase error at each stage
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5139,7 +5224,7 @@ mod tests {
 
     #[test]
     fn test_rns_native_encrypt_decrypt() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5250,7 +5335,7 @@ mod tests {
 
     #[test]
     fn test_rns_native_addition() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5276,7 +5361,7 @@ mod tests {
     #[test]
     fn test_rns_simple_add_mul() {
         // First test with very simple operations to verify basic correctness
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5301,7 +5386,7 @@ mod tests {
 
     #[test]
     fn test_rns_native_multiplication() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5457,7 +5542,7 @@ mod tests {
 
     #[test]
     fn test_rns_multiplication_chain() {
-        let config = FHEConfig::light_rns();
+        let config = FHEConfig::light_rns_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5493,7 +5578,7 @@ mod tests {
     fn test_rns_exact_encrypt_decrypt() {
         // Test basic encrypt/decrypt with light_rns_exact config
         // This config has 2 primes with t = 65537
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5528,7 +5613,7 @@ mod tests {
         // Δ² ≈ 2^88 > Q ≈ 2^60 (wraparound occurs!)
         //
         // K-Elimination capacity: M×A ≈ 2^122 > Δ² ≈ 2^88 ✓
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5578,7 +5663,7 @@ mod tests {
     fn test_rns_exact_multiplication_chain() {
         // Test multiplication chain with light_rns_exact using DUAL-RNS K-Elimination
         // (not single-RNS Bajard which fails when Δ² >> Q)
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5619,7 +5704,7 @@ mod tests {
     #[test]
     fn test_dual_rns_encrypt_decrypt() {
         // Test dual-track encrypt/decrypt with light_rns_exact config
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -5674,7 +5759,7 @@ mod tests {
         //
         // The working solution is in ct_mul_exact.rs with single modulus.
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
 
         // M×A capacity comparison using log2 to avoid overflow
@@ -5724,7 +5809,7 @@ mod tests {
     fn test_dual_rns_trivial_ct_mul() {
         // Test with TRIVIAL ciphertexts (c1 = 0) where tensor product is controlled
         // This matches what ct_mul_exact tests do
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
 
         let delta_big = ctx.q_product / ctx.t as u128;
@@ -5855,7 +5940,7 @@ mod tests {
     #[test]
     fn test_ntt_domain_capacity_analysis() {
         // VERIFY: anchor primes provide sufficient capacity for Q² in NTT domain
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         // Use integer log2 to avoid overflow
@@ -5908,7 +5993,7 @@ mod tests {
     fn test_ntt_domain_trivial_ct_mul() {
         // Test NTT-domain multiplication with trivial ciphertexts (c1=0)
         // to verify the NTT-domain K-Elimination works
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         let delta_big = ctx.q_product / ctx.t as u128;
@@ -6034,7 +6119,7 @@ mod tests {
     #[test]
     fn test_ntt_domain_full_ct_mul() {
         // Full NTT-domain CT×CT with real encryption
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -6095,7 +6180,7 @@ mod tests {
     #[test]
     fn test_coeff_domain_capacity_analysis() {
         // VERIFY: 5 anchor primes provide sufficient capacity for Q²×N
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         // Use integer log2 to avoid overflow: log2(M×A) = log2(M) + log2(A)
@@ -6149,7 +6234,7 @@ mod tests {
     #[test]
     fn test_coeff_domain_trivial_ct_mul() {
         // Test coefficient-domain multiplication with trivial ciphertexts
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         let delta_big = ctx.q_product / ctx.t as u128;
@@ -6241,7 +6326,7 @@ mod tests {
     #[test]
     fn test_coeff_domain_full_ct_mul() {
         // Full coefficient-domain CT×CT with real encryption
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -6304,7 +6389,7 @@ mod tests {
     #[test]
     fn test_ntt_roundtrip_consistency() {
         // Verify NTT→INTT gives same results across all primes
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         println!("=== NTT Roundtrip Consistency Test ===");
@@ -6383,7 +6468,7 @@ mod tests {
     #[test]
     fn test_ntt_multiply_consistency() {
         // Verify NTT multiplication gives consistent results across primes
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         println!("=== NTT Multiply Consistency Test ===");
@@ -6516,7 +6601,7 @@ mod tests {
     #[test]
     fn test_mul_dual_debug() {
         // Detailed debugging of mul_dual to find the bug
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -6753,7 +6838,7 @@ mod tests {
     #[test]
     fn test_dual_poly_mul_consistency() {
         // Test that dual_poly_mul produces consistent results between main and anchor
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         println!("=== Testing dual_poly_mul Consistency ===");
@@ -6862,7 +6947,7 @@ mod tests {
     #[test]
     fn test_ciphertext_consistency() {
         // Test if ciphertexts are consistent between main and anchor
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -6916,7 +7001,7 @@ mod tests {
     #[test]
     fn test_ntt_mul_residues() {
         // Debug: check raw residues after NTT multiplication
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -7133,7 +7218,7 @@ mod tests {
 
         // Also test manually computing result[0] for the real polynomial
         println!("\n=== Manual verification of (a*s)[0] ===");
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual(&mut rng);
@@ -7235,7 +7320,7 @@ mod tests {
     fn test_k_elim_rescale_direct() {
         // Direct test of k_elim_rescale_dual function
         // Verify it correctly rescales tensor product coefficients
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -7289,7 +7374,7 @@ mod tests {
         // After rescale, anchor residues satisfy: v_a = (v_m + k*M) mod a_i
         // where k is the rescaling correction factor (NOT necessarily 0).
         // The invariant is that the K-LIFT formula is self-consistent.
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -7348,7 +7433,7 @@ mod tests {
         println!("=== NINE65 E2E Demonstration: Native DualRNS K-Elimination ===");
 
         // Setup: light_rns_exact config uses 3 main primes + 3 anchor primes
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -7393,7 +7478,7 @@ mod tests {
     #[test]
     fn test_auto_routing() {
         // Test the auto-routing infrastructure selects correct regime
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         println!("=== Auto-Routing Test ===");
@@ -7454,7 +7539,7 @@ mod tests {
     #[test]
     fn test_auto_routing_chained_operations() {
         // Test chained operations through auto interface
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         let mut rng = ShadowHarvester::with_seed(123);
@@ -7487,7 +7572,7 @@ mod tests {
     #[test]
     fn test_regime_mismatch_encrypt_single_keys_dual_route() {
         // This tests that mixing regimes returns RegimeMismatch error
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         // Context routes to KElimDual, but we force Single keys
@@ -7507,7 +7592,7 @@ mod tests {
     #[test]
     fn test_regime_mismatch_mul_mixed_ciphertexts() {
         // Test that mixing ciphertext types in mul_auto returns RegimeMismatch error
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -7538,7 +7623,7 @@ mod tests {
     #[test]
     fn test_regime_mismatch_add_mixed_ciphertexts() {
         // Test that mixing ciphertext types in add_auto returns RegimeMismatch error
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -7666,7 +7751,7 @@ mod tests {
     #[test]
     fn test_random_expressions_kelim_dual() {
         // Random expression trees of depth 3-5 using K-Elim Dual route
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         assert_eq!(
@@ -7727,7 +7812,7 @@ mod tests {
     #[test]
     fn test_random_expressions_depth3() {
         // Deeper expression: ((a * b) + c) * d
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         let mut rng = ShadowHarvester::with_seed(123);
@@ -7778,7 +7863,7 @@ mod tests {
     #[test]
     fn test_chain_via_auto() {
         // Mirror the working chain test but via auto interface
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config); // Use new() like the working test
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -7815,7 +7900,7 @@ mod tests {
     fn test_result_times_fresh() {
         // Verify that (result × fresh) works correctly - SAME fresh each time
         // This matches the pattern in test_chain_via_auto which passes
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -7851,7 +7936,7 @@ mod tests {
     fn test_result_times_different_fresh() {
         // Test with different fresh values each time
         // This may have different noise characteristics
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -8012,7 +8097,7 @@ mod tests {
         // CRITICAL: For exp=2, the correctness window is Δ²/2, NOT Δ/2!
         // The tensor product encodes m×Δ², so errors up to Δ²/2 are fine.
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         // MUST use new_coeff_domain for coefficient-domain K-Elimination
         // new() only uses 2 anchor primes (A≈7.88e16), insufficient for Q²×N
         // new_coeff_domain() uses 4 anchor primes (A≈6.6e34), sufficient for Q²×N ≈ 10^39
@@ -8276,7 +8361,7 @@ mod tests {
         // This is a known limitation of tree multiplication patterns where
         // both operands have been through rescaling - the accumulated rounding
         // errors compound differently than in chain patterns.
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -8382,7 +8467,7 @@ mod tests {
         // This test creates polynomials with known values and verifies
         // main and anchor agree after multiplication.
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         println!("=== Anchor NTT Multiplication Correctness Test ===");
@@ -8533,7 +8618,7 @@ mod tests {
         // Trace anchor consistency through mul_dual to find where divergence happens.
         // This is a diagnostic test to locate the bug in tree multiplication.
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual(&mut rng);
@@ -8655,7 +8740,7 @@ mod tests {
     #[test]
     fn test_anchor_ntt_roundtrip() {
         // First verify NTT→INTT roundtrip works for anchor primes
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let n = ctx.n;
 
@@ -8715,7 +8800,7 @@ mod tests {
         // Direct test: verify that NTT multiplication gives SAME results for main vs anchor.
         // This isolates whether the issue is in NTT itself.
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let n = ctx.n;
 
@@ -8886,7 +8971,7 @@ mod tests {
         // Trace exactly where k=577 comes from in e2*s² multiplication
         // The goal is to understand why multiplying k=0 (e2) with k=0 (s²) gives k=577
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let n = ctx.n;
 
@@ -9042,7 +9127,7 @@ mod tests {
     /// NOT: tensor → rescale → relin (which feeds wrong scale to eval keys)
     #[test]
     fn test_public_mode_depth2_phase_trace() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
 
         // Test with multiple seeds to see variance
@@ -9423,7 +9508,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn test_json_serialization_roundtrip() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -9454,7 +9539,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn test_bincode_serialization_roundtrip() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -9485,7 +9570,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn test_key_serialization_roundtrip() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -9511,7 +9596,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn test_serialization_size_comparison() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -9674,7 +9759,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn test_validated_deserialization_bincode() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -9694,7 +9779,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn test_validated_deserialization_json() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -9728,7 +9813,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde")]
     fn test_tampered_ciphertext_rejected_by_validated_deserialize() {
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(12345);
 
@@ -9932,7 +10017,7 @@ mod tests {
     fn test_tracked_addition() {
         use crate::noise::budget::NoiseBudget;
 
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ctx = RNSFHEContext::new_coeff_domain(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -10675,6 +10760,87 @@ mod tests {
                 .expect("deserialization should succeed");
             let result = ctx.decrypt_dual(&ct2, &keys.secret_key);
             assert_eq!(result, v, "roundtrip for {} failed, got {}", v, result);
+        }
+    }
+
+    #[test]
+    fn test_secure_256_encrypt_decrypt_roundtrip() {
+        use crate::params::secure_configs::SecureConfig;
+
+        // secure_256 has Q > 2^128, exercising U256 path
+        let secure_config = SecureConfig::secure_256();
+        let ctx = RNSFHEContext::try_new(&secure_config.config).unwrap();
+        let mut rng = ShadowHarvester::with_seed(42);
+        let keys = ctx.generate_keys_dual(&mut rng);
+
+        for m in [0u64, 1, 42, ctx.t - 1] {
+            let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
+            let result = ctx.decrypt_dual(&ct, &keys.secret_key);
+            assert_eq!(result, m, "secure_256 encrypt/decrypt failed for m={}", m);
+        }
+    }
+
+    #[test]
+    fn test_secure_192_encrypt_decrypt_roundtrip() {
+        use crate::params::secure_configs::SecureConfig;
+
+        // secure_192 also has Q > 2^128
+        let secure_config = SecureConfig::secure_192();
+        let ctx = RNSFHEContext::try_new(&secure_config.config).unwrap();
+        let mut rng = ShadowHarvester::with_seed(42);
+        let keys = ctx.generate_keys_dual(&mut rng);
+
+        for m in [0u64, 1, 42, ctx.t - 1] {
+            let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
+            let result = ctx.decrypt_dual(&ct, &keys.secret_key);
+            assert_eq!(result, m, "secure_192 encrypt/decrypt failed for m={}", m);
+        }
+    }
+
+    #[test]
+    fn test_high_level_wrappers() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::try_new(&secure_config.config).unwrap();
+
+        // 1. Keygen
+        let keys = ctx.keygen();
+
+        // 2. Encrypt
+        let m = 42u64;
+        let ct = ctx.encrypt_dual_secure(m, &keys.public_key);
+
+        // 3. Decrypt
+        let decrypted = ctx.decrypt_dual(&ct, &keys.secret_key);
+        assert_eq!(decrypted, m);
+
+        #[cfg(feature = "serde")]
+        {
+            // 4. High-level Encrypt to Bytes
+            let bytes = ctx.encrypt_to_bytes(m, &keys.public_key);
+            assert!(!bytes.is_empty());
+
+            // 5. High-level Decrypt from Bytes
+            let result = ctx.decrypt_from_bytes(&bytes, &keys.secret_key).expect("Decrypt failed");
+            assert_eq!(result, m);
+        }
+    }
+
+    #[test]
+    fn test_depth3_128_encrypt_decrypt_roundtrip() {
+        use crate::params::FHEConfig;
+
+        // depth3_128 has Q > 2^128 (5 primes)
+        let config = FHEConfig::depth3_128();
+        let ctx = RNSFHEContext::try_new(&config).unwrap();
+        let mut rng = ShadowHarvester::with_seed(42);
+        let keys = ctx.generate_keys_dual(&mut rng);
+
+        for m in [0u64, 1, 42, ctx.t - 1] {
+            let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
+            let result = ctx.decrypt_dual(&ct, &keys.secret_key);
+            assert_eq!(result, m, "depth3_128 encrypt/decrypt failed for m={}", m);
         }
     }
 }

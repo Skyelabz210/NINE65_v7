@@ -26,10 +26,10 @@ Output:
 warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
 package:   /home/acid/Projects/NINE65/v5/crates/exact_transcendentals/Cargo.toml
 workspace: /home/acid/Projects/NINE65/v5/Cargo.toml
-warning: use of deprecated associated function `nine65::params::FHEConfig::light_rns_exact`: INSECURE: light_rns_exact() has only ~80-bit security (n=1024). Use SecureConfig::secure_128() for production.
+warning: use of deprecated associated function `nine65::params::FHEConfig::light_rns_exact`: INSECURE: light_rns_exact_insecure() has only ~80-bit security (n=1024). Use SecureConfig::secure_128() for production.
    --> crates/nine65/benches/timing.rs:247:29
     |
-247 |     let config = FHEConfig::light_rns_exact();
+247 |     let config = FHEConfig::light_rns_exact_insecure();
     |                             ^^^^^^^^^^^^^^^
     |
     = note: `#[warn(deprecated)]` on by default

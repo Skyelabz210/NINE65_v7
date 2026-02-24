@@ -37,7 +37,7 @@ These are the only benchmark numbers currently approved for README claim usage.
 
 ## Internal Test Profile (Non-Claim)
 
-Historically, some comparisons used `FHEConfig::light_rns_exact()` to tune algorithms.
+Historically, some comparisons used `FHEConfig::light_rns_exact_insecure()` to tune algorithms.
 Those numbers are useful for internal iteration only and are not claim-grade.
 
 Rule:

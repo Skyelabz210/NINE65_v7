@@ -65,6 +65,17 @@ type AnchorRoots = (u64, u64, Vec<u64>, Vec<u64>, Vec<u64>, Vec<u64>, u64);
 impl ExactFHEContext {
     /// Create from standard FHE parameters
     pub fn new(q: u64, n: usize, t: u64) -> Self {
+        // Enforce production safety in non-test builds
+        crate::params::assert_production_safe_fhe_config(&crate::params::FHEConfig {
+            n,
+            primes: vec![q],
+            q,
+            t,
+            eta: 3, // Assume standard eta for validation
+            security_bits: 0,
+            name: "ExactFHEContext",
+        });
+
         let exact_ctx = ExactContext::from_single_modulus(q, n, t);
         let ntt = NTTEngine::new(q, n);
 

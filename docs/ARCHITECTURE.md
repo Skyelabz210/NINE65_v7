@@ -163,8 +163,8 @@ impl SecretData for SecretPoly {}
 
 | Config | N | Claimed | Actual | Status |
 |--------|---|---------|--------|--------|
-| `light()` | 1024 | 80-bit | 36-bit | TEST ONLY (gated) |
-| `he_standard_128()` | 2048 | 128-bit | 56-bit | TEST ONLY (gated) |
+| `light_insecure()` | 1024 | 80-bit | 36-bit | TEST ONLY (gated) |
+| `he_standard_128_insecure()` | 2048 | 128-bit | 56-bit | TEST ONLY (gated) |
 | `standard_128()` | 4096 | 128-bit | 96-bit | MARGINAL |
 | `SecureConfig::secure_128()` | 4096 | 128-bit | 128-bit | MARGINAL (not recommended) |
 | `SecureConfig::secure_192()` | 8192 | 192-bit | 176-bit | RECOMMENDED |

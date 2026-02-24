@@ -75,9 +75,9 @@
 //! use nine65::prelude::*;
 //!
 //! // Use deterministic parameters for reproducible tests
-//! // Note: light() requires `allow_insecure` feature for testing only
+//! // Note: light_insecure() requires `allow_insecure` feature for testing only
 //! #[cfg(feature = "allow_insecure")]
-//! let config = FHEConfig::light();
+//! let config = FHEConfig::light_insecure();
 //! let ntt = NTTEngine::new(config.q, config.n);
 //! let mut rng = ShadowHarvester::with_seed(42);  // Deterministic!
 //!
@@ -98,8 +98,8 @@
 //! | `SecureConfig::secure_192()` | 8192 | 192-bit | High security |
 //! | `standard_128()` | 4096 | 128-bit | Production (FHEConfig) |
 //! | `high_192()` | 8192 | 192-bit | High security (FHEConfig) |
-//! | `light()` | 1024 | ~36-bit | Testing only (`allow_insecure`) |
-//! | `he_standard_128()` | 2048 | ~56-bit | Testing only (`allow_insecure`) |
+//! | `light_insecure()` | 1024 | ~36-bit | Testing only (`allow_insecure`) |
+//! | `he_standard_128_insecure()` | 2048 | ~56-bit | Testing only (`allow_insecure`) |
 //!
 //! ## Module Overview
 //!
@@ -154,7 +154,7 @@ mod v2_integration_tests;
 /// ```ignore
 /// use nine65::prelude::*;
 ///
-/// let config = FHEConfig::light();
+/// let config = FHEConfig::light_insecure();
 /// let ntt = NTTEngine::new(config.q, config.n);
 /// ```
 pub mod prelude {

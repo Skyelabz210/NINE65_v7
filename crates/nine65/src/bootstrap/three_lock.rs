@@ -273,7 +273,7 @@ mod tests {
     use crate::ring::RingPolynomial;
 
     fn setup() -> (FHEConfig, NTTEngine, KeySet, ShadowHarvester, BFVEncoder) {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let keys = KeySet::generate(&config, &ntt, &mut harvester);

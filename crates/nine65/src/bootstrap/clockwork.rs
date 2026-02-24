@@ -303,7 +303,7 @@ mod tests {
     use crate::ops::encrypt::{BFVEncoder, BFVEncryptor, BFVDecryptor};
 
     fn setup() -> (FHEConfig, NTTEngine, KeySet, ShadowHarvester, BFVEncoder) {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let keys = KeySet::generate(&config, &ntt, &mut harvester);
@@ -313,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_can_bootstrap_check() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let cw = ClockworkBootstrap::new(&config);
         let threshold = config.q / (2 * config.t);
         assert!(cw.can_bootstrap(threshold - 1));

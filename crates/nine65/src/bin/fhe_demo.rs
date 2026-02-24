@@ -108,7 +108,7 @@ fn main() {
             );
             #[allow(deprecated)]
             {
-                FHEConfig::light()
+                FHEConfig::light_insecure()
             }
         }
         #[cfg(feature = "allow_insecure")]
@@ -118,7 +118,7 @@ fn main() {
             );
             #[allow(deprecated)]
             {
-                FHEConfig::he_standard_128()
+                FHEConfig::he_standard_128_insecure()
             }
         }
         #[cfg(not(feature = "allow_insecure"))]

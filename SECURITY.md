@@ -60,6 +60,16 @@ The `allow_insecure` feature flag enables test-only parameter configurations wit
 
 Constant-time primitives are available in `crates/nine65/src/security/secret_data.rs`. These primitives use the `subtle` crate for constant-time comparisons and conditional selection. Code paths that handle secret key material should use these primitives exclusively.
 
+#### Constant-Time Requirements
+
+To prevent timing side-channel attacks, all operations involving secret key material must be performed using constant-time (CT) algorithms. This includes:
+
+1. **Decryption**: The core decryption operation `c0 + c1 * s` must use CT multiplication (`mul_ct`).
+2. **Key Generation**: Secret key components must be sampled and handled using CT-safe routines.
+3. **K-Elimination**: The extraction of the `k` value during rescaling must use the constant-time `extract_k` variant when processing ciphertexts derived from secret inputs.
+
+NINE65 v7 enforces these requirements through the `SecretKeyPath` trait and specialized `_ct` variants of arithmetic operations. Developers adding new homomorphic operations or primitives must ensure that any path touching secret data adheres to these CT constraints.
+
 ### Noise Budget Tracking
 
 For noise-sensitive operations, use `TrackedEvaluator` to monitor noise budget consumption across homomorphic circuit evaluations. This helps detect unexpected noise growth that could compromise correctness or security margins before it becomes critical.

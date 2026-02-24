@@ -257,8 +257,8 @@ NINE65 targets post-quantum security through LWE-based cryptography.
 | Config | n | log2(q) | min attack log2(rop) |
 |--------|---|---------|----------------------|
 | `secure_128` | 4096 | 89.08 | 129 |
-| `secure_192` | 8192 | 145.08 | 159 |
-| `secure_256` | 16384 | 203.38 | 226 |
+| `secure_192` | 16384 | 145.08 | 318 |
+| `secure_256` | 16384 | 174.18 | 264 |
 
 ### Security Hardening
 

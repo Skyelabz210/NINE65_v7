@@ -639,7 +639,7 @@ impl KeySet {
     /// # Example
     ///
     /// ```ignore
-    /// let config = FHEConfig::he_standard_128();
+    /// let config = FHEConfig::he_standard_128_insecure();
     /// let ntt = NTTEngine::new(config.q, config.n);
     /// let keys = KeySet::generate_secure(&config, &ntt);
     /// ```
@@ -669,7 +669,7 @@ mod tests {
 
     #[test]
     fn test_keygen_basic() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let mut harvester = ShadowHarvester::with_seed(42);
 
         let sk = SecretKey::generate(&config, &mut harvester);
@@ -687,7 +687,7 @@ mod tests {
 
     #[test]
     fn test_keygen_deterministic() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
 
         let mut h1 = ShadowHarvester::with_seed(12345);
@@ -704,7 +704,7 @@ mod tests {
 
     #[test]
     fn test_keygen_secure() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
 
         let keys1 = KeySet::generate_secure(&config, &ntt);
@@ -719,7 +719,7 @@ mod tests {
 
     #[test]
     fn test_secure_key_is_ternary() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
 
         let sk = SecretKey::generate_secure(&config);
 
@@ -737,7 +737,7 @@ mod tests {
 
     #[test]
     fn test_keygen_benchmark() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(999);
 
@@ -752,7 +752,7 @@ mod tests {
 
     #[test]
     fn test_keygen_secure_benchmark() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
 
         let start = std::time::Instant::now();
@@ -769,7 +769,7 @@ mod tests {
         // Integration test: verify secure keys work with FHE operations
         use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor};
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let keys = KeySet::generate_secure(&config, &ntt);
 
@@ -796,7 +796,7 @@ mod tests {
     fn test_gated_keygen_succeeds_in_window() {
         use crate::security::TimingGate;
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let gate = TimingGate::new(16, 100).unwrap();
 
@@ -820,7 +820,7 @@ mod tests {
         use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor};
         use crate::security::TimingGate;
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let gate = TimingGate::new(16, 100).unwrap();
 
@@ -841,7 +841,7 @@ mod tests {
     fn test_gated_keygen_timing_variance() {
         use crate::security::TimingGate;
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let gate = TimingGate::new(16, 100).unwrap();
 
@@ -872,7 +872,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn test_public_key_serde_roundtrip_validated() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(2026);
 
@@ -897,7 +897,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn test_eval_key_serde_roundtrip_validated() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(8080);
 

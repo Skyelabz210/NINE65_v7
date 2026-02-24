@@ -5,7 +5,7 @@
 - CPU: AMD64
 - OS: Linux 6.12.48+deb13-amd64
 - Rust: stable
-- Config: SecureConfig::test_fast() (N=1024, 30-bit primes)
+- Config: SecureConfig::test_fast_insecure() (N=1024, 30-bit primes)
 
 ## Baseline Measurements
 

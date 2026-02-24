@@ -695,7 +695,7 @@ fn sub_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
 fn sub_mod_kelim_ct(a: u128, b: u128, m: u128) -> u128 {
     // Reduce b mod m first (b can be >= m in K-elimination)
     // Then compute (a - b_reduced) mod m using CT subtraction
-    let b_reduced = b % m;
+    let b_reduced = reduce_ct(b, m);
     sub_mod_u128_ct(a, b_reduced, m)
 }
 
@@ -718,28 +718,68 @@ fn add_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
     (diff & mask) | (sum & !mask)
 }
 
+/// Constant-time modular reduction for u128
+///
+/// # Security
+/// Uses a bit-by-bit approach to ensure constant-time execution
+/// regardless of the input value.
+fn reduce_ct(a: u128, m: u128) -> u128 {
+    if m == 0 {
+        return 0;
+    }
+    let mut rem = 0u128;
+    for i in (0..128).rev() {
+        rem = (rem << 1) | ((a >> i) & 1);
+        let mask = ((rem >= m) as u128).wrapping_neg();
+        rem = rem.wrapping_sub(m & mask);
+    }
+    rem
+}
+
 /// Constant-time modular multiplication for u128
 ///
 /// # Security
-/// Fixed number of iterations (128) regardless of input values.
-/// No data-dependent branches.
+/// Uses a 4-bit windowed approach (32 iterations) to reduce overhead while
+/// maintaining constant-time properties. No data-dependent branches.
 fn mul_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
+    if m == 0 {
+        return 0;
+    }
     let mut result = 0u128;
-    let mut a = a % m;
 
-    // Fixed 128 iterations for constant-time
-    for i in 0..128 {
-        // Extract bit i of b (constant-time)
-        let bit = (b >> i) & 1;
-        let mask = bit.wrapping_neg(); // 0 or u128::MAX
+    // Reduce a mod m in constant time if it's not already reduced.
+    // In K-Elimination, the input is often already reduced, but we
+    // ensure it here for safety.
+    let current_a = reduce_ct(a, m);
 
-        // Conditionally add a to result (constant-time)
-        // add_val is either a (if bit set) or 0 (if bit not set)
-        let add_val = a & mask;
+    // Precompute 1..15 * a mod m
+    // table[i] = (i+1) * a mod m
+    let mut table = [0u128; 15];
+    table[0] = current_a;
+    for i in 1..15 {
+        table[i] = add_mod_u128_ct(table[i - 1], current_a, m);
+    }
+
+    // Process 4 bits at a time (32 iterations for 128 bits)
+    // We go from most significant nibble to least significant.
+    for i in 0..32 {
+        // result = result * 16 mod m (4 doublings)
+        for _ in 0..4 {
+            result = add_mod_u128_ct(result, result, m);
+        }
+
+        // Extract nibble (4 bits) from b
+        let shift = 124 - (i * 4);
+        let nibble = ((b >> shift) & 0xF) as u8;
+
+        // Constant-time selection from table
+        let mut add_val = 0u128;
+        for j in 0..15 {
+            let mask = (((nibble == (j + 1) as u8)) as u128).wrapping_neg();
+            add_val |= table[j] & mask;
+        }
+
         result = add_mod_u128_ct(result, add_val, m);
-
-        // Double a mod m using CT addition (always done)
-        a = add_mod_u128_ct(a, a, m);
     }
 
     result

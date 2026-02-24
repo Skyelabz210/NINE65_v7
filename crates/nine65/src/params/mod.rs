@@ -28,7 +28,7 @@
 //!
 //! ## Legacy Configs (Testing Only)
 //!
-//! The `light()`, `he_standard_128()`, etc. functions are retained for
+//! The `light_insecure()`, `he_standard_128_insecure()`, etc. functions are retained for
 //! backward compatibility and testing but should NOT be used in production.
 
 pub mod primes;
@@ -43,7 +43,9 @@ pub mod exact_params;
 pub use exact_params::ExactDelta;
 
 pub use primes::*;
-pub use secure_configs::{assert_production_safe, ProductionSafe, SecureConfig};
+pub use secure_configs::{
+    assert_production_safe, assert_production_safe_fhe_config, ProductionSafe, SecureConfig,
+};
 pub use security_estimator::{
     CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution, SecurityEstimate,
 };
@@ -88,9 +90,9 @@ impl FHEConfig {
     #[cfg(any(test, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
-        note = "INSECURE: light() has only ~36-bit security. Use SecureConfig::secure_128() for production."
+        note = "INSECURE: light_insecure() has only ~36-bit security. Use SecureConfig::secure_128() for production."
     )]
-    pub fn light() -> Self {
+    pub fn light_insecure() -> Self {
         Self {
             n: 1024,
             primes: vec![998244353],
@@ -98,7 +100,7 @@ impl FHEConfig {
             t: 2053, // Carefully chosen to avoid encode/decode precision issues
             eta: 2,
             security_bits: 36, // CORRECTED: actual security level
-            name: "light",
+            name: "light_insecure",
         }
     }
 
@@ -140,7 +142,8 @@ impl FHEConfig {
     /// Configuration for ct×ct testing with small Δ to avoid Δ² overflow
     /// Uses large t to keep Δ small enough that Δ² < q
     /// WARNING: Has only ~1 bit noise budget - use light_rns for real work
-    pub fn light_mul() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn light_mul_insecure() -> Self {
         // For single-modulus ct×ct: need Δ² < q (so tensor product doesn't overflow)
         // With t=500000: Δ ≈ 1996, Δ² ≈ 4M < q ✓
         // BUT: noise budget = log2(Δ) - initial_noise ≈ 11 - 10 = 1 bit!
@@ -151,7 +154,7 @@ impl FHEConfig {
             t: 500000, // Large t gives small Δ
             eta: 2,
             security_bits: 80,
-            name: "light_mul",
+            name: "light_mul_insecure",
         }
     }
 
@@ -167,7 +170,8 @@ impl FHEConfig {
     /// - Supports 5+ levels of CT×CT multiplication
     ///
     /// This is the RECOMMENDED light config for multiplication testing.
-    pub fn light_rns() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn light_rns_insecure() -> Self {
         Self {
             n: 1024,
             // Three 30-bit NTT primes: Q ≈ 7.4 × 10^26 (~90 bits)
@@ -177,7 +181,7 @@ impl FHEConfig {
             t: 65537,     // Standard plaintext modulus
             eta: 2,
             security_bits: 80,
-            name: "light_rns",
+            name: "light_rns_insecure",
         }
     }
 
@@ -196,7 +200,8 @@ impl FHEConfig {
     /// but exact arithmetic and guaranteed correct results.
     ///
     /// This is the config that matches the QMNF papers' exact approach.
-    pub fn light_exact() -> Self {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn light_exact_insecure() -> Self {
         Self {
             n: 1024,
             primes: vec![998244353], // Single 30-bit prime
@@ -204,7 +209,7 @@ impl FHEConfig {
             t: 500000, // Large t → small Δ → Δ² fits in reconstruction capacity
             eta: 2,
             security_bits: 80,
-            name: "light_exact",
+            name: "light_exact_insecure",
         }
     }
 
@@ -225,11 +230,12 @@ impl FHEConfig {
     ///
     /// NOTE: This config requires K-Elimination rescaling in RNSFHEContext.
     /// Standard Bajard rescaling will fail because Δ² > Q.
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
-        note = "INSECURE: light_rns_exact() has only ~80-bit security (n=1024). Use SecureConfig::secure_128() for production."
+        note = "INSECURE: light_rns_exact_insecure() has only ~80-bit security (n=1024). Use SecureConfig::secure_128() for production."
     )]
-    pub fn light_rns_exact() -> Self {
+    pub fn light_rns_exact_insecure() -> Self {
         Self {
             n: 1024,
             primes: vec![998244353, 985661441], // Two 30-bit primes: Q ≈ 2^60
@@ -237,7 +243,7 @@ impl FHEConfig {
             t: 65537, // Standard t → Δ ≈ 2^44, Δ² ≈ 2^88 < M×A ≈ 2^122 ✓
             eta: 2,
             security_bits: 80,
-            name: "light_rns_exact",
+            name: "light_rns_exact_insecure",
         }
     }
 
@@ -369,9 +375,9 @@ impl FHEConfig {
     #[cfg(any(test, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
-        note = "INSECURE: he_standard_128() has only ~56-bit security with ternary secrets. Use SecureConfig::secure_128()."
+        note = "INSECURE: he_standard_128_insecure() has only ~56-bit security with ternary secrets. Use SecureConfig::secure_128()."
     )]
-    pub fn he_standard_128() -> Self {
+    pub fn he_standard_128_insecure() -> Self {
         // Validate at construction time
         let config = Self {
             n: 2048,
@@ -380,14 +386,14 @@ impl FHEConfig {
             t: 65537, // Standard plaintext modulus (Fermat prime F4)
             eta: 3,
             security_bits: 56, // CORRECTED: actual security with ternary secrets
-            name: "he_standard_128",
+            name: "he_standard_128_insecure",
         };
 
         // Verify orbital bounds
         let result = validate_params(config.n, config.q, config.t);
         debug_assert!(
             result.orbital_safe,
-            "he_standard_128 config fails orbital bounds check"
+            "he_standard_128_insecure config fails orbital bounds check"
         );
 
         config
@@ -648,10 +654,10 @@ mod tests {
     #[test]
     fn test_all_configs_valid() {
         let configs = [
-            SecureConfig::test_fast().into_config(),
-            SecureConfig::test_medium().into_config(),
-            FHEConfig::light_mul(),
-            FHEConfig::light_rns(),
+            SecureConfig::test_fast_insecure().into_config(),
+            SecureConfig::test_medium_insecure().into_config(),
+            FHEConfig::light_mul_insecure(),
+            FHEConfig::light_rns_insecure(),
             FHEConfig::standard_128(),
             FHEConfig::high_192(),
             FHEConfig::deep_128(),
@@ -696,7 +702,7 @@ mod tests {
     #[test]
     #[allow(deprecated)]
     fn test_he_standard_compliance() {
-        let config = FHEConfig::he_standard_128();
+        let config = FHEConfig::he_standard_128_insecure();
 
         // HE Standard v1.1 Table 3 requirements for 128-bit classical security
         let log_q = 64 - config.q.leading_zeros();

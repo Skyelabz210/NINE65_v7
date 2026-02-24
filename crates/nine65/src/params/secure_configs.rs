@@ -38,7 +38,7 @@
 #[cfg(all(not(test), not(debug_assertions), not(feature = "allow_insecure")))]
 const _SECURITY_ASSERTION: () = {
     // This block ensures that release builds cannot accidentally use test configs.
-    // The test_fast() and test_medium() functions are cfg-gated and will not exist
+    // The test_fast_insecure() and test_medium_insecure() functions are cfg-gated and will not exist
     // in release builds, causing compile errors if referenced.
 };
 
@@ -252,14 +252,14 @@ impl SecureConfig {
     ///
     /// NEVER use for production or with real sensitive data.
     #[cfg(any(test, debug_assertions))]
-    pub fn test_fast() -> Self {
+    pub fn test_fast_insecure() -> Self {
         Self::new_verified(
             1024,
             vec![998244353],
             65537,
             2,
             40, // Honest about low security
-            "test_fast",
+            "test_fast_insecure",
         )
     }
 
@@ -268,14 +268,14 @@ impl SecureConfig {
     /// Suitable for integration testing where security
     /// doesn't matter but correct behavior does.
     #[cfg(any(test, debug_assertions))]
-    pub fn test_medium() -> Self {
+    pub fn test_medium_insecure() -> Self {
         Self::new_verified(
             2048,
             vec![998244353, 985661441],
             65537,
             2,
             80,
-            "test_medium",
+            "test_medium_insecure",
         )
     }
 }
@@ -329,6 +329,31 @@ impl ProductionSafe for SecureConfig {
 #[inline]
 pub fn assert_production_safe(config: &SecureConfig) {
     config.require_production_safe();
+}
+
+/// Assert that an FHEConfig is production-safe by re-verifying its security.
+///
+/// Use this in Context constructors that only have access to FHEConfig.
+pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
+    #[cfg(not(any(test, debug_assertions, feature = "allow_insecure")))]
+    {
+        let log_q: u32 = config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+        let estimate = estimator.estimate(config.n, log_q, SecretDistribution::Ternary, 128);
+        let he_compliant = HEStandardBounds::is_compliant(config.n, log_q, 128);
+
+        assert!(
+            estimate.hybrid_bits >= 128 && he_compliant,
+            "SECURITY ERROR: FHEConfig '{}' (N={}, logQ={}) is NOT production safe!\n\
+             Estimated hybrid security: {} bits. HE Standard compliant: {}\n\
+             Use SecureConfig::secure_128() or higher for production.",
+            config.name, config.n, log_q, estimate.hybrid_bits, he_compliant
+        );
+    }
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    {
+        let _ = config; // silence unused warning
+    }
 }
 
 /// Verify security level meets production requirements
@@ -422,7 +447,7 @@ mod tests {
 
     #[test]
     fn test_test_configs_not_production_safe() {
-        let config = SecureConfig::test_fast();
+        let config = SecureConfig::test_fast_insecure();
         assert!(
             !config.is_production_safe(),
             "test_fast should NOT be production safe"
@@ -457,8 +482,8 @@ mod tests {
         println!("\n=== Security Level Comparison ===\n");
 
         let configs = [
-            ("test_fast", SecureConfig::test_fast()),
-            ("test_medium", SecureConfig::test_medium()),
+            ("test_fast", SecureConfig::test_fast_insecure()),
+            ("test_medium", SecureConfig::test_medium_insecure()),
             ("secure_128", SecureConfig::secure_128()),
             ("secure_192", SecureConfig::secure_192()),
         ];
@@ -501,10 +526,10 @@ mod tests {
         assert!(verify_production_safety(&secure_256).is_ok());
 
         // Test configs should fail
-        let test_fast = SecureConfig::test_fast();
+        let test_fast = SecureConfig::test_fast_insecure();
         assert!(verify_production_safety(&test_fast).is_err());
 
-        let test_medium = SecureConfig::test_medium();
+        let test_medium = SecureConfig::test_medium_insecure();
         assert!(verify_production_safety(&test_medium).is_err());
     }
 
@@ -515,8 +540,18 @@ mod tests {
         config.require_production_safe();
 
         // Test configs have the trait but will panic in release
-        let test_config = SecureConfig::test_fast();
+        let test_config = SecureConfig::test_fast_insecure();
         // In test mode, this will not panic
         test_config.require_production_safe();
+    }
+
+    #[test]
+    fn test_assert_production_safe_fhe_config() {
+        // Should not panic in test mode even for insecure configs
+        let config = FHEConfig::light_insecure();
+        assert_production_safe_fhe_config(&config);
+
+        let secure_config = SecureConfig::secure_128();
+        assert_production_safe_fhe_config(&secure_config.config);
     }
 }

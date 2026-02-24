@@ -56,9 +56,9 @@ impl PyFHEConfig {
 
     #[cfg(any(test, feature = "allow_insecure"))]
     #[staticmethod]
-    fn light() -> Self {
+    fn light_insecure() -> Self {
         Self {
-            inner: FHEConfig::light(),
+            inner: FHEConfig::light_insecure(),
         }
     }
 
@@ -118,9 +118,9 @@ impl PySecureConfig {
 
     #[cfg(any(test, debug_assertions))]
     #[staticmethod]
-    fn test_fast() -> Self {
+    fn test_fast_insecure() -> Self {
         Self {
-            inner: SecureConfig::test_fast(),
+            inner: SecureConfig::test_fast_insecure(),
         }
     }
 

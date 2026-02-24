@@ -466,7 +466,7 @@ mod tests {
     use crate::params::FHEConfig;
 
     fn setup() -> (FHEConfig, NTTEngine, KeySet, ShadowHarvester, BFVEncoder) {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let keys = KeySet::generate(&config, &ntt, &mut harvester);
@@ -476,7 +476,7 @@ mod tests {
 
     fn setup_mul() -> (FHEConfig, NTTEngine, KeySet, ShadowHarvester, BFVEncoder) {
         // Use light_mul config for ct×ct (small Δ prevents overflow)
-        let config = FHEConfig::light_mul();
+        let config = FHEConfig::light_mul_insecure();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let keys = KeySet::generate(&config, &ntt, &mut harvester);
@@ -850,7 +850,7 @@ mod tests {
     #[test]
     fn test_scaling_comparison() {
         // Compare K-Elimination scaling vs simple scaling
-        let config = FHEConfig::light_mul();
+        let config = FHEConfig::light_mul_insecure();
         let delta = config.delta();
         let ke = crate::arithmetic::KElimination::for_fhe(config.q);
 
@@ -881,9 +881,9 @@ mod tests {
     }
 
     #[test]
-    fn test_encrypt_decrypt_light_mul() {
+    fn test_encrypt_decrypt_light_mul_insecure() {
         // Test that basic encrypt/decrypt works with light_mul params
-        let config = FHEConfig::light_mul();
+        let config = FHEConfig::light_mul_insecure();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let keys = KeySet::generate(&config, &ntt, &mut harvester);
@@ -929,7 +929,7 @@ mod tests {
     #[test]
     fn test_ntt_basic_multiply() {
         // Test that NTT multiply works correctly for simple case
-        let config = FHEConfig::light_mul();
+        let config = FHEConfig::light_mul_insecure();
         let ntt = NTTEngine::new(config.q, config.n);
 
         // (5, 0, 0, ...) * (7, 0, 0, ...) should = (35, 0, 0, ...) in R_q

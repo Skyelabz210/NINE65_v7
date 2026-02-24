@@ -117,7 +117,7 @@ This mirrors the correct approach already used in `to_anchor_rns_u128()`.
 **Lines**: 224-233
 
 **Description**:
-The `light_rns_exact()` configuration with only 2 primes achieves approximately 80 bits of security according to attack estimator output:
+The `light_rns_exact_insecure()` configuration with only 2 primes achieves approximately 80 bits of security according to attack estimator output:
 
 ```
 QMNF-Light-INSECURE (n=1024, logq=30):
@@ -133,7 +133,7 @@ However, the code documents `security_bits: 80` but does not enforce any warning
 
 **Recommended Mitigation**:
 1. Add deprecation warning or feature gate similar to `he_standard_128`
-2. Rename to `light_rns_exact_INSECURE()` to make security implications clear
+2. Rename to `light_rns_exact_insecure()` to make security implications clear
 3. Add runtime security level check in `RNSFHEContext::new()`
 
 ### HIGH-002: Barrett Reduction Not Fully Constant-Time
