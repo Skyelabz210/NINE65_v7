@@ -1,21 +1,21 @@
 //! NINE65 Error Taxonomy
 //!
-//! Standardized error types derived from Coq proof preconditions.
+//! Standardized error types derived from formally verified proof preconditions.
 //! Every error maps to a specific theorem violation.
 //!
 //! # Theorem Reference
-//! Error conditions are derived from:
-//! - `KElimination.v` — Division preconditions
-//! - `GSOFHE.v` — Noise bounds
-//! - `OrderFinding.v` — Coprimality requirements
-//! - `MQReLU.v` — Modulus constraints
+//! Error conditions are derived from formal artifacts (Lean 4 canonical, with Coq names retained for compatibility):
+//! - `lean4/KElimination/*` and legacy `KElimination.v` — Division preconditions
+//! - `lean4/*GSO*` and legacy `GSOFHE.v` — Noise bounds
+//! - `lean4/*Order*` and legacy `OrderFinding.v` — Coprimality requirements
+//! - `lean4/*MQReLU*` and legacy `MQReLU.v` — Modulus constraints
 
 use thiserror::Error;
 
 /// NINE65 Error Types
 ///
 /// Comprehensive error taxonomy for all components.
-/// Each variant maps to a specific Coq precondition violation.
+/// Each variant maps to a specific formal precondition violation.
 #[derive(Debug, Clone, Error)]
 pub enum Nine65Error {
     // ═══════════════════════════════════════════════════
