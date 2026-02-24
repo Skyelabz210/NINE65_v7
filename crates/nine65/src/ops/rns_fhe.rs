@@ -2448,33 +2448,6 @@ impl RNSFHEContext {
         }
     }
 
-    /// Level-aware polynomial multiplication (operates only on shared primes)
-    fn dual_poly_mul_level(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
-        let level = a.main.len().min(b.main.len());
-
-        // Main limbs: NTT multiply for each prime at this level
-        let main: Vec<Vec<u64>> = (0..level)
-            .map(|limb_idx| {
-                self.ntt_engines[limb_idx].multiply(&a.main[limb_idx], &b.main[limb_idx])
-            })
-            .collect();
-
-        // Anchor: use full multiplication (anchors always have all limbs)
-        let anchor: Vec<Vec<u64>> = a
-            .anchor
-            .iter()
-            .zip(&b.anchor)
-            .zip(self.dual_rns.anchor.ntt_engines.iter())
-            .map(|((a_limb, b_limb), ntt)| ntt.multiply(a_limb, b_limb))
-            .collect();
-
-        DualRNSPoly {
-            main,
-            anchor,
-            n: a.n,
-        }
-    }
-
     /// Constant-time level-aware polynomial multiplication
     fn dual_poly_mul_level_ct(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
         let level = a.main.len().min(b.main.len());

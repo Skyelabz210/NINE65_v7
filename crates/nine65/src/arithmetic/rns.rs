@@ -64,6 +64,7 @@ impl U256 {
 
     /// Constant-time greater-than-or-equal comparison
     #[inline]
+    #[allow(dead_code)]
     pub(crate) fn ge_ct(self, other: Self) -> bool {
         // (self.hi > other.hi) || (self.hi == other.hi && self.lo >= other.lo)
         // bit 127 is set if a < b in (a.wrapping_sub(b))
@@ -100,6 +101,7 @@ impl U256 {
 
     /// Constant-time addition
     #[inline]
+    #[allow(dead_code)]
     pub(crate) fn add_ct(self, other: Self) -> Self {
         let (lo, c0) = self.lo.overflowing_add(other.lo);
         let (hi, _) = self.hi.overflowing_add(other.hi);
@@ -122,6 +124,7 @@ impl U256 {
 
     /// Constant-time subtraction (assumes self >= other)
     #[inline]
+    #[allow(dead_code)]
     pub(crate) fn sub_ct(self, other: Self) -> Self {
         let (lo, b0) = self.lo.overflowing_sub(other.lo);
         let hi = self.hi.wrapping_sub(other.hi).wrapping_sub(b0 as u128);

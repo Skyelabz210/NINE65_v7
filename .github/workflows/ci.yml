@@ -157,17 +157,6 @@ jobs:
       - name: Check licenses and advisories
         run: cargo deny check
 
-  audit:
-    name: Cargo Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Run cargo-audit
-        uses: rustsec/audit-check@v1.4.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
   timing-tests:
     name: Timing Regression Tests
     runs-on: ubuntu-latest
