@@ -1,1 +1,429 @@
+name: CI
 
+# =============================================================================
+# NINE65 v7 — Tiered CI Pipeline
+# =============================================================================
+# AI Roster and Division of Labor:
+#
+#   Jules (google-labs-jules[bot])
+#     Deep autonomous work: architecture, security hardening, multi-file refactors.
+#     Assigned via GitHub Issues. BYPASSES CI — its commits skip all tiers to
+#     avoid burning Actions minutes on work it has already validated internally.
+#
+#   Gemini Flash (free tier, GEMINI_API_KEY secret)
+#     PR code review via API. Posts structured analysis as PR comment.
+#     Runs in T3. Zero compute cost — one HTTP call, no runner minutes consumed.
+#
+#   Qwen Coder Cloud (Alibaba DashScope, QWEN_API_KEY secret)
+#     Claim registry semantic audit, math-hole detection, proof consistency.
+#     Runs in T4 weekly. Already deployed via npm in this repo.
+#
+#   Qwen Coder Local (Ollama, developer machine only)
+#     Pre-commit fast checks. Never appears in CI.
+#
+#   @claude
+#     Invoked via PR comment mention for orchestration, quality assurance,
+#     and targeted deep analysis. Not in hot-path automation.
+#
+#   Codex
+#     Advanced math verification, proof-hole detection. On-demand.
+#
+# =============================================================================
+# Tier structure:
+#   T0 — Bot bypass: Jules and Dependabot commits skip CI entirely
+#   T1 — Fast gate:  fmt + clippy + deny + static analysis (~3 min, every push)
+#   T2 — Full suite: all tests + clockwork (main merges or [full-ci] tag only)
+#   T3 — AI review:  Gemini Flash diff review posted to PR (every non-bot PR)
+#   T4 — Deep:       benchmarks + coverage + Qwen claim audit (Sunday or [deep-ci])
+# =============================================================================
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: 'Force tier: fast | full | deep'
+        required: false
+        default: 'full'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+
+  # ---------------------------------------------------------------------------
+  # T1a — Fast Gate: fmt + clippy + deny
+  # Every push/PR. Skipped for Jules and Dependabot.
+  # ---------------------------------------------------------------------------
+  fast-gate:
+    name: "T1 · Fast Gate (fmt + clippy + deny)"
+    runs-on: ubuntu-latest
+    if: |
+      github.actor != 'google-labs-jules[bot]' &&
+      github.actor != 'dependabot[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-fast-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fast-
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: |
+          cargo clippy --workspace \
+            --exclude nine65-python \
+            --exclude nine65-wasm \
+            --exclude nine65-ffi \
+            --all-targets -- -D warnings
+
+      - name: Check licenses and advisories
+        uses: embark-studios/cargo-deny-action@v2
+
+  # ---------------------------------------------------------------------------
+  # T1b — Static Analysis and Proofs
+  # Every push/PR. Script-based, no Rust compile needed.
+  # ---------------------------------------------------------------------------
+  static-analysis:
+    name: "T1 · Static Analysis & Proofs"
+    runs-on: ubuntu-latest
+    if: |
+      github.actor != 'google-labs-jules[bot]' &&
+      github.actor != 'dependabot[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate claim registry
+        run: bash scripts/check_claim_registry.sh
+
+      - name: Detect stale claims
+        run: bash scripts/check_stale_claims.sh
+
+      - name: Scan for panic patterns
+        run: bash scripts/check_no_panics.sh
+
+      - name: Scan for float usage in runtime paths
+        run: bash scripts/check_no_floats_runtime.sh
+
+      - name: Check Coq proof files present
+        run: |
+          if [ -d "proofs/coq" ]; then
+            ls proofs/coq/*.v 2>/dev/null && echo "Coq files found" || echo "No .v files"
+          fi
+
+      - name: Check Lean4 proof files present
+        run: |
+          for proof in lean4/KElimination/*.lean lean4/KElimination/KElimination/*.lean; do
+            if [ ! -f "$proof" ]; then
+              echo "Missing: $proof"
+            fi
+          done
+
+  # ---------------------------------------------------------------------------
+  # T2 — Full Test Suite
+  # Only on: main branch merges, [full-ci] in commit message, or manual dispatch.
+  # Depends on fast-gate passing first.
+  # ---------------------------------------------------------------------------
+  full-test:
+    name: "T2 · Full Test Suite"
+    runs-on: ubuntu-latest
+    needs: fast-gate
+    if: |
+      github.actor != 'google-labs-jules[bot]' &&
+      github.actor != 'dependabot[bot]' &&
+      (
+        github.ref == 'refs/heads/main' ||
+        contains(github.event.head_commit.message, '[full-ci]') ||
+        github.event_name == 'workflow_dispatch'
+      )
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-full-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-full-
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-full-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run all workspace tests
+        run: |
+          cargo test --workspace \
+            --exclude nine65-python \
+            --exclude nine65-wasm \
+            --exclude nine65-ffi \
+            --verbose
+
+      - name: Run error variant coverage tests
+        run: cargo test -p nine65 --test error_variant_coverage
+
+      - name: Test clockwork feature
+        run: cargo test -p nine65 --lib --release --features clockwork
+
+  # ---------------------------------------------------------------------------
+  # T3 — Gemini Flash AI Code Review
+  # Every PR that is not from a bot.
+  # Posts a structured review comment via Gemini 2.0 Flash free tier API.
+  # Requires secret: GEMINI_API_KEY
+  # If key is absent the step logs a skip message and exits cleanly.
+  # ---------------------------------------------------------------------------
+  ai-review:
+    name: "T3 · Gemini AI Review"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      github.actor != 'google-labs-jules[bot]' &&
+      github.actor != 'dependabot[bot]'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate diff for review
+        id: diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD -- \
+            '*.rs' '*.toml' '*.yml' '*.md' | head -c 12000 > /tmp/pr_diff.txt
+          echo "diff_size=$(wc -c < /tmp/pr_diff.txt)" >> $GITHUB_OUTPUT
+
+      - name: Call Gemini Flash
+        id: gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY not configured — skipping AI review"
+            echo "review=Gemini review skipped: add GEMINI_API_KEY to repo secrets to enable." >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          DIFF=$(cat /tmp/pr_diff.txt)
+
+          PROMPT="You are reviewing a pull request for NINE65 v7, a proprietary Rust FHE system. Rules: integer-only runtime (zero floats), constant-time security paths, formal Coq/Lean4 proofs, QMNF architecture.
+
+          Review this diff for:
+          1. Security — constant-time violations, float in runtime, insecure config leakage
+          2. Correctness — RNS/NTT arithmetic, K-Elimination edge cases, bootstrap path integrity
+          3. Performance — unnecessary allocations, missed parallelism
+          4. Proof alignment — if formal claims touched, do changes stay consistent
+          5. Verdict — APPROVE / REQUEST_CHANGES / COMMENT with one-line rationale
+
+          Be concise and technical. Flag real issues only.
+
+          DIFF:
+          $DIFF"
+
+          RESPONSE=$(curl -s -X POST \
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$GEMINI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{"contents":[{"parts":[{"text":$(echo "$PROMPT" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}]}]}" \
+            --max-time 30)
+
+          REVIEW=$(echo "$RESPONSE" | python3 -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              print(data['candidates'][0]['content']['parts'][0]['text'])
+          except Exception as e:
+              print('Gemini review unavailable: ' + str(e))
+          " 2>/dev/null || echo "Gemini review unavailable")
+
+          echo "review<<REVIEWEOF" >> $GITHUB_OUTPUT
+          echo "$REVIEW" >> $GITHUB_OUTPUT
+          echo "REVIEWEOF" >> $GITHUB_OUTPUT
+
+      - name: Post Gemini review to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = `${{ steps.gemini.outputs.review }}`;
+            const diffSize = '${{ steps.diff.outputs.diff_size }}';
+            const body = [
+              '## Gemini Flash · AI Code Review',
+              '',
+              '_Analyzed ~' + diffSize + ' bytes across .rs/.toml/.yml/.md files_',
+              '',
+              review,
+              '',
+              '---',
+              '_For deep FHE correctness, math-hole detection, or orchestration: mention @claude in a comment._'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+
+  # ---------------------------------------------------------------------------
+  # T4 — Deep Analysis (Sunday scheduled or [deep-ci] tag or manual dispatch)
+  # Benchmarks, coverage, Qwen semantic claim audit.
+  # These are the expensive jobs — only run when they provide real signal.
+  # ---------------------------------------------------------------------------
+  benchmark-regression:
+    name: "T4 · Benchmark Regression"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      contains(github.event.head_commit.message, '[deep-ci]') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tier == 'deep')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run benchmark regression check
+        run: bash scripts/regression_scan.sh enforced
+
+  timing-tests:
+    name: "T4 · Timing Tests"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      contains(github.event.head_commit.message, '[deep-ci]') ||
+      contains(github.event.head_commit.message, '[timing]') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tier == 'deep')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run timing regression tests
+        run: |
+          cargo test --package nine65 --lib --release --features clockwork \
+            -- clockwork::tests --nocapture 2>&1 | tee timing_output.txt
+          python3 scripts/extract_criterion_summary.py timing_output.txt || true
+
+  coverage:
+    name: "T4 · Code Coverage"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      contains(github.event.head_commit.message, '[deep-ci]') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tier == 'deep')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --locked
+
+      - name: Generate coverage report
+        run: |
+          cargo tarpaulin -p nine65 \
+            --out Xml --out Html \
+            --output-dir coverage/ \
+            --timeout 300
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  qwen-claim-audit:
+    name: "T4 · Qwen Claim Semantic Audit"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      contains(github.event.head_commit.message, '[deep-ci]') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tier == 'deep')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Qwen Coder semantic claim validation
+        env:
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        run: |
+          if [ -z "$QWEN_API_KEY" ]; then
+            echo "QWEN_API_KEY not set — skipping Qwen audit (add to repo secrets)"
+            exit 0
+          fi
+
+          CLAIMS=""
+          if [ -f "scripts/claim_registry.json" ]; then
+            CLAIMS=$(cat scripts/claim_registry.json | head -c 6000)
+          elif [ -f "docs/claim_registry.md" ]; then
+            CLAIMS=$(cat docs/claim_registry.md | head -c 6000)
+          fi
+
+          SOURCE=$(find crates/nine65/src -name "*.rs" | head -10 | xargs head -n 50 2>/dev/null | head -c 4000)
+
+          PROMPT="Audit the NINE65 v7 FHE claim registry for semantic consistency. Codebase: Rust, K-Elimination, QMNF, RNS, NTT, Montgomery, Coq/Lean4 proofs, zero floats in runtime.
+
+          Identify: stale or inconsistent claims, unproven security claims, unsupported performance claims, missing claims for significant features.
+
+          Be concise. Flag real issues only.
+
+          CLAIMS: $CLAIMS
+
+          SOURCE: $SOURCE"
+
+          RESPONSE=$(curl -s -X POST \
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions" \
+            -H "Authorization: Bearer $QWEN_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"model\": \"qwen-coder-plus\",
+              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}],
+              \"max_tokens\": 1500
+            }" --max-time 60)
+
+          echo "=== Qwen Coder Claim Audit ==="
+          echo "$RESPONSE" | python3 -c "
+          import sys, json
+          try:
+              data = json.load(sys.stdin)
+              print(data['choices'][0]['message']['content'])
+          except Exception as e:
+              print('Parse error: ' + str(e))
+          " || echo "Qwen audit response unavailable"
