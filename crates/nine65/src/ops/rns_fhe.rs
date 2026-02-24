@@ -638,8 +638,9 @@ impl DualRNSCiphertext {
     )]
     #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 
@@ -660,8 +661,8 @@ impl DualRNSCiphertext {
                 ),
             });
         }
-        let (ct, _): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| Nine65Error::DeserializationError {
+        let (ct, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
+            .map_err(|e| Nine65Error::DeserializationError {
                 message: format!("Bincode parse error: {}", e),
             })?;
         ct.validate()?;
@@ -697,9 +698,10 @@ impl DualRNSKeySet {
                 ),
             });
         }
-        let keys: Self = serde_json::from_str(s).map_err(|e| Nine65Error::DeserializationError {
-            message: format!("JSON parse error: {}", e),
-        })?;
+        let keys: Self =
+            serde_json::from_str(s).map_err(|e| Nine65Error::DeserializationError {
+                message: format!("JSON parse error: {}", e),
+            })?;
         keys.validate()?;
         Ok(keys)
     }
@@ -717,8 +719,9 @@ impl DualRNSKeySet {
     )]
     #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 
@@ -733,9 +736,11 @@ impl DualRNSKeySet {
                 ),
             });
         }
-        let (keys, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Nine65Error::DeserializationError {
-                message: format!("Bincode parse error: {}", e),
+        let (keys, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::DeserializationError {
+                    message: format!("Bincode parse error: {}", e),
+                }
             })?;
         keys.validate()?;
         Ok(keys)
@@ -1029,9 +1034,9 @@ impl RNSFHEContext {
             (MulRoute::BajardSingle, AutoKeys::Single(k)) => {
                 Ok(AutoCiphertext::Single(self.encrypt(m, &k.public_key, rng)))
             }
-            (MulRoute::KElimDual, AutoKeys::Dual(k)) => {
-                Ok(AutoCiphertext::Dual(self.encrypt_dual(m, &k.public_key, rng)))
-            }
+            (MulRoute::KElimDual, AutoKeys::Dual(k)) => Ok(AutoCiphertext::Dual(
+                self.encrypt_dual(m, &k.public_key, rng),
+            )),
             _ => Err(Nine65Error::RegimeMismatch {
                 operation: "encrypt_auto",
                 expected: "matching key regime",
@@ -1059,7 +1064,11 @@ impl RNSFHEContext {
                 AutoCiphertext::Dual(x),
                 AutoCiphertext::Dual(y),
                 AutoKeys::Dual(k),
-            ) => Ok(AutoCiphertext::Dual(self.mul_dual_symmetric(x, y, &k.secret_key))),
+            ) => Ok(AutoCiphertext::Dual(self.mul_dual_symmetric(
+                x,
+                y,
+                &k.secret_key,
+            ))),
             _ => Err(Nine65Error::RegimeMismatch {
                 operation: "mul_auto",
                 expected: "matching ciphertext/key regime",
@@ -1075,11 +1084,7 @@ impl RNSFHEContext {
 
     /// Checked auto-decryption: returns `Err` if noise budget
     /// is exhausted or regime mismatches, instead of silently returning garbage.
-    pub fn try_decrypt_auto(
-        &self,
-        ct: &AutoCiphertext,
-        keys: &AutoKeys,
-    ) -> Nine65Result<u64> {
+    pub fn try_decrypt_auto(&self, ct: &AutoCiphertext, keys: &AutoKeys) -> Nine65Result<u64> {
         let (decoded, margin) = self.decrypt_auto_with_diagnostics(ct, keys)?;
         if margin < 0 {
             Err(Nine65Error::NoiseBudgetExhausted {
@@ -1118,7 +1123,11 @@ impl RNSFHEContext {
     }
 
     #[cfg(not(any(test, debug_assertions)))]
-    fn decrypt_auto_with_diagnostics(&self, ct: &AutoCiphertext, keys: &AutoKeys) -> Nine65Result<(u64, i128)> {
+    fn decrypt_auto_with_diagnostics(
+        &self,
+        ct: &AutoCiphertext,
+        keys: &AutoKeys,
+    ) -> Nine65Result<(u64, i128)> {
         match (self.mul_route(), ct, keys) {
             (MulRoute::BajardSingle, AutoCiphertext::Single(c), AutoKeys::Single(k)) => {
                 Ok((self.decrypt(c, &k.secret_key), 0))
@@ -1141,14 +1150,8 @@ impl RNSFHEContext {
                 Ok(AutoCiphertext::Single(self.add(x, y)))
             }
             (MulRoute::KElimDual, AutoCiphertext::Dual(x), AutoCiphertext::Dual(y)) => {
-                // For dual ciphertexts, add component-wise
-                let c0 = self.dual_poly_add(&x.c0, &y.c0);
-                let c1 = self.dual_poly_add(&x.c1, &y.c1);
-                Ok(AutoCiphertext::Dual(DualRNSCiphertext {
-                    c0,
-                    c1,
-                    level: x.level,
-                }))
+                // Align ciphertext levels before adding mixed-depth operands.
+                Ok(AutoCiphertext::Dual(self.add_dual(x, y)))
             }
             _ => Err(Nine65Error::RegimeMismatch {
                 operation: "add_auto",
@@ -2885,18 +2888,47 @@ impl RNSFHEContext {
     ///
     /// No noise growth from addition (aside from small accumulation).
     pub fn add_dual(&self, ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> DualRNSCiphertext {
+        let target_level = ct1.level.min(ct2.level);
+        let lhs = self
+            .mod_switch_ct_to_level(ct1, target_level)
+            .unwrap_or_else(|| ct1.clone());
+        let rhs = self
+            .mod_switch_ct_to_level(ct2, target_level)
+            .unwrap_or_else(|| ct2.clone());
+
         debug_assert_eq!(
-            ct1.level, ct2.level,
-            "add_dual: level mismatch ({} vs {}) — ciphertexts should be at the same level",
-            ct1.level, ct2.level
+            lhs.level, rhs.level,
+            "add_dual: failed to align ciphertext levels"
         );
-        let c0_new = self.dual_poly_add(&ct1.c0, &ct2.c0);
-        let c1_new = self.dual_poly_add(&ct1.c1, &ct2.c1);
+
+        let c0_new = self.dual_poly_add(&lhs.c0, &rhs.c0);
+        let c1_new = self.dual_poly_add(&lhs.c1, &rhs.c1);
         DualRNSCiphertext {
             c0: c0_new,
             c1: c1_new,
-            level: ct1.level.min(ct2.level),
+            level: lhs.level.min(rhs.level),
         }
+    }
+
+    /// Modulus-switch a ciphertext down to a target level.
+    ///
+    /// Returns `None` when the target is above the current level or when a
+    /// required modulus switch step cannot be completed.
+    pub fn mod_switch_ct_to_level(
+        &self,
+        ct: &DualRNSCiphertext,
+        target_level: usize,
+    ) -> Option<DualRNSCiphertext> {
+        if target_level > ct.level {
+            return None;
+        }
+
+        let mut current = ct.clone();
+        while current.level > target_level {
+            current = self.mod_switch_ct_down(&current)?;
+        }
+
+        Some(current)
     }
 
     /// Determine the main-prime level encoded in an evaluation key
@@ -3351,14 +3383,13 @@ impl RNSFHEContext {
         budget.consume(NoiseOpType::Rescale, rescale_gain)?; // This adds back budget
 
         // Perform the actual operation
-        self.mul_dual_public(ct1, ct2, evk).map_err(|_| {
-            crate::noise::budget::NoiseExhausted {
+        self.mul_dual_public(ct1, ct2, evk)
+            .map_err(|_| crate::noise::budget::NoiseExhausted {
                 required_mb: 0,
                 available_mb: 0,
                 operation_count: 0,
                 last_op: crate::noise::budget::NoiseOpType::MulCt,
-            }
-        })
+            })
     }
 
     /// Tracked deep multiplication: includes modulus switch
@@ -3415,11 +3446,7 @@ impl RNSFHEContext {
     // pipeline with exact K-Elimination rescaling.
 
     /// Subtract two dual-track ciphertexts: ct1 - ct2
-    pub fn sub_dual(
-        &self,
-        ct1: &DualRNSCiphertext,
-        ct2: &DualRNSCiphertext,
-    ) -> DualRNSCiphertext {
+    pub fn sub_dual(&self, ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> DualRNSCiphertext {
         debug_assert_eq!(
             ct1.level, ct2.level,
             "sub_dual: level mismatch ({} vs {})",
@@ -3442,11 +3469,7 @@ impl RNSFHEContext {
     ///
     /// Encodes the scalar as Δ·m in dual-RNS form (same encoding as encrypt_dual)
     /// and adds it to c0. c1 is unchanged.
-    pub fn add_plain_dual(
-        &self,
-        ct: &DualRNSCiphertext,
-        scalar: u64,
-    ) -> DualRNSCiphertext {
+    pub fn add_plain_dual(&self, ct: &DualRNSCiphertext, scalar: u64) -> DualRNSCiphertext {
         assert!(scalar < self.t, "scalar must be < t");
         let encoded = self.encode_scalar_as_delta_dual(scalar);
         DualRNSCiphertext {
@@ -3460,11 +3483,7 @@ impl RNSFHEContext {
     ///
     /// Multiplies both c0 and c1 by the raw scalar value (NOT delta-encoded).
     /// This is the standard BFV scalar multiplication: Enc(m) * k = Enc(m·k).
-    pub fn mul_plain_dual(
-        &self,
-        ct: &DualRNSCiphertext,
-        scalar: u64,
-    ) -> DualRNSCiphertext {
+    pub fn mul_plain_dual(&self, ct: &DualRNSCiphertext, scalar: u64) -> DualRNSCiphertext {
         assert!(scalar < self.t, "scalar must be < t");
         let scalar_poly = self.scalar_to_constant_dual_poly(scalar);
         DualRNSCiphertext {
@@ -4613,7 +4632,9 @@ mod tests {
         let ct3 = ctx.encrypt_dual(3, &full_keys.public_key, &mut rng);
 
         // Multiply using PUBLIC mode (eval key, NOT secret key)
-        let ct6 = ctx.mul_dual_public(&ct2, &ct3, &full_keys.eval_key).unwrap();
+        let ct6 = ctx
+            .mul_dual_public(&ct2, &ct3, &full_keys.eval_key)
+            .unwrap();
 
         // Decrypt (only key holder can do this)
         let dec6 = ctx.decrypt_dual(&ct6, &full_keys.secret_key);
@@ -4623,7 +4644,9 @@ mod tests {
         // Test another multiplication (fresh ciphertexts)
         let ct4 = ctx.encrypt_dual(4, &full_keys.public_key, &mut rng);
         let ct5 = ctx.encrypt_dual(5, &full_keys.public_key, &mut rng);
-        let ct20 = ctx.mul_dual_public(&ct4, &ct5, &full_keys.eval_key).unwrap();
+        let ct20 = ctx
+            .mul_dual_public(&ct4, &ct5, &full_keys.eval_key)
+            .unwrap();
         let dec20 = ctx.decrypt_dual(&ct20, &full_keys.secret_key);
         println!("  4 * 5 = {} (expected 20)", dec20);
         assert_eq!(dec20, 20, "Public mode: 4*5 should be 20");
@@ -4631,7 +4654,9 @@ mod tests {
         // Test 7 * 11 (another single multiplication)
         let ct7 = ctx.encrypt_dual(7, &full_keys.public_key, &mut rng);
         let ct11 = ctx.encrypt_dual(11, &full_keys.public_key, &mut rng);
-        let ct77 = ctx.mul_dual_public(&ct7, &ct11, &full_keys.eval_key).unwrap();
+        let ct77 = ctx
+            .mul_dual_public(&ct7, &ct11, &full_keys.eval_key)
+            .unwrap();
         let dec77 = ctx.decrypt_dual(&ct77, &full_keys.secret_key);
         println!("  7 * 11 = {} (expected 77)", dec77);
         assert_eq!(dec77, 77, "Public mode: 7*11 should be 77");
@@ -4715,7 +4740,9 @@ mod tests {
         // Multiply
         #[allow(deprecated)]
         let ct6_sym = ctx.mul_dual_symmetric(&ct2_sym, &ct3_sym, &sym_keys.secret_key);
-        let ct6_pub = ctx.mul_dual_public(&ct2_pub, &ct3_pub, &pub_keys.eval_key).unwrap();
+        let ct6_pub = ctx
+            .mul_dual_public(&ct2_pub, &ct3_pub, &pub_keys.eval_key)
+            .unwrap();
 
         // Check decryption
         let dec_sym = ctx.decrypt_dual(&ct6_sym, &sym_keys.secret_key);
@@ -4773,12 +4800,16 @@ mod tests {
 
         #[allow(deprecated)]
         let ct20_sym = ctx.mul_dual_symmetric(&ct4_sym, &ct5_sym, &sym_keys.secret_key);
-        let ct20_pub = ctx.mul_dual_public(&ct4_pub, &ct5_pub, &pub_keys.eval_key).unwrap();
+        let ct20_pub = ctx
+            .mul_dual_public(&ct4_pub, &ct5_pub, &pub_keys.eval_key)
+            .unwrap();
 
         // Depth-2: 6 * 20 = 120
         #[allow(deprecated)]
         let ct120_sym = ctx.mul_dual_symmetric(&ct6_sym, &ct20_sym, &sym_keys.secret_key);
-        let ct120_pub = ctx.mul_dual_public(&ct6_pub, &ct20_pub, &pub_keys.eval_key).unwrap();
+        let ct120_pub = ctx
+            .mul_dual_public(&ct6_pub, &ct20_pub, &pub_keys.eval_key)
+            .unwrap();
 
         let dec120_sym = ctx.decrypt_dual(&ct120_sym, &sym_keys.secret_key);
         let dec120_pub = ctx.decrypt_dual(&ct120_pub, &pub_keys.secret_key);
@@ -4866,7 +4897,9 @@ mod tests {
         let ct3 = ctx.encrypt_dual(3, &full_keys.public_key, &mut rng);
 
         // Depth-1: 2*3 = 6 (using mul_dual_public_deep)
-        let ct6_deep = ctx.mul_dual_public_deep(&ct2, &ct3, &full_keys.eval_key).unwrap();
+        let ct6_deep = ctx
+            .mul_dual_public_deep(&ct2, &ct3, &full_keys.eval_key)
+            .unwrap();
         let dec6_deep = ctx.decrypt_dual(&ct6_deep, &full_keys.secret_key);
         println!("Depth-1 with mod_switch: 2*3 = {} (expected 6)", dec6_deep);
         println!(
@@ -4877,7 +4910,9 @@ mod tests {
         // Fresh ct for depth-2
         let ct4 = ctx.encrypt_dual(4, &full_keys.public_key, &mut rng);
         let ct5 = ctx.encrypt_dual(5, &full_keys.public_key, &mut rng);
-        let ct20_deep = ctx.mul_dual_public_deep(&ct4, &ct5, &full_keys.eval_key).unwrap();
+        let ct20_deep = ctx
+            .mul_dual_public_deep(&ct4, &ct5, &full_keys.eval_key)
+            .unwrap();
         let dec20_deep = ctx.decrypt_dual(&ct20_deep, &full_keys.secret_key);
         println!(
             "Depth-1 with mod_switch: 4*5 = {} (expected 20)",
@@ -4887,14 +4922,22 @@ mod tests {
         // Depth-2: 6 * 20 = 120
         // Note: ct6_deep and ct20_deep now have fewer primes due to mod_switch
         // Use standard mul_dual_public (no further mod switch) for the second level
-        let ct120_result = ctx.mul_dual_public(&ct6_deep, &ct20_deep, &full_keys.eval_key).unwrap();
+        let ct120_result = ctx
+            .mul_dual_public(&ct6_deep, &ct20_deep, &full_keys.eval_key)
+            .unwrap();
         let dec120 = ctx.decrypt_dual(&ct120_result, &full_keys.secret_key);
         println!("Depth-2 result: 6*20 = {} (expected 120)", dec120);
 
         // Compare with standard public mode (no mod switch)
-        let ct6_std = ctx.mul_dual_public(&ct2, &ct3, &full_keys.eval_key).unwrap();
-        let ct20_std = ctx.mul_dual_public(&ct4, &ct5, &full_keys.eval_key).unwrap();
-        let ct120_std = ctx.mul_dual_public(&ct6_std, &ct20_std, &full_keys.eval_key).unwrap();
+        let ct6_std = ctx
+            .mul_dual_public(&ct2, &ct3, &full_keys.eval_key)
+            .unwrap();
+        let ct20_std = ctx
+            .mul_dual_public(&ct4, &ct5, &full_keys.eval_key)
+            .unwrap();
+        let ct120_std = ctx
+            .mul_dual_public(&ct6_std, &ct20_std, &full_keys.eval_key)
+            .unwrap();
         let dec120_std = ctx.decrypt_dual(&ct120_std, &full_keys.secret_key);
         println!(
             "Standard public depth-2: 6*20 = {} (expected 120)",
@@ -5056,7 +5099,9 @@ mod tests {
         println!("\n--- Depth-2: 6*20 ---");
         let ct4 = ctx.encrypt_dual(4, &full_keys.public_key, &mut rng);
         let ct5 = ctx.encrypt_dual(5, &full_keys.public_key, &mut rng);
-        let ct20 = ctx.mul_dual_public(&ct4, &ct5, &full_keys.eval_key).unwrap();
+        let ct20 = ctx
+            .mul_dual_public(&ct4, &ct5, &full_keys.eval_key)
+            .unwrap();
         let dec20 = ctx.decrypt_dual(&ct20, &full_keys.secret_key);
         println!("ct20 decrypt = {} (expected 20)", dec20);
 
@@ -5187,7 +5232,9 @@ mod tests {
         println!("\nFresh ct2 has {} main primes", ct2.c0.main.len());
 
         // Use mul_dual_public_deep which applies mod_switch after multiplication
-        let ct6_deep = ctx.mul_dual_public_deep(&ct2, &ct3, &full_keys.eval_key).unwrap();
+        let ct6_deep = ctx
+            .mul_dual_public_deep(&ct2, &ct3, &full_keys.eval_key)
+            .unwrap();
         println!(
             "After mul_dual_public_deep: ct6 has {} main primes",
             ct6_deep.c0.main.len()
@@ -5197,7 +5244,9 @@ mod tests {
         println!("Decrypted: 2*3 = {} (expected 6)", dec6);
 
         // Also test standard multiplication for comparison
-        let ct6_std = ctx.mul_dual_public(&ct2, &ct3, &full_keys.eval_key).unwrap();
+        let ct6_std = ctx
+            .mul_dual_public(&ct2, &ct3, &full_keys.eval_key)
+            .unwrap();
         let dec6_std = ctx.decrypt_dual(&ct6_std, &full_keys.secret_key);
         println!("Standard mul decrypt: 2*3 = {} (expected 6)", dec6_std);
 
@@ -5208,7 +5257,9 @@ mod tests {
         // Now test depth-2 with mod switch enabled
         let ct4 = ctx.encrypt_dual(4, &full_keys.public_key, &mut rng);
         let ct5 = ctx.encrypt_dual(5, &full_keys.public_key, &mut rng);
-        let ct20_deep = ctx.mul_dual_public_deep(&ct4, &ct5, &full_keys.eval_key).unwrap();
+        let ct20_deep = ctx
+            .mul_dual_public_deep(&ct4, &ct5, &full_keys.eval_key)
+            .unwrap();
         println!(
             "\nDepth-1: ct20 has {} main primes",
             ct20_deep.c0.main.len()
@@ -5216,17 +5267,19 @@ mod tests {
 
         // Depth-2: 6 * 20 = 120
         // Use standard mul since we may not have enough primes to switch again
-        let ct120 = ctx.mul_dual_public(&ct6_deep, &ct20_deep, &full_keys.eval_key).unwrap();
+        let ct120 = ctx
+            .mul_dual_public(&ct6_deep, &ct20_deep, &full_keys.eval_key)
+            .unwrap();
         let dec120 = ctx.decrypt_dual(&ct120, &full_keys.secret_key);
         println!("Depth-2 with mod_switch: 6*20 = {} (expected 120)", dec120);
 
         // Compare with standard path (no mod switch)
-        let ct20_std_inner = ctx.mul_dual_public(&ct4, &ct5, &full_keys.eval_key).unwrap();
-        let ct120_std = ctx.mul_dual_public(
-            &ct6_std,
-            &ct20_std_inner,
-            &full_keys.eval_key,
-        ).unwrap();
+        let ct20_std_inner = ctx
+            .mul_dual_public(&ct4, &ct5, &full_keys.eval_key)
+            .unwrap();
+        let ct120_std = ctx
+            .mul_dual_public(&ct6_std, &ct20_std_inner, &full_keys.eval_key)
+            .unwrap();
         let dec120_std = ctx.decrypt_dual(&ct120_std, &full_keys.secret_key);
         println!("Standard depth-2: 6*20 = {} (expected 120)", dec120_std);
 
@@ -7485,6 +7538,33 @@ mod tests {
     }
 
     #[test]
+    fn test_add_dual_aligns_mixed_levels() {
+        let config = crate::params::SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::new_coeff_domain(&config);
+        let mut rng = ShadowHarvester::with_seed(77);
+        let dual_keys = ctx.generate_keys_dual(&mut rng);
+
+        let ct_high = ctx.encrypt_dual(6, &dual_keys.public_key, &mut rng);
+        let ct_low = ctx
+            .mod_switch_ct_down(&ct_high)
+            .expect("able to mod-switch fresh ciphertext down one level");
+
+        assert_ne!(ct_high.level, ct_low.level, "test requires level mismatch");
+
+        let ct_sum = ctx.add_dual(&ct_high, &ct_low);
+        assert_eq!(
+            ct_sum.level, ct_low.level,
+            "addition should align to lower level"
+        );
+
+        let dec = ctx.decrypt_dual(&ct_sum, &dual_keys.secret_key);
+        assert_eq!(
+            dec, 12,
+            "6+6 should decrypt correctly after level alignment"
+        );
+    }
+
+    #[test]
     fn test_regime_mismatch_encrypt_single_keys_dual_route() {
         // This tests that mixing regimes returns RegimeMismatch error
         let config = FHEConfig::light_rns_exact();
@@ -9077,7 +9157,9 @@ mod tests {
 
             // First level: 2*3=6 (PUBLIC mode)
             println!("\n--- Depth 1: 2 * 3 = 6 (PUBLIC) ---");
-            let ct_6 = ctx.mul_dual_public(&ct_2, &ct_3, &full_keys.eval_key).unwrap();
+            let ct_6 = ctx
+                .mul_dual_public(&ct_2, &ct_3, &full_keys.eval_key)
+                .unwrap();
             let dec_6 = ctx.decrypt_dual(&ct_6, &full_keys.secret_key);
             println!("  Result: {} (expected 6)", dec_6);
 
@@ -9093,7 +9175,9 @@ mod tests {
             }
 
             // First level: 4*5=20 (PUBLIC mode)
-            let ct_20 = ctx.mul_dual_public(&ct_4, &ct_5, &full_keys.eval_key).unwrap();
+            let ct_20 = ctx
+                .mul_dual_public(&ct_4, &ct_5, &full_keys.eval_key)
+                .unwrap();
             let dec_20 = ctx.decrypt_dual(&ct_20, &full_keys.secret_key);
             println!("  4 * 5 = {} (expected 20)", dec_20);
 
@@ -9986,7 +10070,9 @@ mod tests {
         let ct_base = ctx.encrypt_dual(base, &keys.public_key, &mut rng);
 
         // Depth-1: 3^2 = 9
-        let ct_depth1 = ctx.mul_dual_public(&ct_base, &ct_base, &keys.eval_key).unwrap();
+        let ct_depth1 = ctx
+            .mul_dual_public(&ct_base, &ct_base, &keys.eval_key)
+            .unwrap();
         let expected_depth1 = (base * base) % config.t;
         let dec_depth1 = ctx.decrypt_dual(&ct_depth1, &keys.secret_key);
         assert_eq!(
@@ -9997,7 +10083,9 @@ mod tests {
 
         // Depth-2: 9^2 = 81 — this is the critical test
         // Without auto mod-switch in mul_dual_public, noise overwhelms at depth-2
-        let ct_depth2 = ctx.mul_dual_public(&ct_depth1, &ct_depth1, &keys.eval_key).unwrap();
+        let ct_depth2 = ctx
+            .mul_dual_public(&ct_depth1, &ct_depth1, &keys.eval_key)
+            .unwrap();
         let expected_depth2 = (expected_depth1 * expected_depth1) % config.t;
         let dec_depth2 = ctx.decrypt_dual(&ct_depth2, &keys.secret_key);
         assert_eq!(
@@ -10175,7 +10263,9 @@ mod tests {
         let ct_b = ctx.encrypt_dual(7, &full_keys.public_key, &mut rng);
 
         // First multiplication should succeed
-        let ct_mul1 = ctx.mul_dual_public(&ct_a, &ct_b, &full_keys.eval_key).unwrap();
+        let ct_mul1 = ctx
+            .mul_dual_public(&ct_a, &ct_b, &full_keys.eval_key)
+            .unwrap();
         let result1 = ctx.try_decrypt_dual(&ct_mul1, &full_keys.secret_key);
         assert!(
             result1.is_ok(),
@@ -10194,7 +10284,9 @@ mod tests {
         let ct_two = ctx.encrypt_dual(2, &full_keys.public_key, &mut rng);
         let mut found_error = false;
         for depth in 2..=20 {
-            ct = ctx.mul_dual_public(&ct, &ct_two, &full_keys.eval_key).unwrap();
+            ct = ctx
+                .mul_dual_public(&ct, &ct_two, &full_keys.eval_key)
+                .unwrap();
             let result = ctx.try_decrypt_dual(&ct, &full_keys.secret_key);
             if result.is_err() {
                 println!("Noise exhaustion detected at depth {} as expected", depth);
@@ -10331,7 +10423,13 @@ mod tests {
         let ct_neg = ctx.negate_dual(&ct);
         let result = ctx.decrypt_dual(&ct_neg, &keys.secret_key);
         // -10 mod 65537 = 65527
-        assert_eq!(result, ctx.t - 10, "negate(10) should be t-10={}, got {}", ctx.t - 10, result);
+        assert_eq!(
+            result,
+            ctx.t - 10,
+            "negate(10) should be t-10={}, got {}",
+            ctx.t - 10,
+            result
+        );
     }
 
     #[test]
@@ -10349,7 +10447,13 @@ mod tests {
         let ct = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
         let ct_neg = ctx.negate_dual(&ct);
         let result = ctx.decrypt_dual(&ct_neg, &keys.secret_key);
-        assert_eq!(result, ctx.t - 1, "negate(1) should be t-1={}, got {}", ctx.t - 1, result);
+        assert_eq!(
+            result,
+            ctx.t - 1,
+            "negate(1) should be t-1={}, got {}",
+            ctx.t - 1,
+            result
+        );
     }
 
     #[test]
@@ -10359,7 +10463,11 @@ mod tests {
         let ct_neg = ctx.negate_dual(&ct);
         let ct_neg_neg = ctx.negate_dual(&ct_neg);
         let result = ctx.decrypt_dual(&ct_neg_neg, &keys.secret_key);
-        assert_eq!(result, 42, "double negate should be identity, got {}", result);
+        assert_eq!(
+            result, 42,
+            "double negate should be identity, got {}",
+            result
+        );
     }
 
     #[test]
@@ -10402,7 +10510,13 @@ mod tests {
         let ct_b = ctx.encrypt_dual(10, &keys.public_key, &mut rng);
         let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
         let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
-        assert_eq!(result, ctx.t - 7, "3 - 10 should be t-7={}, got {}", ctx.t - 7, result);
+        assert_eq!(
+            result,
+            ctx.t - 7,
+            "3 - 10 should be t-7={}, got {}",
+            ctx.t - 7,
+            result
+        );
     }
 
     #[test]
@@ -10412,7 +10526,13 @@ mod tests {
         let ct_b = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
         let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
         let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
-        assert_eq!(result, ctx.t - 5, "0 - 5 should be t-5={}, got {}", ctx.t - 5, result);
+        assert_eq!(
+            result,
+            ctx.t - 5,
+            "0 - 5 should be t-5={}, got {}",
+            ctx.t - 5,
+            result
+        );
     }
 
     #[test]
@@ -10430,7 +10550,11 @@ mod tests {
             let ct_b = ctx.encrypt_dual(b, &keys.public_key, &mut rng);
             let ct_sub = ctx.sub_dual(&ct_a, &ct_b);
             let result = ctx.decrypt_dual(&ct_sub, &keys.secret_key);
-            assert_eq!(result, expected, "{} - {} should be {}, got {}", a, b, expected, result);
+            assert_eq!(
+                result, expected,
+                "{} - {} should be {}, got {}",
+                a, b, expected, result
+            );
         }
     }
 
@@ -10495,7 +10619,11 @@ mod tests {
         let ct_ct = ctx.add_dual(&ct, &ct_b);
         let r_ct = ctx.decrypt_dual(&ct_ct, &keys.secret_key);
 
-        assert_eq!(r_plain, r_ct, "add_plain and add_dual should give same result: plain={} ct={}", r_plain, r_ct);
+        assert_eq!(
+            r_plain, r_ct,
+            "add_plain and add_dual should give same result: plain={} ct={}",
+            r_plain, r_ct
+        );
     }
 
     // --- mul_plain_dual tests ---
@@ -10535,25 +10663,27 @@ mod tests {
         let ct_mul = ctx.mul_plain_dual(&ct, 100);
         let result = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
         let expected = (1000u64 * 100) % ctx.t;
-        assert_eq!(result, expected, "1000 * 100 mod t should be {}, got {}", expected, result);
+        assert_eq!(
+            result, expected,
+            "1000 * 100 mod t should be {}, got {}",
+            expected, result
+        );
     }
 
     #[test]
     fn test_mul_plain_dual_small_values() {
         let (ctx, keys, mut rng) = service_test_setup();
-        let test_cases: Vec<(u64, u64)> = vec![
-            (1, 1),
-            (2, 3),
-            (11, 13),
-            (100, 200),
-            (255, 256),
-        ];
+        let test_cases: Vec<(u64, u64)> = vec![(1, 1), (2, 3), (11, 13), (100, 200), (255, 256)];
         for (m, k) in test_cases {
             let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
             let ct_mul = ctx.mul_plain_dual(&ct, k);
             let result = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
             let expected = (m * k) % ctx.t;
-            assert_eq!(result, expected, "{} * {} should be {}, got {}", m, k, expected, result);
+            assert_eq!(
+                result, expected,
+                "{} * {} should be {}, got {}",
+                m, k, expected, result
+            );
         }
     }
 
@@ -10653,7 +10783,10 @@ mod tests {
         // Corrupted bytes should fail deserialization
         let garbage = vec![0u8, 1, 2, 3, 4, 5, 6, 7, 8, 9];
         let result = DualRNSCiphertext::from_bytes_validated(&garbage);
-        assert!(result.is_err(), "corrupted data should fail deserialization");
+        assert!(
+            result.is_err(),
+            "corrupted data should fail deserialization"
+        );
     }
 
     #[cfg(feature = "serde")]

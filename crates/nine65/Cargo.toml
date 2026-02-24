@@ -6,7 +6,7 @@ edition.workspace = true
 authors.workspace = true
 
 [features]
-default = ["ntt_fft", "parallel"]
+default = ["ntt_fft", "parallel", "exact_transcendentals_backend"]
 
 # The default feature set no longer includes "accelerated". Users who wish
 # to enable acceleration via proprietary crates (mana/unhal) should explicitly
