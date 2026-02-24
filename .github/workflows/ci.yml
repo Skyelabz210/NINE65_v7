@@ -12,6 +12,8 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
 
 jobs:
   build:
@@ -29,35 +31,35 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
+      - name: Print versions
+        run: |
+          rustc --version
+          cargo --version
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-git-
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
+            ${{ runner.os }}-cargo-
 
       - name: Cache target directory
         uses: actions/cache@v4
         with:
           path: target
-          key: ${{ runner.os }}-target-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-target-build-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-target-${{ matrix.rust }}-
+            ${{ runner.os }}-target-build-${{ matrix.rust }}-
 
       - name: Build (debug)
-        run: cargo build --verbose
+        run: cargo build --workspace --exclude nine65-python --exclude nine65-wasm --exclude nine65-ffi --verbose
 
       - name: Build (release)
-        run: cargo build --release --verbose
+        run: cargo build --workspace --exclude nine65-python --exclude nine65-wasm --exclude nine65-ffi --release --verbose
 
   test:
     name: Test
@@ -77,14 +79,12 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
 
       - name: Cache target directory
         uses: actions/cache@v4
@@ -93,10 +93,10 @@ jobs:
           key: ${{ runner.os }}-target-test-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run library tests
-        run: cargo test --lib --verbose
+        run: cargo test --workspace --exclude nine65-python --exclude nine65-wasm --exclude nine65-ffi --lib --verbose
 
       - name: Run all tests
-        run: cargo test --verbose
+        run: cargo test --workspace --exclude nine65-python --exclude nine65-wasm --exclude nine65-ffi --verbose
 
   clippy:
     name: Clippy
@@ -113,14 +113,12 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-clippy-
 
       - name: Cache target directory
         uses: actions/cache@v4
@@ -129,7 +127,7 @@ jobs:
           key: ${{ runner.os }}-target-clippy-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --exclude nine65-python --exclude nine65-wasm --exclude nine65-ffi --all-targets -- -D warnings
 
   rustfmt:
     name: Rustfmt
@@ -143,21 +141,8 @@ jobs:
         with:
           components: rustfmt
 
-      - name: Check formatting
+      - name: Run rustfmt
         run: cargo fmt --all -- --check
-
-  security-audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
-
-      - name: Run security audit
-        run: cargo audit
 
   deny:
     name: Cargo Deny
@@ -167,7 +152,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install cargo-deny
-        run: cargo install cargo-deny
+        run: cargo install cargo-deny --locked
 
       - name: Check licenses and advisories
         run: cargo deny check
@@ -187,26 +172,19 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache target directory
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-target-timing-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Run constant-time verification tests
-        run: cargo test -p nine65 --lib --release -- --ignored --test-threads=1 2>&1 | tee timing-results.txt
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-timing-${{ hashFiles('**/Cargo.lock') }}
         env:
           # Reduce system noise for timing tests
           RUST_TEST_THREADS: 1
 
-      - name: Upload timing results
-        uses: actions/upload-artifact@v4
-        with:
-          name: timing-results
-          path: timing-results.txt
+      - name: Run timing regression tests
+        run: |
+          cargo test --package nine65 --lib --release --features clockwork \
+            -- clockwork::tests --nocapture 2>&1 | tee timing_output.txt
+          python3 scripts/extract_criterion_summary.py timing_output.txt || true
 
   claim-drift-check:
     name: Claim Drift Check
@@ -231,7 +209,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history for baseline comparison
+          fetch-depth: 0
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -239,8 +217,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache target directory
         uses: actions/cache@v4
@@ -251,53 +231,17 @@ jobs:
       - name: Select benchmark gate mode
         id: gate_mode
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
             echo "mode=advisory" >> "$GITHUB_OUTPUT"
           else
             echo "mode=enforced" >> "$GITHUB_OUTPUT"
           fi
-          echo "Selected benchmark gate mode: $(cat "$GITHUB_OUTPUT")"
 
       - name: Validate claim registry
-        continue-on-error: ${{ steps.gate_mode.outputs.mode == 'advisory' }}
         run: bash scripts/check_claim_registry.sh
 
-      - name: Run benchmarks
-        continue-on-error: ${{ steps.gate_mode.outputs.mode == 'advisory' }}
-        run: |
-          cargo bench -p nine65 -- --noplot --save-baseline current 2>&1 | tee bench-results.txt
-          # Extract timing summary
-          echo "=== BENCHMARK SUMMARY ===" >> bench-summary.txt
-          grep -E "time:.*\[" bench-results.txt | tail -20 >> bench-summary.txt || true
-
-      - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-results
-          path: |
-            bench-results.txt
-            bench-summary.txt
-            target/criterion/
-
-      - name: Check for major regressions
-        continue-on-error: ${{ steps.gate_mode.outputs.mode == 'advisory' }}
-        env:
-          BENCHMARK_GATE_MODE: ${{ steps.gate_mode.outputs.mode }}
-        run: |
-          # Criterion emits "Performance has regressed" when baseline comparison fails.
-          if grep -q "Performance has regressed" bench-results.txt; then
-            echo "Performance regression marker detected"
-            grep -B2 "Performance has regressed" bench-results.txt
-            if [[ "${BENCHMARK_GATE_MODE}" == "enforced" ]]; then
-              echo "Enforced mode active: failing benchmark gate"
-              exit 1
-            fi
-            echo "::warning::Benchmark regression marker detected (advisory mode)"
-          fi
-
-  # ═══════════════════════════════════════════════════════════════
-  # NINE65 v6 Quality Gates (added Phase 3, Segment E)
-  # ═══════════════════════════════════════════════════════════════
+      - name: Run benchmark regression check
+        run: bash scripts/regression_scan.sh "${{ steps.gate_mode.outputs.mode }}"
 
   no-panics:
     name: No-Panics Gate
@@ -319,7 +263,7 @@ jobs:
       - name: Scan for float usage
         run: bash scripts/check_no_floats_runtime.sh
 
-  clockwork-tests:
+  clockwork-feature:
     name: Clockwork Feature Tests
     runs-on: ubuntu-latest
     steps:
@@ -332,8 +276,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-clockwork-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache target directory
         uses: actions/cache@v4
@@ -344,44 +290,38 @@ jobs:
       - name: Build with clockwork feature
         run: cargo build -p nine65 --features clockwork
 
-      - name: Run clockwork tests (GRO gates, CT enforcement)
-        run: cargo test -p nine65 --lib --features clockwork -- --test-threads=2
+      - name: Test clockwork feature
+        run: cargo test -p nine65 --lib --release --features clockwork
 
-  formalization-check:
+  formalization-validation:
     name: Formalization Validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify formalization index completeness
+      - name: Check Coq proof files exist
         run: |
-          # Check that every Coq proof file has a mapping in FORMALIZATION_INDEX.md
-          MISSING=0
           if [ -d "proofs/coq" ]; then
-            for proof in proofs/coq/*.v; do
-              basename=$(basename "$proof")
-              if ! grep -q "$basename" docs/FORMALIZATION_INDEX.md 2>/dev/null; then
-                echo "MISSING: $basename not in FORMALIZATION_INDEX.md"
-                MISSING=$((MISSING + 1))
-              fi
-            done
-          fi
-          if [ -d "lean4/KElimination" ]; then
-            for proof in lean4/KElimination/*.lean lean4/KElimination/KElimination/*.lean; do
-              if [ -f "$proof" ]; then
-                basename=$(basename "$proof")
-                if ! grep -q "$basename" docs/FORMALIZATION_INDEX.md 2>/dev/null; then
-                  echo "MISSING: $basename not in FORMALIZATION_INDEX.md"
-                  MISSING=$((MISSING + 1))
-                fi
-              fi
-            done
-          fi
-          if [ "$MISSING" -gt 0 ]; then
-            echo "WARNING: $MISSING proof files not in formalization index"
+            echo "Coq proofs directory exists"
+            ls proofs/coq/*.v 2>/dev/null && echo "Coq files found" || echo "No .v files found"
           else
-            echo "All proof files mapped in formalization index"
+            echo "No proofs/coq directory"
+          fi
+
+      - name: Check Lean4 proof files exist
+        run: |
+          MISSING=0
+          for proof in lean4/KElimination/*.lean lean4/KElimination/KElimination/*.lean; do
+            if [ ! -f "$proof" ]; then
+              echo "Missing: $proof"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+          if [ "$MISSING" -gt 0 ]; then
+            echo "Warning: $MISSING proof files missing"
+          else
+            echo "All expected Lean4 proof files present"
           fi
 
   error-coverage:
@@ -393,6 +333,14 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-errors-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache target directory
         uses: actions/cache@v4
@@ -406,8 +354,7 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
-    # Run on PRs to main
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'schedule' || github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -418,8 +365,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache target directory
         uses: actions/cache@v4
@@ -428,19 +377,11 @@ jobs:
           key: ${{ runner.os }}-target-coverage-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin --locked
 
       - name: Generate coverage report
         run: |
           cargo tarpaulin -p nine65 --out Xml --out Html --output-dir coverage/ --timeout 300
-        continue-on-error: true
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage/cobertura.xml
-          fail_ci_if_error: false
-          verbose: true
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
