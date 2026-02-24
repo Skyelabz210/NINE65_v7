@@ -1,109 +1,138 @@
-# NINE65 v7 "Bootstrap Complete" - Claude Code Guide
+# CLAUDE.md — Project Context for Claude Code
 
-## Build & Test
+## Project Overview
+**NINE65 v7 "Bootstrap Complete"** — A proprietary, unlimited-depth Fully Homomorphic Encryption (FHE) system built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic across all crates.
 
-```bash
-cargo build --release --workspace        # Build all 7 crates (nine65, clockwork-core, exact_transcendentals, nexgen_rational, fhe-service, mana, unhal)
-cargo test --workspace --release          # Run all tests
-cargo test -p nine65 --lib --release      # Core crate only
-cargo test -p nine65 security::tests -- --nocapture  # Security tests
-```
+Key achievement: First FHE system with fully verified bootstrap roundtrip across all three paths (circular, non-circular KSK, and auto-triggered), enabling truly unlimited-depth computation.
 
-## Workspace Crates
+---
 
-| Crate | Path | Purpose |
-|-------|------|---------|
-| `nine65` | `crates/nine65/` | Core FHE: arithmetic, ring, ops, security, entropy, keys, noise, params (621 tests) |
-| `clockwork-core` | `crates/clockwork-core/` | Formal-spec RNS arithmetic: bound tracking, GRO timing, key lifecycle, Garner, integrity (46 tests) |
-| `exact_transcendentals` | `crates/exact_transcendentals/` | Exact transcendental functions via integer CORDIC (143 tests) |
-| `nexgen_rational` | `crates/nexgen_rational/` | Exact i128 rational arithmetic, zero-dep (95 tests) |
-| `fhe-service` | `crates/fhe-service/` | FHE session management and serialization (22 tests) |
-| `mana` | `crates/mana/` | FHE stream accelerator, lane-parallel via Rayon (30 tests) |
-| `unhal` | `crates/unhal/` | Hardware abstraction layer (10 tests) |
+## Cloud Run Deployment
+- **Platform:** Google Cloud Run
+- **Service name:** nine65-v7
+- **Region:** us-south1 (Dallas)
+- **Project:** astro-resonance
+- **URL:** https://nine65-v7-517338038154.us-south1.run.app
+- **Deploy method:** Push to main branch triggers Cloud Build auto-build and deploy
+- **Container port:** 8080
 
-## Key Paths
+---
 
-- **Secure configs**: `crates/nine65/src/params/secure_configs.rs` - `SecureConfig::secure_128()`, `secure_192()`, `secure_256()`
-- **Test configs**: Require `--features allow_insecure` flag
-- **K-Elimination**: `crates/nine65/src/arithmetic/k_elimination.rs`
-- **GSO-FHE**: `crates/nine65/src/ops/gso_fhe.rs` - Depth operations with Clockwork Bootstrap
-- **Three-Lock Bootstrap**: `crates/nine65/src/bootstrap/` - Protected re-encryption with conjunction security (Shannon mask + RLWE outer + Clockwork)
-- **NTT**: `crates/nine65/src/arithmetic/ntt.rs`
-- **Security estimator**: `crates/nine65/src/params/security_estimator.rs`
-- **CT primitives**: `crates/nine65/src/security/secret_data.rs`
-- **Rational bridge**: `crates/nine65/src/arithmetic/rational_bridge.rs` (requires `exact_rational` feature)
-- **Exact noise**: `crates/nine65/src/noise/exact_noise.rs` (requires `exact_rational` feature)
-- **Exact delta**: `crates/nine65/src/params/exact_params.rs` (requires `exact_rational` feature)
-- **Bound tracking**: `crates/nine65/src/arithmetic/bounded_rns.rs` (requires `clockwork` feature)
-- **GRO timing gate**: `crates/nine65/src/security/gro_gate.rs` (requires `clockwork` feature)
-- **Key lifecycle**: `crates/nine65/src/security/key_manager.rs` (requires `clockwork` feature)
-- **Limb integrity**: `crates/nine65/src/security/integrity.rs` (requires `clockwork` feature)
-- **Shadow entropy monitor**: `crates/nine65/src/entropy/shadow_entropy_monitor.rs` (adaptive tests require `adaptive-threading` feature)
-- **Integer math utilities**: `crates/nine65/src/arithmetic/integer_math.rs` - log2, sqrt, format, trig LUT
-- **Garner reconstruction**: `crates/clockwork-core/src/garner.rs` (cross-validates K-Elimination)
-- **Coq proofs**: `proofs/coq/*.v` (14 proofs, requires Coq 8.18+)
-- **Lean4 proofs**: `lean4/KElimination/` (4 proofs, requires Lean 4.x + Mathlib)
+## Repository Structure
+NINE65_v7/
+├── crates/
+│   ├── nine65/              # Core FHE library (689+ tests)
+│   │   └── src/
+│   │       ├── arithmetic/  # RNS, K-Elimination, NTT, Montgomery
+│   │       ├── ops/
+│   │       │   ├── rns_fhe.rs        # BFV ops (encrypt, mul, decrypt)
+│   │       │   ├── bootstrap.rs      # Clockwork Bootstrap (3 paths)
+│   │       │   ├── auto_bootstrap.rs # AutoBootstrapEvaluator
+│   │       │   └── gso_fhe.rs        # GSO depth management
+│   │       ├── entropy/     # CRT Shadow + CSPRNG
+│   │       ├── security/    # CT primitives, GRO gates
+│   │       ├── keys/        # Key generation (BSK, KSK, eval keys)
+│   │       ├── noise/       # Noise budget tracking (millibits)
+│   │       └── params/      # Secure configs + security estimator
+│   ├── clockwork-core/      # Formal-spec RNS (Garner, GRO, bounds)
+│   ├── exact_transcendentals/ # Exact CORDIC transcendentals
+│   ├── nexgen_rational/     # Exact i128 rational arithmetic
+│   ├── fhe-service/         # Session management
+│   ├── mana/                # Lane-parallel accelerator (Rayon)
+│   └── unhal/               # Hardware abstraction layer
+├── proofs/coq/              # 14 machine-checked Coq proofs
+├── lean4/KElimination/      # 4 Lean4 formalizations
+├── scripts/                 # Quality gates
+└── docs/                    # Security proofs, benchmarks, compliance
+
+---
+
+## Build & Test Commands
+
+Build all crates (release):
+  cargo build --release --workspace --exclude nine65-python --exclude nine65-wasm
+
+Run all tests:
+  cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm
+
+Core FHE tests only:
+  cargo test -p nine65 --lib --release
+
+Bootstrap-specific tests:
+  cargo test -p nine65 --lib --release -- bootstrap
+  cargo test -p nine65 --test bootstrap_integration --release
+  cargo test -p nine65 --test bootstrap_parameter_exploration --release
+
+Security tests:
+  cargo test -p nine65 security::tests -- --nocapture
+
+Depth benchmarks:
+  cargo test -p nine65 --lib --release ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 -- --nocapture
+
+---
+
+## Bootstrap Paths
+- Circular: bootstrap() — boot_sk = lift(work_sk) — Verified exact
+- Non-Circular (KSK): bootstrap_with_ksk() — independent boot_sk, gadget key switch — Verified exact
+- Auto-Bootstrap: AutoBootstrapEvaluator::mul_auto() — auto trigger on noise threshold — Verified 10+ chained muls
+
+## Security Configs
+- SecureConfig::secure_128() — n=4096, log2(q)=89.08, attack log2(rop)=129
+- SecureConfig::secure_192() — n=8192, log2(q)=145.08, attack log2(rop)=159
+- SecureConfig::secure_256() — n=16384, log2(q)=203.38, attack log2(rop)=226
+
+---
+
+## Important Coding Rules
+- ZERO floats — no f32/f64 anywhere in the workspace, ever
+- Integer-only arithmetic throughout (K-Elimination, Montgomery, NTT)
+- Constant-time operations required for all security-sensitive code paths
+- Test configs (allow_insecure) are blocked in release builds — never use in production
+- Deterministic execution — bit-identical results across all platforms required
+- All bootstrap paths must produce exact plaintext recovery
 
 ## Feature Flags
+- ntt_fft (default): FFT-based NTT
+- parallel (default): Rayon parallelism
+- clockwork: GRO timing gates, bound tracking, key lifecycle, integrity
+- exact_rational: NexGen rational bridge (exact noise, BFV delta)
+- shadow-entropy: CRT shadow entropy harvester
+- adaptive-threading: Entropy-based adaptive threads (requires shadow-entropy)
+- accelerated: MANA + UNHAL integration
+- deterministic_rng: Reproducible testing
+- allow_insecure: Test-only configs (blocked in release)
 
-- `shadow-entropy` - Enable CRT shadow entropy harvester (needed for some benchmarks)
-- `allow_insecure` - Enable test/light configs (NOT for production)
-- `accelerated` - Link mana/unhal crates into nine65
-- `v2` - Enable ntt_fft + wassan noise bundle
-- `serde` - Serialization support (JSON + bincode)
-- `deterministic_rng` - Reproducible testing via rand_chacha
-- `exact_rational` - Enable NexGen rational bridge (exact noise tracking, BFV delta)
-- `clockwork` - Enable Clockwork-Core integration (bound tracking, GRO timing, key lifecycle, integrity)
-- `adaptive-threading` - Enable entropy-based adaptive thread count (depends on `shadow-entropy`)
-- `slow_tests` - Enable expensive tests
-- Defaults: `ntt_fft`, `parallel` (Rayon)
+---
 
-## Scripts
+## Workspace Crates
+- nine65: Core FHE — arithmetic, ring, ops, security, entropy, keys, noise, params (599+ tests)
+- clockwork-core: Formal-spec RNS — bound tracking, GRO timing, Garner, integrity (46 tests)
+- exact_transcendentals: Exact transcendental functions via integer CORDIC (143 tests)
+- nexgen_rational: Exact i128 rational arithmetic, zero-dep (95 tests)
+- fhe-service: FHE session management and serialization (22 tests)
+- mana: FHE stream accelerator, lane-parallel via Rayon (30 tests)
+- unhal: Hardware abstraction layer (10 tests)
 
-- `scripts/generate_performance_baseline.sh` - Generates dated performance baseline in `docs/`
-- `scripts/generate_security_baseline.sh` - Generates lattice estimator baseline in `docs/`
+---
 
-## Depth Benchmarks (ignored by default, run with --include-ignored)
+## Formal Verification
+14 Coq proofs: K-Elimination, GSO-FHE, CRT Shadow Entropy, Order Finding, MQ-ReLU, Integer Softmax, Montgomery, Mobius, Cyclotomic Phase, Pade Engine, Exact Coefficient, State Compression, Side-Channel Resistance, Encrypted Quantum.
+4 Lean4 proofs: K-Elimination, Core Definitions, Shadow Entropy, Modular Arithmetic.
 
-```bash
-cargo test -p nine65 --lib --release \
-  ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 \
-  -- --include-ignored --nocapture
-```
+Verify Coq (requires Coq 8.18+):
+  cd proofs/coq && coqc *.v
 
-## Fuzz Testing (requires nightly)
+Verify Lean4 (requires Lean 4.x + Mathlib):
+  cd lean4/KElimination && lake build
 
-```bash
-cargo +nightly fuzz run fuzz_encrypt_decrypt
-cargo +nightly fuzz run fuzz_k_elimination
-```
+---
 
-## Conventions
+## Performance Baselines (CPU only, no GPU required)
+secure_128: Encrypt 23.56ms | Add 0.83ms | Mul 152.13ms | Decrypt 11.06ms | Depth 50 in 6.29s
+secure_192: Encrypt 61.59ms | Add 2.10ms | Mul 459.02ms | Decrypt 29.00ms | Depth 50 in 10.10s
+RNS 4-lane: ADD 65.7ns (15.2M/s) | MUL 95.6ns (10.5M/s)
 
-- Integer-only: No floating-point anywhere (zero f32/f64 in all crates)
-- Workspace uses resolver = "2"
-- Release profile: LTO fat, codegen-units=1, panic=abort
-- Proprietary license
+---
 
-## Integer-Only Representations
-
-All values formerly expressed as floats now use exact integer representations:
-
-| Concept | Type | Scale | Example |
-|---------|------|-------|---------|
-| Noise budget (bits) | `u64` millibits | 1000 = 1 bit | `31500` = 31.5 bits |
-| Ratios (N/logQ, hit rate) | `u32` permille | 1000 = 1.0 | `28500` = 28.5 |
-| Error sigma | `u32` millibits | 1000 = 1.0 | `3200` = σ=3.2 |
-| Timing display | `Duration::as_nanos()/as_micros()` | native | integer division |
-| Trig (basin placement) | Q15 fixed-point LUT | `>> 15` | 256-entry cos/sin table |
-| Statistics (chi-squared) | `×1000` scaled | 1000 = 1.0 | `chi_sq_x1000 < 50_000` |
-
-**Key utilities** in `crates/nine65/src/arithmetic/integer_math.rs`:
-- `integer_log2(x)` / `integer_log2_u128(x)` - floor(log2) via `leading_zeros()`
-- `integer_sqrt(n)` - floor(sqrt) via Babylonian method
-- `format_millibits(mb)` - display `31500` as `"31.500"`
-- `format_ops(ops)` - display `1_234_567_890` as `"1G"`
-- `fixed_cos_sin(angle_idx)` - Q15 cos/sin lookup from 256-entry table
-- `COS_SIN_TABLE` / `GOLDEN_ANGLE_Q30` - precomputed constants
-
-**Exemption**: `compiler.rs` retains `#![allow(clippy::float_arithmetic)]` — it is a compile-time analysis tool, not runtime computation.
+## License
+Proprietary. See LICENSE. NINE65 v7 built on QMNF architecture by Acidlabz210.
