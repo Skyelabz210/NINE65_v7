@@ -230,7 +230,10 @@ fn test_error_batching_not_supported() {
 
 #[test]
 fn test_error_too_many_slot_values() {
-    let err = Nine65Error::TooManySlotValues { got: 2048, max: 1024 };
+    let err = Nine65Error::TooManySlotValues {
+        got: 2048,
+        max: 1024,
+    };
     assert_eq!(err.category(), "Batching");
     assert!(err.is_batching_error());
     assert!(err.to_string().contains("too many slot values"));
@@ -349,31 +352,87 @@ fn test_all_variants_have_display() {
         Nine65Error::RangeOverflow { x: 1, bound: 1 },
         Nine65Error::ModulusZero,
         Nine65Error::AnchorZero,
-        Nine65Error::InexactDivision { value: 1, divisor: 1 },
-        Nine65Error::NoiseOverflow { level: 1, threshold: 1 },
-        Nine65Error::DepthExceeded { depth: 1, max_depth: 1 },
-        Nine65Error::OrderNotFound { a: 1, n: 1, bound: 1 },
+        Nine65Error::InexactDivision {
+            value: 1,
+            divisor: 1,
+        },
+        Nine65Error::NoiseOverflow {
+            level: 1,
+            threshold: 1,
+        },
+        Nine65Error::DepthExceeded {
+            depth: 1,
+            max_depth: 1,
+        },
+        Nine65Error::OrderNotFound {
+            a: 1,
+            n: 1,
+            bound: 1,
+        },
         Nine65Error::NotCoprimeToModulus { a: 1, n: 1 },
         Nine65Error::Overflow { operation: "test" },
-        Nine65Error::InvalidParameter { message: "test".into() },
+        Nine65Error::InvalidParameter {
+            message: "test".into(),
+        },
         Nine65Error::DecryptionFailed,
-        Nine65Error::KeyGenFailed { reason: "test".into() },
-        Nine65Error::SecurityLevelNotMet { bits: 1, required: 1 },
-        Nine65Error::MessageOutOfBounds { message: 1, modulus: 1 },
-        Nine65Error::InvalidPolynomialDegree { got: 1, expected: 1 },
-        Nine65Error::KeyRegimeMismatch { message: "test".into() },
-        Nine65Error::NTTConfigError { message: "test".into() },
-        Nine65Error::ConfigError { message: "test".into() },
-        Nine65Error::BatchingNotSupported { t: 1, n: 1, reason: "test".into() },
+        Nine65Error::KeyGenFailed {
+            reason: "test".into(),
+        },
+        Nine65Error::SecurityLevelNotMet {
+            bits: 1,
+            required: 1,
+        },
+        Nine65Error::MessageOutOfBounds {
+            message: 1,
+            modulus: 1,
+        },
+        Nine65Error::InvalidPolynomialDegree {
+            got: 1,
+            expected: 1,
+        },
+        Nine65Error::KeyRegimeMismatch {
+            message: "test".into(),
+        },
+        Nine65Error::NTTConfigError {
+            message: "test".into(),
+        },
+        Nine65Error::ConfigError {
+            message: "test".into(),
+        },
+        Nine65Error::BatchingNotSupported {
+            t: 1,
+            n: 1,
+            reason: "test".into(),
+        },
         Nine65Error::TooManySlotValues { got: 1, max: 1 },
-        Nine65Error::NoModularInverse { value: 1, modulus: 1 },
-        Nine65Error::DeserializationError { message: "test".into() },
-        Nine65Error::BootstrapFailed { reason: "test".into() },
-        Nine65Error::BootstrapConfigMismatch { reason: "test".into() },
-        Nine65Error::BootstrapOverflow { operation: "test".into() },
-        Nine65Error::EntropyFailure { reason: "test".into() },
-        Nine65Error::NoiseBudgetExhausted { required_mb: 1, available_mb: 0 },
-        Nine65Error::RegimeMismatch { operation: "test", expected: "A", got: "B" },
+        Nine65Error::NoModularInverse {
+            value: 1,
+            modulus: 1,
+        },
+        Nine65Error::DeserializationError {
+            message: "test".into(),
+        },
+        Nine65Error::BootstrapFailed {
+            reason: "test".into(),
+        },
+        Nine65Error::BootstrapConfigMismatch {
+            reason: "test".into(),
+        },
+        Nine65Error::BootstrapOverflow {
+            operation: "test".into(),
+        },
+        Nine65Error::EntropyFailure {
+            reason: "test".into(),
+        },
+        Nine65Error::NoiseBudgetExhausted {
+            required_mb: 1,
+            available_mb: 0,
+        },
+        Nine65Error::RegimeMismatch {
+            operation: "test",
+            expected: "A",
+            got: "B",
+        },
     ];
 
     for (i, err) in variants.iter().enumerate() {

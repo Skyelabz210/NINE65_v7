@@ -169,12 +169,15 @@ impl NoiseBudget {
         }
 
         // Checked subtraction to prevent silent overflow
-        let new_remaining = self.remaining_mb.checked_sub(cost_mb).ok_or(NoiseExhausted {
-            required_mb: cost_mb,
-            available_mb: self.remaining_mb,
-            operation_count: self.operations.len(),
-            last_op: op_type,
-        })?;
+        let new_remaining = self
+            .remaining_mb
+            .checked_sub(cost_mb)
+            .ok_or(NoiseExhausted {
+                required_mb: cost_mb,
+                available_mb: self.remaining_mb,
+                operation_count: self.operations.len(),
+                last_op: op_type,
+            })?;
 
         self.remaining_mb = new_remaining;
 
@@ -301,8 +304,7 @@ impl NoiseBudget {
         // budget = delta_bits − bootstrap_noise_bits
         //        = (log_Q − log_t) − (log_t + log_η + log_√N)
         //        = log_Q − 2·log_t − log_η − log_√N
-        let post_bootstrap_mb =
-            (log_q_bits - 2 * t_bits - eta_bits - n_half_bits).max(0) * 1000;
+        let post_bootstrap_mb = (log_q_bits - 2 * t_bits - eta_bits - n_half_bits).max(0) * 1000;
         self.remaining_mb = post_bootstrap_mb;
         self.operations.push(NoiseOperation {
             op_type: NoiseOpType::Bootstrap,
@@ -542,7 +544,7 @@ mod tests {
     #[test]
     fn test_budget_should_bootstrap_threshold_boundary() {
         let mut budget = NoiseBudget::with_budget_bits(100); // 100,000 mb
-        // threshold_permille=250 means trigger at 25% = 25,000 mb
+                                                             // threshold_permille=250 means trigger at 25% = 25,000 mb
         assert!(!budget.should_bootstrap(250), "100% should not trigger");
 
         // Consume to exactly 25,000 (75,000 consumed)

@@ -61,7 +61,7 @@ use crate::arithmetic::NTTEngineFFT as NTTEngine;
 use crate::arithmetic::NTTEngine;
 use crate::bootstrap::clockwork::{BootstrapKey, ClockworkBootstrap};
 use crate::bootstrap::mask::CiphertextMask;
-use crate::bootstrap::outer::{OuterLayer, OuterCiphertextPair};
+use crate::bootstrap::outer::{OuterCiphertextPair, OuterLayer};
 use crate::ops::encrypt::Ciphertext;
 use crate::params::FHEConfig;
 
@@ -87,11 +87,15 @@ pub struct BootstrapStats {
 
 impl BootstrapStats {
     /// Total time in microseconds (integer division).
-    pub fn total_us(&self) -> u64 { self.total_ns / 1000 }
+    pub fn total_us(&self) -> u64 {
+        self.total_ns / 1000
+    }
 
     /// Overhead ratio x100 (100 = 1.0x, 250 = 2.5x).
     pub fn overhead_ratio_x100(&self) -> u64 {
-        if self.clockwork_ns == 0 { return 0; }
+        if self.clockwork_ns == 0 {
+            return 0;
+        }
         self.total_ns * 100 / self.clockwork_ns
     }
 }
@@ -99,7 +103,9 @@ impl BootstrapStats {
 impl std::fmt::Display for BootstrapStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // Integer-only display: all times in microseconds
-        write!(f, "Three-Lock: {}us total ({}us shannon, {}us mont_enc, \
+        write!(
+            f,
+            "Three-Lock: {}us total ({}us shannon, {}us mont_enc, \
                    {}us mont_dec, {}us clockwork) \
                    overhead={}.{}x rotated={}",
             self.total_ns / 1000,
@@ -177,9 +183,7 @@ impl ThreeLockBootstrap {
 
         // Layer 2 -- Montgomery: RLWE-encrypt the masked ciphertext.
         let t1 = std::time::Instant::now();
-        let outer_pair = OuterCiphertextPair::encrypt(
-            &self.outer, &masked_c0, &masked_c1, ntt,
-        );
+        let outer_pair = OuterCiphertextPair::encrypt(&self.outer, &masked_c0, &masked_c1, ntt);
         let montgomery_encrypt_ns = t1.elapsed().as_nanos() as u64;
 
         // =============================================================
@@ -196,10 +200,13 @@ impl ThreeLockBootstrap {
         // Receives the MASKED ciphertext and the mask.
         // Removes the mask ALGEBRAICALLY during decryption (in registers).
         let t3 = std::time::Instant::now();
-        let masked_ct = Ciphertext { c0: dec_c0, c1: dec_c1 };
-        let refreshed = self.clockwork.bootstrap_protected(
-            &masked_ct, &mask, bsk, ntt,
-        );
+        let masked_ct = Ciphertext {
+            c0: dec_c0,
+            c1: dec_c1,
+        };
+        let refreshed = self
+            .clockwork
+            .bootstrap_protected(&masked_ct, &mask, bsk, ntt);
         let clockwork_ns = t3.elapsed().as_nanos() as u64;
         // mask and masked_ct drop here -- zeroized by ZeroizeOnDrop
 
@@ -208,16 +215,22 @@ impl ThreeLockBootstrap {
         // =============================================================
 
         let key_rotated = match self.tier {
-            SecurityTier::Tier1Maximum => { self.outer.rotate_key(); true }
+            SecurityTier::Tier1Maximum => {
+                self.outer.rotate_key();
+                true
+            }
             _ => false,
         };
         self.bootstrap_count += 1;
 
         let total_ns = total_start.elapsed().as_nanos() as u64;
         let stats = BootstrapStats {
-            shannon_mask_ns, montgomery_encrypt_ns,
-            montgomery_decrypt_ns, clockwork_ns,
-            total_ns, key_rotated,
+            shannon_mask_ns,
+            montgomery_encrypt_ns,
+            montgomery_decrypt_ns,
+            clockwork_ns,
+            total_ns,
+            key_rotated,
         };
         (refreshed, stats)
     }
@@ -234,20 +247,23 @@ impl ThreeLockBootstrap {
         let (masked_c0, masked_c1) = mask.apply(&ct.c0, &ct.c1);
 
         // Layer 2 -- Montgomery RLWE encrypt
-        let outer_pair = OuterCiphertextPair::encrypt(
-            &self.outer, &masked_c0, &masked_c1, ntt,
-        );
+        let outer_pair = OuterCiphertextPair::encrypt(&self.outer, &masked_c0, &masked_c1, ntt);
 
         // Peel Layer 2 -- still masked (Shannon active)
         let (dec_c0, dec_c1) = outer_pair.decrypt(&self.outer, ntt);
 
         // Layer 3 -- Clockwork with algebraic mask removal
-        let masked_ct = Ciphertext { c0: dec_c0, c1: dec_c1 };
-        let refreshed = self.clockwork.bootstrap_protected(
-            &masked_ct, &mask, bsk, ntt,
-        );
+        let masked_ct = Ciphertext {
+            c0: dec_c0,
+            c1: dec_c1,
+        };
+        let refreshed = self
+            .clockwork
+            .bootstrap_protected(&masked_ct, &mask, bsk, ntt);
 
-        if self.tier == SecurityTier::Tier1Maximum { self.outer.rotate_key(); }
+        if self.tier == SecurityTier::Tier1Maximum {
+            self.outer.rotate_key();
+        }
         self.bootstrap_count += 1;
         refreshed
     }
@@ -255,10 +271,18 @@ impl ThreeLockBootstrap {
     pub fn can_bootstrap(&self, noise_estimate: u64) -> bool {
         self.clockwork.can_bootstrap(noise_estimate)
     }
-    pub fn rotate_outer_key(&mut self) { self.outer.rotate_key(); }
-    pub fn tier(&self) -> SecurityTier { self.tier }
-    pub fn bootstrap_count(&self) -> u64 { self.bootstrap_count }
-    pub fn clockwork(&self) -> &ClockworkBootstrap { &self.clockwork }
+    pub fn rotate_outer_key(&mut self) {
+        self.outer.rotate_key();
+    }
+    pub fn tier(&self) -> SecurityTier {
+        self.tier
+    }
+    pub fn bootstrap_count(&self) -> u64 {
+        self.bootstrap_count
+    }
+    pub fn clockwork(&self) -> &ClockworkBootstrap {
+        &self.clockwork
+    }
 }
 
 #[cfg(test)]
@@ -266,10 +290,10 @@ mod tests {
     use super::*;
     use crate::bootstrap::mask::CiphertextMask;
     use crate::bootstrap::outer::OuterLayer;
-    use crate::params::secure_configs::SecureConfig;
     use crate::entropy::ShadowHarvester;
     use crate::keys::KeySet;
-    use crate::ops::encrypt::{BFVEncoder, BFVEncryptor, BFVDecryptor};
+    use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor};
+    use crate::params::secure_configs::SecureConfig;
     use crate::ring::RingPolynomial;
 
     fn setup() -> (FHEConfig, NTTEngine, KeySet, ShadowHarvester, BFVEncoder) {
@@ -283,8 +307,10 @@ mod tests {
 
     fn make_bsk(config: &FHEConfig, keys: &KeySet) -> BootstrapKey {
         BootstrapKey::generate_with_pk(
-            config, &keys.secret_key,
-            &keys.public_key.pk0, &keys.public_key.pk1,
+            config,
+            &keys.secret_key,
+            &keys.public_key.pk0,
+            &keys.public_key.pk1,
         )
     }
 
@@ -308,7 +334,10 @@ mod tests {
         let (refreshed, stats) = tl.bootstrap(&ct, &bsk, &ntt);
         let result = decryptor.decrypt(&refreshed);
 
-        println!("Three-Lock E2E: encrypt({}) -> bootstrap -> decrypt = {}", m, result);
+        println!(
+            "Three-Lock E2E: encrypt({}) -> bootstrap -> decrypt = {}",
+            m, result
+        );
         println!("  {}", stats);
         assert_eq!(result, m, "E2E FAILURE: expected {} got {}", m, result);
     }
@@ -378,26 +407,37 @@ mod tests {
         let mask = CiphertextMask::generate(config.n, config.q);
         let (masked, _) = mask.apply(&poly, &poly);
 
-        assert_ne!(masked.coeffs, poly.coeffs, "Masked should differ from original");
+        assert_ne!(
+            masked.coeffs, poly.coeffs,
+            "Masked should differ from original"
+        );
 
         // After outer encrypt/decrypt (Montgomery round-trip), still masked
         let outer = OuterLayer::new(config.n, config.q, config.eta);
         let outer_ct = outer.encrypt(&masked, &ntt);
         let after_montgomery = outer.decrypt(&outer_ct, &ntt);
 
-        assert_ne!(after_montgomery.coeffs, poly.coeffs,
-            "After Montgomery round-trip, data must still be masked");
+        assert_ne!(
+            after_montgomery.coeffs, poly.coeffs,
+            "After Montgomery round-trip, data must still be masked"
+        );
 
         // But the mask can be algebraically removed
         let recovered = mask.mask_c0.remove(&after_montgomery);
-        let max_diff: u64 = recovered.coeffs.iter().zip(poly.coeffs.iter())
+        let max_diff: u64 = recovered
+            .coeffs
+            .iter()
+            .zip(poly.coeffs.iter())
             .map(|(&a, &b)| {
                 let d = if a >= b { a - b } else { b - a };
                 std::cmp::min(d, config.q - d)
             })
-            .max().unwrap_or(0);
-        assert!(max_diff < config.q / 4,
-            "After algebraic mask removal, should recover original + small noise");
+            .max()
+            .unwrap_or(0);
+        assert!(
+            max_diff < config.q / 4,
+            "After algebraic mask removal, should recover original + small noise"
+        );
     }
 
     #[test]
@@ -429,9 +469,17 @@ mod tests {
 
         // Integer-only display
         let noise_pct_x10 = noise * 1000 / budget;
-        println!("Post-Three-Lock noise: {} ({}.{}% of budget {})",
-            noise, noise_pct_x10 / 10, noise_pct_x10 % 10, budget);
-        assert!(noise < budget / 10, "Refreshed ciphertext should have < 10% noise usage");
+        println!(
+            "Post-Three-Lock noise: {} ({}.{}% of budget {})",
+            noise,
+            noise_pct_x10 / 10,
+            noise_pct_x10 % 10,
+            budget
+        );
+        assert!(
+            noise < budget / 10,
+            "Refreshed ciphertext should have < 10% noise usage"
+        );
     }
 
     #[test]
@@ -443,12 +491,16 @@ mod tests {
         let ct = outer.encrypt(&poly, &ntt);
         let dec = outer.decrypt(&ct, &ntt);
 
-        let max_noise: u64 = poly.coeffs.iter().zip(dec.coeffs.iter())
+        let max_noise: u64 = poly
+            .coeffs
+            .iter()
+            .zip(dec.coeffs.iter())
             .map(|(&o, &d)| {
                 let diff = if d >= o { d - o } else { o - d };
                 std::cmp::min(diff, config.q - diff)
             })
-            .max().unwrap_or(0);
+            .max()
+            .unwrap_or(0);
         assert!(max_noise < config.q / 4);
     }
 

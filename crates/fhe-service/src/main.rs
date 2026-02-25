@@ -52,7 +52,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(DEFAULT_MAX_CONNECTIONS);
 
     let listener = TcpListener::bind(&bind_addr)?;
-    let store = match env::var("FHE_SESSION_TTL").ok().and_then(|v| v.parse().ok()) {
+    let store = match env::var("FHE_SESSION_TTL")
+        .ok()
+        .and_then(|v| v.parse().ok())
+    {
         Some(ttl) => SessionStore::new_with_ttl(max_sessions, ttl),
         None => SessionStore::new(max_sessions),
     };
@@ -841,22 +844,14 @@ mod tests {
         values: &[u64],
     ) -> (String, Vec<String>) {
         let body = serde_json::to_vec(&json!({"config": "secure_128"})).unwrap();
-        let resp = handlers::route(
-            &make_request("POST", "/v1/sessions", &body),
-            store,
-            metrics,
-        );
+        let resp = handlers::route(&make_request("POST", "/v1/sessions", &body), store, metrics);
         assert_eq!(resp.status, 201);
         let created: Value = serde_json::from_slice(&resp.body).unwrap();
         let sid = created["session_id"].as_str().unwrap().to_owned();
 
         let enc_body = serde_json::to_vec(&json!({"values": values})).unwrap();
         let enc_path = format!("/v1/sessions/{sid}/encrypt");
-        let resp = handlers::route(
-            &make_request("POST", &enc_path, &enc_body),
-            store,
-            metrics,
-        );
+        let resp = handlers::route(&make_request("POST", &enc_path, &enc_body), store, metrics);
         assert_eq!(resp.status, 200, "encrypt failed");
         let enc_resp: Value = serde_json::from_slice(&resp.body).unwrap();
         let cts: Vec<String> = enc_resp["ciphertexts"]
@@ -883,7 +878,8 @@ mod tests {
             metrics,
         );
         assert_eq!(
-            resp.status, 200,
+            resp.status,
+            200,
             "evaluate failed: {}",
             String::from_utf8_lossy(&resp.body)
         );
@@ -900,13 +896,10 @@ mod tests {
     ) -> u64 {
         let dec_body = serde_json::to_vec(&json!({"ciphertexts": [ct_b64]})).unwrap();
         let dec_path = format!("/v1/sessions/{sid}/decrypt");
-        let resp = handlers::route(
-            &make_request("POST", &dec_path, &dec_body),
-            store,
-            metrics,
-        );
+        let resp = handlers::route(&make_request("POST", &dec_path, &dec_body), store, metrics);
         assert_eq!(
-            resp.status, 200,
+            resp.status,
+            200,
             "decrypt failed: {}",
             String::from_utf8_lossy(&resp.body)
         );
@@ -976,7 +969,11 @@ mod tests {
             );
             let result = decrypt_one(&store, &metrics, &sid, &ct_result);
             let expected = ((*a as u128) * (*b as u128) % 65537) as u64;
-            assert_eq!(result, expected, "{} × {} should be {} (mod t)", a, b, expected);
+            assert_eq!(
+                result, expected,
+                "{} × {} should be {} (mod t)",
+                a, b, expected
+            );
         }
     }
 
@@ -996,7 +993,11 @@ mod tests {
         );
         let result = decrypt_one(&store, &metrics, &sid, &ct_result);
         let expected = (65536u128 * 2 % 65537) as u64;
-        assert_eq!(result, expected, "65536 × 2 mod 65537 should be {}", expected);
+        assert_eq!(
+            result, expected,
+            "65536 × 2 mod 65537 should be {}",
+            expected
+        );
     }
 
     // When exact_rational is enabled, near-t values are rejected by the drift zone guard.
@@ -1310,7 +1311,10 @@ mod tests {
             json!({"op": "mul", "inputs": [cts[0], cts[1]]}),
         );
         let result = decrypt_one(&store, &metrics, &sid, &ct_result);
-        assert_eq!(result, 143, "11 × 13 must equal 143 — K-Elimination correctness");
+        assert_eq!(
+            result, 143,
+            "11 × 13 must equal 143 — K-Elimination correctness"
+        );
     }
 
     // --- secure_192 config test (more noise headroom) ---
@@ -1322,22 +1326,14 @@ mod tests {
         values: &[u64],
     ) -> (String, Vec<String>) {
         let body = serde_json::to_vec(&json!({"config": config})).unwrap();
-        let resp = handlers::route(
-            &make_request("POST", "/v1/sessions", &body),
-            store,
-            metrics,
-        );
+        let resp = handlers::route(&make_request("POST", "/v1/sessions", &body), store, metrics);
         assert_eq!(resp.status, 201, "failed to create {} session", config);
         let created: Value = serde_json::from_slice(&resp.body).unwrap();
         let sid = created["session_id"].as_str().unwrap().to_owned();
 
         let enc_body = serde_json::to_vec(&json!({"values": values})).unwrap();
         let enc_path = format!("/v1/sessions/{sid}/encrypt");
-        let resp = handlers::route(
-            &make_request("POST", &enc_path, &enc_body),
-            store,
-            metrics,
-        );
+        let resp = handlers::route(&make_request("POST", &enc_path, &enc_body), store, metrics);
         assert_eq!(resp.status, 200, "encrypt failed for {}", config);
         let enc_resp: Value = serde_json::from_slice(&resp.body).unwrap();
         let cts: Vec<String> = enc_resp["ciphertexts"]

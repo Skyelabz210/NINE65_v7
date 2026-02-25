@@ -45,9 +45,9 @@
 #[cfg(feature = "ntt_fft")]
 use crate::arithmetic::NTTEngineFFT as NTTEngine;
 
+use crate::arithmetic::KElimination;
 #[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
-use crate::arithmetic::KElimination;
 use crate::bootstrap::mask::CiphertextMask;
 use crate::entropy::SecureRng;
 use crate::keys::SecretKey;
@@ -96,13 +96,11 @@ impl BootstrapKey {
     ///
     /// Stores a clone of the secret key and public key for use during
     /// protected re-encryption. The secret key is zeroized on drop.
-    pub fn generate(
-        config: &FHEConfig,
-        _ntt: &NTTEngine,
-        sk_working: &SecretKey,
-    ) -> Self {
+    pub fn generate(config: &FHEConfig, _ntt: &NTTEngine, sk_working: &SecretKey) -> Self {
         Self {
-            sk: BootstrapSecretKey { s: sk_working.s.clone() },
+            sk: BootstrapSecretKey {
+                s: sk_working.s.clone(),
+            },
             pk_coeffs: (
                 RingPolynomial::zero(config.n, config.q),
                 RingPolynomial::zero(config.n, config.q),
@@ -123,7 +121,9 @@ impl BootstrapKey {
         pk1: &RingPolynomial,
     ) -> Self {
         Self {
-            sk: BootstrapSecretKey { s: sk_working.s.clone() },
+            sk: BootstrapSecretKey {
+                s: sk_working.s.clone(),
+            },
             pk_coeffs: (pk0.clone(), pk1.clone()),
             delta: config.q / config.t,
             n: config.n,
@@ -138,8 +138,12 @@ impl BootstrapKey {
         &self.sk.s
     }
 
-    pub fn len(&self) -> usize { self.n }
-    pub fn is_empty(&self) -> bool { false }
+    pub fn len(&self) -> usize {
+        self.n
+    }
+    pub fn is_empty(&self) -> bool {
+        false
+    }
 }
 
 // =====================================================================
@@ -222,7 +226,9 @@ impl ClockworkBootstrap {
         // raw_clean = raw_masked - mask_poly = delta*m + e
         // The clean polynomial exists here briefly. The ciphertext in
         // memory (masked_ct) is STILL MASKED -- we never touched it.
-        let raw_clean_coeffs: Vec<u64> = raw_masked.coeffs.iter()
+        let raw_clean_coeffs: Vec<u64> = raw_masked
+            .coeffs
+            .iter()
             .zip(mask_poly.coeffs.iter())
             .map(|(&rm, &mp)| {
                 // Constant-time modular subtraction
@@ -247,7 +253,10 @@ impl ClockworkBootstrap {
         // Encode: delta * m in coefficient 0
         let mut pt_coeffs = vec![0u64; self.n];
         pt_coeffs[0] = ((m as u128 * delta as u128) % self.q as u128) as u64;
-        let plaintext = RingPolynomial { coeffs: pt_coeffs, q: self.q };
+        let plaintext = RingPolynomial {
+            coeffs: pt_coeffs,
+            q: self.q,
+        };
 
         // RLWE encryption
         let u = RingPolynomial::random_ternary_rng(self.n, self.q, &mut rng);
@@ -264,9 +273,15 @@ impl ClockworkBootstrap {
         Ciphertext { c0, c1 }
     }
 
-    pub fn k_elimination(&self) -> &KElimination { &self.ke }
-    pub fn modulus(&self) -> u64 { self.q }
-    pub fn plaintext_modulus(&self) -> u64 { self.t }
+    pub fn k_elimination(&self) -> &KElimination {
+        &self.ke
+    }
+    pub fn modulus(&self) -> u64 {
+        self.q
+    }
+    pub fn plaintext_modulus(&self) -> u64 {
+        self.t
+    }
 }
 
 // =====================================================================
@@ -278,7 +293,9 @@ pub struct BootstrapParams;
 
 impl BootstrapParams {
     /// All FHE configs are compatible with protected re-encryption.
-    pub fn is_compatible(_config: &FHEConfig) -> bool { true }
+    pub fn is_compatible(_config: &FHEConfig) -> bool {
+        true
+    }
 
     #[cfg(any(test, debug_assertions))]
     pub fn bootstrap_test_config() -> FHEConfig {
@@ -297,10 +314,10 @@ impl BootstrapParams {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::params::secure_configs::SecureConfig;
     use crate::entropy::ShadowHarvester;
     use crate::keys::KeySet;
-    use crate::ops::encrypt::{BFVEncoder, BFVEncryptor, BFVDecryptor};
+    use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor};
+    use crate::params::secure_configs::SecureConfig;
 
     fn setup() -> (FHEConfig, NTTEngine, KeySet, ShadowHarvester, BFVEncoder) {
         let config = SecureConfig::test_fast_insecure().into_config();
@@ -340,22 +357,34 @@ mod tests {
         assert_eq!(decryptor.decrypt(&ct), m);
 
         let bsk = BootstrapKey::generate_with_pk(
-            &config, &keys.secret_key,
-            &keys.public_key.pk0, &keys.public_key.pk1,
+            &config,
+            &keys.secret_key,
+            &keys.public_key.pk0,
+            &keys.public_key.pk1,
         );
         let cw = ClockworkBootstrap::new(&config);
 
         // Apply mask (Layer 1) -- ciphertext is now masked in memory
         let mask = CiphertextMask::generate(config.n, config.q);
         let (masked_c0, masked_c1) = mask.apply(&ct.c0, &ct.c1);
-        let masked_ct = Ciphertext { c0: masked_c0, c1: masked_c1 };
+        let masked_ct = Ciphertext {
+            c0: masked_c0,
+            c1: masked_c1,
+        };
 
         // Bootstrap the MASKED ciphertext -- mask removed algebraically inside
         let refreshed = cw.bootstrap_protected(&masked_ct, &mask, &bsk, &ntt);
         let result = decryptor.decrypt(&refreshed);
 
-        println!("Protected bootstrap: encrypt({}) -> mask -> bootstrap -> decrypt = {}", m, result);
-        assert_eq!(result, m, "Protected bootstrap failed: expected {} got {}", m, result);
+        println!(
+            "Protected bootstrap: encrypt({}) -> mask -> bootstrap -> decrypt = {}",
+            m, result
+        );
+        assert_eq!(
+            result, m,
+            "Protected bootstrap failed: expected {} got {}",
+            m, result
+        );
     }
 
     #[test]
@@ -365,8 +394,10 @@ mod tests {
         let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
 
         let bsk = BootstrapKey::generate_with_pk(
-            &config, &keys.secret_key,
-            &keys.public_key.pk0, &keys.public_key.pk1,
+            &config,
+            &keys.secret_key,
+            &keys.public_key.pk0,
+            &keys.public_key.pk1,
         );
         let cw = ClockworkBootstrap::new(&config);
 
@@ -379,9 +410,16 @@ mod tests {
 
             let refreshed = cw.bootstrap_protected(&masked_ct, &mask, &bsk, &ntt);
             let result = decryptor.decrypt(&refreshed);
-            assert_eq!(result, m, "Protected bootstrap failed for m={}: got {}", m, result);
+            assert_eq!(
+                result, m,
+                "Protected bootstrap failed for m={}: got {}",
+                m, result
+            );
         }
-        println!("All {} messages bootstrapped correctly through Three-Lock", test_messages.len());
+        println!(
+            "All {} messages bootstrapped correctly through Three-Lock",
+            test_messages.len()
+        );
     }
 
     #[test]
@@ -406,7 +444,9 @@ mod tests {
         let mask_poly = mask.decrypt_contribution(&keys.secret_key.s, &ntt);
 
         // Algebraic removal: raw_masked - mask_poly should equal raw_clean
-        let recovered: Vec<u64> = raw_masked.coeffs.iter()
+        let recovered: Vec<u64> = raw_masked
+            .coeffs
+            .iter()
             .zip(mask_poly.coeffs.iter())
             .map(|(&rm, &mp)| {
                 let diff = (rm as u128) + (config.q as u128) - (mp as u128);
@@ -414,8 +454,10 @@ mod tests {
             })
             .collect();
 
-        assert_eq!(recovered, raw_clean.coeffs,
-            "Algebraic mask removal should perfectly recover the clean decrypted polynomial");
+        assert_eq!(
+            recovered, raw_clean.coeffs,
+            "Algebraic mask removal should perfectly recover the clean decrypted polynomial"
+        );
     }
 
     #[test]
@@ -425,8 +467,10 @@ mod tests {
         let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
 
         let bsk = BootstrapKey::generate_with_pk(
-            &config, &keys.secret_key,
-            &keys.public_key.pk0, &keys.public_key.pk1,
+            &config,
+            &keys.secret_key,
+            &keys.public_key.pk0,
+            &keys.public_key.pk1,
         );
         let cw = ClockworkBootstrap::new(&config);
 
@@ -454,21 +498,30 @@ mod tests {
         let budget = delta / 2;
         // Integer-only display: noise_pct_x10 = noise * 1000 / budget
         let noise_pct_x10 = noise * 1000 / budget;
-        println!("Post-bootstrap noise: {} ({}.{}% of budget {})",
-            noise, noise_pct_x10 / 10, noise_pct_x10 % 10, budget);
-        assert!(noise < budget / 10, "Refreshed ct should have < 10% noise usage");
+        println!(
+            "Post-bootstrap noise: {} ({}.{}% of budget {})",
+            noise,
+            noise_pct_x10 / 10,
+            noise_pct_x10 % 10,
+            budget
+        );
+        assert!(
+            noise < budget / 10,
+            "Refreshed ct should have < 10% noise usage"
+        );
     }
 
     #[test]
     fn test_bootstrap_randomness_independence() {
         let (config, ntt, keys, mut harvester, _) = setup();
         let encoder = BFVEncoder::new(&config);
-        let encryptor = BFVEncryptor::new(
-            &keys.public_key, &encoder, &ntt, config.eta);
+        let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
 
         let bsk = BootstrapKey::generate_with_pk(
-            &config, &keys.secret_key,
-            &keys.public_key.pk0, &keys.public_key.pk1,
+            &config,
+            &keys.secret_key,
+            &keys.public_key.pk0,
+            &keys.public_key.pk1,
         );
         let cw = ClockworkBootstrap::new(&config);
 
@@ -477,14 +530,30 @@ mod tests {
         let mask1 = CiphertextMask::generate(config.n, config.q);
         let (mc0_1, mc1_1) = mask1.apply(&ct.c0, &ct.c1);
         let r1 = cw.bootstrap_protected(
-            &Ciphertext { c0: mc0_1, c1: mc1_1 }, &mask1, &bsk, &ntt);
+            &Ciphertext {
+                c0: mc0_1,
+                c1: mc1_1,
+            },
+            &mask1,
+            &bsk,
+            &ntt,
+        );
 
         let mask2 = CiphertextMask::generate(config.n, config.q);
         let (mc0_2, mc1_2) = mask2.apply(&ct.c0, &ct.c1);
         let r2 = cw.bootstrap_protected(
-            &Ciphertext { c0: mc0_2, c1: mc1_2 }, &mask2, &bsk, &ntt);
+            &Ciphertext {
+                c0: mc0_2,
+                c1: mc1_2,
+            },
+            &mask2,
+            &bsk,
+            &ntt,
+        );
 
-        assert_ne!(r1.c0.coeffs, r2.c0.coeffs,
-            "Two bootstraps should produce different ciphertexts");
+        assert_ne!(
+            r1.c0.coeffs, r2.c0.coeffs,
+            "Two bootstraps should produce different ciphertexts"
+        );
     }
 }

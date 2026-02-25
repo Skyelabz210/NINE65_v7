@@ -277,8 +277,7 @@ impl KElimination {
     /// let ke = KElimination::from_config(KElimConfig::Standard);
     /// ```
     pub fn from_config(config: KElimConfig) -> Self {
-        Self::try_from_config(config)
-            .expect("built-in KElimConfig primes must be coprime")
+        Self::try_from_config(config).expect("built-in KElimConfig primes must be coprime")
     }
 
     /// Fallible constructor from predefined configuration.
@@ -368,11 +367,12 @@ impl KElimination {
     /// The coprimality precondition is guaranteed by the constructor,
     /// so this method only checks the value range.
     pub fn validate_value(&self, value: u128) -> Nine65Result<()> {
-        let capacity = self.alpha_cap.checked_mul(self.beta_cap).ok_or(
-            Nine65Error::Overflow {
+        let capacity = self
+            .alpha_cap
+            .checked_mul(self.beta_cap)
+            .ok_or(Nine65Error::Overflow {
                 operation: "K-Elimination capacity computation",
-            },
-        )?;
+            })?;
 
         if value >= capacity {
             return Err(Nine65Error::RangeOverflow {

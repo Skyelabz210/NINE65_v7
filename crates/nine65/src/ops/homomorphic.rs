@@ -85,7 +85,9 @@ impl<'a> BFVEvaluator<'a> {
     /// Panics if `m >= t` (plaintext modulus). Prefer `try_add_plain()` on
     /// `TrackedEvaluator` for untrusted input.
     pub fn add_plain(&self, ct: &Ciphertext, m: u64) -> Ciphertext {
-        let plain = self.encoder.try_encode(m)
+        let plain = self
+            .encoder
+            .try_encode(m)
             .unwrap_or_else(|e| panic!("add_plain: {}", e));
         Ciphertext {
             c0: ct.c0.add(&plain, self.ntt),

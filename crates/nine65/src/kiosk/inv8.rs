@@ -63,10 +63,10 @@ impl Inv8CheckLane {
     /// Well-known check primes — NTT-friendly primes not used in typical RNS bases.
     /// These are chosen to be coprime to standard NINE65 moduli.
     const CHECK_PRIMES: [u64; 4] = [
-        65537,      // Fermat prime F4
-        786433,     // 3 * 2^18 + 1
-        5767169,    // 11 * 2^19 + 1
-        23068673,   // 11 * 2^21 + 1
+        65537,    // Fermat prime F4
+        786433,   // 3 * 2^18 + 1
+        5767169,  // 11 * 2^19 + 1
+        23068673, // 11 * 2^21 + 1
     ];
 
     /// Create a new INV-8 check lane.

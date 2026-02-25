@@ -1202,6 +1202,25 @@ impl DualRNSContext {
         v_full / divisor as u128
     }
 
+    /// Audit the total dual-RNS capacity against a required bit-width.
+    ///
+    /// Total capacity is M × A. Exact reconstruction requires values < M × A.
+    pub fn audit_capacity(
+        &self,
+        required_bits: u32,
+        is_post_switch: bool,
+    ) -> crate::noise::boundary::BoundaryDiagnostic {
+        let m_bits = crate::noise::boundary::rns_product_bit_length(&self.main.primes);
+        let a_bits = crate::noise::boundary::rns_product_bit_length(&self.anchor.primes);
+        let total_capacity_bits = m_bits + a_bits;
+
+        crate::noise::boundary::BoundaryDiagnostic::audit(
+            required_bits,
+            total_capacity_bits,
+            is_post_switch,
+        )
+    }
+
     /// Exact division with centered representation
     ///
     /// For FHE coefficients, we need signed arithmetic.
@@ -2048,7 +2067,7 @@ mod tests {
         // 4-prime config: k_max can be ~99 bits, requiring 4 anchor primes (~125 bits capacity)
         let main_primes = vec![998244353u64, 985661441, 754974721, 469762049];
 
-        let ctx = DualRNSContext::for_fhe_coeff_domain(&main_primes, 4096);
+        let ctx = DualRNSContext::for_fhe(&main_primes, 4096);
 
         println!("=== 4-Prime CRT Large k Test ===");
         println!("Main primes: {:?}", main_primes);
@@ -2140,7 +2159,7 @@ mod tests {
         let main_primes = vec![998244353u64, 985661441, 754974721];
         let _anchor_primes = vec![2013265921u64, 2281701377, 2483027969];
 
-        let ctx = DualRNSContext::for_fhe_coeff_domain(&main_primes, 4096);
+        let ctx = DualRNSContext::for_fhe(&main_primes, 4096);
 
         // Compute A (product of 3 anchor primes) - this is ~94 bits
         let a_product: u128 = ctx.anchor.primes[..3].iter().map(|&p| p as u128).product();
@@ -2220,7 +2239,7 @@ mod tests {
     fn test_4prime_crt_near_u128_limit() {
         let main_primes = vec![998244353u64, 985661441, 754974721, 469762049];
 
-        let ctx = DualRNSContext::for_fhe_coeff_domain(&main_primes, 4096);
+        let ctx = DualRNSContext::for_fhe(&main_primes, 4096);
 
         // Compute M_level
         let m_level: u128 = main_primes
@@ -2579,7 +2598,9 @@ mod tests {
             hi: 0xFEDCBA0987654321FEDCBA0987654321,
         };
         let m = 123456789;
-        let expected = (a.lo % m as u128 + (a.hi % m as u128 * (1u128 << 64) % m as u128 * (1u128 << 64) % m as u128)) % m as u128;
+        let expected = (a.lo % m as u128
+            + (a.hi % m as u128 * (1u128 << 64) % m as u128 * (1u128 << 64) % m as u128))
+            % m as u128;
         let got = a.mod_u64_ct(m);
         assert_eq!(got as u128, expected);
     }

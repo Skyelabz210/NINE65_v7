@@ -285,8 +285,9 @@ impl Ciphertext {
     )]
     #[doc(hidden)]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 
@@ -305,9 +306,10 @@ impl Ciphertext {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (ct, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| Nine65Error::ConfigError {
-            message: e.to_string(),
-        })?;
+        let (ct, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
+            .map_err(|e| Nine65Error::ConfigError {
+                message: e.to_string(),
+            })?;
         ct.validate(expected_n, expected_q)?;
         Ok(ct)
     }
@@ -627,9 +629,9 @@ impl GatedDecryptor {
         use crate::errors::Nine65Error;
 
         // Find next coincidence window
-        let _window = gate.next_window(0, max_search).ok_or(
-            Nine65Error::DecryptionFailed,
-        )?;
+        let _window = gate
+            .next_window(0, max_search)
+            .ok_or(Nine65Error::DecryptionFailed)?;
 
         // Execute decrypt inside window
         Ok(decryptor.decrypt(ct))
@@ -980,12 +982,7 @@ mod tests {
         for m in [0u64, 1, 10, 100, 500, 1000] {
             let ct = encryptor.encrypt(m, &mut harvester);
             let result = super::GatedDecryptor::decrypt(&decryptor, &ct, &gate);
-            assert_eq!(
-                result.unwrap(),
-                m,
-                "GRO-gated decrypt failed for m={}",
-                m
-            );
+            assert_eq!(result.unwrap(), m, "GRO-gated decrypt failed for m={}", m);
         }
     }
 }

@@ -145,8 +145,18 @@ impl RingPolynomial {
     /// # Panics (debug only)
     /// Panics if moduli or degrees don't match — catches mixed-parameter errors.
     pub fn add(&self, other: &Self, ntt: &NTTEngine) -> Self {
-        debug_assert_eq!(self.q, other.q, "RingPolynomial::add: modulus mismatch ({} vs {})", self.q, other.q);
-        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::add: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
+        debug_assert_eq!(
+            self.q, other.q,
+            "RingPolynomial::add: modulus mismatch ({} vs {})",
+            self.q, other.q
+        );
+        debug_assert_eq!(
+            self.coeffs.len(),
+            other.coeffs.len(),
+            "RingPolynomial::add: degree mismatch ({} vs {})",
+            self.coeffs.len(),
+            other.coeffs.len()
+        );
         let coeffs = ntt.add(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
@@ -156,8 +166,18 @@ impl RingPolynomial {
     /// # Panics (debug only)
     /// Panics if moduli or degrees don't match.
     pub fn sub(&self, other: &Self, ntt: &NTTEngine) -> Self {
-        debug_assert_eq!(self.q, other.q, "RingPolynomial::sub: modulus mismatch ({} vs {})", self.q, other.q);
-        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::sub: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
+        debug_assert_eq!(
+            self.q, other.q,
+            "RingPolynomial::sub: modulus mismatch ({} vs {})",
+            self.q, other.q
+        );
+        debug_assert_eq!(
+            self.coeffs.len(),
+            other.coeffs.len(),
+            "RingPolynomial::sub: degree mismatch ({} vs {})",
+            self.coeffs.len(),
+            other.coeffs.len()
+        );
         let coeffs = ntt.sub(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
@@ -173,8 +193,18 @@ impl RingPolynomial {
     /// # Panics (debug only)
     /// Panics if moduli or degrees don't match.
     pub fn mul(&self, other: &Self, ntt: &NTTEngine) -> Self {
-        debug_assert_eq!(self.q, other.q, "RingPolynomial::mul: modulus mismatch ({} vs {})", self.q, other.q);
-        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::mul: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
+        debug_assert_eq!(
+            self.q, other.q,
+            "RingPolynomial::mul: modulus mismatch ({} vs {})",
+            self.q, other.q
+        );
+        debug_assert_eq!(
+            self.coeffs.len(),
+            other.coeffs.len(),
+            "RingPolynomial::mul: degree mismatch ({} vs {})",
+            self.coeffs.len(),
+            other.coeffs.len()
+        );
         let coeffs = ntt.multiply(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }
@@ -187,8 +217,18 @@ impl RingPolynomial {
     /// # Panics (debug only)
     /// Panics if moduli or degrees don't match.
     pub fn mul_ct(&self, other: &Self, ntt: &NTTEngine) -> Self {
-        debug_assert_eq!(self.q, other.q, "RingPolynomial::mul_ct: modulus mismatch ({} vs {})", self.q, other.q);
-        debug_assert_eq!(self.coeffs.len(), other.coeffs.len(), "RingPolynomial::mul_ct: degree mismatch ({} vs {})", self.coeffs.len(), other.coeffs.len());
+        debug_assert_eq!(
+            self.q, other.q,
+            "RingPolynomial::mul_ct: modulus mismatch ({} vs {})",
+            self.q, other.q
+        );
+        debug_assert_eq!(
+            self.coeffs.len(),
+            other.coeffs.len(),
+            "RingPolynomial::mul_ct: degree mismatch ({} vs {})",
+            self.coeffs.len(),
+            other.coeffs.len()
+        );
         let coeffs = ntt.multiply_ct(&self.coeffs, &other.coeffs);
         Self { coeffs, q: self.q }
     }

@@ -22,16 +22,16 @@
 //! - **INV-8 Detection**: Algebraic inversion attacks detected at first operation
 //! - **Tamper Detection**: Unauthorized computation produces detectable entropy
 
-pub mod fold;
 pub mod destruction;
-pub mod inv8;
+pub mod fold;
 pub mod fuse;
+pub mod inv8;
 pub mod receipt;
 pub mod unit;
 
+pub use destruction::{DestructionReceipt, DestructionSequence};
 pub use fold::{FoldOperator, FoldState};
-pub use destruction::{DestructionSequence, DestructionReceipt};
-pub use inv8::{Inv8CheckLane, Inv8Verdict};
 pub use fuse::{EntropyFuse, FuseState};
-pub use receipt::{ReceiptVerifier, ReceiptHash};
-pub use unit::{KioskUnit, KioskUnitType, KioskLifecycle, UnitStatus};
+pub use inv8::{Inv8CheckLane, Inv8Verdict};
+pub use receipt::{ReceiptHash, ReceiptVerifier};
+pub use unit::{KioskLifecycle, KioskUnit, KioskUnitType, UnitStatus};

@@ -63,8 +63,7 @@ impl Session {
         let config = secure_config.into_config();
         let noise_budget = NoiseBudget::from_config(&config);
 
-        let rns_ctx =
-            RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
+        let rns_ctx = RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
         let dual_keys = rns_ctx.generate_keys_dual_full_secure();
 
         Ok(Self {
@@ -94,8 +93,7 @@ impl Session {
         let config = secure_config.into_config();
         let noise_budget = NoiseBudget::from_config(&config);
 
-        let rns_ctx =
-            RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
+        let rns_ctx = RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
         let mut harvester = ShadowHarvester::with_seed(seed);
         let dual_keys = rns_ctx.generate_keys_dual_full(&mut harvester);
 

@@ -1,3 +1,4 @@
+use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 /// NINE65 Benchmark Harness
 ///
 /// Runs comprehensive FHE benchmarks and outputs structured JSON
@@ -9,7 +10,6 @@
 /// Build:
 ///   cargo build --release -p nine65 --bin nine65_bench --features serde
 use nine65::prelude::*;
-use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use serde_json::{json, Value};
 use std::time::Instant;
 
@@ -27,11 +27,7 @@ fn main() {
         match arg.as_str() {
             "--config" => config_name = args.next().unwrap_or_default(),
             "--max-depth" => {
-                max_depth = args
-                    .next()
-                    .unwrap_or_default()
-                    .parse()
-                    .unwrap_or(80);
+                max_depth = args.next().unwrap_or_default().parse().unwrap_or(80);
             }
             "--output" | "-o" => output_path = args.next(),
             "--a" => {
@@ -74,7 +70,10 @@ fn main() {
     };
 
     eprintln!("NINE65 Benchmark Harness");
-    eprintln!("Config: {} (n={}, q={}, t={})", config_name, config.n, config.q, config.t);
+    eprintln!(
+        "Config: {} (n={}, q={}, t={})",
+        config_name, config.n, config.q, config.t
+    );
     eprintln!("Max depth: {max_depth}");
     eprintln!("---");
 
@@ -165,8 +164,14 @@ fn main() {
     let mul_us = t0.elapsed().as_micros() as u64 / iterations;
 
     eprintln!("  encrypt: {}us, decrypt: {}us", encrypt_us, decrypt_us);
-    eprintln!("  add: {}us, sub: {}us, negate: {}us", add_us, sub_us, negate_us);
-    eprintln!("  add_plain: {}us, mul_plain: {}us, mul: {}us", add_plain_us, mul_plain_us, mul_us);
+    eprintln!(
+        "  add: {}us, sub: {}us, negate: {}us",
+        add_us, sub_us, negate_us
+    );
+    eprintln!(
+        "  add_plain: {}us, mul_plain: {}us, mul: {}us",
+        add_plain_us, mul_plain_us, mul_us
+    );
 
     // ================================================================
     // 3. DEPTH CHAIN
@@ -231,16 +236,28 @@ fn main() {
         let (new_ct, noise_cost, new_plain) = match *op_type {
             "mul_plain" => {
                 let ct = evaluator.mul_plain(&ct_result, *val);
-                (ct, NoiseBudget::mul_plain_cost(&config), (plaintext_result * val) % config.t)
+                (
+                    ct,
+                    NoiseBudget::mul_plain_cost(&config),
+                    (plaintext_result * val) % config.t,
+                )
             }
             "add_plain" => {
                 let ct = evaluator.add_plain(&ct_result, *val);
-                (ct, NoiseBudget::add_plain_cost(), (plaintext_result + val) % config.t)
+                (
+                    ct,
+                    NoiseBudget::add_plain_cost(),
+                    (plaintext_result + val) % config.t,
+                )
             }
             "sub_plain" => {
                 // sub_plain via add_plain with (t - val)
                 let ct = evaluator.add_plain(&ct_result, config.t - val);
-                (ct, NoiseBudget::add_plain_cost(), (plaintext_result + config.t - val) % config.t)
+                (
+                    ct,
+                    NoiseBudget::add_plain_cost(),
+                    (plaintext_result + config.t - val) % config.t,
+                )
             }
             _ => unreachable!(),
         };
@@ -267,7 +284,10 @@ fn main() {
             let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
             total_refreshes += 1;
             refreshed = true;
-            eprintln!("  Depth {depth}: AUTO REFRESH (refresh #{})", total_refreshes);
+            eprintln!(
+                "  Depth {depth}: AUTO REFRESH (refresh #{})",
+                total_refreshes
+            );
         }
 
         let noise_pct = (budget.remaining_millibits() as f64 / initial_budget_mb as f64 * 100.0)
@@ -290,7 +310,10 @@ fn main() {
         depth, total_refreshes, correct
     );
     if !correct {
-        eprintln!("  WARNING: Decrypted {} != expected {}", decrypted, plaintext_result);
+        eprintln!(
+            "  WARNING: Decrypted {} != expected {}",
+            decrypted, plaintext_result
+        );
     }
 
     // ================================================================
@@ -300,26 +323,50 @@ fn main() {
 
     // Deep Arithmetic: chain of mixed mul_plain/add_plain
     let scale_arith = run_scale_test(
-        &config, &ntt, &encoder, &encryptor, &evaluator,
-        &mut rng, 80, "arithmetic",
+        &config,
+        &ntt,
+        &encoder,
+        &encryptor,
+        &evaluator,
+        &mut rng,
+        80,
+        "arithmetic",
     );
 
     // Statistical Pipeline: simulated as a chain of add operations (sum, mean accumulation)
     let scale_stats = run_scale_test(
-        &config, &ntt, &encoder, &encryptor, &evaluator,
-        &mut rng, 60, "statistical",
+        &config,
+        &ntt,
+        &encoder,
+        &encryptor,
+        &evaluator,
+        &mut rng,
+        60,
+        "statistical",
     );
 
     // Neural Network: alternating mul_plain (matmul proxy) and add_plain (bias/relu proxy)
     let scale_nn = run_scale_test(
-        &config, &ntt, &encoder, &encryptor, &evaluator,
-        &mut rng, 50, "neural_network",
+        &config,
+        &ntt,
+        &encoder,
+        &encryptor,
+        &evaluator,
+        &mut rng,
+        50,
+        "neural_network",
     );
 
     // Polynomial Eval: Horner's method chain (mul_plain + add_plain per degree)
     let scale_poly = run_scale_test(
-        &config, &ntt, &encoder, &encryptor, &evaluator,
-        &mut rng, 128, "polynomial",
+        &config,
+        &ntt,
+        &encoder,
+        &encryptor,
+        &evaluator,
+        &mut rng,
+        128,
+        "polynomial",
     );
 
     // ================================================================
@@ -329,8 +376,16 @@ fn main() {
         .iter()
         .filter_map(|e| e.get("elapsed_us").and_then(|v| v.as_u64()))
         .sum();
-    let avg_op_us = if depth > 0 { total_chain_us / depth as u64 } else { 0 };
-    let ops_per_sec = if avg_op_us > 0 { 1_000_000 / avg_op_us } else { 0 };
+    let avg_op_us = if depth > 0 {
+        total_chain_us / depth as u64
+    } else {
+        0
+    };
+    let ops_per_sec = if avg_op_us > 0 {
+        1_000_000 / avg_op_us
+    } else {
+        0
+    };
     let depth_per_sec = if total_chain_us > 0 {
         (depth as f64 / (total_chain_us as f64 / 1_000_000.0)) as u64
     } else {
@@ -482,7 +537,11 @@ fn run_scale_test(
 
     let total_us = t0.elapsed().as_micros() as u64;
     let total_ms = total_us as f64 / 1000.0;
-    let ops_per_sec = if total_us > 0 { ops * 1_000_000 / total_us } else { 0 };
+    let ops_per_sec = if total_us > 0 {
+        ops * 1_000_000 / total_us
+    } else {
+        0
+    };
     let final_noise_pct =
         (budget.remaining_millibits() as f64 / initial_mb as f64 * 100.0).max(0.0) as u64;
 

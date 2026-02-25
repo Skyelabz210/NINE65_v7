@@ -249,10 +249,18 @@ impl LatticeSecurityEstimator {
         secret_distribution: SecretDistribution,
         claimed_security: u32,
     ) -> DualSecurityEstimate {
-        let core_svp = LatticeSecurityEstimator::new(CostModel::CoreSVP)
-            .estimate(n, log_q, secret_distribution, claimed_security);
-        let matzov = LatticeSecurityEstimator::new(CostModel::MATZOV)
-            .estimate(n, log_q, secret_distribution, claimed_security);
+        let core_svp = LatticeSecurityEstimator::new(CostModel::CoreSVP).estimate(
+            n,
+            log_q,
+            secret_distribution,
+            claimed_security,
+        );
+        let matzov = LatticeSecurityEstimator::new(CostModel::MATZOV).estimate(
+            n,
+            log_q,
+            secret_distribution,
+            claimed_security,
+        );
 
         let binding_bits = core_svp.effective_bits.min(matzov.effective_bits);
         let meets_both = core_svp.meets_claim && matzov.meets_claim;
@@ -591,11 +599,17 @@ mod tests {
 
         // N=8192, log(q)=90 should meet 128-bit under both models
         let dual = estimator.dual_estimate(8192, 90, SecretDistribution::Ternary, 128);
-        assert!(dual.meets_both, "N=8192, log(q)=90 should meet 128-bit under both models");
+        assert!(
+            dual.meets_both,
+            "N=8192, log(q)=90 should meet 128-bit under both models"
+        );
 
         // N=1024, log(q)=30 should not meet 128-bit under either
         let dual = estimator.dual_estimate(1024, 30, SecretDistribution::Ternary, 128);
-        assert!(!dual.meets_both, "N=1024, log(q)=30 should not meet 128-bit");
+        assert!(
+            !dual.meets_both,
+            "N=1024, log(q)=30 should not meet 128-bit"
+        );
     }
 
     // =========================================================================
@@ -717,7 +731,10 @@ mod tests {
             );
 
             println!("\n{} with MATZOV:", name);
-            println!("  Effective: {} bits (target: >= {})", est.effective_bits, min_expected_bits);
+            println!(
+                "  Effective: {} bits (target: >= {})",
+                est.effective_bits, min_expected_bits
+            );
             println!("{}", est.analysis);
 
             // MATZOV gives ~10% lower security than CoreSVP
@@ -745,8 +762,14 @@ mod tests {
             let (matz_cost_mb, matz_iters) = matzov_est.matzov_cost(beta);
 
             println!("\nBeta={}:", beta);
-            println!("  CoreSVP: {} millibits, {} iters", core_cost_mb, core_iters);
-            println!("  MATZOV:  {} millibits, {} iters", matz_cost_mb, matz_iters);
+            println!(
+                "  CoreSVP: {} millibits, {} iters",
+                core_cost_mb, core_iters
+            );
+            println!(
+                "  MATZOV:  {} millibits, {} iters",
+                matz_cost_mb, matz_iters
+            );
 
             // MATZOV should be cheaper (lower cost)
             assert!(
@@ -858,7 +881,10 @@ mod tests {
         let binary = estimator.estimate(n, log_q, SecretDistribution::Binary, 128);
         let gaussian = estimator.estimate(n, log_q, SecretDistribution::Gaussian(3200), 128);
 
-        println!("\nSecret distribution penalties (n={}, log_q={}):", n, log_q);
+        println!(
+            "\nSecret distribution penalties (n={}, log_q={}):",
+            n, log_q
+        );
         println!("  Ternary:  {} bits", ternary.effective_bits);
         println!("  Binary:   {} bits", binary.effective_bits);
         println!("  Gaussian: {} bits", gaussian.effective_bits);
@@ -899,16 +925,18 @@ mod tests {
             let config = sec_config.into_config();
             let log_q: u32 = config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
 
-            let dual = estimator.dual_estimate(
-                config.n,
-                log_q,
-                SecretDistribution::Ternary,
-                core_min,
-            );
+            let dual =
+                estimator.dual_estimate(config.n, log_q, SecretDistribution::Ternary, core_min);
 
             println!("\n{} dual estimate:", name);
-            println!("  CoreSVP: {} bits (min: {})", dual.core_svp.effective_bits, core_min);
-            println!("  MATZOV:  {} bits (min: {})", dual.matzov.effective_bits, matzov_min);
+            println!(
+                "  CoreSVP: {} bits (min: {})",
+                dual.core_svp.effective_bits, core_min
+            );
+            println!(
+                "  MATZOV:  {} bits (min: {})",
+                dual.matzov.effective_bits, matzov_min
+            );
             println!("  Binding: {} bits", dual.binding_bits);
 
             // Production configs should meet measured security levels

@@ -150,10 +150,8 @@ impl FoldOperator {
         }
 
         // If not already folded, fold first
-        if self.state == FoldState::Unfolded {
-            if !self.fold(limbs) {
-                return false;
-            }
+        if self.state == FoldState::Unfolded && !self.fold(limbs) {
+            return false;
         }
 
         // Destroy the fold masks
