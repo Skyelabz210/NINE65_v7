@@ -18,6 +18,9 @@ allow = [
 confidence-threshold = 0.8
 
 [[licenses.clarify]]
+# unhal is the internal hardware-abstraction crate (MIT, matches its Cargo.toml).
+# The license-files array is empty because the license is declared in Cargo.toml only,
+# not via a separate LICENSE file in the crate directory. This is intentional.
 name = "unhal"
 expression = "MIT"
 license-files = []

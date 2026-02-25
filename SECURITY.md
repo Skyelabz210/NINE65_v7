@@ -1,15 +1,15 @@
 # Security Policy
 
-This document describes the security policy for NINE65, a bootstrap-free fully homomorphic encryption system. NINE65 is a proprietary Rust workspace comprising the following crates: `nine65`, `clockwork-core`, `mana`, `unhal`, and `nexgen_rational`. Formal verification is provided via Coq and Lean4 proofs.
+This document describes the security policy for NINE65, an unlimited-depth Fully Homomorphic Encryption system with three verified bootstrap paths. NINE65 is a proprietary Rust workspace comprising the following crates: `nine65`, `clockwork-core`, `mana`, `unhal`, and `nexgen_rational`. Formal verification is provided via Coq and Lean4 proofs.
 
 ## Supported Versions
 
 | Version | Status | Support Level |
 |---------|--------|---------------|
-| v5.x | Current | Active security updates and patches |
-| v2.x | Legacy | Critical fixes only; migration to v5 recommended |
+| v7.x | Current | Active security updates and patches |
+| v5.x | Legacy | Critical fixes only; migrate to v7 |
 
-Versions prior to v2 are unsupported and should not be used.
+Versions prior to v5 are unsupported and should not be used.
 
 ## Reporting a Vulnerability
 
@@ -63,6 +63,17 @@ Constant-time primitives are available in `crates/nine65/src/security/secret_dat
 ### Noise Budget Tracking
 
 For noise-sensitive operations, use `TrackedEvaluator` to monitor noise budget consumption across homomorphic circuit evaluations. This helps detect unexpected noise growth that could compromise correctness or security margins before it becomes critical.
+
+## Deployment Warning: fhe-service Decryption Oracle
+
+The `fhe-service` crate exposes a `/decrypt` endpoint for session-based decryption. **This endpoint is a decryption oracle.** Any caller with network access to this endpoint can submit arbitrary ciphertexts and observe whether decryption succeeds. This constitutes a CCA2 (adaptive chosen-ciphertext) attack surface.
+
+**Do not expose the fhe-service decrypt endpoint to untrusted clients.** Deployment guidance:
+- Place the service behind an authentication layer (mTLS, API key, or equivalent) that restricts access to authorized enclave operators only.
+- Avoid architectures where end-users can directly submit ciphertexts for decryption.
+- If IND-CCA2 security is a requirement, a different key-encapsulation scheme is needed before fhe-service can be used in that threat model.
+
+---
 
 ## Known Limitations
 

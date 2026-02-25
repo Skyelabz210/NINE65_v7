@@ -12,7 +12,7 @@ Key achievement: First FHE system with fully verified bootstrap roundtrip across
 - **Service name:** nine65-v7
 - **Region:** us-south1 (Dallas)
 - **Project:** astro-resonance
-- **URL:** https://nine65-v7-517338038154.us-south1.run.app
+- **URL:** https://nine65-v7-517338038154.us-south1.run.app (Disabled — billing paused)
 - **Deploy method:** Push to main branch triggers Cloud Build auto-build and deploy
 - **Container port:** 8080
 
@@ -38,7 +38,7 @@ NINE65_v7/
 │   ├── exact_transcendentals/ # Exact CORDIC transcendentals
 │   ├── nexgen_rational/     # Exact i128 rational arithmetic
 │   ├── fhe-service/         # Session management
-│   ├── mana/                # Lane-parallel accelerator (Rayon)
+│   ├── mana/                # FHE stream accelerator (lane-parallel pipeline; Rayon opt-in)
 │   └── unhal/               # Hardware abstraction layer
 ├── proofs/coq/              # 14 machine-checked Coq proofs
 ├── lean4/KElimination/      # 4 Lean4 formalizations
@@ -77,9 +77,9 @@ Depth benchmarks:
 - Auto-Bootstrap: AutoBootstrapEvaluator::mul_auto() — auto trigger on noise threshold — Verified 10+ chained muls
 
 ## Security Configs
-- SecureConfig::secure_128() — n=4096, log2(q)=89.08, attack log2(rop)=129
-- SecureConfig::secure_192() — n=8192, log2(q)=145.08, attack log2(rop)=159
-- SecureConfig::secure_256() — n=16384, log2(q)=203.38, attack log2(rop)=226
+- SecureConfig::secure_128() — n=4096, log2(q)=90, classical=129/quantum=86/hybrid=129
+- SecureConfig::secure_192() — n=16384, log2(q)=147, classical=374/quantum=213/hybrid=318
+- SecureConfig::secure_256() — n=16384, log2(q)=177, classical=311/quantum=177/hybrid=264
 
 ---
 
@@ -93,7 +93,7 @@ Depth benchmarks:
 
 ## Feature Flags
 - ntt_fft (default): FFT-based NTT
-- parallel (default): Rayon parallelism
+- parallel: Opt-in Rayon parallelism (MANA is the canonical accelerator)
 - clockwork: GRO timing gates, bound tracking, key lifecycle, integrity
 - exact_rational: NexGen rational bridge (exact noise, BFV delta)
 - shadow-entropy: CRT shadow entropy harvester
@@ -110,7 +110,7 @@ Depth benchmarks:
 - exact_transcendentals: Exact transcendental functions via integer CORDIC (143 tests)
 - nexgen_rational: Exact i128 rational arithmetic, zero-dep (95 tests)
 - fhe-service: FHE session management and serialization (22 tests)
-- mana: FHE stream accelerator, lane-parallel via Rayon (30 tests)
+- mana: FHE stream accelerator, lane-parallel pipeline engine (30 tests)
 - unhal: Hardware abstraction layer (10 tests)
 
 ---

@@ -1,6 +1,6 @@
-# Contributing to NINE65 v5
+# Contributing to NINE65 v7
 
-Thank you for your interest in contributing to NINE65, a bootstrap-free Fully Homomorphic Encryption system built on exact integer arithmetic.
+Thank you for your interest in contributing to NINE65, a fully bootstrapped Fully Homomorphic Encryption system built on exact integer arithmetic. NINE65 v7 achieves unlimited-depth computation via three verified bootstrap paths (circular, non-circular KSK, and auto-triggered).
 
 NINE65 is proprietary software. All contributions require prior written authorization from the copyright holder. By submitting a contribution, you agree that your work becomes the property of the project under the existing license terms.
 
@@ -29,7 +29,7 @@ cargo test -p nine65 --lib --release      # Core crate only
 |-------|------|---------|
 | `nine65` | `crates/nine65/` | Core FHE: arithmetic, ring operations, security, entropy, keys, noise, params |
 | `clockwork-core` | `crates/clockwork-core/` | Formal-spec RNS arithmetic: bound tracking, GRO timing, key lifecycle |
-| `mana` | `crates/mana/` | FHE stream accelerator (lane-parallel via Rayon) |
+| `mana` | `crates/mana/` | FHE stream accelerator (lane-parallel pipeline engine; Rayon is an optional transport) |
 | `nexgen_rational` | `crates/nexgen_rational/` | Exact i128 rational arithmetic (zero dependencies) |
 | `unhal` | `crates/unhal/` | Hardware abstraction layer |
 
@@ -88,7 +88,7 @@ grep -rn "f64\|f32" crates/ --include="*.rs"   # runtime must be clean; compiler
 | Flag | Purpose | Production? |
 |------|---------|-------------|
 | `ntt_fft` (default) | Number Theoretic Transform | Yes |
-| `parallel` (default) | Rayon parallelism | Yes |
+| `parallel` | Opt-in Rayon parallelism (MANA is the canonical accelerator) | Yes |
 | `accelerated` | Links mana/unhal | Yes |
 | `allow_insecure` | Test-only configs | **Never** |
 | `exact_rational` | NexGen rational bridge | Yes |

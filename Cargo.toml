@@ -13,7 +13,7 @@ authors = ["Acidlabz210 <acid@hackfate.us>"]
 wide = "0.7"              # Portable SIMD (stable Rust)
 
 # Parallelism
-rayon = "1.10"            # Data parallelism
+rayon = "1.10"            # Opt-in data parallelism (MANA is canonical)
 
 # Crypto (from NINE65)
 zeroize = { version = "1.7", features = ["derive"] }

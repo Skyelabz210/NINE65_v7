@@ -481,6 +481,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "nine65-extreme-tests"
+version = "0.1.0"
+dependencies = [
+ "nine65",
+ "proptest",
+ "rand_chacha 0.3.1",
+ "rand_core 0.6.4",
+ "rayon",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
