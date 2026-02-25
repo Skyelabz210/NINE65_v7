@@ -16,4 +16,4 @@ zeroize = { workspace = true }
 # (We implement our own to guarantee no-float invariant)
 
 [dev-dependencies]
-rand = "0.8"
+rand = "0.9"
