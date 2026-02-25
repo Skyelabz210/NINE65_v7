@@ -26,7 +26,7 @@ mod tests {
 
         // Validate ct_a against a different config (n=1024 vs n=4096, different prime set).
         // light_rns() has n=1024 and different primes, so dimensions will differ.
-        let config_light = nine65::params::FHEConfig::light_rns();
+        let config_light = nine65::params::FHEConfig::light_rns_insecure();
         let ctx_light = RNSFHEContext::try_new(&config_light).expect("ctx_light");
         let mut rng_light = ShadowHarvester::with_seed(0xB000);
         let keys_light = ctx_light.generate_keys_dual(&mut rng_light);

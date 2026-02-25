@@ -67,10 +67,9 @@ impl<'a> AutoBootstrapEvaluator<'a> {
 
         let mul_cost = NoiseBudget::mul_ct_cost(&self.work_ctx.config)
             + NoiseBudget::relin_cost(&self.work_ctx.config);
-        // Consume may fail if budget is exhausted, but we check should_bootstrap below
-        let _ = self.budget.consume(NoiseOpType::MulCt, mul_cost);
+        let budget_exhausted = self.budget.consume(NoiseOpType::MulCt, mul_cost).is_err();
 
-        if self.budget.should_bootstrap(self.trigger_permille) {
+        if budget_exhausted || self.budget.should_bootstrap(self.trigger_permille) {
             self.bootstrap_count += 1;
             let fresh = self.bootstrap.bootstrap(&result, self.bsk, self.ksk)?;
             self.budget.reset_after_bootstrap(&self.work_ctx.config);
