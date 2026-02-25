@@ -1,0 +1,20 @@
+[package]
+name = "nine65-extreme-tests"
+version = "0.1.0"
+edition = "2021"
+description = "Extreme boundary and adversarial test harness for NINE65 v7"
+
+[features]
+# Off by default — opt-in for CI scheduled runs and pre-release validation.
+extreme-tests = []
+
+[dev-dependencies]
+nine65 = { path = "../nine65", features = ["allow_insecure", "exact_rational", "clockwork", "serde"] }
+rand_chacha = { workspace = true }
+rand_core = { workspace = true }
+proptest = { workspace = true }
+rayon = { workspace = true }
+
+[lib]
+name = "nine65_extreme_tests"
+path = "src/lib.rs"
