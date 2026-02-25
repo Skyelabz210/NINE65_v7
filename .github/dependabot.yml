@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+    # NINE65 has minimal external dependencies by design (zeroize, subtle, sha2,
+    # getrandom, rand_core, rand_chacha, rayon, wide, thiserror, criterion, proptest).
+    # Monthly cadence is appropriate — security advisories are handled by cargo-deny.
+    open-pull-requests-limit: 5
