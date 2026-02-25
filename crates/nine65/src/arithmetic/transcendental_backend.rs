@@ -13,20 +13,10 @@ use exact_transcendentals::cordic::{CordicEngine, HyperbolicCordic};
 use std::sync::OnceLock;
 
 #[cfg(feature = "exact_transcendentals_backend")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ExactTranscendentalBackend {
     circular: CordicEngine,
     hyperbolic: HyperbolicCordic,
-}
-
-#[cfg(feature = "exact_transcendentals_backend")]
-impl Default for ExactTranscendentalBackend {
-    fn default() -> Self {
-        Self {
-            circular: CordicEngine::default(),
-            hyperbolic: HyperbolicCordic::default(),
-        }
-    }
 }
 
 #[cfg(feature = "exact_transcendentals_backend")]
@@ -97,7 +87,7 @@ fn exact_backend() -> &'static ExactTranscendentalBackend {
 pub fn try_exp_integer_exact(x: i128, scale: i128) -> Option<i128> {
     #[cfg(feature = "exact_transcendentals_backend")]
     {
-        return exact_backend().exp_integer(x, scale);
+        exact_backend().exp_integer(x, scale)
     }
     #[cfg(not(feature = "exact_transcendentals_backend"))]
     {
@@ -109,7 +99,7 @@ pub fn try_exp_integer_exact(x: i128, scale: i128) -> Option<i128> {
 pub fn try_sin_integer_exact(x: i128, scale: i128) -> Option<i128> {
     #[cfg(feature = "exact_transcendentals_backend")]
     {
-        return exact_backend().sin_integer(x, scale);
+        exact_backend().sin_integer(x, scale)
     }
     #[cfg(not(feature = "exact_transcendentals_backend"))]
     {
@@ -121,7 +111,7 @@ pub fn try_sin_integer_exact(x: i128, scale: i128) -> Option<i128> {
 pub fn try_cos_integer_exact(x: i128, scale: i128) -> Option<i128> {
     #[cfg(feature = "exact_transcendentals_backend")]
     {
-        return exact_backend().cos_integer(x, scale);
+        exact_backend().cos_integer(x, scale)
     }
     #[cfg(not(feature = "exact_transcendentals_backend"))]
     {
@@ -133,7 +123,7 @@ pub fn try_cos_integer_exact(x: i128, scale: i128) -> Option<i128> {
 pub fn try_ln_integer_exact(x: i128, scale: i128) -> Option<i128> {
     #[cfg(feature = "exact_transcendentals_backend")]
     {
-        return exact_backend().ln_integer(x, scale);
+        exact_backend().ln_integer(x, scale)
     }
     #[cfg(not(feature = "exact_transcendentals_backend"))]
     {

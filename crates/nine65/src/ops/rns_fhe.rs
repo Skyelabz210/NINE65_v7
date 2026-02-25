@@ -21,7 +21,6 @@ use crate::arithmetic::{
 };
 use crate::entropy::{FheRng, SecureRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
-use crate::params::secure_configs::SecureConfig;
 use crate::params::{mod_inverse, FHEConfig};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -3374,7 +3373,8 @@ impl RNSFHEContext {
 
         // [DEEP DIAGNOSTICS] Audit capacity after modulus switch
         if self.diagnostics_enabled {
-            let q_bits = crate::noise::boundary::rns_product_bit_length(&self.config.primes[..new_level]);
+            let q_bits =
+                crate::noise::boundary::rns_product_bit_length(&self.config.primes[..new_level]);
             // For BFV, coefficients are bounded by Q.
             let required_bits = q_bits;
 
@@ -4731,7 +4731,10 @@ mod tests {
 
     #[test]
     fn test_public_mode_depth_sweep() {
-        let configs = [FHEConfig::standard_128_insecure(), FHEConfig::high_192_insecure()];
+        let configs = [
+            FHEConfig::standard_128_insecure(),
+            FHEConfig::high_192_insecure(),
+        ];
         let base_bits = [16u32, 12, 10, 8];
 
         for config in configs {

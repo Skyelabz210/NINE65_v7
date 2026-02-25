@@ -2598,7 +2598,9 @@ mod tests {
             hi: 0xFEDCBA0987654321FEDCBA0987654321,
         };
         let m = 123456789;
-        let expected = (a.lo % m as u128 + (a.hi % m as u128 * (1u128 << 64) % m as u128 * (1u128 << 64) % m as u128)) % m as u128;
+        let expected = (a.lo % m as u128
+            + (a.hi % m as u128 * (1u128 << 64) % m as u128 * (1u128 << 64) % m as u128))
+            % m as u128;
         let got = a.mod_u64_ct(m);
         assert_eq!(got as u128, expected);
     }

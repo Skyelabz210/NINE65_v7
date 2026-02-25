@@ -28,8 +28,8 @@ impl ExactDelta {
         let t128 = t as i128;
         let floor_val = q128 / t128;
         let remainder = q128 - t128 * floor_val;
-        let rational = RationalBridge::new(q128, t128)
-            .expect("plaintext modulus t must be nonzero");
+        let rational =
+            RationalBridge::new(q128, t128).expect("plaintext modulus t must be nonzero");
         Self {
             rational,
             floor_val,

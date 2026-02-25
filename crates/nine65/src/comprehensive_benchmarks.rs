@@ -162,9 +162,15 @@ pub mod comprehensive_benchmarks {
             ct = ctx.mul_public(&ct, &ct_clone, &keys.eval_key).unwrap();
 
             let budget_result = budget
-                .consume(NoiseOpType::MulCt, NoiseBudget::mul_ct_cost(&ctx.inner.config))
+                .consume(
+                    NoiseOpType::MulCt,
+                    NoiseBudget::mul_ct_cost(&ctx.inner.config),
+                )
                 .and_then(|_| {
-                    budget.consume(NoiseOpType::Relin, NoiseBudget::relin_cost(&ctx.inner.config))
+                    budget.consume(
+                        NoiseOpType::Relin,
+                        NoiseBudget::relin_cost(&ctx.inner.config),
+                    )
                 })
                 .and_then(|_| {
                     budget.consume(

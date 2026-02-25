@@ -79,9 +79,7 @@ impl MaskLayer {
     /// Only use with `SecureRng` in production. Using `ShadowHarvester` here
     /// degrades security from information-theoretic to computational.
     pub fn generate_with_rng(n: usize, q: u64, rng: &mut SecureRng) -> Self {
-        let coeffs: Vec<u64> = (0..n)
-            .map(|_| rng.random_u64_bounded(q))
-            .collect();
+        let coeffs: Vec<u64> = (0..n).map(|_| rng.random_u64_bounded(q)).collect();
         Self {
             mask: RingPolynomial::from_coeffs(coeffs, q),
         }
@@ -96,14 +94,23 @@ impl MaskLayer {
     /// input polynomial's values (Shannon's theorem).
     #[inline]
     pub fn apply(&self, poly: &RingPolynomial) -> RingPolynomial {
-        debug_assert_eq!(poly.coeffs.len(), self.mask.coeffs.len(),
+        debug_assert_eq!(
+            poly.coeffs.len(),
+            self.mask.coeffs.len(),
             "Mask dimension mismatch: poly has {} coeffs, mask has {}",
-            poly.coeffs.len(), self.mask.coeffs.len());
-        debug_assert_eq!(poly.q, self.mask.q,
-            "Modulus mismatch: poly q={}, mask q={}", poly.q, self.mask.q);
+            poly.coeffs.len(),
+            self.mask.coeffs.len()
+        );
+        debug_assert_eq!(
+            poly.q, self.mask.q,
+            "Modulus mismatch: poly q={}, mask q={}",
+            poly.q, self.mask.q
+        );
 
         let q = poly.q;
-        let coeffs: Vec<u64> = poly.coeffs.iter()
+        let coeffs: Vec<u64> = poly
+            .coeffs
+            .iter()
             .zip(self.mask.coeffs.iter())
             .map(|(&x, &r)| {
                 // Constant-time modular addition
@@ -123,13 +130,17 @@ impl MaskLayer {
     /// Step B of the Three-Lock removal sequence side-channel safe.
     #[inline]
     pub fn remove(&self, masked: &RingPolynomial) -> RingPolynomial {
-        debug_assert_eq!(masked.coeffs.len(), self.mask.coeffs.len(),
-            "Mask dimension mismatch");
-        debug_assert_eq!(masked.q, self.mask.q,
-            "Modulus mismatch");
+        debug_assert_eq!(
+            masked.coeffs.len(),
+            self.mask.coeffs.len(),
+            "Mask dimension mismatch"
+        );
+        debug_assert_eq!(masked.q, self.mask.q, "Modulus mismatch");
 
         let q = masked.q;
-        let coeffs: Vec<u64> = masked.coeffs.iter()
+        let coeffs: Vec<u64> = masked
+            .coeffs
+            .iter()
             .zip(self.mask.coeffs.iter())
             .map(|(&x, &r)| {
                 // Constant-time modular subtraction
@@ -149,10 +160,11 @@ impl MaskLayer {
     /// The new mask is r*s mod q, which remains uniform when gcd(s, q) = 1.
     pub fn track_scalar_mul(&self, scalar: u64) -> MaskLayer {
         let q = self.mask.q;
-        let coeffs: Vec<u64> = self.mask.coeffs.iter()
-            .map(|&r| {
-                ((r as u128) * (scalar as u128) % (q as u128)) as u64
-            })
+        let coeffs: Vec<u64> = self
+            .mask
+            .coeffs
+            .iter()
+            .map(|&r| ((r as u128) * (scalar as u128) % (q as u128)) as u64)
             .collect();
 
         MaskLayer {
@@ -167,11 +179,12 @@ impl MaskLayer {
     /// The combined mask is r1 + r2, uniform when r1 or r2 is uniform.
     pub fn track_add(&self, other: &MaskLayer) -> MaskLayer {
         let q = self.mask.q;
-        let coeffs: Vec<u64> = self.mask.coeffs.iter()
+        let coeffs: Vec<u64> = self
+            .mask
+            .coeffs
+            .iter()
             .zip(other.mask.coeffs.iter())
-            .map(|(&r1, &r2)| {
-                ((r1 as u128 + r2 as u128) % (q as u128)) as u64
-            })
+            .map(|(&r1, &r2)| ((r1 as u128 + r2 as u128) % (q as u128)) as u64)
             .collect();
 
         MaskLayer {
@@ -200,17 +213,24 @@ impl CiphertextMask {
     }
 
     /// Apply masks to both ciphertext components.
-    pub fn apply(&self, c0: &RingPolynomial, c1: &RingPolynomial)
-        -> (RingPolynomial, RingPolynomial)
-    {
+    pub fn apply(
+        &self,
+        c0: &RingPolynomial,
+        c1: &RingPolynomial,
+    ) -> (RingPolynomial, RingPolynomial) {
         (self.mask_c0.apply(c0), self.mask_c1.apply(c1))
     }
 
     /// Remove masks from both ciphertext components.
-    pub fn remove(&self, masked_c0: &RingPolynomial, masked_c1: &RingPolynomial)
-        -> (RingPolynomial, RingPolynomial)
-    {
-        (self.mask_c0.remove(masked_c0), self.mask_c1.remove(masked_c1))
+    pub fn remove(
+        &self,
+        masked_c0: &RingPolynomial,
+        masked_c1: &RingPolynomial,
+    ) -> (RingPolynomial, RingPolynomial) {
+        (
+            self.mask_c0.remove(masked_c0),
+            self.mask_c1.remove(masked_c1),
+        )
     }
 
     /// Compute the mask's contribution in the decrypted polynomial domain.
@@ -254,8 +274,10 @@ mod tests {
         let masked = mask.apply(&poly);
         let recovered = mask.remove(&masked);
 
-        assert_eq!(recovered.coeffs, poly.coeffs,
-            "Mask apply/remove should be identity");
+        assert_eq!(
+            recovered.coeffs, poly.coeffs,
+            "Mask apply/remove should be identity"
+        );
     }
 
     #[test]
@@ -269,8 +291,10 @@ mod tests {
 
         // Check that masked coefficients are not all the same
         let unique: std::collections::HashSet<u64> = masked.coeffs.iter().copied().collect();
-        assert!(unique.len() > 1,
-            "Masked constant should produce diverse coefficients");
+        assert!(
+            unique.len() > 1,
+            "Masked constant should produce diverse coefficients"
+        );
     }
 
     #[test]
@@ -298,19 +322,28 @@ mod tests {
         let scalar = 7u64;
 
         let masked = mask.apply(&poly);
-        let scaled_masked: Vec<u64> = masked.coeffs.iter()
+        let scaled_masked: Vec<u64> = masked
+            .coeffs
+            .iter()
             .map(|&c| ((c as u128 * scalar as u128) % TEST_Q as u128) as u64)
             .collect();
-        let scaled_masked = RingPolynomial { coeffs: scaled_masked, q: TEST_Q };
+        let scaled_masked = RingPolynomial {
+            coeffs: scaled_masked,
+            q: TEST_Q,
+        };
 
         let tracked_mask = mask.track_scalar_mul(scalar);
         let recovered = tracked_mask.remove(&scaled_masked);
 
-        let expected: Vec<u64> = poly.coeffs.iter()
+        let expected: Vec<u64> = poly
+            .coeffs
+            .iter()
             .map(|&c| ((c as u128 * scalar as u128) % TEST_Q as u128) as u64)
             .collect();
-        assert_eq!(recovered.coeffs, expected,
-            "Scalar tracking should recover scaled original");
+        assert_eq!(
+            recovered.coeffs, expected,
+            "Scalar tracking should recover scaled original"
+        );
     }
 
     #[test]

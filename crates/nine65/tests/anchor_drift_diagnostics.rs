@@ -1,6 +1,6 @@
-use nine65::params::secure_configs::SecureConfig;
-use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::entropy::ShadowHarvester;
+use nine65::ops::rns_fhe::RNSFHEContext;
+use nine65::params::secure_configs::SecureConfig;
 
 #[test]
 fn test_anchor_capacity_drift_secure_256() {
@@ -26,7 +26,10 @@ fn test_anchor_capacity_drift_secure_256() {
     let full_keys = ctx.generate_keys_dual_full(&mut rng);
     let result = ctx.mul_dual_public(&ct1, &ct2, &full_keys.eval_key);
 
-    assert!(result.is_err(), "secure_256 must trigger capacity drift error in public mode");
+    assert!(
+        result.is_err(),
+        "secure_256 must trigger capacity drift error in public mode"
+    );
     println!("Caught expected drift error: {:?}", result.err());
 }
 
@@ -43,7 +46,11 @@ fn test_anchor_capacity_safe_secure_128() {
     let ct2 = ctx.encrypt_dual(3, &full_keys.public_key, &mut rng);
 
     let result = ctx.mul_dual_public(&ct1, &ct2, &full_keys.eval_key);
-    assert!(result.is_ok(), "secure_128 should be safe from anchor drift: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "secure_128 should be safe from anchor drift: {:?}",
+        result.err()
+    );
 
     let decrypted = ctx.decrypt_dual(&result.unwrap(), &full_keys.secret_key);
     assert_eq!(decrypted, 6);

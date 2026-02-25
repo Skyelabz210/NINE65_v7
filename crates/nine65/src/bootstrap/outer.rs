@@ -195,11 +195,7 @@ impl OuterCiphertextPair {
     }
 
     /// Decrypt both components.
-    pub fn decrypt(
-        &self,
-        layer: &OuterLayer,
-        ntt: &NTTEngine,
-    ) -> (RingPolynomial, RingPolynomial) {
+    pub fn decrypt(&self, layer: &OuterLayer, ntt: &NTTEngine) -> (RingPolynomial, RingPolynomial) {
         (
             layer.decrypt(&self.outer_c0, ntt),
             layer.decrypt(&self.outer_c1, ntt),
@@ -238,9 +234,12 @@ mod tests {
                 poly.coeffs[i] - recovered.coeffs[i]
             };
             let signed_diff = std::cmp::min(diff, TEST_Q - diff);
-            assert!(signed_diff < 1000,
+            assert!(
+                signed_diff < 1000,
                 "Outer decrypt error too large at coeff {}: diff={}",
-                i, signed_diff);
+                i,
+                signed_diff
+            );
         }
     }
 
@@ -255,8 +254,10 @@ mod tests {
         let ct2 = layer.encrypt(&poly, &ntt);
 
         // Two encryptions of the same plaintext should produce different ciphertexts
-        assert_ne!(ct1.b.coeffs, ct2.b.coeffs,
-            "Outer encryption should be randomized");
+        assert_ne!(
+            ct1.b.coeffs, ct2.b.coeffs,
+            "Outer encryption should be randomized"
+        );
     }
 
     #[test]
@@ -288,9 +289,12 @@ mod tests {
             })
             .count();
 
-        assert!(errors > TEST_N / 2,
+        assert!(
+            errors > TEST_N / 2,
             "Wrong key should produce mostly garbage (got {} errors out of {})",
-            errors, TEST_N);
+            errors,
+            TEST_N
+        );
 
         // New encryption with new key should work
         let ct2 = layer.encrypt(&poly, &ntt);
@@ -303,8 +307,12 @@ mod tests {
                 poly.coeffs[i] - dec2.coeffs[i]
             };
             let signed_diff = std::cmp::min(diff, TEST_Q - diff);
-            assert!(signed_diff < 1000,
-                "New key decrypt should work: diff={} at coeff {}", signed_diff, i);
+            assert!(
+                signed_diff < 1000,
+                "New key decrypt should work: diff={} at coeff {}",
+                signed_diff,
+                i
+            );
         }
 
         let _ = dec1; // suppress warning

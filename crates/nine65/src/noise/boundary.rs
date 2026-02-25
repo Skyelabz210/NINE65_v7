@@ -84,9 +84,11 @@ impl BoundaryDiagnostic {
                     u, self.required_bits, self.capacity_bits
                 ),
             }),
-            BoundaryStatus::CriticalApproaching(u) if strict => Err(Nine65Error::InvalidParameter {
-                message: format!("CRITICAL: Capacity utilization {}% is >= 90%", u),
-            }),
+            BoundaryStatus::CriticalApproaching(u) if strict => {
+                Err(Nine65Error::InvalidParameter {
+                    message: format!("CRITICAL: Capacity utilization {}% is >= 90%", u),
+                })
+            }
             BoundaryStatus::WarningApproaching(u) if strict => Err(Nine65Error::InvalidParameter {
                 message: format!("WARNING: Capacity utilization {}% is >= 80%", u),
             }),

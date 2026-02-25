@@ -87,7 +87,9 @@ impl<'a> AutoBootstrapEvaluator<'a> {
         ct2: &DualRNSCiphertext,
     ) -> DualRNSCiphertext {
         self.total_adds += 1;
-        let _ = self.budget.consume(NoiseOpType::Add, NoiseBudget::add_cost());
+        let _ = self
+            .budget
+            .consume(NoiseOpType::Add, NoiseBudget::add_cost());
         self.work_ctx.add_dual(ct1, ct2)
     }
 

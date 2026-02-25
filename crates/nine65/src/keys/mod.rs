@@ -298,7 +298,10 @@ impl EvaluationKey {
         for _ in 0..levels {
             let a_coeffs = try_secure_uniform_vector(config.n, config.q).map_err(|e| {
                 Nine65Error::KeyGenFailed {
-                    reason: format!("OS CSPRNG failure generating eval-key uniform vector: {}", e),
+                    reason: format!(
+                        "OS CSPRNG failure generating eval-key uniform vector: {}",
+                        e
+                    ),
                 }
             })?;
             let a_i = RingPolynomial::from_coeffs(a_coeffs, config.q);
@@ -434,11 +437,9 @@ impl PublicKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (pk, _): (Self, usize) = 
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
-                Nine65Error::DeserializationError {
-                    message: format!("Bincode parse error: {}", e),
-                }
+        let (pk, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
+            .map_err(|e| Nine65Error::DeserializationError {
+                message: format!("Bincode parse error: {}", e),
             })?;
         pk.validate(expected_n, expected_q)?;
         Ok(pk)
@@ -470,8 +471,9 @@ impl PublicKey {
         note = "Use from_bytes_validated() for untrusted input"
     )]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 }
@@ -504,11 +506,9 @@ impl EvaluationKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (ek, _): (Self, usize) = 
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
-                Nine65Error::DeserializationError {
-                    message: format!("Bincode parse error: {}", e),
-                }
+        let (ek, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
+            .map_err(|e| Nine65Error::DeserializationError {
+                message: format!("Bincode parse error: {}", e),
             })?;
         ek.validate(expected_n, expected_q)?;
         Ok(ek)
@@ -540,8 +540,9 @@ impl EvaluationKey {
         note = "Use from_bytes_validated() for untrusted input"
     )]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 }
@@ -600,14 +601,14 @@ impl GatedKeyGen {
         max_search: u64,
     ) -> Nine65Result<KeySet> {
         // Find next coincidence window
-        let _window = gate.next_window(0, max_search).ok_or_else(|| {
-            Nine65Error::KeyGenFailed {
+        let _window = gate
+            .next_window(0, max_search)
+            .ok_or_else(|| Nine65Error::KeyGenFailed {
                 reason: format!(
                     "GRO timing gate: no coincidence window found within {} steps",
                     max_search
                 ),
-            }
-        })?;
+            })?;
 
         // Execute keygen inside window
         KeySet::try_generate_secure(config, ntt)

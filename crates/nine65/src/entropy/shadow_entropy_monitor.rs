@@ -150,7 +150,8 @@ impl ShadowEntropyMonitor {
         let optimal_threads = self.determine_optimal_threads(batch_size);
 
         // Update the current thread count
-        self.current_threads.store(optimal_threads, Ordering::Relaxed);
+        self.current_threads
+            .store(optimal_threads, Ordering::Relaxed);
         optimal_threads
     }
 
@@ -161,7 +162,8 @@ impl ShadowEntropyMonitor {
 
     /// Update entropy threshold based on system conditions
     pub fn update_threshold(&self, new_threshold: u64) {
-        self.entropy_threshold.store(new_threshold, Ordering::Relaxed);
+        self.entropy_threshold
+            .store(new_threshold, Ordering::Relaxed);
     }
 
     /// Update measurement interval to control how often entropy is measured
@@ -291,7 +293,11 @@ pub struct AdaptiveFHEContext {
     #[cfg(all(not(feature = "sequential"), feature = "parallel"))]
     thread_pool: std::sync::Mutex<Arc<rayon::ThreadPool>>,
     /// Cache the last recommended thread count to reduce mutex contention
-    #[cfg(all(not(feature = "sequential"), feature = "parallel"))]
+    #[cfg(all(
+        not(feature = "sequential"),
+        feature = "parallel",
+        feature = "adaptive-threading"
+    ))]
     last_recommended_threads: std::sync::atomic::AtomicUsize,
 }
 
@@ -327,6 +333,7 @@ impl AdaptiveFHEContext {
                 keys: Arc::new(keys),
                 entropy_monitor,
                 thread_pool: std::sync::Mutex::new(Arc::new(thread_pool)),
+                #[cfg(feature = "adaptive-threading")]
                 last_recommended_threads: std::sync::atomic::AtomicUsize::new(initial_threads),
             }
         }
@@ -342,15 +349,14 @@ impl AdaptiveFHEContext {
     }
 
     #[cfg(all(not(feature = "sequential"), feature = "parallel"))]
-    fn update_thread_pool_if_needed(&self, batch_size: usize) {
+    fn update_thread_pool_if_needed(&self, _batch_size: usize) {
         #[cfg(feature = "adaptive-threading")]
         {
             if self
                 .entropy_monitor
                 .update_workload_and_check_adaptation(batch_size)
             {
-                let recommended_threads =
-                    self.entropy_monitor.adapt_threading(batch_size) as usize;
+                let recommended_threads = self.entropy_monitor.adapt_threading(batch_size) as usize;
                 let cached_threads = self
                     .last_recommended_threads
                     .load(std::sync::atomic::Ordering::Relaxed);
@@ -368,10 +374,8 @@ impl AdaptiveFHEContext {
                             .lock()
                             .unwrap_or_else(|poisoned| poisoned.into_inner());
                         *pool_guard = Arc::new(Self::create_thread_pool(recommended_threads));
-                        self.last_recommended_threads.store(
-                            recommended_threads,
-                            std::sync::atomic::Ordering::Relaxed,
-                        );
+                        self.last_recommended_threads
+                            .store(recommended_threads, std::sync::atomic::Ordering::Relaxed);
                     }
                 }
             }
@@ -390,12 +394,8 @@ impl AdaptiveFHEContext {
                 .map(|(i, &msg)| {
                     let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                     let encoder = BFVEncoder::new(&self.config);
-                    let encryptor = BFVEncryptor::new(
-                        &self.keys.public_key,
-                        &encoder,
-                        &ntt,
-                        self.config.eta,
-                    );
+                    let encryptor =
+                        BFVEncryptor::new(&self.keys.public_key, &encoder, &ntt, self.config.eta);
                     let mut harvester = ShadowHarvester::with_seed(seed.wrapping_add(i as u64));
                     let ct = encryptor.encrypt(msg, &mut harvester);
                     let counter = self
@@ -426,7 +426,8 @@ impl AdaptiveFHEContext {
                     .enumerate()
                     .map_init(
                         || {
-                            let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
+                            let ntt =
+                                crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                             let encoder = BFVEncoder::new(&self.config);
                             (ntt, encoder)
                         },
@@ -440,7 +441,10 @@ impl AdaptiveFHEContext {
                             let mut harvester =
                                 ShadowHarvester::with_seed(seed.wrapping_add(i as u64));
                             let ct = encryptor.encrypt(msg, &mut harvester);
-                            let counter = self.entropy_monitor.measurement_counter.load(Ordering::Relaxed);
+                            let counter = self
+                                .entropy_monitor
+                                .measurement_counter
+                                .load(Ordering::Relaxed);
                             if counter % self.entropy_monitor.measurement_interval == 0 {
                                 self.entropy_monitor.measure_entropy_from_ciphertext(&ct);
                             }
@@ -449,7 +453,8 @@ impl AdaptiveFHEContext {
                     )
                     .collect()
             });
-            self.entropy_monitor.record_performance(batch_size, start_time.elapsed());
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
             result
         }
     }
@@ -493,12 +498,16 @@ impl AdaptiveFHEContext {
                     .par_iter()
                     .map_init(
                         || {
-                            let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
+                            let ntt =
+                                crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                             let encoder = BFVEncoder::new(&self.config);
                             (ntt, encoder)
                         },
                         |(ntt, encoder), ct| {
-                            let counter = self.entropy_monitor.measurement_counter.load(Ordering::Relaxed);
+                            let counter = self
+                                .entropy_monitor
+                                .measurement_counter
+                                .load(Ordering::Relaxed);
                             if counter % self.entropy_monitor.measurement_interval == 0 {
                                 self.entropy_monitor.measure_entropy_from_ciphertext(ct);
                             }
@@ -508,13 +517,18 @@ impl AdaptiveFHEContext {
                     )
                     .collect()
             });
-            self.entropy_monitor.record_performance(batch_size, start_time.elapsed());
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
             result
         }
     }
 
     /// Adaptive homomorphic addition
-    pub fn adaptive_add(&self, ct1_list: &[Ciphertext], ct2_list: &[Ciphertext]) -> Vec<Ciphertext> {
+    pub fn adaptive_add(
+        &self,
+        ct1_list: &[Ciphertext],
+        ct2_list: &[Ciphertext],
+    ) -> Vec<Ciphertext> {
         assert_eq!(ct1_list.len(), ct2_list.len());
         let batch_size = ct1_list.len();
 
@@ -556,12 +570,16 @@ impl AdaptiveFHEContext {
                     .zip(ct2_list.par_iter())
                     .map_init(
                         || {
-                            let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
+                            let ntt =
+                                crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                             let encoder = BFVEncoder::new(&self.config);
                             (ntt, encoder)
                         },
                         |(ntt, encoder), (ct1, ct2)| {
-                            let counter = self.entropy_monitor.measurement_counter.load(Ordering::Relaxed);
+                            let counter = self
+                                .entropy_monitor
+                                .measurement_counter
+                                .load(Ordering::Relaxed);
                             if counter % self.entropy_monitor.measurement_interval == 0 {
                                 self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
                                 self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
@@ -573,14 +591,19 @@ impl AdaptiveFHEContext {
                     )
                     .collect()
             });
-            self.entropy_monitor.record_performance(batch_size, start_time.elapsed());
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
             result
         }
     }
 
     /// Adaptive homomorphic multiplication
     #[allow(deprecated)]
-    pub fn adaptive_mul(&self, ct1_list: &[Ciphertext], ct2_list: &[Ciphertext]) -> Vec<Ciphertext> {
+    pub fn adaptive_mul(
+        &self,
+        ct1_list: &[Ciphertext],
+        ct2_list: &[Ciphertext],
+    ) -> Vec<Ciphertext> {
         assert_eq!(ct1_list.len(), ct2_list.len());
         let batch_size = ct1_list.len();
 
@@ -622,12 +645,16 @@ impl AdaptiveFHEContext {
                     .zip(ct2_list.par_iter())
                     .map_init(
                         || {
-                            let ntt = crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
+                            let ntt =
+                                crate::arithmetic::NTTEngine::new(self.config.q, self.config.n);
                             let encoder = BFVEncoder::new(&self.config);
                             (ntt, encoder)
                         },
                         |(ntt, encoder), (ct1, ct2)| {
-                            let counter = self.entropy_monitor.measurement_counter.load(Ordering::Relaxed);
+                            let counter = self
+                                .entropy_monitor
+                                .measurement_counter
+                                .load(Ordering::Relaxed);
                             if counter % self.entropy_monitor.measurement_interval == 0 {
                                 self.entropy_monitor.measure_entropy_from_ciphertext(ct1);
                                 self.entropy_monitor.measure_entropy_from_ciphertext(ct2);
@@ -639,7 +666,8 @@ impl AdaptiveFHEContext {
                     )
                     .collect()
             });
-            self.entropy_monitor.record_performance(batch_size, start_time.elapsed());
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
             result
         }
     }
@@ -758,10 +786,7 @@ mod tests {
 
         // Large batch should use 8 threads (maximize parallelization)
         let large_batch_threads = monitor.adapt_threading(50);
-        assert_eq!(
-            large_batch_threads, 8,
-            "Large batch should use 8 threads"
-        );
+        assert_eq!(large_batch_threads, 8, "Large batch should use 8 threads");
 
         // Ensure thread counts are within bounds
         assert!(
@@ -997,7 +1022,10 @@ mod tests {
         let messages: Vec<u64> = (0..5).map(|i| i * 3).collect();
         let _cts = context.adaptive_encrypt(&messages, 800);
 
-        let entropy = context.entropy_monitor.entropy_level.load(Ordering::Relaxed);
+        let entropy = context
+            .entropy_monitor
+            .entropy_level
+            .load(Ordering::Relaxed);
         assert!(
             entropy > 0,
             "Entropy should evolve during encryption operations"

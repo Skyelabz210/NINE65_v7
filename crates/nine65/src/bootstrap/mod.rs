@@ -18,12 +18,12 @@
 //!
 //! HackFate.us Research, February 2026
 
+pub mod clockwork;
 pub mod mask;
 pub mod outer;
-pub mod clockwork;
 pub mod three_lock;
 
+pub use clockwork::{BootstrapKey, BootstrapParams, ClockworkBootstrap};
 pub use mask::MaskLayer;
-pub use outer::{OuterLayer, OuterCiphertext};
-pub use clockwork::{ClockworkBootstrap, BootstrapKey, BootstrapParams};
-pub use three_lock::{ThreeLockBootstrap, SecurityTier, BootstrapStats};
+pub use outer::{OuterCiphertext, OuterLayer};
+pub use three_lock::{BootstrapStats, SecurityTier, ThreeLockBootstrap};

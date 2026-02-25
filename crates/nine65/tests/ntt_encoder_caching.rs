@@ -10,8 +10,8 @@ use std::time::Instant;
 fn test_ntt_encoder_caching_performance() {
     use nine65::entropy::shadow_entropy_monitor::AdaptiveFHEContext;
     use nine65::entropy::ShadowHarvester;
-    use nine65::params::SecureConfig;
     use nine65::keys::KeySet;
+    use nine65::params::SecureConfig;
 
     let config = SecureConfig::secure_128().into_config();
     let mut rng = ShadowHarvester::with_seed(42);
@@ -56,12 +56,12 @@ fn test_ntt_encoder_caching_performance() {
 #[test]
 fn test_adaptive_encrypt_correctness() {
     // Basic correctness test - this should PASS even without caching
+    use nine65::arithmetic::NTTEngine;
     use nine65::entropy::shadow_entropy_monitor::AdaptiveFHEContext;
     use nine65::entropy::ShadowHarvester;
-    use nine65::params::SecureConfig;
     use nine65::keys::KeySet;
-    use nine65::arithmetic::NTTEngine;
-    use nine65::ops::encrypt::{BFVEncoder, BFVDecryptor};
+    use nine65::ops::encrypt::{BFVDecryptor, BFVEncoder};
+    use nine65::params::SecureConfig;
 
     let config = SecureConfig::secure_128().into_config();
     let mut rng = ShadowHarvester::with_seed(42);

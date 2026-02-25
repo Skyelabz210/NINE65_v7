@@ -93,7 +93,9 @@ fn assert_boot_invariants(
         });
     }
 
-    if boot_anchors.len() != canonical.len() || !boot_anchors.iter().zip(&canonical).all(|(a, b)| a == b) {
+    if boot_anchors.len() != canonical.len()
+        || !boot_anchors.iter().zip(&canonical).all(|(a, b)| a == b)
+    {
         return Err(Nine65Error::BootstrapConfigMismatch {
             reason: format!(
                 "Boot anchor primes {:?} do not match canonical {:?}",
@@ -124,7 +126,9 @@ impl ClockworkBootstrap {
         // Need at least work_primes + 1 boot primes (circular security drops one)
         let min_for_depth = bootstrap_depth + 2;
         let min_for_modswitch = work_config.primes.len() + 1;
-        let boot_prime_count = min_for_depth.max(min_for_modswitch).min(BOOTSTRAP_PRIMES.len());
+        let boot_prime_count = min_for_depth
+            .max(min_for_modswitch)
+            .min(BOOTSTRAP_PRIMES.len());
 
         let boot_config = FHEConfig {
             n,
@@ -207,13 +211,7 @@ impl ClockworkBootstrap {
             .map(|&p| {
                 s_signed
                     .iter()
-                    .map(|&c| {
-                        if c < 0 {
-                            p - ((-c) as u64)
-                        } else {
-                            c as u64
-                        }
-                    })
+                    .map(|&c| if c < 0 { p - ((-c) as u64) } else { c as u64 })
                     .collect()
             })
             .collect();
@@ -228,13 +226,7 @@ impl ClockworkBootstrap {
             .map(|&p| {
                 s_signed
                     .iter()
-                    .map(|&c| {
-                        if c < 0 {
-                            p - ((-c) as u64)
-                        } else {
-                            c as u64
-                        }
-                    })
+                    .map(|&c| if c < 0 { p - ((-c) as u64) } else { c as u64 })
                     .collect()
             })
             .collect();
@@ -307,13 +299,7 @@ impl ClockworkBootstrap {
             .map(|&p| {
                 e_signed
                     .iter()
-                    .map(|&e| {
-                        if e >= 0 {
-                            e as u64
-                        } else {
-                            p - ((-e) as u64)
-                        }
-                    })
+                    .map(|&e| if e >= 0 { e as u64 } else { p - ((-e) as u64) })
                     .collect()
             })
             .collect();
@@ -326,13 +312,7 @@ impl ClockworkBootstrap {
             .map(|&p| {
                 e_signed
                     .iter()
-                    .map(|&e| {
-                        if e >= 0 {
-                            e as u64
-                        } else {
-                            p - ((-e) as u64)
-                        }
-                    })
+                    .map(|&e| if e >= 0 { e as u64 } else { p - ((-e) as u64) })
                     .collect()
             })
             .collect();
@@ -342,8 +322,7 @@ impl ClockworkBootstrap {
         let mut pk0_main = vec![vec![0u64; n]; num_main];
         for i in 0..num_main {
             let p = self.boot_config.primes[i] as u128;
-            let as_prod =
-                self.boot_ctx.ntt_engines[i].multiply(&a_main[i], &boot_sk.s.main[i]);
+            let as_prod = self.boot_ctx.ntt_engines[i].multiply(&a_main[i], &boot_sk.s.main[i]);
             for j in 0..n {
                 let as_plus_e = (as_prod[j] as u128 + e_main[i][j] as u128) % p;
                 pk0_main[i][j] = if as_plus_e == 0 {
@@ -428,11 +407,7 @@ impl ClockworkBootstrap {
             num_digits: 0,
         };
 
-        Ok(BootstrapKeySet {
-            bsk,
-            ksk,
-            boot_sk,
-        })
+        Ok(BootstrapKeySet { bsk, ksk, boot_sk })
     }
 
     /// Generate bootstrap key material with independent boot key and KSK.
@@ -477,25 +452,13 @@ impl ClockworkBootstrap {
 
         // Generate KSK: converts Enc_{boot_sk} → Enc_{work_sk}
         // Uses gadget decomposition following the GaloisKey pattern.
-        let ksk = KeySwitchKey::generate(
-            &boot_sk,
-            work_sk,
-            &self.boot_ctx,
-            rng,
-        )?;
+        let ksk = KeySwitchKey::generate(&boot_sk, work_sk, &self.boot_ctx, rng)?;
 
-        Ok(BootstrapKeySet {
-            bsk,
-            ksk,
-            boot_sk,
-        })
+        Ok(BootstrapKeySet { bsk, ksk, boot_sk })
     }
 
     /// Generate an independent boot secret key (fresh ternary polynomial).
-    fn generate_independent_boot_sk(
-        &self,
-        rng: &mut ShadowHarvester,
-    ) -> DualRNSSecretKey {
+    fn generate_independent_boot_sk(&self, rng: &mut ShadowHarvester) -> DualRNSSecretKey {
         let n = self.n;
 
         // Generate fresh ternary coefficients {-1, 0, 1}
@@ -518,13 +481,7 @@ impl ClockworkBootstrap {
             .map(|&p| {
                 s_signed
                     .iter()
-                    .map(|&c| {
-                        if c < 0 {
-                            p - ((-c) as u64)
-                        } else {
-                            c as u64
-                        }
-                    })
+                    .map(|&c| if c < 0 { p - ((-c) as u64) } else { c as u64 })
                     .collect()
             })
             .collect();
@@ -539,13 +496,7 @@ impl ClockworkBootstrap {
             .map(|&p| {
                 s_signed
                     .iter()
-                    .map(|&c| {
-                        if c < 0 {
-                            p - ((-c) as u64)
-                        } else {
-                            c as u64
-                        }
-                    })
+                    .map(|&c| if c < 0 { p - ((-c) as u64) } else { c as u64 })
                     .collect()
             })
             .collect();
@@ -629,10 +580,7 @@ impl ClockworkBootstrap {
     /// Level-aware: uses the ciphertext's actual number of RNS limbs (not just 2).
     /// For a fresh ciphertext at level 3, uses all 3 primes. For a post-multiply
     /// ciphertext at level 2, uses 2 primes.
-    fn modswitch_to_t(
-        &self,
-        ct: &DualRNSCiphertext,
-    ) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
+    fn modswitch_to_t(&self, ct: &DualRNSCiphertext) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
         let n = self.n;
         let t = self.t;
         let ct_level = ct.c0.main.len();
@@ -660,11 +608,12 @@ impl ClockworkBootstrap {
             let mut partial_product = 1u128;
             for k in 0..ct_level {
                 if k > 0 {
-                    let inv = mod_inverse_u128(partial_product, primes_u128[k]).ok_or_else(|| {
-                        Nine65Error::BootstrapOverflow {
-                            operation: format!("CRT inverse for prime {}", primes_u128[k]),
-                        }
-                    })?;
+                    let inv =
+                        mod_inverse_u128(partial_product, primes_u128[k]).ok_or_else(|| {
+                            Nine65Error::BootstrapOverflow {
+                                operation: format!("CRT inverse for prime {}", primes_u128[k]),
+                            }
+                        })?;
                     crt_inverses.push(inv);
                 } else {
                     crt_inverses.push(0);
@@ -676,10 +625,18 @@ impl ClockworkBootstrap {
             let mut c1_small = vec![0u64; n];
 
             for i in 0..n {
-                let c0_val = crt_reconstruct_n(ct.c0.main.iter().map(|limb| limb[i] as u128), &primes_u128, &crt_inverses);
+                let c0_val = crt_reconstruct_n(
+                    ct.c0.main.iter().map(|limb| limb[i] as u128),
+                    &primes_u128,
+                    &crt_inverses,
+                );
                 c0_small[i] = ((c0_val * t128 + q_level_half) / q_level % t128) as u64;
 
-                let c1_val = crt_reconstruct_n(ct.c1.main.iter().map(|limb| limb[i] as u128), &primes_u128, &crt_inverses);
+                let c1_val = crt_reconstruct_n(
+                    ct.c1.main.iter().map(|limb| limb[i] as u128),
+                    &primes_u128,
+                    &crt_inverses,
+                );
                 c1_small[i] = ((c1_val * t128 + q_level_half) / q_level % t128) as u64;
             }
 
@@ -798,11 +755,12 @@ impl ClockworkBootstrap {
             let mut partial_product = 1u128;
             for k in 0..ct_level {
                 if k > 0 {
-                    let inv = mod_inverse_u128(partial_product, primes_u128[k]).ok_or_else(|| {
-                        Nine65Error::BootstrapOverflow {
-                            operation: format!("CRT inverse for prime {}", primes_u128[k]),
-                        }
-                    })?;
+                    let inv =
+                        mod_inverse_u128(partial_product, primes_u128[k]).ok_or_else(|| {
+                            Nine65Error::BootstrapOverflow {
+                                operation: format!("CRT inverse for prime {}", primes_u128[k]),
+                            }
+                        })?;
                     crt_inverses.push(inv);
                 } else {
                     crt_inverses.push(0);
@@ -991,7 +949,11 @@ impl ClockworkBootstrap {
         // Build a map: for each work prime, find its index in boot primes
         let mut boot_indices = Vec::with_capacity(work_num_primes);
         for (wi, wp) in self.work_config.primes.iter().enumerate() {
-            let bi = self.boot_config.primes.iter().position(|bp| bp == wp)
+            let bi = self
+                .boot_config
+                .primes
+                .iter()
+                .position(|bp| bp == wp)
                 .ok_or_else(|| Nine65Error::BootstrapConfigMismatch {
                     reason: format!(
                         "Work prime [{}]={} not found in boot primes {:?}",
@@ -1004,10 +966,11 @@ impl ClockworkBootstrap {
         // Precompute p_j^{-1} mod each remaining work prime
         let mut p_j_inv = Vec::with_capacity(work_num_primes);
         for &wp in &self.work_config.primes {
-            let inv = mod_inverse_u128(p_j as u128, wp as u128)
-                .ok_or_else(|| Nine65Error::BootstrapOverflow {
+            let inv = mod_inverse_u128(p_j as u128, wp as u128).ok_or_else(|| {
+                Nine65Error::BootstrapOverflow {
                     operation: format!("mod_inverse({}, {}) for modswitch", p_j, wp),
-                })?;
+                }
+            })?;
             p_j_inv.push(inv);
         }
 
@@ -1071,7 +1034,10 @@ impl ClockworkBootstrap {
                 if k > 0 {
                     let inv = mod_inverse_u128(partial, work_primes_u128[k]).ok_or_else(|| {
                         Nine65Error::BootstrapOverflow {
-                            operation: format!("CRT inverse for work prime {}", work_primes_u128[k]),
+                            operation: format!(
+                                "CRT inverse for work prime {}",
+                                work_primes_u128[k]
+                            ),
                         }
                     })?;
                     work_crt_inv.push(inv);
@@ -1169,11 +1135,14 @@ impl ClockworkBootstrap {
             let mut partial_product = 1u128;
             for k in 0..num_boot_primes {
                 if k > 0 {
-                    let inv = mod_inverse_u128(partial_product, boot_primes_u128[k]).ok_or_else(|| {
-                        Nine65Error::BootstrapOverflow {
-                            operation: format!("CRT inverse for boot prime {}", boot_primes_u128[k]),
-                        }
-                    })?;
+                    let inv = mod_inverse_u128(partial_product, boot_primes_u128[k]).ok_or_else(
+                        || Nine65Error::BootstrapOverflow {
+                            operation: format!(
+                                "CRT inverse for boot prime {}",
+                                boot_primes_u128[k]
+                            ),
+                        },
+                    )?;
                     crt_inverses.push(inv);
                 } else {
                     crt_inverses.push(0);
@@ -1216,16 +1185,14 @@ impl ClockworkBootstrap {
             for i in 0..num_boot_primes {
                 let p = self.boot_config.primes[i];
                 let digit_mod_p: Vec<u64> = digit.iter().map(|&v| v % p).collect();
-                let prod_b =
-                    self.boot_ctx.ntt_engines[i].multiply(&digit_mod_p, &ksk_b.main[i]);
-                let prod_a =
-                    self.boot_ctx.ntt_engines[i].multiply(&digit_mod_p, &ksk_a.main[i]);
+                let prod_b = self.boot_ctx.ntt_engines[i].multiply(&digit_mod_p, &ksk_b.main[i]);
+                let prod_a = self.boot_ctx.ntt_engines[i].multiply(&digit_mod_p, &ksk_a.main[i]);
 
                 for j in 0..n {
-                    new_c0_main[i][j] = ((new_c0_main[i][j] as u128 + prod_b[j] as u128)
-                        % p as u128) as u64;
-                    new_c1_main[i][j] = ((new_c1_main[i][j] as u128 + prod_a[j] as u128)
-                        % p as u128) as u64;
+                    new_c0_main[i][j] =
+                        ((new_c0_main[i][j] as u128 + prod_b[j] as u128) % p as u128) as u64;
+                    new_c1_main[i][j] =
+                        ((new_c1_main[i][j] as u128 + prod_a[j] as u128) % p as u128) as u64;
                 }
             }
         }
@@ -1234,12 +1201,8 @@ impl ClockworkBootstrap {
         // The caller (bootstrap_with_ksk) will apply modswitch_boot_to_work()
         // to properly scale Q_boot → Q_work.
         let num_boot_anchors = self.boot_ctx.dual_rns.anchor.primes.len();
-        let zero_anchor: Vec<Vec<u64>> = (0..num_boot_anchors)
-            .map(|_| vec![0u64; n])
-            .collect();
-        let zero_anchor2: Vec<Vec<u64>> = (0..num_boot_anchors)
-            .map(|_| vec![0u64; n])
-            .collect();
+        let zero_anchor: Vec<Vec<u64>> = (0..num_boot_anchors).map(|_| vec![0u64; n]).collect();
+        let zero_anchor2: Vec<Vec<u64>> = (0..num_boot_anchors).map(|_| vec![0u64; n]).collect();
 
         Ok(DualRNSCiphertext {
             c0: DualRNSPoly {
@@ -1255,7 +1218,6 @@ impl ClockworkBootstrap {
             level: num_boot_primes,
         })
     }
-
 }
 
 // =========================================================================
@@ -1264,13 +1226,7 @@ impl ClockworkBootstrap {
 
 /// CRT reconstruction for 2 primes: given (r0, r1) with moduli (p0, p1),
 /// recover x in [0, p0*p1) such that x = r0 (mod p0), x = r1 (mod p1).
-pub fn crt_reconstruct_2(
-    r0: u128,
-    r1: u128,
-    p0: u128,
-    p1: u128,
-    p0_inv_mod_p1: u128,
-) -> u128 {
+pub fn crt_reconstruct_2(r0: u128, r1: u128, p0: u128, p1: u128, p0_inv_mod_p1: u128) -> u128 {
     let r0_mod_p1 = r0 % p1;
     let diff = if r1 >= r0_mod_p1 {
         r1 - r0_mod_p1
@@ -1326,7 +1282,8 @@ pub fn crt_reconstruct_n(
                 m.checked_mul(primes[k]).is_some(),
                 "crt_reconstruct_n: running product overflows u128 at prime[{}]={} — \
                  caller should use crt_reconstruct_u256 for >4 primes",
-                k, primes[k]
+                k,
+                primes[k]
             );
             m *= primes[k];
         }
@@ -1374,8 +1331,17 @@ mod tests {
         }
 
         // Test known values
-        for x in [0u128, 1, 42, primes[0] - 1, primes[0], primes[0] * primes[1] - 1,
-                   primes[0] * primes[1], q_full / 2, q_full - 1] {
+        for x in [
+            0u128,
+            1,
+            42,
+            primes[0] - 1,
+            primes[0],
+            primes[0] * primes[1] - 1,
+            primes[0] * primes[1],
+            q_full / 2,
+            q_full - 1,
+        ] {
             let residues = primes.iter().map(|&p| x % p);
             let reconstructed = crt_reconstruct_n(residues, &primes, &crt_inverses);
             assert_eq!(reconstructed, x, "CRT-N failed for x={}", x);
@@ -1411,17 +1377,37 @@ mod tests {
 
         // Test every prime-boundary neighborhood: 0, p0-1, p0, p0+1, p1-1, p1, p1+1
         let boundary_values: Vec<u128> = vec![
-            0, 1, 2,
-            p0 - 2, p0 - 1, p0, p0 + 1, p0 + 2,
-            p1 - 2, p1 - 1, p1, p1 + 1, p1 + 2,
+            0,
+            1,
+            2,
+            p0 - 2,
+            p0 - 1,
+            p0,
+            p0 + 1,
+            p0 + 2,
+            p1 - 2,
+            p1 - 1,
+            p1,
+            p1 + 1,
+            p1 + 2,
             // Values near the product boundary
-            product - 3, product - 2, product - 1,
+            product - 3,
+            product - 2,
+            product - 1,
             // Values near half the product (center of the range)
-            product / 2 - 1, product / 2, product / 2 + 1,
+            product / 2 - 1,
+            product / 2,
+            product / 2 + 1,
             // Multiples of each prime (residue = 0 for one limb)
-            p0 * 2, p0 * 3, p1 * 2, p1 * 3,
+            p0 * 2,
+            p0 * 3,
+            p1 * 2,
+            p1 * 3,
             // Near-multiples of each prime
-            p0 * 2 - 1, p0 * 2 + 1, p1 * 2 - 1, p1 * 2 + 1,
+            p0 * 2 - 1,
+            p0 * 2 + 1,
+            p1 * 2 - 1,
+            p1 * 2 + 1,
         ];
 
         for &x in &boundary_values {
@@ -1451,15 +1437,32 @@ mod tests {
         }
 
         let boundary_values: Vec<u128> = vec![
-            0, 1,
-            primes[0] - 1, primes[0], primes[0] + 1,
-            primes[1] - 1, primes[1], primes[1] + 1,
-            primes[2] - 1, primes[2], primes[2] + 1,
-            primes[0] * primes[1] - 1, primes[0] * primes[1], primes[0] * primes[1] + 1,
-            primes[0] * primes[2] - 1, primes[0] * primes[2], primes[0] * primes[2] + 1,
-            primes[1] * primes[2] - 1, primes[1] * primes[2], primes[1] * primes[2] + 1,
-            q_full / 2 - 1, q_full / 2, q_full / 2 + 1,
-            q_full - 3, q_full - 2, q_full - 1,
+            0,
+            1,
+            primes[0] - 1,
+            primes[0],
+            primes[0] + 1,
+            primes[1] - 1,
+            primes[1],
+            primes[1] + 1,
+            primes[2] - 1,
+            primes[2],
+            primes[2] + 1,
+            primes[0] * primes[1] - 1,
+            primes[0] * primes[1],
+            primes[0] * primes[1] + 1,
+            primes[0] * primes[2] - 1,
+            primes[0] * primes[2],
+            primes[0] * primes[2] + 1,
+            primes[1] * primes[2] - 1,
+            primes[1] * primes[2],
+            primes[1] * primes[2] + 1,
+            q_full / 2 - 1,
+            q_full / 2,
+            q_full / 2 + 1,
+            q_full - 3,
+            q_full - 2,
+            q_full - 1,
         ];
 
         for &x in &boundary_values {
@@ -1727,7 +1730,10 @@ mod tests {
                 assert!(
                     scaled < p as u128,
                     "Δ*m mod p out of range: {} >= {} for m={}, prime_idx={}",
-                    scaled, p, m, i
+                    scaled,
+                    p,
+                    m,
+                    i
                 );
             }
         }
@@ -1744,7 +1750,9 @@ mod tests {
         let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual_full(&mut rng);
-        let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("KeyGen");
 
         let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
         let (c0_small, c1_small) = boot.modswitch_to_t(&ct).expect("modswitch");
@@ -1757,12 +1765,18 @@ mod tests {
                 assert!(
                     ct_boot.c0.main[i][j] < p,
                     "c0[{}][{}]={} >= boot_prime={}",
-                    i, j, ct_boot.c0.main[i][j], p
+                    i,
+                    j,
+                    ct_boot.c0.main[i][j],
+                    p
                 );
                 assert!(
                     ct_boot.c1.main[i][j] < p,
                     "c1[{}][{}]={} >= boot_prime={}",
-                    i, j, ct_boot.c1.main[i][j], p
+                    i,
+                    j,
+                    ct_boot.c1.main[i][j],
+                    p
                 );
             }
         }
@@ -1813,7 +1827,9 @@ mod tests {
         let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual_full(&mut rng);
-        let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("KeyGen");
 
         let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
         let result = boot
@@ -1845,7 +1861,9 @@ mod tests {
         let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual_full(&mut rng);
-        let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("KeyGen");
 
         let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
         let result = boot
@@ -1858,12 +1876,18 @@ mod tests {
                 assert!(
                     result.c0.main[i][j] < wp,
                     "c0[{}][{}]={} >= work_prime={}",
-                    i, j, result.c0.main[i][j], wp
+                    i,
+                    j,
+                    result.c0.main[i][j],
+                    wp
                 );
                 assert!(
                     result.c1.main[i][j] < wp,
                     "c1[{}][{}]={} >= work_prime={}",
-                    i, j, result.c1.main[i][j], wp
+                    i,
+                    j,
+                    result.c1.main[i][j],
+                    wp
                 );
             }
         }
@@ -1875,7 +1899,7 @@ mod tests {
 
     #[test]
     fn test_verified_modswitch_agrees_with_unverified_valid_input() {
-        use crate::arithmetic::k_elimination::{KElimination, KElimConfig};
+        use crate::arithmetic::k_elimination::{KElimConfig, KElimination};
         use crate::entropy::ShadowHarvester;
         use crate::ops::rns_fhe::RNSFHEContext;
         use crate::params::SecureConfig;
@@ -1892,7 +1916,8 @@ mod tests {
             let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
 
             // Both methods should produce identical results
-            let (c0_unverified, c1_unverified) = boot.modswitch_to_t(&ct).expect("unverified modswitch");
+            let (c0_unverified, c1_unverified) =
+                boot.modswitch_to_t(&ct).expect("unverified modswitch");
             let (c0_verified, c1_verified) = boot
                 .modswitch_to_t_verified(&ct, &ke)
                 .expect("verified modswitch");
@@ -1927,7 +1952,7 @@ mod tests {
 
     #[test]
     fn test_verified_modswitch_requires_two_rns_limbs() {
-        use crate::arithmetic::k_elimination::{KElimination, KElimConfig};
+        use crate::arithmetic::k_elimination::{KElimConfig, KElimination};
         use crate::ops::rns_fhe::DualRNSPoly;
         use crate::params::SecureConfig;
 
@@ -1964,7 +1989,7 @@ mod tests {
 
     #[test]
     fn test_verified_modswitch_all_coefficients_in_range() {
-        use crate::arithmetic::k_elimination::{KElimination, KElimConfig};
+        use crate::arithmetic::k_elimination::{KElimConfig, KElimination};
         use crate::entropy::ShadowHarvester;
         use crate::ops::rns_fhe::RNSFHEContext;
         use crate::params::SecureConfig;
@@ -1989,7 +2014,7 @@ mod tests {
 
     #[test]
     fn test_verified_modswitch_capacity_overflow_detected() {
-        use crate::arithmetic::k_elimination::{KElimination, KElimConfig};
+        use crate::arithmetic::k_elimination::{KElimConfig, KElimination};
         use crate::ops::rns_fhe::DualRNSPoly;
         use crate::params::SecureConfig;
 
@@ -2041,7 +2066,7 @@ mod tests {
 
     #[test]
     fn test_verified_modswitch_validates_residues() {
-        use crate::arithmetic::k_elimination::{KElimination, KElimConfig};
+        use crate::arithmetic::k_elimination::{KElimConfig, KElimination};
         use crate::entropy::ShadowHarvester;
         use crate::ops::rns_fhe::RNSFHEContext;
         use crate::params::SecureConfig;
@@ -2064,7 +2089,7 @@ mod tests {
 
     #[test]
     fn test_verified_modswitch_boundary_messages() {
-        use crate::arithmetic::k_elimination::{KElimination, KElimConfig};
+        use crate::arithmetic::k_elimination::{KElimConfig, KElimination};
         use crate::entropy::ShadowHarvester;
         use crate::ops::rns_fhe::RNSFHEContext;
         use crate::params::SecureConfig;
@@ -2092,12 +2117,18 @@ mod tests {
                     assert!(
                         c0_small[j] < t,
                         "m={}: c0[{}]={} >= t={}",
-                        m, j, c0_small[j], t
+                        m,
+                        j,
+                        c0_small[j],
+                        t
                     );
                     assert!(
                         c1_small[j] < t,
                         "m={}: c1[{}]={} >= t={}",
-                        m, j, c1_small[j], t
+                        m,
+                        j,
+                        c1_small[j],
+                        t
                     );
                 }
             }
@@ -2207,7 +2238,9 @@ mod tests {
         let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual_full(&mut rng);
-        let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("KeyGen");
 
         for m in [0u64, 1, 2, 7, 42, 100, 1000] {
             let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
@@ -2215,7 +2248,11 @@ mod tests {
                 .bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk)
                 .expect("Circular bootstrap");
             let dec = ctx.decrypt_dual(&ct_boot, &keys.secret_key);
-            assert_eq!(dec, m, "Circular bootstrap roundtrip failed: m={}, got={}", m, dec);
+            assert_eq!(
+                dec, m,
+                "Circular bootstrap roundtrip failed: m={}, got={}",
+                m, dec
+            );
         }
     }
 
@@ -2239,7 +2276,11 @@ mod tests {
                 .bootstrap_with_ksk(&ct, &boot_keys_ksk.bsk, &boot_keys_ksk.ksk)
                 .expect("KSK bootstrap");
             let dec = ctx.decrypt_dual(&ct_boot, &keys.secret_key);
-            assert_eq!(dec, m, "KSK bootstrap roundtrip failed: m={}, got={}", m, dec);
+            assert_eq!(
+                dec, m,
+                "KSK bootstrap roundtrip failed: m={}, got={}",
+                m, dec
+            );
         }
     }
 
@@ -2253,21 +2294,29 @@ mod tests {
         let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual_full(&mut rng);
-        let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("KeyGen");
 
         // encrypt(2) * encrypt(3) = 6
         let ct_2 = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
         let ct_3 = ctx.encrypt_dual(3, &keys.public_key, &mut rng);
-        let ct_6 = ctx.mul_dual_public(&ct_2, &ct_3, &keys.eval_key).expect("mul");
+        let ct_6 = ctx
+            .mul_dual_public(&ct_2, &ct_3, &keys.eval_key)
+            .expect("mul");
         assert_eq!(ctx.decrypt_dual(&ct_6, &keys.secret_key), 6);
 
         // Bootstrap refreshes noise while preserving plaintext
-        let ct_fresh = boot.bootstrap(&ct_6, &boot_keys.bsk, &boot_keys.ksk).expect("bootstrap");
+        let ct_fresh = boot
+            .bootstrap(&ct_6, &boot_keys.bsk, &boot_keys.ksk)
+            .expect("bootstrap");
         assert_eq!(ctx.decrypt_dual(&ct_fresh, &keys.secret_key), 6);
 
         // 6 * 5 = 30 — multiplication after bootstrap must work
         let ct_5 = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
-        let ct_30 = ctx.mul_dual_public(&ct_fresh, &ct_5, &keys.eval_key).expect("mul after boot");
+        let ct_30 = ctx
+            .mul_dual_public(&ct_fresh, &ct_5, &keys.eval_key)
+            .expect("mul after boot");
         assert_eq!(ctx.decrypt_dual(&ct_30, &keys.secret_key), 30);
     }
 
@@ -2283,13 +2332,20 @@ mod tests {
         let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
         let mut rng = ShadowHarvester::with_seed(42);
         let keys = ctx.generate_keys_dual_full(&mut rng);
-        let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("KeyGen");
 
         let t = config.t;
         let ct_two = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
 
         let mut evaluator = AutoBootstrapEvaluator::new(
-            &ctx, &boot, &boot_keys.bsk, &boot_keys.ksk, &keys.eval_key, &config,
+            &ctx,
+            &boot,
+            &boot_keys.bsk,
+            &boot_keys.ksk,
+            &keys.eval_key,
+            &config,
         );
         // Trigger bootstrap at 50% budget remaining — ensures bootstrap fires
         // after every multiplication (budget drops ~69% per mul for secure_128).
@@ -2365,11 +2421,7 @@ mod tests {
         let canonical = DualRNSContext::canonical_anchor_primes_for_n(config.n);
         let boot_anchors = &boot.boot_ctx.dual_rns.anchor.primes;
 
-        assert_eq!(
-            boot_anchors.len(),
-            canonical.len(),
-            "anchor count mismatch"
-        );
+        assert_eq!(boot_anchors.len(), canonical.len(), "anchor count mismatch");
         for (i, (&got, &expected)) in boot_anchors.iter().zip(&canonical).enumerate() {
             assert_eq!(got, expected, "anchor prime [{}] mismatch", i);
         }
@@ -2461,7 +2513,8 @@ mod tests {
                 assert!(
                     boot.boot_config.primes.contains(&wp),
                     "{}: boot missing work prime {}",
-                    label, wp
+                    label,
+                    wp
                 );
             }
             let extras: Vec<u64> = boot

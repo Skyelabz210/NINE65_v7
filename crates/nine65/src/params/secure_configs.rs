@@ -177,7 +177,7 @@ impl SecureConfig {
     /// Uses n=8192 to maintain 128-bit security with larger Q.
     pub fn secure_128_deep() -> Self {
         Self::new_verified(
-            8192,  // Increased from 4096 to maintain security with larger Q
+            8192, // Increased from 4096 to maintain security with larger Q
             vec![
                 998244353, 985661441, 754974721, 469762049, // 4th 30-bit NTT prime
             ],
@@ -198,7 +198,7 @@ impl SecureConfig {
     /// - Quantum: 128 bits
     pub fn secure_192() -> Self {
         Self::new_verified(
-            16384,  // Increased from 8192 to achieve claimed 192-bit security
+            16384, // Increased from 8192 to achieve claimed 192-bit security
             vec![
                 998244353, 985661441, 754974721, 469762049,
                 167772161, // 5th prime for larger Q
@@ -342,11 +342,7 @@ pub fn assert_production_safe_fhe_config(config: &crate::params::FHEConfig) {
         return;
     }
 
-    let log_q: u32 = config
-        .primes
-        .iter()
-        .map(|&p| 64 - p.leading_zeros())
-        .sum();
+    let log_q: u32 = config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
 
     let estimator = crate::params::security_estimator::LatticeSecurityEstimator::default();
     let estimate = estimator.estimate(
@@ -406,8 +402,7 @@ pub fn verify_production_safety(config: &SecureConfig) -> Result<(), String> {
 pub fn get_production_config() -> SecureConfig {
     let config = SecureConfig::secure_128();
     // Verify at construction time
-    verify_production_safety(&config)
-        .expect("Default production config must be production-safe");
+    verify_production_safety(&config).expect("Default production config must be production-safe");
     config
 }
 

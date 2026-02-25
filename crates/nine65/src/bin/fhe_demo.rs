@@ -137,11 +137,17 @@ fn main() {
     };
 
     if a >= config.t {
-        eprintln!("ERROR: --a ({}) must be less than plaintext modulus t ({})", a, config.t);
+        eprintln!(
+            "ERROR: --a ({}) must be less than plaintext modulus t ({})",
+            a, config.t
+        );
         std::process::exit(2);
     }
     if b >= config.t {
-        eprintln!("ERROR: --b ({}) must be less than plaintext modulus t ({})", b, config.t);
+        eprintln!(
+            "ERROR: --b ({}) must be less than plaintext modulus t ({})",
+            b, config.t
+        );
         std::process::exit(2);
     }
 
