@@ -242,9 +242,26 @@ impl KElimination {
     /// Returns [`Nine65Error::NotCoprime`] if alpha_cap and beta_cap share a common factor.
     #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(alpha_primes: &[u64], beta_primes: &[u64]) -> Nine65Result<Self> {
-        let alpha_cap: u128 = alpha_primes.iter().map(|&p| p as u128).product();
+        // Use checked_mul to detect u128 overflow in prime products.
+        let alpha_cap: u128 = alpha_primes
+            .iter()
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
+            .ok_or_else(|| Nine65Error::InvalidParameter {
+                message: "alpha_primes product overflows u128".to_string(),
+            })?;
 
-        let beta_cap: u128 = beta_primes.iter().map(|&p| p as u128).product();
+        let beta_cap: u128 = beta_primes
+            .iter()
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
+            .ok_or_else(|| Nine65Error::InvalidParameter {
+                message: "beta_primes product overflows u128".to_string(),
+            })?;
+
+        // Note: alpha_cap * beta_cap may legitimately exceed u128 for large configs.
+        // This is not an error — it means the K-Elimination capacity is > u128::MAX,
+        // which is sufficient for all FHE plaintext values (bounded by Q, a 30-bit prime).
+        // capacity() will return u128::MAX (saturating) when the product overflows,
+        // correctly indicating "all u128 values are within capacity".
 
         // Compute α_cap^{-1} mod β_cap using extended GCD
         let alpha_inv_beta =
@@ -335,12 +352,41 @@ impl KElimination {
         alpha_bits + beta_bits
     }
 
+    /// Check how close a value is to this K-Elimination's capacity boundary.
+    ///
+    /// Returns a `CapacityReport` indicating whether the value is in the
+    /// `Safe` (<80%), `Warn80` (80–89%), `Warn90` (90–99%), or `Critical`
+    /// (≥100%) region relative to `capacity_bits()`.
+    ///
+    /// This is an informational check — use `validate_value` for hard enforcement.
+    /// Callers in the PyO3/WASM binding layer use this to surface warnings before
+    /// operations that would cause a capacity boundary crossing.
+    ///
+    /// # Example
+    /// ```ignore
+    /// let ke = KElimination::from_config(KElimConfig::Standard);
+    /// let report = ke.capacity_proximity(some_value);
+    /// if report.is_warning() {
+    ///     eprintln!("K-Elimination at {}% capacity ({} of {} bits)",
+    ///         report.utilization_pct, report.value_bits, report.capacity_bits);
+    /// }
+    /// ```
+    pub fn capacity_proximity(&self, value: u128) -> crate::arithmetic::boundary::CapacityReport {
+        use crate::arithmetic::boundary::{capacity_proximity_bits, u128_bit_length};
+        capacity_proximity_bits(u128_bit_length(value), self.capacity_bits())
+    }
+
     /// Get total capacity (alpha_cap * beta_cap)
     ///
     /// Returns the maximum value that can be exactly reconstructed.
     /// Values must be < capacity for exact K-Elimination reconstruction.
+    ///
+    /// Returns `u128::MAX` when the true capacity exceeds u128 (i.e., when
+    /// alpha_cap * beta_cap overflows). In that case all u128 values are
+    /// within capacity — validate_value will always pass, which is correct
+    /// because FHE plaintexts (bounded by the 30-bit prime Q) are always
+    /// well within a capacity exceeding u128::MAX.
     pub fn capacity(&self) -> u128 {
-        // Check for overflow (shouldn't happen with valid configs)
         self.alpha_cap.saturating_mul(self.beta_cap)
     }
 

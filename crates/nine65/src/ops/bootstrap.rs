@@ -124,7 +124,21 @@ impl ClockworkBootstrap {
         // Need at least work_primes + 1 boot primes (circular security drops one)
         let min_for_depth = bootstrap_depth + 2;
         let min_for_modswitch = work_config.primes.len() + 1;
-        let boot_prime_count = min_for_depth.max(min_for_modswitch).min(BOOTSTRAP_PRIMES.len());
+        let required = min_for_depth.max(min_for_modswitch);
+        if required > BOOTSTRAP_PRIMES.len() {
+            return Err(Nine65Error::BootstrapConfigMismatch {
+                reason: format!(
+                    "Bootstrap requires {} primes (work has {}, depth needs {}), \
+                     but BOOTSTRAP_PRIMES only contains {}. \
+                     Increase BOOTSTRAP_PRIMES or reduce circuit depth.",
+                    required,
+                    work_config.primes.len(),
+                    min_for_depth,
+                    BOOTSTRAP_PRIMES.len()
+                ),
+            });
+        }
+        let boot_prime_count = required;
 
         let boot_config = FHEConfig {
             n,

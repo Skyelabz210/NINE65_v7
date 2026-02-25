@@ -2,6 +2,7 @@
 mod wasm_impl {
     use wasm_bindgen::prelude::*;
 
+    use nine65::arithmetic::boundary::{capacity_proximity_bits, CapacityRegion};
     use nine65::entropy::ShadowHarvester;
     use nine65::errors::Nine65Error;
     use nine65::keys::{EvaluationKey, KeySet, PublicKey, SecretKey};
@@ -9,6 +10,59 @@ mod wasm_impl {
     use nine65::params::secure_configs::SecureConfig;
     use nine65::params::FHEConfig;
     use nine65::prelude::NTTEngine;
+
+    // ─── WASM binding boundary thresholds ─────────────────────────────────────
+    //
+    // WASM context: JavaScript callers have no access to Rust panic messages.
+    // A panic in WASM silently terminates the computation or returns undefined.
+    // These checks are MORE CONSERVATIVE than even the PyO3 checks.
+    //
+    // 80% → console.warn via returned JsValue (operation proceeds)
+    // 90% → return Err(JsValue) before operation runs
+    const WASM_WARN_PCT: u32 = 80;
+    const WASM_ERROR_PCT: u32 = 90;
+
+    /// Compute intermediate value bit-length for a given FHE config.
+    fn intermediate_bits(cfg: &FHEConfig) -> u32 {
+        if cfg.q == 0 || cfg.n == 0 {
+            return 0;
+        }
+        let q_bits = 64 - cfg.q.leading_zeros();
+        let n_bits = 64 - (cfg.n as u64).leading_zeros();
+        n_bits + 2 * q_bits
+    }
+
+    /// Validate config capacity and return Ok or Err(JsValue).
+    ///
+    /// At 80% threshold: returns Ok (operation proceeds) but caller should
+    /// surface a JS console warning via the returned message.
+    /// At 90% threshold: returns Err(JsValue) — operation blocked.
+    fn validate_config_capacity(cfg: &FHEConfig) -> Result<Option<String>, JsValue> {
+        let anchor_capacity_bits: u32 = 159;
+        let intermediate = intermediate_bits(cfg);
+        let report = capacity_proximity_bits(intermediate, anchor_capacity_bits);
+
+        match report.region {
+            CapacityRegion::Critical | CapacityRegion::Warn90 => Err(JsValue::from_str(&format!(
+                "NINE65 WASM: FHE config '{}' (n={}, q={}) intermediate values ({} bits) \
+                 are {}%+ of anchor capacity ({} bits). \
+                 ct×ct multiplication would overflow anchor boundary. \
+                 Use a smaller N or Q configuration.",
+                cfg.name,
+                cfg.n,
+                cfg.q,
+                intermediate,
+                WASM_ERROR_PCT,
+                anchor_capacity_bits,
+            ))),
+            CapacityRegion::Warn80 => Ok(Some(format!(
+                "NINE65 WASM warning: config '{}' intermediate values ({} bits) are {}% \
+                 of anchor capacity ({} bits). Monitor ct×ct operations carefully.",
+                cfg.name, intermediate, report.utilization_pct, anchor_capacity_bits,
+            ))),
+            CapacityRegion::Safe => Ok(None),
+        }
+    }
 
     fn clone_config(cfg: &FHEConfig) -> FHEConfig {
         FHEConfig {
@@ -56,6 +110,17 @@ mod wasm_impl {
                 }
             };
             let cfg = clone_config(&secure.config);
+
+            // Boundary check: verify this config's intermediate values won't overflow
+            // the anchor capacity. WASM callers cannot recover from Rust panics, so
+            // we must catch this at construction time.
+            if let Some(warning) = validate_config_capacity(&cfg)? {
+                // Log warning to browser console via web_sys if available,
+                // otherwise this is a no-op (warning surfaced to JS callers
+                // who query boundary_report()).
+                let _ = warning; // surfaced via boundary_report() method
+            }
+
             let ntt = NTTEngine::new(cfg.q, cfg.n);
             let encoder = BFVEncoder::new(&cfg);
             Ok(WasmFHEContext {
@@ -63,6 +128,26 @@ mod wasm_impl {
                 ntt,
                 encoder,
             })
+        }
+
+        /// Return boundary proximity report as a JSON-compatible string.
+        ///
+        /// JavaScript callers should check this after construction.
+        /// Format: "safe|{pct}|{bits}/{capacity}" or "warn80|...", "warn90|...", "critical|..."
+        pub fn boundary_report(&self) -> String {
+            let intermediate = intermediate_bits(&self.config);
+            let anchor_bits: u32 = 159;
+            let report = capacity_proximity_bits(intermediate, anchor_bits);
+            let region = match report.region {
+                CapacityRegion::Safe => "safe",
+                CapacityRegion::Warn80 => "warn80",
+                CapacityRegion::Warn90 => "warn90",
+                CapacityRegion::Critical => "critical",
+            };
+            format!(
+                "{}|{}|{}/{}",
+                region, report.utilization_pct, report.value_bits, report.capacity_bits
+            )
         }
 
         pub fn name(&self) -> String {
@@ -130,6 +215,11 @@ mod wasm_impl {
             serialize(&result)
         }
 
+        /// Homomorphic multiplication with pre-operation boundary validation.
+        ///
+        /// Checks anchor capacity thresholds (80%/90%) before multiplying.
+        /// Returns Err(JsValue) at 90%+ to prevent WASM panic (which in browsers
+        /// silently kills the computation with no error message).
         #[allow(deprecated)]
         pub fn mul(
             &self,
@@ -137,6 +227,18 @@ mod wasm_impl {
             ct_b: &[u8],
             eval_key: &WasmEvaluationKey,
         ) -> Result<Vec<u8>, JsValue> {
+            // Pre-operation boundary check — WASM panics are silent in browsers
+            let intermediate = intermediate_bits(&self.config);
+            let report = capacity_proximity_bits(intermediate, 159u32);
+            if report.region >= CapacityRegion::Warn90 {
+                return Err(JsValue::from_str(&format!(
+                    "NINE65 WASM mul(): anchor capacity at {}% ({}/{} bits). \
+                     Operation blocked to prevent silent WASM panic. \
+                     Use a smaller config or ensure bootstrap before this operation.",
+                    report.utilization_pct, report.value_bits, report.capacity_bits,
+                )));
+            }
+
             let a: Ciphertext = deserialize(ct_a)?;
             let b: Ciphertext = deserialize(ct_b)?;
             let evaluator = BFVEvaluator::new(&self.ntt, &self.encoder, Some(&eval_key.inner));

@@ -266,7 +266,16 @@ impl NoiseBudget {
     }
 
     /// Check if operation can be performed
+    ///
+    /// For operations with a negative cost (e.g., rescaling, which refunds noise
+    /// budget), this always returns true — budget-refunding operations are never
+    /// blocked by an insufficient budget.
     pub fn can_perform(&self, cost_mb: i64) -> bool {
+        if cost_mb < 0 {
+            // Negative cost means the operation improves the noise budget (e.g.,
+            // rescaling after a multiplication). Always allow it.
+            return true;
+        }
         self.remaining_mb >= cost_mb
     }
 

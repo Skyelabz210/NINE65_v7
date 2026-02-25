@@ -165,7 +165,7 @@ impl U256 {
         let (p0_lo, p0_hi) = Self::wide_mul_256(self.lo, b);
         let (p1_lo, p1_hi) = Self::wide_mul_256(self.hi, b);
         let (hi, carry) = p0_hi.overflowing_add(p1_lo);
-        debug_assert!(
+        assert!(
             p1_hi == 0 && !carry,
             "U256::mul_u64 overflow: product exceeds 256 bits"
         );
@@ -933,6 +933,38 @@ impl DualRNSContext {
     /// Anchor product does NOT fit in u128 — K-Elimination uses RNS-domain path.
     pub fn for_fhe(main_primes: &[u64], n: usize) -> Self {
         let anchor_primes = Self::canonical_anchor_primes_for_n(n);
+
+        // Invariant: ct×ct multiplication requires >= 5 anchor primes to cover
+        // N×Q² intermediate values. This assertion fires at startup, not mid-operation.
+        assert!(
+            anchor_primes.len() >= 5,
+            "DualRNSContext::for_fhe requires >= 5 anchor primes for ct×ct capacity, \
+             but canonical_anchor_primes_for_n({}) returned {}. \
+             This is a bug in canonical_anchor_primes_for_n().",
+            n,
+            anchor_primes.len()
+        );
+
+        // Invariant: The product of the first 3 anchor primes must exceed k_max.
+        // k_max ≈ Q * N where Q is the largest main prime and N is the degree.
+        // Product of first 3 canonical anchors ≈ 1.14×10^28, k_max ≈ 10^21 for
+        // secure_128. We verify at startup so misconfigured anchor sets fail loudly.
+        if !main_primes.is_empty() {
+            let q_max = *main_primes.iter().max().unwrap_or(&0) as u128;
+            let k_max_bound = q_max.saturating_mul(n as u128);
+            let anchor3_product: u128 = anchor_primes[..3.min(anchor_primes.len())]
+                .iter()
+                .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
+                .unwrap_or(u128::MAX);
+            assert!(
+                anchor3_product > k_max_bound,
+                "Anchor capacity insufficient for config n={}, max_prime={}: \
+                 first-3-anchor product ({}) must exceed k_max bound ({}). \
+                 Increase anchor prime count or use larger anchors.",
+                n, q_max, anchor3_product, k_max_bound
+            );
+        }
+
         Self::new(main_primes.to_vec(), anchor_primes, n)
     }
 
@@ -949,6 +981,94 @@ impl DualRNSContext {
     pub fn for_fhe_ntt_domain(main_primes: &[u64], n: usize) -> Self {
         #[allow(deprecated)]
         Self::for_fhe_coeff_domain(main_primes, n)
+    }
+
+    /// Bit-length of the full anchor product (sum of anchor prime bit-lengths).
+    ///
+    /// For the canonical 5 anchor primes (~31-32 bits each), this is 159 bits
+    /// (empirically measured: sum of bit-lengths of the 5 canonical primes).
+    /// This is the log2-level capacity of the anchor system.
+    ///
+    /// Values reconstructed via K-Elimination must fit within this capacity.
+    /// Approaching 80-90% of this boundary indicates anchor drift risk for
+    /// large N configurations (secure_256 with N=16384).
+    pub fn anchor_capacity_bits(&self) -> u32 {
+        self.anchor
+            .primes
+            .iter()
+            .map(|&p| 64 - p.leading_zeros())
+            .sum()
+    }
+
+    /// Bit-length of the first-3-anchor product (k-reconstruction bound).
+    ///
+    /// K-Elimination uses the first 3 anchor primes to reconstruct k.
+    /// The k value must be < product(anchor[0..3]). This method returns the
+    /// bit-length of that product (≈93 bits for canonical anchors).
+    pub fn anchor3_capacity_bits(&self) -> u32 {
+        self.anchor
+            .primes
+            .iter()
+            .take(3)
+            .map(|&p| 64 - p.leading_zeros())
+            .sum()
+    }
+
+    /// Check proximity of a k-value to the anchor3 reconstruction bound.
+    ///
+    /// The k value in K-Elimination (`k = (vβ - vα) × αcap⁻¹ mod βcap`) must
+    /// fit within the first-3-anchor product (≈93 bits for canonical anchors).
+    /// Values approaching 80% (74 bits) or 90% (84 bits) of this bound indicate
+    /// anchor capacity drift — especially relevant for large-N configurations.
+    ///
+    /// # Usage
+    /// Called before or after ct×ct to verify k is not approaching boundary.
+    ///
+    /// ```ignore
+    /// let report = ctx.check_k_proximity(k_bits);
+    /// if report.region >= CapacityRegion::Warn80 {
+    ///     eprintln!("[anchor] k at {}% of anchor3 capacity ({}/{} bits)",
+    ///         report.utilization_pct, report.value_bits, report.capacity_bits);
+    /// }
+    /// ```
+    pub fn check_k_proximity(&self, k_bits: u32) -> crate::arithmetic::boundary::CapacityReport {
+        use crate::arithmetic::boundary::capacity_proximity_bits;
+        capacity_proximity_bits(k_bits, self.anchor3_capacity_bits())
+    }
+
+    /// Check proximity of an intermediate value to the full anchor capacity.
+    ///
+    /// For intermediate values during RNS reconstruction (not just k),
+    /// checks against the full anchor product bit-length (≈158 bits for
+    /// canonical 5 anchors). Approaching 80%/90% of this bound means
+    /// the anchor set may be too small for the current N and Q.
+    ///
+    /// This is the check relevant to the "anchor capacity drift at 158 bits
+    /// for very large N at secure_256" concern.
+    pub fn check_intermediate_proximity(
+        &self,
+        value_bits: u32,
+    ) -> crate::arithmetic::boundary::CapacityReport {
+        use crate::arithmetic::boundary::capacity_proximity_bits;
+        capacity_proximity_bits(value_bits, self.anchor_capacity_bits())
+    }
+
+    /// Compute the maximum intermediate value bit-length for this config.
+    ///
+    /// During ct×ct tensor product, intermediate values can reach approximately
+    /// N × Q² where Q is the largest main prime. Returns log2 of this bound.
+    ///
+    /// If this value approaches `anchor_capacity_bits()`, the anchor set is
+    /// insufficient for this (N, Q) configuration.
+    pub fn max_intermediate_bits(&self) -> u32 {
+        if self.main.primes.is_empty() {
+            return 0;
+        }
+        let q_max = self.main.primes.iter().copied().max().unwrap_or(0);
+        let q_bits = 64 - q_max.leading_zeros();
+        let n_bits = 64 - (self.n as u64).leading_zeros();
+        // N × Q² ≈ 2^n_bits × 2^(2*q_bits)
+        n_bits + 2 * q_bits
     }
 
     /// Convert value to dual-RNS representation

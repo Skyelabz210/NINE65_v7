@@ -17,6 +17,7 @@
 //! - **Cyclotomic Phase**: Native ring trig (sin/cos via coefficient extraction)
 
 pub mod barrett;
+pub mod boundary; // CAPACITY PROXIMITY CHECKS (80%/90%/post-switch margins)
 pub mod ct_mul_exact; // EXACT CT×CT
 pub mod cyclotomic_phase; // NATIVE RING TRIGONOMETRY
 pub mod exact_coeff; // DUAL-TRACK COEFFICIENTS
@@ -37,6 +38,10 @@ pub mod transcendental_backend; // FEATURE-GATED EXACT TRANSCENDENTAL ADAPTER
 pub mod valuation; // INTEGER UTILITIES (log2, sqrt, format, trig LUT)
 
 pub use barrett::{BarrettContext, HybridModContext};
+pub use boundary::{
+    capacity_proximity_bits, post_switch_margin_bits, u128_bit_length, u64_bit_length,
+    CapacityRegion, CapacityReport, PostSwitchMargin,
+};
 pub use montgomery::MontgomeryContext;
 pub use persistent_montgomery::{PersistentMontgomery, PersistentPolynomial};
 
