@@ -1,0 +1,5 @@
+# Next.js telemetry gateway — build artifacts excluded from git
+node_modules/
+.next/
+.env
+.env.local
