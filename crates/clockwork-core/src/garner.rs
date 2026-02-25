@@ -124,9 +124,11 @@ impl GarnerDigits {
 
         for (i, &d_i) in self.digits.iter().enumerate() {
             result = result
-                .checked_add((d_i as u128).checked_mul(weight).expect(
-                    "Garner reconstruct: digit × weight overflows u128",
-                ))
+                .checked_add(
+                    (d_i as u128)
+                        .checked_mul(weight)
+                        .expect("Garner reconstruct: digit × weight overflows u128"),
+                )
                 .expect("Garner reconstruct: accumulator overflows u128");
             if i < self.moduli.len() - 1 {
                 weight = weight

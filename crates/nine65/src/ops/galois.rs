@@ -183,9 +183,12 @@ impl GaloisKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (key, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| Nine65Error::ConfigError {
-            message: e.to_string(),
-        })?;
+        let (key, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::ConfigError {
+                    message: e.to_string(),
+                }
+            })?;
         key.validate(expected_n, expected_q)?;
         Ok(key)
     }
@@ -220,8 +223,9 @@ impl GaloisKey {
         note = "Use from_bytes_validated() for untrusted input"
     )]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 }
@@ -260,9 +264,12 @@ impl GaloisKeySet {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (keys, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| Nine65Error::ConfigError {
-            message: e.to_string(),
-        })?;
+        let (keys, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::ConfigError {
+                    message: e.to_string(),
+                }
+            })?;
         keys.validate(expected_n, expected_q)?;
         Ok(keys)
     }
@@ -294,8 +301,9 @@ impl GaloisKeySet {
         note = "Use from_bytes_validated() for untrusted input"
     )]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 }

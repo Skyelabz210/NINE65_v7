@@ -50,7 +50,7 @@
 //!
 //! // 1. Use SecureConfig for production (128-bit+ security guaranteed)
 //! let secure = SecureConfig::secure_128();
-//! let config = FHEConfig::standard_128();  // Or derive from SecureConfig
+//! let config = FHEConfig::standard_128_insecure();  // Or derive from SecureConfig
 //! let ntt = NTTEngine::new(config.q, config.n);
 //!
 //! // 2. Generate keys with OS CSPRNG (PRODUCTION)
@@ -77,7 +77,7 @@
 //! // Use deterministic parameters for reproducible tests
 //! // Note: light() requires `allow_insecure` feature for testing only
 //! #[cfg(feature = "allow_insecure")]
-//! let config = FHEConfig::light();
+//! let config = FHEConfig::light_insecure();
 //! let ntt = NTTEngine::new(config.q, config.n);
 //! let mut rng = ShadowHarvester::with_seed(42);  // Deterministic!
 //!
@@ -154,7 +154,7 @@ mod v2_integration_tests;
 /// ```ignore
 /// use nine65::prelude::*;
 ///
-/// let config = FHEConfig::light();
+/// let config = FHEConfig::light_insecure();
 /// let ntt = NTTEngine::new(config.q, config.n);
 /// ```
 pub mod prelude {

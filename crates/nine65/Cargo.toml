@@ -6,43 +6,70 @@ edition.workspace = true
 authors.workspace = true
 
 [features]
-default = ["ntt_fft", "parallel"]
+# Default build: NTT/FFT ring ops + exact transcendentals backend (CORDIC/AGM).
+# No external parallelism by default — use --features accelerated for MANA/UNHAL
+# acceleration, which is purpose-built for this integer-only FHE architecture.
+default = ["ntt_fft", "exact_transcendentals_backend"]
 
-# The default feature set no longer includes "accelerated". Users who wish
-# to enable acceleration via proprietary crates (mana/unhal) should explicitly
-# enable the "accelerated" feature (e.g., `--features accelerated`). This
-# change improves buildability for users without access to those crates.
-secure-keygen = []
+# Core feature flags
 ntt_fft = []
+secure-keygen = []
+
+# Acceleration via proprietary MANA/UNHAL crates (recommended over rayon).
+# MANA (Modular Anchored Number Arithmetic) is designed specifically for this
+# system's RNS lane structure and integer-only arithmetic. It outperforms
+# general-purpose thread pools for this workload.
+accelerated = ["mana", "unhal"]
+
+# WASSAN noise field and CRT shadow entropy subsystem.
+# Shadow entropy: a proprietary entropy measurement technique derived from
+# Landauer's principle and Shannon information-theoretic entropy, applied to
+# monitor computational noise state in FHE operations. Internal use only —
+# not intended as a user-facing feature.
+shadow-entropy = []
 wassan = ["shadow-entropy"]
 v2 = ["ntt_fft", "wassan"]
-accelerated = ["mana", "unhal"]
-parallel = ["rayon"]
-# Enables secure_seed_from_os() convenience function for seeding ShadowHarvester from OS CSPRNG
-secure_seed = []
-# Enables verbose debug output during DualRNS multiplication (K-Elimination rescaling)
-debug_dual_mul = []
-# Enables serialization via serde (JSON + bincode support)
-serde = ["dep:serde", "dep:serde_json", "dep:bincode"]
-# Shadow entropy extensions (CRT shadow, WASSAN noise field)
-shadow-entropy = []
-# Allow use of insecure test configurations in release builds (NOT RECOMMENDED)
-allow_insecure = []
-# Enable slow/expensive tests (opt-in)
-slow_tests = []
-# Enable benchmark-only helpers (opt-in)
-benchmarks = []
-deterministic_rng = ["dep:rand_chacha", "dep:rand_core"]
-exact_rational = ["nexgen_rational"]
-clockwork = ["clockwork-core", "crc32fast"]
-# Use exact_transcendentals CORDIC/AGM backend for transcendental ops.
+
+# Exact transcendentals via integer CORDIC/AGM backend (no floats).
 exact_transcendentals_backend = ["dep:exact_transcendentals"]
-# Enable adaptive threading based on entropy monitoring (defaults to fixed 4 threads)
+
+# Exact rational arithmetic bridge (nexgen_rational i128 backend).
+exact_rational = ["nexgen_rational"]
+
+# Clockwork timing gates, GRO bound tracking, key lifecycle integrity.
+clockwork = ["clockwork-core", "crc32fast"]
+
+# Deterministic RNG for reproducible testing.
+deterministic_rng = ["dep:rand_chacha", "dep:rand_core"]
+
+# Serialization support (JSON + bincode).
+serde = ["dep:serde", "dep:serde_json", "dep:bincode"]
+
+# OS CSPRNG seeding convenience for ShadowHarvester.
+secure_seed = []
+
+# Verbose debug output for DualRNS K-Elimination rescaling.
+debug_dual_mul = []
+
+# Allow insecure test configs in release builds. NOT FOR PRODUCTION.
+allow_insecure = []
+
+# Opt-in flags for expensive test/bench runs.
+slow_tests = []
+benchmarks = []
+
+# Adaptive threading driven by shadow-entropy state monitoring.
+# Based on Landauer/Shannon entropy metrics applied to FHE noise budgets.
+# Internal subsystem — requires deep familiarity with QMNF architecture.
 adaptive-threading = ["shadow-entropy"]
-# Enable sequential execution (no Rayon)
-sequential = []
-# Enable generic Rayon with fixed thread count (no adaptive entropy monitoring)
+
+# Rayon opt-in variants (explicit only — not in default build).
+# For most use cases, --features accelerated (MANA) is the better choice.
+parallel = ["rayon"]
 generic-rayon = ["rayon"]
+
+# Force sequential execution (disables all parallelism).
+sequential = []
 
 [dependencies]
 mana = { path = "../mana", optional = true }

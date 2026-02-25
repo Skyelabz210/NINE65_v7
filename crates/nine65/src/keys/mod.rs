@@ -298,7 +298,10 @@ impl EvaluationKey {
         for _ in 0..levels {
             let a_coeffs = try_secure_uniform_vector(config.n, config.q).map_err(|e| {
                 Nine65Error::KeyGenFailed {
-                    reason: format!("OS CSPRNG failure generating eval-key uniform vector: {}", e),
+                    reason: format!(
+                        "OS CSPRNG failure generating eval-key uniform vector: {}",
+                        e
+                    ),
                 }
             })?;
             let a_i = RingPolynomial::from_coeffs(a_coeffs, config.q);
@@ -434,11 +437,9 @@ impl PublicKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (pk, _): (Self, usize) = 
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
-                Nine65Error::DeserializationError {
-                    message: format!("Bincode parse error: {}", e),
-                }
+        let (pk, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
+            .map_err(|e| Nine65Error::DeserializationError {
+                message: format!("Bincode parse error: {}", e),
             })?;
         pk.validate(expected_n, expected_q)?;
         Ok(pk)
@@ -470,8 +471,9 @@ impl PublicKey {
         note = "Use from_bytes_validated() for untrusted input"
     )]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 }
@@ -504,11 +506,9 @@ impl EvaluationKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (ek, _): (Self, usize) = 
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
-                Nine65Error::DeserializationError {
-                    message: format!("Bincode parse error: {}", e),
-                }
+        let (ek, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
+            .map_err(|e| Nine65Error::DeserializationError {
+                message: format!("Bincode parse error: {}", e),
             })?;
         ek.validate(expected_n, expected_q)?;
         Ok(ek)
@@ -540,8 +540,9 @@ impl EvaluationKey {
         note = "Use from_bytes_validated() for untrusted input"
     )]
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
+        let (result, _): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard())
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
         Ok(result)
     }
 }
@@ -600,14 +601,14 @@ impl GatedKeyGen {
         max_search: u64,
     ) -> Nine65Result<KeySet> {
         // Find next coincidence window
-        let _window = gate.next_window(0, max_search).ok_or_else(|| {
-            Nine65Error::KeyGenFailed {
+        let _window = gate
+            .next_window(0, max_search)
+            .ok_or_else(|| Nine65Error::KeyGenFailed {
                 reason: format!(
                     "GRO timing gate: no coincidence window found within {} steps",
                     max_search
                 ),
-            }
-        })?;
+            })?;
 
         // Execute keygen inside window
         KeySet::try_generate_secure(config, ntt)
@@ -639,7 +640,7 @@ impl KeySet {
     /// # Example
     ///
     /// ```ignore
-    /// let config = FHEConfig::he_standard_128();
+    /// let config = FHEConfig::he_standard_128_insecure();
     /// let ntt = NTTEngine::new(config.q, config.n);
     /// let keys = KeySet::generate_secure(&config, &ntt);
     /// ```
@@ -669,7 +670,7 @@ mod tests {
 
     #[test]
     fn test_keygen_basic() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let mut harvester = ShadowHarvester::with_seed(42);
 
         let sk = SecretKey::generate(&config, &mut harvester);
@@ -687,7 +688,7 @@ mod tests {
 
     #[test]
     fn test_keygen_deterministic() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
 
         let mut h1 = ShadowHarvester::with_seed(12345);
@@ -704,7 +705,7 @@ mod tests {
 
     #[test]
     fn test_keygen_secure() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
 
         let keys1 = KeySet::generate_secure(&config, &ntt);
@@ -719,7 +720,7 @@ mod tests {
 
     #[test]
     fn test_secure_key_is_ternary() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
 
         let sk = SecretKey::generate_secure(&config);
 
@@ -737,7 +738,7 @@ mod tests {
 
     #[test]
     fn test_keygen_benchmark() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(999);
 
@@ -752,7 +753,7 @@ mod tests {
 
     #[test]
     fn test_keygen_secure_benchmark() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
 
         let start = std::time::Instant::now();
@@ -769,7 +770,7 @@ mod tests {
         // Integration test: verify secure keys work with FHE operations
         use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor};
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let keys = KeySet::generate_secure(&config, &ntt);
 
@@ -796,7 +797,7 @@ mod tests {
     fn test_gated_keygen_succeeds_in_window() {
         use crate::security::TimingGate;
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let gate = TimingGate::new(16, 100).unwrap();
 
@@ -820,7 +821,7 @@ mod tests {
         use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor};
         use crate::security::TimingGate;
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let gate = TimingGate::new(16, 100).unwrap();
 
@@ -841,7 +842,7 @@ mod tests {
     fn test_gated_keygen_timing_variance() {
         use crate::security::TimingGate;
 
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let gate = TimingGate::new(16, 100).unwrap();
 
@@ -872,7 +873,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn test_public_key_serde_roundtrip_validated() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(2026);
 
@@ -897,7 +898,7 @@ mod tests {
     #[cfg(feature = "serde")]
     #[test]
     fn test_eval_key_serde_roundtrip_validated() {
-        let config = SecureConfig::test_fast().into_config();
+        let config = SecureConfig::test_fast_insecure().into_config();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(8080);
 

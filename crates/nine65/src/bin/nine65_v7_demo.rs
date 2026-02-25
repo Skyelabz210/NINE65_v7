@@ -30,10 +30,14 @@ static mut FAIL_COUNT: u32 = 0;
 fn check(label: &str, ok: bool) {
     if ok {
         println!("  [PASS] {label}");
-        unsafe { PASS_COUNT += 1; }
+        unsafe {
+            PASS_COUNT += 1;
+        }
     } else {
         println!("  [FAIL] {label}");
-        unsafe { FAIL_COUNT += 1; }
+        unsafe {
+            FAIL_COUNT += 1;
+        }
     }
 }
 
@@ -62,14 +66,20 @@ fn main() {
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
-            "-h" | "--help" => { print_usage(); return; }
+            "-h" | "--help" => {
+                print_usage();
+                return;
+            }
             "--seed" => {
                 let v = args.next().unwrap_or_default();
                 seed = Some(v.parse::<u64>().unwrap_or_else(|_| {
-                    eprintln!("Invalid --seed value: {v}"); std::process::exit(2);
+                    eprintln!("Invalid --seed value: {v}");
+                    std::process::exit(2);
                 }));
             }
-            "--os-seed" => { use_os_seed = true; }
+            "--os-seed" => {
+                use_os_seed = true;
+            }
             other => {
                 eprintln!("Unknown option: {other}");
                 print_usage();
@@ -77,26 +87,43 @@ fn main() {
             }
         }
     }
-    if use_os_seed { seed = None; }
+    if use_os_seed {
+        seed = None;
+    }
 
     // ─── header ──────────────────────────────────────────────────────────
     println!("╔═══════════════════════════════════════════════════════════════╗");
     println!("║       NINE65 v7 \"Bootstrap Complete\" — Full System Demo      ║");
     println!("╚═══════════════════════════════════════════════════════════════╝");
     println!();
-    println!("  Seed:    {}", if let Some(s) = seed { format!("{s}") } else { "OS entropy".into() });
+    println!(
+        "  Seed:    {}",
+        if let Some(s) = seed {
+            format!("{s}")
+        } else {
+            "OS entropy".into()
+        }
+    );
 
     let total_start = Instant::now();
 
     // ─── Section 1: BFV Core ─────────────────────────────────────────────
     section("1. BFV Core — Single-Modulus Encrypt / Decrypt / Eval");
 
-    let config_128 = FHEConfig::standard_128();
-    println!("  Config:  standard_128 (n={}, q={}, t={}, eta={})",
-        config_128.n, config_128.q, config_128.t, config_128.eta);
-    println!("  Primes:  {} (log2Q ~ {} bits)",
+    let config_128 = FHEConfig::standard_128_insecure();
+    println!(
+        "  Config:  standard_128 (n={}, q={}, t={}, eta={})",
+        config_128.n, config_128.q, config_128.t, config_128.eta
+    );
+    println!(
+        "  Primes:  {} (log2Q ~ {} bits)",
         config_128.primes.len(),
-        config_128.primes.iter().map(|p| 64 - p.leading_zeros()).sum::<u32>());
+        config_128
+            .primes
+            .iter()
+            .map(|p| 64 - p.leading_zeros())
+            .sum::<u32>()
+    );
 
     let ntt = NTTEngine::new(config_128.q, config_128.n);
     let mut rng = if let Some(s) = seed {
@@ -130,29 +157,44 @@ fn main() {
     let ct_sum = evaluator.add(&ct_a, &ct_b);
     let add_us = t0.elapsed().as_micros();
     let sum = decryptor.decrypt(&ct_sum);
-    check(&format!("{a} + {b} = {sum} (expected {})", a + b), sum == a + b);
+    check(
+        &format!("{a} + {b} = {sum} (expected {})", a + b),
+        sum == a + b,
+    );
 
     // Sub
     let ct_diff = evaluator.sub(&ct_b, &ct_a);
     let diff = decryptor.decrypt(&ct_diff);
-    check(&format!("{b} - {a} = {diff} (expected {})", b - a), diff == b - a);
+    check(
+        &format!("{b} - {a} = {diff} (expected {})", b - a),
+        diff == b - a,
+    );
 
     // Negate
     let ct_neg = evaluator.negate(&ct_a);
     let neg = decryptor.decrypt(&ct_neg);
     let expected_neg = (t_mod - a) % t_mod;
-    check(&format!("-{a} = {neg} (expected {expected_neg} mod t)"), neg == expected_neg);
+    check(
+        &format!("-{a} = {neg} (expected {expected_neg} mod t)"),
+        neg == expected_neg,
+    );
 
     // Add plain
     let ct_ap = evaluator.add_plain(&ct_a, 10);
     let ap = decryptor.decrypt(&ct_ap);
-    check(&format!("{a} + 10 = {ap} (expected {})", a + 10), ap == a + 10);
+    check(
+        &format!("{a} + 10 = {ap} (expected {})", a + 10),
+        ap == a + 10,
+    );
 
     // Mul plain
     let ct_mp = evaluator.mul_plain(&ct_a, 3);
     let mp = decryptor.decrypt(&ct_mp);
     let expected_mp = (a * 3) % t_mod;
-    check(&format!("{a} * 3 = {mp} (expected {expected_mp})"), mp == expected_mp);
+    check(
+        &format!("{a} * 3 = {mp} (expected {expected_mp})"),
+        mp == expected_mp,
+    );
 
     println!("  Timing:  encrypt={}us, add={}us", enc_us, add_us);
 
@@ -161,14 +203,22 @@ fn main() {
 
     let sc = SecureConfig::secure_128();
     let config_rns = sc.into_config();
-    println!("  Config:  secure_128 (n={}, t={}, {} main primes)",
-        config_rns.n, config_rns.t, config_rns.primes.len());
+    println!(
+        "  Config:  secure_128 (n={}, t={}, {} main primes)",
+        config_rns.n,
+        config_rns.t,
+        config_rns.primes.len()
+    );
 
     let t0 = Instant::now();
     let ctx = RNSFHEContext::try_new(&config_rns).expect("RNSFHEContext creation failed");
     let ctx_us = t0.elapsed().as_micros();
-    println!("  Context: {}us ({} main + {} anchor primes)",
-        ctx_us, ctx.dual_rns.main.primes.len(), ctx.dual_rns.anchor.primes.len());
+    println!(
+        "  Context: {}us ({} main + {} anchor primes)",
+        ctx_us,
+        ctx.dual_rns.main.primes.len(),
+        ctx.dual_rns.anchor.primes.len()
+    );
 
     let t0 = Instant::now();
     let dual_keys = ctx.generate_keys_dual_full(&mut rng);
@@ -195,16 +245,23 @@ fn main() {
     let dadd_us = t0.elapsed().as_micros();
     let dec_add = ctx.decrypt_dual(&ct_add, &dual_keys.secret_key);
     let expected_add = (m1 + m2) % t_val;
-    check(&format!("{m1} + {m2} = {dec_add} (expected {expected_add})"), dec_add == expected_add);
+    check(
+        &format!("{m1} + {m2} = {dec_add} (expected {expected_add})"),
+        dec_add == expected_add,
+    );
 
     // K-Elimination ct×ct multiplication
     let t0 = Instant::now();
-    let ct_mul = ctx.mul_dual_public(&ct1, &ct2, &dual_keys.eval_key)
+    let ct_mul = ctx
+        .mul_dual_public(&ct1, &ct2, &dual_keys.eval_key)
         .expect("mul_dual_public failed");
     let dmul_us = t0.elapsed().as_micros();
     let dec_mul = ctx.decrypt_dual(&ct_mul, &dual_keys.secret_key);
     let expected_mul = (m1 as u128 * m2 as u128 % t_val as u128) as u64;
-    check(&format!("{m1} * {m2} = {dec_mul} (expected {expected_mul}) [K-Elimination]"), dec_mul == expected_mul);
+    check(
+        &format!("{m1} * {m2} = {dec_mul} (expected {expected_mul}) [K-Elimination]"),
+        dec_mul == expected_mul,
+    );
 
     // Depth-2 chain: secure_128 has 3 main primes → depth-1 noise budget.
     // Anchor capacity is sufficient (5 anchors, 158-bit product), but noise
@@ -215,7 +272,10 @@ fn main() {
             let dec_chain = ctx.decrypt_dual(&ct_chain, &dual_keys.secret_key);
             let expected_chain = (expected_mul as u128 * m1 as u128 % t_val as u128) as u64;
             if dec_chain == expected_chain {
-                check(&format!("({m1}*{m2})*{m1} = {dec_chain} [depth-2 correct]"), true);
+                check(
+                    &format!("({m1}*{m2})*{m1} = {dec_chain} [depth-2 correct]"),
+                    true,
+                );
             } else {
                 println!("  Depth-2 chain: decrypted={dec_chain}, expected={expected_chain}");
                 println!("  -> Noise budget exceeded at depth 2 (expected — use bootstrap for deeper circuits)");
@@ -229,7 +289,10 @@ fn main() {
         }
     }
 
-    println!("  Timing:  dual_encrypt={}us, dual_add={}us, dual_mul={}us", denc_us, dadd_us, dmul_us);
+    println!(
+        "  Timing:  dual_encrypt={}us, dual_add={}us, dual_mul={}us",
+        denc_us, dadd_us, dmul_us
+    );
 
     // ─── Section 3: Three-Lock Bootstrap ────────────────────────────────
     demo_bootstrap(&config_rns, &ctx, &dual_keys, &mut rng);
@@ -254,15 +317,24 @@ fn main() {
     println!("╔═══════════════════════════════════════════════════════════════╗");
     println!("║                         SUMMARY                              ║");
     println!("╠═══════════════════════════════════════════════════════════════╣");
-    println!("║  Tests passed: {:<4}                                          ║", pass);
-    println!("║  Tests failed: {:<4}                                          ║", fail);
+    println!(
+        "║  Tests passed: {:<4}                                          ║",
+        pass
+    );
+    println!(
+        "║  Tests failed: {:<4}                                          ║",
+        fail
+    );
     println!("║  Total time:   {}ms{:>38}║", total_ms, " ");
     println!("║  Config:       secure_128 (128-bit lattice security)         ║");
     println!("║  Integer-only: YES (zero f32/f64)                            ║");
     if fail == 0 {
         println!("║  Status:       ALL PASS                                      ║");
     } else {
-        println!("║  Status:       {} FAILURES                                   ║", fail);
+        println!(
+            "║  Status:       {} FAILURES                                   ║",
+            fail
+        );
     }
     println!("╚═══════════════════════════════════════════════════════════════╝");
 
@@ -295,7 +367,11 @@ fn demo_bootstrap(
         }
     };
     let boot_create_us = t0.elapsed().as_micros();
-    println!("  Engine:  created in {}us (boot primes: {})", boot_create_us, bootstrap.boot_config.primes.len());
+    println!(
+        "  Engine:  created in {}us (boot primes: {})",
+        boot_create_us,
+        bootstrap.boot_config.primes.len()
+    );
 
     // Generate bootstrap keys
     let t0 = Instant::now();
@@ -326,7 +402,10 @@ fn demo_bootstrap(
     };
     let dec_sq = ctx.decrypt_dual(&ct_sq, &keys.secret_key);
     let expected_sq = (m as u128 * m as u128 % config.t as u128) as u64;
-    check(&format!("Pre-bootstrap: {m}^2 = {dec_sq} (expected {expected_sq})"), dec_sq == expected_sq);
+    check(
+        &format!("Pre-bootstrap: {m}^2 = {dec_sq} (expected {expected_sq})"),
+        dec_sq == expected_sq,
+    );
 
     // Bootstrap the noisy ciphertext
     let t0 = Instant::now();
@@ -364,31 +443,54 @@ fn demo_kiosk() {
     println!();
     println!("  --- Bullet (single-use) ---");
     let mut bullet = KioskUnit::bullet(1, &moduli, 42);
-    check(&format!("Bullet created, status={:?}", bullet.status()), bullet.status() == UnitStatus::Ready);
+    check(
+        &format!("Bullet created, status={:?}", bullet.status()),
+        bullet.status() == UnitStatus::Ready,
+    );
 
     let loaded = bullet.load(&[100, 200, 300]);
-    check(&format!("Bullet loaded: {loaded}, status={:?}", bullet.status()),
-        loaded && bullet.status() == UnitStatus::Active);
+    check(
+        &format!("Bullet loaded: {loaded}, status={:?}", bullet.status()),
+        loaded && bullet.status() == UnitStatus::Active,
+    );
 
     let result = bullet.checked_mul(0, 10, 20, moduli[0]);
     // Bullet fuse triggers during the operation (single-use ammunition semantics)
     // Either the result comes back, or the fuse fires and returns None
     let bullet_ok = result.is_some() || bullet.status() == UnitStatus::Triggered;
-    check(&format!("Bullet fires: result={:?}, status={:?}", result, bullet.status()), bullet_ok);
+    check(
+        &format!(
+            "Bullet fires: result={:?}, status={:?}",
+            result,
+            bullet.status()
+        ),
+        bullet_ok,
+    );
 
     // After single use, bullet should be destroyable
     let should = bullet.should_destroy();
-    println!("  should_destroy={should}, remaining_ops={}", bullet.remaining_operations());
+    println!(
+        "  should_destroy={should}, remaining_ops={}",
+        bullet.remaining_operations()
+    );
     let receipt = bullet.destroy();
-    check(&format!("Bullet destroyed, receipt={}", receipt.is_some()), receipt.is_some());
-    check(&format!("Bullet status after destroy: {:?}", bullet.status()),
-        bullet.status() == UnitStatus::Destroyed);
+    check(
+        &format!("Bullet destroyed, receipt={}", receipt.is_some()),
+        receipt.is_some(),
+    );
+    check(
+        &format!("Bullet status after destroy: {:?}", bullet.status()),
+        bullet.status() == UnitStatus::Destroyed,
+    );
 
     // ── Capsule (multi-use with budget) ──
     println!();
     println!("  --- Capsule (10-operation budget) ---");
     let mut capsule = KioskUnit::capsule(2, &moduli, 99, 10);
-    check(&format!("Capsule created, status={:?}", capsule.status()), capsule.status() == UnitStatus::Ready);
+    check(
+        &format!("Capsule created, status={:?}", capsule.status()),
+        capsule.status() == UnitStatus::Ready,
+    );
 
     capsule.load(&[500, 600, 700]);
     check("Capsule loaded", capsule.status() == UnitStatus::Active);
@@ -398,36 +500,70 @@ fn demo_kiosk() {
     for i in 0..15 {
         let r = capsule.checked_add(0, 10, 20, moduli[0]);
         if r.is_none() {
-            println!("  Op {}: fuse triggered, status={:?}", i + 1, capsule.status());
+            println!(
+                "  Op {}: fuse triggered, status={:?}",
+                i + 1,
+                capsule.status()
+            );
             break;
         }
         ops_done += 1;
-        println!("  Op {}: result={:?}, remaining={}", i + 1, r, capsule.remaining_operations());
+        println!(
+            "  Op {}: result={:?}, remaining={}",
+            i + 1,
+            r,
+            capsule.remaining_operations()
+        );
     }
 
-    check(&format!("Capsule completed {} operations before exhaustion", ops_done), ops_done >= 1);
+    check(
+        &format!(
+            "Capsule completed {} operations before exhaustion",
+            ops_done
+        ),
+        ops_done >= 1,
+    );
     let should = capsule.should_destroy();
     println!("  should_destroy={should} (budget exhausted)");
     let receipt = capsule.destroy();
-    check("Capsule destroyed after budget exhaustion", receipt.is_some());
-    check(&format!("Capsule status: {:?}", capsule.status()), capsule.status() == UnitStatus::Destroyed);
+    check(
+        "Capsule destroyed after budget exhaustion",
+        receipt.is_some(),
+    );
+    check(
+        &format!("Capsule status: {:?}", capsule.status()),
+        capsule.status() == UnitStatus::Destroyed,
+    );
 
     // ── Fuse (time-limited) ──
     println!();
     println!("  --- Fuse (time-limited, 1s) ---");
     let mut fuse = KioskUnit::fuse(3, &moduli, 7, 1_000_000_000); // 1 second
-    check(&format!("Fuse created, status={:?}", fuse.status()), fuse.status() == UnitStatus::Ready);
+    check(
+        &format!("Fuse created, status={:?}", fuse.status()),
+        fuse.status() == UnitStatus::Ready,
+    );
 
     fuse.load(&[111, 222, 333]);
     check("Fuse loaded", fuse.status() == UnitStatus::Active);
 
     let r = fuse.checked_mul(0, 5, 6, moduli[0]);
-    check(&format!("Fuse compute: 5*6 mod {} = {:?}", moduli[0], r), r.is_some());
-    println!("  elapsed_nanos={}, fuse_state={:?}", fuse.elapsed_nanos(), fuse.fuse_state());
+    check(
+        &format!("Fuse compute: 5*6 mod {} = {:?}", moduli[0], r),
+        r.is_some(),
+    );
+    println!(
+        "  elapsed_nanos={}, fuse_state={:?}",
+        fuse.elapsed_nanos(),
+        fuse.fuse_state()
+    );
 
     let receipt = fuse.destroy();
     check("Fuse destroyed", receipt.is_some());
-    check(&format!("Fuse status: {:?}", fuse.status()), fuse.status() == UnitStatus::Destroyed);
+    check(
+        &format!("Fuse status: {:?}", fuse.status()),
+        fuse.status() == UnitStatus::Destroyed,
+    );
 
     // Verify destroyed units cannot compute
     let r = fuse.checked_mul(0, 1, 1, moduli[0]);
@@ -463,12 +599,15 @@ fn demo_shadow_entropy(seed: Option<u64>) {
         let mut h4 = ShadowHarvester::with_seed(s);
         let v3 = h3.next_u64();
         let v4 = h4.next_u64();
-        check(&format!("Different seeds produce different values ({v3} != {v4})"), v3 != v4);
+        check(
+            &format!("Different seeds produce different values ({v3} != {v4})"),
+            v3 != v4,
+        );
 
         // CBD distribution test
         let mut h5 = ShadowHarvester::with_seed(s);
         let cbd_vals: Vec<i64> = (0..1000).map(|_| h5.cbd(3)).collect();
-        let all_in_range = cbd_vals.iter().all(|&v| v >= -3 && v <= 3);
+        let all_in_range = cbd_vals.iter().all(|&v| (-3..=3).contains(&v));
         check("CBD(eta=3) values in [-3, 3]", all_in_range);
         let mean: i64 = cbd_vals.iter().sum::<i64>();
         println!("  CBD mean over 1000 samples: {mean} (expected ~0)");
@@ -476,7 +615,7 @@ fn demo_shadow_entropy(seed: Option<u64>) {
         println!("  (OS seed mode — deterministic tests skipped)");
         let mut h = ShadowHarvester::from_os_seed();
         let v = h.next_u64();
-        check(&format!("OS entropy produces value: {v}"), v != 0 || true);
+        check(&format!("OS entropy produces value: {v}"), v != 0);
     }
 }
 
@@ -489,7 +628,11 @@ fn demo_noise_budget(config: &FHEConfig) {
 
     let mut budget = NoiseBudget::from_config(config);
     let initial = budget.remaining_millibits();
-    println!("  Initial budget: {} millibits ({} bits)", initial, initial / 1000);
+    println!(
+        "  Initial budget: {} millibits ({} bits)",
+        initial,
+        initial / 1000
+    );
 
     // Encrypt cost
     let enc_cost = NoiseBudget::encrypt_cost(config);
@@ -508,10 +651,17 @@ fn demo_noise_budget(config: &FHEConfig) {
     let relin_cost = NoiseBudget::relin_cost(config);
     let _ = budget.consume(NoiseOpType::MulCt, mul_cost + relin_cost);
     let after_mul = budget.remaining_millibits();
-    println!("  After mul+relin:{} mb (cost: {} mb)", after_mul, mul_cost + relin_cost);
+    println!(
+        "  After mul+relin:{} mb (cost: {} mb)",
+        after_mul,
+        mul_cost + relin_cost
+    );
 
     check("Budget decreases after operations", after_mul < initial);
-    check(&format!("Budget still positive: {} mb", after_mul), after_mul > 0);
+    check(
+        &format!("Budget still positive: {} mb", after_mul),
+        after_mul > 0,
+    );
 
     // Track how many muls we can do
     let mut test_budget = NoiseBudget::from_config(config);
@@ -559,8 +709,12 @@ fn demo_gso(
     let gso_ct1 = gso.encrypt(m1, &keys.public_key, rng);
     let gso_ct2 = gso.encrypt(m2, &keys.public_key, rng);
 
-    println!("  Fresh ct1: depth={}, noise_distance={}, collapses={}",
-        gso_ct1.depth(), gso_ct1.noise_distance(), gso_ct1.collapses());
+    println!(
+        "  Fresh ct1: depth={}, noise_distance={}, collapses={}",
+        gso_ct1.depth(),
+        gso_ct1.noise_distance(),
+        gso_ct1.collapses()
+    );
     check("Fresh GSO ciphertext has depth 0", gso_ct1.depth() == 0);
 
     // Decrypt
@@ -571,23 +725,37 @@ fn demo_gso(
     let gso_sum = gso.add(&gso_ct1, &gso_ct2);
     let dec_sum = gso.decrypt(&gso_sum, &keys.secret_key);
     let expected_sum = (m1 + m2) % config.t;
-    check(&format!("GSO add: {m1}+{m2} = {dec_sum} (expected {expected_sum})"), dec_sum == expected_sum);
+    check(
+        &format!("GSO add: {m1}+{m2} = {dec_sum} (expected {expected_sum})"),
+        dec_sum == expected_sum,
+    );
     println!("  After add: noise_distance={}", gso_sum.noise_distance());
 
     // Manual noise tracking through multiplication
-    let ct_mul = gso.inner.mul_dual_public(
-        &gso_ct1.inner, &gso_ct2.inner, &keys.eval_key
-    ).expect("GSO mul failed");
+    let ct_mul = gso
+        .inner
+        .mul_dual_public(&gso_ct1.inner, &gso_ct2.inner, &keys.eval_key)
+        .expect("GSO mul failed");
 
     let mut noise = NoiseEstimate::fresh(0);
     noise.mul_noise(&NoiseEstimate::fresh(0), gso.coeff_bound);
-    let gso_mul = GSOCiphertext { inner: ct_mul, noise };
+    let gso_mul = GSOCiphertext {
+        inner: ct_mul,
+        noise,
+    };
 
-    println!("  After mul: depth={}, noise_distance={}, collapses={}",
-        gso_mul.depth(), gso_mul.noise_distance(), gso_mul.collapses());
+    println!(
+        "  After mul: depth={}, noise_distance={}, collapses={}",
+        gso_mul.depth(),
+        gso_mul.noise_distance(),
+        gso_mul.collapses()
+    );
     check("Multiplication increases depth", gso_mul.depth() >= 1);
 
     let dec_mul = gso.decrypt(&gso_mul, &keys.secret_key);
     let expected_mul = (m1 as u128 * m2 as u128 % config.t as u128) as u64;
-    check(&format!("GSO mul: {m1}*{m2} = {dec_mul} (expected {expected_mul})"), dec_mul == expected_mul);
+    check(
+        &format!("GSO mul: {m1}*{m2} = {dec_mul} (expected {expected_mul})"),
+        dec_mul == expected_mul,
+    );
 }

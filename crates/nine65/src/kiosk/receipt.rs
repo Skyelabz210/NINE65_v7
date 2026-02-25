@@ -89,7 +89,7 @@ impl ReceiptData {
     /// Compute the SHA-256 receipt hash for this data.
     pub fn compute_hash(&self) -> ReceiptHash {
         let mut hasher = Sha256::new();
-        hasher.update(&self.to_bytes());
+        hasher.update(self.to_bytes());
         let result = hasher.finalize();
         let mut bytes = [0u8; 32];
         bytes.copy_from_slice(&result);

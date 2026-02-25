@@ -107,13 +107,7 @@ pub fn validate_bootstrap_primes(
     // Compute log2(product) without overflow using sum of log2s
     let log2_product: u32 = primes
         .iter()
-        .map(|&p| {
-            if p == 0 {
-                0
-            } else {
-                64 - p.leading_zeros()
-            }
-        })
+        .map(|&p| if p == 0 { 0 } else { 64 - p.leading_zeros() })
         .sum();
 
     if log2_product < target_security {
@@ -254,28 +248,22 @@ impl BootstrapKey {
             // Add Δ_boot * s_encoded to c0[j] for each boot prime
             for (i, &bp) in boot_ctx.config.primes.iter().enumerate() {
                 let delta_i = boot_ctx.delta_rns[i];
-                let contribution =
-                    (delta_i as u128 * s_encoded as u128) % bp as u128;
-                c0_main[i][j] =
-                    ((c0_main[i][j] as u128 + contribution) % bp as u128) as u64;
+                let contribution = (delta_i as u128 * s_encoded as u128) % bp as u128;
+                c0_main[i][j] = ((c0_main[i][j] as u128 + contribution) % bp as u128) as u64;
             }
 
             // Same for anchor primes
             for (i, &ap) in boot_ctx.dual_rns.anchor.primes.iter().enumerate() {
                 // Compute Δ_boot mod anchor_prime
                 // Δ_boot = Q_boot / t, we need Δ mod ap
-                let q_boot_mod_ap: u128 = boot_ctx
-                    .config
-                    .primes
-                    .iter()
-                    .fold(1u128, |acc, &p| (acc * (p as u128 % ap as u128)) % ap as u128);
+                let q_boot_mod_ap: u128 = boot_ctx.config.primes.iter().fold(1u128, |acc, &p| {
+                    (acc * (p as u128 % ap as u128)) % ap as u128
+                });
                 let t_inv_ap = mod_inverse_u128(t as u128, ap as u128).unwrap_or(0);
                 let delta_anchor = (q_boot_mod_ap * t_inv_ap) % ap as u128;
 
-                let contribution =
-                    (delta_anchor * s_encoded as u128) % ap as u128;
-                c0_anchor[i][j] =
-                    ((c0_anchor[i][j] as u128 + contribution) % ap as u128) as u64;
+                let contribution = (delta_anchor * s_encoded as u128) % ap as u128;
+                c0_anchor[i][j] = ((c0_anchor[i][j] as u128 + contribution) % ap as u128) as u64;
             }
         }
 
@@ -365,13 +353,7 @@ impl KeySwitchKey {
             .map(|&bp| {
                 work_s_signed
                     .iter()
-                    .map(|&v| {
-                        if v >= 0 {
-                            v as u64
-                        } else {
-                            bp - ((-v) as u64)
-                        }
-                    })
+                    .map(|&v| if v >= 0 { v as u64 } else { bp - ((-v) as u64) })
                     .collect()
             })
             .collect();
@@ -383,13 +365,7 @@ impl KeySwitchKey {
             .map(|&ap| {
                 work_s_signed
                     .iter()
-                    .map(|&v| {
-                        if v >= 0 {
-                            v as u64
-                        } else {
-                            ap - ((-v) as u64)
-                        }
-                    })
+                    .map(|&v| if v >= 0 { v as u64 } else { ap - ((-v) as u64) })
                     .collect()
             })
             .collect();
@@ -403,8 +379,13 @@ impl KeySwitchKey {
 
         // power_of_base[i] = base^l mod each prime
         let mut power_main: Vec<u64> = boot_ctx.config.primes.iter().map(|_| 1u64).collect();
-        let mut power_anchor: Vec<u64> =
-            boot_ctx.dual_rns.anchor.primes.iter().map(|_| 1u64).collect();
+        let mut power_anchor: Vec<u64> = boot_ctx
+            .dual_rns
+            .anchor
+            .primes
+            .iter()
+            .map(|_| 1u64)
+            .collect();
 
         for _l in 0..num_digits {
             // a_l = random polynomial under boot primes
@@ -476,8 +457,8 @@ impl KeySwitchKey {
                     let power_val = power_main[i] as u128;
                     let s_boot_contrib = ((s_boot_val * power_val) % p128) as u64;
 
-                    b_main[i][j] = ((neg_as as u128 + e_mod as u128 + s_boot_contrib as u128)
-                        % p128) as u64;
+                    b_main[i][j] =
+                        ((neg_as as u128 + e_mod as u128 + s_boot_contrib as u128) % p128) as u64;
                 }
             }
 
@@ -504,8 +485,8 @@ impl KeySwitchKey {
                     let power_val = power_anchor[i] as u128;
                     let s_boot_contrib = ((s_boot_val * power_val) % p128) as u64;
 
-                    b_anchor[i][j] = ((neg_as as u128 + e_mod as u128 + s_boot_contrib as u128)
-                        % p128) as u64;
+                    b_anchor[i][j] =
+                        ((neg_as as u128 + e_mod as u128 + s_boot_contrib as u128) % p128) as u64;
                 }
             }
 
@@ -520,8 +501,7 @@ impl KeySwitchKey {
             // Update powers: power *= base mod each prime
             for i in 0..num_main {
                 let p = boot_ctx.config.primes[i];
-                power_main[i] =
-                    ((power_main[i] as u128 * decomp_base as u128) % p as u128) as u64;
+                power_main[i] = ((power_main[i] as u128 * decomp_base as u128) % p as u128) as u64;
             }
             for i in 0..num_anchor {
                 let p = boot_ctx.dual_rns.anchor.primes[i];
@@ -678,14 +658,19 @@ mod tests {
                 assert!(
                     inv.is_some(),
                     "No inverse for BOOTSTRAP_PRIMES[{}]={} mod BOOTSTRAP_PRIMES[{}]={}",
-                    i, a, j, m
+                    i,
+                    a,
+                    j,
+                    m
                 );
                 let inv_val = inv.unwrap();
                 assert_eq!(
                     (a * inv_val) % m,
                     1,
                     "a*inv != 1 mod m for a={}, m={}, inv={}",
-                    a, m, inv_val
+                    a,
+                    m,
+                    inv_val
                 );
             }
         }

@@ -294,8 +294,7 @@ impl KElimination {
     /// let ke = KElimination::from_config(KElimConfig::Standard);
     /// ```
     pub fn from_config(config: KElimConfig) -> Self {
-        Self::try_from_config(config)
-            .expect("built-in KElimConfig primes must be coprime")
+        Self::try_from_config(config).expect("built-in KElimConfig primes must be coprime")
     }
 
     /// Fallible constructor from predefined configuration.
@@ -414,11 +413,12 @@ impl KElimination {
     /// The coprimality precondition is guaranteed by the constructor,
     /// so this method only checks the value range.
     pub fn validate_value(&self, value: u128) -> Nine65Result<()> {
-        let capacity = self.alpha_cap.checked_mul(self.beta_cap).ok_or(
-            Nine65Error::Overflow {
+        let capacity = self
+            .alpha_cap
+            .checked_mul(self.beta_cap)
+            .ok_or(Nine65Error::Overflow {
                 operation: "K-Elimination capacity computation",
-            },
-        )?;
+            })?;
 
         if value >= capacity {
             return Err(Nine65Error::RangeOverflow {
@@ -767,25 +767,42 @@ fn add_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
 /// Constant-time modular multiplication for u128
 ///
 /// # Security
-/// Fixed number of iterations (128) regardless of input values.
-/// No data-dependent branches.
+/// Uses a 4-bit windowed approach (32 iterations) to reduce overhead while
+/// maintaining constant-time properties. No data-dependent branches.
 fn mul_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
+    if m == 0 {
+        return 0;
+    }
     let mut result = 0u128;
-    let mut a = a % m;
+    let a = a % m;
+    let mut b = b;
 
-    // Fixed 128 iterations for constant-time
-    for i in 0..128 {
-        // Extract bit i of b (constant-time)
-        let bit = (b >> i) & 1;
-        let mask = bit.wrapping_neg(); // 0 or u128::MAX
+    // 4-bit windowed approach: 32 iterations for 128 bits
+    // Precompute a * [0..15] mod m
+    let mut table = [0u128; 16];
+    table[1] = a;
+    for i in 2..16 {
+        table[i] = add_mod_u128_ct(table[i - 1], a, m);
+    }
 
-        // Conditionally add a to result (constant-time)
-        // add_val is either a (if bit set) or 0 (if bit not set)
-        let add_val = a & mask;
+    for _ in 0..32 {
+        // Shift result by 4 bits (CT)
+        for _ in 0..4 {
+            result = add_mod_u128_ct(result, result, m);
+        }
+
+        // Extract 4 bits from b
+        let window = (b >> 124) as usize;
+        b <<= 4;
+
+        // Select from table in constant-time
+        let mut add_val = 0u128;
+        for (i, &val) in table.iter().enumerate() {
+            let mask = ((window == i) as u128).wrapping_neg();
+            add_val |= val & mask;
+        }
+
         result = add_mod_u128_ct(result, add_val, m);
-
-        // Double a mod m using CT addition (always done)
-        a = add_mod_u128_ct(a, a, m);
     }
 
     result

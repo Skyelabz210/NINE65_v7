@@ -41,7 +41,9 @@ fn setup_bootstrap() -> Nine65Result<(
     Ok((work_ctx, bootstrap, work_keys, boot_keys, rng))
 }
 
-fn setup_bootstrap_with_seed(seed: u64) -> Nine65Result<(
+fn setup_bootstrap_with_seed(
+    seed: u64,
+) -> Nine65Result<(
     RNSFHEContext,
     ClockworkBootstrap,
     nine65::ops::rns_fhe::DualRNSFullKeySet,
@@ -101,8 +103,7 @@ fn test_bsk_deterministic_with_same_seed() {
 
     // Same seed → identical BSK enc_s coefficients
     assert_eq!(
-        boot_keys_1.bsk.enc_s.c0.main[0][0],
-        boot_keys_2.bsk.enc_s.c0.main[0][0],
+        boot_keys_1.bsk.enc_s.c0.main[0][0], boot_keys_2.bsk.enc_s.c0.main[0][0],
         "Same seed should produce identical BSK"
     );
     assert_eq!(
@@ -170,7 +171,10 @@ fn test_ksk_structure_correct_digits() {
         boot_keys.ksk.num_digits,
         "ksk.len() should match num_digits"
     );
-    assert_eq!(boot_keys.ksk.decomp_base, 1024, "Decomp base should be 1024");
+    assert_eq!(
+        boot_keys.ksk.decomp_base, 1024,
+        "Decomp base should be 1024"
+    );
 }
 
 #[test]
@@ -211,12 +215,20 @@ fn test_ksk_coefficients_bounded_by_primes() {
                 assert!(
                     b_l.main[i][j] < bp,
                     "ksk[{}].b[{}][{}]={} >= prime={}",
-                    l, i, j, b_l.main[i][j], bp
+                    l,
+                    i,
+                    j,
+                    b_l.main[i][j],
+                    bp
                 );
                 assert!(
                     a_l.main[i][j] < bp,
                     "ksk[{}].a[{}][{}]={} >= prime={}",
-                    l, i, j, a_l.main[i][j], bp
+                    l,
+                    i,
+                    j,
+                    a_l.main[i][j],
+                    bp
                 );
             }
         }
@@ -261,15 +273,13 @@ fn test_ksk_work_sk_ternary_under_boot_primes() {
 
         // Under each boot prime, should be {0, 1, bp-1}
         for &bp in &bootstrap.boot_config.primes {
-            let expected = if signed >= 0 {
-                signed as u64
-            } else {
-                bp - 1
-            };
+            let expected = if signed >= 0 { signed as u64 } else { bp - 1 };
             assert!(
                 expected == 0 || expected == 1 || expected == bp - 1,
                 "sk under boot prime {} at {}: {} not ternary",
-                bp, j, expected
+                bp,
+                j,
+                expected
             );
         }
     }
@@ -309,7 +319,9 @@ fn test_bootstrap_roundtrip_42_after_mul() {
         setup_bootstrap().expect("Setup failed");
     let m = 42u64;
     let ct = work_ctx.encrypt_dual(m, &work_keys.public_key, &mut rng);
-    let ct2 = work_ctx.mul_dual_public(&ct, &ct, &work_keys.eval_key).unwrap();
+    let ct2 = work_ctx
+        .mul_dual_public(&ct, &ct, &work_keys.eval_key)
+        .unwrap();
     let ct_fresh = bootstrap
         .bootstrap(&ct2, &boot_keys.bsk, &boot_keys.ksk)
         .expect("Bootstrap failed");
@@ -343,11 +355,7 @@ fn test_bootstrap_roundtrip_various_messages() {
     for &m in &[0u64, 1, 2, 42, 100, 1000, 65536, t - 1] {
         let ct = work_ctx.encrypt_dual(m, &work_keys.public_key, &mut rng);
         let result = bootstrap.bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk);
-        assert!(
-            result.is_ok(),
-            "Bootstrap should not fail for m={}",
-            m
-        );
+        assert!(result.is_ok(), "Bootstrap should not fail for m={}", m);
         let dec = work_ctx.decrypt_dual(&result.unwrap(), &work_keys.secret_key);
         println!("Bootstrap m={}: decrypted={}", m, dec);
     }
@@ -390,7 +398,12 @@ fn test_evaluator_creation_defaults() {
     let (work_ctx, bootstrap, _, boot_keys, config) = setup_evaluator();
     let dummy_evk = &boot_keys.bsk.eval_key;
     let evaluator = AutoBootstrapEvaluator::new(
-        &work_ctx, &bootstrap, &boot_keys.bsk, &boot_keys.ksk, dummy_evk, &config,
+        &work_ctx,
+        &bootstrap,
+        &boot_keys.bsk,
+        &boot_keys.ksk,
+        dummy_evk,
+        &config,
     );
     assert_eq!(evaluator.bootstrap_count, 0);
     assert_eq!(evaluator.total_muls, 0);
@@ -519,7 +532,10 @@ fn test_evaluator_budget_summary_format() {
     );
 
     let summary = evaluator.budget_summary();
-    assert!(summary.contains("bootstraps:"), "Summary missing 'bootstraps:'");
+    assert!(
+        summary.contains("bootstraps:"),
+        "Summary missing 'bootstraps:'"
+    );
     assert!(summary.contains("muls:"), "Summary missing 'muls:'");
     assert!(summary.contains("adds:"), "Summary missing 'adds:'");
 }
@@ -802,7 +818,12 @@ fn test_error_categories_bootstrap() {
         },
     ];
     for e in &errors {
-        assert_eq!(e.category(), "Bootstrap", "Error {:?} should be Bootstrap category", e);
+        assert_eq!(
+            e.category(),
+            "Bootstrap",
+            "Error {:?} should be Bootstrap category",
+            e
+        );
     }
 }
 
@@ -818,7 +839,10 @@ fn test_error_bootstrap_recoverability() {
         operation: "test".into(),
     };
 
-    assert!(recoverable.is_recoverable(), "BootstrapFailed should be recoverable");
+    assert!(
+        recoverable.is_recoverable(),
+        "BootstrapFailed should be recoverable"
+    );
     assert!(
         !not_recoverable_1.is_recoverable(),
         "ConfigMismatch should NOT be recoverable"
@@ -856,8 +880,7 @@ fn test_security_bsk_not_trivially_related_to_sk() {
 
     // enc_s.c0 should not equal raw sk coefficients
     assert_ne!(
-        boot_keys.bsk.enc_s.c0.main[0],
-        work_keys.secret_key.s.main[0],
+        boot_keys.bsk.enc_s.c0.main[0], work_keys.secret_key.s.main[0],
         "BSK c0 should not equal raw sk"
     );
 
@@ -1015,7 +1038,9 @@ fn test_stress_repeated_bootstrap_cycles() {
     // 5 explicit bootstrap→multiply cycles
     for cycle in 0..5 {
         // Multiply
-        ct = work_ctx.mul_dual_public(&ct, &ct, &work_keys.eval_key).unwrap();
+        ct = work_ctx
+            .mul_dual_public(&ct, &ct, &work_keys.eval_key)
+            .unwrap();
         // Bootstrap
         match bootstrap.bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk) {
             Ok(fresh) => ct = fresh,
@@ -1056,7 +1081,9 @@ fn test_edge_zero_plaintext_full_cycle() {
         setup_bootstrap().expect("Setup failed");
 
     let ct = work_ctx.encrypt_dual(0, &work_keys.public_key, &mut rng);
-    let ct_sq = work_ctx.mul_dual_public(&ct, &ct, &work_keys.eval_key).unwrap();
+    let ct_sq = work_ctx
+        .mul_dual_public(&ct, &ct, &work_keys.eval_key)
+        .unwrap();
     let result = bootstrap.bootstrap(&ct_sq, &boot_keys.bsk, &boot_keys.ksk);
     assert!(result.is_ok(), "Zero plaintext full cycle should succeed");
 }
@@ -1224,10 +1251,7 @@ fn test_ksk_generation_produces_nonempty_ksk() {
         !boot_keys.ksk.ksk.is_empty(),
         "KSK should have decomposition components"
     );
-    assert!(
-        boot_keys.ksk.num_digits > 0,
-        "KSK should have > 0 digits"
-    );
+    assert!(boot_keys.ksk.num_digits > 0, "KSK should have > 0 digits");
     assert!(
         boot_keys.ksk.decomp_base > 1,
         "KSK decomp base should be > 1"
@@ -1284,8 +1308,20 @@ fn test_ksk_boot_sk_is_independent() {
         .filter(|(a, b)| {
             // Circular should match (modulo prime difference):
             // ternary coefficients {0, 1, p-1} map to same {0, 1, boot_p-1}
-            let a_tern = if **a == 0 { 0 } else if **a == 1 { 1 } else { 2 };
-            let b_tern = if **b == 0 { 0 } else if **b == 1 { 1 } else { 2 };
+            let a_tern = if **a == 0 {
+                0
+            } else if **a == 1 {
+                1
+            } else {
+                2
+            };
+            let b_tern = if **b == 0 {
+                0
+            } else if **b == 1 {
+                1
+            } else {
+                2
+            };
             a_tern != b_tern
         })
         .count();
@@ -1321,7 +1357,11 @@ fn test_bootstrap_with_ksk_does_not_panic() {
 
     let ct = work_ctx.encrypt_dual(0, &work_keys.public_key, &mut rng);
     let result = bootstrap.bootstrap_with_ksk(&ct, &boot_keys.bsk, &boot_keys.ksk);
-    assert!(result.is_ok(), "KSK bootstrap should not fail: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "KSK bootstrap should not fail: {:?}",
+        result.err()
+    );
 }
 
 #[test]
@@ -1333,11 +1373,7 @@ fn test_bootstrap_with_ksk_roundtrip_messages() {
     for &m in &[0u64, 1, 2, 42, 100, 1000, 65536, t - 1] {
         let ct = work_ctx.encrypt_dual(m, &work_keys.public_key, &mut rng);
         let result = bootstrap.bootstrap_with_ksk(&ct, &boot_keys.bsk, &boot_keys.ksk);
-        assert!(
-            result.is_ok(),
-            "KSK bootstrap should not fail for m={}",
-            m
-        );
+        assert!(result.is_ok(), "KSK bootstrap should not fail for m={}", m);
         let dec = work_ctx.decrypt_dual(&result.unwrap(), &work_keys.secret_key);
         println!("KSK bootstrap m={}: decrypted={}", m, dec);
     }

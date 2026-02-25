@@ -1,9 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use nine65::arithmetic::NTTEngine;
 use nine65::entropy::shadow_entropy_monitor::AdaptiveFHEContext;
 use nine65::keys::KeySet;
-use nine65::params::SecureConfig;
 use nine65::ops::encrypt::{BFVEncoder, BFVEncryptor};
-use nine65::arithmetic::NTTEngine;
+use nine65::params::SecureConfig;
 use rayon::prelude::*;
 
 // ─── Helpers ──────────────────────────────────────────────────────────
@@ -22,19 +22,18 @@ fn setup_context() -> (nine65::params::FHEConfig, NTTEngine, KeySet) {
 
 // ─── Sequential Implementation ──────────────────────────────────────────
 
-fn sequential_encrypt(messages: &[u64], config: &nine65::params::FHEConfig, keys: &KeySet) -> Vec<nine65::ops::encrypt::Ciphertext> {
+fn sequential_encrypt(
+    messages: &[u64],
+    config: &nine65::params::FHEConfig,
+    keys: &KeySet,
+) -> Vec<nine65::ops::encrypt::Ciphertext> {
     messages
         .iter()
         .map(|&msg| {
             // Create NTT engine and encoder for each message (no caching in sequential mode)
             let ntt = NTTEngine::new(config.q, config.n);
             let encoder = BFVEncoder::new(config);
-            let encryptor = BFVEncryptor::new(
-                &keys.public_key,
-                &encoder,
-                &ntt,
-                config.eta,
-            );
+            let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
 
             let mut harvester = nine65::entropy::shadow::ShadowHarvester::with_seed(42);
             encryptor.encrypt(msg, &mut harvester)
@@ -44,7 +43,11 @@ fn sequential_encrypt(messages: &[u64], config: &nine65::params::FHEConfig, keys
 
 // ─── Generic Rayon Implementation ───────────────────────────────────────
 
-fn generic_rayon_encrypt(messages: &[u64], config: &nine65::params::FHEConfig, keys: &KeySet) -> Vec<nine65::ops::encrypt::Ciphertext> {
+fn generic_rayon_encrypt(
+    messages: &[u64],
+    config: &nine65::params::FHEConfig,
+    keys: &KeySet,
+) -> Vec<nine65::ops::encrypt::Ciphertext> {
     messages
         .par_iter()
         .map_init(
@@ -56,15 +59,10 @@ fn generic_rayon_encrypt(messages: &[u64], config: &nine65::params::FHEConfig, k
             },
             |(ntt, encoder), &msg| {
                 // Reuse cached objects
-                let encryptor = BFVEncryptor::new(
-                    &keys.public_key,
-                    encoder,
-                    ntt,
-                    config.eta,
-                );
+                let encryptor = BFVEncryptor::new(&keys.public_key, encoder, ntt, config.eta);
                 let mut harvester = nine65::entropy::shadow::ShadowHarvester::with_seed(42);
                 encryptor.encrypt(msg, &mut harvester)
-            }
+            },
         )
         .collect()
 }
@@ -76,7 +74,7 @@ fn bench_threading_strategies(c: &mut Criterion) {
     group.sample_size(10);
 
     let (config, ntt, keys) = setup_context();
-    
+
     // Generate keys again for the adaptive context since KeySet doesn't implement Clone
     let mut rng = nine65::entropy::shadow::ShadowHarvester::with_seed(0xBEEF + 1);
     let keys_for_adaptive = KeySet::generate(&config, &ntt, &mut rng);
@@ -84,7 +82,7 @@ fn bench_threading_strategies(c: &mut Criterion) {
 
     for batch_size in [5, 20, 50, 100] {
         let messages: Vec<u64> = (0..batch_size).map(|i| i as u64).collect();
-        
+
         group.throughput(Throughput::Elements(batch_size as u64));
 
         // Sequential Implementation

@@ -44,7 +44,7 @@ impl IntegerSoftmax {
         Self {
             intermediate_scale: 1_000_000_000,
             output_scale: SOFTMAX_SCALE,
-            max_input: 1_000_000,
+            max_input: 1_000,
         }
     }
 
@@ -52,7 +52,7 @@ impl IntegerSoftmax {
         Self {
             intermediate_scale: 1_000_000_000,
             output_scale,
-            max_input: 1_000_000,
+            max_input: 1_000,
         }
     }
 
@@ -83,14 +83,14 @@ impl IntegerSoftmax {
                 // Use constant-time selection to avoid branching on secret data
                 // For the softmax computation, we need to handle the case where e <= 0
                 // We'll use bit manipulation to avoid branching
-                
+
                 // Determine if e is positive using bit manipulation
-                let e_is_positive = (e > 0) as u128;  // This is still branching but on public data
+                let e_is_positive = (e > 0) as u128; // This is still branching but on public data
                 let _e_is_not_positive = 1u128 - e_is_positive;
-                
+
                 // Calculate the value assuming it's positive (safe since exp should be positive)
                 let e_val = (e as u128) * self.output_scale / (total as u128);
-                
+
                 // Use masking to select between 0 and e_val
                 // If e > 0, e_is_positive = 1, so result = e_val * 1 + 0 * 0 = e_val
                 // If e <= 0, e_is_positive = 0, so result = e_val * 0 + 0 * 1 = 0
@@ -120,6 +120,9 @@ impl IntegerSoftmax {
         if let Some(v) = try_exp_integer_exact(x_norm, self.intermediate_scale) {
             return v.max(0);
         }
+
+        // Keep Padé input in its stable convergence region (roughly [-1, 1]).
+        let x_norm = x_norm.clamp(-self.intermediate_scale, self.intermediate_scale);
 
         let p_val = self.horner_eval(&PADE_P, x_norm);
         let q_val = self.horner_eval(&PADE_Q, x_norm);
@@ -330,5 +333,20 @@ mod tests {
     fn test_softmax_top_k_empty() {
         let softmax = IntegerSoftmax::new();
         assert!(softmax.compute_top_k(&[], 3).is_empty());
+    }
+    #[test]
+    fn test_softmax_monotonic_large_dynamic_range() {
+        let softmax = IntegerSoftmax::new();
+        let logits = vec![1i128, 10, 100, 1000];
+        let probs = softmax.compute(&logits);
+
+        for i in 1..probs.len() {
+            assert!(
+                probs[i] >= probs[i - 1],
+                "softmax output is not monotonic for logits {:?}: {:?}",
+                logits,
+                probs
+            );
+        }
     }
 }

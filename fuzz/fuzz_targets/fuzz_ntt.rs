@@ -16,7 +16,7 @@ struct NTTInput {
 // - INTT(NTT(poly)) == poly
 // - No panics on edge cases
 fuzz_target!(|input: NTTInput| {
-    let config = FHEConfig::standard_128();
+    let config = FHEConfig::standard_128_insecure();
     let ntt = NTTEngine::new(config.q, config.n);
 
     // Take at most n coefficients

@@ -77,9 +77,9 @@ struct ConfigResult {
     log_q_boot: u32,
     delta_boot_bits: u32,
     trials: Vec<BootstrapTrial>,
-    fresh_success_rate: f64,    // for reporting only — not used in computation
+    fresh_success_rate: f64, // for reporting only — not used in computation
     bootstrap_success_rate: f64, // for reporting only
-    mean_error: f64,             // for reporting only
+    mean_error: f64,         // for reporting only
     max_error: u64,
 }
 
@@ -99,10 +99,7 @@ fn test_messages(t: u64) -> Vec<u64> {
 }
 
 /// Run bootstrap correctness trials for a given config.
-fn run_trials(
-    config: &FHEConfig,
-    seed: u64,
-) -> Nine65Result<ConfigResult> {
+fn run_trials(config: &FHEConfig, seed: u64) -> Nine65Result<ConfigResult> {
     let ctx = RNSFHEContext::try_new(config)?;
     let boot = ClockworkBootstrap::new(config)?;
     let mut rng = ShadowHarvester::with_seed(seed);
@@ -149,11 +146,15 @@ fn run_trials(
     let log_q_boot: u32 = boot_primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
 
     // Δ_boot = Q_boot / t (approximate via log2)
-    let q_boot_product: u128 = boot_primes.iter().fold(1u128, |acc, &p| {
-        acc.saturating_mul(p as u128)
-    });
+    let q_boot_product: u128 = boot_primes
+        .iter()
+        .fold(1u128, |acc, &p| acc.saturating_mul(p as u128));
     let delta_boot = q_boot_product / config.t as u128;
-    let delta_boot_bits = if delta_boot > 0 { 128 - delta_boot.leading_zeros() } else { 0 };
+    let delta_boot_bits = if delta_boot > 0 {
+        128 - delta_boot.leading_zeros()
+    } else {
+        0
+    };
 
     Ok(ConfigResult {
         config_name: config.name.to_string(),
@@ -176,13 +177,19 @@ fn run_trials(
 /// Print a ConfigResult in tabular form.
 fn print_result(r: &ConfigResult) {
     println!("\n{}", "=".repeat(70));
-    println!("Config: {} | N={} | t={} | eta={}", r.config_name, r.n, r.t, r.eta);
+    println!(
+        "Config: {} | N={} | t={} | eta={}",
+        r.config_name, r.n, r.t, r.eta
+    );
     println!(
         "Work: {} primes (log Q = {} bits) | Boot: {} primes (log Q = {} bits)",
         r.num_work_primes, r.log_q_work, r.num_boot_primes, r.log_q_boot
     );
     println!("Δ_boot ≈ 2^{} bits", r.delta_boot_bits);
-    println!("Fresh decrypt: {:.0}% correct", r.fresh_success_rate * 100.0);
+    println!(
+        "Fresh decrypt: {:.0}% correct",
+        r.fresh_success_rate * 100.0
+    );
     println!(
         "Bootstrap decrypt: {:.0}% correct | mean_error={:.1} | max_error={}",
         r.bootstrap_success_rate * 100.0,
@@ -306,7 +313,11 @@ fn explore_h2_polynomial_degree() {
     for r in &results {
         println!(
             "{:<15} {:>6} {:>7.0}% {:>12.1} {:>10}",
-            r.config_name, r.n, r.bootstrap_success_rate * 100.0, r.mean_error, r.max_error
+            r.config_name,
+            r.n,
+            r.bootstrap_success_rate * 100.0,
+            r.mean_error,
+            r.max_error
         );
     }
 }
@@ -409,7 +420,10 @@ fn explore_h4_noise_parameter() {
     for r in &results {
         println!(
             "{:>5} {:>7.0}% {:>12.1} {:>10}",
-            r.eta, r.bootstrap_success_rate * 100.0, r.mean_error, r.max_error
+            r.eta,
+            r.bootstrap_success_rate * 100.0,
+            r.mean_error,
+            r.max_error
         );
     }
 }
@@ -449,15 +463,23 @@ fn explore_h5_modswitch_distribution_error() {
     let sk_signed: Vec<i64> = keys.secret_key.s.main[0]
         .iter()
         .map(|&c| {
-            if c == 0 { 0i64 }
-            else if c == 1 { 1i64 }
-            else { -1i64 }
+            if c == 0 {
+                0i64
+            } else if c == 1 {
+                1i64
+            } else {
+                -1i64
+            }
         })
         .collect();
 
     let sk_weight: usize = sk_signed.iter().filter(|&&v| v != 0).count();
-    println!("Secret key Hamming weight: {} / {} ({:.1}%)",
-        sk_weight, n, sk_weight as f64 / n as f64 * 100.0);
+    println!(
+        "Secret key Hamming weight: {} / {} ({:.1}%)",
+        sk_weight,
+        n,
+        sk_weight as f64 / n as f64 * 100.0
+    );
 
     for m in [0u64, 1, 42, 100, 65536] {
         let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
@@ -471,12 +493,18 @@ fn explore_h5_modswitch_distribution_error() {
         let mut c1_full = vec![0u128; n];
         for j in 0..n {
             c0_full[j] = crt_reconstruct_2(
-                ct.c0.main[0][j] as u128, ct.c0.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c0.main[0][j] as u128,
+                ct.c0.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
             c1_full[j] = crt_reconstruct_2(
-                ct.c1.main[0][j] as u128, ct.c1.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c1.main[0][j] as u128,
+                ct.c1.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
         }
 
@@ -487,7 +515,9 @@ fn explore_h5_modswitch_distribution_error() {
             phase[j] = c0_full[j] as i128;
             for k in 0..n {
                 let s_k = sk_signed[k];
-                if s_k == 0 { continue; }
+                if s_k == 0 {
+                    continue;
+                }
                 // Negacyclic: index j-k, with sign flip if wrap
                 let idx = (j as i128 - k as i128).rem_euclid(n as i128) as usize;
                 let sign = if j >= k { 1i128 } else { -1i128 };
@@ -511,7 +541,9 @@ fn explore_h5_modswitch_distribution_error() {
             result_bootstrap[j] = c0_small[j] as i128;
             for k in 0..n {
                 let s_k = sk_signed[k];
-                if s_k == 0 { continue; }
+                if s_k == 0 {
+                    continue;
+                }
                 let idx = (j as i128 - k as i128).rem_euclid(n as i128) as usize;
                 let sign = if j >= k { 1i128 } else { -1i128 };
                 result_bootstrap[j] += sign * s_k as i128 * c1_small[idx] as i128;
@@ -608,7 +640,9 @@ fn explore_combined_sweep() {
                     Err(e) => {
                         println!(
                             "N={:<5} t={:<7} η={:<3} FAILED: {}",
-                            n, t, eta,
+                            n,
+                            t,
+                            eta,
                             format!("{:?}", e).chars().take(40).collect::<String>()
                         );
                     }
@@ -636,7 +670,9 @@ fn explore_phase_by_phase_diagnostic() {
     let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
     let mut rng = ShadowHarvester::with_seed(42);
     let keys = ctx.generate_keys_dual_full(&mut rng);
-    let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+    let boot_keys = boot
+        .generate_keys(&keys.secret_key, &mut rng)
+        .expect("KeyGen");
 
     let n = config.n;
     let t = config.t;
@@ -646,7 +682,11 @@ fn explore_phase_by_phase_diagnostic() {
 
         let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
         let dec_fresh = ctx.decrypt_dual(&ct, &keys.secret_key);
-        println!("  Fresh decrypt: {} (correct={})", dec_fresh, dec_fresh == m);
+        println!(
+            "  Fresh decrypt: {} (correct={})",
+            dec_fresh,
+            dec_fresh == m
+        );
 
         // Phase 1: ModSwitch
         // We can't call modswitch_to_t directly (it's private), but we can
@@ -663,14 +703,20 @@ fn explore_phase_by_phase_diagnostic() {
         let mut c1_small = vec![0u64; n];
         for j in 0..n {
             let c0_val = crt_reconstruct_2(
-                ct.c0.main[0][j] as u128, ct.c0.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c0.main[0][j] as u128,
+                ct.c0.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
             c0_small[j] = ((c0_val * t128 + q_min_half) / q_min % t128) as u64;
 
             let c1_val = crt_reconstruct_2(
-                ct.c1.main[0][j] as u128, ct.c1.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c1.main[0][j] as u128,
+                ct.c1.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
             c1_small[j] = ((c1_val * t128 + q_min_half) / q_min % t128) as u64;
         }
@@ -681,26 +727,42 @@ fn explore_phase_by_phase_diagnostic() {
         let c0_nonzero = c0_small.iter().filter(|&&v| v != 0).count();
         let c1_nonzero = c1_small.iter().filter(|&&v| v != 0).count();
         println!("  Phase 1 (ModSwitch Q->{}):", t);
-        println!("    c0_small: max={}, nonzero={}/{}, [0]={}", c0_max, c0_nonzero, n, c0_small[0]);
-        println!("    c1_small: max={}, nonzero={}/{}, [0]={}", c1_max, c1_nonzero, n, c1_small[0]);
+        println!(
+            "    c0_small: max={}, nonzero={}/{}, [0]={}",
+            c0_max, c0_nonzero, n, c0_small[0]
+        );
+        println!(
+            "    c1_small: max={}, nonzero={}/{}, [0]={}",
+            c1_max, c1_nonzero, n, c1_small[0]
+        );
 
         // Full bootstrap result
-        let ct_boot = boot.bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk).expect("Bootstrap");
+        let ct_boot = boot
+            .bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk)
+            .expect("Bootstrap");
         let dec_boot = ctx.decrypt_dual(&ct_boot, &keys.secret_key);
-        println!("  Full bootstrap decrypt: {} (correct={})", dec_boot, dec_boot == m);
+        println!(
+            "  Full bootstrap decrypt: {} (correct={})",
+            dec_boot,
+            dec_boot == m
+        );
 
         // Analyze the bootstrap output ciphertext
         let c0_boot_max: u64 = ct_boot.c0.main[0].iter().max().copied().unwrap_or(0);
         let c1_boot_max: u64 = ct_boot.c1.main[0].iter().max().copied().unwrap_or(0);
-        println!("  Bootstrap output: c0_max={}, c1_max={}, level={}",
-            c0_boot_max, c1_boot_max, ct_boot.level);
+        println!(
+            "  Bootstrap output: c0_max={}, c1_max={}, level={}",
+            c0_boot_max, c1_boot_max, ct_boot.level
+        );
 
         // Compare output structure with fresh encrypt
         let ct_fresh_m = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
         let c0_fresh_max: u64 = ct_fresh_m.c0.main[0].iter().max().copied().unwrap_or(0);
         let c1_fresh_max: u64 = ct_fresh_m.c1.main[0].iter().max().copied().unwrap_or(0);
-        println!("  Fresh encrypt:    c0_max={}, c1_max={}, level={}",
-            c0_fresh_max, c1_fresh_max, ct_fresh_m.level);
+        println!(
+            "  Fresh encrypt:    c0_max={}, c1_max={}, level={}",
+            c0_fresh_max, c1_fresh_max, ct_fresh_m.level
+        );
     }
 }
 
@@ -722,7 +784,9 @@ fn explore_noise_floor_estimation() {
     let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
     let mut rng = ShadowHarvester::with_seed(42);
     let keys = ctx.generate_keys_dual_full(&mut rng);
-    let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+    let boot_keys = boot
+        .generate_keys(&keys.secret_key, &mut rng)
+        .expect("KeyGen");
 
     let _n = config.n;
 
@@ -735,7 +799,8 @@ fn explore_noise_floor_estimation() {
         let ct_zero = ctx.encrypt_dual(0, &keys.public_key, &mut sample_rng);
         let dec_fresh = ctx.decrypt_dual(&ct_zero, &keys.secret_key);
 
-        let ct_boot = boot.bootstrap(&ct_zero, &boot_keys.bsk, &boot_keys.ksk)
+        let ct_boot = boot
+            .bootstrap(&ct_zero, &boot_keys.bsk, &boot_keys.ksk)
             .expect("Bootstrap");
         let dec_boot = ctx.decrypt_dual(&ct_boot, &keys.secret_key);
 
@@ -748,7 +813,10 @@ fn explore_noise_floor_estimation() {
 
     let all_zero = noise_magnitudes.iter().all(|&v| v == 0);
     let max_noise = noise_magnitudes.iter().max().unwrap();
-    println!("\nNoise floor for m=0: all_zero={}, max={}", all_zero, max_noise);
+    println!(
+        "\nNoise floor for m=0: all_zero={}, max={}",
+        all_zero, max_noise
+    );
     println!("If max > 0, even m=0 has noise (just happens to round correctly).");
 
     // Now do the same for m=1 to see the noise magnitude
@@ -756,7 +824,8 @@ fn explore_noise_floor_estimation() {
     for seed in 0..num_samples {
         let mut sample_rng = ShadowHarvester::with_seed(200 + seed);
         let ct_one = ctx.encrypt_dual(1, &keys.public_key, &mut sample_rng);
-        let ct_boot = boot.bootstrap(&ct_one, &boot_keys.bsk, &boot_keys.ksk)
+        let ct_boot = boot
+            .bootstrap(&ct_one, &boot_keys.bsk, &boot_keys.ksk)
             .expect("Bootstrap");
         let dec_boot = ctx.decrypt_dual(&ct_boot, &keys.secret_key);
         let error = if dec_boot > 1 {
@@ -790,13 +859,19 @@ fn explore_seed_sensitivity() {
             Ok(r) => {
                 let correct = r.trials.iter().filter(|t| t.bootstrap_correct).count();
                 let total = r.trials.len();
-                let m0_ok = r.trials.iter()
+                let m0_ok = r
+                    .trials
+                    .iter()
                     .find(|t| t.message == 0)
                     .map(|t| t.bootstrap_correct)
                     .unwrap_or(false);
                 println!(
                     "  seed={:>8}: {}/{} correct, m=0 correct={}, boot_rate={:.0}%",
-                    seed, correct, total, m0_ok, r.bootstrap_success_rate * 100.0
+                    seed,
+                    correct,
+                    total,
+                    m0_ok,
+                    r.bootstrap_success_rate * 100.0
                 );
                 correct_per_seed.push((seed, correct, total));
             }
@@ -807,7 +882,11 @@ fn explore_seed_sensitivity() {
     let all_same = correct_per_seed.windows(2).all(|w| w[0].1 == w[1].1);
     println!(
         "\nSeed sensitivity: {} (all seeds give same correctness count)",
-        if all_same { "STRUCTURAL (seed-independent)" } else { "MARGINAL (seed-dependent)" }
+        if all_same {
+            "STRUCTURAL (seed-independent)"
+        } else {
+            "MARGINAL (seed-dependent)"
+        }
     );
 }
 
@@ -829,26 +908,42 @@ fn explore_anchor_limb_impact() {
     let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
     let mut rng = ShadowHarvester::with_seed(42);
     let keys = ctx.generate_keys_dual_full(&mut rng);
-    let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+    let boot_keys = boot
+        .generate_keys(&keys.secret_key, &mut rng)
+        .expect("KeyGen");
 
     let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
 
     // Check anchor limbs before bootstrap
-    let anchor_nonzero_before: usize = ct.c0.anchor.iter()
+    let anchor_nonzero_before: usize = ct
+        .c0
+        .anchor
+        .iter()
         .flat_map(|limb| limb.iter())
         .filter(|&&v| v != 0)
         .count();
 
-    let ct_boot = boot.bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk).expect("Bootstrap");
+    let ct_boot = boot
+        .bootstrap(&ct, &boot_keys.bsk, &boot_keys.ksk)
+        .expect("Bootstrap");
 
     // Check anchor limbs after bootstrap
-    let anchor_nonzero_after: usize = ct_boot.c0.anchor.iter()
+    let anchor_nonzero_after: usize = ct_boot
+        .c0
+        .anchor
+        .iter()
         .flat_map(|limb| limb.iter())
         .filter(|&&v| v != 0)
         .count();
 
-    println!("  Before bootstrap: {} non-zero anchor coefficients", anchor_nonzero_before);
-    println!("  After bootstrap:  {} non-zero anchor coefficients", anchor_nonzero_after);
+    println!(
+        "  Before bootstrap: {} non-zero anchor coefficients",
+        anchor_nonzero_before
+    );
+    println!(
+        "  After bootstrap:  {} non-zero anchor coefficients",
+        anchor_nonzero_after
+    );
     println!("  Anchor limbs zeroed: {}", anchor_nonzero_after == 0);
 
     // Check if decrypt_dual uses anchor limbs
@@ -910,13 +1005,27 @@ fn explore_h6_delta_inverse_correction() {
     let delta_inv_mod_t = mod_inverse_u128(delta_work_mod_t as u128, t128);
 
     println!("Parameters:");
-    println!("  Q_min = p0 * p1 = {} ({} bits)", q_min, 128 - q_min.leading_zeros());
+    println!(
+        "  Q_min = p0 * p1 = {} ({} bits)",
+        q_min,
+        128 - q_min.leading_zeros()
+    );
     println!("  t = {}", t);
-    println!("  Δ_work = round(Q_min/t) = {} ({} bits)", delta_work, 128 - delta_work.leading_zeros());
+    println!(
+        "  Δ_work = round(Q_min/t) = {} ({} bits)",
+        delta_work,
+        128 - delta_work.leading_zeros()
+    );
     println!("  Δ_work mod t = {}", delta_work_mod_t);
     match delta_inv_mod_t {
-        Some(inv) => println!("  Δ⁻¹ mod t = {} (verify: {} * {} mod {} = {})",
-            inv, delta_work_mod_t, inv, t, (delta_work_mod_t as u128 * inv) % t128),
+        Some(inv) => println!(
+            "  Δ⁻¹ mod t = {} (verify: {} * {} mod {} = {})",
+            inv,
+            delta_work_mod_t,
+            inv,
+            t,
+            (delta_work_mod_t as u128 * inv) % t128
+        ),
         None => println!("  Δ⁻¹ mod t = DOES NOT EXIST (gcd(Δ,t) ≠ 1) ← THIS IS THE PROBLEM"),
     }
     println!();
@@ -925,9 +1034,13 @@ fn explore_h6_delta_inverse_correction() {
     let sk_signed: Vec<i64> = keys.secret_key.s.main[0]
         .iter()
         .map(|&c| {
-            if c == 0 { 0i64 }
-            else if c == 1 { 1i64 }
-            else { -1i64 }
+            if c == 0 {
+                0i64
+            } else if c == 1 {
+                1i64
+            } else {
+                -1i64
+            }
         })
         .collect();
 
@@ -946,12 +1059,18 @@ fn explore_h6_delta_inverse_correction() {
         let mut c1_full = vec![0u128; n];
         for j in 0..n {
             c0_full[j] = crt_reconstruct_2(
-                ct.c0.main[0][j] as u128, ct.c0.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c0.main[0][j] as u128,
+                ct.c0.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
             c1_full[j] = crt_reconstruct_2(
-                ct.c1.main[0][j] as u128, ct.c1.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c1.main[0][j] as u128,
+                ct.c1.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
         }
 
@@ -965,16 +1084,17 @@ fn explore_h6_delta_inverse_correction() {
             .collect();
 
         // Compute c0 + c1*s in Z_t (negacyclic convolution)
-        let m_no_correction = cleartext_phase_eval(
-            &c0_no_correction, &c1_no_correction, &sk_signed, n, t,
-        );
+        let m_no_correction =
+            cleartext_phase_eval(&c0_no_correction, &c1_no_correction, &sk_signed, n, t);
 
         // === METHOD B: With QMNF Δ⁻¹ correction ===
         let (c0_with_correction, c1_with_correction) = if let Some(inv) = delta_inv_mod_t {
-            let c0_corrected: Vec<u64> = c0_no_correction.iter()
+            let c0_corrected: Vec<u64> = c0_no_correction
+                .iter()
                 .map(|&sr| ((sr as u128 * inv) % t128) as u64)
                 .collect();
-            let c1_corrected: Vec<u64> = c1_no_correction.iter()
+            let c1_corrected: Vec<u64> = c1_no_correction
+                .iter()
                 .map(|&sr| ((sr as u128 * inv) % t128) as u64)
                 .collect();
             (c0_corrected, c1_corrected)
@@ -983,9 +1103,8 @@ fn explore_h6_delta_inverse_correction() {
             (c0_no_correction.clone(), c1_no_correction.clone())
         };
 
-        let m_with_correction = cleartext_phase_eval(
-            &c0_with_correction, &c1_with_correction, &sk_signed, n, t,
-        );
+        let m_with_correction =
+            cleartext_phase_eval(&c0_with_correction, &c1_with_correction, &sk_signed, n, t);
 
         // Error computation (mod t distance)
         let err_no = mod_distance(m_no_correction, m, t);
@@ -993,12 +1112,21 @@ fn explore_h6_delta_inverse_correction() {
 
         println!(
             "m={:<6} {:>8} {:>12} {:>12} {:>12} {:>12}{}",
-            m, dec_fresh, m_no_correction, m_with_correction,
-            err_no, err_with,
-            if err_with == 0 && err_no != 0 { "  ← Δ⁻¹ FIXES IT" }
-            else if err_with == 0 && err_no == 0 { "  (both correct)" }
-            else if err_with < err_no { "  ← Δ⁻¹ helps" }
-            else { "" }
+            m,
+            dec_fresh,
+            m_no_correction,
+            m_with_correction,
+            err_no,
+            err_with,
+            if err_with == 0 && err_no != 0 {
+                "  ← Δ⁻¹ FIXES IT"
+            } else if err_with == 0 && err_no == 0 {
+                "  (both correct)"
+            } else if err_with < err_no {
+                "  ← Δ⁻¹ helps"
+            } else {
+                ""
+            }
         );
     }
 
@@ -1018,13 +1146,7 @@ fn explore_h6_delta_inverse_correction() {
 /// Simulate the BFV phase evaluation in cleartext:
 /// result[0] = (c0[0] + (c1 * s)[0]) mod t
 /// where * is negacyclic polynomial multiplication in Z_t[X]/(X^N+1).
-fn cleartext_phase_eval(
-    c0: &[u64],
-    c1: &[u64],
-    sk_signed: &[i64],
-    n: usize,
-    t: u64,
-) -> u64 {
+fn cleartext_phase_eval(c0: &[u64], c1: &[u64], sk_signed: &[i64], n: usize, t: u64) -> u64 {
     // For coefficient 0 of the negacyclic convolution c1 * s:
     // (c1*s)[0] = sum_{k=0}^{N-1} c1[k] * s[N-k] * (-1)  for k>0
     //           = c1[0]*s[0] - c1[1]*s[N-1] - c1[2]*s[N-2] - ... - c1[N-1]*s[1]
@@ -1037,7 +1159,9 @@ fn cleartext_phase_eval(
     let mut phase_0 = c0[0] as i128;
     for k in 0..n {
         let s_k = sk_signed[k];
-        if s_k == 0 { continue; }
+        if s_k == 0 {
+            continue;
+        }
 
         // Index: (0 - k) mod N = N - k for k > 0, or 0 for k = 0
         // Sign: -1 for k > 0 (wrapped), +1 for k = 0
@@ -1092,9 +1216,13 @@ fn explore_h6b_full_polynomial_correction() {
     let sk_signed: Vec<i64> = keys.secret_key.s.main[0]
         .iter()
         .map(|&c| {
-            if c == 0 { 0i64 }
-            else if c == 1 { 1i64 }
-            else { -1i64 }
+            if c == 0 {
+                0i64
+            } else if c == 1 {
+                1i64
+            } else {
+                -1i64
+            }
         })
         .collect();
 
@@ -1108,12 +1236,18 @@ fn explore_h6b_full_polynomial_correction() {
         let mut c1_full = vec![0u128; n];
         for j in 0..n {
             c0_full[j] = crt_reconstruct_2(
-                ct.c0.main[0][j] as u128, ct.c0.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c0.main[0][j] as u128,
+                ct.c0.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
             c1_full[j] = crt_reconstruct_2(
-                ct.c1.main[0][j] as u128, ct.c1.main[1][j] as u128,
-                p0, p1, p0_inv,
+                ct.c1.main[0][j] as u128,
+                ct.c1.main[1][j] as u128,
+                p0,
+                p1,
+                p0_inv,
             );
         }
 
@@ -1130,10 +1264,12 @@ fn explore_h6b_full_polynomial_correction() {
 
         // With Δ⁻¹ correction
         let phase_with_corr = if let Some(inv) = delta_inv_mod_t {
-            let c0_corr: Vec<u64> = c0_raw.iter()
+            let c0_corr: Vec<u64> = c0_raw
+                .iter()
                 .map(|&sr| ((sr as u128 * inv) % t128) as u64)
                 .collect();
-            let c1_corr: Vec<u64> = c1_raw.iter()
+            let c1_corr: Vec<u64> = c1_raw
+                .iter()
                 .map(|&sr| ((sr as u128 * inv) % t128) as u64)
                 .collect();
             full_negacyclic_phase(&c0_corr, &c1_corr, &sk_signed, n, t)
@@ -1148,7 +1284,9 @@ fn explore_h6b_full_polynomial_correction() {
                 ph[j] = c0_full[j] as i128;
                 for k in 0..n {
                     let s_k = sk_signed[k];
-                    if s_k == 0 { continue; }
+                    if s_k == 0 {
+                        continue;
+                    }
                     if k == 0 {
                         ph[j] += s_k as i128 * c1_full[j] as i128;
                     } else if j >= k {
@@ -1160,7 +1298,8 @@ fn explore_h6b_full_polynomial_correction() {
                 }
                 ph[j] = ph[j].rem_euclid(q_min as i128);
             }
-            let result: Vec<u64> = ph.iter()
+            let result: Vec<u64> = ph
+                .iter()
                 .map(|&v| ((v as u128 * t128 + q_min_half) / q_min % t128) as u64)
                 .collect();
             result
@@ -1169,15 +1308,27 @@ fn explore_h6b_full_polynomial_correction() {
         // For scalar encoding, message is in coefficient 0. Others should be ~0 (noise).
         println!("  Coeff[0] — message coefficient:");
         println!("    Correct BFV:    {}", phase_correct[0]);
-        println!("    No Δ⁻¹:         {} (err={})", phase_no_corr[0], mod_distance(phase_no_corr[0], m, t));
-        println!("    With Δ⁻¹:       {} (err={})", phase_with_corr[0], mod_distance(phase_with_corr[0], m, t));
+        println!(
+            "    No Δ⁻¹:         {} (err={})",
+            phase_no_corr[0],
+            mod_distance(phase_no_corr[0], m, t)
+        );
+        println!(
+            "    With Δ⁻¹:       {} (err={})",
+            phase_with_corr[0],
+            mod_distance(phase_with_corr[0], m, t)
+        );
 
         // Check how many noise coefficients differ between methods
         let mut diff_no_corr = 0u32;
         let mut diff_with_corr = 0u32;
         for j in 1..n {
-            if phase_no_corr[j] != phase_correct[j] { diff_no_corr += 1; }
-            if phase_with_corr[j] != phase_correct[j] { diff_with_corr += 1; }
+            if phase_no_corr[j] != phase_correct[j] {
+                diff_no_corr += 1;
+            }
+            if phase_with_corr[j] != phase_correct[j] {
+                diff_with_corr += 1;
+            }
         }
         println!("  Noise coefficients [1..N) differing from correct BFV:");
         println!("    No Δ⁻¹:   {}/{}", diff_no_corr, n - 1);
@@ -1187,19 +1338,15 @@ fn explore_h6b_full_polynomial_correction() {
 
 /// Full negacyclic polynomial phase evaluation: c0 + c1*s mod (X^N+1) in Z_t.
 /// Returns all N coefficients.
-fn full_negacyclic_phase(
-    c0: &[u64],
-    c1: &[u64],
-    sk: &[i64],
-    n: usize,
-    t: u64,
-) -> Vec<u64> {
+fn full_negacyclic_phase(c0: &[u64], c1: &[u64], sk: &[i64], n: usize, t: u64) -> Vec<u64> {
     let mut result = vec![0i128; n];
     for j in 0..n {
         result[j] = c0[j] as i128;
         for k in 0..n {
             let s_k = sk[k];
-            if s_k == 0 { continue; }
+            if s_k == 0 {
+                continue;
+            }
             if k == 0 {
                 result[j] += s_k as i128 * c1[j] as i128;
             } else if j >= k {
@@ -1230,7 +1377,11 @@ fn explore_h6c_gcd_delta_t() {
 
     let configs: Vec<(&str, Vec<u64>, u64)> = vec![
         ("secure_128", vec![998244353, 985661441, 754974721], 65537),
-        ("secure_128_deep", vec![998244353, 985661441, 754974721, 469762049], 65537),
+        (
+            "secure_128_deep",
+            vec![998244353, 985661441, 754974721, 469762049],
+            65537,
+        ),
         ("2-prime", vec![998244353, 985661441], 65537),
         ("t=17", vec![998244353, 985661441], 17),
         ("t=257", vec![998244353, 985661441], 257),

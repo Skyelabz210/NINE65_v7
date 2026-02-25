@@ -62,6 +62,14 @@ v7 achieves what no prior version could: **every bootstrap path produces exact p
 | **Arithmetic** | Integer-only (zero floats) |
 | **Post-Quantum** | LWE-based (lattice verified) |
 
+### Lattice Estimator Baseline
+
+| Config | n | log2(q) | min attack log2(rop) |
+|--------|---|---------|----------------------|
+| `secure_128` | 4096 | 89.08 | 129 |
+| `secure_192` | 8192 | 145.08 | 159 |
+| `secure_256` | 16384 | 203.38 | 226 |
+
 ---
 
 ## Quick Start
@@ -229,7 +237,7 @@ Performance baselines from internal release builds on CPU. No GPU required.
 |-----------|------------|------------|
 | Encrypt | 23.56ms | 61.59ms |
 | Add | 0.83ms | 2.10ms |
-| Mul (K-Elim rescale) | 152.13ms | 459.02ms |
+| Mul | 152.13ms | 459.02ms |
 | Decrypt | 11.06ms | 29.00ms |
 
 ### Depth (Symmetric Mode)
@@ -259,6 +267,7 @@ NINE65 targets post-quantum security through LWE-based cryptography.
 | `secure_128` | 4096 | 90 | 129 | 86 | 129 |
 | `secure_192` | 16384 | 147 | 374 | 213 | 318 |
 | `secure_256` | 16384 | 177 | 311 | 177 | 264 |
+
 
 ### Security Hardening
 
@@ -305,6 +314,15 @@ Built on the QMNF (Quantized Modular Number Field) architecture:
 ## License
 
 Proprietary. See `LICENSE`.
+
+---
+
+## Compliance and Policy
+
+NINE65 v7 adheres to rigorous internal standards for performance auditing and claim verification.
+
+- [Benchmark Profile Policy](docs/BENCHMARK_PROFILE_POLICY.md)
+- [Claim Registry](docs/CLAIM_REGISTRY.csv)
 
 ---
 

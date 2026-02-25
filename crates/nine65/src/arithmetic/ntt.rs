@@ -127,8 +127,7 @@ impl NTTEngine {
         let psi_powers: Vec<u64> = (0..n).map(|i| mod_pow(psi, i as u64, q)).collect();
         let psi_inv_powers: Vec<u64> = (0..n).map(|i| mod_pow(psi_inv, i as u64, q)).collect();
         let omega_powers: Vec<u64> = (0..n).map(|i| mod_pow(omega, i as u64, q)).collect();
-        let omega_inv_powers: Vec<u64> =
-            (0..n).map(|i| mod_pow(omega_inv, i as u64, q)).collect();
+        let omega_inv_powers: Vec<u64> = (0..n).map(|i| mod_pow(omega_inv, i as u64, q)).collect();
 
         Ok(Self {
             mont,

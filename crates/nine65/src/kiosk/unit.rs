@@ -365,8 +365,7 @@ mod tests {
 
         assert!(ops_done <= 3, "Capsule should stop after 3 operations");
         assert!(
-            capsule.status() == UnitStatus::Triggered
-                || capsule.status() == UnitStatus::Active
+            capsule.status() == UnitStatus::Triggered || capsule.status() == UnitStatus::Active
         );
     }
 

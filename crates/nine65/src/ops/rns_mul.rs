@@ -1025,7 +1025,7 @@ mod tests {
     ) {
         // Use light_rns_exact for smaller polynomial degree and better noise control
         // n=1024 gives more headroom than n=4096 for the same modulus size
-        let config = FHEConfig::light_rns_exact();
+        let config = FHEConfig::light_rns_exact_insecure();
         let ntt = NTTEngine::new(config.q, config.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let rns_eval = RNSEvaluator::new(&config);
@@ -1189,7 +1189,7 @@ mod tests {
     fn test_k_elim_trivial_ciphertext() {
         // Test K-Elimination on trivial ciphertexts (c0 = Δ×m, c1 = 0)
         // This isolates the K-Elimination logic from BFV encryption complexity
-        let config = FHEConfig::standard_128();
+        let config = FHEConfig::standard_128_insecure();
 
         let rns_eval = RNSEvaluator::new(&config);
         let delta = rns_eval.delta as u128;

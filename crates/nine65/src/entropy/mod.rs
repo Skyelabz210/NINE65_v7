@@ -74,7 +74,7 @@ pub use crt_shadow::{
 pub use wassan_noise::WassanNoiseField;
 
 // Export the shadow entropy monitor
-pub use shadow_entropy_monitor::{ShadowEntropyMonitor, AdaptiveFHEContext};
+pub use shadow_entropy_monitor::{AdaptiveFHEContext, ShadowEntropyMonitor};
 
 pub use secure::{
     entropy_health_check, secure_bytes, secure_cbd, secure_cbd_vector, secure_ternary,

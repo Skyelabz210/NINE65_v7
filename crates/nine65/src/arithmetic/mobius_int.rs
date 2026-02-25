@@ -280,7 +280,8 @@ impl MobiusInt {
     /// # Panics
     /// Panics on division by zero. Use `checked_div()` for fallible version.
     pub fn div(&self, other: &Self) -> Self {
-        self.checked_div(other).expect("MobiusInt: division by zero")
+        self.checked_div(other)
+            .expect("MobiusInt: division by zero")
     }
 
     /// Checked division: returns `None` on division by zero.

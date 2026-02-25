@@ -16,7 +16,7 @@ struct EncryptInput {
 // - Decryption correctly recovers the plaintext (mod t)
 fuzz_target!(|input: EncryptInput| {
     // Use a fixed secure config to avoid parameter fuzzing overhead
-    let config = FHEConfig::standard_128();
+    let config = FHEConfig::standard_128_insecure();
 
     // Bound plaintext to valid range
     let plaintext = input.plaintext % config.t;
