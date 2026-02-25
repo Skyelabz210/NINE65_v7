@@ -592,7 +592,7 @@ impl ClockworkBootstrap {
     /// Level-aware: uses the ciphertext's actual number of RNS limbs (not just 2).
     /// For a fresh ciphertext at level 3, uses all 3 primes. For a post-multiply
     /// ciphertext at level 2, uses 2 primes.
-    fn modswitch_to_t(&self, ct: &DualRNSCiphertext) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
+    pub(crate) fn modswitch_to_t(&self, ct: &DualRNSCiphertext) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
         let n = self.n;
         let t = self.t;
         let ct_level = ct.c0.main.len();

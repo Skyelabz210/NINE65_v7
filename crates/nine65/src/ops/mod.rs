@@ -21,6 +21,7 @@ pub mod neural;
 pub mod parallel;
 pub mod rns_fhe;
 pub mod rns_mul;
+pub mod symmetric_bootstrap;
 
 pub use batch::BatchEncoder;
 pub use encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor, Ciphertext};
