@@ -1202,6 +1202,25 @@ impl DualRNSContext {
         v_full / divisor as u128
     }
 
+    /// Audit the total dual-RNS capacity against a required bit-width.
+    ///
+    /// Total capacity is M × A. Exact reconstruction requires values < M × A.
+    pub fn audit_capacity(
+        &self,
+        required_bits: u32,
+        is_post_switch: bool,
+    ) -> crate::noise::boundary::BoundaryDiagnostic {
+        let m_bits = crate::noise::boundary::rns_product_bit_length(&self.main.primes);
+        let a_bits = crate::noise::boundary::rns_product_bit_length(&self.anchor.primes);
+        let total_capacity_bits = m_bits + a_bits;
+
+        crate::noise::boundary::BoundaryDiagnostic::audit(
+            required_bits,
+            total_capacity_bits,
+            is_post_switch,
+        )
+    }
+
     /// Exact division with centered representation
     ///
     /// For FHE coefficients, we need signed arithmetic.

@@ -855,6 +855,8 @@ pub struct RNSFHEContext {
     pub delta_rns: Vec<u64>,
     /// Config reference
     pub config: FHEConfig,
+    /// Deep diagnostics mode enabled
+    pub diagnostics_enabled: bool,
 }
 
 impl RNSFHEContext {
@@ -941,6 +943,7 @@ impl RNSFHEContext {
             delta_rns,
             n: config.n,
             config: config.clone(),
+            diagnostics_enabled: false, // Disabled by default
         })
     }
 
@@ -951,6 +954,11 @@ impl RNSFHEContext {
     /// Use `try_new()` for fallible construction.
     pub fn new(config: &FHEConfig) -> Self {
         Self::try_new(config).expect("Invalid FHE config for RNS-native FHE")
+    }
+
+    /// Enable or disable deep diagnostics mode.
+    pub fn set_diagnostics(&mut self, enabled: bool) {
+        self.diagnostics_enabled = enabled;
     }
 
     /// DEPRECATED: `new()` / `try_new()` now use 5 anchors with full ct×ct capacity.
@@ -2721,6 +2729,19 @@ impl RNSFHEContext {
         ct2: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
     ) -> DualRNSCiphertext {
+        // [DEEP DIAGNOSTICS] Audit capacity for tensor product (N * Q^2)
+        if self.diagnostics_enabled {
+            let log2_n = 64 - self.n.leading_zeros() - 1;
+            let q_bits =
+                crate::noise::boundary::rns_product_bit_length(&self.config.primes[..ct1.level]);
+            let required_bits = log2_n + 2 * q_bits;
+
+            let diag = self.dual_rns.audit_capacity(required_bits, false);
+            if let Err(e) = diag.to_result(true) {
+                eprintln!("[DIAGNOSTIC] mul_dual_symmetric capacity warning: {}", e);
+            }
+        }
+
         // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
         // With 3 anchors (94-bit product), K-Elimination silently overflows for
         // secure_128 (3 main primes). 5 anchors (158-bit product) provides margin.
@@ -2818,6 +2839,18 @@ impl RNSFHEContext {
         ct2: &DualRNSCiphertext,
         evk: &DualRNSEvalKey,
     ) -> Nine65Result<DualRNSCiphertext> {
+        // [DEEP DIAGNOSTICS] Audit capacity for tensor product (N * Q^2)
+        if self.diagnostics_enabled {
+            let log2_n = 64 - self.n.leading_zeros() - 1;
+            let q_bits =
+                crate::noise::boundary::rns_product_bit_length(&self.config.primes[..ct1.level]);
+            let required_bits = log2_n + 2 * q_bits;
+
+            let diag = self.dual_rns.audit_capacity(required_bits, false);
+            // In public mode, we can return Err if strictly enabled and overflow occurs
+            diag.to_result(true)?;
+        }
+
         // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
         // With 3 anchors (94-bit product), K-Elimination silently overflows for
         // secure_128 (3 main primes). 5 anchors (158-bit product) provides margin.
@@ -3332,11 +3365,39 @@ impl RNSFHEContext {
         let c0_new = self.mod_switch_down_dual(&ct.c0)?;
         let c1_new = self.mod_switch_down_dual(&ct.c1)?;
 
-        Some(DualRNSCiphertext {
+        let new_level = ct.level.saturating_sub(1);
+        let result = DualRNSCiphertext {
             c0: c0_new,
             c1: c1_new,
-            level: ct.level.saturating_sub(1),
-        })
+            level: new_level,
+        };
+
+        // [DEEP DIAGNOSTICS] Audit capacity after modulus switch
+        if self.diagnostics_enabled {
+            let q_bits = crate::noise::boundary::rns_product_bit_length(&self.config.primes[..new_level]);
+            // For BFV, coefficients are bounded by Q.
+            let required_bits = q_bits;
+
+            let diag = self.dual_rns.audit_capacity(required_bits, true); // true = post-switch
+            if let Err(e) = diag.to_result(true) {
+                eprintln!("[DIAGNOSTIC] mod_switch_ct_down post-switch caution: {}", e);
+            }
+
+            // Also check if we crossed an integer boundary (e.g., U256 -> U128)
+            let old_q_bits =
+                crate::noise::boundary::rns_product_bit_length(&self.config.primes[..ct.level]);
+            let old_width = crate::noise::boundary::required_int_width(old_q_bits);
+            let new_width = crate::noise::boundary::required_int_width(q_bits);
+
+            if old_width != new_width {
+                println!(
+                    "[DIAGNOSTIC] Int-type boundary crossed: {}u -> {}u (Q bits: {} -> {})",
+                    old_width, new_width, old_q_bits, q_bits
+                );
+            }
+        }
+
+        Some(result)
     }
 
     /// Public mode multiplication with modulus switching for deeper circuits

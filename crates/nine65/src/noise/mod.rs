@@ -28,6 +28,7 @@
 //! use nine65::noise::{NoiseBudget, NoiseExhausted, NoiseOpType};
 //! ```
 
+pub mod boundary;
 pub mod budget;
 
 #[cfg(feature = "exact_rational")]
