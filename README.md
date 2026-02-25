@@ -62,13 +62,13 @@ v7 achieves what no prior version could: **every bootstrap path produces exact p
 | **Arithmetic** | Integer-only (zero floats) |
 | **Post-Quantum** | LWE-based (lattice verified) |
 
-### Lattice Estimator Baseline
+### Security Configurations
 
-| Config | n | log2(q) | min attack log2(rop) |
-|--------|---|---------|----------------------|
-| `secure_128` | 4096 | 89.08 | 129 |
-| `secure_192` | 8192 | 145.08 | 159 |
-| `secure_256` | 16384 | 203.38 | 226 |
+| Config | n | log2(q) | Classical | Quantum | Hybrid |
+|--------|---|---------|-----------|---------|--------|
+| `secure_128` | 4096 | 90 | 129 | 86 | 129 |
+| `secure_192` | 16384 | 147 | 374 | 213 | 318 |
+| `secure_256` | 16384 | 177 | 311 | 177 | 264 |
 
 ---
 
