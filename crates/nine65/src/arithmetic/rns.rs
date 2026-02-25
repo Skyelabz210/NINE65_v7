@@ -2067,7 +2067,7 @@ mod tests {
         // 4-prime config: k_max can be ~99 bits, requiring 4 anchor primes (~125 bits capacity)
         let main_primes = vec![998244353u64, 985661441, 754974721, 469762049];
 
-        let ctx = DualRNSContext::for_fhe_coeff_domain(&main_primes, 4096);
+        let ctx = DualRNSContext::for_fhe(&main_primes, 4096);
 
         println!("=== 4-Prime CRT Large k Test ===");
         println!("Main primes: {:?}", main_primes);
@@ -2159,7 +2159,7 @@ mod tests {
         let main_primes = vec![998244353u64, 985661441, 754974721];
         let _anchor_primes = vec![2013265921u64, 2281701377, 2483027969];
 
-        let ctx = DualRNSContext::for_fhe_coeff_domain(&main_primes, 4096);
+        let ctx = DualRNSContext::for_fhe(&main_primes, 4096);
 
         // Compute A (product of 3 anchor primes) - this is ~94 bits
         let a_product: u128 = ctx.anchor.primes[..3].iter().map(|&p| p as u128).product();
@@ -2239,7 +2239,7 @@ mod tests {
     fn test_4prime_crt_near_u128_limit() {
         let main_primes = vec![998244353u64, 985661441, 754974721, 469762049];
 
-        let ctx = DualRNSContext::for_fhe_coeff_domain(&main_primes, 4096);
+        let ctx = DualRNSContext::for_fhe(&main_primes, 4096);
 
         // Compute M_level
         let m_level: u128 = main_primes

@@ -22,6 +22,9 @@ use crate::arithmetic::{
 use crate::entropy::{FheRng, SecureRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::params::{mod_inverse, FHEConfig};
+
+#[cfg(test)]
+use crate::params::secure_configs::SecureConfig;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 // ============================================================================

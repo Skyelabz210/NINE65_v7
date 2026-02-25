@@ -607,7 +607,7 @@ fn demo_shadow_entropy(seed: Option<u64>) {
         // CBD distribution test
         let mut h5 = ShadowHarvester::with_seed(s);
         let cbd_vals: Vec<i64> = (0..1000).map(|_| h5.cbd(3)).collect();
-        let all_in_range = cbd_vals.iter().all(|&v| v >= -3 && v <= 3);
+        let all_in_range = cbd_vals.iter().all(|&v| (-3..=3).contains(&v));
         check("CBD(eta=3) values in [-3, 3]", all_in_range);
         let mean: i64 = cbd_vals.iter().sum::<i64>();
         println!("  CBD mean over 1000 samples: {mean} (expected ~0)");
@@ -615,7 +615,7 @@ fn demo_shadow_entropy(seed: Option<u64>) {
         println!("  (OS seed mode — deterministic tests skipped)");
         let mut h = ShadowHarvester::from_os_seed();
         let v = h.next_u64();
-        check(&format!("OS entropy produces value: {v}"), v != 0 || true);
+        check(&format!("OS entropy produces value: {v}"), v != 0);
     }
 }
 
