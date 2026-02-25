@@ -469,7 +469,7 @@ dependencies = [
  "nexgen_rational",
  "proptest",
  "rand_chacha 0.3.1",
- "rand_core 0.6.4",
+ "rand_core 0.9.3",
  "rayon",
  "serde",
  "serde_json",
@@ -487,7 +487,7 @@ dependencies = [
  "nine65",
  "proptest",
  "rand_chacha 0.3.1",
- "rand_core 0.6.4",
+ "rand_core 0.9.3",
  "rayon",
 ]
 
