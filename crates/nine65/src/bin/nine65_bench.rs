@@ -61,8 +61,8 @@ fn main() {
         "secure_128_deep" => SecureConfig::secure_128_deep().into_config(),
         "secure_192" => SecureConfig::secure_192().into_config(),
         "secure_256" => SecureConfig::secure_256().into_config(),
-        "standard_128" => FHEConfig::standard_128_insecure(),
-        "high_192" => FHEConfig::high_192_insecure(),
+        "standard_128" => SecureConfig::secure_128().into_config(),
+        "high_192" => SecureConfig::secure_192().into_config(),
         other => {
             eprintln!("Unknown config: {other}");
             std::process::exit(1);

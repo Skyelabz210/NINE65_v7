@@ -127,8 +127,23 @@ fn main() {
             eprintln!("Build with: cargo build --release --features allow_insecure");
             std::process::exit(3);
         }
-        "standard_128" | "standard-128" => FHEConfig::standard_128_insecure(),
-        "high_192" | "high-192" => FHEConfig::high_192_insecure(),
+        "standard_128" | "standard-128" => {
+            use nine65::params::secure_configs::SecureConfig;
+            SecureConfig::secure_128().into_config()
+        }
+        "high_192" | "high-192" => {
+            #[cfg(any(debug_assertions, feature = "allow_insecure"))]
+            {
+                FHEConfig::high_192_insecure()
+            }
+            #[cfg(not(any(debug_assertions, feature = "allow_insecure")))]
+            {
+                use nine65::params::secure_configs::SecureConfig;
+                eprintln!("INFO: Using secure_128 for 'high_192' in release builds. \
+                           For the insecure test config, build with: --features allow_insecure");
+                SecureConfig::secure_128().into_config()
+            }
+        }
         other => {
             eprintln!("Unknown config: {other}");
             print_usage();
