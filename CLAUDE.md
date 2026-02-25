@@ -81,6 +81,11 @@ Depth benchmarks:
 - SecureConfig::secure_192() — n=16384, log2(q)=147, classical=374/quantum=213/hybrid=318
 - SecureConfig::secure_256() — n=16384, log2(q)=177, classical=311/quantum=177/hybrid=264
 
+# Lattice Estimator confirmed (2026-02-25, NINE65 built-in estimator):
+# Core-SVP: secure_128=129 bits, secure_192=318 bits, secure_256=264 bits
+# MATZOV:   secure_128=116 bits, secure_192=286 bits, secure_256=237 bits
+# See: docs/LATTICE_ESTIMATOR_BASELINE_2026-02-25.md
+
 ---
 
 ## Important Coding Rules
