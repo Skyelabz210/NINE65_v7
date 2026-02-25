@@ -25,7 +25,7 @@ rand_core = "0.6"
 rand_chacha = "0.3"
 
 # Dev
-criterion = "0.5"
+criterion = "0.8"
 proptest = "1.4"
 
 [profile.release]
