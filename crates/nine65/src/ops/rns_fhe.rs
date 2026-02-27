@@ -27,6 +27,30 @@ use crate::params::{mod_inverse, FHEConfig};
 use crate::params::secure_configs::SecureConfig;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+#[inline]
+fn emit_diagnostic_warn(message: &str) {
+    #[cfg(feature = "logging")]
+    {
+        log::warn!("{}", message);
+    }
+    #[cfg(not(feature = "logging"))]
+    {
+        eprintln!("{}", message);
+    }
+}
+
+#[inline]
+fn emit_diagnostic_info(message: &str) {
+    #[cfg(feature = "logging")]
+    {
+        log::info!("{}", message);
+    }
+    #[cfg(not(feature = "logging"))]
+    {
+        println!("{}", message);
+    }
+}
+
 // ============================================================================
 // INTEGER-ONLY SCIENTIFIC NOTATION FORMATTING
 // ============================================================================
@@ -2740,7 +2764,10 @@ impl RNSFHEContext {
 
             let diag = self.dual_rns.audit_capacity(required_bits, false);
             if let Err(e) = diag.to_result(true) {
-                eprintln!("[DIAGNOSTIC] mul_dual_symmetric capacity warning: {}", e);
+                emit_diagnostic_warn(&format!(
+                    "[DIAGNOSTIC] mul_dual_symmetric capacity warning: {}",
+                    e
+                ));
             }
         }
 
@@ -3383,7 +3410,10 @@ impl RNSFHEContext {
 
             let diag = self.dual_rns.audit_capacity(required_bits, true); // true = post-switch
             if let Err(e) = diag.to_result(true) {
-                eprintln!("[DIAGNOSTIC] mod_switch_ct_down post-switch caution: {}", e);
+                emit_diagnostic_warn(&format!(
+                    "[DIAGNOSTIC] mod_switch_ct_down post-switch caution: {}",
+                    e
+                ));
             }
 
             // Also check if we crossed an integer boundary (e.g., U256 -> U128)
@@ -3393,10 +3423,10 @@ impl RNSFHEContext {
             let new_width = crate::noise::boundary::required_int_width(q_bits);
 
             if old_width != new_width {
-                println!(
+                emit_diagnostic_info(&format!(
                     "[DIAGNOSTIC] Int-type boundary crossed: {}u -> {}u (Q bits: {} -> {})",
                     old_width, new_width, old_q_bits, q_bits
-                );
+                ));
             }
         }
 
