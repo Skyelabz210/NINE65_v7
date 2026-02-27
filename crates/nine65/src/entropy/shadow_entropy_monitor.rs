@@ -281,7 +281,16 @@ impl ShadowEntropyMonitor {
     }
 }
 
-/// Adaptive FHE Context that uses shadow entropy monitoring
+/// Adaptive FHE context that couples encryption operations with runtime entropy sampling.
+///
+/// Design notes for maintainers:
+/// - In sequential or non-`parallel` builds, operations run directly without a thread pool.
+/// - In `parallel` builds, a private Rayon pool is owned by the context to avoid mutating
+///   global pool state from library code.
+/// - With `adaptive-threading`, thread count recommendations are derived from integer-only
+///   throughput history (no floating point) to preserve deterministic behavior.
+/// - Pool rebuilds are guarded by cached recommendations so we only pay synchronization
+///   overhead when the recommended worker count actually changes.
 pub struct AdaptiveFHEContext {
     /// Shared configuration
     pub config: Arc<FHEConfig>,
