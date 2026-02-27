@@ -432,12 +432,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
 
 [[package]]
-name = "log"
-version = "0.4.29"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
-
-[[package]]
 name = "mana"
 version = "0.1.0"
 dependencies = [
@@ -471,7 +465,6 @@ dependencies = [
  "criterion",
  "exact_transcendentals",
  "getrandom 0.2.16",
- "log",
  "mana",
  "nexgen_rational",
  "proptest",

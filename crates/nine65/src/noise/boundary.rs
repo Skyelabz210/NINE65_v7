@@ -114,17 +114,7 @@ pub fn rns_product_bit_length(primes: &[u64]) -> u32 {
         .sum::<u32>()
 }
 
-/// Identifies the required integer width for a given bit-length.
-///
-/// Width cutoffs map to the integer backends used by the dual-RNS pipeline:
-/// - `<= 64` bits stays in a single machine limb (`u64`)
-/// - `<= 128` bits uses the two-limb path (`u128`)
-/// - `<= 192` bits uses the three-limb fixed-width accumulator (`U192`)
-/// - `> 192` bits uses the four-limb fallback (`U256`)
-///
-/// These boundaries are multiples of 64 because all CRT lanes are represented as
-/// 64-bit limbs, and the helpers in this module intentionally keep arithmetic
-/// integer-only for deterministic cross-platform behavior.
+/// Identifies the required integer width for a given bit-length
 pub fn required_int_width(bits: u32) -> u32 {
     if bits <= 64 {
         64
