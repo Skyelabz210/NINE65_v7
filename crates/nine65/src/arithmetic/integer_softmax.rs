@@ -44,7 +44,7 @@ impl IntegerSoftmax {
         Self {
             intermediate_scale: 1_000_000_000,
             output_scale: SOFTMAX_SCALE,
-            max_input: 1_000,
+            max_input: 1_000_000,
         }
     }
 
@@ -52,7 +52,7 @@ impl IntegerSoftmax {
         Self {
             intermediate_scale: 1_000_000_000,
             output_scale,
-            max_input: 1_000,
+            max_input: 1_000_000,
         }
     }
 
@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn test_softmax_monotonic_large_dynamic_range() {
         let softmax = IntegerSoftmax::new();
-        let logits = vec![1i128, 10, 100, 1000];
+        let logits = vec![1i128, 10_000, 100_000, 1_000_000];
         let probs = softmax.compute(&logits);
 
         for i in 1..probs.len() {
@@ -348,5 +348,26 @@ mod tests {
                 probs
             );
         }
+    }
+
+    #[test]
+    fn test_softmax_large_gap_preserves_separability() {
+        let softmax = IntegerSoftmax::new();
+        let p_small_gap = softmax.compute(&[0i128, 1_000])[1];
+        let p_medium_gap = softmax.compute(&[0i128, 10_000])[1];
+        let p_large_gap = softmax.compute(&[0i128, 100_000])[1];
+
+        assert!(
+            p_small_gap < p_medium_gap,
+            "confidence should increase as logit gap grows: small={}, medium={}",
+            p_small_gap,
+            p_medium_gap
+        );
+        assert!(
+            p_medium_gap < p_large_gap,
+            "confidence should increase as logit gap grows: medium={}, large={}",
+            p_medium_gap,
+            p_large_gap
+        );
     }
 }
