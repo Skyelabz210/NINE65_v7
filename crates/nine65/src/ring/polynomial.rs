@@ -3,11 +3,8 @@
 //! BFV FHE operates on polynomials in the quotient ring R_q = Z_q[X]/(X^N + 1).
 //! This module provides the polynomial abstraction over the NTT engine.
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 use crate::entropy::{FheRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
 use std::fmt;
@@ -73,6 +70,14 @@ impl RingPolynomial {
     pub fn from_coeffs(coeffs: Vec<u64>, q: u64) -> Self {
         let reduced: Vec<u64> = coeffs.iter().map(|&c| c % q).collect();
         Self { coeffs: reduced, q }
+    }
+
+    /// Create from coefficients that are ALREADY reduced mod q.
+    /// Caller must guarantee all coefficients are in [0, q).
+    #[inline]
+    pub fn from_coeffs_unchecked(coeffs: Vec<u64>, q: u64) -> Self {
+        debug_assert!(coeffs.iter().all(|&c| c < q), "from_coeffs_unchecked: coefficient >= q");
+        Self { coeffs, q }
     }
 
     /// Create from signed coefficients
@@ -237,6 +242,106 @@ impl RingPolynomial {
     pub fn scalar_mul(&self, scalar: u64, ntt: &NTTEngine) -> Self {
         let coeffs = ntt.scalar_mul(&self.coeffs, scalar);
         Self { coeffs, q: self.q }
+    }
+
+    // =========================================================================
+    // IN-PLACE OPERATIONS (zero-allocation hot path)
+    // =========================================================================
+
+    /// In-place addition: self += other (mod q)
+    ///
+    /// Modifies coefficients in-place without allocating a new Vec.
+    /// Use in relinearization loops and other hot paths where the
+    /// accumulator is repeatedly updated.
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
+    #[inline]
+    pub fn add_assign_poly(&mut self, other: &Self, q: u64) {
+        debug_assert_eq!(
+            self.q, other.q,
+            "RingPolynomial::add_assign_poly: modulus mismatch ({} vs {})",
+            self.q, other.q
+        );
+        debug_assert_eq!(
+            self.coeffs.len(),
+            other.coeffs.len(),
+            "RingPolynomial::add_assign_poly: degree mismatch ({} vs {})",
+            self.coeffs.len(),
+            other.coeffs.len()
+        );
+        let q128 = q as u128;
+        for (a, &b) in self.coeffs.iter_mut().zip(other.coeffs.iter()) {
+            let sum = *a as u128 + b as u128;
+            *a = if sum >= q128 {
+                (sum - q128) as u64
+            } else {
+                sum as u64
+            };
+        }
+    }
+
+    /// In-place subtraction: self -= other (mod q)
+    ///
+    /// Modifies coefficients in-place without allocating a new Vec.
+    ///
+    /// # Panics (debug only)
+    /// Panics if moduli or degrees don't match.
+    #[inline]
+    pub fn sub_assign_poly(&mut self, other: &Self, q: u64) {
+        debug_assert_eq!(
+            self.q, other.q,
+            "RingPolynomial::sub_assign_poly: modulus mismatch ({} vs {})",
+            self.q, other.q
+        );
+        debug_assert_eq!(
+            self.coeffs.len(),
+            other.coeffs.len(),
+            "RingPolynomial::sub_assign_poly: degree mismatch ({} vs {})",
+            self.coeffs.len(),
+            other.coeffs.len()
+        );
+        for (a, &b) in self.coeffs.iter_mut().zip(other.coeffs.iter()) {
+            *a = if *a >= b { *a - b } else { q - b + *a };
+        }
+    }
+
+    /// In-place negation: self = -self (mod q)
+    ///
+    /// Modifies coefficients in-place without allocating a new Vec.
+    #[inline]
+    pub fn neg_assign(&mut self, q: u64) {
+        for a in self.coeffs.iter_mut() {
+            *a = if *a == 0 { 0 } else { q - *a };
+        }
+    }
+
+    /// In-place scalar multiplication: self *= scalar (mod q)
+    ///
+    /// Modifies coefficients in-place without allocating a new Vec.
+    #[inline]
+    pub fn mul_scalar_assign(&mut self, scalar: u64, q: u64) {
+        let q128 = q as u128;
+        let s128 = scalar as u128;
+        for a in self.coeffs.iter_mut() {
+            *a = ((*a as u128 * s128) % q128) as u64;
+        }
+    }
+
+    /// In-place scalar addition: self[0] += scalar (mod q)
+    ///
+    /// Adds a scalar to the constant coefficient only (standard polynomial
+    /// scalar addition in Z_q[X]).
+    #[inline]
+    pub fn add_scalar_assign(&mut self, scalar: u64, q: u64) {
+        if !self.coeffs.is_empty() {
+            let sum = self.coeffs[0] as u128 + scalar as u128;
+            self.coeffs[0] = if sum >= q as u128 {
+                (sum - q as u128) as u64
+            } else {
+                sum as u64
+            };
+        }
     }
 
     /// Exact scalar division (only works if all coeffs divisible by scalar)
@@ -436,6 +541,132 @@ mod tests {
         assert_eq!(poly.get_signed(1), 0);
         assert_eq!(poly.get_signed(2), 1);
         assert_eq!(poly.get_signed(3), -2);
+    }
+
+    // =========================================================================
+    // In-place operation tests
+    // =========================================================================
+
+    #[test]
+    fn test_add_assign_poly() {
+        let ntt = NTTEngine::new(TEST_PRIME, 4);
+
+        let a = RingPolynomial::from_coeffs(vec![1, 2, 3, 4], TEST_PRIME);
+        let b = RingPolynomial::from_coeffs(vec![10, 20, 30, 40], TEST_PRIME);
+
+        // Allocating version for reference
+        let expected = a.add(&b, &ntt);
+
+        // In-place version
+        let mut a_mut = a.clone();
+        a_mut.add_assign_poly(&b, TEST_PRIME);
+        assert_eq!(a_mut.coeffs, expected.coeffs);
+    }
+
+    #[test]
+    fn test_add_assign_poly_wraps() {
+        let q = 100u64;
+        let a = RingPolynomial::from_coeffs(vec![90, 80, 70, 60], q);
+        let b = RingPolynomial::from_coeffs(vec![20, 30, 40, 50], q);
+
+        let mut a_mut = a.clone();
+        a_mut.add_assign_poly(&b, q);
+        // (90+20)%100=10, (80+30)%100=10, (70+40)%100=10, (60+50)%100=10
+        assert_eq!(a_mut.coeffs, vec![10, 10, 10, 10]);
+    }
+
+    #[test]
+    fn test_sub_assign_poly() {
+        let ntt = NTTEngine::new(TEST_PRIME, 4);
+
+        let a = RingPolynomial::from_coeffs(vec![10, 20, 30, 40], TEST_PRIME);
+        let b = RingPolynomial::from_coeffs(vec![1, 2, 3, 4], TEST_PRIME);
+
+        let expected = a.sub(&b, &ntt);
+
+        let mut a_mut = a.clone();
+        a_mut.sub_assign_poly(&b, TEST_PRIME);
+        assert_eq!(a_mut.coeffs, expected.coeffs);
+    }
+
+    #[test]
+    fn test_sub_assign_poly_wraps() {
+        let q = 100u64;
+        let a = RingPolynomial::from_coeffs(vec![10, 5, 0, 1], q);
+        let b = RingPolynomial::from_coeffs(vec![20, 30, 40, 50], q);
+
+        let mut a_mut = a.clone();
+        a_mut.sub_assign_poly(&b, q);
+        // (10-20+100)=90, (5-30+100)=75, (0-40+100)=60, (1-50+100)=51
+        assert_eq!(a_mut.coeffs, vec![90, 75, 60, 51]);
+    }
+
+    #[test]
+    fn test_neg_assign() {
+        let ntt = NTTEngine::new(TEST_PRIME, 4);
+
+        let a = RingPolynomial::from_coeffs(vec![1, 2, 3, 4], TEST_PRIME);
+        let expected = a.neg(&ntt);
+
+        let mut a_mut = a.clone();
+        a_mut.neg_assign(TEST_PRIME);
+        assert_eq!(a_mut.coeffs, expected.coeffs);
+    }
+
+    #[test]
+    fn test_neg_assign_zero() {
+        let q = 100u64;
+        let mut a = RingPolynomial::from_coeffs(vec![0, 50, 0, 99], q);
+        a.neg_assign(q);
+        assert_eq!(a.coeffs, vec![0, 50, 0, 1]);
+    }
+
+    #[test]
+    fn test_mul_scalar_assign() {
+        let ntt = NTTEngine::new(TEST_PRIME, 4);
+
+        let a = RingPolynomial::from_coeffs(vec![1, 2, 3, 4], TEST_PRIME);
+        let expected = a.scalar_mul(10, &ntt);
+
+        let mut a_mut = a.clone();
+        a_mut.mul_scalar_assign(10, TEST_PRIME);
+        assert_eq!(a_mut.coeffs, expected.coeffs);
+    }
+
+    #[test]
+    fn test_add_scalar_assign() {
+        let q = 100u64;
+        let mut a = RingPolynomial::from_coeffs(vec![10, 20, 30, 40], q);
+        a.add_scalar_assign(5, q);
+        assert_eq!(a.coeffs, vec![15, 20, 30, 40]);
+    }
+
+    #[test]
+    fn test_add_scalar_assign_wraps() {
+        let q = 100u64;
+        let mut a = RingPolynomial::from_coeffs(vec![95, 20, 30, 40], q);
+        a.add_scalar_assign(10, q);
+        assert_eq!(a.coeffs, vec![5, 20, 30, 40]);
+    }
+
+    #[test]
+    fn test_inplace_add_then_sub_roundtrip() {
+        let a = RingPolynomial::from_coeffs(vec![100, 200, 300, 400], TEST_PRIME);
+        let b = RingPolynomial::from_coeffs(vec![50, 150, 250, 350], TEST_PRIME);
+
+        let mut result = a.clone();
+        result.add_assign_poly(&b, TEST_PRIME);
+        result.sub_assign_poly(&b, TEST_PRIME);
+        assert_eq!(result.coeffs, a.coeffs);
+    }
+
+    #[test]
+    fn test_inplace_neg_neg_roundtrip() {
+        let a = RingPolynomial::from_coeffs(vec![1, 2, 3, 4], TEST_PRIME);
+        let mut result = a.clone();
+        result.neg_assign(TEST_PRIME);
+        result.neg_assign(TEST_PRIME);
+        assert_eq!(result.coeffs, a.coeffs);
     }
 
     #[test]

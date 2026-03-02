@@ -38,11 +38,8 @@
 #[cfg(feature = "parallel")]
 use rayon::prelude::*;
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 
 use crate::entropy::ShadowHarvester;
 use crate::errors::Nine65Result;

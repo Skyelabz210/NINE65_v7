@@ -17,11 +17,8 @@
 
 use super::exact_coeff::{AnchorTrack, ExactCoeff, ExactContext, ExactPoly, RnsInner};
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 use crate::ring::RingPolynomial;
 
 /// Exact ciphertext with dual-track coefficients
@@ -478,7 +475,7 @@ impl ExactFHEContext {
 
     /// Exact rescale: Δ² → Δ using K-Elimination
     ///
-    /// This is where the magic happens. We reconstruct each coefficient
+    /// Core reconstruction step. We reconstruct each coefficient
     /// as a true integer and perform exact division.
     pub fn exact_rescale(
         &self,
@@ -687,6 +684,6 @@ mod tests {
         println!("Decrypted: {} (expected 35)", decrypted);
         assert_eq!(decrypted, 35, "Final decrypt failed");
 
-        println!("✓ EXACT CT×CT PASSED: 5 × 7 = 35");
+        println!("[PASS] EXACT CT*CT PASSED: 5 * 7 = 35");
     }
 }

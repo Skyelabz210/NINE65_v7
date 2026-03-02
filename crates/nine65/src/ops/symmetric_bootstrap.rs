@@ -63,11 +63,8 @@
 //!
 //! HackFate.us Research, February 2026
 
-use crate::arithmetic::rns::DualRNSContext;
 use crate::entropy::ShadowHarvester;
-use crate::errors::{Nine65Error, Nine65Result};
-use crate::keys::bootstrap::mod_inverse_u128;
-use crate::ops::bootstrap::crt_reconstruct_n;
+use crate::errors::Nine65Result;
 use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSPoly, DualRNSPublicKey, DualRNSSecretKey, RNSFHEContext,
 };
@@ -151,22 +148,15 @@ impl SymmetricBootstrap {
         pk: &DualRNSPublicKey,
         rng: &mut ShadowHarvester,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let total_start = std::time::Instant::now();
-
         // Step 1: Decrypt (uses the working context's decrypt path)
-        let t0 = std::time::Instant::now();
         let m = self.ctx.decrypt_dual(ct, sk);
-        let decrypt_ns = t0.elapsed().as_nanos() as u64;
 
         // Step 2: Re-encrypt fresh (full noise budget restored)
-        let t1 = std::time::Instant::now();
         let fresh = self.ctx.encrypt_dual(m, pk, rng);
-        let encrypt_ns = t1.elapsed().as_nanos() as u64;
 
         // m drops here — in production, zeroize explicitly
 
         self.bootstrap_count += 1;
-        let total_ns = total_start.elapsed().as_nanos() as u64;
 
         Ok(fresh)
     }
@@ -472,9 +462,11 @@ impl std::fmt::Display for DepthAnalysis {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::arithmetic::rns::DualRNSContext;
     use crate::entropy::ShadowHarvester;
+    use crate::keys::bootstrap::mod_inverse_u128;
     use crate::noise::budget::NoiseBudget;
-    use crate::ops::bootstrap::ClockworkBootstrap;
+    use crate::ops::bootstrap::{crt_reconstruct_n, ClockworkBootstrap};
     use crate::ops::rns_fhe::RNSFHEContext;
     use crate::params::SecureConfig;
 

@@ -7,7 +7,7 @@
 //! requiring conversion. It IS the natural coordinate system for the Möbius
 //! computational substrate.
 //!
-//! Traditional approach (70 years of overhead):
+//! Traditional approach (repeated domain conversion):
 //!   to_montgomery(x) → compute → compute → compute → from_montgomery(result)
 //!   
 //! QMNF Persistent Montgomery:

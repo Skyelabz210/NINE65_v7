@@ -24,11 +24,8 @@
 //!
 //! The anchor primes track the "overflow count" k, allowing exact reconstruction.
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 
 use crate::arithmetic::{DualRNSContext, RNSContext};
 use crate::entropy::ShadowHarvester;
@@ -446,7 +443,7 @@ impl RNSEvaluator {
 
     /// Lift single-modulus polynomial to DualRNS representation
     ///
-    /// ⚠️ WARNING: This function only works correctly for TRIVIAL ciphertexts
+    /// WARNING: This function only works correctly for TRIVIAL ciphertexts
     /// (constant polynomials where the coefficient values are small).
     ///
     /// For real BFV ciphertexts with NTT operations, the lifted representation
@@ -836,8 +833,8 @@ impl RNSEvaluator {
         for (digit, (rk0, rk1)) in decomp.iter().zip(relin_key.rlk.iter()) {
             let term0 = digit.mul(rk0, ntt);
             let term1 = digit.mul(rk1, ntt);
-            c0_new = c0_new.add(&term0, ntt);
-            c1_new = c1_new.add(&term1, ntt);
+            c0_new.add_assign_poly(&term0, self.q);
+            c1_new.add_assign_poly(&term1, self.q);
         }
 
         Ciphertext {
@@ -1122,7 +1119,7 @@ mod tests {
             "K-Elimination RNS multiplication should give correct result"
         );
 
-        println!("\n✓ K-Elimination RNS multiplication PASSED!");
+        println!("\n[PASS] K-Elimination RNS multiplication PASSED!");
     }
 
     #[test]
@@ -1154,7 +1151,7 @@ mod tests {
             assert_eq!(result, expected, "Failed for {} × {}", a, b);
         }
 
-        println!("\n✓ All K-Elimination RNS multiplications PASSED!");
+        println!("\n[PASS] All K-Elimination RNS multiplications PASSED!");
     }
 
     #[test]
@@ -1182,7 +1179,7 @@ mod tests {
         );
 
         assert_eq!(result, expected);
-        println!("✓ RNS multiplication with relinearization PASSED!");
+        println!("[PASS] RNS multiplication with relinearization PASSED!");
     }
 
     #[test]
@@ -1298,6 +1295,6 @@ mod tests {
             a, b, result, expected
         );
 
-        println!("\n✓ Trivial ciphertext K-Elimination PASSED!");
+        println!("\n[PASS] Trivial ciphertext K-Elimination PASSED!");
     }
 }

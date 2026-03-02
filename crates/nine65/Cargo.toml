@@ -6,14 +6,18 @@ edition.workspace = true
 authors.workspace = true
 
 [features]
-# Default build: NTT/FFT ring ops + exact transcendentals backend (CORDIC/AGM).
+# Default build: O(N log N) FFT-based NTT + exact transcendentals backend.
 # No external parallelism by default — use --features accelerated for MANA/UNHAL
 # acceleration, which is purpose-built for this integer-only FHE architecture.
-default = ["ntt_fft", "exact_transcendentals_backend"]
+default = ["exact_transcendentals_backend"]
 
 # Core feature flags
+# reference_ntt: Use O(N^2) DFT instead of O(N log N) FFT for NTT operations.
+# Only for validation/testing -- the FFT path is unconditionally preferred.
+reference_ntt = []
+# Legacy alias -- ntt_fft is now always active; this flag is kept for
+# downstream Cargo.toml entries that enable it explicitly.
 ntt_fft = []
-secure-keygen = []
 
 # Acceleration via proprietary MANA/UNHAL crates (recommended over rayon).
 # MANA (Modular Anchored Number Arithmetic) is designed specifically for this
@@ -21,14 +25,18 @@ secure-keygen = []
 # general-purpose thread pools for this workload.
 accelerated = ["mana", "unhal"]
 
-# WASSAN noise field and CRT shadow entropy subsystem.
+# CRT shadow entropy subsystem.
 # Shadow entropy: a proprietary entropy measurement technique derived from
 # Landauer's principle and Shannon information-theoretic entropy, applied to
 # monitor computational noise state in FHE operations. Internal use only —
 # not intended as a user-facing feature.
 shadow-entropy = []
-wassan = ["shadow-entropy"]
-v2 = ["ntt_fft", "wassan"]
+# NOTE: `wassan` and `v2` meta-features were removed (2026-03-01).
+# `wassan` had zero cfg gates — its only effect was enabling shadow-entropy,
+# which should be activated directly.  `v2` combined the no-op `ntt_fft`
+# alias with `wassan`, making it a double no-op.  If you previously used
+# `--features v2`, replace with `--features shadow-entropy` (or whichever
+# constituent flags you actually need).
 
 # Exact transcendentals via integer CORDIC/AGM backend (no floats).
 exact_transcendentals_backend = ["dep:exact_transcendentals"]
@@ -58,7 +66,7 @@ debug_dual_mul = []
 allow_insecure = []
 
 # Opt-in flags for expensive test/bench runs.
-slow_tests = []
+slow_tests = []  # TEST-ONLY: gates long-running tests in ops/rns_fhe.rs
 benchmarks = []
 
 # Adaptive threading driven by shadow-entropy state monitoring.

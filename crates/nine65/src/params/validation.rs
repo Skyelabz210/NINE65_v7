@@ -61,12 +61,12 @@ impl ParameterValidator {
                 self.ke_total_capacity / max_tensor_value
             };
             messages.push(format!(
-                "✓ Orbital: {} bits required, {} bits available (margin: {}×)",
+                "[OK] Orbital: {} bits required, {} bits available (margin: {}x)",
                 tensor_bits, self.ke_capacity_bits, margin
             ));
         } else {
             messages.push(format!(
-                "✗ ORBITAL VIOLATION: {} bits required, only {} bits available!",
+                "[FAIL] ORBITAL VIOLATION: {} bits required, only {} bits available!",
                 tensor_bits, self.ke_capacity_bits
             ));
             messages.push("  → Reduce q or N, or increase K-Elimination moduli".to_string());
@@ -79,12 +79,12 @@ impl ParameterValidator {
 
         if he_standard_compliant {
             messages.push(format!(
-                "✓ HE Standard: log(q)={} ≤ max {} for N={}",
+                "[OK] HE Standard: log(q)={} <= max {} for N={}",
                 log_q, max_log_q, n
             ));
         } else {
             messages.push(format!(
-                "⚠ HE Standard: log(q)={} > max {} for N={} (128-bit security not guaranteed)",
+                "WARNING: HE Standard: log(q)={} > max {} for N={} (128-bit security not guaranteed)",
                 log_q, max_log_q, n
             ));
         }
@@ -101,12 +101,12 @@ impl ParameterValidator {
         let noise_bits = 64 - delta.leading_zeros();
         if noise_bits < 10 {
             messages.push(format!(
-                "⚠ Noise budget: Δ={} (~{} bits) - very tight for deep circuits",
+                "WARNING: Noise budget: Delta={} (~{} bits) - very tight for deep circuits",
                 delta, noise_bits
             ));
         } else {
             messages.push(format!(
-                "✓ Noise budget: Δ={} (~{} bits)",
+                "[OK] Noise budget: Delta={} (~{} bits)",
                 delta, noise_bits
             ));
         }

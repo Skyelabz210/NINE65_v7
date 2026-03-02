@@ -13,7 +13,8 @@
 //!     &config, &secret_key, &public_key.pk0, &public_key.pk1,
 //! );
 //! let mut tl = ThreeLockBootstrap::new(&config, SecurityTier::Tier2Production);
-//! let (refreshed, stats) = tl.bootstrap(&exhausted_ct, &bsk, &ntt);
+//! let refreshed = tl.bootstrap(&exhausted_ct, &bsk, &ntt);       // hot path (no syscalls)
+//! let (refreshed, stats) = tl.bootstrap_timed(&exhausted_ct, &bsk, &ntt); // with timing
 //! ```
 //!
 //! HackFate.us Research, February 2026

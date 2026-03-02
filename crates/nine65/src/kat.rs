@@ -18,11 +18,8 @@
 //! assert!(results.all_passed());
 //! ```
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 use crate::entropy::ShadowHarvester;
 use crate::keys::KeySet;
 use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor};

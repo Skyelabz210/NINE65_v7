@@ -10,11 +10,8 @@
 //! The basic `encrypt()` method uses `ShadowHarvester` which is deterministic
 //! and should only be used for testing.
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 use crate::entropy::{try_secure_cbd_vector, try_secure_ternary_vector, FheRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::{PublicKey, SecretKey};
@@ -252,43 +249,10 @@ impl Ciphertext {
         serde_json::to_string(self)
     }
 
-    /// Deserialize from JSON string (**unvalidated**).
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized ciphertext.
-    /// For untrusted input, use `from_json_validated()` instead to ensure
-    /// ciphertext integrity and prevent DoS attacks via malformed data.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_json_validated() for untrusted input"
-    )]
-    #[doc(hidden)]
-    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(s)
-    }
-
     /// Serialize to bincode bytes
     pub fn to_bytes(&self) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
         bincode::encode_to_vec(self, bincode::config::standard())
             .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-    }
-
-    /// Deserialize from bincode bytes (**unvalidated**).
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized ciphertext.
-    /// For untrusted input, use `from_bytes_validated()` instead to ensure
-    /// ciphertext integrity and prevent DoS attacks via malformed data.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_bytes_validated() for untrusted input"
-    )]
-    #[doc(hidden)]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard())
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-        Ok(result)
     }
 
     /// Deserialize from JSON with validation

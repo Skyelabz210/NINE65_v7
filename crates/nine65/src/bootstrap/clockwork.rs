@@ -42,12 +42,8 @@
 //! K-Elimination provides exact integer division for the RNS context.
 //! Here, standard integer rounding suffices because we operate in single-modulus mode.
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-use crate::arithmetic::KElimination;
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+use crate::arithmetic::KElimination;
 use crate::bootstrap::mask::CiphertextMask;
 use crate::entropy::SecureRng;
 use crate::keys::SecretKey;
@@ -222,25 +218,21 @@ impl ClockworkBootstrap {
         // This is NOT the plaintext -- it's the mask's algebraic effect
         let mask_poly = mask.decrypt_contribution(sk_poly, ntt);
 
-        // -- Step 3: Algebraic mask removal (constant-time subtraction) --
-        // raw_clean = raw_masked - mask_poly = delta*m + e
-        // The clean polynomial exists here briefly. The ciphertext in
-        // memory (masked_ct) is STILL MASKED -- we never touched it.
-        let raw_clean_coeffs: Vec<u64> = raw_masked
-            .coeffs
-            .iter()
-            .zip(mask_poly.coeffs.iter())
-            .map(|(&rm, &mp)| {
-                // Constant-time modular subtraction
-                let diff = (rm as u128) + (self.q as u128) - (mp as u128);
-                (diff % (self.q as u128)) as u64
-            })
-            .collect();
+        // -- Step 3+4: Algebraic mask removal + decode (single coefficient) --
+        // Only coefficient 0 is needed for decode, so we skip the full
+        // polynomial subtraction and compute just the single element.
+        // raw_clean[0] = raw_masked[0] - mask_poly[0] mod q
+        // The clean value exists only in a register — no heap allocation.
+        let raw0 = raw_masked.coeffs[0];
+        let mask0 = mask_poly.coeffs[0];
+        let c = {
+            // Constant-time modular subtraction (same formula as before)
+            let diff = (raw0 as u128) + (self.q as u128) - (mask0 as u128);
+            (diff % (self.q as u128)) as u64
+        };
 
-        // -- Step 4: Decode plaintext from coefficient 0 --
         // m = floor((2*t*c + q) / (2*q)) mod t
         // (Same formula as BFVEncoder::decode -- centered rounding)
-        let c = raw_clean_coeffs[0];
         let numerator = 2u128 * (self.t as u128) * (c as u128) + (self.q as u128);
         let denominator = 2u128 * (self.q as u128);
         let m = ((numerator / denominator) as u64) % self.t;

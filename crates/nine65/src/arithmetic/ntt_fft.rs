@@ -1,18 +1,10 @@
 //! NTT FFT - Cooley-Tukey O(N log N) Implementation
 //!
-//! Drop-in replacement for O(N²) DFT
+//! This is the default NTT engine. The O(N^2) DFT reference implementation
+//! in `ntt.rs` can be selected with `--features reference_ntt` for validation.
 //!
-//! This file is ADDITIVE - it doesn't replace ntt.rs
-//! Enable with feature flag: --features ntt_fft
-//!
-//! Expected speedup: 500-2000× depending on N
-//!
-//! Usage:
-//!   #[cfg(feature = "ntt_fft")]
-//!   use crate::arithmetic::ntt_fft::NTTEngineFFT as NTTEngine;
-//!
-//!   #[cfg(not(feature = "ntt_fft"))]
-//!   use crate::arithmetic::ntt::NTTEngine;
+//! Dispatch is centralized in `arithmetic/mod.rs` via:
+//!   `use crate::arithmetic::NTTEngine;`
 
 // Allow explicit indexing in FFT algorithms - the loop indices are used in
 // butterfly computations and bit-reversal, not just for array access.
@@ -344,12 +336,29 @@ impl NTTEngineFFT {
     ///
     /// Computes a * b mod (X^N + 1, q)
     ///
-    /// This is the HOT PATH - optimized for speed
+    /// This is the HOT PATH - optimized for speed.
+    /// Convenience wrapper around `multiply_into()`.
     pub fn multiply(&self, a: &[u64], b: &[u64]) -> Vec<u64> {
+        let mut output = Vec::with_capacity(self.n);
+        self.multiply_into(a, b, &mut output);
+        output
+    }
+
+    /// Allocation-free negacyclic polynomial multiplication using FFT NTT
+    ///
+    /// Computes a * b mod (X^N + 1, q) and writes the result into the
+    /// caller-provided `output` buffer, reusing its existing allocation.
+    /// Also uses `scratch` as internal workspace to avoid a second allocation.
+    ///
+    /// For the simplest API, use `multiply()` instead.
+    pub fn multiply_into(&self, a: &[u64], b: &[u64], output: &mut Vec<u64>) {
         debug_assert_eq!(a.len(), self.n);
         debug_assert_eq!(b.len(), self.n);
 
-        let mut a_work = Vec::with_capacity(self.n);
+        // Prepare output as a_work, scratch as b_work
+        output.clear();
+        output.reserve(self.n.saturating_sub(output.capacity()));
+
         let mut b_work = Vec::with_capacity(self.n);
 
         // Step 1: Apply ψ-twist AND convert to Montgomery (fused)
@@ -360,31 +369,29 @@ impl NTTEngineFFT {
             let b_twisted = self
                 .mont
                 .montgomery_mul(self.mont.to_montgomery(b[i]), self.psi_powers_mont[i]);
-            a_work.push(a_twisted);
+            output.push(a_twisted);
             b_work.push(b_twisted);
         }
 
         // Step 2: Forward NTT (in-place, stays in Montgomery)
-        self.ntt_inplace(&mut a_work);
+        self.ntt_inplace(output);
         self.ntt_inplace(&mut b_work);
 
         // Step 3: Point-wise multiplication (Montgomery form)
         for i in 0..self.n {
-            a_work[i] = self.mont.montgomery_mul(a_work[i], b_work[i]);
+            output[i] = self.mont.montgomery_mul(output[i], b_work[i]);
         }
 
         // Step 4: Inverse NTT (in-place)
-        self.intt_inplace(&mut a_work);
+        self.intt_inplace(output);
 
         // Step 5: Remove ψ-twist AND convert from Montgomery (fused)
         for i in 0..self.n {
             let untwisted = self
                 .mont
-                .montgomery_mul(a_work[i], self.psi_inv_powers_mont[i]);
-            a_work[i] = self.mont.from_montgomery(untwisted);
+                .montgomery_mul(output[i], self.psi_inv_powers_mont[i]);
+            output[i] = self.mont.from_montgomery(untwisted);
         }
-
-        a_work
     }
 
     /// Constant-time polynomial multiplication using NTT
@@ -399,16 +406,39 @@ impl NTTEngineFFT {
 
     /// Multiply staying entirely in Montgomery form (for chained operations)
     ///
-    /// Use this when doing multiple multiplications - convert once at start/end
+    /// Use this when doing multiple multiplications - convert once at start/end.
+    /// Convenience wrapper around `multiply_persistent_into()`.
     pub fn multiply_persistent(&self, a_mont: &[u64], b_mont: &[u64]) -> Vec<u64> {
+        let mut output = Vec::with_capacity(self.n);
+        self.multiply_persistent_into(a_mont, b_mont, &mut output);
+        output
+    }
+
+    /// Allocation-free persistent-Montgomery polynomial multiplication
+    ///
+    /// Computes a_mont * b_mont mod (X^N + 1, q) entirely in Montgomery form
+    /// and writes the result into the caller-provided `output` buffer, reusing
+    /// its existing allocation. The result remains in Montgomery form.
+    ///
+    /// For the simplest API, use `multiply_persistent()` instead.
+    pub fn multiply_persistent_into(
+        &self,
+        a_mont: &[u64],
+        b_mont: &[u64],
+        output: &mut Vec<u64>,
+    ) {
         debug_assert_eq!(a_mont.len(), self.n);
         debug_assert_eq!(b_mont.len(), self.n);
 
-        let mut a_work: Vec<u64> = a_mont
-            .iter()
-            .enumerate()
-            .map(|(i, &x)| self.mont.montgomery_mul(x, self.psi_powers_mont[i]))
-            .collect();
+        // Use output as a_work
+        output.clear();
+        output.reserve(self.n.saturating_sub(output.capacity()));
+        output.extend(
+            a_mont
+                .iter()
+                .enumerate()
+                .map(|(i, &x)| self.mont.montgomery_mul(x, self.psi_powers_mont[i])),
+        );
 
         let mut b_work: Vec<u64> = b_mont
             .iter()
@@ -416,23 +446,21 @@ impl NTTEngineFFT {
             .map(|(i, &x)| self.mont.montgomery_mul(x, self.psi_powers_mont[i]))
             .collect();
 
-        self.ntt_inplace(&mut a_work);
+        self.ntt_inplace(output);
         self.ntt_inplace(&mut b_work);
 
         for i in 0..self.n {
-            a_work[i] = self.mont.montgomery_mul(a_work[i], b_work[i]);
+            output[i] = self.mont.montgomery_mul(output[i], b_work[i]);
         }
 
-        self.intt_inplace(&mut a_work);
+        self.intt_inplace(output);
 
         // Untwist but STAY in Montgomery form
         for i in 0..self.n {
-            a_work[i] = self
+            output[i] = self
                 .mont
-                .montgomery_mul(a_work[i], self.psi_inv_powers_mont[i]);
+                .montgomery_mul(output[i], self.psi_inv_powers_mont[i]);
         }
-
-        a_work
     }
 
     // ========================================================================
@@ -440,6 +468,7 @@ impl NTTEngineFFT {
     // ========================================================================
 
     /// Add two polynomials coefficient-wise
+    #[inline]
     pub fn add(&self, a: &[u64], b: &[u64]) -> Vec<u64> {
         debug_assert_eq!(a.len(), self.n);
         debug_assert_eq!(b.len(), self.n);
@@ -458,6 +487,7 @@ impl NTTEngineFFT {
     }
 
     /// Subtract two polynomials coefficient-wise
+    #[inline]
     pub fn sub(&self, a: &[u64], b: &[u64]) -> Vec<u64> {
         debug_assert_eq!(a.len(), self.n);
         debug_assert_eq!(b.len(), self.n);
@@ -477,6 +507,7 @@ impl NTTEngineFFT {
     }
 
     /// Negate polynomial
+    #[inline]
     pub fn neg(&self, a: &[u64]) -> Vec<u64> {
         a.iter()
             .map(|&ai| if ai == 0 { 0 } else { self.q - ai })
@@ -484,6 +515,7 @@ impl NTTEngineFFT {
     }
 
     /// Scalar multiply
+    #[inline]
     pub fn scalar_mul(&self, a: &[u64], scalar: u64) -> Vec<u64> {
         let scalar_mont = self.mont.to_montgomery(scalar);
         a.iter()

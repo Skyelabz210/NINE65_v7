@@ -8,12 +8,11 @@
 #![allow(clippy::needless_range_loop)]
 
 use super::montgomery::MontgomeryContext;
-#[cfg(feature = "ntt_fft")]
+#[cfg(not(feature = "reference_ntt"))]
 use super::ntt_fft::NTTEngineFFT as NTTEngine;
-use zeroize::{Zeroize, ZeroizeOnDrop};
-
-#[cfg(not(feature = "ntt_fft"))]
+#[cfg(feature = "reference_ntt")]
 use super::ntt::NTTEngine;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use core::cmp::Ordering;
 
@@ -773,6 +772,65 @@ impl RNSPolynomial {
         let limbs = self.limbs[..self.limbs.len() - 1].to_vec();
         Self { limbs, n: self.n }
     }
+
+    // =========================================================================
+    // IN-PLACE OPERATIONS (zero-allocation hot path)
+    // =========================================================================
+
+    /// In-place addition: self += other (mod each prime)
+    ///
+    /// Modifies limbs in-place without allocating new Vecs.
+    /// Use in relinearization loops and other hot paths.
+    #[inline]
+    pub fn add_assign_poly(&mut self, other: &Self, ctx: &RNSContext) {
+        assert_eq!(self.n, other.n);
+        for ((a_limb, b_limb), &q) in self
+            .limbs
+            .iter_mut()
+            .zip(other.limbs.iter())
+            .zip(ctx.primes.iter())
+        {
+            let q128 = q as u128;
+            for (a, &b) in a_limb.iter_mut().zip(b_limb.iter()) {
+                let sum = *a as u128 + b as u128;
+                *a = if sum >= q128 {
+                    (sum - q128) as u64
+                } else {
+                    sum as u64
+                };
+            }
+        }
+    }
+
+    /// In-place subtraction: self -= other (mod each prime)
+    ///
+    /// Modifies limbs in-place without allocating new Vecs.
+    #[inline]
+    pub fn sub_assign_poly(&mut self, other: &Self, ctx: &RNSContext) {
+        assert_eq!(self.n, other.n);
+        for ((a_limb, b_limb), &q) in self
+            .limbs
+            .iter_mut()
+            .zip(other.limbs.iter())
+            .zip(ctx.primes.iter())
+        {
+            for (a, &b) in a_limb.iter_mut().zip(b_limb.iter()) {
+                *a = if *a >= b { *a - b } else { q - b + *a };
+            }
+        }
+    }
+
+    /// In-place negation: self = -self (mod each prime)
+    ///
+    /// Modifies limbs in-place without allocating new Vecs.
+    #[inline]
+    pub fn neg_assign(&mut self, ctx: &RNSContext) {
+        for (a_limb, &q) in self.limbs.iter_mut().zip(ctx.primes.iter()) {
+            for a in a_limb.iter_mut() {
+                *a = if *a == 0 { 0 } else { q - *a };
+            }
+        }
+    }
 }
 
 /// Modular inverse using extended Euclidean algorithm
@@ -1017,21 +1075,6 @@ impl DualRNSContext {
         }
 
         Self::new(main_primes.to_vec(), anchor_primes, n)
-    }
-
-    /// DEPRECATED: `for_fhe()` now uses 5 anchors with full ct×ct capacity.
-    /// Use `for_fhe()` directly.
-    #[deprecated(note = "for_fhe() now uses 5 anchors. Use for_fhe() directly.")]
-    pub fn for_fhe_coeff_domain(main_primes: &[u64], n: usize) -> Self {
-        Self::for_fhe(main_primes, n)
-    }
-
-    /// DEPRECATED: NTT-domain K-Elimination is mathematically invalid.
-    /// Use `for_fhe()` instead (now uses 5 anchors with full ct×ct capacity).
-    #[deprecated(note = "NTT-domain K-Elimination is invalid. Use for_fhe()")]
-    pub fn for_fhe_ntt_domain(main_primes: &[u64], n: usize) -> Self {
-        #[allow(deprecated)]
-        Self::for_fhe_coeff_domain(main_primes, n)
     }
 
     /// Bit-length of the full anchor product (sum of anchor prime bit-lengths).
@@ -1535,6 +1578,107 @@ impl DualRNSPolynomial {
             main_limbs,
             anchor_limbs,
             n: self.n,
+        }
+    }
+
+    // =========================================================================
+    // IN-PLACE OPERATIONS (zero-allocation hot path)
+    // =========================================================================
+
+    /// In-place addition: self += other (mod each prime, both main and anchor)
+    ///
+    /// Modifies limbs in-place without allocating new Vecs.
+    #[inline]
+    pub fn add_assign_poly(&mut self, other: &Self, ctx: &DualRNSContext) {
+        assert_eq!(self.n, other.n);
+
+        // Main limbs
+        for ((a_limb, b_limb), &q) in self
+            .main_limbs
+            .iter_mut()
+            .zip(other.main_limbs.iter())
+            .zip(ctx.main.primes.iter())
+        {
+            let q128 = q as u128;
+            for (a, &b) in a_limb.iter_mut().zip(b_limb.iter()) {
+                let sum = *a as u128 + b as u128;
+                *a = if sum >= q128 {
+                    (sum - q128) as u64
+                } else {
+                    sum as u64
+                };
+            }
+        }
+
+        // Anchor limbs
+        for ((a_limb, b_limb), &q) in self
+            .anchor_limbs
+            .iter_mut()
+            .zip(other.anchor_limbs.iter())
+            .zip(ctx.anchor.primes.iter())
+        {
+            let q128 = q as u128;
+            for (a, &b) in a_limb.iter_mut().zip(b_limb.iter()) {
+                let sum = *a as u128 + b as u128;
+                *a = if sum >= q128 {
+                    (sum - q128) as u64
+                } else {
+                    sum as u64
+                };
+            }
+        }
+    }
+
+    /// In-place subtraction: self -= other (mod each prime, both main and anchor)
+    ///
+    /// Modifies limbs in-place without allocating new Vecs.
+    #[inline]
+    pub fn sub_assign_poly(&mut self, other: &Self, ctx: &DualRNSContext) {
+        assert_eq!(self.n, other.n);
+
+        // Main limbs
+        for ((a_limb, b_limb), &q) in self
+            .main_limbs
+            .iter_mut()
+            .zip(other.main_limbs.iter())
+            .zip(ctx.main.primes.iter())
+        {
+            for (a, &b) in a_limb.iter_mut().zip(b_limb.iter()) {
+                *a = if *a >= b { *a - b } else { q - b + *a };
+            }
+        }
+
+        // Anchor limbs
+        for ((a_limb, b_limb), &q) in self
+            .anchor_limbs
+            .iter_mut()
+            .zip(other.anchor_limbs.iter())
+            .zip(ctx.anchor.primes.iter())
+        {
+            for (a, &b) in a_limb.iter_mut().zip(b_limb.iter()) {
+                *a = if *a >= b { *a - b } else { q - b + *a };
+            }
+        }
+    }
+
+    /// In-place negation: self = -self (mod each prime, both main and anchor)
+    ///
+    /// Modifies limbs in-place without allocating new Vecs.
+    #[inline]
+    pub fn neg_assign(&mut self, ctx: &DualRNSContext) {
+        for (a_limb, &q) in self.main_limbs.iter_mut().zip(ctx.main.primes.iter()) {
+            for a in a_limb.iter_mut() {
+                *a = if *a == 0 { 0 } else { q - *a };
+            }
+        }
+        for (a_limb, &q) in self
+            .anchor_limbs
+            .iter_mut()
+            .zip(ctx.anchor.primes.iter())
+        {
+            for a in a_limb.iter_mut() {
+                *a = if *a == 0 { 0 } else { q - *a };
+            }
         }
     }
 

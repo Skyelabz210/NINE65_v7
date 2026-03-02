@@ -188,14 +188,11 @@ pub mod prelude {
         SOFTMAX_SCALE, // EXACT SUM SOFTMAX
     };
 
-    // NTT: Conditional export - use FFT version when v2 feature enabled
-    #[cfg(feature = "ntt_fft")]
-    pub use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-    #[cfg(not(feature = "ntt_fft"))]
+    // NTT: FFT O(N log N) is the unconditional default.
+    // Use --features reference_ntt for the O(N^2) DFT reference implementation.
     pub use crate::arithmetic::NTTEngine;
 
-    // Also export both explicitly for users who need both
+    // Also export both explicitly for users who need a specific implementation
     pub use crate::arithmetic::NTTEngine as NTTEngineDFT;
     pub use crate::arithmetic::NTTEngineFFT;
 
@@ -431,7 +428,7 @@ mod integration_tests {
             budget.remaining_multiplications(&fhe_config)
         );
 
-        println!("\n✅ PRODUCTION 128-BIT TEST PASSED");
+        println!("\n[PASS] PRODUCTION 128-BIT TEST PASSED");
         println!("   {} + {} = {} (encrypted)", a, b, sum);
         println!("   {} - {} = {} (encrypted)", b, a, diff);
     }

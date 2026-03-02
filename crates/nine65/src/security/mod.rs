@@ -3,6 +3,7 @@
 //! Provides security-related functionality:
 //! - LWE-based security estimates for QMNF FHE parameters
 //! - Secret data marker traits for constant-time enforcement
+//! - Constant-time verification tests
 //!
 //! Based on HomomorphicEncryption.org Security Standard v1.1 tables.
 //!
@@ -12,6 +13,9 @@
 pub mod secret_data;
 
 pub use secret_data::{SecretData, SecretKeyPath, SecretPoly, SecretScalar};
+
+#[cfg(test)]
+pub mod ct_verification;
 
 #[cfg(feature = "clockwork")]
 pub mod gro_gate;

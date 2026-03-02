@@ -23,11 +23,8 @@ pub mod bootstrap;
 
 pub use bootstrap::{BootstrapKey, BootstrapKeySet, KeySwitchKey, BOOTSTRAP_PRIMES};
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 use crate::entropy::ShadowHarvester;
 use crate::entropy::{try_secure_cbd_vector, try_secure_ternary_vector, try_secure_uniform_vector};
 use crate::errors::{Nine65Error, Nine65Result};
@@ -446,38 +443,6 @@ impl PublicKey {
     }
 }
 
-#[cfg(all(feature = "serde", feature = "allow_insecure"))]
-impl PublicKey {
-    /// Deserialize from JSON string (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key.
-    /// Only use for trusted input. For untrusted input, use `from_json_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_json_validated() for untrusted input"
-    )]
-    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(s)
-    }
-
-    /// Deserialize from bincode bytes (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key.
-    /// Only use for trusted input. For untrusted input, use `from_bytes_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_bytes_validated() for untrusted input"
-    )]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard())
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-        Ok(result)
-    }
-}
-
 #[cfg(feature = "serde")]
 impl EvaluationKey {
     /// Serialize to JSON string
@@ -512,38 +477,6 @@ impl EvaluationKey {
             })?;
         ek.validate(expected_n, expected_q)?;
         Ok(ek)
-    }
-}
-
-#[cfg(all(feature = "serde", feature = "allow_insecure"))]
-impl EvaluationKey {
-    /// Deserialize from JSON string (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key.
-    /// Only use for trusted input. For untrusted input, use `from_json_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_json_validated() for untrusted input"
-    )]
-    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(s)
-    }
-
-    /// Deserialize from bincode bytes (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key.
-    /// Only use for trusted input. For untrusted input, use `from_bytes_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_bytes_validated() for untrusted input"
-    )]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard())
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-        Ok(result)
     }
 }
 

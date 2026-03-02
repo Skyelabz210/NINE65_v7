@@ -1,0 +1,30 @@
+name: Coq Proof Verification
+
+on:
+  push:
+    paths:
+      - 'proofs/coq/**'
+  pull_request:
+    paths:
+      - 'proofs/coq/**'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Coq
+        run: |
+          wget https://github.com/coq/coq/releases/download/V8.18.0/coq-8.18.0+8.18-x86_64-linux-gnu.deb
+          sudo dpkg -i coq-8.18.0+8.18-x86_64-linux-gnu.deb
+      
+      - name: Compile Proofs
+        run: |
+          cd proofs/coq
+          coqc MontgomeryContext.v
+          coqc KElimination.v
+          coqc KElimination_Completed.v
+      
+      - name: Report Status
+        run: echo "All Coq proofs compiled successfully"

@@ -200,7 +200,7 @@ mod tests {
         let supports_simd = BatchEncoder::supports_simd_slots(&config);
 
         // t=65537, N=1024, 2N=2048
-        // 65536 = 32 * 2048, so 65537 ≡ 1 (mod 2048) ✓
+        // 65536 = 32 * 2048, so 65537 equiv 1 (mod 2048) [OK]
         println!("SIMD slot support: {}", supports_simd);
         assert!(
             supports_simd,

@@ -51,8 +51,7 @@ fn test_depth(config: &FHEConfig, target_depth: usize) {
         config.max_mod_switch_depth()
     );
 
-    #[allow(deprecated)]
-    let ctx = RNSFHEContext::new_coeff_domain(config);
+    let ctx = RNSFHEContext::new(config);
     let mut rng = ShadowHarvester::with_seed(42);
     let keys = ctx.generate_keys_dual_full(&mut rng);
 

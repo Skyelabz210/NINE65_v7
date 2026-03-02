@@ -26,11 +26,8 @@
 //! This keeps the outer layer lightweight -- we're encrypting polynomials,
 //! not performing homomorphic operations inside the outer layer.
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 use crate::entropy::SecureRng;
 use crate::ring::RingPolynomial;
 use zeroize::{Zeroize, ZeroizeOnDrop};

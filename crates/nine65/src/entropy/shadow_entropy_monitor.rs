@@ -397,7 +397,8 @@ impl AdaptiveFHEContext {
 
         #[cfg(any(feature = "sequential", not(feature = "parallel")))]
         {
-            messages
+            let start_time = Instant::now();
+            let result = messages
                 .iter()
                 .enumerate()
                 .map(|(i, &msg)| {
@@ -416,7 +417,10 @@ impl AdaptiveFHEContext {
                     }
                     ct
                 })
-                .collect()
+                .collect();
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
+            result
         }
 
         #[cfg(all(not(feature = "sequential"), feature = "parallel"))]
@@ -474,7 +478,8 @@ impl AdaptiveFHEContext {
 
         #[cfg(any(feature = "sequential", not(feature = "parallel")))]
         {
-            ciphertexts
+            let start_time = Instant::now();
+            let result = ciphertexts
                 .iter()
                 .map(|ct| {
                     let counter = self
@@ -489,7 +494,10 @@ impl AdaptiveFHEContext {
                     let decryptor = BFVDecryptor::new(&self.keys.secret_key, &encoder, &ntt);
                     decryptor.decrypt(ct)
                 })
-                .collect()
+                .collect();
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
+            result
         }
 
         #[cfg(all(not(feature = "sequential"), feature = "parallel"))]
@@ -543,7 +551,8 @@ impl AdaptiveFHEContext {
 
         #[cfg(any(feature = "sequential", not(feature = "parallel")))]
         {
-            ct1_list
+            let start_time = Instant::now();
+            let result = ct1_list
                 .iter()
                 .zip(ct2_list.iter())
                 .map(|(ct1, ct2)| {
@@ -560,7 +569,10 @@ impl AdaptiveFHEContext {
                     }
                     evaluator.add(ct1, ct2)
                 })
-                .collect()
+                .collect();
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
+            result
         }
 
         #[cfg(all(not(feature = "sequential"), feature = "parallel"))]
@@ -618,7 +630,8 @@ impl AdaptiveFHEContext {
 
         #[cfg(any(feature = "sequential", not(feature = "parallel")))]
         {
-            ct1_list
+            let start_time = Instant::now();
+            let result = ct1_list
                 .iter()
                 .zip(ct2_list.iter())
                 .map(|(ct1, ct2)| {
@@ -635,7 +648,10 @@ impl AdaptiveFHEContext {
                     }
                     evaluator.mul(ct1, ct2)
                 })
-                .collect()
+                .collect();
+            self.entropy_monitor
+                .record_performance(batch_size, start_time.elapsed());
+            result
         }
 
         #[cfg(all(not(feature = "sequential"), feature = "parallel"))]

@@ -246,6 +246,16 @@ impl NTTEngine {
     /// Multiply two polynomials using NTT (negacyclic convolution)
     /// This computes a * b mod (X^N + 1, q)
     pub fn multiply(&self, a: &[u64], b: &[u64]) -> Vec<u64> {
+        let mut output = Vec::with_capacity(self.n);
+        self.multiply_into(a, b, &mut output);
+        output
+    }
+
+    /// Allocation-free polynomial multiplication using NTT (negacyclic convolution)
+    ///
+    /// Computes a * b mod (X^N + 1, q) and writes the result into the
+    /// caller-provided `output` buffer, reusing its existing allocation.
+    pub fn multiply_into(&self, a: &[u64], b: &[u64], output: &mut Vec<u64>) {
         assert_eq!(a.len(), self.n);
         assert_eq!(b.len(), self.n);
 
@@ -276,14 +286,11 @@ impl NTTEngine {
         // Step 4: Inverse NTT
         let c_twisted = self.intt(&c_ntt);
 
-        // Step 5: Remove ψ-twist
-        let result: Vec<u64> = c_twisted
-            .iter()
-            .enumerate()
-            .map(|(i, &ci)| ((ci as u128 * self.psi_inv_powers[i] as u128) % self.q as u128) as u64)
-            .collect();
-
-        result
+        // Step 5: Remove ψ-twist, write into caller's buffer
+        output.clear();
+        output.extend(c_twisted.iter().enumerate().map(|(i, &ci)| {
+            ((ci as u128 * self.psi_inv_powers[i] as u128) % self.q as u128) as u64
+        }));
     }
 
     /// Constant-time multiply two polynomials using NTT (negacyclic convolution)

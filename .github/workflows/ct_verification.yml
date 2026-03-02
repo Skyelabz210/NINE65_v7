@@ -1,0 +1,30 @@
+name: Constant-Time Verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+      
+      - name: Run Verification Script
+        run: ./scripts/verify_constant_time.sh --verbose
+      
+      - name: Run Statistical Tests
+        run: cargo test --release constant_time_statistical -- --nocapture
+      
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ct-verification-report
+          path: |
+            statistical_test_output.txt
+            verification_script_output.txt

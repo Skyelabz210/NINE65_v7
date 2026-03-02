@@ -15,11 +15,8 @@
 //! Use checked operations when you need to detect noise exhaustion before it causes
 //! decryption failures. The `TrackedEvaluator` wrapper provides automatic tracking.
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 
 use crate::arithmetic::KElimination;
 use crate::errors::{Nine65Error, Nine65Result};
@@ -181,7 +178,7 @@ impl<'a> BFVEvaluator<'a> {
             .map(|&c| self.ke.scale_and_round(c, self.t, self.q))
             .collect();
 
-        RingPolynomial::from_coeffs(coeffs, self.q)
+        RingPolynomial::from_coeffs_unchecked(coeffs, self.q)
     }
 
     /// Relinearize 3-component ciphertext to 2-component
@@ -223,8 +220,8 @@ impl<'a> BFVEvaluator<'a> {
             let term0 = digit.mul(rlk_b, self.ntt);
             let term1 = digit.mul(rlk_a, self.ntt);
 
-            c0_new = c0_new.add(&term0, self.ntt);
-            c1_new = c1_new.add(&term1, self.ntt);
+            c0_new.add_assign_poly(&term0, self.q);
+            c1_new.add_assign_poly(&term1, self.q);
         }
 
         Ok(Ciphertext {
@@ -243,7 +240,7 @@ impl<'a> BFVEvaluator<'a> {
 
             current = current.iter().map(|&c| c / base).collect();
 
-            digits.push(RingPolynomial::from_coeffs(digit, self.q));
+            digits.push(RingPolynomial::from_coeffs_unchecked(digit, self.q));
         }
 
         digits
@@ -784,10 +781,10 @@ mod tests {
 
         // Verify
         if result1 == expected {
-            println!("✓ Degree-2 decrypt WORKS with t²/q²");
+            println!("[OK] Degree-2 decrypt WORKS with t^2/q^2");
         } else {
             println!(
-                "✗ Degree-2 decrypt FAILED: got {} expected {}",
+                "[FAIL] Degree-2 decrypt FAILED: got {} expected {}",
                 result1, expected
             );
         }
@@ -1232,17 +1229,17 @@ mod tests {
 
         // Determine where the issue is
         if d0_raw.coeffs[0] < delta {
-            println!("\n✗ Issue: RAW tensor product values too small - polynomial mul wrong?");
+            println!("\n[FAIL] Issue: RAW tensor product values too small - polynomial mul wrong?");
         } else if d0.coeffs[0] > delta * 2 {
-            println!("\n✗ Issue: Scaling not reducing values enough");
+            println!("\n[FAIL] Issue: Scaling not reducing values enough");
         } else if sum_raw_scaled[0] == (a * b) % config.t {
-            println!("\n✓ t²/q² scaling on raw tensor works");
+            println!("\n[OK] t^2/q^2 scaling on raw tensor works");
         } else if sum_raw_single_scale[0] == (a * b) % config.t {
-            println!("\n✓ t/q scaling on raw tensor works");
+            println!("\n[OK] t/q scaling on raw tensor works");
         } else if sum_final[0] == (a * b) % config.t {
-            println!("\n✓ Double scaling (pre-scale + t/q) works");
+            println!("\n[OK] Double scaling (pre-scale + t/q) works");
         } else {
-            println!("\n✗ No scaling approach produces correct answer");
+            println!("\n[FAIL] No scaling approach produces correct answer");
             println!("  This indicates fundamental issue in tensor product");
         }
     }

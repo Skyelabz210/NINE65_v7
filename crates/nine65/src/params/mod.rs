@@ -118,7 +118,7 @@ impl FHEConfig {
         // Δ² ≈ 3.1 × 10^26 which is > q, so this still overflows
 
         // Need smaller t to make Δ smaller
-        // If t = q/1000, then Δ = 1000, Δ² = 1M << q ✓
+        // If t = q/1000, then Δ = 1000, Δ² = 1M << q [OK]
         // Let's use t = 2^20 ≈ 1M, Δ ≈ 1T, Δ² ≈ 10^24 which is still huge
 
         // Actually for Δ² < q we need Δ < √q ≈ 10^9
@@ -145,7 +145,7 @@ impl FHEConfig {
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn light_mul_insecure() -> Self {
         // For single-modulus ct×ct: need Δ² < q (so tensor product doesn't overflow)
-        // With t=500000: Δ ≈ 1996, Δ² ≈ 4M < q ✓
+        // With t=500000: Δ ≈ 1996, Δ² ≈ 4M < q [OK]
         // BUT: noise budget = log2(Δ) - initial_noise ≈ 11 - 10 = 1 bit!
         Self {
             n: 1024,
@@ -162,11 +162,11 @@ impl FHEConfig {
     ///
     /// Uses THREE 30-bit NTT-compatible primes for RNS multiplication:
     /// - Effective Q = q1 × q2 × q3 ≈ 7.4 × 10^26 (~90 bits)
-    /// - Each channel: Δ_i = qi/t ≈ 15231, Δ_i² ≈ 232M < qi ✓
+    /// - Each channel: Δ_i = qi/t ≈ 15231, Δ_i² ≈ 232M < qi [OK]
     /// - Noise budget: log2(Q/t) - initial ≈ 74 bits
     /// - Required: Q > N × q² for safe CRT reconstruction
     ///   - N × q² = 1024 × (10^9)² ≈ 10^21 (~70 bits)
-    ///   - Q ≈ 7.4 × 10^26 (~90 bits) > 10^21 ✓
+    ///   - Q ≈ 7.4 × 10^26 (~90 bits) > 10^21 [OK]
     /// - Supports 5+ levels of CT×CT multiplication
     ///
     /// This is the RECOMMENDED light config for multiplication testing.
@@ -194,7 +194,7 @@ impl FHEConfig {
     /// - K-Elimination enables exact rescaling (no float)
     ///
     /// Key constraint: Δ² < 2^92 (M×A capacity)
-    /// With Δ ≈ 2000, Δ² ≈ 4M << 2^92 ✓
+    /// With Δ ≈ 2000, Δ² ≈ 4M << 2^92 [OK]
     ///
     /// Trade-off: Smaller plaintext space (t=500000 vs t=65537)
     /// but exact arithmetic and guaranteed correct results.
@@ -225,7 +225,7 @@ impl FHEConfig {
     ///
     /// Practical choice: t = 65537 (standard plaintext modulus)
     /// - Δ = Q/t ≈ 1.5e13 ≈ 2^44
-    /// - Δ² ≈ 2^88 < M×A ≈ 2^122 ✓
+    /// - Δ² ≈ 2^88 < M×A ≈ 2^122 [OK]
     /// - Noise budget: log2(Δ) - initial ≈ 44 - 12 ≈ 32 bits (plenty!)
     ///
     /// NOTE: This config requires K-Elimination rescaling in RNSFHEContext.
@@ -240,7 +240,7 @@ impl FHEConfig {
             n: 1024,
             primes: vec![998244353, 985661441], // Two 30-bit primes: Q ≈ 2^60
             q: 998244353,
-            t: 65537, // Standard t → Δ ≈ 2^44, Δ² ≈ 2^88 < M×A ≈ 2^122 ✓
+            t: 65537, // Standard t -> Delta ~ 2^44, Delta^2 ~ 2^88 < M*A ~ 2^122 [OK]
             eta: 2,
             security_bits: 80,
             name: "light_rns_exact_insecure",

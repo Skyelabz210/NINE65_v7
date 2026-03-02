@@ -28,11 +28,8 @@ use crate::ring::RingPolynomial;
 #[cfg(test)]
 use crate::entropy::ShadowHarvester;
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 
 /// Galois key for a specific automorphism exponent
 ///
@@ -194,42 +191,6 @@ impl GaloisKey {
     }
 }
 
-/// Unvalidated deserialization methods - gated behind `allow_insecure` feature.
-///
-/// These methods do NOT validate the deserialized data and should only be used
-/// for trusted input or testing. For production, use `from_*_validated()`.
-#[cfg(all(feature = "serde", feature = "allow_insecure"))]
-impl GaloisKey {
-    /// Deserialize from JSON string (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key.
-    /// Only use for trusted input. For untrusted input, use `from_json_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_json_validated() for untrusted input"
-    )]
-    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(s)
-    }
-
-    /// Deserialize from bincode bytes (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key.
-    /// Only use for trusted input. For untrusted input, use `from_bytes_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_bytes_validated() for untrusted input"
-    )]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard())
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-        Ok(result)
-    }
-}
-
 #[cfg(feature = "serde")]
 impl GaloisKeySet {
     /// Serialize to JSON string
@@ -272,39 +233,6 @@ impl GaloisKeySet {
             })?;
         keys.validate(expected_n, expected_q)?;
         Ok(keys)
-    }
-}
-
-/// Unvalidated deserialization methods - gated behind `allow_insecure` feature.
-#[cfg(all(feature = "serde", feature = "allow_insecure"))]
-impl GaloisKeySet {
-    /// Deserialize from JSON string (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key set.
-    /// Only use for trusted input. For untrusted input, use `from_json_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_json_validated() for untrusted input"
-    )]
-    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
-        serde_json::from_str(s)
-    }
-
-    /// Deserialize from bincode bytes (UNVALIDATED)
-    ///
-    /// # Security Warning
-    /// This method does NOT validate the deserialized key set.
-    /// Only use for trusted input. For untrusted input, use `from_bytes_validated()`.
-    #[deprecated(
-        since = "0.1.0",
-        note = "Use from_bytes_validated() for untrusted input"
-    )]
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
-        let (result, _): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard())
-                .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)?;
-        Ok(result)
     }
 }
 

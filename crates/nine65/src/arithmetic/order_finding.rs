@@ -606,7 +606,7 @@ mod tests {
                 assert_ne!(mod_pow(a, result.order - 1, n), 1);
             }
         }
-        println!("\n✓ All basic order finding tests passed");
+        println!("\n[PASS] All basic order finding tests passed");
     }
 
     #[test]
@@ -632,11 +632,11 @@ mod tests {
 
             // Verify without factoring N
             assert_eq!(mod_pow(2, result.order, n), 1);
-            println!("  ✓ Verified: 2^{} ≡ 1 (mod {})", result.order, n);
+            println!("  [OK] Verified: 2^{} = 1 (mod {})", result.order, n);
             println!();
         }
 
-        println!("✓ All semiprime order finding tests passed");
+        println!("[PASS] All semiprime order finding tests passed");
         println!("  NO FACTORIZATION OF N WAS REQUIRED!");
     }
 
@@ -657,7 +657,7 @@ mod tests {
 
             match result {
                 Some((found_p, found_q)) => {
-                    println!("{} = {} × {} ✓", n, found_p, found_q);
+                    println!("{} = {} * {} [OK]", n, found_p, found_q);
                     assert!(
                         (found_p == p && found_q == q) || (found_p == q && found_q == p),
                         "Expected {} = {} × {}, got {} × {}",
@@ -674,7 +674,7 @@ mod tests {
             }
         }
 
-        println!("\n✓ All factorization tests passed");
+        println!("\n[PASS] All factorization tests passed");
     }
 
     #[test]
@@ -700,7 +700,7 @@ mod tests {
         println!("Result: ord_{}(2) = {}", n, result.order);
 
         assert_eq!(result.order, 5100);
-        println!("\n✓ Non-circularity verified!");
+        println!("\n[PASS] Non-circularity verified!");
     }
 
     #[test]
@@ -730,7 +730,7 @@ mod tests {
             println!();
         }
 
-        println!("✓ All additional semiprime tests passed");
+        println!("[PASS] All additional semiprime tests passed");
     }
 
     #[test]
@@ -749,7 +749,7 @@ mod tests {
         // Order divides p-1
         assert_eq!((p - 1) % order, 0);
 
-        println!("\n✓ Prime modulus test passed");
+        println!("\n[PASS] Prime modulus test passed");
     }
 
     #[test]
@@ -791,11 +791,11 @@ mod tests {
 
             // At order: v(r) = 1
             assert_eq!(k.v_t, 1, "v(order) should be 1");
-            println!("  ✓ Path closed at t={}: v({})=1", order, order);
+            println!("  [OK] Path closed at t={}: v({})=1", order, order);
             println!();
         }
 
-        println!("✓ K-elimination verification tests passed");
+        println!("[PASS] K-elimination verification tests passed");
         println!("  Independent winding-number verification confirmed!");
     }
 }

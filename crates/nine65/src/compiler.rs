@@ -391,9 +391,9 @@ impl BootstrapFreeFHECompiler {
         println!(
             "  Bootstrap-free: {}",
             if sufficient {
-                "✓ GUARANTEED"
+                "[OK] GUARANTEED"
             } else {
-                "✗ INSUFFICIENT"
+                "[FAIL] INSUFFICIENT"
             }
         );
         println!();
@@ -601,7 +601,7 @@ mod tests {
             result.parameters.total_modulus_bits
         );
 
-        println!("\n✓ DEPTH-50 BOOTSTRAP-FREE VERIFIED");
+        println!("\n[PASS] DEPTH-50 BOOTSTRAP-FREE VERIFIED");
         println!("  This demonstrates the core NINE65 component:");
         println!("  K-Elimination enables exact rescaling without noise explosion");
     }

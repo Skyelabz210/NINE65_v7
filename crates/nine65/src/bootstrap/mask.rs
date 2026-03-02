@@ -24,11 +24,8 @@ use crate::entropy::SecureRng;
 use crate::ring::RingPolynomial;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 
 /// Information-theoretic mask for a single polynomial.
 ///
@@ -113,10 +110,15 @@ impl MaskLayer {
             .iter()
             .zip(self.mask.coeffs.iter())
             .map(|(&x, &r)| {
-                // Constant-time modular addition
-                // (x + r) mod q without branching
-                let sum = (x as u128) + (r as u128);
-                (sum % (q as u128)) as u64
+                // Modular addition: (x + r) mod q
+                // Since x < q and r < q, sum < 2q, so one conditional subtract suffices
+                let sum = x as u128 + r as u128;
+                let q128 = q as u128;
+                if sum >= q128 {
+                    (sum - q128) as u64
+                } else {
+                    sum as u64
+                }
             })
             .collect();
 
@@ -143,10 +145,16 @@ impl MaskLayer {
             .iter()
             .zip(self.mask.coeffs.iter())
             .map(|(&x, &r)| {
-                // Constant-time modular subtraction
-                // (x - r) mod q = (x + q - r) mod q
-                let diff = (x as u128) + (q as u128) - (r as u128);
-                (diff % (q as u128)) as u64
+                // Modular subtraction: (x - r) mod q = (x + q - r) mod q
+                // Since x < q and r < q, diff = x + q - r is in [1, 2q-1],
+                // so one conditional subtract suffices
+                let diff = x as u128 + q as u128 - r as u128;
+                let q128 = q as u128;
+                if diff >= q128 {
+                    (diff - q128) as u64
+                } else {
+                    diff as u64
+                }
             })
             .collect();
 

@@ -54,11 +54,8 @@
 //! decryption, and re-encrypts. At every point, memory contains only
 //! Shannon-masked values.
 
-#[cfg(feature = "ntt_fft")]
-use crate::arithmetic::NTTEngineFFT as NTTEngine;
-
-#[cfg(not(feature = "ntt_fft"))]
 use crate::arithmetic::NTTEngine;
+
 use crate::bootstrap::clockwork::{BootstrapKey, ClockworkBootstrap};
 use crate::bootstrap::mask::CiphertextMask;
 use crate::bootstrap::outer::{OuterCiphertextPair, OuterLayer};
@@ -159,6 +156,9 @@ impl ThreeLockBootstrap {
 
     /// Execute the Three-Lock Bootstrap with full nested protection.
     ///
+    /// This is the **hot-path** method: zero `Instant::now()` syscalls.
+    /// For timing instrumentation, use [`bootstrap_timed`](Self::bootstrap_timed).
+    ///
     /// The mask passes through to Clockwork -- it is never removed from
     /// the ciphertext in memory. Clockwork handles mask removal
     /// algebraically during decryption.
@@ -167,24 +167,18 @@ impl ThreeLockBootstrap {
         ct: &Ciphertext,
         bsk: &BootstrapKey,
         ntt: &NTTEngine,
-    ) -> (Ciphertext, BootstrapStats) {
-        let total_start = std::time::Instant::now();
-
+    ) -> Ciphertext {
         // =============================================================
         // LOCK PHASE: Apply layers from outside in
         // =============================================================
 
         // Layer 1 -- Shannon: mask the ciphertext.
         // From this point on, ALL memory traces are uniformly random.
-        let t0 = std::time::Instant::now();
         let mask = CiphertextMask::generate(self.n, self.q);
         let (masked_c0, masked_c1) = mask.apply(&ct.c0, &ct.c1);
-        let shannon_mask_ns = t0.elapsed().as_nanos() as u64;
 
         // Layer 2 -- Montgomery: RLWE-encrypt the masked ciphertext.
-        let t1 = std::time::Instant::now();
         let outer_pair = OuterCiphertextPair::encrypt(&self.outer, &masked_c0, &masked_c1, ntt);
-        let montgomery_encrypt_ns = t1.elapsed().as_nanos() as u64;
 
         // =============================================================
         // UNLOCK + REFRESH: Peel Montgomery, pass mask through to Clockwork
@@ -192,13 +186,61 @@ impl ThreeLockBootstrap {
 
         // Peel Layer 2 -- Montgomery decrypt.
         // Result is the STILL-MASKED ciphertext. Shannon is still active.
-        let t2 = std::time::Instant::now();
         let (dec_c0, dec_c1) = outer_pair.decrypt(&self.outer, ntt);
-        let montgomery_decrypt_ns = t2.elapsed().as_nanos() as u64;
 
         // Layer 3 -- Clockwork: protected re-encryption.
         // Receives the MASKED ciphertext and the mask.
         // Removes the mask ALGEBRAICALLY during decryption (in registers).
+        let masked_ct = Ciphertext {
+            c0: dec_c0,
+            c1: dec_c1,
+        };
+        let refreshed = self
+            .clockwork
+            .bootstrap_protected(&masked_ct, &mask, bsk, ntt);
+        // mask and masked_ct drop here -- zeroized by ZeroizeOnDrop
+
+        // =============================================================
+        // POST-BOOTSTRAP: Key rotation per tier policy
+        // =============================================================
+
+        if self.tier == SecurityTier::Tier1Maximum {
+            self.outer.rotate_key();
+        }
+        self.bootstrap_count += 1;
+        refreshed
+    }
+
+    /// Execute the Three-Lock Bootstrap with per-phase timing instrumentation.
+    ///
+    /// Wraps [`bootstrap`](Self::bootstrap) logic with `Instant::now()` calls
+    /// around each phase. Use this variant for profiling and diagnostics.
+    /// **Not** recommended for production hot paths due to syscall overhead.
+    pub fn bootstrap_timed(
+        &mut self,
+        ct: &Ciphertext,
+        bsk: &BootstrapKey,
+        ntt: &NTTEngine,
+    ) -> (Ciphertext, BootstrapStats) {
+        let total_start = std::time::Instant::now();
+
+        // Layer 1 -- Shannon mask
+        let t0 = std::time::Instant::now();
+        let mask = CiphertextMask::generate(self.n, self.q);
+        let (masked_c0, masked_c1) = mask.apply(&ct.c0, &ct.c1);
+        let shannon_mask_ns = t0.elapsed().as_nanos() as u64;
+
+        // Layer 2 -- Montgomery RLWE encrypt
+        let t1 = std::time::Instant::now();
+        let outer_pair = OuterCiphertextPair::encrypt(&self.outer, &masked_c0, &masked_c1, ntt);
+        let montgomery_encrypt_ns = t1.elapsed().as_nanos() as u64;
+
+        // Peel Layer 2 -- Montgomery decrypt (still masked)
+        let t2 = std::time::Instant::now();
+        let (dec_c0, dec_c1) = outer_pair.decrypt(&self.outer, ntt);
+        let montgomery_decrypt_ns = t2.elapsed().as_nanos() as u64;
+
+        // Layer 3 -- Clockwork with algebraic mask removal
         let t3 = std::time::Instant::now();
         let masked_ct = Ciphertext {
             c0: dec_c0,
@@ -208,12 +250,8 @@ impl ThreeLockBootstrap {
             .clockwork
             .bootstrap_protected(&masked_ct, &mask, bsk, ntt);
         let clockwork_ns = t3.elapsed().as_nanos() as u64;
-        // mask and masked_ct drop here -- zeroized by ZeroizeOnDrop
 
-        // =============================================================
-        // POST-BOOTSTRAP: Key rotation per tier policy
-        // =============================================================
-
+        // Post-bootstrap key rotation per tier policy
         let key_rotated = match self.tier {
             SecurityTier::Tier1Maximum => {
                 self.outer.rotate_key();
@@ -236,36 +274,18 @@ impl ThreeLockBootstrap {
     }
 
     /// Execute bootstrap without timing statistics.
+    ///
+    /// Alias for [`bootstrap`](Self::bootstrap). Retained for backward
+    /// compatibility -- the primary `bootstrap()` method is already
+    /// timing-free.
+    #[inline]
     pub fn bootstrap_fast(
         &mut self,
         ct: &Ciphertext,
         bsk: &BootstrapKey,
         ntt: &NTTEngine,
     ) -> Ciphertext {
-        // Layer 1 -- Shannon mask
-        let mask = CiphertextMask::generate(self.n, self.q);
-        let (masked_c0, masked_c1) = mask.apply(&ct.c0, &ct.c1);
-
-        // Layer 2 -- Montgomery RLWE encrypt
-        let outer_pair = OuterCiphertextPair::encrypt(&self.outer, &masked_c0, &masked_c1, ntt);
-
-        // Peel Layer 2 -- still masked (Shannon active)
-        let (dec_c0, dec_c1) = outer_pair.decrypt(&self.outer, ntt);
-
-        // Layer 3 -- Clockwork with algebraic mask removal
-        let masked_ct = Ciphertext {
-            c0: dec_c0,
-            c1: dec_c1,
-        };
-        let refreshed = self
-            .clockwork
-            .bootstrap_protected(&masked_ct, &mask, bsk, ntt);
-
-        if self.tier == SecurityTier::Tier1Maximum {
-            self.outer.rotate_key();
-        }
-        self.bootstrap_count += 1;
-        refreshed
+        self.bootstrap(ct, bsk, ntt)
     }
 
     pub fn can_bootstrap(&self, noise_estimate: u64) -> bool {
@@ -331,7 +351,7 @@ mod tests {
         let bsk = make_bsk(&config, &keys);
         let mut tl = ThreeLockBootstrap::new(&config, SecurityTier::Tier2Production);
 
-        let (refreshed, stats) = tl.bootstrap(&ct, &bsk, &ntt);
+        let (refreshed, stats) = tl.bootstrap_timed(&ct, &bsk, &ntt);
         let result = decryptor.decrypt(&refreshed);
 
         println!(
@@ -354,7 +374,7 @@ mod tests {
         let msgs = [0u64, 1, 42, 100, 500, 1000, 5000, 9000];
         for &m in &msgs {
             let ct = encryptor.encrypt(m, &mut harvester);
-            let (refreshed, _) = tl.bootstrap(&ct, &bsk, &ntt);
+            let refreshed = tl.bootstrap(&ct, &bsk, &ntt);
             let result = decryptor.decrypt(&refreshed);
             assert_eq!(result, m, "Three-Lock failed for m={}: got {}", m, result);
         }
@@ -389,11 +409,11 @@ mod tests {
         let bsk = make_bsk(&config, &keys);
 
         let mut tl = ThreeLockBootstrap::new(&config, SecurityTier::Tier1Maximum);
-        let (r1, s1) = tl.bootstrap(&ct, &bsk, &ntt);
+        let (r1, s1) = tl.bootstrap_timed(&ct, &bsk, &ntt);
         assert!(s1.key_rotated);
         assert_eq!(decryptor.decrypt(&r1), 42);
 
-        let (r2, s2) = tl.bootstrap(&ct, &bsk, &ntt);
+        let (r2, s2) = tl.bootstrap_timed(&ct, &bsk, &ntt);
         assert!(s2.key_rotated);
         assert_eq!(decryptor.decrypt(&r2), 42);
         assert_eq!(tl.bootstrap_count(), 2);
@@ -453,7 +473,7 @@ mod tests {
         let delta = config.q / config.t;
 
         let ct = encryptor.encrypt(m, &mut harvester);
-        let (refreshed, _) = tl.bootstrap(&ct, &bsk, &ntt);
+        let refreshed = tl.bootstrap(&ct, &bsk, &ntt);
 
         let raw = decryptor.decrypt_raw(&refreshed);
         let expected = ((m as u128 * delta as u128) % config.q as u128) as u64;
@@ -518,7 +538,7 @@ mod tests {
         let bsk = make_bsk(&config, &keys);
         let mut tl = ThreeLockBootstrap::new(&config, SecurityTier::Tier2Production);
 
-        // Warm-up
+        // Warm-up (hot path, no timing overhead)
         let _ = tl.bootstrap(&ct, &bsk, &ntt);
 
         let iterations = 5u64;
@@ -528,7 +548,8 @@ mod tests {
         }
         let per_us = start.elapsed().as_micros() as u64 / iterations;
 
-        let (refreshed, stats) = tl.bootstrap(&ct, &bsk, &ntt);
+        // Final iteration with per-phase instrumentation
+        let (refreshed, stats) = tl.bootstrap_timed(&ct, &bsk, &ntt);
         println!("Three-Lock: {}us avg ({} iters)", per_us, iterations);
         println!("  {}", stats);
 

@@ -45,11 +45,12 @@ pub use boundary::{
 pub use montgomery::MontgomeryContext;
 pub use persistent_montgomery::{PersistentMontgomery, PersistentPolynomial};
 
-// NTT: Use FFT version (O(N log N)) when feature enabled, else DFT (O(N²))
-#[cfg(not(feature = "ntt_fft"))]
-pub use ntt::NTTEngine;
-#[cfg(feature = "ntt_fft")]
+// NTT: FFT O(N log N) is the unconditional default.
+// Use --features reference_ntt to fall back to O(N^2) DFT for validation.
+#[cfg(not(feature = "reference_ntt"))]
 pub use ntt_fft::NTTEngineFFT as NTTEngine;
+#[cfg(feature = "reference_ntt")]
+pub use ntt::NTTEngine;
 
 // Also export both explicitly for users who need specific version
 pub use ct_mul_exact::{ExactCiphertext, ExactCiphertext2, ExactFHEContext};

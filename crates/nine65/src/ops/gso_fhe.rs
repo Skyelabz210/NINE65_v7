@@ -555,7 +555,7 @@ mod tests {
 
     fn test_ctx() -> GSOFHEContext {
         let config = FHEConfig::light_rns_exact_insecure();
-        let inner = RNSFHEContext::new_coeff_domain(&config);
+        let inner = RNSFHEContext::new(&config);
         GSOFHEContext::new(inner)
     }
 
@@ -792,7 +792,7 @@ mod depth_benchmarks {
     use std::time::Instant;
 
     fn bench_ctx(config: FHEConfig) -> GSOFHEContext {
-        let inner = RNSFHEContext::new_coeff_domain(&config);
+        let inner = RNSFHEContext::new(&config);
         GSOFHEContext::new(inner)
     }
 
@@ -828,7 +828,7 @@ mod depth_benchmarks {
 
             let op_ms = op_start.elapsed().as_millis();
             println!(
-                "{:5} │ {:6}ms │ {:3}.{}% │ {:9} │ ✓",
+                "{:5} │ {:6}ms │ {:3}.{}% │ {:9} │ [OK]",
                 d,
                 op_ms,
                 stats.ratio_permille / 10,
@@ -1262,7 +1262,7 @@ mod arithmetic_benchmarks {
         println!("└────────────────────────────────────────────────────────────┘");
 
         let config = FHEConfig::light_rns_exact_insecure();
-        let inner = RNSFHEContext::new_coeff_domain(&config);
+        let inner = RNSFHEContext::new(&config);
         let mut fhe_ctx = GSOFHEContext::new(inner);
         let mut rng = ShadowHarvester::new();
         let keys = fhe_ctx.generate_keys(&mut rng);
@@ -1366,7 +1366,7 @@ mod arithmetic_benchmarks {
         println!("│  FHE OPERATIONS (GSO-FHE) - {:<20} │", label);
         println!("└────────────────────────────────────────────────────────────┘");
 
-        let inner = RNSFHEContext::new_coeff_domain(&config);
+        let inner = RNSFHEContext::new(&config);
         let mut fhe_ctx = GSOFHEContext::new(inner);
         let mut rng = ShadowHarvester::new();
         let keys = fhe_ctx.generate_keys(&mut rng);
