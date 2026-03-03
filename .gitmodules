@@ -1,0 +1,3 @@
+[submodule "NINE65-Rust-Guide"]
+	path = NINE65-Rust-Guide
+	url = https://github.com/Skyelabz210/NINE65-Rust-Guide.git
