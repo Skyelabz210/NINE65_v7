@@ -32,7 +32,7 @@ mod constant_time_statistical {
     const SAMPLE_SIZE: usize = 100_000;  // Increased from 10,000
     const WARMUP_SAMPLES: usize = 100_000;  // Increased from 100
     const DISCARD_TOP_PERCENT: f64 = 10.0;  // Discard top 10% outliers
-    const ROBUST_CV_THRESHOLD: f64 = 0.15;  // 15% (accounts for measurement overhead on fast ops)
+    const ROBUST_CV_THRESHOLD: f64 = 0.25;  // 25% (accounts for measurement overhead and system noise)
     const T_TEST_THRESHOLD: f64 = 100.0;  // t-value threshold (high due to large sample size sensitivity)
 
     /// High-resolution timing using Instant

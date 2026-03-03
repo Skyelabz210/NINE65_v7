@@ -28,6 +28,15 @@ Record MontgomeryParams := {
 (** Axiom: R >= q (standard for Montgomery multiplication) *)
 Axiom R_ge_q : forall (p : MontgomeryParams), R >= p.(q).
 
+(** Lemma: R >= 1 (since R is a power of 2) *)
+Lemma R_ge_1 : R >= 1.
+Proof.
+  destruct (R_power_of_2) as [n Hn].
+  rewrite Hn.
+  apply Nat.pow_ge_1.
+  lia.
+Qed.
+
 (** * REDC Algorithm *)
 
 Definition redc (p : MontgomeryParams) (t : nat) : nat :=
@@ -81,7 +90,13 @@ Proof.
   destruct (Nat.eq_dec (t mod R) 0) as [Hzero | Hnonzero].
   - (* t mod R = 0 *)
     (* When t mod R = 0, all terms simplify to 0, so the property holds trivially *)
-    admit.
+    rewrite Hzero.
+    rewrite Nat.mul_0_l.
+    rewrite Nat.sub_0_r.
+    rewrite Nat.mod_0_l by lia.
+    rewrite Nat.add_0_r.
+    rewrite Nat.mod_0_l by lia.
+    reflexivity.
   - (* t mod R > 0 *)
     assert (Hpos : t mod R > 0) by lia.
     assert (HR_neq_0 : R <> 0) by lia.
@@ -90,9 +105,116 @@ Proof.
     { rewrite Nat.mul_comm. rewrite Nat.mul_sub_distr_r. rewrite Nat.mul_1_l. reflexivity. }
     rewrite Hdiff.
     (* The key modular arithmetic property: ((R-1) * (t mod R)) mod R = R - t mod R *)
-    (* This requires detailed modular arithmetic reasoning *)
-    admit.
-Admitted.
+    (* Use Hmod_R: ((t mod R) * R) mod R = 0 *)
+    (* ((R - 1) * (t mod R)) mod R = (R * (t mod R) - (t mod R)) mod R *)
+    (* = (0 - (t mod R)) mod R = (R - (t mod R)) mod R *)
+    assert (Hsub_mod : ((R - 1) * (t mod R)) mod R = (R - t mod R) mod R).
+    {
+      (* Key insight: (R-1) * x + x = R * x ≡ 0 (mod R) *)
+      (* So ((R-1) * x) mod R = (R - x) mod R for x < R *)
+      assert (HtmodR : t mod R < R) by (apply Nat.mod_upper_bound; lia).
+      (* Use the fact that ((R-1) * x + x) mod R = 0 *)
+      assert (H1 : (R - 1) * (t mod R) + t mod R = R * (t mod R)) by lia.
+      assert (Hsum_zero : ((R - 1) * (t mod R) + t mod R) mod R = 0)
+        by (rewrite H1; rewrite Nat.mul_mod by lia; rewrite Nat.Div0.mod_same by lia;
+            rewrite Nat.mul_0_l; rewrite Nat.Div0.mod_0_l by lia; reflexivity).
+      (* Now: if (a + b) mod R = 0 with a < R and b < R, then a = R - b *)
+      set (a := ((R - 1) * (t mod R)) mod R).
+      assert (Ha_lt : a < R) by (unfold a; apply Nat.mod_upper_bound; lia).
+      assert (Hb_lt : t mod R < R) by lia.
+      assert (Hsum_mod : (a + t mod R) mod R = 0).
+      { unfold a.
+        (* Goal: (((R - 1) * (t mod R)) mod R + t mod R) mod R = 0 *)
+        (* We know: ((R - 1) * (t mod R) + t mod R) mod R = 0 (Hsum_zero) *)
+        (* Key insight: (x mod R + y) mod R = (x + y) mod R when y < R *)
+        (* This is because x mod R ≡ x (mod R), so (x mod R + y) ≡ (x + y) (mod R) *)
+        assert (Hkey2 : (((R - 1) * (t mod R)) mod R + t mod R) mod R =
+                 ((R - 1) * (t mod R) + t mod R) mod R).
+        {
+          (* Use the fact that x mod R = x - R * (x / R) *)
+          assert (Hmod_def : ((R - 1) * (t mod R)) mod R =
+                   (R - 1) * (t mod R) - R * (((R - 1) * (t mod R)) / R)).
+          {
+            assert (Hdiv_mod : (R - 1) * (t mod R) =
+                     R * (((R - 1) * (t mod R)) / R) + ((R - 1) * (t mod R)) mod R).
+            { apply Nat.div_mod. lia. }
+            lia.
+          }
+          rewrite Hmod_def.
+          (* Now: (((R - 1) * (t mod R) - R * (...)) + t mod R) mod R *)
+          (* Use: (a - b) + c = a + c - b when b <= a *)
+          assert (Hge : R * (((R - 1) * (t mod R)) / R) <= (R - 1) * (t mod R)).
+          {
+            assert (Hdiv_mod : (R - 1) * (t mod R) =
+                     R * (((R - 1) * (t mod R)) / R) + ((R - 1) * (t mod R)) mod R).
+            { apply Nat.div_mod. lia. }
+            lia.
+          }
+          (* Rearrange: (a - b) + c = (a + c) - b *)
+          assert (Hrearr : ((R - 1) * (t mod R) - R * (((R - 1) * (t mod R)) / R)) + t mod R =
+                   ((R - 1) * (t mod R) + t mod R) - R * (((R - 1) * (t mod R)) / R)).
+          { lia. }
+          rewrite Hrearr.
+          (* Now: (((R - 1) * (t mod R) + t mod R) - R * (...)) mod R *)
+          (* Since R * (...) is a multiple of R, subtracting it doesn't change mod R *)
+          assert (Hmult : R * (((R - 1) * (t mod R)) / R) mod R = 0)
+            by (rewrite Nat.Div0.mul_mod by lia; rewrite Nat.Div0.mod_same by lia;
+                rewrite Nat.mul_0_l; rewrite Nat.Div0.mod_0_l by lia; reflexivity).
+          (* Use: (a - b) mod R = 0 when a ≡ b (mod R) *)
+          (* Here a = (R-1)*(t mod R) + t mod R, b = R * (...) *)
+          (* a mod R = 0 (by Hsum_zero), b mod R = 0 (by Hmult) *)
+          (* So (a - b) mod R = 0 *)
+          (* Both terms are multiples of R, so their difference is also a multiple of R *)
+          assert (Hsub_zero2 : (((R - 1) * (t mod R) + t mod R) - R * (((R - 1) * (t mod R)) / R)) mod R = 0).
+          {
+            assert (Ha_mod : ((R - 1) * (t mod R) + t mod R) mod R = 0) by exact Hsum_zero.
+            assert (Hb_mod : (R * (((R - 1) * (t mod R)) / R)) mod R = 0)
+              by (rewrite Nat.Div0.mul_mod by lia; rewrite Nat.Div0.mod_same by lia;
+                  rewrite Nat.mul_0_l; rewrite Nat.Div0.mod_0_l by lia; reflexivity).
+            assert (Ha_mult : exists k, (R - 1) * (t mod R) + t mod R = k * R)
+              by (exists (((R - 1) * (t mod R) + t mod R) / R);
+                  assert (H := Nat.div_mod ((R - 1) * (t mod R) + t mod R) R);
+                  rewrite Ha_mod in H; rewrite Nat.add_0_r in H;
+                  rewrite Nat.mul_comm in H; lia).
+            destruct Ha_mult as [k1 Hk1].
+            rewrite Hk1.
+            rewrite Nat.mul_comm with (n := k1) (m := R).
+            rewrite <- Nat.mul_sub_distr_l.
+            rewrite Nat.mul_mod.
+            rewrite Nat.mod_same by lia.
+            rewrite Nat.mul_0_l.
+            rewrite Nat.mod_0_l by lia.
+            reflexivity.
+          }
+          rewrite Hsub_zero2.
+          reflexivity.
+        }
+        rewrite Hkey2.
+        reflexivity. }
+      (* (a + b) mod R = 0 with a < R, b < R implies a + b = R *)
+      assert (Hsum_lt_2R : a + t mod R < 2 * R) by lia.
+      assert (Hdiv : (a + t mod R) / R = 1).
+      { apply Nat.div_unique.
+        - rewrite <- Nat.mul_comm. apply Nat.mod_eq. exact Hsum_mod.
+        - lia. }
+      assert (Hdiv_eq : a + t mod R = R * ((a + t mod R) / R))
+        by (apply Nat.div_mod; lia).
+      assert (Hsum_R : a + t mod R = R)
+        by (rewrite Hdiv in Hdiv_eq; lia).
+      lia.
+    }
+    rewrite Hsub_mod.
+    (* (R - t mod R) mod R = R - t mod R since t mod R < R *)
+    assert (Hfinal : (R - t mod R) mod R = R - t mod R).
+    {
+      apply Nat.mod_same.
+      lia.
+    }
+    rewrite Hfinal.
+    rewrite Nat.add_0_r.
+    rewrite Nat.mod_same.
+    reflexivity.
+Qed.
 
 (** Lemma 2: t + m*q is divisible by R *)
 Lemma redc_divisibility : forall (p : MontgomeryParams) (t : nat),
