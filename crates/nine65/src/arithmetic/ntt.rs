@@ -168,6 +168,11 @@ impl NTTEngine {
 
     /// Forward NTT using DFT matrix
     pub fn ntt(&self, a: &[u64]) -> Vec<u64> {
+        self.ntt_with_shadow(a, &mut None)
+    }
+
+    /// Forward NTT with shadow capture (API consistency)
+    pub fn ntt_with_shadow(&self, a: &[u64], shadow: &mut Option<Vec<u64>>) -> Vec<u64> {
         let mut result = vec![0u64; self.n];
 
         for k in 0..self.n {
@@ -175,7 +180,14 @@ impl NTTEngine {
             for j in 0..self.n {
                 let exp = (k * j) % self.n;
                 let w = self.omega_powers[exp];
-                sum += (a[j] as u128) * (w as u128);
+                let prod = (a[j] as u128) * (w as u128);
+                sum += prod;
+
+                if let Some(ref mut s) = shadow {
+                    // Approximate Montgomery-like quotient for SBNI entropy
+                    let q_hat = prod / self.q as u128;
+                    s.push(q_hat as u64);
+                }
             }
             result[k] = (sum % self.q as u128) as u64;
         }

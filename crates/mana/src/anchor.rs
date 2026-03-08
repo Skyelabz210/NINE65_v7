@@ -27,11 +27,11 @@ use crate::stream::ManaStream;
 pub struct KAnchor {
     /// Alpha primes (computational codex)
     pub alpha_primes: Vec<u64>,
-    /// Beta primes (anchor codex)
-    pub beta_primes: Vec<u64>,
+    /// Beta moduli (anchor codex — CLASS-R)
+    pub beta_moduli: Vec<u64>,
     /// Product of alpha primes
     pub alpha_cap: u128,
-    /// Product of beta primes
+    /// Product of beta moduli
     pub beta_cap: u128,
     /// αcap⁻¹ mod βcap (precomputed)
     pub alpha_inv_beta: u128,
@@ -40,17 +40,17 @@ pub struct KAnchor {
 impl KAnchor {
     /// Create K-Elimination anchor
     ///
-    /// All primes must be coprime across both sets.
-    pub fn new(alpha_primes: &[u64], beta_primes: &[u64]) -> Self {
+    /// All moduli must be coprime across both sets.
+    pub fn new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Self {
         let alpha_cap: u128 = alpha_primes.iter().map(|&p| p as u128).product();
-        let beta_cap: u128 = beta_primes.iter().map(|&p| p as u128).product();
+        let beta_cap: u128 = beta_moduli.iter().map(|&p| p as u128).product();
 
         let alpha_inv_beta =
             mod_inverse_u128(alpha_cap % beta_cap, beta_cap).expect("Primes must be coprime");
 
         Self {
             alpha_primes: alpha_primes.to_vec(),
-            beta_primes: beta_primes.to_vec(),
+            beta_moduli: beta_moduli.to_vec(),
             alpha_cap,
             beta_cap,
             alpha_inv_beta,
@@ -59,17 +59,17 @@ impl KAnchor {
 
     /// Create anchor optimized for FHE operations
     ///
-    /// Uses 62-bit anchor primes for ~112-bit total capacity.
+    /// Uses 62-bit anchor moduli for ~112-bit total capacity.
     /// Safe for N=1024 tensor products (~70-bit intermediate values).
     pub fn for_fhe() -> Self {
         // Alpha: ~48 bits (3 × 16-bit primes)
         let alpha_primes = vec![65537, 65521, 65519];
 
-        // Beta: ~62 bits (single large prime)
+        // Beta: ~62 bits (single large modulus)
         // This gives ~110-bit total capacity
-        let beta_primes = vec![4611686018427387847u64];
+        let beta_moduli = vec![4611686018427387847u64];
 
-        Self::new(&alpha_primes, &beta_primes)
+        Self::new(&alpha_primes, &beta_moduli)
     }
 
     /// Extract k value for exact reconstruction
@@ -142,7 +142,7 @@ impl AnchorContext {
     /// Create anchor context from K-Elimination anchor
     pub fn new(anchor: KAnchor) -> Self {
         let mut all_primes = anchor.alpha_primes.clone();
-        all_primes.extend(&anchor.beta_primes);
+        all_primes.extend(&anchor.beta_moduli);
 
         Self { anchor, all_primes }
     }

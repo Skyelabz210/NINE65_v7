@@ -43,7 +43,7 @@ pub enum Inv8Verdict {
 pub struct Inv8CheckLane {
     /// Montgomery context for the check modulus
     check_mont: MontgomeryContext,
-    /// The check modulus (an NTT-friendly prime independent of the main moduli)
+    /// The check modulus (CLASS-R: odd value coprime to all main moduli; primality optional)
     check_modulus: u64,
     /// Running quotient accumulator (primary lane)
     primary_accumulator: u64,
@@ -60,9 +60,9 @@ pub struct Inv8CheckLane {
 }
 
 impl Inv8CheckLane {
-    /// Well-known check primes — NTT-friendly primes not used in typical RNS bases.
-    /// These are chosen to be coprime to standard NINE65 moduli.
-    const CHECK_PRIMES: [u64; 4] = [
+    /// Well-known check moduli — odd values coprime to standard NINE65 moduli.
+    /// These are chosen for their CLASS-R properties.
+    const CHECK_MODULI: [u64; 4] = [
         65537,    // Fermat prime F4
         786433,   // 3 * 2^18 + 1
         5767169,  // 11 * 2^19 + 1
@@ -76,12 +76,12 @@ impl Inv8CheckLane {
         let mut harvester = ShadowHarvester::with_seed(seed);
         let init_state = harvester.next_u64();
 
-        // Select a check prime that is coprime to all main moduli
-        let check_modulus = Self::CHECK_PRIMES
+        // Select a check modulus that is coprime to all main moduli
+        let check_modulus = Self::CHECK_MODULI
             .iter()
             .copied()
             .find(|&p| main_moduli.iter().all(|&m| gcd(p, m) == 1))
-            .unwrap_or(Self::CHECK_PRIMES[0]);
+            .unwrap_or(Self::CHECK_MODULI[0]);
 
         let check_mont = MontgomeryContext::new(check_modulus);
 
