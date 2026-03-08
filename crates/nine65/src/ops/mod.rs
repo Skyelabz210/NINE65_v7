@@ -13,6 +13,7 @@
 pub mod auto_bootstrap;
 pub mod batch;
 pub mod bootstrap;
+pub mod sbni;
 pub mod encrypt;
 pub mod galois;
 pub mod gso_fhe;

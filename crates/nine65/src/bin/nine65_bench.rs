@@ -1,4 +1,8 @@
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
+use nine65::ops::bootstrap::ClockworkBootstrap;
+use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+use nine65::ops::rns_fhe::{DualRNSCiphertext, RNSFHEContext};
+
 /// NINE65 Benchmark Harness
 ///
 /// Runs comprehensive FHE benchmarks and outputs structured JSON
@@ -19,6 +23,10 @@ fn main() {
     let mut output_path: Option<String> = None;
     let mut init_a: u64 = 8;
     let mut init_b: u64 = 8;
+    let mut with_bootstrap = false;
+    let mut auto_bootstrap = false;
+    let mut statistical_test = false;
+    let mut trigger_pct: u32 = 25;
     let seed: u64 = 42;
 
     // Parse args
@@ -36,6 +44,12 @@ fn main() {
             "--b" => {
                 init_b = args.next().unwrap_or_default().parse().unwrap_or(8);
             }
+            "--with-bootstrap" => with_bootstrap = true,
+            "--auto-bootstrap" => auto_bootstrap = true,
+            "--statistical-test" => statistical_test = true,
+            "--trigger-pct" => {
+                trigger_pct = args.next().unwrap_or_default().parse().unwrap_or(25);
+            }
             "-h" | "--help" => {
                 eprintln!(
                     "Usage: nine65_bench [OPTIONS]\n\n\
@@ -44,7 +58,11 @@ fn main() {
                      --max-depth <n>      Max depth for chain test (default: 80)\n\
                      --output <path>      Output JSON file (default: stdout)\n\
                      --a <u64>            First operand (default: 8)\n\
-                     --b <u64>            Second operand (default: 8)\n"
+                     --b <u64>            Second operand (default: 8)\n\
+                     --with-bootstrap     Enable real Clockwork Bootstrap\n\
+                     --auto-bootstrap     Enable Auto-Bootstrap Evaluator\n\
+                     --statistical-test   Run 100-sample statistical correctness test\n\
+                     --trigger-pct <n>    Refresh threshold (default: 25)\n"
                 );
                 return;
             }
@@ -89,6 +107,20 @@ fn main() {
     let keys = KeySet::generate(&config, &ntt, &mut rng);
     let keygen_us = t0.elapsed().as_micros() as u64;
     eprintln!("  Keygen: {}us ({}ms)", keygen_us, keygen_us / 1000);
+
+    // Bootstrap KeyGen
+    let ctx_dual = RNSFHEContext::new(&config);
+    let keys_dual = ctx_dual.generate_keys_dual_full(&mut rng);
+    let boot = ClockworkBootstrap::new(&config).expect("Bootstrap init failed");
+    let boot_keys = if with_bootstrap || auto_bootstrap {
+        eprintln!("Generating bootstrap keys...");
+        let t_boot = Instant::now();
+        let bk = boot.generate_keys(&keys_dual.secret_key, &mut rng).expect("Bootstrap keygen failed");
+        eprintln!("  Bootstrap Keygen: {}ms", t_boot.elapsed().as_millis());
+        Some(bk)
+    } else {
+        None
+    };
 
     let encoder = BFVEncoder::new(&config);
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
@@ -208,10 +240,23 @@ fn main() {
     let mut ct_result = encryptor.encrypt(init_a, &mut rng);
     let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
 
+    // --- LEGACY INITIALIZATION ---
+    let mut ct_result = encryptor.encrypt(init_a, &mut rng);
+    let mut plaintext_result: u64 = (init_a * init_b) % config.t;
+
+    // --- DUALRNS INITIALIZATION (for bootstrap path) ---
+    let mut ct_dual = ctx_dual.encrypt_dual(init_a, &keys_dual.public_key, &mut rng);
+
     // First op: multiply by b (as plaintext)
     let t0 = Instant::now();
-    ct_result = evaluator.mul_plain(&ct_result, init_b);
-    let first_op_us = t0.elapsed().as_micros() as u64;
+    let first_op_us;
+    if with_bootstrap {
+        ct_dual = ctx_dual.mul_plain_dual(&ct_dual, init_b);
+        first_op_us = t0.elapsed().as_micros() as u64;
+    } else {
+        ct_result = evaluator.mul_plain(&ct_result, init_b);
+        first_op_us = t0.elapsed().as_micros() as u64;
+    }
     let _ = budget.consume(NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(&config));
 
     let mut depth_chain: Vec<Value> = Vec::new();
@@ -225,7 +270,6 @@ fn main() {
         "refreshed": false
     }));
 
-    let mut plaintext_result: u64 = (init_a * init_b) % config.t;
     let mut total_refreshes: u64 = 0;
     let mut depth: usize = 1;
 
@@ -233,28 +277,37 @@ fn main() {
         let (op_type, symbol, val) = &chain_ops[d % chain_ops.len()];
 
         let t0 = Instant::now();
-        let (new_ct, noise_cost, new_plain) = match *op_type {
+        let (noise_cost, new_plain) = match *op_type {
             "mul_plain" => {
-                let ct = evaluator.mul_plain(&ct_result, *val);
+                if with_bootstrap {
+                    ct_dual = ctx_dual.mul_plain_dual(&ct_dual, *val);
+                } else {
+                    ct_result = evaluator.mul_plain(&ct_result, *val);
+                }
                 (
-                    ct,
                     NoiseBudget::mul_plain_cost(&config),
                     (plaintext_result * val) % config.t,
                 )
             }
             "add_plain" => {
-                let ct = evaluator.add_plain(&ct_result, *val);
+                if with_bootstrap {
+                    ct_dual = ctx_dual.add_plain_dual(&ct_dual, *val);
+                } else {
+                    ct_result = evaluator.add_plain(&ct_result, *val);
+                }
                 (
-                    ct,
                     NoiseBudget::add_plain_cost(),
                     (plaintext_result + val) % config.t,
                 )
             }
             "sub_plain" => {
                 // sub_plain via add_plain with (t - val)
-                let ct = evaluator.add_plain(&ct_result, config.t - val);
+                if with_bootstrap {
+                    ct_dual = ctx_dual.add_plain_dual(&ct_dual, config.t - val);
+                } else {
+                    ct_result = evaluator.add_plain(&ct_result, config.t - val);
+                }
                 (
-                    ct,
                     NoiseBudget::add_plain_cost(),
                     (plaintext_result + config.t - val) % config.t,
                 )
@@ -263,7 +316,6 @@ fn main() {
         };
         let op_us = t0.elapsed().as_micros() as u64;
 
-        ct_result = new_ct;
         plaintext_result = new_plain;
         depth += 1;
 
@@ -277,17 +329,29 @@ fn main() {
         );
 
         let mut refreshed = false;
-        if consume_result.is_err() {
-            // Simulate Clockwork Bootstrap refresh
-            budget = NoiseBudget::from_config(&config);
-            // Re-consume a small amount for the refresh overhead
-            let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
-            total_refreshes += 1;
-            refreshed = true;
-            eprintln!(
-                "  Depth {depth}: AUTO REFRESH (refresh #{})",
-                total_refreshes
-            );
+        if consume_result.is_err() || (with_bootstrap && budget.should_bootstrap(trigger_pct * 10)) {
+            if let Some(ref bk) = boot_keys {
+                // Real Clockwork Bootstrap refresh
+                ct_dual = boot.bootstrap(&ct_dual, &bk.bsk, &bk.ksk).expect("Bootstrap failed");
+
+                budget.reset_after_bootstrap(&config);
+                total_refreshes += 1;
+                refreshed = true;
+                eprintln!(
+                    "  Depth {depth}: REAL BOOTSTRAP REFRESH (refresh #{})",
+                    total_refreshes
+                );
+            } else {
+                // Simulate Clockwork Bootstrap refresh (legacy mode)
+                budget = NoiseBudget::from_config(&config);
+                let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
+                total_refreshes += 1;
+                refreshed = true;
+                eprintln!(
+                    "  Depth {depth}: SIMULATED REFRESH (refresh #{})",
+                    total_refreshes
+                );
+            }
         }
 
         let noise_pct = (budget.remaining_millibits() as f64 / initial_budget_mb as f64 * 100.0)
@@ -303,7 +367,11 @@ fn main() {
     }
 
     // Verify correctness: decrypt and check
-    let decrypted = decryptor.decrypt(&ct_result);
+    let decrypted = if with_bootstrap {
+        ctx_dual.decrypt_dual(&ct_dual, &keys_dual.secret_key)
+    } else {
+        decryptor.decrypt(&ct_result)
+    };
     let correct = decrypted == plaintext_result;
     eprintln!(
         "  Depth chain complete: depth={}, refreshes={}, correct={}",
@@ -314,6 +382,63 @@ fn main() {
             "  WARNING: Decrypted {} != expected {}",
             decrypted, plaintext_result
         );
+    }
+
+    // ================================================================
+    // 3.5 STATISTICAL TEST
+    // ================================================================
+    if statistical_test {
+        eprintln!("Running statistical correctness test (100 trials)...");
+        let mut statistical_successes = 0;
+        let mut statistical_refreshes = 0;
+
+        let bk = boot_keys.as_ref().expect("--statistical-test requires bootstrap keys (implied)");
+
+        for i in 0..100 {
+            let m_init = rng.next_u64() % config.t;
+            let mut ct = ctx_dual.encrypt_dual(m_init, &keys_dual.public_key, &mut rng);
+            let mut current_plain = m_init;
+            let mut trial_budget = NoiseBudget::from_config(&config);
+
+            // Run depth-80 chain
+            for d in 0..80 {
+                let (_, _, val) = chain_ops[d % chain_ops.len()];
+
+                // Deterministic mixed operations
+                if d % 3 == 0 {
+                    ct = ctx_dual.mul_plain_dual(&ct, val % config.t);
+                    current_plain = (current_plain * (val % config.t)) % config.t;
+                    let _ = trial_budget.consume(NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(&config));
+                } else {
+                    ct = ctx_dual.add_plain_dual(&ct, val % config.t);
+                    current_plain = (current_plain + (val % config.t)) % config.t;
+                    let _ = trial_budget.consume(NoiseOpType::Add, NoiseBudget::add_plain_cost());
+                }
+
+                if trial_budget.should_bootstrap(trigger_pct * 10) {
+                    ct = boot.bootstrap(&ct, &bk.bsk, &bk.ksk).expect("Statistical bootstrap failed");
+                    trial_budget.reset_after_bootstrap(&config);
+                    statistical_refreshes += 1;
+                }
+            }
+
+            let dec = ctx_dual.decrypt_dual(&ct, &keys_dual.secret_key);
+            if dec == current_plain {
+                statistical_successes += 1;
+            }
+
+            if (i + 1) % 100 == 0 {
+                eprintln!("  Trial {}: {}/{} correct", i + 1, statistical_successes, i + 1);
+            }
+        }
+
+        eprintln!("Statistical test complete: {}/100 correct ({} refreshes)", statistical_successes, statistical_refreshes);
+        if statistical_successes == 100 {
+            eprintln!("[PASS] 100/100 trials correct with zero nonzero error distribution.");
+        } else {
+            eprintln!("[FAIL] Statistical correctness failed: {}/100 correct", statistical_successes);
+            std::process::exit(1);
+        }
     }
 
     // ================================================================

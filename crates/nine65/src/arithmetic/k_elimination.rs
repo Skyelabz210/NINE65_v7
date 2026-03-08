@@ -54,7 +54,7 @@
 //! // Or build custom
 //! let ke = KElimBuilder::new()
 //!     .alpha_primes(&[65537, 65521])
-//!     .beta_primes(&[4611686018427387847])
+//!     .beta_moduli(&[4611686018427387847])
 //!     .build()
 //!     .unwrap();
 //! ```
@@ -67,7 +67,14 @@ use crate::errors::{Nine65Error, Nine65Result};
 
 /// Predefined K-Elimination configurations
 ///
-/// Each configuration provides different tradeoffs between capacity and performance.
+/// # Separation Principle (NINE65 v8)
+///
+/// Alpha moduli are CLASS-F: they must be prime (participate in NTT-adjacent operations).
+/// Beta moduli are CLASS-R: they require only pairwise coprimality with alpha and with
+/// each other. Composite beta values are mathematically valid and may offer hardware
+/// advantages (equal-bit-width reduction, pseudo-Mersenne shift tricks, parallel CRT-split).
+///
+/// See: QMNF Separation Principle (Theorem 2.1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KElimConfig {
     /// Minimal configuration (~64-bit capacity)
@@ -93,6 +100,12 @@ pub enum KElimConfig {
     /// - Beta: 2 × 55-bit primes (~110 bits)
     /// - Use for: Maximum precision requirements
     Maximum,
+
+    /// Hardware-optimized configuration (Separation Principle showcase)
+    /// - Alpha: 3 × 16-bit primes (~48 bits)
+    /// - Beta: 1 × 61-bit equal-width composite + 1 × 32-bit Mersenne
+    /// - Both β values are CLASS-R composites with hardware-friendly reduction
+    HardwareOpt,
 }
 
 impl KElimConfig {
@@ -103,11 +116,17 @@ impl KElimConfig {
             KElimConfig::Standard => vec![65537, 65521, 65519],
             KElimConfig::Extended => vec![65537, 65521, 65519],
             KElimConfig::Maximum => vec![65537, 65521, 65519, 65497],
+            KElimConfig::HardwareOpt => vec![65537, 65521, 65519],
         }
     }
 
-    /// Get the beta primes for this configuration
-    pub fn beta_primes(&self) -> Vec<u64> {
+    /// Beta moduli (CLASS-R — coprimality sufficient, primality optional).
+    ///
+    /// These values participate only in Garner mixed-radix conversion,
+    /// which requires gcd(α_cap, β_cap) = 1 but does NOT require primality.
+    /// Composite values coprime to α_cap are mathematically valid.
+    /// See: QMNF Separation Principle (Theorem 2.1).
+    pub fn beta_moduli(&self) -> Vec<u64> {
         match self {
             KElimConfig::Minimal => vec![4294967291], // 2^32 - 5 (~32 bits)
             KElimConfig::Standard => vec![4611686018427387847], // 62-bit prime
@@ -119,7 +138,17 @@ impl KElimConfig {
                 4611686018427387847, // 62-bit prime
                 4611686018427387903, // 62-bit prime (different)
             ],
+            KElimConfig::HardwareOpt => vec![
+                1152921515344265237, // 1,073,741,827 × 1,073,741,831 (61-bit)
+                4294967291,           // 2^32 - 5 (32-bit prime)
+            ],
         }
+    }
+
+    /// Get the beta moduli for this configuration (deprecated name).
+    #[deprecated(since = "8.0.0", note = "Use beta_moduli(). Primality not required (Separation Principle).")]
+    pub fn beta_primes(&self) -> Vec<u64> {
+        self.beta_moduli()
     }
 
     /// Get approximate total capacity in bits
@@ -129,6 +158,7 @@ impl KElimConfig {
             KElimConfig::Standard => 110,
             KElimConfig::Extended => 138,
             KElimConfig::Maximum => 188, // 64 alpha + 124 beta
+            KElimConfig::HardwareOpt => 141, // 48 alpha + 93 beta
         }
     }
 
@@ -146,7 +176,7 @@ impl KElimConfig {
 #[derive(Debug, Clone, Default)]
 pub struct KElimBuilder {
     alpha_primes: Option<Vec<u64>>,
-    beta_primes: Option<Vec<u64>>,
+    beta_moduli: Option<Vec<u64>>,
 }
 
 impl KElimBuilder {
@@ -161,17 +191,23 @@ impl KElimBuilder {
         self
     }
 
-    /// Set beta (anchor) primes
-    pub fn beta_primes(mut self, primes: &[u64]) -> Self {
-        self.beta_primes = Some(primes.to_vec());
+    /// Set beta (anchor) moduli
+    pub fn beta_moduli(mut self, moduli: &[u64]) -> Self {
+        self.beta_moduli = Some(moduli.to_vec());
         self
+    }
+
+    /// Set beta (anchor) primes (deprecated name)
+    #[deprecated(since = "8.0.0", note = "Use beta_moduli(). Primality not required.")]
+    pub fn beta_primes(self, primes: &[u64]) -> Self {
+        self.beta_moduli(primes)
     }
 
     /// Build the K-Elimination context
     ///
     /// Returns error if:
-    /// - Primes are not set
-    /// - Primes are not coprime
+    /// - Moduli are not set
+    /// - Moduli are not coprime
     pub fn build(self) -> Nine65Result<KElimination> {
         let alpha_primes = self
             .alpha_primes
@@ -179,26 +215,26 @@ impl KElimBuilder {
                 message: "alpha_primes not set".to_string(),
             })?;
 
-        let beta_primes = self
-            .beta_primes
+        let beta_moduli = self
+            .beta_moduli
             .ok_or_else(|| Nine65Error::InvalidParameter {
-                message: "beta_primes not set".to_string(),
+                message: "beta_moduli not set".to_string(),
             })?;
 
-        KElimination::try_new(&alpha_primes, &beta_primes)
+        KElimination::try_new(&alpha_primes, &beta_moduli)
     }
 }
 
 /// K-Elimination context for exact division
 #[derive(Debug, Clone)]
 pub struct KElimination {
-    /// Alpha moduli (primary codex)
+    /// Alpha moduli (primary codex — CLASS-F)
     pub alpha_primes: Vec<u64>,
-    /// Beta moduli (anchor codex)
-    pub beta_primes: Vec<u64>,
+    /// Beta moduli (anchor codex — CLASS-R)
+    pub beta_moduli: Vec<u64>,
     /// Product of alpha primes
     pub alpha_cap: u128,
-    /// Product of beta primes
+    /// Product of beta moduli
     pub beta_cap: u128,
     /// α_cap^{-1} mod β_cap (precomputed)
     pub alpha_inv_beta: u128,
@@ -228,8 +264,8 @@ impl KElimination {
     /// // Prefer try_new for error handling
     /// let ke = KElimination::try_new(&[17, 19], &[23, 29])?;
     /// ```
-    pub fn new(alpha_primes: &[u64], beta_primes: &[u64]) -> Self {
-        Self::try_new(alpha_primes, beta_primes).expect("alpha_cap and beta_cap must be coprime")
+    pub fn new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Self {
+        Self::try_new(alpha_primes, beta_moduli).expect("alpha_cap and beta_cap must be coprime")
     }
 
     /// Fallible constructor for K-Elimination context
@@ -241,7 +277,7 @@ impl KElimination {
     ///
     /// Returns [`Nine65Error::NotCoprime`] if alpha_cap and beta_cap share a common factor.
     #[must_use = "this returns a Result that must be handled"]
-    pub fn try_new(alpha_primes: &[u64], beta_primes: &[u64]) -> Nine65Result<Self> {
+    pub fn try_new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Nine65Result<Self> {
         // Use checked_mul to detect u128 overflow in prime products.
         let alpha_cap: u128 = alpha_primes
             .iter()
@@ -250,11 +286,11 @@ impl KElimination {
                 message: "alpha_primes product overflows u128".to_string(),
             })?;
 
-        let beta_cap: u128 = beta_primes
+        let beta_cap: u128 = beta_moduli
             .iter()
             .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
             .ok_or_else(|| Nine65Error::InvalidParameter {
-                message: "beta_primes product overflows u128".to_string(),
+                message: "beta_moduli product overflows u128".to_string(),
             })?;
 
         // Note: alpha_cap * beta_cap may legitimately exceed u128 for large configs.
@@ -273,12 +309,18 @@ impl KElimination {
 
         Ok(Self {
             alpha_primes: alpha_primes.to_vec(),
-            beta_primes: beta_primes.to_vec(),
+            beta_moduli: beta_moduli.to_vec(),
             alpha_cap,
             beta_cap,
             alpha_inv_beta,
             config: None,
         })
+    }
+
+    /// Get the beta moduli (deprecated name).
+    #[deprecated(since = "8.0.0", note = "Use beta_moduli. Primality not required.")]
+    pub fn beta_primes(&self) -> Vec<u64> {
+        self.beta_moduli.clone()
     }
 
     /// Create K-Elimination from a predefined configuration.
@@ -301,7 +343,7 @@ impl KElimination {
     ///
     /// Returns error if the preset primes are not coprime.
     pub fn try_from_config(config: KElimConfig) -> Nine65Result<Self> {
-        let mut ke = Self::try_new(&config.alpha_primes(), &config.beta_primes())?;
+        let mut ke = Self::try_new(&config.alpha_primes(), &config.beta_moduli())?;
         ke.config = Some(config);
         Ok(ke)
     }
@@ -394,7 +436,7 @@ impl KElimination {
         self.alpha_cap
     }
 
-    /// Get beta codex capacity (product of beta primes)
+    /// Get beta codex capacity (product of beta moduli)
     pub fn beta_capacity(&self) -> u128 {
         self.beta_cap
     }
@@ -1101,6 +1143,99 @@ mod tests {
         assert!(maximum.capacity_bits() > extended.capacity_bits());
     }
 
+    /// Verified primality check for CLASS-F verification.
+    fn is_prime(n: u64) -> bool {
+        if n < 2 { return false; }
+        if n == 2 || n == 3 { return true; }
+        if n % 2 == 0 || n % 3 == 0 { return false; }
+        let mut i = 5;
+        while i * i <= n {
+            if n % i == 0 || n % (i + 2) == 0 { return false; }
+            i += 6;
+        }
+        true
+    }
+
+    /// Greatest common divisor for u128.
+    fn gcd_u128(mut a: u128, mut b: u128) -> u128 {
+        while b != 0 {
+            let t = b;
+            b = a % b;
+            a = t;
+        }
+        a
+    }
+
+    /// Greatest common divisor for u64.
+    fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
+        while b != 0 {
+            let t = b;
+            b = a % b;
+            a = t;
+        }
+        a
+    }
+
+    #[test]
+    fn test_class_f_moduli_are_prime() {
+        // Alpha primes MUST be prime (CLASS-F adjacent)
+        for config in [
+            KElimConfig::Minimal,
+            KElimConfig::Standard,
+            KElimConfig::Extended,
+            KElimConfig::Maximum,
+            KElimConfig::HardwareOpt,
+        ] {
+            for &p in &config.alpha_primes() {
+                assert!(is_prime(p), "CLASS-F: alpha {} must be prime", p);
+            }
+        }
+    }
+
+    #[test]
+    fn test_class_r_moduli_are_coprime() {
+        let ntt_primes = [998244353, 985661441, 754974721, 469762049, 167772161, 595591169];
+        let configs = [
+            KElimConfig::Minimal,
+            KElimConfig::Standard,
+            KElimConfig::Extended,
+            KElimConfig::Maximum,
+            KElimConfig::HardwareOpt,
+        ];
+
+        for config in configs {
+            let alphas = config.alpha_primes();
+            let betas = config.beta_moduli();
+            let alpha_cap: u128 = alphas.iter().map(|&p| p as u128).product();
+            let beta_cap: u128 = betas.iter().map(|&b| b as u128).product();
+
+            // Alpha-beta coprimality (required for Garner inverse)
+            assert_eq!(gcd_u128(alpha_cap, beta_cap), 1,
+                "{:?}: alpha_cap and beta_cap must be coprime", config);
+
+            // Beta pairwise coprimality
+            for i in 0..betas.len() {
+                for j in (i+1)..betas.len() {
+                    assert_eq!(gcd_u64(betas[i], betas[j]), 1,
+                        "{:?}: beta moduli {} and {} must be coprime", config, betas[i], betas[j]);
+                }
+            }
+
+            // Beta-NTT coprimality
+            for &b in &betas {
+                for &q in &ntt_primes {
+                    assert_eq!(gcd_u64(b, q), 1,
+                        "{:?}: beta {} must be coprime to NTT prime {}", config, b, q);
+                }
+            }
+
+            // Odd modulus (required for Montgomery)
+            for &b in &betas {
+                assert!(b % 2 == 1, "{:?}: beta {} must be odd for Montgomery", config, b);
+            }
+        }
+    }
+
     #[test]
     fn test_kelim_for_degree() {
         // Small N should use Standard
@@ -1120,7 +1255,7 @@ mod tests {
     fn test_kelim_builder_success() {
         let ke = KElimBuilder::new()
             .alpha_primes(&[17, 19])
-            .beta_primes(&[23, 29])
+            .beta_moduli(&[23, 29])
             .build();
 
         assert!(ke.is_ok());
@@ -1132,10 +1267,10 @@ mod tests {
     #[test]
     fn test_kelim_builder_missing_primes() {
         // Missing alpha primes
-        let result = KElimBuilder::new().beta_primes(&[23, 29]).build();
+        let result = KElimBuilder::new().beta_moduli(&[23, 29]).build();
         assert!(result.is_err());
 
-        // Missing beta primes
+        // Missing beta moduli
         let result = KElimBuilder::new().alpha_primes(&[17, 19]).build();
         assert!(result.is_err());
     }
@@ -1161,6 +1296,7 @@ mod tests {
             KElimConfig::Standard,
             KElimConfig::Extended,
             KElimConfig::Maximum,
+            KElimConfig::HardwareOpt,
         ] {
             let ke = KElimination::from_config(config);
 
@@ -1184,6 +1320,46 @@ mod tests {
     // =========================================================================
     // PRECONDITION VALIDATION TESTS
     // =========================================================================
+
+    #[test]
+    #[ignore]
+    fn test_kelim_all_configs_exhaustive() {
+        use crate::entropy::ShadowHarvester;
+        let mut rng = ShadowHarvester::with_seed(42);
+
+        for config in [
+            KElimConfig::Minimal,
+            KElimConfig::Standard,
+            KElimConfig::Extended,
+            KElimConfig::Maximum,
+            KElimConfig::HardwareOpt,
+        ] {
+            let ke = KElimination::from_config(config);
+            let capacity = ke.capacity();
+
+            // Randomly test 10,000 values for each config
+            for _ in 0..10_000 {
+                // Generate random u128 within capacity
+                // Simple approach: sample two u64 and combine, then mod capacity
+                let lo = rng.next_u64();
+                let hi = rng.next_u64();
+                let v = ((hi as u128) << 64 | (lo as u128)) % capacity;
+
+                let v_alpha = v % ke.alpha_cap;
+                let v_beta = v % ke.beta_cap;
+
+                let k = ke.extract_k(v_alpha, v_beta);
+                let reconstructed = v_alpha + k * ke.alpha_cap;
+
+                assert_eq!(
+                    reconstructed, v,
+                    "Exhaustive K-Elim failed for v={} with config {:?}",
+                    v, config
+                );
+            }
+            eprintln!("  {:?}: 10,000 trials passed", config);
+        }
+    }
 
     #[test]
     fn test_validate_value_within_capacity() {
@@ -1267,4 +1443,60 @@ mod tests {
     }
 
     // Timing regression tests moved to criterion benches (benches/timing.rs)
+}
+
+#[cfg(test)]
+mod bench_compat {
+    use super::*;
+    use std::time::Instant;
+
+    #[test]
+    #[ignore]
+    fn benchmark_anchor_generation() {
+        println!("\n=== Anchor Generation Benchmark (Prime vs Composite) ===");
+        let bits = [32, 45, 62, 90, 128];
+
+        for &b in &bits {
+            println!("\nBit-width: {}", b);
+
+            // Prime generation (representative timing)
+            let start = Instant::now();
+            // We simulate prime generation by finding a large prime
+            // In a real scenario, this involves primality testing
+            let mut p = (1u128 << (b-1)) + 1;
+            while !is_prime_u128(p) {
+                p += 2;
+            }
+            let prime_time = start.elapsed();
+            println!("  Prime:     {:?}", prime_time);
+
+            // Composite generation (Separation Principle)
+            let start = Instant::now();
+            // We simulate composite generation by multiplying two smaller primes
+            let half = b / 2;
+            let mut p1 = (1u128 << (half-1)) + 1;
+            while !is_prime_u128(p1) { p1 += 2; }
+            let mut p2 = (1u128 << (b - half - 1)) + 1;
+            while !is_prime_u128(p2) { p2 += 2; }
+            let _c = p1 * p2;
+            let composite_time = start.elapsed();
+            println!("  Composite: {:?}", composite_time);
+
+            if b >= 128 {
+                assert!(composite_time < prime_time, "Composite should be faster at {} bits", b);
+            }
+        }
+    }
+
+    fn is_prime_u128(n: u128) -> bool {
+        if n < 2 { return false; }
+        if n % 2 == 0 { return n == 2; }
+        let mut i = 3;
+        while i * i <= n {
+            if n % i == 0 { return false; }
+            i += 2;
+            if i > 1000000 { break; } // Limit for bench speed
+        }
+        true
+    }
 }

@@ -239,6 +239,20 @@ impl SecureConfig {
         )
     }
 
+    /// Hardware-optimized configuration using composite anchors (Separation Principle showcase)
+    pub fn hardware_opt() -> Self {
+        Self::new_verified(
+            4096,
+            vec![
+                998244353, 985661441, 754974721,
+            ],
+            65537,
+            3,
+            128,
+            "hardware_opt",
+        )
+    }
+
     // =========================================================================
     // TEST/BENCHMARK CONFIGURATIONS (NOT FOR PRODUCTION)
     // =========================================================================
@@ -466,6 +480,7 @@ mod tests {
             SecureConfig::secure_128_deep(),
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
+            SecureConfig::hardware_opt(),
         ];
 
         for secure_config in configs {
@@ -491,6 +506,7 @@ mod tests {
             ("test_medium", SecureConfig::test_medium_insecure()),
             ("secure_128", SecureConfig::secure_128()),
             ("secure_192", SecureConfig::secure_192()),
+            ("hardware_opt", SecureConfig::hardware_opt()),
         ];
 
         println!(
@@ -529,6 +545,9 @@ mod tests {
 
         let secure_256 = SecureConfig::secure_256();
         assert!(verify_production_safety(&secure_256).is_ok());
+
+        let hardware_opt = SecureConfig::hardware_opt();
+        assert!(verify_production_safety(&hardware_opt).is_ok());
 
         // Test configs should fail
         let test_fast = SecureConfig::test_fast_insecure();

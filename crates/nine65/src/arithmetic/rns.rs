@@ -1839,7 +1839,9 @@ impl DualRNSPolynomial {
                 (false, v_full)
             };
 
-            let divided = abs_v / q_last as u128;
+            // Nearest-integer division (not floor) to avoid systematic bias
+            let q_last_128 = q_last as u128;
+            let divided = (abs_v + q_last_128 / 2) / q_last_128;
 
             let result_val = if is_neg && divided > 0 {
                 ctx.main_product.saturating_sub(divided % ctx.main_product)
@@ -2878,6 +2880,30 @@ mod tests {
         assert_eq!(quotient.lo, 1);
         assert_eq!(quotient.hi, 0);
         assert!(remainder.is_zero());
+    }
+
+    #[test]
+    fn test_k_elim_rescale_full_nearest_integer() {
+        // Test that k_elim_rescale_full performs nearest-integer rounding
+        let (main_primes, anchor_primes) = small_ntt_primes();
+        let ctx = DualRNSContext::new(main_primes, anchor_primes, 4);
+        let q_last = 41u64;
+
+        // Case 1: value = 41 * 2 + 20 = 102. floor(102/41) = 2, round(102/41) = 2
+        let v1 = 102u128;
+        let poly1 = DualRNSPolynomial::from_coeffs(&[v1 as u64, 0, 0, 0], &ctx);
+        let rescaled1 = poly1.k_elim_rescale_full(&ctx, q_last);
+        let res1_main: Vec<u64> = rescaled1.main_limbs.iter().map(|l| l[0]).collect();
+        // Since q_last is one of the primes, the reduced system has one less effective prime
+        // but we verify mod the other primes.
+        assert_eq!(ctx.main.to_int_level(&[res1_main[0]], 1), 2);
+
+        // Case 2: value = 41 * 2 + 21 = 103. floor(103/41) = 2, round(103/41) = 3
+        let v2 = 103u128;
+        let poly2 = DualRNSPolynomial::from_coeffs(&[v2 as u64, 0, 0, 0], &ctx);
+        let rescaled2 = poly2.k_elim_rescale_full(&ctx, q_last);
+        let res2_main: Vec<u64> = rescaled2.main_limbs.iter().map(|l| l[0]).collect();
+        assert_eq!(ctx.main.to_int_level(&[res2_main[0]], 1), 3);
     }
 
     #[test]

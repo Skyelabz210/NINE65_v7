@@ -159,10 +159,31 @@ Theorem distance_symmetric : forall a b m : nat,
 Proof.
   intros a b m Hm.
   unfold modular_distance.
-  (* The proof follows from the complement property of modular differences
-     and the symmetry of the min(d, m-d) operation. *)
-  (* Admitted pending full formalization of modular arithmetic lemmas. *)
-Admitted.
+  set (d1 := (a + m - b) mod m).
+  set (d2 := (b + m - a) mod m).
+  assert (Hsum: (d1 + d2) mod m = 0).
+  { unfold d1, d2.
+    rewrite <- Nat.add_mod_idemp_l; try lia.
+    rewrite <- Nat.add_mod_idemp_r; try lia.
+    replace (a + m - b + (b + m - a)) with (2 * m) by lia.
+    rewrite Nat.mod_mul; lia. }
+  assert (Hd1_bound: d1 < m) by (apply Nat.mod_upper_bound; lia).
+  assert (Hd2_bound: d2 < m) by (apply Nat.mod_upper_bound; lia).
+  assert (Hd1_d2: d1 = 0 /\ d2 = 0 \/ d1 + d2 = m).
+  { destruct d1 as [|d1'].
+    - left. rewrite Nat.add_0_l in Hsum. rewrite Nat.mod_small in Hsum; lia.
+    - right. assert (d1 + d2 > 0) by lia.
+      assert (d1 + d2 < 2 * m) by lia.
+      rewrite Nat.mod_small_iff in Hsum; try lia.
+      destruct Hsum as [H | H]; lia. }
+  destruct Hd1_d2 as [[Hz1 Hz2] | Hsum_m].
+  - rewrite Hz1, Hz2. simpl. reflexivity.
+  - destruct (d1 <=? m / 2) eqn:E1; destruct (d2 <=? m / 2) eqn:E2.
+    + apply Nat.leb_le in E1. apply Nat.leb_le in E2. lia.
+    + apply Nat.leb_le in E1. apply Nat.leb_gt in E2. lia.
+    + apply Nat.leb_gt in E1. apply Nat.leb_le in E2. lia.
+    + apply Nat.leb_gt in E1. apply Nat.leb_gt in E2. lia.
+Qed.
 
 (** * Summary *)
 
