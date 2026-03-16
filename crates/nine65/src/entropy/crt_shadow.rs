@@ -205,34 +205,44 @@ impl Default for ShadowAccumulator {
 /// Wraps standard RNS operations to capture quotients from modular reductions.
 #[derive(Clone, Debug)]
 pub struct CRTShadowContext {
-    /// Prime moduli (must be coprime)
-    pub primes: Vec<u64>,
-    /// Product of all primes
+    /// CRT moduli (must be pairwise coprime; CLASS-R — primality optional)
+    pub moduli: Vec<u64>,
+    /// Product of all moduli
     pub product: u128,
     /// Precomputed CRT reconstruction values
-    /// (M_i, M_i^{-1} mod p_i) for each prime
+    /// (M_i, M_i^{-1} mod p_i) for each modulus
     crt_values: Vec<(u128, u64)>,
 }
 
 impl CRTShadowContext {
-    /// Create new CRT context from primes
-    pub fn new(primes: &[u64]) -> Self {
-        assert!(!primes.is_empty(), "Need at least one prime");
+    /// Greatest common divisor for u64.
+    fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
+        while b != 0 {
+            let t = b;
+            b = a % b;
+            a = t;
+        }
+        a
+    }
 
-        // Verify all distinct (all distinct primes are coprime)
-        for i in 0..primes.len() {
-            for j in (i + 1)..primes.len() {
-                assert_ne!(primes[i], primes[j], "Primes must be distinct");
+    /// Create new CRT context from moduli
+    pub fn new(moduli: &[u64]) -> Self {
+        assert!(!moduli.is_empty(), "Need at least one modulus");
+
+        // Verify pairwise coprimality (CLASS-R requirement)
+        for i in 0..moduli.len() {
+            for j in (i + 1)..moduli.len() {
+                assert_eq!(Self::gcd_u64(moduli[i], moduli[j]), 1, "Moduli must be pairwise coprime");
             }
         }
 
-        let product: u128 = primes
+        let product: u128 = moduli
             .iter()
             .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
-            .expect("CRTShadowContext: prime product overflows u128 — use fewer or smaller primes");
+            .expect("CRTShadowContext: product overflows u128 — use fewer or smaller moduli");
 
         // Precompute CRT values
-        let crt_values: Vec<_> = primes
+        let crt_values: Vec<_> = moduli
             .iter()
             .map(|&pi| {
                 let mi = product / pi as u128;
@@ -243,10 +253,16 @@ impl CRTShadowContext {
             .collect();
 
         Self {
-            primes: primes.to_vec(),
+            moduli: moduli.to_vec(),
             product,
             crt_values,
         }
+    }
+
+    /// Backwards compatibility alias for `moduli`
+    #[deprecated(since = "8.0.0", note = "Use moduli instead of primes")]
+    pub fn primes(&self) -> &[u64] {
+        &self.moduli
     }
 
     /// Create with standard FHE primes
@@ -264,19 +280,19 @@ impl CRTShadowContext {
         ])
     }
 
-    /// Number of lanes (primes)
+    /// Number of lanes (moduli)
     pub fn num_lanes(&self) -> usize {
-        self.primes.len()
+        self.moduli.len()
     }
 
     /// Convert integer to RNS representation
     pub fn from_int(&self, x: u64) -> Vec<u64> {
-        self.primes.iter().map(|&p| x % p).collect()
+        self.moduli.iter().map(|&p| x % p).collect()
     }
 
     /// Convert u128 to RNS representation
     pub fn from_u128(&self, x: u128) -> Vec<u64> {
-        self.primes
+        self.moduli
             .iter()
             .map(|&p| (x % p as u128) as u64)
             .collect()
@@ -284,10 +300,10 @@ impl CRTShadowContext {
 
     /// Convert RNS to integer using CRT reconstruction
     pub fn to_int(&self, rns: &[u64]) -> u128 {
-        assert_eq!(rns.len(), self.primes.len());
+        assert_eq!(rns.len(), self.moduli.len());
 
         let mut result = 0u128;
-        for (i, &p) in self.primes.iter().enumerate() {
+        for (i, &p) in self.moduli.iter().enumerate() {
             let (mi, mi_inv) = self.crt_values[i];
             let term = (rns[i] as u128 * mi_inv as u128) % p as u128;
             let contribution = mulmod_u128(term, mi, self.product);
@@ -302,13 +318,13 @@ impl CRTShadowContext {
 
     /// Add with shadow capture (shadows from carry detection)
     pub fn add_with_shadows(&self, a: &[u64], b: &[u64]) -> (Vec<u64>, Vec<u64>) {
-        assert_eq!(a.len(), self.primes.len());
-        assert_eq!(b.len(), self.primes.len());
+        assert_eq!(a.len(), self.moduli.len());
+        assert_eq!(b.len(), self.moduli.len());
 
-        let mut results = Vec::with_capacity(self.primes.len());
-        let mut shadows = Vec::with_capacity(self.primes.len());
+        let mut results = Vec::with_capacity(self.moduli.len());
+        let mut shadows = Vec::with_capacity(self.moduli.len());
 
-        for (i, &p) in self.primes.iter().enumerate() {
+        for (i, &p) in self.moduli.iter().enumerate() {
             let sum = a[i] as u128 + b[i] as u128;
             let p = p as u128;
 
@@ -330,17 +346,17 @@ impl CRTShadowContext {
 
     /// Subtract with shadow capture
     pub fn sub_with_shadows(&self, a: &[u64], b: &[u64]) -> (Vec<u64>, Vec<u64>) {
-        assert_eq!(a.len(), self.primes.len());
-        assert_eq!(b.len(), self.primes.len());
+        assert_eq!(a.len(), self.moduli.len());
+        assert_eq!(b.len(), self.moduli.len());
 
-        let mut results = Vec::with_capacity(self.primes.len());
-        let mut shadows = Vec::with_capacity(self.primes.len());
+        let mut results = Vec::with_capacity(self.moduli.len());
+        let mut shadows = Vec::with_capacity(self.moduli.len());
 
-        for i in 0..self.primes.len() {
+        for i in 0..self.moduli.len() {
             let (result, borrow) = if a[i] >= b[i] {
                 (a[i] - b[i], 0u64)
             } else {
-                (self.primes[i] - b[i] + a[i], 1u64)
+                (self.moduli[i] - b[i] + a[i], 1u64)
             };
 
             // Shadow: borrow bit mixed with difference
@@ -356,15 +372,15 @@ impl CRTShadowContext {
     /// This is the main entropy generator. Each modular reduction discards
     /// a quotient that contains ~log2(p) bits of information.
     pub fn mul_with_shadows(&self, a: &[u64], b: &[u64]) -> (Vec<u64>, Vec<u64>) {
-        assert_eq!(a.len(), self.primes.len());
-        assert_eq!(b.len(), self.primes.len());
+        assert_eq!(a.len(), self.moduli.len());
+        assert_eq!(b.len(), self.moduli.len());
 
-        let mut results = Vec::with_capacity(self.primes.len());
-        let mut shadows = Vec::with_capacity(self.primes.len());
+        let mut results = Vec::with_capacity(self.moduli.len());
+        let mut shadows = Vec::with_capacity(self.moduli.len());
 
-        for i in 0..self.primes.len() {
+        for i in 0..self.moduli.len() {
             let prod = a[i] as u128 * b[i] as u128;
-            let p = self.primes[i] as u128;
+            let p = self.moduli[i] as u128;
 
             // SHADOW: The quotient - this is the discarded information!
             let quotient = (prod / p) as u64;
@@ -383,15 +399,15 @@ impl CRTShadowContext {
     /// Computes: (a * b + c) mod each prime
     /// Captures both multiplication and addition shadows
     pub fn muladd_with_shadows(&self, a: &[u64], b: &[u64], c: &[u64]) -> (Vec<u64>, Vec<u64>) {
-        assert_eq!(a.len(), self.primes.len());
-        assert_eq!(b.len(), self.primes.len());
-        assert_eq!(c.len(), self.primes.len());
+        assert_eq!(a.len(), self.moduli.len());
+        assert_eq!(b.len(), self.moduli.len());
+        assert_eq!(c.len(), self.moduli.len());
 
-        let mut results = Vec::with_capacity(self.primes.len());
-        let mut shadows = Vec::with_capacity(self.primes.len() * 2);
+        let mut results = Vec::with_capacity(self.moduli.len());
+        let mut shadows = Vec::with_capacity(self.moduli.len() * 2);
 
-        for i in 0..self.primes.len() {
-            let p = self.primes[i] as u128;
+        for i in 0..self.moduli.len() {
+            let p = self.moduli[i] as u128;
 
             // Multiply
             let prod = a[i] as u128 * b[i] as u128;
@@ -415,11 +431,11 @@ impl CRTShadowContext {
 
     /// Negate with shadow (minimal entropy, but included for completeness)
     pub fn neg_with_shadows(&self, a: &[u64]) -> (Vec<u64>, Vec<u64>) {
-        let mut results = Vec::with_capacity(self.primes.len());
-        let mut shadows = Vec::with_capacity(self.primes.len());
+        let mut results = Vec::with_capacity(self.moduli.len());
+        let mut shadows = Vec::with_capacity(self.moduli.len());
 
-        for i in 0..self.primes.len() {
-            let result = if a[i] == 0 { 0 } else { self.primes[i] - a[i] };
+        for i in 0..self.moduli.len() {
+            let result = if a[i] == 0 { 0 } else { self.moduli[i] - a[i] };
             // Shadow: was input zero?
             shadows.push((a[i] == 0) as u64 ^ result);
             results.push(result);
@@ -522,9 +538,9 @@ pub struct IntegratedShadowRNS {
 
 impl IntegratedShadowRNS {
     /// Create new integrated system
-    pub fn new(primes: &[u64]) -> Self {
+    pub fn new(moduli: &[u64]) -> Self {
         Self {
-            ctx: CRTShadowContext::new(primes),
+            ctx: CRTShadowContext::new(moduli),
             acc: ShadowAccumulator::new(),
             op_count: 0,
         }
@@ -600,6 +616,16 @@ impl IntegratedShadowRNS {
     /// Estimated entropy bits available
     pub fn entropy_bits(&self) -> u64 {
         self.acc.estimated_entropy_bits()
+    }
+
+    /// Greatest common divisor for u64.
+    pub fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
+        while b != 0 {
+            let t = b;
+            b = a % b;
+            a = t;
+        }
+        a
     }
 
     /// Statistics

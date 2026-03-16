@@ -198,6 +198,11 @@ impl NTTEngineFFT {
     ///
     /// Complexity: O(N log N) vs O(N²) for DFT
     pub fn ntt_inplace(&self, a: &mut [u64]) {
+        self.ntt_inplace_with_shadow(a, &mut None);
+    }
+
+    /// Forward NTT with shadow capture of Montgomery quotients.
+    pub fn ntt_inplace_with_shadow(&self, a: &mut [u64], shadow: &mut Option<Vec<u64>>) {
         debug_assert_eq!(a.len(), self.n);
 
         // Bit-reverse permutation
@@ -222,7 +227,15 @@ impl NTTEngineFFT {
 
                     let u = a[u_idx];
                     // Multiply by twiddle in Montgomery form (PERSISTENT!)
-                    let t = self.mont.montgomery_mul(self.twiddles_fwd[t_idx], a[v_idx]);
+                    let prod = (self.twiddles_fwd[t_idx] as u128) * (a[v_idx] as u128);
+                    let t = self.mont.montgomery_reduce(prod);
+
+                    if let Some(ref mut s) = shadow {
+                        // Capture Montgomery quotient: q_hat = floor( (a*b*N') / R )
+                        // Simplified: capturing the discarded quotient from REDC
+                        let q_hat = ((prod as u128).wrapping_add((prod as u64).wrapping_mul(self.mont.q_inv_neg) as u128 * self.q as u128)) >> 64;
+                        s.push(q_hat as u64);
+                    }
 
                     // Butterfly
                     a[u_idx] = self.mont_add(u, t);

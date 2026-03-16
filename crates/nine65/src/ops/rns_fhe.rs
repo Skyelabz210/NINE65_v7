@@ -827,6 +827,8 @@ pub struct RNSFHEContext {
     pub config: FHEConfig,
     /// Deep diagnostics mode enabled
     pub diagnostics_enabled: bool,
+    /// Counter for SBNI (Shadow Butterfly Noise Injection)
+    pub sbni_counter: std::sync::atomic::AtomicU64,
 }
 
 impl RNSFHEContext {
@@ -914,6 +916,7 @@ impl RNSFHEContext {
             n: config.n,
             config: config.clone(),
             diagnostics_enabled: false, // Disabled by default
+            sbni_counter: std::sync::atomic::AtomicU64::new(0),
         })
     }
 
@@ -2959,8 +2962,29 @@ impl RNSFHEContext {
         let (relin_c0, relin_c1) = self.relinearize_dual(&d2, evk)?;
 
         // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
-        let c0_pre = self.dual_poly_add(&d0, &relin_c0);
+        let mut c0_pre = self.dual_poly_add(&d0, &relin_c0);
         let c1_pre = self.dual_poly_add(&d1, &relin_c1);
+
+        // Step 3.5: SBNI (Shadow Butterfly Noise Injection)
+        // Capture shadows from the first lane's NTT engine for entropy
+        let mut shadows = Some(Vec::with_capacity(self.n * (64 - self.n.leading_zeros() as usize)));
+        let dummy_poly = vec![123u64; self.n];
+        let mut dummy_work = dummy_poly.clone();
+        #[cfg(not(feature = "reference_ntt"))]
+        self.ntt_engines[0].ntt_inplace_with_shadow(&mut dummy_work, &mut shadows);
+        #[cfg(feature = "reference_ntt")]
+        self.ntt_engines[0].ntt_with_shadow(&dummy_work, &mut shadows);
+
+        if let Some(s) = shadows {
+            let tau = self.sbni_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            super::sbni::inject_dual_in_place(
+                &mut c0_pre,
+                &s,
+                tau,
+                &self.config.primes,
+                &self.dual_rns.anchor.primes
+            );
+        }
 
         // Step 4: K-Elimination rescale ONCE on the combined result
         let use_two_stage = self.should_two_stage_rescale(ct1.level);
