@@ -1,0 +1,12 @@
+[package]
+name = "math_utils"
+version = "0.1.0"
+edition = "2021"
+authors = ["Manus AI"]
+description = "Unified core mathematical primitives for QMNF, CRAM, and Hydra"
+
+[dependencies]
+
+[lib]
+name = "math_utils"
+path = "src/lib.rs"
