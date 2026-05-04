@@ -786,6 +786,8 @@ pub enum CramOpError {
     },
     /// D2 DIV_EXACT-specific failure.
     DivExact(DivExactError),
+    /// D1 K-Elimination-specific failure.
+    KElim(KElimError),
     /// Two evaluable chimera lanes produced different quotients on the
     /// same input. The Phase-4 resolver rejects rather than picking a
     /// lane unilaterally.
@@ -1720,6 +1722,28 @@ impl<C> CramCiphertext<C> {
             }
         }
 
+        // Try D1 (K-Elim) with anchor = 17 (the largest S8 prime that
+        // is not the signature lane), if the divisor is coprime to
+        // M_main = S8_PRODUCT / 17.
+        let m_main_default: u64 = crate::triad::S8_PRODUCT as u64 / 17;
+        if gcd_u64(divisor.unsigned_abs() as u64, m_main_default) == 1 && divisor != 0 {
+            if let Ok((result_ct, _)) = self
+                .clone()
+                .cram_rescale_by_scalar_kelim(divisor, 17, &rescale_base)
+            {
+                let recon = result_ct.reconstruct_c0_coeffs_signed();
+                if let Some(prev) = agreed_result.as_ref() {
+                    if prev != &recon {
+                        return Err(CramOpError::ChimeraLaneDisagreement);
+                    }
+                } else {
+                    agreed_result = Some(recon);
+                    agreed_ct = Some(result_ct);
+                }
+                succeeded.kelim = true;
+            }
+        }
+
         // Try D3 (FPD) iff aux residues are present.
         if self.witness.c0_aux.is_some() {
             if let Ok((result_ct, _)) =
@@ -1746,6 +1770,229 @@ impl<C> CramCiphertext<C> {
                 gcd_with_basis: plan.gcd_with_basis,
             }),
         }
+    }
+}
+
+// ─── K-Elimination Lift (D1) ─────────────────────────────────────────────
+
+/// Errors specific to D1 (K-Elimination lift).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum KElimError {
+    /// `anchor_prime` is not in the active basis.
+    AnchorNotInBasis { anchor: u32 },
+    /// The recovered winding `κ` is outside the certified corridor
+    /// `|κ| < anchor / 2` — the integer being divided is too large for
+    /// the chosen `(M_main, m_anchor)` split.
+    CorridorViolated {
+        coeff_index: usize,
+        kappa: i64,
+        anchor: u32,
+    },
+    /// The recovered integer is not exactly divisible by `divisor`.
+    NonExactRemainder {
+        coeff_index: usize,
+        coefficient: i128,
+        divisor: i128,
+        remainder: i128,
+    },
+    /// `gcd(M_main, m_anchor) ≠ 1` — anchor must be coprime to the main
+    /// reconstruction product. For S8 this is automatic when the anchor
+    /// is one of the basis primes.
+    AnchorNotCoprime,
+    /// `divisor == 0` or `divisor` shares factors with `M_main`, making
+    /// the K-Elim main-side division undefined.
+    DivisorIncompatibleWithMain { divisor: i128 },
+}
+
+/// Garner reconstruction over a chosen subset of S8 lanes (the "main"
+/// reconstruction basis). Returns `(x_main, M_main)` where `x_main` is
+/// the unique non-negative integer in `[0, M_main)` matching the lane
+/// residues.
+fn garner_reconstruct_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
+    let mut x: i128 = sig.residues[main_indices[0]] as i128;
+    let mut radix: i128 = crate::triad::S8[main_indices[0]] as i128;
+    for &idx in &main_indices[1..] {
+        let m_i = crate::triad::S8[idx] as i128;
+        let a_i = sig.residues[idx] as i128;
+        let x_mod_mi = x.rem_euclid(m_i);
+        let diff = (a_i - x_mod_mi).rem_euclid(m_i);
+        let radix_mod_mi = radix.rem_euclid(m_i) as u32;
+        let inv = mod_inv_u32(radix_mod_mi, m_i as u32)
+            .expect("S8 lanes are pairwise coprime");
+        let v = (diff * inv as i128).rem_euclid(m_i);
+        x += v * radix;
+        radix *= m_i;
+    }
+    (x, radix)
+}
+
+/// Recover the K-Elim winding `κ ≡ (r_anchor − x_main) · M_main⁻¹
+/// (mod m_anchor)` for one coefficient.
+fn k_elim_winding(x_main: i128, m_main: i128, r_anchor: u32, m_anchor: u32) -> i64 {
+    let m_anchor_i = m_anchor as i128;
+    let diff = (r_anchor as i128 - x_main.rem_euclid(m_anchor_i)).rem_euclid(m_anchor_i);
+    let radix_mod = m_main.rem_euclid(m_anchor_i) as u32;
+    let inv = mod_inv_u32(radix_mod, m_anchor)
+        .expect("anchor coprime to M_main by precondition");
+    let kappa = (diff * inv as i128).rem_euclid(m_anchor_i);
+    // Recentre to (-m_anchor/2, m_anchor/2].
+    if kappa > m_anchor_i / 2 {
+        (kappa - m_anchor_i) as i64
+    } else {
+        kappa as i64
+    }
+}
+
+impl<C> CramCiphertext<C> {
+    /// Phase-4 D1 rescale via K-Elimination lift.
+    ///
+    /// Splits S8 into a main reconstruction basis `S8 \ {anchor}` and
+    /// an anchor lane `m_anchor`. For each coefficient:
+    ///
+    ///   1. Reconstruct `x_main` from the 7 main lanes (smaller Garner).
+    ///   2. Recover the winding `κ ≡ (r_anchor − x_main) · M_main⁻¹
+    ///      (mod m_anchor)`, recentred into `(-m_anchor/2, m_anchor/2]`.
+    ///   3. Verify the corridor `|κ| < m_anchor / 2`.
+    ///   4. Lift to `A = x_main + κ · M_main`.
+    ///   5. Exact-divide `A / divisor` (rejecting any remainder).
+    ///   6. Re-project the quotient onto the full S8 basis.
+    ///
+    /// Preconditions:
+    ///
+    ///   * `anchor` ∈ S8.
+    ///   * `gcd(divisor, M_main) = 1` so the main-side residue
+    ///     contains the divisor information; if `divisor` shares factors
+    ///     with `M_main`, use D2 or D3 instead.
+    pub fn cram_rescale_by_scalar_kelim<F>(
+        self,
+        divisor: i128,
+        anchor: u32,
+        rescale_base: F,
+    ) -> Result<(Self, ChimeraDivPlan), CramOpError>
+    where
+        F: FnOnce(C, i128) -> C,
+    {
+        self.verify().map_err(CramOpError::InputVerifyFailed)?;
+        let plan = select_division_lane(divisor, self.topology.basis);
+
+        let anchor_idx = crate::triad::S8
+            .iter()
+            .position(|&p| p == anchor)
+            .ok_or(CramOpError::KElim(KElimError::AnchorNotInBasis { anchor }))?;
+        if divisor == 0 {
+            return Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain {
+                divisor,
+            }));
+        }
+        // Build main-lane index list: every S8 index except the anchor.
+        let main_indices: Vec<usize> = (0..crate::triad::S8.len())
+            .filter(|&i| i != anchor_idx)
+            .collect();
+        // M_main = ∏ main lane primes.
+        let m_main: i128 = main_indices
+            .iter()
+            .map(|&i| crate::triad::S8[i] as i128)
+            .product();
+
+        // gcd(divisor, M_main) must be 1 for the lane-side division to
+        // be well-defined.
+        let abs_d = divisor.unsigned_abs() as i128;
+        if gcd_u64(abs_d as u64, m_main as u64) != 1 {
+            return Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain {
+                divisor,
+            }));
+        }
+        // gcd(M_main, m_anchor) is automatic for distinct S8 primes, but
+        // surface a typed error if a future basis breaks the invariant.
+        if gcd_u64(m_main as u64, anchor as u64) != 1 {
+            return Err(CramOpError::KElim(KElimError::AnchorNotCoprime));
+        }
+
+        let n = self.witness.c0_signature.signatures.len();
+        let mut new_signatures = Vec::with_capacity(n);
+        for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
+            // Main reconstruction.
+            let (x_main, m_main_actual) = garner_reconstruct_subset(sig, &main_indices);
+            debug_assert_eq!(m_main_actual, m_main);
+
+            // K-Elim winding.
+            let r_anchor = sig.residues[anchor_idx];
+            let kappa = k_elim_winding(x_main, m_main, r_anchor, anchor);
+
+            // Corridor: |κ| < m_anchor / 2.
+            if (kappa.unsigned_abs() as u32) >= anchor / 2 + 1 {
+                return Err(CramOpError::KElim(KElimError::CorridorViolated {
+                    coeff_index: i,
+                    kappa,
+                    anchor,
+                }));
+            }
+
+            // Lift to certified integer.
+            let a_certified = x_main + (kappa as i128) * m_main;
+            // Recentre to signed if Garner returned a value > S8_PRODUCT/2.
+            let half = (crate::triad::S8_PRODUCT / 2) as i128;
+            let a_signed = if a_certified > half {
+                a_certified - crate::triad::S8_PRODUCT as i128
+            } else {
+                a_certified
+            };
+
+            // Exact division.
+            let r = a_signed.rem_euclid(divisor);
+            let remainder = if r > divisor.abs() / 2 {
+                r - divisor.abs()
+            } else {
+                r
+            };
+            if remainder != 0 {
+                return Err(CramOpError::KElim(KElimError::NonExactRemainder {
+                    coeff_index: i,
+                    coefficient: a_signed,
+                    divisor,
+                    remainder,
+                }));
+            }
+            let q = a_signed / divisor;
+
+            // Re-project onto full S8.
+            let mut residues = [0u32; 8];
+            for (li, &p) in crate::triad::S8.iter().enumerate() {
+                residues[li] = q.rem_euclid(p as i128) as u32;
+            }
+            new_signatures.push(S8Signature { residues });
+        }
+        let new_c0 = PolynomialS8Signature {
+            signatures: new_signatures,
+        };
+
+        let new_op_counter = self
+            .witness
+            .op_counter
+            .checked_add(1)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+        let new_lock_witness = recompute_post_op(
+            &self.witness.lock_witness,
+            &self.locks,
+            &new_c0,
+            new_op_counter,
+        );
+        let new_base = rescale_base(self.base, divisor);
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: new_c0,
+                c1_signature: self.witness.c1_signature,
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+                c0_aux: None,
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+        Ok((out, plan))
     }
 }
 
@@ -2780,5 +3027,117 @@ mod tests {
         let (rescaled, _) = ct.cram_rescale_by_scalar_div_exact(6, |_, _| ()).unwrap();
         assert!(rescaled.verify().is_ok());
         assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![1, 2, 3, 4]);
+    }
+
+    // ---- Phase-4 D1 — K-Elimination lift --------------------------------
+
+    #[test]
+    fn d1_divides_by_coprime_divisor_with_anchor_17() {
+        // 23 is coprime to M_main = S8_PRODUCT / 17 = 570_570 — D1 fits.
+        let coeffs: Vec<i128> = vec![23, 46, 69, -23, -46, 23 * 100, -23 * 200];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, _) = ct.cram_rescale_by_scalar_kelim(23, 17, |_, _| ()).unwrap();
+        let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 23) as i32).collect();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), expected);
+    }
+
+    #[test]
+    fn d1_rejects_anchor_not_in_basis() {
+        let ct = CramCiphertext::wrap_default((), &[23i128], None);
+        match ct.cram_rescale_by_scalar_kelim(23, 23, |_, _| ()) {
+            Err(CramOpError::KElim(KElimError::AnchorNotInBasis { anchor: 23 })) => {}
+            other => panic!("expected AnchorNotInBasis, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d1_rejects_zero_divisor() {
+        let ct = CramCiphertext::wrap_default((), &[1i128], None);
+        match ct.cram_rescale_by_scalar_kelim(0, 17, |_, _| ()) {
+            Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain { divisor: 0 })) => {}
+            other => panic!("expected DivisorIncompatibleWithMain, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d1_rejects_divisor_sharing_factor_with_main() {
+        // Anchor 17 → M_main = S8_PRODUCT/17 = 2*3*5*7*11*13*19 = 570_570.
+        // Divisor 5 shares a factor with M_main → D1 rejects (use D2 or D3).
+        let ct = CramCiphertext::wrap_default((), &[5i128, 10, 15], None);
+        match ct.cram_rescale_by_scalar_kelim(5, 17, |_, _| ()) {
+            Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain { divisor: 5 })) => {}
+            other => panic!("expected DivisorIncompatibleWithMain, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d1_rejects_non_exact_remainder() {
+        // 47 / 23 has remainder 1 — D1 must surface it.
+        let ct = CramCiphertext::wrap_default((), &[47i128], None);
+        match ct.cram_rescale_by_scalar_kelim(23, 17, |_, _| ()) {
+            Err(CramOpError::KElim(KElimError::NonExactRemainder { divisor: 23, .. })) => {}
+            other => panic!("expected NonExactRemainder, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d1_handles_negative_divisor() {
+        let coeffs: Vec<i128> = vec![23, -46, 69, -92];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, _) =
+            ct.cram_rescale_by_scalar_kelim(-23, 17, |_, _| ()).unwrap();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![-1, 2, -3, 4]);
+    }
+
+    #[test]
+    fn d1_kelim_winding_satisfies_invariant() {
+        // For any x in (-S8_PRODUCT/2, S8_PRODUCT/2), the recovered
+        // winding κ must satisfy A = x_main + κ · M_main where A is the
+        // signed value within the corridor.
+        for &x in &[0i128, 1, -1, 17, -17, 100, -100, 9_999, -9_999] {
+            let sig = S8Signature::project(x);
+            let main_indices: Vec<usize> = (0..crate::triad::S8.len())
+                .filter(|&i| crate::triad::S8[i] != 17)
+                .collect();
+            let (x_main, m_main) = garner_reconstruct_subset(&sig, &main_indices);
+            let r_anchor = sig.residue_mod(17).unwrap();
+            let kappa = k_elim_winding(x_main, m_main, r_anchor, 17);
+            let lifted = x_main + (kappa as i128) * m_main;
+            // lifted ≡ x mod (m_main * 17) = S8_PRODUCT — and within
+            // the corridor it equals x exactly (after recentre).
+            let half = (crate::triad::S8_PRODUCT / 2) as i128;
+            let signed = if lifted > half {
+                lifted - crate::triad::S8_PRODUCT as i128
+            } else {
+                lifted
+            };
+            assert_eq!(signed, x, "K-Elim invariant broken at x = {x}");
+        }
+    }
+
+    #[test]
+    fn d1_propagates_lock_evidence() {
+        let ct = CramCiphertext::wrap_default((), &[23i128, 46, 69, 92], None);
+        let (rescaled, _) = ct.cram_rescale_by_scalar_kelim(23, 17, |_, _| ()).unwrap();
+        assert!(rescaled.verify().is_ok());
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn router_runs_d0_and_d1_together_and_they_agree() {
+        // 23 is coprime to all of S8 → D0 succeeds. It is also coprime
+        // to M_main = S8_PRODUCT/17 → D1 succeeds with anchor 17.
+        // Both must agree.
+        let coeffs: Vec<i128> = vec![23, 46, 69, -23, -46];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (result, _, mask) = ct
+            .cram_rescale_with_chimera_router(23, 1_000_000, |_, _| ())
+            .unwrap();
+        assert!(mask.modular_inverse, "D0 should succeed");
+        assert!(mask.kelim, "D1 should succeed");
+        assert_eq!(
+            result.reconstruct_c0_coeffs_signed(),
+            vec![1, 2, 3, -1, -2]
+        );
     }
 }
