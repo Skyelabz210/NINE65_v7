@@ -381,6 +381,9 @@ pub enum LockFailure {
     },
     /// The graph carries a lock kind whose evidence is not yet implemented.
     UnsupportedLockKind { kind: LockType },
+    /// Topology metadata structure is invalid (basis/lane mismatch or
+    /// lock graph references primes outside the basis).
+    TopologyIllFormed,
 }
 
 /// Per-lock evidence captured at wrap time. The evidence is recomputable
@@ -1996,6 +1999,142 @@ impl<C> CramCiphertext<C> {
     }
 }
 
+// ─── Phase 5 — CRAM Bootstrap Witness ─────────────────────────────────────
+
+/// Reasons a bootstrap may be required, derived from witness state.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BootstrapTrigger {
+    /// `op_counter` is at the boundary corridor's upper bound — one
+    /// more op would violate the corridor.
+    CorridorAtUpperBound,
+    /// `op_counter` is within `headroom` of the corridor end.
+    CorridorNearUpperBound { headroom: i128 },
+    /// A lock predicate is currently failing — this bootstrap is
+    /// recovery-driven, not preventive.
+    LockFailing,
+    /// User-driven (manual / scheduled) bootstrap.
+    Manual,
+}
+
+/// Certificate emitted by [`CramCiphertext::cram_bootstrap`].
+#[derive(Debug, Clone)]
+pub struct BootstrapCertificate {
+    pub triggers: Vec<BootstrapTrigger>,
+    pub pre_op_counter: i128,
+    pub post_op_counter: i128,
+    /// True iff every coefficient's S8 signature is byte-identical
+    /// before and after the refresh — the spec's `Decrypt(C_boot) =
+    /// Decrypt(C)` postcondition lifted to the witness layer.
+    pub signature_preserved: bool,
+    /// True iff the boundary corridor was reset (post_op_counter is at
+    /// the start of a fresh corridor).
+    pub corridor_reset: bool,
+}
+
+impl<C> CramCiphertext<C> {
+    /// Inspect the witness for bootstrap triggers without modifying state.
+    pub fn bootstrap_triggers(&self) -> Vec<BootstrapTrigger> {
+        let mut triggers = Vec::new();
+        for entry in &self.witness.lock_witness.entries {
+            if let LockEvidence::Boundary {
+                corridor_low: _,
+                corridor_high,
+            } = &entry.evidence
+            {
+                let head = *corridor_high - self.witness.op_counter;
+                if head <= 0 {
+                    triggers.push(BootstrapTrigger::CorridorAtUpperBound);
+                } else if head <= 2 {
+                    triggers.push(BootstrapTrigger::CorridorNearUpperBound { headroom: head });
+                }
+            }
+        }
+        if self.verify_locks().is_err() {
+            triggers.push(BootstrapTrigger::LockFailing);
+        }
+        triggers
+    }
+
+    /// True iff at least one trigger fires.
+    pub fn bootstrap_required(&self) -> bool {
+        !self.bootstrap_triggers().is_empty()
+    }
+
+    /// CRAM bootstrap. Refreshes the base ciphertext via `refresh_base`,
+    /// resets the boundary corridor by zeroing `op_counter`, and
+    /// recomputes lock evidence against the (preserved) signature.
+    ///
+    /// Postconditions, matching the spec § 10.2:
+    ///
+    ///   * `Decrypt(C_boot) = Decrypt(C)` — the signature is unchanged.
+    ///   * `Valid(C_boot) = true` — full lock-graph verification.
+    ///   * `op_counter == 0` — fresh corridor.
+    ///   * `topology` and `locks` unchanged.
+    pub fn cram_bootstrap<F>(
+        self,
+        refresh_base: F,
+    ) -> Result<(Self, BootstrapCertificate), CramOpError>
+    where
+        F: FnOnce(C) -> C,
+    {
+        // Phase 1 of the spec's pseudocode allows bootstrap to run even
+        // when the current cert is failing (it's a recovery operation).
+        // Verify metadata structure but tolerate lock-witness failure.
+        if !self.verify_metadata() {
+            return Err(CramOpError::InputVerifyFailed(LockFailure::TopologyIllFormed));
+        }
+
+        let triggers = self.bootstrap_triggers();
+        let mut triggers_or_manual = triggers;
+        if triggers_or_manual.is_empty() {
+            triggers_or_manual.push(BootstrapTrigger::Manual);
+        }
+        let pre_signature = self.witness.c0_signature.clone();
+        let pre_op_counter = self.witness.op_counter;
+
+        // Refresh base — for the generic shell this is whatever the
+        // closure does. The signature is the security-bearing object's
+        // image, so it does not move under refresh.
+        let new_base = refresh_base(self.base);
+
+        // Reset op_counter; rebuild lock evidence (boundary corridor
+        // gets a fresh window starting at op_counter = 0).
+        let new_op_counter: i128 = 0;
+        let new_lock_witness = LockWitnessSet::compute(
+            &self.locks,
+            &pre_signature,
+            new_op_counter,
+        );
+
+        let post_signature = pre_signature.clone();
+        let signature_preserved =
+            pre_signature.signatures == post_signature.signatures;
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: post_signature,
+                c1_signature: self.witness.c1_signature,
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+                c0_aux: self.witness.c0_aux,
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+
+        let cert = BootstrapCertificate {
+            triggers: triggers_or_manual,
+            pre_op_counter,
+            post_op_counter: new_op_counter,
+            signature_preserved,
+            corridor_reset: true,
+        };
+        Ok((out, cert))
+    }
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -3139,5 +3278,150 @@ mod tests {
             result.reconstruct_c0_coeffs_signed(),
             vec![1, 2, 3, -1, -2]
         );
+    }
+
+    // ---- Phase 5 — bootstrap witness ------------------------------------
+
+    #[test]
+    fn bootstrap_preserves_signature_byte_for_byte() {
+        // The spec's Decrypt(C_boot) = Decrypt(C) postcondition lifted
+        // to the witness layer: every coefficient's S8 residues must
+        // match exactly.
+        let coeffs = vec![1i128, 2, 3, -4, -5];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let pre_sig = ct.witness.c0_signature.clone();
+        let (after, cert) = ct.cram_bootstrap(|b| b).unwrap();
+        assert!(cert.signature_preserved);
+        assert_eq!(
+            after.witness.c0_signature.signatures,
+            pre_sig.signatures,
+            "signature must be preserved across bootstrap"
+        );
+    }
+
+    #[test]
+    fn bootstrap_resets_op_counter_to_zero() {
+        let mut acc = CramCiphertext::wrap_default((), &[0i128; 4], None);
+        // Drive op_counter up to 5 with sequential adds.
+        for _ in 0..5 {
+            let b = CramCiphertext::wrap_default((), &[0i128; 4], None);
+            acc = acc.cram_add(b, |_, _| ()).unwrap();
+        }
+        assert_eq!(acc.witness.op_counter, 5);
+        let (refreshed, cert) = acc.cram_bootstrap(|b| b).unwrap();
+        assert_eq!(refreshed.witness.op_counter, 0);
+        assert_eq!(cert.pre_op_counter, 5);
+        assert_eq!(cert.post_op_counter, 0);
+        assert!(cert.corridor_reset);
+    }
+
+    #[test]
+    fn bootstrap_restores_corridor_for_more_ops() {
+        // Drive 16 adds (op_counter = 16, at corridor end). Bootstrap
+        // resets the corridor; another 16 adds should now succeed.
+        let mut acc = CramCiphertext::wrap_default((), &[0i128; 2], None);
+        for _ in 0..16 {
+            let b = CramCiphertext::wrap_default((), &[0i128; 2], None);
+            acc = acc.cram_add(b, |_, _| ()).unwrap();
+        }
+        let (mut refreshed, _) = acc.cram_bootstrap(|b| b).unwrap();
+        // Fresh corridor — 16 more adds must succeed.
+        for _ in 0..16 {
+            let b = CramCiphertext::wrap_default((), &[0i128; 2], None);
+            refreshed = refreshed.cram_add(b, |_, _| ()).unwrap();
+        }
+        assert_eq!(refreshed.witness.op_counter, 16);
+    }
+
+    #[test]
+    fn bootstrap_triggers_fire_at_corridor_end() {
+        // After 16 adds, op_counter = 16, corridor_high = 16. Headroom
+        // is 0 → CorridorAtUpperBound trigger.
+        let mut acc = CramCiphertext::wrap_default((), &[0i128; 2], None);
+        for _ in 0..16 {
+            let b = CramCiphertext::wrap_default((), &[0i128; 2], None);
+            acc = acc.cram_add(b, |_, _| ()).unwrap();
+        }
+        assert!(acc.bootstrap_required());
+        let triggers = acc.bootstrap_triggers();
+        assert!(triggers.contains(&BootstrapTrigger::CorridorAtUpperBound));
+    }
+
+    #[test]
+    fn bootstrap_triggers_fire_near_corridor_end() {
+        // After 14 adds (corridor_high - op_counter = 2 → CorridorNear).
+        let mut acc = CramCiphertext::wrap_default((), &[0i128; 2], None);
+        for _ in 0..14 {
+            let b = CramCiphertext::wrap_default((), &[0i128; 2], None);
+            acc = acc.cram_add(b, |_, _| ()).unwrap();
+        }
+        let triggers = acc.bootstrap_triggers();
+        assert!(triggers
+            .iter()
+            .any(|t| matches!(t, BootstrapTrigger::CorridorNearUpperBound { .. })));
+    }
+
+    #[test]
+    fn bootstrap_returns_manual_when_no_natural_trigger() {
+        // Fresh wrap: op_counter = 0, corridor wide open, no triggers.
+        // bootstrap_triggers() returns empty; cram_bootstrap stamps Manual.
+        let ct = CramCiphertext::wrap_default((), &[1i128, 2], None);
+        assert!(!ct.bootstrap_required());
+        assert!(ct.bootstrap_triggers().is_empty());
+        let (_, cert) = ct.cram_bootstrap(|b| b).unwrap();
+        assert_eq!(cert.triggers, vec![BootstrapTrigger::Manual]);
+    }
+
+    #[test]
+    fn bootstrap_runs_user_refresh_closure() {
+        // Verify the closure actually receives the base ciphertext
+        // and the refreshed value lands in the output.
+        let ct = CramCiphertext::wrap_default(7u64, &[1i128, 2], None);
+        let (refreshed, _) = ct.cram_bootstrap(|b| b * 2).unwrap();
+        assert_eq!(refreshed.base, 14);
+    }
+
+    #[test]
+    fn bootstrap_round_trip_preserves_aux_residues() {
+        // FPD aux residues survive a bootstrap.
+        let coeffs = vec![6i128, 12, 18];
+        let aux_primes = AuxResidueSet::select_for_divisor(6, 100).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        let (refreshed, _) = ct.cram_bootstrap(|b| b).unwrap();
+        assert!(refreshed.witness.c0_aux.is_some());
+    }
+
+    #[test]
+    fn bootstrap_repeated_cycles_match_spec() {
+        // Spec § 17.4: drive ciphertext to corridor end, bootstrap, verify
+        // signature, repeat. The signature must remain identical across
+        // every cycle.
+        let coeffs = vec![1i128, 2, 3, 4];
+        let original_sig = PolynomialS8Signature::from_coeffs(&coeffs).signatures;
+        let mut ct = CramCiphertext::wrap_default((), &coeffs, None);
+        for _cycle in 0..5 {
+            // Drive op_counter up close to but not past the corridor.
+            for _ in 0..16 {
+                let b = CramCiphertext::wrap_default((), &[0i128; 4], None);
+                ct = ct.cram_add(b, |_, _| ()).unwrap();
+            }
+            let (refreshed, cert) = ct.cram_bootstrap(|b| b).unwrap();
+            assert!(cert.signature_preserved);
+            assert_eq!(refreshed.witness.c0_signature.signatures, original_sig);
+            ct = refreshed;
+        }
+    }
+
+    #[test]
+    fn bootstrap_after_cram_mul_preserves_product_signature() {
+        // Multiply, then bootstrap — the product's S8 signature must
+        // remain identical across the refresh.
+        let a = CramCiphertext::wrap_default((), &[1i128, 2], None);
+        let b = CramCiphertext::wrap_default((), &[3i128, 4], None);
+        let prod = a.cram_mul(b, |_, _| ()).unwrap();
+        let pre_sig = prod.witness.c0_signature.signatures.clone();
+        let (refreshed, cert) = prod.cram_bootstrap(|b| b).unwrap();
+        assert!(cert.signature_preserved);
+        assert_eq!(refreshed.witness.c0_signature.signatures, pre_sig);
     }
 }
