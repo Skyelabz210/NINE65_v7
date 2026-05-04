@@ -144,6 +144,9 @@ pub mod accelerated; // MANA/UNHAL acceleration layer
 
 pub mod kiosk; // Kiosk Architecture: self-destructing FHE computation units
 
+#[cfg(feature = "exact_transcendentals_backend")]
+pub mod cram_ct_wrap; // CRAM-CT wrapper around DualRNSCiphertext
+
 #[cfg(test)]
 mod v2_integration_tests;
 
