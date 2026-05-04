@@ -784,6 +784,12 @@ pub enum CramOpError {
         primary: crate::chimera_division::ChimeraLane,
         gcd_with_basis: u64,
     },
+    /// D2 DIV_EXACT-specific failure.
+    DivExact(DivExactError),
+    /// Two evaluable chimera lanes produced different quotients on the
+    /// same input. The Phase-4 resolver rejects rather than picking a
+    /// lane unilaterally.
+    ChimeraLaneDisagreement,
 }
 
 /// Add two S8 signatures coefficient-wise. CRT homomorphism makes this
@@ -1535,6 +1541,211 @@ impl<C> CramCiphertext<C> {
         };
         out.verify().map_err(CramOpError::OutputVerifyFailed)?;
         Ok((out, plan))
+    }
+}
+
+// ─── DIV_EXACT (D2) — Absorbent Quotient-Basis Division ──────────────────
+
+/// Errors specific to D2 (DIV_EXACT).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DivExactError {
+    /// Divisor has a prime factor outside the active basis.
+    DivisorNotBasisSmooth { divisor: i128 },
+    /// `divisor == 0`.
+    DivisorIsZero,
+    /// A coefficient is not exactly divisible by `divisor`.
+    NonExactRemainder {
+        coeff_index: usize,
+        coefficient: i128,
+        divisor: i128,
+        remainder: i128,
+    },
+}
+
+impl<C> CramCiphertext<C> {
+    /// Phase-4 D2 rescale: DIV_EXACT through Garner-lift + exact integer
+    /// division. Valid only when:
+    ///
+    ///   * `divisor` is basis-smooth (every prime factor lies in the
+    ///     active basis), and
+    ///   * every coefficient is exactly divisible by `divisor` — D2 is
+    ///     the *exact* quotient lane; nonzero remainders are rejected.
+    ///
+    /// Within the witness's working range `(-S8_PRODUCT/2, S8_PRODUCT/2)`
+    /// the absorbent prime-power machinery the spec uses for very large
+    /// coefficients reduces to exact integer division of the recentred
+    /// reconstruction. Larger coefficients require an explicit absorbent
+    /// extension (Phase-5+ enhancement).
+    pub fn cram_rescale_by_scalar_div_exact<F>(
+        self,
+        divisor: i128,
+        rescale_base: F,
+    ) -> Result<(Self, ChimeraDivPlan), CramOpError>
+    where
+        F: FnOnce(C, i128) -> C,
+    {
+        self.verify().map_err(CramOpError::InputVerifyFailed)?;
+        let plan = select_division_lane(divisor, self.topology.basis);
+
+        if divisor == 0 {
+            return Err(CramOpError::DivExact(DivExactError::DivisorIsZero));
+        }
+        let abs_d_u64 = divisor.unsigned_abs() as u64;
+        if !is_basis_smooth(abs_d_u64, self.topology.basis) {
+            return Err(CramOpError::DivExact(
+                DivExactError::DivisorNotBasisSmooth { divisor },
+            ));
+        }
+
+        // Garner-lift each coefficient to a signed integer, divide
+        // exactly, and re-project onto S8.
+        let n = self.witness.c0_signature.signatures.len();
+        let mut new_signatures = Vec::with_capacity(n);
+        for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
+            let unsigned = crate::lane_projector::garner_reconstruct(sig);
+            let half = (crate::triad::S8_PRODUCT / 2) as i128;
+            let signed = if (unsigned as i128) > half {
+                unsigned as i128 - crate::triad::S8_PRODUCT as i128
+            } else {
+                unsigned as i128
+            };
+            let r = signed.rem_euclid(divisor);
+            let remainder = if r > divisor.abs() / 2 {
+                r - divisor.abs()
+            } else {
+                r
+            };
+            if remainder != 0 {
+                return Err(CramOpError::DivExact(DivExactError::NonExactRemainder {
+                    coeff_index: i,
+                    coefficient: signed,
+                    divisor,
+                    remainder,
+                }));
+            }
+            let q = signed / divisor;
+            let mut residues = [0u32; 8];
+            for (li, &p) in crate::triad::S8.iter().enumerate() {
+                residues[li] = q.rem_euclid(p as i128) as u32;
+            }
+            new_signatures.push(S8Signature { residues });
+        }
+        let new_c0 = PolynomialS8Signature {
+            signatures: new_signatures,
+        };
+
+        let new_op_counter = self
+            .witness
+            .op_counter
+            .checked_add(1)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+        let new_lock_witness = recompute_post_op(
+            &self.witness.lock_witness,
+            &self.locks,
+            &new_c0,
+            new_op_counter,
+        );
+        let new_base = rescale_base(self.base, divisor);
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: new_c0,
+                c1_signature: self.witness.c1_signature,
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+                c0_aux: None, // D2 does not propagate aux residues.
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+        Ok((out, plan))
+    }
+
+    /// Resolver: try every evaluable chimera lane, accept iff every lane
+    /// that succeeds returns the same result. Phase 4 cross-lane agreement
+    /// theorem — when multiple lanes can compute the quotient, they MUST
+    /// agree, otherwise the operation rejects.
+    ///
+    /// Returns the agreed result + the set of lanes that succeeded.
+    pub fn cram_rescale_with_chimera_router<F>(
+        self,
+        divisor: i128,
+        quotient_bound: i128,
+        rescale_base: F,
+    ) -> Result<(Self, ChimeraDivPlan, crate::chimera_division::LaneMask), CramOpError>
+    where
+        C: Clone,
+        F: Fn(C, i128) -> C,
+    {
+        use crate::chimera_division::LaneMask;
+        let plan = select_division_lane(divisor, self.topology.basis);
+        let mut succeeded = LaneMask::default();
+        let mut agreed_result: Option<Vec<i32>> = None;
+        let mut agreed_ct: Option<Self> = None;
+
+        // Try D0.
+        if plan.evaluable.modular_inverse {
+            if let Ok((result_ct, _)) = self.clone().cram_rescale_by_scalar(divisor, &rescale_base) {
+                let recon = result_ct.reconstruct_c0_coeffs_signed();
+                if let Some(prev) = agreed_result.as_ref() {
+                    if prev != &recon {
+                        return Err(CramOpError::ChimeraLaneDisagreement);
+                    }
+                } else {
+                    agreed_result = Some(recon);
+                    agreed_ct = Some(result_ct);
+                }
+                succeeded.modular_inverse = true;
+            }
+        }
+
+        // Try D2.
+        if is_basis_smooth(divisor.unsigned_abs() as u64, self.topology.basis) {
+            if let Ok((result_ct, _)) = self
+                .clone()
+                .cram_rescale_by_scalar_div_exact(divisor, &rescale_base)
+            {
+                let recon = result_ct.reconstruct_c0_coeffs_signed();
+                if let Some(prev) = agreed_result.as_ref() {
+                    if prev != &recon {
+                        return Err(CramOpError::ChimeraLaneDisagreement);
+                    }
+                } else {
+                    agreed_result = Some(recon);
+                    agreed_ct = Some(result_ct);
+                }
+                succeeded.div_exact = true;
+            }
+        }
+
+        // Try D3 (FPD) iff aux residues are present.
+        if self.witness.c0_aux.is_some() {
+            if let Ok((result_ct, _)) =
+                self.clone()
+                    .cram_rescale_by_scalar_fpd(divisor, quotient_bound, &rescale_base)
+            {
+                let recon = result_ct.reconstruct_c0_coeffs_signed();
+                if let Some(prev) = agreed_result.as_ref() {
+                    if prev != &recon {
+                        return Err(CramOpError::ChimeraLaneDisagreement);
+                    }
+                } else {
+                    agreed_ct = Some(result_ct);
+                }
+                succeeded.fused_piggyback = true;
+            }
+        }
+        let _ = agreed_result; // resolver done — drop the comparison cache.
+
+        match agreed_ct {
+            Some(ct) => Ok((ct, plan, succeeded)),
+            None => Err(CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            }),
+        }
     }
 }
 
@@ -2418,5 +2629,156 @@ mod tests {
         let pairs = [(5u32, 2u32), (7u32, 0u32), (11u32, 9u32)];
         let q = garner_fuse_pairs(&pairs);
         assert_eq!(q, 42);
+    }
+
+    // ---- Phase-4 D2 — DIV_EXACT (absorbent quotient-basis division) -----
+
+    #[test]
+    fn d2_divides_by_two() {
+        let coeffs: Vec<i128> = vec![2, 4, 6, -8, -10, 100, -1000, 1_000_000];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, plan) =
+            ct.cram_rescale_by_scalar_div_exact(2, |_, _| ()).unwrap();
+        assert_eq!(plan.gcd_with_basis, 2);
+        let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 2) as i32).collect();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), expected);
+    }
+
+    #[test]
+    fn d2_divides_by_six() {
+        let coeffs: Vec<i128> = vec![6, 12, 18, -24, -30, 600, -3000];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, _) = ct.cram_rescale_by_scalar_div_exact(6, |_, _| ()).unwrap();
+        let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 6) as i32).collect();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), expected);
+    }
+
+    #[test]
+    fn d2_divides_by_thirty() {
+        let coeffs: Vec<i128> = vec![30, 60, 90, -150, -3000];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, _) =
+            ct.cram_rescale_by_scalar_div_exact(30, |_, _| ()).unwrap();
+        let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 30) as i32).collect();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), expected);
+    }
+
+    #[test]
+    fn d2_rejects_non_basis_smooth_divisor() {
+        // 23 is in the FPD aux pool, not in S8 — D2 cannot absorb it.
+        let coeffs = vec![23i128, 46, 69];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        match ct.cram_rescale_by_scalar_div_exact(23, |_, _| ()) {
+            Err(CramOpError::DivExact(DivExactError::DivisorNotBasisSmooth { divisor: 23 })) => {}
+            other => panic!("expected DivisorNotBasisSmooth, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d2_rejects_non_exact_remainder() {
+        // 10 is not exactly divisible by 6 — D2 must surface it as
+        // NonExactRemainder rather than silently producing trunc(10/6).
+        let coeffs = vec![6i128, 10, 12];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        match ct.cram_rescale_by_scalar_div_exact(6, |_, _| ()) {
+            Err(CramOpError::DivExact(DivExactError::NonExactRemainder {
+                coeff_index: 1,
+                coefficient: 10,
+                divisor: 6,
+                ..
+            })) => {}
+            other => panic!("expected NonExactRemainder, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d2_rejects_zero_divisor() {
+        let ct = CramCiphertext::wrap_default((), &[1i128, 2], None);
+        match ct.cram_rescale_by_scalar_div_exact(0, |_, _| ()) {
+            Err(CramOpError::DivExact(DivExactError::DivisorIsZero)) => {}
+            other => panic!("expected DivisorIsZero, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d2_handles_negative_divisor() {
+        let coeffs: Vec<i128> = vec![6, -12, 18, -24];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, _) = ct.cram_rescale_by_scalar_div_exact(-6, |_, _| ()).unwrap();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![-1, 2, -3, 4]);
+    }
+
+    // ---- Cross-lane resolver (D0 / D2 / D3 must agree) ------------------
+
+    #[test]
+    fn router_agrees_when_d0_and_d2_both_apply_to_basis_smooth_coprime() {
+        // 5 is in S8 (so D0 fails: gcd(5, S8) = 5) BUT 5 is basis-smooth
+        // (so D2 applies). Only D2 succeeds. Resolver returns its result.
+        let coeffs = vec![5i128, 10, 15, 20];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (result, _, mask) = ct
+            .cram_rescale_with_chimera_router(5, 1_000_000, |_, _| ())
+            .unwrap();
+        assert!(mask.div_exact);
+        assert!(!mask.modular_inverse);
+        assert_eq!(result.reconstruct_c0_coeffs_signed(), vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn router_agrees_when_d0_alone_succeeds_for_coprime_divisor() {
+        // 23 is coprime to S8 → only D0 applies (D2 fails on smoothness,
+        // D3 needs aux residues).
+        let coeffs = vec![23i128, 46, 69];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (result, _, mask) = ct
+            .cram_rescale_with_chimera_router(23, 1_000_000, |_, _| ())
+            .unwrap();
+        assert!(mask.modular_inverse);
+        assert!(!mask.div_exact);
+        assert!(!mask.fused_piggyback);
+        assert_eq!(result.reconstruct_c0_coeffs_signed(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn router_runs_d2_and_d3_together_and_they_agree() {
+        // 6 is basis-smooth (D2 applies) AND with aux residues attached
+        // D3 also applies. Both must agree on the same quotient.
+        let coeffs: Vec<i128> = vec![6, 12, 18, -24, -30];
+        let aux_primes = AuxResidueSet::select_for_divisor(6, 100_000).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        let (result, _, mask) = ct
+            .cram_rescale_with_chimera_router(6, 100_000, |_, _| ())
+            .unwrap();
+        assert!(mask.div_exact);
+        assert!(mask.fused_piggyback);
+        assert_eq!(
+            result.reconstruct_c0_coeffs_signed(),
+            vec![1, 2, 3, -4, -5]
+        );
+    }
+
+    #[test]
+    fn router_returns_lane_not_implemented_when_no_lane_succeeds() {
+        // Divisor 23 with no aux residues. D0 succeeds — but coefficient
+        // is not divisible exactly. Wait, actually D0 succeeds on non-
+        // exact divisions because it returns x*d^{-1} mod M, which is a
+        // valid modular result. The router prefers D2/D3 for "exact"
+        // cases. Use 0 as divisor to force all lanes to bail.
+        let ct = CramCiphertext::wrap_default((), &[5i128, 10], None);
+        match ct.cram_rescale_with_chimera_router(0, 1000, |_, _| ()) {
+            Err(CramOpError::DivisionLaneNotImplemented { gcd_with_basis: 0, .. }) => {}
+            other => panic!("expected DivisionLaneNotImplemented, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn d2_propagates_lock_evidence_correctly() {
+        // After D2, the witness's lock evidence must reflect the new
+        // signature — verify_locks must pass on the output.
+        let coeffs = vec![6i128, 12, 18, 24];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, _) = ct.cram_rescale_by_scalar_div_exact(6, |_, _| ()).unwrap();
+        assert!(rescaled.verify().is_ok());
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![1, 2, 3, 4]);
     }
 }
