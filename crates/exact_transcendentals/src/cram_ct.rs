@@ -23,6 +23,7 @@
 //! vocabulary today, with the topology table validated by tests.
 
 use crate::chimera::{family_for, LaneRole};
+use crate::lane_projector::PolynomialS8Signature;
 use crate::Vec;
 
 // ─── Safe Basis ───────────────────────────────────────────────────────────
@@ -325,6 +326,75 @@ pub fn lane_role_in_default_topology(p: u32) -> Option<LaneRole> {
     family_for(p).map(|f| f.role)
 }
 
+// ─── CramCiphertext Shell ─────────────────────────────────────────────────
+
+/// Witness state attached alongside a base ciphertext. Phase-1 only carries
+/// the S8 signature of c0's coefficients; later phases will add winding and
+/// shadow state.
+#[derive(Debug, Clone)]
+pub struct CramWitnessState {
+    /// One S8 signature per coefficient of c0.
+    pub c0_signature: PolynomialS8Signature,
+    /// Optional signature of c1, included when the topology requests it.
+    pub c1_signature: Option<PolynomialS8Signature>,
+    /// Operation counter, incremented by every cram_add / cram_mul call.
+    pub op_counter: u64,
+}
+
+impl CramWitnessState {
+    /// Build a fresh witness state from c0 and (optionally) c1 coefficients.
+    pub fn from_coeffs(c0: &[i128], c1: Option<&[i128]>) -> Self {
+        Self {
+            c0_signature: PolynomialS8Signature::from_coeffs(c0),
+            c1_signature: c1.map(PolynomialS8Signature::from_coeffs),
+            op_counter: 0,
+        }
+    }
+
+    /// Return the number of c0 coefficients tracked.
+    pub fn poly_len(&self) -> usize {
+        self.c0_signature.len()
+    }
+}
+
+/// Phase-1 CRAM ciphertext: a base ciphertext `C` (the security-bearing
+/// object) plus the CRAM witness state, the active topology, and the active
+/// phase-lock graph. The base ciphertext is opaque to this module — wrapper
+/// constructors live in `nine65` for the concrete `DualRNSCiphertext` type.
+#[derive(Debug, Clone)]
+pub struct CramCiphertext<C> {
+    pub base: C,
+    pub topology: CramTopology,
+    pub locks: PhaseLockGraph,
+    pub witness: CramWitnessState,
+}
+
+impl<C> CramCiphertext<C> {
+    /// Wrap a base ciphertext with c0 coefficients (and optional c1) using
+    /// the canonical S8 chimera topology and default phase-lock graph.
+    pub fn wrap_default(base: C, c0_coeffs: &[i128], c1_coeffs: Option<&[i128]>) -> Self {
+        Self {
+            base,
+            topology: S8_CHIMERA_V1.clone(),
+            locks: default_phase_locks(),
+            witness: CramWitnessState::from_coeffs(c0_coeffs, c1_coeffs),
+        }
+    }
+
+    /// True iff the topology is well-formed and the phase-lock graph
+    /// references only its basis primes. Phase-1 verification — does not
+    /// yet evaluate the locks themselves.
+    pub fn verify_metadata(&self) -> bool {
+        self.topology.is_well_formed() && self.locks.references_only(&self.topology)
+    }
+
+    /// Reconstruct c0's coefficients (mod S8_PRODUCT) from the witness.
+    /// This is a roundtrip check, not the security-bearing decryption.
+    pub fn reconstruct_c0_coeffs_signed(&self) -> Vec<i32> {
+        self.witness.c0_signature.reconstruct_signed()
+    }
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -429,5 +499,73 @@ mod tests {
             lanes: &S8_CHIMERA_V1_LANES[..1],
         };
         assert!(!bad.is_well_formed());
+    }
+
+    // ---- Phase-1 CRAM ciphertext shell -----------------------------------
+
+    #[test]
+    fn cram_wrap_records_polynomial_s8_signature() {
+        let coeffs: Vec<i128> = (0..16).map(|k| k as i128 * 100_001).collect();
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        assert_eq!(ct.witness.poly_len(), coeffs.len());
+        assert_eq!(ct.witness.op_counter, 0);
+        assert!(ct.verify_metadata());
+    }
+
+    #[test]
+    fn cram_wrap_roundtrips_small_coeffs() {
+        // Coefficients in (-S8_PRODUCT/2, S8_PRODUCT/2) reconstruct exactly.
+        let coeffs = vec![-1_234_567i128, -1, 0, 1, 1_234_567, 4_000_000];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let recon = ct.reconstruct_c0_coeffs_signed();
+        let expected: Vec<i32> = coeffs.iter().map(|&c| c as i32).collect();
+        assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn cram_wrap_carries_optional_c1_signature() {
+        let c0 = vec![1i128, 2, 3, 4];
+        let c1 = vec![5i128, 6, 7, 8];
+        let ct = CramCiphertext::wrap_default((), &c0, Some(&c1));
+        assert!(ct.witness.c1_signature.is_some());
+        let recon_c1 = ct
+            .witness
+            .c1_signature
+            .as_ref()
+            .unwrap()
+            .reconstruct_signed();
+        assert_eq!(recon_c1, vec![5, 6, 7, 8]);
+    }
+
+    #[test]
+    fn cram_metadata_verification_catches_topology_mismatch() {
+        // Build a topology with a basis that does not match its lanes.
+        let bad_topology = CramTopology {
+            id: TopologyId("BAD"),
+            basis: SafeBasis::S6,
+            // Lanes include 17 and 19, which are not in S6.
+            lanes: &S8_CHIMERA_V1_LANES,
+        };
+        let ct = CramCiphertext {
+            base: (),
+            topology: bad_topology,
+            locks: default_phase_locks(),
+            witness: CramWitnessState::from_coeffs(&[0i128], None),
+        };
+        assert!(!ct.verify_metadata());
+    }
+
+    #[test]
+    fn cram_metadata_verification_catches_lock_referencing_unknown_prime() {
+        let mut bad_locks = default_phase_locks();
+        // 23 is in the FPD aux pool, not S8 — must be rejected.
+        bad_locks.add(23, 5, LockType::Anchor);
+        let ct = CramCiphertext {
+            base: (),
+            topology: S8_CHIMERA_V1.clone(),
+            locks: bad_locks,
+            witness: CramWitnessState::from_coeffs(&[0i128], None),
+        };
+        assert!(!ct.verify_metadata());
     }
 }

@@ -40,6 +40,7 @@ pub mod constants;
 pub mod continued_fraction;
 pub mod cordic;
 pub mod cram_ct;
+pub mod lane_projector;
 pub mod sqrt;
 pub mod triad;
 
