@@ -676,6 +676,8 @@ pub struct CramWitnessState {
     pub op_counter: i128,
     /// Phase-2 lock evidence — one entry per lock in the graph.
     pub lock_witness: LockWitnessSet,
+    /// Optional auxiliary-prime residues for FPD (D3 division) support.
+    pub c0_aux: Option<AuxResidueSet>,
 }
 
 impl CramWitnessState {
@@ -689,6 +691,7 @@ impl CramWitnessState {
             c1_signature: c1.map(PolynomialS8Signature::from_coeffs),
             op_counter: 0,
             lock_witness,
+            c0_aux: None,
         }
     }
 
@@ -946,6 +949,7 @@ impl<C> CramCiphertext<C> {
                 c1_signature: new_c1,
                 op_counter: new_op_counter,
                 lock_witness: new_lock_witness,
+                c0_aux: None,
             },
         };
         out.verify().map_err(CramOpError::OutputVerifyFailed)?;
@@ -991,6 +995,7 @@ impl<C> CramCiphertext<C> {
                 c1_signature: new_c1,
                 op_counter: new_op_counter,
                 lock_witness: new_lock_witness,
+                c0_aux: None,
             },
         };
         out.verify().map_err(CramOpError::OutputVerifyFailed)?;
@@ -1049,6 +1054,7 @@ impl<C> CramCiphertext<C> {
                 c1_signature: new_c1,
                 op_counter: new_op_counter,
                 lock_witness: new_lock_witness,
+                c0_aux: None,
             },
         };
         out.verify().map_err(CramOpError::OutputVerifyFailed)?;
@@ -1230,6 +1236,7 @@ impl<C> CramCiphertext<C> {
                 c1_signature: new_c1,
                 op_counter: new_op_counter,
                 lock_witness: new_lock_witness,
+                c0_aux: None,
             },
         };
         out.verify().map_err(CramOpError::OutputVerifyFailed)?;
@@ -1253,6 +1260,282 @@ fn apply_lane_inverses(
         signatures.push(S8Signature { residues });
     }
     PolynomialS8Signature { signatures }
+}
+
+// ─── Fused Piggyback Division (D3) ────────────────────────────────────────
+
+/// Auxiliary-prime residues attached to a polynomial for FPD support.
+///
+/// FPD needs residues modulo primes outside the S8 basis to widen the
+/// fusion product `P` past the certified quotient bound. This struct
+/// stores those residues coefficient-by-coefficient so the FPD lane
+/// can fuse against the chosen auxiliary primes without re-deriving
+/// them at op time.
+#[derive(Debug, Clone)]
+pub struct AuxResidueSet {
+    pub primes: Vec<u32>,
+    /// `residues[coeff_idx][prime_idx]` — outer index per polynomial
+    /// coefficient, inner index aligned with `primes`.
+    pub residues: Vec<Vec<u32>>,
+}
+
+impl AuxResidueSet {
+    /// Project each coefficient into every aux prime in `primes`.
+    pub fn from_coeffs(coeffs: &[i128], primes: &[u32]) -> Self {
+        let primes_vec = primes.to_vec();
+        let residues: Vec<Vec<u32>> = coeffs
+            .iter()
+            .map(|&c| {
+                primes_vec
+                    .iter()
+                    .map(|&p| c.rem_euclid(p as i128) as u32)
+                    .collect()
+            })
+            .collect();
+        Self {
+            primes: primes_vec,
+            residues,
+        }
+    }
+
+    /// Pick the smallest set of auxiliary primes from
+    /// [`crate::chimera::AUX_FPD_POOL`] that
+    /// (a) are coprime to the divisor and to the S8 basis product,
+    /// (b) when multiplied with the S8 "good lanes" for the divisor,
+    ///     produce a fusion product `P > 2 * quotient_bound`.
+    ///
+    /// Returns `None` if the pool can't deliver enough margin.
+    pub fn select_for_divisor(divisor: i128, quotient_bound: i128) -> Option<Vec<u32>> {
+        let abs_d = divisor.unsigned_abs();
+        if abs_d == 0 {
+            return None;
+        }
+        let s8_good_product: u64 = crate::triad::S8
+            .iter()
+            .filter(|&&m| gcd_u64(m as u64, abs_d as u64) == 1)
+            .map(|&m| m as u64)
+            .product();
+        let mut p: u128 = s8_good_product as u128;
+        let target = (quotient_bound as u128).saturating_mul(2).saturating_add(1);
+        let mut chosen = Vec::new();
+        if p > target {
+            return Some(chosen);
+        }
+        for &alpha in crate::chimera::AUX_FPD_POOL.iter() {
+            if gcd_u64(alpha as u64, abs_d as u64) != 1 {
+                continue;
+            }
+            chosen.push(alpha);
+            p = p.saturating_mul(alpha as u128);
+            if p > target {
+                return Some(chosen);
+            }
+        }
+        None
+    }
+}
+
+/// Incremental Garner CRT fusion of (modulus, residue) pairs into the
+/// unique integer `Q` in `[0, ∏ moduli)`. Moduli must be pairwise coprime.
+fn garner_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
+    let mut x: i128 = pairs[0].1 as i128;
+    let mut radix: i128 = pairs[0].0 as i128;
+    for &(m, r) in &pairs[1..] {
+        let m_i = m as i128;
+        let r_i = r as i128;
+        let x_mod_m = x.rem_euclid(m_i);
+        let diff = (r_i - x_mod_m).rem_euclid(m_i);
+        let radix_mod_m = radix.rem_euclid(m_i) as u32;
+        let inv = mod_inv_u32(radix_mod_m, m)
+            .expect("FPD: lane moduli must be pairwise coprime");
+        let v = (diff * inv as i128).rem_euclid(m_i);
+        x = x + v * radix;
+        radix = radix * m_i;
+    }
+    x
+}
+
+/// FPD result for one coefficient: new S8 lane residues + new aux residues.
+struct FpdLanePieces {
+    new_s8: [u32; 8],
+    new_aux: Vec<u32>,
+}
+
+/// Per-coefficient FPD division: fuse the good S8 lanes and the aux lanes
+/// to recover the exact integer quotient, then re-project onto S8 (and
+/// the aux primes for chain continuation).
+fn fpd_one_coefficient(
+    s8_residues: [u32; 8],
+    aux_residues: &[u32],
+    aux_primes: &[u32],
+    divisor: i128,
+    fusion_product: i128,
+) -> Option<FpdLanePieces> {
+    let abs_d = divisor.unsigned_abs() as u64;
+    let sign: i128 = if divisor < 0 { -1 } else { 1 };
+
+    // Build the (modulus, quotient_residue) pair list across good S8
+    // lanes and every aux prime (which are by construction coprime to d).
+    let mut pairs: Vec<(u32, u32)> = Vec::with_capacity(8 + aux_primes.len());
+    for (i, &p) in crate::triad::S8.iter().enumerate() {
+        if gcd_u64(p as u64, abs_d) == 1 {
+            let inv = mod_inv_u32((abs_d % p as u64) as u32, p)?;
+            let q = (s8_residues[i] as u64 * inv as u64 % p as u64) as u32;
+            pairs.push((p, q));
+        }
+    }
+    for (j, &alpha) in aux_primes.iter().enumerate() {
+        let inv = mod_inv_u32((abs_d % alpha as u64) as u32, alpha)?;
+        let q = (aux_residues[j] as u64 * inv as u64 % alpha as u64) as u32;
+        pairs.push((alpha, q));
+    }
+
+    // Fuse → Q ∈ [0, P).
+    let q_unsigned = garner_fuse_pairs(&pairs);
+    // Recentre to (-P/2, P/2].
+    let q_signed = if q_unsigned > fusion_product / 2 {
+        q_unsigned - fusion_product
+    } else {
+        q_unsigned
+    };
+    let q_signed = q_signed * sign;
+
+    // Re-project onto every S8 lane (including the lanes that were skipped
+    // during fusion because they share factors with d — those re-acquire
+    // a meaningful residue from the recovered quotient).
+    let mut new_s8 = [0u32; 8];
+    for (i, &p) in crate::triad::S8.iter().enumerate() {
+        new_s8[i] = q_signed.rem_euclid(p as i128) as u32;
+    }
+    let new_aux: Vec<u32> = aux_primes
+        .iter()
+        .map(|&alpha| q_signed.rem_euclid(alpha as i128) as u32)
+        .collect();
+    Some(FpdLanePieces { new_s8, new_aux })
+}
+
+impl<C> CramCiphertext<C> {
+    /// Wrap a base ciphertext with both the standard S8 witness and an
+    /// auxiliary residue set sized for FPD division.
+    pub fn wrap_with_fpd_aux(
+        base: C,
+        c0_coeffs: &[i128],
+        c1_coeffs: Option<&[i128]>,
+        aux_primes: &[u32],
+    ) -> Self {
+        let mut ct = Self::wrap_default(base, c0_coeffs, c1_coeffs);
+        ct.witness.c0_aux = Some(AuxResidueSet::from_coeffs(c0_coeffs, aux_primes));
+        ct
+    }
+
+    /// Phase-4 D3 rescale via Fused Piggyback Division.
+    ///
+    /// Requires the witness to carry an [`AuxResidueSet`] sized for the
+    /// divisor (use [`Self::wrap_with_fpd_aux`] at ingestion). The fusion
+    /// product over S8's good lanes plus the aux primes must exceed
+    /// `2 * quotient_bound`; otherwise the lane reports
+    /// `BoundInsufficient` and Phase 4 returns `DivisionLaneNotImplemented`.
+    pub fn cram_rescale_by_scalar_fpd<F>(
+        self,
+        divisor: i128,
+        quotient_bound: i128,
+        rescale_base: F,
+    ) -> Result<(Self, ChimeraDivPlan), CramOpError>
+    where
+        F: FnOnce(C, i128) -> C,
+    {
+        self.verify().map_err(CramOpError::InputVerifyFailed)?;
+        let plan = select_division_lane(divisor, self.topology.basis);
+
+        let aux_set = self.witness.c0_aux.as_ref().ok_or_else(|| {
+            CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            }
+        })?;
+        // Verify every aux prime is coprime to the divisor.
+        let abs_d = divisor.unsigned_abs() as u64;
+        if abs_d == 0
+            || aux_set
+                .primes
+                .iter()
+                .any(|&alpha| gcd_u64(alpha as u64, abs_d) != 1)
+        {
+            return Err(CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            });
+        }
+        // Compute the fusion product P = (∏ good S8) × (∏ aux).
+        let s8_good: i128 = crate::triad::S8
+            .iter()
+            .filter(|&&m| gcd_u64(m as u64, abs_d) == 1)
+            .map(|&m| m as i128)
+            .product();
+        let aux_prod: i128 = aux_set.primes.iter().map(|&p| p as i128).product();
+        let fusion_product = s8_good
+            .checked_mul(aux_prod)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+        if fusion_product <= quotient_bound.saturating_mul(2) {
+            return Err(CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            });
+        }
+
+        // Per-coefficient FPD.
+        let n = self.witness.c0_signature.signatures.len();
+        let mut new_signatures = Vec::with_capacity(n);
+        let mut new_aux_residues = Vec::with_capacity(n);
+        for i in 0..n {
+            let pieces = fpd_one_coefficient(
+                self.witness.c0_signature.signatures[i].residues,
+                &aux_set.residues[i],
+                &aux_set.primes,
+                divisor,
+                fusion_product,
+            )
+            .ok_or(CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            })?;
+            new_signatures.push(S8Signature {
+                residues: pieces.new_s8,
+            });
+            new_aux_residues.push(pieces.new_aux);
+        }
+        let new_c0 = PolynomialS8Signature {
+            signatures: new_signatures,
+        };
+        let new_aux = AuxResidueSet {
+            primes: aux_set.primes.clone(),
+            residues: new_aux_residues,
+        };
+
+        let new_op_counter = self
+            .witness
+            .op_counter
+            .checked_add(1)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+        let new_lock_witness =
+            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+        let new_base = rescale_base(self.base, divisor);
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: new_c0,
+                c1_signature: self.witness.c1_signature, // c1 unchanged in scalar div
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+                c0_aux: Some(new_aux),
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+        Ok((out, plan))
+    }
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────
@@ -2000,5 +2283,140 @@ mod tests {
         for n in [23u64, 29, 100_003] {
             assert!(!is_basis_smooth(n, SafeBasis::S8), "{} should NOT be smooth", n);
         }
+    }
+
+    // ---- Phase-4 D3 — Fused Piggyback Division --------------------------
+
+    #[test]
+    fn aux_select_for_coprime_divisor_returns_empty_when_s8_already_suffices() {
+        // For divisor d coprime to S8, every S8 lane is "good" — fusion
+        // product is S8_PRODUCT = 9_699_690, which already exceeds 2*B_q
+        // for any B_q < 4_849_845.
+        let aux = AuxResidueSet::select_for_divisor(23, 1_000_000);
+        assert_eq!(aux, Some(Vec::new()));
+    }
+
+    #[test]
+    fn aux_select_for_basis_sharing_divisor_returns_aux_primes() {
+        // Divisor 6 shares 2 and 3 with S8. Good lanes' product is
+        // 5*7*11*13*17*19 = 1_616_615. For quotient bound 1_000_000,
+        // we need P > 2_000_000. So aux primes are needed.
+        let aux = AuxResidueSet::select_for_divisor(6, 1_000_000).unwrap();
+        assert!(!aux.is_empty(), "expected at least one aux prime");
+        // Every chosen aux prime must be coprime to 6.
+        for &alpha in &aux {
+            assert!(crate::chimera::AUX_FPD_POOL.contains(&alpha));
+            assert_eq!(super::gcd_u64(alpha as u64, 6), 1);
+        }
+    }
+
+    #[test]
+    fn fpd_divides_by_six_recovers_exact_quotient() {
+        // Coefficients are exact multiples of 6; FPD must recover
+        // x/6 on every coefficient.
+        let coeffs: Vec<i128> = vec![6, 12, 18, -24, -30, 60, 102, 1_200];
+        let aux_primes = AuxResidueSet::select_for_divisor(6, 1_000_000).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        let (rescaled, plan) =
+            ct.cram_rescale_by_scalar_fpd(6, 1_000_000, |_, _| ()).unwrap();
+        assert_eq!(plan.primary, crate::chimera_division::ChimeraLane::FusedPiggyback);
+        assert_eq!(plan.gcd_with_basis, 6);
+        let recon = rescaled.reconstruct_c0_coeffs_signed();
+        let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 6) as i32).collect();
+        assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn fpd_divides_by_thirty_recovers_exact_quotient() {
+        // 30 = 2*3*5 — three S8 primes shared. The router still chooses
+        // FPD; aux primes widen the fusion product past 2*B_q.
+        let coeffs: Vec<i128> = vec![30, 60, 90, -150, -210, 300_000];
+        let aux_primes = AuxResidueSet::select_for_divisor(30, 100_000).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        let (rescaled, _) =
+            ct.cram_rescale_by_scalar_fpd(30, 100_000, |_, _| ()).unwrap();
+        let recon = rescaled.reconstruct_c0_coeffs_signed();
+        let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 30) as i32).collect();
+        assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn fpd_handles_negative_divisor() {
+        // Negative divisor → quotient flips sign. FPD recovers the
+        // signed integer, recentred around zero.
+        let coeffs: Vec<i128> = vec![6, -12, 18, -24];
+        let aux_primes = AuxResidueSet::select_for_divisor(-6, 100).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        let (rescaled, _) =
+            ct.cram_rescale_by_scalar_fpd(-6, 100, |_, _| ()).unwrap();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![-1, 2, -3, 4]);
+    }
+
+    #[test]
+    fn fpd_rejects_when_aux_residues_missing() {
+        // wrap_default doesn't attach aux residues — FPD must reject.
+        let ct = CramCiphertext::wrap_default((), &[6i128, 12, 18], None);
+        match ct.cram_rescale_by_scalar_fpd(6, 100, |_, _| ()) {
+            Err(CramOpError::DivisionLaneNotImplemented {
+                primary: crate::chimera_division::ChimeraLane::FusedPiggyback,
+                gcd_with_basis: 6,
+            }) => {}
+            other => panic!("expected aux-missing rejection, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn fpd_rejects_when_aux_set_shares_factor_with_divisor() {
+        // Construct a deliberately bad aux set that shares a factor with
+        // the divisor (this should never happen with select_for_divisor,
+        // but guard the entry point).
+        let coeffs = vec![23i128 * 5, 23 * 7, 23 * 11];
+        let bad_aux = vec![23u32]; // 23 divides the divisor → bad.
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &bad_aux);
+        match ct.cram_rescale_by_scalar_fpd(23, 100, |_, _| ()) {
+            Err(CramOpError::DivisionLaneNotImplemented { .. }) => {}
+            other => panic!("expected rejection, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn fpd_rejects_when_quotient_bound_exceeds_fusion_product() {
+        // Divisor 30 → good-lanes product is 7*11*13*17*19 = 323_323.
+        // With one aux prime 23 → P = 7_436_429. Demand bound = 100_000_000:
+        // need P > 2*B_q = 200_000_000 — fails.
+        let coeffs = vec![30i128];
+        let aux_primes = vec![23u32];
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        match ct.cram_rescale_by_scalar_fpd(30, 100_000_000, |_, _| ()) {
+            Err(CramOpError::DivisionLaneNotImplemented { .. }) => {}
+            other => panic!("expected bound rejection, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn fpd_carries_aux_residues_to_output_for_chained_division() {
+        // After one FPD, the result should still carry aux residues so
+        // a subsequent FPD on the same chain works without re-wrapping.
+        let coeffs: Vec<i128> = vec![60, 120, 180, 240];
+        let aux_primes = AuxResidueSet::select_for_divisor(6, 100).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        let (after_first, _) =
+            ct.cram_rescale_by_scalar_fpd(6, 100, |_, _| ()).unwrap();
+        assert!(
+            after_first.witness.c0_aux.is_some(),
+            "FPD output must carry aux residues for chaining"
+        );
+        // Chain: divide by 5 next (coprime to S8 actually — D0 path,
+        // but we still want aux to survive). After cram_add etc. the
+        // aux residues are dropped by Phase 4 (documented limitation).
+    }
+
+    #[test]
+    fn garner_fuse_pairs_round_trip() {
+        // Sanity: fuse known residues and confirm the integer matches.
+        // x = 42, against (5, 7, 11) → r = (2, 0, 9).
+        let pairs = [(5u32, 2u32), (7u32, 0u32), (11u32, 9u32)];
+        let q = garner_fuse_pairs(&pairs);
+        assert_eq!(q, 42);
     }
 }
