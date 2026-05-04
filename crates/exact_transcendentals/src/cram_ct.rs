@@ -757,6 +757,193 @@ impl<C> CramCiphertext<C> {
     }
 }
 
+// ─── Phase-3 Homomorphic Operations ───────────────────────────────────────
+
+/// Errors specific to Phase-3 operations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CramOpError {
+    /// One of the inputs failed pre-op verification.
+    InputVerifyFailed(LockFailure),
+    /// The post-op result failed verification — the operation produced a
+    /// state that does not satisfy its own locks.
+    OutputVerifyFailed(LockFailure),
+    /// Operands have polynomials of different lengths.
+    PolynomialLengthMismatch { lhs: usize, rhs: usize },
+    /// Operand topologies disagree.
+    TopologyMismatch,
+    /// Operand basis profiles disagree.
+    BasisMismatch,
+    /// op_counter would overflow.
+    OpCounterOverflow,
+}
+
+/// Add two S8 signatures coefficient-wise. CRT homomorphism makes this
+/// equivalent to adding the underlying integers and re-projecting.
+fn add_signatures(
+    a: &PolynomialS8Signature,
+    b: &PolynomialS8Signature,
+) -> Result<PolynomialS8Signature, CramOpError> {
+    if a.signatures.len() != b.signatures.len() {
+        return Err(CramOpError::PolynomialLengthMismatch {
+            lhs: a.signatures.len(),
+            rhs: b.signatures.len(),
+        });
+    }
+    let mut signatures = Vec::with_capacity(a.signatures.len());
+    for (sa, sb) in a.signatures.iter().zip(b.signatures.iter()) {
+        let mut residues = [0u32; 8];
+        for (i, &p) in crate::triad::S8.iter().enumerate() {
+            residues[i] = (sa.residues[i] + sb.residues[i]) % p;
+        }
+        signatures.push(S8Signature { residues });
+    }
+    Ok(PolynomialS8Signature { signatures })
+}
+
+/// Multiply each coefficient's S8 signature by a constant scalar `c`.
+fn scale_signature(a: &PolynomialS8Signature, c: i128) -> PolynomialS8Signature {
+    let scalar = S8Signature::project(c);
+    let mut signatures = Vec::with_capacity(a.signatures.len());
+    for sa in &a.signatures {
+        let mut residues = [0u32; 8];
+        for (i, &p) in crate::triad::S8.iter().enumerate() {
+            residues[i] = ((sa.residues[i] as u64 * scalar.residues[i] as u64) % p as u64) as u32;
+        }
+        signatures.push(S8Signature { residues });
+    }
+    PolynomialS8Signature { signatures }
+}
+
+/// Recompute lock evidence after a homomorphic op. Anchor/Agreement/Shadow/
+/// Signature locks are rebuilt from the new signature; the Boundary lock's
+/// corridor is preserved across operations because it tracks accumulated
+/// op-count drift between bootstraps, not per-op state.
+fn recompute_post_op(
+    prior: &LockWitnessSet,
+    graph: &PhaseLockGraph,
+    new_sig: &PolynomialS8Signature,
+    new_op_counter: i128,
+) -> LockWitnessSet {
+    // Start from a fresh compute, then graft the prior boundary corridors.
+    let mut fresh = LockWitnessSet::compute(graph, new_sig, new_op_counter);
+    for entry in fresh.entries.iter_mut() {
+        if entry.lock.kind == LockType::Boundary {
+            // Find the corresponding prior entry by (source, target, kind).
+            if let Some(prior_entry) = prior.entries.iter().find(|p| {
+                p.lock.source == entry.lock.source
+                    && p.lock.target == entry.lock.target
+                    && p.lock.kind == LockType::Boundary
+            }) {
+                if let LockEvidence::Boundary { .. } = &prior_entry.evidence {
+                    entry.evidence = prior_entry.evidence.clone();
+                }
+            }
+        }
+    }
+    fresh
+}
+
+impl<C> CramCiphertext<C> {
+    /// Phase-3 ciphertext + ciphertext addition.
+    ///
+    /// Composes the two base ciphertexts via the user-supplied closure
+    /// (which knows the concrete `C` type and the field semantics) and
+    /// updates the witness signature lane-wise. Both inputs are verified
+    /// before the op; the output is verified before being returned.
+    pub fn cram_add<F>(self, other: Self, add_base: F) -> Result<Self, CramOpError>
+    where
+        F: FnOnce(C, C) -> C,
+    {
+        self.verify().map_err(CramOpError::InputVerifyFailed)?;
+        other.verify().map_err(CramOpError::InputVerifyFailed)?;
+
+        if self.topology.id != other.topology.id {
+            return Err(CramOpError::TopologyMismatch);
+        }
+        if self.topology.basis != other.topology.basis {
+            return Err(CramOpError::BasisMismatch);
+        }
+
+        let new_c0 = add_signatures(&self.witness.c0_signature, &other.witness.c0_signature)?;
+        let new_c1 = match (&self.witness.c1_signature, &other.witness.c1_signature) {
+            (Some(a), Some(b)) => Some(add_signatures(a, b)?),
+            (None, None) => None,
+            _ => None, // Mixed presence — drop c1.
+        };
+
+        let new_op_counter = self
+            .witness
+            .op_counter
+            .max(other.witness.op_counter)
+            .checked_add(1)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+
+        let new_lock_witness =
+            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+
+        let new_base = add_base(self.base, other.base);
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: new_c0,
+                c1_signature: new_c1,
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+        Ok(out)
+    }
+
+    /// Phase-3 ciphertext * scalar multiplication.
+    ///
+    /// Multiplies each coefficient's S8 signature by `scalar` (CRT
+    /// homomorphism makes this lane-wise). Full ciphertext * ciphertext
+    /// multiplication lands in Phase 4 alongside the chimera division
+    /// route used by BFV rescale.
+    pub fn cram_mul_by_scalar<F>(self, scalar: i128, mul_base: F) -> Result<Self, CramOpError>
+    where
+        F: FnOnce(C, i128) -> C,
+    {
+        self.verify().map_err(CramOpError::InputVerifyFailed)?;
+
+        let new_c0 = scale_signature(&self.witness.c0_signature, scalar);
+        let new_c1 = self
+            .witness
+            .c1_signature
+            .as_ref()
+            .map(|s| scale_signature(s, scalar));
+
+        let new_op_counter = self
+            .witness
+            .op_counter
+            .checked_add(1)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+
+        let new_lock_witness =
+            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+
+        let new_base = mul_base(self.base, scalar);
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: new_c0,
+                c1_signature: new_c1,
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+        Ok(out)
+    }
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -1168,5 +1355,184 @@ mod tests {
                 );
             }
         }
+    }
+
+    // ---- Phase-3 homomorphic operations ---------------------------------
+
+    #[test]
+    fn cram_add_preserves_coefficient_sum_in_range() {
+        // Coefficients chosen so their sums fit in (-S8_PRODUCT/2, S8_PRODUCT/2).
+        let a_coeffs: Vec<i128> = vec![100, 200, -300, 400_000, -1_500_000, 0, 1, 7];
+        let b_coeffs: Vec<i128> = vec![50, -200, 300, 100_000, 500_000, -1, 0, -7];
+        let a = CramCiphertext::wrap_default((), &a_coeffs, None);
+        let b = CramCiphertext::wrap_default((), &b_coeffs, None);
+        let sum = a.cram_add(b, |_, _| ()).unwrap();
+        let recon = sum.reconstruct_c0_coeffs_signed();
+        let expected: Vec<i32> = a_coeffs
+            .iter()
+            .zip(b_coeffs.iter())
+            .map(|(&x, &y)| (x + y) as i32)
+            .collect();
+        assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn cram_add_increments_op_counter() {
+        let a = CramCiphertext::wrap_default((), &[1i128, 2, 3, 4], None);
+        let b = CramCiphertext::wrap_default((), &[5i128, 6, 7, 8], None);
+        let result = a.cram_add(b, |_, _| ()).unwrap();
+        assert_eq!(result.witness.op_counter, 1);
+    }
+
+    #[test]
+    fn cram_add_chains_op_counter_correctly() {
+        // After three sequential adds, op_counter should be 3.
+        let mut acc = CramCiphertext::wrap_default((), &[0i128; 4], None);
+        for _ in 0..3 {
+            let b = CramCiphertext::wrap_default((), &[1i128; 4], None);
+            acc = acc.cram_add(b, |_, _| ()).unwrap();
+        }
+        assert_eq!(acc.witness.op_counter, 3);
+        // Polynomial accumulator ended at [3, 3, 3, 3].
+        assert_eq!(acc.reconstruct_c0_coeffs_signed(), vec![3, 3, 3, 3]);
+    }
+
+    #[test]
+    fn cram_add_rejects_polynomial_length_mismatch() {
+        let a = CramCiphertext::wrap_default((), &[1i128, 2, 3], None);
+        let b = CramCiphertext::wrap_default((), &[5i128, 6, 7, 8], None);
+        match a.cram_add(b, |_, _| ()) {
+            Err(CramOpError::PolynomialLengthMismatch { lhs: 3, rhs: 4 }) => {}
+            other => panic!("expected length mismatch, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn cram_add_rebuilds_lock_evidence() {
+        // After the op the new evidence must verify against the new
+        // signatures — a stale evidence set would fail the OutputVerify
+        // step and bubble up as OutputVerifyFailed.
+        let a = CramCiphertext::wrap_default((), &[1i128, 2], None);
+        let b = CramCiphertext::wrap_default((), &[3i128, 4], None);
+        let sum = a.cram_add(b, |_, _| ()).unwrap();
+        assert!(sum.verify().is_ok());
+        // Anchor evidence reflects the new lane-5 / lane-7 residues.
+        let anchor_entry = sum
+            .witness
+            .lock_witness
+            .entries
+            .iter()
+            .find(|e| e.lock.kind == LockType::Anchor)
+            .unwrap();
+        if let LockEvidence::Anchor { expected_k } = &anchor_entry.evidence {
+            assert_eq!(expected_k.len(), 2);
+        } else {
+            panic!("anchor evidence missing");
+        }
+    }
+
+    #[test]
+    fn cram_add_preserves_boundary_corridor() {
+        // The boundary lock's corridor brackets the pre-op op_counter.
+        // After cram_add, op_counter increments but the corridor is
+        // preserved — the new value must still be inside it.
+        let a = CramCiphertext::wrap_default((), &[1i128, 2, 3, 4], None);
+        let pre_corridor = a
+            .witness
+            .lock_witness
+            .entries
+            .iter()
+            .find_map(|e| match &e.evidence {
+                LockEvidence::Boundary {
+                    corridor_low,
+                    corridor_high,
+                } => Some((*corridor_low, *corridor_high)),
+                _ => None,
+            })
+            .unwrap();
+        let b = CramCiphertext::wrap_default((), &[1i128; 4], None);
+        let result = a.cram_add(b, |_, _| ()).unwrap();
+        let post_corridor = result
+            .witness
+            .lock_witness
+            .entries
+            .iter()
+            .find_map(|e| match &e.evidence {
+                LockEvidence::Boundary {
+                    corridor_low,
+                    corridor_high,
+                } => Some((*corridor_low, *corridor_high)),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(pre_corridor, post_corridor, "corridor must be preserved");
+    }
+
+    #[test]
+    fn cram_add_eventually_violates_boundary_corridor() {
+        // The boundary corridor for a fresh wrap is [0, 16] (anchor=17).
+        // After 17 adds, op_counter = 17 leaves the corridor — the next
+        // op fails OutputVerifyFailed with BoundaryViolation.
+        let mut acc = CramCiphertext::wrap_default((), &[0i128; 2], None);
+        for _ in 0..16 {
+            let b = CramCiphertext::wrap_default((), &[0i128; 2], None);
+            acc = acc.cram_add(b, |_, _| ()).unwrap();
+        }
+        assert_eq!(acc.witness.op_counter, 16);
+        // 17th add must fail — op_counter would be 17, outside [0, 16].
+        let b = CramCiphertext::wrap_default((), &[0i128; 2], None);
+        match acc.cram_add(b, |_, _| ()) {
+            Err(CramOpError::OutputVerifyFailed(LockFailure::BoundaryViolation { .. })) => {}
+            other => panic!("expected boundary violation on 17th op, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn cram_mul_by_scalar_preserves_coefficient_product_in_range() {
+        let coeffs: Vec<i128> = vec![1, 2, 3, 4, -5, -6, 7, 8];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let result = ct.cram_mul_by_scalar(11, |_, _| ()).unwrap();
+        let recon = result.reconstruct_c0_coeffs_signed();
+        let expected: Vec<i32> = coeffs.iter().map(|&c| (c * 11) as i32).collect();
+        assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn cram_mul_by_negative_scalar_works() {
+        let coeffs: Vec<i128> = vec![10, 20, 30];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let result = ct.cram_mul_by_scalar(-3, |_, _| ()).unwrap();
+        assert_eq!(result.reconstruct_c0_coeffs_signed(), vec![-30, -60, -90]);
+    }
+
+    #[test]
+    fn cram_mul_by_zero_collapses_polynomial() {
+        let ct = CramCiphertext::wrap_default((), &[1i128, 2, 3, 4], None);
+        let result = ct.cram_mul_by_scalar(0, |_, _| ()).unwrap();
+        assert_eq!(result.reconstruct_c0_coeffs_signed(), vec![0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn cram_op_input_verify_failure_is_reported() {
+        // Tamper with the witness BEFORE the op so the input verify fails.
+        let mut a = CramCiphertext::wrap_default((), &[1i128, 2, 3, 4], None);
+        let lane_5_index = crate::triad::S8.iter().position(|&p| p == 5).unwrap();
+        a.witness.c0_signature.signatures[0].residues[lane_5_index] =
+            (a.witness.c0_signature.signatures[0].residues[lane_5_index] + 1) % 5;
+        let b = CramCiphertext::wrap_default((), &[1i128, 2, 3, 4], None);
+        match a.cram_add(b, |_, _| ()) {
+            Err(CramOpError::InputVerifyFailed(LockFailure::AnchorDivergence { .. })) => {}
+            other => panic!("expected input verify failure, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn cram_op_propagates_base_ciphertext_via_closure() {
+        // The user-supplied closure is the only path for the concrete
+        // ciphertext type. Verify it actually runs.
+        let a = CramCiphertext::wrap_default(7u64, &[1i128, 2], None);
+        let b = CramCiphertext::wrap_default(11u64, &[3i128, 4], None);
+        let sum = a.cram_add(b, |x, y| x + y).unwrap();
+        assert_eq!(sum.base, 18);
     }
 }
