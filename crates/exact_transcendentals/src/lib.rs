@@ -42,6 +42,7 @@ pub mod cordic;
 pub mod cram_ct;
 pub mod lane_projector;
 pub mod sqrt;
+pub mod substrate;
 pub mod triad;
 
 #[cfg(feature = "arbitrary-precision")]

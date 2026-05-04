@@ -775,6 +775,12 @@ pub enum CramOpError {
     BasisMismatch,
     /// op_counter would overflow.
     OpCounterOverflow,
+    /// The chimera router selected a lane that Phase 4 has not yet
+    /// implemented (D1 K-Elim, D2 DIV_EXACT, D3 FPD).
+    DivisionLaneNotImplemented {
+        primary: crate::chimera_division::ChimeraLane,
+        gcd_with_basis: u64,
+    },
 }
 
 /// Add two S8 signatures coefficient-wise. CRT homomorphism makes this
@@ -796,6 +802,54 @@ fn add_signatures(
             residues[i] = (sa.residues[i] + sb.residues[i]) % p;
         }
         signatures.push(S8Signature { residues });
+    }
+    Ok(PolynomialS8Signature { signatures })
+}
+
+/// Negacyclic polynomial multiplication of two S8 signatures.
+///
+/// For polynomials of degree < N living in `R = Z[X]/(X^N + 1)`, the schoolbook
+/// product on each lane is `c[k] = sum_{i+j=k} a[i]*b[j] mod p` minus
+/// `sum_{i+j=N+k} a[i]*b[j] mod p` (the negacyclic wrap from `X^N = -1`).
+/// CRT homomorphism makes lane-wise multiplication equivalent to polynomial
+/// multiplication of the integers each lane reconstructs.
+fn negacyclic_convolve_signatures(
+    a: &PolynomialS8Signature,
+    b: &PolynomialS8Signature,
+) -> Result<PolynomialS8Signature, CramOpError> {
+    if a.signatures.len() != b.signatures.len() {
+        return Err(CramOpError::PolynomialLengthMismatch {
+            lhs: a.signatures.len(),
+            rhs: b.signatures.len(),
+        });
+    }
+    let n = a.signatures.len();
+    let mut signatures = Vec::with_capacity(n);
+    for _ in 0..n {
+        signatures.push(S8Signature { residues: [0u32; 8] });
+    }
+    for (lane_idx, &p) in crate::triad::S8.iter().enumerate() {
+        let p_u64 = p as u64;
+        for k in 0..n {
+            let mut acc: u64 = 0;
+            // Positive terms: i + j = k.
+            for i in 0..=k {
+                let j = k - i;
+                let prod = (a.signatures[i].residues[lane_idx] as u64
+                    * b.signatures[j].residues[lane_idx] as u64)
+                    % p_u64;
+                acc = (acc + prod) % p_u64;
+            }
+            // Negative (wrap) terms: i + j = N + k.
+            for i in (k + 1)..n {
+                let j = n + k - i;
+                let prod = (a.signatures[i].residues[lane_idx] as u64
+                    * b.signatures[j].residues[lane_idx] as u64)
+                    % p_u64;
+                acc = (acc + p_u64 - prod) % p_u64;
+            }
+            signatures[k].residues[lane_idx] = acc as u32;
+        }
     }
     Ok(PolynomialS8Signature { signatures })
 }
@@ -942,6 +996,263 @@ impl<C> CramCiphertext<C> {
         out.verify().map_err(CramOpError::OutputVerifyFailed)?;
         Ok(out)
     }
+
+    /// Phase-4 ciphertext × ciphertext multiplication via negacyclic
+    /// convolution at the S8 signature level.
+    ///
+    /// Treats c0 as a polynomial in `Z[X]/(X^N + 1)` and multiplies the two
+    /// witness signatures lane-wise; CRT homomorphism makes this equivalent
+    /// to multiplying the integer polynomials each lane reconstructs. Full
+    /// BFV semantics (tensor + relinearize + rescale) are deferred to the
+    /// `nine65` integration; the closure handles the concrete `C` side.
+    pub fn cram_mul<F>(self, other: Self, mul_base: F) -> Result<Self, CramOpError>
+    where
+        F: FnOnce(C, C) -> C,
+    {
+        self.verify().map_err(CramOpError::InputVerifyFailed)?;
+        other.verify().map_err(CramOpError::InputVerifyFailed)?;
+
+        if self.topology.id != other.topology.id {
+            return Err(CramOpError::TopologyMismatch);
+        }
+        if self.topology.basis != other.topology.basis {
+            return Err(CramOpError::BasisMismatch);
+        }
+
+        let new_c0 = negacyclic_convolve_signatures(
+            &self.witness.c0_signature,
+            &other.witness.c0_signature,
+        )?;
+        let new_c1 = match (&self.witness.c1_signature, &other.witness.c1_signature) {
+            (Some(a), Some(b)) => Some(negacyclic_convolve_signatures(a, b)?),
+            _ => None,
+        };
+
+        let new_op_counter = self
+            .witness
+            .op_counter
+            .max(other.witness.op_counter)
+            .checked_add(1)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+
+        let new_lock_witness =
+            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+
+        let new_base = mul_base(self.base, other.base);
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: new_c0,
+                c1_signature: new_c1,
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+        Ok(out)
+    }
+}
+
+// ─── Phase-4 Chimera Division Router ──────────────────────────────────────
+
+/// gcd helper local to the chimera router.
+fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
+    while b != 0 {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    a
+}
+
+/// Recommendation produced by the chimera router for a given divisor.
+///
+/// The router classifies the divisor against the active CRT basis and
+/// returns which of the four lanes can produce a certified quotient.
+/// `D0` (modular inverse) is the cheap fast path when the divisor is
+/// coprime to the basis product. The other three lanes are recommended
+/// (with a status code) but their full implementation lives in the
+/// `chimera_division` certificate layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChimeraDivPlan {
+    /// The lane the router selects as primary.
+    pub primary: crate::chimera_division::ChimeraLane,
+    /// Status the router would attach to the primary lane's certificate.
+    pub primary_status: crate::chimera_division::DivStatus,
+    /// gcd(d, basis_product) — `1` for D0, `>1` triggers fallback lanes.
+    pub gcd_with_basis: u64,
+    /// Mask of lanes deemed evaluable by the router.
+    pub evaluable: crate::chimera_division::LaneMask,
+}
+
+/// Decide which division lane to route a scalar divisor through.
+///
+/// Phase-4 router covers the static classification:
+///
+/// * `gcd(d, M_act) == 1` → D0 ModularInverse, status `ModularInverseExact`.
+/// * `d > 0` and shares factors → D3 FusedPiggyback (auxiliary anchors
+///   handle the non-coprime divisor; full FPD requires the aux pool).
+/// * `d == 0` → no lane evaluable, status `InvalidDivisor`.
+///
+/// D1 (K-Elim) and D2 (DIV_EXACT absorbent) require additional witnesses
+/// not yet plumbed into the CramWitnessState; the router marks them
+/// evaluable when their static preconditions hold so the certificate
+/// layer can fill them in later.
+pub fn select_division_lane(divisor: i128, basis: SafeBasis) -> ChimeraDivPlan {
+    use crate::chimera_division::{ChimeraLane, DivStatus, LaneMask};
+    if divisor == 0 {
+        return ChimeraDivPlan {
+            primary: ChimeraLane::ModularInverse,
+            primary_status: DivStatus::InvalidDivisor,
+            gcd_with_basis: 0,
+            evaluable: LaneMask::default(),
+        };
+    }
+    let abs_d = divisor.unsigned_abs() as u64;
+    let m = basis.product();
+    let g = gcd_u64(abs_d, m);
+    let mut evaluable = LaneMask::default();
+    if g == 1 {
+        evaluable.modular_inverse = true;
+        evaluable.fused_piggyback = true; // FPD always works for non-zero d
+        return ChimeraDivPlan {
+            primary: ChimeraLane::ModularInverse,
+            primary_status: DivStatus::ModularInverseExact,
+            gcd_with_basis: 1,
+            evaluable,
+        };
+    }
+    // Shared factor — D0 is unsafe; recommend D3 with bound-pending status.
+    evaluable.fused_piggyback = true;
+    // D2 (DIV_EXACT) is statically applicable when |d| is a product of
+    // primes that all live inside the basis (so an absorbent extension
+    // could cover it). For Phase 4 we just record evaluability.
+    if is_basis_smooth(abs_d, basis) {
+        evaluable.div_exact = true;
+    }
+    ChimeraDivPlan {
+        primary: ChimeraLane::FusedPiggyback,
+        primary_status: DivStatus::FusedBounded,
+        gcd_with_basis: g,
+        evaluable,
+    }
+}
+
+/// True iff every prime factor of `d` lies in `basis.moduli()`.
+fn is_basis_smooth(mut d: u64, basis: SafeBasis) -> bool {
+    if d == 0 {
+        return false;
+    }
+    for &p in basis.moduli() {
+        let p64 = p as u64;
+        while d % p64 == 0 {
+            d /= p64;
+        }
+    }
+    d == 1
+}
+
+/// Modular inverse of `d` for each S8 lane (D0 lane).
+///
+/// Returns `Some(inv_per_lane)` if every lane has an inverse (i.e., d is
+/// coprime to every S8 prime). Returns `None` if any lane has no inverse,
+/// signalling the router to fall back to D1/D2/D3.
+fn s8_lane_inverses(d: i128) -> Option<[u32; 8]> {
+    let abs_d = d.unsigned_abs() as u64;
+    let sign = if d < 0 { true } else { false };
+    let mut out = [0u32; 8];
+    for (i, &p) in crate::triad::S8.iter().enumerate() {
+        let r = (abs_d % p as u64) as u32;
+        let inv = mod_inv_u32(r, p)?;
+        out[i] = if sign { (p - inv) % p } else { inv };
+    }
+    Some(out)
+}
+
+impl<C> CramCiphertext<C> {
+    /// Phase-4 D0 rescale: divide every coefficient by `divisor` lane-wise
+    /// using modular inverses. Requires `gcd(divisor, S8_PRODUCT) == 1`.
+    ///
+    /// Returns the rescaled ciphertext + the chimera resolver decision so
+    /// callers can inspect which lane was selected and why.
+    pub fn cram_rescale_by_scalar<F>(
+        self,
+        divisor: i128,
+        rescale_base: F,
+    ) -> Result<(Self, ChimeraDivPlan), CramOpError>
+    where
+        F: FnOnce(C, i128) -> C,
+    {
+        self.verify().map_err(CramOpError::InputVerifyFailed)?;
+
+        let plan = select_division_lane(divisor, self.topology.basis);
+        if !plan.evaluable.modular_inverse {
+            // Phase-4 only implements D0; D1/D2/D3 are static-recommendation only.
+            return Err(CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            });
+        }
+
+        let inverses = s8_lane_inverses(divisor)
+            .ok_or(CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            })?;
+
+        let new_c0 = apply_lane_inverses(&self.witness.c0_signature, &inverses);
+        let new_c1 = self
+            .witness
+            .c1_signature
+            .as_ref()
+            .map(|s| apply_lane_inverses(s, &inverses));
+
+        let new_op_counter = self
+            .witness
+            .op_counter
+            .checked_add(1)
+            .ok_or(CramOpError::OpCounterOverflow)?;
+
+        let new_lock_witness =
+            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+
+        let new_base = rescale_base(self.base, divisor);
+
+        let out = CramCiphertext {
+            base: new_base,
+            topology: self.topology,
+            locks: self.locks,
+            witness: CramWitnessState {
+                c0_signature: new_c0,
+                c1_signature: new_c1,
+                op_counter: new_op_counter,
+                lock_witness: new_lock_witness,
+            },
+        };
+        out.verify().map_err(CramOpError::OutputVerifyFailed)?;
+        Ok((out, plan))
+    }
+}
+
+/// Multiply each coefficient's S8 signature lane-wise by precomputed
+/// per-lane inverses (D0 path).
+fn apply_lane_inverses(
+    a: &PolynomialS8Signature,
+    inverses: &[u32; 8],
+) -> PolynomialS8Signature {
+    let mut signatures = Vec::with_capacity(a.signatures.len());
+    for sa in &a.signatures {
+        let mut residues = [0u32; 8];
+        for (i, &p) in crate::triad::S8.iter().enumerate() {
+            residues[i] =
+                ((sa.residues[i] as u64 * inverses[i] as u64) % p as u64) as u32;
+        }
+        signatures.push(S8Signature { residues });
+    }
+    PolynomialS8Signature { signatures }
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────
@@ -1534,5 +1845,160 @@ mod tests {
         let b = CramCiphertext::wrap_default(11u64, &[3i128, 4], None);
         let sum = a.cram_add(b, |x, y| x + y).unwrap();
         assert_eq!(sum.base, 18);
+    }
+
+    // ---- Phase-4 ciphertext × ciphertext multiplication ------------------
+
+    #[test]
+    fn cram_mul_produces_negacyclic_polynomial_product() {
+        // For polynomials a = 1 + 2x and b = 3 + 4x in Z[x]/(x^2 + 1):
+        //   a*b = 3 + 4x + 6x + 8x^2
+        //       = 3 + 10x + 8(-1)            (negacyclic: x^2 = -1)
+        //       = -5 + 10x.
+        let a = CramCiphertext::wrap_default((), &[1i128, 2], None);
+        let b = CramCiphertext::wrap_default((), &[3i128, 4], None);
+        let prod = a.cram_mul(b, |_, _| ()).unwrap();
+        assert_eq!(prod.reconstruct_c0_coeffs_signed(), vec![-5, 10]);
+    }
+
+    #[test]
+    fn cram_mul_handles_degree_4_polynomials() {
+        // a = 1 + 2x + 3x^2 + 4x^3, b = 1 (constant). a*b = a.
+        let a_coeffs = vec![1i128, 2, 3, 4];
+        let b_coeffs = vec![1i128, 0, 0, 0];
+        let a = CramCiphertext::wrap_default((), &a_coeffs, None);
+        let b = CramCiphertext::wrap_default((), &b_coeffs, None);
+        let prod = a.cram_mul(b, |_, _| ()).unwrap();
+        assert_eq!(prod.reconstruct_c0_coeffs_signed(), vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn cram_mul_negacyclic_wrap_in_x_squared_ring() {
+        // x * x in Z[x]/(x^2 + 1) = -1, encoded as coefficient (-1, 0).
+        let a = CramCiphertext::wrap_default((), &[0i128, 1], None);
+        let b = CramCiphertext::wrap_default((), &[0i128, 1], None);
+        let prod = a.cram_mul(b, |_, _| ()).unwrap();
+        assert_eq!(prod.reconstruct_c0_coeffs_signed(), vec![-1, 0]);
+    }
+
+    #[test]
+    fn cram_mul_zero_polynomial_collapses() {
+        let a = CramCiphertext::wrap_default((), &[1i128, 2, 3, 4], None);
+        let zero = CramCiphertext::wrap_default((), &[0i128; 4], None);
+        let prod = a.cram_mul(zero, |_, _| ()).unwrap();
+        assert_eq!(prod.reconstruct_c0_coeffs_signed(), vec![0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn cram_mul_increments_op_counter() {
+        let a = CramCiphertext::wrap_default((), &[1i128, 2], None);
+        let b = CramCiphertext::wrap_default((), &[3i128, 4], None);
+        let prod = a.cram_mul(b, |_, _| ()).unwrap();
+        assert_eq!(prod.witness.op_counter, 1);
+    }
+
+    // ---- Phase-4 chimera division router ---------------------------------
+
+    #[test]
+    fn router_selects_d0_for_coprime_divisor() {
+        let plan = select_division_lane(23, SafeBasis::S8);
+        assert_eq!(
+            plan.primary,
+            crate::chimera_division::ChimeraLane::ModularInverse
+        );
+        assert_eq!(
+            plan.primary_status,
+            crate::chimera_division::DivStatus::ModularInverseExact
+        );
+        assert_eq!(plan.gcd_with_basis, 1);
+        assert!(plan.evaluable.modular_inverse);
+    }
+
+    #[test]
+    fn router_falls_back_to_d3_for_basis_sharing_divisor() {
+        let plan = select_division_lane(6, SafeBasis::S8);
+        assert_eq!(
+            plan.primary,
+            crate::chimera_division::ChimeraLane::FusedPiggyback
+        );
+        assert_eq!(plan.gcd_with_basis, 6);
+        assert!(plan.evaluable.fused_piggyback);
+        assert!(!plan.evaluable.modular_inverse);
+    }
+
+    #[test]
+    fn router_marks_d2_evaluable_for_basis_smooth_divisor() {
+        // 30 = 2·3·5 — every prime factor is in S8, so DIV_EXACT (D2)
+        // is statically applicable given an absorbent extension.
+        let plan = select_division_lane(30, SafeBasis::S8);
+        assert!(plan.evaluable.div_exact);
+        assert!(plan.evaluable.fused_piggyback);
+    }
+
+    #[test]
+    fn router_rejects_zero_divisor() {
+        let plan = select_division_lane(0, SafeBasis::S8);
+        assert_eq!(
+            plan.primary_status,
+            crate::chimera_division::DivStatus::InvalidDivisor
+        );
+        assert_eq!(plan.evaluable.count(), 0);
+    }
+
+    #[test]
+    fn cram_rescale_by_coprime_scalar_runs_d0() {
+        // 23 is coprime to S8_PRODUCT, so D0 succeeds.
+        let coeffs = vec![23i128 * 5, 23 * 7, 23 * 11, 23 * 13];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, plan) = ct.cram_rescale_by_scalar(23, |_, _| ()).unwrap();
+        assert_eq!(
+            plan.primary,
+            crate::chimera_division::ChimeraLane::ModularInverse
+        );
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![5, 7, 11, 13]);
+    }
+
+    #[test]
+    fn cram_rescale_d1_d2_d3_not_yet_implemented() {
+        // 6 shares factors with S8 — only D1/D2/D3 paths apply, none of
+        // which Phase 4 implements yet. Must return DivisionLaneNotImplemented.
+        let ct = CramCiphertext::wrap_default((), &[6i128, 12, 18], None);
+        match ct.cram_rescale_by_scalar(6, |_, _| ()) {
+            Err(CramOpError::DivisionLaneNotImplemented {
+                primary: crate::chimera_division::ChimeraLane::FusedPiggyback,
+                gcd_with_basis: 6,
+            }) => {}
+            other => panic!("expected DivisionLaneNotImplemented, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn cram_rescale_handles_negative_coprime_scalar() {
+        // -23: D0 negates the lane inverses to recover an integer division.
+        let coeffs = vec![23i128, 46, -23, -69];
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        let (rescaled, _) = ct.cram_rescale_by_scalar(-23, |_, _| ()).unwrap();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![-1, -2, 1, 3]);
+    }
+
+    #[test]
+    fn cram_rescale_rejects_zero_divisor() {
+        let ct = CramCiphertext::wrap_default((), &[1i128, 2], None);
+        match ct.cram_rescale_by_scalar(0, |_, _| ()) {
+            Err(CramOpError::DivisionLaneNotImplemented { gcd_with_basis: 0, .. }) => {}
+            other => panic!("expected zero-divisor rejection, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn is_basis_smooth_recognises_known_smooth_numbers() {
+        // S8 = {2,3,5,7,11,13,17,19}. Smooth examples:
+        for n in [1u64, 2, 3, 5, 7, 30, 42, 9_699_690] {
+            assert!(is_basis_smooth(n, SafeBasis::S8), "{} should be S8-smooth", n);
+        }
+        // Non-smooth: contains 23, 29, 31, 37, ...
+        for n in [23u64, 29, 100_003] {
+            assert!(!is_basis_smooth(n, SafeBasis::S8), "{} should NOT be smooth", n);
+        }
     }
 }
