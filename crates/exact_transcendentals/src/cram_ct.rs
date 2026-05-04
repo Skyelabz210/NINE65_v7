@@ -23,7 +23,7 @@
 //! vocabulary today, with the topology table validated by tests.
 
 use crate::chimera::{family_for, LaneRole};
-use crate::lane_projector::PolynomialS8Signature;
+use crate::lane_projector::{mod_inv_u32, PolynomialS8Signature, S8Signature};
 use crate::Vec;
 
 // ─── Safe Basis ───────────────────────────────────────────────────────────
@@ -326,6 +326,340 @@ pub fn lane_role_in_default_topology(p: u32) -> Option<LaneRole> {
     family_for(p).map(|f| f.role)
 }
 
+// ─── Phase-2 Lock Evidence ────────────────────────────────────────────────
+
+/// Why a lock predicate failed. Phase-2 verification reports the first
+/// failure with enough detail to point at the corrupted coefficient.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LockFailure {
+    /// The witness graph and the evidence set disagree on the lock list.
+    EvidenceMismatch,
+    /// An anchor lock's recomputed K-Elim winding diverged from the witness.
+    AnchorDivergence {
+        source: u32,
+        target: u32,
+        coeff_index: usize,
+        expected: u32,
+        actual: u32,
+    },
+    /// An agreement lock's joint CRT residue differs from the witness.
+    AgreementDivergence {
+        source: u32,
+        target: u32,
+        coeff_index: usize,
+        expected: u32,
+        actual: u32,
+    },
+    /// A shadow lock's snapshot of the target lane changed.
+    ShadowDivergence {
+        source: u32,
+        target: u32,
+        coeff_index: usize,
+        expected: u32,
+        actual: u32,
+    },
+    /// op_counter wandered outside the certified winding corridor.
+    BoundaryViolation {
+        source: u32,
+        target: u32,
+        op_counter: i128,
+        corridor_low: i128,
+        corridor_high: i128,
+    },
+    /// The signature-lane hash changed.
+    SignatureDivergence {
+        lane: u32,
+        expected: u32,
+        actual: u32,
+    },
+    /// A coefficient slot was missing in the evidence.
+    EvidenceLengthMismatch {
+        source: u32,
+        target: u32,
+        expected_len: usize,
+        actual_len: usize,
+    },
+    /// The graph carries a lock kind whose evidence is not yet implemented.
+    UnsupportedLockKind { kind: LockType },
+}
+
+/// Per-lock evidence captured at wrap time. The evidence is recomputable
+/// from the polynomial S8 signature plus op_counter, so any tampering
+/// changes the recomputed value and the lock fails.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LockEvidence {
+    /// Expected K-Elim winding `k = (r_target - r_source) * source^-1 mod target`
+    /// per coefficient.
+    Anchor { expected_k: Vec<u32> },
+    /// Expected joint CRT residue `x mod (source * target)` per coefficient.
+    Agreement { expected_joint: Vec<u32> },
+    /// Snapshot of the target lane's residues.
+    Shadow { expected_residues: Vec<u32> },
+    /// Winding corridor `[low, high]` with `high - low < target` (anchor prime).
+    Boundary { corridor_low: i128, corridor_high: i128 },
+    /// Expected signature-lane hash mod 19.
+    Signature { expected: u32 },
+    /// Multiplicative locks have no Phase-2 evidence yet.
+    Multiplicative,
+}
+
+#[derive(Debug, Clone)]
+pub struct LockEvidenceEntry {
+    pub lock: PhaseLock,
+    pub evidence: LockEvidence,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct LockWitnessSet {
+    pub entries: Vec<LockEvidenceEntry>,
+}
+
+/// Simple deterministic mix used for the signature lane in Phase 2.
+/// FNV-1a with the residues of every coefficient and the op counter folded in.
+/// Replace with a real cryptographic hash before claiming proof-carrying status.
+fn signature_lane_hash(sig: &PolynomialS8Signature, op_counter: i128) -> u32 {
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325; // FNV-1a 64-bit offset basis
+    let prime: u64 = 0x0000_0100_0000_01b3;
+    let mut absorb = |x: u64| {
+        h ^= x;
+        h = h.wrapping_mul(prime);
+    };
+    for s in &sig.signatures {
+        for r in s.residues {
+            absorb(r as u64);
+        }
+    }
+    // Fold both halves of the i128 so the hash distinguishes counters that
+    // collide modulo 2^64.
+    absorb(op_counter as u64);
+    absorb((op_counter >> 64) as u64);
+    (h % 19) as u32
+}
+
+/// CRT joint residue of (r_a mod p, r_b mod q) into Z/(p*q)Z, computed via
+/// Garner's two-step formula. `p` and `q` must be coprime.
+fn crt_pair(r_a: u32, p: u32, r_b: u32, q: u32) -> u32 {
+    let inv = mod_inv_u32(p % q, q).expect("S8 primes are pairwise coprime");
+    let diff = (r_b as i64 - r_a as i64).rem_euclid(q as i64) as u32;
+    let k = ((diff as u64) * (inv as u64) % q as u64) as u32;
+    (r_a as u64 + (k as u64) * (p as u64)) as u32
+}
+
+/// K-Elim winding `k = (r_target - r_source) * source^-1 mod target` for one
+/// coefficient — `source` and `target` must be coprime.
+fn anchor_k(sig: &S8Signature, source: u32, target: u32) -> u32 {
+    let r_s = sig.residue_mod(source).expect("source not in S8");
+    let r_t = sig.residue_mod(target).expect("target not in S8");
+    let inv = mod_inv_u32(source % target, target).expect("source/target not coprime");
+    let diff = (r_t as i64 - r_s as i64).rem_euclid(target as i64) as u32;
+    ((diff as u64) * (inv as u64) % target as u64) as u32
+}
+
+impl LockWitnessSet {
+    /// Build evidence for every lock in `graph` from the current signature
+    /// and op counter.
+    pub fn compute(
+        graph: &PhaseLockGraph,
+        sig: &PolynomialS8Signature,
+        op_counter: i128,
+    ) -> Self {
+        let mut entries = Vec::with_capacity(graph.locks.len());
+        for &lock in &graph.locks {
+            // Defensive: locks referencing primes outside S8 cannot have
+            // residues computed. Emit the no-op `Multiplicative` evidence
+            // so `compute` never panics; the off-basis lock is caught by
+            // `verify_metadata` before `verify_locks` runs.
+            let s_in_s8 = crate::triad::S8.contains(&lock.source);
+            let t_in_s8 = crate::triad::S8.contains(&lock.target);
+            if !s_in_s8 || !t_in_s8 {
+                entries.push(LockEvidenceEntry {
+                    lock,
+                    evidence: LockEvidence::Multiplicative,
+                });
+                continue;
+            }
+            let evidence = match lock.kind {
+                LockType::Anchor => {
+                    let expected_k = sig
+                        .signatures
+                        .iter()
+                        .map(|s| anchor_k(s, lock.source, lock.target))
+                        .collect();
+                    LockEvidence::Anchor { expected_k }
+                }
+                LockType::Agreement => {
+                    let expected_joint = sig
+                        .signatures
+                        .iter()
+                        .map(|s| {
+                            let r_s = s.residue_mod(lock.source).unwrap();
+                            let r_t = s.residue_mod(lock.target).unwrap();
+                            crt_pair(r_s, lock.source, r_t, lock.target)
+                        })
+                        .collect();
+                    LockEvidence::Agreement { expected_joint }
+                }
+                LockType::Shadow => {
+                    let expected_residues = sig
+                        .signatures
+                        .iter()
+                        .map(|s| s.residue_mod(lock.target).unwrap())
+                        .collect();
+                    LockEvidence::Shadow { expected_residues }
+                }
+                LockType::Boundary => {
+                    // Corridor width = anchor prime (= target). The corridor
+                    // brackets the current op_counter so any drift outside
+                    // the band fails the lock.
+                    let width = lock.target as i128;
+                    LockEvidence::Boundary {
+                        corridor_low: op_counter,
+                        corridor_high: op_counter.saturating_add(width - 1),
+                    }
+                }
+                LockType::Signature => LockEvidence::Signature {
+                    expected: signature_lane_hash(sig, op_counter),
+                },
+                LockType::Multiplicative => LockEvidence::Multiplicative,
+            };
+            entries.push(LockEvidenceEntry { lock, evidence });
+        }
+        Self { entries }
+    }
+
+    /// Check that every lock still verifies against the (possibly mutated)
+    /// signature and op counter.
+    pub fn verify(
+        &self,
+        graph: &PhaseLockGraph,
+        sig: &PolynomialS8Signature,
+        op_counter: i128,
+    ) -> Result<(), LockFailure> {
+        if self.entries.len() != graph.locks.len() {
+            return Err(LockFailure::EvidenceMismatch);
+        }
+        for (i, entry) in self.entries.iter().enumerate() {
+            if entry.lock.source != graph.locks[i].source
+                || entry.lock.target != graph.locks[i].target
+                || entry.lock.kind != graph.locks[i].kind
+            {
+                return Err(LockFailure::EvidenceMismatch);
+            }
+            verify_one(entry, sig, op_counter)?;
+        }
+        Ok(())
+    }
+}
+
+fn verify_one(
+    entry: &LockEvidenceEntry,
+    sig: &PolynomialS8Signature,
+    op_counter: i128,
+) -> Result<(), LockFailure> {
+    let lock = entry.lock;
+    let n = sig.signatures.len();
+    match &entry.evidence {
+        LockEvidence::Anchor { expected_k } => {
+            if expected_k.len() != n {
+                return Err(LockFailure::EvidenceLengthMismatch {
+                    source: lock.source,
+                    target: lock.target,
+                    expected_len: expected_k.len(),
+                    actual_len: n,
+                });
+            }
+            for (i, s) in sig.signatures.iter().enumerate() {
+                let actual = anchor_k(s, lock.source, lock.target);
+                if actual != expected_k[i] {
+                    return Err(LockFailure::AnchorDivergence {
+                        source: lock.source,
+                        target: lock.target,
+                        coeff_index: i,
+                        expected: expected_k[i],
+                        actual,
+                    });
+                }
+            }
+        }
+        LockEvidence::Agreement { expected_joint } => {
+            if expected_joint.len() != n {
+                return Err(LockFailure::EvidenceLengthMismatch {
+                    source: lock.source,
+                    target: lock.target,
+                    expected_len: expected_joint.len(),
+                    actual_len: n,
+                });
+            }
+            for (i, s) in sig.signatures.iter().enumerate() {
+                let r_s = s.residue_mod(lock.source).unwrap();
+                let r_t = s.residue_mod(lock.target).unwrap();
+                let actual = crt_pair(r_s, lock.source, r_t, lock.target);
+                if actual != expected_joint[i] {
+                    return Err(LockFailure::AgreementDivergence {
+                        source: lock.source,
+                        target: lock.target,
+                        coeff_index: i,
+                        expected: expected_joint[i],
+                        actual,
+                    });
+                }
+            }
+        }
+        LockEvidence::Shadow { expected_residues } => {
+            if expected_residues.len() != n {
+                return Err(LockFailure::EvidenceLengthMismatch {
+                    source: lock.source,
+                    target: lock.target,
+                    expected_len: expected_residues.len(),
+                    actual_len: n,
+                });
+            }
+            for (i, s) in sig.signatures.iter().enumerate() {
+                let actual = s.residue_mod(lock.target).unwrap();
+                if actual != expected_residues[i] {
+                    return Err(LockFailure::ShadowDivergence {
+                        source: lock.source,
+                        target: lock.target,
+                        coeff_index: i,
+                        expected: expected_residues[i],
+                        actual,
+                    });
+                }
+            }
+        }
+        LockEvidence::Boundary {
+            corridor_low,
+            corridor_high,
+        } => {
+            if op_counter < *corridor_low || op_counter > *corridor_high {
+                return Err(LockFailure::BoundaryViolation {
+                    source: lock.source,
+                    target: lock.target,
+                    op_counter,
+                    corridor_low: *corridor_low,
+                    corridor_high: *corridor_high,
+                });
+            }
+        }
+        LockEvidence::Signature { expected } => {
+            let actual = signature_lane_hash(sig, op_counter);
+            if actual != *expected {
+                return Err(LockFailure::SignatureDivergence {
+                    lane: lock.source,
+                    expected: *expected,
+                    actual,
+                });
+            }
+        }
+        LockEvidence::Multiplicative => {
+            return Err(LockFailure::UnsupportedLockKind {
+                kind: LockType::Multiplicative,
+            });
+        }
+    }
+    Ok(())
+}
+
 // ─── CramCiphertext Shell ─────────────────────────────────────────────────
 
 /// Witness state attached alongside a base ciphertext. Phase-1 only carries
@@ -337,17 +671,24 @@ pub struct CramWitnessState {
     pub c0_signature: PolynomialS8Signature,
     /// Optional signature of c1, included when the topology requests it.
     pub c1_signature: Option<PolynomialS8Signature>,
-    /// Operation counter, incremented by every cram_add / cram_mul call.
-    pub op_counter: u64,
+    /// Operation / winding counter (i128 to match NINE65 winding convention),
+    /// incremented by every cram_add / cram_mul call.
+    pub op_counter: i128,
+    /// Phase-2 lock evidence — one entry per lock in the graph.
+    pub lock_witness: LockWitnessSet,
 }
 
 impl CramWitnessState {
-    /// Build a fresh witness state from c0 and (optionally) c1 coefficients.
-    pub fn from_coeffs(c0: &[i128], c1: Option<&[i128]>) -> Self {
+    /// Build a fresh witness state from c0 (and optionally c1) coefficients,
+    /// computing lock evidence for every entry in `graph`.
+    pub fn from_coeffs(c0: &[i128], c1: Option<&[i128]>, graph: &PhaseLockGraph) -> Self {
+        let c0_signature = PolynomialS8Signature::from_coeffs(c0);
+        let lock_witness = LockWitnessSet::compute(graph, &c0_signature, 0);
         Self {
-            c0_signature: PolynomialS8Signature::from_coeffs(c0),
+            c0_signature,
             c1_signature: c1.map(PolynomialS8Signature::from_coeffs),
             op_counter: 0,
+            lock_witness,
         }
     }
 
@@ -372,20 +713,41 @@ pub struct CramCiphertext<C> {
 impl<C> CramCiphertext<C> {
     /// Wrap a base ciphertext with c0 coefficients (and optional c1) using
     /// the canonical S8 chimera topology and default phase-lock graph.
+    /// Lock evidence is captured at wrap time so subsequent calls to
+    /// `verify_locks` detect any tampering on c0.
     pub fn wrap_default(base: C, c0_coeffs: &[i128], c1_coeffs: Option<&[i128]>) -> Self {
+        let topology = S8_CHIMERA_V1.clone();
+        let locks = default_phase_locks();
+        let witness = CramWitnessState::from_coeffs(c0_coeffs, c1_coeffs, &locks);
         Self {
             base,
-            topology: S8_CHIMERA_V1.clone(),
-            locks: default_phase_locks(),
-            witness: CramWitnessState::from_coeffs(c0_coeffs, c1_coeffs),
+            topology,
+            locks,
+            witness,
         }
     }
 
     /// True iff the topology is well-formed and the phase-lock graph
-    /// references only its basis primes. Phase-1 verification — does not
-    /// yet evaluate the locks themselves.
+    /// references only its basis primes. Phase-1 metadata check.
     pub fn verify_metadata(&self) -> bool {
         self.topology.is_well_formed() && self.locks.references_only(&self.topology)
+    }
+
+    /// Phase-2: evaluate every lock predicate in the graph against the
+    /// current witness state. Returns the first failure with enough
+    /// detail to identify the divergent coefficient.
+    pub fn verify_locks(&self) -> Result<(), LockFailure> {
+        self.witness
+            .lock_witness
+            .verify(&self.locks, &self.witness.c0_signature, self.witness.op_counter)
+    }
+
+    /// Phase-1 + Phase-2 combined verification.
+    pub fn verify(&self) -> Result<(), LockFailure> {
+        if !self.verify_metadata() {
+            return Err(LockFailure::EvidenceMismatch);
+        }
+        self.verify_locks()
     }
 
     /// Reconstruct c0's coefficients (mod S8_PRODUCT) from the witness.
@@ -546,11 +908,13 @@ mod tests {
             // Lanes include 17 and 19, which are not in S6.
             lanes: &S8_CHIMERA_V1_LANES,
         };
+        let locks = default_phase_locks();
+        let witness = CramWitnessState::from_coeffs(&[0i128], None, &locks);
         let ct = CramCiphertext {
             base: (),
             topology: bad_topology,
-            locks: default_phase_locks(),
-            witness: CramWitnessState::from_coeffs(&[0i128], None),
+            locks,
+            witness,
         };
         assert!(!ct.verify_metadata());
     }
@@ -560,12 +924,249 @@ mod tests {
         let mut bad_locks = default_phase_locks();
         // 23 is in the FPD aux pool, not S8 — must be rejected.
         bad_locks.add(23, 5, LockType::Anchor);
+        let witness = CramWitnessState::from_coeffs(&[0i128], None, &bad_locks);
         let ct = CramCiphertext {
             base: (),
             topology: S8_CHIMERA_V1.clone(),
             locks: bad_locks,
-            witness: CramWitnessState::from_coeffs(&[0i128], None),
+            witness,
         };
         assert!(!ct.verify_metadata());
+    }
+
+    // ---- Phase-2 lock predicate evaluation -------------------------------
+
+    fn sample_coeffs() -> Vec<i128> {
+        // Mix of zero, ±1, small, large positive, large negative.
+        vec![0, 1, -1, 42, -42, 1_234_567, -1_234_567, 4_500_000]
+    }
+
+    #[test]
+    fn fresh_wrap_passes_phase2_verification() {
+        let coeffs = sample_coeffs();
+        let ct = CramCiphertext::wrap_default((), &coeffs, None);
+        assert!(ct.verify().is_ok(), "fresh wrap must verify");
+        assert_eq!(ct.witness.lock_witness.entries.len(), ct.locks.locks.len());
+    }
+
+    #[test]
+    fn anchor_lock_detects_lane_5_tampering() {
+        let coeffs = sample_coeffs();
+        let mut ct = CramCiphertext::wrap_default((), &coeffs, None);
+        // Bump residue mod 5 on coefficient 3. The default anchor lock is
+        // 5↔7 so this must trigger AnchorDivergence.
+        let lane_5_index = crate::triad::S8.iter().position(|&p| p == 5).unwrap();
+        ct.witness.c0_signature.signatures[3].residues[lane_5_index] =
+            (ct.witness.c0_signature.signatures[3].residues[lane_5_index] + 1) % 5;
+        match ct.verify_locks() {
+            Err(LockFailure::AnchorDivergence {
+                source: 5,
+                target: 7,
+                coeff_index: 3,
+                ..
+            }) => {}
+            other => panic!("expected AnchorDivergence at coeff 3, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn agreement_lock_detects_lane_17_tampering() {
+        let coeffs = sample_coeffs();
+        let mut ct = CramCiphertext::wrap_default((), &coeffs, None);
+        // Default agreement lock is 11↔17. Bump residue mod 17 on coeff 5,
+        // but pick a delta that the prior anchor (5↔7) and shadow (2↔11)
+        // checks won't catch first. Lane 17 is touched by the agreement
+        // lock and the boundary lock; agreement should trigger first.
+        let lane_17_index = crate::triad::S8.iter().position(|&p| p == 17).unwrap();
+        ct.witness.c0_signature.signatures[5].residues[lane_17_index] =
+            (ct.witness.c0_signature.signatures[5].residues[lane_17_index] + 1) % 17;
+        match ct.verify_locks() {
+            Err(LockFailure::AgreementDivergence {
+                source: 11,
+                target: 17,
+                coeff_index: 5,
+                ..
+            }) => {}
+            // Signature lane hash also changes, but agreement is checked first
+            // because it appears earlier in the default lock graph.
+            other => panic!("expected AgreementDivergence at coeff 5, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn shadow_lock_detects_lane_11_tampering() {
+        let coeffs = sample_coeffs();
+        let mut ct = CramCiphertext::wrap_default((), &coeffs, None);
+        // Bump residue mod 11. Default agreement (11↔17) fires before
+        // shadow (2↔11), so we expect AgreementDivergence here — the test
+        // confirms tampering with lane 11 is caught somewhere.
+        let lane_11_index = crate::triad::S8.iter().position(|&p| p == 11).unwrap();
+        ct.witness.c0_signature.signatures[1].residues[lane_11_index] =
+            (ct.witness.c0_signature.signatures[1].residues[lane_11_index] + 1) % 11;
+        let err = ct.verify_locks().expect_err("must fail");
+        assert!(
+            matches!(err, LockFailure::AgreementDivergence { .. } | LockFailure::ShadowDivergence { .. }),
+            "lane-11 tampering must be caught by an 11-bearing lock, got {:?}",
+            err
+        );
+    }
+
+    #[test]
+    fn shadow_lock_detects_lane_11_tampering_when_other_locks_skipped() {
+        // Build a CT with ONLY the shadow lock so we can assert the
+        // ShadowDivergence variant directly.
+        let coeffs = sample_coeffs();
+        let mut shadow_only = PhaseLockGraph::new();
+        shadow_only.add(2, 11, LockType::Shadow);
+        let witness = CramWitnessState::from_coeffs(&coeffs, None, &shadow_only);
+        let mut ct = CramCiphertext {
+            base: (),
+            topology: S8_CHIMERA_V1.clone(),
+            locks: shadow_only,
+            witness,
+        };
+        let lane_11_index = crate::triad::S8.iter().position(|&p| p == 11).unwrap();
+        ct.witness.c0_signature.signatures[2].residues[lane_11_index] =
+            (ct.witness.c0_signature.signatures[2].residues[lane_11_index] + 1) % 11;
+        match ct.verify_locks() {
+            Err(LockFailure::ShadowDivergence {
+                source: 2,
+                target: 11,
+                coeff_index: 2,
+                ..
+            }) => {}
+            other => panic!("expected ShadowDivergence at coeff 2, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn boundary_lock_rejects_op_counter_outside_corridor() {
+        let coeffs = sample_coeffs();
+        let mut ct = CramCiphertext::wrap_default((), &coeffs, None);
+        // Default boundary lock is 13↔17 with corridor width 17 (anchor).
+        // Bumping op_counter past corridor_high triggers BoundaryViolation.
+        ct.witness.op_counter = 1_000_000;
+        match ct.verify_locks() {
+            Err(LockFailure::BoundaryViolation {
+                source: 13,
+                target: 17,
+                op_counter: 1_000_000,
+                ..
+            }) => {}
+            other => panic!("expected BoundaryViolation, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn boundary_lock_accepts_op_counter_inside_corridor() {
+        let coeffs = sample_coeffs();
+        let mut sig_only = PhaseLockGraph::new();
+        sig_only.add(13, 17, LockType::Boundary);
+        let witness = CramWitnessState::from_coeffs(&coeffs, None, &sig_only);
+        let mut ct = CramCiphertext {
+            base: (),
+            topology: S8_CHIMERA_V1.clone(),
+            locks: sig_only,
+            witness,
+        };
+        // op_counter starts at 0, corridor [0, 16] (width = 17). Bump to
+        // 16 — still inside corridor.
+        ct.witness.op_counter = 16;
+        assert!(ct.verify_locks().is_ok());
+        // 17 is outside.
+        ct.witness.op_counter = 17;
+        assert!(matches!(
+            ct.verify_locks(),
+            Err(LockFailure::BoundaryViolation { .. })
+        ));
+    }
+
+    #[test]
+    fn signature_lock_detects_op_counter_drift_alone() {
+        let coeffs = sample_coeffs();
+        let mut sig_only = PhaseLockGraph::new();
+        sig_only.add(19, 19, LockType::Signature);
+        let witness = CramWitnessState::from_coeffs(&coeffs, None, &sig_only);
+        let mut ct = CramCiphertext {
+            base: (),
+            topology: S8_CHIMERA_V1.clone(),
+            locks: sig_only,
+            witness,
+        };
+        // The signature lane folds the op counter into its hash, so a single
+        // bump must perturb the expected residue.
+        ct.witness.op_counter = 1;
+        assert!(matches!(
+            ct.verify_locks(),
+            Err(LockFailure::SignatureDivergence { lane: 19, .. })
+        ));
+    }
+
+    #[test]
+    fn evidence_length_mismatch_is_caught() {
+        let coeffs = sample_coeffs();
+        let mut ct = CramCiphertext::wrap_default((), &coeffs, None);
+        // Truncate one of the per-coefficient evidence vectors.
+        if let LockEvidence::Anchor { expected_k } =
+            &mut ct.witness.lock_witness.entries[0].evidence
+        {
+            expected_k.pop();
+        }
+        assert!(matches!(
+            ct.verify_locks(),
+            Err(LockFailure::EvidenceLengthMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn evidence_mismatch_when_graph_changes_after_wrap() {
+        let coeffs = sample_coeffs();
+        let mut ct = CramCiphertext::wrap_default((), &coeffs, None);
+        // Add a lock to the graph after wrap. Witness set still has the
+        // original entries — the count diverges.
+        ct.locks.add(5, 11, LockType::Multiplicative);
+        assert!(matches!(
+            ct.verify_locks(),
+            Err(LockFailure::EvidenceMismatch)
+        ));
+    }
+
+    #[test]
+    fn crt_pair_matches_brute_force_for_s8_pairs() {
+        // Sanity check the CRT helper used by the agreement lock.
+        for &p in &crate::triad::S8 {
+            for &q in &crate::triad::S8 {
+                if p >= q {
+                    continue;
+                }
+                for r_a in 0..p {
+                    for r_b in 0..q {
+                        let joint = crt_pair(r_a, p, r_b, q);
+                        assert!(joint < p * q);
+                        assert_eq!(joint % p, r_a);
+                        assert_eq!(joint % q, r_b);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn anchor_k_inverse_relationship_holds() {
+        // For x in [0, S8_PRODUCT), the K-Elim winding k = (r_target - r_source)
+        // * source^-1 mod target must satisfy x ≡ r_source + k*source (mod target).
+        for x in [0u32, 1, 7, 35, 100, 9_699_689] {
+            let sig = S8Signature::project(x as i128);
+            for &(s, t) in &[(2u32, 3), (5, 7), (11, 13), (17, 19)] {
+                let k = anchor_k(&sig, s, t);
+                let r_s = sig.residue_mod(s).unwrap();
+                let r_t = sig.residue_mod(t).unwrap();
+                assert_eq!(
+                    (r_s as u64 + k as u64 * s as u64) % t as u64,
+                    r_t as u64,
+                    "anchor_k broken for ({s},{t}) at x={x}"
+                );
+            }
+        }
     }
 }

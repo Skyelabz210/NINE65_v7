@@ -57,7 +57,7 @@ impl S8Signature {
 
 /// Extended Euclidean modular inverse for small u32 moduli.
 /// Returns `Some(x)` such that `(a * x) mod m == 1`, or `None` if `gcd(a, m) != 1`.
-fn mod_inv_u32(a: u32, m: u32) -> Option<u32> {
+pub fn mod_inv_u32(a: u32, m: u32) -> Option<u32> {
     let (mut old_r, mut r) = (a as i64, m as i64);
     let (mut old_s, mut s) = (1i64, 0i64);
     while r != 0 {
