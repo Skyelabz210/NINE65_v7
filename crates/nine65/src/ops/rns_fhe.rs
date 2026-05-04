@@ -2977,11 +2977,14 @@ impl RNSFHEContext {
 
         if let Some(s) = shadows {
             let tau = self.sbni_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            // After rescale, c0_pre.main shrinks; pass only the live main
+            // primes so SBNI's loop can't walk past the actual lane count.
+            let active_main = &self.config.primes[..c0_pre.main.len()];
             super::sbni::inject_dual_in_place(
                 &mut c0_pre,
                 &s,
                 tau,
-                &self.config.primes,
+                active_main,
                 &self.dual_rns.anchor.primes
             );
         }

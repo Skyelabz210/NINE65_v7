@@ -34,10 +34,14 @@ use std::vec::Vec;
 
 pub mod agm;
 pub mod binary_splitting;
+pub mod chimera;
+pub mod chimera_division;
 pub mod constants;
 pub mod continued_fraction;
 pub mod cordic;
+pub mod cram_ct;
 pub mod sqrt;
+pub mod triad;
 
 #[cfg(feature = "arbitrary-precision")]
 pub mod bigint;
