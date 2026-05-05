@@ -1,313 +1,326 @@
-# NINE65 v7 "Bootstrap Complete"
-## Unlimited-Depth FHE with Verified Clockwork Bootstrap
+# NINE65
+## Low-Depth Bootstrap FHE for Continuous Privacy-Preserving Computation
 
 <div align="center">
 
-**First FHE system with fully verified bootstrap roundtrip: circular, non-circular (KSK), and auto-triggered unlimited-depth chains**
+**NINE65 is an integer-only BFV/RNS FHE substrate for high-performance private computation across public-key, symmetric, service, edge, and browser-facing deployment modes.**
 
-[![Tests](https://img.shields.io/badge/tests-689%20passing-brightgreen)]()
-[![Bootstrap](https://img.shields.io/badge/bootstrap-verified%20roundtrip-success)]()
-[![Proofs](https://img.shields.io/badge/formal%20proofs-Coq%20%2B%20Lean4-blue)]()
-[![Security](https://img.shields.io/badge/security-128--256%20bit-green)]()
-[![Build](https://img.shields.io/badge/build-passing-success)]()
+It is no longer just the original "v7 Bootstrap Complete" snapshot. The current codebase includes the v8 Shadow Butterfly work, real Clockwork bootstrap integration, symmetric protected refresh, SBNI timing-noise hardening, and CRAM-CT witness wiring over live DualRNS ciphertexts.
 
-[What's New](#whats-new-in-v7) | [Quick Start](#quick-start) | [Architecture](#architecture) | [Benchmarks](#performance-benchmarks) | [Security](#post-quantum-security)
+[Current Functionality](#current-functionality) | [Modes](#execution-modes) | [Quick Start](#quick-start) | [Architecture](#architecture) | [Build](#build-and-test) | [Security](#security-posture)
 
 </div>
 
 ---
 
-## What's New in v7
+## Current Functionality
 
-### Bootstrap-Complete: All Three Paths Verified
+NINE65 is a modular integer-computation substrate for privacy-preserving systems. Its current role is not to be a generic survey/chatbot product or a single demo of FHE bootstrapping. It is the cryptographic compute layer that can sit under products that need continuous private evaluation, private aggregation, edge execution, or constrained-device privacy infrastructure.
 
-v7 achieves what no prior version could: **every bootstrap path produces exact plaintext recovery**, enabling truly unlimited-depth FHE computation.
+The current implementation provides:
 
-| Path | Description | Status |
-|------|-------------|--------|
-| **Circular Bootstrap** | `bootstrap()` - boot_sk = lift(work_sk) | Verified exact |
-| **Non-Circular (KSK)** | `bootstrap_with_ksk()` - independent boot_sk, gadget key switch | Verified exact |
-| **Auto-Bootstrap** | `AutoBootstrapEvaluator::mul_auto()` - automatic trigger on noise threshold | Verified 10+ chained muls |
+| Capability | Current implementation |
+|---|---|
+| **Public-key FHE mode** | DualRNS BFV evaluation with `mul_dual_public`, evaluation keys, Clockwork bootstrap, and `AutoBootstrapEvaluator` for continued depth. |
+| **Low-depth bootstrap** | Clockwork bootstrap uses exact modulus switching plus plaintext×ciphertext bootstrap work, keeping the refresh circuit at low multiplicative depth. |
+| **Circular + non-circular bootstrap paths** | `generate_keys()` / `bootstrap()` for circular mode and `generate_keys_with_ksk()` / `bootstrap_with_ksk()` for KSK non-circular mode. |
+| **Symmetric protected refresh** | `SymmetricBootstrap` provides decrypt→re-encrypt refresh for key-holder scenarios, framed by the Three-Lock protection model. |
+| **SBNI hardening** | Shadow Butterfly Noise Injection rerandomizes deterministic noise drift from butterfly-derived entropy and is wired into public multiplication paths. |
+| **CRAM-CT witness layer** | `cram_ct_wrap` wraps `DualRNSCiphertext` in a phase-locked CRAM witness shell and re-extracts signatures after real BFV ops. |
+| **Edge/browser path** | `nine65-wasm` exposes a browser boundary with capacity checks and disabled secret-key export. |
+| **Service path** | `fhe-service` exposes session-based encrypt/decrypt/evaluate HTTP endpoints with request limits, metrics, TTL, and validation. |
+| **Accelerator path** | `mana` and `unhal` provide lane-parallel and hardware-abstraction infrastructure for CRT/RNS workloads. |
+| **Integer-only runtime** | Core cryptographic paths are exact integer arithmetic; the core crate forbids unsafe code. |
 
-### Key Fixes (v6 -> v7)
+The practical system direction is:
 
-1. **Key Switch Modswitch Fix**: `key_switch()` was performing simple residue reduction (`x mod Q_work`) instead of proper RNS modswitch (`round(x * Q_work / Q_boot)`). This destroyed the delta-m encoding for non-circular bootstrap. Fixed by separating key switch (stays in boot space) from modswitch (proper prime-drop scaling).
-
-2. **Anchor Limb Recomputation**: `modswitch_boot_to_work()` zeroed K-Elimination anchor limbs, causing subsequent multiplications to produce garbage (K-Elimination rescale needs valid anchors). Fixed by CRT-reconstructing each coefficient from work main primes and reducing mod each anchor prime.
-
-3. **CRT Gadget Decomposition**: `key_switch()` decomposed only from the first RNS limb (~30 bits) instead of CRT-reconstructing the full ~120-bit coefficient before base-B decomposition. Fixed with Garner's iterative CRT reconstruction across all boot prime limbs.
-
-### New Regression Tests
-
-| Test | What It Verifies |
-|------|------------------|
-| `test_circular_bootstrap_roundtrip` | 7 messages through circular bootstrap |
-| `test_ksk_bootstrap_roundtrip` | 7 messages through non-circular KSK bootstrap |
-| `test_mul_then_bootstrap_then_mul` | multiply -> bootstrap -> multiply chain |
-| `test_auto_bootstrap_chained_muls` | 10 chained muls with auto-triggered bootstrap (2^11 = 2048) |
+```text
+continuous private computation
+  = exact RNS/BFV arithmetic
+  + low-depth bootstrap/refresh
+  + public and symmetric modes
+  + edge/service/browser deployment surfaces
+  + witness/lock metadata for state integrity
+```
 
 ---
 
-## Executive Summary
+## Execution Modes
 
-| Metric | NINE65 v7 |
-|--------|-----------|
-| **Max Depth** | Unlimited (auto-bootstrap) |
-| **Bootstrap Paths** | 3 (circular, KSK, auto) |
-| **Bootstrap Cost** | Trivial (depth-1 Clockwork) |
-| **Security Levels** | 128, 192, 256 bit |
-| **Test Coverage** | 689+ tests passing |
-| **Formal Proofs** | 14 Coq + 4 Lean4 |
-| **Platform** | CPU only, deterministic |
-| **Arithmetic** | Integer-only (zero floats) |
-| **Post-Quantum** | LWE-based (lattice verified) |
+### 1. Public-key mode
 
-### Security Configurations
+Use this when an evaluator should compute over ciphertexts without holding the secret key.
 
-| Config | n | log2(q) | Classical | Quantum | Hybrid |
-|--------|---|---------|-----------|---------|--------|
-| `secure_128` | 4096 | 90 | 129 | 86 | 129 |
-| `secure_192` | 16384 | 147 | 374 | 213 | 318 |
-| `secure_256` | 16384 | 177 | 311 | 177 | 264 |
+```text
+client/key-holder: key generation + encryption/decryption
+server/evaluator:  add, mul, bootstrap, aggregate, route
+```
+
+Public mode uses DualRNS BFV ciphertexts, evaluation keys, and Clockwork bootstrap. `AutoBootstrapEvaluator` automatically refreshes ciphertexts when the tracked budget is exhausted or crosses a trigger threshold.
+
+### 2. Non-circular public mode
+
+Use this when the bootstrap key should be independent from the work key.
+
+```text
+work key != boot key
+bootstrap phase output is key-switched back to the work key
+```
+
+This path uses `generate_keys_with_ksk()` and `bootstrap_with_ksk()`.
+
+### 3. Symmetric protected mode
+
+Use this when the evaluator is also the key holder, or when refresh runs inside a protected key boundary such as an HSM, TEE, local device, private gateway, or controlled edge node.
+
+```text
+decrypt under sk -> immediately re-encrypt -> restore fresh noise budget
+```
+
+This is not the same security model as public FHE bootstrap. Its purpose is continuous high-performance private computation where the key holder is permitted to perform protected refresh. The code models this as `SymmetricBootstrap`, with Three-Lock framing around the plaintext exposure window.
+
+### 4. Edge / IoT / browser mode
+
+NINE65 includes infrastructure intended for constrained or near-user deployment:
+
+- `nine65-wasm` for browser/JS integration.
+- boundary checks before operations that could exceed anchor capacity.
+- disabled secret-key export in the WASM API.
+- `mana` / `unhal` acceleration paths for CRT-lane execution.
+- deterministic CPU-only operation paths for environments where GPU assumptions are not available.
+
+### 5. Service mode
+
+`fhe-service` is a REST-style microservice for session-based FHE operations.
+
+Important boundary: the current service session model keeps key material server-side. For strict consumer-side privacy, prefer client-side or edge-held keys, or use the service as a private key-holder component rather than as a public SaaS trust boundary.
 
 ---
 
 ## Quick Start
 
-```rust
-use nine65::params::secure_configs::SecureConfig;
-use nine65::ops::rns_fhe::RNSFHEContext;
-use nine65::ops::bootstrap::ClockworkBootstrap;
-use nine65::entropy::ShadowHarvester;
+### Public-key auto-bootstrap
 
-// Setup
+```rust
+use nine65::entropy::ShadowHarvester;
+use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+use nine65::ops::bootstrap::ClockworkBootstrap;
+use nine65::ops::rns_fhe::RNSFHEContext;
+use nine65::params::secure_configs::SecureConfig;
+
 let config = SecureConfig::secure_128().into_config();
-let ctx = RNSFHEContext::try_new(&config).expect("Context");
-let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
+let ctx = RNSFHEContext::try_new(&config).expect("context");
+let boot = ClockworkBootstrap::new(&config).expect("bootstrap");
 let mut rng = ShadowHarvester::from_os_seed();
 
-// Keys
 let keys = ctx.generate_keys_dual_full(&mut rng);
-let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
+let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("boot keys");
 
-// Encrypt and compute
-let ct_a = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
-let ct_b = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
-let ct_prod = ctx.mul_dual_public(&ct_a, &ct_b, &keys.eval_key).expect("mul");
+let x = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
+let mut acc = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
 
-// Bootstrap refreshes noise -> enables unlimited depth
-let ct_fresh = boot.bootstrap(&ct_prod, &boot_keys.bsk, &boot_keys.ksk)
-    .expect("bootstrap");
-
-// Continue computing on refreshed ciphertext
-let ct_c = ctx.encrypt_dual(3, &keys.public_key, &mut rng);
-let ct_result = ctx.mul_dual_public(&ct_fresh, &ct_c, &keys.eval_key)
-    .expect("mul after boot");
-let result = ctx.decrypt_dual(&ct_result, &keys.secret_key);
-assert_eq!(result, 42 * 7 * 3);
-```
-
-### Auto-Bootstrap (Unlimited Depth)
-
-```rust
-use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
-
-let mut evaluator = AutoBootstrapEvaluator::new(
-    &ctx, &boot, &boot_keys.bsk, &boot_keys.ksk, &keys.eval_key, &config,
+let mut eval = AutoBootstrapEvaluator::new(
+    &ctx,
+    &boot,
+    &boot_keys.bsk,
+    &boot_keys.ksk,
+    &keys.eval_key,
+    &config,
 );
 
-// Chain arbitrary multiplications - bootstrap fires automatically
-let ct_x = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
-let mut ct = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
-for _ in 0..20 {
-    ct = evaluator.mul_auto(&ct, &ct_x).expect("unlimited depth");
+for _ in 0..100 {
+    acc = eval.mul_auto(&acc, &x).expect("mul + auto-refresh");
 }
-// Result is exact: 2^20 mod t
+
+let out = ctx.decrypt_dual(&acc, &keys.secret_key);
+println!("result mod t = {out}; bootstraps = {}", eval.bootstrap_count);
 ```
 
-### Non-Circular Security (KSK Path)
+### Non-circular bootstrap
 
 ```rust
-// Independent boot key (no circular security assumption)
-let boot_keys_ksk = boot.generate_keys_with_ksk(&keys.secret_key, &mut rng)
-    .expect("KSK keygen");
+let boot_keys = boot
+    .generate_keys_with_ksk(&keys.secret_key, &mut rng)
+    .expect("independent boot key + KSK");
 
 let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
-let ct_refreshed = boot.bootstrap_with_ksk(
-    &ct, &boot_keys_ksk.bsk, &boot_keys_ksk.ksk
-).expect("KSK bootstrap");
-assert_eq!(ctx.decrypt_dual(&ct_refreshed, &keys.secret_key), 42);
+let refreshed = boot
+    .bootstrap_with_ksk(&ct, &boot_keys.bsk, &boot_keys.ksk)
+    .expect("non-circular refresh");
+
+assert_eq!(ctx.decrypt_dual(&refreshed, &keys.secret_key), 42);
+```
+
+### Symmetric protected refresh
+
+```rust
+use nine65::ops::symmetric_bootstrap::SymmetricBootstrap;
+
+let mut sym = SymmetricBootstrap::new(&config).expect("symmetric bootstrap");
+let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+let refreshed = sym
+    .bootstrap(&ct, &keys.secret_key, &keys.public_key, &mut rng)
+    .expect("symmetric refresh");
+
+assert_eq!(ctx.decrypt_dual(&refreshed, &keys.secret_key), 42);
+```
+
+### CRAM-CT wrapper over real DualRNS ciphertexts
+
+```rust
+use nine65::cram_ct_wrap::{cram_add_dual, cram_mul_dual, wrap_dual_rns};
+
+let a = wrap_dual_rns(ctx.encrypt_dual(7, &keys.public_key, &mut rng));
+let b = wrap_dual_rns(ctx.encrypt_dual(11, &keys.public_key, &mut rng));
+
+let sum = cram_add_dual(&ctx, a, b).expect("CRAM add witness");
+assert_eq!(ctx.decrypt_dual(&sum.base, &keys.secret_key), 18 % ctx.t);
 ```
 
 ---
 
 ## Architecture
 
-```
+```text
 NINE65_v7/
 ├── crates/
-│   ├── nine65/              # Core FHE (689+ tests)
+│   ├── nine65/                  # Core BFV/RNS FHE engine
 │   │   └── src/
-│   │       ├── arithmetic/  # RNS, K-Elimination, NTT, Montgomery
+│   │       ├── arithmetic/      # RNS, K-Elimination, NTT, Montgomery, bounds
 │   │       ├── ops/
-│   │       │   ├── rns_fhe.rs        # BFV operations (encrypt, mul, decrypt)
-│   │       │   ├── bootstrap.rs      # Clockwork Bootstrap (3 paths)
-│   │       │   ├── auto_bootstrap.rs # AutoBootstrapEvaluator
-│   │       │   └── gso_fhe.rs        # GSO depth management
-│   │       ├── entropy/     # CRT Shadow + CSPRNG
-│   │       ├── security/    # CT primitives, GRO gates
-│   │       ├── keys/        # Key generation (BSK, KSK, eval keys)
-│   │       ├── noise/       # Noise budget tracking (millibits)
-│   │       └── params/      # Secure configs + security estimator
-│   ├── clockwork-core/      # Formal-spec RNS (Garner, GRO, bounds)
-│   ├── exact_transcendentals/  # Exact CORDIC transcendentals
-│   ├── nexgen_rational/     # Exact i128 rational arithmetic
-│   ├── fhe-service/         # Session management
-│   ├── mana/                # Lane-parallel accelerator
-│   └── unhal/               # Hardware abstraction
-├── proofs/coq/              # 14 machine-checked Coq proofs
-├── lean4/KElimination/      # 4 Lean4 formalizations
-├── scripts/                 # Quality gates
-└── docs/                    # Security proofs, benchmarks, compliance
+│   │       │   ├── rns_fhe.rs              # DualRNS BFV operations
+│   │       │   ├── bootstrap.rs            # Clockwork public bootstrap
+│   │       │   ├── auto_bootstrap.rs       # public-mode auto-refresh evaluator
+│   │       │   ├── symmetric_bootstrap.rs  # symmetric protected refresh
+│   │       │   ├── sbni.rs                 # Shadow Butterfly Noise Injection
+│   │       │   └── gso_fhe.rs              # depth/state management
+│   │       ├── cram_ct_wrap.rs  # CRAM-CT witness wrapper over DualRNS ciphertexts
+│   │       ├── entropy/         # Shadow entropy, CSPRNG, deterministic RNG
+│   │       ├── keys/            # public, secret, eval, BSK, KSK material
+│   │       ├── noise/           # integer noise-budget tracking
+│   │       ├── security/        # estimator and timing/security utilities
+│   │       └── params/          # secure configs and parameter validation
+│   ├── exact_transcendentals/   # exact integer transcendental / CRAM vocabulary
+│   ├── clockwork-core/          # formal-spec RNS, GRO, bound tracking
+│   ├── fhe-service/             # HTTP service boundary
+│   ├── mana/                    # lane-parallel CRT/RNS acceleration
+│   ├── unhal/                   # hardware abstraction over MANA
+│   ├── nine65-wasm/             # browser/edge bindings, excluded from default workspace
+│   └── nine65-python/           # Python bindings, excluded from default workspace
+├── proofs/coq/                  # Coq proof artifacts
+├── lean4/                       # Lean4 proof artifacts
+├── docs/                        # audit, benchmark, security, and claim docs
+└── scripts/                     # quality gates and benchmark generation
 ```
 
-### Workspace Crates
+---
 
-| Crate | Purpose | Tests |
-|-------|---------|-------|
-| `nine65` | Core FHE: arithmetic, ring, ops, security, entropy, keys, noise, params | 599+ |
-| `clockwork-core` | Formal-spec RNS: bound tracking, GRO timing, Garner, integrity | 46 |
-| `exact_transcendentals` | Exact transcendental functions via integer CORDIC | 143 |
-| `nexgen_rational` | Exact i128 rational arithmetic, zero-dep | 95 |
-| `fhe-service` | FHE session management and serialization | 22 |
-| `mana` | FHE stream accelerator, lane-parallel via Rayon | 30 |
-| `unhal` | Hardware abstraction layer | 10 |
+## Security Posture
+
+NINE65 targets post-quantum privacy-preserving computation using LWE/BFV-style lattice cryptography and exact integer RNS arithmetic.
+
+Core security and correctness themes:
+
+- public-key FHE evaluation without evaluator-side plaintext access;
+- low-depth Clockwork bootstrap for continued public-mode computation;
+- KSK path for non-circular bootstrap operation;
+- symmetric protected refresh for key-holder deployments;
+- SBNI timing-noise hardening;
+- K-Elimination exact rescaling and anchor/boundary checks;
+- zero floating-point in cryptographic runtime paths;
+- `#![forbid(unsafe_code)]` in the core crate;
+- secret-bearing type hardening and zeroization paths;
+- claim registry and benchmark policy to avoid stale public claims.
+
+Security configurations are available through:
+
+```rust
+SecureConfig::secure_128()
+SecureConfig::secure_192()
+SecureConfig::secure_256()
+```
+
+Benchmark and security claims should be tied back to the checked artifacts in `docs/CLAIM_REGISTRY.csv`, `docs/BENCHMARK_PROFILE_POLICY.md`, and the dated benchmark/security baselines. Re-run baselines on target hardware before making external performance claims.
 
 ---
 
 ## Build and Test
 
 ```bash
-# Build all crates (release)
-cargo build --release --workspace --exclude nine65-python --exclude nine65-wasm
+# Build core workspace
+cargo build --release --workspace \
+  --exclude nine65-python \
+  --exclude nine65-wasm \
+  --exclude nine65-ffi
 
-# Run all tests
-cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm
+# Test core workspace
+cargo test --release --workspace \
+  --exclude nine65-python \
+  --exclude nine65-wasm \
+  --exclude nine65-ffi
 
-# Core FHE tests only
+# Core crate only
 cargo test -p nine65 --lib --release
 
-# Bootstrap-specific tests
+# Bootstrap tests
 cargo test -p nine65 --lib --release -- bootstrap
-cargo test -p nine65 --test bootstrap_integration --release
-cargo test -p nine65 --test bootstrap_parameter_exploration --release
+cargo test -p nine65 --lib --release -- symmetric_bootstrap
 
-# Depth benchmarks
-cargo test -p nine65 --lib --release \
-  ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 \
-  -- --nocapture
+# Service tests
+cargo test -p fhe-service --release
 
-# Security tests
-cargo test -p nine65 security::tests -- --nocapture
+# Constant-time / float / claim hygiene scripts
+./scripts/check_no_floats_runtime.sh
+./scripts/check_claim_registry.sh
+./scripts/verify_constant_time.sh
 ```
 
 ### Feature Flags
 
-| Feature | Description |
-|---------|-------------|
-| `ntt_fft` (default) | FFT-based NTT |
-| `parallel` (default) | Rayon parallelism |
-| `clockwork` | GRO timing gates, bound tracking, key lifecycle, integrity |
-| `exact_rational` | NexGen rational bridge (exact noise, BFV delta) |
-| `shadow-entropy` | CRT shadow entropy harvester |
-| `adaptive-threading` | Entropy-based adaptive threads (requires `shadow-entropy`) |
-| `accelerated` | MANA + UNHAL integration |
-| `deterministic_rng` | Reproducible testing |
-| `allow_insecure` | Test-only configs (blocked in release) |
+| Feature | Purpose |
+|---|---|
+| `exact_transcendentals_backend` | Default exact integer backend and CRAM-CT vocabulary. |
+| `clockwork` | GRO timing gates, bound tracking, key lifecycle integrity. |
+| `accelerated` | MANA + UNHAL acceleration path. |
+| `parallel` / `generic-rayon` | Explicit Rayon opt-in paths. |
+| `shadow-entropy` | CRT shadow entropy and monitoring subsystem. |
+| `adaptive-threading` | Entropy-driven adaptive threading. |
+| `exact_rational` | NexGen rational bridge. |
+| `serde` | JSON/bincode serialization support. |
+| `deterministic_rng` | reproducible testing. |
+| `allow_insecure` | test-only insecure configs; blocked from production release paths where enforced. |
 
 ---
 
-## Performance Benchmarks
+## Deployment Surfaces
 
-Performance baselines from internal release builds on CPU. No GPU required.
-
-### FHE Operations (secure_128 / secure_192)
-
-| Operation | secure_128 | secure_192 |
-|-----------|------------|------------|
-| Encrypt | 23.56ms | 61.59ms |
-| Add | 0.83ms | 2.10ms |
-| Mul | 152.13ms | 459.02ms |
-| Decrypt | 11.06ms | 29.00ms |
-
-### Depth (Symmetric Mode)
-
-| Config | Depth | Total | Avg/mul |
-|--------|-------|-------|---------|
-| secure_128 | 50 | 6.29s | 125.81ms |
-| secure_192 | 50 | 10.10s | 201.91ms |
-
-### RNS Arithmetic (4-lane)
-
-| Op | Time | Throughput |
-|----|------|------------|
-| ADD | 65.7ns | 15.2M/s |
-| MUL | 95.6ns | 10.5M/s |
+| Surface | Purpose | Notes |
+|---|---|---|
+| Rust crate | library integration | primary path for cryptographic operations. |
+| `fhe-service` | HTTP service | session model currently keeps keys server-side. |
+| WASM binding | browser/edge | boundary checks and secret-key export disabled. |
+| MANA/UNHAL | acceleration / hardware abstraction | CRT-lane and edge/accelerator-oriented infrastructure. |
+| Python binding | experimentation | excluded from default workspace. |
 
 ---
 
-## Post-Quantum Security
+## Current Positioning
 
-NINE65 targets post-quantum security through LWE-based cryptography.
+NINE65 should be described as:
 
-### Lattice Estimator Baseline
-
-| Config | n | log2(q) | Classical | Quantum | Hybrid |
-|--------|---|---------|-----------|---------|--------|
-| `secure_128` | 4096 | 90 | 129 | 86 | 129 |
-| `secure_192` | 16384 | 147 | 374 | 213 | 318 |
-| `secure_256` | 16384 | 177 | 311 | 177 | 264 |
-
-
-### Security Hardening
-
-- **Constant-time operations**: Montgomery, K-Elimination, NTT
-- **Compile-time parameter enforcement**: Test configs blocked in release
-- **Runtime validation**: HE Standard compliance, orbital safety checks
-- **GRO timing gates**: On keygen and decrypt paths
-- **Noise budget monitoring**: Integer-only millibits precision
-
----
-
-## Formal Verification
-
-### Coq Proofs (14)
-
-K-Elimination, GSO-FHE, CRT Shadow Entropy, Order Finding, MQ-ReLU, Integer Softmax, Montgomery, Mobius, Cyclotomic Phase, Pade Engine, Exact Coefficient, State Compression, Side-Channel Resistance, Encrypted Quantum.
-
-### Lean4 Proofs (4)
-
-K-Elimination, Core Definitions, Shadow Entropy, Modular Arithmetic.
-
-```bash
-# Verify Coq proofs (requires Coq 8.18+)
-cd proofs/coq && coqc *.v
-
-# Verify Lean4 proofs (requires Lean 4.x + Mathlib)
-cd lean4/KElimination && lake build
+```text
+A low-depth bootstrap FHE substrate for continuous, high-performance,
+privacy-preserving computation across public-key, symmetric, service,
+edge, and browser deployment modes.
 ```
 
----
+Avoid describing the current project as only:
 
-## Technical Foundation
+```text
+v7 Bootstrap Complete
+```
 
-Built on the QMNF (Quantized Modular Number Field) architecture:
-
-1. **Integer-only arithmetic**: Zero f64/f32 across all workspace crates
-2. **Stacked CRT**: Two-layer exact arithmetic (fast CRTBigInt + unlimited HCVLangBigInt)
-3. **Fused Piggyback Division**: 40x faster RNS division via anchor-first computation
-4. **K-Elimination**: Exact division in RNS without floating-point
-5. **Deterministic execution**: Bit-identical results across all platforms
+That phrase captures an older milestone, not the current functional shape of the repository.
 
 ---
 
@@ -317,14 +330,4 @@ Proprietary. See `LICENSE`.
 
 ---
 
-## Compliance and Policy
-
-NINE65 v7 adheres to rigorous internal standards for performance auditing and claim verification.
-
-- [Benchmark Profile Policy](docs/BENCHMARK_PROFILE_POLICY.md)
-- [Claim Registry](docs/CLAIM_REGISTRY.csv)
-
----
-
-*NINE65 v7 "Bootstrap Complete" - Unlimited-Depth FHE with Verified Clockwork Bootstrap*
-*Built on QMNF architecture by Acidlabz210*
+*NINE65 — modular integer privacy infrastructure by Acidlabz210.*
