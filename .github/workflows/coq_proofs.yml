@@ -4,27 +4,40 @@ on:
   push:
     paths:
       - 'proofs/coq/**'
+      - 'verified-innovations/proofs/coq/**'
   pull_request:
     paths:
       - 'proofs/coq/**'
+      - 'verified-innovations/proofs/coq/**'
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
+      # ubuntu-latest (24.04) ships Coq 8.18.0. The previous step fetched a
+      # GitHub release .deb that no longer exists (404), so verification never
+      # actually ran.
       - name: Install Coq
         run: |
-          wget https://github.com/coq/coq/releases/download/V8.18.0/coq-8.18.0+8.18-x86_64-linux-gnu.deb
-          sudo dpkg -i coq-8.18.0+8.18-x86_64-linux-gnu.deb
-      
-      - name: Compile Proofs
+          sudo apt-get update
+          sudo apt-get install -y coq
+          coqc --version
+
+      # Compile every proof file in both trees (previously only 3 of 29 were
+      # built). Files are stdlib-only and independent, so order/flags don't
+      # matter. A file containing `Admitted` still compiles (exit 0); closing
+      # those admits is tracked separately.
+      - name: Compile all Coq proofs
         run: |
-          cd proofs/coq
-          coqc MontgomeryContext.v
-          coqc KElimination.v
-          coqc KElimination_Completed.v
-      
+          fail=0
+          for f in proofs/coq/*.v verified-innovations/proofs/coq/*.v; do
+            echo "== coqc $f =="
+            coqc -q "$f" || { echo "FAILED: $f"; fail=1; }
+          done
+          exit $fail
+
       - name: Report Status
+        if: success()
         run: echo "All Coq proofs compiled successfully"
