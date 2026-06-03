@@ -50,7 +50,10 @@ jobs:
       # cryptographic hardness assumption (ahop_hardness) and fail on any other.
       - name: Assert only the documented axiom (ahop_hardness)
         run: |
-          unexpected=$(grep -rnE '^[[:space:]]*axiom[[:space:]]' KElimination --include=*.lean \
+          # Audit the root module (KElimination.lean) AND all submodules
+          # (KElimination/), both of which `lake build` elaborates. Stay out of
+          # .lake/ (vendored Mathlib has many axioms).
+          unexpected=$(grep -rnE '^[[:space:]]*axiom[[:space:]]' KElimination.lean KElimination --include=*.lean \
                        | grep -vE '\bahop_hardness\b' || true)
           if [ -n "$unexpected" ]; then
             echo "::error::Unexpected Lean axiom(s) — only ahop_hardness is allowed:"
