@@ -443,7 +443,7 @@ Theorem full_polynomial_access : forall n,
   length (poly_access_pattern n) = n.
 Proof.
   intro n. unfold poly_access_pattern.
-  apply length_seq.
+  apply seq_length.
 Qed.
 
 (** No gaps in access pattern *)

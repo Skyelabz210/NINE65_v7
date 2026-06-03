@@ -206,10 +206,11 @@ Lemma pow_list_nth_error : forall a N i : nat,
 Proof.
   intros a N i Hi.
   rewrite nth_error_map.
-  rewrite nth_error_seq.
-  assert (Hltb : i <? N = true) by (apply Nat.ltb_lt; exact Hi).
-  rewrite Hltb.
-  simpl. reflexivity.
+  assert (Hseq : nth_error (seq 0 N) i = Some i).
+  { assert (Hlen : i < length (seq 0 N)) by (rewrite seq_length; exact Hi).
+    rewrite (nth_error_nth' (seq 0 N) 0 Hlen).
+    rewrite (@seq_nth N 0 i 0 Hi). reflexivity. }
+  rewrite Hseq. reflexivity.
 Qed.
 
 (** Pigeonhole: collision among a^0..a^(N-1) *)
@@ -222,7 +223,7 @@ Proof.
   intros a N HN Hcop.
   set (vals := map (fun k => Nat.pow a k mod N) (seq 0 N)).
   assert (Hlen : length vals = N).
-  { unfold vals. rewrite length_map. rewrite length_seq. reflexivity. }
+  { unfold vals. rewrite map_length. rewrite seq_length. reflexivity. }
   assert (Hincl : incl vals (seq 1 (N - 1))).
   { intros x Hx.
     unfold vals in Hx.
@@ -239,7 +240,7 @@ Proof.
   { intro Hnd.
     pose proof (NoDup_incl_length (l := vals) (l' := seq 1 (N - 1)) Hnd Hincl) as Hlen'.
     rewrite Hlen in Hlen'.
-    rewrite length_seq in Hlen'.
+    rewrite seq_length in Hlen'.
     lia. }
   destruct (exists_dup_nth_error vals Hnodup)
     as [i [j [Hi [Hij Hnth]]]].

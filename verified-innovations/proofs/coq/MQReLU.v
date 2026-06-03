@@ -85,27 +85,19 @@ Proof.
   destruct (Nat.eqb r 0) eqn:E0.
   - (* r = 0: sign is Zero, x = 0 *)
     apply Nat.eqb_eq in E0. subst r.
-    simpl.
-    (* 0 < q/2 is true since q > 2 *)
-    destruct (0 <? q / 2) eqn:E1.
-    + reflexivity.
-    + apply Nat.ltb_ge in E1.
-      (* q > 2 implies q / 2 > 0 *)
-      assert (q / 2 > 0) by (apply Nat.div_str_pos; lia).
-      lia.
+    (* 0 < q/2 since q > 2, so the threshold branch gives x = 0 *)
+    assert (Hpos : 0 < q / 2) by (apply Nat.div_str_pos; lia).
+    assert (E1 : 0 <? q / 2 = true) by (apply Nat.ltb_lt; exact Hpos).
+    rewrite E1. reflexivity.
   - (* r <> 0 *)
     apply Nat.eqb_neq in E0.
     destruct (r <? q / 2) eqn:E1.
     + (* Case 2: 0 < r < q/2: sign is Positive, x = r > 0 *)
       apply Nat.ltb_lt in E1.
-      simpl.
-      rewrite E1.
       (* x = Z.of_nat r and r > 0 *)
       lia.
     + (* Case 3: r >= q/2: sign is Negative, x = r - q < 0 *)
       apply Nat.ltb_ge in E1.
-      simpl.
-      rewrite E1.
       (* x = Z.of_nat r - Z.of_nat q = r - q < 0 since r < q *)
       lia.
 Qed.
