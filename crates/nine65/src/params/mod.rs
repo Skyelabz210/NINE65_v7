@@ -252,9 +252,18 @@ impl FHEConfig {
         self.primes.len() >= 2
     }
 
-    /// Get the effective modulus product Q for RNS configs
+    /// Get the effective modulus product Q for RNS configs.
+    ///
+    /// Saturates at `u128::MAX` for the largest configurations (192/256-bit and
+    /// deep), whose true product exceeds 128 bits. Saturating multiplication is
+    /// identical to `*` for every config whose product fits in u128, so smaller
+    /// configs are unaffected; it just avoids an overflow panic (debug) / silent
+    /// wrap (release) on the large ones. Callers needing an exact large-Q value
+    /// should use bit-length accounting (sum of prime bit-lengths) instead.
     pub fn rns_product(&self) -> u128 {
-        self.primes.iter().fold(1u128, |acc, &p| acc * p as u128)
+        self.primes
+            .iter()
+            .fold(1u128, |acc, &p| acc.saturating_mul(p as u128))
     }
 
     /// Get noise budget in millibits for RNS multiplication
