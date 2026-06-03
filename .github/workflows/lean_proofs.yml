@@ -53,8 +53,12 @@ jobs:
           # Audit the root module (KElimination.lean) AND all submodules
           # (KElimination/), both of which `lake build` elaborates. Stay out of
           # .lake/ (vendored Mathlib has many axioms).
+          # Allowlist by the exact declaration shape (`axiom ahop_hardness`), not
+          # the bare token — otherwise a new axiom that merely *mentions*
+          # ahop_hardness in its type (e.g. `axiom evil : ahop_hardness q -> False`)
+          # would be filtered out and pass.
           unexpected=$(grep -rnE '^[[:space:]]*axiom[[:space:]]' KElimination.lean KElimination --include=*.lean \
-                       | grep -vE '\bahop_hardness\b' || true)
+                       | grep -vE 'axiom[[:space:]]+ahop_hardness\b' || true)
           if [ -n "$unexpected" ]; then
             echo "::error::Unexpected Lean axiom(s) — only ahop_hardness is allowed:"
             echo "$unexpected"
