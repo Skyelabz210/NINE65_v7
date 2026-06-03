@@ -60,8 +60,11 @@ jobs:
           # Match the `axiom` declaration keyword with optional leading
           # attributes (e.g. `@[simp] axiom bad : False`) and indentation, then
           # allowlist only the genuine `axiom ahop_hardness` declaration.
+          # Anchor the allowlist to the declaration itself — i.e. immediately
+          # after grep's `file:line:` prefix — so a token in a trailing comment
+          # (e.g. `axiom bad : False -- axiom ahop_hardness`) cannot sneak past.
           unexpected=$(grep -rnE '^[[:space:]]*(@\[[^]]*\][[:space:]]*)*axiom[[:space:]]' KElimination.lean KElimination --include=*.lean \
-                       | grep -vE 'axiom[[:space:]]+ahop_hardness\b' || true)
+                       | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(@\[[^]]*\][[:space:]]*)*axiom[[:space:]]+ahop_hardness\b' || true)
           if [ -n "$unexpected" ]; then
             echo "::error::Unexpected Lean axiom(s) — only ahop_hardness is allowed:"
             echo "$unexpected"
