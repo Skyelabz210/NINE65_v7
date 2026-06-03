@@ -43,3 +43,18 @@ jobs:
           if grep -q "declaration uses 'sorry'" build.log; then
             echo "::error::Lean build reported 'sorry'"; exit 1
           fi
+
+      # A proof can also be silently swapped for an `axiom` (no `sorry` warning),
+      # which would keep the build green while removing machine-checked coverage.
+      # This is the authoritative proof gate, so allow ONLY the one documented
+      # cryptographic hardness assumption (ahop_hardness) and fail on any other.
+      - name: Assert only the documented axiom (ahop_hardness)
+        run: |
+          unexpected=$(grep -rnE '^[[:space:]]*axiom[[:space:]]' KElimination --include=*.lean \
+                       | grep -vE '\bahop_hardness\b' || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected Lean axiom(s) — only ahop_hardness is allowed:"
+            echo "$unexpected"
+            exit 1
+          fi
+          echo "Axiom audit OK (only ahop_hardness)."
