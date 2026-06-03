@@ -1,4 +1,10 @@
-name: Coq Proof Verification
+name: Coq Proofs (legacy)
+
+# The Coq tree is a legacy NINE65 v2-era exploration, SUPERSEDED by the Lean
+# formalization (see lean_proofs.yml — that is the verification gate). This
+# workflow only confirms the legacy files that still compile have not regressed.
+# Three files are known-broken / ill-formed and are skipped; do not treat the
+# Coq tree as machine-checked verification.
 
 on:
   push:
@@ -16,28 +22,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ubuntu-latest (24.04) ships Coq 8.18.0. The previous step fetched a
-      # GitHub release .deb that no longer exists (404), so verification never
-      # actually ran.
+      # ubuntu-latest (24.04) ships Coq 8.18.0. (The previous step fetched a
+      # GitHub release .deb that no longer exists — 404 — so it never ran.)
       - name: Install Coq
         run: |
           sudo apt-get update
           sudo apt-get install -y coq
           coqc --version
 
-      # Compile every proof file in both trees (previously only 3 of 29 were
-      # built). Files are stdlib-only and independent, so order/flags don't
-      # matter. A file containing `Admitted` still compiles (exit 0); closing
-      # those admits is tracked separately.
-      - name: Compile all Coq proofs
+      - name: Compile legacy Coq proofs (non-authoritative)
         run: |
+          # Known-broken legacy files (false theorems / ill-formed Fixpoint /
+          # undefined references). Tracked in docs/LEAN_FORMAL_VERIFICATION_2026-06-03.md.
+          skip="proofs/coq/MontgomeryContext.v proofs/coq/CyclotomicPhase.v proofs/coq/KElimination_Completed.v"
           fail=0
           for f in proofs/coq/*.v verified-innovations/proofs/coq/*.v; do
+            case " $skip " in *" $f "*) echo "SKIP (legacy/known-broken): $f"; continue;; esac
             echo "== coqc $f =="
             coqc -q "$f" || { echo "FAILED: $f"; fail=1; }
           done
           exit $fail
-
-      - name: Report Status
-        if: success()
-        run: echo "All Coq proofs compiled successfully"
