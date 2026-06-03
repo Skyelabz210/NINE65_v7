@@ -72,8 +72,10 @@ def bsgs_steps (B : Nat) : Nat := Nat.sqrt B + 1
 theorem bsgs_sublinear (B : Nat) (hB : B > 4) :
     bsgs_steps B < B := by
   unfold bsgs_steps
-  have h := Nat.sqrt_lt_self hB
-  omega
+  have hsq : Nat.sqrt B * Nat.sqrt B ≤ B := Nat.sqrt_le B
+  have h2 : 2 ≤ Nat.sqrt B := by
+    rw [Nat.le_sqrt]; omega
+  nlinarith [hsq, h2]
 
 /-! # Shor's Classical Reduction -/
 
@@ -158,18 +160,19 @@ theorem k_step_v_correct (kr : KRecurrence) (hinv : k_invariant kr) :
   rw [hv]
   rw [Nat.pow_succ]
   rw [Nat.mul_mod]
-  rw [Nat.mod_mod_of_dvd]
-  · ring_nf
-    rw [← Nat.mul_mod]
-  · exact dvd_refl _
+  rw [Nat.mod_mod_of_dvd _ (dvd_refl _)]
+  rw [← Nat.mul_mod]
 
 /-- K-step preserves invariant -/
 theorem k_step_preserves_invariant (kr : KRecurrence) (hinv : k_invariant kr) :
     k_invariant (k_step kr) := by
-  unfold k_invariant at *
-  obtain ⟨hn, ha, hv⟩ := hinv
-  refine ⟨hn, ha, ?_⟩
-  exact k_step_v_correct kr hinv
+  have hv := k_step_v_correct kr hinv
+  obtain ⟨hn, ha, _⟩ := hinv
+  refine ⟨?_, ?_, ?_⟩
+  · show (k_step kr).n > 0; exact hn
+  · show (k_step kr).a_ref > 0; exact ha
+  · show (k_step kr).v_t = (k_step kr).base ^ (k_step kr).t % (k_step kr).n
+    exact hv
 
 /-- Order verification via K-recurrence -/
 def verify_order_k (b N A r : Nat) : Bool :=
@@ -185,8 +188,9 @@ theorem k_iter_t (r : Nat) (b N A : Nat) :
   induction r with
   | zero => rfl
   | succ r ih =>
-    simp [Nat.iterate, k_step]
-    exact ih
+    rw [Function.iterate_succ_apply', k_step]
+    simp only
+    rw [ih]
 
 /-- After r iterations, n is preserved -/
 theorem k_iter_n (r : Nat) (b N A : Nat) :
@@ -194,8 +198,9 @@ theorem k_iter_n (r : Nat) (b N A : Nat) :
   induction r with
   | zero => rfl
   | succ r ih =>
-    simp [Nat.iterate, k_step]
-    exact ih
+    rw [Function.iterate_succ_apply', k_step]
+    simp only
+    rw [ih]
 
 /-- After r iterations, base is preserved -/
 theorem k_iter_base (r : Nat) (b N A : Nat) :
@@ -203,19 +208,20 @@ theorem k_iter_base (r : Nat) (b N A : Nat) :
   induction r with
   | zero => rfl
   | succ r ih =>
-    simp [Nat.iterate, k_step]
-    exact ih
+    rw [Function.iterate_succ_apply', k_step]
+    simp only
+    rw [ih]
 
 /-! # Test Cases -/
 
 /-- ord_15(2) = 4: 2^4 mod 15 = 1 -/
-example : 2 ^ 4 % 15 = 1 := by native_decide
+example : 2 ^ 4 % 15 = 1 := by decide
 
 /-- ord_21(2) = 6: 2^6 mod 21 = 1 -/
-example : 2 ^ 6 % 21 = 1 := by native_decide
+example : 2 ^ 6 % 21 = 1 := by decide
 
 /-- ord_35(2) = 12: 2^12 mod 35 = 1 -/
-example : 2 ^ 12 % 35 = 1 := by native_decide
+example : 2 ^ 12 % 35 = 1 := by decide
 
 end KElimination.OrderFinding
 

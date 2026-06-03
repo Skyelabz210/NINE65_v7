@@ -43,17 +43,23 @@ def redc (p : MontParams) (T : Nat) : Nat :=
   let t := (T + m * p.M) / p.R
   if t < p.M then t else t - p.M
 
-/-- REDC result is bounded by M -/
-theorem redc_bounded (p : MontParams) (T : Nat) :
-    redc p T < p.M ∨ redc p T = 0 := by
+/-- REDC result is bounded by M, given the standard REDC input precondition
+    `T < M * R`.
+
+    NOTE: the previous unconditional statement `redc p T < p.M ∨ redc p T = 0`
+    was false (e.g. M = 2, R = 2, T = 100 gives `redc = 48`, which is neither
+    `< 2` nor `= 0`). With the `T < M * R` precondition the bound `redc p T < M`
+    holds and is provable. (This `redc` is the simplified model defined above,
+    where `m` is always 0, so it reduces to `T / R` with a conditional
+    subtraction.) -/
+theorem redc_bounded (p : MontParams) (T : Nat) (hT : T < p.M * p.R) :
+    redc p T < p.M := by
+  have ht : T / p.R < p.M := by
+    rw [Nat.div_lt_iff_lt_mul p.R_pos]; exact hT
   unfold redc
-  split_ifs with h
-  · left; exact h
-  · -- t - M case: if t >= M and t < 2M then t - M < M
-    -- but we don't have the 2M bound here, so prove the disjunction
-    by_cases h2 : (T + (T % p.R) * p.R % p.R * p.M) / p.R - p.M = 0
-    · right; exact h2
-    · left; omega
+  simp only [Nat.mul_mod_left, Nat.zero_mul, Nat.add_zero]
+  rw [if_pos ht]
+  exact ht
 
 /-! # Montgomery Form -/
 
@@ -84,6 +90,7 @@ theorem mont_add_bounded (p : MontParams) (x y : Nat)
     (hx : x < p.M) (hy : y < p.M) :
     mont_add p x y < p.M := by
   unfold mont_add
+  simp only
   split_ifs with h
   · exact h
   · omega
@@ -104,12 +111,13 @@ theorem mont_add_correct_mod (p : MontParams) (x y : Nat)
     (hx : x < p.M) (hy : y < p.M) :
     mont_add p x y = (x + y) % p.M := by
   unfold mont_add
+  simp only
   split_ifs with h
   · exact (Nat.mod_eq_of_lt h).symm
-  · have hlt : x + y - p.M < p.M := by omega
-    have heq : x + y = p.M + (x + y - p.M) := by omega
-    rw [heq, Nat.add_mod_right]
-    exact (Nat.mod_eq_of_lt hlt).symm
+  · -- ¬(x+y < M) gives M ≤ x+y < 2M, so (x+y) % M = x+y - M
+    have hlt : x + y - p.M < p.M := by omega
+    have hge : p.M ≤ x + y := by omega
+    rw [Nat.mod_eq_sub_mod hge, Nat.mod_eq_of_lt hlt]
 
 /-! # Performance Analysis -/
 
@@ -154,31 +162,35 @@ theorem poly_add_preserves_form (p : MontParams) (a b : MontPoly)
     (ha : ∀ x, x ∈ a → x < p.M)
     (hb : ∀ y, y ∈ b → y < p.M) :
     ∀ z, z ∈ mont_poly_add p a b → z < p.M := by
-  intro z hz
   induction a generalizing b with
-  | nil => exact hb z hz
+  | nil => intro z hz; exact hb z hz
   | cons x xs ih =>
     cases b with
-    | nil => exact ha z hz
+    | nil => intro z hz; exact ha z hz
     | cons y ys =>
-      simp [mont_poly_add] at hz
+      intro z hz
+      simp only [mont_poly_add, List.mem_cons] at hz
       rcases hz with rfl | hz
-      · exact mont_add_bounded p x y (ha x (List.mem_cons_self _ _)) (hb y (List.mem_cons_self _ _))
-      · exact ih (fun w hw => ha w (List.mem_cons_of_mem _ hw)) ys
-          (fun w hw => hb w (List.mem_cons_of_mem _ hw)) hz
+      · exact mont_add_bounded p x y (ha x List.mem_cons_self) (hb y List.mem_cons_self)
+      · exact ih ys (fun w hw => ha w (List.mem_cons_of_mem _ hw))
+          (fun w hw => hb w (List.mem_cons_of_mem _ hw)) z hz
 
 /-- Polynomial addition preserves length (min of inputs) -/
 theorem poly_add_length (p : MontParams) (a b : MontPoly)
     (hlen : a.length = b.length) :
     (mont_poly_add p a b).length = a.length := by
   induction a generalizing b with
-  | nil => simp [mont_poly_add]; omega
+  | nil =>
+    cases b with
+    | nil => rfl
+    | cons y ys => simp at hlen
   | cons x xs ih =>
     cases b with
     | nil => simp at hlen
     | cons y ys =>
-      simp [mont_poly_add, List.length] at hlen ⊢
-      exact ih (by omega)
+      simp only [mont_poly_add, List.length_cons]
+      simp only [List.length_cons] at hlen
+      rw [ih ys (by omega)]
 
 end KElimination.Montgomery
 

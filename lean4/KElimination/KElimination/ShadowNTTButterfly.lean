@@ -67,8 +67,13 @@ theorem butterfly_eq_implies_two_wv_eq
     _ = (u' + w * v') - (u' - w * v') := by rw [h1, h2]
     _ = (2 : ZMod q) * (w * v') := by ring
 
-/-- Butterfly injectivity when 2 and the twiddle are nonzero. -/
+/-- Butterfly injectivity when 2 and the twiddle are nonzero.
+
+`ZMod q` must be an integral domain for the cancellation `mul_left_cancel₀` to hold;
+over a composite modulus the butterfly map need not be injective, so `Fact (Nat.Prime q)`
+is a genuine well-formedness precondition (it makes `ZMod q` a field). -/
 theorem butterfly_injective
+    {q : ℕ} [Fact (Nat.Prime q)]
     (w : ZMod q)
     (h2 : (2 : ZMod q) ≠ 0)
     (hw : w ≠ 0) :
@@ -95,16 +100,14 @@ theorem butterflyInv_left
     (h2 : inv2 * (2 : ZMod q) = 1)
     (hw : winv * w = 1) :
     butterflyInv inv2 winv (butterfly w u v) = (u, v) := by
-  ext <;> simp [butterflyInv, butterfly]
-  · calc
-      inv2 * ((u + w * v) + (u - w * v)) = inv2 * ((2 : ZMod q) * u) := by ring
-      _ = (inv2 * (2 : ZMod q)) * u := by ring
-      _ = u := by rw [h2]; ring
-  · calc
-      winv * inv2 * ((u + w * v) - (u - w * v)) = winv * inv2 * ((2 : ZMod q) * (w * v)) := by ring
-      _ = winv * (inv2 * (2 : ZMod q)) * (w * v) := by ring
-      _ = winv * w * v := by rw [h2]; ring
-      _ = v := by rw [hw]; ring
+  unfold butterflyInv butterfly
+  ext
+  · -- inv2 * ((u + w*v) + (u - w*v)) = inv2 * (2*u) = u, using h2
+    show inv2 * ((u + w * v) + (u - w * v)) = u
+    linear_combination u * h2
+  · -- winv*inv2 * ((u + w*v) - (u - w*v)) = (inv2*2)*(winv*w)*v = v, using h2 and hw
+    show winv * inv2 * ((u + w * v) - (u - w * v)) = v
+    linear_combination (winv * w * v) * h2 + v * hw
 
 /-- The explicit inverse is a right inverse under the algebraic inverse hypotheses. -/
 theorem butterflyInv_right
@@ -112,24 +115,13 @@ theorem butterflyInv_right
     (h2 : (2 : ZMod q) * inv2 = 1)
     (hw : w * winv = 1) :
     butterfly w (butterflyInv inv2 winv (y₁, y₂)).1 (butterflyInv inv2 winv (y₁, y₂)).2 = (y₁, y₂) := by
-  ext <;> simp [butterflyInv, butterfly]
-  · calc
-      inv2 * (y₁ + y₂) + w * (winv * inv2 * (y₁ - y₂))
-          = inv2 * ((y₁ + y₂) + (y₁ - y₂)) := by rw [show w * (winv * inv2 * (y₁ - y₂)) = inv2 * (y₁ - y₂) by calc
-              w * (winv * inv2 * (y₁ - y₂)) = (w * winv) * inv2 * (y₁ - y₂) := by ring
-              _ = inv2 * (y₁ - y₂) := by rw [hw]; ring]
-        ring
-      _ = inv2 * ((2 : ZMod q) * y₁) := by ring
-      _ = ((2 : ZMod q) * inv2) * y₁ := by ring
-      _ = y₁ := by rw [h2]; ring
-  · calc
-      inv2 * (y₁ + y₂) - w * (winv * inv2 * (y₁ - y₂))
-          = inv2 * ((y₁ + y₂) - (y₁ - y₂)) := by rw [show w * (winv * inv2 * (y₁ - y₂)) = inv2 * (y₁ - y₂) by calc
-              w * (winv * inv2 * (y₁ - y₂)) = (w * winv) * inv2 * (y₁ - y₂) := by ring
-              _ = inv2 * (y₁ - y₂) := by rw [hw]; ring]
-        ring
-      _ = inv2 * ((2 : ZMod q) * y₂) := by ring
-      _ = ((2 : ZMod q) * inv2) * y₂ := by ring
-      _ = y₂ := by rw [h2]; ring
+  unfold butterfly butterflyInv
+  ext
+  · -- inv2*(y₁+y₂) + w*(winv*inv2*(y₁-y₂)) = y₁, using h2 and hw
+    show inv2 * (y₁ + y₂) + w * (winv * inv2 * (y₁ - y₂)) = y₁
+    linear_combination y₁ * h2 + (inv2 * (y₁ - y₂)) * hw
+  · -- inv2*(y₁+y₂) - w*(winv*inv2*(y₁-y₂)) = y₂, using h2 and hw
+    show inv2 * (y₁ + y₂) - w * (winv * inv2 * (y₁ - y₂)) = y₂
+    linear_combination y₂ * h2 - (inv2 * (y₁ - y₂)) * hw
 
 end KElimination.ShadowNTTButterfly
