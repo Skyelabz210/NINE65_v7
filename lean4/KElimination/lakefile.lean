@@ -9,4 +9,8 @@ require mathlib from git
 
 @[default_target]
 lean_lib «KElimination» where
-  -- add library configuration options here
+  -- Build the root module AND every KElimination.* submodule, so `lake build`
+  -- actually elaborates all proof files. Previously only the near-empty root
+  -- module (which imports just Mathlib) was built, so none of the proofs were
+  -- ever machine-checked by `lake build` or CI.
+  globs := #[.andSubmodules `KElimination]
