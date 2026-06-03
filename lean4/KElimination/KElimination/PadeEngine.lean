@@ -78,7 +78,7 @@ theorem ops_linear_in_degree (pa : PadeApprox) :
 def is_well_conditioned (pa : PadeApprox) : Prop := pa.den_coeffs > 0
 
 theorem exp_well_conditioned : is_well_conditioned exp_pade_3_3 := by
-  unfold is_well_conditioned exp_pade_3_3; omega
+  unfold is_well_conditioned exp_pade_3_3; decide
 
 /-! # Comparison with Taylor Series -/
 
@@ -88,6 +88,8 @@ def pade_coeffs_for_error (error_order : Nat) : Nat := error_order
 theorem pade_similar_complexity (err : Nat) (_herr : err > 0) :
     pade_coeffs_for_error err ≤ taylor_terms_for_error err := by
   unfold pade_coeffs_for_error taylor_terms_for_error
+  -- both sides reduce to `err`, so the goal is `err ≤ err`
+  exact Nat.le_refl err
 
 end KElimination.PadeEngine
 

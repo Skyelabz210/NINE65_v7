@@ -103,7 +103,7 @@ def poly_access_pattern (n : Nat) : List Nat :=
 /-- Access pattern length matches polynomial degree -/
 theorem access_pattern_length (n : Nat) :
     (poly_access_pattern n).length = n := by
-  unfold poly_access_pattern; exact List.length_range n
+  unfold poly_access_pattern; exact List.length_range
 
 /-- Access pattern is independent of coefficient values -/
 theorem access_pattern_oblivious (n : Nat) (_coeffs1 _coeffs2 : List Nat) :

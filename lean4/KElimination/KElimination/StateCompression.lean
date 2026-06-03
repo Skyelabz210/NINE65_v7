@@ -85,25 +85,29 @@ theorem ghz_compression (n : Nat) (hn : n ≥ 6) :
   Storage: O(n) instead of O(2^n). -/
 def product_storage (n : Nat) : Nat := n * 32
 
+/-- Helper: `2*n < 2^n` for every `n ≥ 3`.
+    Proved by induction from the base case `n = 3` (where `6 < 8`).
+    Inductive step: `2*(n+1) = 2*n + 2 < 2^n + 2 ≤ 2^n + 2^n = 2^(n+1)`,
+    using `2 ≤ 2^n` (true for `n ≥ 1`, in particular `n ≥ 3`). -/
+private theorem two_mul_lt_two_pow (n : Nat) (hn : n ≥ 3) : 2 * n < 2 ^ n := by
+  induction n, hn using Nat.le_induction with
+  | base => decide
+  | succ m hm ih =>
+    have h2 : (2 : Nat) ≤ 2 ^ m := by
+      calc (2 : Nat) = 2 ^ 1 := (pow_one 2).symm
+        _ ≤ 2 ^ m := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have hpow : 2 ^ (m + 1) = 2 ^ m + 2 ^ m := by
+      rw [pow_succ]; ring
+    omega
+
 /-- Product compression: O(n) < O(2^n) for n >= 6 -/
 theorem product_compression (n : Nat) (hn : n ≥ 6) :
     product_storage n < traditional_storage n := by
   unfold product_storage traditional_storage
   -- Need: n * 32 < 2^n * 16, i.e., 2*n < 2^n
-  -- For n >= 6: 2^6 = 64 > 12 = 2*6, and 2^n grows faster
-  have h64 : 2 ^ 6 = 64 := by norm_num
-  have hpow : 2 ^ n ≥ 64 := by
-    calc 2 ^ n ≥ 2 ^ 6 := Nat.pow_le_pow_right (by norm_num) hn
-    _ = 64 := h64
-  -- For n in [6, 31]: 2*n < 64 <= 2^n
-  -- For n >= 32: 2^n >> 2n by exponential growth
-  -- In all cases: n * 32 < 2^n * 16 ↔ 2n < 2^n
-  -- We prove: 2*n ≤ 2^n for n ≥ 1, then strict for n ≥ 2
-  -- Actually simpler: n*32 = n*2*16 and 2^n*16, so need n*2 < 2^n
-  -- For n=6: 12 < 64. For n > 6: induction (2^(n+1) = 2*2^n > 2*2n ≥ 2(n+1) when 2n>1)
+  -- n*32 = n*2*16 and 2^n*16, so it suffices to show 2*n < 2^n.
   suffices h : 2 * n < 2 ^ n by omega
-  -- Prove 2*n < 2^n for n >= 6
-  interval_cases n <;> omega
+  exact two_mul_lt_two_pow n (by omega)
 
 /-! # Compression Ratios -/
 

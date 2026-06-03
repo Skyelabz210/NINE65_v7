@@ -18,8 +18,8 @@ def anchorRes (X A : Nat) : Nat := X % A
 /-- Fundamental identity: X = v_M + k * M -/
 theorem fundamental (X M : Nat) (hM : M > 0) :
     X = mainRes X M + overflow X M * M := by
-  simp [mainRes, overflow]
-  omega
+  unfold mainRes overflow
+  exact (Nat.mod_add_div' X M).symm
 
 /-- Residue is less than modulus -/
 theorem res_lt (X M : Nat) (hM : M > 0) : mainRes X M < M := by
@@ -29,9 +29,8 @@ theorem res_lt (X M : Nat) (hM : M > 0) : mainRes X M < M := by
 /-- k range for bounded X -/
 theorem overflow_range (X M A : Nat) (hM : M > 0) (hX : X < M * A) :
     overflow X M < A := by
-  simp [overflow]
-  have h := Nat.div_lt_iff_lt_mul hM
-  rw [h]
-  exact hX
+  unfold overflow
+  rw [Nat.div_lt_iff_lt_mul hM]
+  rwa [Nat.mul_comm]
 
 end KElimination.Basic
