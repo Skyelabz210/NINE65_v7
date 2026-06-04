@@ -37,13 +37,15 @@ def to_signed_magnitude (sr : SymmetricResidue) : Nat :=
 
 /-- Magnitude is bounded by half modulus -/
 theorem magnitude_bounded (sr : SymmetricResidue)
-    (hm : sr.modulus > 0) (hv : sr.value < sr.modulus) :
+    (_hm : sr.modulus > 0) (hv : sr.value < sr.modulus) :
     to_signed_magnitude sr ≤ half_modulus sr.modulus := by
   unfold to_signed_magnitude is_negative half_modulus
   split_ifs with h
   · -- Negative: magnitude = m - v, and v > m/2, so m - v ≤ m/2
+    simp only [decide_eq_true_eq] at h
     omega
   · -- Positive: magnitude = v ≤ m/2 by ¬(m/2 < v)
+    simp only [decide_eq_true_eq] at h
     omega
 
 /-! # Operations -/
@@ -60,7 +62,7 @@ def sr_neg (a : SymmetricResidue) : SymmetricResidue :=
 
 /-- Negation is involutive: neg(neg(a)) = a -/
 theorem neg_involutive (a : SymmetricResidue)
-    (hm : a.modulus > 0) (hv : a.value < a.modulus) (hpos : a.value > 0) :
+    (_hm : a.modulus > 0) (hv : a.value < a.modulus) (hpos : a.value > 0) :
     (sr_neg (sr_neg a)).value = a.value := by
   unfold sr_neg
   simp only
@@ -81,7 +83,7 @@ def sign_bit (sr : SymmetricResidue) : Nat :=
 
 /-- Negation flips the sign bit (when value ≠ 0 and ≠ m/2) -/
 theorem sign_consistent_with_neg (a : SymmetricResidue)
-    (hm : a.modulus > 2) (hpos : a.value > 0)
+    (_hm : a.modulus > 2) (hpos : a.value > 0)
     (hv : a.value < a.modulus) (hneq : a.value ≠ a.modulus / 2) :
     sign_bit (sr_neg a) = 1 - sign_bit a := by
   unfold sign_bit sr_neg is_negative half_modulus
@@ -89,6 +91,7 @@ theorem sign_consistent_with_neg (a : SymmetricResidue)
   have hmod : (a.modulus - a.value) % a.modulus = a.modulus - a.value :=
     Nat.mod_eq_of_lt (by omega)
   rw [hmod]
+  simp only [decide_eq_true_eq]
   split_ifs with h1 h2
   · -- neg is negative and a is negative: contradiction
     -- a.value > m/2 (negative) → m - a.value < m/2 → neg should be positive
@@ -134,13 +137,11 @@ def near_boundary (sr : SymmetricResidue) (margin : Nat) : Bool :=
 
 /-- Boundary detection is correct -/
 theorem boundary_detection_correct (sr : SymmetricResidue) (margin : Nat)
-    (hm : sr.modulus > 0) (hv : sr.value < sr.modulus)
+    (_hm : sr.modulus > 0) (_hv : sr.value < sr.modulus)
     (hnear : near_boundary sr margin = true) :
     to_signed_magnitude sr + margin > half_modulus sr.modulus := by
   unfold near_boundary at hnear
-  exact Nat.lt_of_decide_eq_true hnear |>.lt |>.le |>.lt_of_lt (by omega) |>.le |>.lt_of_lt (by
-    simp only [Nat.lt_iff_add_one_le] at hnear ⊢
-    omega)
+  exact of_decide_eq_true hnear
 
 /-! # Factored Representation for Large Numbers -/
 

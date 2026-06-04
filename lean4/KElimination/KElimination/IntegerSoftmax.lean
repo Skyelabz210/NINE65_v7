@@ -41,7 +41,10 @@ private theorem foldl_add_acc (l : List Nat) (acc : Nat) :
 
 theorem sum_probs_cons (h : Nat) (t : List Nat) :
     sum_probs (h :: t) = h + sum_probs t := by
-  unfold sum_probs; simp [List.foldl]; rw [foldl_add_acc]; omega
+  unfold sum_probs
+  simp only [List.foldl_cons]
+  rw [foldl_add_acc]
+  omega
 
 /-! # Construction -/
 
@@ -82,7 +85,7 @@ theorem distribute_maintains_bound (probs : List Nat) (target : Nat)
 private theorem sum_probs_bound (l : List Nat) (p : Nat) (hp : p ∈ l) :
     p ≤ sum_probs l := by
   induction l with
-  | nil => exact absurd hp (List.not_mem_nil p)
+  | nil => exact absurd hp List.not_mem_nil
   | cons h t ih =>
     rw [sum_probs_cons]
     rcases List.mem_cons.mp hp with rfl | ht

@@ -936,7 +936,17 @@ mod tests {
         let mut max_correct_depth = 0usize;
 
         for i in 0..target_depth {
-            ct = ctx.mul_dual_symmetric(&ct, &ct_2, &keys.secret_key);
+            // The fresh multiplier `ct_2` sits at the top level, but `ct`
+            // descends one level per multiply, so their levels diverge after the
+            // first product and mul_dual_symmetric's same-level precondition
+            // trips (a debug_assert in debug builds). Align the multiplier down
+            // to ct's current level; once it can no longer be switched down we
+            // have hit the level/noise ceiling, so stop the survey gracefully.
+            let ct_2_aligned = match ctx.mod_switch_ct_to_level(&ct_2, ct.level) {
+                Some(c) => c,
+                None => break,
+            };
+            ct = ctx.mul_dual_symmetric(&ct, &ct_2_aligned, &keys.secret_key);
             expected = ((expected as u128 * 2) % t as u128) as u64;
             let dec = ctx.decrypt_dual(&ct, &keys.secret_key);
             if dec != expected {

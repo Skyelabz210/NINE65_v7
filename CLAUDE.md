@@ -1,7 +1,7 @@
 # CLAUDE.md — Project Context for Claude Code
 
 ## Project Overview
-**NINE65 v7 "Bootstrap Complete"** — A proprietary, unlimited-depth Fully Homomorphic Encryption (FHE) system built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic across all crates.
+**NINE65 v8 "Shadow Butterfly"** — A proprietary, unlimited-depth Fully Homomorphic Encryption (FHE) system built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic across all crates.
 
 Key achievement: First FHE system with fully verified bootstrap roundtrip across all three paths (circular, non-circular KSK, and auto-triggered), enabling truly unlimited-depth computation.
 
@@ -121,14 +121,19 @@ Depth benchmarks:
 ---
 
 ## Formal Verification
-14 Coq proofs: K-Elimination, GSO-FHE, CRT Shadow Entropy, Order Finding, MQ-ReLU, Integer Softmax, Montgomery, Mobius, Cyclotomic Phase, Pade Engine, Exact Coefficient, State Compression, Side-Channel Resistance, Encrypted Quantum.
-4 Lean4 proofs: K-Elimination, Core Definitions, Shadow Entropy, Modular Arithmetic.
 
-Verify Coq (requires Coq 8.18+):
-  cd proofs/coq && coqc *.v
+**Lean 4 is the formalization of record.** `lean4/KElimination/` builds cleanly
+against the pinned Mathlib (`lake build`: 0 errors, 0 `sorry`), with a single
+documented axiom `ahop_hardness` (the AHOP cryptographic hardness assumption).
+The library globs all submodules, so every `KElimination.*` proof file is
+elaborated (19 modules). See `docs/LEAN_FORMAL_VERIFICATION_2026-06-03.md`.
 
-Verify Lean4 (requires Lean 4.x + Mathlib):
-  cd lean4/KElimination && lake build
+  cd lean4/KElimination && lake build   # requires Lean v4.27.0-rc1 + Mathlib
+
+The `proofs/coq/` and `verified-innovations/proofs/coq/` trees are a **legacy
+NINE65 v2-era exploration**, predating the move to Lean. They are not maintained
+and are NOT the verification basis: several files do not compile and several
+contain `Admitted` lemmas. Do not cite the Coq tree as machine-checked.
 
 ---
 
@@ -140,4 +145,4 @@ RNS 4-lane: ADD 65.7ns (15.2M/s) | MUL 95.6ns (10.5M/s)
 ---
 
 ## License
-Proprietary. See LICENSE. NINE65 v7 built on QMNF architecture by Acidlabz210.
+Proprietary. See LICENSE. NINE65 v8 built on QMNF architecture by Acidlabz210.

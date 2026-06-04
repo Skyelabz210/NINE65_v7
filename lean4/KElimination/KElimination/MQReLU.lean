@@ -41,14 +41,20 @@ theorem sign_detection_correct (q r : Nat) (hq : q > 2) (hr : r < q) :
     | Sign.Positive => residue_to_signed q r > 0
     | Sign.Negative => residue_to_signed q r < 0
     | Sign.Zero => residue_to_signed q r = 0 := by
-  unfold detect_sign residue_to_signed threshold
+  unfold detect_sign threshold
   split_ifs with h0 h1
   · -- r = 0: Zero case
-    subst h0; simp
+    show residue_to_signed q r = 0
+    unfold residue_to_signed threshold
+    split_ifs <;> omega
   · -- r < q/2: Positive case
-    omega
+    show residue_to_signed q r > 0
+    unfold residue_to_signed threshold
+    rw [if_pos h1]; omega
   · -- r >= q/2: Negative case
-    omega
+    show residue_to_signed q r < 0
+    unfold residue_to_signed threshold
+    rw [if_neg h1]; omega
 
 /-! # ReLU Implementation -/
 
@@ -66,17 +72,17 @@ theorem mq_relu_bounded (q r : Nat) (hq : q > 0) (hr : r < q) :
   split_ifs <;> omega
 
 /-- ReLU of zero is zero -/
-theorem mq_relu_zero (q : Nat) (hq : q > 2) : mq_relu q 0 = 0 := by
+theorem mq_relu_zero (q : Nat) (_hq : q > 2) : mq_relu q 0 = 0 := by
   unfold mq_relu detect_sign; simp
 
 /-- ReLU of positive value preserves value -/
-theorem mq_relu_positive (q r : Nat) (hq : q > 2) (hr_pos : r > 0) (hr_lt : r < q / 2) :
+theorem mq_relu_positive (q r : Nat) (_hq : q > 2) (hr_pos : r > 0) (hr_lt : r < q / 2) :
     mq_relu q r = r := by
   unfold mq_relu detect_sign threshold
   simp [Nat.ne_of_gt hr_pos, hr_lt]
 
 /-- ReLU of negative value is zero -/
-theorem mq_relu_negative (q r : Nat) (hq : q > 2) (hr : r ≥ q / 2) (hr_lt : r < q) :
+theorem mq_relu_negative (q r : Nat) (_hq : q > 2) (hr : r ≥ q / 2) (_hr_lt : r < q) :
     mq_relu q r = 0 := by
   unfold mq_relu detect_sign threshold
   split_ifs with h0 h1
@@ -125,7 +131,7 @@ theorem batch_bounds (q : Nat) (residues : List Nat) (hq : q > 0)
     intro r' hr'
     simp [mq_relu_batch] at hr'
     rcases hr' with rfl | hr'
-    · exact mq_relu_bounded q r hq (hbounds r (List.mem_cons_self r rs))
+    · exact mq_relu_bounded q r hq (hbounds r List.mem_cons_self)
     · exact ih (fun x hx => hbounds x (List.mem_cons_of_mem r hx)) r' hr'
 
 /-! # Sign Count Analysis -/
@@ -134,24 +140,24 @@ theorem batch_bounds (q : Nat) (residues : List Nat) (hq : q > 0)
 def count_signs (q : Nat) : List Nat → Nat × Nat × Nat
   | [] => (0, 0, 0)
   | r :: rs =>
-    let (pos, neg, zero) := count_signs q rs
+    let (pos, neg, zc) := count_signs q rs
     match detect_sign q r with
-    | Sign.Positive => (pos + 1, neg, zero)
-    | Sign.Negative => (pos, neg + 1, zero)
-    | Sign.Zero => (pos, neg, zero + 1)
+    | Sign.Positive => (pos + 1, neg, zc)
+    | Sign.Negative => (pos, neg + 1, zc)
+    | Sign.Zero => (pos, neg, zc + 1)
 
 /-- Total count equals length -/
 theorem count_sum (q : Nat) (residues : List Nat) :
-    let (pos, neg, zero) := count_signs q residues
-    pos + neg + zero = residues.length := by
+    let (pos, neg, zc) := count_signs q residues
+    pos + neg + zc = residues.length := by
   induction residues with
   | nil => rfl
   | cons r rs ih =>
     simp only [count_signs, List.length_cons]
     generalize count_signs q rs = c at ih ⊢
-    obtain ⟨pos, neg, zero⟩ := c
+    obtain ⟨pos, neg, zc⟩ := c
     simp only at ih ⊢
-    cases detect_sign q r <;> omega
+    cases detect_sign q r <;> simp_all <;> omega
 
 end KElimination.MQReLU
 

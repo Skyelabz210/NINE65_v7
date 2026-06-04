@@ -60,7 +60,7 @@ theorem rotation_wraps (n k i : Nat) (hn : n > 0) :
   exact Nat.mod_lt _ hn
 
 /-- Rotation by 0 is identity -/
-theorem rotation_zero (n i : Nat) (hn : n > 0) (hi : i < n) :
+theorem rotation_zero (n i : Nat) (_hn : n > 0) (hi : i < n) :
     rotation_index n 0 i = i := by
   unfold rotation_index
   simp [Nat.mod_eq_of_lt hi]
@@ -89,21 +89,21 @@ def modular_distance (a b modulus : Nat) : Nat :=
 theorem distance_bounded (a b m : Nat) (hm : m > 0) :
     modular_distance a b m ≤ m / 2 := by
   unfold modular_distance
-  set diff := (a + m - b) % m
-  have hdiff : diff < m := Nat.mod_lt _ hm
-  split_ifs with h
-  · exact h
-  · omega
+  have hdiff : (a + m - b) % m < m := Nat.mod_lt _ hm
+  by_cases h : (a + m - b) % m ≤ m / 2
+  · simp only [h, if_true]
+  · simp only [h, if_false]; omega
 
 /-- Distance from self is 0 -/
-theorem distance_self (a m : Nat) (hm : m > 0) (ha : a < m) :
+theorem distance_self (a m : Nat) (_hm : m > 0) (_ha : a < m) :
     modular_distance a a m = 0 := by
   unfold modular_distance
   have h1 : (a + m - a) % m = 0 := by
     have : a + m - a = m := by omega
     rw [this]
     exact Nat.mod_self m
-  simp [h1]
+  rw [h1]
+  simp
 
 /-! # Coefficient Parity Properties -/
 

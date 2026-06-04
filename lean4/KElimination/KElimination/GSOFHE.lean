@@ -77,7 +77,7 @@ theorem noise_bounded (est : NoiseEstimate) (config : GSOConfig) :
   unfold maybe_collapse needs_collapse perform_collapse
   split_ifs with h
   · -- Collapse: distance = 0
-    simp; omega
+    simp
   · -- No collapse: distance ≤ threshold
     simp at h; omega
 
@@ -115,7 +115,7 @@ theorem depth_50_achievable (config : GSOConfig) (init : NoiseEstimate) :
 theorem maybe_collapse_count (est : NoiseEstimate) (config : GSOConfig) :
     (maybe_collapse est config).collapse_count ≤ est.collapse_count + 1 := by
   unfold maybe_collapse needs_collapse perform_collapse
-  split_ifs <;> simp <;> omega
+  split_ifs <;> simp
 
 /-- noise_mul preserves collapse count sum -/
 theorem noise_mul_collapse_count (a b : NoiseEstimate) (config : GSOConfig) :

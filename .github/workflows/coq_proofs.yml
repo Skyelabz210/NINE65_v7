@@ -1,30 +1,44 @@
-name: Coq Proof Verification
+name: Coq Proofs (legacy)
+
+# The Coq tree is a legacy NINE65 v2-era exploration, SUPERSEDED by the Lean
+# formalization (see lean_proofs.yml — that is the verification gate). This
+# workflow only confirms the legacy files that still compile have not regressed.
+# Three files are known-broken / ill-formed and are skipped; do not treat the
+# Coq tree as machine-checked verification.
 
 on:
   push:
     paths:
       - 'proofs/coq/**'
+      - 'verified-innovations/proofs/coq/**'
   pull_request:
     paths:
       - 'proofs/coq/**'
+      - 'verified-innovations/proofs/coq/**'
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
+      # ubuntu-latest (24.04) ships Coq 8.18.0. (The previous step fetched a
+      # GitHub release .deb that no longer exists — 404 — so it never ran.)
       - name: Install Coq
         run: |
-          wget https://github.com/coq/coq/releases/download/V8.18.0/coq-8.18.0+8.18-x86_64-linux-gnu.deb
-          sudo dpkg -i coq-8.18.0+8.18-x86_64-linux-gnu.deb
-      
-      - name: Compile Proofs
+          sudo apt-get update
+          sudo apt-get install -y coq
+          coqc --version
+
+      - name: Compile legacy Coq proofs (non-authoritative)
         run: |
-          cd proofs/coq
-          coqc MontgomeryContext.v
-          coqc KElimination.v
-          coqc KElimination_Completed.v
-      
-      - name: Report Status
-        run: echo "All Coq proofs compiled successfully"
+          # Known-broken legacy files (false theorems / ill-formed Fixpoint /
+          # undefined references). Tracked in docs/LEAN_FORMAL_VERIFICATION_2026-06-03.md.
+          skip="proofs/coq/MontgomeryContext.v proofs/coq/CyclotomicPhase.v proofs/coq/KElimination_Completed.v"
+          fail=0
+          for f in proofs/coq/*.v verified-innovations/proofs/coq/*.v; do
+            case " $skip " in *" $f "*) echo "SKIP (legacy/known-broken): $f"; continue;; esac
+            echo "== coqc $f =="
+            coqc -q "$f" || { echo "FAILED: $f"; fail=1; }
+          done
+          exit $fail

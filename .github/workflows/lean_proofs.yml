@@ -1,0 +1,73 @@
+name: Lean Formal Verification
+
+# Lean 4 is the formalization of record. This actually builds every proof module
+# (the library globs all KElimination.* submodules), so `lake build` failing —
+# or any `sorry` — fails CI. The previous CI only checked that the .lean files
+# existed; nothing was ever machine-checked.
+
+on:
+  push:
+    paths:
+      - 'lean4/**'
+  pull_request:
+    paths:
+      - 'lean4/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lean4/KElimination
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install elan (Lean toolchain manager)
+        run: |
+          curl -sSfL https://github.com/leanprover/elan/releases/latest/download/elan-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          ./elan-init -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      # lean-toolchain pins the version; elan installs it on first use. On GitHub
+      # runners the Mathlib olean cache is reachable, so this is fast (no
+      # from-source Mathlib build).
+      - name: Fetch Mathlib cache
+        run: lake exe cache get || true
+
+      # `sorry` only produces a warning (build still exits 0), so fail explicitly
+      # if the build log reports any. pipefail makes a real build error fail too.
+      - name: Build and verify all proof modules (fail on error or sorry)
+        run: |
+          set -o pipefail
+          lake build 2>&1 | tee build.log
+          if grep -q "declaration uses 'sorry'" build.log; then
+            echo "::error::Lean build reported 'sorry'"; exit 1
+          fi
+
+      # A proof can also be silently swapped for an `axiom` (no `sorry` warning),
+      # which would keep the build green while removing machine-checked coverage.
+      # This is the authoritative proof gate, so allow ONLY the one documented
+      # cryptographic hardness assumption (ahop_hardness) and fail on any other.
+      - name: Assert only the documented axiom (ahop_hardness)
+        run: |
+          # Audit the root module (KElimination.lean) AND all submodules
+          # (KElimination/), both of which `lake build` elaborates. Stay out of
+          # .lake/ (vendored Mathlib has many axioms).
+          # Allowlist by the exact declaration shape (`axiom ahop_hardness`), not
+          # the bare token — otherwise a new axiom that merely *mentions*
+          # ahop_hardness in its type (e.g. `axiom evil : ahop_hardness q -> False`)
+          # would be filtered out and pass.
+          # Match the `axiom` declaration keyword with optional leading
+          # attributes (e.g. `@[simp] axiom bad : False`) and indentation, then
+          # allowlist only the genuine `axiom ahop_hardness` declaration.
+          # Anchor the allowlist to the declaration itself — i.e. immediately
+          # after grep's `file:line:` prefix — so a token in a trailing comment
+          # (e.g. `axiom bad : False -- axiom ahop_hardness`) cannot sneak past.
+          unexpected=$(grep -rnE '^[[:space:]]*(@\[[^]]*\][[:space:]]*)*axiom[[:space:]]' KElimination.lean KElimination --include=*.lean \
+                       | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(@\[[^]]*\][[:space:]]*)*axiom[[:space:]]+ahop_hardness\b' || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::Unexpected Lean axiom(s) — only ahop_hardness is allowed:"
+            echo "$unexpected"
+            exit 1
+          fi
+          echo "Axiom audit OK (only ahop_hardness)."
