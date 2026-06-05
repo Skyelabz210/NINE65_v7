@@ -45,29 +45,11 @@ jobs:
           fi
 
       # A proof can also be silently swapped for an `axiom` (no `sorry` warning),
-      # which would keep the build green while removing machine-checked coverage.
-      # This is the authoritative proof gate, so allow ONLY the one documented
-      # cryptographic hardness assumption (ahop_hardness) and fail on any other.
-      - name: Assert only the documented axiom (ahop_hardness)
-        run: |
-          # Audit the root module (KElimination.lean) AND all submodules
-          # (KElimination/), both of which `lake build` elaborates. Stay out of
-          # .lake/ (vendored Mathlib has many axioms).
-          # Allowlist by the exact declaration shape (`axiom ahop_hardness`), not
-          # the bare token — otherwise a new axiom that merely *mentions*
-          # ahop_hardness in its type (e.g. `axiom evil : ahop_hardness q -> False`)
-          # would be filtered out and pass.
-          # Match the `axiom` declaration keyword with optional leading
-          # attributes (e.g. `@[simp] axiom bad : False`) and indentation, then
-          # allowlist only the genuine `axiom ahop_hardness` declaration.
-          # Anchor the allowlist to the declaration itself — i.e. immediately
-          # after grep's `file:line:` prefix — so a token in a trailing comment
-          # (e.g. `axiom bad : False -- axiom ahop_hardness`) cannot sneak past.
-          unexpected=$(grep -rnE '^[[:space:]]*(@\[[^]]*\][[:space:]]*)*axiom[[:space:]]' KElimination.lean KElimination --include=*.lean \
-                       | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(@\[[^]]*\][[:space:]]*)*axiom[[:space:]]+ahop_hardness\b' || true)
-          if [ -n "$unexpected" ]; then
-            echo "::error::Unexpected Lean axiom(s) — only ahop_hardness is allowed:"
-            echo "$unexpected"
-            exit 1
-          fi
-          echo "Axiom audit OK (only ahop_hardness)."
+      # which keeps the build green while removing machine-checked coverage. This
+      # is the authoritative proof gate, so inspect the elaborated *kernel
+      # environment* and fail if any KElimination module declares an axiom other
+      # than the one documented hardness assumption. Unlike a source grep, this
+      # sees through attributes, comments, and macro-synthesized axioms. It runs
+      # right after `lake build`, so the module oleans are warm (~10s).
+      - name: Assert only the documented axiom (kernel env audit)
+        run: bash scripts/axiom_audit.sh
