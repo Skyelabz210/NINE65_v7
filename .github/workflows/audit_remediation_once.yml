@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/audit-remediation-20260713
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
