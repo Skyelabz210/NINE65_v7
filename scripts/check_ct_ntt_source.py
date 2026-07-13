@@ -37,6 +37,11 @@ def forbid(text: str, token: str) -> None:
         raise AssertionError(f"forbidden token present: {token}")
 
 
+def reject_branches(name: str, body: str) -> None:
+    if "if " in body:
+        raise AssertionError(f"data-dependent branch candidate in {name}")
+
+
 def public_butterfly_schedule(n: int) -> list[tuple[int, int, int]]:
     if n < 1 or n & (n - 1):
         raise ValueError("n must be a positive power of two")
@@ -72,12 +77,11 @@ def main() -> int:
     forbid(ntt, "if sum >= self.q")
     forbid(ntt, "if ai >= bi")
 
-    ntt_add = section(ntt, "pub fn add(&self", "pub fn sub(&self")
-    ntt_sub = section(ntt, "pub fn sub(&self", "pub fn neg(&self")
-    ntt_neg = section(ntt, "pub fn neg(&self", "pub fn scalar_mul(&self")
-    for name, body in (("ntt_add", ntt_add), ("ntt_sub", ntt_sub), ("ntt_neg", ntt_neg)):
-        if "if " in body:
-            raise AssertionError(f"data-dependent branch candidate in {name}")
+    reject_branches("ntt_add", section(ntt, "pub fn add(&self", "pub fn sub(&self"))
+    reject_branches("ntt_sub", section(ntt, "pub fn sub(&self", "pub fn neg(&self"))
+    reject_branches(
+        "ntt_neg", section(ntt, "pub fn neg(&self", "pub fn scalar_mul(&self")
+    )
 
     require(persistent, "Montgomery modulus must be odd")
     require(persistent, "Montgomery modulus must be below 2^63")
@@ -86,22 +90,48 @@ def main() -> int:
     require(persistent, "odd_composite_class_r_modulus_is_supported")
 
     persistent_sections = (
-        ("redc", "pub fn redc", "pub fn mul"),
-        ("mul", "pub fn mul", "pub fn add"),
-        ("add", "pub fn add", "pub fn sub"),
-        ("sub", "pub fn sub", "pub fn neg"),
-        ("neg", "pub fn neg", "pub fn square"),
-        ("pow", "pub fn pow", "pub fn inverse"),
+        ("persistent_redc", "pub fn redc", "pub fn mul"),
+        ("persistent_mul", "pub fn mul", "pub fn add"),
+        ("persistent_add", "pub fn add", "pub fn sub"),
+        ("persistent_sub", "pub fn sub", "pub fn neg"),
+        ("persistent_neg", "pub fn neg", "pub fn square"),
+        ("persistent_pow", "pub fn pow", "pub fn inverse"),
     )
     for name, start, end in persistent_sections:
-        body = section(persistent, start, end)
-        if "if " in body:
-            raise AssertionError(f"data-dependent branch candidate in persistent {name}")
+        reject_branches(name, section(persistent, start, end))
 
-    require(montgomery, "pub fn montgomery_reduce")
-    require(montgomery, "overflowing_sub(self.q)")
-    require(montgomery, "pub fn montgomery_add")
-    require(montgomery, "pub fn montgomery_sub")
+    require(montgomery, "Montgomery modulus must be odd")
+    require(montgomery, "Montgomery modulus must be below 2^63")
+    require(montgomery, "candidate.wrapping_sub(self.q)")
+    require(montgomery, "for bit_index in (0..64).rev()")
+    require(montgomery, "pub fn montgomery_pow_vartime")
+    require(montgomery, "Variable-time exponentiation for public setup values only")
+
+    montgomery_sections = (
+        (
+            "montgomery_reduce",
+            "pub fn montgomery_reduce",
+            "pub fn montgomery_square",
+        ),
+        (
+            "montgomery_pow",
+            "pub fn montgomery_pow",
+            "pub fn montgomery_pow_vartime",
+        ),
+        (
+            "montgomery_add",
+            "pub fn montgomery_add",
+            "pub fn montgomery_sub",
+        ),
+        (
+            "montgomery_sub",
+            "pub fn montgomery_sub",
+            "pub fn montgomery_neg",
+        ),
+        ("montgomery_neg", "pub fn montgomery_neg", "}\n}"),
+    )
+    for name, start, end in montgomery_sections:
+        reject_branches(name, section(montgomery, start, end))
 
     schedule_counts: dict[str, int] = {}
     digest = hashlib.sha256()
@@ -122,6 +152,7 @@ def main() -> int:
         "scope": "source_invariants_and_public_schedule_only",
         "class_f_prime_guard": True,
         "ntt_branchless_coefficient_ops": True,
+        "montgomery_branchless_core": True,
         "persistent_branchless_core": True,
         "class_r_odd_composite_support": True,
         "public_schedule_counts": schedule_counts,
