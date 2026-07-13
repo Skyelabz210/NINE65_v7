@@ -10,6 +10,7 @@ on:
       - 'crates/nine65/src/cram_ct_wrap.rs'
       - 'crates/nine65/src/ops/rns_fhe.rs'
       - 'scripts/check_residue_native_architecture.py'
+      - 'scripts/cram_correctness_harness.py'
       - '.github/workflows/cram_residue_native_gates.yml'
   push:
     branches:
@@ -59,6 +60,32 @@ jobs:
         run: cargo test -p cram-core --all-targets
       - name: Clippy exactness gate
         run: cargo clippy -p cram-core --all-targets -- -D warnings
+
+  oracle-scale:
+    needs: architecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [small, medium, large, endurance]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run independent integer-only oracle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/oracle
+          python3 scripts/cram_correctness_harness.py --profile '${{ matrix.profile }}' \
+            | tee 'artifacts/oracle/${{ matrix.profile }}.json'
+      - name: Upload oracle evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cram-oracle-${{ matrix.profile }}
+          path: artifacts/oracle/
+          if-no-files-found: error
+          retention-days: 30
 
   scale-correctness:
     needs: [architecture, correctness]
