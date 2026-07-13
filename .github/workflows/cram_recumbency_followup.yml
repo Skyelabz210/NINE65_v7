@@ -1,0 +1,192 @@
+name: CRAM Recumbency Follow-up Gate
+
+on:
+  pull_request:
+    branches:
+      - "hardening/beyond-100-app-platform"
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "crates/nine65/src/arithmetic/k_elimination.rs"
+      - "crates/nine65/src/arithmetic/residue_division.rs"
+      - "crates/nine65/src/arithmetic/mod.rs"
+      - "crates/nine65/src/arithmetic/rns.rs"
+      - "crates/nine65/src/bin/nine65_bench.rs"
+      - "crates/nine65/src/noise/budget.rs"
+      - "crates/nine65/src/ops/auto_bootstrap.rs"
+      - "crates/nine65/src/ops/bootstrap.rs"
+      - "crates/nine65/src/ops/rns_fhe.rs"
+      - "crates/nine65/src/ops/rns_mul.rs"
+      - "crates/nine65/src/ops/sbni.rs"
+      - "crates/nine65/src/params/mod.rs"
+      - "crates/nine65/src/params/secure_configs.rs"
+      - "crates/nine65/tests/bootstrap_residue_shape_regression.rs"
+      - "crates/nine65/tests/dual_rns_context_metadata_regression.rs"
+      - "crates/nine65/tests/k_elimination_basis_regression.rs"
+      - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - "crates/nine65/tests/rns_context_metadata_regression.rs"
+      - ".github/scripts/apply_issue29_rns_metadata_patch.py"
+      - ".github/scripts/check_cram_recumbency.py"
+      - "docs/CRAM_RESIDUE_NATIVE_BOOTSTRAP_SPEC.md"
+      - "docs/AUDIT_REMEDIATION_2026-07-13.md"
+      - ".github/workflows/cram_recumbency_followup.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-cram-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Enforce CRAM recumbency contract
+        run: python3 .github/scripts/check_cram_recumbency.py
+
+      - name: Verify exact RNS context metadata patch
+        run: python3 .github/scripts/apply_issue29_rns_metadata_patch.py --check
+
+      - name: Reject floating-point tokens in exact paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            crates/nine65/src/arithmetic/residue_division.rs
+            crates/nine65/src/bin/nine65_bench.rs
+            crates/nine65/src/noise/budget.rs
+            crates/nine65/src/ops/auto_bootstrap.rs
+            crates/nine65/src/ops/sbni.rs
+            crates/nine65/src/params/mod.rs
+            crates/nine65/src/params/secure_configs.rs
+            crates/nine65/tests/bootstrap_residue_shape_regression.rs
+            crates/nine65/tests/dual_rns_context_metadata_regression.rs
+            crates/nine65/tests/k_elimination_basis_regression.rs
+            crates/nine65/tests/refresh_preflight_regression.rs
+            crates/nine65/tests/rns_context_metadata_regression.rs
+          )
+          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)|[0-9]+\.[0-9]+' "${files[@]}"; then
+            echo "floating-point token found in exact-integer paths" >&2
+            exit 1
+          fi
+
+      - name: Verify statistical gate controls exit status
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'let overall_correct = depth_correct && statistical_correct;' \
+            crates/nine65/src/bin/nine65_bench.rs
+          grep -F 'if !overall_correct {' crates/nine65/src/bin/nine65_bench.rs
+
+      - name: Verify exact noise accounting
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'let delta_bits = exact_delta_bit_length(config);' \
+            crates/nine65/src/noise/budget.rs
+          ! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \
+            crates/nine65/src/noise/budget.rs
+
+      - name: Verify audited secure-128 dimension
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -A8 -F 'pub fn secure_128() -> Self {' \
+            crates/nine65/src/params/secure_configs.rs | grep -F '8192'
+
+      - name: Verify committed modulus and NTT evidence
+        run: |
+          test -s artifacts/proof_bundle/modulus_validation_report.json
+          test -s artifacts/proof_bundle/ntt_roundtrip_stress.json
+          python3 tools/audit_modulus_evidence.py
+
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Compile audit benchmark
+        run: cargo check -p nine65 --bin nine65_bench --features serde
+
+      - name: Exact parameter and product-boundary tests
+        run: cargo test -p nine65 --lib --release params::tests -- --nocapture
+
+      - name: Audited security-profile tests
+        run: cargo test -p nine65 --lib --release params::secure_configs::tests -- --nocapture
+
+      - name: Exact noise-budget tests
+        run: cargo test -p nine65 --lib --release noise::budget::tests -- --nocapture
+
+      - name: Bounded residue-division contract tests
+        run: cargo test -p nine65 --lib --release arithmetic::residue_division::tests -- --nocapture
+
+      - name: Exact refresh-preflight regression
+        run: cargo test -p nine65 --release --test refresh_preflight_regression -- --nocapture
+
+      - name: Exact RNS context metadata regression
+        run: cargo test -p nine65 --release --test rns_context_metadata_regression -- --nocapture
+
+      - name: Exact DualRNS family metadata regression
+        run: cargo test -p nine65 --release --test dual_rns_context_metadata_regression -- --nocapture
+
+      - name: K-Elimination safe-basis regression
+        run: cargo test -p nine65 --release --test k_elimination_basis_regression -- --nocapture
+
+      - name: K-Elimination residue/boundary tests
+        run: cargo test -p nine65 --lib --release arithmetic::k_elimination::tests -- --nocapture
+
+      - name: NTT roundtrip regression
+        run: cargo test -p nine65 --release --test ntt_roundtrip_prime_regression -- --nocapture
+
+      - name: SBNI invariant tests
+        run: cargo test -p nine65 --lib --release ops::sbni -- --nocapture
+
+      - name: Auto-bootstrap unit tests
+        run: cargo test -p nine65 --lib --release ops::auto_bootstrap -- --nocapture
+
+      - name: Clockwork bootstrap unit tests
+        run: cargo test -p nine65 --lib --release ops::bootstrap -- --nocapture
+
+      - name: Bootstrap residue-shape regression
+        run: cargo test -p nine65 --release --test bootstrap_residue_shape_regression -- --nocapture
+
+      - name: DualRNS leveled smoke test
+        run: |
+          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+            --config secure_128_deep --max-depth 1 --output /tmp/nine65-leveled.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('/tmp/nine65-leveled.json').read_text())
+          assert report['metadata']['integer_only_reporting'] is True
+          assert report['metadata']['simulated_refreshes'] == 0
+          assert report['operations']['path'] == 'DualRNS + K-Elimination'
+          assert report['depth_chain']['correct'] is True
+          assert report['overall_correct'] is True
+          PY
+
+      - name: DualRNS automatic-refresh statistical smoke test
+        run: |
+          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+            --config secure_128_deep --max-depth 3 --auto-bootstrap \
+            --statistical-test --output /tmp/nine65-auto.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('/tmp/nine65-auto.json').read_text())
+          assert report['metadata']['simulated_refreshes'] == 0
+          assert report['depth_chain']['correct'] is True
+          assert report['depth_chain']['total_bootstrap_calls'] > 0
+          assert report['depth_chain']['exercised_real_refresh'] is True
+          assert report['statistical_test']['correct'] is True
+          assert report['statistical_test']['failures'] == 0
+          assert report['statistical_test']['total_bootstrap_calls'] > 0
+          assert report['statistical_test']['exercised_real_refresh'] is True
+          assert report['overall_correct'] is True
+          PY
