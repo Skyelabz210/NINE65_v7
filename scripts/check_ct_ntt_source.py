@@ -82,7 +82,8 @@ def main() -> int:
     require(persistent, "Montgomery modulus must be odd")
     require(persistent, "Montgomery modulus must be below 2^63")
     require(persistent, "for bit_index in (0..64).rev()")
-    require(persistent, "odd composite CLASS-R")
+    require(persistent, "this layer is CLASS-R")
+    require(persistent, "odd_composite_class_r_modulus_is_supported")
 
     persistent_sections = (
         ("redc", "pub fn redc", "pub fn mul"),
