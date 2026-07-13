@@ -110,7 +110,7 @@ def run_profile(profile: ScaleProfile) -> dict[str, int | str | list[int]]:
             for index, modulus in enumerate(moduli):
                 rhs = rng.next() % modulus
                 old = residues[index]
-                mode = step % 3
+                mode = (step + index) % 3
                 if mode == 0:
                     updated = (old + rhs) % modulus
                 elif mode == 1:
