@@ -1,32 +1,58 @@
 # fhe-service
 
-Rust HTTP service that exposes the FHE boundary for the telemetry gateway.
+Rust HTTP service exposing an internal, server-key-holder FHE boundary.
 
 Implemented endpoints:
-- `GET /healthz` - Health check and active session count
-- `GET /v1/version` - Service version and supported configurations
-- `GET /v1/metrics` - Prometheus metrics endpoint
-- `POST /v1/sessions` - Create a new FHE session with key generation
-- `GET /v1/sessions/{id}` - Get session information and noise budget
-- `DELETE /v1/sessions/{id}` - Destroy a session and zeroize key material
-- `POST /v1/sessions/{id}/encrypt` - Encrypt values to ciphertexts
-- `POST /v1/sessions/{id}/decrypt` - Decrypt ciphertexts to values
-- `POST /v1/sessions/{id}/evaluate` - Perform homomorphic operations (add, sub, negate, mul, add_plain, mul_plain)
 
-Notes:
-- Sessions hold server-side encryption keys and track noise budget
-- Key material never leaves the server; only ciphertexts travel over the wire
-- Supports secure configurations: secure_128, secure_192, secure_256
-- Automatic session cleanup with TTL-based reaper
+- `GET /healthz`
+- `GET /v1/version`
+- `GET /v1/metrics`
+- `POST /v1/sessions`
+- `GET /v1/sessions/{id}`
+- `DELETE /v1/sessions/{id}`
+- `POST /v1/sessions/{id}/encrypt`
+- `POST /v1/sessions/{id}/evaluate`
+- `POST /v1/sessions/{id}/decrypt` — operator-only and disabled by default
 
-Security Model:
-- This service provides IND-CPA (indistinguishability under chosen-plaintext attack) security
-- The decryption endpoint functions as a decryption oracle by design and should NOT be exposed to untrusted clients in production without additional application-layer authentication
-- The service does NOT provide CCA (chosen-ciphertext attack) security protections such as noise flooding or OAEP-style message encoding
-- For symmetric-mode usage (single server with known key), IND-CPA security is sufficient
-- For multi-party or asymmetric usage scenarios, additional security measures are required
+## Decryption policy
 
-Run locally:
+Production builds conceal the decrypt endpoint unless all conditions hold:
+
 ```bash
+export FHE_ENABLE_DECRYPT=1
+export FHE_DECRYPT_TOKEN='<operator secret>'
+```
+
+The caller must also provide:
+
+```text
+x-fhe-decrypt-token: <operator secret>
+```
+
+Token comparison is constant-time. This gate is defense in depth and does not replace mTLS, workload identity, tenant authorization, or network isolation.
+
+## Security boundary
+
+- Sessions hold server-side keys and track an exact integer noise budget.
+- The service is an internal `ServiceOperator` mode, not consumer-side key ownership.
+- The service targets IND-CPA evaluation semantics; it does not become IND-CCA secure merely because the decrypt route is gated.
+- Public evaluator applications should keep the secret key in the client, owner-controlled key service, HSM/TEE, or device boundary and should not use this process as a public decryption service.
+- Session cleanup destroys stored key material through the configured zeroization path.
+
+See `docs/SECURITY_MODE_MATRIX.md` for the complete mode contract.
+
+## Run locally
+
+Evaluation-only default:
+
+```bash
+cargo run -p fhe-service --release
+```
+
+Explicit operator decryption mode:
+
+```bash
+FHE_ENABLE_DECRYPT=1 \
+FHE_DECRYPT_TOKEN='<operator secret>' \
 cargo run -p fhe-service --release
 ```
