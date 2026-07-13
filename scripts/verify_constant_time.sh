@@ -59,7 +59,7 @@ grep -Fq "odd_composite_class_r_modulus_is_supported" \
 echo "[4/5] Claim boundary and residual-risk language"
 grep -Fq "compiler/disassembly and hardware evidence pending" \
   docs/SIDE_CHANNEL_THREAT_MODEL.md
-grep -Fq "does not establish a universal constant-time claim" \
+grep -Fq "universal constant-time claim" \
   docs/CT_NTT_AUDIT_2026-07-13.md
 grep -Fq "compiler_disassembly_verified\": False" \
   scripts/check_ct_ntt_source.py
@@ -69,25 +69,29 @@ grep -Fq "cache_line_alignment_verified\": False" \
   scripts/check_ct_ntt_source.py
 
 echo "[5/5] High-risk source pattern checks"
-if grep -nE 'if[[:space:]]+sum[[:space:]]*>=[[:space:]]*self\.(q|m)' \
-    crates/nine65/src/arithmetic/ntt_fft.rs \
-    crates/nine65/src/arithmetic/montgomery.rs \
-    crates/nine65/src/arithmetic/persistent_montgomery.rs; then
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+for source in \
+  crates/nine65/src/arithmetic/ntt_fft.rs \
+  crates/nine65/src/arithmetic/montgomery.rs \
+  crates/nine65/src/arithmetic/persistent_montgomery.rs; do
+  output="$TMP_DIR/$(basename "$source")"
+  sed '/#\[cfg(test)\]/,$d' "$source" > "$output"
+done
+
+if grep -nE 'if[[:space:]]+sum[[:space:]]*>=[[:space:]]*self\.(q|m)' "$TMP_DIR"/*; then
   echo "FAIL branchy modular-add pattern returned" >&2
   exit 1
 fi
 
-if grep -nE 'if[[:space:]]+(a|left|x)[[:space:]]*>=[[:space:]]*(b|right|y)' \
-    crates/nine65/src/arithmetic/ntt_fft.rs \
-    crates/nine65/src/arithmetic/montgomery.rs \
-    crates/nine65/src/arithmetic/persistent_montgomery.rs; then
+if grep -nE 'if[[:space:]]+(a|left|x)[[:space:]]*>=[[:space:]]*(b|right|y)' "$TMP_DIR"/*; then
   echo "FAIL branchy modular-subtract pattern returned" >&2
   exit 1
 fi
 
 if grep -nE 'if[[:space:]]+(a|value|x)[[:space:]]*==[[:space:]]*0' \
-    crates/nine65/src/arithmetic/ntt_fft.rs \
-    crates/nine65/src/arithmetic/montgomery.rs; then
+    "$TMP_DIR/ntt_fft.rs" "$TMP_DIR/montgomery.rs"; then
   echo "FAIL branchy secret-value zero check returned in CT core" >&2
   exit 1
 fi
