@@ -1,25 +1,66 @@
+//! NINE65 exact-integer benchmark and correctness harness.
+//!
+//! The mixed chain reported here is an **operation-count chain** containing
+//! ciphertext-plaintext operations. It is not ciphertext-ciphertext
+//! multiplicative depth. Unbootstrapped runs stop when the modeled noise budget
+//! cannot fund the next operation. The harness never resets a budget without
+//! performing a real ciphertext refresh.
+
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use nine65::ops::bootstrap::ClockworkBootstrap;
-use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
-use nine65::ops::rns_fhe::{DualRNSCiphertext, RNSFHEContext};
-
-/// NINE65 Benchmark Harness
-///
-/// Runs comprehensive FHE benchmarks and outputs structured JSON
-/// for the hackfate.us demo page (speedometers, depth chain, noise budget).
-///
-/// Usage:
-///   nine65_bench --config secure_128 --max-depth 80 --output bench.json
-///
-/// Build:
-///   cargo build --release -p nine65 --bin nine65_bench --features serde
+use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
 use serde_json::{json, Value};
 use std::time::Instant;
 
+fn percent_floor(remaining: i64, total: i64) -> u64 {
+    if remaining <= 0 || total <= 0 {
+        0
+    } else {
+        ((remaining as u128 * 100) / total as u128) as u64
+    }
+}
+
+fn rate_per_second(count: u64, elapsed_us: u64) -> u64 {
+    if elapsed_us == 0 {
+        0
+    } else {
+        ((count as u128 * 1_000_000) / elapsed_us as u128) as u64
+    }
+}
+
+fn usage() {
+    eprintln!(
+        "Usage: nine65_bench [OPTIONS]\n\n\
+         Options:\n\
+         --config <name>      secure_128 (default), secure_128_deep, secure_192, secure_256\n\
+         --max-depth <n>      Requested mixed-operation count (default: 80)\n\
+         --output <path>      Output JSON file (default: stdout)\n\
+         --a <u64>            First operand (default: 8)\n\
+         --b <u64>            Second operand (default: 8)\n\
+         --with-bootstrap     Enable real Clockwork Bootstrap\n\
+         --auto-bootstrap     Enable threshold-triggered real bootstrap\n\
+         --statistical-test   Run 100 real-bootstrap correctness trials\n\
+         --trigger-pct <n>    Refresh threshold in percent (default: 25)"
+    );
+}
+
+fn select_config(name: &str) -> FHEConfig {
+    match name {
+        "secure_128" | "standard_128" => SecureConfig::secure_128().into_config(),
+        "secure_128_deep" => SecureConfig::secure_128_deep().into_config(),
+        "secure_192" | "high_192" => SecureConfig::secure_192().into_config(),
+        "secure_256" => SecureConfig::secure_256().into_config(),
+        other => {
+            eprintln!("Unknown config: {other}");
+            std::process::exit(2);
+        }
+    }
+}
+
 fn main() {
     let mut config_name = String::from("secure_128");
-    let mut max_depth: usize = 80;
+    let mut requested_operations: usize = 80;
     let mut output_path: Option<String> = None;
     let mut init_a: u64 = 8;
     let mut init_b: u64 = 8;
@@ -29,513 +70,399 @@ fn main() {
     let mut trigger_pct: u32 = 25;
     let seed: u64 = 42;
 
-    // Parse args
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--config" => config_name = args.next().unwrap_or_default(),
             "--max-depth" => {
-                max_depth = args.next().unwrap_or_default().parse().unwrap_or(80);
+                requested_operations = args
+                    .next()
+                    .unwrap_or_default()
+                    .parse()
+                    .unwrap_or(80);
             }
             "--output" | "-o" => output_path = args.next(),
-            "--a" => {
-                init_a = args.next().unwrap_or_default().parse().unwrap_or(8);
-            }
-            "--b" => {
-                init_b = args.next().unwrap_or_default().parse().unwrap_or(8);
-            }
+            "--a" => init_a = args.next().unwrap_or_default().parse().unwrap_or(8),
+            "--b" => init_b = args.next().unwrap_or_default().parse().unwrap_or(8),
             "--with-bootstrap" => with_bootstrap = true,
             "--auto-bootstrap" => auto_bootstrap = true,
             "--statistical-test" => statistical_test = true,
             "--trigger-pct" => {
-                trigger_pct = args.next().unwrap_or_default().parse().unwrap_or(25);
+                trigger_pct = args.next().unwrap_or_default().parse().unwrap_or(25)
             }
             "-h" | "--help" => {
-                eprintln!(
-                    "Usage: nine65_bench [OPTIONS]\n\n\
-                     Options:\n\
-                     --config <name>      secure_128 (default), secure_192, secure_256\n\
-                     --max-depth <n>      Max depth for chain test (default: 80)\n\
-                     --output <path>      Output JSON file (default: stdout)\n\
-                     --a <u64>            First operand (default: 8)\n\
-                     --b <u64>            Second operand (default: 8)\n\
-                     --with-bootstrap     Enable real Clockwork Bootstrap\n\
-                     --auto-bootstrap     Enable Auto-Bootstrap Evaluator\n\
-                     --statistical-test   Run 100-sample statistical correctness test\n\
-                     --trigger-pct <n>    Refresh threshold (default: 25)\n"
-                );
+                usage();
                 return;
             }
             _ => {
                 eprintln!("Unknown flag: {arg}");
-                std::process::exit(1);
+                usage();
+                std::process::exit(2);
             }
         }
     }
 
-    // Select config
-    let config = match config_name.as_str() {
-        "secure_128" => SecureConfig::secure_128().into_config(),
-        "secure_128_deep" => SecureConfig::secure_128_deep().into_config(),
-        "secure_192" => SecureConfig::secure_192().into_config(),
-        "secure_256" => SecureConfig::secure_256().into_config(),
-        "standard_128" => SecureConfig::secure_128().into_config(),
-        "high_192" => SecureConfig::secure_192().into_config(),
-        other => {
-            eprintln!("Unknown config: {other}");
-            std::process::exit(1);
-        }
-    };
+    if requested_operations == 0 {
+        eprintln!("--max-depth must be positive");
+        std::process::exit(2);
+    }
+    if trigger_pct > 100 {
+        eprintln!("--trigger-pct must be in 0..=100");
+        std::process::exit(2);
+    }
 
-    eprintln!("NINE65 Benchmark Harness");
+    // Statistical verification and auto mode both require actual key material
+    // and actual refreshes. Neither mode is permitted to simulate a refresh.
+    if auto_bootstrap || statistical_test {
+        with_bootstrap = true;
+    }
+
+    let config = select_config(&config_name);
+    let trigger_permille = trigger_pct * 10;
+
+    eprintln!("NINE65 exact benchmark harness");
     eprintln!(
-        "Config: {} (n={}, q={}, t={})",
-        config_name, config.n, config.q, config.t
+        "Config: {} (n={}, lanes={}, q0={}, t={})",
+        config_name,
+        config.n,
+        config.primes.len(),
+        config.q,
+        config.t
     );
-    eprintln!("Max depth: {max_depth}");
-    eprintln!("---");
+    eprintln!("Requested mixed operations: {requested_operations}");
+    eprintln!(
+        "Bootstrap: {}",
+        if with_bootstrap { "real" } else { "disabled" }
+    );
 
-    // Setup
     let ntt = NTTEngine::new(config.q, config.n);
     let mut rng = ShadowHarvester::with_seed(seed);
 
-    // ================================================================
-    // 1. KEYGEN TIMING
-    // ================================================================
-    eprintln!("Benchmarking keygen...");
-    let t0 = Instant::now();
+    let keygen_start = Instant::now();
     let keys = KeySet::generate(&config, &ntt, &mut rng);
-    let keygen_us = t0.elapsed().as_micros() as u64;
-    eprintln!("  Keygen: {}us ({}ms)", keygen_us, keygen_us / 1000);
-
-    // Bootstrap KeyGen
-    let ctx_dual = RNSFHEContext::new(&config);
-    let keys_dual = ctx_dual.generate_keys_dual_full(&mut rng);
-    let boot = ClockworkBootstrap::new(&config).expect("Bootstrap init failed");
-    let boot_keys = if with_bootstrap || auto_bootstrap {
-        eprintln!("Generating bootstrap keys...");
-        let t_boot = Instant::now();
-        let bk = boot.generate_keys(&keys_dual.secret_key, &mut rng).expect("Bootstrap keygen failed");
-        eprintln!("  Bootstrap Keygen: {}ms", t_boot.elapsed().as_millis());
-        Some(bk)
-    } else {
-        None
-    };
+    let keygen_us = keygen_start.elapsed().as_micros() as u64;
 
     let encoder = BFVEncoder::new(&config);
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
     let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
     let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
 
-    // ================================================================
-    // 2. SINGLE OPERATION TIMING (averaged over 100 iterations)
-    // ================================================================
-    eprintln!("Benchmarking single operations (100 iterations each)...");
-    let iterations = 100;
+    let iterations: u64 = 100;
 
-    // Encrypt
-    let t0 = Instant::now();
-    let mut ct_a = encryptor.encrypt(init_a, &mut rng);
+    let start = Instant::now();
+    let mut ct_a = encryptor.encrypt(init_a % config.t, &mut rng);
     for _ in 1..iterations {
-        ct_a = encryptor.encrypt(init_a, &mut rng);
+        ct_a = encryptor.encrypt(init_a % config.t, &mut rng);
     }
-    let encrypt_us = t0.elapsed().as_micros() as u64 / iterations;
+    let encrypt_us = start.elapsed().as_micros() as u64 / iterations;
+    let ct_b = encryptor.encrypt(init_b % config.t, &mut rng);
 
-    let ct_b = encryptor.encrypt(init_b, &mut rng);
-
-    // Decrypt
-    let t0 = Instant::now();
+    let start = Instant::now();
     for _ in 0..iterations {
         let _ = decryptor.decrypt(&ct_a);
     }
-    let decrypt_us = t0.elapsed().as_micros() as u64 / iterations;
+    let decrypt_us = start.elapsed().as_micros() as u64 / iterations;
 
-    // Add (ct + ct)
-    let t0 = Instant::now();
+    let start = Instant::now();
     for _ in 0..iterations {
         let _ = evaluator.add(&ct_a, &ct_b);
     }
-    let add_us = t0.elapsed().as_micros() as u64 / iterations;
+    let add_us = start.elapsed().as_micros() as u64 / iterations;
 
-    // Sub (ct - ct)
-    let t0 = Instant::now();
+    let start = Instant::now();
     for _ in 0..iterations {
         let _ = evaluator.sub(&ct_a, &ct_b);
     }
-    let sub_us = t0.elapsed().as_micros() as u64 / iterations;
+    let sub_us = start.elapsed().as_micros() as u64 / iterations;
 
-    // Negate
-    let t0 = Instant::now();
+    let start = Instant::now();
     for _ in 0..iterations {
         let _ = evaluator.negate(&ct_a);
     }
-    let negate_us = t0.elapsed().as_micros() as u64 / iterations;
+    let negate_us = start.elapsed().as_micros() as u64 / iterations;
 
-    // Add plain
-    let t0 = Instant::now();
+    let start = Instant::now();
     for _ in 0..iterations {
-        let _ = evaluator.add_plain(&ct_a, 10);
+        let _ = evaluator.add_plain(&ct_a, 10 % config.t);
     }
-    let add_plain_us = t0.elapsed().as_micros() as u64 / iterations;
+    let add_plain_us = start.elapsed().as_micros() as u64 / iterations;
 
-    // Mul plain
-    let t0 = Instant::now();
+    let start = Instant::now();
     for _ in 0..iterations {
         let _ = evaluator.mul_plain(&ct_a, 3);
     }
-    let mul_plain_us = t0.elapsed().as_micros() as u64 / iterations;
+    let mul_plain_us = start.elapsed().as_micros() as u64 / iterations;
 
-    // Mul (ct * ct) - the expensive one
     #[allow(deprecated)]
-    let mul_fn = |a: &Ciphertext, b: &Ciphertext| evaluator.mul(a, b);
+    let mul_us = {
+        let start = Instant::now();
+        for _ in 0..iterations {
+            let _ = evaluator.mul(&ct_a, &ct_b);
+        }
+        start.elapsed().as_micros() as u64 / iterations
+    };
 
-    let t0 = Instant::now();
-    for _ in 0..iterations {
-        let _ = mul_fn(&ct_a, &ct_b);
-    }
-    let mul_us = t0.elapsed().as_micros() as u64 / iterations;
+    let ctx = RNSFHEContext::new(&config);
+    let dual_keys = ctx.generate_keys_dual_full(&mut rng);
 
-    eprintln!("  encrypt: {}us, decrypt: {}us", encrypt_us, decrypt_us);
-    eprintln!(
-        "  add: {}us, sub: {}us, negate: {}us",
-        add_us, sub_us, negate_us
-    );
-    eprintln!(
-        "  add_plain: {}us, mul_plain: {}us, mul: {}us",
-        add_plain_us, mul_plain_us, mul_us
-    );
+    let bootstrap = if with_bootstrap {
+        Some(ClockworkBootstrap::new(&config).expect("bootstrap initialization failed"))
+    } else {
+        None
+    };
+    let bootstrap_keys = if let Some(ref engine) = bootstrap {
+        let started = Instant::now();
+        let generated = engine
+            .generate_keys(&dual_keys.secret_key, &mut rng)
+            .expect("bootstrap key generation failed");
+        eprintln!("Bootstrap key generation: {}us", started.elapsed().as_micros());
+        Some(generated)
+    } else {
+        None
+    };
 
-    // ================================================================
-    // 3. DEPTH CHAIN
-    // ================================================================
-    eprintln!("Running depth chain (max depth: {max_depth})...");
-
-    let chain_ops: Vec<(&str, &str, u64)> = vec![
-        ("mul_plain", "\u{00d7}", 3),
-        ("add_plain", "+", 2),
-        ("mul_plain", "\u{00d7}", 5),
-        ("add_plain", "+", 13),
-        ("sub_plain", "\u{2212}", 7),
-        ("mul_plain", "\u{00d7}", 2),
-        ("add_plain", "+", 11),
-        ("mul_plain", "\u{00d7}", 4),
-        ("add_plain", "+", 9),
-        ("sub_plain", "\u{2212}", 3),
-        ("mul_plain", "\u{00d7}", 7),
-        ("add_plain", "+", 17),
-        ("mul_plain", "\u{00d7}", 3),
-        ("sub_plain", "\u{2212}", 8),
-        ("add_plain", "+", 6),
-        ("mul_plain", "\u{00d7}", 9),
-        ("sub_plain", "\u{2212}", 1),
-        ("add_plain", "+", 23),
-        ("mul_plain", "\u{00d7}", 2),
-        ("add_plain", "+", 5),
+    let chain_ops: [(&str, u64); 20] = [
+        ("mul_plain", 3),
+        ("add_plain", 2),
+        ("mul_plain", 5),
+        ("add_plain", 13),
+        ("sub_plain", 7),
+        ("mul_plain", 2),
+        ("add_plain", 11),
+        ("mul_plain", 4),
+        ("add_plain", 9),
+        ("sub_plain", 3),
+        ("mul_plain", 7),
+        ("add_plain", 17),
+        ("mul_plain", 3),
+        ("sub_plain", 8),
+        ("add_plain", 6),
+        ("mul_plain", 9),
+        ("sub_plain", 1),
+        ("add_plain", 23),
+        ("mul_plain", 2),
+        ("add_plain", 5),
     ];
 
-    // Initial computation: a * b
     let mut budget = NoiseBudget::from_config(&config);
     let initial_budget_mb = budget.remaining_millibits();
-
-    let mut ct_result = encryptor.encrypt(init_a, &mut rng);
+    let mut ciphertext = ctx.encrypt_dual(init_a % config.t, &dual_keys.public_key, &mut rng);
     let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
+    let mut plaintext = init_a % config.t;
+    let mut entries: Vec<Value> = Vec::with_capacity(requested_operations);
+    let mut refreshes: u64 = 0;
+    let chain_start = Instant::now();
 
-    // --- LEGACY INITIALIZATION ---
-    let mut ct_result = encryptor.encrypt(init_a, &mut rng);
-    let mut plaintext_result: u64 = (init_a * init_b) % config.t;
-
-    // --- DUALRNS INITIALIZATION (for bootstrap path) ---
-    let mut ct_dual = ctx_dual.encrypt_dual(init_a, &keys_dual.public_key, &mut rng);
-
-    // First op: multiply by b (as plaintext)
-    let t0 = Instant::now();
-    let first_op_us;
-    if with_bootstrap {
-        ct_dual = ctx_dual.mul_plain_dual(&ct_dual, init_b);
-        first_op_us = t0.elapsed().as_micros() as u64;
-    } else {
-        ct_result = evaluator.mul_plain(&ct_result, init_b);
-        first_op_us = t0.elapsed().as_micros() as u64;
-    }
-    let _ = budget.consume(NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(&config));
-
-    let mut depth_chain: Vec<Value> = Vec::new();
-    let noise_pct = (budget.remaining_millibits() as f64 / initial_budget_mb as f64 * 100.0) as u64;
-
-    depth_chain.push(json!({
-        "depth": 1,
-        "operation": format!("{} \u{00d7} {}", init_a, init_b),
-        "noise_budget_pct": noise_pct,
-        "elapsed_us": first_op_us,
-        "refreshed": false
-    }));
-
-    let mut total_refreshes: u64 = 0;
-    let mut depth: usize = 1;
-
-    for d in 0..(max_depth - 1) {
-        let (op_type, symbol, val) = &chain_ops[d % chain_ops.len()];
-
-        let t0 = Instant::now();
-        let (noise_cost, new_plain) = match *op_type {
-            "mul_plain" => {
-                if with_bootstrap {
-                    ct_dual = ctx_dual.mul_plain_dual(&ct_dual, *val);
-                } else {
-                    ct_result = evaluator.mul_plain(&ct_result, *val);
-                }
-                (
-                    NoiseBudget::mul_plain_cost(&config),
-                    (plaintext_result * val) % config.t,
-                )
-            }
-            "add_plain" => {
-                if with_bootstrap {
-                    ct_dual = ctx_dual.add_plain_dual(&ct_dual, *val);
-                } else {
-                    ct_result = evaluator.add_plain(&ct_result, *val);
-                }
-                (
-                    NoiseBudget::add_plain_cost(),
-                    (plaintext_result + val) % config.t,
-                )
-            }
-            "sub_plain" => {
-                // sub_plain via add_plain with (t - val)
-                if with_bootstrap {
-                    ct_dual = ctx_dual.add_plain_dual(&ct_dual, config.t - val);
-                } else {
-                    ct_result = evaluator.add_plain(&ct_result, config.t - val);
-                }
-                (
-                    NoiseBudget::add_plain_cost(),
-                    (plaintext_result + config.t - val) % config.t,
-                )
-            }
-            _ => unreachable!(),
+    for index in 0..requested_operations {
+        let (operation, operand) = if index == 0 {
+            ("mul_plain", init_b % config.t)
+        } else {
+            chain_ops[(index - 1) % chain_ops.len()]
         };
-        let op_us = t0.elapsed().as_micros() as u64;
 
-        plaintext_result = new_plain;
-        depth += 1;
+        let (noise_type, noise_cost) = match operation {
+            "mul_plain" => (
+                NoiseOpType::MulPlain,
+                NoiseBudget::mul_plain_cost(&config),
+            ),
+            _ => (NoiseOpType::Add, NoiseBudget::add_plain_cost()),
+        };
 
-        // Track noise
-        let consume_result = budget.consume(
-            match *op_type {
-                "mul_plain" => NoiseOpType::MulPlain,
-                _ => NoiseOpType::Add, // add_plain cost ~= add cost
-            },
-            noise_cost,
-        );
+        let needs_refresh = budget.remaining_millibits() < noise_cost
+            || (with_bootstrap && budget.should_bootstrap(trigger_permille));
 
-        let mut refreshed = false;
-        if consume_result.is_err() || (with_bootstrap && budget.should_bootstrap(trigger_pct * 10)) {
-            if let Some(ref bk) = boot_keys {
-                // Real Clockwork Bootstrap refresh
-                ct_dual = boot.bootstrap(&ct_dual, &bk.bsk, &bk.ksk).expect("Bootstrap failed");
-
+        if needs_refresh {
+            if let (Some(engine), Some(keys)) = (bootstrap.as_ref(), bootstrap_keys.as_ref()) {
+                ciphertext = engine
+                    .bootstrap(&ciphertext, &keys.bsk, &keys.ksk)
+                    .expect("real bootstrap failed");
                 budget.reset_after_bootstrap(&config);
-                total_refreshes += 1;
-                refreshed = true;
-                eprintln!(
-                    "  Depth {depth}: REAL BOOTSTRAP REFRESH (refresh #{})",
-                    total_refreshes
-                );
+                refreshes += 1;
             } else {
-                // Simulate Clockwork Bootstrap refresh (legacy mode)
-                budget = NoiseBudget::from_config(&config);
-                let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
-                total_refreshes += 1;
-                refreshed = true;
                 eprintln!(
-                    "  Depth {depth}: SIMULATED REFRESH (refresh #{})",
-                    total_refreshes
+                    "Stopped before operation {}: modeled noise budget cannot fund the next operation",
+                    index + 1
                 );
+                break;
             }
         }
 
-        let noise_pct = (budget.remaining_millibits() as f64 / initial_budget_mb as f64 * 100.0)
-            .max(0.0) as u64;
+        let op_start = Instant::now();
+        match operation {
+            "mul_plain" => {
+                ciphertext = ctx.mul_plain_dual(&ciphertext, operand);
+                plaintext = (plaintext * operand) % config.t;
+            }
+            "add_plain" => {
+                ciphertext = ctx.add_plain_dual(&ciphertext, operand % config.t);
+                plaintext = (plaintext + operand) % config.t;
+            }
+            "sub_plain" => {
+                let encoded_subtrahend = (config.t - (operand % config.t)) % config.t;
+                ciphertext = ctx.add_plain_dual(&ciphertext, encoded_subtrahend);
+                plaintext = (plaintext + encoded_subtrahend) % config.t;
+            }
+            _ => unreachable!(),
+        }
+        let elapsed_us = op_start.elapsed().as_micros() as u64;
 
-        depth_chain.push(json!({
-            "depth": depth,
-            "operation": format!("result {} {}", symbol, val),
-            "noise_budget_pct": noise_pct,
-            "elapsed_us": op_us,
-            "refreshed": refreshed
+        budget
+            .consume(noise_type, noise_cost)
+            .expect("preflighted noise consumption must succeed");
+
+        entries.push(json!({
+            "operation_index": index + 1,
+            "operation": operation,
+            "operand": operand,
+            "elapsed_us": elapsed_us,
+            "noise_budget_pct": percent_floor(
+                budget.remaining_millibits(),
+                initial_budget_mb,
+            ),
+            "real_refreshes_so_far": refreshes,
         }));
     }
 
-    // Verify correctness: decrypt and check
-    let decrypted = if with_bootstrap {
-        ctx_dual.decrypt_dual(&ct_dual, &keys_dual.secret_key)
-    } else {
-        decryptor.decrypt(&ct_result)
-    };
-    let correct = decrypted == plaintext_result;
-    eprintln!(
-        "  Depth chain complete: depth={}, refreshes={}, correct={}",
-        depth, total_refreshes, correct
-    );
-    if !correct {
-        eprintln!(
-            "  WARNING: Decrypted {} != expected {}",
-            decrypted, plaintext_result
-        );
-    }
+    let chain_us = chain_start.elapsed().as_micros() as u64;
+    let operations_achieved = entries.len();
+    let decrypted = ctx.decrypt_dual(&ciphertext, &dual_keys.secret_key);
+    let achieved_chain_correct = decrypted == plaintext;
+    let completed_requested = operations_achieved == requested_operations;
 
-    // ================================================================
-    // 3.5 STATISTICAL TEST
-    // ================================================================
-    if statistical_test {
-        eprintln!("Running statistical correctness test (100 trials)...");
-        let mut statistical_successes = 0;
-        let mut statistical_refreshes = 0;
+    let statistical_summary = if statistical_test {
+        let engine = bootstrap.as_ref().expect("statistical test bootstrap engine");
+        let keys = bootstrap_keys
+            .as_ref()
+            .expect("statistical test bootstrap keys");
+        let mut successes: u64 = 0;
+        let mut statistical_refreshes: u64 = 0;
 
-        let bk = boot_keys.as_ref().expect("--statistical-test requires bootstrap keys (implied)");
-
-        for i in 0..100 {
-            let m_init = rng.next_u64() % config.t;
-            let mut ct = ctx_dual.encrypt_dual(m_init, &keys_dual.public_key, &mut rng);
-            let mut current_plain = m_init;
+        for _ in 0..100u64 {
+            let mut expected = rng.next_u64() % config.t;
+            let mut ct = ctx.encrypt_dual(expected, &dual_keys.public_key, &mut rng);
             let mut trial_budget = NoiseBudget::from_config(&config);
+            let _ = trial_budget.consume(
+                NoiseOpType::Encrypt,
+                NoiseBudget::encrypt_cost(&config),
+            );
 
-            // Run depth-80 chain
-            for d in 0..80 {
-                let (_, _, val) = chain_ops[d % chain_ops.len()];
-
-                // Deterministic mixed operations
-                if d % 3 == 0 {
-                    ct = ctx_dual.mul_plain_dual(&ct, val % config.t);
-                    current_plain = (current_plain * (val % config.t)) % config.t;
-                    let _ = trial_budget.consume(NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(&config));
+            for step in 0..80usize {
+                let (_, operand) = chain_ops[step % chain_ops.len()];
+                let (kind, cost) = if step % 3 == 0 {
+                    (
+                        NoiseOpType::MulPlain,
+                        NoiseBudget::mul_plain_cost(&config),
+                    )
                 } else {
-                    ct = ctx_dual.add_plain_dual(&ct, val % config.t);
-                    current_plain = (current_plain + (val % config.t)) % config.t;
-                    let _ = trial_budget.consume(NoiseOpType::Add, NoiseBudget::add_plain_cost());
-                }
+                    (NoiseOpType::Add, NoiseBudget::add_plain_cost())
+                };
 
-                if trial_budget.should_bootstrap(trigger_pct * 10) {
-                    ct = boot.bootstrap(&ct, &bk.bsk, &bk.ksk).expect("Statistical bootstrap failed");
+                if trial_budget.remaining_millibits() < cost
+                    || trial_budget.should_bootstrap(trigger_permille)
+                {
+                    ct = engine
+                        .bootstrap(&ct, &keys.bsk, &keys.ksk)
+                        .expect("statistical bootstrap failed");
                     trial_budget.reset_after_bootstrap(&config);
                     statistical_refreshes += 1;
                 }
+
+                if step % 3 == 0 {
+                    ct = ctx.mul_plain_dual(&ct, operand);
+                    expected = (expected * operand) % config.t;
+                } else {
+                    ct = ctx.add_plain_dual(&ct, operand % config.t);
+                    expected = (expected + operand) % config.t;
+                }
+                trial_budget
+                    .consume(kind, cost)
+                    .expect("preflighted statistical budget consumption");
             }
 
-            let dec = ctx_dual.decrypt_dual(&ct, &keys_dual.secret_key);
-            if dec == current_plain {
-                statistical_successes += 1;
-            }
-
-            if (i + 1) % 100 == 0 {
-                eprintln!("  Trial {}: {}/{} correct", i + 1, statistical_successes, i + 1);
+            if ctx.decrypt_dual(&ct, &dual_keys.secret_key) == expected {
+                successes += 1;
             }
         }
 
-        eprintln!("Statistical test complete: {}/100 correct ({} refreshes)", statistical_successes, statistical_refreshes);
-        if statistical_successes == 100 {
-            eprintln!("[PASS] 100/100 trials correct with zero nonzero error distribution.");
-        } else {
-            eprintln!("[FAIL] Statistical correctness failed: {}/100 correct", statistical_successes);
+        if successes != 100 {
+            eprintln!("Statistical correctness failed: {successes}/100");
             std::process::exit(1);
         }
-    }
 
-    // ================================================================
-    // 4. SCALE TESTS
-    // ================================================================
-    eprintln!("Running scale tests...");
+        json!({
+            "enabled": true,
+            "successes": successes,
+            "trials": 100,
+            "real_refreshes": statistical_refreshes,
+        })
+    } else {
+        json!({"enabled": false})
+    };
 
-    // Deep Arithmetic: chain of mixed mul_plain/add_plain
-    let scale_arith = run_scale_test(
-        &config,
-        &ntt,
-        &encoder,
-        &encryptor,
-        &evaluator,
-        &mut rng,
-        80,
-        "arithmetic",
-    );
+    let scale_tests = json!({
+        "deep_arithmetic": run_scale_test(
+            &config,
+            &encryptor,
+            &evaluator,
+            &mut rng,
+            80,
+            "arithmetic",
+        ),
+        "statistical_pipeline": run_scale_test(
+            &config,
+            &encryptor,
+            &evaluator,
+            &mut rng,
+            60,
+            "statistical",
+        ),
+        "neural_network": run_scale_test(
+            &config,
+            &encryptor,
+            &evaluator,
+            &mut rng,
+            50,
+            "neural_network",
+        ),
+        "polynomial_eval": run_scale_test(
+            &config,
+            &encryptor,
+            &evaluator,
+            &mut rng,
+            128,
+            "polynomial",
+        ),
+    });
 
-    // Statistical Pipeline: simulated as a chain of add operations (sum, mean accumulation)
-    let scale_stats = run_scale_test(
-        &config,
-        &ntt,
-        &encoder,
-        &encryptor,
-        &evaluator,
-        &mut rng,
-        60,
-        "statistical",
-    );
-
-    // Neural Network: alternating mul_plain (matmul proxy) and add_plain (bias/relu proxy)
-    let scale_nn = run_scale_test(
-        &config,
-        &ntt,
-        &encoder,
-        &encryptor,
-        &evaluator,
-        &mut rng,
-        50,
-        "neural_network",
-    );
-
-    // Polynomial Eval: Horner's method chain (mul_plain + add_plain per degree)
-    let scale_poly = run_scale_test(
-        &config,
-        &ntt,
-        &encoder,
-        &encryptor,
-        &evaluator,
-        &mut rng,
-        128,
-        "polynomial",
-    );
-
-    // ================================================================
-    // 5. COMPUTE SUMMARY
-    // ================================================================
-    let total_chain_us: u64 = depth_chain
+    let average_chain_us = if operations_achieved == 0 {
+        0
+    } else {
+        chain_us / operations_achieved as u64
+    };
+    let chain_ops_per_second = rate_per_second(operations_achieved as u64, chain_us);
+    let min_noise = entries
         .iter()
-        .filter_map(|e| e.get("elapsed_us").and_then(|v| v.as_u64()))
-        .sum();
-    let avg_op_us = if depth > 0 {
-        total_chain_us / depth as u64
-    } else {
-        0
-    };
-    let ops_per_sec = if avg_op_us > 0 {
-        1_000_000 / avg_op_us
-    } else {
-        0
-    };
-    let depth_per_sec = if total_chain_us > 0 {
-        (depth as f64 / (total_chain_us as f64 / 1_000_000.0)) as u64
-    } else {
-        0
-    };
-    let min_noise = depth_chain
-        .iter()
-        .filter_map(|e| e.get("noise_budget_pct").and_then(|v| v.as_u64()))
+        .filter_map(|entry| entry.get("noise_budget_pct").and_then(Value::as_u64))
         .min()
-        .unwrap_or(0);
+        .unwrap_or(percent_floor(
+            budget.remaining_millibits(),
+            initial_budget_mb,
+        ));
 
-    // ================================================================
-    // 6. BUILD JSON OUTPUT
-    // ================================================================
     let output = json!({
         "metadata": {
-            "timestamp": format!("{}", chrono_lite()),
+            "timestamp": chrono_lite(),
             "config": config_name,
             "n": config.n,
-            "q": config.q,
+            "rns_primes": config.primes,
+            "q_primary": config.q,
             "t": config.t,
             "eta": config.eta,
-            "security_bits": config.security_bits,
+            "security_claim_bits": config.security_bits,
             "seed": seed,
-            "max_depth": max_depth,
+            "requested_operation_count": requested_operations,
+            "chain_semantics": "mixed ciphertext-plaintext operation count; not ciphertext-ciphertext multiplicative depth",
+            "bootstrap_mode": if with_bootstrap { "real" } else { "disabled" },
             "nine65_version": env!("CARGO_PKG_VERSION"),
         },
         "keygen_us": keygen_us,
@@ -547,150 +474,107 @@ fn main() {
             "negate_us": negate_us,
             "add_plain_us": add_plain_us,
             "mul_plain_us": mul_plain_us,
-            "mul_us": mul_us,
+            "legacy_single_modulus_mul_us": mul_us,
         },
-        "depth_chain": {
-            "init_expression": format!("{} \u{00d7} {}", init_a, init_b),
-            "final_depth": depth,
-            "total_refreshes": total_refreshes,
-            "correct": correct,
+        "operation_chain": {
+            "requested_operations": requested_operations,
+            "operations_achieved": operations_achieved,
+            "completed_requested": completed_requested,
+            "achieved_chain_correct": achieved_chain_correct,
             "decrypted_result": decrypted,
-            "expected_result": plaintext_result,
-            "entries": depth_chain,
+            "expected_result": plaintext,
+            "real_refreshes": refreshes,
+            "elapsed_us": chain_us,
+            "entries": entries,
         },
-        "scale_tests": {
-            "deep_arithmetic": scale_arith,
-            "statistical_pipeline": scale_stats,
-            "neural_network": scale_nn,
-            "polynomial_eval": scale_poly,
-        },
+        "statistical_test": statistical_summary,
+        "scale_tests": scale_tests,
         "speedometer_summary": {
-            "avg_ops_per_sec": ops_per_sec,
-            "avg_latency_us": avg_op_us,
-            "max_depth_achieved": depth,
-            "depth_per_sec": depth_per_sec,
+            "average_chain_ops_per_sec": chain_ops_per_second,
+            "average_chain_latency_us": average_chain_us,
+            "operations_achieved": operations_achieved,
             "noise_budget_min_pct": min_noise,
-            "total_refreshes": total_refreshes,
+            "real_refreshes": refreshes,
         },
     });
 
-    let json_str = serde_json::to_string_pretty(&output).expect("JSON serialization failed");
-
+    let json_text = serde_json::to_string_pretty(&output).expect("JSON serialization failed");
     if let Some(path) = output_path {
-        std::fs::write(&path, &json_str).expect("Failed to write output file");
-        eprintln!("Output written to: {path}");
+        std::fs::write(&path, json_text).expect("failed to write benchmark output");
+        eprintln!("Output written to {path}");
     } else {
-        println!("{json_str}");
+        println!("{json_text}");
     }
 
-    eprintln!("---");
-    eprintln!("Benchmark complete.");
-    eprintln!("  Ops/sec: {ops_per_sec}");
-    eprintln!("  Avg latency: {avg_op_us}us");
-    eprintln!("  Max depth: {depth}");
-    eprintln!("  Refreshes: {total_refreshes}");
+    eprintln!(
+        "Completed: achieved {operations_achieved}/{requested_operations} operations, correctness={}, real refreshes={refreshes}",
+        achieved_chain_correct
+    );
 }
 
-/// Run a scale test workload and return JSON summary
-#[allow(clippy::too_many_arguments)]
 fn run_scale_test(
     config: &FHEConfig,
-    _ntt: &NTTEngine,
-    _encoder: &BFVEncoder,
     encryptor: &BFVEncryptor,
     evaluator: &BFVEvaluator,
     rng: &mut ShadowHarvester,
-    target_depth: usize,
-    workload_type: &str,
+    requested_operations: usize,
+    workload: &str,
 ) -> Value {
     let mut budget = NoiseBudget::from_config(config);
-    let initial_mb = budget.remaining_millibits();
-    let mut ct = encryptor.encrypt(42, rng);
+    let initial_budget = budget.remaining_millibits();
+    let mut ciphertext = encryptor.encrypt(42 % config.t, rng);
     let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(config));
+    let started = Instant::now();
+    let mut achieved: u64 = 0;
 
-    let mut refreshes: u64 = 0;
-    let mut ops: u64 = 0;
-    let t0 = Instant::now();
-
-    for d in 0..target_depth {
-        let (noise_op, noise_cost) = match workload_type {
-            "arithmetic" => {
-                if d % 3 == 0 {
-                    ct = evaluator.mul_plain(&ct, 3);
-                    (NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(config))
-                } else {
-                    ct = evaluator.add_plain(&ct, 7);
-                    (NoiseOpType::Add, NoiseBudget::add_plain_cost())
-                }
-            }
-            "statistical" => {
-                // Simulates accumulation operations (sum, running mean)
-                ct = evaluator.add_plain(&ct, (d as u64) + 1);
-                (NoiseOpType::Add, NoiseBudget::add_plain_cost())
-            }
-            "neural_network" => {
-                if d % 2 == 0 {
-                    // Dense layer proxy (mul_plain)
-                    ct = evaluator.mul_plain(&ct, 2);
-                    (NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(config))
-                } else {
-                    // Bias/activation proxy (add_plain)
-                    ct = evaluator.add_plain(&ct, 1);
-                    (NoiseOpType::Add, NoiseBudget::add_plain_cost())
-                }
-            }
-            "polynomial" => {
-                // Horner step: result = result * x + coefficient
-                if d % 2 == 0 {
-                    ct = evaluator.mul_plain(&ct, 5); // multiply by x
-                    (NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(config))
-                } else {
-                    ct = evaluator.add_plain(&ct, (d as u64) + 1); // add coefficient
-                    (NoiseOpType::Add, NoiseBudget::add_plain_cost())
-                }
-            }
-            _ => unreachable!(),
+    for index in 0..requested_operations {
+        let (kind, cost) = match workload {
+            "arithmetic" if index % 3 == 0 => (
+                NoiseOpType::MulPlain,
+                NoiseBudget::mul_plain_cost(config),
+            ),
+            "neural_network" if index % 2 == 0 => (
+                NoiseOpType::MulPlain,
+                NoiseBudget::mul_plain_cost(config),
+            ),
+            "polynomial" if index % 2 == 0 => (
+                NoiseOpType::MulPlain,
+                NoiseBudget::mul_plain_cost(config),
+            ),
+            _ => (NoiseOpType::Add, NoiseBudget::add_plain_cost()),
         };
-        ops += 1;
 
-        if budget.consume(noise_op, noise_cost).is_err() {
-            budget = NoiseBudget::from_config(config);
-            let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(config));
-            refreshes += 1;
+        if budget.remaining_millibits() < cost {
+            break;
         }
+
+        ciphertext = match kind {
+            NoiseOpType::MulPlain => evaluator.mul_plain(&ciphertext, 3),
+            _ => evaluator.add_plain(&ciphertext, ((index as u64) + 1) % config.t),
+        };
+        budget
+            .consume(kind, cost)
+            .expect("preflighted scale-test budget consumption");
+        achieved += 1;
     }
 
-    let total_us = t0.elapsed().as_micros() as u64;
-    let total_ms = total_us as f64 / 1000.0;
-    let ops_per_sec = if total_us > 0 {
-        ops * 1_000_000 / total_us
-    } else {
-        0
-    };
-    let final_noise_pct =
-        (budget.remaining_millibits() as f64 / initial_mb as f64 * 100.0).max(0.0) as u64;
-
-    eprintln!(
-        "  {}: depth={}, ops={}, time={:.1}ms, ops/s={}, refreshes={}",
-        workload_type, target_depth, ops, total_ms, ops_per_sec, refreshes
-    );
-
+    let elapsed_us = started.elapsed().as_micros() as u64;
     json!({
-        "workload": workload_type,
-        "max_depth": target_depth,
-        "total_ops": ops,
-        "total_time_ms": (total_ms * 10.0).round() / 10.0,
-        "ops_per_sec": ops_per_sec,
-        "refreshes": refreshes,
-        "final_noise_pct": final_noise_pct,
+        "workload": workload,
+        "requested_operations": requested_operations,
+        "operations_achieved": achieved,
+        "completed_requested": achieved == requested_operations as u64,
+        "elapsed_us": elapsed_us,
+        "operations_per_sec": rate_per_second(achieved, elapsed_us),
+        "simulated_refreshes": 0,
+        "final_noise_pct": percent_floor(budget.remaining_millibits(), initial_budget),
     })
 }
 
-/// Minimal timestamp without chrono dependency
 fn chrono_lite() -> String {
     use std::time::SystemTime;
-    let d = SystemTime::now()
+    let duration = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap_or_default();
-    format!("{}s_since_epoch", d.as_secs())
+    format!("{}s_since_epoch", duration.as_secs())
 }
