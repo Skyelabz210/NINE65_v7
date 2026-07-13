@@ -9,6 +9,6 @@ app.private_feedback_residue_core,internal,exploratory,crates/private-feedback-c
 app.private_feedback_nine65_adapter,internal,exploratory,crates/private-feedback-nine65/README.md
 wasm.client_boundary,internal,exploratory,docs/SECURITY_MODE_MATRIX.md
 bench.external_fhe_matrix_protocol,internal,exploratory,docs/EXTERNAL_FHE_BENCHMARK_MATRIX.md
-security.ct_ntt_completion_plan,internal,exploratory,docs/CT_NTT_CACHE_ROADMAP.md
+security.ct_ntt_source_hardening,internal,exploratory,docs/CT_NTT_AUDIT_2026-07-13.md
 formal.app_critical_spine,internal,exploratory,docs/FORMAL_APP_CRITICAL_SPINE.md
 docs.claim_evidence_ledger,internal,exploratory,docs/CLAIM_EVIDENCE_LEDGER.md
