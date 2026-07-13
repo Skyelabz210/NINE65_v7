@@ -15,7 +15,8 @@ This ledger maps the pre-application hardening report to repository artifacts. â
 | Entropy separation | `docs/ENTROPY_MODEL.md` | Implemented | Source audit confirms key paths use secure entropy |
 | CT-NTT/cache roadmap | `docs/CT_NTT_CACHE_ROADMAP.md` | Completion gates defined | CT-0 through CT-6 evidence required for broad constant-time claim |
 | App-critical proof spine | Lean `AppBoundary` plus formal spine doc | Implemented | Lean workflow passes with no new axioms/sorry |
-| First structured private app | `crates/private-feedback-core` | Implemented | Rust tests/clippy pass; NINE65 ciphertext adapter remains next integration node |
+| Structured private-feedback domain core | `crates/private-feedback-core` | Implemented | Rust tests/clippy pass |
+| Public-evaluator NINE65 adapter | `crates/private-feedback-nine65` | Implemented with live DualRNS round-trip test | Adapter tests/clippy pass on runner |
 | Current bootstrap/parameter remediation | merged PR #26 | Integrated | Audit remediation workflow passes |
 | Residue-native scale DAG | based on PR #28 | Integrated | N02 and N05-N30 gates remain tracked by DAG ledger |
 
@@ -34,9 +35,9 @@ Do not merge this line to `main` while any of the following holds:
 
 ## Next integration nodes
 
-1. Attach NINE65 public-evaluator encryption/evaluation adapters to `private-feedback-core` fixed slots.
-2. Add browser-generated client key flow and ciphertext upload example.
-3. Implement tenant identity and signed request envelopes for service mode.
-4. Complete the FPD production path and machine-checked wrapper preconditions.
-5. Execute the external benchmark matrix on one pinned machine.
-6. Complete CT-0 reachability inventory and CT-2 NTT address-trace evidence.
+1. Add browser-generated client key flow and ciphertext upload example.
+2. Implement tenant identity and signed request envelopes for service mode.
+3. Complete the FPD production path and machine-checked wrapper preconditions.
+4. Execute the external benchmark matrix on one pinned machine.
+5. Complete CT-0 reachability inventory and CT-2 NTT address-trace evidence.
+6. Complete remaining N02 and N05-N30 residue-native DAG gates.
