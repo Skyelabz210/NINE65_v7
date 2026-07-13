@@ -96,6 +96,11 @@ def reference_winding(main_residue: int, anchor_residue: int, main: int, anchor:
     return (difference * inverse) % anchor
 
 
+def adjacent_winding(main_residue: int, anchor_residue: int, main: int) -> int:
+    anchor = main + 1
+    return (main_residue - anchor_residue) % anchor
+
+
 def run_profile(profile: ScaleProfile) -> dict[str, int | str | list[int]]:
     lane_operations = 0
     rolling_digest = hashlib.sha256()
@@ -137,6 +142,17 @@ def run_profile(profile: ScaleProfile) -> dict[str, int | str | list[int]]:
                 raise AssertionError((main, anchor, value, recovered, value // main))
             exhaustive_states += 1
 
+    adjacent_states = 0
+    for main in range(2, 128):
+        anchor = main + 1
+        for value in range(main * anchor):
+            general = reference_winding(value % main, value % anchor, main, anchor)
+            shortcut = adjacent_winding(value % main, value % anchor, main)
+            expected = value // main
+            if general != expected or shortcut != expected:
+                raise AssertionError((main, value, general, shortcut, expected))
+            adjacent_states += 1
+
     main = 9_699_690
     anchor = 23
     span = main * anchor
@@ -154,6 +170,7 @@ def run_profile(profile: ScaleProfile) -> dict[str, int | str | list[int]]:
         "steps": profile.steps,
         "lane_operations": lane_operations,
         "exhaustive_anchor_states": exhaustive_states,
+        "adjacent_shortcut_states": adjacent_states,
         "sampled_anchor_states": profile.kelim_samples,
         "internal_projections": 0,
         "crt_reconstructions": 0,
