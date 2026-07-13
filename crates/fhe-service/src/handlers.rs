@@ -12,6 +12,7 @@ use crate::wire::{
 
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use std::sync::atomic::{AtomicU64, Ordering};
 use subtle::ConstantTimeEq;
 
@@ -47,7 +48,10 @@ fn decrypt_authorized_with(
     let Some(provided) = provided_token else {
         return false;
     };
-    bool::from(provided.as_bytes().ct_eq(expected.as_bytes()))
+
+    let expected_digest: [u8; 32] = Sha256::digest(expected.as_bytes()).into();
+    let provided_digest: [u8; 32] = Sha256::digest(provided.as_bytes()).into();
+    bool::from(expected_digest.ct_eq(&provided_digest))
 }
 
 fn decrypt_route_authorized(request: &HttpRequest) -> bool {
