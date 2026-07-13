@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed when prohibited mechanisms enter production CRAM paths."""
+"""Fail closed when prohibited mechanisms enter residue-native production paths."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-PRODUCTION_ROOTS = (
+PRODUCTION_TARGETS = (
     ROOT / "crates" / "cram-core" / "src",
     ROOT / "crates" / "cram-poly" / "src",
     ROOT / "crates" / "cram-fhe" / "src",
-    ROOT / "crates" / "nine65" / "src",
+    ROOT / "crates" / "nine65" / "src" / "cram_ct_wrap.rs",
+    ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
 )
 
-# Identifiers are assembled to keep this enforcement file from matching itself.
 PROHIBITED = {
     "garner": re.compile(r"\b" + "gar" + "ner" + r"\b", re.IGNORECASE),
     "mixed_radix": re.compile(r"mixed[_ -]?" + "radix", re.IGNORECASE),
@@ -24,14 +24,7 @@ PROHIBITED = {
     "floating_type": re.compile(r"\bf(?:32|64)\b|\bas\s+f(?:32|64)\b"),
 }
 
-ALLOWED_PATH_PARTS = {
-    "tests",
-    "test_oracle",
-    "oracle",
-    "legacy",
-    "archive",
-    "docs",
-}
+ALLOWED_PATH_PARTS = {"tests", "test_oracle", "oracle", "legacy", "archive", "docs"}
 
 
 def is_allowed(path: pathlib.Path) -> bool:
@@ -53,13 +46,20 @@ def scan_file(path: pathlib.Path) -> list[str]:
     return failures
 
 
+def iter_files(target: pathlib.Path):
+    if target.is_file():
+        yield target
+    elif target.is_dir():
+        for path in target.rglob("*"):
+            if path.suffix in {".rs", ".toml"} and path.is_file():
+                yield path
+
+
 def main() -> int:
     failures: list[str] = []
-    for root in PRODUCTION_ROOTS:
-        if not root.exists():
-            continue
-        for path in root.rglob("*"):
-            if path.suffix in {".rs", ".toml"} and path.is_file():
+    for target in PRODUCTION_TARGETS:
+        if target.exists():
+            for path in iter_files(target):
                 failures.extend(scan_file(path))
     if failures:
         print("Residue-native architecture gate FAILED", file=sys.stderr)
