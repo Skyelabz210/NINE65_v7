@@ -1,0 +1,82 @@
+{
+  "all_anchors_prime": true,
+  "all_main_ntt_compatible": true,
+  "all_main_prime": true,
+  "all_plaintext_moduli_valid": true,
+  "all_profile_lanes_pairwise_coprime": true,
+  "anchors_ntt_compatible_for_supported_n": {
+    "1024": true,
+    "16384": true,
+    "2048": true,
+    "8192": true
+  },
+  "anchors_pairwise_coprime": true,
+  "arithmetic": "exact_integer_only",
+  "canonical_anchors": [
+    2013265921,
+    2281701377,
+    2483027969,
+    2885681153,
+    3221225473
+  ],
+  "current_anchor_execution_class": "CLASS-A_FIELD_BACKED_NTT_PLUS_CLASS-R_K-ELIM",
+  "evidence_sha256": "68b65afe334832c1725fbd0165e1be689734a763f1fbd52b28e6a271ec3b738b",
+  "main_anchor_disjoint_and_coprime": true,
+  "main_lane_class": "CLASS-F",
+  "profiles": {
+    "hardware_opt": {
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "primes": [
+        998244353,
+        985661441,
+        754974721
+      ]
+    },
+    "secure_128": {
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "primes": [
+        998244353,
+        985661441,
+        754974721
+      ]
+    },
+    "secure_128_deep": {
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ]
+    },
+    "secure_192": {
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ]
+    },
+    "secure_256": {
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        595591169
+      ]
+    }
+  },
+  "ring_only_composite_anchor_fast_path_available": false,
+  "schema": 1,
+  "status": "PASS"
+}
