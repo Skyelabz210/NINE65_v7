@@ -8,6 +8,7 @@ on:
       - 'crates/fhe-service/**'
       - 'crates/nine65-wasm/**'
       - 'crates/private-feedback-core/**'
+      - 'crates/private-feedback-nine65/**'
       - 'docs/SECURITY_MODE_MATRIX.md'
       - 'docs/ENTROPY_MODEL.md'
       - 'docs/CRAM_INTEGRATION_CONTRACT.md'
@@ -20,6 +21,7 @@ on:
       - 'crates/fhe-service/**'
       - 'crates/nine65-wasm/**'
       - 'crates/private-feedback-core/**'
+      - 'crates/private-feedback-nine65/**'
       - 'docs/**'
       - 'scripts/external_fhe_matrix.py'
       - '.github/workflows/app_platform_gates.yml'
@@ -30,7 +32,7 @@ permissions:
 
 jobs:
   app-core:
-    name: Structured private-feedback core
+    name: Structured private-feedback stack
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,16 +41,30 @@ jobs:
           components: clippy, rustfmt
       - name: Format
         run: cargo fmt --all -- --check
-      - name: Test reference application core
+      - name: Test residue-native domain core
         run: cargo test -p private-feedback-core --release
-      - name: Clippy reference application core
-        run: cargo clippy -p private-feedback-core --all-targets -- -D warnings
+      - name: Test live DualRNS adapter
+        run: cargo test -p private-feedback-nine65 --release
+      - name: Clippy application stack
+        run: |
+          cargo clippy -p private-feedback-core --all-targets -- -D warnings
+          cargo clippy -p private-feedback-nine65 --all-targets -- -D warnings
       - name: Enforce residue-native application vocabulary
         run: |
-          if rg -n --glob '*.rs' '(Garner|mixed.?radix|f64|f32)' crates/private-feedback-core; then
-            echo 'Forbidden reconstruction or floating-point token in private-feedback-core'
+          if rg -n --glob '*.rs' '(Garner|mixed.?radix|f64|f32)' \
+              crates/private-feedback-core crates/private-feedback-nine65; then
+            echo 'Forbidden reconstruction or floating-point token in private-feedback stack'
             exit 1
           fi
+      - name: Assert evaluator adapter exposes no decrypt API
+        run: |
+          if rg -n 'pub fn decrypt|DualRNSSecretKey|secret_key:' \
+              crates/private-feedback-nine65/src/lib.rs; then
+            echo 'Public-evaluator adapter exposes a decrypt capability'
+            exit 1
+          fi
+          rg -q 'add_dual' crates/private-feedback-nine65/src/lib.rs
+          rg -q 'encrypt_dual_secure' crates/private-feedback-nine65/src/lib.rs
 
   service-boundary:
     name: Fail-closed service boundary
@@ -87,8 +103,9 @@ jobs:
       - name: Assert secret-key export remains disabled
         run: |
           rg -q 'SecretKey export disabled' crates/nine65-wasm/src/lib.rs
-          if rg -n 'pub fn to_bytes.*SecretKey|serialize\(&self\.inner\)' crates/nine65-wasm/src/lib.rs; then
-            echo 'Review secret-key export boundary; broad match detected'
+          if rg -n 'impl WasmSecretKey' crates/nine65-wasm/src/lib.rs >/dev/null; then
+            rg -q 'Err\(JsValue::from_str\("SecretKey export disabled"\)\)' \
+              crates/nine65-wasm/src/lib.rs
           fi
 
   policy-and-claims:
@@ -109,3 +126,4 @@ jobs:
           test -f docs/CT_NTT_CACHE_ROADMAP.md
           test -f docs/FORMAL_APP_CRITICAL_SPINE.md
           test -f lean4/KElimination/KElimination/AppBoundary.lean
+          test -f crates/private-feedback-nine65/README.md
