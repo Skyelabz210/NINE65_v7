@@ -17,6 +17,7 @@ thiserror = { workspace = true }
 base64 = "0.22"
 bincode = "1.3"
 getrandom = { workspace = true }
+sha2 = { workspace = true }
 subtle = { workspace = true }
 
 [dev-dependencies]
