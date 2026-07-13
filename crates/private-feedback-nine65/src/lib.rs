@@ -61,9 +61,9 @@ impl EncryptedFeedback {
             return Err(AdapterError::InvalidCiphertextCount);
         }
 
-        for index in 0..SLOT_COUNT {
-            self.ciphertexts[index] =
-                context.add_dual(&self.ciphertexts[index], &rhs.ciphertexts[index]);
+        for (left, right) in self.ciphertexts.iter_mut().zip(&rhs.ciphertexts) {
+            let sum = context.add_dual(left, right);
+            *left = sum;
         }
 
         Ok(())
@@ -75,9 +75,7 @@ mod tests {
     use super::*;
     use nine65::entropy::ShadowHarvester;
     use nine65::params::secure_configs::SecureConfig;
-    use private_feedback_core::{
-        FrictionClass, QuestionClass, SentimentClass,
-    };
+    use private_feedback_core::{FrictionClass, QuestionClass, SentimentClass};
 
     fn signal(topic: u16, severity: u8, confidence_permille: u16) -> FeedbackSignal {
         FeedbackSignal::try_new(
@@ -119,12 +117,14 @@ mod tests {
             .add_assign(&context, &encrypted_right)
             .expect("homomorphic slot aggregation");
 
-        for index in 0..SLOT_COUNT {
-            let actual = context.decrypt_dual(
-                &encrypted_left.ciphertexts()[index],
-                &keys.secret_key,
-            );
-            let expected = (left_slots[index] + right_slots[index]) % context.t;
+        for (index, ((left, right), ciphertext)) in left_slots
+            .iter()
+            .zip(&right_slots)
+            .zip(encrypted_left.ciphertexts())
+            .enumerate()
+        {
+            let actual = context.decrypt_dual(ciphertext, &keys.secret_key);
+            let expected = (left + right) % context.t;
             assert_eq!(actual, expected, "slot {index}");
         }
     }
