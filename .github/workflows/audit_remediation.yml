@@ -1,0 +1,70 @@
+name: Audit Remediation Gate
+
+on:
+  pull_request:
+    paths:
+      - "crates/nine65/src/bin/nine65_bench.rs"
+      - "crates/nine65/src/ops/auto_bootstrap.rs"
+      - "crates/nine65/src/ops/sbni.rs"
+      - "docs/AUDIT_REMEDIATION_2026-07-13.md"
+      - ".github/workflows/audit_remediation.yml"
+  push:
+    branches:
+      - "audit/remediate-2026-07-13"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-dual-rns-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Reject floating-point tokens in remediated paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=(
+            crates/nine65/src/bin/nine65_bench.rs
+            crates/nine65/src/ops/auto_bootstrap.rs
+            crates/nine65/src/ops/sbni.rs
+          )
+          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)|[0-9]+\.[0-9]+' "${files[@]}"; then
+            echo "floating-point token found in exact-integer audit paths" >&2
+            exit 1
+          fi
+
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Compile audit benchmark
+        run: cargo check -p nine65 --bin nine65_bench --features serde
+
+      - name: SBNI invariant tests
+        run: cargo test -p nine65 --lib --release ops::sbni -- --nocapture
+
+      - name: Auto-bootstrap unit tests
+        run: cargo test -p nine65 --lib --release ops::auto_bootstrap -- --nocapture
+
+      - name: DualRNS benchmark smoke test
+        run: |
+          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+            --config secure_128 --max-depth 1 --output /tmp/nine65-audit.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('/tmp/nine65-audit.json').read_text())
+          assert report['metadata']['integer_only_reporting'] is True
+          assert report['metadata']['simulated_refreshes'] == 0
+          assert report['operations']['path'] == 'DualRNS + K-Elimination'
+          assert report['depth_chain']['correct'] is True
+          PY
