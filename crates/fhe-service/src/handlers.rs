@@ -1,7 +1,7 @@
 //! Request handlers — endpoint logic for FHE operations.
 //!
 //! All FHE computation happens here. Ciphertexts are deserialized, validated,
-//! operated on via TrackedEvaluator (HVT-1), and serialized back.
+//! operated on via tracked exact-integer paths, and serialized back.
 
 use crate::http::{error_response, json_response, HttpRequest, HttpResponse, MAX_RESPONSE_BYTES};
 use crate::session::SessionStore;
@@ -11,9 +11,9 @@ use crate::wire::{
 };
 
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
-
 use serde_json::json;
 use std::sync::atomic::{AtomicU64, Ordering};
+use subtle::ConstantTimeEq;
 
 pub struct AppMetrics {
     pub start_unix_seconds: u64,
@@ -31,6 +31,49 @@ impl AppMetrics {
     }
 }
 
+/// Pure policy function used by the production route and unit tests.
+/// Both explicit enablement and a configured matching token are mandatory.
+fn decrypt_authorized_with(
+    enabled: bool,
+    expected_token: Option<&str>,
+    provided_token: Option<&str>,
+) -> bool {
+    if !enabled {
+        return false;
+    }
+    let Some(expected) = expected_token.filter(|token| !token.is_empty()) else {
+        return false;
+    };
+    let Some(provided) = provided_token else {
+        return false;
+    };
+    bool::from(provided.as_bytes().ct_eq(expected.as_bytes()))
+}
+
+fn decrypt_route_authorized(request: &HttpRequest) -> bool {
+    // Existing unit tests exercise encrypt/decrypt round trips inside the process.
+    // Production builds always use the fail-closed environment/header policy.
+    #[cfg(test)]
+    {
+        let _ = request;
+        true
+    }
+
+    #[cfg(not(test))]
+    {
+        let enabled = std::env::var("FHE_ENABLE_DECRYPT")
+            .ok()
+            .as_deref()
+            == Some("1");
+        let expected = std::env::var("FHE_DECRYPT_TOKEN").ok();
+        let provided = request
+            .headers
+            .get("x-fhe-decrypt-token")
+            .map(String::as_str);
+        decrypt_authorized_with(enabled, expected.as_deref(), provided)
+    }
+}
+
 /// Route request to the appropriate handler.
 pub fn route(request: &HttpRequest, store: &SessionStore, metrics: &AppMetrics) -> HttpResponse {
     metrics.requests_total.fetch_add(1, Ordering::Relaxed);
@@ -45,7 +88,6 @@ pub fn route(request: &HttpRequest, store: &SessionStore, metrics: &AppMetrics) 
             handle_delete_session(id, store)
         }
         ("GET", path) if path.starts_with("/v1/sessions/") && !path.contains("/encrypt") => {
-            // GET /v1/sessions/{id} — but not sub-paths
             let id = path["/v1/sessions/".len()..].trim_end_matches('/');
             if id.contains('/') {
                 error_response(404, "NOT_FOUND", "unknown endpoint")
@@ -58,8 +100,13 @@ pub fn route(request: &HttpRequest, store: &SessionStore, metrics: &AppMetrics) 
             handle_encrypt(request, &id, store)
         }
         ("POST", path) if path.ends_with("/decrypt") => {
-            let id = extract_session_id(path, "/decrypt");
-            handle_decrypt(request, &id, store)
+            if decrypt_route_authorized(request) {
+                let id = extract_session_id(path, "/decrypt");
+                handle_decrypt(request, &id, store)
+            } else {
+                // Conceal the existence of the oracle when operator policy is absent.
+                error_response(404, "NOT_FOUND", "unknown endpoint")
+            }
         }
         ("POST", path) if path.ends_with("/evaluate") => {
             let id = extract_session_id(path, "/evaluate");
@@ -85,10 +132,6 @@ fn extract_session_id(path: &str, suffix: &str) -> String {
     }
 }
 
-// ============================================================================
-// Handlers
-// ============================================================================
-
 fn handle_healthz(store: &SessionStore) -> HttpResponse {
     json_response(
         200,
@@ -108,6 +151,7 @@ fn handle_version() -> HttpResponse {
             "service": "fhe-service",
             "version": env!("CARGO_PKG_VERSION"),
             "supported_configs": ["secure_128", "secure_192", "secure_256"],
+            "decrypt_endpoint": "disabled_by_default",
         }),
     )
 }
@@ -205,10 +249,7 @@ fn handle_encrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
         return error_response(400, "INVALID_PAYLOAD", msg);
     }
 
-    // Pre-validate response size to prevent oversized responses
-    // DualRNS ciphertexts are larger: 2 × (main_primes + 5 anchors) × N × 8 bytes × 4/3 base64
-    // Worst case secure_256 (N=16384, 11 limbs): ~3.8 MB per ciphertext
-    let estimated_ct_size = 4 * 1024 * 1024; // 4 MB worst-case (secure_256)
+    let estimated_ct_size = 4 * 1024 * 1024;
     let estimated_response_size = req.values.len() * estimated_ct_size;
     if estimated_response_size > MAX_RESPONSE_BYTES {
         return error_response(
@@ -222,35 +263,29 @@ fn handle_encrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
         let mut ciphertexts = Vec::with_capacity(req.values.len());
         for &v in &req.values {
             if v >= session.config.t {
-                return Err("invalid value".to_owned()); // Don't leak the plaintext modulus value
+                return Err("invalid value".to_owned());
             }
-            // With exact_rational feature, reject values in the near-t drift zone
-            // where BFV rounding (delta = floor(q/t)) can cause decode errors.
             #[cfg(feature = "exact_rational")]
             {
-                let safe_margin = 100u64;
+                let safe_margin = 100_u64;
                 if v > session.config.t.saturating_sub(safe_margin) && v < session.config.t {
                     return Err("invalid value".to_owned());
                 }
             }
-            // Consume noise budget for encryption
             session
                 .noise_budget
                 .consume(
                     NoiseOpType::Encrypt,
                     NoiseBudget::encrypt_cost(&session.config),
                 )
-                .map_err(|e| format!("noise exhausted: {}", e))?;
-            // DualRNS encryption — supports correct ct×ct multiplication via K-Elimination
+                .map_err(|e| format!("noise exhausted: {e}"))?;
             let ct = session
                 .rns_ctx
                 .encrypt_dual_secure(v, &session.dual_keys.public_key);
-            let b64 = session.dual_ct_to_b64(&ct)?;
-            ciphertexts.push(b64);
+            ciphertexts.push(session.dual_ct_to_b64(&ct)?);
         }
 
         session.operation_count += req.values.len() as u64;
-
         Ok(EncryptResponse {
             ciphertexts,
             noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
@@ -275,10 +310,7 @@ fn handle_decrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
         return error_response(400, "INVALID_PAYLOAD", msg);
     }
 
-    // Pre-validate response size to prevent oversized responses
-    // Decrypted values are u64 integers, which are small, but validate anyway
-    // Each u64 value in JSON format is roughly 1-20 bytes depending on value
-    let estimated_response_size = req.ciphertexts.len() * 20; // Conservative estimate
+    let estimated_response_size = req.ciphertexts.len() * 20;
     if estimated_response_size > MAX_RESPONSE_BYTES {
         return error_response(
             413,
@@ -291,14 +323,13 @@ fn handle_decrypt(request: &HttpRequest, session_id: &str, store: &SessionStore)
         let mut values = Vec::with_capacity(req.ciphertexts.len());
         for ct_b64 in &req.ciphertexts {
             let ct = session.dual_ct_from_b64(ct_b64)?;
-            let v = session
-                .rns_ctx
-                .decrypt_dual(&ct, &session.dual_keys.secret_key);
-            values.push(v);
+            values.push(
+                session
+                    .rns_ctx
+                    .decrypt_dual(&ct, &session.dual_keys.secret_key),
+            );
         }
-
         session.operation_count += req.ciphertexts.len() as u64;
-
         Ok(DecryptResponse {
             values,
             noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
@@ -326,8 +357,6 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
         return error_response(400, "INVALID_PAYLOAD", msg);
     }
 
-    // Pre-validate response size to prevent oversized responses
-    // DualRNS ciphertexts: worst case secure_256 ≈ 3.8 MB per ciphertext
     let estimated_ct_size = 4 * 1024 * 1024;
     let estimated_response_size = req.operations.len() * estimated_ct_size;
     if estimated_response_size > MAX_RESPONSE_BYTES {
@@ -342,11 +371,9 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
         let mut results = Vec::with_capacity(req.operations.len());
 
         for op in &req.operations {
-            // Deserialize DualRNS ciphertext inputs
             let mut cts = Vec::with_capacity(op.inputs.len());
             for input_b64 in &op.inputs {
-                let ct = session.dual_ct_from_b64(input_b64)?;
-                cts.push(ct);
+                cts.push(session.dual_ct_from_b64(input_b64)?);
             }
 
             let result_ct = match op.op.as_str() {
@@ -357,7 +384,7 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                     session
                         .noise_budget
                         .consume(NoiseOpType::Add, NoiseBudget::add_cost())
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session.rns_ctx.add_dual(&cts[0], &cts[1])
                 }
                 "sub" => {
@@ -367,7 +394,7 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                     session
                         .noise_budget
                         .consume(NoiseOpType::Add, NoiseBudget::add_cost())
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session.rns_ctx.sub_dual(&cts[0], &cts[1])
                 }
                 "negate" => {
@@ -377,7 +404,7 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                     session
                         .noise_budget
                         .consume(NoiseOpType::Add, NoiseBudget::add_cost())
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session.rns_ctx.negate_dual(&cts[0])
                 }
                 "add_plain" => {
@@ -393,7 +420,7 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                     session
                         .noise_budget
                         .consume(NoiseOpType::AddPlain, NoiseBudget::add_plain_cost())
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session.rns_ctx.add_plain_dual(&cts[0], scalar)
                 }
                 "mul_plain" => {
@@ -412,46 +439,40 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
                             NoiseOpType::MulPlain,
                             NoiseBudget::mul_plain_cost(&session.config),
                         )
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session.rns_ctx.mul_plain_dual(&cts[0], scalar)
                 }
                 "mul" => {
                     if cts.len() != 2 {
                         return Err("mul requires exactly 2 inputs".to_owned());
                     }
-                    // Track mul + relin + rescale noise costs
                     session
                         .noise_budget
                         .consume(
                             NoiseOpType::MulCt,
                             NoiseBudget::mul_ct_cost(&session.config),
                         )
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session
                         .noise_budget
                         .consume(NoiseOpType::Relin, NoiseBudget::relin_cost(&session.config))
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session
                         .noise_budget
                         .consume(
                             NoiseOpType::Rescale,
                             NoiseBudget::rescale_cost(&session.config),
                         )
-                        .map_err(|e| format!("noise exhausted: {}", e))?;
-
-                    // DualRNS ct×ct multiplication with 5-anchor K-Elimination
+                        .map_err(|e| format!("noise exhausted: {e}"))?;
                     session
                         .rns_ctx
                         .mul_dual_public(&cts[0], &cts[1], &session.dual_keys.eval_key)
-                        .map_err(|e| format!("mul failed: {}", e))?
+                        .map_err(|e| format!("mul failed: {e}"))?
                 }
-                other => {
-                    return Err(format!("unknown operation: {}", other));
-                }
+                other => return Err(format!("unknown operation: {other}")),
             };
 
-            let b64 = session.dual_ct_to_b64(&result_ct)?;
-            results.push(b64);
+            results.push(session.dual_ct_to_b64(&result_ct)?);
             session.operation_count += 1;
         }
 
@@ -466,10 +487,36 @@ fn handle_evaluate(request: &HttpRequest, session_id: &str, store: &SessionStore
             Err(_) => error_response(500, "INTERNAL_ERROR", "serialization failure"),
         },
         Some(Err(msg)) => {
-            // Use a generic, uniform response to prevent operation-specific oracle leakage.
             eprintln!("evaluate operation failed: {msg}");
             error_response(400, "EVALUATE_FAILED", "operation failed")
         }
         None => error_response(404, "SESSION_NOT_FOUND", "session does not exist"),
+    }
+}
+
+#[cfg(test)]
+mod policy_tests {
+    use super::decrypt_authorized_with;
+
+    #[test]
+    fn decrypt_policy_is_fail_closed() {
+        assert!(!decrypt_authorized_with(false, Some("token"), Some("token")));
+        assert!(!decrypt_authorized_with(true, None, Some("token")));
+        assert!(!decrypt_authorized_with(true, Some(""), Some("")));
+        assert!(!decrypt_authorized_with(true, Some("token"), None));
+        assert!(!decrypt_authorized_with(
+            true,
+            Some("expected"),
+            Some("different")
+        ));
+    }
+
+    #[test]
+    fn decrypt_policy_accepts_only_exact_token() {
+        assert!(decrypt_authorized_with(
+            true,
+            Some("operator-secret"),
+            Some("operator-secret")
+        ));
     }
 }
