@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "crates/nine65/src/bin/nine65_bench.rs"
+      - "crates/nine65/src/noise/budget.rs"
       - "crates/nine65/src/ops/auto_bootstrap.rs"
       - "crates/nine65/src/ops/sbni.rs"
       - "crates/nine65/src/params/mod.rs"
@@ -35,6 +36,7 @@ jobs:
           set -euo pipefail
           files=(
             crates/nine65/src/bin/nine65_bench.rs
+            crates/nine65/src/noise/budget.rs
             crates/nine65/src/ops/auto_bootstrap.rs
             crates/nine65/src/ops/sbni.rs
             crates/nine65/src/params/mod.rs
@@ -52,6 +54,15 @@ jobs:
             crates/nine65/src/bin/nine65_bench.rs
           grep -F 'if !overall_correct {' crates/nine65/src/bin/nine65_bench.rs
 
+      - name: Verify exact noise accounting is active
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -F 'let delta_bits = exact_delta_bit_length(config);' \
+            crates/nine65/src/noise/budget.rs
+          ! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \
+            crates/nine65/src/noise/budget.rs
+
       - name: Rust formatting
         run: cargo fmt --all -- --check
 
@@ -60,6 +71,9 @@ jobs:
 
       - name: Exact parameter and product-boundary tests
         run: cargo test -p nine65 --lib --release params::tests -- --nocapture
+
+      - name: Exact noise-budget tests
+        run: cargo test -p nine65 --lib --release noise::budget::tests -- --nocapture
 
       - name: SBNI invariant tests
         run: cargo test -p nine65 --lib --release ops::sbni -- --nocapture
