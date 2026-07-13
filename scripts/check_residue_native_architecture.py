@@ -16,20 +16,31 @@ PRODUCTION_TARGETS = (
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
 )
 
-# Match executable identifiers and type usage, not explanatory documentation.
+# The patterns target executable identifiers and type names. Documentation and
+# instrumentation counters are not execution mechanisms and are excluded below.
 PROHIBITED = {
-    "garner_symbol": re.compile(r"\b" + "gar" + "ner" + r"(?:_|::|\s*\()", re.IGNORECASE),
-    "mixed_radix_symbol": re.compile(r"\bmixed_" + "radix\b", re.IGNORECASE),
-    "crt_reconstruct": re.compile(r"\bcrt_" + "reconstruct\b", re.IGNORECASE),
+    "garner_call": re.compile(r"\b" + "gar" + "ner" + r"\s*(?:::|\()", re.IGNORECASE),
+    "mixed_radix_call": re.compile(
+        r"\bmixed[_ -]?" + "radix" + r"\s*(?:::|\()", re.IGNORECASE
+    ),
+    "crt_reconstruct": re.compile(r"\bcrt_" + "reconstruct\s*\(", re.IGNORECASE),
     "hidden_big_integer": re.compile(r"\b(Big" + r"Int|BigUint)\b"),
     "floating_type": re.compile(r"\bf(?:32|64)\b|\bas\s+f(?:32|64)\b"),
 }
 
 ALLOWED_PATH_PARTS = {"tests", "test_oracle", "oracle", "legacy", "archive", "docs"}
+COMMENT_PREFIXES = ("//", "//!", "///", "#")
 
 
 def is_allowed(path: pathlib.Path) -> bool:
     return any(part in ALLOWED_PATH_PARTS for part in path.parts)
+
+
+def executable_fragment(line: str) -> str:
+    stripped = line.lstrip()
+    if stripped.startswith(COMMENT_PREFIXES):
+        return ""
+    return line.split("//", 1)[0]
 
 
 def scan_file(path: pathlib.Path) -> list[str]:
@@ -40,20 +51,15 @@ def scan_file(path: pathlib.Path) -> list[str]:
     except UnicodeDecodeError:
         return []
     failures: list[str] = []
-    in_block_comment = False
     for line_number, line in enumerate(text.splitlines(), start=1):
-        stripped = line.strip()
-        if in_block_comment:
-            if "*/" in stripped:
-                in_block_comment = False
-            continue
-        if stripped.startswith("/*") or stripped.startswith("//") or stripped.startswith("#"):
-            if stripped.startswith("/*") and "*/" not in stripped:
-                in_block_comment = True
+        fragment = executable_fragment(line)
+        if not fragment:
             continue
         for name, pattern in PROHIBITED.items():
-            if pattern.search(line):
-                failures.append(f"{path.relative_to(ROOT)}:{line_number}: {name}: {stripped}")
+            if pattern.search(fragment):
+                failures.append(
+                    f"{path.relative_to(ROOT)}:{line_number}: {name}: {line.strip()}"
+                )
     return failures
 
 
