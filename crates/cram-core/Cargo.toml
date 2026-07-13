@@ -1,0 +1,12 @@
+[package]
+name = "cram-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license = "LicenseRef-Proprietary-Permissive"
+description = "Residue-native CRAM state, invariants, and architectural gates for NINE65"
+
+[dependencies]
+
+[dev-dependencies]
+proptest.workspace = true
