@@ -17,4 +17,4 @@ Current safe basis:
 
 The crate contains no Garner reconstruction, mixed-radix conversion, floating-point arithmetic, or method that projects a residue aggregate back to an integer. Authorized plaintext output belongs in a separate boundary component governed by `docs/SECURITY_MODE_MATRIX.md`.
 
-This is an application-domain reference and correctness harness. The subsequent NINE65 adapter will encrypt each fixed slot or lane frame according to the selected public, edge, or protected mode.
+`private-feedback-nine65` supplies the public-evaluator adapter. It encrypts the fixed slots as live DualRNS ciphertexts and aggregates them homomorphically without adding a public decrypt capability.
