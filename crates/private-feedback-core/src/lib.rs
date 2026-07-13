@@ -102,6 +102,7 @@ impl FeedbackSignal {
 
     /// Exact fixed-slot encoding. No free-form text enters the aggregate frame.
     pub fn slots(self) -> [u64; SLOT_COUNT] {
+        let consent = if self.consent_to_retain { 1 } else { 0 };
         [
             u64::from(self.topic),
             self.friction as u64,
@@ -109,7 +110,7 @@ impl FeedbackSignal {
             self.sentiment as u64,
             u64::from(self.product_area),
             self.followup as u64,
-            u64::from(self.consent_to_retain),
+            consent,
             u64::from(self.confidence_permille),
         ]
     }
