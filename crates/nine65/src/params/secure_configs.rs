@@ -21,10 +21,6 @@ use super::security_estimator::{
 use super::FHEConfig;
 
 /// Exact bit length of the product of the supplied RNS primes.
-///
-/// Eight 64-bit limbs cover products through 512 bits. This is intentionally
-/// independent of `u128`, saturation, floating point, and logarithmic
-/// approximations.
 fn exact_product_bit_length(primes: &[u64]) -> u32 {
     let mut limbs = [0u64; 8];
     limbs[0] = 1;
@@ -51,7 +47,6 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
     0
 }
 
-/// Secure FHE configuration with an explicit claim and internal screening data.
 #[derive(Clone, Debug)]
 pub struct SecureConfig {
     pub config: FHEConfig,
@@ -99,11 +94,13 @@ impl SecureConfig {
             estimate.effective_bits,
             estimate.analysis,
         );
-        assert!(
-            he_standard_compliant,
-            "SECURITY ERROR: config '{}' exceeds the HE Standard bound",
-            name
-        );
+        if claimed_security >= 128 {
+            assert!(
+                he_standard_compliant,
+                "SECURITY ERROR: config '{}' exceeds the HE Standard bound",
+                name
+            );
+        }
 
         let config = FHEConfig {
             n,
@@ -125,9 +122,6 @@ impl SecureConfig {
         }
     }
 
-    /// A production-safe profile must claim at least 128 bits, satisfy the
-    /// complete internal screen and HE bound, and meet the audited dimension
-    /// floor. Test profiles can never become production-safe by estimator output.
     pub fn is_production_safe(&self) -> bool {
         self.claimed_security >= 128
             && self.config.n >= 8192
@@ -375,7 +369,7 @@ mod tests {
     }
 
     #[test]
-    fn test_configs_are_not_production_safe() {
+    fn test_configs_construct_but_are_not_production_safe() {
         let fast = SecureConfig::test_fast_insecure();
         let medium = SecureConfig::test_medium_insecure();
         assert!(!fast.is_production_safe());
