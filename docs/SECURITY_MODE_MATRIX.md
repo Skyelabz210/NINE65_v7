@@ -12,7 +12,7 @@ NINE65 exposes several computational modes with different trust boundaries. Appl
 | `PublicEvaluator` | Client, tenant key service, or isolated owner-controlled boundary | Client/owner | Untrusted evaluator | Client/owner only | Untrusted | Consumer privacy, outsourced computation, private aggregation | Server-side decryption endpoint exposed to users |
 | `PublicEvaluatorKsk` | Work-key owner and independent boot-key owner/boundary | Client/owner | Untrusted evaluator | Work-key owner | Untrusted | Non-circular bootstrap deployments | Collapsing work and boot key without declaring circular mode |
 | `SymmetricProtected` | Same protected node that refreshes | Protected node | Protected node | Protected node | Trusted key-holder boundary | HSM, TEE, local device, private edge gateway | Marketing as evaluator-blind public FHE |
-| `ServiceOperator` | `fhe-service` process | Service | Service | Service, only when explicitly enabled | Trusted operator | Internal telemetry, isolated control plane, operator-only processing | Public SaaS decryption oracle |
+| `ServiceOperator` | `fhe-service` process | Service | Service | Service, only when explicitly enabled | Trusted operator | Internal telemetry, isolated control plane, authenticated tenant processing | Public SaaS decryption oracle or unauthenticated shared session namespace |
 | `WasmClientLeveled` | Browser/device process | Browser/device | Browser/device or compatible remote evaluator | Browser/device | Remote evaluator may be untrusted | Current single-modulus BFV client encryption and bounded leveled arithmetic | Claiming DualRNS, K-Elimination, or auto-bootstrap support from the current WASM crate |
 | `Experimental` | Declared per experiment | Declared per experiment | Declared per experiment | Declared per experiment | Unspecified until documented | Tests, benchmarks, research branches | Production or external security claims |
 
@@ -24,11 +24,23 @@ Every application integration must declare:
 2. the process or device that holds the secret key;
 3. whether bootstrap is circular, KSK-separated, symmetric refresh, or unavailable;
 4. whether any endpoint can return plaintext;
-5. authentication and tenant-isolation controls;
+5. authentication, tenant-isolation, rate, and audit controls;
 6. the exact parameter tuple and evidence artifact;
 7. the permitted number-line projection boundaries.
 
 A deployment is rejected when any field is omitted.
+
+## Service base authorization
+
+Every protected `fhe-service` request requires:
+
+- `FHE_API_TOKEN` configured by the operator and supplied as `x-fhe-api-token`;
+- a bounded `x-fhe-tenant-id` header;
+- passage through the per-tenant integer request window.
+
+Sessions are bound to the authenticated tenant at creation. Wrong-tenant and absent-session lookups return the same result. The store fails closed on poisoned synchronization state rather than recovering and reusing potentially inconsistent cryptographic state.
+
+The default tenant limit is 120 protected requests per exact one-minute window, configurable through `FHE_RATE_LIMIT_PER_MINUTE`. Metrics require an additional `FHE_OPERATOR_TOKEN` / `x-fhe-operator-token` capability. Audit events contain a truncated tenant digest, action class, exact integer timestamp, and status only.
 
 ## Decryption endpoint policy
 
@@ -37,7 +49,7 @@ A deployment is rejected when any field is omitted.
 - `FHE_ENABLE_DECRYPT=1` is set by the operator; and
 - `FHE_DECRYPT_TOKEN` is configured and supplied as `x-fhe-decrypt-token`.
 
-The configured and supplied tokens are hashed to fixed-length SHA-256 digests before constant-time comparison. The service must bind to loopback by default. A reverse proxy, mTLS, workload identity, or equivalent operator authentication remains mandatory for any non-loopback deployment. The token gate is defense in depth; it is not a replacement for transport authentication.
+The decrypt request must also pass the base API and tenant checks. Configured and supplied tokens are hashed to fixed-length SHA-256 digests before constant-time comparison. The service binds to loopback by default. A reverse proxy, mTLS, workload identity, or equivalent operator authentication remains mandatory for any non-loopback deployment. These gates are defense in depth; they do not create IND-CCA security.
 
 ## Residue-space contract
 
@@ -66,6 +78,7 @@ For the current WASM crate:
 An application may move from prototype to deployment only after:
 
 - the mode firewall test passes;
+- base API authentication, tenant isolation, rate limiting, and audit policy are verified;
 - `/decrypt` is verified unavailable under the production environment;
 - key destruction and session expiry are tested;
 - ciphertext deserialization rejects malformed dimensions and limb counts;
