@@ -29,10 +29,12 @@ CRAM retains heterogeneous lane operators and explicit cross-lane Transduction. 
 | N03 | Canonical CRAM state | Initial implementation complete | Constructor and architecture-counter tests pass |
 | N04 | Basis and residue lanes | Scale tests implemented | Rust runner matrix must pass at 2-64 lanes and 128-65,536 steps |
 | N05 | Winding and hidden carry | Type scaffold complete | Exact production update rules and chained oracle tests pending |
-| N06 | Shadow and anchor state | Mathematical scale oracle executed | Production witness API remains pending |
+| N06 | Shadow and anchor state | Production anchor-witness API implemented | Rust compile/test gate pending |
 | N07 | Bound certificate | Add/multiply rules plus depth tests implemented | Rust adversarial soundness matrix pending |
 | N08 | Heterogeneous topology | Initial validated assignment type complete | Transduction-edge graph pending |
-| N09-N20 | Arithmetic through bootstrap | Pending | Each node requires correctness before performance |
+| N09 | Residue-native primitive arithmetic | Lane add/sub/mul implemented and scale-tested | Complete state updates remain pending |
+| N10 | K-Elimination division | Point-wise anchor-phase recovery implemented | Quotient-state construction remains pending |
+| N11-N20 | Division routing through bootstrap | Pending | Each node requires correctness before performance |
 | N21 | Architecture counters | Implemented in `cram-core` | All prohibited counters must remain zero |
 | N22 | Exhaustive and differential correctness | In progress | Independent integer-only harness passes; Rust CI pending |
 | N23-N26 | Property, security, fault, and performance gates | Pending | No claims until runner evidence exists |
@@ -50,28 +52,35 @@ The independent integer-only harness completed all four profiles with zero misma
 | large | 32, 64 | 8,192 | 786,432 | 131,072 | PASS |
 | endurance | 64 | 65,536 | 4,194,304 | 1,048,576 | PASS |
 
-Each profile also exhaustively checks 2,905 states across the coprime pairs `(4,9)`, `(8,9)`, `(15,16)`, `(25,49)`, and `(36,37)`. Evidence is stored at `artifacts/N22_N27/correctness_scale_2026-07-13.json`.
+Each profile also exhaustively checks 2,905 states across the coprime pairs `(4,9)`, `(8,9)`, `(15,16)`, `(25,49)`, and `(36,37)`. The adjacent-anchor subtraction path was independently checked across 699,006 complete states for every pair `(M,M+1)` with `2 <= M < 128`.
 
-This evidence validates the current basis, lane arithmetic, structural state, bound-rule scaffold, and anchor-phase winding formula. It does not yet certify the full Rust FHE path, residue-native Transduction, rescale, key switching, or bootstrap.
+Evidence is stored at `artifacts/N22_N27/correctness_scale_2026-07-13.json`.
+
+This evidence validates the current heterogeneous lane arithmetic, basis invariants, structural state, bound-rule scaffold, production anchor witness formula, and adjacent-anchor shortcut. It does not yet certify the full Rust FHE path, residue-native Transduction, rescale, key switching, or bootstrap.
 
 ## Current implementation files
 
 - `crates/cram-core/Cargo.toml`
 - `crates/cram-core/src/lib.rs`
+- `crates/cram-core/src/anchor.rs`
 - `crates/cram-core/tests/workload_scales.rs`
 - `scripts/check_residue_native_architecture.py`
 - `scripts/cram_correctness_harness.py`
 - `.github/workflows/cram_residue_native_gates.yml`
 - `artifacts/N22_N27/correctness_scale_2026-07-13.json`
 
+## Runner status
+
+The GitHub connector currently reports no workflow run associated with the latest branch commits. Rust compilation, formatting, Clippy, existing NINE65 regression tests, and the Rust workload matrix therefore remain explicitly unverified. The independent Python harness is the executed evidence available for this tranche.
+
 ## Next execution tranche
 
-1. Obtain GitHub Actions runner evidence and repair compilation or lint findings without weakening gates.
+1. Resolve GitHub Actions execution and repair compilation or lint findings without weakening gates.
 2. Generate N01's complete violation ledger for existing NINE65 residue/FHE paths.
 3. Capture N02 same-machine secure and insecure baselines.
 4. Split `cram-core/src/lib.rs` into state, basis, lane, winding, shadow, bounds, topology, instrumentation, and errors modules.
-5. Implement N05 exact winding update rules and exhaustive small-state tests.
-6. Implement N06 production anchor witnesses and K-Elimination tests.
+5. Implement N05 exact winding update rules and exhaustive chained-state tests.
+6. Complete N10 quotient-state construction from anchor witnesses.
 7. Implement N08 Transduction edges without reconstruction, Garner, or mixed-radix machinery.
 
 ## Merge rule
