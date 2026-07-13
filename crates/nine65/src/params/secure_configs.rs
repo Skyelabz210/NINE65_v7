@@ -8,27 +8,25 @@
 //!
 //! | Config | N | RNS chain | Claim |
 //! |--------|---|-----------|-------|
-//! | `secure_128` | 8192 | 3 NTT primes (~90 bits) | 128 bits |
-//! | `secure_128_deep` | 8192 | 4 NTT primes (~120 bits) | 128 bits |
-//! | `secure_192` | 16384 | 5 NTT primes (~147 bits) | 192 bits |
-//! | `secure_256` | 16384 | 6 NTT primes (~177 bits) | 256 bits |
+//! | `secure_128` | 8192 | 3 NTT primes (~90 bits) | candidate 128-bit profile |
+//! | `secure_128_deep` | 8192 | 4 NTT primes (~120 bits) | candidate 128-bit profile |
+//! | `secure_192` | 16384 | 5 NTT primes (~147 bits) | candidate 192-bit profile |
+//! | `secure_256` | 16384 | 6 NTT primes (~177 bits) | candidate 256-bit profile |
 
-#[cfg(test)]
-use super::is_ntt_compatible;
 use super::security_estimator::{
     CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution,
 };
-use super::FHEConfig;
+use super::{gcd, is_ntt_compatible, is_prime, FHEConfig};
 
 /// Exact bit length of the product of the supplied RNS primes.
 fn exact_product_bit_length(primes: &[u64]) -> u32 {
-    let mut limbs = [0u64; 8];
+    let mut limbs = [0_u64; 8];
     limbs[0] = 1;
 
     for &factor in primes {
-        let mut carry = 0u128;
+        let mut carry = 0_u128;
         for limb in &mut limbs {
-            let product = (*limb as u128) * factor as u128 + carry;
+            let product = *limb as u128 * factor as u128 + carry;
             *limb = product as u64;
             carry = product >> 64;
         }
@@ -45,6 +43,27 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
         }
     }
     0
+}
+
+fn validate_class_f_chain(n: usize, primes: &[u64]) {
+    for (index, &prime) in primes.iter().enumerate() {
+        assert!(
+            is_prime(prime),
+            "CLASS-F RNS lane {index} must be prime, got {prime}"
+        );
+        assert!(
+            is_ntt_compatible(prime, n),
+            "CLASS-F RNS lane {prime} is not NTT-compatible for N={n}"
+        );
+        for &prior in &primes[..index] {
+            assert_ne!(prior, prime, "duplicate CLASS-F RNS prime {prime}");
+            assert_eq!(
+                gcd(prior, prime),
+                1,
+                "CLASS-F RNS lanes {prior} and {prime} are not coprime"
+            );
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -68,6 +87,7 @@ impl SecureConfig {
     ) -> Self {
         assert!(n.is_power_of_two(), "N must be a power of two");
         assert!(!primes.is_empty(), "at least one RNS prime is required");
+        validate_class_f_chain(n, &primes);
         assert!(t >= 2, "plaintext modulus must be at least two");
         assert!(
             primes.iter().all(|&prime| t < prime),
@@ -136,8 +156,8 @@ impl SecureConfig {
     pub fn secure_128() -> Self {
         Self::new_verified(
             8192,
-            vec![998244353, 985661441, 754974721],
-            65537,
+            vec![998_244_353, 985_661_441, 754_974_721],
+            65_537,
             3,
             128,
             "secure_128",
@@ -147,8 +167,8 @@ impl SecureConfig {
     pub fn secure_128_deep() -> Self {
         Self::new_verified(
             8192,
-            vec![998244353, 985661441, 754974721, 469762049],
-            65537,
+            vec![998_244_353, 985_661_441, 754_974_721, 469_762_049],
+            65_537,
             3,
             128,
             "secure_128_deep",
@@ -157,15 +177,15 @@ impl SecureConfig {
 
     pub fn secure_192() -> Self {
         Self::new_verified(
-            16384,
+            16_384,
             vec![
-                998244353,
-                985661441,
-                754974721,
-                469762049,
-                167772161,
+                998_244_353,
+                985_661_441,
+                754_974_721,
+                469_762_049,
+                167_772_161,
             ],
-            65537,
+            65_537,
             4,
             192,
             "secure_192",
@@ -174,16 +194,16 @@ impl SecureConfig {
 
     pub fn secure_256() -> Self {
         Self::new_verified(
-            16384,
+            16_384,
             vec![
-                998244353,
-                985661441,
-                754974721,
-                469762049,
-                167772161,
-                595591169,
+                998_244_353,
+                985_661_441,
+                754_974_721,
+                469_762_049,
+                167_772_161,
+                595_591_169,
             ],
-            65537,
+            65_537,
             5,
             256,
             "secure_256",
@@ -193,8 +213,8 @@ impl SecureConfig {
     pub fn hardware_opt() -> Self {
         Self::new_verified(
             8192,
-            vec![998244353, 985661441, 754974721],
-            65537,
+            vec![998_244_353, 985_661_441, 754_974_721],
+            65_537,
             3,
             128,
             "hardware_opt",
@@ -205,8 +225,8 @@ impl SecureConfig {
     pub fn test_fast_insecure() -> Self {
         Self::new_verified(
             1024,
-            vec![998244353],
-            65537,
+            vec![998_244_353],
+            65_537,
             2,
             40,
             "test_fast_insecure",
@@ -217,8 +237,8 @@ impl SecureConfig {
     pub fn test_medium_insecure() -> Self {
         Self::new_verified(
             2048,
-            vec![998244353, 985661441],
-            65537,
+            vec![998_244_353, 985_661_441],
+            65_537,
             2,
             80,
             "test_medium_insecure",
@@ -251,6 +271,13 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
     if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
         return;
     }
+
+    validate_class_f_chain(config.n, &config.primes);
+    assert!(config.t >= 2, "plaintext modulus must be at least two");
+    assert!(
+        config.primes.iter().all(|&prime| config.t < prime),
+        "plaintext modulus must be smaller than every RNS prime"
+    );
 
     let required_security = (config.security_bits as u32).max(128);
     let log_q = exact_product_bit_length(&config.primes);
@@ -323,6 +350,16 @@ pub fn get_production_config() -> SecureConfig {
 mod tests {
     use super::*;
 
+    fn production_configs() -> [SecureConfig; 5] {
+        [
+            SecureConfig::secure_128(),
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+            SecureConfig::hardware_opt(),
+        ]
+    }
+
     #[test]
     fn secure_128_uses_audited_dimension_floor() {
         let config = SecureConfig::secure_128();
@@ -334,13 +371,7 @@ mod tests {
 
     #[test]
     fn named_production_configs_meet_their_internal_claims() {
-        for config in [
-            SecureConfig::secure_128(),
-            SecureConfig::secure_128_deep(),
-            SecureConfig::secure_192(),
-            SecureConfig::secure_256(),
-            SecureConfig::hardware_opt(),
-        ] {
+        for config in production_configs() {
             assert!(config.is_production_safe(), "{}", config.config.name);
             assert!(config.hybrid_security >= config.claimed_security);
             assert!(config.he_standard_compliant);
@@ -348,24 +379,36 @@ mod tests {
     }
 
     #[test]
-    fn every_production_prime_is_ntt_compatible() {
-        for config in [
-            SecureConfig::secure_128(),
-            SecureConfig::secure_128_deep(),
-            SecureConfig::secure_192(),
-            SecureConfig::secure_256(),
-            SecureConfig::hardware_opt(),
-        ] {
-            for &prime in &config.config.primes {
+    fn every_production_lane_is_prime_distinct_coprime_and_ntt_compatible() {
+        for config in production_configs() {
+            for (index, &prime) in config.config.primes.iter().enumerate() {
+                assert!(is_prime(prime), "{prime} is composite");
                 assert!(
                     is_ntt_compatible(prime, config.config.n),
-                    "{} is not NTT-compatible for N={} ({})",
-                    prime,
+                    "{prime} is not NTT-compatible for N={} ({})",
                     config.config.n,
                     config.config.name
                 );
+                for &prior in &config.config.primes[..index] {
+                    assert_ne!(prior, prime);
+                    assert_eq!(gcd(prior, prime), 1);
+                }
             }
         }
+    }
+
+    #[test]
+    fn class_f_validator_rejects_composite_lane() {
+        let result = std::panic::catch_unwind(|| validate_class_f_chain(2, &[65]));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn class_f_validator_rejects_duplicate_lane() {
+        let result = std::panic::catch_unwind(|| {
+            validate_class_f_chain(1024, &[998_244_353, 998_244_353]);
+        });
+        assert!(result.is_err());
     }
 
     #[test]
@@ -389,17 +432,17 @@ mod tests {
     #[test]
     fn exact_product_bit_length_matches_known_chains() {
         assert_eq!(
-            exact_product_bit_length(&[998244353, 985661441, 754974721]),
+            exact_product_bit_length(&[998_244_353, 985_661_441, 754_974_721]),
             90
         );
         assert!(
             exact_product_bit_length(&[
-                998244353,
-                985661441,
-                754974721,
-                469762049,
-                167772161,
-                595591169,
+                998_244_353,
+                985_661_441,
+                754_974_721,
+                469_762_049,
+                167_772_161,
+                595_591_169,
             ]) > 128
         );
     }
