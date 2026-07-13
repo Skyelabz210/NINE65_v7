@@ -234,7 +234,6 @@ impl SessionStore {
             return false;
         };
         let Ok(session) = session_lock.read() else {
-            map.remove(id);
             return false;
         };
         if session.tenant_id != tenant_id {
