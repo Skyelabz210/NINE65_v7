@@ -11,3 +11,6 @@ path = "src/lib.rs"
 [dependencies]
 nine65 = { path = "../nine65" }
 private-feedback-core = { path = "../private-feedback-core" }
+
+[dev-dependencies]
+nine65 = { path = "../nine65", features = ["allow_insecure"] }
