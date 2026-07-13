@@ -1,0 +1,13 @@
+[package]
+name = "private-feedback-nine65"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+nine65 = { path = "../nine65" }
+private-feedback-core = { path = "../private-feedback-core" }
