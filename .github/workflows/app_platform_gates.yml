@@ -1,0 +1,111 @@
+name: Application Platform Gates
+
+on:
+  push:
+    branches:
+      - hardening/beyond-100-app-platform
+    paths:
+      - 'crates/fhe-service/**'
+      - 'crates/nine65-wasm/**'
+      - 'crates/private-feedback-core/**'
+      - 'docs/SECURITY_MODE_MATRIX.md'
+      - 'docs/ENTROPY_MODEL.md'
+      - 'docs/CRAM_INTEGRATION_CONTRACT.md'
+      - 'docs/CLAIM_REGISTRY.csv'
+      - 'scripts/external_fhe_matrix.py'
+      - '.github/workflows/app_platform_gates.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'crates/fhe-service/**'
+      - 'crates/nine65-wasm/**'
+      - 'crates/private-feedback-core/**'
+      - 'docs/**'
+      - 'scripts/external_fhe_matrix.py'
+      - '.github/workflows/app_platform_gates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-core:
+    name: Structured private-feedback core
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Test reference application core
+        run: cargo test -p private-feedback-core --release
+      - name: Clippy reference application core
+        run: cargo clippy -p private-feedback-core --all-targets -- -D warnings
+      - name: Enforce residue-native application vocabulary
+        run: |
+          if rg -n --glob '*.rs' '(Garner|mixed.?radix|f64|f32)' crates/private-feedback-core; then
+            echo 'Forbidden reconstruction or floating-point token in private-feedback-core'
+            exit 1
+          fi
+
+  service-boundary:
+    name: Fail-closed service boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Test service
+        run: cargo test -p fhe-service --release
+      - name: Clippy service
+        run: cargo clippy -p fhe-service --all-targets -- -D warnings
+      - name: Assert decrypt policy is explicit and default-deny
+        run: |
+          rg -q 'FHE_ENABLE_DECRYPT' crates/fhe-service/src/handlers.rs
+          rg -q 'FHE_DECRYPT_TOKEN' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-decrypt-token' crates/fhe-service/src/handlers.rs
+          rg -q 'decrypt_policy_is_fail_closed' crates/fhe-service/src/handlers.rs
+          rg -q 'disabled_by_default' crates/fhe-service/src/handlers.rs
+
+  wasm-client:
+    name: WASM client boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Build WASM boundary
+        run: >-
+          cargo check
+          --manifest-path crates/nine65-wasm/Cargo.toml
+          --target wasm32-unknown-unknown
+          --features wasm
+      - name: Assert secret-key export remains disabled
+        run: |
+          rg -q 'SecretKey export disabled' crates/nine65-wasm/src/lib.rs
+          if rg -n 'pub fn to_bytes.*SecretKey|serialize\(&self\.inner\)' crates/nine65-wasm/src/lib.rs; then
+            echo 'Review secret-key export boundary; broad match detected'
+          fi
+
+  policy-and-claims:
+    name: Mode, claim, and benchmark policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate claim registry
+        run: bash scripts/check_claim_registry.sh
+      - name: Validate external benchmark schema
+        run: python3 scripts/external_fhe_matrix.py --self-test
+      - name: Assert normative contracts exist
+        run: |
+          test -f docs/SECURITY_MODE_MATRIX.md
+          test -f docs/LINEAGE.md
+          test -f docs/ENTROPY_MODEL.md
+          test -f docs/CRAM_INTEGRATION_CONTRACT.md
+          test -f docs/CT_NTT_CACHE_ROADMAP.md
+          test -f docs/FORMAL_APP_CRITICAL_SPINE.md
+          test -f lean4/KElimination/KElimination/AppBoundary.lean
