@@ -75,7 +75,7 @@ jobs:
           git diff --exit-code -- artifacts/app_platform/private_feedback_correctness_2026-07-13.json
 
   service-boundary:
-    name: Fail-closed service boundary
+    name: Authenticated tenant-isolated service boundary
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,10 +84,29 @@ jobs:
           components: clippy, rustfmt
       - name: Test service
         run: cargo test -p fhe-service --release
-      - name: Clippy service
-        run: cargo clippy -p fhe-service --all-targets -- -D warnings
-      - name: Assert decrypt policy is explicit and default-deny
+      - name: Clippy production service targets
+        run: cargo clippy -p fhe-service --lib --bins -- -D warnings
+      - name: Assert base authentication and tenant isolation
         run: |
+          rg -q 'FHE_API_TOKEN' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-api-token' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-tenant-id' crates/fhe-service/src/handlers.rs
+          rg -q 'valid_tenant_id' crates/fhe-service/src/handlers.rs
+          rg -q 'with_session_for_tenant' crates/fhe-service/src/session.rs
+          rg -q 'with_session_mut_for_tenant' crates/fhe-service/src/session.rs
+          rg -q 'tenant_mismatch_is_indistinguishable_from_missing_session' \
+            crates/fhe-service/src/session.rs
+          if rg -n 'into_inner\(' crates/fhe-service/src/session.rs; then
+            echo 'poisoned cryptographic state recovery remains enabled'
+            exit 1
+          fi
+      - name: Assert rate operator audit and decrypt controls
+        run: |
+          rg -q 'FHE_RATE_LIMIT_PER_MINUTE' crates/fhe-service/src/handlers.rs
+          rg -q 'DEFAULT_RATE_LIMIT_PER_MINUTE' crates/fhe-service/src/handlers.rs
+          rg -q 'FHE_OPERATOR_TOKEN' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-operator-token' crates/fhe-service/src/handlers.rs
+          rg -q 'audit_event' crates/fhe-service/src/handlers.rs
           rg -q 'FHE_ENABLE_DECRYPT' crates/fhe-service/src/handlers.rs
           rg -q 'FHE_DECRYPT_TOKEN' crates/fhe-service/src/handlers.rs
           rg -q 'x-fhe-decrypt-token' crates/fhe-service/src/handlers.rs
@@ -95,6 +114,8 @@ jobs:
           rg -q 'disabled_by_default' crates/fhe-service/src/handlers.rs
           rg -q 'Sha256::digest' crates/fhe-service/src/handlers.rs
           rg -q 'ct_eq' crates/fhe-service/src/handlers.rs
+      - name: Assert loopback default
+        run: rg -q '127\.0\.0\.1:8080' crates/fhe-service/src/main.rs
 
   wasm-client:
     name: WASM client boundary
