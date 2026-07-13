@@ -8,6 +8,7 @@ on:
       - "crates/nine65/src/ops/auto_bootstrap.rs"
       - "crates/nine65/src/ops/sbni.rs"
       - "crates/nine65/src/params/mod.rs"
+      - "crates/nine65/src/params/secure_configs.rs"
       - "docs/AUDIT_REMEDIATION_2026-07-13.md"
       - ".github/workflows/audit_remediation.yml"
   push:
@@ -40,6 +41,7 @@ jobs:
             crates/nine65/src/ops/auto_bootstrap.rs
             crates/nine65/src/ops/sbni.rs
             crates/nine65/src/params/mod.rs
+            crates/nine65/src/params/secure_configs.rs
           )
           if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)|[0-9]+\.[0-9]+' "${files[@]}"; then
             echo "floating-point token found in exact-integer audit paths" >&2
@@ -63,6 +65,13 @@ jobs:
           ! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \
             crates/nine65/src/noise/budget.rs
 
+      - name: Verify audited secure-128 dimension
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -A8 -F 'pub fn secure_128() -> Self {' \
+            crates/nine65/src/params/secure_configs.rs | grep -F '8192'
+
       - name: Rust formatting
         run: cargo fmt --all -- --check
 
@@ -71,6 +80,9 @@ jobs:
 
       - name: Exact parameter and product-boundary tests
         run: cargo test -p nine65 --lib --release params::tests -- --nocapture
+
+      - name: Audited security-profile tests
+        run: cargo test -p nine65 --lib --release params::secure_configs::tests -- --nocapture
 
       - name: Exact noise-budget tests
         run: cargo test -p nine65 --lib --release noise::budget::tests -- --nocapture
