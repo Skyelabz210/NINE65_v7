@@ -1,0 +1,46 @@
+name: CRAM residue-native gates
+
+on:
+  pull_request:
+    paths:
+      - 'crates/cram-core/**'
+      - 'crates/cram-poly/**'
+      - 'crates/cram-fhe/**'
+      - 'crates/nine65/src/cram_ct_wrap.rs'
+      - 'crates/nine65/src/ops/rns_fhe.rs'
+      - 'scripts/check_residue_native_architecture.py'
+      - '.github/workflows/cram_residue_native_gates.yml'
+  push:
+    branches:
+      - 'cram/residue-native-scale-dag'
+
+permissions:
+  contents: read
+
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject prohibited production mechanisms
+        run: python3 scripts/check_residue_native_architecture.py
+      - name: Reject floating point in CRAM production crates
+        run: |
+          if grep -RInE '\bf(32|64)\b|as[[:space:]]+f(32|64)' crates/cram-core/src crates/cram-poly/src crates/cram-fhe/src 2>/dev/null; then
+            echo 'floating-point token found in CRAM production path' >&2
+            exit 1
+          fi
+
+  correctness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Compile CRAM core
+        run: cargo check -p cram-core --all-targets
+      - name: Test CRAM core
+        run: cargo test -p cram-core --all-targets
+      - name: Clippy exactness gate
+        run: cargo clippy -p cram-core --all-targets -- -D warnings
