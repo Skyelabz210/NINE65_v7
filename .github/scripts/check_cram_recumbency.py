@@ -5,6 +5,10 @@ This source-contract gate complements, but never replaces, Rust arithmetic and
 runtime tests. It rejects internal coefficient reconstruction, ambiguous product
 sentinels, approximate/saturated capacity decisions, and forbidden conversion
 algorithms in active FHE paths.
+
+Pure `#[cfg(test)]` items are removed before inspection. This permits the
+public-vector reconstruction oracle required by the formal specification while
+keeping every feature-enabled and production item in scope.
 """
 
 from __future__ import annotations
@@ -20,8 +24,101 @@ def read(relative: str) -> str:
     return (ROOT / relative).read_text(encoding="utf-8")
 
 
+def _code_without_strings_or_line_comment(line: str) -> str:
+    code = line.split("//", 1)[0]
+    return re.sub(r'"(?:\\.|[^"\\])*"', '""', code)
+
+
+def _is_pure_test_cfg(attribute: str) -> bool:
+    normalized = re.sub(r"\s+", "", attribute)
+    return normalized == "#[cfg(test)]" or normalized.startswith("#[cfg(all(test,")
+
+
+def strip_pure_test_items(text: str) -> str:
+    """Remove Rust items guarded only by `cfg(test)`.
+
+    The scanner is intentionally conservative. Mixed gates such as
+    `cfg(any(test, feature = "reference"))` remain visible because they may be
+    compiled outside a test build. Source drift that produces an unbalanced
+    item causes the original text to remain in scope rather than hiding it.
+    """
+
+    lines = text.splitlines(keepends=True)
+    output: list[str] = []
+    index = 0
+
+    while index < len(lines):
+        if "#[cfg" not in lines[index]:
+            output.append(lines[index])
+            index += 1
+            continue
+
+        attribute_start = index
+        attribute_parts = [lines[index]]
+        while "]" not in "".join(attribute_parts) and index + 1 < len(lines):
+            index += 1
+            attribute_parts.append(lines[index])
+        attribute = "".join(attribute_parts)
+
+        if not _is_pure_test_cfg(attribute):
+            output.extend(lines[attribute_start : index + 1])
+            index += 1
+            continue
+
+        item_index = index + 1
+        # Keep consuming attributes and documentation attached to the item.
+        while item_index < len(lines):
+            stripped = lines[item_index].lstrip()
+            if stripped.startswith("#[") or stripped.startswith("///") or stripped.startswith("//!"):
+                item_index += 1
+                continue
+            break
+
+        if item_index >= len(lines):
+            # Fail visible: preserve malformed trailing source.
+            output.extend(lines[attribute_start:])
+            break
+
+        brace_depth = 0
+        saw_brace = False
+        cursor = item_index
+        item_end: int | None = None
+
+        while cursor < len(lines):
+            code = _code_without_strings_or_line_comment(lines[cursor])
+            opens = code.count("{")
+            closes = code.count("}")
+
+            if not saw_brace and ";" in code and opens == 0:
+                item_end = cursor + 1
+                break
+
+            if opens > 0:
+                saw_brace = True
+            if saw_brace:
+                brace_depth += opens - closes
+                if brace_depth == 0:
+                    item_end = cursor + 1
+                    break
+            cursor += 1
+
+        if item_end is None:
+            # Never conceal malformed or unexpectedly shaped code.
+            output.extend(lines[attribute_start : index + 1])
+            index += 1
+            continue
+
+        index = item_end
+
+    return "".join(output)
+
+
+def production_view(relative: str) -> str:
+    return strip_pure_test_items(read(relative))
+
+
 def require_absent(relative: str, patterns: list[tuple[str, str]]) -> list[str]:
-    text = read(relative)
+    text = production_view(relative)
     failures: list[str] = []
     for expression, explanation in patterns:
         if re.search(expression, text, flags=re.MULTILINE | re.IGNORECASE | re.DOTALL):
@@ -30,7 +127,7 @@ def require_absent(relative: str, patterns: list[tuple[str, str]]) -> list[str]:
 
 
 def require_present(relative: str, patterns: list[tuple[str, str]]) -> list[str]:
-    text = read(relative)
+    text = production_view(relative)
     failures: list[str] = []
     for expression, explanation in patterns:
         if not re.search(expression, text, flags=re.MULTILINE | re.DOTALL):
