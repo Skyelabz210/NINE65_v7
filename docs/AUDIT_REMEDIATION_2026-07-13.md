@@ -2,71 +2,108 @@
 
 ## Scope
 
-This record maps the July 13 physical audit findings to the current v8 codebase and the corrective changes on `audit/remediate-2026-07-13`.
+This record maps the July 13 physical-audit findings and the subsequent source audit to the current v8 codebase and the corrective changes on `audit/remediate-2026-07-13`.
 
-The audit reported two load-bearing concerns:
+The initial audit reported two load-bearing concerns:
 
 1. `secure_128` was estimated at 98 effective bits by the audit environment rather than the claimed 128 bits.
-2. unrefreshed depth chains produced decryption mismatches at depth 8 for `secure_128` and depth 5 for `secure_192` / `secure_256`.
+2. Unrefreshed depth chains produced decryption mismatches at depth 8 for `secure_128` and depth 5 for `secure_192` / `secure_256`.
 
-The remediation treats these as separate parameter-attestation and execution-mode questions. It does not convert an unrefreshed leveled-FHE ceiling into an unlimited-depth claim.
+The source audit then identified three additional correctness hazards:
+
+3. statistical auto-bootstrap failure did not control the benchmark exit status;
+4. manual and automatic refresh decisions could occur after an over-budget multiplication;
+5. large RNS products were saturated into `u128::MAX`, and `FHEConfig::custom` accepted `t >= q_i`.
+
+The remediation treats parameter attestation, arithmetic correctness, and execution mode as separate gates. It does not convert a finite leveled-FHE ceiling into an unlimited-depth claim.
 
 ## Resolution matrix
 
 | Finding | Root condition | Remediation | Status |
 |---|---|---|---|
-| External audit estimates `secure_128` below 128 bits | The repository's integer estimator and the external audit do not share a reproducible estimator artifact or identical attack model | The audit benchmark now defaults to `secure_128_deep` (`N = 8192`). `secure_128` remains available for compatibility and comparative testing, but external 128-bit attestation is not inferred from the in-tree estimator alone. | Fail-closed operational mitigation; independent estimator reconciliation remains required before an external 128-bit claim |
-| Depth 5–8 mismatch | A no-bootstrap chain was compared with an 80-operation target | The benchmark now separates `no_bootstrap`, `clockwork_manual`, and `clockwork_auto`. No-bootstrap mode stops and returns failure at the first rejected multiplication, exhausted budget, or decryption mismatch. | Resolved |
-| Simulated refresh counted as bootstrap | The legacy harness reset only its software noise counter while leaving the ciphertext unchanged | Simulated refresh was removed. Both bootstrap modes execute `ClockworkBootstrap`; JSON always reports `simulated_refreshes = 0`. | Resolved |
-| `--auto-bootstrap` did not drive the auto evaluator | The flag generated keys but the depth loop continued on the legacy ciphertext path | Auto mode now executes `AutoBootstrapEvaluator::mul_auto` over live DualRNS ciphertexts. | Resolved |
-| ct×ct timing labeled K-Elimination while measuring the basic single-modulus evaluator | Benchmark routing and reporting were inconsistent | ct×ct timing now calls `RNSFHEContext::mul_dual_public` with the evaluation key and reports `DualRNS + K-Elimination`. | Resolved |
-| Addition-chain noise exhaustion could be ignored | `AutoBootstrapEvaluator::add_auto` discarded `NoiseBudget::consume` errors | Added `try_add_auto`; addition now refreshes on exhaustion or threshold crossing. The compatibility wrapper fails loudly if refresh fails. | Resolved |
-| Invalid auto-bootstrap thresholds | Any `u32` threshold was accepted | Thresholds are restricted to `0..=1000` permille. | Resolved |
-| SBNI shape mismatch / empty-source panics were non-local and poorly diagnosed | The injector assumed all limb and entropy dimensions were valid | SBNI now checks entropy, lane count, modulus range, limb count, and limb length before mutation. | Resolved |
-| Floating-point benchmark and statistical reporting | Percentages, rates, and chi-square checks used binary floating point | All remediated paths use integer or exactly scaled integer comparisons. | Resolved |
+| External audit estimates `secure_128` below 128 bits | The repository estimator and the external audit do not share a pinned estimator artifact and identical attack model | The audit benchmark defaults to `secure_128_deep` (`N = 8192`). `secure_128` remains a compatibility/comparison profile until an independent exact-tuple artifact is checked in. | Operationally mitigated; external attestation remains open |
+| Depth 5–8 mismatch | A no-bootstrap chain was compared with an 80-operation target | The harness separates `no_bootstrap`, `clockwork_manual`, and `clockwork_auto`. Leveled mode stops before an operation the tracked budget cannot fund. | Resolved in code; runtime gate pending |
+| Simulated refresh counted as bootstrap | The legacy harness reset only its software noise counter | Simulated refresh was removed. Refresh modes execute `ClockworkBootstrap`; JSON reports `simulated_refreshes = 0`. | Resolved in code; runtime gate pending |
+| Statistical failures could exit successfully | Overall status read only `depth_chain.correct` | `overall_correct` is the conjunction of depth correctness and requested statistical correctness; either failure exits nonzero. | Resolved in code; CI assertion added |
+| Multiplication occurred before budget preflight | Refresh was decided after ct×ct execution | Manual and automatic paths check `can_perform(mul + relin)` and the trigger before multiplication. A post-bootstrap budget that still cannot fund the operation fails closed. | Resolved in code; runtime gate pending |
+| `--auto-bootstrap` did not drive the evaluator | The flag generated keys but the loop remained on the legacy path | Auto mode executes `AutoBootstrapEvaluator::mul_auto` over live DualRNS ciphertexts. | Resolved in code; runtime gate pending |
+| ct×ct timing mislabeled K-Elimination | Timing used a basic single-modulus operation | Timing calls `RNSFHEContext::mul_dual_public` and reports `DualRNS + K-Elimination`. | Resolved |
+| Addition-chain budget exhaustion was ignored | `add_auto` discarded `NoiseBudget::consume` errors | Added checked addition and pre-operation refresh; the compatibility wrapper fails loudly on refresh failure. | Resolved in code |
+| Saturated large RNS products | `rns_product()` used saturating `u128` multiplication and fed the result into noise accounting | Added checked scalar projection, exact dynamic little-endian limbs, exact product bit length, and exact multi-limb division by `t`. Scalar access panics on overflow rather than saturating. | Resolved in code; boundary tests added |
+| Invalid custom plaintext modulus | `FHEConfig::custom()` accepted `t == q_i` and `t > q_i` | Custom construction now requires `2 <= t < q_i` for every field lane. | Resolved in code; boundary tests added |
+| SBNI shape mismatch / empty-source panics | The injector assumed valid entropy and limb dimensions | SBNI validates entropy, lane count, modulus range, limb count, and limb length before mutation. | Resolved in code |
+| Floating-point benchmark and statistical reporting | Rates and distribution checks used binary floating point | Remediated paths use integers or exactly scaled integer inequalities. | Resolved in code |
+
+## Exact modulus accounting
+
+The canonical full ciphertext modulus remains the ordered RNS prime vector. Large products are handled as exact, dynamically sized little-endian `u64` limbs.
+
+The parameter API now provides:
+
+- `try_rns_product() -> Option<u128>` for checked scalar projection;
+- `rns_product_limbs()` for the exact full product;
+- `rns_product_bit_length()` for exact size accounting;
+- fail-closed `rns_product()` for callers with a proven `u128` precondition;
+- exact multi-limb division by the plaintext modulus for RNS noise-budget bit length.
+
+Boundary tests cover products below, equal to, and above `u128::MAX`. The equality vector uses the exact factorization
+
+```text
+2^128 - 1 = (2^64 - 1) × 274177 × 67280421310721.
+```
+
+No saturated or wrapped scalar product is permitted to influence noise, capacity, security, routing, or boundary decisions.
 
 ## Security parameter handling
 
-The current in-tree estimator is an integer-only engineering estimator. It is useful as a regression signal, but it is not a substitute for a reproducible external lattice-estimator run. Therefore:
+The in-tree estimator is an integer-only engineering screen, not an independent lattice-security certificate. Therefore:
 
-- `secure_128_deep` is the default audit profile.
-- `secure_128` must not be presented as externally attested solely because `HEStandardBounds::is_compliant` or the internal estimator returns a passing value.
-- A release claim must include the exact estimator version, attack models, secret distribution, error distribution, ring dimension, full modulus chain, and output artifact.
-- Any disagreement between an external estimator and the in-tree estimate is resolved in favor of the lower result until reproduced and reconciled.
-
-This policy preserves exact arithmetic while separating arithmetic correctness from security estimation.
+- `secure_128_deep` is the conservative audit profile;
+- named security claims require the exact estimator version, attack models, distributions, ring dimension, ordered modulus chain, and raw output;
+- disagreement is resolved in favor of the lower reproducible estimate;
+- HE Standard table compliance is necessary evidence, not complete attestation.
 
 ## Depth semantics
 
-Three measurements are now kept distinct:
+Three measurements remain distinct:
 
-1. **No bootstrap** — measures the leveled-FHE ceiling. It is expected to terminate after a finite number of ct×ct multiplications.
-2. **Manual Clockwork bootstrap** — executes a real refresh when the exact integer noise tracker reaches its trigger or the current level must be refreshed before retry.
-3. **Automatic Clockwork bootstrap** — delegates every multiplication to `AutoBootstrapEvaluator` and records actual bootstrap count.
+1. **No bootstrap** — a finite leveled-FHE survey.
+2. **Manual Clockwork bootstrap** — explicit pre-operation refresh.
+3. **Automatic Clockwork bootstrap** — evaluator-managed pre-operation refresh.
 
-A requested depth is reported as achieved only when every completed step decrypts to the exact expected plaintext and no failure condition is present.
+A requested depth passes only when every completed step decrypts exactly, every required refresh succeeds, the operation budget is preflighted, and any requested statistical trial set has zero failures.
 
 ## CRAM / RNS invariants
 
-The remediated benchmark remains recumbent:
-
-- ciphertext state stays in DualRNS main and anchor lanes;
-- ct×ct rescaling uses the K-Elimination path;
-- no Garner reconstruction or mixed-radix conversion is introduced into the hot path;
-- bootstrap and SBNI preserve the main/anchor lane relationship;
-- all reported percentages and rates are integer quotients with declared truncation.
-
-NTT lanes remain CLASS-F and use NTT-compatible primes. Anchor and boundary operations remain CLASS-R and require coprimality rather than unnecessary primality assumptions.
+- Ciphertext state remains resident in DualRNS main and anchor lanes.
+- ct×ct rescaling remains on K-Elimination.
+- NTT lanes remain prime CLASS-F lanes.
+- Anchor and boundary routes remain CLASS-R and are governed by coprimality plus explicit range.
+- No Garner reconstruction or mixed-radix conversion is introduced into the hot path.
+- Number-line values are emitted only at explicit boundary/decryption projection.
 
 ## Verification gate
 
-`.github/workflows/audit_remediation.yml` performs the following checks:
+`.github/workflows/audit_remediation.yml` is configured to:
 
-- rejects floating-point tokens in the remediated Rust paths;
-- checks Rust formatting;
-- compiles the benchmark with `serde`;
-- runs SBNI invariant tests;
-- runs auto-bootstrap unit tests;
-- executes a one-depth DualRNS benchmark smoke test and validates its JSON contract.
+- reject floating-point tokens in the remediated Rust paths;
+- statically verify that statistical correctness controls overall exit status;
+- run Rust formatting;
+- compile the benchmark with `serde`;
+- run exact parameter/product-boundary tests;
+- run SBNI and auto-bootstrap unit tests;
+- execute a leveled DualRNS smoke test;
+- execute an automatic-refresh 100-trial statistical smoke test;
+- assert `overall_correct = true`, zero statistical failures, and zero simulated refreshes.
 
-The audit branch is mergeable only after this gate and the repository's existing gates pass.
+## Merge state
+
+No GitHub Actions run is attached to the connector-authored head at the time of this record. The Python structural harness passed delimiter balance, exactness-token checks, boundary arithmetic, and required control-flow assertions, but it is not a Rust compiler or runtime substitute.
+
+The branch remains non-mergeable by policy until:
+
+1. `cargo fmt --all -- --check` passes;
+2. the benchmark and library compile;
+3. the exact parameter, SBNI, and auto-bootstrap tests pass;
+4. both benchmark smoke runs pass;
+5. an independent estimator artifact is supplied before any external named-security claim.
