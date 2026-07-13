@@ -89,27 +89,28 @@ structure StructuredSignal where
   confidence : Nat
   deriving DecidableEq, Repr
 
-/-- Application-domain bounds. All fields are exact nonnegative integers. -/
+/-- Exact application-domain bounds matching `private-feedback-core`. -/
 def StructuredSignal.Valid (s : StructuredSignal) : Prop :=
   s.topic < 256 ∧
-  s.friction < 64 ∧
+  s.friction < 8 ∧
   s.severity < 8 ∧
-  s.sentiment < 8 ∧
+  s.sentiment < 6 ∧
   s.productArea < 1024 ∧
-  s.followupClass < 64 ∧
+  s.followupClass < 7 ∧
   s.consent < 2 ∧
-  s.confidence < 1024
+  s.confidence < 1001
 
 /-- Fixed slot encoding contains no raw-text field. -/
-def StructuredSignal.slots (s : StructuredSignal) : Fin 8 → Nat
-  | ⟨0, _⟩ => s.topic
-  | ⟨1, _⟩ => s.friction
-  | ⟨2, _⟩ => s.severity
-  | ⟨3, _⟩ => s.sentiment
-  | ⟨4, _⟩ => s.productArea
-  | ⟨5, _⟩ => s.followupClass
-  | ⟨6, _⟩ => s.consent
-  | ⟨7, _⟩ => s.confidence
+def StructuredSignal.slots (s : StructuredSignal) (index : Fin 8) : Nat :=
+  match index.val with
+  | 0 => s.topic
+  | 1 => s.friction
+  | 2 => s.severity
+  | 3 => s.sentiment
+  | 4 => s.productArea
+  | 5 => s.followupClass
+  | 6 => s.consent
+  | _ => s.confidence
 
 @[simp] theorem valid_consent_is_bit {s : StructuredSignal} (h : s.Valid) :
     s.consent < 2 := by
