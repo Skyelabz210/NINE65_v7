@@ -1,0 +1,29 @@
+{
+  "aggregation_cases": 4096,
+  "aggregation_lane_checks": 262144,
+  "arithmetic": "exact_integer_only",
+  "basis_pair_coprimality_checks": 28,
+  "date": "2026-07-13",
+  "evidence_sha256": "d91a77551ca16db5f28913308123511852347c412d4f6ba7b97753fdce367092",
+  "floating_point_operations": 0,
+  "garner_calls": 0,
+  "invalid_boundary_cases": 8,
+  "lane_range_checks": 147968,
+  "mixed_radix_calls": 0,
+  "numberline_reconstruction_calls": 0,
+  "safe_basis": [
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+  ],
+  "safe_basis_product": 9699690,
+  "schema": 1,
+  "selector_state_cases": 192,
+  "status": "PASS",
+  "valid_signals_axis_checked": 2312
+}
