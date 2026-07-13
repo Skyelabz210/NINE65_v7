@@ -5,6 +5,8 @@
 //! invertible. Primality is not required: this layer is CLASS-R unless a caller
 //! requests a field-only operation such as Fermat inversion.
 
+use crate::params::is_prime;
+
 /// Persistent Montgomery context for one odd modulus below `2^63`.
 #[derive(Clone, Debug)]
 pub struct PersistentMontgomery {
@@ -119,12 +121,14 @@ impl PersistentMontgomery {
         lower
     }
 
-    /// Field-only convenience inversion.
+    /// Field-only Fermat inversion.
     ///
-    /// The caller must establish that `m` is prime. The `None` result for zero
-    /// is an explicit validity boundary and is not a secret-oblivious API.
+    /// Composite CLASS-R moduli are valid for persistent ring arithmetic but
+    /// are rejected here because `x^(m-2)` is a field identity, not a general
+    /// ring inverse algorithm. The validity branch is an explicit public API
+    /// boundary and this method is not part of a secret-oblivious hot path.
     pub fn inverse(&self, value: u64) -> Option<u64> {
-        if value == 0 {
+        if value == 0 || !is_prime(self.m) {
             None
         } else {
             Some(self.pow(value, self.m - 2))
@@ -303,6 +307,14 @@ mod tests {
     }
 
     #[test]
+    fn field_inverse_accepts_prime_modulus() {
+        let context = PersistentMontgomery::new(TEST_PRIME);
+        let value = context.enter(7);
+        let inverse = context.inverse(value).expect("prime-field inverse");
+        assert_eq!(context.exit(context.mul(value, inverse)), 1);
+    }
+
+    #[test]
     fn odd_composite_class_r_modulus_is_supported() {
         let modulus = 15_u64;
         let context = PersistentMontgomery::new(modulus);
@@ -314,6 +326,7 @@ mod tests {
                 assert_eq!(context.sub(left, right), (left + modulus - right) % modulus);
             }
         }
+        assert_eq!(context.inverse(context.enter(2)), None);
     }
 
     #[test]
