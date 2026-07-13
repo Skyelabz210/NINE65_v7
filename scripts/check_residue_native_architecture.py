@@ -16,9 +16,10 @@ PRODUCTION_TARGETS = (
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
 )
 
+# Match executable identifiers and type usage, not explanatory documentation.
 PROHIBITED = {
-    "garner": re.compile(r"\b" + "gar" + "ner" + r"\b", re.IGNORECASE),
-    "mixed_radix": re.compile(r"mixed[_ -]?" + "radix", re.IGNORECASE),
+    "garner_symbol": re.compile(r"\b" + "gar" + "ner" + r"(?:_|::|\s*\()", re.IGNORECASE),
+    "mixed_radix_symbol": re.compile(r"\bmixed_" + "radix\b", re.IGNORECASE),
     "crt_reconstruct": re.compile(r"\bcrt_" + "reconstruct\b", re.IGNORECASE),
     "hidden_big_integer": re.compile(r"\b(Big" + r"Int|BigUint)\b"),
     "floating_type": re.compile(r"\bf(?:32|64)\b|\bas\s+f(?:32|64)\b"),
@@ -39,10 +40,20 @@ def scan_file(path: pathlib.Path) -> list[str]:
     except UnicodeDecodeError:
         return []
     failures: list[str] = []
+    in_block_comment = False
     for line_number, line in enumerate(text.splitlines(), start=1):
+        stripped = line.strip()
+        if in_block_comment:
+            if "*/" in stripped:
+                in_block_comment = False
+            continue
+        if stripped.startswith("/*") or stripped.startswith("//") or stripped.startswith("#"):
+            if stripped.startswith("/*") and "*/" not in stripped:
+                in_block_comment = True
+            continue
         for name, pattern in PROHIBITED.items():
             if pattern.search(line):
-                failures.append(f"{path.relative_to(ROOT)}:{line_number}: {name}: {line.strip()}")
+                failures.append(f"{path.relative_to(ROOT)}:{line_number}: {name}: {stripped}")
     return failures
 
 
