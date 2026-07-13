@@ -54,17 +54,11 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
 /// Secure FHE configuration with an explicit claim and internal screening data.
 #[derive(Clone, Debug)]
 pub struct SecureConfig {
-    /// Underlying FHE configuration.
     pub config: FHEConfig,
-    /// Named security claim that this configuration must satisfy.
     pub claimed_security: u32,
-    /// Internal classical screening result in bits.
     pub classical_security: u32,
-    /// Internal hybrid-attack screening result in bits.
     pub hybrid_security: u32,
-    /// Internal quantum-cost screening result in bits.
     pub quantum_security: u32,
-    /// Whether the tuple is within the HE Standard modulus bound.
     pub he_standard_compliant: bool,
 }
 
@@ -97,8 +91,6 @@ impl SecureConfig {
         let he_standard_compliant =
             HEStandardBounds::is_compliant(n, log_q, claimed_security);
 
-        // Fail closed. A named claim must pass the complete internal screen;
-        // no 90%-of-claim relaxation is accepted.
         assert!(
             estimate.effective_bits >= claimed_security,
             "SECURITY ERROR: config '{}' claims {} bits but screens at {} bits.\n{}",
@@ -119,8 +111,6 @@ impl SecureConfig {
             q,
             t,
             eta,
-            // This field carries the named claim. Screening results remain in
-            // SecureConfig and must not silently replace the public contract.
             security_bits: claimed_security as usize,
             name,
         };
@@ -135,24 +125,20 @@ impl SecureConfig {
         }
     }
 
-    /// Returns true only when the named claim, HE bound, and audited dimension
-    /// floor are all satisfied.
+    /// A production-safe profile must claim at least 128 bits, satisfy the
+    /// complete internal screen and HE bound, and meet the audited dimension
+    /// floor. Test profiles can never become production-safe by estimator output.
     pub fn is_production_safe(&self) -> bool {
-        self.hybrid_security >= self.claimed_security
+        self.claimed_security >= 128
+            && self.config.n >= 8192
+            && self.hybrid_security >= self.claimed_security
             && self.he_standard_compliant
-            && (self.claimed_security < 128 || self.config.n >= 8192)
     }
 
     pub fn into_config(self) -> FHEConfig {
         self.config
     }
 
-    /// Audited 128-bit production candidate.
-    ///
-    /// N was raised from 4096 to 8192 after the July 2026 independent audit
-    /// assessed the former tuple below its 128-bit claim. The RNS chain remains
-    /// three NTT-friendly primes so the arithmetic/noise capacity is unchanged;
-    /// this change increases the lattice dimension and security margin.
     pub fn secure_128() -> Self {
         Self::new_verified(
             8192,
@@ -164,7 +150,6 @@ impl SecureConfig {
         )
     }
 
-    /// 128-bit candidate with a four-prime chain for deeper leveled work.
     pub fn secure_128_deep() -> Self {
         Self::new_verified(
             8192,
@@ -176,7 +161,6 @@ impl SecureConfig {
         )
     }
 
-    /// 192-bit production candidate.
     pub fn secure_192() -> Self {
         Self::new_verified(
             16384,
@@ -194,7 +178,6 @@ impl SecureConfig {
         )
     }
 
-    /// 256-bit production candidate.
     pub fn secure_256() -> Self {
         Self::new_verified(
             16384,
@@ -213,8 +196,6 @@ impl SecureConfig {
         )
     }
 
-    /// Hardware-oriented 128-bit candidate. It uses the same audited dimension
-    /// floor as `secure_128`; hardware optimization does not waive security.
     pub fn hardware_opt() -> Self {
         Self::new_verified(
             8192,
@@ -226,7 +207,6 @@ impl SecureConfig {
         )
     }
 
-    /// Fast test configuration. Never deploy with sensitive data.
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn test_fast_insecure() -> Self {
         Self::new_verified(
@@ -239,7 +219,6 @@ impl SecureConfig {
         )
     }
 
-    /// Medium test configuration. Never deploy with sensitive data.
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn test_medium_insecure() -> Self {
         Self::new_verified(
@@ -253,7 +232,6 @@ impl SecureConfig {
     }
 }
 
-/// Marker trait used by release-path guards.
 pub trait ProductionSafe {
     fn require_production_safe(&self);
 }
@@ -275,8 +253,6 @@ pub fn assert_production_safe(config: &SecureConfig) {
     config.require_production_safe();
 }
 
-/// Validate a raw `FHEConfig` against its declared claim, with a 128-bit
-/// minimum on production paths.
 pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
     if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
         return;
@@ -312,9 +288,14 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
     );
 }
 
-/// Return a detailed error rather than panicking.
 pub fn verify_production_safety(config: &SecureConfig) -> Result<(), String> {
-    if config.config.n < 8192 && config.claimed_security >= 128 {
+    if config.claimed_security < 128 {
+        return Err(format!(
+            "claim={} bits is below the production minimum of 128 bits",
+            config.claimed_security
+        ));
+    }
+    if config.config.n < 8192 {
         return Err(format!(
             "N={} is below the audited production floor N=8192",
             config.config.n
@@ -395,8 +376,12 @@ mod tests {
 
     #[test]
     fn test_configs_are_not_production_safe() {
-        assert!(!SecureConfig::test_fast_insecure().is_production_safe());
-        assert!(!SecureConfig::test_medium_insecure().is_production_safe());
+        let fast = SecureConfig::test_fast_insecure();
+        let medium = SecureConfig::test_medium_insecure();
+        assert!(!fast.is_production_safe());
+        assert!(!medium.is_production_safe());
+        assert!(verify_production_safety(&fast).is_err());
+        assert!(verify_production_safety(&medium).is_err());
     }
 
     #[test]
