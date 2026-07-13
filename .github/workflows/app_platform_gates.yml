@@ -93,6 +93,8 @@ jobs:
           rg -q 'x-fhe-decrypt-token' crates/fhe-service/src/handlers.rs
           rg -q 'decrypt_policy_is_fail_closed' crates/fhe-service/src/handlers.rs
           rg -q 'disabled_by_default' crates/fhe-service/src/handlers.rs
+          rg -q 'Sha256::digest' crates/fhe-service/src/handlers.rs
+          rg -q 'ct_eq' crates/fhe-service/src/handlers.rs
 
   wasm-client:
     name: WASM client boundary
@@ -102,18 +104,37 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-      - name: Build WASM boundary
+      - name: Build release WASM boundary
         run: >-
           cargo check
+          --release
           --manifest-path crates/nine65-wasm/Cargo.toml
           --target wasm32-unknown-unknown
           --features wasm
+      - name: Assert secure browser entropy and validated boundaries
+        run: |
+          rg -q 'getrandom = .*features = \["js"\]' crates/nine65-wasm/Cargo.toml
+          rg -q 'KeySet::try_generate_secure' crates/nine65-wasm/src/lib.rs
+          rg -q 'try_encrypt_secure' crates/nine65-wasm/src/lib.rs
+          rg -q 'public_key_from_bytes' crates/nine65-wasm/src/lib.rs
+          rg -q 'evaluation_key_from_bytes' crates/nine65-wasm/src/lib.rs
+          rg -q 'decode_ciphertext' crates/nine65-wasm/src/lib.rs
+          rg -q 'single-modulus-bfv-leveled' crates/nine65-wasm/src/lib.rs
+          rg -q 'supports_dual_rns' crates/nine65-wasm/src/lib.rs
+          rg -q 'supports_auto_bootstrap' crates/nine65-wasm/src/lib.rs
+          if rg -n 'pub fn generate_keyset_seeded\(|pub fn encrypt_seeded\(' \
+              crates/nine65-wasm/src/lib.rs; then
+            echo 'unsafe seeded production API name remains exposed'
+            exit 1
+          fi
       - name: Assert secret-key export remains disabled
         run: |
           rg -q 'SecretKey export disabled' crates/nine65-wasm/src/lib.rs
-          if rg -n 'impl WasmSecretKey' crates/nine65-wasm/src/lib.rs >/dev/null; then
-            rg -q 'Err\(JsValue::from_str\("SecretKey export disabled"\)\)' \
-              crates/nine65-wasm/src/lib.rs
+          rg -q 'Err\(JsValue::from_str\("SecretKey export disabled"\)\)' \
+            crates/nine65-wasm/src/lib.rs
+          if rg -n 'pub fn from_bytes' crates/nine65-wasm/src/lib.rs; then
+            echo 'context-free key import remains exposed'
+            exit 1
           fi
 
   policy-and-claims:
