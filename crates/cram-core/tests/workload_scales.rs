@@ -1,9 +1,9 @@
 #![allow(clippy::manual_is_multiple_of)]
 
 use cram_core::{
-    ArchitectureCounters, BasisFrame, BoundCertificate, CramState, DomainState, FrameId,
-    LaneId, LaneOperator, LineageDigest, OperatorTopology, ResidueLane, ShadowState,
-    WindingState,
+    anchor::recover_winding, ArchitectureCounters, BasisFrame, BoundCertificate, CramState,
+    DomainState, FrameId, LaneId, LaneOperator, LineageDigest, OperatorTopology, ResidueLane,
+    ShadowState, WindingState,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -232,26 +232,6 @@ fn bound_rules_remain_sound_at_profile_depth() {
     );
 }
 
-fn extended_gcd(left: i128, right: i128) -> (i128, i128, i128) {
-    if right == 0 {
-        return (left.abs(), left.signum(), 0);
-    }
-    let (gcd, x1, y1) = extended_gcd(right, left.rem_euclid(right));
-    (gcd, y1, x1 - (left / right) * y1)
-}
-
-fn inverse_mod(value: u64, modulus: u64) -> u64 {
-    let (gcd, coefficient, _) = extended_gcd(value as i128, modulus as i128);
-    assert_eq!(gcd, 1, "inverse requires coprimality");
-    u64::try_from(coefficient.rem_euclid(modulus as i128)).expect("inverse is canonical")
-}
-
-fn reference_winding(main_residue: u64, anchor_residue: u64, main: u64, anchor: u64) -> u64 {
-    let inverse = inverse_mod(main % anchor, anchor);
-    let difference = (anchor_residue + anchor - (main_residue % anchor)) % anchor;
-    ((difference as u128 * inverse as u128) % anchor as u128) as u64
-}
-
 #[test]
 fn anchor_phase_winding_is_exhaustively_exact_on_small_pairs() {
     let pairs = [(4_u64, 9_u64), (8, 9), (15, 16), (25, 49), (36, 37)];
@@ -260,8 +240,14 @@ fn anchor_phase_winding_is_exhaustively_exact_on_small_pairs() {
     for (main, anchor) in pairs {
         assert_eq!(cram_core::gcd(main, anchor), 1);
         for value in 0..main * anchor {
-            let recovered = reference_winding(value % main, value % anchor, main, anchor);
-            assert_eq!(recovered, value / main, "main={main} anchor={anchor} value={value}");
+            let witness = recover_winding(value % main, value % anchor, main, anchor)
+                .expect("coprime pair");
+            assert_eq!(
+                witness.winding_mod_anchor,
+                value / main,
+                "main={main} anchor={anchor} value={value}"
+            );
+            assert!(witness.verify());
             states += 1;
         }
     }
@@ -280,8 +266,14 @@ fn anchor_phase_winding_scales_to_large_composite_frame() {
     assert_eq!(cram_core::gcd(main, anchor), 1);
     for sample in 0..profile.kelim_samples {
         let value = rng.next() % range;
-        let recovered = reference_winding(value % main, value % anchor, main, anchor);
-        assert_eq!(recovered, value / main, "sample={sample} value={value}");
+        let witness = recover_winding(value % main, value % anchor, main, anchor)
+            .expect("coprime frame and anchor");
+        assert_eq!(
+            witness.winding_mod_anchor,
+            value / main,
+            "sample={sample} value={value}"
+        );
+        assert!(witness.verify());
     }
 
     println!(
