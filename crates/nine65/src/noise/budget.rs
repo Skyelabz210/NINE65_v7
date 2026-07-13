@@ -39,7 +39,7 @@ pub enum NoiseOpType {
 
 /// Error returned when an operation cannot be represented safely in the
 /// current budget.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NoiseExhausted {
     pub required_mb: i64,
     pub available_mb: i64,
