@@ -14,6 +14,8 @@ on:
       - 'docs/CRAM_INTEGRATION_CONTRACT.md'
       - 'docs/CLAIM_REGISTRY.csv'
       - 'scripts/external_fhe_matrix.py'
+      - 'scripts/private_feedback_correctness_harness.py'
+      - 'artifacts/app_platform/**'
       - '.github/workflows/app_platform_gates.yml'
   pull_request:
     branches: [main, develop]
@@ -24,6 +26,8 @@ on:
       - 'crates/private-feedback-nine65/**'
       - 'docs/**'
       - 'scripts/external_fhe_matrix.py'
+      - 'scripts/private_feedback_correctness_harness.py'
+      - 'artifacts/app_platform/**'
       - '.github/workflows/app_platform_gates.yml'
   workflow_dispatch:
 
@@ -65,6 +69,10 @@ jobs:
           fi
           rg -q 'add_dual' crates/private-feedback-nine65/src/lib.rs
           rg -q 'encrypt_dual_secure' crates/private-feedback-nine65/src/lib.rs
+      - name: Reproduce exact-integer application evidence
+        run: |
+          python3 scripts/private_feedback_correctness_harness.py
+          git diff --exit-code -- artifacts/app_platform/private_feedback_correctness_2026-07-13.json
 
   service-boundary:
     name: Fail-closed service boundary
