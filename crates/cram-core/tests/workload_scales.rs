@@ -1,3 +1,5 @@
+#![allow(clippy::manual_is_multiple_of)]
+
 use cram_core::{
     ArchitectureCounters, BasisFrame, BoundCertificate, CramState, DomainState, FrameId,
     LaneId, LaneOperator, LineageDigest, OperatorTopology, ResidueLane, ShadowState,
@@ -144,7 +146,7 @@ fn residue_lane_correctness_scales_by_lanes_and_depth() {
                     .expect("canonical right operand");
                 let old = lane.residue;
 
-                let (updated, expected) = match step % 3 {
+                let (updated, expected) = match (step + index) % 3 {
                     0 => (
                         lane.add(rhs).expect("compatible add"),
                         ((old as u128 + rhs_residue as u128) % modulus as u128) as u64,
