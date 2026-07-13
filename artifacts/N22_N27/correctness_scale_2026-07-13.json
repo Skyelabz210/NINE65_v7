@@ -1,0 +1,59 @@
+{
+  "evidence_type": "independent_integer_only_python_harness",
+  "harness": "scripts/cram_correctness_harness.py",
+  "date_utc": "2026-07-13",
+  "rust_execution": "pending GitHub Actions runner",
+  "results": [
+    {
+      "profile": "small",
+      "lane_counts": [2, 4, 8],
+      "steps": 128,
+      "lane_operations": 1792,
+      "exhaustive_anchor_states": 2905,
+      "sampled_anchor_states": 2048,
+      "digest_sha256": "2e1deaefb43c6a988845c6978936ebeb3993d9f9cc80a1f44461c4c1ffeedbbe",
+      "status": "PASS"
+    },
+    {
+      "profile": "medium",
+      "lane_counts": [8, 16, 32],
+      "steps": 1024,
+      "lane_operations": 57344,
+      "exhaustive_anchor_states": 2905,
+      "sampled_anchor_states": 16384,
+      "digest_sha256": "4b629de2a5aa9b259239951d8ed7ced182a27c6ca86e876fb9b341f216139414",
+      "status": "PASS"
+    },
+    {
+      "profile": "large",
+      "lane_counts": [32, 64],
+      "steps": 8192,
+      "lane_operations": 786432,
+      "exhaustive_anchor_states": 2905,
+      "sampled_anchor_states": 131072,
+      "digest_sha256": "daccc68539886ff5319f3c769c3b143f260e99b5d613f8c8993eacda49211865",
+      "status": "PASS"
+    },
+    {
+      "profile": "endurance",
+      "lane_counts": [64],
+      "steps": 65536,
+      "lane_operations": 4194304,
+      "exhaustive_anchor_states": 2905,
+      "sampled_anchor_states": 1048576,
+      "digest_sha256": "b8a6d1d8062710cf8cc81637d655a3fbd7343ebf12cbd3a29d202a93ea44feae",
+      "status": "PASS"
+    }
+  ],
+  "architectural_counters": {
+    "internal_projections": 0,
+    "crt_reconstructions": 0,
+    "scalar_materializations": 0,
+    "garner_calls": 0,
+    "mixed_radix_calls": 0
+  },
+  "limitations": [
+    "This evidence validates the current lane arithmetic, basis invariants, bound-rule scaffolding, and anchor-phase winding formula.",
+    "It does not certify the full Rust FHE path, transduction, rescale, key switching, or bootstrap; those remain gated by later DAG nodes and GitHub Actions execution."
+  ]
+}
