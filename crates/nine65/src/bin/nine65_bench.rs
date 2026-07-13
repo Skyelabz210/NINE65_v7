@@ -1,8 +1,9 @@
 //! NINE65 audit and benchmark harness.
 //!
-//! The harness measures the production DualRNS path, distinguishes an
-//! unrefreshed depth survey from real Clockwork refresh, and uses integer-only
-//! reporting. It never labels a simulated noise-budget reset as bootstrap.
+//! This binary measures the production DualRNS path, separates leveled depth
+//! from real Clockwork refresh, preflights every tracked operation, and reports
+//! only exact integer quantities. A software noise-counter reset is never
+//! reported as ciphertext bootstrap.
 
 use nine65::entropy::ShadowHarvester;
 use nine65::keys::bootstrap::{BootstrapKey, KeySwitchKey};
@@ -77,7 +78,7 @@ fn main() {
 
     let operations = benchmark_operations(&ctx, &keys, &mut rng, options.init_a, options.init_b);
 
-    let (depth_chain, statistical) = match options.mode {
+    let (depth_chain, statistical_test) = match options.mode {
         DepthMode::NoBootstrap => (
             run_no_bootstrap_depth(
                 &ctx,
@@ -89,17 +90,18 @@ fn main() {
             Value::Null,
         ),
         DepthMode::ManualBootstrap => {
-            let boot = ClockworkBootstrap::new(&config).expect("Clockwork bootstrap init failed");
-            let boot_keys = boot
+            let bootstrap =
+                ClockworkBootstrap::new(&config).expect("Clockwork bootstrap init failed");
+            let bootstrap_keys = bootstrap
                 .generate_keys(&keys.secret_key, &mut rng)
                 .expect("Clockwork bootstrap key generation failed");
             (
                 run_manual_bootstrap_depth(
                     &ctx,
                     &keys,
-                    &boot,
-                    &boot_keys.bsk,
-                    &boot_keys.ksk,
+                    &bootstrap,
+                    &bootstrap_keys.bsk,
+                    &bootstrap_keys.ksk,
                     &mut rng,
                     options.init_a,
                     options.max_depth,
@@ -109,28 +111,29 @@ fn main() {
             )
         }
         DepthMode::AutoBootstrap => {
-            let boot = ClockworkBootstrap::new(&config).expect("Clockwork bootstrap init failed");
-            let boot_keys = boot
+            let bootstrap =
+                ClockworkBootstrap::new(&config).expect("Clockwork bootstrap init failed");
+            let bootstrap_keys = bootstrap
                 .generate_keys(&keys.secret_key, &mut rng)
                 .expect("Clockwork bootstrap key generation failed");
-            let depth = run_auto_bootstrap_depth(
+            let depth_chain = run_auto_bootstrap_depth(
                 &ctx,
                 &keys,
-                &boot,
-                &boot_keys.bsk,
-                &boot_keys.ksk,
+                &bootstrap,
+                &bootstrap_keys.bsk,
+                &bootstrap_keys.ksk,
                 &mut rng,
                 options.init_a,
                 options.max_depth,
                 options.trigger_pct,
             );
-            let statistical = if options.statistical_test {
+            let statistical_test = if options.statistical_test {
                 run_statistical_auto_bootstrap(
                     &ctx,
                     &keys,
-                    &boot,
-                    &boot_keys.bsk,
-                    &boot_keys.ksk,
+                    &bootstrap,
+                    &bootstrap_keys.bsk,
+                    &bootstrap_keys.ksk,
                     &mut rng,
                     options.max_depth,
                     options.trigger_pct,
@@ -138,14 +141,17 @@ fn main() {
             } else {
                 Value::Null
             };
-            (depth, statistical)
+            (depth_chain, statistical_test)
         }
     };
 
-    let correct = depth_chain
-        .get("correct")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
+    let depth_correct = json_bool(&depth_chain, "correct");
+    let statistical_correct = if options.statistical_test {
+        json_bool(&statistical_test, "correct")
+    } else {
+        true
+    };
+    let overall_correct = depth_correct && statistical_correct;
 
     let output = json!({
         "metadata": {
@@ -166,21 +172,31 @@ fn main() {
         "keygen_us": keygen_us,
         "operations": operations,
         "depth_chain": depth_chain,
-        "statistical_test": statistical
+        "statistical_test": statistical_test,
+        "overall_correct": overall_correct
     });
 
     let json_text = serde_json::to_string_pretty(&output).expect("JSON serialization failed");
-    if let Some(path) = options.output_path {
-        std::fs::write(&path, json_text).expect("failed to write benchmark output");
+    if let Some(path) = options.output_path.as_deref() {
+        std::fs::write(path, json_text).expect("failed to write benchmark output");
         eprintln!("output={path}");
     } else {
         println!("{json_text}");
     }
 
-    if !correct {
-        eprintln!("depth survey ended without a correct final ciphertext");
+    if !overall_correct {
+        if !depth_correct {
+            eprintln!("depth-chain correctness gate failed");
+        }
+        if !statistical_correct {
+            eprintln!("statistical correctness gate failed");
+        }
         std::process::exit(1);
     }
+}
+
+fn json_bool(value: &Value, field: &str) -> bool {
+    value.get(field).and_then(Value::as_bool).unwrap_or(false)
 }
 
 fn parse_options() -> Result<Options, String> {
@@ -259,8 +275,7 @@ fn required_value(
     args: &mut impl Iterator<Item = String>,
     flag: &str,
 ) -> Result<String, String> {
-    args.next()
-        .ok_or_else(|| format!("missing value for {flag}"))
+    args.next().ok_or_else(|| format!("missing value for {flag}"))
 }
 
 fn parse_value<T: std::str::FromStr>(value: &str, flag: &str) -> Result<T, String> {
@@ -276,11 +291,11 @@ fn print_help() {
          --max-depth <n>       ct×ct multiplications to attempt (default: 80)\n\
          --output <path>       write structured JSON to a file\n\
          --a <u64>             encrypted accumulator value (default: 8)\n\
-         --b <u64>             second operand for single-operation timing (default: 8)\n\
+         --b <u64>             second operand for operation timing (default: 8)\n\
          --with-bootstrap      use real manual Clockwork refresh\n\
          --auto-bootstrap      use AutoBootstrapEvaluator\n\
          --statistical-test    run 100 auto-bootstrap correctness trials\n\
-         --trigger-pct <n>     refresh threshold in 0..=100 (default: 25)"
+         --trigger-pct <n>     pre-operation refresh threshold in 0..=100 (default: 25)"
     );
 }
 
@@ -351,6 +366,10 @@ fn benchmark_operations(
     })
 }
 
+fn multiplication_cost(config: &FHEConfig) -> i64 {
+    NoiseBudget::mul_ct_cost(config) + NoiseBudget::relin_cost(config)
+}
+
 fn run_no_bootstrap_depth(
     ctx: &RNSFHEContext,
     keys: &DualRNSFullKeySet,
@@ -363,10 +382,18 @@ fn run_no_bootstrap_depth(
     let mut accumulator = ctx.encrypt_dual(expected, &keys.public_key, rng);
     let mut budget = NoiseBudget::from_config(&ctx.config);
     let initial_budget = budget.remaining_millibits();
+    let operation_cost = multiplication_cost(&ctx.config);
     let mut entries = Vec::new();
     let mut failure = None;
 
     for depth in 1..=max_depth {
+        if !budget.can_perform(operation_cost) {
+            failure = Some(format!(
+                "tracked noise budget cannot fund multiplication at depth {depth}"
+            ));
+            break;
+        }
+
         let start = Instant::now();
         let next = match ctx.mul_dual_public(&accumulator, &one, &keys.eval_key) {
             Ok(next) => next,
@@ -376,16 +403,14 @@ fn run_no_bootstrap_depth(
             }
         };
         let elapsed_us = micros_u64(start.elapsed().as_micros());
-        let exhausted = budget
-            .consume(
-                NoiseOpType::MulCt,
-                NoiseBudget::mul_ct_cost(&ctx.config)
-                    + NoiseBudget::relin_cost(&ctx.config),
-            )
-            .is_err();
+
+        if let Err(error) = budget.consume(NoiseOpType::MulCt, operation_cost) {
+            failure = Some(format!("noise preflight invariant failed at depth {depth}: {error}"));
+            break;
+        }
+
         let decrypted = ctx.decrypt_dual(&next, &keys.secret_key);
         let correct = decrypted == expected;
-
         entries.push(json!({
             "depth": depth,
             "elapsed_us": elapsed_us,
@@ -393,17 +418,12 @@ fn run_no_bootstrap_depth(
             "expected": expected,
             "correct": correct,
             "noise_budget_pct": percent(budget.remaining_millibits(), initial_budget),
-            "noise_exhausted": exhausted,
             "refreshed": false
         }));
         accumulator = next;
 
         if !correct {
             failure = Some(format!("decryption mismatch at depth {depth}"));
-            break;
-        }
-        if exhausted {
-            failure = Some(format!("tracked noise budget exhausted at depth {depth}"));
             break;
         }
     }
@@ -435,6 +455,7 @@ fn run_manual_bootstrap_depth(
     let mut accumulator = ctx.encrypt_dual(expected, &keys.public_key, rng);
     let mut budget = NoiseBudget::from_config(&ctx.config);
     let initial_budget = budget.remaining_millibits();
+    let operation_cost = multiplication_cost(&ctx.config);
     let trigger_permille = trigger_pct * 10;
     let mut entries = Vec::new();
     let mut refreshes = 0u64;
@@ -442,18 +463,41 @@ fn run_manual_bootstrap_depth(
 
     for depth in 1..=max_depth {
         let start = Instant::now();
-        let mut next = match ctx.mul_dual_public(&accumulator, &one, &keys.eval_key) {
+        let mut refreshed = false;
+
+        if !budget.can_perform(operation_cost) || budget.should_bootstrap(trigger_permille) {
+            accumulator = match bootstrap.bootstrap(&accumulator, bsk, ksk) {
+                Ok(fresh) => fresh,
+                Err(error) => {
+                    failure = Some(format!("pre-operation bootstrap failed: {error}"));
+                    break;
+                }
+            };
+            budget.reset_after_bootstrap(&ctx.config);
+            refreshes += 1;
+            refreshed = true;
+        }
+
+        if !budget.can_perform(operation_cost) {
+            failure = Some(format!(
+                "post-bootstrap budget cannot fund multiplication at depth {depth}"
+            ));
+            break;
+        }
+
+        let next = match ctx.mul_dual_public(&accumulator, &one, &keys.eval_key) {
             Ok(next) => next,
-            Err(_) => {
+            Err(_) if !refreshed => {
                 accumulator = match bootstrap.bootstrap(&accumulator, bsk, ksk) {
                     Ok(fresh) => fresh,
                     Err(error) => {
-                        failure = Some(format!("pre-operation bootstrap failed: {error}"));
+                        failure = Some(format!("recovery bootstrap failed: {error}"));
                         break;
                     }
                 };
                 budget.reset_after_bootstrap(&ctx.config);
                 refreshes += 1;
+                refreshed = true;
                 match ctx.mul_dual_public(&accumulator, &one, &keys.eval_key) {
                     Ok(next) => next,
                     Err(error) => {
@@ -462,27 +506,15 @@ fn run_manual_bootstrap_depth(
                     }
                 }
             }
+            Err(error) => {
+                failure = Some(format!("multiplication failed after preflight refresh: {error}"));
+                break;
+            }
         };
 
-        let exhausted = budget
-            .consume(
-                NoiseOpType::MulCt,
-                NoiseBudget::mul_ct_cost(&ctx.config)
-                    + NoiseBudget::relin_cost(&ctx.config),
-            )
-            .is_err();
-        let mut refreshed = false;
-        if exhausted || budget.should_bootstrap(trigger_permille) {
-            next = match bootstrap.bootstrap(&next, bsk, ksk) {
-                Ok(fresh) => fresh,
-                Err(error) => {
-                    failure = Some(format!("post-operation bootstrap failed: {error}"));
-                    break;
-                }
-            };
-            budget.reset_after_bootstrap(&ctx.config);
-            refreshes += 1;
-            refreshed = true;
+        if let Err(error) = budget.consume(NoiseOpType::MulCt, operation_cost) {
+            failure = Some(format!("noise preflight invariant failed at depth {depth}: {error}"));
+            break;
         }
 
         let elapsed_us = micros_u64(start.elapsed().as_micros());
@@ -495,7 +527,6 @@ fn run_manual_bootstrap_depth(
             "expected": expected,
             "correct": correct,
             "noise_budget_pct": percent(budget.remaining_millibits(), initial_budget),
-            "noise_exhausted_before_refresh": exhausted,
             "refreshed": refreshed
         }));
         accumulator = next;
@@ -564,6 +595,7 @@ fn run_auto_bootstrap_depth(
             "expected": expected,
             "correct": correct,
             "noise_budget_pct": percent(evaluator.remaining_budget_mb(), initial_budget),
+            "bootstrap_calls": evaluator.bootstrap_count - previous_refreshes,
             "refreshed": evaluator.bootstrap_count > previous_refreshes
         }));
         accumulator = next;
@@ -596,7 +628,7 @@ fn run_statistical_auto_bootstrap(
     trigger_pct: u32,
 ) -> Value {
     let mut successes = 0u64;
-    let mut total_refreshes = 0u64;
+    let mut total_bootstrap_calls = 0u64;
 
     for _ in 0..STATISTICAL_TRIALS {
         let expected = rng.next_u64() % ctx.t;
@@ -622,7 +654,8 @@ fn run_statistical_auto_bootstrap(
                 }
             };
         }
-        total_refreshes += evaluator.bootstrap_count as u64;
+
+        total_bootstrap_calls += evaluator.bootstrap_count as u64;
         if trial_ok && ctx.decrypt_dual(&accumulator, &keys.secret_key) == expected {
             successes += 1;
         }
@@ -633,7 +666,7 @@ fn run_statistical_auto_bootstrap(
         "depth_per_trial": depth,
         "successes": successes,
         "failures": STATISTICAL_TRIALS - successes,
-        "total_refreshes": total_refreshes,
+        "total_bootstrap_calls": total_bootstrap_calls,
         "correct": successes == STATISTICAL_TRIALS
     })
 }
@@ -642,7 +675,7 @@ fn summarize_depth(
     mode: DepthMode,
     entries: &[Value],
     failure: Option<String>,
-    refreshes: u64,
+    bootstrap_calls: u64,
     decrypted: u64,
     expected: u64,
 ) -> Value {
@@ -661,7 +694,7 @@ fn summarize_depth(
     json!({
         "mode": mode.label(),
         "final_depth": depth,
-        "total_refreshes": refreshes,
+        "total_bootstrap_calls": bootstrap_calls,
         "simulated_refreshes": 0,
         "total_elapsed_us": total_us,
         "ops_per_sec": ops_per_sec,
