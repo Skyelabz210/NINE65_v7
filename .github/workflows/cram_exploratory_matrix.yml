@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - 'crates/nine65/src/bin/cram_exploratory_probe.rs'
+      - 'crates/nine65/src/bin/cram_modulus_probe.rs'
       - 'crates/nine65/Cargo.toml'
       - 'scripts/cram_claim_inventory.py'
       - 'scripts/run_cram_exploratory_matrix.py'
       - 'scripts/cram_compare_results.py'
+      - 'scripts/normalize_nine65_bench.py'
       - 'benchmarks/comparative/**'
       - 'docs/CRAM_FHE_EXPLORATORY_HARNESS_PLAN.md'
       - '.github/workflows/cram_exploratory_matrix.yml'
@@ -63,16 +65,18 @@ jobs:
           python3 -m py_compile \
             scripts/cram_claim_inventory.py \
             scripts/run_cram_exploratory_matrix.py \
-            scripts/cram_compare_results.py
+            scripts/cram_compare_results.py \
+            scripts/normalize_nine65_bench.py
       - name: Capture structural claim inventory
         run: |
           mkdir -p artifacts/exploratory/source
           python3 scripts/cram_claim_inventory.py \
             --output artifacts/exploratory/source/claim_inventory.json
-      - name: Reject floating point in the new probe
+      - name: Reject floating point in new probes
         run: |
           if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
-            crates/nine65/src/bin/cram_exploratory_probe.rs; then
+            crates/nine65/src/bin/cram_exploratory_probe.rs \
+            crates/nine65/src/bin/cram_modulus_probe.rs; then
             echo 'floating-point token found in exploratory probe' >&2
             exit 1
           fi
@@ -89,14 +93,26 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Format gate
         run: cargo fmt --all -- --check
-      - name: Compile exploratory probe
+      - name: Compile exploratory probes
         run: |
           cargo check --release -p nine65 \
-            --bin cram_exploratory_probe --features serde
-      - name: Build exploratory probe
+            --bin cram_exploratory_probe \
+            --bin cram_modulus_probe \
+            --features serde
+      - name: Build exploratory probes
         run: |
           cargo build --release -p nine65 \
-            --bin cram_exploratory_probe --features serde
+            --bin cram_exploratory_probe \
+            --bin cram_modulus_probe \
+            --features serde
+      - name: Run exact NTT candidate probe
+        run: |
+          mkdir -p artifacts/exploratory/moduli
+          target/release/cram_modulus_probe \
+            --n 256 \
+            --moduli 998244353,1006632961,4294967296,4294967295 \
+            --seed 42 \
+            --output artifacts/exploratory/moduli/results.json
       - name: Run quick real-FHE matrix
         id: matrix
         continue-on-error: true
@@ -117,7 +133,7 @@ jobs:
         if: always()
         with:
           name: cram-exploratory-quick
-          path: artifacts/exploratory/quick
+          path: artifacts/exploratory
       - name: Enforce matrix result after artifact capture
         if: always()
         run: test '${{ steps.matrix.outcome }}' = 'success'
@@ -129,17 +145,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build exploratory probe
+      - name: Build exploratory probes
         run: |
           cargo build --release -p nine65 \
-            --bin cram_exploratory_probe --features serde
-      - name: Assemble dispatch arguments
-        id: args
+            --bin cram_exploratory_probe \
+            --bin cram_modulus_probe \
+            --features serde
+      - name: Run dispatched exploratory matrix
+        id: dispatched
+        continue-on-error: true
         shell: bash
         run: |
-          args=(--profile '${{ inputs.profile }}' --skip-build \
-            --output-dir artifacts/exploratory/dispatched \
-            --trigger-permille '${{ inputs.trigger_permille }}')
+          args=(
+            --profile '${{ inputs.profile }}'
+            --skip-build
+            --output-dir artifacts/exploratory/dispatched
+            --trigger-permille '${{ inputs.trigger_permille }}'
+          )
           if test -n '${{ inputs.configs }}'; then
             args+=(--configs '${{ inputs.configs }}')
           fi
@@ -155,15 +177,7 @@ jobs:
           if test '${{ inputs.include_bootstrap }}' = 'true'; then
             args+=(--include-bootstrap)
           fi
-          printf '%q ' "${args[@]}" > artifacts_args.txt
-      - name: Run dispatched exploratory matrix
-        id: dispatched
-        continue-on-error: true
-        shell: bash
-        run: |
-          mkdir -p artifacts/exploratory/dispatched
-          # The argument file is generated entirely from typed workflow inputs.
-          eval "python3 scripts/run_cram_exploratory_matrix.py $(cat artifacts_args.txt)"
+          python3 scripts/run_cram_exploratory_matrix.py "${args[@]}"
       - name: Analyze compatible records
         if: always()
         run: |
