@@ -1,0 +1,182 @@
+name: CRAM exploratory FHE matrix
+
+on:
+  pull_request:
+    paths:
+      - 'crates/nine65/src/bin/cram_exploratory_probe.rs'
+      - 'crates/nine65/Cargo.toml'
+      - 'scripts/cram_claim_inventory.py'
+      - 'scripts/run_cram_exploratory_matrix.py'
+      - 'scripts/cram_compare_results.py'
+      - 'benchmarks/comparative/**'
+      - 'docs/CRAM_FHE_EXPLORATORY_HARNESS_PLAN.md'
+      - '.github/workflows/cram_exploratory_matrix.yml'
+  push:
+    branches:
+      - 'cram/residue-native-scale-dag'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Workload profile
+        type: choice
+        options:
+          - quick
+          - standard
+          - endurance
+        default: quick
+      configs:
+        description: Optional comma-separated configuration override
+        type: string
+        default: ''
+      workloads:
+        description: Optional comma-separated workload override
+        type: string
+        default: ''
+      seeds:
+        description: Optional comma-separated seed override
+        type: string
+        default: ''
+      include_bootstrap:
+        description: Include real-bootstrap threshold and exhaustion sweeps
+        type: boolean
+        default: false
+      candidate_walls:
+        description: Optional comma-separated candidate wall values
+        type: string
+        default: ''
+      trigger_permille:
+        description: Budget threshold in permille
+        type: string
+        default: '120'
+
+permissions:
+  contents: read
+
+jobs:
+  source-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate harness Python syntax
+        run: |
+          python3 -m py_compile \
+            scripts/cram_claim_inventory.py \
+            scripts/run_cram_exploratory_matrix.py \
+            scripts/cram_compare_results.py
+      - name: Capture structural claim inventory
+        run: |
+          mkdir -p artifacts/exploratory/source
+          python3 scripts/cram_claim_inventory.py \
+            --output artifacts/exploratory/source/claim_inventory.json
+      - name: Reject floating point in the new probe
+        run: |
+          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
+            crates/nine65/src/bin/cram_exploratory_probe.rs; then
+            echo 'floating-point token found in exploratory probe' >&2
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cram-source-claim-inventory
+          path: artifacts/exploratory/source
+
+  probe-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Format gate
+        run: cargo fmt --all -- --check
+      - name: Compile exploratory probe
+        run: |
+          cargo check --release -p nine65 \
+            --bin cram_exploratory_probe --features serde
+      - name: Build exploratory probe
+        run: |
+          cargo build --release -p nine65 \
+            --bin cram_exploratory_probe --features serde
+      - name: Run quick real-FHE matrix
+        id: matrix
+        continue-on-error: true
+        run: |
+          python3 scripts/run_cram_exploratory_matrix.py \
+            --profile quick \
+            --skip-build \
+            --output-dir artifacts/exploratory/quick
+      - name: Produce strict comparison report
+        if: always()
+        run: |
+          if test -f artifacts/exploratory/quick/manifest.json; then
+            python3 scripts/cram_compare_results.py \
+              artifacts/exploratory/quick/manifest.json \
+              --output artifacts/exploratory/quick/comparison.json
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cram-exploratory-quick
+          path: artifacts/exploratory/quick
+      - name: Enforce matrix result after artifact capture
+        if: always()
+        run: test '${{ steps.matrix.outcome }}' = 'success'
+
+  dispatched-matrix:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build exploratory probe
+        run: |
+          cargo build --release -p nine65 \
+            --bin cram_exploratory_probe --features serde
+      - name: Assemble dispatch arguments
+        id: args
+        shell: bash
+        run: |
+          args=(--profile '${{ inputs.profile }}' --skip-build \
+            --output-dir artifacts/exploratory/dispatched \
+            --trigger-permille '${{ inputs.trigger_permille }}')
+          if test -n '${{ inputs.configs }}'; then
+            args+=(--configs '${{ inputs.configs }}')
+          fi
+          if test -n '${{ inputs.workloads }}'; then
+            args+=(--workloads '${{ inputs.workloads }}')
+          fi
+          if test -n '${{ inputs.seeds }}'; then
+            args+=(--seeds '${{ inputs.seeds }}')
+          fi
+          if test -n '${{ inputs.candidate_walls }}'; then
+            args+=(--candidate-walls '${{ inputs.candidate_walls }}')
+          fi
+          if test '${{ inputs.include_bootstrap }}' = 'true'; then
+            args+=(--include-bootstrap)
+          fi
+          printf '%q ' "${args[@]}" > artifacts_args.txt
+      - name: Run dispatched exploratory matrix
+        id: dispatched
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p artifacts/exploratory/dispatched
+          # The argument file is generated entirely from typed workflow inputs.
+          eval "python3 scripts/run_cram_exploratory_matrix.py $(cat artifacts_args.txt)"
+      - name: Analyze compatible records
+        if: always()
+        run: |
+          if test -f artifacts/exploratory/dispatched/manifest.json; then
+            python3 scripts/cram_compare_results.py \
+              artifacts/exploratory/dispatched/manifest.json \
+              --output artifacts/exploratory/dispatched/comparison.json
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cram-exploratory-${{ inputs.profile }}
+          path: artifacts/exploratory/dispatched
+      - name: Enforce dispatched matrix after artifact capture
+        if: always()
+        run: test '${{ steps.dispatched.outcome }}' = 'success'
