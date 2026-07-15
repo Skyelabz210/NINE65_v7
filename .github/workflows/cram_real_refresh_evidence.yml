@@ -1,0 +1,62 @@
+name: CRAM Real Refresh Evidence
+
+on:
+  pull_request:
+    branches:
+      - "hardening/beyond-100-app-platform"
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "crates/nine65/src/bin/nine65_bench.rs"
+      - "crates/nine65/src/noise/budget.rs"
+      - "crates/nine65/src/ops/auto_bootstrap.rs"
+      - "crates/nine65/src/ops/bootstrap.rs"
+      - "crates/nine65/src/ops/rns_fhe.rs"
+      - "crates/nine65/src/ops/rns_mul.rs"
+      - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - ".github/workflows/cram_real_refresh_evidence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  forced-real-refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Compile exact benchmark
+        run: cargo check -p nine65 --bin nine65_bench --features serde
+
+      - name: Exact refresh-preflight regression
+        run: cargo test -p nine65 --release --test refresh_preflight_regression -- --nocapture
+
+      - name: Force and prove real automatic refresh
+        run: |
+          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+            --config secure_128_deep --max-depth 1 --auto-bootstrap \
+            --trigger-pct 100 --statistical-test \
+            --output /tmp/nine65-forced-refresh.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('/tmp/nine65-forced-refresh.json').read_text())
+          assert report['metadata']['integer_only_reporting'] is True
+          assert report['metadata']['simulated_refreshes'] == 0
+          assert report['metadata']['trigger_pct'] == 100
+          assert report['depth_chain']['correct'] is True
+          assert report['depth_chain']['final_depth'] == 1
+          assert report['depth_chain']['total_bootstrap_calls'] > 0
+          assert report['depth_chain']['exercised_real_refresh'] is True
+          assert report['statistical_test']['correct'] is True
+          assert report['statistical_test']['failures'] == 0
+          assert report['statistical_test']['total_bootstrap_calls'] > 0
+          assert report['statistical_test']['exercised_real_refresh'] is True
+          assert report['overall_correct'] is True
+          PY
