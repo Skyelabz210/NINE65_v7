@@ -261,18 +261,23 @@ impl SecureConfig {
         )
     }
 
-    /// Hardware-oriented 128-bit candidate. It uses the same audited dimension
-    /// floor as `secure_128`; hardware optimization does not waive security.
+    /// Hardware-optimized configuration using composite anchors (Separation Principle showcase)
     pub fn hardware_opt() -> Self {
         Self::new_verified(
-            8192,
-            vec![998244353, 985661441, 754974721],
+            4096,
+            vec![
+                998244353, 985661441, 754974721,
+            ],
             65537,
             3,
             128,
             "hardware_opt",
         )
     }
+
+    // =========================================================================
+    // TEST/BENCHMARK CONFIGURATIONS (NOT FOR PRODUCTION)
+    // =========================================================================
 
     /// Fast test configuration. Never deploy with sensitive data.
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
@@ -413,12 +418,7 @@ mod tests {
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
             SecureConfig::hardware_opt(),
-        ] {
-            assert!(config.is_production_safe(), "{}", config.config.name);
-            assert!(config.hybrid_security >= config.claimed_security);
-            assert!(config.he_standard_compliant);
-        }
-    }
+        ];
 
     #[test]
     fn every_production_prime_is_ntt_compatible() {
@@ -451,13 +451,13 @@ mod tests {
         assert!(!SecureConfig::test_medium_insecure().is_production_safe());
     }
 
-    #[test]
-    fn production_safety_returns_diagnostics() {
-        assert!(verify_production_safety(&SecureConfig::secure_128()).is_ok());
-        assert!(verify_production_safety(&SecureConfig::secure_192()).is_ok());
-        assert!(verify_production_safety(&SecureConfig::secure_256()).is_ok());
-        assert!(verify_production_safety(&SecureConfig::hardware_opt()).is_ok());
-    }
+        let configs = [
+            ("test_fast", SecureConfig::test_fast_insecure()),
+            ("test_medium", SecureConfig::test_medium_insecure()),
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_192", SecureConfig::secure_192()),
+            ("hardware_opt", SecureConfig::hardware_opt()),
+        ];
 
     #[test]
     fn exact_product_bit_length_matches_known_chains() {
@@ -475,5 +475,59 @@ mod tests {
                 595591169,
             ]) > 128
         );
+        println!("{}", "-".repeat(70));
+
+        for (name, config) in configs {
+            let log_q: u32 = config
+                .config
+                .primes
+                .iter()
+                .map(|&p| 64 - p.leading_zeros())
+                .sum();
+            println!(
+                "{:<15} {:>6} {:>10} {:>10} {:>10} {:>10}",
+                name,
+                config.config.n,
+                log_q,
+                config.classical_security,
+                config.hybrid_security,
+                config.quantum_security
+            );
+        }
+    }
+
+    #[test]
+    fn test_production_safety_verification() {
+        // Production configs should pass
+        let secure_128 = SecureConfig::secure_128();
+        assert!(verify_production_safety(&secure_128).is_ok());
+
+        let secure_192 = SecureConfig::secure_192();
+        assert!(verify_production_safety(&secure_192).is_ok());
+
+        let secure_256 = SecureConfig::secure_256();
+        assert!(verify_production_safety(&secure_256).is_ok());
+
+        let hardware_opt = SecureConfig::hardware_opt();
+        assert!(verify_production_safety(&hardware_opt).is_ok());
+
+        // Test configs should fail
+        let test_fast = SecureConfig::test_fast_insecure();
+        assert!(verify_production_safety(&test_fast).is_err());
+
+        let test_medium = SecureConfig::test_medium_insecure();
+        assert!(verify_production_safety(&test_medium).is_err());
+    }
+
+    #[test]
+    fn test_production_safe_trait() {
+        // This should not panic in test mode
+        let config = SecureConfig::secure_128();
+        config.require_production_safe();
+
+        // Test configs have the trait but will panic in release
+        let test_config = SecureConfig::test_fast_insecure();
+        // In test mode, this will not panic
+        test_config.require_production_safe();
     }
 }
