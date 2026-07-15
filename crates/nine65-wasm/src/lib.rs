@@ -3,7 +3,6 @@ mod wasm_impl {
     use wasm_bindgen::prelude::*;
 
     use nine65::arithmetic::boundary::{capacity_proximity_bits, CapacityRegion};
-    use nine65::entropy::ShadowHarvester;
     use nine65::errors::Nine65Error;
     use nine65::keys::{EvaluationKey, KeySet, PublicKey, SecretKey};
     use nine65::ops::{BFVDecryptor, BFVEncoder, BFVEncryptor, BFVEvaluator, Ciphertext};
@@ -11,18 +10,12 @@ mod wasm_impl {
     use nine65::params::FHEConfig;
     use nine65::prelude::NTTEngine;
 
-    // ─── WASM binding boundary thresholds ─────────────────────────────────────
-    //
-    // WASM context: JavaScript callers have no access to Rust panic messages.
-    // A panic in WASM silently terminates the computation or returns undefined.
-    // These checks are MORE CONSERVATIVE than even the PyO3 checks.
-    //
-    // 80% → console.warn via returned JsValue (operation proceeds)
-    // 90% → return Err(JsValue) before operation runs
+    // This crate currently exposes the legacy single-modulus BFV client surface.
+    // It does not expose DualRNS, K-Elimination, or automatic bootstrap.
+    const WIDE_INTERMEDIATE_CAPACITY_BITS: u32 = 127;
     const WASM_WARN_PCT: u32 = 80;
     const WASM_ERROR_PCT: u32 = 90;
 
-    /// Compute intermediate value bit-length for a given FHE config.
     fn intermediate_bits(cfg: &FHEConfig) -> u32 {
         if cfg.q == 0 || cfg.n == 0 {
             return 0;
@@ -32,33 +25,26 @@ mod wasm_impl {
         n_bits + 2 * q_bits
     }
 
-    /// Validate config capacity and return Ok or Err(JsValue).
-    ///
-    /// At 80% threshold: returns Ok (operation proceeds) but caller should
-    /// surface a JS console warning via the returned message.
-    /// At 90% threshold: returns Err(JsValue) — operation blocked.
     fn validate_config_capacity(cfg: &FHEConfig) -> Result<Option<String>, JsValue> {
-        let anchor_capacity_bits: u32 = 159;
         let intermediate = intermediate_bits(cfg);
-        let report = capacity_proximity_bits(intermediate, anchor_capacity_bits);
+        let report = capacity_proximity_bits(intermediate, WIDE_INTERMEDIATE_CAPACITY_BITS);
 
         match report.region {
             CapacityRegion::Critical | CapacityRegion::Warn90 => Err(JsValue::from_str(&format!(
-                "NINE65 WASM: FHE config '{}' (n={}, q={}) intermediate values ({} bits) \
-                 are {}%+ of anchor capacity ({} bits). \
-                 ct×ct multiplication would overflow anchor boundary. \
-                 Use a smaller N or Q configuration.",
+                "NINE65 WASM single-modulus BFV config '{}' (n={}, q={}) requires {} intermediate bits, at or above the {}% boundary of the {}-bit checked wide-integer capacity. Use a smaller supported configuration.",
                 cfg.name,
                 cfg.n,
                 cfg.q,
                 intermediate,
                 WASM_ERROR_PCT,
-                anchor_capacity_bits,
+                WIDE_INTERMEDIATE_CAPACITY_BITS,
             ))),
             CapacityRegion::Warn80 => Ok(Some(format!(
-                "NINE65 WASM warning: config '{}' intermediate values ({} bits) are {}% \
-                 of anchor capacity ({} bits). Monitor ct×ct operations carefully.",
-                cfg.name, intermediate, report.utilization_pct, anchor_capacity_bits,
+                "NINE65 WASM warning: config '{}' requires {} intermediate bits ({}% of the {}-bit checked wide-integer capacity).",
+                cfg.name,
+                intermediate,
+                report.utilization_pct,
+                WIDE_INTERMEDIATE_CAPACITY_BITS,
             ))),
             CapacityRegion::Safe => Ok(None),
         }
@@ -81,11 +67,11 @@ mod wasm_impl {
     }
 
     fn serialize<T: serde::Serialize>(value: &T) -> Result<Vec<u8>, JsValue> {
-        bincode::serialize(value).map_err(|e| JsValue::from_str(&e.to_string()))
+        bincode::serialize(value).map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     fn deserialize<T: serde::de::DeserializeOwned>(bytes: &[u8]) -> Result<T, JsValue> {
-        bincode::deserialize(bytes).map_err(|e| JsValue::from_str(&e.to_string()))
+        bincode::deserialize(bytes).map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     #[wasm_bindgen]
@@ -109,35 +95,36 @@ mod wasm_impl {
                     ))
                 }
             };
-            let cfg = clone_config(&secure.config);
+            let config = clone_config(&secure.config);
+            let _warning = validate_config_capacity(&config)?;
+            let ntt = NTTEngine::try_new(config.q, config.n).map_err(map_err)?;
+            let encoder = BFVEncoder::new(&config);
 
-            // Boundary check: verify this config's intermediate values won't overflow
-            // the anchor capacity. WASM callers cannot recover from Rust panics, so
-            // we must catch this at construction time.
-            if let Some(warning) = validate_config_capacity(&cfg)? {
-                // Log warning to browser console via web_sys if available,
-                // otherwise this is a no-op (warning surfaced to JS callers
-                // who query boundary_report()).
-                let _ = warning; // surfaced via boundary_report() method
-            }
-
-            let ntt = NTTEngine::new(cfg.q, cfg.n);
-            let encoder = BFVEncoder::new(&cfg);
-            Ok(WasmFHEContext {
-                config: cfg,
+            Ok(Self {
+                config,
                 ntt,
                 encoder,
             })
         }
 
-        /// Return boundary proximity report as a JSON-compatible string.
-        ///
-        /// JavaScript callers should check this after construction.
-        /// Format: "safe|{pct}|{bits}/{capacity}" or "warn80|...", "warn90|...", "critical|..."
+        /// Current browser surface identifier.
+        pub fn surface(&self) -> String {
+            "single-modulus-bfv-leveled".to_string()
+        }
+
+        pub fn supports_dual_rns(&self) -> bool {
+            false
+        }
+
+        pub fn supports_auto_bootstrap(&self) -> bool {
+            false
+        }
+
+        /// Format: `safe|pct|bits/capacity`, `warn80|...`, `warn90|...`, or `critical|...`.
         pub fn boundary_report(&self) -> String {
             let intermediate = intermediate_bits(&self.config);
-            let anchor_bits: u32 = 159;
-            let report = capacity_proximity_bits(intermediate, anchor_bits);
+            let report =
+                capacity_proximity_bits(intermediate, WIDE_INTERMEDIATE_CAPACITY_BITS);
             let region = match report.region {
                 CapacityRegion::Safe => "safe",
                 CapacityRegion::Warn80 => "warn80",
@@ -162,22 +149,93 @@ mod wasm_impl {
             self.config.t
         }
 
-        pub fn generate_keyset_seeded(&self, seed: u64) -> WasmKeySet {
-            let mut harvester = ShadowHarvester::with_seed(seed);
-            let keys = KeySet::generate(&self.config, &self.ntt, &mut harvester);
-            WasmKeySet { inner: keys }
+        /// Generate keys with browser OS cryptographic randomness.
+        pub fn generate_keyset(&self) -> Result<WasmKeySet, JsValue> {
+            let keys = KeySet::try_generate_secure(&self.config, &self.ntt).map_err(map_err)?;
+            Ok(WasmKeySet { inner: keys })
         }
 
-        pub fn encrypt_seeded(
+        /// Deterministic key generation is available only in debug/test builds.
+        pub fn generate_keyset_seeded_for_test(&self, seed: u64) -> Result<WasmKeySet, JsValue> {
+            #[cfg(debug_assertions)]
+            {
+                let mut harvester = nine65::entropy::ShadowHarvester::with_seed(seed);
+                let keys = KeySet::generate(&self.config, &self.ntt, &mut harvester);
+                Ok(WasmKeySet { inner: keys })
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                let _ = seed;
+                Err(JsValue::from_str(
+                    "deterministic key generation is disabled in release builds",
+                ))
+            }
+        }
+
+        /// Encrypt with browser OS cryptographic randomness.
+        pub fn encrypt(
+            &self,
+            value: u64,
+            public_key: &WasmPublicKey,
+        ) -> Result<Vec<u8>, JsValue> {
+            public_key
+                .inner
+                .validate(self.config.n, self.config.q)
+                .map_err(map_err)?;
+            let encryptor =
+                BFVEncryptor::new(&public_key.inner, &self.encoder, &self.ntt, self.config.eta);
+            let ciphertext = encryptor.try_encrypt_secure(value).map_err(map_err)?;
+            serialize(&ciphertext)
+        }
+
+        /// Deterministic encryption is available only in debug/test builds.
+        pub fn encrypt_seeded_for_test(
             &self,
             value: u64,
             public_key: &WasmPublicKey,
             seed: u64,
         ) -> Result<Vec<u8>, JsValue> {
-            let encryptor =
-                BFVEncryptor::new(&public_key.inner, &self.encoder, &self.ntt, self.config.eta);
-            let ct = encryptor.try_encrypt_seeded(value, seed).map_err(map_err)?;
-            serialize(&ct)
+            #[cfg(debug_assertions)]
+            {
+                public_key
+                    .inner
+                    .validate(self.config.n, self.config.q)
+                    .map_err(map_err)?;
+                let encryptor = BFVEncryptor::new(
+                    &public_key.inner,
+                    &self.encoder,
+                    &self.ntt,
+                    self.config.eta,
+                );
+                let ciphertext = encryptor
+                    .try_encrypt_seeded(value, seed)
+                    .map_err(map_err)?;
+                serialize(&ciphertext)
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                let _ = (value, public_key, seed);
+                Err(JsValue::from_str(
+                    "deterministic encryption is disabled in release builds",
+                ))
+            }
+        }
+
+        pub fn public_key_from_bytes(&self, data: &[u8]) -> Result<WasmPublicKey, JsValue> {
+            let key: PublicKey = deserialize(data)?;
+            key.validate(self.config.n, self.config.q)
+                .map_err(map_err)?;
+            Ok(WasmPublicKey { inner: key })
+        }
+
+        pub fn evaluation_key_from_bytes(
+            &self,
+            data: &[u8],
+        ) -> Result<WasmEvaluationKey, JsValue> {
+            let key: EvaluationKey = deserialize(data)?;
+            key.validate(self.config.n, self.config.q)
+                .map_err(map_err)?;
+            Ok(WasmEvaluationKey { inner: key })
         }
 
         pub fn decrypt(
@@ -185,65 +243,69 @@ mod wasm_impl {
             ciphertext: &[u8],
             secret_key: &WasmSecretKey,
         ) -> Result<u64, JsValue> {
-            let ct: Ciphertext = deserialize(ciphertext)?;
+            let ciphertext = self.decode_ciphertext(ciphertext)?;
+            secret_key
+                .inner
+                .s
+                .validate(self.config.n, self.config.q)
+                .map_err(map_err)?;
             let decryptor = BFVDecryptor::new(&secret_key.inner, &self.encoder, &self.ntt);
-            Ok(decryptor.decrypt(&ct))
+            Ok(decryptor.decrypt(&ciphertext))
         }
 
-        pub fn add(&self, ct_a: &[u8], ct_b: &[u8]) -> Result<Vec<u8>, JsValue> {
-            let a: Ciphertext = deserialize(ct_a)?;
-            let b: Ciphertext = deserialize(ct_b)?;
+        pub fn add(&self, left: &[u8], right: &[u8]) -> Result<Vec<u8>, JsValue> {
+            let left = self.decode_ciphertext(left)?;
+            let right = self.decode_ciphertext(right)?;
             let evaluator = BFVEvaluator::new(&self.ntt, &self.encoder, None);
-            let result = evaluator.add(&a, &b);
-            serialize(&result)
+            serialize(&evaluator.add(&left, &right))
         }
 
-        pub fn add_plain(&self, ct: &[u8], value: u64) -> Result<Vec<u8>, JsValue> {
+        pub fn add_plain(&self, ciphertext: &[u8], value: u64) -> Result<Vec<u8>, JsValue> {
             if value >= self.config.t {
                 return Err(JsValue::from_str("plaintext value exceeds modulus"));
             }
-            let ciphertext: Ciphertext = deserialize(ct)?;
+            let ciphertext = self.decode_ciphertext(ciphertext)?;
             let evaluator = BFVEvaluator::new(&self.ntt, &self.encoder, None);
-            let result = evaluator.add_plain(&ciphertext, value);
-            serialize(&result)
+            serialize(&evaluator.add_plain(&ciphertext, value))
         }
 
-        pub fn mul_plain(&self, ct: &[u8], value: u64) -> Result<Vec<u8>, JsValue> {
-            let ciphertext: Ciphertext = deserialize(ct)?;
+        pub fn mul_plain(&self, ciphertext: &[u8], value: u64) -> Result<Vec<u8>, JsValue> {
+            if value >= self.config.t {
+                return Err(JsValue::from_str("plaintext value exceeds modulus"));
+            }
+            let ciphertext = self.decode_ciphertext(ciphertext)?;
             let evaluator = BFVEvaluator::new(&self.ntt, &self.encoder, None);
-            let result = evaluator.mul_plain(&ciphertext, value);
-            serialize(&result)
+            serialize(&evaluator.mul_plain(&ciphertext, value))
         }
 
-        /// Homomorphic multiplication with pre-operation boundary validation.
-        ///
-        /// Checks anchor capacity thresholds (80%/90%) before multiplying.
-        /// Returns Err(JsValue) at 90%+ to prevent WASM panic (which in browsers
-        /// silently kills the computation with no error message).
+        /// Leveled single-modulus multiplication. This is not DualRNS auto-bootstrap.
         #[allow(deprecated)]
         pub fn mul(
             &self,
-            ct_a: &[u8],
-            ct_b: &[u8],
-            eval_key: &WasmEvaluationKey,
+            left: &[u8],
+            right: &[u8],
+            evaluation_key: &WasmEvaluationKey,
         ) -> Result<Vec<u8>, JsValue> {
-            // Pre-operation boundary check — WASM panics are silent in browsers
-            let intermediate = intermediate_bits(&self.config);
-            let report = capacity_proximity_bits(intermediate, 159u32);
-            if report.region >= CapacityRegion::Warn90 {
-                return Err(JsValue::from_str(&format!(
-                    "NINE65 WASM mul(): anchor capacity at {}% ({}/{} bits). \
-                     Operation blocked to prevent silent WASM panic. \
-                     Use a smaller config or ensure bootstrap before this operation.",
-                    report.utilization_pct, report.value_bits, report.capacity_bits,
-                )));
-            }
+            validate_config_capacity(&self.config)?;
+            evaluation_key
+                .inner
+                .validate(self.config.n, self.config.q)
+                .map_err(map_err)?;
+            let left = self.decode_ciphertext(left)?;
+            let right = self.decode_ciphertext(right)?;
+            let evaluator =
+                BFVEvaluator::new(&self.ntt, &self.encoder, Some(&evaluation_key.inner));
+            serialize(&evaluator.mul(&left, &right))
+        }
+    }
 
-            let a: Ciphertext = deserialize(ct_a)?;
-            let b: Ciphertext = deserialize(ct_b)?;
-            let evaluator = BFVEvaluator::new(&self.ntt, &self.encoder, Some(&eval_key.inner));
-            let result = evaluator.mul(&a, &b);
-            serialize(&result)
+    impl WasmFHEContext {
+        fn decode_ciphertext(&self, bytes: &[u8]) -> Result<Ciphertext, JsValue> {
+            let ciphertext: Ciphertext = deserialize(bytes)?;
+            ciphertext
+                .validate(self.config.n, self.config.q)
+                .map_err(map_err)?;
+            Ok(ciphertext)
         }
     }
 
@@ -283,11 +345,6 @@ mod wasm_impl {
         pub fn to_bytes(&self) -> Result<Vec<u8>, JsValue> {
             serialize(&self.inner)
         }
-
-        pub fn from_bytes(data: &[u8]) -> Result<WasmPublicKey, JsValue> {
-            let key: PublicKey = deserialize(data)?;
-            Ok(WasmPublicKey { inner: key })
-        }
     }
 
     #[wasm_bindgen]
@@ -311,11 +368,6 @@ mod wasm_impl {
     impl WasmEvaluationKey {
         pub fn to_bytes(&self) -> Result<Vec<u8>, JsValue> {
             serialize(&self.inner)
-        }
-
-        pub fn from_bytes(data: &[u8]) -> Result<WasmEvaluationKey, JsValue> {
-            let key: EvaluationKey = deserialize(data)?;
-            Ok(WasmEvaluationKey { inner: key })
         }
     }
 }

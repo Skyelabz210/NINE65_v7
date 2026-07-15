@@ -1,229 +1,107 @@
-#!/bin/bash
-# scripts/verify_constant_time.sh
+#!/usr/bin/env bash
+# Source-level constant-time verification for NINE65.
 #
-# Constant-Time Verification Script for NINE65 v7
-# 
-# This script runs a suite of constant-time verification checks:
-# 1. Statistical timing analysis (dudect-style)
-# 2. Code pattern scanning for timing leaks
-# 3. Clippy lints for common timing vulnerabilities
-#
-# Usage: ./scripts/verify_constant_time.sh [--verbose]
+# This script fails closed on source-invariant regressions. It does not claim
+# compiler, cache, timing, speculative-execution, power, or EM closure.
 
-set -e
+set -euo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-VERBOSE=false
-if [[ "$1" == "--verbose" ]]; then
-    VERBOSE=true
+VERBOSE=0
+if [[ "${1:-}" == "--verbose" ]]; then
+  VERBOSE=1
+elif [[ -n "${1:-}" ]]; then
+  echo "usage: $0 [--verbose]" >&2
+  exit 64
 fi
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   NINE65 v7 Constant-Time Verification Suite          ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════╝${NC}"
-echo ""
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
 
-# Track pass/fail
-PASS_COUNT=0
-FAIL_COUNT=0
-WARN_COUNT=0
-
-# Function to report results
-report() {
-    local status=$1
-    local test_name=$2
-    local message=$3
-    
-    case $status in
-        PASS)
-            echo -e "${GREEN}[PASS]${NC} $test_name"
-            ((PASS_COUNT++))
-            ;;
-        FAIL)
-            echo -e "${RED}[FAIL]${NC} $test_name"
-            if [ -n "$message" ]; then
-                echo -e "       ${RED}$message${NC}"
-            fi
-            ((FAIL_COUNT++))
-            ;;
-        WARN)
-            echo -e "${YELLOW}[WARN]${NC} $test_name"
-            if [ -n "$message" ]; then
-                echo -e "       ${YELLOW}$message${NC}"
-            fi
-            ((WARN_COUNT++))
-            ;;
-    esac
-}
-
-# ============================================================================
-# Step 1: Code Pattern Scanning
-# ============================================================================
-echo -e "${BLUE}[1/4] Scanning for timing leak patterns...${NC}"
-
-# Check for data-dependent branches in secret-key paths
-SECRET_FILES=(
-    "crates/nine65/src/arithmetic/k_elimination.rs"
-    "crates/nine65/src/arithmetic/montgomery.rs"
-    "crates/nine65/src/arithmetic/barrett.rs"
-    "crates/nine65/src/security/secret_data.rs"
+required_files=(
+  "crates/nine65/src/arithmetic/ntt_fft.rs"
+  "crates/nine65/src/arithmetic/montgomery.rs"
+  "crates/nine65/src/arithmetic/persistent_montgomery.rs"
+  "crates/nine65/src/arithmetic/k_elimination.rs"
+  "crates/nine65/src/security/secret_data.rs"
+  "scripts/check_ct_ntt_source.py"
+  "docs/CT_NTT_AUDIT_2026-07-13.md"
+  "docs/SIDE_CHANNEL_THREAT_MODEL.md"
 )
 
-BRANCH_PATTERNS=(
-    "if\s+\w+\s*<\s*\w+"
-    "if\s+\w+\s*>\s*\w+"
-    "if\s+\w+\s*==\s*\w+"
-    "match\s+\w+\s*\{"
-)
-
-for file in "${SECRET_FILES[@]}"; do
-    if [ ! -f "$file" ]; then
-        report "WARN" "$file" "File not found"
-        continue
-    fi
-    
-    # Check for non-CT patterns (excluding ct_ functions and tests)
-    # Look for branching on potentially secret data
-    BRANCH_COUNT=$(grep -n "if\s.*<?\|if\s.*>?\|if\s.*==\|if\s.*!=" "$file" 2>/dev/null | \
-        grep -v "ct_\|_ct\|test_\|#\[test\]|//\|mask\|borrow" | wc -l || echo 0)
-    
-    if [ "$BRANCH_COUNT" -gt 0 ]; then
-        if $VERBOSE; then
-            report "WARN" "$file" "Found $BRANCH_COUNT potential timing-sensitive branches"
-            grep -n "if\s.*<?\|if\s.*>?\|if\s.*==\|if\s.*!=" "$file" 2>/dev/null | \
-                grep -v "ct_\|_ct\|test_\|#\[test\]|//\|mask\|borrow" | head -5
-        else
-            report "WARN" "$file" "Found $BRANCH_COUNT potential timing-sensitive branches"
-        fi
-    else
-        report "PASS" "$file" "No obvious timing leaks"
-    fi
-done
-
-echo ""
-
-# ============================================================================
-# Step 2: Clippy Lints for Timing Vulnerabilities
-# ============================================================================
-echo -e "${BLUE}[2/4] Running Clippy timing vulnerability lints...${NC}"
-
-# Run clippy with timing-related lints
-CLIPPY_OUTPUT=$(cargo clippy --package nine65 -- \
-    -D clippy::indexing_slicing \
-    -D clippy::unwrap_used \
-    -W clippy::cast_possible_truncation \
-    -W clippy::cast_sign_loss \
-    2>&1 || true)
-
-# Check for indexing_slicing (can leak timing info)
-INDEXING_COUNT=$(echo "$CLIPPY_OUTPUT" | grep -c "indexing_slicing" || echo 0)
-if [ "$INDEXING_COUNT" -gt 0 ]; then
-    report "WARN" "indexing_slicing" "$INDEXING_COUNT instances found"
-else
-    report "PASS" "indexing_slicing" "No unsafe indexing"
-fi
-
-# Check for unwrap_used (can panic on secret data)
-UNWRAP_COUNT=$(echo "$CLIPPY_OUTPUT" | grep -c "unwrap_used" || echo 0)
-if [ "$UNWRAP_COUNT" -gt 0 ]; then
-    report "WARN" "unwrap_used" "$UNWRAP_COUNT instances found"
-else
-    report "PASS" "unwrap_used" "No unsafe unwraps"
-fi
-
-# Check for cast_possible_truncation (timing leak via truncation)
-CAST_COUNT=$(echo "$CLIPPY_OUTPUT" | grep -c "cast_possible_truncation" || echo 0)
-if [ "$CAST_COUNT" -gt 0 ]; then
-    report "WARN" "cast_possible_truncation" "$CAST_COUNT instances found"
-else
-    report "PASS" "cast_possible_truncation" "No unsafe casts"
-fi
-
-echo ""
-
-# ============================================================================
-# Step 3: Statistical Timing Tests
-# ============================================================================
-echo -e "${BLUE}[3/4] Running statistical timing tests...${NC}"
-
-# Run the statistical timing tests
-STAT_TEST_OUTPUT=$(cargo test --package nine65 --release constant_time_statistical -- --nocapture 2>&1 || true)
-
-if echo "$STAT_TEST_OUTPUT" | grep -q "test result: ok"; then
-    report "PASS" "statistical_timing" "All statistical CT tests passed"
-elif echo "$STAT_TEST_OUTPUT" | grep -q "test result: FAILED"; then
-    report "FAIL" "statistical_timing" "Statistical CT tests failed"
-    if $VERBOSE; then
-        echo "$STAT_TEST_OUTPUT" | grep -A 5 "FAILED"
-    fi
-else
-    report "WARN" "statistical_timing" "Tests not found or skipped"
-fi
-
-echo ""
-
-# ============================================================================
-# Step 4: Constant-Time Function Verification
-# ============================================================================
-echo -e "${BLUE}[4/4] Verifying constant-time function annotations...${NC}"
-
-# Check for CT function markers
-CT_FUNCTIONS=(
-    "extract_k"
-    "extract_k_vartime"
-    "montgomery_reduce"
-    "montgomery_mul"
-    "barrett_reduce"
-    "detect_sign"
-)
-
-for func in "${CT_FUNCTIONS[@]}"; do
-    # Check if function exists and has CT implementation
-    if grep -q "fn ${func}" crates/nine65/src/arithmetic/*.rs; then
-        # Check for CT markers or comments
-        if grep -B5 "fn ${func}" crates/nine65/src/arithmetic/*.rs | grep -q "CONSTANT-TIME\|constant-time\|ct_\|_ct"; then
-            report "PASS" "$func" "Marked as constant-time"
-        else
-            report "WARN" "$func" "Missing CT annotation"
-        fi
-    else
-        report "WARN" "$func" "Function not found"
-    fi
-done
-
-echo ""
-
-# ============================================================================
-# Summary
-# ============================================================================
-echo -e "${BLUE}╔════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║                  Verification Summary                  ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════╝${NC}"
-echo ""
-echo -e "  ${GREEN}PASS:${NC} $PASS_COUNT"
-echo -e "  ${YELLOW}WARN:${NC} $WARN_COUNT"
-echo -e "  ${RED}FAIL:${NC} $FAIL_COUNT"
-echo ""
-
-if [ "$FAIL_COUNT" -gt 0 ]; then
-    echo -e "${RED}❌ Verification FAILED${NC}"
-    echo ""
-    echo "Critical issues found. Please review the failures above."
+for path in "${required_files[@]}"; do
+  if [[ ! -f "$path" ]]; then
+    echo "FAIL missing required CT artifact: $path" >&2
     exit 1
-elif [ "$WARN_COUNT" -gt 0 ]; then
-    echo -e "${YELLOW}⚠ Verification PASSED with warnings${NC}"
-    echo ""
-    echo "Review warnings for potential timing leak improvements."
-    exit 0
-else
-    echo -e "${GREEN}✓ Verification PASSED${NC}"
-    echo ""
-    echo "All constant-time checks passed successfully."
-    exit 0
+  fi
+done
+
+echo "[1/5] NTT and Montgomery source invariants"
+python3 scripts/check_ct_ntt_source.py
+
+echo "[2/5] Explicit public-only variable-time boundaries"
+grep -Fq "Variable-time exponentiation for public setup values only" \
+  crates/nine65/src/arithmetic/montgomery.rs
+grep -Fq "Variable-time setup operation over public parameters only" \
+  crates/nine65/src/arithmetic/ntt_fft.rs
+grep -Fq "Variable-time setup helper over public values" \
+  crates/nine65/src/arithmetic/ntt_fft.rs
+
+echo "[3/5] CLASS-F / CLASS-R separation"
+grep -Fq "CLASS-F NTT modulus must be prime" \
+  crates/nine65/src/arithmetic/ntt_fft.rs
+grep -Fq "this layer is CLASS-R" \
+  crates/nine65/src/arithmetic/persistent_montgomery.rs
+grep -Fq "odd_composite_class_r_modulus_is_supported" \
+  crates/nine65/src/arithmetic/persistent_montgomery.rs
+grep -Fq "odd_composite_class_r_modulus_is_supported" \
+  crates/nine65/src/arithmetic/montgomery.rs
+
+echo "[4/5] Claim boundary and residual-risk language"
+grep -Fq "compiler/disassembly and hardware evidence pending" \
+  docs/SIDE_CHANNEL_THREAT_MODEL.md
+grep -Fq "universal constant-time claim" \
+  docs/CT_NTT_AUDIT_2026-07-13.md
+grep -Fq "compiler_disassembly_verified\": False" \
+  scripts/check_ct_ntt_source.py
+grep -Fq "empirical_timing_verified\": False" \
+  scripts/check_ct_ntt_source.py
+grep -Fq "cache_line_alignment_verified\": False" \
+  scripts/check_ct_ntt_source.py
+
+echo "[5/5] High-risk source pattern checks"
+TMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$TMP_DIR"' EXIT
+
+for source in \
+  crates/nine65/src/arithmetic/ntt_fft.rs \
+  crates/nine65/src/arithmetic/montgomery.rs \
+  crates/nine65/src/arithmetic/persistent_montgomery.rs; do
+  output="$TMP_DIR/$(basename "$source")"
+  sed '/#\[cfg(test)\]/,$d' "$source" > "$output"
+done
+
+if grep -nE 'if[[:space:]]+sum[[:space:]]*>=[[:space:]]*self\.(q|m)' "$TMP_DIR"/*; then
+  echo "FAIL branchy modular-add pattern returned" >&2
+  exit 1
 fi
+
+if grep -nE 'if[[:space:]]+(a|left|x)[[:space:]]*>=[[:space:]]*(b|right|y)' "$TMP_DIR"/*; then
+  echo "FAIL branchy modular-subtract pattern returned" >&2
+  exit 1
+fi
+
+if grep -nE 'if[[:space:]]+(a|value|x)[[:space:]]*==[[:space:]]*0' \
+    "$TMP_DIR/ntt_fft.rs" "$TMP_DIR/montgomery.rs"; then
+  echo "FAIL branchy secret-value zero check returned in CT core" >&2
+  exit 1
+fi
+
+if [[ "$VERBOSE" -eq 1 ]]; then
+  echo "Residual gates intentionally OPEN:"
+  echo "  - compiler IR/disassembly review"
+  echo "  - cache-line/alignment and address-trace evidence"
+  echo "  - fixed-vs-random target timing diagnostics"
+  echo "  - speculative execution, scheduler, SMT, power, and EM analysis"
+fi
+
+echo "PASS source-level CT invariants; target-specific closure remains open"

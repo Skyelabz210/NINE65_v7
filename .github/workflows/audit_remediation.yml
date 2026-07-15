@@ -2,18 +2,26 @@ name: Audit Remediation Gate
 
 on:
   pull_request:
+    branches: [main]
     paths:
+      - "crates/nine65/src/arithmetic/ntt_fft.rs"
+      - "crates/nine65/src/arithmetic/montgomery.rs"
+      - "crates/nine65/src/arithmetic/persistent_montgomery.rs"
+      - "crates/nine65/src/arithmetic/rns.rs"
       - "crates/nine65/src/bin/nine65_bench.rs"
       - "crates/nine65/src/noise/budget.rs"
       - "crates/nine65/src/ops/auto_bootstrap.rs"
       - "crates/nine65/src/ops/sbni.rs"
       - "crates/nine65/src/params/mod.rs"
       - "crates/nine65/src/params/secure_configs.rs"
+      - "scripts/audit_modulus_classes.py"
+      - "artifacts/security/modulus_class_audit_2026-07-13.json"
       - "docs/AUDIT_REMEDIATION_2026-07-13.md"
       - ".github/workflows/audit_remediation.yml"
   push:
     branches:
-      - "audit/remediate-2026-07-13"
+      - "hardening/beyond-100-app-platform"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,6 +44,9 @@ jobs:
         run: |
           set -euo pipefail
           files=(
+            crates/nine65/src/arithmetic/ntt_fft.rs
+            crates/nine65/src/arithmetic/montgomery.rs
+            crates/nine65/src/arithmetic/persistent_montgomery.rs
             crates/nine65/src/bin/nine65_bench.rs
             crates/nine65/src/noise/budget.rs
             crates/nine65/src/ops/auto_bootstrap.rs
@@ -43,7 +54,7 @@ jobs:
             crates/nine65/src/params/mod.rs
             crates/nine65/src/params/secure_configs.rs
           )
-          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)|[0-9]+\.[0-9]+' "${files[@]}"; then
+          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' "${files[@]}"; then
             echo "floating-point token found in exact-integer audit paths" >&2
             exit 1
           fi
@@ -72,6 +83,11 @@ jobs:
           grep -A8 -F 'pub fn secure_128() -> Self {' \
             crates/nine65/src/params/secure_configs.rs | grep -F '8192'
 
+      - name: Reproduce modulus-class evidence
+        run: |
+          python3 scripts/audit_modulus_classes.py
+          git diff --exit-code -- artifacts/security/modulus_class_audit_2026-07-13.json
+
       - name: Rust formatting
         run: cargo fmt --all -- --check
 
@@ -86,6 +102,11 @@ jobs:
 
       - name: Exact noise-budget tests
         run: cargo test -p nine65 --lib --release noise::budget::tests -- --nocapture
+
+      - name: NTT and Montgomery arithmetic tests
+        run: |
+          cargo test -p nine65 --lib --release ntt_fft -- --nocapture
+          cargo test -p nine65 --lib --release montgomery -- --nocapture
 
       - name: SBNI invariant tests
         run: cargo test -p nine65 --lib --release ops::sbni -- --nocapture

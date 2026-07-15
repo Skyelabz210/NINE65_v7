@@ -7,6 +7,7 @@
 //! - **NTT Gen 3**: Negacyclic convolution with ψ-twist
 //! - **RNS/CRT**: Parallel computation across coprime moduli
 //! - **K-Elimination**: Exact polynomial division (50× speedup)
+//! - **Bounded Residue Division**: Proof-carrying quotient projection
 //! - **Exact Divider**: Dual-track integer reconstruction
 //! - **Exact Coeff**: Dual-track coefficient representation
 //! - **CT Mul Exact**: Exact ciphertext multiplication
@@ -33,6 +34,7 @@ pub mod ntt_fft; // V2: O(N log N) FFT-based NTT (500-2000× faster)
 pub mod order_finding; // NON-CIRCULAR BSGS (Shor's classical reduction)
 pub mod pade_engine; // INTEGER TRANSCENDENTALS (exp/sin/cos/sigmoid)
 pub mod persistent_montgomery; // MONTGOMERY FORM
+pub mod residue_division; // PROOF-CARRYING BOUNDED QUOTIENT PROJECTION
 pub mod rns;
 pub mod transcendental_backend; // FEATURE-GATED EXACT TRANSCENDENTAL ADAPTER
 pub mod valuation; // INTEGER UTILITIES (log2, sqrt, format, trig LUT)
@@ -74,6 +76,11 @@ pub use order_finding::{
     verify_order_k_elimination, FactorResult, KRecurrence, OrderResult,
 };
 pub use pade_engine::{PadeEngine, PADE_SCALE};
+pub use residue_division::{
+    validate_residue_division_request, validate_residue_division_result, BoundedResidueDivider,
+    ResidueBasisRef, ResidueDivisionCertificate, ResidueDivisionRequest, ResidueDivisionResult,
+    ResidueDivisorRef, ResidueStateRef,
+};
 pub(crate) use rns::{compute_delta_rns_overflow_safe, U256};
 pub use rns::{DualRNSContext, DualRNSPolynomial, DualRNSValue, RNSContext, RNSPolynomial};
 

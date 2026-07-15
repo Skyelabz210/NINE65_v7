@@ -1,0 +1,179 @@
+name: Application Platform Gates
+
+on:
+  push:
+    branches:
+      - hardening/beyond-100-app-platform
+    paths:
+      - 'crates/fhe-service/**'
+      - 'crates/nine65-wasm/**'
+      - 'crates/private-feedback-core/**'
+      - 'crates/private-feedback-nine65/**'
+      - 'docs/SECURITY_MODE_MATRIX.md'
+      - 'docs/ENTROPY_MODEL.md'
+      - 'docs/CRAM_INTEGRATION_CONTRACT.md'
+      - 'docs/CLAIM_REGISTRY.csv'
+      - 'scripts/external_fhe_matrix.py'
+      - 'scripts/private_feedback_correctness_harness.py'
+      - 'artifacts/app_platform/**'
+      - '.github/workflows/app_platform_gates.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'crates/fhe-service/**'
+      - 'crates/nine65-wasm/**'
+      - 'crates/private-feedback-core/**'
+      - 'crates/private-feedback-nine65/**'
+      - 'docs/**'
+      - 'scripts/external_fhe_matrix.py'
+      - 'scripts/private_feedback_correctness_harness.py'
+      - 'artifacts/app_platform/**'
+      - '.github/workflows/app_platform_gates.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-core:
+    name: Structured private-feedback stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Test residue-native domain core
+        run: cargo test -p private-feedback-core --release
+      - name: Test live DualRNS adapter
+        run: cargo test -p private-feedback-nine65 --release
+      - name: Clippy application stack
+        run: |
+          cargo clippy -p private-feedback-core --all-targets -- -D warnings
+          cargo clippy -p private-feedback-nine65 --all-targets -- -D warnings
+      - name: Enforce residue-native application vocabulary
+        run: |
+          if rg -n --glob '*.rs' '(Garner|mixed.?radix|f64|f32)' \
+              crates/private-feedback-core crates/private-feedback-nine65; then
+            echo 'Forbidden reconstruction or floating-point token in private-feedback stack'
+            exit 1
+          fi
+      - name: Assert evaluator adapter exposes no decrypt API
+        run: |
+          if rg -n 'pub fn decrypt|DualRNSSecretKey|secret_key:' \
+              crates/private-feedback-nine65/src/lib.rs; then
+            echo 'Public-evaluator adapter exposes a decrypt capability'
+            exit 1
+          fi
+          rg -q 'add_dual' crates/private-feedback-nine65/src/lib.rs
+          rg -q 'encrypt_dual_secure' crates/private-feedback-nine65/src/lib.rs
+      - name: Reproduce exact-integer application evidence
+        run: |
+          python3 scripts/private_feedback_correctness_harness.py
+          git diff --exit-code -- artifacts/app_platform/private_feedback_correctness_2026-07-13.json
+
+  service-boundary:
+    name: Authenticated tenant-isolated service boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Test service
+        run: cargo test -p fhe-service --release
+      - name: Clippy production service targets
+        run: cargo clippy -p fhe-service --lib --bins -- -D warnings
+      - name: Assert base authentication and tenant isolation
+        run: |
+          rg -q 'FHE_API_TOKEN' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-api-token' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-tenant-id' crates/fhe-service/src/handlers.rs
+          rg -q 'valid_tenant_id' crates/fhe-service/src/handlers.rs
+          rg -q 'with_session_for_tenant' crates/fhe-service/src/session.rs
+          rg -q 'with_session_mut_for_tenant' crates/fhe-service/src/session.rs
+          rg -q 'tenant_mismatch_is_indistinguishable_from_missing_session' \
+            crates/fhe-service/src/session.rs
+          if rg -n 'into_inner\(' crates/fhe-service/src/session.rs; then
+            echo 'poisoned cryptographic state recovery remains enabled'
+            exit 1
+          fi
+      - name: Assert rate operator audit and decrypt controls
+        run: |
+          rg -q 'FHE_RATE_LIMIT_PER_MINUTE' crates/fhe-service/src/handlers.rs
+          rg -q 'DEFAULT_RATE_LIMIT_PER_MINUTE' crates/fhe-service/src/handlers.rs
+          rg -q 'FHE_OPERATOR_TOKEN' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-operator-token' crates/fhe-service/src/handlers.rs
+          rg -q 'audit_event' crates/fhe-service/src/handlers.rs
+          rg -q 'FHE_ENABLE_DECRYPT' crates/fhe-service/src/handlers.rs
+          rg -q 'FHE_DECRYPT_TOKEN' crates/fhe-service/src/handlers.rs
+          rg -q 'x-fhe-decrypt-token' crates/fhe-service/src/handlers.rs
+          rg -q 'decrypt_policy_is_fail_closed' crates/fhe-service/src/handlers.rs
+          rg -q 'disabled_by_default' crates/fhe-service/src/handlers.rs
+          rg -q 'Sha256::digest' crates/fhe-service/src/handlers.rs
+          rg -q 'ct_eq' crates/fhe-service/src/handlers.rs
+      - name: Assert loopback default
+        run: rg -q '127\.0\.0\.1:8080' crates/fhe-service/src/main.rs
+
+  wasm-client:
+    name: WASM client boundary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Build release WASM boundary
+        run: >-
+          cargo check
+          --release
+          --manifest-path crates/nine65-wasm/Cargo.toml
+          --target wasm32-unknown-unknown
+          --features wasm
+      - name: Assert secure browser entropy and validated boundaries
+        run: |
+          rg -q 'getrandom = .*features = \["js"\]' crates/nine65-wasm/Cargo.toml
+          rg -q 'KeySet::try_generate_secure' crates/nine65-wasm/src/lib.rs
+          rg -q 'try_encrypt_secure' crates/nine65-wasm/src/lib.rs
+          rg -q 'public_key_from_bytes' crates/nine65-wasm/src/lib.rs
+          rg -q 'evaluation_key_from_bytes' crates/nine65-wasm/src/lib.rs
+          rg -q 'decode_ciphertext' crates/nine65-wasm/src/lib.rs
+          rg -q 'single-modulus-bfv-leveled' crates/nine65-wasm/src/lib.rs
+          rg -q 'supports_dual_rns' crates/nine65-wasm/src/lib.rs
+          rg -q 'supports_auto_bootstrap' crates/nine65-wasm/src/lib.rs
+          if rg -n 'pub fn generate_keyset_seeded\(|pub fn encrypt_seeded\(' \
+              crates/nine65-wasm/src/lib.rs; then
+            echo 'unsafe seeded production API name remains exposed'
+            exit 1
+          fi
+      - name: Assert secret-key export remains disabled
+        run: |
+          rg -q 'SecretKey export disabled' crates/nine65-wasm/src/lib.rs
+          rg -q 'Err\(JsValue::from_str\("SecretKey export disabled"\)\)' \
+            crates/nine65-wasm/src/lib.rs
+          if rg -n 'pub fn from_bytes' crates/nine65-wasm/src/lib.rs; then
+            echo 'context-free key import remains exposed'
+            exit 1
+          fi
+
+  policy-and-claims:
+    name: Mode, claim, and benchmark policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate claim registry
+        run: bash scripts/check_claim_registry.sh
+      - name: Validate external benchmark schema
+        run: python3 scripts/external_fhe_matrix.py --self-test
+      - name: Assert normative contracts exist
+        run: |
+          test -f docs/SECURITY_MODE_MATRIX.md
+          test -f docs/LINEAGE.md
+          test -f docs/ENTROPY_MODEL.md
+          test -f docs/CRAM_INTEGRATION_CONTRACT.md
+          test -f docs/CT_NTT_CACHE_ROADMAP.md
+          test -f docs/FORMAL_APP_CRITICAL_SPINE.md
+          test -f lean4/KElimination/KElimination/AppBoundary.lean
+          test -f crates/private-feedback-nine65/README.md

@@ -1,117 +1,158 @@
-# NINE65 v6 Side-Channel Threat Model
+# NINE65 Side-Channel Threat Model
 
-## Scope
+**Revision:** 2026-07-13  
+**Scope:** current DualRNS, NTT, Persistent-Montgomery, bootstrap, service, and WASM surfaces.
 
-This document covers timing side-channel threats to NINE65's BFV FHE implementation. Other side-channels (power analysis, EM emanation, cache timing) are out of scope for this software-only system.
+This document distinguishes source-level hardening from compiler-, microarchitecture-, process-, and physical-side-channel closure. A source implementation may be branchless while still requiring target-specific evidence.
 
-## Assets Under Protection
+## Protected assets
 
-| Asset | Location | Criticality |
-|-------|----------|-------------|
-| Secret key polynomial `s` | `SecretKey.s`, `DualRNSSecretKey.s` | CRITICAL — full key recovery |
-| Evaluation key `s^2` info | `EvaluationKey.rlk` | HIGH — leaks s^2, partial key recovery |
-| Plaintext message `m` | `BFVEncoder.encode()` output | MEDIUM — application-dependent |
-| Noise budget state | `NoiseBudget.remaining_mb` | LOW — aids noise overflow attacks |
+| Asset | Principal locations | Risk |
+|---|---|---|
+| Secret key polynomial | `DualRNSSecretKey`, key-holder process/device | Complete plaintext/key compromise |
+| Bootstrap and evaluation material | bootstrap/evaluation key types | Scheme- and mode-dependent leakage or misuse |
+| Plaintext structured signal | client, authorized decrypt boundary | Application privacy compromise |
+| Ciphertext state and noise metadata | evaluator/service | Correctness oracle, traffic correlation, denial of service |
+| Operator token/session key | `fhe-service` environment/process | Unauthorized decryption capability |
 
-## Threat Model
+## Trust boundaries
 
-### T1: Timing Side-Channel on Decryption
+Security mode is explicit. See `SECURITY_MODE_MATRIX.md`.
 
-**Attack**: Observe `BFVDecryptor::decrypt()` timing to learn secret key bits.
+- Public evaluators are not granted decrypt or number-line projection capabilities.
+- Symmetric protected mode trusts its key-holder boundary.
+- `fhe-service` is a server-key-holder mode and is not consumer-side key ownership.
+- WASM/device mode keeps the key near the consumer but does not make browser memory physically unreadable.
 
-**Mechanism**: The inner product `c0 + c1 * s` touches every coefficient of `s`. If `mul` uses early-exit optimizations (skip zero coefficients), timing reveals Hamming weight of `s`.
+## T1 — Secret-dependent arithmetic timing
 
-**Mitigation**:
-- `RingPolynomial::mul_ct()` — constant-time polynomial multiplication using NTT (no coefficient-dependent branching)
-- `GatedDecryptor` — executes decrypt inside GRO coincidence window (INV-7) for value-independent execution timing
-- `SecretKeyPath` trait — compile-time enforcement that secret data uses CT paths
+**Attack:** infer secret coefficients or plaintext-dependent intermediates from branches, instruction counts, or data-dependent memory accesses.
 
-**Status**: IMPLEMENTED (v6)
+**Current controls:**
 
-### T2: Timing Side-Channel on Key Generation
+- Montgomery reduction/add/sub use branchless canonicalization.
+- NTT butterfly add/sub/neg route through branchless Montgomery primitives.
+- Persistent-Montgomery REDC/add/sub/neg are branchless.
+- Persistent exponentiation uses a fixed 64-iteration Montgomery ladder.
+- NTT loop bounds, bit-reversal indices, and twiddle indices depend only on public parameters.
+- `scripts/check_ct_ntt_source.py` rejects regression to the prior branchy source patterns.
 
-**Attack**: Observe `KeySet::generate_secure()` timing to learn ternary distribution of `s`.
+**Status:** source-hardened; compiler/disassembly and hardware evidence pending.
 
-**Mechanism**: Ternary sampling with rejection (`secure_ternary()`) has variable iteration count.
+## T2 — Cache and address-trace leakage
 
-**Mitigation**:
-- `GatedKeyGen` — executes keygen inside GRO coincidence window
-- Ternary sampling uses rejection from `{0,1,2,3}` → `{-1,0,1}` with 25% rejection rate (bounded, constant-time within window)
+**Attack:** recover information through secret-dependent array addresses or cache behavior.
 
-**Status**: IMPLEMENTED (v6)
+**Current controls:**
 
-### T3: Noise Budget Oracle (IBM 2025 BFV Key Recovery)
+- NTT coefficient and twiddle addresses follow a public schedule determined by `N`, stage, block, and offset.
+- Sparse coefficient shortcuts are not used in the reviewed FFT butterfly path.
+- Key arithmetic loops use public dimensions.
 
-**Attack**: Provoke decryption failures when noise budget is exhausted, use failure/success oracle to recover key.
+**Residuals:**
 
-**Mechanism**: If noise overflow wraps silently (unsigned underflow), ciphertexts decrypt to random values without error, giving attacker a distinguishing oracle.
+- `Vec<u64>` does not itself certify cache-line alignment.
+- compiler transformations and target prefetch behavior are not yet evidenced;
+- shared-cache, SMT, and co-tenant attacks remain deployment concerns.
 
-**Mitigation**:
-- `NoiseBudget::consume()` uses `checked_sub()` — returns `Nine65Error::NoiseBudgetExhausted` instead of wrapping
-- `TrackedEvaluator` wraps all homomorphic operations with automatic budget checking
-- All noise budget operations use millibits (integer-only, no float rounding)
+**Status:** public schedule established at source level; cache-line and trace evidence pending.
 
-**Status**: IMPLEMENTED (v6, Segment B)
+## T3 — Decryption and correctness oracles
 
-### T4: Entropy Source Failure
+**Attack:** submit crafted ciphertexts and distinguish decryption success, failure, plaintext, or noise-exhaustion behavior.
 
-**Attack**: Exploit predictable random values if OS CSPRNG fails silently.
+**Current controls:**
 
-**Mechanism**: If `/dev/urandom` returns predictable data (stuck entropy pool, VM clone, container without entropy), all keys and encryption randomness are compromised.
+- public evaluator mode has no decrypt capability;
+- `fhe-service` decrypt routing is concealed by default;
+- production decryption requires explicit enablement, configured operator token, and matching request header;
+- tokens are hashed to fixed-length SHA-256 digests before constant-time comparison;
+- malformed ciphertexts are size- and shape-validated before arithmetic;
+- noise accounting fails closed instead of unsigned wraparound.
 
-**Mitigation**:
-- `entropy_health_check()` — startup and periodic validation of CSPRNG output
-- `try_*` methods throughout entropy module — propagate errors instead of panicking
-- Two-sample divergence check (32 bytes) catches stuck pools
+**Residuals:**
 
-**Status**: IMPLEMENTED (v6)
+- service token gating is defense in depth, not IND-CCA security;
+- mTLS/workload identity, tenant authorization, rate limits, and network isolation remain mandatory;
+- response classes and latency require deployment-level oracle testing.
 
-### T5: Cache Timing in NTT
+**Status:** default-deny service boundary implemented; CCA-hard construction not claimed.
 
-**Attack**: Observe NTT memory access patterns to learn polynomial coefficients.
+## T4 — Entropy-source misuse
 
-**Mechanism**: NTT butterfly operations access twiddle factors at data-dependent indices. CPU cache line misses leak access patterns.
+**Attack:** predict keys or encryption randomness through deterministic or failed entropy sources.
 
-**Mitigation**:
-- NTT twiddle factor tables are precomputed and fully loaded into cache before operations
-- Future: full CT-NTT with data-independent memory access patterns
+**Current controls:**
 
-**Status**: PARTIAL (twiddle precomputation implemented; full CT-NTT is future work)
+- `SecureRng` wraps the OS CSPRNG for key generation and production cryptographic sampling;
+- service production key generation uses `generate_keys_dual_full_secure()`;
+- `ShadowHarvester` is documented and typed as deterministic/test-oriented;
+- SBNI is separated from key-generation entropy and bootstrap semantics;
+- OS entropy errors propagate or terminate before security-critical output.
 
-## GRO Timing Gate Architecture
+**Residuals:** VM/container cloning, platform CSPRNG failure, and lifecycle/reseed policy remain deployment concerns.
 
-The Golden Ratio Oscillator (GRO) provides timing isolation:
+**Status:** source roles separated; environment health evidence required per deployment.
 
-```
-Oscillator A: phase += delta_phi_a (each step)
-Oscillator B: phase += delta_phi_b (approx phi * delta_phi_a)
+## T5 — SBNI misuse or malformed lane state
 
-Coincidence window: |phase_A - phase_B| < W
+**Attack:** corrupt ciphertext correctness, index outside live limbs, or infer operation state through malformed entropy/lane input.
 
-Crypto operation executes only during coincidence windows.
-External observer sees: operation_time = window_start + constant
-```
+**Current controls:**
 
-**Properties** (from Clockwork formal spec):
-- T9: Coincidence period = 2^N_acc when delta_phi difference is odd
-- T10: Windows are uniformly distributed over the period
-- T8: Timing is value-independent within windows
+- empty entropy is rejected;
+- live main and anchor counts are checked after modulus switching;
+- modulus and limb lengths are validated before mutation;
+- one signed injection polynomial is reduced consistently across live lanes;
+- injection is bounded and does not reset the noise budget or count as bootstrap.
 
-## Residual Risks
+**Status:** source remediation integrated; Rust test execution pending on the combined head.
 
-1. **Hardware-level cache timing** — not addressed by software CT enforcement
-2. **Speculative execution** (Spectre-class) — NTT may be vulnerable on affected CPUs
-3. **Compiler optimization** — `volatile` writes in zeroization may be optimized in future compilers
-4. **Side-channel in `getrandom`** — OS CSPRNG implementation is trusted
+## T6 — Key lifetime and memory exposure
 
-## Verification Checklist
+**Attack:** recover key material from logs, serialization, process memory, crash dumps, swaps, or stale sessions.
 
-- [x] `mul_ct` used for all secret-key multiplications
-- [x] GRO timing gate wraps keygen and decrypt
-- [x] Noise budget uses `checked_sub()` (no silent overflow)
-- [x] `SecretKeyPath` trait enforces CT at compile time
-- [x] Entropy health check available
-- [x] `ZeroizeOnDrop` on `SecretKey`
-- [x] Circular security validated by test
-- [ ] Full CT-NTT implementation (future)
-- [ ] Cache line alignment for twiddle tables (future)
+**Current controls:**
+
+- secret-bearing core types use zeroization paths;
+- key debug output is redacted where implemented;
+- WASM secret-key byte export is disabled;
+- service sessions have TTL cleanup and deletion;
+- core crate forbids unsafe code.
+
+**Residuals:**
+
+- allocator copies and compiler behavior can outlive logical zeroization;
+- browser linear memory has platform limitations;
+- process dumps, hibernation, swap, and administrator access are deployment concerns.
+
+**Status:** software lifecycle controls present; platform assurance pending.
+
+## T7 — Speculative execution and physical channels
+
+**Attack:** Spectre-class transient execution, power analysis, EM emanation, frequency scaling, or thermal effects.
+
+**Current controls:** none claimed at the universal software level.
+
+Required deployment controls include CPU/microcode policy, process isolation, co-tenancy restrictions, HSM/TEE use where appropriate, disabled untrusted plugins, and target-specific testing.
+
+**Status:** open deployment gate.
+
+## Verification gates
+
+A broad `constant-time` claim requires all of the following for the exact commit, compiler, flags, and target:
+
+1. source reachability inventory;
+2. branch/control-flow audit;
+3. address-trace audit;
+4. compiler IR and disassembly review;
+5. fixed-vs-random integer-cycle diagnostics;
+6. cache-line/twiddle placement evidence;
+7. speculative-execution and process-isolation statement;
+8. rerun after compiler, target, or arithmetic changes.
+
+Current approved wording:
+
+> NINE65 contains constant-time-oriented source paths with public NTT address scheduling and branchless coefficient arithmetic. Compiler, cache, and hardware closure remain target-specific verification work.
+
+See `CT_NTT_AUDIT_2026-07-13.md` and `CT_NTT_CACHE_ROADMAP.md`.

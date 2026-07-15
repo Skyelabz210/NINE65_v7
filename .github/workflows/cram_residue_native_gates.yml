@@ -1,0 +1,138 @@
+name: CRAM residue-native gates
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'crates/cram-core/**'
+      - 'crates/cram-poly/**'
+      - 'crates/cram-fhe/**'
+      - 'crates/nine65/src/cram_ct_wrap.rs'
+      - 'crates/nine65/src/ops/rns_fhe.rs'
+      - 'scripts/check_residue_native_architecture.py'
+      - 'scripts/cram_correctness_harness.py'
+      - '.github/workflows/cram_residue_native_gates.yml'
+  push:
+    branches:
+      - 'cram/residue-native-scale-dag'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cram-residue-native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject prohibited production mechanisms
+        run: python3 scripts/check_residue_native_architecture.py
+      - name: Reject floating point in CRAM production crates
+        shell: bash
+        run: |
+          set -euo pipefail
+          roots=()
+          for path in crates/cram-core/src crates/cram-poly/src crates/cram-fhe/src; do
+            if [[ -d "$path" ]]; then
+              roots+=("$path")
+            fi
+          done
+          if ((${#roots[@]} > 0)) && grep -RInE '\bf(32|64)\b|as[[:space:]]+f(32|64)' "${roots[@]}"; then
+            echo 'floating-point token found in CRAM production path' >&2
+            exit 1
+          fi
+
+  correctness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Format check
+        run: cargo fmt --all -- --check
+      - name: Compile CRAM core
+        run: cargo check -p cram-core --all-targets
+      - name: Test CRAM core
+        run: cargo test -p cram-core --all-targets
+      - name: Clippy exactness gate
+        run: cargo clippy -p cram-core --all-targets -- -D warnings
+
+  oracle-scale:
+    needs: architecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [small, medium, large, endurance]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run independent integer-only oracle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/oracle
+          python3 scripts/cram_correctness_harness.py --profile '${{ matrix.profile }}' \
+            | tee 'artifacts/oracle/${{ matrix.profile }}.json'
+      - name: Upload oracle evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cram-oracle-${{ matrix.profile }}
+          path: artifacts/oracle/
+          if-no-files-found: error
+          retention-days: 30
+
+  scale-correctness:
+    needs: [architecture, correctness]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [small, medium, large, endurance]
+    env:
+      CRAM_SCALE_PROFILE: ${{ matrix.profile }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Run exact scale workload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/correctness
+          cargo test -p cram-core --test workload_scales --release -- --nocapture \
+            | tee "artifacts/correctness/${CRAM_SCALE_PROFILE}.log"
+      - name: Record architecture scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_residue_native_architecture.py \
+            | tee "artifacts/correctness/${CRAM_SCALE_PROFILE}-architecture.log"
+      - name: Upload scale evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cram-correctness-${{ matrix.profile }}
+          path: artifacts/correctness/
+          if-no-files-found: error
+          retention-days: 30
+
+  nine65-regression-smoke:
+    needs: architecture
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Existing FHE workflow correctness
+        run: cargo test -p nine65 --lib --release test_full_fhe_workflow -- --nocapture
+      - name: Existing CRAM wrapper correctness
+        run: >-
+          cargo test -p nine65 --lib --release
+          --features exact_transcendentals_backend
+          cram_ct_wrap::tests:: -- --nocapture
