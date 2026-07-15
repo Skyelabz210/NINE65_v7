@@ -1,16 +1,15 @@
-//! NINE65 audit and benchmark harness.
+//! NINE65 exact DualRNS audit harness.
 //!
-//! This binary measures the production DualRNS path, separates leveled depth
-//! from real Clockwork refresh, preflights every tracked operation, and reports
-//! only exact integer quantities. A software noise-counter reset is never
-//! reported as ciphertext bootstrap.
+//! The harness separates finite leveled depth from real Clockwork refresh,
+//! preflights every tracked operation, keeps reporting integer-only, and makes
+//! every requested correctness gate control process exit.
 
-use nine65::entropy::ShadowHarvester;
+use nine65::entropy::{FheRng, ShadowHarvester};
 use nine65::keys::bootstrap::{BootstrapKey, KeySwitchKey};
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
 use nine65::ops::bootstrap::ClockworkBootstrap;
-use nine65::ops::rns_fhe::{DualRNSFullKeySet, RNSFHEContext};
+use nine65::ops::rns_fhe::{DualRNSCiphertext, DualRNSFullKeySet, RNSFHEContext};
 use nine65::params::secure_configs::SecureConfig;
 use nine65::params::FHEConfig;
 use serde_json::{json, Value};
@@ -59,9 +58,8 @@ fn main() {
     };
 
     let config = select_config(&options.config_name);
-    eprintln!("NINE65 DualRNS benchmark");
     eprintln!(
-        "config={} n={} main_primes={} t={} mode={}",
+        "NINE65 DualRNS benchmark: config={} n={} lanes={} t={} mode={}",
         options.config_name,
         config.n,
         config.primes.len(),
@@ -75,75 +73,8 @@ fn main() {
     let keygen_start = Instant::now();
     let keys = ctx.generate_keys_dual_full(&mut rng);
     let keygen_us = micros_u64(keygen_start.elapsed().as_micros());
-
     let operations = benchmark_operations(&ctx, &keys, &mut rng, options.init_a, options.init_b);
-
-    let (depth_chain, statistical_test) = match options.mode {
-        DepthMode::NoBootstrap => (
-            run_no_bootstrap_depth(
-                &ctx,
-                &keys,
-                &mut rng,
-                options.init_a,
-                options.max_depth,
-            ),
-            Value::Null,
-        ),
-        DepthMode::ManualBootstrap => {
-            let bootstrap =
-                ClockworkBootstrap::new(&config).expect("Clockwork bootstrap init failed");
-            let bootstrap_keys = bootstrap
-                .generate_keys(&keys.secret_key, &mut rng)
-                .expect("Clockwork bootstrap key generation failed");
-            (
-                run_manual_bootstrap_depth(
-                    &ctx,
-                    &keys,
-                    &bootstrap,
-                    &bootstrap_keys.bsk,
-                    &bootstrap_keys.ksk,
-                    &mut rng,
-                    options.init_a,
-                    options.max_depth,
-                    options.trigger_pct,
-                ),
-                Value::Null,
-            )
-        }
-        DepthMode::AutoBootstrap => {
-            let bootstrap =
-                ClockworkBootstrap::new(&config).expect("Clockwork bootstrap init failed");
-            let bootstrap_keys = bootstrap
-                .generate_keys(&keys.secret_key, &mut rng)
-                .expect("Clockwork bootstrap key generation failed");
-            let depth_chain = run_auto_bootstrap_depth(
-                &ctx,
-                &keys,
-                &bootstrap,
-                &bootstrap_keys.bsk,
-                &bootstrap_keys.ksk,
-                &mut rng,
-                options.init_a,
-                options.max_depth,
-                options.trigger_pct,
-            );
-            let statistical_test = if options.statistical_test {
-                run_statistical_auto_bootstrap(
-                    &ctx,
-                    &keys,
-                    &bootstrap,
-                    &bootstrap_keys.bsk,
-                    &bootstrap_keys.ksk,
-                    &mut rng,
-                    options.max_depth,
-                    options.trigger_pct,
-                )
-            } else {
-                Value::Null
-            };
-            (depth_chain, statistical_test)
-        }
-    };
+    let (depth_chain, statistical_test) = execute_depth_mode(&options, &ctx, &keys, &mut rng);
 
     let depth_correct = json_bool(&depth_chain, "correct");
     let statistical_correct = if options.statistical_test {
@@ -192,6 +123,74 @@ fn main() {
             eprintln!("statistical correctness gate failed");
         }
         std::process::exit(1);
+    }
+}
+
+fn execute_depth_mode(
+    options: &Options,
+    ctx: &RNSFHEContext,
+    keys: &DualRNSFullKeySet,
+    rng: &mut ShadowHarvester,
+) -> (Value, Value) {
+    match options.mode {
+        DepthMode::NoBootstrap => (
+            run_no_bootstrap_depth(ctx, keys, rng, options.init_a, options.max_depth),
+            Value::Null,
+        ),
+        DepthMode::ManualBootstrap => {
+            let bootstrap = ClockworkBootstrap::new(&ctx.config)
+                .expect("Clockwork bootstrap initialization failed");
+            let bootstrap_keys = bootstrap
+                .generate_keys(&keys.secret_key, rng)
+                .expect("Clockwork bootstrap key generation failed");
+            (
+                run_manual_bootstrap_depth(
+                    ctx,
+                    keys,
+                    &bootstrap,
+                    &bootstrap_keys.bsk,
+                    &bootstrap_keys.ksk,
+                    rng,
+                    options.init_a,
+                    options.max_depth,
+                    options.trigger_pct,
+                ),
+                Value::Null,
+            )
+        }
+        DepthMode::AutoBootstrap => {
+            let bootstrap = ClockworkBootstrap::new(&ctx.config)
+                .expect("Clockwork bootstrap initialization failed");
+            let bootstrap_keys = bootstrap
+                .generate_keys(&keys.secret_key, rng)
+                .expect("Clockwork bootstrap key generation failed");
+            let depth = run_auto_bootstrap_depth(
+                ctx,
+                keys,
+                &bootstrap,
+                &bootstrap_keys.bsk,
+                &bootstrap_keys.ksk,
+                rng,
+                options.init_a,
+                options.max_depth,
+                options.trigger_pct,
+            );
+            let statistical = if options.statistical_test {
+                run_statistical_auto_bootstrap(
+                    ctx,
+                    keys,
+                    &bootstrap,
+                    &bootstrap_keys.bsk,
+                    &bootstrap_keys.ksk,
+                    rng,
+                    options.max_depth,
+                    options.trigger_pct,
+                )
+            } else {
+                Value::Null
+            };
+            (depth, statistical)
+        }
     }
 }
 
@@ -326,7 +325,6 @@ fn benchmark_operations(
         ciphertext_a = ctx.encrypt_dual(a % ctx.t, &keys.public_key, rng);
     }
     let encrypt_us = average_micros(start, TIMING_ITERATIONS);
-
     let ciphertext_b = ctx.encrypt_dual(b % ctx.t, &keys.public_key, rng);
 
     let start = Instant::now();
@@ -370,6 +368,22 @@ fn multiplication_cost(config: &FHEConfig) -> i64 {
     NoiseBudget::mul_ct_cost(config) + NoiseBudget::relin_cost(config)
 }
 
+fn bootstrap_pair(
+    bootstrap: &ClockworkBootstrap,
+    left: &DualRNSCiphertext,
+    right: &DualRNSCiphertext,
+    bsk: &BootstrapKey,
+    ksk: &KeySwitchKey,
+) -> Result<(DualRNSCiphertext, DualRNSCiphertext), String> {
+    let fresh_left = bootstrap
+        .bootstrap(left, bsk, ksk)
+        .map_err(|error| format!("left operand bootstrap failed: {error}"))?;
+    let fresh_right = bootstrap
+        .bootstrap(right, bsk, ksk)
+        .map_err(|error| format!("right operand bootstrap failed: {error}"))?;
+    Ok((fresh_left, fresh_right))
+}
+
 fn run_no_bootstrap_depth(
     ctx: &RNSFHEContext,
     keys: &DualRNSFullKeySet,
@@ -411,15 +425,16 @@ fn run_no_bootstrap_depth(
 
         let decrypted = ctx.decrypt_dual(&next, &keys.secret_key);
         let correct = decrypted == expected;
-        entries.push(json!({
-            "depth": depth,
-            "elapsed_us": elapsed_us,
-            "decrypted": decrypted,
-            "expected": expected,
-            "correct": correct,
-            "noise_budget_pct": percent(budget.remaining_millibits(), initial_budget),
-            "refreshed": false
-        }));
+        entries.push(depth_entry(
+            depth,
+            elapsed_us,
+            decrypted,
+            expected,
+            correct,
+            percent(budget.remaining_millibits(), initial_budget),
+            false,
+            0,
+        ));
         accumulator = next;
 
         if !correct {
@@ -451,31 +466,34 @@ fn run_manual_bootstrap_depth(
     trigger_pct: u32,
 ) -> Value {
     let expected = initial % ctx.t;
-    let one = ctx.encrypt_dual(1, &keys.public_key, rng);
+    let mut one = ctx.encrypt_dual(1, &keys.public_key, rng);
     let mut accumulator = ctx.encrypt_dual(expected, &keys.public_key, rng);
     let mut budget = NoiseBudget::from_config(&ctx.config);
     let initial_budget = budget.remaining_millibits();
     let operation_cost = multiplication_cost(&ctx.config);
     let trigger_permille = trigger_pct * 10;
     let mut entries = Vec::new();
-    let mut refreshes = 0u64;
+    let mut total_bootstrap_calls = 0u64;
     let mut failure = None;
 
     for depth in 1..=max_depth {
         let start = Instant::now();
-        let mut refreshed = false;
+        let mut step_bootstrap_calls = 0u64;
 
         if !budget.can_perform(operation_cost) || budget.should_bootstrap(trigger_permille) {
-            accumulator = match bootstrap.bootstrap(&accumulator, bsk, ksk) {
-                Ok(fresh) => fresh,
+            match bootstrap_pair(bootstrap, &accumulator, &one, bsk, ksk) {
+                Ok((fresh_accumulator, fresh_one)) => {
+                    accumulator = fresh_accumulator;
+                    one = fresh_one;
+                }
                 Err(error) => {
-                    failure = Some(format!("pre-operation bootstrap failed: {error}"));
+                    failure = Some(format!("pre-operation bootstrap failed at depth {depth}: {error}"));
                     break;
                 }
-            };
+            }
             budget.reset_after_bootstrap(&ctx.config);
-            refreshes += 1;
-            refreshed = true;
+            step_bootstrap_calls += 2;
+            total_bootstrap_calls += 2;
         }
 
         if !budget.can_perform(operation_cost) {
@@ -485,29 +503,35 @@ fn run_manual_bootstrap_depth(
             break;
         }
 
-        let next = match ctx.mul_dual_public(&accumulator, &one, &keys.eval_key) {
-            Ok(next) => next,
-            Err(_) if !refreshed => {
-                accumulator = match bootstrap.bootstrap(&accumulator, bsk, ksk) {
-                    Ok(fresh) => fresh,
-                    Err(error) => {
-                        failure = Some(format!("recovery bootstrap failed: {error}"));
-                        break;
-                    }
-                };
-                budget.reset_after_bootstrap(&ctx.config);
-                refreshes += 1;
-                refreshed = true;
-                match ctx.mul_dual_public(&accumulator, &one, &keys.eval_key) {
-                    Ok(next) => next,
-                    Err(error) => {
-                        failure = Some(format!("multiplication failed after refresh: {error}"));
-                        break;
-                    }
+        let mut next = ctx.mul_dual_public(&accumulator, &one, &keys.eval_key);
+        if next.is_err() && step_bootstrap_calls == 0 {
+            match bootstrap_pair(bootstrap, &accumulator, &one, bsk, ksk) {
+                Ok((fresh_accumulator, fresh_one)) => {
+                    accumulator = fresh_accumulator;
+                    one = fresh_one;
+                }
+                Err(error) => {
+                    failure = Some(format!("recovery bootstrap failed at depth {depth}: {error}"));
+                    break;
                 }
             }
+            budget.reset_after_bootstrap(&ctx.config);
+            step_bootstrap_calls += 2;
+            total_bootstrap_calls += 2;
+
+            if !budget.can_perform(operation_cost) {
+                failure = Some(format!(
+                    "recovery post-bootstrap budget cannot fund multiplication at depth {depth}"
+                ));
+                break;
+            }
+            next = ctx.mul_dual_public(&accumulator, &one, &keys.eval_key);
+        }
+
+        let next = match next {
+            Ok(next) => next,
             Err(error) => {
-                failure = Some(format!("multiplication failed after preflight refresh: {error}"));
+                failure = Some(format!("multiplication failed at depth {depth}: {error}"));
                 break;
             }
         };
@@ -520,15 +544,16 @@ fn run_manual_bootstrap_depth(
         let elapsed_us = micros_u64(start.elapsed().as_micros());
         let decrypted = ctx.decrypt_dual(&next, &keys.secret_key);
         let correct = decrypted == expected;
-        entries.push(json!({
-            "depth": depth,
-            "elapsed_us": elapsed_us,
-            "decrypted": decrypted,
-            "expected": expected,
-            "correct": correct,
-            "noise_budget_pct": percent(budget.remaining_millibits(), initial_budget),
-            "refreshed": refreshed
-        }));
+        entries.push(depth_entry(
+            depth,
+            elapsed_us,
+            decrypted,
+            expected,
+            correct,
+            percent(budget.remaining_millibits(), initial_budget),
+            step_bootstrap_calls > 0,
+            step_bootstrap_calls,
+        ));
         accumulator = next;
 
         if !correct {
@@ -541,7 +566,7 @@ fn run_manual_bootstrap_depth(
         DepthMode::ManualBootstrap,
         &entries,
         failure,
-        refreshes,
+        total_bootstrap_calls,
         ctx.decrypt_dual(&accumulator, &keys.secret_key),
         expected,
     )
@@ -576,28 +601,29 @@ fn run_auto_bootstrap_depth(
     let mut failure = None;
 
     for depth in 1..=max_depth {
-        let previous_refreshes = evaluator.bootstrap_count;
+        let before = evaluator.bootstrap_count;
         let start = Instant::now();
         let next = match evaluator.mul_auto(&accumulator, &one) {
             Ok(next) => next,
             Err(error) => {
-                failure = Some(format!("auto-bootstrap multiplication failed: {error}"));
+                failure = Some(format!("auto-bootstrap multiplication failed at depth {depth}: {error}"));
                 break;
             }
         };
         let elapsed_us = micros_u64(start.elapsed().as_micros());
         let decrypted = ctx.decrypt_dual(&next, &keys.secret_key);
         let correct = decrypted == expected;
-        entries.push(json!({
-            "depth": depth,
-            "elapsed_us": elapsed_us,
-            "decrypted": decrypted,
-            "expected": expected,
-            "correct": correct,
-            "noise_budget_pct": percent(evaluator.remaining_budget_mb(), initial_budget),
-            "bootstrap_calls": evaluator.bootstrap_count - previous_refreshes,
-            "refreshed": evaluator.bootstrap_count > previous_refreshes
-        }));
+        let calls = evaluator.bootstrap_count - before;
+        entries.push(depth_entry(
+            depth,
+            elapsed_us,
+            decrypted,
+            expected,
+            correct,
+            percent(evaluator.remaining_budget_mb(), initial_budget),
+            calls > 0,
+            calls as u64,
+        ));
         accumulator = next;
 
         if !correct {
@@ -631,7 +657,7 @@ fn run_statistical_auto_bootstrap(
     let mut total_bootstrap_calls = 0u64;
 
     for _ in 0..STATISTICAL_TRIALS {
-        let expected = rng.next_u64() % ctx.t;
+        let expected = FheRng::next_u64(rng) % ctx.t;
         let one = ctx.encrypt_dual(1, &keys.public_key, rng);
         let mut accumulator = ctx.encrypt_dual(expected, &keys.public_key, rng);
         let mut evaluator = AutoBootstrapEvaluator::new(
@@ -667,7 +693,31 @@ fn run_statistical_auto_bootstrap(
         "successes": successes,
         "failures": STATISTICAL_TRIALS - successes,
         "total_bootstrap_calls": total_bootstrap_calls,
-        "correct": successes == STATISTICAL_TRIALS
+        "exercised_real_refresh": total_bootstrap_calls > 0,
+        "correct": successes == STATISTICAL_TRIALS && total_bootstrap_calls > 0
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn depth_entry(
+    depth: usize,
+    elapsed_us: u64,
+    decrypted: u64,
+    expected: u64,
+    correct: bool,
+    budget_pct: u64,
+    refreshed: bool,
+    bootstrap_calls: u64,
+) -> Value {
+    json!({
+        "depth": depth,
+        "elapsed_us": elapsed_us,
+        "decrypted": decrypted,
+        "expected": expected,
+        "correct": correct,
+        "noise_budget_pct": budget_pct,
+        "refreshed": refreshed,
+        "bootstrap_calls": bootstrap_calls
     })
 }
 
@@ -695,6 +745,7 @@ fn summarize_depth(
         "mode": mode.label(),
         "final_depth": depth,
         "total_bootstrap_calls": bootstrap_calls,
+        "exercised_real_refresh": bootstrap_calls > 0,
         "simulated_refreshes": 0,
         "total_elapsed_us": total_us,
         "ops_per_sec": ops_per_sec,

@@ -1,178 +1,67 @@
-//! K-Elimination: Exact Division in RNS
+//! K-Elimination: exact dual-family division support.
 //!
-//! # K-Elimination
-//!
-//! Provides exact division in RNS with 100% exactness.
-//! No floating point, no approximations, no error accumulation.
-//!
-//! # Theorem Reference
-//! - **Proof File**: `KElimination.v`
-//! - **Key Theorem**: `k_elimination_complete`
-//! - **Status**: PROVED
-//!
-//! # Mathematical Foundation
-//!
-//! Given value V in dual-codex (α, β):
-//! ```text
-//!   V = vα (mod αcap)
-//!   V = vβ (mod βcap)
-//! ```
-//!
-//! We can recover V exactly by computing:
-//! ```text
-//!   k = (vβ - vα) * αcap_inv (mod βcap)
-//!   V = vα + k * αcap
-//! ```
-//!
-//! # Coq Theorem Statement
-//!
-//! ```coq
-//! Theorem k_elimination_complete : forall k v_M M A : nat,
-//!   M > 0 -> v_M < M -> k < A ->
-//!   let X := v_M + k * M in X / M = k.
-//!
-//! Theorem complexity_improvement :
-//!   k_elimination_ops k = k /\ mrc_ops k = k * k.
-//!   (* O(k) vs O(k²) *)
-//! ```
-//!
-//! # Performance
-//! - **Speedup**: 40× vs Mixed Radix Conversion
-//! - **Complexity**: O(k) vs O(k²)
-//!
-//! This allows exact division: V / d = (vα + k * αcap) / d
-//! when d | V (which is guaranteed in FHE rescaling).
-//!
-//! # Configuration
-//!
-//! Use `KElimConfig` for predefined configurations or `KElimBuilder` for custom setups:
-//!
-//! ```ignore
-//! // Use a preset
-//! let ke = KElimination::from_config(KElimConfig::Standard);
-//!
-//! // Or build custom
-//! let ke = KElimBuilder::new()
-//!     .alpha_primes(&[65537, 65521])
-//!     .beta_moduli(&[4611686018427387847])
-//!     .build()
-//!     .unwrap();
-//! ```
+//! CLASS-F alpha lanes are distinct prime field moduli. CLASS-R beta lanes
+//! may be composite, but every lane must be greater than one, distinct, and
+//! pairwise coprime within and across families. The ordered modulus vectors are
+//! canonical. Scalar reconstruction helpers in this module are explicit
+//! boundary/reference utilities; production FHE paths must remain in DualRNS
+//! main and anchor lanes.
 
 use crate::errors::{Nine65Error, Nine65Result};
+use crate::params::is_prime;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CONFIGURATION
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Predefined K-Elimination configurations
-///
-/// # Separation Principle (NINE65 v8)
-///
-/// Alpha moduli are CLASS-F: they must be prime (participate in NTT-adjacent operations).
-/// Beta moduli are CLASS-R: they require only pairwise coprimality with alpha and with
-/// each other. Composite beta values are mathematically valid and may offer hardware
-/// advantages (equal-bit-width reduction, pseudo-Mersenne shift tricks, parallel CRT-split).
-///
-/// See: QMNF Separation Principle (Theorem 2.1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KElimConfig {
-    /// Minimal configuration (~64-bit capacity)
-    /// - Alpha: 2 × 16-bit primes (~32 bits)
-    /// - Beta: 1 × 32-bit prime (~32 bits)
-    /// - Use for: Small values, fast testing
     Minimal,
-
-    /// Standard configuration (~112-bit capacity)
-    /// - Alpha: 3 × 16-bit primes (~48 bits)
-    /// - Beta: 1 × 62-bit prime (~62 bits)
-    /// - Use for: Most FHE operations with N ≤ 2048
     Standard,
-
-    /// Extended configuration (~140-bit capacity)
-    /// - Alpha: 3 × 16-bit primes (~48 bits)
-    /// - Beta: 2 × 45-bit primes (~90 bits)
-    /// - Use for: Large N (4096+), deep circuits
     Extended,
-
-    /// Maximum configuration (~176-bit capacity)
-    /// - Alpha: 4 × 16-bit primes (~64 bits)
-    /// - Beta: 2 × 55-bit primes (~110 bits)
-    /// - Use for: Maximum precision requirements
     Maximum,
-
-    /// Hardware-optimized configuration (Separation Principle showcase)
-    /// - Alpha: 3 × 16-bit primes (~48 bits)
-    /// - Beta: 1 × 61-bit equal-width composite + 1 × 32-bit Mersenne
-    /// - Both β values are CLASS-R composites with hardware-friendly reduction
     HardwareOpt,
 }
 
 impl KElimConfig {
-    /// Get the alpha primes for this configuration
     pub fn alpha_primes(&self) -> Vec<u64> {
         match self {
-            KElimConfig::Minimal => vec![65537, 65521],
-            KElimConfig::Standard => vec![65537, 65521, 65519],
-            KElimConfig::Extended => vec![65537, 65521, 65519],
-            KElimConfig::Maximum => vec![65537, 65521, 65519, 65497],
-            KElimConfig::HardwareOpt => vec![65537, 65521, 65519],
+            Self::Minimal => vec![65537, 65521],
+            Self::Standard | Self::Extended | Self::HardwareOpt => {
+                vec![65537, 65521, 65519]
+            }
+            Self::Maximum => vec![65537, 65521, 65519, 65497],
         }
     }
 
-    /// Beta moduli (CLASS-R — coprimality sufficient, primality optional).
-    ///
-    /// These values participate only in Garner mixed-radix conversion,
-    /// which requires gcd(α_cap, β_cap) = 1 but does NOT require primality.
-    /// Composite values coprime to α_cap are mathematically valid.
-    /// See: QMNF Separation Principle (Theorem 2.1).
+    /// CLASS-R anchor moduli. Primality is unnecessary; coprimality is required.
     pub fn beta_moduli(&self) -> Vec<u64> {
         match self {
-            KElimConfig::Minimal => vec![4294967291], // 2^32 - 5 (~32 bits)
-            KElimConfig::Standard => vec![4611686018427387847], // 62-bit prime
-            KElimConfig::Extended => vec![
-                35184372088777, // ~45-bit prime
-                35184372088831, // ~45-bit prime
-            ],
-            KElimConfig::Maximum => vec![
-                4611686018427387847, // 62-bit prime
-                4611686018427387903, // 62-bit prime (different)
-            ],
-            KElimConfig::HardwareOpt => vec![
-                1152921515344265237, // 1,073,741,827 × 1,073,741,831 (61-bit)
-                4294967291,           // 2^32 - 5 (32-bit prime)
-            ],
+            Self::Minimal => vec![4294967291],
+            Self::Standard => vec![4611686018427387847],
+            Self::Extended => vec![35184372088777, 35184372088831],
+            Self::Maximum => vec![4611686018427387847, 4611686018427387903],
+            Self::HardwareOpt => vec![1152921515344265237, 4294967291],
         }
     }
 
-    /// Get the beta moduli for this configuration (deprecated name).
-    #[deprecated(since = "8.0.0", note = "Use beta_moduli(). Primality not required (Separation Principle).")]
+    #[deprecated(
+        since = "8.0.0",
+        note = "Use beta_moduli(); CLASS-R lanes need coprimality, not primality"
+    )]
     pub fn beta_primes(&self) -> Vec<u64> {
         self.beta_moduli()
     }
 
-    /// Get approximate total capacity in bits
     pub fn capacity_bits(&self) -> u32 {
-        match self {
-            KElimConfig::Minimal => 64,
-            KElimConfig::Standard => 110,
-            KElimConfig::Extended => 138,
-            KElimConfig::Maximum => 188, // 64 alpha + 124 beta
-            KElimConfig::HardwareOpt => 141, // 48 alpha + 93 beta
-        }
+        KElimination::from_config(*self).capacity_bit_length()
     }
 
-    /// Recommended configuration for given polynomial degree N
     pub fn for_degree(n: usize) -> Self {
         match n {
-            0..=1024 => KElimConfig::Standard,
-            1025..=4096 => KElimConfig::Extended,
-            _ => KElimConfig::Maximum,
+            0..=1024 => Self::Standard,
+            1025..=4096 => Self::Extended,
+            _ => Self::Maximum,
         }
     }
 }
 
-/// Builder for custom K-Elimination configurations
 #[derive(Debug, Clone, Default)]
 pub struct KElimBuilder {
     alpha_primes: Option<Vec<u64>>,
@@ -180,132 +69,82 @@ pub struct KElimBuilder {
 }
 
 impl KElimBuilder {
-    /// Create a new builder
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Set alpha (primary) primes
     pub fn alpha_primes(mut self, primes: &[u64]) -> Self {
         self.alpha_primes = Some(primes.to_vec());
         self
     }
 
-    /// Set beta (anchor) moduli
     pub fn beta_moduli(mut self, moduli: &[u64]) -> Self {
         self.beta_moduli = Some(moduli.to_vec());
         self
     }
 
-    /// Set beta (anchor) primes (deprecated name)
-    #[deprecated(since = "8.0.0", note = "Use beta_moduli(). Primality not required.")]
-    pub fn beta_primes(self, primes: &[u64]) -> Self {
-        self.beta_moduli(primes)
+    #[deprecated(
+        since = "8.0.0",
+        note = "Use beta_moduli(); CLASS-R lanes need coprimality, not primality"
+    )]
+    pub fn beta_primes(self, moduli: &[u64]) -> Self {
+        self.beta_moduli(moduli)
     }
 
-    /// Build the K-Elimination context
-    ///
-    /// Returns error if:
-    /// - Moduli are not set
-    /// - Moduli are not coprime
     pub fn build(self) -> Nine65Result<KElimination> {
         let alpha_primes = self
             .alpha_primes
             .ok_or_else(|| Nine65Error::InvalidParameter {
                 message: "alpha_primes not set".to_string(),
             })?;
-
         let beta_moduli = self
             .beta_moduli
             .ok_or_else(|| Nine65Error::InvalidParameter {
                 message: "beta_moduli not set".to_string(),
             })?;
-
         KElimination::try_new(&alpha_primes, &beta_moduli)
     }
 }
 
-/// K-Elimination context for exact division
 #[derive(Debug, Clone)]
 pub struct KElimination {
-    /// Alpha moduli (primary codex — CLASS-F)
     pub alpha_primes: Vec<u64>,
-    /// Beta moduli (anchor codex — CLASS-R)
     pub beta_moduli: Vec<u64>,
-    /// Product of alpha primes
     pub alpha_cap: u128,
-    /// Product of beta moduli
     pub beta_cap: u128,
-    /// α_cap^{-1} mod β_cap (precomputed)
     pub alpha_inv_beta: u128,
-    /// Configuration used (if from preset)
     config: Option<KElimConfig>,
 }
 
 impl KElimination {
-    /// Create K-Elimination context with given moduli
-    ///
-    /// # Panics
-    ///
-    /// This is a **panicking constructor**. It will panic if:
-    /// - `alpha_cap` and `beta_cap` are not coprime (GCD != 1)
-    ///
-    /// For fallible construction, use [`try_new()`](Self::try_new) instead.
-    ///
-    /// # Requirements
-    /// - All primes must be coprime
-    /// - beta_cap must be > largest value to divide
-    ///
-    /// # Example
-    /// ```ignore
-    /// // This may panic if primes share common factors
-    /// let ke = KElimination::new(&[17, 19], &[23, 29]);
-    ///
-    /// // Prefer try_new for error handling
-    /// let ke = KElimination::try_new(&[17, 19], &[23, 29])?;
-    /// ```
     pub fn new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Self {
-        Self::try_new(alpha_primes, beta_moduli).expect("alpha_cap and beta_cap must be coprime")
+        Self::try_new(alpha_primes, beta_moduli)
+            .expect("K-Elimination safe-basis invariants must hold")
     }
 
-    /// Fallible constructor for K-Elimination context
-    ///
-    /// Returns error if moduli are not coprime. Prefer this over [`new()`](Self::new)
-    /// when handling untrusted input or in library code.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`Nine65Error::NotCoprime`] if alpha_cap and beta_cap share a common factor.
-    #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Nine65Result<Self> {
-        // Use checked_mul to detect u128 overflow in prime products.
-        let alpha_cap: u128 = alpha_primes
-            .iter()
-            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
-            .ok_or_else(|| Nine65Error::InvalidParameter {
-                message: "alpha_primes product overflows u128".to_string(),
-            })?;
+        validate_alpha_family(alpha_primes)?;
+        validate_beta_family(beta_moduli)?;
+        validate_cross_family(alpha_primes, beta_moduli)?;
 
-        let beta_cap: u128 = beta_moduli
-            .iter()
-            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
-            .ok_or_else(|| Nine65Error::InvalidParameter {
-                message: "beta_moduli product overflows u128".to_string(),
-            })?;
+        let alpha_cap = checked_product(alpha_primes, "alpha product")?;
+        let beta_cap = checked_product(beta_moduli, "beta product")?;
+        let family_gcd = gcd_u128(alpha_cap, beta_cap);
+        if family_gcd != 1 {
+            return Err(Nine65Error::NotCoprime {
+                m: diagnostic_u64(alpha_cap),
+                a: diagnostic_u64(beta_cap),
+                gcd: diagnostic_u64(family_gcd),
+            });
+        }
 
-        // Note: alpha_cap * beta_cap may legitimately exceed u128 for large configs.
-        // This is not an error — it means the K-Elimination capacity is > u128::MAX,
-        // which is sufficient for all FHE plaintext values (bounded by Q, a 30-bit prime).
-        // capacity() will return u128::MAX (saturating) when the product overflows,
-        // correctly indicating "all u128 values are within capacity".
-
-        // Compute α_cap^{-1} mod β_cap using extended GCD
-        let alpha_inv_beta =
-            mod_inverse_u128(alpha_cap, beta_cap).ok_or_else(|| Nine65Error::NotCoprime {
-                m: alpha_cap as u64,
-                a: beta_cap as u64,
-                gcd: gcd_u128(alpha_cap, beta_cap) as u64,
-            })?;
+        let alpha_inv_beta = mod_inverse_u128(alpha_cap, beta_cap).ok_or_else(|| {
+            Nine65Error::NotCoprime {
+                m: diagnostic_u64(alpha_cap),
+                a: diagnostic_u64(beta_cap),
+                gcd: diagnostic_u64(family_gcd),
+            }
+        })?;
 
         Ok(Self {
             alpha_primes: alpha_primes.to_vec(),
@@ -317,164 +156,107 @@ impl KElimination {
         })
     }
 
-    /// Get the beta moduli (deprecated name).
-    #[deprecated(since = "8.0.0", note = "Use beta_moduli. Primality not required.")]
+    pub fn alpha_primes(&self) -> Vec<u64> {
+        self.alpha_primes.clone()
+    }
+
+    pub fn beta_moduli(&self) -> Vec<u64> {
+        self.beta_moduli.clone()
+    }
+
+    #[deprecated(
+        since = "8.0.0",
+        note = "Use beta_moduli(); CLASS-R lanes need coprimality, not primality"
+    )]
     pub fn beta_primes(&self) -> Vec<u64> {
         self.beta_moduli.clone()
     }
 
-    /// Create K-Elimination from a predefined configuration.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the preset primes are not coprime (should never happen
-    /// with built-in configurations). For fallible construction, use
-    /// [`try_from_config()`](Self::try_from_config).
-    ///
-    /// # Example
-    /// ```ignore
-    /// let ke = KElimination::from_config(KElimConfig::Standard);
-    /// ```
     pub fn from_config(config: KElimConfig) -> Self {
-        Self::try_from_config(config).expect("built-in KElimConfig primes must be coprime")
+        Self::try_from_config(config).expect("built-in K-Elim safe basis must validate")
     }
 
-    /// Fallible constructor from predefined configuration.
-    ///
-    /// Returns error if the preset primes are not coprime.
     pub fn try_from_config(config: KElimConfig) -> Nine65Result<Self> {
-        let mut ke = Self::try_new(&config.alpha_primes(), &config.beta_moduli())?;
-        ke.config = Some(config);
-        Ok(ke)
+        let mut value = Self::try_new(&config.alpha_primes(), &config.beta_moduli())?;
+        value.config = Some(config);
+        Ok(value)
     }
 
-    /// Create K-Elimination optimized for given polynomial degree.
-    ///
-    /// Automatically selects appropriate configuration based on N.
     pub fn for_degree(n: usize) -> Self {
         Self::from_config(KElimConfig::for_degree(n))
     }
 
-    /// Fallible constructor optimized for given polynomial degree.
     pub fn try_for_degree(n: usize) -> Nine65Result<Self> {
         Self::try_from_config(KElimConfig::for_degree(n))
     }
 
-    /// Create K-Elimination optimized for FHE with given ciphertext modulus.
-    ///
-    /// Uses Standard configuration (~112-bit capacity).
-    ///
-    /// ORBITAL PATCH (December 2024):
-    /// Previous ~16-bit primes gave only ~80-bit capacity.
-    /// For N=1024 tensor products, intermediate values can reach ~70 bits.
-    ///
-    /// FIX: Use 62-bit anchor primes → 110+ bit total capacity
-    /// Capacity (110 bits) > Demand (70 bits) → Exact reconstruction guaranteed
     pub fn for_fhe(_q: u64) -> Self {
         Self::from_config(KElimConfig::Standard)
     }
 
-    /// Fallible constructor optimized for FHE.
     pub fn try_for_fhe(_q: u64) -> Nine65Result<Self> {
         Self::try_from_config(KElimConfig::Standard)
     }
 
-    /// Get the configuration used (if created from preset)
     pub fn config(&self) -> Option<KElimConfig> {
         self.config
     }
 
-    /// Get total capacity in bits (alpha_cap * beta_cap)
-    ///
-    /// Computed as log2(alpha_cap) + log2(beta_cap) to avoid overflow.
+    /// Exact 256-bit little-endian capacity limbs for alpha_cap × beta_cap.
+    pub fn capacity_limbs(&self) -> Vec<u64> {
+        trim_fixed_limbs(multiply_u128(self.alpha_cap, self.beta_cap))
+    }
+
+    pub fn capacity_bit_length(&self) -> u32 {
+        limbs_bit_length(&self.capacity_limbs())
+    }
+
     pub fn capacity_bits(&self) -> u32 {
-        let alpha_bits = 128 - self.alpha_cap.leading_zeros();
-        let beta_bits = 128 - self.beta_cap.leading_zeros();
-        alpha_bits + beta_bits
+        self.capacity_bit_length()
     }
 
-    /// Check how close a value is to this K-Elimination's capacity boundary.
-    ///
-    /// Returns a `CapacityReport` indicating whether the value is in the
-    /// `Safe` (<80%), `Warn80` (80–89%), `Warn90` (90–99%), or `Critical`
-    /// (≥100%) region relative to `capacity_bits()`.
-    ///
-    /// This is an informational check — use `validate_value` for hard enforcement.
-    /// Callers in the PyO3/WASM binding layer use this to surface warnings before
-    /// operations that would cause a capacity boundary crossing.
-    ///
-    /// # Example
-    /// ```ignore
-    /// let ke = KElimination::from_config(KElimConfig::Standard);
-    /// let report = ke.capacity_proximity(some_value);
-    /// if report.is_warning() {
-    ///     eprintln!("K-Elimination at {}% capacity ({} of {} bits)",
-    ///         report.utilization_pct, report.value_bits, report.capacity_bits);
-    /// }
-    /// ```
-    pub fn capacity_proximity(&self, value: u128) -> crate::arithmetic::boundary::CapacityReport {
-        use crate::arithmetic::boundary::{capacity_proximity_bits, u128_bit_length};
-        capacity_proximity_bits(u128_bit_length(value), self.capacity_bits())
+    pub fn try_capacity(&self) -> Option<u128> {
+        self.alpha_cap.checked_mul(self.beta_cap)
     }
 
-    /// Get total capacity (alpha_cap * beta_cap)
-    ///
-    /// Returns the maximum value that can be exactly reconstructed.
-    /// Values must be < capacity for exact K-Elimination reconstruction.
-    ///
-    /// Returns `u128::MAX` when the true capacity exceeds u128 (i.e., when
-    /// alpha_cap * beta_cap overflows). In that case all u128 values are
-    /// within capacity — validate_value will always pass, which is correct
-    /// because FHE plaintexts (bounded by the 30-bit prime Q) are always
-    /// well within a capacity exceeding u128::MAX.
+    #[deprecated(
+        since = "8.1.0",
+        note = "Use try_capacity(), capacity_limbs(), or capacity_bit_length()"
+    )]
     pub fn capacity(&self) -> u128 {
-        self.alpha_cap.saturating_mul(self.beta_cap)
+        self.try_capacity().expect(
+            "K-Elimination capacity exceeds u128; use capacity_limbs or capacity_bit_length",
+        )
     }
 
-    /// Get alpha codex capacity (product of alpha primes)
     pub fn alpha_capacity(&self) -> u128 {
         self.alpha_cap
     }
 
-    /// Get beta codex capacity (product of beta moduli)
     pub fn beta_capacity(&self) -> u128 {
         self.beta_cap
     }
 
-    /// Validate that a value is within reconstruction capacity.
-    ///
-    /// Returns `Ok(())` if the value can be exactly reconstructed,
-    /// or `Err` with the specific violation.
-    ///
-    /// # Preconditions (from KElimination.v)
-    /// - alpha_cap > 0
-    /// - beta_cap > 0
-    /// - gcd(alpha_cap, beta_cap) == 1
-    /// - value < alpha_cap * beta_cap (reconstruction capacity)
-    ///
-    /// The coprimality precondition is guaranteed by the constructor,
-    /// so this method only checks the value range.
+    pub fn capacity_proximity(
+        &self,
+        value: u128,
+    ) -> crate::arithmetic::boundary::CapacityReport {
+        use crate::arithmetic::boundary::{capacity_proximity_bits, u128_bit_length};
+        capacity_proximity_bits(u128_bit_length(value), self.capacity_bit_length())
+    }
+
     pub fn validate_value(&self, value: u128) -> Nine65Result<()> {
-        let capacity = self
-            .alpha_cap
-            .checked_mul(self.beta_cap)
-            .ok_or(Nine65Error::Overflow {
-                operation: "K-Elimination capacity computation",
-            })?;
-
-        if value >= capacity {
-            return Err(Nine65Error::RangeOverflow {
-                x: value,
-                bound: capacity,
-            });
+        if let Some(capacity) = self.try_capacity() {
+            if value >= capacity {
+                return Err(Nine65Error::RangeOverflow {
+                    x: value,
+                    bound: capacity,
+                });
+            }
         }
-
         Ok(())
     }
 
-    /// Validate preconditions for a dual-codex representation.
-    ///
-    /// Checks that v_alpha < alpha_cap and v_beta < beta_cap.
     pub fn validate_residues(&self, v_alpha: u128, v_beta: u128) -> Nine65Result<()> {
         if v_alpha >= self.alpha_cap {
             return Err(Nine65Error::RangeOverflow {
@@ -491,12 +273,7 @@ impl KElimination {
         Ok(())
     }
 
-    /// Exact division with full precondition validation.
-    ///
-    /// Returns `Err` if:
-    /// - residues are out of range
-    /// - divisor is zero
-    /// - division is not exact (value not divisible by divisor)
+    /// Explicit scalar boundary/reference division with complete validation.
     pub fn exact_divide_validated(
         &self,
         v_alpha: u128,
@@ -507,358 +284,340 @@ impl KElimination {
             return Err(Nine65Error::ModulusZero);
         }
         self.validate_residues(v_alpha, v_beta)?;
-
-        let k = self.extract_k(v_alpha, v_beta);
-        let v_full = v_alpha + k * self.alpha_cap;
-
-        if v_full % (divisor as u128) != 0 {
-            return Err(Nine65Error::InexactDivision {
-                value: v_full,
-                divisor,
-            });
+        let value = self.reconstruct_boundary_checked(v_alpha, v_beta)?;
+        if value % divisor as u128 != 0 {
+            return Err(Nine65Error::InexactDivision { value, divisor });
         }
-
-        Ok(v_full / (divisor as u128))
+        Ok(value / divisor as u128)
     }
 
-    /// Extract k value for exact reconstruction (CONSTANT-TIME - DEFAULT)
-    ///
-    /// Given:
-    ///   v_alpha = V mod alpha_cap
-    ///   v_beta = V mod beta_cap
-    ///
-    /// Computes k such that V = v_alpha + k * alpha_cap
-    ///
-    /// # Security
-    /// No data-dependent branches. Safe for processing secret data.
-    /// This is the default, constant-time implementation.
-    ///
-    /// For performance-critical code paths where timing leakage is acceptable
-    /// (e.g., processing only public data), use `extract_k_vartime()`.
-    ///
-    /// # Note
-    /// The modulo operation on v_alpha uses public beta_cap, so the division
-    /// timing doesn't leak secret information (beta_cap is a system parameter).
+    /// Extract the bounded winding index k from dual-family residues.
     pub fn extract_k(&self, v_alpha: u128, v_beta: u128) -> u128 {
-        // Constant-time subtraction: (v_beta - v_alpha) mod beta_cap
-        // sub_mod_kelim_ct handles v_alpha >= beta_cap correctly
         let diff = sub_mod_kelim_ct(v_beta, v_alpha, self.beta_cap);
-
-        // Constant-time multiplication
         mul_mod_u128_ct(diff, self.alpha_inv_beta, self.beta_cap)
     }
 
-    /// Extract k value for exact reconstruction (VARIABLE-TIME)
-    ///
-    /// # Security Warning
-    /// This function has timing side-channels based on input values.
-    /// Only use when processing public data where timing leakage is acceptable.
-    ///
-    /// For secret data, use `extract_k()` (the default, constant-time version).
     #[deprecated(
         since = "0.2.0",
-        note = "Use extract_k() for constant-time safety. Only use extract_k_vartime() when processing public data."
+        note = "Use extract_k(); variable-time extraction is for public reference data only"
     )]
     pub fn extract_k_vartime(&self, v_alpha: u128, v_beta: u128) -> u128 {
-        // k = (v_beta - v_alpha) * alpha_inv_beta mod beta_cap
-        let diff = if v_beta >= v_alpha {
-            v_beta - v_alpha
+        let reduced_alpha = v_alpha % self.beta_cap;
+        let diff = if v_beta >= reduced_alpha {
+            v_beta - reduced_alpha
         } else {
-            self.beta_cap - ((v_alpha - v_beta) % self.beta_cap)
+            self.beta_cap - (reduced_alpha - v_beta)
         };
-
         mul_mod_u128(diff, self.alpha_inv_beta, self.beta_cap)
     }
 
-    /// Exact division: compute V / divisor where divisor | V (CONSTANT-TIME - DEFAULT)
-    ///
-    /// This enables exact FHE rescaling.
-    ///
-    /// # Security
-    /// Uses constant-time k extraction. The final division is variable-time
-    /// but the divisor is typically public in FHE rescaling.
+    /// Scalar boundary/reference helper. Production FHE code must use lane-wise
+    /// DualRNS transduction rather than this projection.
     pub fn exact_divide(&self, v_alpha: u128, v_beta: u128, divisor: u64) -> u128 {
-        // Reconstruct full value using CT k extraction
-        let k = self.extract_k(v_alpha, v_beta);
-        let v_full = v_alpha + k * self.alpha_cap;
-
-        // Exact division (divisor must divide v_full)
-        v_full / (divisor as u128)
+        assert!(divisor != 0, "divisor must be nonzero");
+        let value = self
+            .reconstruct_boundary_checked(v_alpha, v_beta)
+            .expect("K-Elimination scalar boundary reconstruction overflow");
+        value / divisor as u128
     }
 
-    /// Exact division with remainder check (uses constant-time k extraction)
-    pub fn exact_divide_checked(&self, v_alpha: u128, v_beta: u128, divisor: u64) -> Option<u128> {
-        let k = self.extract_k(v_alpha, v_beta);
-        let v_full = v_alpha + k * self.alpha_cap;
-
-        if v_full.is_multiple_of(divisor as u128) {
-            Some(v_full / (divisor as u128))
+    pub fn exact_divide_checked(
+        &self,
+        v_alpha: u128,
+        v_beta: u128,
+        divisor: u64,
+    ) -> Option<u128> {
+        if divisor == 0 {
+            return None;
+        }
+        let value = self.reconstruct_boundary_checked(v_alpha, v_beta).ok()?;
+        if value % divisor as u128 == 0 {
+            Some(value / divisor as u128)
         } else {
             None
         }
     }
 
-    /// Scale value by t/q with exact rounding (CONSTANT-TIME - DEFAULT)
-    ///
-    /// Computes: round(value * t / q) exactly
-    /// This is the critical operation for BFV multiplication
-    ///
-    /// # Security
-    /// Uses constant-time k extraction. Final division is variable-time
-    /// but t and q are typically public parameters.
+    /// Public scalar reference scaling helper.
     pub fn scale_and_round(&self, value: u64, t: u64, q: u64) -> u64 {
-        // Compute: round(value * t / q) = floor((value * t + q/2) / q)
-        let value = value as u128;
-        let t = t as u128;
-        let q = q as u128;
-
-        // Numerator = value * t + q/2 (for rounding)
-        let numerator = value * t + q / 2;
-
-        // Get dual-codex representation
+        assert!(q != 0, "q must be nonzero");
+        let numerator = value as u128 * t as u128 + q as u128 / 2;
         let v_alpha = numerator % self.alpha_cap;
         let v_beta = numerator % self.beta_cap;
-
-        // Constant-time k extraction
-        let k = self.extract_k(v_alpha, v_beta);
-        let full_numerator = v_alpha + k * self.alpha_cap;
-
-        // Division by q
-        ((full_numerator / q) % q) as u64
+        let full_numerator = self
+            .reconstruct_boundary_checked(v_alpha, v_beta)
+            .expect("K-Elimination scalar scaling reconstruction overflow");
+        ((full_numerator / q as u128) % q as u128) as u64
     }
 
-    // =========================================================================
-    // VARIABLE-TIME OPERATIONS (for public data only)
-    // =========================================================================
-
-    /// Exact division: compute V / divisor (VARIABLE-TIME)
-    ///
-    /// # Security Warning
-    /// Uses variable-time k extraction with timing side-channels.
-    /// Only use when processing public data.
     #[deprecated(
         since = "0.2.0",
-        note = "Use exact_divide() for constant-time safety. Only use exact_divide_vartime() when processing public data."
+        note = "Use exact_divide(); variable-time division is for public reference data only"
     )]
     #[allow(deprecated)]
-    pub fn exact_divide_vartime(&self, v_alpha: u128, v_beta: u128, divisor: u64) -> u128 {
+    pub fn exact_divide_vartime(
+        &self,
+        v_alpha: u128,
+        v_beta: u128,
+        divisor: u64,
+    ) -> u128 {
+        assert!(divisor != 0, "divisor must be nonzero");
         let k = self.extract_k_vartime(v_alpha, v_beta);
-        let v_full = v_alpha + k * self.alpha_cap;
-        v_full / (divisor as u128)
+        let value = v_alpha
+            .checked_add(
+                k.checked_mul(self.alpha_cap)
+                    .expect("K-Elimination scalar reconstruction multiplication overflow"),
+            )
+            .expect("K-Elimination scalar reconstruction addition overflow");
+        value / divisor as u128
     }
 
-    /// Scale value by t/q with exact rounding (VARIABLE-TIME)
-    ///
-    /// # Security Warning
-    /// Uses variable-time k extraction with timing side-channels.
-    /// Only use when processing public data.
     #[deprecated(
         since = "0.2.0",
-        note = "Use scale_and_round() for constant-time safety. Only use scale_and_round_vartime() when processing public data."
+        note = "Use scale_and_round(); variable-time scaling is for public reference data only"
     )]
     #[allow(deprecated)]
     pub fn scale_and_round_vartime(&self, value: u64, t: u64, q: u64) -> u64 {
-        let value = value as u128;
-        let t = t as u128;
-        let q = q as u128;
-
-        let numerator = value * t + q / 2;
-
+        assert!(q != 0, "q must be nonzero");
+        let numerator = value as u128 * t as u128 + q as u128 / 2;
         let v_alpha = numerator % self.alpha_cap;
         let v_beta = numerator % self.beta_cap;
-
-        // Variable-time k extraction
         let k = self.extract_k_vartime(v_alpha, v_beta);
-        let full_numerator = v_alpha + k * self.alpha_cap;
+        let full_numerator = v_alpha
+            .checked_add(
+                k.checked_mul(self.alpha_cap)
+                    .expect("K-Elimination scalar scaling multiplication overflow"),
+            )
+            .expect("K-Elimination scalar scaling addition overflow");
+        ((full_numerator / q as u128) % q as u128) as u64
+    }
 
-        ((full_numerator / q) % q) as u64
+    fn reconstruct_boundary_checked(
+        &self,
+        v_alpha: u128,
+        v_beta: u128,
+    ) -> Nine65Result<u128> {
+        self.validate_residues(v_alpha, v_beta)?;
+        let k = self.extract_k(v_alpha, v_beta);
+        let winding = k
+            .checked_mul(self.alpha_cap)
+            .ok_or(Nine65Error::Overflow {
+                operation: "K-Elimination scalar boundary multiplication",
+            })?;
+        v_alpha.checked_add(winding).ok_or(Nine65Error::Overflow {
+            operation: "K-Elimination scalar boundary addition",
+        })
     }
 }
 
-/// Modular inverse using extended Euclidean algorithm (u128)
-fn mod_inverse_u128(a: u128, m: u128) -> Option<u128> {
-    let (g, x, _) = extended_gcd_i128(a as i128, m as i128);
-
-    if g != 1 {
-        return None; // No inverse exists
+fn validate_alpha_family(values: &[u64]) -> Nine65Result<()> {
+    if values.is_empty() {
+        return Err(Nine65Error::InvalidParameter {
+            message: "CLASS-F alpha family must not be empty".to_string(),
+        });
     }
+    for (index, &value) in values.iter().enumerate() {
+        if value <= 1 || !is_prime(value) {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!("CLASS-F alpha modulus {value} is not prime"),
+            });
+        }
+        for &previous in &values[..index] {
+            let gcd = gcd_u128(value as u128, previous as u128);
+            if gcd != 1 {
+                return Err(Nine65Error::NotCoprime {
+                    m: value,
+                    a: previous,
+                    gcd: gcd as u64,
+                });
+            }
+        }
+    }
+    Ok(())
+}
 
-    // Ensure positive result
-    let result = if x < 0 {
-        (x + m as i128) as u128
+fn validate_beta_family(values: &[u64]) -> Nine65Result<()> {
+    if values.is_empty() {
+        return Err(Nine65Error::InvalidParameter {
+            message: "CLASS-R beta family must not be empty".to_string(),
+        });
+    }
+    for (index, &value) in values.iter().enumerate() {
+        if value <= 1 {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!("CLASS-R beta modulus {value} must be greater than one"),
+            });
+        }
+        for &previous in &values[..index] {
+            let gcd = gcd_u128(value as u128, previous as u128);
+            if gcd != 1 {
+                return Err(Nine65Error::NotCoprime {
+                    m: value,
+                    a: previous,
+                    gcd: gcd as u64,
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_cross_family(alpha: &[u64], beta: &[u64]) -> Nine65Result<()> {
+    for &alpha_modulus in alpha {
+        for &beta_modulus in beta {
+            let gcd = gcd_u128(alpha_modulus as u128, beta_modulus as u128);
+            if gcd != 1 {
+                return Err(Nine65Error::NotCoprime {
+                    m: alpha_modulus,
+                    a: beta_modulus,
+                    gcd: gcd as u64,
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+fn checked_product(values: &[u64], operation: &'static str) -> Nine65Result<u128> {
+    values
+        .iter()
+        .try_fold(1u128, |acc, &value| acc.checked_mul(value as u128))
+        .ok_or(Nine65Error::Overflow { operation })
+}
+
+fn multiply_u128(a: u128, b: u128) -> [u64; 4] {
+    let a0 = a as u64 as u128;
+    let a1 = (a >> 64) as u64 as u128;
+    let b0 = b as u64 as u128;
+    let b1 = (b >> 64) as u64 as u128;
+
+    let p00 = a0 * b0;
+    let p01 = a0 * b1;
+    let p10 = a1 * b0;
+    let p11 = a1 * b1;
+
+    let limb0 = p00 as u64;
+    let middle = (p00 >> 64) + (p01 as u64 as u128) + (p10 as u64 as u128);
+    let limb1 = middle as u64;
+    let upper = (p01 >> 64) + (p10 >> 64) + (p11 as u64 as u128) + (middle >> 64);
+    let limb2 = upper as u64;
+    let limb3 = ((p11 >> 64) + (upper >> 64)) as u64;
+    [limb0, limb1, limb2, limb3]
+}
+
+fn trim_fixed_limbs(limbs: [u64; 4]) -> Vec<u64> {
+    let mut result = limbs.to_vec();
+    while result.len() > 1 && result.last() == Some(&0) {
+        result.pop();
+    }
+    result
+}
+
+fn limbs_bit_length(limbs: &[u64]) -> u32 {
+    for index in (0..limbs.len()).rev() {
+        if limbs[index] != 0 {
+            return index as u32 * 64 + (64 - limbs[index].leading_zeros());
+        }
+    }
+    0
+}
+
+fn diagnostic_u64(value: u128) -> u64 {
+    if value > u64::MAX as u128 {
+        u64::MAX
     } else {
-        x as u128
-    };
-
-    Some(result % m)
+        value as u64
+    }
 }
 
-/// Extended GCD for i128
-fn extended_gcd_i128(a: i128, b: i128) -> (i128, i128, i128) {
-    if a == 0 {
-        return (b, 0, 1);
+/// Variable-time inverse over public safe-basis moduli using coefficients kept
+/// modulo `modulus`; no signed narrowing occurs.
+fn mod_inverse_u128(value: u128, modulus: u128) -> Option<u128> {
+    if modulus <= 1 {
+        return None;
+    }
+    let mut r = modulus;
+    let mut new_r = value % modulus;
+    let mut coefficient = 0u128;
+    let mut new_coefficient = 1u128;
+
+    while new_r != 0 {
+        let quotient = r / new_r;
+        let next_r = r - quotient * new_r;
+        r = new_r;
+        new_r = next_r;
+
+        let scaled = mul_mod_u128(quotient, new_coefficient, modulus);
+        let next_coefficient = sub_mod_u128_ct(coefficient, scaled, modulus);
+        coefficient = new_coefficient;
+        new_coefficient = next_coefficient;
     }
 
-    let (g, x1, y1) = extended_gcd_i128(b % a, a);
-    let x = y1 - (b / a) * x1;
-    let y = x1;
-
-    (g, x, y)
+    if r == 1 {
+        Some(coefficient)
+    } else {
+        None
+    }
 }
 
-/// GCD for u128 using Euclidean algorithm
 fn gcd_u128(mut a: u128, mut b: u128) -> u128 {
     while b != 0 {
-        let t = b;
-        b = a % b;
-        a = t;
+        let remainder = a % b;
+        a = b;
+        b = remainder;
     }
     a
 }
 
-/// Modular multiplication for u128 (variable-time)
-///
-/// # Security Note
-/// This function has timing side-channels. Use `mul_mod_u128_ct` for
-/// constant-time operation when processing secret data.
-fn mul_mod_u128(a: u128, b: u128, m: u128) -> u128 {
-    // For large values, use careful multiplication
-    if a < (1u128 << 64) && b < (1u128 << 64) {
-        (a * b) % m
-    } else {
-        // Use Montgomery-like approach for large values
-        let mut result = 0u128;
-        let mut a = a % m;
-        let mut b = b;
-
-        while b > 0 {
-            if b & 1 == 1 {
-                result = (result + a) % m;
-            }
-            a = (a << 1) % m;
-            b >>= 1;
-        }
-
-        result
-    }
+fn sub_mod_u128_ct(a: u128, b: u128, modulus: u128) -> u128 {
+    let difference = a.wrapping_sub(b);
+    let mask = ((a < b) as u128).wrapping_neg();
+    difference.wrapping_add(modulus & mask)
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CONSTANT-TIME OPERATIONS (for defense-in-depth)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Constant-time conditional subtraction: result = (a - b) mod m
-///
-/// # Security
-/// No data-dependent branches. Time is constant regardless of input values.
-///
-/// # Assumptions
-/// Both a and b must be < m for correct results.
-///
-/// # Correctness
-/// - When a >= b: returns a - b (no wraparound needed)
-/// - When a < b: returns m - (b - a) = m + a - b = (a - b) + m
-#[inline(always)]
-fn sub_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
-    let diff = a.wrapping_sub(b); // Correct when a >= b; wraps when a < b
-
-    // If a < b, diff wrapped and we need to add m to get correct result
-    let needs_add = (a < b) as u128;
-    let mask = needs_add.wrapping_neg(); // 0 or u128::MAX
-
-    // Add m only when a < b (mask is all 1s)
-    diff.wrapping_add(m & mask)
+fn sub_mod_kelim_ct(a: u128, b: u128, modulus: u128) -> u128 {
+    sub_mod_u128_ct(a, b % modulus, modulus)
 }
 
-/// Constant-time subtraction for K-elimination: result = (a - b) mod m
-///
-/// # Security
-/// Uses constant-time operations. The modulo by m uses hardware division
-/// which is constant-time for fixed bit-width operands.
-///
-/// # Note
-/// Unlike sub_mod_u128_ct, this handles the case where b > m (which happens
-/// in K-elimination where v_alpha can be >= beta_cap).
-#[inline(always)]
-fn sub_mod_kelim_ct(a: u128, b: u128, m: u128) -> u128 {
-    // Reduce b mod m first (b can be >= m in K-elimination)
-    // Then compute (a - b_reduced) mod m using CT subtraction
-    let b_reduced = b % m;
-    sub_mod_u128_ct(a, b_reduced, m)
-}
+/// Exact branchless modular addition for normalized residues `a,b < modulus`.
+fn add_mod_u128_ct(a: u128, b: u128, modulus: u128) -> u128 {
+    debug_assert!(modulus != 0);
+    debug_assert!(a < modulus);
+    debug_assert!(b < modulus);
 
-/// Constant-time modular addition for u128
-///
-/// Computes (a + b) mod m without branches.
-/// Assumes a, b < m.
-#[inline(always)]
-fn add_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
+    let threshold = modulus - b;
+    let reduced = a.wrapping_sub(threshold);
     let sum = a.wrapping_add(b);
-    let diff = sum.wrapping_sub(m);
-
-    // Need to reduce if: overflow occurred (sum < a) OR sum >= m
-    let overflow = (sum < a) as u128;
-    let geq_m = (sum >= m) as u128;
-    let need_reduce = overflow | geq_m;
-    let mask = need_reduce.wrapping_neg(); // 0 or u128::MAX
-
-    // Select diff if need_reduce, else sum
-    (diff & mask) | (sum & !mask)
+    let reduce_mask = ((a >= threshold) as u128).wrapping_neg();
+    (reduced & reduce_mask) | (sum & !reduce_mask)
 }
 
-/// Constant-time modular multiplication for u128
-///
-/// # Security
-/// Uses a 4-bit windowed approach (32 iterations) to reduce overhead while
-/// maintaining constant-time properties. No data-dependent branches.
-fn mul_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
-    if m == 0 {
+fn mul_mod_u128_ct(a: u128, b: u128, modulus: u128) -> u128 {
+    if modulus == 0 {
         return 0;
     }
     let mut result = 0u128;
-    let a = a % m;
-    let mut b = b;
-
-    // 4-bit windowed approach: 32 iterations for 128 bits
-    // Precompute a * [0..15] mod m
-    let mut table = [0u128; 16];
-    table[1] = a;
-    for i in 2..16 {
-        table[i] = add_mod_u128_ct(table[i - 1], a, m);
+    let mut addend = a % modulus;
+    for bit in 0..128 {
+        let selected = ((b >> bit) & 1).wrapping_neg();
+        result = add_mod_u128_ct(result, addend & selected, modulus);
+        addend = add_mod_u128_ct(addend, addend, modulus);
     }
-
-    for _ in 0..32 {
-        // Shift result by 4 bits (CT)
-        for _ in 0..4 {
-            result = add_mod_u128_ct(result, result, m);
-        }
-
-        // Extract 4 bits from b
-        let window = (b >> 124) as usize;
-        b <<= 4;
-
-        // Select from table in constant-time
-        let mut add_val = 0u128;
-        for (i, &val) in table.iter().enumerate() {
-            let mask = ((window == i) as u128).wrapping_neg();
-            add_val |= val & mask;
-        }
-
-        result = add_mod_u128_ct(result, add_val, m);
-    }
-
     result
 }
 
-// Bench-only wrappers (keep internal functions private in normal builds)
-#[cfg(feature = "benchmarks")]
-pub fn bench_mul_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
-    mul_mod_u128_ct(a, b, m)
+fn mul_mod_u128(a: u128, b: u128, modulus: u128) -> u128 {
+    mul_mod_u128_ct(a, b, modulus)
 }
 
 #[cfg(feature = "benchmarks")]
-pub fn bench_sub_mod_u128_ct(a: u128, b: u128, m: u128) -> u128 {
-    sub_mod_u128_ct(a, b, m)
+pub fn bench_mul_mod_u128_ct(a: u128, b: u128, modulus: u128) -> u128 {
+    mul_mod_u128_ct(a, b, modulus)
+}
+
+#[cfg(feature = "benchmarks")]
+pub fn bench_sub_mod_u128_ct(a: u128, b: u128, modulus: u128) -> u128 {
+    sub_mod_u128_ct(a, b, modulus)
 }
 
 #[cfg(test)]
@@ -866,637 +625,136 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_k_elimination_basic() {
-        let ke = KElimination::new(
-            &[17, 19], // alpha = 323
-            &[23, 29], // beta = 667
+    fn safe_basis_validation() {
+        assert!(KElimination::try_new(&[17, 19], &[23, 29]).is_ok());
+        assert!(KElimination::try_new(&[15, 17], &[23]).is_err());
+        assert!(KElimination::try_new(&[17, 17], &[23]).is_err());
+        assert!(KElimination::try_new(&[17, 19], &[23, 46]).is_err());
+        assert!(KElimination::try_new(&[17, 19], &[17, 23]).is_err());
+    }
+
+    #[test]
+    fn exact_capacity_metadata() {
+        for config in [
+            KElimConfig::Minimal,
+            KElimConfig::Standard,
+            KElimConfig::Extended,
+            KElimConfig::Maximum,
+            KElimConfig::HardwareOpt,
+        ] {
+            let value = KElimination::from_config(config);
+            if let Some(capacity) = value.try_capacity() {
+                assert_eq!(
+                    value.alpha_cap.checked_mul(value.beta_cap),
+                    Some(capacity)
+                );
+                assert_eq!(
+                    value.capacity_limbs().len(),
+                    if capacity >> 64 == 0 { 1 } else { 2 }
+                );
+            } else {
+                assert_eq!(value.alpha_cap.checked_mul(value.beta_cap), None);
+                assert!(value.capacity_bit_length() > 128);
+                assert!(value.capacity_limbs().len() >= 3);
+            }
+        }
+    }
+
+    #[test]
+    fn exact_capacity_bits_match_presets() {
+        assert_eq!(KElimConfig::Minimal.capacity_bits(), 64);
+        assert_eq!(KElimConfig::Standard.capacity_bits(), 110);
+        assert_eq!(KElimConfig::Extended.capacity_bits(), 138);
+        assert_eq!(KElimConfig::Maximum.capacity_bits(), 188);
+        assert_eq!(KElimConfig::HardwareOpt.capacity_bits(), 140);
+    }
+
+    #[test]
+    fn extraction_and_division_match_reference_values() {
+        let value = KElimination::new(&[17, 19], &[23, 29]);
+        for scalar in [0u128, 1, 1000, 10_000, 200_000] {
+            let alpha = scalar % value.alpha_cap;
+            let beta = scalar % value.beta_cap;
+            let reconstructed = alpha + value.extract_k(alpha, beta) * value.alpha_cap;
+            assert_eq!(reconstructed, scalar);
+        }
+
+        let division = KElimination::new(&[65537, 65521], &[65519, 65497]);
+        let scalar = 12_345u128;
+        assert_eq!(
+            division.exact_divide_checked(
+                scalar % division.alpha_cap,
+                scalar % division.beta_cap,
+                5,
+            ),
+            Some(2469)
         );
-
-        assert_eq!(ke.alpha_cap, 323);
-        assert_eq!(ke.beta_cap, 667);
-
-        // Test value
-        let v: u128 = 1000;
-        let v_alpha = v % ke.alpha_cap;
-        let v_beta = v % ke.beta_cap;
-
-        let k = ke.extract_k(v_alpha, v_beta);
-        let reconstructed = v_alpha + k * ke.alpha_cap;
-
-        assert_eq!(reconstructed, v, "Reconstruction failed");
     }
 
     #[test]
-    fn test_exact_division() {
-        let ke = KElimination::new(&[65537, 65521], &[65519, 65497]);
-
-        // Test: 12345 / 5 = 2469
-        let v: u128 = 12345;
-        let divisor = 5u64;
-
-        let v_alpha = v % ke.alpha_cap;
-        let v_beta = v % ke.beta_cap;
-
-        let result = ke.exact_divide(v_alpha, v_beta, divisor);
-        assert_eq!(result, 2469);
+    fn validated_division_rejects_range_and_inexactness() {
+        let value = KElimination::new(&[17, 19], &[23, 29]);
+        assert!(value
+            .exact_divide_validated(value.alpha_cap, 0, 1)
+            .is_err());
+        let scalar = 1001u128;
+        assert!(value
+            .exact_divide_validated(
+                scalar % value.alpha_cap,
+                scalar % value.beta_cap,
+                2,
+            )
+            .is_err());
     }
 
     #[test]
-    fn test_scale_and_round() {
-        let ke = KElimination::for_fhe(65537);
-
-        // Test: round(100 * 257 / 65537) = round(25700 / 65537) = 0
-        let result = ke.scale_and_round(100, 257, 65537);
-        assert_eq!(result, 0);
-
-        // Test: round(50000 * 257 / 65537) = round(12850000 / 65537) = 196
-        let result = ke.scale_and_round(50000, 257, 65537);
-        let expected = ((50000u128 * 257 + 65537 / 2) / 65537) as u64;
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_large_values() {
-        let ke = KElimination::new(&[65537, 65521, 65519], &[65497, 65479]);
-
-        // Large value that would overflow u64
-        let v: u128 = 1_000_000_000_000;
-        let v_alpha = v % ke.alpha_cap;
-        let v_beta = v % ke.beta_cap;
-
-        let k = ke.extract_k(v_alpha, v_beta);
-        let reconstructed = v_alpha + k * ke.alpha_cap;
-
-        assert_eq!(reconstructed, v);
-    }
-
-    #[test]
-    fn test_fhe_rescaling() {
-        // Simulate BFV rescaling scenario
-        let ke = KElimination::for_fhe(65537);
-        let q: u64 = 65537;
-        let t: u64 = 257;
-
-        // After tensor product, coefficients can be large
-        // Test scaling various coefficient values
-        for coeff in [0u64, 1, 100, 1000, 10000, 32768, 65536] {
-            let scaled = ke.scale_and_round(coeff, t, q);
-            let expected = (((coeff as u128) * (t as u128) + (q as u128) / 2) / (q as u128)) as u64;
-            assert_eq!(scaled, expected % q, "Scaling failed for coeff={}", coeff);
-        }
-    }
-
-    // =========================================================================
-    // CONSTANT-TIME OPERATION TESTS (verifying CT is now default)
-    // =========================================================================
-
-    #[test]
-    #[allow(deprecated)]
-    fn test_extract_k_ct_matches_vartime() {
-        let ke = KElimination::new(
-            &[17, 19], // alpha = 323
-            &[23, 29], // beta = 667
-        );
-
-        // Capacity = alpha_cap * beta_cap = 323 * 667 = 215441
-        let capacity = ke.alpha_cap * ke.beta_cap;
-
-        // Test that default (CT) matches deprecated vartime version
-        // Only test values within capacity for reconstruction verification
-        for v in [0u128, 1, 100, 1000, 10000, 100000, 200000] {
-            let v_alpha = v % ke.alpha_cap;
-            let v_beta = v % ke.beta_cap;
-
-            let k_ct_default = ke.extract_k(v_alpha, v_beta);
-            let k_vartime = ke.extract_k_vartime(v_alpha, v_beta);
-
-            assert_eq!(
-                k_ct_default, k_vartime,
-                "Default CT and vartime extract_k differ for v={}",
-                v
-            );
-
-            // Verify reconstruction works with CT
-            // For values > capacity, we get v mod capacity
-            let reconstructed = v_alpha + k_ct_default * ke.alpha_cap;
-            let expected = v % capacity;
-            assert_eq!(
-                reconstructed, expected,
-                "CT reconstruction failed for v={}",
-                v
-            );
+    fn scale_and_round_matches_integer_reference() {
+        let value = KElimination::for_fhe(65537);
+        for coefficient in [0u64, 1, 100, 1000, 10_000, 32_768, 65_536] {
+            let expected =
+                ((coefficient as u128 * 257 + 65537 / 2) / 65537) as u64;
+            assert_eq!(value.scale_and_round(coefficient, 257, 65537), expected);
         }
     }
 
     #[test]
-    #[allow(deprecated)]
-    fn test_exact_divide_ct_matches_vartime() {
-        let ke = KElimination::new(&[65537, 65521], &[65519, 65497]);
-
-        // Test that default (CT) matches deprecated vartime version
-        for v in [10u128, 100, 1000, 12345, 67890] {
-            let divisor = 5u64;
-            let v_full = v * (divisor as u128); // Ensure divisible
-
-            let v_alpha = v_full % ke.alpha_cap;
-            let v_beta = v_full % ke.beta_cap;
-
-            let result_ct_default = ke.exact_divide(v_alpha, v_beta, divisor);
-            let result_vartime = ke.exact_divide_vartime(v_alpha, v_beta, divisor);
-
-            assert_eq!(
-                result_ct_default, result_vartime,
-                "Default CT and vartime exact_divide differ for v_full={}",
-                v_full
-            );
-            assert_eq!(result_ct_default, v, "Exact division failed");
+    fn constant_and_variable_extractors_agree() {
+        let value = KElimination::new(&[17, 19], &[23, 29]);
+        for scalar in [0u128, 1, 100, 1000, 10_000, 100_000, 200_000] {
+            let alpha = scalar % value.alpha_cap;
+            let beta = scalar % value.beta_cap;
+            #[allow(deprecated)]
+            let variable = value.extract_k_vartime(alpha, beta);
+            assert_eq!(value.extract_k(alpha, beta), variable);
         }
     }
 
     #[test]
-    #[allow(deprecated)]
-    fn test_scale_and_round_ct_matches_vartime() {
-        let ke = KElimination::for_fhe(65537);
-        let q: u64 = 65537;
-        let t: u64 = 257;
-
-        for coeff in [0u64, 1, 100, 1000, 10000, 32768, 65536] {
-            let scaled_ct_default = ke.scale_and_round(coeff, t, q);
-            let scaled_vartime = ke.scale_and_round_vartime(coeff, t, q);
-
-            assert_eq!(
-                scaled_ct_default, scaled_vartime,
-                "Default CT and vartime scale_and_round differ for coeff={}",
-                coeff
-            );
-        }
-    }
-
-    #[test]
-    fn test_extract_k_is_constant_time_default() {
-        // Verify the default extract_k uses CT implementation
-        let ke = KElimination::new(&[17, 19], &[23, 29]);
-
-        // Various inputs should all work correctly with CT
-        for v in [0u128, 1, 100, 1000, 100000] {
-            let v_alpha = v % ke.alpha_cap;
-            let v_beta = v % ke.beta_cap;
-
-            let k = ke.extract_k(v_alpha, v_beta);
-            let reconstructed = v_alpha + k * ke.alpha_cap;
-
-            assert_eq!(reconstructed, v, "CT reconstruction failed");
-        }
-    }
-
-    #[test]
-    fn test_sub_mod_u128_ct() {
-        let m = 667u128;
-
-        // Test a > b (no borrow needed)
-        assert_eq!(super::sub_mod_u128_ct(100, 30, m), 70);
-
-        // Test a < b (borrow needed)
-        assert_eq!(super::sub_mod_u128_ct(30, 100, m), m - 70);
-
-        // Test a == b
-        assert_eq!(super::sub_mod_u128_ct(50, 50, m), 0);
-
-        // Test edge cases
-        assert_eq!(super::sub_mod_u128_ct(0, 0, m), 0);
-        assert_eq!(super::sub_mod_u128_ct(m - 1, 0, m), m - 1);
-        assert_eq!(super::sub_mod_u128_ct(0, m - 1, m), 1);
-    }
-
-    #[test]
-    fn test_mul_mod_u128_ct_correctness() {
-        let m = 667u128;
-
-        // Test various multiplications
-        for a in [0u128, 1, 100, 374, 442, 500, 666] {
-            for b in [0u128, 1, 100, 200, 500, 666] {
-                let result_vt = super::mul_mod_u128(a, b, m);
-                let result_ct = super::mul_mod_u128_ct(a, b, m);
-                let expected = (a * b) % m;
-
-                assert_eq!(
-                    result_vt, expected,
-                    "VT mul_mod failed: {}*{} mod {} = {} (expected {})",
-                    a, b, m, result_vt, expected
-                );
-                assert_eq!(
-                    result_ct, expected,
-                    "CT mul_mod failed: {}*{} mod {} = {} (expected {})",
-                    a, b, m, result_ct, expected
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn test_mul_mod_u128_ct_large_modulus() {
-        // Test with larger modulus like beta_cap in real configs
-        let m = 4611686018427387847u128; // 62-bit prime
-
-        for a in [0u128, 1, 1000, 1_000_000, 1_000_000_000] {
-            for b in [0u128, 1, 1000, 1_000_000, 1_000_000_000] {
-                let result_vt = super::mul_mod_u128(a, b, m);
-                let result_ct = super::mul_mod_u128_ct(a, b, m);
-
-                assert_eq!(
-                    result_vt, result_ct,
-                    "CT differs from VT: {}*{} mod {} = {} (vt) vs {} (ct)",
-                    a, b, m, result_vt, result_ct
-                );
-            }
-        }
-    }
-
-    // =========================================================================
-    // CONFIGURATION TESTS
-    // =========================================================================
-
-    #[test]
-    fn test_kelim_config_from_config() {
-        for config in [
-            KElimConfig::Minimal,
-            KElimConfig::Standard,
-            KElimConfig::Extended,
-            KElimConfig::Maximum,
+    fn modular_multiplication_matches_reference() {
+        let modulus = 4611686018427387847u128;
+        for (a, b) in [
+            (0u128, 0u128),
+            (1, 1),
+            (12345, 67890),
+            (modulus - 1, modulus - 1),
         ] {
-            let ke = KElimination::from_config(config);
-            assert_eq!(ke.config(), Some(config));
-            assert!(ke.capacity_bits() > 0);
+            assert_eq!(mul_mod_u128_ct(a, b, modulus), (a * b) % modulus);
         }
     }
 
     #[test]
-    fn test_kelim_config_capacity() {
-        let minimal = KElimination::from_config(KElimConfig::Minimal);
-        let standard = KElimination::from_config(KElimConfig::Standard);
-        let extended = KElimination::from_config(KElimConfig::Extended);
-        let maximum = KElimination::from_config(KElimConfig::Maximum);
-
-        // Capacity should increase with each level
-        assert!(standard.capacity_bits() > minimal.capacity_bits());
-        assert!(extended.capacity_bits() > standard.capacity_bits());
-        assert!(maximum.capacity_bits() > extended.capacity_bits());
-    }
-
-    /// Verified primality check for CLASS-F verification.
-    fn is_prime(n: u64) -> bool {
-        if n < 2 { return false; }
-        if n == 2 || n == 3 { return true; }
-        if n % 2 == 0 || n % 3 == 0 { return false; }
-        let mut i = 5;
-        while i * i <= n {
-            if n % i == 0 || n % (i + 2) == 0 { return false; }
-            i += 6;
-        }
-        true
-    }
-
-    /// Greatest common divisor for u128.
-    fn gcd_u128(mut a: u128, mut b: u128) -> u128 {
-        while b != 0 {
-            let t = b;
-            b = a % b;
-            a = t;
-        }
-        a
-    }
-
-    /// Greatest common divisor for u64.
-    fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
-        while b != 0 {
-            let t = b;
-            b = a % b;
-            a = t;
-        }
-        a
+    fn modular_addition_handles_u128_wrap_boundary() {
+        let modulus = u128::MAX - 158;
+        let a = modulus - 1;
+        let b = modulus - 1;
+        assert_eq!(add_mod_u128_ct(a, b, modulus), modulus - 2);
     }
 
     #[test]
-    fn test_class_f_moduli_are_prime() {
-        // Alpha primes MUST be prime (CLASS-F adjacent)
-        for config in [
-            KElimConfig::Minimal,
-            KElimConfig::Standard,
-            KElimConfig::Extended,
-            KElimConfig::Maximum,
-            KElimConfig::HardwareOpt,
-        ] {
-            for &p in &config.alpha_primes() {
-                assert!(is_prime(p), "CLASS-F: alpha {} must be prime", p);
-            }
-        }
-    }
-
-    #[test]
-    fn test_class_r_moduli_are_coprime() {
-        let ntt_primes = [998244353, 985661441, 754974721, 469762049, 167772161, 595591169];
-        let configs = [
-            KElimConfig::Minimal,
-            KElimConfig::Standard,
-            KElimConfig::Extended,
-            KElimConfig::Maximum,
-            KElimConfig::HardwareOpt,
-        ];
-
-        for config in configs {
-            let alphas = config.alpha_primes();
-            let betas = config.beta_moduli();
-            let alpha_cap: u128 = alphas.iter().map(|&p| p as u128).product();
-            let beta_cap: u128 = betas.iter().map(|&b| b as u128).product();
-
-            // Alpha-beta coprimality (required for Garner inverse)
-            assert_eq!(gcd_u128(alpha_cap, beta_cap), 1,
-                "{:?}: alpha_cap and beta_cap must be coprime", config);
-
-            // Beta pairwise coprimality
-            for i in 0..betas.len() {
-                for j in (i+1)..betas.len() {
-                    assert_eq!(gcd_u64(betas[i], betas[j]), 1,
-                        "{:?}: beta moduli {} and {} must be coprime", config, betas[i], betas[j]);
-                }
-            }
-
-            // Beta-NTT coprimality
-            for &b in &betas {
-                for &q in &ntt_primes {
-                    assert_eq!(gcd_u64(b, q), 1,
-                        "{:?}: beta {} must be coprime to NTT prime {}", config, b, q);
-                }
-            }
-
-            // Odd modulus (required for Montgomery)
-            for &b in &betas {
-                assert!(b % 2 == 1, "{:?}: beta {} must be odd for Montgomery", config, b);
-            }
-        }
-    }
-
-    #[test]
-    fn test_kelim_for_degree() {
-        // Small N should use Standard
-        let ke_small = KElimination::for_degree(1024);
-        assert_eq!(ke_small.config(), Some(KElimConfig::Standard));
-
-        // Medium N should use Extended
-        let ke_medium = KElimination::for_degree(4096);
-        assert_eq!(ke_medium.config(), Some(KElimConfig::Extended));
-
-        // Large N should use Maximum
-        let ke_large = KElimination::for_degree(8192);
-        assert_eq!(ke_large.config(), Some(KElimConfig::Maximum));
-    }
-
-    #[test]
-    fn test_kelim_builder_success() {
-        let ke = KElimBuilder::new()
-            .alpha_primes(&[17, 19])
-            .beta_moduli(&[23, 29])
-            .build();
-
-        assert!(ke.is_ok());
-        let ke = ke.unwrap();
-        assert_eq!(ke.alpha_cap, 323);
-        assert_eq!(ke.beta_cap, 667);
-    }
-
-    #[test]
-    fn test_kelim_builder_missing_primes() {
-        // Missing alpha primes
-        let result = KElimBuilder::new().beta_moduli(&[23, 29]).build();
-        assert!(result.is_err());
-
-        // Missing beta moduli
-        let result = KElimBuilder::new().alpha_primes(&[17, 19]).build();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_kelim_try_new_coprime() {
-        // Coprime primes should succeed
-        let result = KElimination::try_new(&[17, 19], &[23, 29]);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn test_kelim_try_new_not_coprime() {
-        // Non-coprime should fail (both have factor of 17)
-        let result = KElimination::try_new(&[17, 19], &[17, 29]);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_all_configs_work_for_reconstruction() {
-        for config in [
-            KElimConfig::Minimal,
-            KElimConfig::Standard,
-            KElimConfig::Extended,
-            KElimConfig::Maximum,
-            KElimConfig::HardwareOpt,
-        ] {
-            let ke = KElimination::from_config(config);
-
-            // Test reconstruction for various values within capacity
-            for v in [0u128, 1, 1000, 1_000_000, 1_000_000_000] {
-                let v_alpha = v % ke.alpha_cap;
-                let v_beta = v % ke.beta_cap;
-
-                let k = ke.extract_k(v_alpha, v_beta);
-                let reconstructed = v_alpha + k * ke.alpha_cap;
-
-                assert_eq!(
-                    reconstructed, v,
-                    "Reconstruction failed for v={} with config {:?}",
-                    v, config
-                );
-            }
-        }
-    }
-
-    // =========================================================================
-    // PRECONDITION VALIDATION TESTS
-    // =========================================================================
-
-    #[test]
-    #[ignore]
-    fn test_kelim_all_configs_exhaustive() {
-        use crate::entropy::ShadowHarvester;
-        let mut rng = ShadowHarvester::with_seed(42);
-
-        for config in [
-            KElimConfig::Minimal,
-            KElimConfig::Standard,
-            KElimConfig::Extended,
-            KElimConfig::Maximum,
-            KElimConfig::HardwareOpt,
-        ] {
-            let ke = KElimination::from_config(config);
-            let capacity = ke.capacity();
-
-            // Randomly test 10,000 values for each config
-            for _ in 0..10_000 {
-                // Generate random u128 within capacity
-                // Simple approach: sample two u64 and combine, then mod capacity
-                let lo = rng.next_u64();
-                let hi = rng.next_u64();
-                let v = ((hi as u128) << 64 | (lo as u128)) % capacity;
-
-                let v_alpha = v % ke.alpha_cap;
-                let v_beta = v % ke.beta_cap;
-
-                let k = ke.extract_k(v_alpha, v_beta);
-                let reconstructed = v_alpha + k * ke.alpha_cap;
-
-                assert_eq!(
-                    reconstructed, v,
-                    "Exhaustive K-Elim failed for v={} with config {:?}",
-                    v, config
-                );
-            }
-            eprintln!("  {:?}: 10,000 trials passed", config);
-        }
-    }
-
-    #[test]
-    fn test_validate_value_within_capacity() {
-        let ke = KElimination::new(&[17, 19], &[23, 29]);
-        // capacity = 323 * 667 = 215441
-        assert!(ke.validate_value(0).is_ok());
-        assert!(ke.validate_value(1000).is_ok());
-        assert!(ke.validate_value(215440).is_ok()); // max valid
-    }
-
-    #[test]
-    fn test_validate_value_exceeds_capacity() {
-        let ke = KElimination::new(&[17, 19], &[23, 29]);
-        // capacity = 323 * 667 = 215441
-        assert!(ke.validate_value(215441).is_err()); // exactly at boundary
-        assert!(ke.validate_value(1_000_000).is_err());
-    }
-
-    #[test]
-    fn test_validate_residues_valid() {
-        let ke = KElimination::new(&[17, 19], &[23, 29]);
-        assert!(ke.validate_residues(100, 300).is_ok());
-        assert!(ke.validate_residues(0, 0).is_ok());
-        assert!(ke.validate_residues(322, 666).is_ok()); // alpha_cap-1, beta_cap-1
-    }
-
-    #[test]
-    fn test_validate_residues_out_of_range() {
-        let ke = KElimination::new(&[17, 19], &[23, 29]);
-        assert!(ke.validate_residues(323, 0).is_err()); // v_alpha >= alpha_cap
-        assert!(ke.validate_residues(0, 667).is_err()); // v_beta >= beta_cap
-    }
-
-    #[test]
-    fn test_exact_divide_validated_success() {
-        let ke = KElimination::new(&[65537, 65521], &[65519, 65497]);
-        let v: u128 = 12345;
-        let divisor = 5u64;
-        let v_alpha = v % ke.alpha_cap;
-        let v_beta = v % ke.beta_cap;
-        let result = ke.exact_divide_validated(v_alpha, v_beta, divisor);
-        assert_eq!(result.unwrap(), 2469);
-    }
-
-    #[test]
-    fn test_exact_divide_validated_not_divisible() {
-        let ke = KElimination::new(&[65537, 65521], &[65519, 65497]);
-        let v: u128 = 12346; // not divisible by 5
-        let v_alpha = v % ke.alpha_cap;
-        let v_beta = v % ke.beta_cap;
-        let result = ke.exact_divide_validated(v_alpha, v_beta, 5);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_exact_divide_validated_zero_divisor() {
-        let ke = KElimination::new(&[17, 19], &[23, 29]);
-        let result = ke.exact_divide_validated(100, 300, 0);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_try_from_config_all_valid() {
-        for config in [
-            KElimConfig::Minimal,
-            KElimConfig::Standard,
-            KElimConfig::Extended,
-            KElimConfig::Maximum,
-        ] {
-            let result = KElimination::try_from_config(config);
-            assert!(result.is_ok(), "try_from_config failed for {:?}", config);
-        }
-    }
-
-    #[test]
-    fn test_try_for_degree() {
-        let result = KElimination::try_for_degree(1024);
-        assert!(result.is_ok());
-        let ke = result.unwrap();
-        assert_eq!(ke.config(), Some(KElimConfig::Standard));
-    }
-
-    // Timing regression tests moved to criterion benches (benches/timing.rs)
-}
-
-#[cfg(test)]
-mod bench_compat {
-    use super::*;
-    use std::time::Instant;
-
-    #[test]
-    #[ignore]
-    fn benchmark_anchor_generation() {
-        println!("\n=== Anchor Generation Benchmark (Prime vs Composite) ===");
-        let bits = [32, 45, 62, 90, 128];
-
-        for &b in &bits {
-            println!("\nBit-width: {}", b);
-
-            // Prime generation (representative timing)
-            let start = Instant::now();
-            // We simulate prime generation by finding a large prime
-            // In a real scenario, this involves primality testing
-            let mut p = (1u128 << (b-1)) + 1;
-            while !is_prime_u128(p) {
-                p += 2;
-            }
-            let prime_time = start.elapsed();
-            println!("  Prime:     {:?}", prime_time);
-
-            // Composite generation (Separation Principle)
-            let start = Instant::now();
-            // We simulate composite generation by multiplying two smaller primes
-            let half = b / 2;
-            let mut p1 = (1u128 << (half-1)) + 1;
-            while !is_prime_u128(p1) { p1 += 2; }
-            let mut p2 = (1u128 << (b - half - 1)) + 1;
-            while !is_prime_u128(p2) { p2 += 2; }
-            let _c = p1 * p2;
-            let composite_time = start.elapsed();
-            println!("  Composite: {:?}", composite_time);
-
-            if b >= 128 {
-                assert!(composite_time < prime_time, "Composite should be faster at {} bits", b);
-            }
-        }
-    }
-
-    fn is_prime_u128(n: u128) -> bool {
-        if n < 2 { return false; }
-        if n % 2 == 0 { return n == 2; }
-        let mut i = 3;
-        while i * i <= n {
-            if n % i == 0 { return false; }
-            i += 2;
-            if i > 1000000 { break; } // Limit for bench speed
-        }
-        true
+    fn inverse_handles_public_moduli_above_i128() {
+        let modulus = u128::MAX - 158;
+        let value = 5u128;
+        let inverse = mod_inverse_u128(value, modulus).expect("inverse must exist");
+        assert_eq!(mul_mod_u128(value, inverse, modulus), 1);
     }
 }
