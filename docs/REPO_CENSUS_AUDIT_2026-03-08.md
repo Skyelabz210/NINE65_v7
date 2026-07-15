@@ -13,7 +13,8 @@
 | **Total .rs files** | 190 |
 | **Total Rust LOC** | ~93,184 |
 | **Total repo files** (excl. .git, target) | 687 |
-| **Workspace crates** | 7 |
+| **Cargo manifests** | 15 (1 workspace root + 14 crates) |
+| **Crates documented in CLAUDE.md** | 7 (UNDERCOUNT — see Part 2) |
 | **Formal proofs (Coq)** | 16 files / 6,554 lines |
 | **Formal proofs (Lean4)** | 19 files / 3,692 lines |
 | **Documentation files** | 58 files / ~13,771 lines |

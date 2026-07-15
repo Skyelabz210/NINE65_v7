@@ -39,10 +39,18 @@ pub mod chimera_division;
 pub mod constants;
 pub mod continued_fraction;
 pub mod cordic;
+pub mod arrow_step;
+pub mod composite_division;
 pub mod cram_ct;
+pub mod cram_ops;
+pub mod cram_pde;
+pub mod crt_torus;
+pub mod k_elim;
 pub mod lane_projector;
 pub mod sqrt;
 pub mod substrate;
+pub mod time_crystal;
+pub mod transduction;
 pub mod triad;
 
 #[cfg(feature = "arbitrary-precision")]
