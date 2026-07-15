@@ -1,46 +1,17 @@
-//! Secure Parameter Configurations
+//! Audited production parameter configurations for NINE65.
 //!
-//! Production-ready FHE parameter sets with verified security levels.
-//! All configurations in this module have been validated against:
-//! - HE Standard v1.1 security bounds
-//! - Hybrid lattice attack cost estimates
-//! - MATZOV attack cost models
+//! All arithmetic in this module is exact integer arithmetic. The internal
+//! security estimator is a deterministic screening gate, not an independent
+//! lattice-security certificate. Every release that carries a named security
+//! claim must archive an external lattice-estimator result for the exact tuple
+//! `(N, Q, t, secret distribution, error distribution)`.
 //!
-//! # Security Guarantees
-//!
-//! | Config | N | log(Q) | Classical | Quantum | Hybrid |
-//! |--------|---|--------|-----------|---------|--------|
-//! | `secure_128` | 4096 | 90 | 129-bit | 86-bit | 129-bit |
-//! | `secure_192` | 16384 | 147 | 374-bit | 213-bit | 318-bit |
-//! | `secure_256` | 16384 | 177 | 311-bit | 177-bit | 264-bit |
-//!
-//! # Usage
-//!
-//! ```ignore
-//! use nine65::params::secure_configs::SecureConfig;
-//!
-//! // For production deployment
-//! let config = SecureConfig::secure_128();
-//! assert!(config.is_production_safe());
-//! ```
-//!
-//! # Compile-Time Security Enforcement
-//!
-//! Test configurations (`test_fast`, `test_medium`) are only available when:
-//! - Running tests (`#[cfg(test)]`)
-//! - Debug builds (`#[cfg(debug_assertions)]`)
-//! - `allow_insecure` feature is enabled
-//!
-//! Release builds without `allow_insecure` will fail to compile if attempting
-//! to use insecure configurations.
-
-// COMPILE-TIME ASSERTION: Prevent insecure configs in release builds
-#[cfg(all(not(test), not(debug_assertions), not(feature = "allow_insecure")))]
-const _SECURITY_ASSERTION: () = {
-    // This block ensures that release builds cannot accidentally use test configs.
-    // The test_fast() and test_medium() functions are cfg-gated and will not exist
-    // in release builds, causing compile errors if referenced.
-};
+//! | Config | N | RNS chain | Claim |
+//! |--------|---|-----------|-------|
+//! | `secure_128` | 8192 | 3 NTT primes (~90 bits) | 128 bits |
+//! | `secure_128_deep` | 8192 | 4 NTT primes (~120 bits) | 128 bits |
+//! | `secure_192` | 16384 | 5 NTT primes (~147 bits) | 192 bits |
+//! | `secure_256` | 16384 | 6 NTT primes (~177 bits) | 256 bits |
 
 #[cfg(test)]
 use super::is_ntt_compatible;
@@ -49,23 +20,44 @@ use super::security_estimator::{
 };
 use super::FHEConfig;
 
-/// Secure FHE configuration with verified security properties
+/// Exact bit length of the product of the supplied RNS primes.
+fn exact_product_bit_length(primes: &[u64]) -> u32 {
+    let mut limbs = [0u64; 8];
+    limbs[0] = 1;
+
+    for &factor in primes {
+        let mut carry = 0u128;
+        for limb in &mut limbs {
+            let product = (*limb as u128) * factor as u128 + carry;
+            *limb = product as u64;
+            carry = product >> 64;
+        }
+        assert_eq!(
+            carry, 0,
+            "RNS product exceeds the 512-bit security-accounting capacity"
+        );
+    }
+
+    for index in (0..limbs.len()).rev() {
+        let limb = limbs[index];
+        if limb != 0 {
+            return index as u32 * 64 + (64 - limb.leading_zeros());
+        }
+    }
+    0
+}
+
 #[derive(Clone, Debug)]
 pub struct SecureConfig {
-    /// Underlying FHE configuration
     pub config: FHEConfig,
-    /// Verified classical security bits
+    pub claimed_security: u32,
     pub classical_security: u32,
-    /// Verified hybrid attack security bits
     pub hybrid_security: u32,
-    /// Verified quantum security bits
     pub quantum_security: u32,
-    /// HE Standard compliant
     pub he_standard_compliant: bool,
 }
 
 impl SecureConfig {
-    /// Create secure config with security verification
     fn new_verified(
         n: usize,
         primes: Vec<u64>,
@@ -74,113 +66,88 @@ impl SecureConfig {
         claimed_security: u32,
         name: &'static str,
     ) -> Self {
+        assert!(n.is_power_of_two(), "N must be a power of two");
+        assert!(!primes.is_empty(), "at least one RNS prime is required");
+        assert!(t >= 2, "plaintext modulus must be at least two");
+        assert!(
+            primes.iter().all(|&prime| t < prime),
+            "plaintext modulus must be smaller than every RNS prime"
+        );
+
         let q = primes[0];
-        let log_q: u32 = primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
-
-        // Verify with security estimator
+        let log_q = exact_product_bit_length(&primes);
         let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
-        let estimate = estimator.estimate(n, log_q, SecretDistribution::Ternary, claimed_security);
+        let estimate = estimator.estimate(
+            n,
+            log_q,
+            SecretDistribution::Ternary,
+            claimed_security,
+        );
+        let he_standard_compliant =
+            HEStandardBounds::is_compliant(n, log_q, claimed_security);
 
-        // Verify HE Standard compliance
-        let he_compliant = HEStandardBounds::is_compliant(n, log_q, claimed_security);
-
-        // RUNTIME ASSERTION: Verify claimed security matches actual security
-        // Allow 10% margin for estimation variance
-        #[cfg(not(any(test, feature = "allow_insecure")))]
-        {
-            if claimed_security >= 128 {
-                // For production configs, enforce strict security validation
-                let security_margin_permille = 900; // 90% (allowing 10% underestimate)
-                let min_acceptable = (claimed_security as u64 * security_margin_permille) / 1000;
-
-                assert!(
-                    estimate.hybrid_bits as u64 >= min_acceptable,
-                    "SECURITY ERROR: Config '{}' claims {} bits but achieves only {} hybrid bits!\n\
-                     This is below the 90% threshold ({} bits minimum).\n\
-                     Adjust parameters or lower security claim.",
-                    name,
-                    claimed_security,
-                    estimate.hybrid_bits,
-                    min_acceptable
-                );
-            }
+        assert!(
+            estimate.effective_bits >= claimed_security,
+            "SECURITY ERROR: config '{}' claims {} bits but screens at {} bits.\n{}",
+            name,
+            claimed_security,
+            estimate.effective_bits,
+            estimate.analysis,
+        );
+        if claimed_security >= 128 {
+            assert!(
+                he_standard_compliant,
+                "SECURITY ERROR: config '{}' exceeds the HE Standard bound",
+                name
+            );
         }
 
         let config = FHEConfig {
             n,
-            primes: primes.clone(),
+            primes,
             q,
             t,
             eta,
-            security_bits: estimate.effective_bits as usize,
+            security_bits: claimed_security as usize,
             name,
         };
 
         Self {
             config,
+            claimed_security,
             classical_security: estimate.classical_bits,
             hybrid_security: estimate.hybrid_bits,
             quantum_security: estimate.quantum_bits,
-            he_standard_compliant: he_compliant,
+            he_standard_compliant,
         }
     }
 
-    /// Check if this config is safe for production use
     pub fn is_production_safe(&self) -> bool {
-        self.hybrid_security >= 128 && self.he_standard_compliant
+        self.claimed_security >= 128
+            && self.config.n >= 8192
+            && self.hybrid_security >= self.claimed_security
+            && self.he_standard_compliant
     }
 
-    /// Get the underlying FHEConfig
     pub fn into_config(self) -> FHEConfig {
         self.config
     }
 
-    // =========================================================================
-    // PRODUCTION-SAFE CONFIGURATIONS
-    // =========================================================================
-
-    /// 128-bit secure configuration (RECOMMENDED FOR PRODUCTION)
-    ///
-    /// Parameters verified against hybrid lattice attacks.
-    /// Meets HE Standard v1.1 requirements.
-    ///
-    /// # Security Analysis
-    /// - Classical BKZ: 145 bits
-    /// - Hybrid MITM+BKZ: 128 bits
-    /// - Quantum: 85 bits (post-quantum safe for near-term)
-    ///
-    /// # Performance
-    /// - Polynomial degree: 4096
-    /// - Supports ~10 multiplicative levels
-    /// - KeyGen: ~50ms, Encrypt: ~5ms, Decrypt: ~3ms
     pub fn secure_128() -> Self {
-        // N=4096 with log(Q)~90 bits (3x30-bit primes)
-        // HE Standard allows up to 109 bits for 128-bit security at N=4096
         Self::new_verified(
-            4096,
-            vec![
-                998244353, // 30-bit NTT prime
-                985661441, // 30-bit NTT prime
-                754974721, // 30-bit NTT prime
-            ],
-            65537, // Standard plaintext modulus
-            3,     // CBD parameter
+            8192,
+            vec![998244353, 985661441, 754974721],
+            65537,
+            3,
             128,
             "secure_128",
         )
     }
 
-    /// 128-bit secure with larger modulus for deeper circuits
-    ///
-    /// Uses 4 primes for ~120 bits of ciphertext modulus.
-    /// Supports ~15 multiplicative levels.
-    /// Uses n=8192 to maintain 128-bit security with larger Q.
     pub fn secure_128_deep() -> Self {
         Self::new_verified(
-            8192, // Increased from 4096 to maintain security with larger Q
-            vec![
-                998244353, 985661441, 754974721, 469762049, // 4th 30-bit NTT prime
-            ],
+            8192,
+            vec![998244353, 985661441, 754974721, 469762049],
             65537,
             3,
             128,
@@ -188,49 +155,33 @@ impl SecureConfig {
         )
     }
 
-    /// 192-bit secure configuration (HIGH SECURITY)
-    ///
-    /// For applications requiring long-term security.
-    ///
-    /// # Security Analysis
-    /// - Classical BKZ: 210 bits
-    /// - Hybrid MITM+BKZ: 192 bits
-    /// - Quantum: 128 bits
     pub fn secure_192() -> Self {
         Self::new_verified(
-            16384, // Increased from 8192 to achieve claimed 192-bit security
+            16384,
             vec![
-                998244353, 985661441, 754974721, 469762049,
-                167772161, // 5th prime for larger Q
+                998244353,
+                985661441,
+                754974721,
+                469762049,
+                167772161,
             ],
             65537,
-            4, // Larger eta for more security
+            4,
             192,
             "secure_192",
         )
     }
 
-    /// 256-bit secure configuration (MAXIMUM SECURITY)
-    ///
-    /// For highest security requirements.
-    /// Note: Significantly slower than lower security configs.
-    ///
-    /// # Security Analysis
-    /// - N=16384, log(Q)=177 (6 primes)
-    /// - Classical BKZ: 311 bits
-    /// - Hybrid MITM+BKZ: 264 bits (well above 230 = 256×0.9 threshold)
-    /// - Quantum: 177 bits
-    /// - HE Standard v1.1: compliant (max log(Q) for N=16384 at 256-bit = 237)
-    ///
-    /// Uses 6 primes rather than 7 to keep log(Q) below the estimator's
-    /// hybrid-attack threshold. With 7 primes (log_q=207), the ternary-secret
-    /// MITM penalty reduces hybrid security to 226 bits, which is below the
-    /// 230-bit minimum (256 × 90%).
     pub fn secure_256() -> Self {
         Self::new_verified(
             16384,
             vec![
-                998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
+                998244353,
+                985661441,
+                754974721,
+                469762049,
+                167772161,
+                595591169,
             ],
             65537,
             5,
@@ -239,13 +190,10 @@ impl SecureConfig {
         )
     }
 
-    /// Hardware-optimized configuration using composite anchors (Separation Principle showcase)
     pub fn hardware_opt() -> Self {
         Self::new_verified(
-            4096,
-            vec![
-                998244353, 985661441, 754974721,
-            ],
+            8192,
+            vec![998244353, 985661441, 754974721],
             65537,
             3,
             128,
@@ -253,18 +201,6 @@ impl SecureConfig {
         )
     }
 
-    // =========================================================================
-    // TEST/BENCHMARK CONFIGURATIONS (NOT FOR PRODUCTION)
-    // =========================================================================
-
-    /// Fast test configuration (NOT SECURE - TEST ONLY)
-    ///
-    /// WARNING: Only ~40 bits of security. Use only for:
-    /// - Unit tests
-    /// - Development debugging
-    /// - Performance benchmarking
-    ///
-    /// NEVER use for production or with real sensitive data.
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn test_fast_insecure() -> Self {
         Self::new_verified(
@@ -272,15 +208,11 @@ impl SecureConfig {
             vec![998244353],
             65537,
             2,
-            40, // Honest about low security
+            40,
             "test_fast_insecure",
         )
     }
 
-    /// Medium test configuration (~80 bits)
-    ///
-    /// Suitable for integration testing where security
-    /// doesn't matter but correct behavior does.
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn test_medium_insecure() -> Self {
         Self::new_verified(
@@ -294,11 +226,6 @@ impl SecureConfig {
     }
 }
 
-/// Compile-time security guard for release builds
-///
-/// This trait is only implemented for production-safe configs.
-/// Attempting to use `require_production_safe()` on a test config
-/// in release mode will fail to compile.
 pub trait ProductionSafe {
     fn require_production_safe(&self);
 }
@@ -306,124 +233,89 @@ pub trait ProductionSafe {
 impl ProductionSafe for SecureConfig {
     fn require_production_safe(&self) {
         #[cfg(not(any(test, debug_assertions, feature = "allow_insecure")))]
-        {
-            // COMPILE-TIME CHECK: Ensure test configs cannot be constructed in release
-            #[cfg(all(not(test), not(debug_assertions), not(feature = "allow_insecure")))]
-            const _: () = {
-                // This ensures test_fast/test_medium are not accessible in release builds
-                // They are gated by #[cfg(any(test, debug_assertions))]
-            };
-
-            // RUNTIME CHECK: Verify security level meets minimum threshold
-            assert!(
-                self.is_production_safe(),
-                "SECURITY ERROR: Attempted to use non-production-safe FHE config '{}'!\n\
-                 This config has only {} bits of hybrid security.\n\
-                 Minimum required: 128 bits.\n\
-                 Use SecureConfig::secure_128() or higher for production.",
-                self.config.name,
-                self.hybrid_security
-            );
-
-            // ADDITIONAL CHECK: Verify HE Standard compliance
-            assert!(
-                self.he_standard_compliant,
-                "SECURITY ERROR: Config '{}' is not HE Standard v1.1 compliant!\n\
-                 This indicates the parameter set may not meet security requirements.",
-                self.config.name
-            );
-        }
+        assert!(
+            self.is_production_safe(),
+            "SECURITY ERROR: config '{}' does not satisfy its {}-bit production contract",
+            self.config.name,
+            self.claimed_security,
+        );
     }
 }
 
-/// Assert that a config is production-safe at runtime
-///
-/// In release builds without `allow_insecure` feature, this will
-/// panic if the config doesn't meet security requirements.
 #[inline]
 pub fn assert_production_safe(config: &SecureConfig) {
     config.require_production_safe();
 }
 
-/// Verify that an FHEConfig meets minimum production security requirements (128 bits).
-///
-/// This uses the lattice security estimator to perform a runtime check.
-/// In release builds without `allow_insecure` feature, this will panic if
-/// security is below 128 bits.
-pub fn assert_production_safe_fhe_config(config: &crate::params::FHEConfig) {
-    // Skip check in test/debug or if explicitly allowed
+pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
     if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
         return;
     }
 
-    let log_q: u32 = config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
-
-    let estimator = crate::params::security_estimator::LatticeSecurityEstimator::default();
+    let required_security = (config.security_bits as u32).max(128);
+    let log_q = exact_product_bit_length(&config.primes);
+    let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
     let estimate = estimator.estimate(
         config.n,
         log_q,
-        crate::params::security_estimator::SecretDistribution::Ternary,
-        128,
+        SecretDistribution::Ternary,
+        required_security,
     );
 
-    if !estimate.meets_claim {
-        panic!(
-            "PRODUCTION SECURITY VIOLATION: Config '{}' provides only {} bits of security (128 required).\n\
-             Analysis: {}\n\
-             Action: Increase N or decrease the number/size of RNS primes.",
-            config.name, estimate.effective_bits, estimate.analysis
-        );
-    }
+    assert!(
+        config.n >= 8192,
+        "PRODUCTION SECURITY VIOLATION: N={} is below the audited floor N=8192",
+        config.n
+    );
+    assert!(
+        estimate.effective_bits >= required_security,
+        "PRODUCTION SECURITY VIOLATION: config '{}' screens at {} bits ({} required).\n{}",
+        config.name,
+        estimate.effective_bits,
+        required_security,
+        estimate.analysis,
+    );
+    assert!(
+        HEStandardBounds::is_compliant(config.n, log_q, required_security),
+        "PRODUCTION SECURITY VIOLATION: config '{}' exceeds the HE Standard modulus bound",
+        config.name
+    );
 }
 
-/// Verify security level meets production requirements
-///
-/// Returns Ok(()) if config is production-safe, Err with details otherwise.
 pub fn verify_production_safety(config: &SecureConfig) -> Result<(), String> {
-    if !config.is_production_safe() {
+    if config.claimed_security < 128 {
         return Err(format!(
-            "Config '{}' is not production-safe: hybrid_security={} bits (need >= 128), \
-             he_standard_compliant={}",
-            config.config.name, config.hybrid_security, config.he_standard_compliant
+            "claim={} bits is below the production minimum of 128 bits",
+            config.claimed_security
         ));
     }
-
-    // Additional checks for production configs
-    if config.hybrid_security < 128 {
+    if config.config.n < 8192 {
         return Err(format!(
-            "Hybrid security {} bits is below minimum 128 bits",
-            config.hybrid_security
-        ));
-    }
-
-    if !config.he_standard_compliant {
-        return Err("Not HE Standard v1.1 compliant".to_string());
-    }
-
-    // Verify minimum parameter sizes
-    if config.config.n < 4096 {
-        return Err(format!(
-            "Polynomial degree N={} is too small for production (need >= 4096)",
+            "N={} is below the audited production floor N=8192",
             config.config.n
         ));
     }
-
+    if config.hybrid_security < config.claimed_security {
+        return Err(format!(
+            "internal hybrid screen={} bits, claim={} bits",
+            config.hybrid_security, config.claimed_security
+        ));
+    }
+    if !config.he_standard_compliant {
+        return Err("not HE Standard compliant".to_string());
+    }
     Ok(())
 }
 
-/// Guard that prevents use of insecure configs in release builds
 #[cfg(not(any(test, debug_assertions, feature = "allow_insecure")))]
 pub fn get_production_config() -> SecureConfig {
     let config = SecureConfig::secure_128();
-    // Verify at construction time
-    verify_production_safety(&config).expect("Default production config must be production-safe");
+    verify_production_safety(&config).expect("default production config must be safe");
     config
 }
 
 #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
 pub fn get_production_config() -> SecureConfig {
-    // In test/debug, allow returning any config but warn
-    eprintln!("WARNING: Using debug/test mode - security checks relaxed");
     SecureConfig::secure_128()
 }
 
@@ -432,140 +324,83 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_secure_128_meets_claims() {
+    fn secure_128_uses_audited_dimension_floor() {
         let config = SecureConfig::secure_128();
-        println!(
-            "secure_128: classical={}, hybrid={}, quantum={}",
-            config.classical_security, config.hybrid_security, config.quantum_security
-        );
-
-        // N=4096 with log(Q)~90 bits should give >100 bits security
-        assert!(
-            config.hybrid_security >= 100,
-            "secure_128 should have >= 100 bits hybrid security, got {}",
-            config.hybrid_security
-        );
+        assert_eq!(config.config.n, 8192);
+        assert_eq!(config.claimed_security, 128);
+        assert!(config.hybrid_security >= config.claimed_security);
         assert!(config.is_production_safe());
     }
 
     #[test]
-    fn test_secure_192_meets_claims() {
-        let config = SecureConfig::secure_192();
-        println!(
-            "secure_192: classical={}, hybrid={}, quantum={}",
-            config.classical_security, config.hybrid_security, config.quantum_security
-        );
-
-        // N=8192 with log(Q)~150 bits should give >150 bits security
-        assert!(
-            config.hybrid_security >= 150,
-            "secure_192 should have >= 150 bits hybrid security, got {}",
-            config.hybrid_security
-        );
-    }
-
-    #[test]
-    fn test_test_configs_not_production_safe() {
-        let config = SecureConfig::test_fast_insecure();
-        assert!(
-            !config.is_production_safe(),
-            "test_fast should NOT be production safe"
-        );
-    }
-
-    #[test]
-    fn test_all_configs_have_ntt_compatible_primes() {
-        let configs = [
+    fn named_production_configs_meet_their_internal_claims() {
+        for config in [
             SecureConfig::secure_128(),
             SecureConfig::secure_128_deep(),
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
             SecureConfig::hardware_opt(),
-        ];
+        ] {
+            assert!(config.is_production_safe(), "{}", config.config.name);
+            assert!(config.hybrid_security >= config.claimed_security);
+            assert!(config.he_standard_compliant);
+        }
+    }
 
-        for secure_config in configs {
-            let config = &secure_config.config;
-            for &p in &config.primes {
+    #[test]
+    fn every_production_prime_is_ntt_compatible() {
+        for config in [
+            SecureConfig::secure_128(),
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+            SecureConfig::hardware_opt(),
+        ] {
+            for &prime in &config.config.primes {
                 assert!(
-                    is_ntt_compatible(p, config.n),
-                    "Prime {} is not NTT-compatible for N={} in config {}",
-                    p,
-                    config.n,
-                    config.name
+                    is_ntt_compatible(prime, config.config.n),
+                    "{} is not NTT-compatible for N={} ({})",
+                    prime,
+                    config.config.n,
+                    config.config.name
                 );
             }
         }
     }
 
     #[test]
-    fn test_security_comparison() {
-        println!("\n=== Security Level Comparison ===\n");
+    fn test_configs_construct_but_are_not_production_safe() {
+        let fast = SecureConfig::test_fast_insecure();
+        let medium = SecureConfig::test_medium_insecure();
+        assert!(!fast.is_production_safe());
+        assert!(!medium.is_production_safe());
+        assert!(verify_production_safety(&fast).is_err());
+        assert!(verify_production_safety(&medium).is_err());
+    }
 
-        let configs = [
-            ("test_fast", SecureConfig::test_fast_insecure()),
-            ("test_medium", SecureConfig::test_medium_insecure()),
-            ("secure_128", SecureConfig::secure_128()),
-            ("secure_192", SecureConfig::secure_192()),
-            ("hardware_opt", SecureConfig::hardware_opt()),
-        ];
+    #[test]
+    fn production_safety_returns_diagnostics() {
+        assert!(verify_production_safety(&SecureConfig::secure_128()).is_ok());
+        assert!(verify_production_safety(&SecureConfig::secure_192()).is_ok());
+        assert!(verify_production_safety(&SecureConfig::secure_256()).is_ok());
+        assert!(verify_production_safety(&SecureConfig::hardware_opt()).is_ok());
+    }
 
-        println!(
-            "{:<15} {:>6} {:>10} {:>10} {:>10} {:>10}",
-            "Config", "N", "log(Q)", "Classical", "Hybrid", "Quantum"
+    #[test]
+    fn exact_product_bit_length_matches_known_chains() {
+        assert_eq!(
+            exact_product_bit_length(&[998244353, 985661441, 754974721]),
+            90
         );
-        println!("{}", "-".repeat(70));
-
-        for (name, config) in configs {
-            let log_q: u32 = config
-                .config
-                .primes
-                .iter()
-                .map(|&p| 64 - p.leading_zeros())
-                .sum();
-            println!(
-                "{:<15} {:>6} {:>10} {:>10} {:>10} {:>10}",
-                name,
-                config.config.n,
-                log_q,
-                config.classical_security,
-                config.hybrid_security,
-                config.quantum_security
-            );
-        }
-    }
-
-    #[test]
-    fn test_production_safety_verification() {
-        // Production configs should pass
-        let secure_128 = SecureConfig::secure_128();
-        assert!(verify_production_safety(&secure_128).is_ok());
-
-        let secure_192 = SecureConfig::secure_192();
-        assert!(verify_production_safety(&secure_192).is_ok());
-
-        let secure_256 = SecureConfig::secure_256();
-        assert!(verify_production_safety(&secure_256).is_ok());
-
-        let hardware_opt = SecureConfig::hardware_opt();
-        assert!(verify_production_safety(&hardware_opt).is_ok());
-
-        // Test configs should fail
-        let test_fast = SecureConfig::test_fast_insecure();
-        assert!(verify_production_safety(&test_fast).is_err());
-
-        let test_medium = SecureConfig::test_medium_insecure();
-        assert!(verify_production_safety(&test_medium).is_err());
-    }
-
-    #[test]
-    fn test_production_safe_trait() {
-        // This should not panic in test mode
-        let config = SecureConfig::secure_128();
-        config.require_production_safe();
-
-        // Test configs have the trait but will panic in release
-        let test_config = SecureConfig::test_fast_insecure();
-        // In test mode, this will not panic
-        test_config.require_production_safe();
+        assert!(
+            exact_product_bit_length(&[
+                998244353,
+                985661441,
+                754974721,
+                469762049,
+                167772161,
+                595591169,
+            ]) > 128
+        );
     }
 }
