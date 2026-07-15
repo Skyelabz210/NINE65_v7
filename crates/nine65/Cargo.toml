@@ -118,6 +118,16 @@ name = "nine65_bench"
 path = "src/bin/nine65_bench.rs"
 required-features = ["serde"]
 
+[[bin]]
+name = "cram_exploratory_probe"
+path = "src/bin/cram_exploratory_probe.rs"
+required-features = ["serde"]
+
+[[bin]]
+name = "cram_modulus_probe"
+path = "src/bin/cram_modulus_probe.rs"
+required-features = ["serde"]
+
 [[bench]]
 name = "fhe_scaling"
 harness = false

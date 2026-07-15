@@ -14,6 +14,9 @@ PRODUCTION_TARGETS = (
     ROOT / "crates" / "cram-fhe" / "src",
     ROOT / "crates" / "nine65" / "src" / "cram_ct_wrap.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
+    ROOT / "crates" / "nine65" / "src" / "ops" / "rns_mul.rs",
+    ROOT / "crates" / "nine65" / "src" / "ops" / "bootstrap.rs",
+    ROOT / "crates" / "nine65" / "src" / "ops" / "auto_bootstrap.rs",
 )
 
 # The patterns target executable identifiers and type names. Documentation and
@@ -23,7 +26,7 @@ PROHIBITED = {
     "mixed_radix_call": re.compile(
         r"\bmixed[_ -]?" + "radix" + r"\s*(?:::|\()", re.IGNORECASE
     ),
-    "crt_reconstruct": re.compile(r"\bcrt_" + "reconstruct\s*\(", re.IGNORECASE),
+    "crt_reconstruct": re.compile(r"\bcrt_" + "reconstruct(?:_[A-Za-z0-9]+)?\s*\(", re.IGNORECASE),
     "hidden_big_integer": re.compile(r"\b(Big" + r"Int|BigUint)\b"),
     "floating_type": re.compile(r"\bf(?:32|64)\b|\bas\s+f(?:32|64)\b"),
 }
