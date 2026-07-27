@@ -53,6 +53,12 @@ pub mod time_crystal;
 pub mod transduction;
 pub mod triad;
 
+pub mod dyn_crt;
+pub mod chimera_page;
+pub mod recumbent;
+pub mod cram_fhe_bridge;
+pub mod cram_harness;
+
 #[cfg(feature = "arbitrary-precision")]
 pub mod bigint;
 #[cfg(feature = "arbitrary-precision")]

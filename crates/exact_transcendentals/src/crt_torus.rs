@@ -6,7 +6,7 @@
 //! Zero floating point. All arithmetic exact integer (A1).
 
 #[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
+use alloc::{borrow::ToOwned, vec::Vec};
 #[cfg(feature = "std")]
 use std::vec::Vec;
 
