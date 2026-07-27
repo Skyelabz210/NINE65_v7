@@ -10,6 +10,7 @@ on:
       - 'scripts/test_cram_compare_results.py'
       - 'scripts/analyze_cram_fhe_hypotheses.py'
       - 'scripts/test_analyze_cram_fhe_hypotheses.py'
+      - 'benchmarks/comparative/nine65_v6_v7_contract.json'
       - 'docs/NINE65_V6_V7_COMPARATIVE_HARNESS.md'
       - '.github/workflows/cram_v6_v7_comparative.yml'
   push:
@@ -48,8 +49,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Validate Python harnesses
+      - name: Validate harness files
         run: |
+          python3 -m json.tool benchmarks/comparative/nine65_v6_v7_contract.json > /dev/null
           python3 -m py_compile \
             scripts/run_nine65_v6_v7_compare.py \
             scripts/cram_compare_results.py \
@@ -153,7 +155,7 @@ jobs:
         if: steps.credential.outputs.available == 'true'
         with:
           repository: Skyelabz210/NINE65_v6_a_Clockwork_Prime
-          ref: main
+          ref: bd5c5c29f5c367bf34831cf5c1b97b3b938ac829
           token: ${{ secrets.NINE65_CROSS_REPO_TOKEN }}
           path: v6-repo
       - uses: dtolnay/rust-toolchain@stable
