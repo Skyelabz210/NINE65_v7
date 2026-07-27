@@ -8,6 +8,8 @@ on:
       - 'scripts/run_nine65_v6_v7_compare.py'
       - 'scripts/cram_compare_results.py'
       - 'scripts/test_cram_compare_results.py'
+      - 'scripts/analyze_cram_fhe_hypotheses.py'
+      - 'scripts/test_analyze_cram_fhe_hypotheses.py'
       - 'docs/NINE65_V6_V7_COMPARATIVE_HARNESS.md'
       - '.github/workflows/cram_v6_v7_comparative.yml'
   push:
@@ -51,8 +53,11 @@ jobs:
           python3 -m py_compile \
             scripts/run_nine65_v6_v7_compare.py \
             scripts/cram_compare_results.py \
-            scripts/test_cram_compare_results.py
+            scripts/test_cram_compare_results.py \
+            scripts/analyze_cram_fhe_hypotheses.py \
+            scripts/test_analyze_cram_fhe_hypotheses.py
           python3 scripts/test_cram_compare_results.py
+          python3 scripts/test_analyze_cram_fhe_hypotheses.py
       - name: Format new Rust probe
         run: rustfmt --edition 2021 --check crates/nine65/src/bin/cram_comparative_probe.rs
       - name: Reject floating point in comparative path
@@ -60,7 +65,8 @@ jobs:
           if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
             crates/nine65/src/bin/cram_comparative_probe.rs \
             scripts/run_nine65_v6_v7_compare.py \
-            scripts/cram_compare_results.py; then
+            scripts/cram_compare_results.py \
+            scripts/analyze_cram_fhe_hypotheses.py; then
             echo 'floating-point token found in exact comparative path' >&2
             exit 1
           fi
@@ -90,6 +96,23 @@ jobs:
             --output artifacts/v6_v7_compare/smoke/result.json \
             > artifacts/v6_v7_compare/smoke/stdout.log \
             2> artifacts/v6_v7_compare/smoke/stderr.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('artifacts/v6_v7_compare/smoke/result.json')
+          payload = json.loads(path.read_text(encoding='utf-8'))
+          assert payload['schema'] == 'nine65-comparative-probe-v1'
+          assert payload['status'] == 'PASS'
+          depth = payload['ct_mul_depth']
+          assert depth['completed'] == depth['requested']
+          assert depth['all_completed_entries_correct'] is True
+          assert depth['first_error'] is None
+          PY
+          python3 scripts/analyze_cram_fhe_hypotheses.py \
+            artifacts/v6_v7_compare/smoke/result.json \
+            --output artifacts/v6_v7_compare/smoke/hypothesis_analysis.json \
+            > artifacts/v6_v7_compare/smoke/hypothesis_analysis.stdout.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -151,6 +174,11 @@ jobs:
             --ct-mul-depth '${{ inputs.ct_mul_depth }}' \
             --v6-max-depth '${{ inputs.v6_max_depth }}' \
             --seed 42
+          python3 scripts/analyze_cram_fhe_hypotheses.py \
+            artifacts/v6_v7_compare/dispatched/comparison_analysis.json \
+            artifacts/v6_v7_compare/dispatched/raw \
+            --output artifacts/v6_v7_compare/dispatched/hypothesis_analysis.json \
+            > artifacts/v6_v7_compare/dispatched/hypothesis_analysis.stdout.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
