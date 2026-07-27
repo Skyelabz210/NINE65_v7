@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Normalize and compare CRAM/NINE65 and external FHE benchmark results.
 
-Only exactly compatible records are ranked. All statistics are integer or exact
-rational values.
+Only exactly compatible records with zero recorded correctness failures are
+ranked. All statistics are integer or exact rational values.
 """
 
 from __future__ import annotations
@@ -92,14 +92,19 @@ def reduced_ratio(left: dict[str, int], right: dict[str, int]) -> dict[str, int]
 
 def compatibility_key(record: dict[str, Any]) -> tuple[object, ...]:
     compatibility = record["compatibility"]
-    return (record["operation"],) + tuple(compatibility[field] for field in COMPATIBILITY_FIELDS)
+    return (record["operation"],) + tuple(
+        compatibility[field] for field in COMPATIBILITY_FIELDS
+    )
 
 
 def validate_normalized(record: dict[str, Any], source: pathlib.Path) -> dict[str, Any]:
     if record.get("schema") != "fhe-comparison-record-v1":
         raise ValueError(f"unsupported comparison record schema: {source}")
     samples = record.get("samples_ns")
-    if not isinstance(samples, list) or any(not isinstance(value, int) or value < 0 for value in samples):
+    if not isinstance(samples, list) or any(
+        not isinstance(value, int) or isinstance(value, bool) or value < 0
+        for value in samples
+    ):
         raise ValueError(f"samples_ns must contain nonnegative integers: {source}")
     compatibility = record.get("compatibility")
     if not isinstance(compatibility, dict):
@@ -107,12 +112,22 @@ def validate_normalized(record: dict[str, Any], source: pathlib.Path) -> dict[st
     missing = [field for field in COMPATIBILITY_FIELDS if field not in compatibility]
     if missing:
         raise ValueError(f"compatibility fields missing {missing}: {source}")
+    correctness = record.get("correctness")
+    if not isinstance(correctness, dict):
+        raise ValueError(f"correctness object missing: {source}")
+    for field in ("trials", "failures"):
+        value = correctness.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError(f"correctness.{field} must be a nonnegative integer: {source}")
     record = dict(record)
     record["source_file"] = str(source)
     return record
 
 
-def normalize_probe_manifest(path: pathlib.Path, manifest: dict[str, Any]) -> list[dict[str, Any]]:
+def normalize_probe_manifest(
+    path: pathlib.Path,
+    manifest: dict[str, Any],
+) -> list[dict[str, Any]]:
     hardware_fingerprint = canonical_hash(manifest.get("hardware", {}))
     commit = str(manifest.get("commit", "unknown"))
     records: list[dict[str, Any]] = []
@@ -232,19 +247,27 @@ def group_report(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
             left_median = left["metrics"]["median_ns"]
             right_median = right["metrics"]["median_ns"]
             ratio = reduced_ratio(left_median, right_median)
+            correctness_gate = (
+                left["metrics"]["correctness"].get("failures", 0) == 0
+                and right["metrics"]["correctness"].get("failures", 0) == 0
+                and left["metrics"]["correctness"].get("trials", 0) > 0
+                and right["metrics"]["correctness"].get("trials", 0) > 0
+            )
             comparisons.append(
                 {
                     "left": f"{left['implementation']}@{left['version']}",
                     "right": f"{right['implementation']}@{right['version']}",
-                    "left_over_right_median": ratio,
-                    "ranking_allowed": True,
-                    "correctness_gate": (
-                        left["metrics"]["correctness"].get("failures", 0) == 0
-                        and right["metrics"]["correctness"].get("failures", 0) == 0
-                    ),
+                    "left_over_right_median": ratio if correctness_gate else None,
+                    "ranking_allowed": correctness_gate,
+                    "correctness_gate": correctness_gate,
+                    "blocked_reason": None
+                    if correctness_gate
+                    else "one or both records lack a passing correctness trial",
                 }
             )
-        compatibility = {field: key[index + 1] for index, field in enumerate(COMPATIBILITY_FIELDS)}
+        compatibility = {
+            field: key[index + 1] for index, field in enumerate(COMPATIBILITY_FIELDS)
+        }
         reports.append(
             {
                 "operation": key[0],
@@ -297,7 +320,10 @@ def main() -> int:
         "compatibility_rule": ["operation", *COMPATIBILITY_FIELDS],
         "groups": group_report(records),
         "incompatibility_dimension_counts": incompatibility_summary(records),
-        "ranking_rule": "Only records in the same compatibility group may be ranked.",
+        "ranking_rule": (
+            "Records must share every compatibility field and each record must have "
+            "at least one trial with zero recorded failures."
+        ),
     }
     rendered = json.dumps(output, indent=2, sort_keys=True)
     if args.output:
