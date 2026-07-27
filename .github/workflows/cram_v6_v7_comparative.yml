@@ -1,0 +1,161 @@
+name: NINE65 v6 v7 comparative harness
+
+on:
+  pull_request:
+    paths:
+      - 'crates/nine65/src/bin/cram_comparative_probe.rs'
+      - 'crates/nine65/Cargo.toml'
+      - 'scripts/run_nine65_v6_v7_compare.py'
+      - 'scripts/cram_compare_results.py'
+      - 'scripts/test_cram_compare_results.py'
+      - 'docs/NINE65_V6_V7_COMPARATIVE_HARNESS.md'
+      - '.github/workflows/cram_v6_v7_comparative.yml'
+  push:
+    branches:
+      - 'cram/exploratory-comparative-v2'
+  workflow_dispatch:
+    inputs:
+      repetitions:
+        description: Complete v6/v7 process repetitions
+        type: string
+        default: '7'
+      iterations:
+        description: Fast-operation samples inside each v7 process
+        type: string
+        default: '100'
+      mul_iterations:
+        description: Multiplication samples inside each v7 process
+        type: string
+        default: '10'
+      ct_mul_depth:
+        description: DualRNS ciphertext-squaring attempts
+        type: string
+        default: '8'
+      v6_max_depth:
+        description: v6 mixed-chain operation count
+        type: string
+        default: '8'
+
+permissions:
+  contents: read
+
+jobs:
+  v7-comparative-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Validate Python harnesses
+        run: |
+          python3 -m py_compile \
+            scripts/run_nine65_v6_v7_compare.py \
+            scripts/cram_compare_results.py \
+            scripts/test_cram_compare_results.py
+          python3 scripts/test_cram_compare_results.py
+      - name: Format new Rust probe
+        run: rustfmt --edition 2021 --check crates/nine65/src/bin/cram_comparative_probe.rs
+      - name: Reject floating point in comparative path
+        run: |
+          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
+            crates/nine65/src/bin/cram_comparative_probe.rs \
+            scripts/run_nine65_v6_v7_compare.py \
+            scripts/cram_compare_results.py; then
+            echo 'floating-point token found in exact comparative path' >&2
+            exit 1
+          fi
+      - name: Compile comparative probe
+        run: |
+          cargo check --release -p nine65 \
+            --bin cram_comparative_probe \
+            --features serde,allow_insecure
+      - name: Build comparative probe
+        run: |
+          cargo build --release -p nine65 \
+            --bin cram_comparative_probe \
+            --features serde,allow_insecure
+      - name: Execute same-process correctness smoke
+        id: smoke
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/v6_v7_compare/smoke
+          target/release/cram_comparative_probe \
+            --config v6_compat_4096 \
+            --iterations 2 \
+            --mul-iterations 1 \
+            --ct-mul-depth 2 \
+            --seed 42 \
+            --a 8 \
+            --b 8 \
+            --output artifacts/v6_v7_compare/smoke/result.json \
+            > artifacts/v6_v7_compare/smoke/stdout.log \
+            2> artifacts/v6_v7_compare/smoke/stderr.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nine65-v7-comparative-smoke
+          path: artifacts/v6_v7_compare/smoke
+      - name: Enforce smoke result after evidence capture
+        if: always()
+        run: test '${{ steps.smoke.outcome }}' = 'success'
+
+  same-machine-v6-v7:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check cross-repository credential
+        id: credential
+        env:
+          CROSS_REPO_TOKEN: ${{ secrets.NINE65_CROSS_REPO_TOKEN }}
+        shell: bash
+        run: |
+          if test -n "$CROSS_REPO_TOKEN"; then
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            mkdir -p "$GITHUB_WORKSPACE/v7/artifacts/v6_v7_compare/dispatched"
+            cat > "$GITHUB_WORKSPACE/v7/artifacts/v6_v7_compare/dispatched/skipped.json" <<'JSON'
+          {
+            "status": "SKIPPED",
+            "reason": "Repository secret NINE65_CROSS_REPO_TOKEN is not configured. No comparison was fabricated."
+          }
+          JSON
+          fi
+      - uses: actions/checkout@v4
+        if: steps.credential.outputs.available == 'true'
+        with:
+          path: v7
+      - uses: actions/checkout@v4
+        if: steps.credential.outputs.available == 'true'
+        with:
+          repository: Skyelabz210/NINE65_v6_a_Clockwork_Prime
+          ref: main
+          token: ${{ secrets.NINE65_CROSS_REPO_TOKEN }}
+          path: v6-repo
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.credential.outputs.available == 'true'
+      - name: Run pinned same-machine comparison
+        id: comparison
+        if: steps.credential.outputs.available == 'true'
+        continue-on-error: true
+        working-directory: v7
+        run: |
+          python3 scripts/run_nine65_v6_v7_compare.py \
+            --v6-root "$GITHUB_WORKSPACE/v6-repo/NINE65/NINE65_v6_a_Clockwork_Prime" \
+            --v7-root "$GITHUB_WORKSPACE/v7" \
+            --output-dir "$GITHUB_WORKSPACE/v7/artifacts/v6_v7_compare/dispatched" \
+            --repetitions '${{ inputs.repetitions }}' \
+            --iterations '${{ inputs.iterations }}' \
+            --mul-iterations '${{ inputs.mul_iterations }}' \
+            --ct-mul-depth '${{ inputs.ct_mul_depth }}' \
+            --v6-max-depth '${{ inputs.v6_max_depth }}' \
+            --seed 42
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nine65-v6-v7-same-machine
+          path: v7/artifacts/v6_v7_compare/dispatched
+      - name: Enforce comparison after evidence capture
+        if: always() && steps.credential.outputs.available == 'true'
+        run: test '${{ steps.comparison.outcome }}' = 'success'
