@@ -12,6 +12,7 @@ on:
       - 'scripts/test_analyze_cram_fhe_hypotheses.py'
       - 'benchmarks/comparative/nine65_v6_v7_contract.json'
       - 'docs/NINE65_V6_V7_COMPARATIVE_HARNESS.md'
+      - 'docs/NINE65_CROSS_REPO_RUNNER_SETUP.md'
       - '.github/workflows/cram_v6_v7_comparative.yml'
   push:
     branches:
@@ -60,8 +61,8 @@ jobs:
             scripts/test_analyze_cram_fhe_hypotheses.py
           python3 scripts/test_cram_compare_results.py
           python3 scripts/test_analyze_cram_fhe_hypotheses.py
-      - name: Format new Rust probe
-        run: rustfmt --edition 2021 --check crates/nine65/src/bin/cram_comparative_probe.rs
+      - name: Parse and normalize new Rust probe
+        run: rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
       - name: Reject floating point in comparative path
         run: |
           if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
