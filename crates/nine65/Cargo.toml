@@ -128,6 +128,11 @@ name = "cram_modulus_probe"
 path = "src/bin/cram_modulus_probe.rs"
 required-features = ["serde"]
 
+[[bin]]
+name = "cram_comparative_probe"
+path = "src/bin/cram_comparative_probe.rs"
+required-features = ["serde"]
+
 [[bench]]
 name = "fhe_scaling"
 harness = false
