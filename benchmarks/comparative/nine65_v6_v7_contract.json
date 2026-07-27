@@ -1,0 +1,63 @@
+{
+  "schema": "nine65-v6-v7-comparison-contract-v1",
+  "purpose": "same-machine implementation regression analysis",
+  "security_ranking_allowed": false,
+  "v6": {
+    "repository": "Skyelabz210/NINE65_v6_a_Clockwork_Prime",
+    "commit": "bd5c5c29f5c367bf34831cf5c1b97b3b938ac829",
+    "workspace_root": "NINE65/NINE65_v6_a_Clockwork_Prime",
+    "binary": "nine65_bench",
+    "config": "secure_128"
+  },
+  "v7": {
+    "repository": "Skyelabz210/NINE65_v7",
+    "binary": "cram_comparative_probe",
+    "config": "v6_compat_4096",
+    "required_features": [
+      "serde",
+      "allow_insecure"
+    ]
+  },
+  "parameter_tuple": {
+    "n": 4096,
+    "main_moduli": [
+      998244353,
+      985661441,
+      754974721
+    ],
+    "plaintext_modulus": 65537,
+    "eta": 3,
+    "threads": 1,
+    "build_profile": "release"
+  },
+  "required_compatibility_fields": [
+    "operation",
+    "scheme",
+    "plaintext_semantics",
+    "target_security_bits",
+    "security_estimator",
+    "n",
+    "log_q_bits",
+    "plaintext_modulus",
+    "slots",
+    "refresh_kind",
+    "hardware_fingerprint",
+    "threads",
+    "build_profile",
+    "sample_policy"
+  ],
+  "ranking_gate": {
+    "minimum_correctness_trials": 1,
+    "maximum_correctness_failures": 0,
+    "exact_compatibility_required": true
+  },
+  "evidence_policy": {
+    "timing_unit": "integer nanoseconds",
+    "ratio_type": "reduced exact rational",
+    "preserve_failed_runs": true,
+    "preserve_stdout": true,
+    "preserve_stderr": true,
+    "preserve_raw_json": true,
+    "fabricate_missing_results": false
+  }
+}
