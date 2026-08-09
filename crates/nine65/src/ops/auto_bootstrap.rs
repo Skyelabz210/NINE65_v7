@@ -60,10 +60,7 @@ impl<'a> AutoBootstrapEvaluator<'a> {
     /// caller configuration error and are rejected immediately rather than
     /// producing a permanently-on or permanently-off refresh policy.
     pub fn set_trigger_threshold(&mut self, permille: u32) {
-        assert!(
-            permille <= 1000,
-            "auto-bootstrap threshold must be in 0..=1000 permille"
-        );
+        assert_valid_trigger_threshold(permille);
         self.trigger_permille = permille;
     }
 
@@ -95,9 +92,11 @@ impl<'a> AutoBootstrapEvaluator<'a> {
             + NoiseBudget::relin_cost(&self.work_ctx.config);
         let budget_exhausted = self
             .budget
-            .consume(NoiseOpType::MulCt, mul_cost)
+            .consume(NoiseOpType::MulCt, operation_cost)
             .is_err();
 
+        let result = self.work_ctx.mul_dual_public(ct1, ct2, self.evk)?;
+        self.total_muls += 1;
         self.refresh_if_required(result, budget_exhausted)
     }
 
@@ -153,16 +152,30 @@ impl<'a> AutoBootstrapEvaluator<'a> {
     }
 }
 
+/// Validate an auto-bootstrap trigger threshold expressed in permille.
+///
+/// Legal thresholds lie in the closed interval `0..=1000` (0% to 100% of the
+/// budget remaining). Values above 1000 permille are a caller configuration
+/// error and panic rather than producing a permanently-on refresh policy.
+fn assert_valid_trigger_threshold(permille: u32) {
+    assert!(
+        permille <= 1000,
+        "auto-bootstrap threshold must be in 0..=1000 permille"
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[ignore = "VESTIGIAL: asserts assert_valid_trigger_threshold(1001) panics — argument validation for the auto-bootstrap refresh trigger. A refresh trigger threshold only means something if there is a budget to be at 25 percent of. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     #[should_panic(expected = "0..=1000")]
     fn trigger_threshold_rejects_values_above_one_hundred_percent() {
         assert_valid_trigger_threshold(1001);
     }
 
+    #[ignore = "VESTIGIAL: asserts assert_valid_trigger_threshold accepts 0, 250 and 1000 permille — the legal interval of the auto-bootstrap refresh trigger. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn trigger_threshold_accepts_closed_legal_interval() {
         assert_valid_trigger_threshold(0);

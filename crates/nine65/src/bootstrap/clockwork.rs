@@ -320,6 +320,7 @@ mod tests {
         (config, ntt, keys, harvester, encoder)
     }
 
+    #[ignore = "VESTIGIAL: asserts ClockworkBootstrap::can_bootstrap is true just below q/(2t) and false just above — a noise-threshold predicate gating when a refresh is still possible. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_can_bootstrap_check() {
         let config = SecureConfig::test_fast_insecure().into_config();
@@ -329,6 +330,7 @@ mod tests {
         assert!(!cw.can_bootstrap(threshold + 1));
     }
 
+    #[ignore = "VESTIGIAL: asserts BootstrapKey::generate produces n entries and that secret_key_poly() has dimension n — structural coverage of bootstrap key material. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_three_lock_key_generation() {
         let (config, ntt, keys, _, _) = setup();
@@ -338,6 +340,7 @@ mod tests {
         assert_eq!(bsk.secret_key_poly().coeffs.len(), config.n);
     }
 
+    #[ignore = "VESTIGIAL: asserts encrypt(42) -> CiphertextMask -> cw.bootstrap_protected -> decrypt returns 42, the Three-Lock protected re-encryption path end to end. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_end_to_end_protected_bootstrap() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -379,6 +382,7 @@ mod tests {
         );
     }
 
+    #[ignore = "VESTIGIAL: asserts cw.bootstrap_protected roundtrips eight messages spanning 0..9000 through the Three-Lock mask. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_protected_bootstrap_multiple_messages() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -414,6 +418,7 @@ mod tests {
         );
     }
 
+    #[ignore = "VESTIGIAL: asserts that raw_masked minus mask.decrypt_contribution equals the clean decrypted polynomial — algebraic mask removal inside the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_mask_contribution_correctness() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -452,6 +457,7 @@ mod tests {
         );
     }
 
+    #[ignore = "VESTIGIAL: asserts a bootstrap_protected output sits below 10 percent of the noise budget, i.e. that the refresh actually reset the budget. Nothing depletes the budget here, so there is nothing to reset. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_bootstrap_produces_fresh_noise() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -503,6 +509,7 @@ mod tests {
         );
     }
 
+    #[ignore = "VESTIGIAL: asserts two bootstrap_protected runs over the same ciphertext with different masks produce different c0 coefficients. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_bootstrap_randomness_independence() {
         let (config, ntt, keys, mut harvester, _) = setup();

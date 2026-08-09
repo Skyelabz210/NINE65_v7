@@ -162,15 +162,12 @@ impl NTTEngineFFT {
     }
 
     /// Forward NTT with shadow capture of Montgomery quotients.
-    pub fn ntt_inplace_with_shadow(&self, a: &mut [u64], shadow: &mut Option<Vec<u64>>) {
-        debug_assert_eq!(a.len(), self.n);
-
-    /// Forward NTT. Control flow, addresses, and twiddle indices are public.
-    pub fn ntt_inplace_with_shadow(
-        &self,
-        values: &mut [u64],
-        shadow: &mut Option<Vec<u64>>,
-    ) {
+    ///
+    /// Control flow, addresses, and twiddle indices are public. When `shadow`
+    /// is `Some`, the discarded Montgomery quotient of each twiddle multiply is
+    /// captured (q_hat = floor((a*b*N') / R)), matching the inverse transform's
+    /// shadow protocol.
+    pub fn ntt_inplace_with_shadow(&self, values: &mut [u64], shadow: &mut Option<Vec<u64>>) {
         debug_assert_eq!(values.len(), self.n);
         self.bit_reverse_permute(values);
 
@@ -198,30 +195,9 @@ impl NTTEngineFFT {
                         captured.push(quotient as u64);
                     }
 
-            for k in (0..self.n).step_by(m) {
-                let mut t_idx = 0;
-
-                for j in 0..half_m {
-                    let u_idx = k + j;
-                    let v_idx = k + j + half_m;
-
-                    let u = a[u_idx];
-                    // Multiply by twiddle in Montgomery form (PERSISTENT!)
-                    let prod = (self.twiddles_fwd[t_idx] as u128) * (a[v_idx] as u128);
-                    let t = self.mont.montgomery_reduce(prod);
-
-                    if let Some(ref mut s) = shadow {
-                        // Capture Montgomery quotient: q_hat = floor( (a*b*N') / R )
-                        // Simplified: capturing the discarded quotient from REDC
-                        let q_hat = ((prod as u128).wrapping_add((prod as u64).wrapping_mul(self.mont.q_inv_neg) as u128 * self.q as u128)) >> 64;
-                        s.push(q_hat as u64);
-                    }
-
-                    // Butterfly
-                    a[u_idx] = self.mont_add(u, t);
-                    a[v_idx] = self.mont_sub(u, t);
-
-                    t_idx += t_step;
+                    values[upper_index] = self.mont.montgomery_add(upper, lower);
+                    values[lower_index] = self.mont.montgomery_sub(upper, lower);
+                    twiddle_index += twiddle_step;
                 }
             }
         }

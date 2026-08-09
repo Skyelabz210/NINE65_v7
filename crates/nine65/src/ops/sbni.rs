@@ -1,8 +1,59 @@
-//! Shadow Butterfly Noise Injection (SBNI)
+//! RETIRED MECHANISM — Shadow Butterfly Noise Injection (SBNI)
 //!
-//! SBNI rerandomizes accumulated deterministic noise drift using entropy
-//! derived as a zero-marginal-cost byproduct of the NTT butterfly operations.
-//! This provides timing side-channel immunity and strengthens IND-CPA security.
+//! **This file is not part of the module tree.** `pub mod sbni;` was removed
+//! from `crates/nine65/src/ops/mod.rs`; nothing here compiles into the crate.
+//! It is kept on disk as the record of a dropped mechanism, per
+//! `docs/RETIRED_MECHANISMS.md` §5 (a silent delete is not acceptable).
+//!
+//! Dropped per explicit author decision. SBNI was a purely additive masking
+//! layer — not a representation transform and not a correctness mechanism. It
+//! had exactly one production call site, `mul_dual_public` Step 3.5 in
+//! `ops/rns_fhe.rs`, which has been removed.
+//!
+//! Three reasons the removal is observationally safe:
+//!
+//! 1. STRUCTURAL. `inject_dual_in_place` only performed
+//!    `poly.main[i][k] += e` and `poly.anchor[i][k] += e` with the *same*
+//!    integer epsilon in every lane. It added no lane, dropped no lane,
+//!    reordered nothing and rescaled nothing, and it touched `c0` only. No
+//!    code anywhere read a value it produced.
+//!
+//! 2. NUMERICAL. Injection ran immediately *before* the K-Elimination rescale
+//!    by `Delta = M_level / t` (100+ bits for secure_128), while
+//!    `|epsilon| <= SBNI_BOUND = 20`. So `round((v + eps)/Delta)` differed
+//!    from `round(v/Delta)` only with probability ~40/2^100. SBNI was already
+//!    a no-op on the emitted ciphertext.
+//!
+//! 3. CRYPTOGRAPHIC. The claimed "zero-marginal-cost butterfly entropy" was
+//!    harvested by running an NTT over the hardcoded constant
+//!    `vec![123u64; n]` through fixed twiddles, producing an identical shadow
+//!    vector on every call. The only varying hash input was `tau`, a monotonic
+//!    counter from 0. No secret key, no RNG, no ciphertext-dependent material,
+//!    and blake3 unkeyed. Epsilon was therefore a deterministic, publicly
+//!    recomputable function of the operation index — an adversary reproduces
+//!    it exactly, so it masked nothing.
+//!
+//! The original module doc claimed SBNI "rerandomizes accumulated
+//! deterministic noise drift", provides "timing side-channel immunity" and
+//! "strengthens IND-CPA security". None of those were delivered by this
+//! implementation. Downstream documents still asserting SBNI as a live
+//! security control (README.md, docs/ENTROPY_MODEL.md,
+//! docs/SIDE_CHANNEL_THREAT_MODEL.md T5, docs/CLAIM_EVIDENCE_LEDGER.md,
+//! docs/CRAM_RLWE_SECURITY_ASSESSMENT_2026-06-03.md §3.2 "Option B") need
+//! those claims retired, not merely re-pointed.
+//!
+//! It was also the crash site: `inject_dual_in_place` indexed `poly.main[i]`
+//! while iterating the *full* `config.primes`, which panicked out of bounds
+//! once the auto modulus-switch in `mul_dual_public` Step 5 had shortened
+//! `poly.main`. Both the injection and that auto-switch are now gone.
+//!
+//! Five tests retired with this file: `test_injection_poly_bounded`,
+//! `test_injection_preserves_correctness`, `test_injection_stochastic`, and
+//! the two bare module-scope tests `test_blake3_uniformity` and
+//! `test_blake3_serial_correlation` (which sit *outside* the `mod tests`
+//! block). All five passed at the time of retirement; they tested the
+//! mechanism's own internals and have no replacement, because the mechanism
+//! has none.
 
 use crate::ring::RingPolynomial;
 use crate::ops::rns_fhe::DualRNSPoly;

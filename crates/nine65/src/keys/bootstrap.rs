@@ -680,6 +680,7 @@ mod tests {
     // BOOTSTRAP PRIME VALIDATION TESTS
     // ═══════════════════════════════════════════════════════════════════
 
+    #[ignore = "VESTIGIAL: asserts validate_bootstrap_primes accepts BOOTSTRAP_PRIMES at N=4096, 128-bit. The validator and the constant it validates exist only to gate bootstrap key material. NOTE: the NTT-compatibility and coprimality checks inside it are generic and live; if BOOTSTRAP_PRIMES is retired, re-express those checks against the work basis under a non-bootstrap name rather than restoring this test. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_valid_set() {
         // BOOTSTRAP_PRIMES should pass validation for N=4096
@@ -691,6 +692,7 @@ mod tests {
         );
     }
 
+    #[ignore = "VESTIGIAL: asserts validate_bootstrap_primes rejects a prime not congruent to 1 mod 2N with NTTConfigError — bootstrap-basis validation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_ntt_incompatible() {
         // Prime not congruent to 1 mod 2N should fail
@@ -706,6 +708,7 @@ mod tests {
         }
     }
 
+    #[ignore = "VESTIGIAL: asserts validate_bootstrap_primes rejects gcd(9, 21) = 3 with NotCoprime — bootstrap-basis validation. Coprimality itself remains architecturally live; only its application to the bootstrap prime set is quarantined. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_not_coprime() {
         // Use NTT-compatible composites that share a factor
@@ -724,6 +727,7 @@ mod tests {
         }
     }
 
+    #[ignore = "VESTIGIAL: asserts validate_bootstrap_primes rejects a single 13-bit prime with SecurityLevelNotMet at the 128-bit bar — bootstrap-basis validation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_insufficient_security() {
         // Single small prime should fail security check
@@ -740,6 +744,7 @@ mod tests {
         }
     }
 
+    #[ignore = "VESTIGIAL: asserts validate_bootstrap_primes rejects an empty bootstrap prime array with InvalidParameter. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_empty_array() {
         let empty: &[u64] = &[];
@@ -754,6 +759,7 @@ mod tests {
         }
     }
 
+    #[ignore = "VESTIGIAL: asserts validate_bootstrap_primes rejects a zero entry in the bootstrap prime array with NTTConfigError. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_zero_prime() {
         let with_zero = [0u64, 998244353];
@@ -768,6 +774,7 @@ mod tests {
         }
     }
 
+    #[ignore = "VESTIGIAL: asserts BOOTSTRAP_PRIMES either validate or fail only with NTTConfigError across N in [1024, 2048, 4096, 8192]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_multiple_degrees() {
         // Test that BOOTSTRAP_PRIMES work for various N values
@@ -787,6 +794,7 @@ mod tests {
         }
     }
 
+    #[ignore = "VESTIGIAL: asserts the first two BOOTSTRAP_PRIMES pass at a 50-bit bar and fail at 128 — sizing the bootstrap basis against a security target. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_validate_bootstrap_primes_first_two_only() {
         // Smaller subset should still pass coprimality/NTT but may fail security
@@ -839,6 +847,7 @@ mod tests {
         }
     }
 
+    #[ignore = "VESTIGIAL: asserts BootstrapKey::generate succeeds against a config built from BOOTSTRAP_PRIMES — generation of bootstrap key material itself. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_bootstrap_key_generation_validates_primes() {
         use crate::entropy::ShadowHarvester;

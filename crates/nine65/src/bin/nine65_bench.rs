@@ -8,19 +8,7 @@
 
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use nine65::ops::bootstrap::ClockworkBootstrap;
-use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
-use nine65::ops::rns_fhe::{DualRNSCiphertext, RNSFHEContext};
-
-/// NINE65 Benchmark Harness
-///
-/// Runs comprehensive FHE benchmarks and outputs structured JSON
-/// for the hackfate.us demo page (speedometers, depth chain, noise budget).
-///
-/// Usage:
-///   nine65_bench --config secure_128 --max-depth 80 --output bench.json
-///
-/// Build:
-///   cargo build --release -p nine65 --bin nine65_bench --features serde
+use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
 use serde_json::{json, Value};
 use std::time::{Instant, SystemTime};
@@ -102,26 +90,8 @@ fn main() {
             "--trigger-pct" => {
                 trigger_pct = args.next().unwrap_or_default().parse().unwrap_or(25)
             }
-            "--with-bootstrap" => with_bootstrap = true,
-            "--auto-bootstrap" => auto_bootstrap = true,
-            "--statistical-test" => statistical_test = true,
-            "--trigger-pct" => {
-                trigger_pct = args.next().unwrap_or_default().parse().unwrap_or(25);
-            }
             "-h" | "--help" => {
-                eprintln!(
-                    "Usage: nine65_bench [OPTIONS]\n\n\
-                     Options:\n\
-                     --config <name>      secure_128 (default), secure_192, secure_256\n\
-                     --max-depth <n>      Max depth for chain test (default: 80)\n\
-                     --output <path>      Output JSON file (default: stdout)\n\
-                     --a <u64>            First operand (default: 8)\n\
-                     --b <u64>            Second operand (default: 8)\n\
-                     --with-bootstrap     Enable real Clockwork Bootstrap\n\
-                     --auto-bootstrap     Enable Auto-Bootstrap Evaluator\n\
-                     --statistical-test   Run 100-sample statistical correctness test\n\
-                     --trigger-pct <n>    Refresh threshold (default: 25)\n"
-                );
+                usage();
                 return;
             }
             _ => {
@@ -171,20 +141,6 @@ fn main() {
     let keygen_start = Instant::now();
     let keys = KeySet::generate(&config, &ntt, &mut rng);
     let keygen_us = keygen_start.elapsed().as_micros() as u64;
-
-    // Bootstrap KeyGen
-    let ctx_dual = RNSFHEContext::new(&config);
-    let keys_dual = ctx_dual.generate_keys_dual_full(&mut rng);
-    let boot = ClockworkBootstrap::new(&config).expect("Bootstrap init failed");
-    let boot_keys = if with_bootstrap || auto_bootstrap {
-        eprintln!("Generating bootstrap keys...");
-        let t_boot = Instant::now();
-        let bk = boot.generate_keys(&keys_dual.secret_key, &mut rng).expect("Bootstrap keygen failed");
-        eprintln!("  Bootstrap Keygen: {}ms", t_boot.elapsed().as_millis());
-        Some(bk)
-    } else {
-        None
-    };
 
     let encoder = BFVEncoder::new(&config);
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
@@ -290,112 +246,44 @@ fn main() {
 
     let mut budget = NoiseBudget::from_config(&config);
     let initial_budget_mb = budget.remaining_millibits();
-
-    // --- LEGACY INITIALIZATION ---
-    let mut ct_result = encryptor.encrypt(init_a, &mut rng);
+    let mut ciphertext = ctx.encrypt_dual(init_a % config.t, &dual_keys.public_key, &mut rng);
     let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
-    let mut plaintext_result: u64 = (init_a * init_b) % config.t;
+    let mut plaintext = init_a % config.t;
+    let mut entries: Vec<Value> = Vec::with_capacity(requested_operations);
+    let mut refreshes: u64 = 0;
+    let chain_start = Instant::now();
 
-    // --- DUALRNS INITIALIZATION (for bootstrap path) ---
-    let mut ct_dual = ctx_dual.encrypt_dual(init_a, &keys_dual.public_key, &mut rng);
-
-    // First op: multiply by b (as plaintext)
-    let t0 = Instant::now();
-    let first_op_us;
-    if with_bootstrap {
-        ct_dual = ctx_dual.mul_plain_dual(&ct_dual, init_b);
-        first_op_us = t0.elapsed().as_micros() as u64;
-    } else {
-        ct_result = evaluator.mul_plain(&ct_result, init_b);
-        first_op_us = t0.elapsed().as_micros() as u64;
-    }
-    let _ = budget.consume(NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(&config));
-
-    let mut depth_chain: Vec<Value> = Vec::new();
-    let noise_pct = (budget.remaining_millibits() as f64 / initial_budget_mb as f64 * 100.0) as u64;
-
-    depth_chain.push(json!({
-        "depth": 1,
-        "operation": format!("{} \u{00d7} {}", init_a, init_b),
-        "noise_budget_pct": noise_pct,
-        "elapsed_us": first_op_us,
-        "refreshed": false
-    }));
-
-    let mut total_refreshes: u64 = 0;
-    let mut depth: usize = 1;
-
-    for d in 0..(max_depth - 1) {
-        let (op_type, symbol, val) = &chain_ops[d % chain_ops.len()];
-
-        let t0 = Instant::now();
-        let (noise_cost, new_plain) = match *op_type {
-            "mul_plain" => {
-                if with_bootstrap {
-                    ct_dual = ctx_dual.mul_plain_dual(&ct_dual, *val);
-                } else {
-                    ct_result = evaluator.mul_plain(&ct_result, *val);
-                }
-                (
-                    NoiseBudget::mul_plain_cost(&config),
-                    (plaintext_result * val) % config.t,
-                )
-            }
-            "add_plain" => {
-                if with_bootstrap {
-                    ct_dual = ctx_dual.add_plain_dual(&ct_dual, *val);
-                } else {
-                    ct_result = evaluator.add_plain(&ct_result, *val);
-                }
-                (
-                    NoiseBudget::add_plain_cost(),
-                    (plaintext_result + val) % config.t,
-                )
-            }
-            "sub_plain" => {
-                // sub_plain via add_plain with (t - val)
-                if with_bootstrap {
-                    ct_dual = ctx_dual.add_plain_dual(&ct_dual, config.t - val);
-                } else {
-                    ct_result = evaluator.add_plain(&ct_result, config.t - val);
-                }
-                (
-                    NoiseBudget::add_plain_cost(),
-                    (plaintext_result + config.t - val) % config.t,
-                )
-            }
-            _ => unreachable!(),
+    for index in 0..requested_operations {
+        let (operation, operand) = if index == 0 {
+            ("mul_plain", init_b % config.t)
+        } else {
+            chain_ops[(index - 1) % chain_ops.len()]
         };
 
-        plaintext_result = new_plain;
-        depth += 1;
+        let (noise_type, noise_cost) = match operation {
+            "mul_plain" => (
+                NoiseOpType::MulPlain,
+                NoiseBudget::mul_plain_cost(&config),
+            ),
+            _ => (NoiseOpType::Add, NoiseBudget::add_plain_cost()),
+        };
 
         let needs_refresh = budget.remaining_millibits() < noise_cost
             || (with_bootstrap && budget.should_bootstrap(trigger_permille));
 
-        let mut refreshed = false;
-        if consume_result.is_err() || (with_bootstrap && budget.should_bootstrap(trigger_pct * 10)) {
-            if let Some(ref bk) = boot_keys {
-                // Real Clockwork Bootstrap refresh
-                ct_dual = boot.bootstrap(&ct_dual, &bk.bsk, &bk.ksk).expect("Bootstrap failed");
-
+        if needs_refresh {
+            if let (Some(engine), Some(keys)) = (bootstrap.as_ref(), bootstrap_keys.as_ref()) {
+                ciphertext = engine
+                    .bootstrap(&ciphertext, &keys.bsk, &keys.ksk)
+                    .expect("real bootstrap failed");
                 budget.reset_after_bootstrap(&config);
-                total_refreshes += 1;
-                refreshed = true;
-                eprintln!(
-                    "  Depth {depth}: REAL BOOTSTRAP REFRESH (refresh #{})",
-                    total_refreshes
-                );
+                refreshes += 1;
             } else {
-                // Simulate Clockwork Bootstrap refresh (legacy mode)
-                budget = NoiseBudget::from_config(&config);
-                let _ = budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
-                total_refreshes += 1;
-                refreshed = true;
                 eprintln!(
-                    "  Depth {depth}: SIMULATED REFRESH (refresh #{})",
-                    total_refreshes
+                    "Stopped before operation {}: modeled noise budget cannot fund the next operation",
+                    index + 1
                 );
+                break;
             }
         }
 
@@ -435,85 +323,19 @@ fn main() {
         }));
     }
 
-    // Verify correctness: decrypt and check
-    let decrypted = if with_bootstrap {
-        ctx_dual.decrypt_dual(&ct_dual, &keys_dual.secret_key)
-    } else {
-        decryptor.decrypt(&ct_result)
-    };
-    let correct = decrypted == plaintext_result;
-    eprintln!(
-        "  Depth chain complete: depth={}, refreshes={}, correct={}",
-        depth, total_refreshes, correct
-    );
-    if !correct {
-        eprintln!(
-            "  WARNING: Decrypted {} != expected {}",
-            decrypted, plaintext_result
-        );
-    }
+    let chain_us = chain_start.elapsed().as_micros() as u64;
+    let operations_achieved = entries.len();
+    let decrypted = ctx.decrypt_dual(&ciphertext, &dual_keys.secret_key);
+    let achieved_chain_correct = decrypted == plaintext;
+    let completed_requested = operations_achieved == requested_operations;
 
-    // ================================================================
-    // 3.5 STATISTICAL TEST
-    // ================================================================
-    if statistical_test {
-        eprintln!("Running statistical correctness test (100 trials)...");
-        let mut statistical_successes = 0;
-        let mut statistical_refreshes = 0;
-
-        let bk = boot_keys.as_ref().expect("--statistical-test requires bootstrap keys (implied)");
-
-        for i in 0..100 {
-            let m_init = rng.next_u64() % config.t;
-            let mut ct = ctx_dual.encrypt_dual(m_init, &keys_dual.public_key, &mut rng);
-            let mut current_plain = m_init;
-            let mut trial_budget = NoiseBudget::from_config(&config);
-
-            // Run depth-80 chain
-            for d in 0..80 {
-                let (_, _, val) = chain_ops[d % chain_ops.len()];
-
-                // Deterministic mixed operations
-                if d % 3 == 0 {
-                    ct = ctx_dual.mul_plain_dual(&ct, val % config.t);
-                    current_plain = (current_plain * (val % config.t)) % config.t;
-                    let _ = trial_budget.consume(NoiseOpType::MulPlain, NoiseBudget::mul_plain_cost(&config));
-                } else {
-                    ct = ctx_dual.add_plain_dual(&ct, val % config.t);
-                    current_plain = (current_plain + (val % config.t)) % config.t;
-                    let _ = trial_budget.consume(NoiseOpType::Add, NoiseBudget::add_plain_cost());
-                }
-
-                if trial_budget.should_bootstrap(trigger_pct * 10) {
-                    ct = boot.bootstrap(&ct, &bk.bsk, &bk.ksk).expect("Statistical bootstrap failed");
-                    trial_budget.reset_after_bootstrap(&config);
-                    statistical_refreshes += 1;
-                }
-            }
-
-            let dec = ctx_dual.decrypt_dual(&ct, &keys_dual.secret_key);
-            if dec == current_plain {
-                statistical_successes += 1;
-            }
-
-            if (i + 1) % 100 == 0 {
-                eprintln!("  Trial {}: {}/{} correct", i + 1, statistical_successes, i + 1);
-            }
-        }
-
-        eprintln!("Statistical test complete: {}/100 correct ({} refreshes)", statistical_successes, statistical_refreshes);
-        if statistical_successes == 100 {
-            eprintln!("[PASS] 100/100 trials correct with zero nonzero error distribution.");
-        } else {
-            eprintln!("[FAIL] Statistical correctness failed: {}/100 correct", statistical_successes);
-            std::process::exit(1);
-        }
-    }
-
-    // ================================================================
-    // 4. SCALE TESTS
-    // ================================================================
-    eprintln!("Running scale tests...");
+    let statistical_summary = if statistical_test {
+        let engine = bootstrap.as_ref().expect("statistical test bootstrap engine");
+        let keys = bootstrap_keys
+            .as_ref()
+            .expect("statistical test bootstrap keys");
+        let mut successes: u64 = 0;
+        let mut statistical_refreshes: u64 = 0;
 
         for _ in 0..100u64 {
             let mut expected = rng.next_u64() % config.t;

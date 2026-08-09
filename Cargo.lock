@@ -232,6 +232,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "cram-core"
+version = "0.1.0"
+dependencies = [
+ "proptest",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -366,6 +373,8 @@ dependencies = [
  "nine65",
  "serde",
  "serde_json",
+ "sha2",
+ "subtle",
  "thiserror",
 ]
 
@@ -607,6 +616,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
 dependencies = [
  "zerocopy",
+]
+
+[[package]]
+name = "private-feedback-core"
+version = "0.1.0"
+
+[[package]]
+name = "private-feedback-nine65"
+version = "0.1.0"
+dependencies = [
+ "nine65",
+ "private-feedback-core",
 ]
 
 [[package]]

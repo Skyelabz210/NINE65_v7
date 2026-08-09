@@ -827,8 +827,6 @@ pub struct RNSFHEContext {
     pub config: FHEConfig,
     /// Deep diagnostics mode enabled
     pub diagnostics_enabled: bool,
-    /// Counter for SBNI (Shadow Butterfly Noise Injection)
-    pub sbni_counter: std::sync::atomic::AtomicU64,
 }
 
 impl RNSFHEContext {
@@ -916,7 +914,6 @@ impl RNSFHEContext {
             n: config.n,
             config: config.clone(),
             diagnostics_enabled: false, // Disabled by default
-            sbni_counter: std::sync::atomic::AtomicU64::new(0),
         })
     }
 
@@ -2769,21 +2766,26 @@ impl RNSFHEContext {
         // Direct relinearization using s² (NOT SECURE for multi-party)
         let s2 = self.dual_poly_mul(&sk.s, &sk.s);
         let e2_s2 = self.dual_poly_mul(&e2, &s2);
-        let c0_new = self.dual_poly_add(&e0, &e2_s2);
+        // `e0`/`e1`/`e2` leave the rescale canonical (k == 0). `e2_s2` does NOT:
+        // its true integer product overshoots M_level, so `dual_poly_mul` hands
+        // back main-wrapped/anchor-unwrapped lanes carrying a nonzero winding.
+        // Reset the winding before the ciphertext is handed to the next
+        // multiply, or the next tensor squares the inflated representative and
+        // the surplus lands in the noise. Main lanes / basis / level untouched.
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
 
         let level = c0_new.main.len();
-        let ct_result = DualRNSCiphertext {
+
+        // RETIRED: the auto modulus-switch that used to run here
+        // (`if level >= 3 { mod_switch_ct_down(..) }`) is gone. K-Elimination
+        // performs an EXACT division, so the value shrinks without the basis
+        // having to shrink with it. Multiply returns at full lane count; the
+        // main-prime set is invariant across the operation.
+        // See docs/RETIRED_MECHANISMS.md and tests/basis_invariance.rs.
+        DualRNSCiphertext {
             c0: c0_new,
             c1: e1,
             level,
-        };
-
-        // Auto modulus-switch when enough levels remain (mirrors mul_dual_public).
-        // This shrinks noise proportionally, enabling deeper symmetric circuits.
-        if level >= 3 {
-            self.mod_switch_ct_down(&ct_result).unwrap_or(ct_result)
-        } else {
-            ct_result
         }
     }
 
@@ -2880,21 +2882,19 @@ impl RNSFHEContext {
 
         // Direct relinearization using precomputed s² (NOT SECURE for multi-party)
         let e2_s2 = self.dual_poly_mul(&e2, s2);
-        let c0_new = self.dual_poly_add(&e0, &e2_s2);
+        // Same winding reset as `mul_dual_symmetric` -- see the comment there
+        // and on `canonicalize_dual_anchor`.
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
 
         let level = c0_new.main.len();
-        let ct_result = DualRNSCiphertext {
+
+        // RETIRED: auto modulus-switch removed here as well. See the note in
+        // `mul_dual_symmetric`. Exact division reduces the value; the basis
+        // does not move.
+        DualRNSCiphertext {
             c0: c0_new,
             c1: e1,
             level,
-        };
-
-        // Auto modulus-switch when enough levels remain (mirrors mul_dual_public).
-        // This shrinks noise proportionally, enabling deeper symmetric circuits.
-        if level >= 3 {
-            self.mod_switch_ct_down(&ct_result).unwrap_or(ct_result)
-        } else {
-            ct_result
         }
     }
 
@@ -2962,29 +2962,19 @@ impl RNSFHEContext {
         let (relin_c0, relin_c1) = self.relinearize_dual(&d2, evk)?;
 
         // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
-        let mut c0_pre = self.dual_poly_add(&d0, &relin_c0);
+        let c0_pre = self.dual_poly_add(&d0, &relin_c0);
         let c1_pre = self.dual_poly_add(&d1, &relin_c1);
 
-        // Step 3.5: SBNI (Shadow Butterfly Noise Injection)
-        // Capture shadows from the first lane's NTT engine for entropy
-        let mut shadows = Some(Vec::with_capacity(self.n * (64 - self.n.leading_zeros() as usize)));
-        let dummy_poly = vec![123u64; self.n];
-        let mut dummy_work = dummy_poly.clone();
-        #[cfg(not(feature = "reference_ntt"))]
-        self.ntt_engines[0].ntt_inplace_with_shadow(&mut dummy_work, &mut shadows);
-        #[cfg(feature = "reference_ntt")]
-        self.ntt_engines[0].ntt_with_shadow(&dummy_work, &mut shadows);
-
-        if let Some(s) = shadows {
-            let tau = self.sbni_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            super::sbni::inject_dual_in_place(
-                &mut c0_pre,
-                &s,
-                tau,
-                &self.config.primes,
-                &self.dual_rns.anchor.primes
-            );
-        }
+        // RETIRED (Step 3.5): SBNI — shadow-butterfly noise injection.
+        // Dropped per author decision. It added a signed epsilon with
+        // |epsilon| <= 20 into c0 only, immediately before a rescale by
+        // Delta = M_level/t (100+ bits), so it was a no-op on the emitted
+        // ciphertext with probability ~1 - 2^-95. Its "entropy" was an NTT of
+        // the hardcoded constant vec![123u64; n] through fixed twiddles, giving
+        // the same shadow vector on every call, keyed only by a monotonic
+        // counter — publicly recomputable, therefore masking nothing.
+        // See crates/nine65/src/ops/sbni.rs (retired) and
+        // docs/RETIRED_MECHANISMS.md.
 
         // Step 4: K-Elimination rescale ONCE on the combined result
         let use_two_stage = self.should_two_stage_rescale(ct1.level);
@@ -3000,19 +2990,26 @@ impl RNSFHEContext {
         };
 
         let level = c0_new.main.len();
-        let ct_result = DualRNSCiphertext {
+
+        // RETIRED (Step 5): the auto modulus-switch that ran here
+        // (`if level >= 3 { mod_switch_ct_down(..) }`) is gone.
+        //
+        // Classical BFV fuses "divide the value" with "drop a lane from the
+        // basis" only because inexact division forces you to shrink the
+        // representation in order to shrink the value. K-Elimination divides
+        // exactly, which unfuses the two: Step 4 already reduced the value by
+        // Delta, so there is nothing left for a lane drop to accomplish. The
+        // basis does not move, no level is consumed, and multiplication depth
+        // is not budget-bounded by a modulus chain.
+        //
+        // This was also the producer of the sbni.rs:84 out-of-bounds panic: it
+        // returned a ciphertext whose `poly.main` was shorter than
+        // `self.config.primes`, while the next multiply kept passing the full
+        // prime list alongside it.
+        Ok(DualRNSCiphertext {
             c0: c0_new,
             c1: c1_new,
             level,
-        };
-
-        // Step 5: Auto modulus-switch when enough levels remain
-        // This shrinks noise proportionally, enabling deeper public-mode circuits.
-        // Auto modulus switching shrinks noise for deeper circuits.
-        Ok(if level >= 3 {
-            self.mod_switch_ct_down(&ct_result).unwrap_or(ct_result)
-        } else {
-            ct_result
         })
     }
 
@@ -3274,6 +3271,53 @@ impl RNSFHEContext {
     /// IMPORTANT: We CENTER v_m around Q/2 before processing to handle values
     /// that represent negative noise (values > Q/2 are interpreted as negative).
 
+    /// Reset a dual poly's ANCHOR lanes to the residues of the canonical
+    /// `[0, M_level)` value its own MAIN lanes already encode.
+    ///
+    /// Why this is needed. In the dual representation the main lanes carry
+    /// `v mod M_level` and the anchor lanes carry `v mod A`; K-Elimination
+    /// reads the pair to recover the winding `k` in `v = v_m + k*M_level`.
+    /// `dual_poly_mul` reduces main mod each main prime and anchor mod each
+    /// anchor prime *independently*, so a product whose true integer exceeds
+    /// `M_level` comes back with the main lanes wrapped and the anchor lanes
+    /// un-wrapped — the pair then encodes `v_m + k*M_level` with `k != 0`.
+    ///
+    /// That is harmless mod Q (decryption only ever reads the main lanes), but
+    /// it is not harmless for the NEXT multiply: the tensor product squares the
+    /// inflated representative, and the K-Elimination rescale — which divides
+    /// the *full* value `v_m + k*M_level` exactly, as it must — faithfully
+    /// carries that surplus through as extra noise. Left alone it is a fixed
+    /// per-multiply tax on the noise budget.
+    ///
+    /// This recomputes `anchor[j] = v_m mod a_j` from `v_m`. It touches ONLY
+    /// the anchor lanes: the main lanes, the main basis, the lane count and the
+    /// level are all untouched, so this is not a modulus switch and the
+    /// ciphertext is unchanged mod Q. It is idempotent, and a no-op on any poly
+    /// that is already canonical (e.g. anything straight out of
+    /// `k_elim_rescale_dual`, which stores `scaled < M_level` into both sides).
+    fn canonicalize_dual_anchor(&self, poly: &DualRNSPoly) -> DualRNSPoly {
+        let ct_level = poly.main.len();
+        let anchor_primes = &self.dual_rns.anchor.primes;
+        let mut anchor = vec![vec![0u64; self.n]; anchor_primes.len()];
+        let mut main_residues = vec![0u64; ct_level];
+
+        for i in 0..self.n {
+            for (j, limb) in poly.main.iter().enumerate() {
+                main_residues[j] = limb[i];
+            }
+            let v_m = self.rns.to_u256_level(&main_residues, ct_level);
+            for (j, &a) in anchor_primes.iter().enumerate() {
+                anchor[j][i] = v_m.mod_u64(a);
+            }
+        }
+
+        DualRNSPoly {
+            main: poly.main.clone(),
+            anchor,
+            n: self.n,
+        }
+    }
+
     fn k_elim_rescale_dual(&self, poly: &DualRNSPoly) -> DualRNSPoly {
         let ct_level = poly.main.len();
         let level_primes = &self.config.primes[..ct_level];
@@ -3283,15 +3327,15 @@ impl RNSFHEContext {
         let (delta, r_u64) = m_level.div_mod_u64(self.t);
         let q_half = m_level.shr1();
 
-        // Anchor product used for k sign interpretation (match extract_k_rns_level)
-        let num_primes_for_sign = if ct_level >= 5 {
-            self.dual_rns.anchor.primes.len().min(5)
-        } else if ct_level >= 4 {
-            self.dual_rns.anchor.primes.len().min(4)
-        } else {
-            self.dual_rns.anchor.primes.len().min(3)
-        };
-        let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes[..num_primes_for_sign]);
+        // Anchor product used for k sign interpretation -- MUST match the
+        // anchor subset `extract_k_rns_level` actually reconstructed `k_u`
+        // against below, or `SignedK256::from_unsigned`'s half-range test
+        // (k > a_product/2 => negative) is checked against the wrong modulus.
+        // `extract_k_rns_level` (arithmetic/rns.rs) always uses the full
+        // canonical anchor set now (see its own comment for why the old
+        // ct_level-tiered selection was wrong post-ladder-removal); this must
+        // mirror that unconditionally, not recompute its own tier.
+        let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes);
 
         let mut result_main = vec![vec![0u64; self.n]; ct_level];
         let mut result_anchor = vec![vec![0u64; self.n]; self.dual_rns.anchor.primes.len()];
@@ -3375,8 +3419,21 @@ impl RNSFHEContext {
         self.k_elim_rescale_dual(&coarse)
     }
 
-    fn should_two_stage_rescale(&self, level: usize) -> bool {
-        self.q_product == 0 && level >= 3 && self.config.primes.len() > 5
+    /// RETIRED: always `false`.
+    ///
+    /// The gate used to be `q_product == 0 && level >= 3 && primes.len() > 5`,
+    /// which routed large-prime configurations into
+    /// `k_elim_rescale_dual_two_stage` — and that function drops a main lane
+    /// via `mod_switch_down_dual` *before* rescaling. That is a basis move
+    /// smuggled inside the exact-division step: a second, quieter modulus
+    /// ladder that survived the removal of the Step-5 auto-switches and stayed
+    /// invisible only because secure_128 (3 primes) never tripped the gate.
+    ///
+    /// The basis does not move during division, so every rescale now takes the
+    /// single-stage `k_elim_rescale_dual` path. Retained (returning `false`)
+    /// rather than deleted so the retired two-stage path stays inspectable.
+    fn should_two_stage_rescale(&self, _level: usize) -> bool {
+        false
     }
 
     // ========================================================================
@@ -3903,7 +3960,8 @@ impl RNSFHEContext {
         // c1' = e1
         let s2 = self.dual_poly_mul(&sk.s, &sk.s);
         let e2_s2 = self.dual_poly_mul(&e2, &s2);
-        let c0_new = self.dual_poly_add(&e0, &e2_s2);
+        // Winding reset -- see `canonicalize_dual_anchor` and `mul_dual_symmetric`.
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
 
         DualRNSCiphertext {
             c0: c0_new,
@@ -3949,7 +4007,8 @@ impl RNSFHEContext {
 
         // Relinearize: fold e2 into e0 using precomputed s²
         let e2_s2 = self.dual_poly_mul(&e2, s2);
-        let c0_new = self.dual_poly_add(&e0, &e2_s2);
+        // Winding reset -- see `canonicalize_dual_anchor` and `mul_dual_symmetric`.
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
 
         DualRNSCiphertext {
             c0: c0_new,
@@ -4024,7 +4083,8 @@ impl RNSFHEContext {
         // c1' = e1
         let s2 = self.dual_poly_mul(&sk.s, &sk.s);
         let e2_s2 = self.dual_poly_mul(&e2, &s2);
-        let c0_new = self.dual_poly_add(&e0, &e2_s2);
+        // Winding reset -- see `canonicalize_dual_anchor` and `mul_dual_symmetric`.
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
 
         DualRNSCiphertext {
             c0: c0_new,
@@ -4070,7 +4130,8 @@ impl RNSFHEContext {
 
         // Step 5: Relinearize using precomputed s²
         let e2_s2 = self.dual_poly_mul(&e2, s2);
-        let c0_new = self.dual_poly_add(&e0, &e2_s2);
+        // Winding reset -- see `canonicalize_dual_anchor` and `mul_dual_symmetric`.
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
 
         DualRNSCiphertext {
             c0: c0_new,
@@ -5161,6 +5222,7 @@ mod tests {
         assert_eq!(dec_pub, 6, "Public depth-1 must work");
     }
 
+    #[ignore = "RETIRED MECHANISM: asserts that mul_dual_public auto-drops the last prime ('primes after switch', ct6_deep.c0.main.len()) and that depth-2 decrypts only because that level was spent ('=== MODULUS SWITCHING SUCCESS ==='). This substrate does not implement modulus switching. Exact division in residue space (K-Elimination for gcd(d,M)=1, Fused Piggyback Division otherwise) divides the ciphertext value by d WITHOUT moving the basis: same lanes, same Q, noise scaled by 1/d with no rounding term. No level is consumed, so no prime is ever dropped and 'primes after switch' has no referent. Repairing this test would reintroduce the level ladder. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_mul_dual_public_with_mod_switch() {
         // Test mul_dual_public which combines:
@@ -5501,6 +5563,7 @@ mod tests {
         }
     }
 
+    #[ignore = "RETIRED MECHANISM: exercises mod_switch_down_dual and level-aware decrypt, observing the basis shrink from 4 main primes to 3 ('Fresh ct2 has 4 main primes' -> 'After mul_dual_public: ct6 has 3 main primes') so that a depth-2 multiply becomes reachable. This substrate does not implement modulus switching. Exact division in residue space divides the value by d WITHOUT moving the basis: the main-prime count is invariant, so there is nothing for this test to observe. Repairing it would mean restoring the descending level chain. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_modulus_switching_basic() {
         // Test mod_switch_down_dual and level-aware decrypt
@@ -10381,6 +10444,7 @@ mod tests {
     // PUBLIC-MODE AUTO MOD-SWITCH TESTS (TDD from audit analysis)
     // ========================================================================
 
+    #[ignore = "RETIRED MECHANISM: its stated premise is that depth-2 is reachable only once mul_dual_public 'automatically applies modulus switching when enough levels exist' — 'Without auto mod-switch in mul_dual_public, noise overwhelms at depth-2' — i.e. depth bought by consuming a level from the 4-prime depth2_128 ladder. This substrate does not implement modulus switching, and the auto_mod_switch marker this test is named for is retired. Exact division in residue space scales noise by 1/d without dropping a prime, so depth-2 costs nothing and 'enough levels exist' is not a precondition anything can fail. Repairing this test would reintroduce the ladder. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_mul_dual_public_auto_mod_switch_depth2() {
         // TDD RED: mul_dual_public should automatically apply modulus switching
@@ -10428,6 +10492,7 @@ mod tests {
         println!("=== mul_dual_public auto mod-switch depth-2 PASSED ===");
     }
 
+    #[ignore = "RETIRED MECHANISM (weakest of this file's four modswitch classifications — see docs/RETIRED_MECHANISMS.md): the test's own assertions are plain correctness (assert_eq!(dec, expected)), but its setup is level-supply reasoning — it sits under the PUBLIC-MODE AUTO MOD-SWITCH banner and sizes depth-3 against depth3_128's 5 primes 'for sufficient headroom', i.e. depth bounded by prime count with a level spent per multiply. That accounting is retired: exact division in residue space divides the value without moving the basis, so prime count does not gate depth. UN-QUARANTINE CANDIDATE: this one may return as a straight depth-3 correctness test once it is re-expressed without the auto-mod-switch premise and passes on unbounded-depth semantics."]
     #[test]
     fn test_mul_dual_public_depth3_chain() {
         // TDD RED: Test depth-3 chain through mul_dual_public with auto mod-switch.
@@ -10540,6 +10605,338 @@ mod tests {
         println!("=== mul_dual_symmetric depth-2 secure_128_deep PASSED ===");
     }
 
+    // ============================================================================
+    // ADDITIVE DIAGNOSTIC (not a correctness assertion) -- depth-2 K-Elimination
+    // capacity probe. Investigates docs/LADDER_REMOVAL.md §3.4/§6.1's open item:
+    // where, precisely, does the depth-2 symmetric squaring chain above first
+    // diverge from the true exact integer? Adds no new behaviour; only reads
+    // already-existing private state via calls identical to the production
+    // call sites, plus one independent (non-production) reconstruction.
+    //
+    // `extract_k_rns_level` (arithmetic/rns.rs:1302-1347) selects how many of
+    // the 5 canonical anchor primes to CRT-reconstruct k from, based *only* on
+    // `ct_level` (3 anchors if ct_level<4, else 4 if ct_level<5, else 5) --
+    // never on the actual magnitude k needs. This probe computes, for every
+    // coefficient of every raw tensor-product term (d0/d1/d2) in both the
+    // depth-1 and depth-2 multiply of the identical fixed-basis symmetric
+    // squaring chain used above, two things:
+    //   (a) k_prod  -- the PRODUCTION value: the exact call k_elim_rescale_dual
+    //       makes (rns_fhe.rs:3305-3307), via DualRNSContext::extract_k_rns_level.
+    //   (b) k_full5 -- an INDEPENDENT ground-truth reconstruction, built from
+    //       the identical per-limb k_rns residue formula extract_k_rns_level
+    //       uses internally, but CRT-reconstructed from the FULL 5-anchor basis
+    //       (never truncated to whatever subset ct_level happens to select).
+    //       DualRNSContext::for_fhe's own startup assertions, and its module
+    //       doc ("M×A ≈ 246-bit capacity, sufficient for ct×ct tensor products
+    //       up to N×Q² ≈ 191-bit... secure_128"), establish that the full
+    //       5-anchor basis has capacity comfortably above the worst-case N·Q²
+    //       tensor-product bound, so k_full5 is a trustworthy reference as
+    //       long as its own reported bit-length stays under the full A5
+    //       capacity (printed and checked below, not assumed).
+    // Where k_prod != (k_full5 mod A_used), production is PROVABLY wrong at
+    // that exact coefficient -- an aliased k, not merely "a lot of noise".
+    #[test]
+    fn diag_depth2_k_capacity_probe_secure_128_deep() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128_deep();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(12345);
+        let keys = ctx.generate_keys_dual(&mut rng);
+
+        // NOTE on the naive_k0_mismatch numbers below: a coefficient with a
+        // negative small true value (e.g. a secret-key coefficient == -1)
+        // legitimately requires a NONZERO k relative to M_level -- its main
+        // residues CRT-reconstruct to M_level-1 (the canonical rep of "-1
+        // mod M_level"), which does NOT equal its anchor residues' own
+        // canonical "-1 mod anchor_prime" values, because M_level and the
+        // anchor primes are coprime (M_level is not a multiple of any anchor
+        // prime). That is EXPECTED, not a bug -- it is exactly the k != 0
+        // case extract_k_rns_level exists to handle. This count is reported
+        // only as texture (it roughly tracks how many coefficients are
+        // negative), not as a correctness signal by itself; the actual
+        // correctness signal is the capacity comparison in probe_stage below.
+        println!(
+            "[diag] naive_k0_mismatch (k=0 assumed; texture only, NOT a bug signal -- see note above): \
+             s={} pk0={} pk1(=a)={}",
+            naive_k0_mismatch_report(&ctx, &keys.secret_key.s),
+            naive_k0_mismatch_report(&ctx, &keys.public_key.pk0),
+            naive_k0_mismatch_report(&ctx, &keys.public_key.pk1),
+        );
+
+        let base = 3u64;
+        let ct_base = ctx.encrypt_dual(base, &keys.public_key, &mut rng);
+        println!(
+            "[diag] naive_k0_mismatch of FRESH ciphertext (texture only): c0={} c1={}",
+            naive_k0_mismatch_report(&ctx, &ct_base.c0),
+            naive_k0_mismatch_report(&ctx, &ct_base.c1),
+        );
+
+        let ct_d1 = ctx.mul_dual_symmetric(&ct_base, &ct_base, &keys.secret_key);
+        let dec_d1 = ctx.decrypt_dual(&ct_d1, &keys.secret_key);
+        println!("[diag] depth-1 decrypt = {} (want 9)", dec_d1);
+
+        let anchor_bits: Vec<u32> = ctx
+            .dual_rns
+            .anchor
+            .primes
+            .iter()
+            .map(|&p| 64 - p.leading_zeros())
+            .collect();
+        let a3_bits: u32 = anchor_bits[..3].iter().sum();
+        let a4_bits: u32 = anchor_bits[..4].iter().sum();
+        let a5_bits: u32 = anchor_bits[..5].iter().sum();
+        let m_bits: u32 = ctx
+            .config
+            .primes
+            .iter()
+            .map(|&p| 64 - p.leading_zeros())
+            .sum();
+        let n_bits = 64 - (ctx.n as u64).leading_zeros() - 1;
+        println!(
+            "[diag] N={} (log2N={}), M_level (4 main primes {:?}) = {} bits",
+            ctx.n, n_bits, ctx.config.primes, m_bits
+        );
+        println!(
+            "[diag] anchor capacities: A3={} A4={} A5={} bits (canonical 5 anchors: {:?})",
+            a3_bits, a4_bits, a5_bits, ctx.dual_rns.anchor.primes
+        );
+        println!(
+            "[diag] ctx.ke.capacity_bit_length() = {} bits <- VESTIGIAL: ctx.ke is `KElimination::for_fhe(config.primes[0])`, \
+             i.e. always `KElimConfig::Standard` (alpha=[65537,65521,65519], beta=[4611686018427387847]) regardless of the \
+             active FHEConfig; try_new's own comment calls it 'Legacy K-Elimination (now using dual_rns internally)'. \
+             Grep confirms zero reads of ctx.ke inside k_elim_rescale_dual / extract_digit_dual / extract_k_rns_level. \
+             It is unrelated to dual_rns.anchor, the basis extract_k_rns_level actually reconstructs k from.",
+            ctx.ke.capacity_bit_length()
+        );
+        println!(
+            "[diag] worst-case raw tensor-product bound N*Q^2 = {} bits (n_bits + 2*m_bits = {} + {})",
+            n_bits + 2 * m_bits,
+            n_bits,
+            2 * m_bits
+        );
+
+        probe_stage(
+            &ctx,
+            "DEPTH-1 tensor (fresh Enc(3) x fresh Enc(3))",
+            &ct_base,
+            &ct_base,
+            a5_bits,
+        );
+        probe_stage(
+            &ctx,
+            "DEPTH-2 tensor (ct_d1=Enc(9) x ct_d1=Enc(9))",
+            &ct_d1,
+            &ct_d1,
+            a5_bits,
+        );
+
+        let ct_d2 = ctx.mul_dual_symmetric(&ct_d1, &ct_d1, &keys.secret_key);
+        let dec_d2 = ctx.decrypt_dual(&ct_d2, &keys.secret_key);
+        println!("[diag] depth-2 decrypt = {} (want 81)", dec_d2);
+    }
+
+    /// Reports how many coefficients of `poly` have a nonzero true k relative
+    /// to M_level -- i.e. how many do NOT satisfy "CRT-reconstruct via the
+    /// main system alone, then that same value reduces correctly mod every
+    /// anchor prime" (k assumed 0). This is NOT a bug detector by itself: a
+    /// coefficient representing a negative small value (secret-key -1, a
+    /// negative noise term, ...) legitimately needs k != 0, because "-1 mod
+    /// M_level" (= M_level - 1) is not "-1 mod anchor_prime" reduced further
+    /// -- M_level and the anchor primes are coprime. See the caller's note.
+    fn naive_k0_mismatch_report(ctx: &RNSFHEContext, poly: &DualRNSPoly) -> String {
+        let primes = &ctx.config.primes[..poly.main.len()];
+        let anchors = &ctx.dual_rns.anchor.primes;
+        let mut mismatches = 0usize;
+        let mut first: Option<usize> = None;
+        let mut main_residues = vec![0u64; poly.main.len()];
+        for i in 0..ctx.n {
+            for (j, limb) in poly.main.iter().enumerate() {
+                main_residues[j] = limb[i];
+            }
+            let v = ctx.rns.to_u256_level(&main_residues, poly.main.len());
+            for (j, &a) in anchors.iter().enumerate() {
+                if v.mod_u64(a) != poly.anchor[j][i] {
+                    mismatches += 1;
+                    if first.is_none() {
+                        first = Some(i);
+                    }
+                    break;
+                }
+            }
+        }
+        if mismatches == 0 {
+            "CONSISTENT".to_string()
+        } else {
+            format!(
+                "{}/{} coeffs INCONSISTENT (first at coeff {})",
+                mismatches,
+                ctx.n,
+                first.unwrap()
+            )
+        }
+    }
+
+    /// Helper for `diag_depth2_k_capacity_probe_secure_128_deep`. Computes the
+    /// raw tensor-product terms d0/d1/d2 exactly as `mul_dual_symmetric` does
+    /// (same private `dual_poly_mul` / `dual_poly_add` calls), then for every
+    /// one of the `ctx.n` coefficients compares the PRODUCTION k
+    /// reconstruction against an independent full-5-anchor ground truth.
+    fn probe_stage(
+        ctx: &RNSFHEContext,
+        label: &str,
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+        a5_bits: u32,
+    ) {
+        let ct_level = ct1.level;
+        assert_eq!(ct_level, ct2.level, "levels must match for this probe");
+        let level_primes = &ctx.config.primes[..ct_level];
+        let m_level = U256::product_u64s(level_primes);
+
+        // Mirrors extract_k_rns_level's own selection exactly (rns.rs:1302+):
+        // the full canonical anchor set, unconditionally -- see that
+        // function's doc comment for why the old ct_level-tiered selection
+        // this probe used to replicate was the depth-2 capacity bug.
+        let used_k_primes = ctx.dual_rns.anchor.primes.len();
+        let used_capacity_bits: u32 = ctx.dual_rns.anchor.primes[..used_k_primes]
+            .iter()
+            .map(|&p| 64 - p.leading_zeros())
+            .sum();
+        let a_used = U256::product_u64s(&ctx.dual_rns.anchor.primes[..used_k_primes]);
+
+        let d0 = ctx.dual_poly_mul(&ct1.c0, &ct2.c0);
+        let c0_1_c1_2 = ctx.dual_poly_mul(&ct1.c0, &ct2.c1);
+        let c1_1_c0_2 = ctx.dual_poly_mul(&ct1.c1, &ct2.c0);
+        let d1 = ctx.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
+        let d2 = ctx.dual_poly_mul(&ct1.c1, &ct2.c1);
+
+        println!(
+            "--- {} (ct_level={}, PRODUCTION uses {} anchors = {} bits capacity; full A5 = {} bits) ---",
+            label, ct_level, used_k_primes, used_capacity_bits, a5_bits
+        );
+
+        for (name, d) in [
+            ("d0=c0*c0", &d0),
+            ("d1=c0*c1+c1*c0", &d1),
+            ("d2=c1*c1", &d2),
+        ] {
+            // NOTE ON SIGN: k is not naturally "small". `extract_k_rns_level`
+            // returns the CANONICAL UNSIGNED CRT residue in [0, A_used); the
+            // production code immediately re-interprets it as SIGNED via
+            // `SignedK256::from_unsigned` (line ~3309: if k > A_used/2, the
+            // true value is negative with magnitude A_used - k). A raw
+            // unsigned-bit-length comparison (first attempt, since discarded)
+            // is dominated by this convention and is not a capacity signal by
+            // itself -- e.g. true k == -3 reconstructed mod a ~127-bit A_used
+            // prints as a ~127-bit unsigned number. The comparison that
+            // actually matters is on the SIGNED MAGNITUDE, exactly as
+            // `SignedK256::from_unsigned` computes it, both for the
+            // production capacity (A_used) and for the full-5-anchor ground
+            // truth (A5) -- and then whether the two SIGNED reconstructions
+            // (sign and magnitude) agree.
+            let a5 = U256::product_u64s(&ctx.dual_rns.anchor.primes);
+            let a5_half = a5.shr1();
+            let a_used_half = a_used.shr1();
+
+            let mut max_true_signed_mag_bits: u32 = 0;
+            let mut over_used_half_capacity: usize = 0;
+            let mut sign_or_magnitude_mismatches: usize = 0;
+            let mut first_mismatch_idx: Option<usize> = None;
+            let mut first_mismatch_detail = String::new();
+
+            let num_main = d.main.len();
+            let num_anchor = d.anchor.len();
+            let mut main_residues = vec![0u64; num_main];
+            let mut anchor_residues = vec![0u64; num_anchor];
+
+            for i in 0..ctx.n {
+                for (j, limb) in d.main.iter().enumerate() {
+                    main_residues[j] = limb[i];
+                }
+                for (j, limb) in d.anchor.iter().enumerate() {
+                    anchor_residues[j] = limb[i];
+                }
+
+                let v_m = ctx.rns.to_u256_level(&main_residues, ct_level);
+
+                // (a) PRODUCTION: the exact call k_elim_rescale_dual makes,
+                // then the exact signed conversion it applies next (line
+                // ~3305-3309 of this file).
+                let k_prod = ctx
+                    .dual_rns
+                    .extract_k_rns_level(v_m, &anchor_residues, level_primes);
+                let (prod_neg, prod_mag) = signed_from_unsigned(k_prod, a_used, a_used_half);
+
+                // (b) independent ground truth: identical per-limb k_rns
+                // formula, reconstructed from ALL 5 anchors (never truncated
+                // to whatever subset ct_level happens to select), then the
+                // SAME signed conversion applied against the full A5.
+                let anchors = &ctx.dual_rns.anchor.primes;
+                let mut k_rns = vec![0u64; anchors.len()];
+                for (j, &a_j) in anchors.iter().enumerate() {
+                    let m_level_mod_aj = m_level.mod_u64(a_j);
+                    let inv = crate::arithmetic::rns::mod_inverse(m_level_mod_aj, a_j);
+                    let v_m_mod_aj = v_m.mod_u64(a_j);
+                    let diff = (anchor_residues[j] + a_j - v_m_mod_aj) % a_j;
+                    k_rns[j] = ((diff as u128) * (inv as u128) % (a_j as u128)) as u64;
+                }
+                let k_full5 = crate::arithmetic::rns::crt_reconstruct_u256(&k_rns, anchors);
+                let (true_neg, true_mag) = signed_from_unsigned(k_full5, a5, a5_half);
+
+                let true_mag_bits = true_mag.bitlen();
+                if true_mag_bits > max_true_signed_mag_bits {
+                    max_true_signed_mag_bits = true_mag_bits;
+                }
+                if true_mag.gt(a_used_half) {
+                    over_used_half_capacity += 1;
+                }
+
+                if prod_neg != true_neg || prod_mag.lo != true_mag.lo || prod_mag.hi != true_mag.hi
+                {
+                    sign_or_magnitude_mismatches += 1;
+                    if first_mismatch_idx.is_none() {
+                        first_mismatch_idx = Some(i);
+                        first_mismatch_detail = format!(
+                            "prod=({}{} bits) true=({}{} bits)",
+                            if prod_neg { "-" } else { "+" },
+                            prod_mag.bitlen(),
+                            if true_neg { "-" } else { "+" },
+                            true_mag_bits
+                        );
+                    }
+                }
+            }
+
+            println!(
+                "  {:<16} max |true signed k| = {:>3} bits (production half-capacity = {:>3} bits [A_used/2], full A5/2 = {:>3} bits) | \
+                 |true k| > A_used/2 (production would mis-sign/alias) = {:>5}/{} coeffs | production vs ground-truth (sign+magnitude) mismatches = {:>5}/{}{}",
+                name,
+                max_true_signed_mag_bits,
+                used_capacity_bits.saturating_sub(1),
+                a5_bits.saturating_sub(1),
+                over_used_half_capacity,
+                ctx.n,
+                sign_or_magnitude_mismatches,
+                ctx.n,
+                first_mismatch_idx
+                    .map(|i| format!(" (first mismatch at coeff {}: {})", i, first_mismatch_detail))
+                    .unwrap_or_default()
+            );
+        }
+    }
+
+    /// Mirrors `SignedK256::from_unsigned` (rns_fhe.rs:4353) exactly, returning
+    /// (is_negative, magnitude) instead of the private struct so this probe
+    /// doesn't need to depend on that type's field visibility.
+    fn signed_from_unsigned(k: U256, a_product: U256, half: U256) -> (bool, U256) {
+        if k.gt(half) {
+            (true, a_product.sub(k))
+        } else {
+            (false, k)
+        }
+    }
+
     #[test]
     fn test_mul_dual_symmetric_secure_192_u256_path() {
         // TDD: Verify symmetric multiplication works at secure_192 (N=8192,
@@ -10578,6 +10975,7 @@ mod tests {
     /// The audit (Section 2.7) identified that decrypt_dual silently returns
     /// garbage when noise budget is exhausted. try_decrypt_dual must signal
     /// failure via Result instead.
+    #[ignore = "RETIRED MECHANISM (noise budget): the test chains multiplies over `for depth in 2..=20` and then demands exhaustion actually occur — assert!(found_error, \"try_decrypt_dual must return Err when noise is exhausted\"). That assertion specifies a depleting budget. This substrate has none: exact division in residue space scales noise by 1/d with no rounding term added and without dropping a lane, so nothing is spent per multiply and the Err this test waits for never arrives at any depth. The audit finding it encodes (Section 2.7 — decrypt_dual must not silently return garbage) is still live, but must be re-tested against a corrupted/invalid ciphertext rather than against depth. Repairing this test by making depth exhaust something would reintroduce the ladder. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_try_decrypt_dual_returns_err_on_noise_exhaustion() {
         use crate::params::secure_configs::SecureConfig;

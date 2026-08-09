@@ -4,6 +4,11 @@ description = "QMNF-Accelerated BFV FHE with AHOP Quantum Simulation"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+# Every bench target is declared explicitly via a [[bench]] stanza below.
+# Auto-discovery is off so that benches/threading_comparison.rs (a rayon
+# comparison bench for a rejected parallelism approach) is not pulled into
+# the build merely by existing on disk.
+autobenches = false
 
 [features]
 # Default build: O(N log N) FFT-based NTT + exact transcendentals backend.
@@ -108,6 +113,12 @@ criterion = { workspace = true }
 proptest = { workspace = true }
 rand_core = { workspace = true }
 rand_chacha = { workspace = true }
+# NOTE: rayon is deliberately NOT a dev-dependency. It is an *optional* runtime
+# dependency behind the `parallel` / `generic-rayon` features only. MANA
+# (crates/mana, feature `accelerated`) is the canonical parallelism layer for
+# this workload; rayon is slower here. Any bench or test that needs rayon must
+# declare `required-features = ["parallel"]` rather than pulling rayon in
+# unconditionally as a dev-dependency.
 
 [[bin]]
 name = "nine65_v7_demo"
@@ -136,6 +147,11 @@ harness = false
 name = "nine65_vs_seal_comparison"
 harness = false
 
+# benches/threading_comparison.rs has NO [[bench]] stanza on purpose.
+# It benchmarks rayon against MANA — a rejected parallelism approach — so it is
+# not part of the built/tested surface. `autobenches = false` (see [package])
+# keeps Cargo from re-discovering it. The source file is retained for reference.
+
 [[bench]]
 name = "throughput"
 harness = false
@@ -150,6 +166,15 @@ required-features = ["parallel"]
 name = "timing"
 harness = false
 required-features = ["benchmarks"]
+
+# Correctness-gated multiplicative-depth chain. This is the only bench that
+# chains ct x ct multiplies; every other ct x ct id in the suite re-multiplies
+# the same two fixed ciphertexts, which is depth 1 repeated. No
+# `required-features`: it uses only default-feature public API so the depth
+# floor can never become unmeasurable because a feature flag drifted.
+[[bench]]
+name = "depth_chain"
+harness = false
 
 [[example]]
 name = "test_mod_switch"

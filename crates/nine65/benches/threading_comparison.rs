@@ -1,3 +1,25 @@
+//! NOT BUILT — benchmarks a REJECTED parallelism approach (rayon).
+//!
+//! This bench compares generic rayon work-stealing against the adaptive/MANA
+//! paths. rayon is **not** the parallelism layer for NINE65: it is measurably
+//! slower for this workload, whose lanes are i.i.d. residues (x mod p, each
+//! referencing no other lane) rather than the irregular task graph rayon's
+//! work-stealing scheduler is built for. MANA (`crates/mana`, enabled by the
+//! `accelerated` feature) is the canonical parallelism layer; the root
+//! Cargo.toml annotates rayon as "Opt-in data parallelism (MANA is canonical)".
+//!
+//! Consequently:
+//!   * rayon is NOT a dev-dependency of nine65 — it is optional, behind the
+//!     `parallel` / `generic-rayon` features only.
+//!   * this file has NO `[[bench]]` stanza, and `autobenches = false` is set in
+//!     crates/nine65/Cargo.toml, so Cargo does not build it.
+//!   * `use rayon::prelude::*` below therefore does not resolve in a default
+//!     build. That is intended, not a defect to be fixed by adding rayon back.
+//!
+//! The source is retained for reference / provenance of the rejected approach.
+//! To run it ad hoc, re-add a `[[bench]]` stanza with
+//! `required-features = ["parallel"]` — do not add rayon to `[dev-dependencies]`.
+
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use nine65::arithmetic::NTTEngine;
 use nine65::entropy::shadow_entropy_monitor::AdaptiveFHEContext;

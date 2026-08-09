@@ -1,0 +1,340 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-08-09",
+  "repo": "NINE65_v7",
+  "record_type": "benchmark_baseline",
+  "quick_pass": true,
+  "quick_pass_note": "Every criterion target in this record ran with shortened settings (--warm-up-time 1 --measurement-time 3..5 --sample-size 10) instead of criterion defaults (3s warmup / 5s measurement / 100 samples). These numbers establish order-of-magnitude and the two regression floors. A publication run needs criterion defaults on a quiet machine. The depth SURVEY numbers are not criterion-sampled at all: they are single deterministic correctness-gated chain runs and are exact, not statistical.",
+
+  "toolchain": {
+    "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "cargo": "cargo 1.94.1 (29ea6fb6a 2026-03-24)",
+    "profile": "release / bench",
+    "host_os": "Linux 6.18.5-fc-v20",
+    "host_cores": 4
+  },
+
+  "measurement_conditions": {
+    "machine_quiet": false,
+    "detail": "A concurrent modulus-switching quarantine workflow repeatedly ran 'cargo test -p nine65 --lib' and 'cargo build' throughout the session (observed 276% CPU; load average 3.3-4.3). All measurements ran under 'nice -n -10'. Single-threaded numbers are robust: two independent runs of the end-to-end probe agree to 0.3%, and the new depth_chain bench independently reproduced the probe's multiply latency to within 0.6%.",
+    "distrust": [
+      "throughput/*",
+      "adaptive_rayon/*"
+    ],
+    "distrust_reason": "These targets use rayon across all 4 cores and were genuinely contending with the foreign workload. Treat every parallel/batch number as a pessimistic upper bound."
+  },
+
+  "granularity_legend": {
+    "lane_level": "A single residue-lane scalar operation. NANOSECONDS. Unit of measure: one modmul / one reduce / one exact-divide on one lane.",
+    "polynomial": "One transform or one polynomial multiply over N coefficients. MICROSECONDS.",
+    "full_poly_ms": "One whole-polynomial operation across every RNS limb at N=8192. MILLISECONDS.",
+    "end_to_end": "One complete ciphertext operation (encrypt / decrypt / add / multiply incl. relinearization) at N=8192. MILLISECONDS.",
+    "batch": "A whole batch of B ciphertexts, NOT per-op latency. Divide by B before quoting per-ciphertext.",
+    "plaintext_only": "No crypto and no ciphertext involved. Never quote as a ciphertext-op number.",
+    "not_nine65": "Inline code written in the bench file that never calls the library.",
+    "SEPARATION_RULE": "lane_level and end_to_end are ~6-8 orders of magnitude apart (1 ns vs 105 ms). They must never be averaged, compared, or quoted in the same breath."
+  },
+
+  "regression_floors": {
+    "multiplicative_depth": {
+      "floor": 200,
+      "status": "MEASURED_SHAPE_DEPENDENT",
+      "met": "only in one of three measured chain shapes",
+      "summary": "Depth is a property of the chain shape, not of the scheme. The floor is cleared with large margin in symmetric mode against a fresh Enc(1) operand (>=2048, ceiling-limited, not noise-limited). It is NOT cleared in the public-key evaluation mode that corresponds to homomorphic evaluation in the normal sense, where the measured limit is 1. A single 'depth = N' claim for this system is not well-formed without naming the shape.",
+      "measured_by": "crates/nine65/benches/depth_chain.rs (written 2026-08-09, this session)",
+      "corroborated_by": "crates/nine65/tests/depth_and_noise.rs (pre-existing; independently reproduces every number below)"
+    },
+    "end_to_end_latency": {
+      "claim": "sub-5ms homomorphic ops",
+      "status": "FAILS_FOR_MULTIPLY",
+      "summary": "Homomorphic addition (0.82 ms) and decryption (4.13 ms) are under 5 ms. Encryption (9.93 ms) is 2x over. The symmetric homomorphic multiply (105 ms) is 21x over and the public-mode homomorphic multiply (279 ms) is 56x over. The claim survives only if 'homomorphic op' is read to exclude multiplication."
+    }
+  },
+
+  "depth_survey": {
+    "source_bench": "crates/nine65/benches/depth_chain.rs",
+    "bench_target_registered": true,
+    "harness": false,
+    "correctness_gated": true,
+    "correctness_gate": "Every counted depth is verified with decrypt_dual against a plaintext tracked in the clear. A chain stops at the first wrong decryption.",
+    "parameter_set": {
+      "config": "secure_128",
+      "n": 8192,
+      "t": 65537,
+      "main_primes": [998244353, 985661441, 754974721],
+      "main_lanes": 3,
+      "anchor_lanes": 5,
+      "log2_q": 89.26,
+      "log2_noise_budget": 72.26
+    },
+    "anti_ladder_invariant": {
+      "asserted": true,
+      "observable": "(main_lanes, anchor_lanes, ct.level)",
+      "value_at_depth_0": [3, 5, 3],
+      "value_at_max_depth": [3, 5, 3],
+      "held_across_links": 2048,
+      "note": "The basis does not move. This is asserted at EVERY link of every chain, so a reintroduced modulus switch would fail the bench rather than silently corrupt the depth number. 'levels remaining' and 'budget consumed' are deliberately NOT recorded: they measure the retired mechanism."
+    },
+    "shapes": [
+      {
+        "id": "shape_1_symmetric_seq",
+        "chain": "ct <- ct * Enc(1)",
+        "mode": "symmetric",
+        "mode_note": "Requires the secret key at the evaluator. mul_dual_symmetric documents itself as 'NOT SECURE for multi-party'. This is not the FHE threat model.",
+        "max_correct_depth": 2048,
+        "stopped_by": "ceiling",
+        "is_lower_bound": true,
+        "meets_floor_200": true,
+        "ms_per_link_incl_decrypt_gate": 112.2,
+        "wall_seconds": 229.9,
+        "note": "Stopped at the requested ceiling with the chain still healthy, so 2048 is a LOWER BOUND, not the limit. A separate run at ceiling 256 also completed clean. The pre-existing test depth_and_noise.rs measures the noise curve on this same chain as growing ~1.2 bits per doubling of depth and extrapolates exhaustion near depth 2^30."
+      },
+      {
+        "id": "shape_2_symmetric_squaring",
+        "chain": "ct <- ct * ct",
+        "mode": "symmetric",
+        "max_correct_depth": 1,
+        "stopped_by": "noise",
+        "is_lower_bound": false,
+        "meets_floor_200": false,
+        "first_incorrect_depth": 2,
+        "first_incorrect_detail": "got 65302, want 81",
+        "ms_per_link_incl_decrypt_gate": 229.2,
+        "note": "Worst case: both operands carry accumulated noise, so noise magnitude is multiplied rather than incremented at each step."
+      },
+      {
+        "id": "shape_3_public_seq",
+        "chain": "ct <- ct * Enc(1) via mul_dual_public",
+        "mode": "public",
+        "mode_note": "THE ACTUAL FHE MODEL. Evaluator holds no secret key; relinearization goes through the evaluation key.",
+        "max_correct_depth": 1,
+        "stopped_by": "noise",
+        "is_lower_bound": false,
+        "meets_floor_200": false,
+        "first_incorrect_depth": 2,
+        "first_incorrect_detail": "got 15, want 5",
+        "ms_per_link_incl_decrypt_gate": 552.2,
+        "note": "This is the number that matters for any claim about homomorphic evaluation. Public-mode relinearization adds ~29 bits of noise per multiply against a 72-bit budget, which exhausts after two multiplies. The deep-depth property of shape 1 does not transfer to this mode."
+      }
+    ]
+  },
+
+  "targets": [
+    {
+      "name": "timing",
+      "crate": "nine65",
+      "features": ["benchmarks"],
+      "status": "completed",
+      "granularity": "mixed: lane_level, polynomial, full_poly_ms"
+    },
+    {
+      "name": "depth_chain",
+      "crate": "nine65",
+      "features": [],
+      "status": "completed",
+      "granularity": "end_to_end",
+      "note": "NEW, written this session. The only bench in the suite that chains ct x ct multiplies."
+    },
+    {
+      "name": "fhe_scaling",
+      "crate": "nine65",
+      "features": [],
+      "status": "completed_with_defects",
+      "granularity": "mixed: end_to_end (deprecated path), polynomial"
+    },
+    {
+      "name": "throughput",
+      "crate": "nine65",
+      "features": ["parallel"],
+      "status": "completed",
+      "granularity": "mixed: plaintext_only, batch"
+    },
+    {
+      "name": "adaptive_rayon",
+      "crate": "nine65",
+      "features": ["parallel"],
+      "status": "completed_with_defects",
+      "granularity": "mixed: batch, lane_level, infrastructure"
+    },
+    {
+      "name": "nine65_vs_seal_comparison",
+      "crate": "nine65",
+      "features": [],
+      "status": "partial",
+      "granularity": "mixed",
+      "measured_ids": 23,
+      "unreachable_ids": 7,
+      "failure": "Hangs permanently at group 8 of 10. bench_cyclotomic_operations calls CyclotomicRing::new(4096, 1152921504606584833); find_primitive_root (crates/nine65/src/arithmetic/cyclotomic_phase.rs:31) is a linear scan 'for g in 2..q' over a 60-bit prime. Measured scan rate 24.7M candidates/s; expected first qualifying g at ~q/4096 = 2.8e14, giving ~1.14e7 s (~132 days). Criterion filters skip measurement but NOT setup, so no filter bypasses it. Verified this session: the linear scan is present at cyclotomic_phase.rs:31 and criterion_group! registers bench_cyclotomic_operations (8th) before bench_fhe_operations (9th) and bench_fhe_key_generation (10th).",
+      "unreachable_groups": ["Cyclotomic Phase", "FHE_DualRNS_K-Elimination", "FHE_KeyGen"],
+      "workaround": "Standalone out-of-repo probe; superseded for the multiply id by the new in-repo depth_chain bench, which measures the same operation at 105.58 ms vs the probe's 105.017 ms."
+    },
+    {
+      "name": "lane_ops",
+      "crate": "mana",
+      "status": "no_measurements",
+      "values_omitted": true,
+      "failure": "Produced 'running 0 tests ... 0 measured'. crates/mana/Cargo.toml has its '[[bench]] name=\"lane_ops\" harness=false' stanza COMMENTED OUT and does not set autobenches=false, so benches/lane_ops.rs is auto-discovered under the libtest harness and criterion_main!'s main() is never called. Undocumented; reads as an oversight. Fix is a one-line uncomment. NOT applied.",
+      "would_measure": "Lane::add/mul and ManaStream::add over 2048/4096/8192 coefficients across 8 NTT-friendly primes"
+    },
+    {
+      "name": "performance",
+      "crate": "exact_transcendentals",
+      "status": "no_measurements",
+      "values_omitted": true,
+      "failure": "Produced 'running 0 tests ... 0 measured'. crates/exact_transcendentals/Cargo.toml has NO [[bench]] stanza at all and does not set autobenches=false, so benches/performance.rs is auto-discovered under the libtest harness. Reads as an oversight: the crate declares criterion in [dev-dependencies] with html_reports enabled.",
+      "would_measure": "CORDIC sincos, AGM pi, binary-split exp, isqrt Newton, continued-fraction convergent"
+    },
+    {
+      "name": "threading_comparison",
+      "crate": "nine65",
+      "status": "skipped_by_design",
+      "values_omitted": true,
+      "detail": "Not a declared bench target and not a failure to fix. The exclusion is deliberate and documented at crates/nine65/Cargo.toml:150-153, backed by autobenches=false: it benchmarks rayon against MANA, a rejected parallelism approach. The previously reported 'fails to build because rayon is not in dev-dependencies' is a consequence of that intentional exclusion, not a bug."
+    }
+  ],
+
+  "measurements": [
+    {"target": "depth_chain", "group": "depth_chain_link", "id": "symmetric_with_s2", "granularity": "end_to_end", "operation": "homomorphic multiply, symmetric, precomputed s^2", "value": 105.58, "unit": "ms", "ci": [102.73, 105.58, 109.62], "parameter_set": "secure_128 N=8192 t=65537 3 main primes", "quick_pass": true, "note": "Cross-validates the standalone probe's 105.017 ms to within 0.6%."},
+    {"target": "depth_chain", "group": "depth_chain_link", "id": "symmetric_plain", "granularity": "end_to_end", "operation": "homomorphic multiply, symmetric, s^2 recomputed per call", "value": 110.43, "unit": "ms", "ci": [109.02, 110.43, 111.83], "parameter_set": "secure_128 N=8192", "quick_pass": true, "note": "The ~5 ms delta vs symmetric_with_s2 is the cost of recomputing s^2 each multiply."},
+    {"target": "depth_chain", "group": "depth_chain_link", "id": "public", "granularity": "end_to_end", "operation": "homomorphic multiply, PUBLIC mode (real FHE model)", "value": 279.12, "unit": "ms", "ci": [275.69, 279.12, 282.43], "parameter_set": "secure_128 N=8192", "quick_pass": true, "note": "2.6x the symmetric multiply. This is the number to quote for homomorphic evaluation; it is 56x the sub-5ms claim."},
+    {"target": "depth_chain", "group": "depth_chain_link", "id": "decrypt_gate", "granularity": "end_to_end", "operation": "decrypt_dual", "value": 4.4010, "unit": "ms", "ci": [4.3362, 4.4010, 4.4942], "parameter_set": "secure_128 N=8192", "quick_pass": true},
+    {"target": "depth_chain", "group": "depth_chain_scaling", "id": "1", "granularity": "end_to_end", "operation": "chain of 1 symmetric multiply", "value": 102.22, "unit": "ms", "ci": [101.26, 102.22, 104.17], "parameter_set": "secure_128 N=8192", "quick_pass": true},
+    {"target": "depth_chain", "group": "depth_chain_scaling", "id": "4", "granularity": "end_to_end", "operation": "chain of 4 symmetric multiplies", "value": 428.53, "unit": "ms", "ci": [424.72, 428.53, 432.33], "parameter_set": "secure_128 N=8192", "quick_pass": true, "derived_per_link_ms": 107.13},
+    {"target": "depth_chain", "group": "depth_chain_scaling", "id": "16", "granularity": "end_to_end", "operation": "chain of 16 symmetric multiplies", "value": 1719.8, "unit": "ms", "ci": [1700.8, 1719.8, 1740.4], "parameter_set": "secure_128 N=8192", "quick_pass": true, "derived_per_link_ms": 107.49, "note": "Per-link cost is FLAT in depth (102.2 / 107.1 / 107.5 ms at lengths 1 / 4 / 16). This is the timing-side echo of the anti-ladder invariant: if the basis shrank as the chain progressed, later links would get cheaper."},
+
+    {"target": "timing", "group": "barrett_ct", "id": "reduce/small", "granularity": "lane_level", "operation": "Barrett reduce u128 -> mod q, constant-time", "value": 2.178, "unit": "ns", "ci": [2.1407, 2.1782, 2.2317], "parameter_set": "q=998244353 (30-bit)", "quick_pass": true},
+    {"target": "timing", "group": "barrett_ct", "id": "reduce/large", "granularity": "lane_level", "operation": "Barrett reduce u128 -> mod q, constant-time", "value": 2.665, "unit": "ns", "parameter_set": "q=998244353 (30-bit)", "quick_pass": true},
+    {"target": "timing", "group": "barrett_ct", "id": "mul/small", "granularity": "lane_level", "operation": "Barrett modmul u64 x u64 mod q, constant-time", "value": 4.156, "unit": "ns", "parameter_set": "q=998244353 (30-bit)", "quick_pass": true},
+    {"target": "timing", "group": "barrett_ct", "id": "mul/large", "granularity": "lane_level", "operation": "Barrett modmul u64 x u64 mod q, constant-time", "value": 2.779, "unit": "ns", "ci": [2.7544, 2.7791, 2.8113], "parameter_set": "q=998244353 (30-bit)", "quick_pass": true},
+    {"target": "timing", "group": "k_elimination_ct", "id": "sub_mod_u128_ct/no_borrow", "granularity": "lane_level", "operation": "constant-time modular subtract", "value": 1.933, "unit": "ns", "ci": [1.9206, 1.9329, 1.9513], "parameter_set": "u128", "quick_pass": true},
+    {"target": "timing", "group": "k_elimination_ct", "id": "sub_mod_u128_ct/borrow", "granularity": "lane_level", "operation": "constant-time modular subtract", "value": 1.936, "unit": "ns", "parameter_set": "u128", "quick_pass": true, "note": "Equal to the no_borrow case, i.e. branch-free as intended."},
+    {"target": "timing", "group": "k_elimination_ct", "id": "mul_mod_u128_ct/small", "granularity": "lane_level", "operation": "constant-time u128 modmul via bit-serial loop", "value": 372.84, "unit": "ns", "parameter_set": "62-bit prime 4611686018427387847", "quick_pass": true, "caveat": "NOT a single-instruction modmul. ~3.07 ns per bit over ~128 rounds is the signature of a bit-serial double-and-add loop. It is ~400x the Barrett modmul. Never quote as 'a modmul'."},
+    {"target": "timing", "group": "k_elimination_ct", "id": "mul_mod_u128_ct/large", "granularity": "lane_level", "operation": "constant-time u128 modmul via bit-serial loop", "value": 393.01, "unit": "ns", "ci": [391.49, 393.01, 394.71], "parameter_set": "62-bit prime", "quick_pass": true, "caveat": "See mul_mod_u128_ct/small."},
+    {"target": "timing", "group": "k_elimination_ct", "id": "extract_k/small", "granularity": "lane_level", "operation": "KElimination::extract_k, constant-time", "value": 384.75, "unit": "ns", "parameter_set": "62-bit prime", "quick_pass": true},
+    {"target": "timing", "group": "k_elimination_ct", "id": "extract_k/large", "granularity": "lane_level", "operation": "KElimination::extract_k, constant-time", "value": 387.03, "unit": "ns", "parameter_set": "62-bit prime", "quick_pass": true},
+    {"target": "timing", "group": "k_elimination_ct", "id": "extract_k/edge", "granularity": "lane_level", "operation": "KElimination::extract_k, constant-time", "value": 386.45, "unit": "ns", "parameter_set": "62-bit prime", "quick_pass": true, "note": "Flat across input class, as a constant-time primitive should be."},
+    {"target": "timing", "group": "k_elimination_divider", "id": "reconstruct_exact", "granularity": "lane_level", "operation": "CRAM ExactDivider::reconstruct_exact", "value": 9.548, "unit": "ns", "parameter_set": "one residue pair, rolled through a 2048-entry table so constants cannot fold", "quick_pass": true},
+    {"target": "timing", "group": "k_elimination_divider", "id": "exact_divide", "granularity": "lane_level", "operation": "CRAM exact division by 5", "value": 12.647, "unit": "ns", "parameter_set": "one residue pair", "quick_pass": true},
+    {"target": "timing", "group": "k_elimination_divider", "id": "divmod", "granularity": "lane_level", "operation": "CRAM divmod by 7", "value": 12.432, "unit": "ns", "parameter_set": "one residue pair", "quick_pass": true},
+    {"target": "timing", "group": "k_elimination_divider", "id": "scale_and_round/bfv_like", "granularity": "lane_level", "operation": "CRAM scale_and_round", "value": 16.177, "unit": "ns", "ci": [15.767, 16.177, 16.593], "parameter_set": "one residue pair", "quick_pass": true},
+    {"target": "timing", "group": "ntt_ct", "id": "ntt/small", "granularity": "polynomial", "operation": "forward NTT", "value": 3.712, "unit": "us", "ci": [3.6753, 3.7124, 3.7346], "parameter_set": "N=256", "quick_pass": true, "caveat": "The 'small' variant input is the ZERO polynomial: a degenerate input for a transform."},
+    {"target": "timing", "group": "ntt_ct", "id": "ntt/large", "granularity": "polynomial", "operation": "forward NTT", "value": 3.985, "unit": "us", "parameter_set": "N=256", "quick_pass": true},
+    {"target": "timing", "group": "ntt_ct", "id": "intt/small", "granularity": "polynomial", "operation": "inverse NTT", "value": 3.476, "unit": "us", "parameter_set": "N=256", "quick_pass": true},
+    {"target": "timing", "group": "ntt_ct", "id": "intt/large", "granularity": "polynomial", "operation": "inverse NTT", "value": 3.438, "unit": "us", "parameter_set": "N=256", "quick_pass": true},
+    {"target": "timing", "group": "ntt_ct", "id": "multiply/small", "granularity": "polynomial", "operation": "polynomial multiply", "value": 11.392, "unit": "us", "parameter_set": "N=256", "quick_pass": true},
+    {"target": "timing", "group": "ntt_ct", "id": "multiply/large", "granularity": "polynomial", "operation": "polynomial multiply", "value": 11.158, "unit": "us", "parameter_set": "N=256", "quick_pass": true},
+    {"target": "timing", "group": "rns_kelim_rescale", "id": "k_elim_rescale", "granularity": "full_poly_ms", "operation": "one complete DualRNS K-Elimination exact rescale of one polynomial", "value": 25.222, "unit": "ms", "ci": [24.489, 25.222, 25.708], "parameter_set": "secure_128 N=8192, 3 main + 5 anchor lanes", "quick_pass": true, "note": "This is CRAM exact division, NOT modulus switching: it divides the value and the basis does not move. Must never be averaged with the nanosecond ids in this same target. Cross-check: a multiply needs a tensor product plus several of these plus relinearization, which composes to the measured ~105 ms."},
+
+    {"target": "fhe_scaling", "group": "ntt_scaling", "id": "forward/1024", "granularity": "polynomial", "operation": "forward NTT", "value": 15.102, "unit": "us", "parameter_set": "N=1024", "quick_pass": true, "derived_ns_per_butterfly": 2.950},
+    {"target": "fhe_scaling", "group": "ntt_scaling", "id": "forward/2048", "granularity": "polynomial", "operation": "forward NTT", "value": 30.894, "unit": "us", "parameter_set": "N=2048", "quick_pass": true, "derived_ns_per_butterfly": 2.743},
+    {"target": "fhe_scaling", "group": "ntt_scaling", "id": "forward/4096", "granularity": "polynomial", "operation": "forward NTT", "value": 70.260, "unit": "us", "parameter_set": "N=4096", "quick_pass": true, "derived_ns_per_butterfly": 2.859},
+    {"target": "fhe_scaling", "group": "ntt_scaling", "id": "forward/8192", "granularity": "polynomial", "operation": "forward NTT", "value": 157.29, "unit": "us", "ci": [154.55, 157.29, 161.59], "parameter_set": "N=8192", "quick_pass": true, "derived_ns_per_butterfly": 2.954, "note": "This group is the ONE genuine N sweep in the suite; its ids are correctly labelled."},
+    {"target": "fhe_scaling", "group": "ntt_scaling", "id": "roundtrip/8192", "granularity": "polynomial", "operation": "forward+inverse NTT", "value": 293.14, "unit": "us", "ci": [289.21, 293.14, 299.26], "parameter_set": "N=8192", "quick_pass": true, "derived_ns_per_butterfly": 2.753},
+    {"target": "fhe_scaling", "group": "homo_mul_scaling", "id": "parallel/N=2048/128-bit", "granularity": "end_to_end", "operation": "BFVEvaluator::mul (DEPRECATED single-modulus path)", "value": 11.289, "unit": "ms", "ci": [11.088, 11.289, 11.539], "parameter_set_as_labelled": "N=2048", "parameter_set_actual": "secure_128 => N=8192, single 30-bit q=998244353, RNS chain UNUSED", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "homo_mul_scaling", "id": "parallel/N=4096/128-bit-deep", "granularity": "end_to_end", "operation": "BFVEvaluator::mul (DEPRECATED)", "value": 10.965, "unit": "ms", "parameter_set_as_labelled": "N=4096", "parameter_set_actual": "secure_128_deep => N=8192", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "homo_mul_scaling", "id": "parallel/N=4096/192-bit", "granularity": "end_to_end", "operation": "BFVEvaluator::mul (DEPRECATED)", "value": 24.447, "unit": "ms", "parameter_set_as_labelled": "N=4096", "parameter_set_actual": "secure_192 => N=16384", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "homo_mul_scaling", "id": "parallel/N=8192/256-bit", "granularity": "end_to_end", "operation": "BFVEvaluator::mul (DEPRECATED)", "value": 25.311, "unit": "ms", "ci": [24.949, 25.311, 25.518], "parameter_set_as_labelled": "N=8192", "parameter_set_actual": "secure_256 => N=16384", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "encrypt_decrypt_scaling", "id": "encrypt/2048", "granularity": "end_to_end", "operation": "BFVEncryptor encrypt (DEPRECATED single-modulus path)", "value": 1.5317, "unit": "ms", "ci": [1.5201, 1.5317, 1.5410], "parameter_set_as_labelled": "N=2048", "parameter_set_actual": "secure_128 => N=8192", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "encrypt_decrypt_scaling", "id": "encrypt/4096", "granularity": "end_to_end", "operation": "BFVEncryptor encrypt (DEPRECATED)", "value": 3.5450, "unit": "ms", "parameter_set_as_labelled": "N=4096", "parameter_set_actual": "secure_192 => N=16384", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "encrypt_decrypt_scaling", "id": "encrypt/8192", "granularity": "end_to_end", "operation": "BFVEncryptor encrypt (DEPRECATED)", "value": 3.7719, "unit": "ms", "parameter_set_as_labelled": "N=8192", "parameter_set_actual": "secure_256 => N=16384", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "encrypt_decrypt_scaling", "id": "decrypt/2048", "granularity": "end_to_end", "operation": "BFVDecryptor decrypt (DEPRECATED)", "value": 517.54, "unit": "us", "ci": [512.11, 517.54, 523.04], "parameter_set_as_labelled": "N=2048", "parameter_set_actual": "secure_128 => N=8192", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "encrypt_decrypt_scaling", "id": "decrypt/4096", "granularity": "end_to_end", "operation": "BFVDecryptor decrypt (DEPRECATED)", "value": 1.2614, "unit": "ms", "parameter_set_as_labelled": "N=4096", "parameter_set_actual": "secure_192 => N=16384", "label_defect": true, "quick_pass": true},
+    {"target": "fhe_scaling", "group": "encrypt_decrypt_scaling", "id": "decrypt/8192", "granularity": "end_to_end", "operation": "BFVDecryptor decrypt (DEPRECATED)", "value": 1.2451, "unit": "ms", "parameter_set_as_labelled": "N=8192", "parameter_set_actual": "secure_256 => N=16384", "label_defect": true, "quick_pass": true},
+
+    {"target": "nine65_vs_seal_comparison", "group": "Persistent Montgomery", "id": "Montgomery enter", "granularity": "lane_level", "operation": "enter Montgomery domain", "value": 944.23, "unit": "ps", "parameter_set": "60-bit prime", "quick_pass": true, "caveat": "Sub-nanosecond means this is pipelined THROUGHPUT across independent loop iterations, not dependent-chain latency."},
+    {"target": "nine65_vs_seal_comparison", "group": "Persistent Montgomery", "id": "Montgomery mul", "granularity": "lane_level", "operation": "Montgomery modmul", "value": 983.28, "unit": "ps", "ci": [954.42, 983.28, 1027.0], "parameter_set": "60-bit prime", "quick_pass": true, "caveat": "Throughput, not latency. ~3 cycles at 3 GHz for 3 chained 64x64 multiplies. Quote as throughput or not at all."},
+    {"target": "nine65_vs_seal_comparison", "group": "Persistent Montgomery", "id": "Montgomery exit", "granularity": "lane_level", "operation": "exit Montgomery domain", "value": 728.98, "unit": "ps", "parameter_set": "60-bit prime", "quick_pass": true, "caveat": "Throughput, not latency."},
+    {"target": "nine65_vs_seal_comparison", "group": "Sign Detection (MQ-ReLU)", "id": "MobiusInt sign", "granularity": "lane_level", "operation": "sign detection", "value": 12.761, "unit": "ns", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Sign Detection (MQ-ReLU)", "id": "MQ-ReLU scalar", "granularity": "lane_level", "operation": "scalar ReLU", "value": 9.457, "unit": "ns", "ci": [9.3226, 9.4567, 9.7612], "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Sign Detection (MQ-ReLU)", "id": "MQ-ReLU Poly", "granularity": "polynomial", "operation": "ReLU over a polynomial", "value": 38.652, "unit": "us", "parameter_set": "4096 coefficients", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Pade Transcendentals", "id": "Pade exp", "granularity": "lane_level", "operation": "Pade exp on scaled i128", "value": 77.736, "unit": "ns", "ci": [77.345, 77.736, 78.160], "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Pade Transcendentals", "id": "Pade sin", "granularity": "lane_level", "operation": "Pade sin on scaled i128", "value": 90.885, "unit": "ns", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Pade Transcendentals", "id": "Pade sigmoid", "granularity": "lane_level", "operation": "Pade sigmoid on scaled i128", "value": 88.050, "unit": "ns", "ci": [85.942, 88.050, 90.101], "quick_pass": true, "note": "Last id emitted before the permanent stall in bench_cyclotomic_operations."},
+    {"target": "nine65_vs_seal_comparison", "group": "Order Finding", "id": "ord_63(2)", "granularity": "lane_level", "operation": "multiplicative order", "value": 117.38, "unit": "ns", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Order Finding", "id": "ord_1000(3)", "granularity": "lane_level", "operation": "multiplicative order", "value": 849.82, "unit": "ns", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Order Finding", "id": "factor_15", "granularity": "lane_level", "operation": "factor", "value": 196.65, "unit": "ns", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Order Finding", "id": "factor_3233", "granularity": "polynomial", "operation": "factor", "value": 3.0024, "unit": "us", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "ML Operations", "id": "Integer Softmax/10", "granularity": "lane_level", "operation": "integer softmax", "value": 943.05, "unit": "ns", "parameter_set": "10 elements", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "ML Operations", "id": "Integer Softmax/100", "granularity": "polynomial", "operation": "integer softmax", "value": 9.7375, "unit": "us", "parameter_set": "100 elements", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "ML Operations", "id": "Integer Softmax/1000", "granularity": "polynomial", "operation": "integer softmax", "value": 94.891, "unit": "us", "parameter_set": "1000 elements", "quick_pass": true},
+    {"target": "nine65_vs_seal_comparison", "group": "Polynomial Operations", "id": "eval/100", "granularity": "not_nine65", "operation": "inline polynomial eval written in the bench file", "value": 454.52, "unit": "ns", "quick_pass": true, "caveat": "Does not call the library. Not a NINE65 number."},
+    {"target": "nine65_vs_seal_comparison", "group": "Polynomial Operations", "id": "eval/1000", "granularity": "not_nine65", "operation": "inline polynomial eval", "value": 19.008, "unit": "us", "quick_pass": true, "caveat": "Does not call the library."},
+    {"target": "nine65_vs_seal_comparison", "group": "Polynomial Operations", "id": "eval/4096", "granularity": "not_nine65", "operation": "inline polynomial eval", "value": 160.31, "unit": "us", "quick_pass": true, "caveat": "Does not call the library."},
+    {"target": "nine65_vs_seal_comparison", "group": "Quantum Operations", "id": "Grover/10", "granularity": "not_nine65", "operation": "inline Grover iteration count", "value": 5.722, "unit": "ns", "quick_pass": true, "caveat": "Does not call the library."},
+    {"target": "nine65_vs_seal_comparison", "group": "Quantum Operations", "id": "Grover/15", "granularity": "not_nine65", "operation": "inline Grover iteration count", "value": 5.707, "unit": "ns", "quick_pass": true, "caveat": "Does not call the library."},
+    {"target": "nine65_vs_seal_comparison", "group": "Quantum Operations", "id": "Grover/20", "granularity": "not_nine65", "operation": "inline Grover iteration count", "value": 7.481, "unit": "ns", "quick_pass": true, "caveat": "Does not call the library."},
+    {"target": "nine65_vs_seal_comparison", "group": "Cyclotomic Phase", "id": "*", "status": "unreachable", "values_omitted": true, "reason": "setup hang, ~132 days expected"},
+    {"target": "nine65_vs_seal_comparison", "group": "FHE_DualRNS_K-Elimination", "id": "*", "status": "unreachable", "values_omitted": true, "reason": "setup hang in a preceding group", "superseded_by": "depth_chain/depth_chain_link/symmetric_with_s2"},
+    {"target": "nine65_vs_seal_comparison", "group": "FHE_KeyGen", "id": "*", "status": "unreachable", "values_omitted": true, "reason": "setup hang in a preceding group"},
+
+    {"target": "throughput", "group": "batch_encoding", "id": "encode/64", "granularity": "plaintext_only", "operation": "CRT packing", "value": 28.857, "unit": "us", "parameter_set": "batch 64, N=8192", "quick_pass": true, "caveat": "No crypto, no ciphertext. Never quote as a ciphertext-op number."},
+    {"target": "throughput", "group": "batch_encoding", "id": "encode/1024", "granularity": "plaintext_only", "operation": "CRT packing", "value": 32.199, "unit": "us", "ci": [32.078, 32.199, 32.336], "parameter_set": "batch 1024, N=8192", "quick_pass": true, "caveat": "No crypto. Flat in batch size because it is dominated by fixed N=8192 work."},
+    {"target": "throughput", "group": "batch_encoding", "id": "decode/1024", "granularity": "plaintext_only", "operation": "CRT unpacking", "value": 6.4658, "unit": "us", "parameter_set": "batch 1024", "quick_pass": true, "caveat": "No crypto."},
+    {"target": "throughput", "group": "parallel_encryption", "id": "sequential/500", "granularity": "batch", "operation": "encrypt_secure x 500, sequential", "value": 8514.9, "unit": "ms", "parameter_set": "secure config, N=8192, batch 500", "derived_ms_per_ciphertext": 17.03, "quick_pass": true, "distrust": true},
+    {"target": "throughput", "group": "parallel_encryption", "id": "parallel/500", "granularity": "batch", "operation": "encrypt_secure x 500, rayon 4 cores", "value": null, "unit": "ms", "reported_as_throughput_elem_per_s": [167, 172], "derived_ms_per_ciphertext": [5.8, 8.7], "quick_pass": true, "distrust": true, "note": "~2.9x speedup over sequential. Contended with foreign load; pessimistic upper bound."},
+    {"target": "throughput", "group": "parallel_decryption", "id": "sequential/500", "granularity": "batch", "operation": "decrypt x 500, sequential", "value": null, "unit": "ms", "reported_as_throughput_kelem_per_s": [1.77, 1.91], "derived_ms_per_ciphertext": 0.565, "quick_pass": true, "distrust": true},
+    {"target": "throughput", "group": "parallel_decryption", "id": "parallel/500", "granularity": "batch", "operation": "decrypt x 500, rayon 4 cores", "value": 100.17, "unit": "ms", "ci": [99.249, 100.17, 101.04], "derived_ms_per_ciphertext": 0.200, "quick_pass": true, "distrust": true},
+    {"target": "throughput", "group": "roundtrip_throughput", "id": "100", "granularity": "batch", "operation": "encrypt+decrypt roundtrip x 100", "value": 619.65, "unit": "ms", "derived_elem_per_s": 161, "quick_pass": true, "distrust": true},
+    {"target": "throughput", "group": "roundtrip_throughput", "id": "1000", "granularity": "batch", "operation": "encrypt+decrypt roundtrip x 1000", "value": 5291.4, "unit": "ms", "derived_elem_per_s": 189, "quick_pass": true, "distrust": true},
+
+    {"target": "adaptive_rayon", "group": "adaptive_vs_static_encrypt", "id": "adaptive/100", "granularity": "batch", "operation": "adaptive_encrypt x 100", "value": 118.62, "unit": "ms", "quick_pass": true, "distrust": true},
+    {"target": "adaptive_rayon", "group": "adaptive_vs_static_encrypt", "id": "static_parallel/100", "granularity": "batch", "operation": "static parallel encrypt x 100", "value": 52.034, "unit": "ms", "quick_pass": true, "distrust": true, "note": "adaptive is 2.3-4.0x SLOWER than static across the encrypt sweep."},
+    {"target": "adaptive_rayon", "group": "adaptive_vs_static_decrypt", "id": "adaptive/10", "granularity": "batch", "operation": "adaptive_decrypt x 10", "value": 21.145, "unit": "ms", "ci": [20.734, 21.145, 21.791], "quick_pass": true, "distrust": true},
+    {"target": "adaptive_rayon", "group": "adaptive_vs_static_decrypt", "id": "static_parallel/10", "granularity": "batch", "operation": "static parallel decrypt x 10", "value": 2.5764, "unit": "ms", "ci": [2.5110, 2.5764, 2.6780], "quick_pass": true, "distrust": true, "note": "adaptive is 4.7-8.2x SLOWER than static across the decrypt sweep. Root cause at crates/nine65/src/entropy/shadow_entropy_monitor.rs:395: adaptive_encrypt constructs a fresh NTTEngine::new(q,8192) + BFVEncoder + BFVEncryptor PER MESSAGE, rebuilding twiddle tables every ciphertext. That is per-iteration setup cost misattributed to threading strategy."},
+    {"target": "adaptive_rayon", "group": "entropy_overhead", "id": "measure_ciphertext", "granularity": "invalid", "operation": "measure_entropy_from_ciphertext", "value": null, "values_omitted": true, "reported_value_ps": 663.81, "quick_pass": true, "invalid_reason": "NO-OP. ~2 clock cycles cannot scan an N=8192 ciphertext. measure_entropy_from_ciphertext has two cfg-gated definitions (crates/nine65/src/entropy/shadow_entropy_monitor.rs:108 and :134); the real one requires feature 'adaptive-threading', which is NOT in default and NOT in this bench's required-features = ['parallel']. The compiled body is literally fn(_ct: &Ciphertext) -> u64 { 0 }. DO NOT REPORT as an entropy-monitoring cost. It also means the whole adaptive_vs_static comparison ran with the entropy monitor DISABLED, so that comparison is not measuring what its name says."},
+    {"target": "adaptive_rayon", "group": "entropy_overhead", "id": "adapt_threading", "granularity": "lane_level", "operation": "relaxed atomic load", "value": 622.94, "unit": "ps", "quick_pass": true, "note": "Real, but it is just a relaxed atomic load."},
+    {"target": "adaptive_rayon", "group": "thread_pool_creation", "id": "rayon_pool/8", "granularity": "infrastructure", "operation": "rayon ThreadPool construction", "value": 798.09, "unit": "us", "ci": [753.53, 798.09, 852.93], "parameter_set": "8 threads", "quick_pass": true, "caveat": "Measures RAYON, not nine65."}
+  ],
+
+  "derived": {
+    "ntt_butterfly_cost": {
+      "formula": "butterflies = (N/2) * log2(N)",
+      "unit": "ns_per_butterfly",
+      "values": {"1024": 2.950, "2048": 2.743, "4096": 2.859, "8192": 2.954, "8192_roundtrip": 2.753, "256_from_timing": 3.625},
+      "note": "Flat ~2.7-3.0 ns from N=1024 to N=8192: the NTT scales cleanly as N log N with no per-butterfly degradation. The N=256 point is the outlier (small-N fixed overhead) and should not be the headline."
+    },
+    "granularity_span": {
+      "montgomery_modmul_ns": 0.983,
+      "barrett_modmul_ns": 2.779,
+      "cram_exact_divide_ns": 12.647,
+      "constant_time_u128_modmul_ns": 393.01,
+      "ntt_n8192_us": 157.29,
+      "kelim_rescale_n8192_ms": 25.222,
+      "homomorphic_multiply_symmetric_ms": 105.58,
+      "homomorphic_multiply_public_ms": 279.12,
+      "span_orders_of_magnitude": 8.45,
+      "note": "From a 0.98 ns Montgomery modmul to a 279 ms public-mode homomorphic multiply is ~8.5 orders of magnitude. Do not conflate any two of these."
+    }
+  },
+
+  "known_defects": [
+    {"id": "seal-bench-unreachable", "severity": "blocking", "location": "crates/nine65/src/arithmetic/cyclotomic_phase.rs:31", "summary": "find_primitive_root is a linear scan 'for g in 2..q' over a 60-bit prime. Expected wall time ~132 days. Makes every full-ciphertext CRAM id in nine65_vs_seal_comparison permanently unreachable, and criterion filters cannot bypass it because filters skip measurement, not setup.", "verified_this_session": true},
+    {"id": "fhe-scaling-mislabelled-N", "severity": "high", "location": "crates/nine65/benches/fhe_scaling.rs:12-25 and :87-91", "summary": "Every id in homo_mul_scaling and encrypt_decrypt_scaling understates N. Labelled N=2048/4096/4096/8192 but the configs are actually N=8192/8192/16384/16384. Two of the three 'scaling' points are the same ring degree. Confirmed from source (secure_configs.rs:176-232) and corroborated by the data: pairs that should differ 2x in N measure within 3% of each other.", "verified_this_session": true},
+    {"id": "entropy-monitor-noop", "severity": "high", "location": "crates/nine65/src/entropy/shadow_entropy_monitor.rs:108,134", "summary": "measure_entropy_from_ciphertext compiles to a constant-0 stub under the bench's feature set, so entropy_overhead/measure_ciphertext (663.81 ps) is a no-op and the whole adaptive_vs_static comparison ran with the entropy monitor disabled."},
+    {"id": "adaptive-per-message-setup", "severity": "medium", "location": "crates/nine65/src/entropy/shadow_entropy_monitor.rs:395", "summary": "adaptive_encrypt rebuilds NTTEngine + BFVEncoder + BFVEncryptor per message, so twiddle-table construction is charged to threading strategy. Explains the 2.3-8.2x 'adaptive is slower' result."},
+    {"id": "mana-bench-disabled", "severity": "medium", "location": "crates/mana/Cargo.toml", "summary": "[[bench]] stanza commented out and autobenches not disabled, so lane_ops runs under libtest and measures nothing. Undocumented; one-line fix. NOT applied."},
+    {"id": "exact-transcendentals-bench-disabled", "severity": "medium", "location": "crates/exact_transcendentals/Cargo.toml", "summary": "No [[bench]] stanza at all and autobenches not disabled, so performance.rs runs under libtest and measures nothing. Undocumented oversight. NOT applied."},
+    {"id": "depth-floor-not-enforced", "severity": "medium", "location": "crates/nine65/benches/depth_chain.rs", "summary": "The new bench REPORTS depth but does not assert the floor (a panicking bench is useless). The existing test tests/depth_and_noise.rs asserts only DEPTH_REGRESSION_FLOOR = 32, not 200, and only on the symmetric shape. No test currently enforces depth >= 200 on any shape."},
+    {"id": "fake-depth-200-test", "severity": "medium", "location": "crates/nine65/tests/bootstrap_integration.rs:1090", "summary": "test_stress_budget_depth_200_precision must NOT be read as evidence for the depth-200 floor. Inspected this session: it constructs a bare NoiseBudget, loops 200 times consuming NoiseOpType::Add (additions, not multiplies), and asserts 500000 - 200000 == 300000. It touches no ciphertext and performs no multiply. It is the retired 'budget consumed' metric class, and it is not even about MULTIPLICATIVE depth."}
+  ],
+
+  "retired_mechanism_audit": {
+    "question": "Which benches measure the retired modulus-switching mechanism and should be retired alongside it?",
+    "answer": "NONE.",
+    "detail": "Grepping every bench source in crates/nine65/benches and crates/mana/benches for mod_switch / modulus_switch / NoiseBudget / noise_budget / levels_remaining returns no hits outside the new depth_chain.rs, where 'level' appears only as part of the anti-ladder invariant assertion (asserting the level does NOT move). The retired-mechanism problem lives in the TEST suite (the ~18 failures being quarantined in the concurrent workflow), not in the bench suite. No bench target needs to be retired on modulus-switching grounds.",
+    "adjacent_but_NOT_retired": [
+      {"id": "timing/rns_kelim_rescale/k_elim_rescale", "why_not_retired": "Despite the name 'rescale', this benches k_elim_rescale_dual, which is CRAM exact division. It divides the value and the basis does not move. It is the current mechanism, not the retired one. Verified: the auto modulus-switch that used to follow it inside mul_dual_symmetric is gone, with a comment at crates/nine65/src/ops/rns_fhe.rs:2773 recording the retirement, and the multiply returns at full lane count."}
+    ],
+    "retire_on_OTHER_grounds": [
+      {"id": "fhe_scaling/homo_mul_scaling", "grounds": "deprecated path, not retired mechanism", "detail": "Benches BFVEvaluator::mul, which is #[deprecated] in favour of mul_dual_symmetric, over a single 30-bit modulus with the RNS chain unused. It is measuring the legacy pre-CRAM path. Its ids are also mislabelled. It should be re-pointed at the DualRNS path or removed, but not because of modulus switching."},
+      {"id": "fhe_scaling/encrypt_decrypt_scaling", "grounds": "deprecated path", "detail": "Same: BFVEncryptor/BFVDecryptor on config.q = primes[0], a single 30-bit modulus."},
+      {"id": "adaptive_rayon/*", "grounds": "posture tension", "detail": "threading_comparison is excluded by design for benchmarking rayon against MANA, a rejected parallelism approach; adaptive_rayon survives that exclusion while benchmarking the same rejected rayon layer, and its thread_pool_creation group constructs rayon ThreadPools directly. Flagged, not decided here."}
+    ]
+  },
+
+  "raw_output_paths": {
+    "note": "Paths outside the repo, on the session scratchpad.",
+    "bench_out_dir": "/tmp/claude-0/-home-claude/229d9a6e-bfd6-5ec9-9c64-5c8c0d7c26f9/scratchpad/bench_out/",
+    "files": ["timing.txt", "seal_bench.txt", "seal_all.txt", "fhe_scaling.txt", "throughput.txt", "adaptive_rayon.txt", "fhe_probe.txt", "fhe_probe_run2.txt", "depth_chain.txt", "depth_chain_deep.txt"]
+  }
+}
