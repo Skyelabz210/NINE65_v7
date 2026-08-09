@@ -13,8 +13,6 @@
 //! | `secure_192` | 16384 | 5 NTT primes (~147 bits) | 192 bits |
 //! | `secure_256` | 16384 | 6 NTT primes (~177 bits) | 256 bits |
 
-#[cfg(test)]
-use super::is_ntt_compatible;
 use super::security_estimator::{
     CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution,
 };
@@ -68,37 +66,6 @@ fn validate_class_f_chain(n: usize, primes: &[u64]) {
     }
 }
 
-/// Exact bit length of the product of the supplied RNS primes.
-///
-/// Eight 64-bit limbs cover products through 512 bits. This is intentionally
-/// independent of `u128`, saturation, floating point, and logarithmic
-/// approximations.
-fn exact_product_bit_length(primes: &[u64]) -> u32 {
-    let mut limbs = [0u64; 8];
-    limbs[0] = 1;
-
-    for &factor in primes {
-        let mut carry = 0u128;
-        for limb in &mut limbs {
-            let product = (*limb as u128) * factor as u128 + carry;
-            *limb = product as u64;
-            carry = product >> 64;
-        }
-        assert_eq!(
-            carry, 0,
-            "RNS product exceeds the 512-bit security-accounting capacity"
-        );
-    }
-
-    for index in (0..limbs.len()).rev() {
-        let limb = limbs[index];
-        if limb != 0 {
-            return index as u32 * 64 + (64 - limb.leading_zeros());
-        }
-    }
-    0
-}
-
 /// Secure FHE configuration with an explicit claim and internal screening data.
 #[derive(Clone, Debug)]
 pub struct SecureConfig {
@@ -146,9 +113,14 @@ impl SecureConfig {
             HEStandardBounds::is_compliant(n, log_q, claimed_security);
 
         // Fail closed. A named claim must pass the complete internal screen;
-        // no 90%-of-claim relaxation is accepted.
+        // Fail closed for real claims. Configs explicitly marked insecure
+        // (test/benchmark tier, name ends `_insecure`) are permitted to
+        // construct with their shortfall RECORDED in `he_standard_compliant`
+        // and the screened bits; `is_production_safe` / `verify_production_safety`
+        // reject them at use time. No 90%-of-claim relaxation is accepted.
+        let is_insecure_tier = name.ends_with("_insecure");
         assert!(
-            estimate.effective_bits >= claimed_security,
+            is_insecure_tier || estimate.effective_bits >= claimed_security,
             "SECURITY ERROR: config '{}' claims {} bits but screens at {} bits.\n{}",
             name,
             claimed_security,
@@ -156,7 +128,7 @@ impl SecureConfig {
             estimate.analysis,
         );
         assert!(
-            he_standard_compliant,
+            is_insecure_tier || he_standard_compliant,
             "SECURITY ERROR: config '{}' exceeds the HE Standard bound",
             name
         );
@@ -263,8 +235,11 @@ impl SecureConfig {
 
     /// Hardware-optimized configuration using composite anchors (Separation Principle showcase)
     pub fn hardware_opt() -> Self {
+        // N=8192 satisfies the audited production floor for the 128-bit claim.
+        // (The lattice estimator blesses 4096 at hybrid≈129, but the conservative
+        // N>=8192 floor governs any >=128-bit production claim.)
         Self::new_verified(
-            4096,
+            8192,
             vec![
                 998244353, 985661441, 754974721,
             ],
@@ -418,7 +393,22 @@ mod tests {
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
             SecureConfig::hardware_opt(),
-        ];
+        ] {
+            // Each named production config must clear its own claimed bar.
+            assert!(
+                config.hybrid_security >= config.claimed_security,
+                "{}: hybrid {} < claimed {}",
+                config.config.name,
+                config.hybrid_security,
+                config.claimed_security
+            );
+            assert!(
+                config.is_production_safe(),
+                "{} is not production-safe",
+                config.config.name
+            );
+        }
+    }
 
     #[test]
     fn every_production_prime_is_ntt_compatible() {
@@ -429,7 +419,7 @@ mod tests {
             SecureConfig::secure_256(),
             SecureConfig::hardware_opt(),
         ] {
-            for &prime in &config.config.primes {
+            for (index, &prime) in config.config.primes.iter().enumerate() {
                 assert!(
                     is_ntt_compatible(prime, config.config.n),
                     "{} is not NTT-compatible for N={} ({})",
@@ -451,14 +441,6 @@ mod tests {
         assert!(!SecureConfig::test_medium_insecure().is_production_safe());
     }
 
-        let configs = [
-            ("test_fast", SecureConfig::test_fast_insecure()),
-            ("test_medium", SecureConfig::test_medium_insecure()),
-            ("secure_128", SecureConfig::secure_128()),
-            ("secure_192", SecureConfig::secure_192()),
-            ("hardware_opt", SecureConfig::hardware_opt()),
-        ];
-
     #[test]
     fn exact_product_bit_length_matches_known_chains() {
         assert_eq!(
@@ -475,7 +457,17 @@ mod tests {
                 595591169,
             ]) > 128
         );
-        println!("{}", "-".repeat(70));
+    }
+
+    #[test]
+    fn security_summary_table_is_consistent() {
+        let configs = [
+            ("test_fast", SecureConfig::test_fast_insecure()),
+            ("test_medium", SecureConfig::test_medium_insecure()),
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_192", SecureConfig::secure_192()),
+            ("hardware_opt", SecureConfig::hardware_opt()),
+        ];
 
         for (name, config) in configs {
             let log_q: u32 = config
@@ -484,15 +476,21 @@ mod tests {
                 .iter()
                 .map(|&p| 64 - p.leading_zeros())
                 .sum();
-            println!(
-                "{:<15} {:>6} {:>10} {:>10} {:>10} {:>10}",
-                name,
-                config.config.n,
-                log_q,
+            // The hybrid estimate never exceeds the classical estimate, and the
+            // quantum estimate never exceeds the hybrid one (screening invariant).
+            assert!(
+                config.classical_security >= config.hybrid_security,
+                "{name}: classical {} < hybrid {}",
                 config.classical_security,
+                config.hybrid_security
+            );
+            assert!(
+                config.hybrid_security >= config.quantum_security,
+                "{name}: hybrid {} < quantum {}",
                 config.hybrid_security,
                 config.quantum_security
             );
+            assert!(log_q > 0, "{name}: empty modulus chain");
         }
     }
 
@@ -531,3 +529,4 @@ mod tests {
         test_config.require_production_safe();
     }
 }
+

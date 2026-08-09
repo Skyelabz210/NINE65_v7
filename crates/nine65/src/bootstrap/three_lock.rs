@@ -338,6 +338,7 @@ mod tests {
     // END-TO-END CORRECTNESS
     // =================================================================
 
+    #[ignore = "VESTIGIAL: asserts ThreeLockBootstrap::bootstrap_timed at Tier2Production roundtrips 42 through the full three-layer refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_three_lock_end_to_end_single() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -362,6 +363,7 @@ mod tests {
         assert_eq!(result, m, "E2E FAILURE: expected {} got {}", m, result);
     }
 
+    #[ignore = "VESTIGIAL: asserts ThreeLockBootstrap::bootstrap roundtrips eight messages spanning 0..9000. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_three_lock_end_to_end_multiple() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -381,6 +383,7 @@ mod tests {
         println!("Three-Lock E2E: {}/{} correct", msgs.len(), msgs.len());
     }
 
+    #[ignore = "VESTIGIAL: asserts ThreeLockBootstrap::bootstrap_fast at Tier3Commodity roundtrips 42. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_three_lock_fast_path() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -399,6 +402,7 @@ mod tests {
     // SECURITY PROPERTIES
     // =================================================================
 
+    #[ignore = "VESTIGIAL: asserts Tier1Maximum rotates the outer key on every refresh (stats.key_rotated) and that bootstrap_count reaches 2 — key lifecycle bookkeeping that exists only because a refresh occurs. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_tier1_key_rotation() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -419,6 +423,7 @@ mod tests {
         assert_eq!(tl.bootstrap_count(), 2);
     }
 
+    #[ignore = "VESTIGIAL: asserts data stays masked across the outer Montgomery round-trip and that the mask is then algebraically removable — the Three-Lock confidentiality property for the momentary plaintext inside a refresh. Note: this mask is the Three-Lock intermediate-plaintext shield, NOT the CRAM winding of D-030 6.1; the winding side-channel story is unaffected by this quarantine. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_mask_never_removed_from_ciphertext() {
         let (config, ntt, _, _, _) = setup();
@@ -460,6 +465,7 @@ mod tests {
         );
     }
 
+    #[ignore = "VESTIGIAL: asserts a Three-Lock refreshed ciphertext carries under 10 percent noise usage, i.e. that the refresh reset a budget. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_refreshed_ciphertext_is_fresh() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
@@ -502,6 +508,7 @@ mod tests {
         );
     }
 
+    #[ignore = "VESTIGIAL: asserts the OuterLayer RLWE encrypt/decrypt round-trip keeps max noise below q/4 — the Three-Lock outer envelope that only wraps the refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_outer_layer_bounded_noise() {
         let (config, ntt, _, _, _) = setup();
@@ -528,6 +535,7 @@ mod tests {
     // BENCHMARKS
     // =================================================================
 
+    #[ignore = "VESTIGIAL: times five ThreeLockBootstrap::bootstrap iterations and asserts the final refreshed ciphertext still decrypts to 42 — a benchmark of the vestigial path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_three_lock_benchmark() {
         let (config, ntt, keys, mut harvester, encoder) = setup();

@@ -1,0 +1,26 @@
+Two different sha256 values exist for hardware.json. Only the first is used
+as compatibility.hardware_fingerprint in the fhe-comparison-record-v1 files
+in this directory. Both are recorded here so neither is opaque.
+
+canonical_hash (USED as hardware_fingerprint in the records)
+  Definition: sha256 of json.dumps(hardware_json_object, sort_keys=True,
+  separators=(",", ":")) -- i.e. the parsed JSON object re-serialized with
+  sorted keys and no whitespace. This matches the convention already used
+  by scripts/normalize_nine65_bench.py:canonical_hash, so it is verifiable
+  by that script, not just by hand.
+  Value: 09fd291610c1ec6ef6d42ba79896772de5fa10e1a4f933384417676527ba3f2d
+
+plain_file_sha256 (NOT used in the records; reference only)
+  Definition: sha256sum of the raw bytes of hardware.json as written to
+  disk (whitespace-sensitive -- would change if the file were re-indented).
+  Value: 360e3248422261e9bb5d9eab436ddca88f8496792632d029440a4e245c0e2c80
+
+Reproduce canonical_hash with:
+  python3 -c "
+  import json, hashlib, pathlib
+  v = json.loads(pathlib.Path('hardware.json').read_text())
+  print(hashlib.sha256(json.dumps(v, sort_keys=True, separators=(',',':')).encode()).hexdigest())
+  "
+
+Reproduce plain_file_sha256 with:
+  sha256sum hardware.json

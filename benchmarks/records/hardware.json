@@ -1,0 +1,68 @@
+{
+  "document_kind": "nine65-hardware-document-v1",
+  "captured_at_utc": "2026-08-09T15:42:22Z",
+  "captured_by": "benchmarks/records probe (this task), additive-only measurement pass",
+  "cpu": {
+    "model_name": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+    "vendor_id": "GenuineIntel",
+    "cpu_family": 6,
+    "model": 85,
+    "stepping": 7,
+    "microcode": "0x1",
+    "logical_cores": 4,
+    "sockets": 1,
+    "cores_per_socket": 4,
+    "threads_per_core": 1,
+    "cpu_mhz_reported": 2800.320,
+    "base_clock_ghz_advertised": 2.8,
+    "boost_clock_ghz": "NOT AVAILABLE - no cpufreq scaling interface exposed to this guest (/sys/devices/system/cpu/cpu0/cpufreq is absent); the hypervisor does not expose a distinct boost frequency to the VM, only the single advertised 2.80GHz in /proc/cpuinfo",
+    "cache": {
+      "l1d": "128 KiB (4 instances, 32 KiB/core)",
+      "l1i": "128 KiB (4 instances, 32 KiB/core)",
+      "l2": "4 MiB (4 instances, 1 MiB/core)",
+      "l3": "33 MiB (1 instance, shared)",
+      "cache_size_field_proc_cpuinfo_kb": 33792
+    },
+    "numa_nodes": 1,
+    "relevant_isa_flags": ["avx2", "avx512f", "avx512dq", "avx512cd", "avx512bw", "avx512vl", "avx512_vnni", "bmi1", "bmi2", "adx", "aes", "fma", "pclmulqdq"],
+    "bogomips": 5600.64
+  },
+  "virtualization": {
+    "hypervisor_vendor": "KVM",
+    "virtualization_type": "full",
+    "guest_detection": "systemd-detect-virt reports 'docker' (containerized on top of a KVM-virtualized host); /proc/cpuinfo carries the 'hypervisor' flag",
+    "caveat": "This is a virtualized/shared-tenancy environment, not bare metal. CPU steal time, cache/NUMA topology exposed to the guest, and clock stability may not match a dedicated bare-metal host. This is disclosed, not hidden, per the task's 'commodity hardware' claim needing a resolvable artifact rather than an assertion."
+  },
+  "memory": {
+    "mem_total_kb": 16461004,
+    "mem_total_human_free_h": "15Gi",
+    "swap_total": "0B"
+  },
+  "os": {
+    "uname_a": "Linux vm 6.18.5-fc-v20 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux",
+    "kernel_release": "6.18.5-fc-v20",
+    "architecture": "x86_64",
+    "cargo_reported_os": "Ubuntu 24.4.0 (noble) [64-bit]"
+  },
+  "toolchain": {
+    "rustc_version": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "rustc_commit_hash": "e408947bfd200af42db322daf0fadfe7e26d3bd1",
+    "rustc_commit_date": "2026-03-25",
+    "rustc_host_target": "x86_64-unknown-linux-gnu",
+    "llvm_version": "21.1.8",
+    "cargo_version": "cargo 1.94.1 (29ea6fb6a 2026-03-24)",
+    "cargo_commit_hash": "29ea6fb6a5db279426f4cc4e17aa385f05a0cfbc"
+  },
+  "build_profile": {
+    "profile_name": "release-fat-lto-cgu1",
+    "source": "workspace root Cargo.toml [profile.release]: opt-level=3, lto=\"fat\", codegen-units=1, panic=\"abort\" (crates/nine65/Cargo.toml also declares its own [profile.release] with opt-level=3, lto=\"fat\", codegen-units=1; cargo warns 'profiles for the non root package will be ignored' for the workspace member declarations, so the workspace-root profile is the one actually applied)",
+    "target_triple": "x86_64-unknown-linux-gnu",
+    "cargo_invocation": ["cargo", "build", "--release", "-p", "nine65", "--example", "comparison_record_probe"]
+  },
+  "runtime_conditions": {
+    "threads": 1,
+    "thread_pinning": "RAYON_NUM_THREADS=1 taskset -c 0",
+    "loadavg_1min_before_each_run": [0.15, 0.55, 0.42, 0.64],
+    "note": "loadavg sampled with `cat /proc/loadavg` immediately before each of the four probe invocations made during this task (one build-adjacent check plus three timed runs); this container had no other CPU-bound process running during measurement (verified with `ps aux --sort=-%cpu`)."
+  }
+}

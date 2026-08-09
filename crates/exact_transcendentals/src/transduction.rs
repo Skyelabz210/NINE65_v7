@@ -58,6 +58,8 @@ pub const TRANSPORT_CORE: [i128; 4] = [3, 7, 11, 13];
 pub struct TransductionMap {
     /// coefficients[i][j] = CRT unit vector e_i (basis A) evaluated mod b_j.
     coefficients: Vec<Vec<i128>>,
+    /// The CRT unit vectors e_i themselves, needed for the wrap term.
+    idempotents: Vec<i128>,
     /// Source basis moduli.
     basis_a: Vec<i128>,
     /// Target basis moduli.
@@ -86,6 +88,7 @@ impl TransductionMap {
         let m = basis_b.len();
 
         let mut coefficients = Vec::with_capacity(n);
+        let mut idempotents = Vec::with_capacity(n);
 
         for i in 0..n {
             let a_i = basis_a[i];
@@ -103,10 +106,12 @@ impl TransductionMap {
                 row.push(k_elim::modd(e_i, b_j));
             }
             coefficients.push(row);
+            idempotents.push(e_i);
         }
 
         TransductionMap {
             coefficients,
+            idempotents,
             basis_a: basis_a.to_vec(),
             basis_b: basis_b.to_vec(),
             m_a,
@@ -138,37 +143,53 @@ impl TransductionMap {
 
         let m = self.basis_b.len();
 
-        // Try direct CRT formula first: works when b_j divides M_A
-        // (i.e., when all prime factors of b_j are covered by basis A).
-        // For the general case, reconstruct via Garner then reduce.
+        // A2 — RESIDUE-NATIVE. The precomputed coefficient matrix
+        // `alpha_ij = e_i mod b_j` (CRT idempotents of basis A, reduced into
+        // each target lane) lets every target residue be read directly:
         //
-        // Since our moduli fit comfortably in i128 (products < 10^7),
-        // Garner reconstruction is cheap and exact. We reconstruct once
-        // and reduce mod each target modulus.
-        let pairs: Vec<(i128, i128)> = x_a
-            .iter()
-            .zip(self.basis_a.iter())
-            .map(|(&r, &m_i)| (k_elim::modd(r, m_i), m_i))
-            .collect();
-
-        let value = k_elim::garner_reconstruct(&pairs)
-            .expect("basis_a moduli must be pairwise coprime");
+        //     y_j = ( sum_i x_i * alpha_ij )  mod b_j
+        //
+        // exact for values in [0, M_A) — the documented domain of this method.
+        // Nothing proportional to the value is ever formed: the largest
+        // intermediate is basis-sized, not value-sized.
+        //
+        // The previous implementation called `garner_reconstruct` here, which
+        // materialised the integer and destroyed the winding — a mixed-radix
+        // cascade inside the very operator whose purpose is to move between
+        // fixtures WITHOUT leaving residue space. Retired per A2: Garner's
+        // digit i depends on digits 0..i-1, whereas each target lane below is
+        // read independently, so the source lanes stay i.i.d.
+        // raw = sum_i x_i * e_i, unreduced. x = raw - t*M_A with t = floor(raw/M_A),
+        // since apply() is documented for values in [0, M_A).
+        let mut raw: i128 = 0;
+        for (i, &a_i) in self.basis_a.iter().enumerate() {
+            raw += k_elim::modd(x_a[i], a_i) * self.idempotents[i];
+        }
+        let t = raw / self.m_a;
 
         let mut result = Vec::with_capacity(m);
         for j in 0..m {
             let b_j = self.basis_b[j];
-            // Check if b_j is one of the basis_a moduli — direct copy
-            let mut found = false;
+
+            // Shared lane: copy straight across. This is the phase lock — a
+            // lane present in both fixtures carries the phase unchanged.
+            if let Some(i) = self.basis_a.iter().position(|&a_i| a_i == b_j) {
+                result.push(k_elim::modd(x_a[i], b_j));
+                continue;
+            }
+
+            let mut acc: i128 = 0;
             for (i, &a_i) in self.basis_a.iter().enumerate() {
-                if a_i == b_j {
-                    result.push(k_elim::modd(x_a[i], b_j));
-                    found = true;
-                    break;
-                }
+                let r_i = k_elim::modd(x_a[i], a_i);
+                acc = k_elim::modd(acc + r_i * self.coefficients[i][j], b_j);
             }
-            if !found {
-                result.push(k_elim::modd(value, b_j));
-            }
+            // Wrap term. sum_i x_i*e_i overshoots x by t*M_A, and that term
+            // only vanishes mod b_j when b_j | M_A. t is basis-sized (raw is
+            // bounded by M_A * sum(a_i)), so forming it is not a value-sized
+            // reconstruction — and each e_i term is read independently, so
+            // there is no threaded accumulator. A2 holds.
+            acc = k_elim::modd(acc - t * k_elim::modd(self.m_a, b_j), b_j);
+            result.push(acc);
         }
 
         result

@@ -103,10 +103,12 @@ impl KElimConfig {
 
     /// Beta moduli (CLASS-R — coprimality sufficient, primality optional).
     ///
-    /// These values participate only in Garner mixed-radix conversion,
-    /// which requires gcd(α_cap, β_cap) = 1 but does NOT require primality.
-    /// Composite values coprime to α_cap are mathematically valid.
-    /// See: QMNF Separation Principle (Theorem 2.1).
+    /// These values carry the K-Elimination winding lift `X = v_α + k·α_cap`
+    /// (a single boundary read), NOT a mixed-radix / Garner conversion of the
+    /// alpha lanes into a positional integer. The lift requires
+    /// gcd(α_cap, β_cap) = 1 but does NOT require primality; composite values
+    /// coprime to α_cap are mathematically valid.
+    /// See: QMNF Separation Principle (Theorem 2.1); A2 (no mixed-radix fusion).
     pub fn beta_moduli(&self) -> Vec<u64> {
         match self {
             KElimConfig::Minimal => vec![4294967291], // 2^32 - 5 (~32 bits)
@@ -139,7 +141,7 @@ impl KElimConfig {
             KElimConfig::Standard => 110,
             KElimConfig::Extended => 138,
             KElimConfig::Maximum => 188, // 64 alpha + 124 beta
-            KElimConfig::HardwareOpt => 141, // 48 alpha + 93 beta
+            KElimConfig::HardwareOpt => 140, // α_cap·β_cap = 140 bits (48-bit α × 93-bit β; product bit-length, not the sum)
         }
     }
 
@@ -252,6 +254,39 @@ impl KElimination {
     /// Returns [`Nine65Error::NotCoprime`] if alpha_cap and beta_cap share a common factor.
     #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Nine65Result<Self> {
+        // CLASS-F (alpha) lanes must be prime and NTT-adjacent; enforce primality.
+        for &a in alpha_primes {
+            if a <= 1 || !is_prime(a) {
+                return Err(Nine65Error::InvalidParameter {
+                    message: format!("CLASS-F alpha lane {a} must be prime"),
+                });
+            }
+        }
+        // Alpha lanes must be pairwise distinct/coprime (distinct primes ⇒ coprime).
+        for i in 0..alpha_primes.len() {
+            for j in (i + 1)..alpha_primes.len() {
+                if gcd_u128(alpha_primes[i] as u128, alpha_primes[j] as u128) != 1 {
+                    return Err(Nine65Error::NotCoprime {
+                        m: alpha_primes[i],
+                        a: alpha_primes[j],
+                        gcd: gcd_u128(alpha_primes[i] as u128, alpha_primes[j] as u128) as u64,
+                    });
+                }
+            }
+        }
+        // CLASS-R (beta) lanes require pairwise coprimality (primality optional).
+        for i in 0..beta_moduli.len() {
+            for j in (i + 1)..beta_moduli.len() {
+                if gcd_u128(beta_moduli[i] as u128, beta_moduli[j] as u128) != 1 {
+                    return Err(Nine65Error::NotCoprime {
+                        m: beta_moduli[i],
+                        a: beta_moduli[j],
+                        gcd: gcd_u128(beta_moduli[i] as u128, beta_moduli[j] as u128) as u64,
+                    });
+                }
+            }
+        }
+
         // Use checked_mul to detect u128 overflow in prime products.
         let alpha_cap: u128 = alpha_primes
             .iter()
@@ -271,7 +306,7 @@ impl KElimination {
             Nine65Error::NotCoprime {
                 m: diagnostic_u64(alpha_cap),
                 a: diagnostic_u64(beta_cap),
-                gcd: diagnostic_u64(family_gcd),
+                gcd: diagnostic_u64(gcd_u128(alpha_cap, beta_cap)),
             }
         })?;
 
@@ -948,7 +983,7 @@ mod tests {
             let alpha_cap: u128 = alphas.iter().map(|&p| p as u128).product();
             let beta_cap: u128 = betas.iter().map(|&b| b as u128).product();
 
-            // Alpha-beta coprimality (required for Garner inverse)
+            // Alpha-beta coprimality (required for the K-Elim winding-lift inverse α_cap⁻¹ mod β_cap)
             assert_eq!(gcd_u128(alpha_cap, beta_cap), 1,
                 "{:?}: alpha_cap and beta_cap must be coprime", config);
 

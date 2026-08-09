@@ -259,16 +259,21 @@ pub fn crt_weights(basis: &[i128]) -> Option<(Vec<i128>, i128)> {
     Some((weights, m))
 }
 
-/// K-Elimination exact division: given residues of `a` and a divisor `b`
-/// coprime to the basis product, returns the residues and integer value
-/// of the quotient `a/b`.
+/// K-Elimination exact division, residue-native (A2).
+///
+/// Given residues of `a` on `basis` and a divisor `b` coprime to the basis
+/// product with `b | a`, returns the QUOTIENT'S RESIDUES on the same basis.
+/// Because `b` is a unit on every lane, `q_i = a_i · b⁻¹ (mod p_i)` is already
+/// the quotient in residue form — no reconstruction is performed and residue
+/// space is never left. Use [`k_elim_divide_named`] when an integer name is
+/// genuinely required.
 ///
 /// Precondition: gcd(b, M) = 1 and b | a.
 pub fn k_elim_divide(
     residues: &[i128],
     basis: &[i128],
     b: i128,
-) -> Option<(Vec<i128>, i128)> {
+) -> Option<Vec<i128>> {
     let m: i128 = basis.iter().product();
     if gcd(b, m) != 1 {
         return None;
@@ -278,10 +283,84 @@ pub fn k_elim_divide(
         let b_inv = mod_inv(b, p)?;
         alpha.push(modd(r * b_inv, p));
     }
-    let q = garner_reconstruct(
-        &alpha.iter().copied().zip(basis.iter().copied()).collect::<Vec<_>>(),
-    )?;
-    Some((alpha, q))
+    Some(alpha)
+}
+
+/// K-Elimination exact division with an integer NAME, on demand.
+///
+/// Returns `(quotient_residues, quotient_value)`. The name is recovered by a
+/// single K-Elimination winding lift against a star-prime anchor `a_anchor`
+/// (carried alongside the basis as `a mod anchor`), NOT by a mixed-radix fuse
+/// of `basis`:
+///   `q_shell = a_shell · b⁻¹ (mod M)` on the basis (shell-internal),
+///   `q_anchor = a_anchor · b⁻¹ (mod anchor)`,
+///   `k = (q_anchor − q_shell) · M⁻¹ (mod anchor)`,  `q = q_shell + k·M`.
+/// Exact whenever `anchor > q` (extend with more anchors for larger q).
+///
+/// Precondition: gcd(b, M) = 1, gcd(b, anchor) = 1, gcd(M, anchor) = 1, b | a,
+/// and `anchor > a / b`.
+pub fn k_elim_divide_named(
+    residues: &[i128],
+    basis: &[i128],
+    b: i128,
+    a_anchor_residue: i128,
+    anchor: i128,
+) -> Option<(Vec<i128>, i128)> {
+    let m: i128 = basis.iter().product();
+    if gcd(b, m) != 1 || gcd(b, anchor) != 1 || gcd(m, anchor) != 1 {
+        return None;
+    }
+    let q_res = k_elim_divide(residues, basis, b)?;
+    // shell-internal read of q mod M from its lane residues
+    let q_shell = garner_reconstruct(
+        &q_res.iter().copied().zip(basis.iter().copied()).collect::<Vec<_>>(),
+    )? % m;
+    let q_anchor = modd(a_anchor_residue * mod_inv(b, anchor)?, anchor);
+    let k = modd((q_anchor - q_shell) * mod_inv(m, anchor)?, anchor);
+    Some((q_res, q_shell + k * m))
+}
+
+/// Residue-native per-lane reciprocal: `1/a` in residue form.
+///
+/// Returns `a^{-1} mod p_i` on each lane. Requires `a` to be a unit on every
+/// lane (gcd(a, M) = 1). Pure per-lane inversion — no reconstruction, no
+/// cross-lane carry. Building block for [`div_lanewise`] and [`mul_via_div`].
+pub fn reciprocal_lanewise(residues: &[i128], basis: &[i128]) -> Option<Vec<i128>> {
+    let mut out = Vec::with_capacity(basis.len());
+    for (&r, &p) in residues.iter().zip(basis.iter()) {
+        out.push(mod_inv(modd(r, p), p)?);
+    }
+    Some(out)
+}
+
+/// Residue-native per-lane division: `x / y` in residue form.
+///
+/// Computes `x_i · y_i^{-1} mod p_i` on each lane. Requires `y` to be a unit on
+/// every lane. Exact when `y | x`; otherwise the modular quotient (a ring
+/// element). No reconstruction, no cross-lane carry — division is a native
+/// residue operation here, not a base-extension detour.
+pub fn div_lanewise(x: &[i128], y: &[i128], basis: &[i128]) -> Option<Vec<i128>> {
+    let mut out = Vec::with_capacity(basis.len());
+    for ((&xr, &yr), &p) in x.iter().zip(y.iter()).zip(basis.iter()) {
+        out.push(modd(xr * mod_inv(modd(yr, p), p)?, p));
+    }
+    Some(out)
+}
+
+/// DIV³ — noise-free multiplication expressed purely through division.
+///
+/// `mul(a, b) = DIV(1, DIV(DIV(1, a), b))`, i.e. `a·b = 1 / (1/(a·b))`. Every
+/// step is a per-lane reciprocal/divide; the product is recovered with no
+/// cross-lane carry and no reconstruction. This is the "embrace division"
+/// identity: where a residue system would normally avoid division, DIV³ turns
+/// it into the multiply primitive itself. Requires `a` and `b` to be units on
+/// every lane (gcd(a, M) = gcd(b, M) = 1); the ordinary lanewise product is the
+/// direct route when units are not guaranteed.
+pub fn mul_via_div(a: &[i128], b: &[i128], basis: &[i128]) -> Option<Vec<i128>> {
+    let one: Vec<i128> = basis.iter().map(|&p| modd(1, p)).collect();
+    let inv_a = div_lanewise(&one, a, basis)?; // 1/a
+    let inv_ab = div_lanewise(&inv_a, b, basis)?; // 1/(a·b)
+    div_lanewise(&one, &inv_ab, basis) // a·b
 }
 
 /// Fused Piggyback Division: exact quotient a/b when b shares a factor with M.
@@ -572,9 +651,15 @@ mod tests {
         let a = 88i128;
         let b = 8i128;
         let a_res: Vec<i128> = basis.iter().map(|&p| a % p).collect();
-        let (q_res, q) = k_elim_divide(&a_res, &basis, b).unwrap();
-        assert_eq!(q, 11);
+        // residue-native: the quotient's lane residues, no reconstruction
+        let q_res = k_elim_divide(&a_res, &basis, b).unwrap();
         assert_eq!(q_res, decompose(11, &basis));
+        // opt-in name via a single anchor winding lift (star prime 13 > q = 11)
+        let anchor = 13i128;
+        let a_anchor = a % anchor;
+        let (q_res2, q) = k_elim_divide_named(&a_res, &basis, b, a_anchor, anchor).unwrap();
+        assert_eq!(q, 11);
+        assert_eq!(q_res2, decompose(11, &basis));
     }
 
     // --- FPD ---
@@ -630,5 +715,36 @@ mod tests {
         add_carry(&mut kd, &mus, 20);
         assert!(kd[0] >= 0 && kd[0] < 17, "level 0 should be in [0, 17)");
         assert_eq!(k_from_tower(&kd, &mus), orig_val + 20);
+    }
+
+    #[test]
+    fn div_cubed_multiply_matches_lanewise_product() {
+        // basis of 8 small coprime primes standing in for residue lanes
+        let basis = vec![257i128, 263, 269, 271, 277, 281, 283, 293];
+        let m: i128 = basis.iter().product();
+        // several unit operands (gcd with M = 1)
+        for (a, b) in [(6i128, 7i128), (123, 45), (9999, 8888), (2, 3), (100, 250)] {
+            assert_eq!(gcd(a, m), 1);
+            assert_eq!(gcd(b, m), 1);
+            let ar: Vec<i128> = basis.iter().map(|&p| a % p).collect();
+            let br: Vec<i128> = basis.iter().map(|&p| b % p).collect();
+            // DIV³: a·b = 1 / (1/(a·b))
+            let got = mul_via_div(&ar, &br, &basis).unwrap();
+            let want: Vec<i128> = basis.iter().map(|&p| (a * b) % p).collect();
+            assert_eq!(got, want, "DIV³ mul mismatch for a={a} b={b}");
+        }
+    }
+
+    #[test]
+    fn reciprocal_and_div_lanewise_are_inverse() {
+        let basis = vec![257i128, 263, 269, 271];
+        let a = 12345i128;
+        assert_eq!(gcd(a, basis.iter().product::<i128>()), 1);
+        let ar: Vec<i128> = basis.iter().map(|&p| a % p).collect();
+        // 1/a then 1/(1/a) == a
+        let inv = reciprocal_lanewise(&ar, &basis).unwrap();
+        let one: Vec<i128> = basis.iter().map(|&p| 1 % p).collect();
+        let back = div_lanewise(&one, &inv, &basis).unwrap();
+        assert_eq!(back, ar);
     }
 }

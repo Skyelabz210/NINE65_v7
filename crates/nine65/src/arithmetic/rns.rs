@@ -1319,14 +1319,37 @@ impl DualRNSContext {
         let m_level = U256::product_u64s(level_main_primes);
 
         // Choose how many anchor primes to reconstruct k from.
-        // For >=5 main primes, use 5 anchors; for >=4 use 4; else use 3.
-        let k_primes = if level_main_primes.len() >= 5 {
-            self.anchor.primes.len().min(5)
-        } else if level_main_primes.len() >= 4 {
-            self.anchor.primes.len().min(4)
-        } else {
-            self.anchor.primes.len().min(3)
-        };
+        //
+        // NOTE (post-ladder-removal): this used to be tiered off
+        // `level_main_primes.len()` (>=5 main primes -> 5 anchors, >=4 -> 4,
+        // else -> 3), on the assumption that a shrinking main-prime count
+        // meant shrinking remaining depth and hence a bounded k. That
+        // assumption tracked the retired auto-mod-switch, which shrank the
+        // main basis every multiply. With the ladder gone, `level_main_primes`
+        // is now CONSTANT across an entire multiplicative chain for a given
+        // config, so the tier selection never adapted to depth at all -- while
+        // the true k grows with every multiply, nothing capped it. That let
+        // k silently exceed the selected anchor subset's capacity and wrap
+        // (see docs/LADDER_REMOVAL.md §3.4/§6.1: depth-2 k reaches ~153 bits,
+        // exceeding the old 4-anchor ~125-bit selection for secure_128_deep's
+        // 4-main-prime level).
+        //
+        // Fix: always reconstruct from the FULL canonical anchor set. It is
+        // fixed-size and depth-independent (`for_fhe` asserts >= 5 anchor
+        // primes and that their first-3 product exceeds the single-multiply
+        // k bound), so using all of it is never wrong for a level that was
+        // previously using a subset -- CRT reconstruction from a superset of
+        // moduli that already contained enough capacity returns the same
+        // value. It raises the ceiling from A4 (~125 bits) to the full A5
+        // (~157 bits for the canonical 5 primes), which is not an unbounded
+        // fix (a sufficiently deep chain can still exceed A5 -- see
+        // `check_intermediate_proximity` / `max_intermediate_bits` for the
+        // capacity-introspection API a future hardening pass should wire in
+        // as a loud failure rather than a silent wrap), but it is correct
+        // for every depth this anchor set has capacity for, which is what a
+        // fixed-size, non-shrinking anchor basis can offer without
+        // reintroducing per-multiply basis changes.
+        let k_primes = self.anchor.primes.len();
         assert!(
             k_primes >= 3,
             "Need at least 3 anchor primes for k reconstruction"
@@ -2417,6 +2440,195 @@ mod tests {
         }
 
         println!("=== 4-Prime CRT Large k Test PASSED ===");
+    }
+
+    /// PROOF #1 (mechanism isolation, depth-2 investigation): the most minimal
+    /// possible reproduction, with no `DualRNSContext`, no ciphertext, no FHE
+    /// machinery of any kind -- a single call to the literal CRT reconstruction
+    /// primitive (`crt_reconstruct_u256`, rns.rs:841) that both
+    /// `extract_k_rns_level` (rns.rs:1346) and `to_u256_level` bottom out in.
+    ///
+    /// It uses the exact 5 canonical anchor primes `DualRNSContext::for_fhe`
+    /// selects for every NINE65 FHEConfig (secure_128, secure_128_deep,
+    /// secure_192 all share this fixed set -- see
+    /// `canonical_anchor_primes_for_n`, which ignores its `n` argument).
+    ///
+    /// Claim under test: reconstructing a value from CRT residues over a
+    /// SUBSET of anchor primes whose product is smaller than the true value
+    /// silently returns `true_value mod (product of that subset)` -- a
+    /// deterministic wraparound, not an error -- when the true value exceeds
+    /// that subset's capacity but still fits the full anchor set's capacity.
+    #[test]
+    fn test_crt_reconstruct_u256_wraps_past_prime_subset_capacity() {
+        let anchors = DualRNSContext::canonical_anchor_primes_for_n(8192);
+        assert_eq!(
+            anchors,
+            vec![2013265921, 2281701377, 2483027969, 2885681153, 3221225473],
+            "canonical anchor set must match what production actually uses"
+        );
+
+        // Capacity of the first 4 anchors -- what extract_k_rns_level selects
+        // whenever level_main_primes.len() == 4 (e.g. every multiply at
+        // secure_128_deep, since the basis no longer shrinks post-ladder-
+        // removal) -- versus the full 5-anchor capacity.
+        let a4 = U256::product_u64s(&anchors[..4]);
+        let a5 = U256::product_u64s(&anchors[..5]);
+        assert_eq!(a4.bitlen(), 125, "sanity: 4-anchor capacity (A4)");
+        assert_eq!(a5.bitlen(), 157, "sanity: 5-anchor capacity (A5)");
+
+        // A value in the exact band the isolation report measured for a
+        // depth-2 K-Elimination k (max ~152 bits): bigger than A4 (125 bits),
+        // still comfortably inside A5 (157 bits).
+        let k_true = U256 {
+            lo: 0x9E3779B97F4A7C15F39CC0605CEDC835u128,
+            hi: 1u128 << 24,
+        };
+        assert_eq!(k_true.bitlen(), 153, "sanity: chosen test value's bit length");
+        assert!(k_true.bitlen() > a4.bitlen(), "test value must exceed A4 capacity");
+        assert!(k_true.bitlen() < a5.bitlen(), "test value must still fit A5 capacity");
+
+        // Residues of k_true in each of the 5 anchor primes. This per-lane
+        // reduction is plain modular arithmetic and is not in question --
+        // the isolation independently verified this step is correct at both
+        // depths by reproducing the crate's own anchor residues from scratch.
+        let k_rns: Vec<u64> = anchors.iter().map(|&p| k_true.mod_u64(p)).collect();
+
+        // Reconstructing with the FULL 5-anchor basis recovers k_true exactly
+        // -- proves the CRT algorithm itself is correct given enough primes.
+        let reconstructed_5 = crt_reconstruct_u256(&k_rns, &anchors);
+        assert_eq!(
+            reconstructed_5, k_true,
+            "5-anchor CRT must round-trip a value within its own capacity"
+        );
+
+        // Reconstructing with only the first 4 anchors -- exactly the subset
+        // `extract_k_rns_level` passes to this same function whenever
+        // level_main_primes.len() == 4 -- silently wraps.
+        let reconstructed_4 = crt_reconstruct_u256(&k_rns[..4], &anchors[..4]);
+        assert_ne!(
+            reconstructed_4, k_true,
+            "4-anchor CRT reconstruction of a value needing 5 anchors' worth of \
+             capacity MUST diverge from the true value -- this is the capacity bug, \
+             proven independent of any BFV ciphertext or relinearization machinery"
+        );
+        assert_eq!(
+            reconstructed_4,
+            k_true.rem_u256(a4),
+            "the wrong 4-anchor result is exactly k_true mod A4: a deterministic \
+             silent wraparound, not garbage -- confirms it is a pure capacity \
+             defect, not an algorithmic error in the CRT step"
+        );
+    }
+
+    /// PROOF #2 (mechanism isolation, depth-2 investigation), UPDATED after
+    /// the fix: this originally reproduced the wraparound through the actual
+    /// production entry point, `DualRNSContext::extract_k_rns_level`, called
+    /// exactly as `k_elim_rescale_dual` (rns_fhe.rs) and `extract_digit_dual`
+    /// call it -- with secure_128_deep's real 4 main primes as
+    /// `level_main_primes`. That call used to select only 4 of the 5 anchor
+    /// primes (a tier keyed off `level_main_primes.len()`, which no longer
+    /// carries depth information once the ladder that used to shrink it was
+    /// retired) and silently wrap. `extract_k_rns_level` now always
+    /// reconstructs from the full canonical anchor set regardless of
+    /// `level_main_primes.len()`, so this same call recovers `k_true`
+    /// exactly. Kept, inverted, as a regression test for the fix: no
+    /// ciphertext, no encrypt/decrypt, no NTT convolution, just a direct
+    /// (v_main, v_anchor_rns, level_main_primes) triple constructed so that
+    /// `v_exact = v_main + k_true * M_level` holds by definition, with
+    /// k_true in the depth-2 magnitude band the isolation measured (~150
+    /// bits, which A4=125 bits could not hold but A5=157 bits does).
+    ///
+    /// This is precisely the case `test_4prime_crt_large_k` (above) and
+    /// `test_4prime_crt_near_u128_limit` (below) explicitly SKIP
+    /// ("SKIP (exceeds anchor capacity)") rather than assert on -- that
+    /// skip was exactly the coverage gap that let the original bug ship
+    /// silently.
+    #[test]
+    fn test_extract_k_rns_level_recovers_depth2_k_beyond_4anchor_capacity_secure_128_deep() {
+        let main_primes = vec![998244353u64, 985661441, 754974721, 469762049]; // secure_128_deep, verbatim
+        let ctx = DualRNSContext::for_fhe(&main_primes, 8192);
+        assert_eq!(ctx.anchor.primes.len(), 5);
+
+        let m_level = U256::product_u64s(&main_primes);
+        assert_eq!(m_level.bitlen(), 119); // matches "4 NTT primes (~120 bits)" doc comment
+
+        let a4: U256 = U256::product_u64s(&ctx.anchor.primes[..4]);
+        assert_eq!(a4.bitlen(), 125);
+        let a5: U256 = U256::product_u64s(&ctx.anchor.primes);
+        assert_eq!(a5.bitlen(), 157);
+
+        // Same k_true as PROOF #1: exceeds A4 (125 bits), fits comfortably
+        // under A5 (157 bits), and sits in the ~150-bit band the isolation
+        // measured for a real depth-2 tensor-product k (d0's coefficient 0:
+        // "+152 bits magnitude").
+        let k_true = U256 {
+            lo: 0x9E3779B97F4A7C15F39CC0605CEDC835u128,
+            hi: 1u128 << 24,
+        };
+        assert_eq!(k_true.bitlen(), 153);
+        assert!(k_true.bitlen() > a4.bitlen());
+
+        let v_main_val: u64 = 777;
+        let v_main = U256::from_u64(v_main_val);
+
+        // v_anchor_rns[i] = (v_main + k_true * M_level) mod anchor[i], computed
+        // WITHOUT ever materializing the ~270-bit v_exact as a single integer
+        // (which itself overflows U256's 256 bits at this depth -- consistent
+        // with the isolation's own "true_magnitude_bits_depth2: 271" figure).
+        // Each term is reduced mod anchor[i] before combining, which is
+        // arithmetically identical to reducing the full sum mod anchor[i].
+        let v_anchor_rns: Vec<u64> = ctx
+            .anchor
+            .primes
+            .iter()
+            .map(|&a_i| {
+                let k_mod_ai = k_true.mod_u64(a_i) as u128;
+                let m_mod_ai = m_level.mod_u64(a_i) as u128;
+                let term = (k_mod_ai * m_mod_ai) % a_i as u128;
+                ((v_main_val as u128 + term) % a_i as u128) as u64
+            })
+            .collect();
+
+        // What k_elim_rescale_dual / extract_digit_dual actually call for
+        // secure_128_deep (4 main primes, ct_level == 4 always post-ladder-
+        // removal): extract_k_rns_level now always reconstructs from the
+        // full 5-anchor canonical set, independent of level_main_primes.len().
+        let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes);
+
+        assert_eq!(
+            k_reconstructed, k_true,
+            "extract_k_rns_level must recover k EXACTLY for a depth-2-sized \
+             true k against secure_128_deep's real 4-main-prime level, now that \
+             it always reconstructs from the full 5-anchor set (A5=157 bits) \
+             instead of a level_main_primes.len()-gated subset (A4=125 bits, \
+             which this k_true deliberately exceeds) -- this is the actual \
+             production call path, with no BFV/ciphertext involved at all"
+        );
+        assert_ne!(
+            k_reconstructed,
+            k_true.rem_u256(a4),
+            "must NOT collapse to the old 4-anchor wraparound value -- that \
+             was the bug this test used to reproduce"
+        );
+
+        // Sanity check: an independent 5-anchor reconstruction built from the
+        // same per-lane residue formula (rather than calling the production
+        // function) agrees with what extract_k_rns_level now returns --
+        // confirming the fix is exactly "use the full anchor set", not some
+        // other divergent path.
+        let k_rns_full: Vec<u64> = ctx
+            .anchor
+            .primes
+            .iter()
+            .map(|&a_i| k_true.mod_u64(a_i))
+            .collect();
+        let k_via_5_anchors = crt_reconstruct_u256(&k_rns_full, &ctx.anchor.primes);
+        assert_eq!(
+            k_via_5_anchors, k_true,
+            "5-anchor reconstruction of the SAME true k is exact -- the CRT \
+             algorithm itself is correct; the fix was purely the anchor-count \
+             SELECTION in extract_k_rns_level"
+        );
     }
 
     /// Test signed-k boundary behavior at A/2

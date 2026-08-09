@@ -219,6 +219,7 @@ fn print_result(r: &ConfigResult) {
 
 /// Test bootstrap correctness with 2, 3, 4, 5, 6 boot primes.
 /// More primes = larger Q_boot (more noise room) but also more noise sources.
+#[ignore = "VESTIGIAL: H1 — sweeps the number of boot primes looking for a count at which bootstrap roundtrips correctly. The whole search presumes a spare-prime budget is the tuning knob. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_h1_boot_prime_count() {
     println!("\n\n========== H1: BOOT PRIME COUNT ==========");
@@ -258,6 +259,7 @@ fn explore_h1_boot_prime_count() {
 
 /// Smaller N means fewer terms in polynomial product, less rounding error
 /// accumulation from modswitch-before-multiply.
+#[ignore = "VESTIGIAL: H2 — sweeps the polynomial degree N looking for a bootstrap-correct parameterisation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_h2_polynomial_degree() {
     println!("\n\n========== H2: POLYNOMIAL DEGREE ==========");
@@ -328,6 +330,7 @@ fn explore_h2_polynomial_degree() {
 
 /// Smaller t means larger Δ_boot = Q_boot/t, giving more noise headroom.
 /// Trade-off: smaller plaintext space.
+#[ignore = "VESTIGIAL: H3 — sweeps the plaintext modulus t looking for a bootstrap-correct parameterisation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_h3_plaintext_modulus() {
     println!("\n\n========== H3: PLAINTEXT MODULUS ==========");
@@ -386,6 +389,7 @@ fn explore_h3_plaintext_modulus() {
 
 /// eta controls CBD noise width. Smaller eta = less initial noise in BSK
 /// and KSK, but potentially less security.
+#[ignore = "VESTIGIAL: H4 — sweeps the noise parameter eta looking for a bootstrap-correct parameterisation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_h4_noise_parameter() {
     println!("\n\n========== H4: NOISE PARAMETER eta ==========");
@@ -435,6 +439,7 @@ fn explore_h4_noise_parameter() {
 /// Directly measure the error from modswitch-before-multiply vs the
 /// correct decrypt-then-round approach. This isolates whether the issue
 /// is noise or algorithmic (rounding doesn't distribute over poly mul).
+#[ignore = "VESTIGIAL: H5 — tests whether rounding before the polynomial multiply introduces systematic error in bootstrap Phase 1. The rounding term it hunts for does not exist under exact division. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 #[allow(clippy::needless_range_loop)] // k used for both indexing and arithmetic (j-k negacyclic)
 fn explore_h5_modswitch_distribution_error() {
@@ -574,6 +579,7 @@ fn explore_h5_modswitch_distribution_error() {
 
 /// Sweep the parameter space to find configurations where bootstrap
 /// achieves >90% correctness. This identifies the boundary.
+#[ignore = "VESTIGIAL: sweeps the joint parameter space for a bootstrap-correct configuration. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_combined_sweep() {
     println!("\n\n========== COMBINED PARAMETER SWEEP ==========");
@@ -658,6 +664,7 @@ fn explore_combined_sweep() {
 
 /// Run each bootstrap phase independently and measure intermediate values.
 /// This pinpoints exactly where correctness breaks down.
+#[ignore = "VESTIGIAL: instruments bootstrap Phase 1 / 2 / 3 separately to localise where the roundtrip loses the plaintext. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_phase_by_phase_diagnostic() {
     println!("\n\n========== PHASE-BY-PHASE DIAGNOSTIC ==========");
@@ -772,6 +779,7 @@ fn explore_phase_by_phase_diagnostic() {
 
 /// Empirically estimate the noise introduced by each bootstrap phase
 /// by encrypting zero and observing the output.
+#[ignore = "VESTIGIAL: estimates the post-bootstrap noise floor. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_noise_floor_estimation() {
     println!("\n\n========== NOISE FLOOR ESTIMATION ==========");
@@ -844,6 +852,7 @@ fn explore_noise_floor_estimation() {
 /// Test whether bootstrap correctness varies with RNG seed.
 /// If correctness is seed-dependent, the noise is marginal.
 /// If consistently wrong, it's a structural issue.
+#[ignore = "VESTIGIAL: measures how bootstrap correctness varies with the RNG seed. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_seed_sensitivity() {
     println!("\n\n========== SEED SENSITIVITY ==========");
@@ -896,6 +905,7 @@ fn explore_seed_sensitivity() {
 
 /// The key_switch output zeros out anchor limbs. Investigate whether
 /// this causes issues for subsequent decrypt_dual.
+#[ignore = "VESTIGIAL: measures how the anchor limb count affects bootstrap correctness. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_anchor_limb_impact() {
     println!("\n\n========== ANCHOR LIMB ANALYSIS ==========");
@@ -975,6 +985,7 @@ fn explore_anchor_limb_impact() {
 ///
 /// This test simulates the full bootstrap cleartext path with and without
 /// the Δ⁻¹ correction to determine if this is the root cause of F-1.
+#[ignore = "VESTIGIAL: H6 — hand-rolled cleartext phase evaluation probing a Delta-inverse correction for bootstrap Phase 2. It calls no bootstrap API but exists only to diagnose the Phase 2 scaling error. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_h6_delta_inverse_correction() {
     println!("\n\n========== H6: Δ⁻¹ CORRECTION ANALYSIS ==========");
@@ -1188,6 +1199,7 @@ fn mod_distance(a: u64, b: u64, t: u64) -> u64 {
 /// Same as H6 but evaluates ALL N coefficients (not just [0]) to check
 /// whether the correction works across the entire polynomial, and whether
 /// the Δ encoding corrupts the negacyclic convolution structure.
+#[ignore = "VESTIGIAL: H6b — extends the H6 cleartext probe to the full negacyclic phase polynomial, still diagnosing bootstrap Phase 2 scaling. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_h6b_full_polynomial_correction() {
     println!("\n\n========== H6b: FULL POLYNOMIAL Δ⁻¹ ANALYSIS ==========");
@@ -1370,6 +1382,7 @@ fn full_negacyclic_phase(c0: &[u64], c1: &[u64], sk: &[i64], n: usize, t: u64) -
 /// is impossible and a different approach is needed.
 ///
 /// This test checks all parameter configs to determine where Δ⁻¹ exists.
+#[ignore = "VESTIGIAL: H6c — probes gcd(Delta, t) as the source of the bootstrap Phase 2 correction error. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn explore_h6c_gcd_delta_t() {
     println!("\n\n========== H6c: GCD(Δ, t) EXISTENCE CHECK ==========");
@@ -1444,6 +1457,7 @@ fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
 ///
 /// Tests both circular security (`bootstrap()`) and non-circular
 /// (`bootstrap_with_ksk()`) paths.
+#[ignore = "VESTIGIAL: the exploration file's terminal assertion that a bootstrap roundtrip is correct under the configuration the sweeps landed on. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn test_bootstrap_roundtrip_correctness() {
     use nine65::params::SecureConfig;

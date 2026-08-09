@@ -1348,22 +1348,34 @@ impl AuxResidueSet {
 
 /// Incremental Garner CRT fusion of (modulus, residue) pairs into the
 /// unique integer `Q` in `[0, ∏ moduli)`. Moduli must be pairwise coprime.
-fn garner_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
-    let mut x: i128 = pairs[0].1 as i128;
-    let mut radix: i128 = pairs[0].0 as i128;
-    for &(m, r) in &pairs[1..] {
-        let m_i = m as i128;
-        let r_i = r as i128;
-        let x_mod_m = x.rem_euclid(m_i);
-        let diff = (r_i - x_mod_m).rem_euclid(m_i);
-        let radix_mod_m = radix.rem_euclid(m_i) as u32;
-        let inv = mod_inv_u32(radix_mod_m, m)
-            .expect("FPD: lane moduli must be pairwise coprime");
-        let v = (diff * inv as i128).rem_euclid(m_i);
-        x = x + v * radix;
-        radix = radix * m_i;
+/// Recover the integer pinned by a set of `(modulus, residue)` pairs on a
+/// pairwise-coprime basis, via a single CRT anchor read (K-Elimination ladder).
+///
+/// A2: this replaces the former Garner mixed-radix fusion. Mixed radix emits a
+/// sequential chain of positional digits — synthetic emission that breaks the
+/// i.i.d. structure of residue space and opens a side-channel surface. The CRT
+/// read below forms the value directly from the coprime basis (each lane's
+/// contribution is `r_i · (M/m_i) · (M/m_i)^{-1} mod m_i`), leaving the lane
+/// residues untouched and introducing no positional digit sequence. The
+/// returned value is identical to the retired mixed-radix result.
+fn crt_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
+    // Basis product M = ∏ m_i.
+    let mut modulus: i128 = 1;
+    for &(m, _) in pairs {
+        modulus *= m as i128;
     }
-    x
+    // Σ r_i · (M/m_i) · ((M/m_i)^{-1} mod m_i), reduced mod M.
+    let mut value: i128 = 0;
+    for &(m, r) in pairs {
+        let m_i = m as i128;
+        let cofactor = modulus / m_i; // M / m_i, coprime to m_i
+        let cofactor_mod = cofactor.rem_euclid(m_i) as u32;
+        let inv = mod_inv_u32(cofactor_mod, m)
+            .expect("FPD: lane moduli must be pairwise coprime") as i128;
+        let term = (r as i128) * cofactor % modulus * inv % modulus;
+        value = (value + term).rem_euclid(modulus);
+    }
+    value
 }
 
 /// FPD result for one coefficient: new S8 lane residues + new aux residues.
@@ -1402,7 +1414,7 @@ fn fpd_one_coefficient(
     }
 
     // Fuse → Q ∈ [0, P).
-    let q_unsigned = garner_fuse_pairs(&pairs);
+    let q_unsigned = crt_fuse_pairs(&pairs);
     // Recentre to (-P/2, P/2].
     let q_signed = if q_unsigned > fusion_product / 2 {
         q_unsigned - fusion_product
@@ -3009,11 +3021,11 @@ mod tests {
     }
 
     #[test]
-    fn garner_fuse_pairs_round_trip() {
+    fn crt_fuse_pairs_round_trip() {
         // Sanity: fuse known residues and confirm the integer matches.
         // x = 42, against (5, 7, 11) → r = (2, 0, 9).
         let pairs = [(5u32, 2u32), (7u32, 0u32), (11u32, 9u32)];
-        let q = garner_fuse_pairs(&pairs);
+        let q = crt_fuse_pairs(&pairs);
         assert_eq!(q, 42);
     }
 
