@@ -343,3 +343,98 @@ tested, shipping as a default dependency, and **not called by the FHE path**,
 which reimplements it with a permanent CLASS-F anchor that the project's own
 contract, its own FPD module, and its own Lean theorem each independently say it
 should not have.
+
+---
+
+## 8. Addendum, 2026-08-10 — CRAM build pass
+
+The audit above found the substrate's exact-division machinery uncalled. This
+pass built the missing pieces against the author's formal specifications
+(CRAM v2.0, the K-Elimination paper, the Complete Formal Synthesis) rather than
+against inferred architecture.
+
+### 8.1 What landed
+
+| file | what | tests |
+|---|---|---|
+| `crates/exact_transcendentals/src/cram_carry.rs` | shell 36 / anchor 37, Holte carry chain in exact rationals | 8 |
+| `crates/exact_transcendentals/src/cram_anchor.rs` | adjacent anchor `A = P+1`, flat parallel lift | 14 |
+| `crates/exact_transcendentals/src/cram_machine.rs` | Adelic State Tuple `(r, a, K, Σ, T)` | 20 (was 11) |
+| `crates/exact_transcendentals/tests/cram_gates.rs` | quality gates C1–C6, C8, P1–P3, P3b, P5–P9 | 16 |
+
+`exact_transcendentals`: **478 passed / 0 failed** (457 lib + 5
+`a2_residue_native` + 16 `cram_gates`). `cram_gates` is a required CI step in
+`.github/workflows/ci.yml`.
+
+Two results worth recording because they were measured rather than assumed:
+
+- **`P·(P+1)` is always even** — one of two consecutive integers is — so no two
+  adjacent anchors in a family are ever pairwise coprime, and a disjoint
+  anchor family delivers fault containment but *not* a combinable
+  reconstruction. `AnchorFamily::reconstruct` returns `NoJointValue` for it
+  rather than a partial answer.
+- **The anchored read needs no CRT.** With `A = M+1` and `M ≡ −1 (mod A)`,
+  `a = (g − K) mod A` inverts to `g = (a + K) mod A`, exact because
+  `g < M < A`. `g = M` is unreachable, so it is a free corruption check. This
+  is what unblocks retiring Garner from `safe_basis_io`'s carry detection.
+
+Every new test was mutation-checked rather than trusted for being green:
+flipping `(r−a)` to `(r+a)` fails 8/14 anchor tests; making the lift a cascade
+fails exactly the shuffle-invariance gate; coupling lane `j` to `j−1` fails
+6/14 including fault containment; dropping the `K·K'·M` cross term from §2.1
+fails 3 machine tests and gate P3b.
+
+### 8.2 Open, and load-bearing: what `K` is
+
+The step-1 state treats a **heterogeneous schema as having no winding**
+(`Winding::Undefined`). The author's objection is that this makes `K` vacuous:
+a heterogeneous instruction is the *normal* CRAM operation, so the guard fires
+on essentially every real program, and a state component the spec makes
+canonical would be live only for `AAAAA` and `MMMMM`.
+
+The source supports the objection. `cram_ops.rs:333` — `CramOp::apply` computes
+`((a + b) % p)` and **discards the quotient**, which is precisely ΔK for that
+lane: 0 or 1 for `Add`/`Sub` (the unit carry of §3 above), up to `p−1` for
+`Mul`/`Sqr`. `Schema::apply` (`cram_ops.rs:263`) then returns `Vec<u64>` only.
+So under a heterogeneous schema the winding is not undefined — it is computed
+and thrown away, once per lane per instruction. Separately,
+`Cram::carry_signature` recomputes a *hypothetical* `Sqr` carry from the stored
+residue instead of reading what the last operator actually carried.
+
+Two things remain unresolved and only the author can settle them, because they
+determine the state shape:
+
+1. **Does `⊕ℤ` mean one winding component per lane, or the mixed-radix tower
+   digits of a single global `K`?** Per-lane is heterogeneous-safe and A2-clean
+   (no cross-lane flow). The global reading has code support:
+   `k_elim.rs:408 k_from_tower` returns a single `i128` and `tower_add`
+   propagates carry *between levels*, not between lanes.
+2. **Does a `Div`/`Inv` lane keep its winding when the divisibility oracle is
+   present?** The current blanket `ModularOnly` rule says never. That is right
+   for a bare Div root (chimera 1: `a·b⁻¹ mod p` is not `⌊a/b⌋`) but wrong for
+   FPD, which cancels `g` by `Div` on the lanes where its factors live with
+   `b | a` guaranteed — there the quotient is a genuine integer with a
+   derivable winding. As written, the rule would break chimera 3 before it is
+   built.
+
+The failure the guard was aimed at is real — returning `g + K·M` for a state
+whose lanes did not come from one integer operation is the depth-2
+silent-wrong-answer class — but it belongs on the **integer read**
+(`project_integer`), not on the winding's existence.
+
+### 8.3 Corrections to §5
+
+- The `nine65 --lib` baseline is **652 / 3 / 103**, not 648/3/103. The four
+  additional passing tests come from the `cram_ct_wrap.rs` FPD seam added
+  during the audit. The three failures are unchanged and named in §5.
+- `crates/fhe-service` does not compile (`handlers.rs:488`, `E0282`/`E0283`
+  type annotations needed). Confirmed pre-existing and unrelated: `fhe-service`
+  references none of the modules added or modified in this pass.
+- The A1 float counts in §5 overstate the exposure. Of the 81 `f32`/`f64`
+  occurrences under `exact_transcendentals/src`, **every one is inside a
+  `#[cfg(test)]` item** — verified per module against its test boundary, not by
+  reading its comments. Under `crates/nine65/src`, four production sites remain
+  (`compiler.rs` static noise model, `ops/sbni.rs` in the retired SBNI module,
+  `security/ct_verification.rs` in the off-limits constant-time layer,
+  `comprehensive_benchmarks.rs` wall-clock); the rest are comments *about* A1.
+  Indexed as entries `[1]`–`[4]` in `CRAM_OPPORTUNITY_REPORT.md`.

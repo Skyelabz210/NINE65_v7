@@ -199,6 +199,48 @@ let (num, den) = SQRT2_HI;    // 577/408 (5 decimal accuracy)
 - `π = (a_n + b_n)² / (4t_n)` (Gauss-Legendre)
 - `K(k) = π / (2 × M(1, √(1-k²)))` (elliptic integral)
 
+## CRAM opportunity action items
+
+Mirrored from `CRAM_OPPORTUNITY_REPORT.md` (pass 1). Entry numbers are the
+routing key back into that report; every Level-2 node is currently `pending`,
+so these are logged for action, not procedures to follow.
+
+**FORCED**
+
+- `[5]` `src/transduction.rs:213,224` — `garner_reconstruct` still on the
+  transduction compute path. The sibling call at `:156` was already retired;
+  finish it. → `reconstruction-retirement`
+- `[6]` `src/transduction.rs:330-331` — round-trip identity checked by
+  reconstructing both sides instead of comparing transduced Σ.
+  → `transduction-state`
+- `[7]` `src/composite_division.rs:144,167-176` — `mixed_radix_garner()` plus
+  mixed-radix compare/subtract to recover sign and magnitude on a division
+  path. → `reconstruction-retirement`
+- `[8]` `src/cram_pde.rs:127` — `ExactState::to_u128` reconstructs via Garner,
+  and `safe_basis_io::{add,mul}` call it for the corridor carry. Unblocked:
+  `cram_machine::canonical_from` gives `g = (a + K) mod A` with no
+  reconstruction. `tests/cram_gates.rs::p2_*` asserts this debt.
+  → `reconstruction-retirement`
+- `[9]` `src/k_elim.rs:150-163` — `garner_reconstruct` threads one accumulator
+  across lanes; a fault at lane `j` damages every downstream partial (measured
+  in `cram_anchor::tests`). Every caller inherits the coupling.
+  → `iid-heterogeneous-transduction`
+
+**CANDIDATE**
+
+- `[11]` `src/crt.rs`, `src/crt_torus.rs` — classical CRT utilities coexisting
+  with the residue-native modules. → `crt-to-cram-substrate`
+- `[12]` `src/cram_pde.rs` — `ExactState` already has the right shape (lanes +
+  winding) but is confined to the PDE module. → `crt-to-cram-substrate`
+- `[21]` `src/cram_ct.rs:1198,1461,1596,1689,1881` — five coexisting rescale
+  variants behind a runtime router; consolidate onto the gated Fifth Operator.
+  → `fifth-operator-rescale`
+
+**A1 status:** this crate is clean. Every `f32`/`f64` occurrence sits inside a
+`#[cfg(test)]` item, verified against each module's test boundary, and
+`tests/cram_gates.rs::p1_*` scans the production slice of the `cram_*` modules
+to keep it that way.
+
 ## License
 
 MIT OR Apache-2.0
