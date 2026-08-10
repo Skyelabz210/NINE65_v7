@@ -72,6 +72,119 @@ fn lane0_as_i128(ct: &DualRNSCiphertext) -> Vec<i128> {
     ct.c0.main[0].iter().map(|&x| x as i128).collect()
 }
 
+// ─── Division seam (FPD) ──────────────────────────────────────────────────
+//
+// The add/mul path above fingerprints lane 0, which is cheap and needs no
+// reconstruction. That is NOT sufficient for division: Fused Piggyback
+// Division recovers the winding through an auxiliary lane coprime to the
+// divisor, and it needs `x mod p_aux` for the TRUE coefficient x. Lane-0
+// residues cannot supply it — `(x mod p0) mod 23 != x mod 23` in general.
+//
+// So the division seam projects the real centered coefficient. That is a
+// deliberate boundary crossing, confined to the ingestion point of a
+// division, and it is bounded: `AuxResidueSet::from_coeffs` takes `i128`,
+// so a config whose centered range exceeds i128 CANNOT be lifted. We refuse
+// rather than truncate — same fail-closed posture as FPD's own
+// `BoundInsufficient`.
+
+/// Auxiliary primes for FPD, coprime to the S8 safe basis
+/// {2,3,5,7,11,13,17,19} by construction.
+pub const FPD_AUX_PRIMES: &[u32] = &[23, 29, 31, 37, 41, 43, 47];
+
+/// Why a ciphertext could not be lifted into the CRAM division lane.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CramLiftError {
+    /// The context's coefficient modulus is too wide for the `i128` witness
+    /// API. `secure_192` (Q=146 bits) and `secure_256` (Q=175 bits) hit this;
+    /// `secure_128` (90), `secure_128_deep` (119) and `hardware_opt` (90)
+    /// do not.
+    ModulusTooWideForWitness { q_bits: u32 },
+    /// An aux prime shares a factor with the divisor, so it cannot carry the
+    /// piggyback lane for this division.
+    AuxSharesFactorWithDivisor { aux: u32, divisor: i128 },
+}
+
+/// True iff centered coefficients for this context fit the `i128` witness API.
+///
+/// `q_product == 0` is this codebase's sentinel for "Q did not fit u128"
+/// (see `RNSFHEContext::try_new`), so it is disqualifying on its own.
+pub fn cram_witness_capacity_ok(ctx: &RNSFHEContext) -> bool {
+    ctx.q_product != 0 && ctx.q_product < (1u128 << 127)
+}
+
+/// Project `c0` to centered integer coefficients in `[-Q/2, Q/2)`.
+///
+/// This reconstructs against the main basis — the same operation
+/// `canonicalize_dual_anchor` already performs in the multiply path — and is
+/// the reason this function is confined to the division boundary.
+fn c0_centered_i128(
+    ctx: &RNSFHEContext,
+    ct: &DualRNSCiphertext,
+) -> Result<Vec<i128>, CramLiftError> {
+    if !cram_witness_capacity_ok(ctx) {
+        return Err(CramLiftError::ModulusTooWideForWitness {
+            q_bits: if ctx.q_product == 0 {
+                128
+            } else {
+                128 - ctx.q_product.leading_zeros()
+            },
+        });
+    }
+    let level = ct.c0.main.len();
+    let q = ctx.q_product;
+    let half = q >> 1;
+    let mut residues = vec![0u64; level];
+    let mut out = Vec::with_capacity(ct.c0.n);
+    for i in 0..ct.c0.n {
+        for (j, limb) in ct.c0.main.iter().enumerate() {
+            residues[j] = limb[i];
+        }
+        // Q < 2^127 was checked above, so the reconstruction fits the low
+        // 128 bits and the centered value fits i128.
+        let v = ctx.rns.to_u256_level(&residues, level).lo;
+        out.push(if v > half {
+            (v as i128) - (q as i128)
+        } else {
+            v as i128
+        });
+    }
+    Ok(out)
+}
+
+/// Lift a `DualRNSCiphertext` into CRAM residue space **with the FPD
+/// auxiliary lane populated**, so the division path is reachable.
+///
+/// Unlike [`wrap_dual_rns`], this carries `c0_aux`, which
+/// `CramCiphertext::cram_rescale_by_scalar_fpd` requires; without it that
+/// call returns `DivisionLaneNotImplemented` regardless of the divisor.
+pub fn wrap_dual_rns_fpd(
+    ctx: &RNSFHEContext,
+    ct: DualRNSCiphertext,
+    aux_primes: &[u32],
+) -> Result<CramCiphertext<DualRNSCiphertext>, CramLiftError> {
+    let coeffs = c0_centered_i128(ctx, &ct)?;
+    Ok(CramCiphertext::wrap_with_fpd_aux(
+        ct, &coeffs, None, aux_primes,
+    ))
+}
+
+/// Select aux primes from [`FPD_AUX_PRIMES`] that are coprime to `divisor`.
+pub fn aux_primes_for(divisor: i128) -> Result<Vec<u32>, CramLiftError> {
+    let d = divisor.unsigned_abs();
+    let picked: Vec<u32> = FPD_AUX_PRIMES
+        .iter()
+        .copied()
+        .filter(|&p| d % (p as u128) != 0)
+        .collect();
+    if picked.is_empty() {
+        return Err(CramLiftError::AuxSharesFactorWithDivisor {
+            aux: FPD_AUX_PRIMES[0],
+            divisor,
+        });
+    }
+    Ok(picked)
+}
+
 fn rewrap_after_op(
     new_base: DualRNSCiphertext,
     op_counter: i128,
@@ -187,5 +300,123 @@ mod tests {
         let sum = cram_add_dual(&ctx, a1, b1).unwrap();
         let post_sig = sum.witness.c0_signature.signatures;
         assert_ne!(pre_sig, post_sig, "signature must change after add");
+    }
+
+    // ─── Division seam ────────────────────────────────────────────────────
+
+    /// The centered projection must be EXACT, not approximate: reducing each
+    /// centered coefficient back against every main prime must reproduce the
+    /// original lane residue, for every coefficient. Full sweep, no sampling.
+    #[test]
+    fn centered_projection_round_trips_exactly_on_every_coefficient() {
+        let (ctx, keys) = fresh_ctx_and_full_keys();
+        let mut rng = ShadowHarvester::with_seed(7);
+        let ct = ctx.encrypt_dual(12345, &keys.public_key, &mut rng);
+
+        let centered = c0_centered_i128(&ctx, &ct).expect("secure_128 must lift");
+        assert_eq!(
+            centered.len(),
+            ct.c0.n,
+            "projection must cover every coefficient, not a prefix"
+        );
+
+        let q = ctx.q_product as i128;
+        let mut checked = 0usize;
+        for (i, &c) in centered.iter().enumerate() {
+            assert!(
+                c >= -(q / 2) - 1 && c < q,
+                "coefficient {i} = {c} outside the centered range"
+            );
+            for (j, &p) in ctx.config.primes[..ct.c0.main.len()].iter().enumerate() {
+                let back = c.rem_euclid(p as i128) as u64;
+                assert_eq!(
+                    back, ct.c0.main[j][i],
+                    "lane {j} coeff {i}: centered value does not reduce back to the \
+                     original residue — the projection is lossy"
+                );
+            }
+            checked += 1;
+        }
+        assert_eq!(
+            checked, ct.c0.n,
+            "must sweep every coefficient, not a sample"
+        );
+    }
+
+    /// The seam that matters: `wrap_dual_rns_fpd` populates `c0_aux`, and
+    /// `wrap_dual_rns` does not. Without `c0_aux` the FPD division lane is
+    /// unreachable by construction, so this is the difference between the
+    /// division path existing and not existing.
+    #[test]
+    fn fpd_wrap_populates_the_division_lane_and_default_wrap_does_not() {
+        let (ctx, keys) = fresh_ctx_and_full_keys();
+        let mut rng = ShadowHarvester::with_seed(9);
+        let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+
+        let plain = wrap_dual_rns(ct.clone());
+        assert!(
+            plain.witness.c0_aux.is_none(),
+            "control: the default wrap must NOT carry an aux lane — if this \
+             ever becomes Some, this test no longer distinguishes the two paths"
+        );
+
+        let aux = aux_primes_for(4).expect("4 is coprime to the aux catalogue");
+        let lifted = wrap_dual_rns_fpd(&ctx, ct, &aux).expect("secure_128 must lift");
+        let set = lifted
+            .witness
+            .c0_aux
+            .as_ref()
+            .expect("FPD wrap must carry the aux lane");
+        assert_eq!(
+            set.residues.len(),
+            lifted.witness.poly_len(),
+            "one aux residue vector per tracked coefficient"
+        );
+        assert!(lifted.verify().is_ok(), "lifted ciphertext must verify");
+    }
+
+    /// Negative control: a config whose centered range exceeds `i128` must be
+    /// REFUSED, not silently truncated. `secure_192` has Q = 146 bits.
+    #[test]
+    fn wide_config_is_refused_rather_than_truncated() {
+        let cfg = SecureConfig::secure_192();
+        let ctx = RNSFHEContext::new(&cfg.config);
+        assert!(
+            !cram_witness_capacity_ok(&ctx),
+            "secure_192 (Q=146 bits) must not be reported as witness-capable"
+        );
+
+        let mut rng = ShadowHarvester::with_seed(3);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let ct = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
+
+        match wrap_dual_rns_fpd(&ctx, ct, FPD_AUX_PRIMES) {
+            Err(CramLiftError::ModulusTooWideForWitness { q_bits }) => {
+                assert!(
+                    q_bits > 127,
+                    "refusal must report a genuinely over-wide modulus, got {q_bits} bits"
+                );
+            }
+            other => panic!("secure_192 must be refused, got {other:?}"),
+        }
+    }
+
+    /// Aux selection must drop any prime sharing a factor with the divisor —
+    /// that is the precondition FPD relies on.
+    #[test]
+    fn aux_selection_excludes_primes_sharing_a_factor_with_the_divisor() {
+        let picked = aux_primes_for(23 * 29).unwrap();
+        assert!(
+            !picked.contains(&23) && !picked.contains(&29),
+            "23 and 29 divide the divisor and must be excluded, got {picked:?}"
+        );
+        assert!(!picked.is_empty(), "remaining catalogue must still be usable");
+        for p in &picked {
+            assert_ne!(
+                (23i128 * 29) % (*p as i128),
+                0,
+                "every retained aux prime must be coprime to the divisor"
+            );
+        }
     }
 }
