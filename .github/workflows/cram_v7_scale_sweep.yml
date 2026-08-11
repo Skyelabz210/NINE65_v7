@@ -1,0 +1,148 @@
+name: NINE65 v7 comparative scale sweep
+
+on:
+  pull_request:
+    paths:
+      - 'crates/nine65/src/bin/cram_comparative_probe.rs'
+      - 'crates/nine65/Cargo.toml'
+      - 'scripts/run_nine65_v7_scale_sweep.py'
+      - 'scripts/analyze_cram_fhe_hypotheses.py'
+      - '.github/workflows/cram_v7_scale_sweep.yml'
+  push:
+    branches:
+      - 'cram/exploratory-comparative-v2'
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Scale profile
+        type: choice
+        options:
+          - quick
+          - standard
+          - endurance
+        default: standard
+      configs:
+        description: Optional comma-separated configuration override
+        type: string
+        default: ''
+      seeds:
+        description: Optional comma-separated seed override
+        type: string
+        default: ''
+      iterations:
+        description: Optional fast-operation iteration override, zero uses profile
+        type: string
+        default: '0'
+      mul_iterations:
+        description: Optional multiplication iteration override, zero uses profile
+        type: string
+        default: '0'
+      ct_mul_depth:
+        description: Optional ciphertext depth override, zero uses profile
+        type: string
+        default: '0'
+      require_depth_complete:
+        description: Fail the dispatched matrix on any depth stop
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  quick-correctness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Parse harness sources
+        run: |
+          python3 -m py_compile \
+            scripts/run_nine65_v7_scale_sweep.py \
+            scripts/analyze_cram_fhe_hypotheses.py
+          rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
+      - name: Reject floating point
+        run: |
+          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
+            crates/nine65/src/bin/cram_comparative_probe.rs \
+            scripts/run_nine65_v7_scale_sweep.py \
+            scripts/analyze_cram_fhe_hypotheses.py; then
+            echo 'floating-point token found in scale path' >&2
+            exit 1
+          fi
+      - name: Build comparative probe
+        run: |
+          cargo build --release -p nine65 \
+            --bin cram_comparative_probe \
+            --features serde,allow_insecure
+      - name: Run quick scale correctness matrix
+        id: sweep
+        continue-on-error: true
+        run: |
+          python3 scripts/run_nine65_v7_scale_sweep.py \
+            --profile quick \
+            --skip-build \
+            --require-depth-complete \
+            --output-dir artifacts/v7_scale_sweep/quick
+          python3 scripts/analyze_cram_fhe_hypotheses.py \
+            artifacts/v7_scale_sweep/quick/cases \
+            --output artifacts/v7_scale_sweep/quick/hypothesis_analysis.json \
+            > artifacts/v7_scale_sweep/quick/hypothesis_analysis.stdout.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nine65-v7-scale-quick
+          path: artifacts/v7_scale_sweep/quick
+      - name: Enforce quick matrix after evidence capture
+        if: always()
+        run: test '${{ steps.sweep.outcome }}' = 'success'
+
+  dispatched-scale:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build comparative probe
+        run: |
+          cargo build --release -p nine65 \
+            --bin cram_comparative_probe \
+            --features serde,allow_insecure
+      - name: Assemble exact sweep command
+        id: arguments
+        shell: bash
+        run: |
+          args=(--profile '${{ inputs.profile }}' --skip-build \
+            --output-dir artifacts/v7_scale_sweep/dispatched \
+            --iterations '${{ inputs.iterations }}' \
+            --mul-iterations '${{ inputs.mul_iterations }}' \
+            --ct-mul-depth '${{ inputs.ct_mul_depth }}')
+          if test -n '${{ inputs.configs }}'; then
+            args+=(--configs '${{ inputs.configs }}')
+          fi
+          if test -n '${{ inputs.seeds }}'; then
+            args+=(--seeds '${{ inputs.seeds }}')
+          fi
+          if test '${{ inputs.require_depth_complete }}' = 'true'; then
+            args+=(--require-depth-complete)
+          fi
+          printf '%q ' "${args[@]}" > sweep_args.txt
+      - name: Run scale sweep
+        id: sweep
+        continue-on-error: true
+        run: |
+          eval "python3 scripts/run_nine65_v7_scale_sweep.py $(cat sweep_args.txt)"
+          python3 scripts/analyze_cram_fhe_hypotheses.py \
+            artifacts/v7_scale_sweep/dispatched/cases \
+            --output artifacts/v7_scale_sweep/dispatched/hypothesis_analysis.json \
+            > artifacts/v7_scale_sweep/dispatched/hypothesis_analysis.stdout.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nine65-v7-scale-${{ inputs.profile }}
+          path: artifacts/v7_scale_sweep/dispatched
+      - name: Enforce dispatched matrix after evidence capture
+        if: always()
+        run: test '${{ steps.sweep.outcome }}' = 'success'
