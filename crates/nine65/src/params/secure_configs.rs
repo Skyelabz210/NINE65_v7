@@ -132,6 +132,11 @@ impl SecureConfig {
             "SECURITY ERROR: config '{}' exceeds the HE Standard bound",
             name
         );
+        assert!(
+            is_insecure_tier || claimed_security < 128 || n >= 8192,
+            "SECURITY ERROR: config '{}' claims {}-bit security but dimension N={} is below the 8192 floor",
+            name, claimed_security, n
+        );
 
         let config = FHEConfig {
             n,

@@ -16,19 +16,177 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use core::cmp::Ordering;
 
+/// Minimal 512-bit unsigned integer for intermediate reconstruction.
+///
+/// Representation: 4 x u128 (little-endian).
+/// Supports up to 8-prime RNS bases (approx 480 bits).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct U512 {
+    pub d0: u128,
+    pub d1: u128,
+    pub d2: u128,
+    pub d3: u128,
+}
+
+impl U512 {
+    pub const fn zero() -> Self {
+        Self { d0: 0, d1: 0, d2: 0, d3: 0 }
+    }
+
+    pub const fn from_u64(x: u64) -> Self {
+        Self { d0: x as u128, d1: 0, d2: 0, d3: 0 }
+    }
+
+    pub const fn from_u128(x: u128) -> Self {
+        Self { d0: x, d1: 0, d2: 0, d3: 0 }
+    }
+
+    pub fn from_u256(x: U256) -> Self {
+        Self { d0: x.lo, d1: x.hi, d2: 0, d3: 0 }
+    }
+
+    pub fn to_u256_truncated(self) -> U256 {
+        U256 { lo: self.d0, hi: self.d1 }
+    }
+
+    pub fn add(self, other: Self) -> Self {
+        let (d0, c0) = self.d0.overflowing_add(other.d0);
+        let (d1, c1) = self.d1.overflowing_add(other.d1);
+        let (d1, c1_2) = d1.overflowing_add(if c0 { 1 } else { 0 });
+        let (d2, c2) = self.d2.overflowing_add(other.d2);
+        let (d2, c2_2) = d2.overflowing_add(if c1 || c1_2 { 1 } else { 0 });
+        let (d3, _) = self.d3.overflowing_add(other.d3);
+        let (d3, _) = d3.overflowing_add(if c2 || c2_2 { 1 } else { 0 });
+        Self { d0, d1, d2, d3 }
+    }
+
+    pub fn sub(self, other: Self) -> Self {
+        let (d0, b0) = self.d0.overflowing_sub(other.d0);
+        let (d1, b1) = self.d1.overflowing_sub(other.d1);
+        let (d1, b1_2) = d1.overflowing_sub(if b0 { 1 } else { 0 });
+        let (d2, b2) = self.d2.overflowing_sub(other.d2);
+        let (d2, b2_2) = d2.overflowing_sub(if b1 || b1_2 { 1 } else { 0 });
+        let (d3, _) = self.d3.overflowing_sub(other.d3);
+        let (d3, _) = d3.overflowing_sub(if b2 || b2_2 { 1 } else { 0 });
+        Self { d0, d1, d2, d3 }
+    }
+
+    pub fn mul_u128(self, x: u128) -> Self {
+        let (lo0, hi0) = U256::wide_mul_256(self.d0, x);
+        let (lo1, hi1) = U256::wide_mul_256(self.d1, x);
+        let (lo2, hi2) = U256::wide_mul_256(self.d2, x);
+        let (lo3, _) = U256::wide_mul_256(self.d3, x);
+
+        let mut res = Self { d0: lo0, d1: hi0, d2: 0, d3: 0 };
+        res = res.add(Self { d0: 0, d1: lo1, d2: hi1, d3: 0 });
+        res = res.add(Self { d0: 0, d1: 0, d2: lo2, d3: hi2 });
+        res = res.add(Self { d0: 0, d1: 0, d2: 0, d3: lo3 });
+        res
+    }
+
+    pub fn div_u64(self, d: u64) -> Self {
+        let d128 = d as u128;
+        let mut rem: u128 = 0;
+        
+        let mut limbs = [
+            (self.d3 >> 64) as u64, (self.d3 & 0xFFFFFFFFFFFFFFFF) as u64,
+            (self.d2 >> 64) as u64, (self.d2 & 0xFFFFFFFFFFFFFFFF) as u64,
+            (self.d1 >> 64) as u64, (self.d1 & 0xFFFFFFFFFFFFFFFF) as u64,
+            (self.d0 >> 64) as u64, (self.d0 & 0xFFFFFFFFFFFFFFFF) as u64,
+        ];
+        
+        let mut q_limbs = [0u64; 8];
+        for i in 0..8 {
+            let acc = (rem << 64) | (limbs[i] as u128);
+            q_limbs[i] = (acc / d128) as u64;
+            rem = acc % d128;
+        }
+        
+        Self {
+            d0: (q_limbs[6] as u128) << 64 | (q_limbs[7] as u128),
+            d1: (q_limbs[4] as u128) << 64 | (q_limbs[5] as u128),
+            d2: (q_limbs[2] as u128) << 64 | (q_limbs[3] as u128),
+            d3: (q_limbs[0] as u128) << 64 | (q_limbs[1] as u128),
+        }
+    }
+
+    pub fn product_u64s(primes: &[u64]) -> Self {
+        let mut res = Self::from_u64(1);
+        for &p in primes {
+            res = res.mul_u128(p as u128);
+        }
+        res
+    }
+
+    pub fn mod_u256(self, m: U256) -> U256 {
+        // Simple bit-by-bit mod for correctness (A2-compliant)
+        let mut rem = Self::zero();
+        let m_512 = Self::from_u256(m);
+        for i in (0..512).rev() {
+            rem = rem.shl1();
+            if self.get_bit(i) {
+                rem.d0 |= 1;
+            }
+            if rem.ge(m_512) {
+                rem = rem.sub(m_512);
+            }
+        }
+        U256 { lo: rem.d0, hi: rem.d1 }
+    }
+
+    pub fn mod_u64(self, m: u64) -> u64 {
+        let mut rem = 0u128;
+        let m128 = m as u128;
+        for i in (0..512).rev() {
+            rem = (rem << 1) | (if self.get_bit(i) { 1 } else { 0 });
+            if rem >= m128 {
+                rem -= m128;
+            }
+        }
+        rem as u64
+    }
+
+    fn get_bit(self, i: u32) -> bool {
+        if i < 128 {
+            (self.d0 >> i) & 1 == 1
+        } else if i < 256 {
+            (self.d1 >> (i - 128)) & 1 == 1
+        } else if i < 384 {
+            (self.d2 >> (i - 256)) & 1 == 1
+        } else {
+            (self.d3 >> (i - 384)) & 1 == 1
+        }
+    }
+
+    fn shl1(self) -> Self {
+        let d3 = (self.d3 << 1) | (self.d2 >> 127);
+        let d2 = (self.d2 << 1) | (self.d1 >> 127);
+        let d1 = (self.d1 << 1) | (self.d0 >> 127);
+        let d0 = self.d0 << 1;
+        Self { d0, d1, d2, d3 }
+    }
+
+    fn ge(self, other: Self) -> bool {
+        if self.d3 != other.d3 { return self.d3 > other.d3; }
+        if self.d2 != other.d2 { return self.d2 > other.d2; }
+        if self.d1 != other.d1 { return self.d1 > other.d1; }
+        self.d0 >= other.d0
+    }
+}
+
 /// Minimal 256-bit unsigned integer for intermediate reconstruction.
 ///
 /// Representation: value = lo + hi * 2^128.
 /// Only the operations needed by NINE65's K-Elimination / rescale path are implemented.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct U256 {
-    pub(crate) lo: u128,
-    pub(crate) hi: u128,
+pub struct U256 {
+    pub lo: u128,
+    pub hi: u128,
 }
 
 impl U256 {
     #[inline]
-    pub(crate) const fn zero() -> Self {
+    pub const fn zero() -> Self {
         Self { lo: 0, hi: 0 }
     }
     #[inline]
@@ -36,7 +194,7 @@ impl U256 {
         Self { lo: 1, hi: 0 }
     }
     #[inline]
-    pub(crate) const fn from_u64(x: u64) -> Self {
+    pub const fn from_u64(x: u64) -> Self {
         Self {
             lo: x as u128,
             hi: 0,
@@ -44,7 +202,7 @@ impl U256 {
     }
     #[inline]
     #[allow(dead_code)] // Available for bootstrap U256 paths
-    pub(crate) const fn from_u128(x: u128) -> Self {
+    pub const fn from_u128(x: u128) -> Self {
         Self { lo: x, hi: 0 }
     }
 
@@ -96,7 +254,7 @@ impl U256 {
     }
 
     #[inline]
-    pub(crate) fn add(self, other: Self) -> Self {
+    pub fn add(self, other: Self) -> Self {
         self.overflowing_add(other).0
     }
 
@@ -111,7 +269,7 @@ impl U256 {
     }
 
     #[inline]
-    pub(crate) fn sub(self, other: Self) -> Self {
+    pub fn sub(self, other: Self) -> Self {
         debug_assert!(self.ge(other), "U256 underflow");
         let (lo, b0) = self.lo.overflowing_sub(other.lo);
         let hi = self.hi - other.hi - if b0 { 1 } else { 0 };
@@ -233,7 +391,7 @@ impl U256 {
 
     /// value mod m where m fits in u64 (as used for primes).
     #[inline]
-    pub(crate) fn mod_u64(self, m: u64) -> u64 {
+    pub fn mod_u64(self, m: u64) -> u64 {
         let m128 = m as u128;
         if m128 == 0 {
             return 0;
@@ -535,29 +693,7 @@ impl RNSContext {
     pub(crate) fn to_u256_level(&self, rns: &[u64], level: usize) -> U256 {
         assert!(level <= self.primes.len(), "Level exceeds prime count");
         assert!(rns.len() >= level, "RNS length mismatch");
-
-        let primes = &self.primes[..level];
-
-        // Iterative CRT (Garner-style) in full precision (U256).
-        // x_0 = r0, m_0 = p0
-        let mut x = U256::from_u64(rns[0] % primes[0]);
-        let mut m_prod = U256::from_u64(primes[0]);
-
-        for i in 1..level {
-            let p = primes[i];
-            // Use CT mod for secret data x
-            let x_mod_p = x.mod_u64_ct(p);
-            // m_prod is public, can use variable time mod
-            let m_mod_p = m_prod.mod_u64(p);
-            let diff = (rns[i] + p - x_mod_p) % p;
-            let inv = mod_inverse(m_mod_p, p);
-            let t = ((diff as u128) * (inv as u128) % (p as u128)) as u64;
-
-            x = x.add(m_prod.mul_u64(t));
-            m_prod = m_prod.mul_u64(p);
-        }
-
-        x
+        crt_reconstruct_u256(&rns[..level], &self.primes[..level])
     }
 
     /// Compute modular inverse using extended Euclidean algorithm
@@ -842,22 +978,27 @@ pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     assert!(!primes.is_empty(), "need primes");
     assert!(residues.len() >= primes.len(), "residue length mismatch");
 
-    let mut x = U256::from_u64(residues[0] % primes[0]);
-    let mut m_prod = U256::from_u64(primes[0]);
+    // A2 "No-Garner" Invariant: Use Parallel Summation CRT
+    // x = (sum r_i * Mi * [Mi^-1 mod p_i]) mod M
+    let mut sum = U512::zero();
+    let m = U512::product_u64s(primes);
 
-    for i in 1..primes.len() {
-        let p = primes[i];
-        let x_mod_p = x.mod_u64(p);
-        let m_mod_p = m_prod.mod_u64(p);
-        let diff = (residues[i] + p - x_mod_p) % p;
-        let inv = mod_inverse(m_mod_p, p);
-        let t = ((diff as u128) * (inv as u128) % (p as u128)) as u64;
+    for i in 0..primes.len() {
+        let pi = primes[i];
+        let ri = residues[i] % pi;
+        if ri == 0 { continue; }
 
-        x = x.add(m_prod.mul_u64(t));
-        m_prod = m_prod.mul_u64(p);
+        let mi = m.div_u64(pi);
+        let mi_mod_pi = mi.mod_u64(pi);
+        let inv = mod_inverse(mi_mod_pi, pi);
+
+        // term = ri * inv * Mi
+        let weight = mi.mul_u128(inv as u128);
+        let term = weight.mul_u128(ri as u128);
+        sum = sum.add(term);
     }
 
-    x
+    sum.mod_u256(m.to_u256_truncated())
 }
 
 pub(crate) fn mod_inverse(a: u64, m: u64) -> u64 {
@@ -1027,6 +1168,8 @@ impl DualRNSContext {
             2483027969, // 37 × 2^26 + 1    (~32 bits)
             2885681153, // 43 × 2^26 + 1    (~32 bits)
             3221225473, // 3 × 2^30 + 1     (~32 bits)
+            3221422081, // 98310 × 2^15 + 1 (~32 bits)
+            3222306817, // 98337 × 2^15 + 1 (~32 bits)
         ]
     }
 
@@ -1365,8 +1508,24 @@ impl DualRNSContext {
             k_rns[i] = ((diff as u128) * (inv as u128) % (a_i as u128)) as u64;
         }
 
-        // Reconstruct k from the first k_primes anchors via iterative CRT to U256.
-        crt_reconstruct_u256(&k_rns[..k_primes], &self.anchor.primes[..k_primes])
+        // Reconstruct k from the first k_primes anchors via parallel summation CRT.
+        let k_u = crt_reconstruct_u256(&k_rns[..k_primes], &self.anchor.primes[..k_primes]);
+
+        // Capacity Loud-Fail: If k is at the boundary of A, we have a wrap-around risk.
+        // We check if k is close to the anchor product A.
+        let a_product = U256::product_u64s(&self.anchor.primes[..k_primes]);
+        // Capacity Loud-Fail: k should be far from A/2 to avoid wrap-around.
+        // The winding k can be signed; k_u in [0, A/2) are positive, [A/2, A) are negative.
+        // Capacity is exceeded if |k| approaches A/2.
+        let a_half = a_product.div_mod_u64(2).0;
+        let safety_margin = U256::from_u64(1_000_000);
+        if k_u.ge(a_half.sub(safety_margin)) && k_u.le(a_half.add(safety_margin)) {
+            panic!("CAPACITY ERROR: Winding number k reached the anchor boundary A/2. \
+                   This indicates a deep circuit overflow or anchor basis exhaustion. \
+                   Current k_u: {:?}, A/2: {:?}", k_u, a_half);
+        }
+
+        k_u
     }
 
     /// K-Elimination: Reconstruct full value from dual-RNS representation

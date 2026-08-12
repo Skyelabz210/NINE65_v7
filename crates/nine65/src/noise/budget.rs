@@ -134,8 +134,11 @@ fn exact_delta_bit_length(config: &FHEConfig) -> i64 {
 }
 
 fn initial_noise_bit_bound(config: &FHEConfig) -> i64 {
+    // Exact integer bound for CBD noise at N=n, width=eta
+    // Bound ≈ 6 * eta * sqrt(n)
     let eta_bits = scalar_bit_length(config.eta as u64).max(1);
     let root_n_bits = (config.n.trailing_zeros() / 2) as i64;
+    // 3 bits for factor 6-8 safety margin
     eta_bits + root_n_bits + 3
 }
 
@@ -221,8 +224,10 @@ impl NoiseBudget {
         100
     }
 
-    pub fn mul_plain_cost(config: &FHEConfig) -> i64 {
-        scalar_bit_length(config.t) * 1000
+    pub fn mul_plain_cost(scalar: u64, config: &FHEConfig) -> i64 {
+        let scalar_bits = scalar_bit_length(scalar).max(1);
+        let t_bits = scalar_bit_length(config.t);
+        (scalar_bits + t_bits) * 1000
     }
 
     pub fn mul_ct_cost(config: &FHEConfig) -> i64 {

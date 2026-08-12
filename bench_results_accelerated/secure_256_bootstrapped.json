@@ -1,0 +1,419 @@
+{
+  "keygen_us": 8550,
+  "metadata": {
+    "bootstrap_mode": "real",
+    "chain_semantics": "mixed ciphertext-plaintext operation count; not ciphertext-ciphertext multiplicative depth",
+    "config": "secure_256",
+    "eta": 5,
+    "n": 16384,
+    "nine65_version": "0.1.0",
+    "q_primary": 998244353,
+    "requested_operation_count": 40,
+    "rns_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      167772161,
+      595591169
+    ],
+    "security_claim_bits": 256,
+    "seed": 42,
+    "t": 65537,
+    "timestamp": "1786510235s_since_epoch"
+  },
+  "operation_chain": {
+    "achieved_chain_correct": true,
+    "completed_requested": true,
+    "decrypted_result": 9880,
+    "elapsed_us": 727060,
+    "entries": [
+      {
+        "elapsed_us": 29323,
+        "noise_budget_pct": 81,
+        "operand": 8,
+        "operation": "mul_plain",
+        "operation_index": 1,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 29150,
+        "noise_budget_pct": 69,
+        "operand": 3,
+        "operation": "mul_plain",
+        "operation_index": 2,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 993,
+        "noise_budget_pct": 69,
+        "operand": 2,
+        "operation": "add_plain",
+        "operation_index": 3,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 29697,
+        "noise_budget_pct": 58,
+        "operand": 5,
+        "operation": "mul_plain",
+        "operation_index": 4,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 896,
+        "noise_budget_pct": 58,
+        "operand": 13,
+        "operation": "add_plain",
+        "operation_index": 5,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 883,
+        "noise_budget_pct": 58,
+        "operand": 7,
+        "operation": "sub_plain",
+        "operation_index": 6,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 28853,
+        "noise_budget_pct": 46,
+        "operand": 2,
+        "operation": "mul_plain",
+        "operation_index": 7,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 824,
+        "noise_budget_pct": 46,
+        "operand": 11,
+        "operation": "add_plain",
+        "operation_index": 8,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 28848,
+        "noise_budget_pct": 34,
+        "operand": 4,
+        "operation": "mul_plain",
+        "operation_index": 9,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 838,
+        "noise_budget_pct": 34,
+        "operand": 9,
+        "operation": "add_plain",
+        "operation_index": 10,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 802,
+        "noise_budget_pct": 34,
+        "operand": 3,
+        "operation": "sub_plain",
+        "operation_index": 11,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 28831,
+        "noise_budget_pct": 22,
+        "operand": 7,
+        "operation": "mul_plain",
+        "operation_index": 12,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 908,
+        "noise_budget_pct": 90,
+        "operand": 17,
+        "operation": "add_plain",
+        "operation_index": 13,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 29137,
+        "noise_budget_pct": 78,
+        "operand": 3,
+        "operation": "mul_plain",
+        "operation_index": 14,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 920,
+        "noise_budget_pct": 78,
+        "operand": 8,
+        "operation": "sub_plain",
+        "operation_index": 15,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 817,
+        "noise_budget_pct": 78,
+        "operand": 6,
+        "operation": "add_plain",
+        "operation_index": 16,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 29020,
+        "noise_budget_pct": 66,
+        "operand": 9,
+        "operation": "mul_plain",
+        "operation_index": 17,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 818,
+        "noise_budget_pct": 66,
+        "operand": 1,
+        "operation": "sub_plain",
+        "operation_index": 18,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 769,
+        "noise_budget_pct": 66,
+        "operand": 23,
+        "operation": "add_plain",
+        "operation_index": 19,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 29014,
+        "noise_budget_pct": 55,
+        "operand": 2,
+        "operation": "mul_plain",
+        "operation_index": 20,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 761,
+        "noise_budget_pct": 55,
+        "operand": 5,
+        "operation": "add_plain",
+        "operation_index": 21,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 29125,
+        "noise_budget_pct": 43,
+        "operand": 3,
+        "operation": "mul_plain",
+        "operation_index": 22,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 827,
+        "noise_budget_pct": 43,
+        "operand": 2,
+        "operation": "add_plain",
+        "operation_index": 23,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 29108,
+        "noise_budget_pct": 31,
+        "operand": 5,
+        "operation": "mul_plain",
+        "operation_index": 24,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 834,
+        "noise_budget_pct": 31,
+        "operand": 13,
+        "operation": "add_plain",
+        "operation_index": 25,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 793,
+        "noise_budget_pct": 31,
+        "operand": 7,
+        "operation": "sub_plain",
+        "operation_index": 26,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 29193,
+        "noise_budget_pct": 19,
+        "operand": 2,
+        "operation": "mul_plain",
+        "operation_index": 27,
+        "real_refreshes_so_far": 1
+      },
+      {
+        "elapsed_us": 969,
+        "noise_budget_pct": 90,
+        "operand": 11,
+        "operation": "add_plain",
+        "operation_index": 28,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 29103,
+        "noise_budget_pct": 78,
+        "operand": 4,
+        "operation": "mul_plain",
+        "operation_index": 29,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 927,
+        "noise_budget_pct": 78,
+        "operand": 9,
+        "operation": "add_plain",
+        "operation_index": 30,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 816,
+        "noise_budget_pct": 78,
+        "operand": 3,
+        "operation": "sub_plain",
+        "operation_index": 31,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 29201,
+        "noise_budget_pct": 66,
+        "operand": 7,
+        "operation": "mul_plain",
+        "operation_index": 32,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 879,
+        "noise_budget_pct": 66,
+        "operand": 17,
+        "operation": "add_plain",
+        "operation_index": 33,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 29620,
+        "noise_budget_pct": 55,
+        "operand": 3,
+        "operation": "mul_plain",
+        "operation_index": 34,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 892,
+        "noise_budget_pct": 55,
+        "operand": 8,
+        "operation": "sub_plain",
+        "operation_index": 35,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 839,
+        "noise_budget_pct": 55,
+        "operand": 6,
+        "operation": "add_plain",
+        "operation_index": 36,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 29241,
+        "noise_budget_pct": 43,
+        "operand": 9,
+        "operation": "mul_plain",
+        "operation_index": 37,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 838,
+        "noise_budget_pct": 43,
+        "operand": 1,
+        "operation": "sub_plain",
+        "operation_index": 38,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 774,
+        "noise_budget_pct": 43,
+        "operand": 23,
+        "operation": "add_plain",
+        "operation_index": 39,
+        "real_refreshes_so_far": 2
+      },
+      {
+        "elapsed_us": 29474,
+        "noise_budget_pct": 31,
+        "operand": 2,
+        "operation": "mul_plain",
+        "operation_index": 40,
+        "real_refreshes_so_far": 2
+      }
+    ],
+    "expected_result": 9880,
+    "operations_achieved": 40,
+    "real_refreshes": 2,
+    "requested_operations": 40
+  },
+  "operations": {
+    "add_plain_us": 141,
+    "add_us": 76,
+    "decrypt_us": 1385,
+    "encrypt_us": 4222,
+    "legacy_single_modulus_mul_us": 26923,
+    "mul_plain_us": 160,
+    "negate_us": 71,
+    "sub_us": 73
+  },
+  "scale_tests": {
+    "deep_arithmetic": {
+      "completed_requested": false,
+      "elapsed_us": 3137,
+      "final_noise_pct": 10,
+      "operations_achieved": 21,
+      "operations_per_sec": 6694,
+      "requested_operations": 80,
+      "simulated_refreshes": 0,
+      "workload": "arithmetic"
+    },
+    "neural_network": {
+      "completed_requested": false,
+      "elapsed_us": 2123,
+      "final_noise_pct": 11,
+      "operations_achieved": 14,
+      "operations_per_sec": 6594,
+      "requested_operations": 50,
+      "simulated_refreshes": 0,
+      "workload": "neural_network"
+    },
+    "polynomial_eval": {
+      "completed_requested": false,
+      "elapsed_us": 2097,
+      "final_noise_pct": 11,
+      "operations_achieved": 14,
+      "operations_per_sec": 6676,
+      "requested_operations": 128,
+      "simulated_refreshes": 0,
+      "workload": "polynomial"
+    },
+    "statistical_pipeline": {
+      "completed_requested": true,
+      "elapsed_us": 8474,
+      "final_noise_pct": 89,
+      "operations_achieved": 60,
+      "operations_per_sec": 7080,
+      "requested_operations": 60,
+      "simulated_refreshes": 0,
+      "workload": "statistical"
+    }
+  },
+  "speedometer_summary": {
+    "average_chain_latency_us": 18176,
+    "average_chain_ops_per_sec": 55,
+    "noise_budget_min_pct": 19,
+    "operations_achieved": 40,
+    "real_refreshes": 2
+  },
+  "statistical_test": {
+    "enabled": false
+  }
+}

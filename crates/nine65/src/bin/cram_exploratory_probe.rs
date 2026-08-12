@@ -247,20 +247,20 @@ fn budget_permille(remaining: i64, initial: i64) -> i64 {
     remaining.max(0).saturating_mul(1000) / initial
 }
 
-fn operation_cost(operation: Operation, config: &FHEConfig) -> i64 {
+fn operation_cost(operation: Operation, config: &FHEConfig, rhs: u64) -> i64 {
     match operation {
         Operation::AddCt => NoiseBudget::add_cost(),
-        Operation::MulPlain => NoiseBudget::mul_plain_cost(config),
+        Operation::MulPlain => NoiseBudget::mul_plain_cost(rhs, config),
         Operation::MulCt => {
             NoiseBudget::mul_ct_cost(config) + NoiseBudget::relin_cost(config)
         }
     }
 }
 
-fn alternative_cycle_cost(operation: Operation, config: &FHEConfig) -> i64 {
+fn alternative_cycle_cost(operation: Operation, config: &FHEConfig, rhs: u64) -> i64 {
     match operation {
         Operation::MulCt => NoiseBudget::multiplication_cycle_cost(config),
-        _ => operation_cost(operation, config),
+        _ => operation_cost(operation, config, rhs),
     }
 }
 
@@ -338,8 +338,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for step in 0..args.depth {
         let operation = args.workload.operation(step);
-        let cost_mb = operation_cost(operation, &config);
-        let cycle_cost_mb = alternative_cycle_cost(operation, &config);
+        let cost_mb = operation_cost(operation, &config, rhs);
+        let cycle_cost_mb = alternative_cycle_cost(operation, &config, rhs);
         let before_budget_mb = budget.remaining_millibits();
         let before_level = ciphertext.level;
         let before_multiplications = multiplication_count;

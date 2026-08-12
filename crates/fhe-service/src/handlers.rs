@@ -485,7 +485,7 @@ fn handle_decrypt(
             );
         }
         session.operation_count += req.ciphertexts.len() as u64;
-        Ok(DecryptResponse {
+        Ok::<DecryptResponse, String>(DecryptResponse {
             values,
             noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
         })
@@ -586,7 +586,7 @@ fn handle_evaluate(
                         .noise_budget
                         .consume(
                             NoiseOpType::MulPlain,
-                            NoiseBudget::mul_plain_cost(&session.config),
+                            NoiseBudget::mul_plain_cost(scalar, &session.config),
                         )
                         .map_err(|error| format!("noise exhausted: {error}"))?;
                     session.rns_ctx.mul_plain_dual(&ciphertexts[0], scalar)

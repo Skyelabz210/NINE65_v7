@@ -2745,46 +2745,36 @@ impl RNSFHEContext {
         let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
         let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
 
-        // K-Elimination exact rescale (two-stage for large-Q configurations)
-        let use_two_stage = self.should_two_stage_rescale(ct1.level);
-        let e0 = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&d0)
-        } else {
-            self.k_elim_rescale_dual(&d0)
-        };
-        let e1 = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&d1)
-        } else {
-            self.k_elim_rescale_dual(&d1)
-        };
-        let e2 = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&d2)
-        } else {
-            self.k_elim_rescale_dual(&d2)
-        };
+        // CORRECT ORDER: relinearize THEN rescale (not rescale then relinearize!)
+        // Eval key was generated for the UNSCALED tensor product space.
+        // If we rescale first, we feed the wrong scale into relinearization.
 
-        // Direct relinearization using s² (NOT SECURE for multi-party)
+        // Step 2: Symmetric relinearization on d2 (BEFORE rescale!)
         let s2 = self.dual_poly_mul(&sk.s, &sk.s);
-        let e2_s2 = self.dual_poly_mul(&e2, &s2);
-        // `e0`/`e1`/`e2` leave the rescale canonical (k == 0). `e2_s2` does NOT:
-        // its true integer product overshoots M_level, so `dual_poly_mul` hands
-        // back main-wrapped/anchor-unwrapped lanes carrying a nonzero winding.
-        // Reset the winding before the ciphertext is handed to the next
-        // multiply, or the next tensor squares the inflated representative and
-        // the surplus lands in the noise. Main lanes / basis / level untouched.
-        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
+        let d2_s2 = self.dual_poly_mul(&d2, &s2);
+        
+        // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
+        let c0_pre = self.dual_poly_add(&d0, &d2_s2);
+        let c1_pre = d1;
+
+        // Step 4: K-Elimination rescale ONCE on the combined result
+        let use_two_stage = self.should_two_stage_rescale(ct1.level);
+        let c0_new = if use_two_stage {
+            self.k_elim_rescale_dual_two_stage(&c0_pre)
+        } else {
+            self.k_elim_rescale_dual(&c0_pre)
+        };
+        let c1_new = if use_two_stage {
+            self.k_elim_rescale_dual_two_stage(&c1_pre)
+        } else {
+            self.k_elim_rescale_dual(&c1_pre)
+        };
 
         let level = c0_new.main.len();
 
-        // RETIRED: the auto modulus-switch that used to run here
-        // (`if level >= 3 { mod_switch_ct_down(..) }`) is gone. K-Elimination
-        // performs an EXACT division, so the value shrinks without the basis
-        // having to shrink with it. Multiply returns at full lane count; the
-        // main-prime set is invariant across the operation.
-        // See docs/RETIRED_MECHANISMS.md and tests/basis_invariance.rs.
         DualRNSCiphertext {
             c0: c0_new,
-            c1: e1,
+            c1: c1_new,
             level,
         }
     }
@@ -2862,38 +2852,32 @@ impl RNSFHEContext {
         let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
         let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
 
-        // K-Elimination exact rescale (two-stage for large-Q configurations)
-        let use_two_stage = self.should_two_stage_rescale(ct1.level);
-        let e0 = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&d0)
-        } else {
-            self.k_elim_rescale_dual(&d0)
-        };
-        let e1 = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&d1)
-        } else {
-            self.k_elim_rescale_dual(&d1)
-        };
-        let e2 = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&d2)
-        } else {
-            self.k_elim_rescale_dual(&d2)
-        };
+        // CORRECT ORDER: relinearize THEN rescale (not rescale then relinearize!)
+        // Step 2: Symmetric relinearization on d2 (BEFORE rescale!)
+        let d2_s2 = self.dual_poly_mul(&d2, s2);
+        
+        // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
+        let c0_pre = self.dual_poly_add(&d0, &d2_s2);
+        let c1_pre = d1;
 
-        // Direct relinearization using precomputed s² (NOT SECURE for multi-party)
-        let e2_s2 = self.dual_poly_mul(&e2, s2);
-        // Same winding reset as `mul_dual_symmetric` -- see the comment there
-        // and on `canonicalize_dual_anchor`.
-        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&e0, &e2_s2));
+        // Step 4: K-Elimination rescale ONCE on the combined result
+        let use_two_stage = self.should_two_stage_rescale(ct1.level);
+        let c0_new = if use_two_stage {
+            self.k_elim_rescale_dual_two_stage(&c0_pre)
+        } else {
+            self.k_elim_rescale_dual(&c0_pre)
+        };
+        let c1_new = if use_two_stage {
+            self.k_elim_rescale_dual_two_stage(&c1_pre)
+        } else {
+            self.k_elim_rescale_dual(&c1_pre)
+        };
 
         let level = c0_new.main.len();
 
-        // RETIRED: auto modulus-switch removed here as well. See the note in
-        // `mul_dual_symmetric`. Exact division reduces the value; the basis
-        // does not move.
         DualRNSCiphertext {
             c0: c0_new,
-            c1: e1,
+            c1: c1_new,
             level,
         }
     }

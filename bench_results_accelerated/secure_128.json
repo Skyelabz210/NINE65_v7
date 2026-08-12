@@ -1,0 +1,144 @@
+{
+  "keygen_us": 3720,
+  "metadata": {
+    "bootstrap_mode": "disabled",
+    "chain_semantics": "mixed ciphertext-plaintext operation count; not ciphertext-ciphertext multiplicative depth",
+    "config": "secure_128",
+    "eta": 3,
+    "n": 8192,
+    "nine65_version": "0.1.0",
+    "q_primary": 998244353,
+    "requested_operation_count": 20,
+    "rns_primes": [
+      998244353,
+      985661441,
+      754974721
+    ],
+    "security_claim_bits": 128,
+    "seed": 42,
+    "t": 65537,
+    "timestamp": "1786509213s_since_epoch"
+  },
+  "operation_chain": {
+    "achieved_chain_correct": true,
+    "completed_requested": false,
+    "decrypted_result": 976,
+    "elapsed_us": 28531,
+    "entries": [
+      {
+        "elapsed_us": 9373,
+        "noise_budget_pct": 60,
+        "operand": 8,
+        "operation": "mul_plain",
+        "operation_index": 1,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 9260,
+        "noise_budget_pct": 33,
+        "operand": 3,
+        "operation": "mul_plain",
+        "operation_index": 2,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 235,
+        "noise_budget_pct": 33,
+        "operand": 2,
+        "operation": "add_plain",
+        "operation_index": 3,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 9101,
+        "noise_budget_pct": 6,
+        "operand": 5,
+        "operation": "mul_plain",
+        "operation_index": 4,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 234,
+        "noise_budget_pct": 6,
+        "operand": 13,
+        "operation": "add_plain",
+        "operation_index": 5,
+        "real_refreshes_so_far": 0
+      },
+      {
+        "elapsed_us": 281,
+        "noise_budget_pct": 5,
+        "operand": 7,
+        "operation": "sub_plain",
+        "operation_index": 6,
+        "real_refreshes_so_far": 0
+      }
+    ],
+    "expected_result": 976,
+    "operations_achieved": 6,
+    "real_refreshes": 0,
+    "requested_operations": 20
+  },
+  "operations": {
+    "add_plain_us": 70,
+    "add_us": 38,
+    "decrypt_us": 639,
+    "encrypt_us": 1799,
+    "legacy_single_modulus_mul_us": 12553,
+    "mul_plain_us": 92,
+    "negate_us": 35,
+    "sub_us": 37
+  },
+  "scale_tests": {
+    "deep_arithmetic": {
+      "completed_requested": false,
+      "elapsed_us": 650,
+      "final_noise_pct": 5,
+      "operations_achieved": 9,
+      "operations_per_sec": 13846,
+      "requested_operations": 80,
+      "simulated_refreshes": 0,
+      "workload": "arithmetic"
+    },
+    "neural_network": {
+      "completed_requested": false,
+      "elapsed_us": 661,
+      "final_noise_pct": 5,
+      "operations_achieved": 6,
+      "operations_per_sec": 9077,
+      "requested_operations": 50,
+      "simulated_refreshes": 0,
+      "workload": "neural_network"
+    },
+    "polynomial_eval": {
+      "completed_requested": false,
+      "elapsed_us": 578,
+      "final_noise_pct": 5,
+      "operations_achieved": 6,
+      "operations_per_sec": 10380,
+      "requested_operations": 128,
+      "simulated_refreshes": 0,
+      "workload": "polynomial"
+    },
+    "statistical_pipeline": {
+      "completed_requested": true,
+      "elapsed_us": 4248,
+      "final_noise_pct": 77,
+      "operations_achieved": 60,
+      "operations_per_sec": 14124,
+      "requested_operations": 60,
+      "simulated_refreshes": 0,
+      "workload": "statistical"
+    }
+  },
+  "speedometer_summary": {
+    "average_chain_latency_us": 4755,
+    "average_chain_ops_per_sec": 210,
+    "noise_budget_min_pct": 5,
+    "operations_achieved": 6,
+    "real_refreshes": 0
+  },
+  "statistical_test": {
+    "enabled": false
+  }
+}

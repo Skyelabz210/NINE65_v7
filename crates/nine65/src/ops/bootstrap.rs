@@ -1238,15 +1238,9 @@ impl ClockworkBootstrap {
 
 /// CRT reconstruction for 2 primes: given (r0, r1) with moduli (p0, p1),
 /// recover x in [0, p0*p1) such that x = r0 (mod p0), x = r1 (mod p1).
-pub fn crt_reconstruct_2(r0: u128, r1: u128, p0: u128, p1: u128, p0_inv_mod_p1: u128) -> u128 {
-    let r0_mod_p1 = r0 % p1;
-    let diff = if r1 >= r0_mod_p1 {
-        r1 - r0_mod_p1
-    } else {
-        p1 - (r0_mod_p1 - r1)
-    };
-    let k = (diff * p0_inv_mod_p1) % p1;
-    r0 + k * p0
+pub fn crt_reconstruct_2(r0: u128, r1: u128, p0: u128, p1: u128, _p0_inv_mod_p1: u128) -> u128 {
+    // A2 "No-Garner": Use centralized Parallel Summation CRT
+    crt_reconstruct_u256(&[r0 as u64, r1 as u64], &[p0 as u64, p1 as u64]).lo
 }
 
 /// Iterative CRT reconstruction from N residues.
@@ -1272,36 +1266,12 @@ pub fn crt_reconstruct_2(r0: u128, r1: u128, p0: u128, p1: u128, p0_inv_mod_p1: 
 pub fn crt_reconstruct_n(
     residues: impl Iterator<Item = u128>,
     primes: &[u128],
-    crt_inverses: &[u128],
+    _crt_inverses: &[u128],
 ) -> u128 {
-    let mut x = 0u128;
-    let mut m = 1u128; // running product p[0]*...*p[k-1]
-
-    for (k, r_k) in residues.enumerate() {
-        if k == 0 {
-            x = r_k % primes[0];
-            m = primes[0];
-        } else {
-            let x_mod_pk = x % primes[k];
-            let diff = if r_k >= x_mod_pk {
-                r_k - x_mod_pk
-            } else {
-                primes[k] - (x_mod_pk - r_k)
-            };
-            let coeff = (diff * crt_inverses[k]) % primes[k];
-            x += coeff * m;
-            assert!(
-                m.checked_mul(primes[k]).is_some(),
-                "crt_reconstruct_n: running product overflows u128 at prime[{}]={} — \
-                 caller should use crt_reconstruct_u256 for >4 primes",
-                k,
-                primes[k]
-            );
-            m *= primes[k];
-        }
-    }
-
-    x
+    // A2 "No-Garner": Use centralized Parallel Summation CRT
+    let residues_u64: Vec<u64> = residues.map(|r| r as u64).collect();
+    let primes_u64: Vec<u64> = primes.iter().map(|&p| p as u64).collect();
+    crt_reconstruct_u256(&residues_u64, &primes_u64).lo
 }
 
 #[cfg(test)]

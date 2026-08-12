@@ -263,7 +263,7 @@ fn main() {
         let (noise_type, noise_cost) = match operation {
             "mul_plain" => (
                 NoiseOpType::MulPlain,
-                NoiseBudget::mul_plain_cost(&config),
+                NoiseBudget::mul_plain_cost(operand, &config),
             ),
             _ => (NoiseOpType::Add, NoiseBudget::add_plain_cost()),
         };
@@ -310,6 +310,10 @@ fn main() {
             .consume(noise_type, noise_cost)
             .expect("preflighted noise consumption must succeed");
 
+        // PER-STEP CORRECTNESS CHECK
+        let decrypted = ctx.decrypt_dual(&ciphertext, &dual_keys.secret_key);
+        let correct = decrypted == plaintext;
+
         entries.push(json!({
             "operation_index": index + 1,
             "operation": operation,
@@ -319,8 +323,17 @@ fn main() {
                 budget.remaining_millibits(),
                 initial_budget_mb,
             ),
-            "real_refreshes_so_far": refreshes,
+            "noise_remaining_mb": budget.remaining_millibits(),
+            "correct": correct,
         }));
+
+        if !correct {
+            eprintln!(
+                "CORRECTNESS FAILURE at operation {}: expected {}, got {}",
+                index + 1, plaintext, decrypted
+            );
+            break;
+        }
     }
 
     let chain_us = chain_start.elapsed().as_micros() as u64;
@@ -351,7 +364,7 @@ fn main() {
                 let (kind, cost) = if step % 3 == 0 {
                     (
                         NoiseOpType::MulPlain,
-                        NoiseBudget::mul_plain_cost(&config),
+                        NoiseBudget::mul_plain_cost(3, &config),
                     )
                 } else {
                     (NoiseOpType::Add, NoiseBudget::add_plain_cost())
@@ -531,15 +544,15 @@ fn run_scale_test(
         let (kind, cost) = match workload {
             "arithmetic" if index % 3 == 0 => (
                 NoiseOpType::MulPlain,
-                NoiseBudget::mul_plain_cost(config),
+                NoiseBudget::mul_plain_cost(3, config),
             ),
             "neural_network" if index % 2 == 0 => (
                 NoiseOpType::MulPlain,
-                NoiseBudget::mul_plain_cost(config),
+                NoiseBudget::mul_plain_cost(3, config),
             ),
             "polynomial" if index % 2 == 0 => (
                 NoiseOpType::MulPlain,
-                NoiseBudget::mul_plain_cost(config),
+                NoiseBudget::mul_plain_cost(3, config),
             ),
             _ => (NoiseOpType::Add, NoiseBudget::add_plain_cost()),
         };

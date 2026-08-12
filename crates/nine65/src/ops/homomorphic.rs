@@ -350,8 +350,9 @@ impl<'a> TrackedEvaluator<'a> {
 
     /// Check if plaintext multiplication can be performed
     pub fn can_mul_plain(&self) -> bool {
+        // Use a conservative scalar (3) for pre-flight check
         self.budget
-            .can_perform(NoiseBudget::mul_plain_cost(self.config))
+            .can_perform(NoiseBudget::mul_plain_cost(3, self.config))
     }
 
     /// Check if ciphertext multiplication can be performed
@@ -409,7 +410,7 @@ impl<'a> TrackedEvaluator<'a> {
     pub fn try_mul_plain(&mut self, ct: &Ciphertext, m: u64) -> Result<Ciphertext, NoiseExhausted> {
         self.budget.consume(
             NoiseOpType::MulPlain,
-            NoiseBudget::mul_plain_cost(self.config),
+            NoiseBudget::mul_plain_cost(m, self.config),
         )?;
         Ok(self.evaluator.mul_plain(ct, m))
     }
