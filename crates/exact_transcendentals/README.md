@@ -244,3 +244,7 @@ to keep it that way.
 ## License
 
 MIT OR Apache-2.0
+
+## CRAM Opportunity Index — open action item (2026-08-12)
+
+Mirrored from `CRAM_OPPORTUNITY_REPORT.md` entry [35]: arrow-emission reversibility is (operator, dim, prime)-dependent — heat [1,3,1] at dim=8 is singular (one-way) on lanes {3, 5, 7}, two of which sit in `TRANSPORT_CORE`. Transport lane selection must gate on `det(A) mod p != 0` per deployment. Route: `prime-family-engineering` (node pending).

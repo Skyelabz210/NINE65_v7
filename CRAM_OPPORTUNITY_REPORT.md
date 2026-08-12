@@ -103,3 +103,13 @@ Recorded so a later pass does not re-open them:
 - **`crates/clockwork-core/src/{garner,key_lifecycle}.rs`** — `reconstruct()`
   there is secret-sharing recombination, not CRT reconstruction. Different
   object, same word.
+
+[31] CANDIDATE | deterministic-lane-parallelism | crates/mana/src/parallel.rs:1-275 | MANA's only parallel dispatch is rayon work-stealing (feature-gated, off by default since the rayon removal) — the "lane-parallel pipeline engine" has no deterministic lane executor; measured sequential baseline on 4 idle cores: mul 310/270/229/224 M coeff-ops/s at LOW(3×1024)/MED(6×4096)/HEAVY(10×16384)/ULTRA(16×32768) | → node:deterministic-lane-parallelism (pending) | crates/mana/README.md
+
+[32] CANDIDATE | crt-to-cram-substrate | crates/mana/src/lane.rs:163-198 | Lane::mul/scalar_mul reduce via `%` division while the same crate's PersistentLane (Montgomery-persistent ⊗, lane.rs:340-540) measures 2.41x faster on a 1000-deep mul chain at N=16384 (54.6ms vs 22.6ms); homogeneous-multiplier stacking exists but ManaStream's lanes do not use it | → node:crt-to-cram-substrate (pending) | crates/mana/README.md
+
+[33] CANDIDATE | reconstruction-retirement | crates/mana/src/anchor.rs:166-207 | AnchorContext::exact_divide_stream bottoms out in compute_partial_crt: per-coefficient partial-CRT summation of BOTH codices inside the accelerator's division path — K-Elimination-shaped API, reconstruction-shaped cost; currently uncalled outside tests, must be audited before any hot-path wiring | → node:reconstruction-retirement (pending) | crates/mana/README.md
+
+[34] CANDIDATE | iid-heterogeneous-transduction | crates/exact_transcendentals/src/transduction.rs (TransductionMap) ⇄ crates/mana/src/stream.rs (ManaStream) | lane-to-lane basis movement without reconstruction exists (i128 scalar path, S6/S8/TRANSPORT_CORE constants) but has no bridge to ManaStream's u64 lane vectors — the missing link for heterogeneous-lane mobility in the accelerator | → node:iid-heterogeneous-transduction (pending) | crates/mana/README.md
+
+[35] CANDIDATE | prime-family-engineering | crates/exact_transcendentals/src/arrow_step.rs (ArrowStep::for_heat) | arrow-emission reversibility MEASURED: heat stencil [1,3,1] at dim=8 folds 10^6 steps exactly; singular one-way lanes = {3, 5, 7} — two of four TRANSPORT_CORE primes cannot run backward under this operator; reversibility is (operator, dim, prime)-dependent, so transport lane selection must gate on det(A) mod p ≠ 0 per deployment, not on basis membership | → node:prime-family-engineering (pending) | crates/exact_transcendentals/README.md
