@@ -11,6 +11,9 @@ mana = { path = "../mana" }
 rayon = { workspace = true, optional = true }
 
 [features]
-default = ["parallel"]
+# No external parallelism by default — mirrors mana's posture: MANA's
+# lane-parallel scheduling is the canonical accelerator for this workspace,
+# and rayon is strictly opt-in (benchmarking comparison only).
+default = []
 parallel = ["rayon", "mana/parallel"]
 simd = []  # Declared but empty - modular arithmetic doesn't benefit from SIMD

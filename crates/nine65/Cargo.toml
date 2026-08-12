@@ -11,10 +11,12 @@ authors.workspace = true
 autobenches = false
 
 [features]
-# Default build: O(N log N) FFT-based NTT + exact transcendentals backend.
-# No external parallelism by default — use --features accelerated for MANA/UNHAL
-# acceleration, which is purpose-built for this integer-only FHE architecture.
-default = ["exact_transcendentals_backend"]
+# Default build: O(N log N) FFT-based NTT + exact transcendentals backend +
+# MANA/UNHAL acceleration (purpose-built for this integer-only FHE
+# architecture). Rayon is strictly opt-in via `parallel`/`generic-rayon` and
+# is NOT part of any default graph — unhal is consumed with
+# default-features = false to keep it that way.
+default = ["exact_transcendentals_backend", "accelerated"]
 
 # Core feature flags
 # reference_ntt: Use O(N^2) DFT instead of O(N log N) FFT for NTT operations.
@@ -89,7 +91,11 @@ sequential = []
 
 [dependencies]
 mana = { path = "../mana", optional = true }
-unhal = { path = "../unhal", optional = true }
+# default-features = false: unhal's `parallel` default would silently pull
+# rayon (and mana/parallel) into `--features accelerated`, contradicting the
+# MANA-over-rayon posture documented above. Rayon remains strictly opt-in via
+# this crate's own `parallel` / `generic-rayon` features.
+unhal = { path = "../unhal", optional = true, default-features = false }
 rayon = { workspace = true, optional = true }
 zeroize = { workspace = true }
 getrandom = { workspace = true }
