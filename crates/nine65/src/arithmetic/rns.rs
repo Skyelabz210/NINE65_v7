@@ -838,6 +838,36 @@ impl RNSPolynomial {
 /// Reconstruct an integer from CRT residues into U256 using iterative CRT.
 ///
 /// Assumes primes are pairwise coprime and the true value is in [0, Π p_i).
+/// Exact product of u64 factors as little-endian u64 limbs (any size).
+pub(crate) fn product_limbs_u64(factors: &[u64]) -> Vec<u64> {
+    let mut limbs = vec![1u64];
+    for &factor in factors {
+        let mut carry = 0u128;
+        for limb in &mut limbs {
+            let product = *limb as u128 * factor as u128 + carry;
+            *limb = product as u64;
+            carry = product >> 64;
+        }
+        if carry != 0 {
+            limbs.push(carry as u64);
+        }
+    }
+    while limbs.len() > 1 && limbs.last() == Some(&0) {
+        limbs.pop();
+    }
+    limbs
+}
+
+/// Bit length of a little-endian u64 limb value.
+pub(crate) fn limbs_bit_length_u64(limbs: &[u64]) -> u32 {
+    for index in (0..limbs.len()).rev() {
+        if limbs[index] != 0 {
+            return index as u32 * 64 + (64 - limbs[index].leading_zeros());
+        }
+    }
+    0
+}
+
 pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     assert!(!primes.is_empty(), "need primes");
     assert!(residues.len() >= primes.len(), "residue length mismatch");
@@ -931,6 +961,20 @@ pub struct DualRNSContext {
     pub main_product: u128,
     /// Product of anchor primes (A) - may be 0 if > u128::MAX
     pub anchor_product: u128,
+    /// Exact M when it fits in u128, `None` otherwise — the non-sentinel
+    /// counterpart of `main_product` (see dual_rns_context_metadata_regression.rs)
+    pub main_product_checked: Option<u128>,
+    /// Exact M as little-endian u64 limbs — valid for any M size
+    pub main_product_limbs: Vec<u64>,
+    /// Exact bit length of M
+    pub main_product_bit_length: u32,
+    /// Exact A when it fits in u128, `None` otherwise — the non-sentinel
+    /// counterpart of `anchor_product`
+    pub anchor_product_checked: Option<u128>,
+    /// Exact A as little-endian u64 limbs — valid for any A size
+    pub anchor_product_limbs: Vec<u64>,
+    /// Exact bit length of A
+    pub anchor_product_bit_length: u32,
     /// M⁻¹ mod A (precomputed) - only valid if anchor_product fits u128
     pub main_inv_anchor: u128,
     /// M⁻¹ mod pi for each anchor prime (for RNS-domain K-Elim)
@@ -994,11 +1038,27 @@ impl DualRNSContext {
             0 // Can't compute, must use RNS-domain K-Elim
         };
 
+        // Exact non-sentinel product metadata (valid for any product size;
+        // the u128 `main_product`/`anchor_product` fields use a 0 sentinel
+        // on overflow and stay for backward compatibility).
+        let main_product_limbs = product_limbs_u64(&main.primes);
+        let main_product_bit_length = limbs_bit_length_u64(&main_product_limbs);
+        let main_product_checked = (main_product > 0).then_some(main_product);
+        let anchor_product_limbs = product_limbs_u64(&anchor.primes);
+        let anchor_product_bit_length = limbs_bit_length_u64(&anchor_product_limbs);
+        let anchor_product_checked = (anchor_product > 0).then_some(anchor_product);
+
         Self {
             main,
             anchor,
             main_product,
             anchor_product,
+            main_product_checked,
+            main_product_limbs,
+            main_product_bit_length,
+            anchor_product_checked,
+            anchor_product_limbs,
+            anchor_product_bit_length,
             main_inv_anchor,
             main_inv_anchor_rns,
             n,
@@ -1014,26 +1074,76 @@ impl DualRNSContext {
     ///
     /// All primes satisfy (p-1) % (2*n) == 0 for supported n values and are
     /// > 2×10^9 (above max rescaled coefficient ~1.3×10^9).
-    pub fn canonical_anchor_primes_for_n(_n: usize) -> Vec<u64> {
-        // 5 NTT-compatible anchor primes for Q²×N capacity (ct×ct multiplication)
-        // All satisfy: (p-1) % 2n == 0 for NTT compatibility
+    pub fn canonical_anchor_primes_for_n(n: usize) -> Vec<u64> {
+        // NTT-compatible anchor primes for Q²×N capacity (ct×ct multiplication)
+        // All satisfy: (p-1) % 2n == 0 for NTT compatibility (2^15 | p-1, so
+        // every supported ring dimension up to n = 16384 is covered)
         // All > 2×10^9 (above max rescaled coefficient ~1.3×10^9)
         //
-        // Capacity: M×A ≈ 246 bits for secure_128 > N×Q² ≈ 191 bits  (55-bit margin)
-        // k reconstruction uses first 3 primes: product ≈ 1.14×10^28 >> k_max ≈ 10^21
-        vec![
+        // n <= 8192 (secure_128, secure_128_deep, hardware_opt): 5 primes,
+        //   A ≈ 157 bits. M×A ≈ 246 bits for secure_128 > N×Q² ≈ 191 bits.
+        //   Unchanged from the original set — no extra anchor lanes, no
+        //   per-multiply cost increase for the 128-bit tiers, and k
+        //   reconstruction is byte-identical to the previous behavior.
+        //
+        // n = 16384 (secure_192, secure_256): 10 primes, A ≈ 315 bits.
+        //   secure_256 (Q ≈ 175 bits): M×A ≈ 490 bits > N×Q² ≈ 364 bits,
+        //     74% utilization — below the 80% strict gate that public-mode
+        //     multiplication enforces (`BoundaryDiagnostic::to_result(true)`
+        //     errors on WarningApproaching >= 80%, not just Critical >= 90%).
+        //   secure_192 (Q ≈ 146 bits): M×A ≈ 461 bits > N×Q² ≈ 306 bits,
+        //     66% utilization. With the old 5-prime set secure_192 sat at
+        //     100% utilization (306 required vs 303 capacity) and secure_256
+        //     failed outright — both now have real margin.
+        //   k reconstruction in U256 uses the first
+        //   K_RECONSTRUCTION_MAX_ANCHORS = 8 primes (A_recon ≈ 251 bits,
+        //   inside U256's Garner ceiling); the remaining lanes act as
+        //   integrity witnesses — see `extract_k_rns_level`.
+        //
+        // k reconstruction lower bound uses first 3 primes: product ≈ 1.14×10^28 >> k_max ≈ 10^21
+        let mut primes = vec![
             2013265921, // 15 × 2^27 + 1    (~31 bits)
             2281701377, // 17 × 2^27 + 1    (~31 bits)
             2483027969, // 37 × 2^26 + 1    (~32 bits)
             2885681153, // 43 × 2^26 + 1    (~32 bits)
             3221225473, // 3 × 2^30 + 1     (~32 bits)
-        ]
+        ];
+        if n >= 16384 {
+            primes.extend_from_slice(&[
+                3221422081, // 98310 × 2^15 + 1 (~32 bits)
+                3222306817, // 98337 × 2^15 + 1 (~32 bits)
+                3222372353, // 98339 × 2^15 + 1 (~32 bits)
+                3222568961, // 98345 × 2^15 + 1 (~32 bits)
+                3222962177, // 98357 × 2^15 + 1 (~32 bits)
+            ]);
+        }
+        primes
+    }
+
+    /// Number of leading anchor primes used for U256 k reconstruction.
+    ///
+    /// The full anchor basis may exceed U256's Garner ceiling (10 primes is
+    /// A ≈ 315 bits > 256 for n = 16384); the first 8 (A_recon ≈ 251 bits)
+    /// always fit. Any legitimate k is far smaller than A_recon (the 80%
+    /// capacity gate caps k below ~217 bits for secure_256), and anchor
+    /// lanes beyond this count are verified as integrity witnesses in
+    /// `extract_k_rns_level` so an over-capacity k fails loudly instead of
+    /// silently wrapping.
+    ///
+    /// For 5-anchor bases (n <= 8192) this returns 5: reconstruction uses
+    /// the full basis exactly as before, and no witness check runs.
+    pub(crate) fn k_reconstruction_anchor_count(&self) -> usize {
+        const K_RECONSTRUCTION_MAX_ANCHORS: usize = 8;
+        self.anchor.primes.len().min(K_RECONSTRUCTION_MAX_ANCHORS)
     }
 
     /// Create optimized dual-RNS for FHE with full ct×ct capacity
     ///
-    /// Uses 5 NTT-compatible anchor primes providing M×A ≈ 246-bit capacity,
-    /// sufficient for ct×ct tensor products up to N×Q² ≈ 191 bits (secure_128).
+    /// Uses NTT-compatible anchor primes selected by ring dimension
+    /// (see `canonical_anchor_primes_for_n`): 5 primes (A ≈ 157 bits) for
+    /// n <= 8192, 10 primes (A ≈ 315 bits) for n = 16384, sufficient for
+    /// ct×ct tensor products at every secure tier including secure_256
+    /// (N×Q² ≈ 364 bits < M×A ≈ 490 bits, 74% utilization).
     ///
     /// Anchor primes satisfy: (p-1) % 2n == 0 for NTT compatibility.
     /// All anchor primes > 2×10^9 (above max rescaled coefficient ~1.3×10^9).
@@ -1349,7 +1459,7 @@ impl DualRNSContext {
         // for every depth this anchor set has capacity for, which is what a
         // fixed-size, non-shrinking anchor basis can offer without
         // reintroducing per-multiply basis changes.
-        let k_primes = self.anchor.primes.len();
+        let k_primes = self.k_reconstruction_anchor_count();
         assert!(
             k_primes >= 3,
             "Need at least 3 anchor primes for k reconstruction"
@@ -1366,7 +1476,43 @@ impl DualRNSContext {
         }
 
         // Reconstruct k from the first k_primes anchors via iterative CRT to U256.
-        crt_reconstruct_u256(&k_rns[..k_primes], &self.anchor.primes[..k_primes])
+        let k_u = crt_reconstruct_u256(&k_rns[..k_primes], &self.anchor.primes[..k_primes]);
+
+        // Witness verification: any anchor lane beyond the U256 reconstruction
+        // subset must agree with the reconstructed k under the SAME signed
+        // interpretation the consumers apply (k > A_recon/2 means negative,
+        // mirroring SignedK256::from_unsigned against A_recon). A legitimate
+        // k has |k| far below A_recon/2, so its residues are consistent in
+        // every lane; a k that exceeded A_recon's capacity wrapped during
+        // reconstruction and disagrees with the witness lanes, which turns
+        // the old silent-wraparound failure mode into a loud panic.
+        if k_primes < self.anchor.primes.len() {
+            let a_recon = U256::product_u64s(&self.anchor.primes[..k_primes]);
+            let half = a_recon.shr1();
+            let is_neg = k_u.gt(half);
+            let magnitude = if is_neg { a_recon.sub(k_u) } else { k_u };
+            for (i, &a_w) in self.anchor.primes.iter().enumerate().skip(k_primes) {
+                let mag_mod = magnitude.mod_u64(a_w);
+                let expected = if is_neg && mag_mod != 0 {
+                    a_w - mag_mod
+                } else {
+                    mag_mod
+                };
+                assert!(
+                    expected == k_rns[i],
+                    "K-Elimination witness dissent: anchor lane {i} (prime {a_w}) \
+                     disagrees with k reconstructed from the first {k_primes} anchors \
+                     (expected residue {expected}, lane holds {}). The winding k has \
+                     exceeded the {}-bit reconstruction capacity — this indicates a \
+                     deep-circuit overflow past the anchor basis. Bootstrap earlier \
+                     or expand the anchor basis.",
+                    k_rns[i],
+                    a_recon.bitlen(),
+                );
+            }
+        }
+
+        k_u
     }
 
     /// K-Elimination: Reconstruct full value from dual-RNS representation
@@ -2449,9 +2595,9 @@ mod tests {
     /// `extract_k_rns_level` (rns.rs:1346) and `to_u256_level` bottom out in.
     ///
     /// It uses the exact 5 canonical anchor primes `DualRNSContext::for_fhe`
-    /// selects for every NINE65 FHEConfig (secure_128, secure_128_deep,
-    /// secure_192 all share this fixed set -- see
-    /// `canonical_anchor_primes_for_n`, which ignores its `n` argument).
+    /// selects for every n <= 8192 NINE65 FHEConfig (secure_128 and
+    /// secure_128_deep share this fixed set -- see
+    /// `canonical_anchor_primes_for_n`; n = 16384 tiers get 3 extra primes).
     ///
     /// Claim under test: reconstructing a value from CRT residues over a
     /// SUBSET of anchor primes whose product is smaller than the true value
@@ -2464,7 +2610,7 @@ mod tests {
         assert_eq!(
             anchors,
             vec![2013265921, 2281701377, 2483027969, 2885681153, 3221225473],
-            "canonical anchor set must match what production actually uses"
+            "canonical anchor set must match what production actually uses at n=8192"
         );
 
         // Capacity of the first 4 anchors -- what extract_k_rns_level selects

@@ -254,38 +254,14 @@ impl KElimination {
     /// Returns [`Nine65Error::NotCoprime`] if alpha_cap and beta_cap share a common factor.
     #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Nine65Result<Self> {
-        // CLASS-F (alpha) lanes must be prime and NTT-adjacent; enforce primality.
-        for &a in alpha_primes {
-            if a <= 1 || !is_prime(a) {
-                return Err(Nine65Error::InvalidParameter {
-                    message: format!("CLASS-F alpha lane {a} must be prime"),
-                });
-            }
-        }
-        // Alpha lanes must be pairwise distinct/coprime (distinct primes ⇒ coprime).
-        for i in 0..alpha_primes.len() {
-            for j in (i + 1)..alpha_primes.len() {
-                if gcd_u128(alpha_primes[i] as u128, alpha_primes[j] as u128) != 1 {
-                    return Err(Nine65Error::NotCoprime {
-                        m: alpha_primes[i],
-                        a: alpha_primes[j],
-                        gcd: gcd_u128(alpha_primes[i] as u128, alpha_primes[j] as u128) as u64,
-                    });
-                }
-            }
-        }
-        // CLASS-R (beta) lanes require pairwise coprimality (primality optional).
-        for i in 0..beta_moduli.len() {
-            for j in (i + 1)..beta_moduli.len() {
-                if gcd_u128(beta_moduli[i] as u128, beta_moduli[j] as u128) != 1 {
-                    return Err(Nine65Error::NotCoprime {
-                        m: beta_moduli[i],
-                        a: beta_moduli[j],
-                        gcd: gcd_u128(beta_moduli[i] as u128, beta_moduli[j] as u128) as u64,
-                    });
-                }
-            }
-        }
+        // Safe-basis family validation (see k_elimination_basis_regression.rs):
+        // CLASS-F alpha lanes must be non-empty, prime, and pairwise distinct;
+        // CLASS-R beta lanes must be non-empty, > 1, and pairwise coprime
+        // (a bare pairwise-gcd check silently admits unit moduli, since 1 is
+        // coprime to everything); the two families must be cross-coprime.
+        validate_alpha_family(alpha_primes)?;
+        validate_beta_family(beta_moduli)?;
+        validate_cross_family(alpha_primes, beta_moduli)?;
 
         // Use checked_mul to detect u128 overflow in prime products.
         let alpha_cap: u128 = alpha_primes

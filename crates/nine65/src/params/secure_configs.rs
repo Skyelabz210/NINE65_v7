@@ -132,6 +132,17 @@ impl SecureConfig {
             "SECURITY ERROR: config '{}' exceeds the HE Standard bound",
             name
         );
+        // Conservative production floor: any >= 128-bit security claim
+        // requires N >= 8192 (see hardware_opt's note — the lattice estimator
+        // blesses smaller N, but the audited N >= 8192 floor governs
+        // production claims). Insecure test tiers are exempt.
+        assert!(
+            is_insecure_tier || claimed_security < 128 || n >= 8192,
+            "SECURITY ERROR: config '{}' claims {}-bit security but dimension N={} is below the 8192 floor",
+            name,
+            claimed_security,
+            n
+        );
 
         let config = FHEConfig {
             n,

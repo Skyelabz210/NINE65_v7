@@ -485,7 +485,7 @@ fn handle_decrypt(
             );
         }
         session.operation_count += req.ciphertexts.len() as u64;
-        Ok(DecryptResponse {
+        Ok::<_, String>(DecryptResponse {
             values,
             noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
         })
