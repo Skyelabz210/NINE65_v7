@@ -42,10 +42,6 @@ PR, all of it is well-scoped below.
 plus 6 in fhe-service. Fix, don't suppress (except where noted):
 - `crates/nine65/src/ops/auto_bootstrap.rs:8` — unused `Nine65Error` import.
 - `crates/nine65/src/arithmetic/rns.rs:91` area — `let mut limbs` doesn't need `mut`.
-- `crates/nine65/src/arithmetic/k_elimination.rs:580/606/632` —
-  `validate_alpha_family` / `validate_beta_family` / `validate_cross_family`
-  are dead. Check git history first: if they were meant to be wired into
-  `KElimination::for_fhe` validation, wire them; otherwise delete.
 - `crates/nine65/src/ops/bootstrap.rs:752` — deprecated `ke.capacity()`;
   replace with `try_capacity()` / `capacity_bit_length()` per the deprecation note.
 - fhe-service unused-import warnings.

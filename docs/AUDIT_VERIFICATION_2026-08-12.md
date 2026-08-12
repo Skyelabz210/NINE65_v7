@@ -76,6 +76,18 @@ The tarball's diagnosis — anchor capacity is the secure_256 blocker — was
      `main/anchor_product_checked`/`_limbs`/`_bit_length` fields via new
      `product_limbs_u64` / `limbs_bit_length_u64` helpers (exact for any
      product size; the u128 0-sentinel fields remain for compatibility).
+   - `tests/k_elimination_basis_regression.rs` pinned safe-basis validation
+     (`zero_and_unit_moduli_are_rejected`) that `KElimination::try_new`
+     didn't fully enforce: its inline pairwise-gcd check silently admitted
+     unit moduli, since 1 is coprime to everything. The crate contained
+     complete validators (`validate_alpha_family` / `validate_beta_family` /
+     `validate_cross_family`) that were written but never wired in — they
+     were the source of three dead-code warnings. Wired them into
+     `try_new`, replacing the weaker inline loops.
+   - `tests/full_system_exercise.rs` called the fail-closed `rns_product()`
+     on every config including `deep_circuit_insecure` (product > u128),
+     which panics by design; switched to `try_rns_product()` with a
+     bit-length fallback.
    - Three stale unit tests, each broken independently of this PR:
      `security::tests::test_lwe_params_from_config` pinned the old
      secure_128 N=4096 (code moved to 8192 some time ago);
@@ -135,6 +147,14 @@ untouched.
    witness-checked reconstruction is the working configuration.
 3. CLAUDE.md's config table is stale: `secure_128` is n = 8192 in code, not
    n = 4096.
+
+## 6. Final verification state
+
+`cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast`:
+**1637 passed, 0 failed, 206 ignored across all 56 test targets.**
+Before this pass, the workspace test build did not even compile (five
+independent pre-existing breakages, each masking the next behind cargo's
+fail-fast), so no full-suite baseline existed to compare against.
 
 ---
 
