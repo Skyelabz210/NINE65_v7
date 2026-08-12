@@ -61,6 +61,16 @@ The tarball's diagnosis — anchor capacity is the secure_256 blocker — was
      `#[cfg(test)]` session helpers that moved a `FnOnce` closure into two
      call sites. Annotated the error type and changed the helpers to
      `Fn` passed by reference; all 50 fhe-service tests pass.
+   - `tests/rns_context_metadata_regression.rs` (authored by the repo's own
+     prior audit pass) pinned an exact-metadata contract for
+     `RNSFHEContext` that was never implemented — the fields
+     `q_product_checked`/`q_product_limbs` did not exist and `q_bits` was
+     the sum of per-prime widths, which overcounts the true product bit
+     length by up to 1 bit per prime and inflated decomposition digit
+     counts. Implemented the contract: both fields added, `q_bits` now the
+     exact product bit length via `FHEConfig::rns_product_bit_length()`.
+     Key generation and digit decomposition both derive counts from the
+     same stored `q_bits`, so the change is self-consistent.
 
 **New capability unlocked:** `secure_256` (and full-level `secure_192`)
 ct×ct multiplication through the strict public-mode gate now succeeds with
