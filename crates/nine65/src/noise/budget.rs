@@ -348,8 +348,12 @@ mod tests {
 
     #[test]
     fn exact_delta_size_does_not_sum_lane_widths() {
-        let config = raw_config(vec![5, 5], 2, 1, 1);
-        assert_eq!(exact_delta_bit_length(&config), 4); // floor(25/2) = 12
+        // Q = 5*7 = 35, delta = floor(35/2) = 17 -> 5 bits exactly.
+        // The naive lane-width formula gives (3+3) - 2 = 4, which differs —
+        // that divergence is the point of this regression test. (The old
+        // [5, 5] example was degenerate: both formulas produced 4.)
+        let config = raw_config(vec![5, 7], 2, 1, 1);
+        assert_eq!(exact_delta_bit_length(&config), 5); // floor(35/2) = 17
         let summed_lane_widths = 6i64;
         let t_bits = scalar_bit_length(config.t);
         assert_ne!(exact_delta_bit_length(&config), summed_lane_widths - t_bits);
@@ -357,12 +361,10 @@ mod tests {
 
     #[test]
     fn exact_delta_size_handles_products_above_u128() {
-        let config = raw_config(
-            vec![u64::MAX, 274177, 67280421310721, 2],
-            3,
-            1,
-            1,
-        );
+        // Every factor must exceed t (exact_delta_bit_length asserts t < prime;
+        // the old vector included a factor of 2 with t = 3 and panicked).
+        // 64 + 64 + 18 = ~146 product bits, comfortably above u128.
+        let config = raw_config(vec![u64::MAX, u64::MAX - 4, 274177], 3, 1, 1);
         assert!(exact_delta_bit_length(&config) > 128);
     }
 

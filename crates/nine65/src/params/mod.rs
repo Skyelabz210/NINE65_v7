@@ -99,7 +99,6 @@ pub struct FHEConfig {
 
 impl FHEConfig {
     /// Light configuration for testing (~36-bit actual security)
-    #[cfg(any(test, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
         note = "INSECURE: light() has only ~36-bit security. Use an audited SecureConfig candidate."
@@ -308,7 +307,6 @@ impl FHEConfig {
     }
 
     /// HE Standard 128-bit legacy configuration (~56-bit internal estimate).
-    #[cfg(any(test, feature = "allow_insecure"))]
     #[deprecated(
         since = "5.0.0",
         note = "INSECURE: he_standard_128 has only test-level security with ternary secrets."

@@ -211,19 +211,19 @@ impl SessionStore {
     #[cfg(test)]
     pub fn with_session<F, R>(&self, id: &str, operation: F) -> Option<R>
     where
-        F: FnOnce(&Session) -> R,
+        F: Fn(&Session) -> R,
     {
-        self.with_session_for_tenant(id, "test", operation)
-            .or_else(|| self.with_session_for_tenant(id, "internal", operation))
+        self.with_session_for_tenant(id, "test", &operation)
+            .or_else(|| self.with_session_for_tenant(id, "internal", &operation))
     }
 
     #[cfg(test)]
     pub fn with_session_mut<F, R>(&self, id: &str, operation: F) -> Option<R>
     where
-        F: FnOnce(&mut Session) -> R,
+        F: Fn(&mut Session) -> R,
     {
-        self.with_session_mut_for_tenant(id, "test", operation)
-            .or_else(|| self.with_session_mut_for_tenant(id, "internal", operation))
+        self.with_session_mut_for_tenant(id, "test", &operation)
+            .or_else(|| self.with_session_mut_for_tenant(id, "internal", &operation))
     }
 
     pub fn remove_for_tenant(&self, id: &str, tenant_id: &str) -> bool {

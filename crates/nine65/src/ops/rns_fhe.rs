@@ -815,7 +815,14 @@ pub struct RNSFHEContext {
     pub t: u64,
     /// Q = product of main primes (stored as u128, 0 if too large)
     pub q_product: u128,
-    /// Exact bit-width of Q (sum of prime bit-widths)
+    /// Exact Q when it fits in u128, `None` otherwise — the non-sentinel
+    /// counterpart of `q_product` (see rns_context_metadata_regression.rs)
+    pub q_product_checked: Option<u128>,
+    /// Exact Q as little-endian u64 limbs — canonical representation valid
+    /// for any Q size, including Q > u128
+    pub q_product_limbs: Vec<u64>,
+    /// Exact bit length of the Q product (NOT the sum of per-prime widths,
+    /// which can overcount by 1 bit per prime).
     /// Used for decomposition sizing when q_product=0 sentinel
     pub q_bits: usize,
     /// Polynomial degree
@@ -870,12 +877,11 @@ impl RNSFHEContext {
             .map(|&p| NTTEngine::new(p, config.n))
             .collect();
 
-        // Compute Q bit-width (sum of prime bit-widths) - always valid
-        let q_bits: usize = config
-            .primes
-            .iter()
-            .map(|&p| (64 - p.leading_zeros()) as usize)
-            .sum();
+        // Exact Q bit length from the limb product (valid for any Q size).
+        // The old sum-of-prime-widths overcounts by up to 1 bit per prime
+        // (e.g. 754974721 × 167772161: widths sum to 58, product is 57 bits),
+        // which inflated decomposition digit counts.
+        let q_bits = config.rns_product_bit_length() as usize;
 
         // Compute Q = product of main primes (0 sentinel if overflow)
         // When Q overflows u128, we use 0 as sentinel and rely on RNS-native paths
@@ -909,6 +915,8 @@ impl RNSFHEContext {
             ke,
             t: config.t,
             q_product,
+            q_product_checked: config.try_rns_product(),
+            q_product_limbs: config.rns_product_limbs(),
             q_bits,
             delta_rns,
             n: config.n,
@@ -2616,8 +2624,11 @@ impl RNSFHEContext {
     }
 
     /// Non-cfg version for release builds (level-aware)
+    ///
+    /// Public to match the test/debug variant above: integration tests built
+    /// with `--release` link against this variant (noise_profile.rs).
     #[cfg(not(any(test, debug_assertions)))]
-    fn decrypt_dual_with_diagnostics(
+    pub fn decrypt_dual_with_diagnostics(
         &self,
         ct: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
@@ -3315,11 +3326,14 @@ impl RNSFHEContext {
         // anchor subset `extract_k_rns_level` actually reconstructed `k_u`
         // against below, or `SignedK256::from_unsigned`'s half-range test
         // (k > a_product/2 => negative) is checked against the wrong modulus.
-        // `extract_k_rns_level` (arithmetic/rns.rs) always uses the full
-        // canonical anchor set now (see its own comment for why the old
-        // ct_level-tiered selection was wrong post-ladder-removal); this must
-        // mirror that unconditionally, not recompute its own tier.
-        let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes);
+        // `extract_k_rns_level` (arithmetic/rns.rs) reconstructs from the
+        // first `k_reconstruction_anchor_count()` anchors (the full set for
+        // 5-anchor bases; capped at 8 for the 10-anchor n=16384 basis, whose
+        // full product exceeds U256 -- extra lanes are verified as integrity
+        // witnesses there); this must mirror that count, not recompute its
+        // own tier.
+        let k_recon_count = self.dual_rns.k_reconstruction_anchor_count();
+        let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes[..k_recon_count]);
 
         let mut result_main = vec![vec![0u64; self.n]; ct_level];
         let mut result_anchor = vec![vec![0u64; self.n]; self.dual_rns.anchor.primes.len()];

@@ -312,7 +312,8 @@ mod tests {
         let config = SecureConfig::secure_128().into_config();
         let params = LWEParams::from_config(&config);
 
-        assert_eq!(params.n, 4096); // SecureConfig::secure_128() uses N=4096
+        assert_eq!(params.n, config.n); // must mirror the config, not a pinned N
+        assert_eq!(params.n, 8192); // SecureConfig::secure_128() uses N=8192
         assert!(params.log_q > 0);
         assert!(params.sigma_millibits > 0);
 
