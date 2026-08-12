@@ -838,6 +838,36 @@ impl RNSPolynomial {
 /// Reconstruct an integer from CRT residues into U256 using iterative CRT.
 ///
 /// Assumes primes are pairwise coprime and the true value is in [0, Π p_i).
+/// Exact product of u64 factors as little-endian u64 limbs (any size).
+pub(crate) fn product_limbs_u64(factors: &[u64]) -> Vec<u64> {
+    let mut limbs = vec![1u64];
+    for &factor in factors {
+        let mut carry = 0u128;
+        for limb in &mut limbs {
+            let product = *limb as u128 * factor as u128 + carry;
+            *limb = product as u64;
+            carry = product >> 64;
+        }
+        if carry != 0 {
+            limbs.push(carry as u64);
+        }
+    }
+    while limbs.len() > 1 && limbs.last() == Some(&0) {
+        limbs.pop();
+    }
+    limbs
+}
+
+/// Bit length of a little-endian u64 limb value.
+pub(crate) fn limbs_bit_length_u64(limbs: &[u64]) -> u32 {
+    for index in (0..limbs.len()).rev() {
+        if limbs[index] != 0 {
+            return index as u32 * 64 + (64 - limbs[index].leading_zeros());
+        }
+    }
+    0
+}
+
 pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     assert!(!primes.is_empty(), "need primes");
     assert!(residues.len() >= primes.len(), "residue length mismatch");
@@ -931,6 +961,20 @@ pub struct DualRNSContext {
     pub main_product: u128,
     /// Product of anchor primes (A) - may be 0 if > u128::MAX
     pub anchor_product: u128,
+    /// Exact M when it fits in u128, `None` otherwise — the non-sentinel
+    /// counterpart of `main_product` (see dual_rns_context_metadata_regression.rs)
+    pub main_product_checked: Option<u128>,
+    /// Exact M as little-endian u64 limbs — valid for any M size
+    pub main_product_limbs: Vec<u64>,
+    /// Exact bit length of M
+    pub main_product_bit_length: u32,
+    /// Exact A when it fits in u128, `None` otherwise — the non-sentinel
+    /// counterpart of `anchor_product`
+    pub anchor_product_checked: Option<u128>,
+    /// Exact A as little-endian u64 limbs — valid for any A size
+    pub anchor_product_limbs: Vec<u64>,
+    /// Exact bit length of A
+    pub anchor_product_bit_length: u32,
     /// M⁻¹ mod A (precomputed) - only valid if anchor_product fits u128
     pub main_inv_anchor: u128,
     /// M⁻¹ mod pi for each anchor prime (for RNS-domain K-Elim)
@@ -994,11 +1038,27 @@ impl DualRNSContext {
             0 // Can't compute, must use RNS-domain K-Elim
         };
 
+        // Exact non-sentinel product metadata (valid for any product size;
+        // the u128 `main_product`/`anchor_product` fields use a 0 sentinel
+        // on overflow and stay for backward compatibility).
+        let main_product_limbs = product_limbs_u64(&main.primes);
+        let main_product_bit_length = limbs_bit_length_u64(&main_product_limbs);
+        let main_product_checked = (main_product > 0).then_some(main_product);
+        let anchor_product_limbs = product_limbs_u64(&anchor.primes);
+        let anchor_product_bit_length = limbs_bit_length_u64(&anchor_product_limbs);
+        let anchor_product_checked = (anchor_product > 0).then_some(anchor_product);
+
         Self {
             main,
             anchor,
             main_product,
             anchor_product,
+            main_product_checked,
+            main_product_limbs,
+            main_product_bit_length,
+            anchor_product_checked,
+            anchor_product_limbs,
+            anchor_product_bit_length,
             main_inv_anchor,
             main_inv_anchor_rns,
             n,
