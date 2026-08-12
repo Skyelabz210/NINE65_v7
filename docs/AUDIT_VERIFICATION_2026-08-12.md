@@ -71,6 +71,20 @@ The tarball's diagnosis — anchor capacity is the secure_256 blocker — was
      exact product bit length via `FHEConfig::rns_product_bit_length()`.
      Key generation and digit decomposition both derive counts from the
      same stored `q_bits`, so the change is self-consistent.
+   - `tests/dual_rns_context_metadata_regression.rs` — same story for
+     `DualRNSContext`: implemented the pinned
+     `main/anchor_product_checked`/`_limbs`/`_bit_length` fields via new
+     `product_limbs_u64` / `limbs_bit_length_u64` helpers (exact for any
+     product size; the u128 0-sentinel fields remain for compatibility).
+   - Three stale unit tests, each broken independently of this PR:
+     `security::tests::test_lwe_params_from_config` pinned the old
+     secure_128 N=4096 (code moved to 8192 some time ago);
+     `noise::budget` `exact_delta_size_does_not_sum_lane_widths` used a
+     degenerate [5, 5] example where the wrong and right formulas
+     coincide (both give 4); and `exact_delta_size_handles_products_above_u128`
+     passed a factor of 2 with t = 3, violating the function's own
+     `t < prime` precondition and panicking. All three fixed to test what
+     they meant to test.
 
 **New capability unlocked:** `secure_256` (and full-level `secure_192`)
 ct×ct multiplication through the strict public-mode gate now succeeds with
