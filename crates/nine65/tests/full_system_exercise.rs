@@ -167,7 +167,13 @@ fn test_all_insecure_configs_construct() {
     ];
 
     for (name, cfg) in &configs {
-        let q_prod = cfg.rns_product();
+        // try_rns_product: configs like deep_circuit exceed u128, where the
+        // fail-closed rns_product() would panic; fall back to the exact bit
+        // length, which is valid for any product size.
+        let q_display = match cfg.try_rns_product() {
+            Some(q_prod) if q_prod <= 1_000_000_000_000 => format!("{}", q_prod),
+            _ => format!("~2^{}", cfg.rns_product_bit_length()),
+        };
         println!(
             "{:<30} {:>6} {:>8} {:>8} {:>8} {:>10}",
             name,
@@ -175,11 +181,7 @@ fn test_all_insecure_configs_construct() {
             cfg.primes.len(),
             cfg.q,
             cfg.t,
-            if q_prod > 1_000_000_000_000 {
-                format!("~2^{}", 128 - q_prod.leading_zeros())
-            } else {
-                format!("{}", q_prod)
-            }
+            q_display
         );
     }
 
