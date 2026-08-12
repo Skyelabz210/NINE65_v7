@@ -438,3 +438,67 @@ silent-wrong-answer class — but it belongs on the **integer read**
   `security/ct_verification.rs` in the off-limits constant-time layer,
   `comprehensive_benchmarks.rs` wall-clock); the rest are comments *about* A1.
   Indexed as entries `[1]`–`[4]` in `CRAM_OPPORTUNITY_REPORT.md`.
+
+### 8.4 Retraction, 2026-08-12 — §5 and §8.3 are both out of date
+
+Measured against `main` at `5935fbf`. Two of §8.3's own bullets were wrong
+within two days of being written, so they are retracted here rather than
+quietly edited: a stale correction is worse than the error it corrected,
+because it reads as freshly verified.
+
+**Retracted — the baseline.** §5 says `648 / 3 / 103`; §8.3 corrects that to
+`652 / 3 / 103`. Both are obsolete. The measured figure is
+
+```
+cargo test -p nine65 --lib   →   724 passed / 0 failed / 103 ignored
+```
+
+**All three failures §5 diagnosed are fixed**, not merely re-counted:
+`noise::budget::tests::exact_delta_size_does_not_sum_lane_widths`,
+`noise::budget::tests::exact_delta_size_handles_products_above_u128`, and
+`security::tests::test_lwe_params_from_config` all pass. The suite also grew by
+72 tests. Any gate asserting the old triple is asserting a stale number.
+
+**Retracted — the compile break.** §8.3 says `crates/fhe-service` does not
+compile. It does. `handlers.rs` now pins the closure's error type with
+`Ok::<DecryptResponse, String>(…)`, which is what the `E0282`/`E0283` pair
+needed. `cargo build --workspace` and `cargo test --workspace --no-run` are both
+clean, with zero errors.
+
+**Retracted — "3 targets fail to compile" (§5).** All three are fixed:
+
+- `full_system_exercise.rs` — the double `#[cfg]` on `light_insecure` /
+  `he_standard_128_insecure` is gone; only the wide
+  `cfg(any(test, debug_assertions, feature = "allow_insecure"))` remains.
+- `rns_context_metadata_regression.rs` and
+  `dual_rns_context_metadata_regression.rs` — §5 wrote these off as assertions
+  "against a refactor that never landed". That was wrong, and worth stating
+  plainly because the conclusion it invited was deletion. Checked symbol by
+  symbol, everything they called already existed **except** the context-side
+  caches, and those have since landed: `q_product_checked` / `q_product_limbs`
+  on `RNSFHEContext`, all six `{main,anchor}_product_{checked,limbs,bit_length}`
+  on `DualRNSContext`, with a shared `product_limbs_u64` helper. The tests were
+  never stale; they were a specification waiting for its other half.
+
+**The defect they specified was real, and is fixed.** `q_bits` was the *sum of
+prime bit widths* under a comment claiming it was "always valid". It is now
+`config.rns_product_bit_length()`. The sum overcounts by up to one bit per
+prime — for `754974721 × 167772161` the widths sum to 58 while the product is
+57 bits — which inflated relinearisation digit counts. Same failure class as the
+depth-2 anchor-capacity defect in §1 and as the `exact_delta_size` pair above: a
+magnitude that is summed or sentinelled instead of measured.
+
+**Still standing from §8.3.** The A1 finding is unchanged, re-verified on
+`5935fbf`: `exact_transcendentals` has **zero** production floats — every
+occurrence is inside a `#[cfg(test)]` item — and the same four production sites
+remain under `nine65` (`compiler.rs`, `ops/sbni.rs`,
+`security/ct_verification.rs`, `comprehensive_benchmarks.rs`), indexed as
+`[1]`–`[4]` in `CRAM_OPPORTUNITY_REPORT.md`.
+
+**CI.** `ci.yml:187` runs `cargo test --workspace` excluding only
+`nine65-python`/`-wasm`/`-ffi`, so `cram_gates` already runs there — 16/16, with
+`exact_transcendentals` lib at 457 and `a2_residue_native` at 5. §5's "**CI is
+red today**" no longer holds on the compile axis. A dedicated, attributable step
+still belongs in `cram_residue_native_gates.yml`, which already exists for
+exactly this purpose; it is unwritten only because the available token lacks the
+`workflow` scope.
