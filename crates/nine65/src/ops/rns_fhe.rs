@@ -2616,8 +2616,11 @@ impl RNSFHEContext {
     }
 
     /// Non-cfg version for release builds (level-aware)
+    ///
+    /// Public to match the test/debug variant above: integration tests built
+    /// with `--release` link against this variant (noise_profile.rs).
     #[cfg(not(any(test, debug_assertions)))]
-    fn decrypt_dual_with_diagnostics(
+    pub fn decrypt_dual_with_diagnostics(
         &self,
         ct: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
@@ -3331,11 +3334,14 @@ impl RNSFHEContext {
         // anchor subset `extract_k_rns_level` actually reconstructed `k_u`
         // against below, or `SignedK256::from_unsigned`'s half-range test
         // (k > a_product/2 => negative) is checked against the wrong modulus.
-        // `extract_k_rns_level` (arithmetic/rns.rs) always uses the full
-        // canonical anchor set now (see its own comment for why the old
-        // ct_level-tiered selection was wrong post-ladder-removal); this must
-        // mirror that unconditionally, not recompute its own tier.
-        let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes);
+        // `extract_k_rns_level` (arithmetic/rns.rs) reconstructs from the
+        // first `k_reconstruction_anchor_count()` anchors (the full set for
+        // 5-anchor bases; capped at 8 for the 10-anchor n=16384 basis, whose
+        // full product exceeds U256 -- extra lanes are verified as integrity
+        // witnesses there); this must mirror that count, not recompute its
+        // own tier.
+        let k_recon_count = self.dual_rns.k_reconstruction_anchor_count();
+        let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes[..k_recon_count]);
 
         let mut result_main = vec![vec![0u64; self.n]; ct_level];
         let mut result_anchor = vec![vec![0u64; self.n]; self.dual_rns.anchor.primes.len()];

@@ -77,7 +77,7 @@ Depth benchmarks:
 - Auto-Bootstrap: AutoBootstrapEvaluator::mul_auto() — auto trigger on noise threshold — Verified 10+ chained muls
 
 ## Security Configs
-- SecureConfig::secure_128() — n=4096, log2(q)=90, classical=129/quantum=86/hybrid=129
+- SecureConfig::secure_128() — n=8192, log2(q)=90, classical=129/quantum=86/hybrid=129
 - SecureConfig::secure_192() — n=16384, log2(q)=147, classical=374/quantum=213/hybrid=318
 - SecureConfig::secure_256() — n=16384, log2(q)=177, classical=311/quantum=177/hybrid=264
 
