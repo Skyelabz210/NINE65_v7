@@ -206,6 +206,100 @@ impl ArrowStep {
     }
 }
 
+// ─── reversibility: the arrow-emission gate ─────────────────────────────────
+
+/// Invert an n×n matrix mod a prime p by Gauss–Jordan elimination with
+/// Fermat inverses. Returns `None` when the matrix is singular mod p —
+/// the lane's arrow is one-way and MUST NOT be selected for reversible
+/// transport. Exact integer arithmetic throughout.
+pub fn mat_inv_mod(m: &[u64], n: usize, p: u64) -> Option<Vec<u64>> {
+    debug_assert_eq!(m.len(), n * n);
+
+    let mulm = |x: u64, y: u64| ((x as u128 * y as u128) % p as u128) as u64;
+    let subm = |x: u64, y: u64| ((x as u128 + p as u128 - y as u128) % p as u128) as u64;
+    let pow_mod = |mut b: u64, mut e: u64| {
+        let mut r = 1u64;
+        b %= p;
+        while e > 0 {
+            if e & 1 == 1 {
+                r = ((r as u128 * b as u128) % p as u128) as u64;
+            }
+            b = ((b as u128 * b as u128) % p as u128) as u64;
+            e >>= 1;
+        }
+        r
+    };
+
+    let mut a: Vec<u64> = m.iter().map(|&x| x % p).collect();
+    let mut inv = mat_identity(n);
+
+    for col in 0..n {
+        let piv = (col..n).find(|&r| a[r * n + col] != 0)?;
+        if piv != col {
+            for j in 0..n {
+                a.swap(col * n + j, piv * n + j);
+                inv.swap(col * n + j, piv * n + j);
+            }
+        }
+        let pinv = pow_mod(a[col * n + col], p - 2); // Fermat: p prime
+        for j in 0..n {
+            a[col * n + j] = mulm(a[col * n + j], pinv);
+            inv[col * n + j] = mulm(inv[col * n + j], pinv);
+        }
+        for r in 0..n {
+            if r != col && a[r * n + col] != 0 {
+                let f = a[r * n + col];
+                for j in 0..n {
+                    a[r * n + j] = subm(a[r * n + j], mulm(f, a[col * n + j]));
+                    inv[r * n + j] = subm(inv[r * n + j], mulm(f, inv[col * n + j]));
+                }
+            }
+        }
+    }
+
+    Some(inv)
+}
+
+impl ArrowStep {
+    /// The arrow-emission gate: per-lane reversibility of the folded
+    /// operator. A^N is invertible mod p iff the single-step A is, so the
+    /// gate inverts the one-step stencil per lane. `true` = the lane can be
+    /// run backward exactly ((A⁻¹)^N undoes A^N); `false` = the arrow is
+    /// one-way on that lane (det(A) ≡ 0 mod p).
+    ///
+    /// Reversibility is a property of (operator, dim, prime) JOINTLY — not
+    /// of the basis. Measured example: heat stencil [1,3,1] at dim=8 is
+    /// singular on lanes {3, 5, 7}, two of which sit in `TRANSPORT_CORE`.
+    /// Transport-lane selection must consult this gate per deployment.
+    pub fn reversible_lanes(&self, a: u64, b: u64) -> Vec<bool> {
+        self.primes
+            .iter()
+            .map(|&p| {
+                let single = heat_circulant(self.n, a, b, p);
+                mat_inv_mod(&single, self.n, p).is_some()
+            })
+            .collect()
+    }
+
+    /// Exact reverse application: undo `steps` folded time steps on every
+    /// reversible lane. Returns `None` if ANY lane in the basis is singular
+    /// (loud refusal — a partial unfold would silently desynchronise the
+    /// lanes, which is exactly the projection non-reversibility failure
+    /// T-X-PROJ forbids).
+    pub fn unfold(&self, a: u64, b: u64, state: &[Vec<u64>]) -> Option<Vec<Vec<u64>>> {
+        assert_eq!(state.len(), self.primes.len());
+
+        let mut out = Vec::with_capacity(state.len());
+        for (li, &p) in self.primes.iter().enumerate() {
+            let single = heat_circulant(self.n, a, b, p);
+            let ainv = mat_inv_mod(&single, self.n, p)?;
+            let unfolded_op = mat_pow_mod(&ainv, self.steps, self.n, p);
+            out.push(mat_apply(&unfolded_op, &state[li], self.n, p));
+        }
+        Some(out)
+    }
+}
+
 // ─── Floyd's cycle detection for nonlinear PDEs ─────────────────────────────
 
 /// One time step of the inviscid-diffusive Burgers discretisation on a
