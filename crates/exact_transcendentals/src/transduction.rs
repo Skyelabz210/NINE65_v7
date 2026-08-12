@@ -195,42 +195,52 @@ impl TransductionMap {
         result
     }
 
-    /// Verify that transduction preserved the value.
+    /// Verify that transduction preserved the value — residue-native.
     ///
-    /// Reconstructs the integer from both residue representations using
-    /// Garner's algorithm and checks equality modulo `lcm(M_A, M_B)`.
-    /// This is primarily useful for testing and debugging.
+    /// Two representations agree modulo `lcm(M_A, M_B)` iff the value read
+    /// from basis A reproduces `x_b` on every B lane AND the value read
+    /// from basis B reproduces `x_a` on every A lane: by CRT, lanewise
+    /// agreement on both bases IS agreement mod the lcm. Both reads are
+    /// lanewise transductions through the idempotent tables — no integer is
+    /// ever materialised, no digit depends on another digit. There are no
+    /// cascades.
+    ///
+    /// (Previous implementation Garner-reconstructed both sides and compared
+    /// mod lcm — a positional exit for a question residue space answers
+    /// directly. Retired per A2; semantics unchanged.)
     pub fn verify(&self, x_a: &[i128], x_b: &[i128]) -> bool {
         assert_eq!(x_a.len(), self.basis_a.len());
         assert_eq!(x_b.len(), self.basis_b.len());
 
-        // Reconstruct from basis A
-        let pairs_a: Vec<(i128, i128)> = x_a
-            .iter()
-            .zip(self.basis_a.iter())
-            .map(|(&r, &m)| (k_elim::modd(r, m), m))
-            .collect();
-        let val_a = match k_elim::garner_reconstruct(&pairs_a) {
-            Some(v) => v,
-            None => return false,
-        };
+        // Basis B must be pairwise coprime for the reverse read (the old
+        // Garner path reported such inputs as unverifiable; keep that
+        // contract without panicking).
+        for i in 0..self.basis_b.len() {
+            for j in (i + 1)..self.basis_b.len() {
+                if k_elim::gcd(self.basis_b[i], self.basis_b[j]) != 1 {
+                    return false;
+                }
+            }
+        }
 
-        // Reconstruct from basis B
-        let pairs_b: Vec<(i128, i128)> = x_b
-            .iter()
-            .zip(self.basis_b.iter())
-            .map(|(&r, &m)| (k_elim::modd(r, m), m))
-            .collect();
-        let val_b = match k_elim::garner_reconstruct(&pairs_b) {
-            Some(v) => v,
-            None => return false,
-        };
+        // A -> B lanewise read must reproduce x_b.
+        let from_a = self.apply(x_a);
+        for (j, &b_j) in self.basis_b.iter().enumerate() {
+            if k_elim::modd(from_a[j], b_j) != k_elim::modd(x_b[j], b_j) {
+                return false;
+            }
+        }
 
-        // Compute lcm(M_A, M_B) = M_A * M_B / gcd(M_A, M_B)
-        let g = k_elim::gcd(self.m_a, self.m_b);
-        let lcm = self.m_a / g * self.m_b;
+        // B -> A lanewise read must reproduce x_a.
+        let map_ba = TransductionMap::new(&self.basis_b, &self.basis_a);
+        let from_b = map_ba.apply(x_b);
+        for (i, &a_i) in self.basis_a.iter().enumerate() {
+            if k_elim::modd(from_b[i], a_i) != k_elim::modd(x_a[i], a_i) {
+                return false;
+            }
+        }
 
-        k_elim::modd(val_a, lcm) == k_elim::modd(val_b, lcm)
+        true
     }
 
     /// Read-only access to source basis.
@@ -295,8 +305,6 @@ pub fn transduct_s8_to_s6(residues_s8: &[i128]) -> Vec<i128> {
 /// exact. For values in `[0, max(M_A, M_B))`, the result is correct
 /// modulo `min(M_A, M_B)`.
 pub fn verify_roundtrip(basis_a: &[i128], basis_b: &[i128], value: i128) -> bool {
-    let m_a = basis_a.iter().copied().fold(1i128, |acc, x| acc * x);
-
     // Decompose value into basis A
     let residues_a: Vec<i128> = basis_a.iter().map(|&m| k_elim::modd(value, m)).collect();
 
@@ -308,32 +316,19 @@ pub fn verify_roundtrip(basis_a: &[i128], basis_b: &[i128], value: i128) -> bool
     let map_ba = TransductionMap::new(basis_b, basis_a);
     let residues_a_prime = map_ba.apply(&residues_b);
 
-    // Check: recovered residues must match originals mod each a_i
+    // Two residue vectors over the SAME basis represent the same value mod
+    // M_A iff they agree lane by lane — that IS the identity, by CRT. The
+    // Garner "double check" that used to follow this loop reconstructed both
+    // vectors to positional integers and compared them mod M_A: a value-sized
+    // exit that could never disagree with the lanewise comparison above it.
+    // Retired per A2. There are no cascades.
     for (i, &a_i) in basis_a.iter().enumerate() {
         if k_elim::modd(residues_a[i], a_i) != k_elim::modd(residues_a_prime[i], a_i) {
             return false;
         }
     }
 
-    // Also verify via full reconstruction
-    let pairs_a: Vec<(i128, i128)> = residues_a
-        .iter()
-        .zip(basis_a.iter())
-        .map(|(&r, &m)| (r, m))
-        .collect();
-    let pairs_a_prime: Vec<(i128, i128)> = residues_a_prime
-        .iter()
-        .zip(basis_a.iter())
-        .map(|(&r, &m)| (r, m))
-        .collect();
-
-    let v_orig = k_elim::garner_reconstruct(&pairs_a);
-    let v_round = k_elim::garner_reconstruct(&pairs_a_prime);
-
-    match (v_orig, v_round) {
-        (Some(a), Some(b)) => k_elim::modd(a, m_a) == k_elim::modd(b, m_a),
-        _ => false,
-    }
+    true
 }
 
 // ---------------------------------------------------------------------------
