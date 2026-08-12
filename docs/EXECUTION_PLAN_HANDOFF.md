@@ -152,7 +152,24 @@ mods to a CT limb-based reduction (implement a faster `mod_u64_ct` via
 Horner over limbs with CT select, ~8 mulmods instead of 256 iterations).
 Do not silently mix the two postures.
 
-### H4. Bootstrap paths at secure_256
+### H4. Wire MANA/UNHAL into the dual-RNS hot path
+`accelerated` is now a default feature and rayon is verified absent from the
+default dependency graph (unhal is consumed `default-features = false`; its
+own default no longer includes `parallel`). But `AcceleratedFHE`
+(`crates/nine65/src/accelerated.rs`) is a side-car with ZERO callers in
+`ops/` or `arithmetic/` — it wraps the legacy `ops::Ciphertext`, not
+`DualRNSCiphertext`, so the production path gets no speedup (measured:
+identical 157.6ms secure_128 / 711ms secure_192 mul with the feature on and
+off). Real integration means routing `dual_poly_mul` / NTT lane loops in
+`ops/rns_fhe.rs` through MANA's lane-parallel stream engine
+(`mana::stream::ManaStream`, `unhal::accelerator::Accelerator`) behind
+`#[cfg(feature = "accelerated")]`, with bit-identical outputs enforced by an
+A/B regression test (accelerated vs sequential must match exactly —
+determinism is a hard project rule). Fix `accelerated.rs`'s stale docstring
+("Parallel across primes (Rayon)") while there. Re-run M2 benchmarks after
+wiring; only then do "accelerated" performance claims mean anything.
+
+### H5. Bootstrap paths at secure_256
 `bootstrap()` / `bootstrap_with_ksk()` / `AutoBootstrapEvaluator::mul_auto`
 have never run on a working secure_256 tier. Run
 `cargo test -p nine65 --lib --release -- bootstrap` plus the
