@@ -4536,7 +4536,15 @@ impl RNSFHEContext {
         T: Send,
         F: Fn(usize) -> T + Sync,
     {
-        mana::executor::run_lanes(total, lane_fn)
+        // The full accelerator stack, as designed: UNHAL is the hardware
+        // abstraction that picks the strategy; MANA's deterministic lane
+        // executor does the work. One process-wide auto-configured
+        // instance — its config reads only public machine facts.
+        use std::sync::OnceLock;
+        static UNHAL_ACCEL: OnceLock<unhal::accelerator::Accelerator> = OnceLock::new();
+        UNHAL_ACCEL
+            .get_or_init(unhal::accelerator::Accelerator::auto)
+            .run_lanes(total, lane_fn)
     }
 
     #[cfg(not(feature = "accelerated"))]
