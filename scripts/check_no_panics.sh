@@ -1,21 +1,121 @@
 #!/usr/bin/env bash
 # check_no_panics.sh — Quality gate: no panic!/unwrap()/expect() in production code
 #
-# Scans all Rust source files in crates/nine65/src/ for panic patterns,
-# excluding test modules (#[cfg(test)] blocks).
+# Scans Rust source under crates/nine65/src for panic patterns outside test code.
 #
-# Exit 0 if clean, exit 1 if violations found.
+# ---------------------------------------------------------------------------
+# REPAIRED 2026-08-12 — Execution Plan Phase 2 (docs/EXECUTION_PLAN_2026-08-12.md)
+# ---------------------------------------------------------------------------
+# Two defects were fixed:
+#
+# 1. STRUCTURALLY UNABLE TO FAIL. The old script ended with a hardcoded
+#    `exit 0` on the violation branch, so it reported findings and then passed
+#    unconditionally. It could not fail no matter what entered the tree.
+#    Enforcement is now a real, switchable decision (see MODE below) rather
+#    than a constant.
+#
+# 2. INACCURATE COUNT. Test code was excluded by the heuristic "a `#[cfg(test)]`
+#    appears somewhere above this line, and fewer than 2000 lines above".
+#    `ops/rns_fhe.rs` has a ~7000-line `#[cfg(test)] mod tests` block, so every
+#    test line past the 2000-line window was counted as production. That is
+#    where the widely-quoted figure of 238 violations came from. Test items are
+#    now delimited by brace depth, which is what produced the real number.
+#
+# ---------------------------------------------------------------------------
+# MODE — advisory (default) vs enforced
+# ---------------------------------------------------------------------------
+# Default is ADVISORY: it prints the true violation count and exits 0.
+#
+# This is deliberate and temporary. The remaining findings are a real backlog,
+# not noise, but Phase 2 of the execution plan records an OPEN DECISION that
+# belongs to the repo owner: hard cutover (burn the backlog down to zero, then
+# gate) versus ratchet (baseline today's count, gate on "no new violations").
+# Flipping this gate to hard-fail before that decision would turn CI red on
+# `main` immediately — this script runs in ci.yml tier T1 on every push and PR.
+#
+# To enforce, pass `enforced` as $1 or set NINE65_PANIC_GATE=enforce:
+#     bash scripts/check_no_panics.sh enforced
+#     NINE65_PANIC_GATE=enforce bash scripts/check_no_panics.sh
+# In enforced mode a non-zero violation count exits 1.
+#
+# Exit 0 if clean (or advisory), exit 1 if enforcing and violations remain.
 
 set -euo pipefail
 
 CRATE_DIR="crates/nine65/src"
 VIOLATIONS=0
 
+MODE="${1:-${NINE65_PANIC_GATE:-advisory}}"
+case "${MODE}" in
+    enforce|enforced) MODE="enforced" ;;
+    *) MODE="advisory" ;;
+esac
+
+# Emit "FILE:LINE:CONTENT" for lines that are NOT inside a test-gated item
+# (#[cfg(test)], #[cfg(all(test, ...))], #[test]). Item extent is determined by
+# brace depth on a string- and comment-stripped view of each line, so braces
+# inside literals cannot desynchronise the scanner. Anything that does not
+# parse as a balanced item stays visible rather than being hidden.
+read -r -d '' PROD_AWK <<'AWK' || true
+function code(l,   c) {
+  c = l
+  gsub(/"(\\.|[^"\\])*"/, "\"\"", c)
+  sub(/\/\/.*$/, "", c)
+  return c
+}
+BEGIN { skip = 0; pending = 0; depth = 0; started = 0 }
+FNR == 1 { skip = 0; pending = 0; depth = 0; started = 0 }
+{
+  line = $0
+  c = code(line)
+  if (skip) {
+    if (!started) {
+      if (index(c, "{") > 0) { started = 1; depth = 0 }
+      else if (index(c, ";") > 0) { skip = 0; next }
+      else { next }
+    }
+    n = gsub(/\{/, "{", c); m = gsub(/\}/, "}", c)
+    depth += n - m
+    if (depth <= 0) { skip = 0; started = 0 }
+    next
+  }
+  if (pending) {
+    if (c ~ /^[[:space:]]*#\[/ || line ~ /^[[:space:]]*\/\//) { print FILENAME ":" FNR ":" line; next }
+    pending = 0; skip = 1; started = 0; depth = 0
+    if (index(c, "{") > 0) {
+      started = 1
+      n = gsub(/\{/, "{", c); m = gsub(/\}/, "}", c)
+      depth = n - m
+      if (depth <= 0) { skip = 0; started = 0 }
+    } else if (index(c, ";") > 0) { skip = 0 }
+    next
+  }
+  if (c ~ /^[[:space:]]*#\[cfg\(test\)\][[:space:]]*$/ || c ~ /^[[:space:]]*#\[cfg\(all\(test,/ || c ~ /^[[:space:]]*#\[test\][[:space:]]*$/) {
+    pending = 1
+    print FILENAME ":" FNR ":" line
+    next
+  }
+  print FILENAME ":" FNR ":" line
+}
+AWK
+
+# bin/ holds benchmark and demo binaries, not library code — the same exemption
+# scripts/check_no_floats_runtime.sh documents and applies.
+production_lines() {
+    find "$CRATE_DIR" -name '*.rs' -type f -not -path '*/bin/*' -print0 \
+        | xargs -0 -r awk "$PROD_AWK"
+}
+
 echo "=== No-Panics Quality Gate ==="
-echo "Scanning: $CRATE_DIR"
+echo "Scanning: $CRATE_DIR (excluding bin/ and test-gated items)"
+echo "Mode:     $MODE"
 echo ""
 
-# Patterns to detect (in non-test code)
+PROD_LINES="$(production_lines)"
+PROD_LINE_COUNT=$(printf '%s\n' "$PROD_LINES" | wc -l)
+echo "Production source lines in scope: $PROD_LINE_COUNT"
+echo ""
+
 PATTERNS=(
     'panic!'
     '\.unwrap()'
@@ -23,73 +123,45 @@ PATTERNS=(
 )
 
 for pattern in "${PATTERNS[@]}"; do
-    # Find matches, excluding test modules
-    # We use a simple heuristic: skip lines in files that are inside #[cfg(test)] blocks
-    # For a robust check, we grep and then filter out test-only occurrences
-
-    matches=$(grep -rn "$pattern" "$CRATE_DIR" --include="*.rs" 2>/dev/null || true)
+    # Drop whole-line comments; `//` mid-line is left alone so that a genuine
+    # trailing-comment violation is not hidden by its own annotation.
+    matches=$(printf '%s\n' "$PROD_LINES" \
+        | grep -v '^[^:]*:[0-9]*:[[:space:]]*//' \
+        | grep "$pattern" || true)
 
     if [ -z "$matches" ]; then
-        echo "  [PASS] No '$pattern' found"
+        echo "  [PASS] '$pattern' — none in production code"
         continue
     fi
 
-    # Filter out test modules and doc comments
-    non_test_matches=""
-    while IFS= read -r line; do
-        file=$(echo "$line" | cut -d: -f1)
-        lineno=$(echo "$line" | cut -d: -f2)
-
-        # Skip if inside a #[cfg(test)] module (check preceding lines)
-        in_test=$(head -n "$lineno" "$file" 2>/dev/null | grep -c '#\[cfg(test)\]' || true)
-        # Count closing braces after last #[cfg(test)] to see if we're still inside
-        if [ "$in_test" -gt 0 ]; then
-            # Simple heuristic: if there's a #[cfg(test)] before this line,
-            # assume it's test code (works for module-level test blocks)
-            last_cfg_test_line=$(head -n "$lineno" "$file" | grep -n '#\[cfg(test)\]' | tail -1 | cut -d: -f1)
-            if [ -n "$last_cfg_test_line" ]; then
-                # If the test annotation is within 200 lines, likely in test module
-                diff=$((lineno - last_cfg_test_line))
-                if [ "$diff" -lt 2000 ]; then
-                    continue
-                fi
-            fi
-        fi
-
-        # Skip doc comments (lines starting with ///)
-        content=$(echo "$line" | cut -d: -f3-)
-        if echo "$content" | grep -q '^\s*//'; then
-            continue
-        fi
-
-        non_test_matches="$non_test_matches
-$line"
-    done <<< "$matches"
-
-    # Trim and check
-    non_test_matches=$(echo "$non_test_matches" | sed '/^$/d')
-
-    if [ -z "$non_test_matches" ]; then
-        echo "  [PASS] '$pattern' — all occurrences in test code"
-    else
-        count=$(echo "$non_test_matches" | wc -l)
-        echo "  [WARN] '$pattern' — $count occurrences in production code"
-        echo "$non_test_matches" | head -10
-        if [ "$count" -gt 10 ]; then
-            echo "  ... and $((count - 10)) more"
-        fi
-        VIOLATIONS=$((VIOLATIONS + count))
+    count=$(printf '%s\n' "$matches" | wc -l)
+    echo "  [FAIL] '$pattern' — $count occurrences in production code"
+    printf '%s\n' "$matches" | head -10 | sed 's/^/    /'
+    if [ "$count" -gt 10 ]; then
+        echo "    ... and $((count - 10)) more"
     fi
+    VIOLATIONS=$((VIOLATIONS + count))
 done
 
 echo ""
-if [ "$VIOLATIONS" -gt 0 ]; then
-    echo "RESULT: $VIOLATIONS panic-pattern violations found"
-    echo "NOTE: Some .expect() calls on OS CSPRNG are acceptable (CRITICAL path)"
-    echo "      Review each violation and convert to try_*/? where possible."
-    # Advisory mode: don't fail CI yet (some expect() on CSPRNG is intentional)
-    exit 0
-else
+if [ "$VIOLATIONS" -eq 0 ]; then
     echo "RESULT: No panic patterns in production code"
     exit 0
 fi
+
+echo "RESULT: $VIOLATIONS panic-pattern violations in production code"
+echo "NOTE: Some .expect() calls on the OS CSPRNG are intentional (CRITICAL path);"
+echo "      others should become try_*/? returns. Each needs individual review."
+
+if [ "$MODE" = "enforced" ]; then
+    echo "Mode 'enforced': failing on the remaining backlog."
+    exit 1
+fi
+
+echo ""
+echo "ADVISORY MODE — not failing CI."
+echo "  Enforcement is blocked on an open repo-owner decision recorded in"
+echo "  docs/EXECUTION_PLAN_2026-08-12.md Phase 2: hard cutover (burn the"
+echo "  backlog to zero, then gate) vs ratchet (baseline this count, gate on"
+echo "  new violations only). Re-run with 'enforced' once that is settled."
+exit 0

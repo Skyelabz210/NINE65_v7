@@ -8,10 +8,28 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+# Real, in-tree residue-native production surfaces.
+#
+# REPAIRED 2026-08-12 (Execution Plan Phase 2): this tuple used to list
+# `crates/cram-poly/src` and `crates/cram-fhe/src`. Neither crate has ever
+# existed in this workspace (confirmed against `git log -S`, and the workspace
+# member list) — they were aspirational names written alongside the scanner in
+# commit 294c438. Because `main()` silently skipped any target that did not
+# exist, the residue-native polynomial layer and the CRAM ciphertext layer were
+# simply never scanned while the gate reported on the rest.
+#
+# They are replaced 1:1 by the modules that actually fill those roles today:
+#   cram-poly -> crates/nine65/src/ring          (production polynomial layer)
+#   cram-fhe  -> crates/exact_transcendentals/src/cram_ct.rs
+#                                                (CRAM ciphertext layer, wrapped
+#                                                 by nine65's cram_ct_wrap.rs)
+# A missing target is now a hard error (see `main`) so a future rename cannot
+# silently drop coverage again.
 PRODUCTION_TARGETS = (
     ROOT / "crates" / "cram-core" / "src",
-    ROOT / "crates" / "cram-poly" / "src",
-    ROOT / "crates" / "cram-fhe" / "src",
+    ROOT / "crates" / "nine65" / "src" / "ring",
+    ROOT / "crates" / "exact_transcendentals" / "src" / "cram_ct.rs",
     ROOT / "crates" / "nine65" / "src" / "cram_ct_wrap.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_mul.rs",
@@ -46,6 +64,83 @@ def executable_fragment(line: str) -> str:
     return line.split("//", 1)[0]
 
 
+TEST_GATE = re.compile(r"^\s*#\[(?:cfg\(test\)|cfg\(all\(test\s*,|test)\]?")
+
+
+def _brace_code(line: str) -> str:
+    """Line view used only for brace counting: no strings, no line comment."""
+    code = re.sub(r'"(?:\\.|[^"\\])*"', '""', line)
+    return code.split("//", 1)[0]
+
+
+def production_lines(text: str) -> list[tuple[int, str]]:
+    """Numbered source lines that are not inside a test-gated item.
+
+    The gate's contract is "prohibited mechanisms in residue-native *production*
+    paths". Without this, an inline `#[cfg(test)] mod tests { ... }` (for
+    example `ops/rns_fhe.rs`, whose test module is ~7000 lines long) is reported
+    as production debt. `.github/scripts/check_cram_recumbency.py` already
+    applies the same rule; this keeps the two gates telling the same story.
+
+    Conservative by construction: anything that does not parse as a balanced
+    item stays visible rather than being hidden.
+    """
+
+    lines = text.splitlines()
+    kept: list[tuple[int, str]] = []
+    index = 0
+    total = len(lines)
+
+    while index < total:
+        line = lines[index]
+        if not TEST_GATE.match(line):
+            kept.append((index + 1, line))
+            index += 1
+            continue
+
+        # Consume attributes / doc comments attached to the gated item.
+        cursor = index + 1
+        while cursor < total:
+            stripped = lines[cursor].lstrip()
+            if stripped.startswith("#[") or stripped.startswith("//"):
+                cursor += 1
+                continue
+            break
+
+        if cursor >= total:
+            kept.extend((n + 1, lines[n]) for n in range(index, total))
+            break
+
+        depth = 0
+        saw_brace = False
+        end: int | None = None
+        while cursor < total:
+            code = _brace_code(lines[cursor])
+            opens = code.count("{")
+            closes = code.count("}")
+            if not saw_brace and ";" in code and opens == 0:
+                end = cursor + 1
+                break
+            if opens > 0:
+                saw_brace = True
+            if saw_brace:
+                depth += opens - closes
+                if depth <= 0:
+                    end = cursor + 1
+                    break
+            cursor += 1
+
+        if end is None:
+            # Never conceal malformed or unexpectedly shaped source.
+            kept.append((index + 1, line))
+            index += 1
+            continue
+
+        index = end
+
+    return kept
+
+
 def scan_file(path: pathlib.Path) -> list[str]:
     if is_allowed(path):
         return []
@@ -54,7 +149,7 @@ def scan_file(path: pathlib.Path) -> list[str]:
     except UnicodeDecodeError:
         return []
     failures: list[str] = []
-    for line_number, line in enumerate(text.splitlines(), start=1):
+    for line_number, line in production_lines(text):
         fragment = executable_fragment(line)
         if not fragment:
             continue
@@ -77,16 +172,43 @@ def iter_files(target: pathlib.Path):
 
 def main() -> int:
     failures: list[str] = []
+    missing: list[str] = []
+    scanned = 0
+
     for target in PRODUCTION_TARGETS:
-        if target.exists():
-            for path in iter_files(target):
-                failures.extend(scan_file(path))
-    if failures:
+        if not target.exists():
+            # Previously `if target.exists()` skipped silently, which is how two
+            # never-existent crates sat in this list unnoticed. A target that
+            # cannot be scanned is a gate defect, not a pass.
+            missing.append(str(target.relative_to(ROOT)))
+            continue
+        for path in iter_files(target):
+            scanned += 1
+            failures.extend(scan_file(path))
+
+    if missing:
         print("Residue-native architecture gate FAILED", file=sys.stderr)
+        print(
+            "configured production target(s) do not exist — fix PRODUCTION_TARGETS:",
+            file=sys.stderr,
+        )
+        for target in missing:
+            print(f"  missing_target: {target}", file=sys.stderr)
+
+    if failures:
+        if not missing:
+            print("Residue-native architecture gate FAILED", file=sys.stderr)
+        print(
+            f"{len(failures)} prohibited construct(s) in {scanned} scanned file(s):",
+            file=sys.stderr,
+        )
         for failure in failures:
             print(failure, file=sys.stderr)
+
+    if missing or failures:
         return 1
-    print("Residue-native architecture gate PASSED")
+
+    print(f"Residue-native architecture gate PASSED ({scanned} files scanned)")
     return 0
 
 

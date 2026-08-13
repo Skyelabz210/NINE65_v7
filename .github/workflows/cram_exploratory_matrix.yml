@@ -14,8 +14,10 @@ on:
       - 'docs/CRAM_FHE_EXPLORATORY_HARNESS_PLAN.md'
       - '.github/workflows/cram_exploratory_matrix.yml'
   push:
+    # Re-pointed 2026-08-12: was 'cram/residue-native-scale-dag', a branch that
+    # no longer exists, so this push trigger was dead. Trunk is `main`.
     branches:
-      - 'cram/residue-native-scale-dag'
+      - main
   workflow_dispatch:
     inputs:
       profile:

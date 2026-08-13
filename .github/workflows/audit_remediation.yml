@@ -1,5 +1,21 @@
 name: Audit Remediation Gate
 
+# Repaired 2026-08-12 (execution plan Phase 2):
+#  * push trigger re-pointed from the deleted branch
+#    `hardening/beyond-100-app-platform` to the real trunk `main`. The
+#    pull_request half was already live against `main`.
+#  * the "SBNI invariant tests" step was removed: `pub mod sbni;` is commented
+#    out at crates/nine65/src/ops/mod.rs:16-19, so `ops::sbni` matches zero
+#    tests and the step reported success while executing nothing.
+#  * the nine65_bench JSON assertions were rewritten against the schema the
+#    binary actually emits today. They referenced `depth_chain`,
+#    `overall_correct`, `metadata.integer_only_reporting`,
+#    `metadata.simulated_refreshes` and `operations.path` — none of which
+#    exist any more (the emitter is crates/nine65/src/bin/nine65_bench.rs
+#    ~line 465). Every one of those steps was failing on a KeyError, so this
+#    gate has been red on `main` PRs for reasons unrelated to the change under
+#    test. See the individual step comments for how each assertion was mapped.
+
 on:
   pull_request:
     branches: [main]
@@ -20,7 +36,7 @@ on:
       - ".github/workflows/audit_remediation.yml"
   push:
     branches:
-      - "hardening/beyond-100-app-platform"
+      - main
   workflow_dispatch:
 
 permissions:
@@ -59,13 +75,29 @@ jobs:
             exit 1
           fi
 
-      - name: Verify statistical gate controls overall status
+      # The original two greps looked for
+      #   let overall_correct = depth_correct && statistical_correct;
+      #   if !overall_correct {
+      # Neither string exists in nine65_bench.rs any more — the identifier
+      # `overall_correct` is gone from the file entirely, so this step could
+      # only ever fail. What survives is the statistical half: a failed
+      # statistical run still forces a non-zero exit. That half is asserted
+      # here.
+      #
+      # The depth half genuinely regressed and is NOT asserted: the binary
+      # computes `achieved_chain_correct` and reports it in JSON, but never
+      # exits non-zero on it. Restoring that is a change to the benchmark
+      # binary, not to CI — recorded for the repo owner rather than papered
+      # over with a weaker grep that pretends to cover it.
+      - name: Verify statistical gate controls exit status
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'let overall_correct = depth_correct && statistical_correct;' \
+          grep -F 'eprintln!("Statistical correctness failed: {successes}/100");' \
             crates/nine65/src/bin/nine65_bench.rs
-          grep -F 'if !overall_correct {' crates/nine65/src/bin/nine65_bench.rs
+          grep -F 'std::process::exit(1);' crates/nine65/src/bin/nine65_bench.rs
+          grep -F 'let achieved_chain_correct = decrypted == plaintext;' \
+            crates/nine65/src/bin/nine65_bench.rs
 
       - name: Verify exact noise accounting is active
         shell: bash
@@ -108,12 +140,24 @@ jobs:
           cargo test -p nine65 --lib --release ntt_fft -- --nocapture
           cargo test -p nine65 --lib --release montgomery -- --nocapture
 
-      - name: SBNI invariant tests
-        run: cargo test -p nine65 --lib --release ops::sbni -- --nocapture
+      # "SBNI invariant tests" removed here: ops::sbni is no longer in the
+      # module tree (crates/nine65/src/ops/mod.rs:16-19), so the filter matched
+      # zero tests and the step was a guaranteed pass. The source file is still
+      # scanned by the floating-point step above.
 
       - name: Auto-bootstrap unit tests
         run: cargo test -p nine65 --lib --release ops::auto_bootstrap -- --nocapture
 
+      # Assertion mapping from the old (removed) schema to the current one:
+      #   metadata.integer_only_reporting -> every number in the report is an
+      #       int, checked structurally below (strictly stronger than the old
+      #       self-declared boolean).
+      #   metadata.simulated_refreshes    -> scale_tests[*].simulated_refreshes
+      #   depth_chain.correct             -> operation_chain.achieved_chain_correct
+      #   overall_correct                 -> operation_chain.completed_requested
+      #                                      AND achieved_chain_correct
+      #   operations.path                 -> DROPPED. The bench no longer emits
+      #       a path label; there is no honest substitute, so it is not faked.
       - name: DualRNS leveled smoke test
         run: |
           cargo run --release -p nine65 --bin nine65_bench --features serde -- \
@@ -122,12 +166,30 @@ jobs:
           import json
           from pathlib import Path
 
+
+          def assert_integral(node, path='$'):
+              if isinstance(node, bool):
+                  return
+              if isinstance(node, float):
+                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
+              if isinstance(node, dict):
+                  for key, value in node.items():
+                      assert_integral(value, f'{path}.{key}')
+              elif isinstance(node, list):
+                  for index, value in enumerate(node):
+                      assert_integral(value, f'{path}[{index}]')
+
+
           report = json.loads(Path('/tmp/nine65-leveled.json').read_text())
-          assert report['metadata']['integer_only_reporting'] is True
-          assert report['metadata']['simulated_refreshes'] == 0
-          assert report['operations']['path'] == 'DualRNS + K-Elimination'
-          assert report['depth_chain']['correct'] is True
-          assert report['overall_correct'] is True
+          assert_integral(report)
+          assert report['metadata']['bootstrap_mode'] == 'disabled'
+          assert report['statistical_test']['enabled'] is False
+          for name, scale in report['scale_tests'].items():
+              assert scale['simulated_refreshes'] == 0, name
+          chain = report['operation_chain']
+          assert chain['achieved_chain_correct'] is True
+          assert chain['completed_requested'] is True
+          assert chain['real_refreshes'] == 0
           PY
 
       - name: DualRNS automatic-refresh statistical smoke test
@@ -140,9 +202,13 @@ jobs:
           from pathlib import Path
 
           report = json.loads(Path('/tmp/nine65-auto.json').read_text())
-          assert report['metadata']['simulated_refreshes'] == 0
-          assert report['depth_chain']['correct'] is True
-          assert report['statistical_test']['correct'] is True
-          assert report['statistical_test']['failures'] == 0
-          assert report['overall_correct'] is True
+          assert report['metadata']['bootstrap_mode'] == 'real'
+          for name, scale in report['scale_tests'].items():
+              assert scale['simulated_refreshes'] == 0, name
+          assert report['operation_chain']['achieved_chain_correct'] is True
+          statistical = report['statistical_test']
+          assert statistical['enabled'] is True
+          assert statistical['trials'] == 100
+          # old schema: statistical_test.failures == 0
+          assert statistical['successes'] == statistical['trials']
           PY

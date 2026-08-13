@@ -15,8 +15,10 @@ on:
       - 'docs/NINE65_CROSS_REPO_RUNNER_SETUP.md'
       - '.github/workflows/cram_v6_v7_comparative.yml'
   push:
+    # Re-pointed 2026-08-12: was 'cram/exploratory-comparative-v2', a branch
+    # that no longer exists, so this push trigger was dead. Trunk is `main`.
     branches:
-      - 'cram/exploratory-comparative-v2'
+      - main
   workflow_dispatch:
     inputs:
       repetitions:

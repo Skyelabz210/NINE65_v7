@@ -1,9 +1,15 @@
 name: Application Platform Gates
 
+# Branch gating repaired 2026-08-12: the push trigger named
+# `hardening/beyond-100-app-platform`, a branch that no longer exists (the repo
+# has only `main` and `claude/*`), so the push half of this workflow had been
+# dead. Re-pointed at the real trunk. The pull_request half was already live
+# against `main` and is unchanged.
+
 on:
   push:
     branches:
-      - hardening/beyond-100-app-platform
+      - main
     paths:
       - 'crates/fhe-service/**'
       - 'crates/nine65-wasm/**'
