@@ -32,7 +32,7 @@ name: CI
 # Tier structure:
 #   T0 — Bot bypass: Jules and Dependabot commits skip CI entirely
 #   T1 — Fast gate:  fmt + clippy + deny + static analysis (~3 min, every push)
-#   T2 — Full suite: all tests + clockwork (main merges or [full-ci] tag only)
+#   T2 — Full suite: all tests + clockwork (every PR, main pushes, [full-ci])
 #   T3 — AI review:  Gemini Flash diff review posted to PR (every non-bot PR)
 #   T4 — Deep:       benchmarks + coverage + Qwen claim audit (Sunday or [deep-ci])
 # =============================================================================
@@ -90,13 +90,12 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+      # nine65-python / nine65-wasm / nine65-ffi are already excluded at the
+      # workspace level (Cargo.toml `[workspace] exclude`), so repeating them as
+      # `--exclude` flags here was a no-op that only produced
+      # "excluded package(s) ... not found in workspace" warnings.
       - name: Run clippy
-        run: |
-          cargo clippy --workspace \
-            --exclude nine65-python \
-            --exclude nine65-wasm \
-            --exclude nine65-ffi \
-            --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Check licenses and advisories
         uses: embark-studios/cargo-deny-action@v2
@@ -127,24 +126,78 @@ jobs:
       - name: Scan for float usage in runtime paths
         run: bash scripts/check_no_floats_runtime.sh
 
+      # NOTE: this is a *presence/inventory* gate only. It proves the proof trees
+      # have not silently shrunk; it does NOT machine-check anything. The real
+      # verification gate is lean_proofs.yml (lake build + axiom audit). The
+      # legacy Coq tree is explicitly non-authoritative (see coq_proofs.yml).
+      #
+      # Previously both steps could not fail by construction: the Coq step was a
+      # bare `ls`, and the Lean step only echoed "Missing:" without exiting 1 —
+      # and its glob covered lean4/KElimination/*.lean plus one level below,
+      # missing the AHOP/ and Lattice/ subdirectories entirely.
       - name: Check Coq proof files present
         run: |
-          if [ -d "proofs/coq" ]; then
-            ls proofs/coq/*.v 2>/dev/null && echo "Coq files found" || echo "No .v files"
+          set -euo pipefail
+          if [ ! -d proofs/coq ]; then
+            echo "::error::proofs/coq is missing"
+            exit 1
+          fi
+          count=$(find proofs/coq -maxdepth 1 -type f -name '*.v' | wc -l)
+          echo "Legacy Coq files in proofs/coq: $count"
+          # 16 .v files present as of 2026-08-12. Ratchet: the tree may grow,
+          # but a silent deletion must fail this gate.
+          if [ "$count" -lt 16 ]; then
+            echo "::error::expected at least 16 .v files in proofs/coq, found $count"
+            exit 1
           fi
 
-      - name: Check Lean4 proof files present
+      - name: Check Lean4 proof modules present
         run: |
-          for proof in lean4/KElimination/*.lean lean4/KElimination/KElimination/*.lean; do
-            if [ ! -f "$proof" ]; then
-              echo "Missing: $proof"
+          set -euo pipefail
+          root=lean4/KElimination
+          for required in \
+            "$root/lakefile.lean" \
+            "$root/lean-toolchain" \
+            "$root/lake-manifest.json" \
+            "$root/KElimination.lean" \
+            "$root/scripts/axiom_audit.sh"; do
+            if [ ! -f "$required" ]; then
+              echo "::error::missing required Lean file: $required"
+              exit 1
+            fi
+          done
+          # Recursive: `find` reaches KElimination/AHOP/ and KElimination/Lattice/,
+          # which the old two-level glob silently skipped.
+          modules=$(find "$root/KElimination" -type f -name '*.lean' | sort)
+          count=$(printf '%s\n' "$modules" | grep -c . || true)
+          echo "Lean modules under $root/KElimination:"
+          printf '%s\n' "$modules"
+          echo "count=$count"
+          # 20 modules under KElimination/ + KElimination.lean = 21 total as of
+          # 2026-08-12. Ratchet: growth is fine, silent deletion is not.
+          if [ "$count" -lt 20 ]; then
+            echo "::error::expected at least 20 Lean modules under $root/KElimination, found $count"
+            exit 1
+          fi
+          for subdir in AHOP Lattice; do
+            if [ ! -d "$root/KElimination/$subdir" ]; then
+              echo "::error::missing Lean subdirectory: $root/KElimination/$subdir"
+              exit 1
             fi
           done
 
   # ---------------------------------------------------------------------------
   # T2 — Full Test Suite
-  # Only on: main branch merges, [full-ci] in commit message, or manual dispatch.
-  # Depends on fast-gate passing first.
+  # Runs on: every pull request, pushes to main, [full-ci] in a pushed commit
+  # message, or manual dispatch. Depends on fast-gate passing first.
+  #
+  # The `github.event_name == 'pull_request'` clause closes a real hole. On a
+  # pull_request event `github.ref` is `refs/pull/<n>/merge` (never
+  # `refs/heads/main`) and `github.event.head_commit` does not exist at all
+  # (it is a push-event field), so `contains(github.event.head_commit.message,
+  # '[full-ci]')` evaluated against null and was always false. The net effect
+  # was that NO pull request — to `develop`, to `main`, or anywhere else — ever
+  # ran a single test. Only direct pushes to main did.
   # ---------------------------------------------------------------------------
   full-test:
     name: "T2 · Full Test Suite"
@@ -154,6 +207,7 @@ jobs:
       github.actor != 'google-labs-jules[bot]' &&
       github.actor != 'dependabot[bot]' &&
       (
+        github.event_name == 'pull_request' ||
         github.ref == 'refs/heads/main' ||
         contains(github.event.head_commit.message, '[full-ci]') ||
         github.event_name == 'workflow_dispatch'
@@ -182,13 +236,10 @@ jobs:
           path: target
           key: ${{ runner.os }}-target-full-${{ hashFiles('**/Cargo.lock') }}
 
+      # See the clippy step: the three --exclude flags were no-ops, the packages
+      # are excluded from the workspace itself.
       - name: Run all workspace tests
-        run: |
-          cargo test --workspace \
-            --exclude nine65-python \
-            --exclude nine65-wasm \
-            --exclude nine65-ffi \
-            --verbose
+        run: cargo test --workspace --verbose
 
       - name: Run error variant coverage tests
         run: cargo test -p nine65 --test error_variant_coverage
@@ -333,11 +384,29 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      # The previous version of this step ended with
+      #   python3 scripts/extract_criterion_summary.py timing_output.txt || true
+      # which could never do anything: that script takes `--criterion-root` and
+      # a *required* `--out`, so a bare positional argument makes argparse exit
+      # 2 — and it reads `target/criterion`, which `cargo test` does not
+      # produce (Criterion output only exists under `cargo bench`). The
+      # `|| true` swallowed the failure, so the step reported success while
+      # emitting no summary at all. Removed rather than "fixed" — a Criterion
+      # summary belongs in a real `cargo bench` job, which this repo does not
+      # have yet (execution plan Phase 8).
       - name: Run timing regression tests
         run: |
+          set -o pipefail
           cargo test --package nine65 --lib --release --features clockwork \
             -- clockwork::tests --nocapture 2>&1 | tee timing_output.txt
-          python3 scripts/extract_criterion_summary.py timing_output.txt || true
+
+      - name: Upload timing output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clockwork-timing-output
+          path: timing_output.txt
+          if-no-files-found: error
 
   coverage:
     name: "T4 · Code Coverage"

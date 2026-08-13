@@ -1,12 +1,20 @@
 name: CRAM residue-native gates
 
+# Branch gating repaired 2026-08-12: the push trigger named
+# 'cram/residue-native-scale-dag', a branch that no longer exists, so it was
+# dead. Re-pointed at the real trunk (`main`). The unqualified pull_request
+# trigger was already live and is unchanged.
+#
+# The `crates/cram-poly/**` and `crates/cram-fhe/**` path filters were removed:
+# neither crate exists in the workspace (only `crates/cram-core` does), so they
+# could never match. The floating-point scan below already guards each root
+# with `[[ -d "$path" ]]`, so it keeps working unchanged.
+
 on:
   workflow_dispatch:
   pull_request:
     paths:
       - 'crates/cram-core/**'
-      - 'crates/cram-poly/**'
-      - 'crates/cram-fhe/**'
       - 'crates/nine65/src/cram_ct_wrap.rs'
       - 'crates/nine65/src/ops/rns_fhe.rs'
       - 'scripts/check_residue_native_architecture.py'
@@ -14,7 +22,7 @@ on:
       - '.github/workflows/cram_residue_native_gates.yml'
   push:
     branches:
-      - 'cram/residue-native-scale-dag'
+      - main
 
 permissions:
   contents: read

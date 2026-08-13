@@ -2935,15 +2935,39 @@ impl RNSFHEContext {
             );
         }
 
-        // CORRECT ORDER: relinearize THEN rescale (not rescale then relinearize!)
+        // ORDER: rescale THEN relinearize.
         //
-        // The eval key is generated for the UNSCALED tensor product space.
-        // If we rescale first, we feed the wrong scale into relinearization.
+        // This reversed on 2026-08-12 and it is the fix for the public-mode
+        // depth-1 cap. The old order ran relinearization on the raw tensor term
+        // `d2`, on the reasoning that "the eval key was generated for the
+        // UNSCALED tensor product space". That reasoning does not hold for a
+        // gadget-decomposition eval key: `rlk_i` encrypts `base^i * s^2`, which
+        // has no scale of its own — relinearization computes `P * s^2` for
+        // whatever `P` you decompose, so it is scale-agnostic. What it is NOT is
+        // range-agnostic: the gadget has `ceil(q_bits / log2(base))` digits, so
+        // it spans exactly `[0, M_level)`, and `d2` BEFORE rescale is about
+        // `2*log2(Q) + log2(N)` bits wide.
         //
-        // Standard BFV flow:
+        // Measured on secure_128 (docs/DEPTH1_ROOT_CAUSE_2026-08-12.md's
+        // reproducing case, instrumented): the gadget spans 96 bits; the exact
+        // value of `d2` is 82 bits at depth 1 — under the gadget, purely because
+        // a FRESH ciphertext's `c1` carries only ~36-bit coefficients (public
+        // keys are sampled below the smallest anchor prime) — and 135 bits at
+        // depth 2, once `c1` is a full-width canonical value out of a rescale.
+        // So the old order was correct at depth 1 by accident and truncated the
+        // decomposition from depth 2 on, which is exactly where the cap sat.
+        //
+        // Rescaling first makes the relinearized polynomial canonical
+        // (`k == 0`, `< M_level`), which is what the gadget is sized for, and
+        // makes the leftover `M * winding` term harmless: it enters AFTER the
+        // division, so it vanishes mod Q at decryption instead of being carried
+        // through a divide by Delta.
+        //
+        // Flow:
         // 1. Tensor product → (d0, d1, d2) at scale Q² (degree-2 ciphertext)
-        // 2. Relinearize d2 → fold into degree-1 (still at scale Q²)
-        // 3. Rescale the combined result → divide by Δ (now at scale Q)
+        // 2. Rescale all three → divide by Δ (now at scale Q, all canonical)
+        // 3. Relinearize d2 and fold into degree-1
+        // 4. Reset the winding so the result is canonical for the next multiply
 
         // Step 1: Tensor product (unscaled, at modulus Q²)
         let d0 = self.dual_poly_mul(&ct1.c0, &ct2.c0);
@@ -2952,13 +2976,20 @@ impl RNSFHEContext {
         let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
         let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
 
-        // Step 2: PUBLIC relinearization on d2 (BEFORE rescale!)
-        // Eval key was generated for this scale
-        let (relin_c0, relin_c1) = self.relinearize_dual(&d2, evk)?;
-
-        // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
-        let c0_pre = self.dual_poly_add(&d0, &relin_c0);
-        let c1_pre = self.dual_poly_add(&d1, &relin_c1);
+        // Step 2: K-Elimination rescale of every degree-2 component.
+        // `should_two_stage_rescale` is retired (always false); the branch is
+        // kept only so the retired path stays inspectable, as elsewhere.
+        let use_two_stage = self.should_two_stage_rescale(ct1.level);
+        let rescale = |p: &DualRNSPoly| {
+            if use_two_stage {
+                self.k_elim_rescale_dual_two_stage(p)
+            } else {
+                self.k_elim_rescale_dual(p)
+            }
+        };
+        let d0_s = rescale(&d0);
+        let d1_s = rescale(&d1);
+        let d2_s = rescale(&d2);
 
         // RETIRED (Step 3.5): SBNI — shadow-butterfly noise injection.
         // Dropped per author decision. It added a signed epsilon with
@@ -2971,18 +3002,20 @@ impl RNSFHEContext {
         // See crates/nine65/src/ops/sbni.rs (retired) and
         // docs/RETIRED_MECHANISMS.md.
 
-        // Step 4: K-Elimination rescale ONCE on the combined result
-        let use_two_stage = self.should_two_stage_rescale(ct1.level);
-        let c0_new = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&c0_pre)
-        } else {
-            self.k_elim_rescale_dual(&c0_pre)
-        };
-        let c1_new = if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&c1_pre)
-        } else {
-            self.k_elim_rescale_dual(&c1_pre)
-        };
+        // Step 3: PUBLIC relinearization of the rescaled, canonical d2.
+        let (relin_c0, relin_c1) = self.relinearize_dual(&d2_s, evk)?;
+
+        // Step 4: fold into a degree-1 ciphertext, then reset the winding.
+        //
+        // `relin_c0` carries an exact integer of order `base^(num_digits-1) *
+        // ||s^2||` — far above M_level — because the eval key holds its entries
+        // exactly rather than reduced. That surplus is invisible to decryption
+        // (which reads main lanes mod Q only) but would be squared by the NEXT
+        // tensor product and blow the dual-RNS capacity, so it is reset here.
+        // See `canonicalize_dual_anchor`: main lanes, basis, lane count and
+        // level are all untouched, so this is not a modulus switch.
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&d0_s, &relin_c0));
+        let c1_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&d1_s, &relin_c1));
 
         let level = c0_new.main.len();
 
@@ -3103,6 +3136,16 @@ impl RNSFHEContext {
     /// So c0 + c1*s with relinearization = e0 + relin_c0 + (e1 + relin_c1)*s
     ///                                   = e0 + sum(d_i * rlk0_i) + (e1 + sum(d_i * rlk1_i))*s
     ///                                   ≈ e0 + e2*s² + e1*s (the original degree-2 result)
+    ///
+    /// # Precondition on `poly` (enforced, not assumed)
+    ///
+    /// The gadget has `evk.num_digits` digits of `evk.decomp_base`, sized from
+    /// `q_bits` — i.e. it spans exactly the canonical range `[0, M_level)`. The
+    /// caller must therefore hand this a RESCALED, canonical polynomial. Feeding
+    /// it an unrescaled tensor term (which is ~`2*log2(Q)+log2(N)` bits wide)
+    /// silently truncated the decomposition before 2026-08-12 and returned a
+    /// confidently wrong ciphertext; `extract_digit_dual` now returns `Err`
+    /// instead. See that function's doc comment for the full argument.
     fn relinearize_dual(
         &self,
         poly: &DualRNSPoly,
@@ -3143,7 +3186,8 @@ impl RNSFHEContext {
         // For each digit of the decomposition
         for (digit_idx, (rlk0, rlk1)) in evk.rlk.iter().enumerate() {
             // Extract digit from each coefficient
-            let digit_poly = self.extract_digit_dual(poly, digit_idx, evk.decomp_base);
+            let digit_poly =
+                self.extract_digit_dual(poly, digit_idx, evk.decomp_base, evk.num_digits)?;
 
             // Multiply digit by both rlk components
             // rlk0_i = -a_i*s - e_i + power_i * s²
@@ -3158,20 +3202,55 @@ impl RNSFHEContext {
         Ok((result_c0, result_c1))
     }
 
-    /// Extract the i-th digit of each coefficient (for decomposition)
+    /// Extract the `digit_idx`-th gadget digit of every coefficient.
     ///
-    /// CRITICAL: Uses K-Elimination to get exact value, then centered representation
-    /// for correct digit extraction of negative values.
-    fn extract_digit_dual(&self, poly: &DualRNSPoly, digit_idx: usize, base: u64) -> DualRNSPoly {
-        // For digit decomposition, we need the EXACT value (via K-Elimination),
-        // then extract the digit.
-        //
-        // CRITICAL BUG FIX: We must use the K-eliminated exact value, NOT just v_m!
-        // After tensor product, coefficients can exceed M, so v_m ≠ exact_value.
-        // The digit extraction must be on the EXACT value to get correct relinearization.
-        //
-        // digit_i(x) = floor(x / base^i) mod base
-
+    /// # What the digits have to satisfy
+    ///
+    /// `relinearize_dual` forms `sum_i digit_i * rlk_i`, and each eval-key entry
+    /// carries the EXACT integer `base^i * s^2 - a_i*s - e_i` in the dual
+    /// representation (nothing in `generate_eval_key_dual_with_base` reduces it
+    /// modulo `M`). So the relinearized pair evaluates at `s` to
+    ///
+    /// ```text
+    ///     (sum_i digit_i * base^i) * s^2  -  sum_i digit_i * e_i
+    /// ```
+    ///
+    /// which reproduces `poly * s^2` **only if the digits reconstruct `poly`'s
+    /// exact value as an integer**:
+    ///
+    /// ```text
+    ///     sum_{i<num_digits} digit_i * base^i  ==  X,   X = v_m + k*M_level
+    /// ```
+    ///
+    /// Two things follow, and both were violated before 2026-08-12:
+    ///
+    /// 1. **Sign.** `extract_k_rns_level` returns the canonical UNSIGNED CRT
+    ///    residue in `[0, A_recon)`; a negative winding comes back as the huge
+    ///    value `A_recon - |k|`. `k_elim_rescale_dual` immediately converts with
+    ///    `SignedK256::from_unsigned` and works on the centered value. This
+    ///    function used the raw unsigned `k` (`exact = v_m + k*M_level`) despite
+    ///    a comment promising centering — so any coefficient with a negative
+    ///    winding was decomposed from a completely different integer. Fixed by
+    ///    applying the same conversion, against the same anchor product, and
+    ///    then decomposing `|X|` and negating every digit when `X < 0`
+    ///    (`sum_i (-d_i) * base^i = -|X| = X`, exactly, with every digit still
+    ///    bounded by `base` so the noise bound is unchanged).
+    ///
+    /// 2. **Capacity.** The gadget spans `base^num_digits`. Feeding it a value
+    ///    wider than that silently truncates to the low `num_digits` digits and
+    ///    the identity above fails by a multiple of `base^num_digits` — a
+    ///    discrete, ciphertext-destroying corruption with no panic and no `Err`.
+    ///    That is exactly what an UNRESCALED tensor term does: at `secure_128`
+    ///    the depth-2 `d2` measures 135 bits against a 96-bit gadget. This is
+    ///    now a loud `Err`, and `mul_dual_public` rescales `d2` (making it
+    ///    canonical, `k = 0`, `< M_level`) before relinearizing.
+    fn extract_digit_dual(
+        &self,
+        poly: &DualRNSPoly,
+        digit_idx: usize,
+        base: u64,
+        num_digits: usize,
+    ) -> Nine65Result<DualRNSPoly> {
         debug_assert!(base.is_power_of_two(), "decomp_base must be power of two");
         let base_bits = base.trailing_zeros();
         let base_mask = (base as u128) - 1;
@@ -3181,6 +3260,16 @@ impl RNSFHEContext {
         let level_primes = &self.config.primes[..ct_level];
         let m_product_level = U256::product_u64s(level_primes);
 
+        // Anchor product k was actually reconstructed against. MUST mirror
+        // `extract_k_rns_level`'s own subset (and `k_elim_rescale_dual`'s
+        // reading of it), or `SignedK256::from_unsigned`'s half-range test is
+        // checked against the wrong modulus.
+        let k_recon_count = self.dual_rns.k_reconstruction_anchor_count();
+        let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes[..k_recon_count]);
+
+        // Representable range of the gadget: |X| <= base^num_digits - 1.
+        let gadget_bits = (base_bits as usize).saturating_mul(num_digits);
+
         let mut main: Vec<Vec<u64>> = vec![vec![0u64; self.n]; ct_level];
         let mut anchor: Vec<Vec<u64>> = vec![vec![0u64; self.n]; self.dual_rns.anchor.primes.len()];
 
@@ -3189,8 +3278,10 @@ impl RNSFHEContext {
         let mut main_residues = vec![0u64; num_main];
         let mut anchor_residues = vec![0u64; num_anchor];
 
+        let shift_bits = (digit_idx as u32) * base_bits;
+
         for i in 0..self.n {
-            // Use K-Elimination to get EXACT value
+            // Use K-Elimination to get the EXACT value
             for (j, limb) in poly.main.iter().enumerate() {
                 main_residues[j] = limb[i];
             }
@@ -3199,44 +3290,71 @@ impl RNSFHEContext {
             for (j, limb) in poly.anchor.iter().enumerate() {
                 anchor_residues[j] = limb[i];
             }
-            let k = self
+            let k_u = self
                 .dual_rns
                 .extract_k_rns_level(v_m, &anchor_residues, level_primes);
+            let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
 
-            // Compute low 256 bits of exact_value = v_m + k * M_level
-            let exact = v_m.add(k.mul_low(m_product_level));
-            let exact_lo = exact.lo;
-            let exact_hi = exact.hi;
+            // exact_value = v_m + k*M_level, as a SIGNED integer.
+            let km = k_signed.magnitude.mul_low(m_product_level);
+            let (is_neg, mag) = if !k_signed.is_neg {
+                (false, v_m.add(km))
+            } else if km.le(v_m) {
+                (false, v_m.sub(km))
+            } else {
+                (true, km.sub(v_m))
+            };
 
-            // Extract digit for power-of-two base: digit = (exact >> (base_bits * idx)) & (base - 1)
-            let shift_bits = (digit_idx as u32) * base_bits;
-            let digit = if shift_bits < 128 {
+            if (mag.bitlen() as usize) > gadget_bits {
+                return Err(Nine65Error::InvalidParameter {
+                    message: format!(
+                        "gadget decomposition capacity exceeded at coefficient {i}: the \
+                         polynomial's exact value needs {} bits but the evaluation key's \
+                         gadget spans only {} bits ({} digits of base 2^{}). \
+                         Relinearize a RESCALED (canonical, < M_level) polynomial — an \
+                         unrescaled tensor term is ~2*log2(Q)+log2(N) bits wide.",
+                        mag.bitlen(),
+                        gadget_bits,
+                        num_digits,
+                        base_bits,
+                    ),
+                });
+            }
+
+            // digit = (|X| >> (base_bits * idx)) & (base - 1)
+            let digit = if shift_bits >= 256 {
+                0u64
+            } else if shift_bits < 128 {
                 let hi_part = if shift_bits == 0 {
                     0
                 } else {
-                    exact_hi << (128 - shift_bits)
+                    mag.hi << (128 - shift_bits)
                 };
-                let merged = (exact_lo >> shift_bits) | hi_part;
-                (merged & base_mask) as u64
+                (((mag.lo >> shift_bits) | hi_part) & base_mask) as u64
             } else {
-                let hi_shift = shift_bits - 128;
-                ((exact_hi >> hi_shift) & base_mask) as u64
+                ((mag.hi >> (shift_bits - 128)) & base_mask) as u64
             };
 
-            // Store digit in each RNS limb (digit is small, fits in all moduli)
+            // Store the digit in each RNS limb. When X < 0 every digit is
+            // negated, so the reconstruction is -|X| = X exactly; magnitudes
+            // (hence the key-switching noise bound) are unchanged.
             for (prime_idx, limb) in main.iter_mut().enumerate() {
-                limb[i] = digit % self.config.primes[prime_idx];
+                let p = self.config.primes[prime_idx];
+                let r = digit % p;
+                limb[i] = if is_neg && r != 0 { p - r } else { r };
             }
             for (prime_idx, limb) in anchor.iter_mut().enumerate() {
-                limb[i] = digit % self.dual_rns.anchor.primes[prime_idx];
+                let a = self.dual_rns.anchor.primes[prime_idx];
+                let r = digit % a;
+                limb[i] = if is_neg && r != 0 { a - r } else { r };
             }
         }
 
-        DualRNSPoly {
+        Ok(DualRNSPoly {
             main,
             anchor,
             n: self.n,
-        }
+        })
     }
 
     /// Product of the first `level` main primes (Q_level)
@@ -5415,7 +5533,27 @@ mod tests {
         println!("  d2 centered ||·||∞ = {}", centered_inf_norm(&d2));
 
         // Step 2: Relinearize d2 (BEFORE rescale)
-        let (relin_c0, relin_c1) = ctx.relinearize_dual(&d2, &full_keys.eval_key).unwrap();
+        //
+        // As of the 2026-08-12 depth-1 fix this is a hard error, not a silent
+        // wrong answer: an unrescaled tensor term is ~2*log2(Q)+log2(N) bits
+        // wide, past the gadget's span, so no valid digit decomposition exists.
+        // `extract_digit_dual` previously read the winding `k` as unsigned and
+        // produced garbage digits here without complaint. The production path
+        // (`mul_dual_public`) rescales first and is covered end-to-end by
+        // tests/depth_and_noise.rs::depth_and_noise_curve_public_mode.
+        let (relin_c0, relin_c1) = match ctx.relinearize_dual(&d2, &full_keys.eval_key) {
+            Ok(pair) => pair,
+            Err(Nine65Error::InvalidParameter { ref message })
+                if message.contains("gadget decomposition capacity exceeded") =>
+            {
+                println!(
+                    "[EXPECTED] pre-rescale relinearization correctly refused: {}",
+                    message
+                );
+                return;
+            }
+            Err(other) => panic!("unexpected relinearize_dual failure: {other:?}"),
+        };
         println!("After relinearization (before rescale):");
         println!(
             "  relin_c0 centered ||·||∞ = {}",
@@ -9739,8 +9877,29 @@ mod tests {
             print_k_summary(&ctx, &d2, "d2 (c1*c1)");
 
             // Stage B: PUBLIC relinearization (BEFORE rescale!)
-            // This is where eval key noise enters
-            let (relin_c0, relin_c1) = ctx.relinearize_dual(&d2, &full_keys.eval_key).unwrap();
+            // This is where eval key noise enters.
+            //
+            // As of the 2026-08-12 depth-1 fix, relinearizing an UNRESCALED
+            // tensor term is a hard error rather than a silent wrong answer:
+            // the term is ~2*log2(Q)+log2(N) bits wide, far past the gadget's
+            // span, so no valid digit decomposition exists. Before the fix
+            // `extract_digit_dual` read the winding `k` as unsigned and emitted
+            // garbage digits here without complaint. Assert the guard fires and
+            // move to the next seed — the remainder of this trace only ever
+            // described the broken path's output.
+            let (relin_c0, relin_c1) = match ctx.relinearize_dual(&d2, &full_keys.eval_key) {
+                Ok(pair) => pair,
+                Err(Nine65Error::InvalidParameter { ref message })
+                    if message.contains("gadget decomposition capacity exceeded") =>
+                {
+                    println!(
+                        "\n   [EXPECTED] pre-rescale relinearization correctly refused: {}",
+                        message
+                    );
+                    continue;
+                }
+                Err(other) => panic!("unexpected relinearize_dual failure: {other:?}"),
+            };
 
             println!("\n   [K-VALUE TRACKING] Post-relin (before combining with d0/d1):");
             print_k_summary(&ctx, &relin_c0, "relin_c0 (sum of digit*rlk0)");
@@ -10933,6 +11092,159 @@ mod tests {
         } else {
             (false, k)
         }
+    }
+
+    /// Exact signed integer carried by coefficient `i` of a dual poly, read the
+    /// same way `k_elim_rescale_dual` reads it.
+    fn exact_signed_coeff(ctx: &RNSFHEContext, poly: &DualRNSPoly, i: usize) -> (bool, U256) {
+        let level = poly.main.len();
+        let level_primes = &ctx.config.primes[..level];
+        let m = U256::product_u64s(level_primes);
+        let k_cnt = ctx.dual_rns.k_reconstruction_anchor_count();
+        let a_used = U256::product_u64s(&ctx.dual_rns.anchor.primes[..k_cnt]);
+        let a_half = a_used.shr1();
+
+        let main_res: Vec<u64> = poly.main.iter().map(|l| l[i]).collect();
+        let anchor_res: Vec<u64> = poly.anchor.iter().map(|l| l[i]).collect();
+        let v_m = ctx.rns.to_u256_level(&main_res, level);
+        let k_u = ctx
+            .dual_rns
+            .extract_k_rns_level(v_m, &anchor_res, level_primes);
+        let (k_neg, k_mag) = signed_from_unsigned(k_u, a_used, a_half);
+        let km = k_mag.mul_low(m);
+        if !k_neg {
+            (false, v_m.add(km))
+        } else if km.le(v_m) {
+            (false, v_m.sub(km))
+        } else {
+            (true, km.sub(v_m))
+        }
+    }
+
+    /// The gadget-decomposition identity `relinearize_dual` depends on, asserted
+    /// directly rather than inferred from a decryption.
+    ///
+    /// For every sampled coefficient of the polynomial actually handed to
+    /// relinearization, `sum_i digit_i * base^i` must equal that coefficient's
+    /// EXACT signed integer (`v_m + k*M_level`, read exactly as
+    /// `k_elim_rescale_dual` reads it) — not merely agree with it mod something.
+    /// This is the invariant whose violation capped `mul_dual_public` at depth 1
+    /// until 2026-08-12 (docs/DEPTH1_ROOT_CAUSE_2026-08-12.md).
+    ///
+    /// The test also records the measurement that explains why the old
+    /// relinearize-then-rescale order looked fine at depth 1: an UNRESCALED `d2`
+    /// is 82 bits at depth 1 (a fresh ciphertext's `c1` carries only ~36-bit
+    /// coefficients) but 135 bits at depth 2, against a 96-bit gadget. That the
+    /// unrescaled term is now REJECTED (loud `Err`) rather than silently
+    /// truncated is asserted here too.
+    #[test]
+    fn public_relin_gadget_identity_is_exact_at_every_depth() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let cfg = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&cfg.config);
+        let mut rng = ShadowHarvester::with_seed(9001);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let evk = &keys.eval_key;
+        let gadget_bits = evk.decomp_base.trailing_zeros() as usize * evk.num_digits;
+        println!(
+            "gadget: {} digits of base 2^{} = {} bits (q_bits={})",
+            evk.num_digits,
+            evk.decomp_base.trailing_zeros(),
+            gadget_bits,
+            ctx.q_bits
+        );
+
+        let ct_one = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
+        let mut acc = ctx.encrypt_dual(5, &keys.public_key, &mut rng);
+        let sample = 512.min(ctx.n);
+        let mut saw_unrescaled_overflow = false;
+
+        for depth in 1..=4usize {
+            let d2_raw = ctx.dual_poly_mul(&acc.c1, &ct_one.c1);
+            let raw_bits = (0..sample)
+                .map(|i| exact_signed_coeff(&ctx, &d2_raw, i).1.bitlen())
+                .max()
+                .unwrap();
+
+            // What production now feeds relinearization: the RESCALED term.
+            let d2 = ctx.k_elim_rescale_dual(&d2_raw);
+            let digits: Vec<DualRNSPoly> = (0..evk.num_digits)
+                .map(|d| {
+                    ctx.extract_digit_dual(&d2, d, evk.decomp_base, evk.num_digits)
+                        .expect("rescaled d2 must fit the gadget")
+                })
+                .collect();
+
+            let mut mismatches = 0usize;
+            let mut max_bits = 0u32;
+            for i in 0..sample {
+                let (x_neg, x_mag) = exact_signed_coeff(&ctx, &d2, i);
+                max_bits = max_bits.max(x_mag.bitlen());
+
+                // Recover each digit as a SIGNED value: the decomposition
+                // negates every digit when the coefficient is negative, so a
+                // residue above p/2 on lane 0 means "-(p - r)".
+                let p0 = ctx.config.primes[0];
+                let mut dsum_pos = U256::zero();
+                let mut dsum_neg = U256::zero();
+                for dp in digits.iter().rev() {
+                    let r = dp.main[0][i];
+                    dsum_pos = dsum_pos.mul_u64(evk.decomp_base);
+                    dsum_neg = dsum_neg.mul_u64(evk.decomp_base);
+                    if r > p0 / 2 {
+                        dsum_neg = dsum_neg.add(U256::from_u64(p0 - r));
+                    } else {
+                        dsum_pos = dsum_pos.add(U256::from_u64(r));
+                    }
+                }
+                let (d_neg, d_mag) = if dsum_pos.ge(dsum_neg) {
+                    (false, dsum_pos.sub(dsum_neg))
+                } else {
+                    (true, dsum_neg.sub(dsum_pos))
+                };
+                let zero = d_mag.is_zero() && x_mag.is_zero();
+                if !(d_mag == x_mag && (zero || d_neg == x_neg)) {
+                    mismatches += 1;
+                }
+            }
+            assert_eq!(
+                mismatches, 0,
+                "depth {depth}: gadget decomposition does not reconstruct the exact \
+                 value for {mismatches}/{sample} coefficients"
+            );
+            println!(
+                "  depth {depth}: raw d2 = {raw_bits} bits (gadget {gadget_bits}); \
+                 rescaled d2 = {max_bits} bits; digit identity exact on {sample}/{sample} coeffs"
+            );
+
+            // The unrescaled term is what the pre-fix order decomposed. Once it
+            // outgrows the gadget it must be REJECTED, never truncated.
+            if raw_bits as usize > gadget_bits {
+                saw_unrescaled_overflow = true;
+                assert!(
+                    ctx.extract_digit_dual(&d2_raw, 0, evk.decomp_base, evk.num_digits)
+                        .is_err(),
+                    "depth {depth}: a {raw_bits}-bit value was accepted by a \
+                     {gadget_bits}-bit gadget instead of failing loudly"
+                );
+            }
+
+            acc = ctx
+                .mul_dual_public(&acc, &ct_one, evk)
+                .expect("mul_dual_public");
+            assert_eq!(
+                ctx.decrypt_dual(&acc, &keys.secret_key),
+                5,
+                "depth {depth}: public multiply by Enc(1) changed the plaintext"
+            );
+        }
+
+        assert!(
+            saw_unrescaled_overflow,
+            "the chain never produced an unrescaled tensor term wider than the \
+             gadget, so the capacity guard was never exercised"
+        );
     }
 
     #[test]

@@ -1662,20 +1662,82 @@ impl DualRNSContext {
     /// Returns the unique value v < M×A such that:
     ///   v ≡ v_main (mod M)
     ///   v ≡ v_anchor (mod A)
+    ///
+    /// # Panics
+    ///
+    /// This is the **u128** reconstruction path, and it is only usable when
+    /// `M`, `A` and `M·A` all fit in u128. It panics — loudly, with the actual
+    /// bit lengths — when any of them does not, and when the reconstructed
+    /// value reaches the `M·A` capacity bound.
+    ///
+    /// Until 2026-08-12 the `M·A` overflow case did not panic: it fell through
+    /// to `v_main.wrapping_add(k.wrapping_mul(self.main_product))` under a
+    /// comment reading "we still compute the result mod 2^128". That is not the
+    /// value this function's contract promises, and a truncated reconstruction
+    /// is indistinguishable from a correct one at the call site — a silent
+    /// wrong answer, in a function whose entire job is exactness. Every sibling
+    /// capacity boundary in this file already failed loudly
+    /// (`extract_k_rns_level`'s `A/2` panic, `for_fhe`'s startup asserts); this
+    /// was the exception.
+    ///
+    /// Bases whose `M·A` exceeds u128 — every shipping FHE config — must use
+    /// the U256 path instead: [`DualRNSContext::extract_k_rns_level`] together
+    /// with [`RNSContext::to_u256_level`], which is what `k_elim_rescale_dual`
+    /// and `extract_digit_dual` in `ops/rns_fhe.rs` actually call.
     pub fn reconstruct(&self, v_main: u128, v_anchor: u128) -> u128 {
         let k = self.extract_k(v_main, v_anchor);
-        
-        // hRange (X < M·A) runtime assertion.
-        // We verify that the reconstructed value fits within the DualRNS capacity.
-        // For u128 reconstruction, M*A must fit in u128.
-        if let Some(total_capacity) = self.main_product.checked_mul(self.anchor_product) {
-            let res = v_main + k * self.main_product;
-            assert!(res < total_capacity, "K-Elimination capacity exceeded: X >= M*A");
-            res
-        } else {
-            // If M*A overflows u128, we still compute the result mod 2^128.
-            v_main.wrapping_add(k.wrapping_mul(self.main_product))
+
+        // hRange (X < M·A) runtime check. `main_product`/`anchor_product` carry
+        // a 0 sentinel on overflow, so read the non-sentinel `*_checked` fields
+        // and report the exact bit length the basis actually needs.
+        let m = self.main_product_checked.unwrap_or_else(|| {
+            panic!(
+                "K-Elimination u128 reconstruct: main product M is {} bits and does not \
+                 fit in u128. Use the U256 path (extract_k_rns_level + to_u256_level).",
+                self.main_product_bit_length
+            )
+        });
+        let a = self.anchor_product_checked.unwrap_or_else(|| {
+            panic!(
+                "K-Elimination u128 reconstruct: anchor product A is {} bits and does not \
+                 fit in u128. Use the U256 path (extract_k_rns_level + to_u256_level).",
+                self.anchor_product_bit_length
+            )
+        });
+        // `M*A` is the reconstruction capacity, but it is NOT itself required to
+        // fit in u128. The value this function returns is `v_main + k*M` for the
+        // unique `k < A`, and that expression is exact whenever it does not
+        // overflow u128 — regardless of how large `M*A` is. Refusing purely
+        // because the *basis* is wide would reject exact, unambiguous
+        // reconstructions (e.g. reading a ~74-bit Δ out of a 152-bit basis),
+        // so the guard belongs on the ANSWER, not on the basis.
+        //
+        // The silent-wraparound bug this replaced was specifically
+        // `v_main.wrapping_add(k.wrapping_mul(M))`, i.e. the case where that
+        // expression overflows. That case now panics via `checked_*` below.
+        let res = k
+            .checked_mul(m)
+            .and_then(|km| v_main.checked_add(km))
+            .unwrap_or_else(|| {
+                panic!(
+                    "K-Elimination u128 reconstruct: v_main + k*M overflowed u128 \
+                     (k={k}, M={m}, v_main={v_main}, M*A needs {} bits). Reconstructing \
+                     anyway would silently return the value mod 2^128. Use the U256 path \
+                     (extract_k_rns_level + to_u256_level).",
+                    self.main_product_bit_length + self.anchor_product_bit_length,
+                )
+            });
+
+        // hRange (X < M*A): only a real constraint when M*A fits in u128. When
+        // it does not, every u128 value is trivially below the capacity and the
+        // overflow check above is the whole guard.
+        if let Some(total_capacity) = m.checked_mul(a) {
+            assert!(
+                res < total_capacity,
+                "K-Elimination capacity exceeded: X >= M*A (X={res}, M*A={total_capacity})"
+            );
         }
+        res
     }
 
     /// K-Elimination exact division: compute v / divisor where divisor | v
@@ -2405,6 +2467,90 @@ mod tests {
 
         let result = ctx.exact_divide(v_main, v_anchor, divisor);
         assert_eq!(result, expected, "Exact division failed!");
+    }
+
+    /// A basis whose `M` and `A` each fit in u128 but whose product does not.
+    /// `M = 998244353 * 985661441 * 754974721` is ~89 bits and
+    /// `A = 2013265921 * 2281701377` is ~62 bits, so `M*A` is ~151 bits.
+    /// Every prime here is NTT-compatible with `n = 1024`.
+    fn overflowing_capacity_ctx() -> DualRNSContext {
+        DualRNSContext::new(
+            vec![998244353, 985661441, 754974721],
+            vec![2013265921, 2281701377],
+            1024,
+        )
+    }
+
+    /// The overflow branch of `DualRNSContext::reconstruct` must FAIL, not wrap.
+    ///
+    /// It used to return `v_main.wrapping_add(k.wrapping_mul(main_product))` —
+    /// the reconstruction mod 2^128 — which is a wrong answer that looks exactly
+    /// like a right one. Every sibling capacity boundary in this file panics;
+    /// this one now does too.
+    #[test]
+    #[should_panic(expected = "overflowed u128")]
+    fn reconstruct_panics_instead_of_wrapping_when_the_answer_exceeds_u128() {
+        let ctx = overflowing_capacity_ctx();
+        // Both products individually fit, so the failure is specifically the
+        // reconstructed value overflowing — not a sentinel.
+        assert!(ctx.main_product_checked.is_some());
+        assert!(ctx.anchor_product_checked.is_some());
+        assert_eq!(
+            ctx.main_product_bit_length + ctx.anchor_product_bit_length,
+            152
+        );
+
+        // Choose residues forcing a large winding: k near A-1 puts k*M around
+        // 152 bits, well past u128. Pre-fix, `wrapping_add`/`wrapping_mul`
+        // returned that value mod 2^128 — a wrong answer indistinguishable
+        // from a right one at the call site.
+        let m = ctx.main_product;
+        let a = ctx.anchor_product;
+        let v_main = 12345u128 % m;
+        // v_anchor chosen so extract_k yields a near-maximal k.
+        let k_target = a - 1;
+        let v_anchor = (v_main + (k_target % a) * (m % a)) % a;
+        let _ = ctx.reconstruct(v_main, v_anchor);
+    }
+
+    /// The complement of the test above: a wide basis (M*A = 152 bits, past
+    /// u128) is NOT by itself a failure. Reading a value that comfortably fits
+    /// must still reconstruct exactly — the guard is on the answer, not the
+    /// basis. This pins the over-strict-guard regression.
+    #[test]
+    fn reconstruct_succeeds_on_wide_basis_when_the_value_fits() {
+        let ctx = overflowing_capacity_ctx();
+        assert!(
+            ctx.main_product.checked_mul(ctx.anchor_product).is_none(),
+            "this basis is chosen precisely because M*A exceeds u128"
+        );
+        for v in [0u128, 1, 65537, 1234567, ctx.main_product / 65537] {
+            let v_main = v % ctx.main_product;
+            let v_anchor = v % ctx.anchor_product;
+            assert_eq!(
+                ctx.reconstruct(v_main, v_anchor),
+                v,
+                "exact reconstruction must survive a wide basis"
+            );
+        }
+    }
+
+    /// The same loud failure, reached through the public `exact_divide` wrapper
+    /// (the FHE-facing entry point), so the guard cannot be bypassed by callers
+    /// that never touch `reconstruct` directly.
+    #[test]
+    #[should_panic(expected = "overflowed u128")]
+    fn exact_divide_panics_instead_of_wrapping_when_the_answer_exceeds_u128() {
+        let ctx = overflowing_capacity_ctx();
+        let m = ctx.main_product;
+        let a = ctx.anchor_product;
+        let v_main = 600u128 % m;
+        // Same near-maximal winding as the `reconstruct` test, reached through
+        // the public `exact_divide` wrapper so the guard cannot be bypassed by
+        // callers that never touch `reconstruct` directly.
+        let k_target = a - 1;
+        let v_anchor = (v_main + (k_target % a) * (m % a)) % a;
+        let _ = ctx.exact_divide(v_main, v_anchor, 6);
     }
 
     #[test]

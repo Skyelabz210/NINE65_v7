@@ -113,16 +113,114 @@ def strip_pure_test_items(text: str) -> str:
     return "".join(output)
 
 
+def executable_view(text: str) -> str:
+    """Blank comment bodies and string literals, preserving line/column offsets.
+
+    REPAIRED 2026-08-12 (Execution Plan Phase 2). The contracts below target
+    *executable constructs*, but they were matched against raw source, so the
+    "language" contracts fired on prose — including the compliance notes that
+    state a mechanism is deliberately NOT used, e.g.
+
+        // A2 "No-Garner" Invariant: Use Parallel Summation CRT
+        /// (a single boundary read), NOT a mixed-radix / Garner conversion
+        /// See: QMNF Separation Principle (Theorem 2.1); A2 (no mixed-radix fusion).
+
+    A gate that fails because the source documents its own compliance reports
+    nothing. `scripts/check_residue_native_architecture.py` already draws the
+    line here ("Documentation and instrumentation counters are not execution
+    mechanisms"); this brings the two gates into agreement.
+
+    Blanking, not deleting: every character is replaced by a space and every
+    newline is kept, so reported line numbers still match the real file. String
+    literals are blanked too, so an error message naming a prohibited mechanism
+    is not mistaken for using one. `//` inside a string literal is not treated
+    as a comment. Multi-line string literals reset at each newline, which keeps
+    more source visible rather than less.
+    """
+
+    out: list[str] = []
+    index = 0
+    length = len(text)
+    in_block_comment = False
+    in_string = False
+
+    while index < length:
+        char = text[index]
+
+        if char == "\n":
+            in_string = False
+            out.append("\n")
+            index += 1
+            continue
+
+        if in_block_comment:
+            if char == "*" and index + 1 < length and text[index + 1] == "/":
+                in_block_comment = False
+                out.append("  ")
+                index += 2
+                continue
+            out.append(" ")
+            index += 1
+            continue
+
+        if in_string:
+            if char == "\\" and index + 1 < length:
+                out.append("  " if text[index + 1] != "\n" else " \n")
+                index += 2
+                continue
+            if char == '"':
+                in_string = False
+            out.append(" ")
+            index += 1
+            continue
+
+        if char == "/" and index + 1 < length and text[index + 1] == "/":
+            end = text.find("\n", index)
+            end = length if end < 0 else end
+            out.append(" " * (end - index))
+            index = end
+            continue
+
+        if char == "/" and index + 1 < length and text[index + 1] == "*":
+            in_block_comment = True
+            out.append("  ")
+            index += 2
+            continue
+
+        if char == '"':
+            in_string = True
+            out.append(" ")
+            index += 1
+            continue
+
+        out.append(char)
+        index += 1
+
+    return "".join(out)
+
+
 def production_view(relative: str) -> str:
-    return strip_pure_test_items(read(relative))
+    return executable_view(strip_pure_test_items(read(relative)))
+
+
+def _line_of(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
 
 
 def require_absent(relative: str, patterns: list[tuple[str, str]]) -> list[str]:
     text = production_view(relative)
     failures: list[str] = []
     for expression, explanation in patterns:
-        if re.search(expression, text, flags=re.MULTILINE | re.IGNORECASE | re.DOTALL):
-            failures.append(f"{relative}: {explanation} [{expression}]")
+        matches = list(
+            re.finditer(expression, text, flags=re.MULTILINE | re.IGNORECASE | re.DOTALL)
+        )
+        if matches:
+            lines = ", ".join(str(_line_of(text, m.start())) for m in matches[:8])
+            more = "" if len(matches) <= 8 else f", +{len(matches) - 8} more"
+            failures.append(
+                f"{relative}: {explanation} "
+                f"[{expression}] at line(s) {lines}{more}"
+            )
     return failures
 
 

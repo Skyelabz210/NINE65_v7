@@ -1,162 +1,217 @@
 #!/usr/bin/env bash
+# check_stale_claims.sh — Quality gate: the claim registry describes reality.
+#
+# HISTORY / WHY THIS WAS REWRITTEN (2026-08-12, Execution Plan Phase 2):
+#   The previous version hardcoded three claim IDs that were formally retired
+#   on 2026-07-13 (see docs/CLAIM_RETIREMENTS_2026-07-13.md) and removed from
+#   docs/CLAIM_REGISTRY.csv. `artifact_for()` therefore returned the empty
+#   string for all three and the script exited 1 on EVERY push and PR (it runs
+#   in ci.yml tier T1 "Static Analysis & Proofs"). It also parsed a README
+#   benchmark table (Encrypt/Add/Mul/Decrypt rows, depth rows, estimator rows)
+#   that no longer exists in README.md.
+#
+#   The retired IDs are deliberately NOT spelled out in this file: check 3
+#   below fails any file outside the retirement records that names one, and
+#   this gate must not be the thing it is trying to catch.
+#
+#   Nothing about that old logic could ever pass again, so it carried no signal.
+#   This version derives everything it checks from files that exist today, and
+#   hardcodes no claim IDs at all.
+#
+# WHAT THIS GATE ENFORCES
+#   1. Preconditions: README.md, docs/CLAIM_REGISTRY.csv and at least one
+#      docs/CLAIM_RETIREMENTS_*.md are present, and the registry header matches
+#      the expected schema.
+#   2. Retired claim IDs (parsed out of every docs/CLAIM_RETIREMENTS_*.md) do
+#      NOT reappear as active rows in docs/CLAIM_REGISTRY.csv.
+#   3. Retired claim IDs are not cited anywhere else in the tree as if they
+#      were live evidence — docs, scripts and workflows included. This is the
+#      exact failure mode that broke this script: a gate went on referencing
+#      IDs the registry had dropped. The retirement documents themselves are
+#      the only place a retired ID may appear.
+#   4. Every ACTIVE registry row points at an artifact that exists and is
+#      non-empty. (scripts/check_claim_registry.sh validates the row *schema*
+#      and artifact existence; this adds the "not an empty stub" check and is
+#      deliberately redundant on existence so either gate alone catches a
+#      dangling artifact.)
+#
+# Structural/schema validation of the registry rows lives in
+# scripts/check_claim_registry.sh — this script is about staleness only.
+#
+# Exit 0 if the registry is truthful, exit 1 otherwise.
+
 set -euo pipefail
 
 readme="README.md"
 registry="docs/CLAIM_REGISTRY.csv"
+expected_header="claim_id,visibility,profile_class,artifact_path"
 errors=0
 
-artifact_for() {
-  local claim_id="$1"
-  awk -F',' -v id="${claim_id}" '$1 == id { print $4 }' "${registry}"
+fail() {
+  echo "ERROR: $*"
+  errors=$((errors + 1))
 }
 
 require_file() {
   local path="$1"
   if [[ ! -f "${path}" ]]; then
-    echo "ERROR: missing file: ${path}"
-    errors=$((errors + 1))
+    fail "missing file: ${path}"
   fi
 }
 
-compare_value() {
-  local label="$1"
-  local readme_val="$2"
-  local artifact_val="$3"
-  if [[ "${readme_val}" != "${artifact_val}" ]]; then
-    echo "ERROR: claim drift for ${label}: README=${readme_val}, artifact=${artifact_val}"
-    errors=$((errors + 1))
-  fi
-}
+echo "=== Stale Claim Gate ==="
+echo "Registry: ${registry}"
+echo ""
 
-require_non_empty() {
-  local label="$1"
-  local val="$2"
-  if [[ -z "${val}" ]]; then
-    echo "ERROR: missing parsed value for ${label}"
-    errors=$((errors + 1))
-  fi
-}
-
-round2() {
-  local val="$1"
-  awk -v x="${val}" 'BEGIN { printf "%.2f", x + 0.0 }'
-}
-
-perf_doc=$(artifact_for "readme.fhe_ops_secure_128_192")
-depth_doc=$(artifact_for "readme.depth50_symmetric_secure")
-security_doc=$(artifact_for "readme.lwe_estimator_secure_configs")
-
+# ---------------------------------------------------------------------------
+# 1. Preconditions
+# ---------------------------------------------------------------------------
 require_file "${readme}"
 require_file "${registry}"
-require_file "${perf_doc}"
-require_file "${depth_doc}"
-require_file "${security_doc}"
+
+retirement_docs=()
+while IFS= read -r doc; do
+  retirement_docs+=("${doc}")
+done < <(find docs -maxdepth 1 -name 'CLAIM_RETIREMENTS_*.md' -type f | sort)
+
+if [[ "${#retirement_docs[@]}" -eq 0 ]]; then
+  fail "no docs/CLAIM_RETIREMENTS_*.md found — retirements must stay on record"
+fi
 
 if [[ "${errors}" -gt 0 ]]; then
-  echo "stale claim check failed (${errors} precondition error(s))"
+  echo ""
+  echo "RESULT: stale claim check FAILED (${errors} precondition error(s))"
   exit 1
 fi
 
-# README claim values (source of public claims)
-readme_enc_128=$(awk -F'|' '$2 ~ /^[[:space:]]*Encrypt[[:space:]]*$/ {v=$3; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
-readme_add_128=$(awk -F'|' '$2 ~ /^[[:space:]]*Add[[:space:]]*$/ {v=$3; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
-readme_mul_128=$(awk -F'|' '$2 ~ /^[[:space:]]*Mul[[:space:]]*$/ {v=$3; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
-readme_dec_128=$(awk -F'|' '$2 ~ /^[[:space:]]*Decrypt[[:space:]]*$/ {v=$3; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
+echo "Retirement records: ${retirement_docs[*]}"
+echo ""
 
-readme_enc_192=$(awk -F'|' '$2 ~ /^[[:space:]]*Encrypt[[:space:]]*$/ {v=$4; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
-readme_add_192=$(awk -F'|' '$2 ~ /^[[:space:]]*Add[[:space:]]*$/ {v=$4; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
-readme_mul_192=$(awk -F'|' '$2 ~ /^[[:space:]]*Mul[[:space:]]*$/ {v=$4; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
-readme_dec_192=$(awk -F'|' '$2 ~ /^[[:space:]]*Decrypt[[:space:]]*$/ {v=$4; gsub(/[[:space:]m,s]/, "", v); print v; exit}' "${readme}")
+header=$(head -n1 "${registry}")
+if [[ "${header}" != "${expected_header}" ]]; then
+  fail "registry header changed: expected '${expected_header}', got '${header}'"
+fi
 
-readme_depth_128=$(awk -F'|' '$2 ~ /^[[:space:]]*secure_128[[:space:]]*$/ {v=$4; gsub(/[[:space:]s]/, "", v); print v; exit}' "${readme}")
-readme_depth_192=$(awk -F'|' '$2 ~ /^[[:space:]]*secure_192[[:space:]]*$/ {v=$4; gsub(/[[:space:]s]/, "", v); print v; exit}' "${readme}")
+# ---------------------------------------------------------------------------
+# 2. Collect active and retired claim IDs
+# ---------------------------------------------------------------------------
+active_ids=()
+while IFS= read -r id; do
+  [[ -z "${id}" ]] && continue
+  active_ids+=("${id}")
+done < <(tail -n +2 "${registry}" | cut -d',' -f1)
 
-readme_sec_128=$(awk -F'|' '$2 ~ /secure_128/ {v=$5; gsub(/[[:space:]]/, "", v); print v; exit}' "${readme}")
-readme_sec_192=$(awk -F'|' '$2 ~ /secure_192/ {v=$5; gsub(/[[:space:]]/, "", v); print v; exit}' "${readme}")
-readme_sec_256=$(awk -F'|' '$2 ~ /secure_256/ {v=$5; gsub(/[[:space:]]/, "", v); print v; exit}' "${readme}")
+if [[ "${#active_ids[@]}" -eq 0 ]]; then
+  fail "docs/CLAIM_REGISTRY.csv has no claim rows"
+fi
 
-# Artifact values: secure_128 block in performance baseline
-perf_block_128="${TMPDIR:-/tmp}/claim_drift_perf_128.$$"
-perf_block_192="${TMPDIR:-/tmp}/claim_drift_perf_192.$$"
-depth_block_128="${TMPDIR:-/tmp}/claim_drift_depth_128.$$"
-depth_block_192="${TMPDIR:-/tmp}/claim_drift_depth_192.$$"
-trap 'rm -f "${perf_block_128}" "${perf_block_192}" "${depth_block_128}" "${depth_block_192}"' EXIT
+# Retired IDs are the backtick-quoted identifier in the FIRST column of the
+# retirement tables: "| `some.claim_id` | reason | replacement |". Only column
+# one is read — the third column names the *replacement* claim, which is
+# normally an active registry row and must not be treated as retired.
+retired_ids=()
+while IFS= read -r id; do
+  [[ -z "${id}" ]] && continue
+  retired_ids+=("${id}")
+done < <(awk -F'|' '/^\|/ {
+             gsub(/[` ]/, "", $2)
+             if ($2 ~ /^[a-z0-9_]+\.[a-z0-9_]+$/) { print $2 }
+           }' "${retirement_docs[@]}" | sort -u)
 
-awk '/### Secure Config FHE Ops \(secure_128\)/, /### Secure Config FHE Ops \(secure_192\)/' "${perf_doc}" > "${perf_block_128}"
-awk '/### Secure Config FHE Ops \(secure_192\)/, /### Symmetric Max Depth \(secure_128\)/' "${perf_doc}" > "${perf_block_192}"
-awk '/### Symmetric Max Depth \(secure_128\)/, /### Symmetric Max Depth \(secure_192\)/' "${depth_doc}" > "${depth_block_128}"
-awk 'f{print} /### Symmetric Max Depth \(secure_192\)/{f=1; print}' "${depth_doc}" > "${depth_block_192}"
+if [[ "${#retired_ids[@]}" -eq 0 ]]; then
+  fail "parsed zero retired IDs from ${retirement_docs[*]} — parser or format drifted"
+fi
 
-artifact_enc_128=$(grep -m1 "FHE_ENCRYPT" "${perf_block_128}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
-artifact_add_128=$(grep -m1 "FHE_ADD" "${perf_block_128}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
-artifact_mul_128=$(grep -m1 "FHE_MUL" "${perf_block_128}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
-artifact_dec_128=$(grep -m1 "FHE_DECRYPT" "${perf_block_128}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
+echo "=== Check 1: registry inventory ==="
+echo "  Active claims:  ${#active_ids[@]}"
+echo "  Retired claims: ${#retired_ids[@]}"
+echo ""
 
-artifact_enc_192=$(grep -m1 "FHE_ENCRYPT" "${perf_block_192}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
-artifact_add_192=$(grep -m1 "FHE_ADD" "${perf_block_192}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
-artifact_mul_192=$(grep -m1 "FHE_MUL" "${perf_block_192}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
-artifact_dec_192=$(grep -m1 "FHE_DECRYPT" "${perf_block_192}" | grep -Eo '[0-9]+\.[0-9]+' | tail -n1)
+# ---------------------------------------------------------------------------
+# 3. Retired IDs must not be active
+# ---------------------------------------------------------------------------
+echo "=== Check 2: retired claims stay retired ==="
+readmitted=0
+for retired in "${retired_ids[@]}"; do
+  for active in "${active_ids[@]}"; do
+    if [[ "${retired}" == "${active}" ]]; then
+      fail "retired claim '${retired}' is active again in ${registry}"
+      readmitted=$((readmitted + 1))
+    fi
+  done
+done
+if [[ "${readmitted}" -eq 0 ]]; then
+  echo "  [PASS] no retired ID reappears in the active registry"
+fi
+echo ""
 
-artifact_depth_128=$(round2 "$(grep -m1 "Total time:" "${depth_block_128}" | grep -Eo '[0-9]+\.[0-9]+')")
-artifact_depth_192=$(round2 "$(grep -m1 "Total time:" "${depth_block_192}" | grep -Eo '[0-9]+\.[0-9]+')")
+# ---------------------------------------------------------------------------
+# 4. Retired IDs must not be cited as live evidence elsewhere
+# ---------------------------------------------------------------------------
+echo "=== Check 3: no live references to retired claims ==="
+stale_refs=0
+for retired in "${retired_ids[@]}"; do
+  # Search the tracked tree, excluding the retirement records (which must keep
+  # naming the IDs) and the registry itself (covered by check 2).
+  # NOTE: every option must precede `--`; anything after `--` is an operand,
+  # which is how the --exclude flags were silently ignored during development.
+  hits=$(grep -rIl --fixed-strings \
+           --exclude-dir=.git \
+           --exclude-dir=target \
+           --exclude-dir=node_modules \
+           --exclude-dir=__pycache__ \
+           --exclude='CLAIM_RETIREMENTS_*.md' \
+           --exclude='CLAIM_REGISTRY.csv' \
+           -- "${retired}" . 2>/dev/null || true)
+  if [[ -n "${hits}" ]]; then
+    while IFS= read -r hit; do
+      [[ -z "${hit}" ]] && continue
+      fail "retired claim '${retired}' still referenced in ${hit#./}"
+      stale_refs=$((stale_refs + 1))
+    done <<< "${hits}"
+  fi
+done
+if [[ "${stale_refs}" -eq 0 ]]; then
+  echo "  [PASS] retired IDs appear only in the retirement records"
+fi
+echo ""
 
-artifact_sec_128=$(awk -F'|' '$2 ~ /^[[:space:]]*secure_128[[:space:]]*$/ {v=$5; gsub(/[[:space:]]/, "", v); print v; exit}' "${security_doc}")
-artifact_sec_192=$(awk -F'|' '$2 ~ /^[[:space:]]*secure_192[[:space:]]*$/ {v=$5; gsub(/[[:space:]]/, "", v); print v; exit}' "${security_doc}")
-artifact_sec_256=$(awk -F'|' '$2 ~ /^[[:space:]]*secure_256[[:space:]]*$/ {v=$5; gsub(/[[:space:]]/, "", v); print v; exit}' "${security_doc}")
+# ---------------------------------------------------------------------------
+# 5. Active claims must have real, non-empty artifacts
+# ---------------------------------------------------------------------------
+echo "=== Check 4: active claim artifacts are real ==="
+bad_artifacts=0
+while IFS=',' read -r claim_id visibility profile_class artifact_path; do
+  [[ "${claim_id}" == "claim_id" ]] && continue
+  [[ -z "${claim_id}" ]] && continue
+  if [[ -z "${artifact_path}" ]]; then
+    fail "claim '${claim_id}' has no artifact_path"
+    bad_artifacts=$((bad_artifacts + 1))
+    continue
+  fi
+  if [[ ! -f "${artifact_path}" ]]; then
+    fail "claim '${claim_id}' points at missing artifact: ${artifact_path}"
+    bad_artifacts=$((bad_artifacts + 1))
+    continue
+  fi
+  if [[ ! -s "${artifact_path}" ]]; then
+    fail "claim '${claim_id}' points at an empty artifact: ${artifact_path}"
+    bad_artifacts=$((bad_artifacts + 1))
+  fi
+done < "${registry}"
+if [[ "${bad_artifacts}" -eq 0 ]]; then
+  echo "  [PASS] all ${#active_ids[@]} active claims resolve to non-empty artifacts"
+fi
+echo ""
 
-require_non_empty "readme_enc_128" "${readme_enc_128}"
-require_non_empty "readme_add_128" "${readme_add_128}"
-require_non_empty "readme_mul_128" "${readme_mul_128}"
-require_non_empty "readme_dec_128" "${readme_dec_128}"
-require_non_empty "readme_enc_192" "${readme_enc_192}"
-require_non_empty "readme_add_192" "${readme_add_192}"
-require_non_empty "readme_mul_192" "${readme_mul_192}"
-require_non_empty "readme_dec_192" "${readme_dec_192}"
-require_non_empty "readme_depth_128" "${readme_depth_128}"
-require_non_empty "readme_depth_192" "${readme_depth_192}"
-require_non_empty "readme_sec_128" "${readme_sec_128}"
-require_non_empty "readme_sec_192" "${readme_sec_192}"
-require_non_empty "readme_sec_256" "${readme_sec_256}"
-
-require_non_empty "artifact_enc_128" "${artifact_enc_128}"
-require_non_empty "artifact_add_128" "${artifact_add_128}"
-require_non_empty "artifact_mul_128" "${artifact_mul_128}"
-require_non_empty "artifact_dec_128" "${artifact_dec_128}"
-require_non_empty "artifact_enc_192" "${artifact_enc_192}"
-require_non_empty "artifact_add_192" "${artifact_add_192}"
-require_non_empty "artifact_mul_192" "${artifact_mul_192}"
-require_non_empty "artifact_dec_192" "${artifact_dec_192}"
-require_non_empty "artifact_depth_128" "${artifact_depth_128}"
-require_non_empty "artifact_depth_192" "${artifact_depth_192}"
-require_non_empty "artifact_sec_128" "${artifact_sec_128}"
-require_non_empty "artifact_sec_192" "${artifact_sec_192}"
-require_non_empty "artifact_sec_256" "${artifact_sec_256}"
-
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
 if [[ "${errors}" -gt 0 ]]; then
-  echo "stale claim check failed (${errors} parse issue(s))"
+  echo "RESULT: stale claim check FAILED (${errors} error(s))"
   exit 1
 fi
 
-compare_value "encrypt secure_128" "${readme_enc_128}" "${artifact_enc_128}"
-compare_value "add secure_128" "${readme_add_128}" "${artifact_add_128}"
-compare_value "mul secure_128" "${readme_mul_128}" "${artifact_mul_128}"
-compare_value "decrypt secure_128" "${readme_dec_128}" "${artifact_dec_128}"
-
-compare_value "encrypt secure_192" "${readme_enc_192}" "${artifact_enc_192}"
-compare_value "add secure_192" "${readme_add_192}" "${artifact_add_192}"
-compare_value "mul secure_192" "${readme_mul_192}" "${artifact_mul_192}"
-compare_value "decrypt secure_192" "${readme_dec_192}" "${artifact_dec_192}"
-
-compare_value "depth total secure_128" "${readme_depth_128}" "${artifact_depth_128}"
-compare_value "depth total secure_192" "${readme_depth_192}" "${artifact_depth_192}"
-
-compare_value "security rop secure_128" "${readme_sec_128}" "${artifact_sec_128}"
-compare_value "security rop secure_192" "${readme_sec_192}" "${artifact_sec_192}"
-compare_value "security rop secure_256" "${readme_sec_256}" "${artifact_sec_256}"
-
-if [[ "${errors}" -gt 0 ]]; then
-  echo "stale claim check failed (${errors} drift issue(s))"
-  exit 1
-fi
-
-echo "Stale claim check passed."
+echo "RESULT: stale claim check PASSED"
+echo "  ${#active_ids[@]} active claims, ${#retired_ids[@]} retired claims, no stale references."
+exit 0

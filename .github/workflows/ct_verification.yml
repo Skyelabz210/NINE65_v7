@@ -1,8 +1,20 @@
 name: Constant-Time Verification
 
+# Two jobs, deliberately split:
+#
+#   verify              — deterministic, source-level and functional CT gates.
+#                         Blocking, runs on every relevant push/PR.
+#   statistical-timing  — the 8 wall-clock Welch t-test timing tests in
+#                         crates/nine65/src/security/ct_verification.rs. Every
+#                         one is `#[ignore]`d and annotated "run in controlled
+#                         environment only". Non-blocking and scheduled, NOT
+#                         per-push. See the job header for why.
+
 on:
   push:
-    branches: [main, hardening/beyond-100-app-platform]
+    # `hardening/beyond-100-app-platform` was removed from the repository; only
+    # `main` and `claude/*` exist. Re-pointed at the real trunk.
+    branches: [main]
     paths:
       - 'crates/nine65/src/arithmetic/ntt_fft.rs'
       - 'crates/nine65/src/arithmetic/montgomery.rs'
@@ -19,6 +31,9 @@ on:
       - 'scripts/check_ct_ntt_source.py'
       - 'scripts/verify_constant_time.sh'
       - '.github/workflows/ct_verification.yml'
+  schedule:
+    # Sunday 04:00 UTC — statistical timing run on an otherwise idle runner.
+    - cron: '0 4 * * 0'
   workflow_dispatch:
 
 permissions:
@@ -26,7 +41,9 @@ permissions:
 
 jobs:
   verify:
+    name: CT source and functional gates
     runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
     steps:
       - uses: actions/checkout@v4
 
@@ -46,20 +63,95 @@ jobs:
           cargo test -p nine65 --lib --release ntt_fft -- --nocapture
           cargo test -p nine65 --lib --release persistent_montgomery -- --nocapture
 
-      - name: Constant-time statistical diagnostics
+      # The statistical timing tests used to be invoked here, without --ignored.
+      # All 8 tests in security::ct_verification::constant_time_statistical are
+      # `#[ignore]`d, so that step executed ZERO tests and reported success —
+      # a gate that could not fail. They now live in the statistical-timing job
+      # below. This step just proves they still compile and are still exactly
+      # the 8 we think they are, which is cheap and deterministic.
+      - name: Assert statistical CT tests exist and are compiled
         run: |
-          cargo test -p nine65 --release constant_time_statistical -- --nocapture \
-            | tee statistical_test_output.txt
+          set -euo pipefail
+          listing=$(cargo test -p nine65 --lib --release constant_time_statistical -- \
+            --ignored --list 2>/dev/null | grep ': test$' || true)
+          echo "$listing"
+          count=$(printf '%s\n' "$listing" | grep -c . || true)
+          if [ "$count" -ne 8 ]; then
+            echo "::error::expected 8 ignored constant_time_statistical tests, found $count"
+            echo "::error::(update this count deliberately if the harness changed)"
+            exit 1
+          fi
 
       - name: Clippy touched arithmetic modules
         run: cargo clippy -p nine65 --lib -- -D warnings
 
       - name: Upload reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ct-verification-report
           if-no-files-found: error
           path: |
             ct_ntt_source_report.json
-            statistical_test_output.txt
             verification_script_output.txt
+
+  # ---------------------------------------------------------------------------
+  # Statistical timing diagnostics — NON-BLOCKING, scheduled/manual only.
+  #
+  # Why not a per-push blocking gate: these 8 tests measure wall-clock timing
+  # and run a Welch t-test over the samples. GitHub's shared runners are noisy,
+  # co-tenanted and frequency-scaled, so a t-statistic measured there is not
+  # evidence of a timing leak or of its absence — it is mostly measuring the
+  # neighbours. The tests themselves say so ("Statistical timing test — run in
+  # controlled environment only"), which is exactly why they carry #[ignore].
+  # Making them blocking would trade a gate that cannot fail for a gate that
+  # fails at random; neither is a signal.
+  #
+  # So: they run weekly and on demand, with --ignored so they actually execute,
+  # and the raw output is uploaded for a human to read. continue-on-error keeps
+  # a noisy runner from marking the workflow red, while the step's own status is
+  # still visible in the run summary.
+  #
+  # Promoting this to blocking requires a dedicated, quiesced runner — track
+  # that decision with the repo owner, not here.
+  # ---------------------------------------------------------------------------
+  statistical-timing:
+    name: CT statistical timing (non-blocking, scheduled)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run ignored constant-time statistical tests
+        id: statistical
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cargo test -p nine65 --lib --release constant_time_statistical -- \
+            --ignored --nocapture --test-threads 1 \
+            2>&1 | tee statistical_test_output.txt
+
+      - name: Record outcome
+        if: always()
+        run: |
+          echo "statistical timing outcome: ${{ steps.statistical.outcome }}"
+          {
+            echo "### Constant-time statistical timing"
+            echo
+            echo "Outcome: \`${{ steps.statistical.outcome }}\` (non-blocking)"
+            echo
+            echo "Shared GitHub runners are noisy; treat a failure as a prompt to"
+            echo "re-run on a quiesced machine, not as proof of a timing leak."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload statistical timing output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ct-statistical-timing
+          if-no-files-found: error
+          path: statistical_test_output.txt
