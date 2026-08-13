@@ -2428,22 +2428,27 @@ impl RNSFHEContext {
     /// Level-aware polynomial multiplication (operates only on shared primes)
     fn dual_poly_mul_level(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
         let level = a.main.len().min(b.main.len());
-
-        // Main limbs: NTT multiply for each prime at this level
-        let main: Vec<Vec<u64>> = (0..level)
-            .map(|limb_idx| {
-                self.ntt_engines[limb_idx].multiply(&a.main[limb_idx], &b.main[limb_idx])
-            })
-            .collect();
-
-        // Anchor: use full multiplication (anchors always have all limbs)
-        let anchor: Vec<Vec<u64>> = a
+        let anchor_engines = &self.dual_rns.anchor.ntt_engines;
+        // Anchors always carry all limbs; zip semantics preserved.
+        let anchor_count = a
             .anchor
-            .iter()
-            .zip(&b.anchor)
-            .zip(self.dual_rns.anchor.ntt_engines.iter())
-            .map(|((a_limb, b_limb), ntt)| ntt.multiply(a_limb, b_limb))
-            .collect();
+            .len()
+            .min(b.anchor.len())
+            .min(anchor_engines.len());
+
+        // Main limbs at this level + all anchor limbs as one deterministic
+        // lane set (see run_limb_lanes for the bit-identity contract).
+        let mut lanes = Self::run_limb_lanes(level + anchor_count, |i| {
+            if i < level {
+                self.ntt_engines[i].multiply(&a.main[i], &b.main[i])
+            } else {
+                let j = i - level;
+                anchor_engines[j].multiply(&a.anchor[j], &b.anchor[j])
+            }
+        });
+
+        let anchor = lanes.split_off(level);
+        let main = lanes;
 
         DualRNSPoly {
             main,
@@ -3270,83 +3275,109 @@ impl RNSFHEContext {
         // Representable range of the gadget: |X| <= base^num_digits - 1.
         let gadget_bits = (base_bits as usize).saturating_mul(num_digits);
 
-        let mut main: Vec<Vec<u64>> = vec![vec![0u64; self.n]; ct_level];
-        let mut anchor: Vec<Vec<u64>> = vec![vec![0u64; self.n]; self.dual_rns.anchor.primes.len()];
-
-        let num_main = poly.main.len();
-        let num_anchor = poly.anchor.len();
-        let mut main_residues = vec![0u64; num_main];
-        let mut anchor_residues = vec![0u64; num_anchor];
-
+        let num_anchor_out = self.dual_rns.anchor.primes.len();
         let shift_bits = (digit_idx as u32) * base_bits;
 
-        for i in 0..self.n {
-            // Use K-Elimination to get the EXACT value
-            for (j, limb) in poly.main.iter().enumerate() {
-                main_residues[j] = limb[i];
-            }
-            let v_m = self.rns.to_u256_level(&main_residues, ct_level);
+        // Per-coefficient work is independent: chunk the coefficient range
+        // (fixed, platform-independent boundaries) across the deterministic
+        // lane executor. Each chunk returns its own column block; assembly
+        // below is by chunk index, so output is bit-identical to the
+        // sequential loop. Error semantics also match: the failing chunk
+        // reports the lowest offending coefficient, and chunks are inspected
+        // in index order, so the reported coefficient is the globally lowest
+        // violator — the same one the sequential loop would have hit first.
+        type DigitChunk = Result<(Vec<Vec<u64>>, Vec<Vec<u64>>), Nine65Error>;
+        let chunks: Vec<DigitChunk> = Self::run_limb_lanes(self.coeff_chunk_count(), |c| {
+            let (lo, hi) = self.coeff_chunk_bounds(c);
+            let w = hi - lo;
+            let mut cm: Vec<Vec<u64>> = vec![vec![0u64; w]; ct_level];
+            let mut ca: Vec<Vec<u64>> = vec![vec![0u64; w]; num_anchor_out];
+            let mut main_residues = vec![0u64; poly.main.len()];
+            let mut anchor_residues = vec![0u64; poly.anchor.len()];
 
-            for (j, limb) in poly.anchor.iter().enumerate() {
-                anchor_residues[j] = limb[i];
-            }
-            let k_u = self
-                .dual_rns
-                .extract_k_rns_level(v_m, &anchor_residues, level_primes);
-            let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
+            for i in lo..hi {
+                // Use K-Elimination to get the EXACT value
+                for (j, limb) in poly.main.iter().enumerate() {
+                    main_residues[j] = limb[i];
+                }
+                let v_m = self.rns.to_u256_level(&main_residues, ct_level);
 
-            // exact_value = v_m + k*M_level, as a SIGNED integer.
-            let km = k_signed.magnitude.mul_low(m_product_level);
-            let (is_neg, mag) = if !k_signed.is_neg {
-                (false, v_m.add(km))
-            } else if km.le(v_m) {
-                (false, v_m.sub(km))
-            } else {
-                (true, km.sub(v_m))
-            };
+                for (j, limb) in poly.anchor.iter().enumerate() {
+                    anchor_residues[j] = limb[i];
+                }
+                let k_u = self
+                    .dual_rns
+                    .extract_k_rns_level(v_m, &anchor_residues, level_primes);
+                let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
 
-            if (mag.bitlen() as usize) > gadget_bits {
-                return Err(Nine65Error::InvalidParameter {
-                    message: format!(
-                        "gadget decomposition capacity exceeded at coefficient {i}: the \
-                         polynomial's exact value needs {} bits but the evaluation key's \
-                         gadget spans only {} bits ({} digits of base 2^{}). \
-                         Relinearize a RESCALED (canonical, < M_level) polynomial — an \
-                         unrescaled tensor term is ~2*log2(Q)+log2(N) bits wide.",
-                        mag.bitlen(),
-                        gadget_bits,
-                        num_digits,
-                        base_bits,
-                    ),
-                });
-            }
-
-            // digit = (|X| >> (base_bits * idx)) & (base - 1)
-            let digit = if shift_bits >= 256 {
-                0u64
-            } else if shift_bits < 128 {
-                let hi_part = if shift_bits == 0 {
-                    0
+                // exact_value = v_m + k*M_level, as a SIGNED integer.
+                let km = k_signed.magnitude.mul_low(m_product_level);
+                let (is_neg, mag) = if !k_signed.is_neg {
+                    (false, v_m.add(km))
+                } else if km.le(v_m) {
+                    (false, v_m.sub(km))
                 } else {
-                    mag.hi << (128 - shift_bits)
+                    (true, km.sub(v_m))
                 };
-                (((mag.lo >> shift_bits) | hi_part) & base_mask) as u64
-            } else {
-                ((mag.hi >> (shift_bits - 128)) & base_mask) as u64
-            };
 
-            // Store the digit in each RNS limb. When X < 0 every digit is
-            // negated, so the reconstruction is -|X| = X exactly; magnitudes
-            // (hence the key-switching noise bound) are unchanged.
-            for (prime_idx, limb) in main.iter_mut().enumerate() {
-                let p = self.config.primes[prime_idx];
-                let r = digit % p;
-                limb[i] = if is_neg && r != 0 { p - r } else { r };
+                if (mag.bitlen() as usize) > gadget_bits {
+                    return Err(Nine65Error::InvalidParameter {
+                        message: format!(
+                            "gadget decomposition capacity exceeded at coefficient {i}: the \
+                             polynomial's exact value needs {} bits but the evaluation key's \
+                             gadget spans only {} bits ({} digits of base 2^{}). \
+                             Relinearize a RESCALED (canonical, < M_level) polynomial — an \
+                             unrescaled tensor term is ~2*log2(Q)+log2(N) bits wide.",
+                            mag.bitlen(),
+                            gadget_bits,
+                            num_digits,
+                            base_bits,
+                        ),
+                    });
+                }
+
+                // digit = (|X| >> (base_bits * idx)) & (base - 1)
+                let digit = if shift_bits >= 256 {
+                    0u64
+                } else if shift_bits < 128 {
+                    let hi_part = if shift_bits == 0 {
+                        0
+                    } else {
+                        mag.hi << (128 - shift_bits)
+                    };
+                    (((mag.lo >> shift_bits) | hi_part) & base_mask) as u64
+                } else {
+                    ((mag.hi >> (shift_bits - 128)) & base_mask) as u64
+                };
+
+                // Store the digit in each RNS limb. When X < 0 every digit is
+                // negated, so the reconstruction is -|X| = X exactly; magnitudes
+                // (hence the key-switching noise bound) are unchanged.
+                let col = i - lo;
+                for (prime_idx, limb) in cm.iter_mut().enumerate() {
+                    let p = self.config.primes[prime_idx];
+                    let r = digit % p;
+                    limb[col] = if is_neg && r != 0 { p - r } else { r };
+                }
+                for (prime_idx, limb) in ca.iter_mut().enumerate() {
+                    let a = self.dual_rns.anchor.primes[prime_idx];
+                    let r = digit % a;
+                    limb[col] = if is_neg && r != 0 { a - r } else { r };
+                }
             }
-            for (prime_idx, limb) in anchor.iter_mut().enumerate() {
-                let a = self.dual_rns.anchor.primes[prime_idx];
-                let r = digit % a;
-                limb[i] = if is_neg && r != 0 { a - r } else { r };
+            Ok((cm, ca))
+        });
+
+        let mut main: Vec<Vec<u64>> = vec![vec![0u64; self.n]; ct_level];
+        let mut anchor: Vec<Vec<u64>> = vec![vec![0u64; self.n]; num_anchor_out];
+        for (c, chunk) in chunks.into_iter().enumerate() {
+            let (cm, ca) = chunk?;
+            let (lo, hi) = self.coeff_chunk_bounds(c);
+            for (j, col_block) in cm.into_iter().enumerate() {
+                main[j][lo..hi].copy_from_slice(&col_block);
+            }
+            for (j, col_block) in ca.into_iter().enumerate() {
+                anchor[j][lo..hi].copy_from_slice(&col_block);
             }
         }
 
@@ -3411,16 +3442,31 @@ impl RNSFHEContext {
     fn canonicalize_dual_anchor(&self, poly: &DualRNSPoly) -> DualRNSPoly {
         let ct_level = poly.main.len();
         let anchor_primes = &self.dual_rns.anchor.primes;
-        let mut anchor = vec![vec![0u64; self.n]; anchor_primes.len()];
-        let mut main_residues = vec![0u64; ct_level];
 
-        for i in 0..self.n {
-            for (j, limb) in poly.main.iter().enumerate() {
-                main_residues[j] = limb[i];
+        // Independent per coefficient: same deterministic coefficient
+        // chunking as the rescale/digit loops.
+        let chunks: Vec<Vec<Vec<u64>>> = Self::run_limb_lanes(self.coeff_chunk_count(), |c| {
+            let (lo, hi) = self.coeff_chunk_bounds(c);
+            let w = hi - lo;
+            let mut ca: Vec<Vec<u64>> = vec![vec![0u64; w]; anchor_primes.len()];
+            let mut main_residues = vec![0u64; ct_level];
+            for i in lo..hi {
+                for (j, limb) in poly.main.iter().enumerate() {
+                    main_residues[j] = limb[i];
+                }
+                let v_m = self.rns.to_u256_level(&main_residues, ct_level);
+                for (j, &a) in anchor_primes.iter().enumerate() {
+                    ca[j][i - lo] = v_m.mod_u64(a);
+                }
             }
-            let v_m = self.rns.to_u256_level(&main_residues, ct_level);
-            for (j, &a) in anchor_primes.iter().enumerate() {
-                anchor[j][i] = v_m.mod_u64(a);
+            ca
+        });
+
+        let mut anchor = vec![vec![0u64; self.n]; anchor_primes.len()];
+        for (c, ca) in chunks.into_iter().enumerate() {
+            let (lo, hi) = self.coeff_chunk_bounds(c);
+            for (j, col_block) in ca.into_iter().enumerate() {
+                anchor[j][lo..hi].copy_from_slice(&col_block);
             }
         }
 
@@ -3453,60 +3499,82 @@ impl RNSFHEContext {
         let k_recon_count = self.dual_rns.k_reconstruction_anchor_count();
         let a_n_product = U256::product_u64s(&self.dual_rns.anchor.primes[..k_recon_count]);
 
-        let mut result_main = vec![vec![0u64; self.n]; ct_level];
-        let mut result_anchor = vec![vec![0u64; self.n]; self.dual_rns.anchor.primes.len()];
-
         let q_upper = (self.t as u64).saturating_mul(2).saturating_add(4);
+        let num_anchor_out = self.dual_rns.anchor.primes.len();
 
-        let num_main = poly.main.len();
-        let num_anchor = poly.anchor.len();
-        let mut main_residues = vec![0u64; num_main];
-        let mut anchor_residues = vec![0u64; num_anchor];
+        // Per-coefficient rescale is independent: same fixed-boundary
+        // coefficient chunking as extract_digit_dual, same bit-identity
+        // argument (each chunk is a pure function of its columns; assembly
+        // is by chunk index).
+        let chunks: Vec<(Vec<Vec<u64>>, Vec<Vec<u64>>)> =
+            Self::run_limb_lanes(self.coeff_chunk_count(), |c| {
+                let (lo, hi) = self.coeff_chunk_bounds(c);
+                let w = hi - lo;
+                let mut cm: Vec<Vec<u64>> = vec![vec![0u64; w]; ct_level];
+                let mut ca: Vec<Vec<u64>> = vec![vec![0u64; w]; num_anchor_out];
+                let mut main_residues = vec![0u64; poly.main.len()];
+                let mut anchor_residues = vec![0u64; poly.anchor.len()];
 
-        for i in 0..self.n {
-            // Reconstruct v_m and extract k
-            for (j, limb) in poly.main.iter().enumerate() {
-                main_residues[j] = limb[i];
+                for i in lo..hi {
+                    // Reconstruct v_m and extract k
+                    for (j, limb) in poly.main.iter().enumerate() {
+                        main_residues[j] = limb[i];
+                    }
+                    for (j, limb) in poly.anchor.iter().enumerate() {
+                        anchor_residues[j] = limb[i];
+                    }
+
+                    let v_m = self.rns.to_u256_level(&main_residues, ct_level);
+                    let k_u = self
+                        .dual_rns
+                        .extract_k_rns_level(v_m, &anchor_residues, level_primes);
+
+                    let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
+                    let v_centered = SignedU256::center(v_m, m_level, q_half);
+
+                    // k_mod_delta = k (mod delta) (magnitude; sign handled separately)
+                    let k_mod_delta = k_signed.magnitude.rem_u256(delta);
+
+                    // k_base = k_mod_delta * t   (k_mod_delta < delta, so k_base < M_level)
+                    let k_base = k_mod_delta.mul_u64(self.t);
+
+                    // r = M_level % t is < t, so k_rem fits comfortably in 256 bits
+                    let k_rem = k_mod_delta.mul_u64(r_u64);
+
+                    // rem_term = round((v_centered +/- k_rem)/delta) mod M_level
+                    let add_rem = !k_signed.is_neg;
+                    let rem_term = round_div_signed_mod_u256(
+                        v_centered, k_rem, add_rem, delta, m_level, q_upper,
+                    );
+
+                    // scaled = (k_base +/- rem_term) mod M_level
+                    let scaled = if !k_signed.is_neg {
+                        k_base.add_mod(rem_term, m_level)
+                    } else {
+                        rem_term.sub_mod(k_base, m_level)
+                    };
+
+                    // Store residues at this level
+                    let col = i - lo;
+                    for (j, &p) in level_primes.iter().enumerate() {
+                        cm[j][col] = scaled.mod_u64(p);
+                    }
+                    for (j, &a) in self.dual_rns.anchor.primes.iter().enumerate() {
+                        ca[j][col] = scaled.mod_u64(a);
+                    }
+                }
+                (cm, ca)
+            });
+
+        let mut result_main = vec![vec![0u64; self.n]; ct_level];
+        let mut result_anchor = vec![vec![0u64; self.n]; num_anchor_out];
+        for (c, (cm, ca)) in chunks.into_iter().enumerate() {
+            let (lo, hi) = self.coeff_chunk_bounds(c);
+            for (j, col_block) in cm.into_iter().enumerate() {
+                result_main[j][lo..hi].copy_from_slice(&col_block);
             }
-            for (j, limb) in poly.anchor.iter().enumerate() {
-                anchor_residues[j] = limb[i];
-            }
-
-            let v_m = self.rns.to_u256_level(&main_residues, ct_level);
-            let k_u = self
-                .dual_rns
-                .extract_k_rns_level(v_m, &anchor_residues, level_primes);
-
-            let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
-            let v_centered = SignedU256::center(v_m, m_level, q_half);
-
-            // k_mod_delta = k (mod delta) (we work with magnitude and handle sign separately)
-            let k_mod_delta = k_signed.magnitude.rem_u256(delta);
-
-            // k_base = k_mod_delta * t   (note: k_mod_delta < delta, so k_base < M_level)
-            let k_base = k_mod_delta.mul_u64(self.t);
-
-            // r = M_level % t is < t, so k_rem fits comfortably in 256 bits
-            let k_rem = k_mod_delta.mul_u64(r_u64);
-
-            // rem_term = round((v_centered +/- k_rem)/delta) mod M_level
-            let add_rem = !k_signed.is_neg;
-            let rem_term =
-                round_div_signed_mod_u256(v_centered, k_rem, add_rem, delta, m_level, q_upper);
-
-            // scaled = (k_base +/- rem_term) mod M_level
-            let scaled = if !k_signed.is_neg {
-                k_base.add_mod(rem_term, m_level)
-            } else {
-                rem_term.sub_mod(k_base, m_level)
-            };
-
-            // Store residues at this level
-            for (j, &p) in level_primes.iter().enumerate() {
-                result_main[j][i] = scaled.mod_u64(p);
-            }
-            for (j, &a) in self.dual_rns.anchor.primes.iter().enumerate() {
-                result_anchor[j][i] = scaled.mod_u64(a);
+            for (j, col_block) in ca.into_iter().enumerate() {
+                result_anchor[j][lo..hi].copy_from_slice(&col_block);
             }
         }
 
@@ -4454,25 +4522,80 @@ impl RNSFHEContext {
         }
     }
 
+    /// Run one NTT limb-multiply per lane across `main_count + anchor_count`
+    /// lanes. With the (default) `accelerated` feature this dispatches
+    /// through MANA's deterministic lane executor — one OS thread per idle
+    /// core, each lane a pure function writing to its index-assigned slot,
+    /// so output is bit-identical to the sequential path for every thread
+    /// count (the executor's tests pin that contract). Without the feature
+    /// it is the plain sequential loop. Lane count and n are public
+    /// parameters; no branch here depends on coefficient values.
+    #[cfg(feature = "accelerated")]
+    fn run_limb_lanes<T, F>(total: usize, lane_fn: F) -> Vec<T>
+    where
+        T: Send,
+        F: Fn(usize) -> T + Sync,
+    {
+        mana::executor::run_lanes(total, lane_fn)
+    }
+
+    #[cfg(not(feature = "accelerated"))]
+    fn run_limb_lanes<T, F>(total: usize, lane_fn: F) -> Vec<T>
+    where
+        F: Fn(usize) -> T,
+    {
+        (0..total).map(lane_fn).collect()
+    }
+
+    /// Coefficient-chunk width for parallelizing per-coefficient loops
+    /// (K-Elimination rescale / digit extraction / anchor canonicalization).
+    /// Chunk boundaries derive from `n` and this constant ONLY — never from
+    /// the machine's thread count — so the work partition, like the output,
+    /// is identical on every platform. n=8192 → 16 chunks.
+    const COEFF_CHUNK: usize = 512;
+
+    #[inline]
+    fn coeff_chunk_bounds(&self, chunk_idx: usize) -> (usize, usize) {
+        let lo = chunk_idx * Self::COEFF_CHUNK;
+        let hi = (lo + Self::COEFF_CHUNK).min(self.n);
+        (lo, hi)
+    }
+
+    #[inline]
+    fn coeff_chunk_count(&self) -> usize {
+        self.n.div_ceil(Self::COEFF_CHUNK)
+    }
+
     /// Dual polynomial multiplication using NTT in both systems
     fn dual_poly_mul(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
-        // Main system: use NTT engines
-        let main: Vec<Vec<u64>> = a
+        // Same effective counts as the original zip chains: the shorter of
+        // the two polys and the engine list on each track.
+        let main_count = a
             .main
-            .iter()
-            .zip(&b.main)
-            .zip(self.ntt_engines.iter())
-            .map(|((a_limb, b_limb), ntt)| ntt.multiply(a_limb, b_limb))
-            .collect();
-
-        // Anchor system: use anchor NTT engines from dual_rns
-        let anchor: Vec<Vec<u64>> = a
+            .len()
+            .min(b.main.len())
+            .min(self.ntt_engines.len());
+        let anchor_engines = &self.dual_rns.anchor.ntt_engines;
+        let anchor_count = a
             .anchor
-            .iter()
-            .zip(&b.anchor)
-            .zip(self.dual_rns.anchor.ntt_engines.iter())
-            .map(|((a_limb, b_limb), ntt)| ntt.multiply(a_limb, b_limb))
-            .collect();
+            .len()
+            .min(b.anchor.len())
+            .min(anchor_engines.len());
+
+        // All main + anchor limbs form one lane set: independent negacyclic
+        // NTT convolutions over distinct primes — 8 lanes at secure_128,
+        // 15-16 at secure_192/256.
+        let mut lanes = Self::run_limb_lanes(main_count + anchor_count, |i| {
+            if i < main_count {
+                self.ntt_engines[i].multiply(&a.main[i], &b.main[i])
+            } else {
+                let j = i - main_count;
+                anchor_engines[j].multiply(&a.anchor[j], &b.anchor[j])
+            }
+        });
+
+        let anchor = lanes.split_off(main_count);
+        let main = lanes;
 
         let result = DualRNSPoly {
             main,
@@ -11848,5 +11971,94 @@ mod tests {
             let result = ctx.decrypt_dual(&ct2, &keys.secret_key);
             assert_eq!(result, v, "roundtrip for {} failed, got {}", v, result);
         }
+    }
+
+    /// The accelerator contract: with the (default) `accelerated` feature,
+    /// dual_poly_mul / dual_poly_mul_level dispatch limbs through MANA's
+    /// deterministic lane executor. This test pins BIT-IDENTITY between that
+    /// path and a hand-rolled sequential reference using the same engines —
+    /// the workspace's bit-identical-across-platforms rule applied to
+    /// thread count.
+    #[test]
+    fn accelerated_dual_poly_mul_is_bit_identical_to_sequential_reference() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(20260813);
+        let keys = ctx.generate_keys_dual(&mut rng);
+
+        // Real ciphertext polys (not toy vectors): encrypt two values and
+        // take their component polynomials as multiplication operands.
+        let ct_a = ctx.encrypt_dual(123, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt_dual(456, &keys.public_key, &mut rng);
+
+        for (a, b) in [
+            (&ct_a.c0, &ct_b.c0),
+            (&ct_a.c0, &ct_b.c1),
+            (&ct_a.c1, &ct_b.c1),
+        ] {
+            let accel = ctx.dual_poly_mul(a, b);
+
+            // Sequential reference: the exact pre-executor computation.
+            let main_count = a.main.len().min(b.main.len()).min(ctx.ntt_engines.len());
+            let ref_main: Vec<Vec<u64>> = (0..main_count)
+                .map(|i| ctx.ntt_engines[i].multiply(&a.main[i], &b.main[i]))
+                .collect();
+            let anchor_engines = &ctx.dual_rns.anchor.ntt_engines;
+            let anchor_count = a.anchor.len().min(b.anchor.len()).min(anchor_engines.len());
+            let ref_anchor: Vec<Vec<u64>> = (0..anchor_count)
+                .map(|j| anchor_engines[j].multiply(&a.anchor[j], &b.anchor[j]))
+                .collect();
+
+            assert_eq!(accel.main, ref_main, "main track diverged from sequential reference");
+            assert_eq!(accel.anchor, ref_anchor, "anchor track diverged from sequential reference");
+        }
+
+        // Level-aware variant, same contract.
+        let accel_lvl = ctx.dual_poly_mul_level(&ct_a.c0, &ct_b.c0);
+        let level = ct_a.c0.main.len().min(ct_b.c0.main.len());
+        let ref_main_lvl: Vec<Vec<u64>> = (0..level)
+            .map(|i| ctx.ntt_engines[i].multiply(&ct_a.c0.main[i], &ct_b.c0.main[i]))
+            .collect();
+        assert_eq!(accel_lvl.main, ref_main_lvl);
+
+        // And the end-to-end sanity that matters: a full public multiply
+        // still decrypts exactly through the accelerated path.
+        let full = ctx.generate_keys_dual_full(&mut rng);
+        let ca = ctx.encrypt_dual(11, &full.public_key, &mut rng);
+        let cb = ctx.encrypt_dual(13, &full.public_key, &mut rng);
+        let prod = ctx
+            .mul_dual_public(&ca, &cb, &full.eval_key)
+            .expect("public multiply");
+        assert_eq!(ctx.decrypt_dual(&prod, &full.secret_key), (11 * 13) % ctx.t);
+    }
+
+    /// Wall-clock probe for the accelerator A/B measurement. Prints timing;
+    /// asserts only correctness. Run with --nocapture in both feature
+    /// configurations to compare.
+    #[test]
+    fn accel_timing_probe_mul_dual_public() {
+        use crate::params::secure_configs::SecureConfig;
+        use std::time::Instant;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(7);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let ca = ctx.encrypt_dual(11, &keys.public_key, &mut rng);
+        let cb = ctx.encrypt_dual(13, &keys.public_key, &mut rng);
+
+        // warmup
+        let _ = ctx.mul_dual_public(&ca, &cb, &keys.eval_key).unwrap();
+        let iters = 10;
+        let t0 = Instant::now();
+        let mut last = None;
+        for _ in 0..iters {
+            last = Some(ctx.mul_dual_public(&ca, &cb, &keys.eval_key).unwrap());
+        }
+        let per = t0.elapsed() / iters;
+        println!("ACCEL_TIMING mul_dual_public secure_128: {:?} per op", per);
+        assert_eq!(ctx.decrypt_dual(&last.unwrap(), &keys.secret_key), (11*13) % ctx.t);
     }
 }
