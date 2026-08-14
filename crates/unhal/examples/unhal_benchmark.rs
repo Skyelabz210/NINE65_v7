@@ -73,6 +73,7 @@ fn bench_size(n: usize, iters: usize) {
         mode: ExecutionMode::Parallel,
         parallel_threshold: 1,
         num_threads: 0,
+        lane_parallel_threshold: 1,
     });
 
     println!("\n--- UNHAL Benchmark N={} (iters={}) ---", n, iters);

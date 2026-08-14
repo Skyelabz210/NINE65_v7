@@ -17,6 +17,7 @@
 #![deny(missing_docs)]
 
 pub mod anchor;
+pub mod executor;
 pub mod gso;
 pub mod lane;
 pub mod stream;
@@ -27,6 +28,7 @@ pub mod parallel;
 pub mod prelude {
     //! Common imports
     pub use crate::anchor::{AnchorContext, KAnchor};
+    pub use crate::executor::{run_lanes, run_lanes_sequential};
     pub use crate::gso::{GsoSwarm, QbitAgent};
     pub use crate::lane::{Lane, LaneOps};
     pub use crate::stream::{ManaStream, StreamOps};

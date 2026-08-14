@@ -68,6 +68,14 @@ pub struct AcceleratorConfig {
     pub parallel_threshold: usize,
     /// Number of threads (0 = auto, uses Rayon default)
     pub num_threads: usize,
+    /// Minimum LANE count before lane-level work dispatches to MANA's
+    /// deterministic executor. Distinct from `parallel_threshold`, which
+    /// was sized for per-stream ELEMENT counts (default 256) — production
+    /// FHE tracks carry 8–16 lanes, so gating lane dispatch on the element
+    /// threshold meant the parallel path could never engage. Lane dispatch
+    /// does not depend on the rayon `parallel` feature: MANA's executor is
+    /// dependency-free scoped threads with bit-identical output.
+    pub lane_parallel_threshold: usize,
 }
 
 impl Default for AcceleratorConfig {
@@ -76,6 +84,7 @@ impl Default for AcceleratorConfig {
             mode: ExecutionMode::auto_detect(),
             parallel_threshold: 256,
             num_threads: 0,
+            lane_parallel_threshold: 2,
         }
     }
 }
@@ -90,6 +99,8 @@ impl AcceleratorConfig {
     pub fn sequential() -> Self {
         Self {
             mode: ExecutionMode::Sequential,
+            // Sequential means sequential: lane dispatch stays inline too.
+            lane_parallel_threshold: usize::MAX,
             ..Default::default()
         }
     }
@@ -141,6 +152,29 @@ impl Accelerator {
     #[inline]
     fn should_parallelize(&self, num_lanes: usize) -> bool {
         num_lanes >= self.config.parallel_threshold
+    }
+
+    /// Dispatch `lanes` independent lane computations through the best
+    /// available path: MANA's deterministic lane executor when the lane
+    /// count clears `lane_parallel_threshold`, inline sequential otherwise.
+    ///
+    /// This is the UNHAL entry point for the production FHE hot path
+    /// (nine65's per-limb NTT and per-coefficient K-Elimination loops).
+    /// UNHAL decides the strategy; MANA executes the lanes. Output is
+    /// bit-identical for every strategy — MANA's executor pins that
+    /// contract in its own tests, and this method adds nothing
+    /// data-dependent: the branch below reads only the lane count and
+    /// configuration, never lane values.
+    pub fn run_lanes<T, F>(&self, lanes: usize, lane_fn: F) -> Vec<T>
+    where
+        T: Send,
+        F: Fn(usize) -> T + Sync,
+    {
+        if lanes >= self.config.lane_parallel_threshold {
+            mana::executor::run_lanes(lanes, lane_fn)
+        } else {
+            mana::executor::run_lanes_sequential(lanes, lane_fn)
+        }
     }
 
     /// Add two streams using best available path
@@ -391,5 +425,31 @@ mod tests {
         assert_eq!(sum.reconstruct_at(0), 100);
         // Sum of 1+11+21+31+41 = 105
         assert_eq!(sum.reconstruct_at(1), 105);
+    }
+
+    /// UNHAL lane dispatch: auto engages MANA's executor at production lane
+    /// counts (8-16), sequential() never does, and both produce bit-identical
+    /// output.
+    #[test]
+    fn lane_dispatch_engages_at_production_lane_counts_and_stays_bit_identical() {
+        let auto = Accelerator::auto();
+        let seq = Accelerator::new(AcceleratorConfig::sequential());
+
+        assert!(auto.config.lane_parallel_threshold <= 8,
+            "auto config must engage at production lane counts (8-16)");
+        assert_eq!(seq.config.lane_parallel_threshold, usize::MAX);
+
+        let work = |i: usize| -> Vec<u64> {
+            let p = [23u64, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89][i % 16];
+            (0..128u64).map(|x| x.wrapping_mul(p).wrapping_add(i as u64) % p).collect()
+        };
+
+        for lanes in [1usize, 2, 8, 16] {
+            let a = auto.run_lanes(lanes, work);
+            let s = seq.run_lanes(lanes, work);
+            let r = mana::executor::run_lanes_sequential(lanes, work);
+            assert_eq!(a, r, "auto dispatch diverged at {lanes} lanes");
+            assert_eq!(s, r, "sequential dispatch diverged at {lanes} lanes");
+        }
     }
 }
