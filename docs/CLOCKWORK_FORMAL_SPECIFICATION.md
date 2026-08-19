@@ -390,7 +390,23 @@ clockwork-core crate
 | `needs_promotion(cap, guard)` | cap < H + guard | Signal need for basis extension |
 | `dot_product_bound(terms)` | D7 dot product rule | Track matrix-vector multiply |
 
-The `on_rescale` method is critical for NINE65's bootstrap-free depth strategy: each rescaling drops one RNS prime, reducing both the coefficient size and the bound by that prime's bit-width. This is how GSO-FHE achieves depth-50 without bootstrapping.
+The `on_rescale` method is described here (2026-02-05, NINE65 v5) as tracking
+modulus switching: each rescaling drops one RNS prime, reducing both the
+coefficient size and the bound by that prime's bit-width.
+
+> **2026-08-19 note:** `docs/RETIRED_MECHANISMS.md` is authoritative that
+> NINE65's production rescale (K-Elimination / Fused Piggyback Division,
+> `mul_dual_public`/`mul_dual_symmetric`) no longer switches moduli or drops
+> a prime — exact residue-space division unfuses "divide the value" from
+> "drop a lane," so the basis does not move and there is no level counter to
+> decrement. If `on_rescale` as described above (bound decreasing by a
+> dropped prime's bit-width) is still invoked anywhere on that path, it is
+> describing a retired mechanism; if it is only invoked by GSO-FHE's
+> separate bounded/leveled evaluator (`ops/gso_fhe.rs`, a still-current, more
+> classical depth-management mode distinct from the CRAM rescale — see
+> `docs/FORMALIZATION_INDEX.md`'s error-taxonomy scope note), the description
+> is scoped correctly but should say so explicitly rather than presenting
+> prime-dropping as how NINE65 generally achieves depth.
 
 ### 4.3 TimingGate (GRO Wrapper)
 

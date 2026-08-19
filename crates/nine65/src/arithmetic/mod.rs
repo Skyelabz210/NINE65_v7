@@ -26,6 +26,7 @@ pub mod exact_divider; // K-ELIMINATION PRIMITIVE
 pub mod integer_math;
 pub mod integer_softmax; // EXACT SUM SOFTMAX
 pub mod k_elimination; // EXACT DIVISION
+pub mod kelim_residue_divider; // BoundedResidueDivider impl (coupled-anchor law)
 pub mod mobius_int; // SIGNED ARITHMETIC (no M/2 threshold failure)
 pub mod montgomery;
 pub mod mq_relu; // O(1) SIGN DETECTION

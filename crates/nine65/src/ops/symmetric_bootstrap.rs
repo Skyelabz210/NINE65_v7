@@ -69,6 +69,7 @@ use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSPoly, DualRNSPublicKey, DualRNSSecretKey, RNSFHEContext,
 };
 use crate::params::FHEConfig;
+use zeroize::Zeroize;
 
 /// Symmetric Bootstrap Engine — decrypt/re-encrypt with Three-Lock protection.
 ///
@@ -149,12 +150,14 @@ impl SymmetricBootstrap {
         rng: &mut ShadowHarvester,
     ) -> Nine65Result<DualRNSCiphertext> {
         // Step 1: Decrypt (uses the working context's decrypt path)
-        let m = self.ctx.decrypt_dual(ct, sk);
+        let mut m = self.ctx.decrypt_dual(ct, sk);
 
         // Step 2: Re-encrypt fresh (full noise budget restored)
         let fresh = self.ctx.encrypt_dual(m, pk, rng);
 
-        // m drops here — in production, zeroize explicitly
+        // Zeroize the plaintext explicitly rather than relying on an
+        // ordinary drop, which leaves it in freed stack/heap memory.
+        m.zeroize();
 
         self.bootstrap_count += 1;
 
@@ -172,12 +175,15 @@ impl SymmetricBootstrap {
         let total_start = std::time::Instant::now();
 
         let t0 = std::time::Instant::now();
-        let m = self.ctx.decrypt_dual(ct, sk);
+        let mut m = self.ctx.decrypt_dual(ct, sk);
         let decrypt_ns = t0.elapsed().as_nanos() as u64;
 
         let t1 = std::time::Instant::now();
         let fresh = self.ctx.encrypt_dual(m, pk, rng);
         let encrypt_ns = t1.elapsed().as_nanos() as u64;
+
+        // Zeroize the plaintext explicitly (see `bootstrap` above).
+        m.zeroize();
 
         self.bootstrap_count += 1;
         let total_ns = total_start.elapsed().as_nanos() as u64;
@@ -209,10 +215,13 @@ impl SymmetricBootstrap {
         sk: &DualRNSSecretKey,
         rng: &mut ShadowHarvester,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let m = self.ctx.decrypt_dual(ct, sk);
+        let mut m = self.ctx.decrypt_dual(ct, sk);
 
         // Symmetric encrypt: c0 = -(a·s + e) + Δ·m, c1 = a
         let fresh = self.symmetric_encrypt(m, sk, rng);
+
+        // Zeroize the plaintext explicitly (see `bootstrap` above).
+        m.zeroize();
 
         self.bootstrap_count += 1;
         Ok(fresh)

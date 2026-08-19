@@ -87,26 +87,27 @@ Security mode is explicit. See `SECURITY_MODE_MATRIX.md`.
 - `SecureRng` wraps the OS CSPRNG for key generation and production cryptographic sampling;
 - service production key generation uses `generate_keys_dual_full_secure()`;
 - `ShadowHarvester` is documented and typed as deterministic/test-oriented;
-- SBNI is separated from key-generation entropy and bootstrap semantics;
 - OS entropy errors propagate or terminate before security-critical output.
 
 **Residuals:** VM/container cloning, platform CSPRNG failure, and lifecycle/reseed policy remain deployment concerns.
 
 **Status:** source roles separated; environment health evidence required per deployment.
 
-## T5 — SBNI misuse or malformed lane state
+## T5 — retired (SBNI misuse or malformed lane state)
 
-**Attack:** corrupt ciphertext correctness, index outside live limbs, or infer operation state through malformed entropy/lane input.
+SBNI (Shadow Butterfly Noise Injection) was retired 2026-08-09: `pub mod sbni;`
+was removed from `ops/mod.rs`, its one production call site
+(`mul_dual_public` Step 3.5) is gone, and nothing in the crate compiles
+against it. The threat this entry described — corrupt ciphertext
+correctness, index outside live limbs, or infer operation state through
+malformed entropy/lane input — has no live attack surface because the
+mechanism it targeted no longer exists. See `docs/LADDER_REMOVAL.md` §1 for
+the retirement record and `docs/RETIRED_MECHANISMS.md` for the companion
+retirement of modulus switching. This entry is kept, marked retired, rather
+than silently deleted, per the same non-silent-delete rule
+`RETIRED_MECHANISMS.md` applies to quarantined tests.
 
-**Current controls:**
-
-- empty entropy is rejected;
-- live main and anchor counts are checked after modulus switching;
-- modulus and limb lengths are validated before mutation;
-- one signed injection polynomial is reduced consistently across live lanes;
-- injection is bounded and does not reset the noise budget or count as bootstrap.
-
-**Status:** source remediation integrated; Rust test execution pending on the combined head.
+**Status:** retired; not applicable to the current threat surface.
 
 ## T6 — Key lifetime and memory exposure
 

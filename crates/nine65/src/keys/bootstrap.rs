@@ -4,13 +4,14 @@
 //! - `BootstrapKey`: working secret key encrypted under bootstrap parameters
 //! - `KeySwitchKey`: converts ciphertexts from boot key to working key
 
-use crate::entropy::{FheRng, ShadowHarvester};
+use crate::entropy::{require_secure_rng, FheRng, SecureRng};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSEvalKey, DualRNSFullKeySet, DualRNSPoly, DualRNSPublicKey,
     DualRNSSecretKey, RNSFHEContext,
 };
 use crate::params::FHEConfig;
+use zeroize::{Zeroize, Zeroizing};
 
 /// NTT-friendly primes for the bootstrap modulus chain.
 /// With q_small = t, bootstrap depth drops to ~1.
@@ -169,6 +170,18 @@ pub struct BootstrapKeySet {
 }
 
 impl BootstrapKey {
+    /// Generate bootstrap key material using the OS CSPRNG. This is the
+    /// production entry point.
+    pub fn generate_secure(
+        work_config: &FHEConfig,
+        boot_ctx: &RNSFHEContext,
+        boot_keys: &DualRNSFullKeySet,
+        work_sk: &DualRNSSecretKey,
+    ) -> Nine65Result<Self> {
+        let mut rng = SecureRng::new();
+        Self::generate(work_config, boot_ctx, boot_keys, work_sk, &mut rng)
+    }
+
     /// Generate bootstrap key material.
     ///
     /// 1. Validates bootstrap primes meet cryptographic requirements
@@ -176,13 +189,21 @@ impl BootstrapKey {
     /// 3. Generates boot key pair
     /// 4. Encodes work sk as Z_t polynomial: {-1,0,1} -> {t-1,0,1}
     /// 5. Encrypts encoded sk under boot pk
-    pub fn generate(
+    ///
+    /// `enc_s` is literally `Enc(work_sk)` -- the working secret key,
+    /// encrypted. Generic over `FheRng`; `require_secure_rng` below rejects
+    /// a non-secure RNG at this entry point outside test/debug builds and
+    /// the `allow_insecure` feature. Prefer [`Self::generate_secure`] unless
+    /// you have a specific, documented reason to inject a different RNG.
+    pub fn generate<R: FheRng>(
         work_config: &FHEConfig,
         boot_ctx: &RNSFHEContext,
         boot_keys: &DualRNSFullKeySet,
         work_sk: &DualRNSSecretKey,
-        rng: &mut ShadowHarvester,
+        rng: &mut R,
     ) -> Nine65Result<Self> {
+        require_secure_rng(rng, "BootstrapKey::generate");
+
         let t = work_config.t;
         let n = work_config.n;
 
@@ -218,7 +239,7 @@ impl BootstrapKey {
         // This gives Enc_boot(s_work) with proper noise characteristics.
 
         // Step 1: Create an encryption of 0 under boot pk
-        let ct_zero = boot_ctx.encrypt_dual(0, &boot_keys.public_key, rng);
+        let ct_zero = boot_ctx.encrypt_dual_with_rng(0, &boot_keys.public_key, rng);
 
         // Step 2: Add Δ_boot * s_encoded into c0 (coefficient by coefficient)
         let mut c0_main = ct_zero.c0.main.clone();
@@ -331,19 +352,24 @@ impl KeySwitchKey {
         // Get the ternary representation from work_sk.
         // work_sk.s.main[0] has coefficients mod work_primes[0].
         // For a ternary key, they are in {0, 1, work_primes[0]-1}.
-        // We need to re-encode under each boot prime.
-        let work_s_signed: Vec<i64> = work_sk.s.main[0]
-            .iter()
-            .map(|&c| {
-                if c == 0 {
-                    0i64
-                } else if c == 1 {
-                    1i64
-                } else {
-                    -1i64 // p-1 represents -1 for ternary
-                }
-            })
-            .collect();
+        // We need to re-encode under each boot prime. This is the working
+        // secret key in a bare Vec -- zeroize the temporary on drop.
+        let work_s_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
+            work_sk
+                .s
+                .main[0]
+                .iter()
+                .map(|&c| {
+                    if c == 0 {
+                        0i64
+                    } else if c == 1 {
+                        1i64
+                    } else {
+                        -1i64 // p-1 represents -1 for ternary
+                    }
+                })
+                .collect(),
+        );
 
         // Encode work_sk under boot primes
         let work_sk_boot_main: Vec<Vec<u64>> = boot_ctx
@@ -369,7 +395,7 @@ impl KeySwitchKey {
                     .collect()
             })
             .collect();
-        let work_sk_boot = DualRNSPoly {
+        let mut work_sk_boot = DualRNSPoly {
             main: work_sk_boot_main,
             anchor: work_sk_boot_anchor,
             n,
@@ -509,6 +535,10 @@ impl KeySwitchKey {
                     ((power_anchor[i] as u128 * decomp_base as u128) % p as u128) as u64;
             }
         }
+
+        // work_sk_boot holds the working secret key re-encoded under boot
+        // primes; it is no longer needed once the gadget pairs are built.
+        work_sk_boot.zeroize();
 
         Ok(Self {
             ksk: ksk_pairs,

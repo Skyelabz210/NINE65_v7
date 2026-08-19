@@ -13,9 +13,39 @@
 //!
 //! Also provides: Garner reconstruction as iterated K-Elimination, batch
 //! winding survey, cross-lane winding matrix, p-adic digit extraction
-//! (triple K-Elim), and the winding-lift phase differential (Theorem 7.3).
+//! (triple K-Elim), the winding-lift phase differential (Theorem 7.3), and
+//! bounded-digit winding-tower arithmetic (`k_to_tower`/`k_from_tower`/
+//! `tower_add`/`add_carry`) for carry propagation across multi-level towers.
 //!
 //! Zero floating point. All arithmetic exact integer (A1).
+//!
+//! # Relationship to the production K-Elimination record (G14 consolidation)
+//!
+//! This module is the **staged CRAM method-of-record** K-Elimination engine:
+//! it is the residue-native division/reconstruction primitive consumed
+//! internally by this crate's own CRAM machinery (`cram_anchor`,
+//! `cram_machine`, `cram_ops`, `cram_pde`, `crt_torus`, `transduction`), over
+//! an arbitrary-length coprime basis (`&[i128]` residues), not a fixed
+//! two-modulus split.
+//!
+//! It is **not** the same thing as, and is intentionally independent of,
+//! `nine65::arithmetic::rns::extract_k_rns_level` — the canonical
+//! *production* K-Elimination used by the live DualRNS BFV engine
+//! (`crates/nine65/src/ops/rns_fhe.rs`). The two are not interchangeable by
+//! a thin wrapper: `extract_k_rns_level` operates over the DualRNS engine's
+//! own multi-anchor lane-vector ciphertext representation and lives in a
+//! downstream crate this one cannot depend on (`exact_transcendentals` is a
+//! dependency-free, `no_std`-compatible leaf crate — see its `CLAUDE.md`;
+//! `nine65` depends on it, not the reverse). As of this pass, nothing in
+//! `nine65`'s live encrypt/mul/decrypt hot path calls into this module —
+//! it is exercised only by this crate's own tests/CRAM modules and by a
+//! handful of `nine65` audit binaries and tests that cross-check it against
+//! the production path (see `crates/nine65/tests/basis_invariance.rs`,
+//! `residue_space_ciphertext.rs`, `noise_profile.rs`, `depth_and_noise.rs`).
+//! Wiring this staged engine into the production hot path is tracked
+//! separately as the CRAM-architecture integration (see the repository's
+//! CRAM compliance gates); this file is kept as the reference/staging
+//! implementation for that eventual migration, not deleted or merged.
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
@@ -288,13 +318,23 @@ pub fn k_elim_divide(
 
 /// K-Elimination exact division with an integer NAME, on demand.
 ///
-/// Returns `(quotient_residues, quotient_value)`. The name is recovered by a
-/// single K-Elimination winding lift against a star-prime anchor `a_anchor`
-/// (carried alongside the basis as `a mod anchor`), NOT by a mixed-radix fuse
-/// of `basis`:
-///   `q_shell = a_shell · b⁻¹ (mod M)` on the basis (shell-internal),
-///   `q_anchor = a_anchor · b⁻¹ (mod anchor)`,
-///   `k = (q_anchor − q_shell) · M⁻¹ (mod anchor)`,  `q = q_shell + k·M`.
+/// Returns `(quotient_residues, quotient_value)`. Two *different* steps are
+/// involved, and it matters which is which (this doc previously conflated
+/// them — see G14 audit finding, now corrected):
+///
+///   1. **Is** a mixed-radix fuse of `basis`: `q_shell mod M` is read off the
+///      quotient's own `basis` residues via a full [`garner_reconstruct`]
+///      over the shell (iterated K-Elimination, `basis.len() - 1` steps).
+///      This step never leaves the shell — it does not touch `anchor`.
+///   2. **Is not** a mixed-radix fuse: the *name* — i.e. lifting `q_shell`
+///      (a residue mod `M`) up to the true integer `q` — is recovered by a
+///      single additional K-Elimination winding lift against the star-prime
+///      anchor `a_anchor` (carried alongside the basis as `a mod anchor`),
+///      not by folding `anchor` into a combined multi-modulus Garner fuse
+///      together with `basis`:
+///      `q_anchor = a_anchor · b⁻¹ (mod anchor)`,
+///      `k = (q_anchor − q_shell) · M⁻¹ (mod anchor)`,  `q = q_shell + k·M`.
+///
 /// Exact whenever `anchor > q` (extend with more anchors for larger q).
 ///
 /// Precondition: gcd(b, M) = 1, gcd(b, anchor) = 1, gcd(M, anchor) = 1, b | a,
@@ -456,10 +496,24 @@ pub fn tower_add(a: &[i128], b: &[i128], mus: &[i128], depth: usize, c0: i128) -
 }
 
 /// Single-carry canonicalization: propagate carry through bounded-digit levels.
+///
+/// # Bounds
+/// `kd.len()` (`d`) drives the loop bound `d - 1` and the top-level index
+/// `kd[d - 1]`. Both are only well-defined for `d >= 1`; a naive `d - 1` on
+/// an empty `kd` underflows the `usize` subtraction (panics with overflow
+/// checks on, wraps to `usize::MAX` and then index-panics without them —
+/// either way a crash, not silent corruption). An empty tower has no digit
+/// position to carry into, so this is guarded as a documented no-op: any
+/// nonzero incoming carry is simply undeliverable there and dropped, exactly
+/// as `k_to_tower(_, _, 0)` already returns an empty tower for "no depth".
+/// See regression test `add_carry_empty_tower_does_not_underflow`.
 pub fn add_carry(kd: &mut [i128], mus: &[i128], mut c: i128) {
     let d = kd.len();
+    let Some(top) = d.checked_sub(1) else {
+        return; // Empty tower: nothing to carry into.
+    };
     let mut i = 0;
-    while i < d - 1 && c != 0 {
+    while i < top && c != 0 {
         kd[i] += c;
         if kd[i] >= mus[i] {
             c = kd[i] / mus[i];
@@ -474,7 +528,7 @@ pub fn add_carry(kd: &mut [i128], mus: &[i128], mut c: i128) {
         i += 1;
     }
     if c != 0 {
-        kd[d - 1] += c;
+        kd[top] += c;
     }
 }
 
@@ -715,6 +769,35 @@ mod tests {
         add_carry(&mut kd, &mus, 20);
         assert!(kd[0] >= 0 && kd[0] < 17, "level 0 should be in [0, 17)");
         assert_eq!(k_from_tower(&kd, &mus), orig_val + 20);
+    }
+
+    /// G21 regression: `add_carry` on an empty tower (`kd.len() == 0`) must
+    /// not underflow the `usize` subtraction `d - 1` that previously drove
+    /// both the loop bound and the top-level index. Before the fix this
+    /// panicked (debug: "attempt to subtract with overflow"; release:
+    /// `usize` wraps to `MAX`, then `kd[i]` index-panics immediately).
+    /// An empty tower has nowhere to carry into, so the fixed behavior is a
+    /// documented no-op.
+    #[test]
+    fn add_carry_empty_tower_does_not_underflow() {
+        let mus: Vec<i128> = vec![];
+        let mut kd: Vec<i128> = vec![];
+        // Must not panic, regardless of whether the carry is zero or not.
+        add_carry(&mut kd, &mus, 0);
+        add_carry(&mut kd, &mus, 42);
+        add_carry(&mut kd, &mus, -7);
+        assert!(kd.is_empty(), "empty tower must stay empty");
+    }
+
+    /// G21 regression: a single-digit tower (`d == 1`) exercises the same
+    /// `d - 1 == 0` boundary from the other side — the loop must run zero
+    /// iterations and the carry must land directly in the (only) top digit.
+    #[test]
+    fn add_carry_single_digit_tower_absorbs_carry_at_top() {
+        let mus: Vec<i128> = vec![17]; // unused by the top level, present for signature parity
+        let mut kd = vec![5i128];
+        add_carry(&mut kd, &mus, 20);
+        assert_eq!(kd[0], 25, "single-digit tower's top level absorbs the full carry");
     }
 
     #[test]

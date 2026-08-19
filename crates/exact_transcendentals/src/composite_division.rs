@@ -267,10 +267,43 @@ pub fn garner4_ntt(r: &[u128]) -> u128 {
 // Exact division
 // ============================================================================
 
-/// Exact division in v5 substrate. d must have prime factors in {2, 5} only.
-pub fn cram_div_exact_pos_v5(x: &ExtResV5, d: u128) -> ExtResV5 {
-    debug_assert!(d > 0);
-    debug_assert!(d % 7 != 0, "v5: d must not have factor 7");
+/// Precondition failures for [`cram_div_exact_pos_v5`].
+///
+/// G11 (NINE65_v7_DEEP_ANALYSIS_20260817.md): these preconditions used to be
+/// `debug_assert!`-only. In a `--release` build (the default profile this
+/// crate's own `Cargo.toml` sets, with no `debug-assertions` override) every
+/// `debug_assert!` compiles to nothing — a divisor with a factor of 7 (or
+/// anything outside {2, 5}) silently ran the {2, 5}-only lift math anyway
+/// and returned a wrong `ExtResV5` with no signal that anything went wrong.
+/// This module has zero callers anywhere in the workspace today (`pub mod
+/// composite_division;` in `lib.rs`, dormant but armed as public API), so
+/// promoting these to a real `Result` is a pure safety fix with no observed
+/// call-site impact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum V5DivisionError {
+    /// `d` was zero (division by zero is never a valid v5 request).
+    DivisorIsZero,
+    /// `d` has a prime factor of 7. Lane 4 (`2^63 * 7^22`) reserves its
+    /// entire 7-content for the NTT lift's own bookkeeping; a divisor that
+    /// also consumes 7-content is exactly the case this substrate does not
+    /// support.
+    DivisorHasFactorSeven { d: u128 },
+    /// `d` has a prime factor outside {2, 5, 7} — this substrate was only
+    /// ever built to divide by {2, 5}-smooth values. `residual` is what
+    /// remains of `d` after removing every factor of 2 and 5.
+    DivisorOutsideSupportedFactors { d: u128, residual: u128 },
+}
+
+/// Exact division in v5 substrate. `d` must have prime factors in {2, 5}
+/// only — see [`V5DivisionError`] for what is now rejected instead of
+/// silently mis-computed.
+pub fn cram_div_exact_pos_v5(x: &ExtResV5, d: u128) -> Result<ExtResV5, V5DivisionError> {
+    if d == 0 {
+        return Err(V5DivisionError::DivisorIsZero);
+    }
+    if d % 7 == 0 {
+        return Err(V5DivisionError::DivisorHasFactorSeven { d });
+    }
 
     let mut d2 = 1u128;
     let mut dd = d;
@@ -283,7 +316,9 @@ pub fn cram_div_exact_pos_v5(x: &ExtResV5, d: u128) -> ExtResV5 {
         d5 *= 5;
         dd /= 5;
     }
-    debug_assert!(dd == 1, "v5: d has factors other than 2, 5");
+    if dd != 1 {
+        return Err(V5DivisionError::DivisorOutsideSupportedFactors { d, residual: dd });
+    }
 
     let r_mod_d2 = if d2 == 1 {
         0
@@ -320,7 +355,7 @@ pub fn cram_div_exact_pos_v5(x: &ExtResV5, d: u128) -> ExtResV5 {
     let q_partial_5modulus = garner_5modulus_to_u128(&q_res[0..4], q_res[4]);
     q_res[5] = q_partial_5modulus % LANE_5POW_V5;
 
-    ExtResV5 { res: q_res }
+    Ok(ExtResV5 { res: q_res })
 }
 
 fn small_lane_partial_v5(
@@ -448,7 +483,7 @@ mod tests {
             for &x in test_xs {
                 if x >= 0 {
                     let er = ExtResV5::from_i128(x);
-                    let q = cram_div_exact_pos_v5(&er, d).to_i128();
+                    let q = cram_div_exact_pos_v5(&er, d).unwrap().to_i128();
                     assert_eq!(q, x / d as i128, "v5 div d={} x={}", d, x);
                 }
             }
@@ -465,7 +500,7 @@ mod tests {
         ];
         for &x in test_xs {
             let er = ExtResV5::from_i128(x);
-            let q = cram_div_exact_pos_v5(&er, d).to_i128();
+            let q = cram_div_exact_pos_v5(&er, d).unwrap().to_i128();
             assert_eq!(q, x / d as i128, "v5 div S^2 x={}", x);
         }
     }
@@ -482,10 +517,58 @@ mod tests {
             let x = r as i128;
             for &d in &[1024u128, 1u128 << 30, 100_000_000u128] {
                 let er = ExtResV5::from_i128(x);
-                let q = cram_div_exact_pos_v5(&er, d).to_i128();
+                let q = cram_div_exact_pos_v5(&er, d).unwrap().to_i128();
                 let canonical = x / d as i128;
                 assert_eq!(q, canonical, "v5 stress: x={} d={}", x, d);
             }
         }
+    }
+
+    #[test]
+    fn rejects_divisor_zero() {
+        let er = ExtResV5::from_i128(100);
+        assert_eq!(
+            cram_div_exact_pos_v5(&er, 0),
+            Err(V5DivisionError::DivisorIsZero)
+        );
+    }
+
+    #[test]
+    fn rejects_divisor_with_factor_seven_instead_of_silently_computing_garbage() {
+        // G11 (NINE65_v7_DEEP_ANALYSIS_20260817.md): this precondition used
+        // to be `debug_assert!`-only, so a release build ran the {2,5}-only
+        // lift math on a factor-7 divisor anyway and returned a wrong
+        // answer with no signal. It must now be a real, typed rejection.
+        let er = ExtResV5::from_i128(700);
+        assert_eq!(
+            cram_div_exact_pos_v5(&er, 7),
+            Err(V5DivisionError::DivisorHasFactorSeven { d: 7 })
+        );
+        // Also catch it when 7 is only one factor among otherwise-supported
+        // ones (2 * 7 = 14): the previous debug_assert-only check ran even
+        // though d % 7 == 0 here too.
+        let er2 = ExtResV5::from_i128(1400);
+        assert_eq!(
+            cram_div_exact_pos_v5(&er2, 14),
+            Err(V5DivisionError::DivisorHasFactorSeven { d: 14 })
+        );
+    }
+
+    #[test]
+    fn rejects_divisor_with_factors_outside_two_and_five() {
+        // 33 = 3 * 11 — neither factor is 2, 5, or 7. Must be rejected with
+        // the residual factor surfaced, not silently mis-computed.
+        let er = ExtResV5::from_i128(330);
+        assert_eq!(
+            cram_div_exact_pos_v5(&er, 33),
+            Err(V5DivisionError::DivisorOutsideSupportedFactors { d: 33, residual: 33 })
+        );
+        // 20 = 4 * 5 (supported) but 60 = 4 * 3 * 5 has a residual factor
+        // of 3 once every 2 and 5 is stripped out.
+        let er2 = ExtResV5::from_i128(600);
+        assert_eq!(
+            cram_div_exact_pos_v5(&er2, 60),
+            Err(V5DivisionError::DivisorOutsideSupportedFactors { d: 60, residual: 3 })
+        );
     }
 }

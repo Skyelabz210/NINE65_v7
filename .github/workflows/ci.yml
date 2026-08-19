@@ -369,6 +369,17 @@ jobs:
       - name: Run benchmark regression check
         run: bash scripts/regression_scan.sh enforced
 
+      # mana's criterion bench (benches/lane_ops.rs) had a commented-out
+      # `[[bench]]` stanza in Cargo.toml, so it was never compiled by
+      # anything, let alone by CI. `-- --test` is criterion's own smoke mode:
+      # it runs each benchmark function exactly once instead of the full
+      # statistical sampling, so this is a compile-and-run check, not a
+      # perf-regression gate -- there is no committed baseline for mana lane
+      # throughput yet. It exists so the bench target itself cannot silently
+      # bit-rot.
+      - name: Compile and smoke-run mana lane-ops bench
+        run: cargo bench -p mana --bench lane_ops -- --test
+
   timing-tests:
     name: "T4 · Timing Tests"
     runs-on: ubuntu-latest

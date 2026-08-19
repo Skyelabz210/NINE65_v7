@@ -1,5 +1,9 @@
 # Lattice Estimator Baseline (2026-02-05)
 
+> **Superseded** by `docs/LATTICE_ESTIMATOR_BASELINE_2026-02-25.md` — see
+> that file for the current staleness/provenance note (parameters below also
+> predate the current `n=8192`/`16384` `secure_configs.rs` values).
+
 Command:
 - cargo run -p nine65 --bin security_estimator_baseline
 

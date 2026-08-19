@@ -1,5 +1,13 @@
 # Lattice Estimator Baseline (2026-01-27)
 
+> **Superseded (2026-08-19):** parameters below (`secure_128` n=4096,
+> `secure_192` n=8192) predate the current `secure_configs.rs` (`secure_128`
+> n=8192, `secure_192`/`secure_256` n=16384). This is nonetheless the only
+> baseline in this directory produced with the real external
+> `lattice-estimator` tool rather than the in-tree Rust heuristic — see
+> `docs/LATTICE_ESTIMATOR_BASELINE_2026-02-25.md` for the fuller staleness
+> and regeneration note.
+
 Tooling:
 - Lattice estimator: malb/lattice-estimator @ 66771ec3d331e2021eccf17331a5ed1ff71f3ddb
 - Runtime: sagemath/sagemath:9.5 (via Docker)

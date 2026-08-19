@@ -1,47 +1,54 @@
 #!/bin/bash
-# Test script to verify parameter security hardening changes
+# Verifies the FHE parameter security hardening surface actually holds:
+#   - the crate compiles cleanly with default features
+#   - ProductionSafe / SecureConfig invariants (params::secure_configs)
+#   - orbital-boundary + HE Standard parameter validation (params::validation)
+#   - production parameter tables (params::production)
+#
+# This is a real gate: `set -euo pipefail` means any failing command aborts
+# the script with a non-zero exit immediately. Earlier versions of this
+# script piped `cargo check` through `grep ... || echo "No errors..."`,
+# which discarded cargo's exit status and made the `||` branch's own zero
+# exit the last word regardless of what cargo reported -- the script always
+# printed a "PASSED"-shaped summary. That pattern is gone.
+set -euo pipefail
 
-set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 echo "=== Parameter Security Hardening Verification ==="
-echo ""
-echo "Testing compilation of security modules..."
+echo
 
-# Test that the params module compiles (even if other modules have issues)
-echo "Checking params module syntax..."
-cargo check -p nine65 --lib --no-default-features 2>&1 | grep -i "secure_configs\|validation" || echo "No errors in security modules"
+echo "--- Compiling nine65 (default features) ---"
+cargo check -p nine65 --lib
 
-echo ""
-echo "=== Summary of Security Hardening Changes ==="
-echo ""
-echo "1. Compile-Time Assertions:"
-echo "   - Added cfg gates on test_fast() and test_medium()"
-echo "   - Added const assertions for security invariants"
-echo "   - Test configs only accessible in test/debug builds"
-echo ""
-echo "2. ProductionSafe Trait Enhancements:"
-echo "   - Added HE Standard compliance check"
-echo "   - Added verify_production_safety() function with detailed errors"
-echo "   - Enhanced production safety verification in require_production_safe()"
-echo ""
-echo "3. Runtime Parameter Validation:"
-echo "   - Added production_safe field to ValidationResult"
-echo "   - Added classical_security_bits and quantum_security_bits fields"
-echo "   - Implemented estimate_security_detailed() for comprehensive analysis"
-echo "   - Added assert_production_params() for strict production checks"
-echo ""
-echo "4. Documentation Updates:"
-echo "   - Updated NIST_COMPLIANCE_MATRIX.md with security hardening section"
-echo "   - Added parameter security hardening section to README.md"
-echo "   - Documented all security verification APIs and usage examples"
-echo ""
-echo "=== Test Results ==="
-echo ""
-echo "Note: Full compilation blocked by pre-existing errors in rns_fhe.rs"
-echo "Security hardening changes are syntactically correct and logically sound."
-echo ""
-echo "Changed files:"
-echo "  - crates/nine65/src/params/secure_configs.rs"
-echo "  - crates/nine65/src/params/validation.rs"
-echo "  - docs/NIST_COMPLIANCE_MATRIX.md"
-echo "  - README.md"
+echo
+echo "--- ProductionSafe / SecureConfig invariants (params::secure_configs) ---"
+cargo test -p nine65 --lib --release params::secure_configs::tests -- --nocapture
+
+echo
+echo "--- Orbital boundary + HE Standard parameter validation (params::validation) ---"
+cargo test -p nine65 --lib --release params::validation::tests -- --nocapture
+
+echo
+echo "--- Production parameter tables (params::production) ---"
+cargo test -p nine65 --lib --release params::production::tests -- --nocapture
+
+echo
+echo "--- allow_insecure release-build gate (informational, non-fatal) ---"
+# CLAUDE.md: "Test configs (allow_insecure) are blocked in release builds --
+# never use in production." The enforcement point is a `compile_error!` at
+# crates/nine65/src/lib.rs:124-125, gated on
+# `not(any(test, debug_assertions))`. It is presently commented out, so this
+# check is expected to warn on unmodified `main`. It is kept non-fatal
+# (unlike the checks above) because closing it means editing lib.rs, which is
+# out of scope for this script; the warning exists so the gap stays visible
+# instead of silently regressing further.
+if cargo check -p nine65 --lib --release --features allow_insecure >/tmp/nine65_allow_insecure_release_check.log 2>&1; then
+  echo "::warning::allow_insecure compiles into a release build (nine65 --release --features allow_insecure succeeded)."
+  echo "::warning::The compile_error! gate at crates/nine65/src/lib.rs:124-125 is commented out; uncomment it to close this."
+else
+  echo "confirmed: allow_insecure is rejected by the release-build compile_error gate"
+fi
+
+echo
+echo "=== Parameter security hardening verification PASSED ==="

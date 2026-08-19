@@ -5,8 +5,8 @@ HTTP microservice for session-based BFV homomorphic encryption using the DualRNS
 ## Quick Start
 
 ```bash
-# Start the service
-./bin/fhe-service
+# Build and start the service (from the repo root, or run apps/fhe-service/run.sh)
+cargo run --release -p fhe-service
 
 # Create a session, encrypt two values, add them, decrypt the result
 SID=$(curl -s -X POST http://127.0.0.1:8080/v1/sessions \
@@ -95,9 +95,9 @@ Supported configs:
 
 | Config | n | log2(Q) | t | Security |
 |--------|---|---------|---|----------|
-| `secure_128` | 4096 | ~90 | 65537 | 128-bit |
-| `secure_192` | 16384 | ~145 | 65537 | 192-bit |
-| `secure_256` | 16384 | ~174 | 65537 | 256-bit |
+| `secure_128` | 8192 | ~90 | 65537 | 128-bit |
+| `secure_192` | 16384 | ~147 | 65537 | 192-bit |
+| `secure_256` | 16384 | ~177 | 65537 | 256-bit |
 
 **Response** `201`:
 ```json
@@ -105,7 +105,7 @@ Supported configs:
   "session_id": "a1b2c3d4e5f6...",
   "config": "secure_128",
   "params": {
-    "n": 4096,
+    "n": 8192,
     "log_q": 90,
     "t": 65537,
     "security_bits": 128

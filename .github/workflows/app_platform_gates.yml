@@ -120,8 +120,15 @@ jobs:
           rg -q 'disabled_by_default' crates/fhe-service/src/handlers.rs
           rg -q 'Sha256::digest' crates/fhe-service/src/handlers.rs
           rg -q 'ct_eq' crates/fhe-service/src/handlers.rs
+      # The literal '127.0.0.1:8080' this used to grep for was split into
+      # DEFAULT_HOST / DEFAULT_PORT consts (crates/fhe-service/src/main.rs)
+      # so the single-string assertion could never match again -- this job
+      # was permanently red, training reviewers to ignore it. Assert the
+      # two consts directly instead of a string that no longer exists.
       - name: Assert loopback default
-        run: rg -q '127\.0\.0\.1:8080' crates/fhe-service/src/main.rs
+        run: |
+          rg -q 'DEFAULT_HOST: &str = .127\.0\.0\.1.' crates/fhe-service/src/main.rs
+          rg -q 'DEFAULT_PORT: &str = .8080.' crates/fhe-service/src/main.rs
 
   wasm-client:
     name: WASM client boundary

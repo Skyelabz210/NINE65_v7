@@ -1,8 +1,25 @@
 # NINE65 v8 "Shadow Butterfly" Audit Report
 
-**Status**: PASS
+**Status**: PASS (at the time of this report — see superseded-claims note below)
 **Date**: February 2026
 **Auditor**: Jules (Swarm Intelligence)
+
+> **Superseded claims (2026-08-19):** this report is a point-in-time historical
+> record and is left unedited below, but two of its claims no longer hold and
+> must not be read as current status:
+> - **§4 SBNI** — SBNI was retired 2026-08-09; its BLAKE3 entropy source was
+>   later found to be a deterministic, publicly recomputable function of the
+>   operation index (see `docs/LADDER_REMOVAL.md` §1), so the chi-squared/
+>   serial-correlation tests cited here characterized an unkeyed, predictable
+>   stream, not a security property. SBNI is no longer part of the codebase.
+> - **§3 Depth Chain Verification** (`secure_128` depth 1000, `secure_192`/
+>   `secure_256` depth 500) — these numbers are not reproduced by any test in
+>   the current suite and are not in `docs/CLAIM_REGISTRY.csv`. For
+>   currently-passing, test-named depth evidence see CLAUDE.md's "Bootstrap
+>   Paths" / depth-benchmark sections and
+>   `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_unbounded`
+>   (CI-asserted floor of 128, secure_128, symmetric mul-by-fresh-operand,
+>   no bootstrap).
 
 ## 1. Build and Test Summary
 - **Build Result**: SUCCESS (Release builds optimized for performance)

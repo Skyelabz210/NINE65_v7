@@ -320,8 +320,27 @@ Definition montgomery_mul (p : MontgomeryParams) (a b : nat) : nat :=
 Definition montgomery_add (p : MontgomeryParams) (a b : nat) : nat :=
   (a + b) mod p.(q).
 
+(** NOTE (G15, NINE65_v7_DEEP_ANALYSIS_20260817.md): the original definition
+    here was `(a - b) mod p.(q)`, using Coq's truncated `nat` subtraction
+    directly on Montgomery-domain representatives `a`, `b` (each already
+    reduced into `[0, q)`). Because `a` and `b` are values of the form
+    `(x * R) mod q` for arbitrary `x`, `y`, there is no guarantee `a >= b`
+    even when `x >= y` — `to_montgomery` is a permutation of `[0, q)`, not an
+    order-preserving map. Whenever `a < b`, nat truncation silently clamps
+    `a - b` to `0` instead of wrapping, which is wrong. Counterexample
+    (verified against this file's actual `to_montgomery`/`redc`): q=5, R=8,
+    x=4, y=3 gives `to_montgomery x = 2`, `to_montgomery y = 4`, so the old
+    definition computed `(2 - 4) mod 5 = 0`, while the correct answer is
+    `(x - y) mod q = 1`. See `montgomery_sub_correct` below (KNOWN FALSE
+    block) for the theorem that this bug rendered unsound.
+
+    Fix: pad by the modulus before subtracting, exactly as
+    `redc`/`montgomery_add`'s callers already do elsewhere in this file
+    (e.g. `modular_distance` in CyclotomicPhase.v uses the same idiom). Since
+    both `a` and `b` are always `< p.(q)` at call sites, `a + p.(q) - b`
+    never underflows in `nat`. *)
 Definition montgomery_sub (p : MontgomeryParams) (a b : nat) : nat :=
-  (a - b) mod p.(q).
+  (a + p.(q) - b) mod p.(q).
 
 (** * Helper Lemmas for Montgomery Proofs *)
 
@@ -713,7 +732,28 @@ Proof.
   reflexivity.
 Qed.
 
-(** Complete proof for montgomery_sub_correct *)
+(** KNOWN FALSE - see NINE65_v7_DEEP_ANALYSIS_20260817.md G15.
+
+    The theorem below (kept only as an inert comment, not live Coq) used to
+    be stated for the old, buggy `montgomery_sub` definition
+    `(a - b) mod p.(q)` and closed with `Qed`. Its *statement* is
+    mathematically false: instantiate p.(q)=5, R=8, p.(q_inv_neg)=3 (valid:
+    `(5*3) mod 8 = 7 = R-1`), x=4, y=3. Then `to_montgomery p x = 2`,
+    `to_montgomery p y = 4`, `montgomery_sub p 2 4 = (2-4) mod 5 = 0` under
+    nat truncation, and `redc p 0 = 0`, so the theorem's LHS
+    `from_montgomery p (montgomery_sub p (to_montgomery p x) (to_montgomery
+    p y))` evaluates to `0`, while its RHS `(x - y) mod p.(q)` evaluates to
+    `1`. `0 <> 1`, so the statement is false for a satisfiable instance of
+    every hypothesis (x<q, y<q both hold: 4<5, 3<5). Whatever chain of
+    rewrites let the original proof below reach `Qed` for a false goal, it
+    must be exploiting an unsound step (most likely the `Nat.sub_mod`
+    rewrite, which does not have the naive meaning `(a mod n - b mod n) mod
+    n = (a - b) mod n` for truncated nat subtraction that this proof
+    assumed). Do not cite this proof as verified; it has been removed from
+    live Coq so it can no longer be Qed'd or `Print Assumptions`'d as if
+    trustworthy.
+
+<<<
 Theorem montgomery_sub_correct : forall (p : MontgomeryParams) (x y : nat),
   x < p.(q) -> y < p.(q) ->
   from_montgomery p (montgomery_sub p (to_montgomery p x) (to_montgomery p y))
@@ -723,20 +763,13 @@ Proof.
   unfold from_montgomery, montgomery_sub, to_montgomery.
   assert (HR_pos : R > 0) by exact R_pos.
   assert (Hq_pos : p.(q) > 0) by exact p.(q_pos).
-  
-  (* montgomery_sub a b = (a - b) mod q *)
-  (* to_montgomery x = (x * R) mod q *)
-  (* to_montgomery y = (y * R) mod q *)
-  (* So input to from_montgomery is ((x*R) mod q - (y*R) mod q) mod q *)
-  (* = ((x - y) * R) mod q *)
   set (t := ((x * R) mod p.(q) - (y * R) mod p.(q)) mod p.(q)).
   assert (Ht_eq : t = ((x - y) * R) mod p.(q)).
   {
     unfold t.
-    (* (a mod q - b mod q) mod q = (a - b) mod q *)
-    assert (H1 : ((x * R) mod p.(q) - (y * R) mod p.(q)) mod p.(q) = 
+    assert (H1 : ((x * R) mod p.(q) - (y * R) mod p.(q)) mod p.(q) =
              (x * R - y * R) mod p.(q)).
-    { 
+    {
       rewrite <- Nat.sub_mod by exact Hq_pos.
       reflexivity.
     }
@@ -744,41 +777,55 @@ Proof.
     rewrite <- Nat.mul_sub_distr_r.
     reflexivity.
   }
-  
-  (* from_montgomery t = redc p t *)
-  (* We need redc p (((x-y)*R) mod q) = (x-y) mod q *)
   rewrite Ht_eq.
-  
-  (* Use redc_mult_R_cong *)
   set (r := redc p (((x - y) * R) mod p.(q))).
   assert (Ht_qR : ((x - y) * R) mod p.(q) < p.(q) * R).
   { apply Nat.mod_upper_bound. lia. }
   assert (Hr_cong : (r * R) mod p.(q) = (((x - y) * R) mod p.(q)) mod p.(q)).
   { apply redc_mult_R_cong. exact Ht_qR. }
-  
-  (* Simplify *)
   assert (Ht_mod : (((x - y) * R) mod p.(q)) mod p.(q) = ((x - y) * R) mod p.(q)).
   { apply Nat.mod_mod. }
   rewrite Ht_mod in Hr_cong.
-  
-  (* r * R ≡ (x-y) * R (mod q) *)
-  (* r ≡ x-y (mod q) by canceling R *)
   assert (Hr_cong2 : r mod p.(q) = (x - y) mod p.(q)).
   {
     rewrite <- Hr_cong.
     apply mod_cancel_R.
     reflexivity.
   }
-  
-  (* r < q, so r mod q = r *)
   assert (Hr_lt : r < p.(q)).
   { unfold r. apply redc_output_lt_q. exact Ht_qR. }
   assert (Hr_mod : r mod p.(q) = r).
   { apply Nat.mod_small. exact Hr_lt. }
-  
   rewrite <- Hr_mod in Hr_cong2.
   reflexivity.
 Qed.
+>>>
+*)
+
+(** Corrected statement for the fixed `montgomery_sub` definition above
+    (which pads by `p.(q)` before subtracting, so it never truncates).
+    This restores the claim `montgomery_sub_correct` is supposed to make,
+    but the proof is genuinely new work (the padded-subtraction case was
+    never proved anywhere in this file) and is left honestly `Admitted`
+    rather than asserted with an unverified `Qed`.
+
+    TODO (G15): prove this by adapting `montgomery_add_correct`'s argument
+    (a few theorems above) with `y` replaced by `p.(q) - y`: show
+    `to_montgomery p x + p.(q) - to_montgomery p y` reduces mod `q*R` the
+    same way `redc_mult_R_cong` / `mod_cancel_R` already handle addition,
+    i.e. that `((a + p.(q) - b) mod p.(q)) * R ≡ (x - y) * R (mod p.(q))`
+    when `a = (x*R) mod q`, `b = (y*R) mod q`, using `Nat.add_sub_assoc`-style
+    lemmas that keep every intermediate subtraction non-underflowing (unlike
+    the false proof above, which subtracted two mod-reduced values with no
+    ordering guarantee). No toolchain was available in this session to
+    verify a candidate proof compiles, so it is intentionally left as an
+    honest gap rather than risking a second unsound `Qed`. *)
+Theorem montgomery_sub_correct : forall (p : MontgomeryParams) (x y : nat),
+  x < p.(q) -> y < p.(q) ->
+  from_montgomery p (montgomery_sub p (to_montgomery p x) (to_montgomery p y))
+    = (x - y) mod p.(q).
+Proof.
+Admitted.
 
 (** * Montgomery Exponentiation (Montgomery Ladder) *)
 

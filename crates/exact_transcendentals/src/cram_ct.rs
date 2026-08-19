@@ -22,9 +22,49 @@
 //! module exists so the rest of the workspace can speak the spec's
 //! vocabulary today, with the topology table validated by tests.
 
+use core::sync::atomic::{AtomicU64, Ordering};
+
 use crate::chimera::{family_for, LaneRole};
 use crate::lane_projector::{mod_inv_u32, PolynomialS8Signature, S8Signature};
 use crate::Vec;
+
+// ─── Hot-path CRAM division usage counters (G10) ───────────────────────────
+//
+// `cram_core::ArchitectureCounters` (crates/cram-core/src/lib.rs) is the
+// canonical shape for this instrumentation, but `exact_transcendentals` has
+// zero dependencies by design (see this crate's CLAUDE.md) and wiring the
+// real crate would mean editing Cargo.toml, which is outside this fix's
+// permitted file set. These counters mirror cram-core's field names
+// (`garner_calls`, `crt_reconstructions`) so a later rename to the shared
+// type is mechanical. They are incremented at every Garner-style
+// reconstruction call site this file (and `composite_division.rs`, which
+// reuses this static) actually owns: D1's `garner_reconstruct_subset`, D2's
+// `garner_reconstruct`, and D3's `crt_fuse_pairs`.
+#[derive(Default)]
+pub struct CramDivisionCounters {
+    pub garner_calls: AtomicU64,
+    pub crt_reconstructions: AtomicU64,
+}
+
+impl CramDivisionCounters {
+    pub const fn new() -> Self {
+        Self {
+            garner_calls: AtomicU64::new(0),
+            crt_reconstructions: AtomicU64::new(0),
+        }
+    }
+
+    pub fn snapshot(&self) -> (u64, u64) {
+        (
+            self.garner_calls.load(Ordering::Relaxed),
+            self.crt_reconstructions.load(Ordering::Relaxed),
+        )
+    }
+}
+
+/// Process-wide counters for every Garner-style reconstruction call in the
+/// D1/D2/D3 division lanes this crate implements.
+pub static CRAM_DIVISION_COUNTERS: CramDivisionCounters = CramDivisionCounters::new();
 
 // ─── Safe Basis ───────────────────────────────────────────────────────────
 
@@ -791,6 +831,10 @@ pub enum CramOpError {
     DivExact(DivExactError),
     /// D1 K-Elimination-specific failure.
     KElim(KElimError),
+    /// D3 FPD-specific failure (G11): the bad-lane exactness check caught a
+    /// fused quotient that disagrees with the numerator on a lane the
+    /// fusion basis could not include.
+    Fpd(FpdError),
     /// Two evaluable chimera lanes produced different quotients on the
     /// same input. The Phase-4 resolver rejects rather than picking a
     /// lane unilaterally.
@@ -1359,6 +1403,9 @@ impl AuxResidueSet {
 /// residues untouched and introducing no positional digit sequence. The
 /// returned value is identical to the retired mixed-radix result.
 fn crt_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
+    CRAM_DIVISION_COUNTERS
+        .garner_calls
+        .fetch_add(1, Ordering::Relaxed);
     // Basis product M = ∏ m_i.
     let mut modulus: i128 = 1;
     for &(m, _) in pairs {
@@ -1384,31 +1431,71 @@ struct FpdLanePieces {
     new_aux: Vec<u32>,
 }
 
+/// Failure modes for [`fpd_one_coefficient`].
+///
+/// G11 (NINE65_v7_DEEP_ANALYSIS_20260817.md): `fpd_one_coefficient` used to
+/// return a bare `Option`, collapsing two very different situations into one
+/// `None` — a structural invariant violation (an aux/good-lane modulus
+/// turned out not to be coprime to `d` after all) and a genuinely inexact
+/// division (the numerator was never an exact multiple of `d`, so the
+/// "recovered quotient" is meaningless). Worse, the second case was never
+/// even detected: the fused quotient was accepted and re-projected onto S8
+/// with `DivStatus::FusedBounded` and nothing checked it against the S8
+/// lanes the fusion basis excluded. [`BadLaneDisagreement`] is that missing
+/// check.
+///
+/// [`BadLaneDisagreement`]: FpdError::BadLaneDisagreement
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FpdError {
+    /// A required per-lane modular inverse of the divisor does not exist,
+    /// even though the caller (`cram_rescale_by_scalar_fpd`) already checked
+    /// every aux prime for coprimality with `d` before calling here.
+    LaneInverseMissing,
+    /// The candidate quotient produced by fusing the *coprime* S8 lanes and
+    /// the auxiliary anchors disagrees with the coefficient's residue on a
+    /// "bad" S8 lane — one where `d` is not invertible, so that lane could
+    /// not participate in the fusion and instead serves as an independent
+    /// witness. `d * q ≡ a (mod p)` is a genuine constraint on such a lane;
+    /// it holds iff the numerator was exactly divisible by `d`. A mismatch
+    /// means it was not, and the fused "quotient" is meaningless — this is
+    /// the exactness check that was previously entirely absent.
+    BadLaneDisagreement { coeff_index: usize, s8_lane_modulus: u32 },
+}
+
 /// Per-coefficient FPD division: fuse the good S8 lanes and the aux lanes
-/// to recover the exact integer quotient, then re-project onto S8 (and
-/// the aux primes for chain continuation).
+/// to recover the exact integer quotient, verify it against every S8 lane
+/// the fusion excluded, then re-project onto S8 (and the aux primes for
+/// chain continuation).
 fn fpd_one_coefficient(
+    coeff_index: usize,
     s8_residues: [u32; 8],
     aux_residues: &[u32],
     aux_primes: &[u32],
     divisor: i128,
     fusion_product: i128,
-) -> Option<FpdLanePieces> {
+) -> Result<FpdLanePieces, FpdError> {
     let abs_d = divisor.unsigned_abs() as u64;
     let sign: i128 = if divisor < 0 { -1 } else { 1 };
 
     // Build the (modulus, quotient_residue) pair list across good S8
     // lanes and every aux prime (which are by construction coprime to d).
+    // Lanes skipped here (gcd(p, d) != 1) are recorded so the reconstructed
+    // quotient can be checked against them independently below.
     let mut pairs: Vec<(u32, u32)> = Vec::with_capacity(8 + aux_primes.len());
+    let mut bad_lanes: Vec<(usize, u32)> = Vec::new();
     for (i, &p) in crate::triad::S8.iter().enumerate() {
         if gcd_u64(p as u64, abs_d) == 1 {
-            let inv = mod_inv_u32((abs_d % p as u64) as u32, p)?;
+            let inv = mod_inv_u32((abs_d % p as u64) as u32, p)
+                .ok_or(FpdError::LaneInverseMissing)?;
             let q = (s8_residues[i] as u64 * inv as u64 % p as u64) as u32;
             pairs.push((p, q));
+        } else {
+            bad_lanes.push((i, p));
         }
     }
     for (j, &alpha) in aux_primes.iter().enumerate() {
-        let inv = mod_inv_u32((abs_d % alpha as u64) as u32, alpha)?;
+        let inv = mod_inv_u32((abs_d % alpha as u64) as u32, alpha)
+            .ok_or(FpdError::LaneInverseMissing)?;
         let q = (aux_residues[j] as u64 * inv as u64 % alpha as u64) as u32;
         pairs.push((alpha, q));
     }
@@ -1423,9 +1510,23 @@ fn fpd_one_coefficient(
     };
     let q_signed = q_signed * sign;
 
-    // Re-project onto every S8 lane (including the lanes that were skipped
-    // during fusion because they share factors with d — those re-acquire
-    // a meaningful residue from the recovered quotient).
+    // G11: verify the reconstructed quotient against every S8 lane the
+    // fusion basis did NOT include. `d * q_signed` must reduce to the
+    // coefficient's original residue on each such lane; a mismatch proves
+    // the numerator was never evenly divisible by `d`.
+    for &(i, p) in &bad_lanes {
+        let predicted = (q_signed * divisor).rem_euclid(p as i128) as u32;
+        if predicted != s8_residues[i] {
+            return Err(FpdError::BadLaneDisagreement {
+                coeff_index,
+                s8_lane_modulus: p,
+            });
+        }
+    }
+
+    // Re-project onto every S8 lane (including the bad lanes just verified
+    // above — they re-acquire a meaningful residue from the now-certified
+    // quotient).
     let mut new_s8 = [0u32; 8];
     for (i, &p) in crate::triad::S8.iter().enumerate() {
         new_s8[i] = q_signed.rem_euclid(p as i128) as u32;
@@ -1434,7 +1535,7 @@ fn fpd_one_coefficient(
         .iter()
         .map(|&alpha| q_signed.rem_euclid(alpha as i128) as u32)
         .collect();
-    Some(FpdLanePieces { new_s8, new_aux })
+    Ok(FpdLanePieces { new_s8, new_aux })
 }
 
 impl<C> CramCiphertext<C> {
@@ -1512,15 +1613,24 @@ impl<C> CramCiphertext<C> {
         let mut new_aux_residues = Vec::with_capacity(n);
         for i in 0..n {
             let pieces = fpd_one_coefficient(
+                i,
                 self.witness.c0_signature.signatures[i].residues,
                 &aux_set.residues[i],
                 &aux_set.primes,
                 divisor,
                 fusion_product,
             )
-            .ok_or(CramOpError::DivisionLaneNotImplemented {
-                primary: plan.primary,
-                gcd_with_basis: plan.gcd_with_basis,
+            .map_err(|err| match err {
+                // A structural invariant violation (should be unreachable
+                // given the coprimality checks above) folds into the same
+                // "lane not implemented" report as before.
+                FpdError::LaneInverseMissing => CramOpError::DivisionLaneNotImplemented {
+                    primary: plan.primary,
+                    gcd_with_basis: plan.gcd_with_basis,
+                },
+                // A genuinely inexact division gets its own typed, specific
+                // error rather than being folded into the generic one above.
+                FpdError::BadLaneDisagreement { .. } => CramOpError::Fpd(err),
             })?;
             new_signatures.push(S8Signature {
                 residues: pieces.new_s8,
@@ -1619,6 +1729,9 @@ impl<C> CramCiphertext<C> {
         let n = self.witness.c0_signature.signatures.len();
         let mut new_signatures = Vec::with_capacity(n);
         for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
+            CRAM_DIVISION_COUNTERS
+                .garner_calls
+                .fetch_add(1, Ordering::Relaxed);
             let unsigned = crate::lane_projector::garner_reconstruct(sig);
             let half = (crate::triad::S8_PRODUCT / 2) as i128;
             let signed = if (unsigned as i128) > half {
@@ -1926,6 +2039,9 @@ impl<C> CramCiphertext<C> {
         let n = self.witness.c0_signature.signatures.len();
         let mut new_signatures = Vec::with_capacity(n);
         for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
+            CRAM_DIVISION_COUNTERS
+                .garner_calls
+                .fetch_add(1, Ordering::Relaxed);
             // Main reconstruction.
             let (x_main, m_main_actual) = garner_reconstruct_subset(sig, &main_indices);
             debug_assert_eq!(m_main_actual, m_main);
@@ -2947,6 +3063,31 @@ mod tests {
         let recon = rescaled.reconstruct_c0_coeffs_signed();
         let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 30) as i32).collect();
         assert_eq!(recon, expected);
+    }
+
+    #[test]
+    fn fpd_rejects_inexact_numerator_instead_of_returning_garbage() {
+        // G11 (NINE65_v7_DEEP_ANALYSIS_20260817.md): before the bad-lane
+        // check, `fpd_one_coefficient` never verified `d | A`. Divisor 6's
+        // full prime factorization {2, 3} lies inside S8, so both are "bad"
+        // (non-invertible) lanes the fusion basis excludes — checking the
+        // reconstructed quotient against both is a complete exactness test
+        // for this divisor (2 and 3 coprime => divisible by both iff
+        // divisible by 6). Coefficient 7 is not a multiple of 6: this must
+        // now fail closed with a typed error, not silently return a wrong
+        // "quotient".
+        let coeffs: Vec<i128> = vec![6, 7, 18];
+        let aux_primes = AuxResidueSet::select_for_divisor(6, 100).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        match ct.cram_rescale_by_scalar_fpd(6, 100, |_, _| ()) {
+            Err(CramOpError::Fpd(FpdError::BadLaneDisagreement {
+                coeff_index: 1, ..
+            })) => {}
+            other => panic!(
+                "expected a bad-lane disagreement on coefficient index 1, got {:?}",
+                other
+            ),
+        }
     }
 
     #[test]
