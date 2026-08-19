@@ -60,8 +60,14 @@ Core FHE tests only:
 
 Bootstrap-specific tests:
   cargo test -p nine65 --lib --release -- bootstrap
-  cargo test -p nine65 --test bootstrap_integration --release
-  cargo test -p nine65 --test bootstrap_parameter_exploration --release
+  cargo test -p nine65 --test bootstrap_integration --release --features allow_insecure
+  cargo test -p nine65 --test bootstrap_parameter_exploration --release --features allow_insecure
+
+(Standalone `-p nine65` runs of integration-test and bench targets need
+`--features allow_insecure`: those targets link the library without cfg(test),
+so the release-mode secure-RNG gate would otherwise reject their seeded
+ShadowHarvester. The workspace-wide command above needs nothing extra. Each
+affected target declares this via required-features in crates/nine65/Cargo.toml.)
 
 Security tests:
   cargo test -p nine65 security::tests -- --nocapture

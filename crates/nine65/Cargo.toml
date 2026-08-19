@@ -150,13 +150,26 @@ name = "cram_comparative_probe"
 path = "src/bin/cram_comparative_probe.rs"
 required-features = ["serde"]
 
+# Why `allow_insecure` appears in every bench (and many [[test]]) stanzas below:
+# integration-test and bench targets link the nine65 *library* compiled WITHOUT
+# `cfg(test)` (Cargo only sets that for the lib's own unit-test build). In a
+# `--release` invocation the library therefore compiles the enforcing arm of
+# `entropy::require_secure_rng`, and any target that drives keygen/encrypt with
+# a seeded `ShadowHarvester` panics with SECURITY ERROR. Workspace-wide runs
+# (`cargo test --release --workspace`) never hit this because fhe-service's
+# dev-dependency on `nine65/allow_insecure` unifies the feature in; standalone
+# `-p nine65` runs of these targets do. `required-features` makes the
+# requirement explicit: Cargo reports the missing feature instead of the
+# library panicking mid-test.
 [[bench]]
 name = "fhe_scaling"
 harness = false
+required-features = ["allow_insecure"]
 
 [[bench]]
 name = "nine65_vs_seal_comparison"
 harness = false
+required-features = ["allow_insecure"]
 
 # benches/threading_comparison.rs has NO [[bench]] stanza on purpose.
 # It benchmarks rayon against MANA — a rejected parallelism approach — so it is
@@ -166,26 +179,93 @@ harness = false
 [[bench]]
 name = "throughput"
 harness = false
-required-features = ["parallel"]
+required-features = ["parallel", "allow_insecure"]
 
 [[bench]]
 name = "adaptive_rayon"
 harness = false
-required-features = ["parallel"]
+required-features = ["parallel", "allow_insecure"]
 
 [[bench]]
 name = "timing"
 harness = false
-required-features = ["benchmarks"]
+required-features = ["benchmarks", "allow_insecure"]
 
 # Correctness-gated multiplicative-depth chain. This is the only bench that
 # chains ct x ct multiplies; every other ct x ct id in the suite re-multiplies
 # the same two fixed ciphertexts, which is depth 1 repeated. No
 # `required-features`: it uses only default-feature public API so the depth
 # floor can never become unmeasurable because a feature flag drifted.
+# (`allow_insecure` is still required: the bench generates keys with a seeded
+# ShadowHarvester, which the release-mode secure-RNG gate otherwise rejects.)
 [[bench]]
 name = "depth_chain"
 harness = false
+required-features = ["allow_insecure"]
+
+
+# Integration-test targets that generate keys/ciphertexts with a seeded
+# ShadowHarvester (see the bench-stanza note above for why the feature is
+# required in standalone `-p nine65 --release` runs).
+[[test]]
+name = "anchor_drift_diagnostics"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "basis_invariance"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "bootstrap_integration"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "bootstrap_parameter_exploration"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "bootstrap_residue_shape_regression"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth2_isolation"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth_and_noise"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "full_system_exercise"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "noise_profile"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "ntt_encoder_caching"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "random_encrypt"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "residue_space_ciphertext"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "security_integration"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "test_192_256_bootstrap"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "time_crystal_verification"
+required-features = ["allow_insecure"]
 
 [[example]]
 name = "test_mod_switch"

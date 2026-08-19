@@ -143,7 +143,12 @@ pub fn require_secure_rng<R: FheRng>(rng: &R, operation: &str) {
     if !rng.is_secure() {
         panic!(
             "SECURITY ERROR: Non-secure RNG used for {}!\n\
-             Use SecureRng for production. Shadow entropy is test-only.",
+             Use SecureRng for production. Shadow entropy is test-only.\n\
+             (If this fired from one of nine65's own integration tests or \
+             benches in a --release build: those targets link the library \
+             without cfg(test), so they must be run with \
+             `--features allow_insecure`; their Cargo target stanzas declare \
+             it via required-features.)",
             operation
         );
     }
