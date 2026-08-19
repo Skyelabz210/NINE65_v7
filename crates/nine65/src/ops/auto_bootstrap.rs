@@ -64,25 +64,45 @@ impl<'a> AutoBootstrapEvaluator<'a> {
         self.trigger_permille = permille;
     }
 
-    #[inline]
-    fn refresh_if_required(
+    /// Refresh both operands via bootstrap when the pending operation would
+    /// exceed the tracked budget or cross the configured trigger threshold,
+    /// so an over-budget operand is bootstrapped *before* it is combined
+    /// with anything else -- never after.
+    ///
+    /// This is the fix for the Q17 finding in the deep-analysis audit: the
+    /// previous implementation performed the multiply (or add) *first* and
+    /// only checked the budget afterward, refreshing the *result*. A
+    /// budget-crossing operation had therefore already computed on an
+    /// operand whose tracked noise had crossed the safe threshold, and the
+    /// post-hoc "refresh" of the result could only faithfully re-encrypt
+    /// that already-corrupted value -- it could never repair it. Checking
+    /// and refreshing before the operation, on the operands, is the only
+    /// ordering under which "refresh" actually means what it says.
+    fn preflight_refresh(
         &mut self,
-        ciphertext: DualRNSCiphertext,
-        budget_exhausted: bool,
-    ) -> Nine65Result<DualRNSCiphertext> {
-        if budget_exhausted || self.budget.should_bootstrap(self.trigger_permille) {
-            let fresh = self
-                .bootstrap
-                .bootstrap(&ciphertext, self.bsk, self.ksk)?;
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+        operation_cost: i64,
+    ) -> Nine65Result<(DualRNSCiphertext, DualRNSCiphertext)> {
+        if !self.budget.can_perform(operation_cost)
+            || self.budget.should_bootstrap(self.trigger_permille)
+        {
+            let fresh1 = self.bootstrap.bootstrap(ct1, self.bsk, self.ksk)?;
+            let fresh2 = self.bootstrap.bootstrap(ct2, self.bsk, self.ksk)?;
             self.budget.reset_after_bootstrap(&self.work_ctx.config);
-            self.bootstrap_count += 1;
-            Ok(fresh)
+            self.bootstrap_count += 2;
+            Ok((fresh1, fresh2))
         } else {
-            Ok(ciphertext)
+            Ok((ct1.clone(), ct2.clone()))
         }
     }
 
     /// Multiply with automatic bootstrap.
+    ///
+    /// Refreshes the operands *before* multiplying whenever the multiply
+    /// would exhaust or cross the tracked noise budget (see
+    /// [`Self::preflight_refresh`]); the multiply itself then always runs on
+    /// operands the budget can account for.
     pub fn mul_auto(
         &mut self,
         ct1: &DualRNSCiphertext,
@@ -90,35 +110,52 @@ impl<'a> AutoBootstrapEvaluator<'a> {
     ) -> Nine65Result<DualRNSCiphertext> {
         let operation_cost = NoiseBudget::mul_ct_cost(&self.work_ctx.config)
             + NoiseBudget::relin_cost(&self.work_ctx.config);
-        let budget_exhausted = self
-            .budget
-            .consume(NoiseOpType::MulCt, operation_cost)
-            .is_err();
 
-        let result = self.work_ctx.mul_dual_public(ct1, ct2, self.evk)?;
+        let (op1, op2) = self.preflight_refresh(ct1, ct2, operation_cost)?;
+
+        self.budget
+            .consume(NoiseOpType::MulCt, operation_cost)
+            .map_err(|e| Nine65Error::BootstrapFailed {
+                reason: format!(
+                    "noise budget cannot cover a single multiply immediately \
+                     after refresh (config budget too small for this op): {}",
+                    e
+                ),
+            })?;
+
+        let result = self.work_ctx.mul_dual_public(&op1, &op2, self.evk)?;
         self.total_muls += 1;
-        self.refresh_if_required(result, budget_exhausted)
+        Ok(result)
     }
 
     /// Add with automatic bootstrap and explicit error propagation.
     ///
     /// Additions are inexpensive, but a sufficiently long addition-only chain
-    /// can still consume the tracked budget. This checked entry point refreshes
-    /// on either exhaustion or threshold crossing.
+    /// can still consume the tracked budget. Refreshes the operands *before*
+    /// adding whenever the add would exhaust or cross the tracked noise
+    /// budget (see [`Self::preflight_refresh`]).
     pub fn try_add_auto(
         &mut self,
         ct1: &DualRNSCiphertext,
         ct2: &DualRNSCiphertext,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let result = self.work_ctx.add_dual(ct1, ct2);
+        let operation_cost = NoiseBudget::add_cost();
+
+        let (op1, op2) = self.preflight_refresh(ct1, ct2, operation_cost)?;
+
+        self.budget
+            .consume(NoiseOpType::Add, operation_cost)
+            .map_err(|e| Nine65Error::BootstrapFailed {
+                reason: format!(
+                    "noise budget cannot cover a single add immediately \
+                     after refresh (config budget too small for this op): {}",
+                    e
+                ),
+            })?;
+
+        let result = self.work_ctx.add_dual(&op1, &op2);
         self.total_adds += 1;
-
-        let budget_exhausted = self
-            .budget
-            .consume(NoiseOpType::Add, NoiseBudget::add_cost())
-            .is_err();
-
-        self.refresh_if_required(result, budget_exhausted)
+        Ok(result)
     }
 
     /// Compatibility wrapper for existing callers.

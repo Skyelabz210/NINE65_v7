@@ -1,0 +1,74 @@
+name: Fuzz Smoke
+
+# fuzz/ has 5 libFuzzer targets (fuzz_deserialize, fuzz_encrypt_decrypt,
+# fuzz_homomorphic, fuzz_k_elimination, fuzz_ntt) and, until this workflow,
+# zero CI wiring: nothing ever built or ran them, so a target could silently
+# bit-rot -- a renamed API, a panic on first input -- for months with no
+# signal. This is deliberately a *smoke* run, not a full fuzzing campaign:
+# each target gets a short bounded wall-clock budget via
+# `-max_total_time=N`, which is cheap and enough to catch "doesn't build" /
+# "panics immediately" regressions. A real fuzzing session (hours, corpus
+# accumulation) is a manual `cargo fuzz run <target>` on a developer machine,
+# not something a weekly CI job should attempt on shared runners.
+
+on:
+  schedule:
+    - cron: '0 5 * * 0' # Sunday 05:00 UTC
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'fuzz/**'
+      - 'crates/nine65/src/**'
+      - '.github/workflows/fuzz_smoke.yml'
+  workflow_dispatch:
+    inputs:
+      seconds_per_target:
+        description: Wall-clock seconds to run each target
+        type: string
+        default: '60'
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz-smoke:
+    name: "Fuzz · ${{ matrix.target }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - fuzz_deserialize
+          - fuzz_encrypt_decrypt
+          - fuzz_homomorphic
+          - fuzz_k_elimination
+          - fuzz_ntt
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('fuzz/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Short bounded fuzz run
+        shell: bash
+        run: |
+          set -euo pipefail
+          seconds='${{ github.event.inputs.seconds_per_target }}'
+          seconds="${seconds:-60}"
+          cargo fuzz run '${{ matrix.target }}' --release -- \
+            -max_total_time="$seconds"

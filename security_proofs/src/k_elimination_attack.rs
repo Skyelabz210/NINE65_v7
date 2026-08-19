@@ -214,30 +214,53 @@ fn attack_multiple_k(params: &KElimParams) {
 }
 
 /// Attack 4: Timing side-channel in K-Elimination computation
+///
+/// G14 correction (2026-08-19): this function previously asserted
+/// "Montgomery reduction is constant-time" and "Modular reduction:
+/// constant-time (Montgomery)" as conclusions. Neither is true of the code
+/// actually exercised in this file: `KElimParams::compute_k` (above) uses
+/// plain `%`/`*` operators, not Montgomery reduction, and native integer
+/// division/modulo latency on most CPUs varies with operand magnitude —
+/// i.e. it is a *vartime* reference implementation, not a timing analysis.
+/// This function is kept as an algebraic-narrative demo (its real
+/// contribution is Attacks 1-3: inversion/leakage/correlation, which do not
+/// depend on timing at all) and no longer makes a timing-safety claim it
+/// cannot back up. For an actual, executed statistical timing analysis of
+/// this workspace's genuinely constant-time K-Elimination primitives, see
+/// `nine65::security::ct_verification` (dudect-style, `#[ignore]`d by
+/// default — hardware-dependent, run explicitly with `--ignored` on
+/// dedicated/pinned hardware) and the branchless CT primitives in
+/// `nine65::arithmetic::k_elimination` and `clockwork_core::garner`.
 fn attack_timing(_params: &KElimParams) {
     println!("═══════════════════════════════════════════════════════════════");
-    println!("ATTACK 4: TIMING SIDE-CHANNEL");
+    println!("ATTACK 4: TIMING SIDE-CHANNEL (algebraic discussion only)");
     println!("═══════════════════════════════════════════════════════════════");
     println!();
     println!("Does K-Elimination computation leak timing information?");
     println!();
     println!("K-Elimination algorithm:");
-    println!("  1. phase = X mod M          (constant time mod)");
-    println!("  2. k = (phase × M_inv) mod A (constant time mul/mod)");
+    println!("  1. phase = X mod M");
+    println!("  2. k = (phase × M_inv) mod A");
     println!();
-    println!("All operations are:");
-    println!("  - Fixed-width integer arithmetic");
-    println!("  - No branches dependent on secret values");
-    println!("  - Montgomery reduction is constant-time");
+    println!("NOTE: compute_k() above uses plain `%`/`*`, i.e. it is a");
+    println!("vartime reference implementation for this demo, NOT a");
+    println!("constant-time one, and NOT Montgomery reduction. Native");
+    println!("integer division/modulo latency on most CPUs depends on");
+    println!("operand magnitude, so this code path is not a valid basis for");
+    println!("a timing-safety claim either way.");
     println!();
-    println!("Potential leakage points:");
-    println!("  ✓ Modular reduction: constant-time (Montgomery)");
-    println!("  ✓ Multiplication: constant-time (native × or Montgomery)");
-    println!("  ✓ No early termination conditions");
+    println!("This workspace DOES have genuinely constant-time K-Elimination");
+    println!("primitives (branchless mask-based reduction, no native %/DIV");
+    println!("on secret data) in nine65::arithmetic::k_elimination and");
+    println!("clockwork_core::garner, with an executed statistical dudect-");
+    println!("style verification suite in nine65::security::ct_verification.");
+    println!("That suite — not this algebraic demo — is the actual timing");
+    println!("side-channel evidence for this workspace.");
     println!();
-    println!("Conclusion: K-Elimination is TIMING-SAFE by construction");
-    println!("  - All operations take fixed time");
-    println!("  - No secret-dependent branches");
+    println!("Conclusion: algebraically, K-Elimination's formula has no");
+    println!("secret-dependent early-exit branches by construction; whether");
+    println!("a GIVEN implementation is actually constant-time depends on");
+    println!("which primitives it uses for the mod/mul steps — see above.");
     println!();
 }
 
@@ -289,7 +312,11 @@ fn main() {
              (params.m as f64).log2());
     println!("  ✓ SECRET LEAKAGE:      None (errors mask secret)");
     println!("  ✓ CORRELATION ATTACK:  Reduces to Ring-LWE");
-    println!("  ✓ TIMING ATTACK:       Constant-time operations");
+    println!("  ~ TIMING ATTACK:       Algebraically branch-free; this demo's");
+    println!("                         own compute_k() is vartime reference");
+    println!("                         code, not evidence either way — see");
+    println!("                         nine65::security::ct_verification for");
+    println!("                         the actual measured CT verification.");
     println!();
     println!("Overall: K-Elimination does NOT weaken FHE security");
     println!();

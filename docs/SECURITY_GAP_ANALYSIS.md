@@ -45,7 +45,7 @@ This document tracks remaining gaps for production readiness.
 | M2 | **No Python bindings** | Rust-only API | Limited adoption | MEDIUM | Internal |
 | M3 | **Community building** | Small user base | Slow ecosystem growth | ONGOING | Manus Audit |
 
-### 4. ADDRESSED (Verified by Manus Audit)
+### 4. ADDRESSED (Verified by Manus Audit — historical, this specific audit's own numbers, not reproduced in this pass)
 
 | Feature | Validation | Rating |
 |---------|------------|--------|
@@ -53,8 +53,8 @@ This document tracks remaining gaps for production readiness.
 | GSO-FHE noise management | No information leakage | PASS |
 | Constant-time operations | Mitigates timing attacks | PASS |
 | Secure memory handling | zeroize crate in use | PASS |
-| Code quality | 0 unsafe, 44 unwrap, 522 tests | PASS |
-| Deep circuit performance | 812ms for depth-50 (best CPU) | PASS |
+| Code quality | 0 unsafe, 44 unwrap, 522 tests | PASS (historical counts; not re-verified) |
+| Deep circuit performance | 812ms for depth-50 (best CPU) — historical Manus Audit figure, not reproduced here and not in `docs/CLAIM_REGISTRY.csv`; conflicts with the ~6.29s figure in CLAUDE.md's current Performance Baselines for the same nominal depth/config, so treat both as unreconciled until a fresh benchmark run is archived | PASS (unverified in this pass) |
 | Memory efficiency | 200 MB (lowest in class) | PASS |
 
 ---
@@ -108,7 +108,11 @@ test_mul_dual_public_mode_deep:
 1. Larger Q/smaller t ratio (increase modulus headroom)
 2. Improved noise management in relinearization (tighter bounds)
 3. Hybrid mode (public encrypt, symmetric compute)
-4. Explore Gentry-style modulus switching
+4. ~~Explore Gentry-style modulus switching~~ — **foreclosed** (2026-08-09):
+   `docs/RETIRED_MECHANISMS.md` settled this architecturally. NINE65 divides
+   exactly in residue space, which unfuses "divide the value" from "drop a
+   lane from the basis," so there is no level ladder to switch down. Do not
+   reintroduce modulus switching to address this gap; use approaches 1-3.
 
 ### Phase 8: Formal Security Analysis (Weeks 5-8)
 

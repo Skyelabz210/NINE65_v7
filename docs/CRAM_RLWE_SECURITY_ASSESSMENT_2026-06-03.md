@@ -85,13 +85,20 @@ This is a **real question that requires formal work**, but it is not a showstopp
 - **Option A:** Prove security under the tighter distribution. A noise distribution
   with *less* entropy than assumed is *harder* for the adversary to exploit in most
   attack models — the CCS 2024 attack exploits structure, not tightness per se.
-- **Option B:** SBNI (`sbni.rs`) already injects calibrated noise. Validate its
-  distribution against the BFV proof's assumed error term to restore the standard
-  reduction.
+- **Option B — [RETIRED 2026-08-09]:** this option proposed validating SBNI's
+  (`sbni.rs`) injected noise against the BFV proof's assumed error term. SBNI
+  itself was later retired: `docs/LADDER_REMOVAL.md` §1.2(c) shows its
+  entropy source was a deterministic, publicly recomputable function of the
+  operation index (an NTT over a hardcoded constant, keyed only by a
+  monotonic counter through an unkeyed hash), so it never injected calibrated
+  noise in the sense this option assumed. Option B is not available; a
+  distribution-restoring mechanism would need to be built fresh, not
+  validated and re-pointed.
 - **Option C:** The Bultel et al. (ePrint 2025/2288) pragmatic CPA-D approach
   may apply directly.
 
-This is an engineering task with known resolution paths, not an open research
+Option A or Option C remain the live resolution paths. This is an engineering
+task with a known-narrower set of resolution paths, not an open research
 problem.
 
 ---
@@ -113,12 +120,13 @@ This is a documented placeholder, not a discovered vulnerability.
 should not be persisted or transmitted alongside ciphertexts. This is a protocol-
 level design choice, not a code bug.
 
-### 3.3 SBNI/CRAM Witness Synchronization
+### 3.3 SBNI/CRAM Witness Synchronization — moot, SBNI retired
 
-After SBNI injection (`sbni.rs`), the CRAM witness needs rewrapping.
-`rewrap_after_op` in `cram_ct_wrap.rs` handles this for homomorphic ops.
-Extending it to cover SBNI injection is straightforward — either make SBNI
-consume and rewrap the `CramCiphertext`, or add a post-SBNI rewrap call.
+This item assumed SBNI injection remained a live call site needing a
+post-injection witness rewrap. SBNI was retired 2026-08-09 (`sbni.rs` is no
+longer compiled into the crate; see `docs/LADDER_REMOVAL.md` §1), so there is
+no injection step left to synchronize `rewrap_after_op` against. No action
+needed here.
 
 ### 3.4 Cross-Validation Binding
 
@@ -149,8 +157,10 @@ The following were identified by initial analysis but are not actual concerns:
 reveals strictly less than the ciphertext itself.
 
 **One formal question requires work:** the exact-division noise model deviates
-from BFV's assumed distribution. Three concrete resolution paths exist (new proof,
-SBNI noise flooding, or the Bultel et al. pragmatic approach). This is tractable.
+from BFV's assumed distribution. Of the three resolution paths originally
+proposed, two remain live (a tighter-distribution proof, or the Bultel et al.
+pragmatic approach); the SBNI-noise-flooding path is retired along with SBNI
+itself (2026-08-09, `docs/LADDER_REMOVAL.md`). This is tractable.
 
 **Four implementation items** (§3.1-3.4) are worth addressing. All are bounded
 engineering tasks, not architectural issues.

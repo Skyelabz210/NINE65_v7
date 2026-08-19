@@ -1,26 +1,43 @@
 # NINE65 FHE FAQ Hotsheet
 
-**Quick Reference for NINE65 Bootstrap-Free FHE System**
-*Last Updated: 2026-01-28*
+**Quick Reference for NINE65**
+*Last Updated: 2026-01-28. Depth/timing claims below are historical and
+unreproduced in this pass — see the note under "Quick Facts."*
 
 ---
 
 ## What is NINE65?
 
-**NINE65** is a bootstrap-free Fully Homomorphic Encryption (FHE) system achieving **depth-50+ circuits** without ever bootstrapping. It is built on the QMNF integer-only architecture with formally verified components.
+**NINE65** is now a Rust BFV/DualRNS FHE system with real Clockwork bootstrap
+(circular, KSK-separated, and auto-triggered paths) as well as a bootstrap-free
+symmetric-mode path that clears many multiplicative levels without ever
+bootstrapping (no ladder to run out of — see `docs/RETIRED_MECHANISMS.md`).
+This document's original "bootstrap-free" framing described only the
+symmetric-mode path and predates the Clockwork bootstrap integration; see
+CLAUDE.md's "Bootstrap Paths" section for current status. It is built on the
+QMNF integer-only architecture.
 
 ---
 
 ## Quick Facts
 
+> **2026-08-19 note:** the depth and runtime figures below were not
+> reproduced in this pass and are not in `docs/CLAIM_REGISTRY.csv`. For
+> current, CI-asserted depth evidence, see
+> `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_unbounded`
+> (asserts a 128-level floor, `secure_128`, symmetric mul-by-fresh-operand, no
+> bootstrap) and `depth_and_noise.rs::depth_and_noise_curve_deep_chain`
+> (asserts a 32-level regression floor). For current timing baselines, see
+> CLAUDE.md's "Performance Baselines" section.
+
 | Question | Answer |
 |----------|--------|
-| **Max circuit depth?** | 50+ levels (symmetric mode) |
-| **Bootstrapping required?** | Never |
-| **Depth-50 runtime?** | 6.15s (secure_128) / 22.62s (secure_192) |
+| **Max circuit depth?** | CI-asserted floor: 128 levels, symmetric mul-by-fresh-operand, `secure_128` (see note above). General ct×ct squaring chains are much shallower — see `docs/SYMMETRIC_BOOTSTRAP_ANALYSIS.md` and `crates/nine65/tests/time_crystal_verification.rs::public_relin_chain_depth_measured` for the measured (unasserted) public-mode number. |
+| **Bootstrapping required?** | Not for the symmetric mul-by-fresh-operand path; Clockwork bootstrap exists for general ct×ct circuits — see CLAUDE.md. |
+| **Depth-50 runtime?** | Historical figure (2026-01-28), not reproduced in this pass. See CLAUDE.md's "Performance Baselines" for current numbers. |
 | **Post-quantum safe?** | Yes - LWE-based |
 | **Hardware requirements?** | CPU only (~200MB RAM) |
-| **Floating-point used?** | Never - integer-only architecture |
+| **Floating-point used?** | No f32/f64 in crypto/arithmetic hot paths (one documented non-cryptographic exception: `compiler.rs::NoiseModel`, a planning-only noise estimator — see CLAUDE.md's "Important Coding Rules"). |
 
 ---
 

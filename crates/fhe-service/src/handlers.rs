@@ -285,14 +285,25 @@ pub fn route(request: &HttpRequest, store: &SessionStore, metrics: &AppMetrics) 
     response
 }
 
+/// Extract the session id between the fixed `/v1/sessions/` prefix and the
+/// route's suffix (`/encrypt`, `/decrypt`, `/evaluate`).
+///
+/// Uses `strip_prefix`/`strip_suffix` rather than manual byte-index slicing:
+/// the previous version only checked *lengths* (`without_suffix.len() >
+/// prefix.len()`) and then sliced at a fixed byte offset regardless of
+/// whether `path` actually started with the literal prefix. A path that
+/// doesn't start with `/v1/sessions/` but is long enough (e.g. any path
+/// containing a multi-byte UTF-8 character straddling byte offset 13) could
+/// slice on a non-char-boundary and panic. `catch_unwind` in `main.rs` turns
+/// that into a 500 rather than a crash, but this closes it at the source: a
+/// non-matching path now cleanly yields an empty id (session lookup then
+/// 404s), never a panic.
 fn extract_session_id(path: &str, suffix: &str) -> String {
-    let without_suffix = &path[..path.len() - suffix.len()];
-    let prefix = "/v1/sessions/";
-    if without_suffix.len() > prefix.len() {
-        without_suffix[prefix.len()..].to_owned()
-    } else {
-        String::new()
-    }
+    const PREFIX: &str = "/v1/sessions/";
+    path.strip_prefix(PREFIX)
+        .and_then(|rest| rest.strip_suffix(suffix))
+        .unwrap_or_default()
+        .to_owned()
 }
 
 fn handle_healthz() -> HttpResponse {

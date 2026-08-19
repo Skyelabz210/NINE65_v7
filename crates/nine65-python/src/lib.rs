@@ -598,14 +598,11 @@ impl PyFHEContext {
         let values: Vec<u64> = values.extract()?;
         let encryptor =
             BFVEncryptor::new(&public_key.inner, &self.encoder, &self.ntt, self.config.eta);
-        let mut harvester = ShadowHarvester::with_seed(42);
 
         values
             .into_iter()
             .map(|value| {
-                let ct = encryptor
-                    .try_encrypt(value, &mut harvester)
-                    .map_err(nine65_err)?;
+                let ct = encryptor.try_encrypt_secure(value).map_err(nine65_err)?;
                 Ok(PyCiphertext { inner: ct })
             })
             .collect()

@@ -30,7 +30,7 @@ use crate::entropy::{try_secure_cbd_vector, try_secure_ternary_vector, try_secur
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::params::FHEConfig;
 use crate::ring::RingPolynomial;
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use zeroize::{Zeroize, Zeroizing, ZeroizeOnDrop};
 
 /// Secret Key: ternary polynomial s ∈ R_q
 ///
@@ -75,27 +75,32 @@ impl SecretKey {
 
     /// Fallible secure secret key generation.
     pub fn try_generate_secure(config: &FHEConfig) -> Nine65Result<Self> {
-        let ternary =
+        // Secret material: both temporaries are zeroized on drop rather than
+        // left, un-cleared, in freed heap memory once `s` is built from them.
+        let ternary: Zeroizing<Vec<i64>> = Zeroizing::new(
             try_secure_ternary_vector(config.n).map_err(|e| Nine65Error::KeyGenFailed {
                 reason: format!(
                     "OS CSPRNG failure generating secret key ternary vector: {}",
                     e
                 ),
-            })?;
+            })?,
+        );
 
         // Convert ternary {-1, 0, 1} to ring elements mod q
-        let coeffs: Vec<u64> = ternary
-            .iter()
-            .map(|&t| {
-                if t < 0 {
-                    config.q - 1 // -1 mod q
-                } else {
-                    t as u64
-                }
-            })
-            .collect();
+        let coeffs: Zeroizing<Vec<u64>> = Zeroizing::new(
+            ternary
+                .iter()
+                .map(|&t| {
+                    if t < 0 {
+                        config.q - 1 // -1 mod q
+                    } else {
+                        t as u64
+                    }
+                })
+                .collect(),
+        );
 
-        let s = RingPolynomial::from_coeffs(coeffs, config.q);
+        let s = RingPolynomial::from_coeffs(coeffs.to_vec(), config.q);
         Ok(Self { s })
     }
 }

@@ -9,6 +9,17 @@
 //! All FFI boundary code follows strict safety invariants documented on
 //! each function.
 //!
+//! **No `catch_unwind` at the boundary.** None of the `extern "C"` functions
+//! below wrap their body in `std::panic::catch_unwind`. A Rust panic that
+//! reaches an `extern "C"` function unwinds into the calling C code, which is
+//! undefined behavior (and, with `panic = "abort"` configured for release
+//! builds elsewhere in this workspace, aborts the host process). Callers
+//! embedding this library must either ensure inputs cannot trigger a panic
+//! in the underlying `nine65::kiosk` implementation, or wrap calls into this
+//! library in their own unwind boundary. This is a known gap, not a doc-only
+//! omission — see the workspace audit's FFI findings before relying on this
+//! API for untrusted input.
+//!
 //! ## Lifecycle
 //!
 //! ```text
@@ -272,11 +283,26 @@ pub unsafe extern "C" fn nine65_kiosk_free(handle: *mut KioskHandle) {
 
 /// Verify a destruction receipt.
 ///
+/// # Known limitation — partial-field verification
+/// This function reconstructs `ReceiptData` from the fields carried on the
+/// FFI-visible `FfiDestructionReceipt` (`unit_id`, `operations_performed`)
+/// and fills the remaining fields the original receipt hash was computed
+/// over — `fold_generation`, `final_entropy`, `timestamp_nanos`,
+/// `unit_type` — with fixed placeholder values (`1`, `0`, `0`, `0`), not the
+/// values the destroyed unit actually had. The hash comparison therefore
+/// only verifies `unit_id`/`operations_performed` against a receipt that
+/// happens to have been created with those exact placeholder values for the
+/// other four fields; it does not verify the receipt against the unit's
+/// real `fold_generation`/`final_entropy`/`timestamp_nanos`/`unit_type` at
+/// destruction time. Do not treat a `1` return as proof the receipt matches
+/// the full original destruction record — only that the two visible fields
+/// are consistent with a receipt built from the placeholder remainder.
+///
 /// # Safety
 /// - `receipt` must point to a valid FfiDestructionReceipt with valid=1
 ///
 /// # Returns
-/// 1 if receipt verifies, 0 if not
+/// 1 if the (partial, see above) verification succeeds, 0 if not
 #[no_mangle]
 pub unsafe extern "C" fn nine65_receipt_verify(
     receipt: *const FfiDestructionReceipt,

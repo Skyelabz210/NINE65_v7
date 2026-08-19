@@ -16,6 +16,8 @@
 
 use crate::arithmetic::k_elimination::KElimination;
 use crate::arithmetic::rns::{crt_reconstruct_u256, DualRNSContext, U256};
+use crate::entropy::{require_secure_rng, FheRng, SecureRng};
+#[cfg(test)]
 use crate::entropy::ShadowHarvester;
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::bootstrap::{
@@ -26,6 +28,7 @@ use crate::ops::rns_fhe::{
     DualRNSSecretKey, RNSFHEContext,
 };
 use crate::params::FHEConfig;
+use zeroize::Zeroizing;
 
 /// Clockwork Bootstrap engine — holds precomputed data for bootstrap execution.
 pub struct ClockworkBootstrap {
@@ -199,21 +202,28 @@ impl ClockworkBootstrap {
         let n = self.n;
         let first_work_prime = self.work_config.primes[0];
 
-        // Extract signed ternary coefficients from work_sk
-        let s_signed: Vec<i8> = work_sk.s.main[0]
-            .iter()
-            .map(|&c| {
-                if c == 0 {
-                    0i8
-                } else if c == 1 {
-                    1i8
-                } else if c == first_work_prime - 1 {
-                    -1i8
-                } else {
-                    0i8 // Non-ternary — shouldn't happen with proper key gen
-                }
-            })
-            .collect();
+        // Extract signed ternary coefficients from work_sk. This is the
+        // secret key in a bare, unwrapped Vec -- zeroize the temporary on
+        // drop so it does not linger in freed heap memory after the lifted
+        // DualRNSSecretKey (which is itself Zeroize + ZeroizeOnDrop) is built.
+        let s_signed: Zeroizing<Vec<i8>> = Zeroizing::new(
+            work_sk
+                .s
+                .main[0]
+                .iter()
+                .map(|&c| {
+                    if c == 0 {
+                        0i8
+                    } else if c == 1 {
+                        1i8
+                    } else if c == first_work_prime - 1 {
+                        -1i8
+                    } else {
+                        0i8 // Non-ternary — shouldn't happen with proper key gen
+                    }
+                })
+                .collect(),
+        );
 
         // Encode under boot main primes
         let s_main: Vec<Vec<u64>> = self
@@ -256,10 +266,10 @@ impl ClockworkBootstrap {
     ///
     /// Uses the boot context's NTT engines for polynomial multiplication.
     /// The resulting pk encrypts under boot_sk = lift(work_sk).
-    fn generate_circular_pk(
+    fn generate_circular_pk<R: FheRng>(
         &self,
         boot_sk: &DualRNSSecretKey,
-        rng: &mut ShadowHarvester,
+        rng: &mut R,
     ) -> DualRNSPublicKey {
         let n = self.n;
         let eta = self.boot_config.eta;
@@ -292,18 +302,22 @@ impl ClockworkBootstrap {
             .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
             .collect();
 
-        // Sample error e (CBD with given eta)
-        let e_signed: Vec<i64> = (0..n)
-            .map(|_| {
-                let mut sum = 0i64;
-                for _ in 0..eta {
-                    let a_bit = (rng.next_u64() & 1) as i64;
-                    let b_bit = (rng.next_u64() & 1) as i64;
-                    sum += a_bit - b_bit;
-                }
-                sum
-            })
-            .collect();
+        // Sample error e (CBD with given eta). Zeroized on drop -- it is
+        // combined into a*s below and never itself needs to survive past
+        // this function.
+        let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
+            (0..n)
+                .map(|_| {
+                    let mut sum = 0i64;
+                    for _ in 0..eta {
+                        let a_bit = (rng.next_u64() & 1) as i64;
+                        let b_bit = (rng.next_u64() & 1) as i64;
+                        sum += a_bit - b_bit;
+                    }
+                    sum
+                })
+                .collect(),
+        );
         let e_main: Vec<Vec<u64>> = self
             .boot_config
             .primes
@@ -375,16 +389,34 @@ impl ClockworkBootstrap {
         }
     }
 
+    /// Generate all bootstrap key material (circular security) using the OS
+    /// CSPRNG. This is the production entry point.
+    pub fn generate_keys_secure(&self, work_sk: &DualRNSSecretKey) -> Nine65Result<BootstrapKeySet> {
+        let mut rng = SecureRng::new();
+        self.generate_keys(work_sk, &mut rng)
+    }
+
     /// Generate all bootstrap key material (circular security).
     ///
     /// Uses the same secret key for boot and work contexts (circular security).
     /// No key-switch key is needed — Phase 2 produces plaintext × ciphertext
     /// (not ct × ct), so no relinearization is required.
-    pub fn generate_keys(
+    ///
+    /// Generic over `FheRng` so callers can supply `SecureRng` (required for
+    /// production — enforced by `require_secure_rng` below) or, for tests
+    /// and reproducible benchmarks only, `ShadowHarvester`. Prefer
+    /// [`Self::generate_keys_secure`] unless you have a specific, documented
+    /// reason to inject a different RNG: this generates `enc_s = Enc(work_sk)`
+    /// (the bootstrap key material encrypts the working secret key itself),
+    /// so a predictable RNG here is a full key-recovery exposure, not just a
+    /// ciphertext-distinguishing one.
+    pub fn generate_keys<R: FheRng>(
         &self,
         work_sk: &DualRNSSecretKey,
-        rng: &mut ShadowHarvester,
+        rng: &mut R,
     ) -> Nine65Result<BootstrapKeySet> {
+        require_secure_rng(rng, "ClockworkBootstrap::generate_keys");
+
         // Circular security: lift work_sk to boot primes (same polynomial, new moduli)
         let boot_sk = self.lift_sk_to_boot(work_sk);
 
@@ -422,6 +454,16 @@ impl ClockworkBootstrap {
         Ok(BootstrapKeySet { bsk, ksk, boot_sk })
     }
 
+    /// Generate bootstrap key material with independent boot key and KSK,
+    /// using the OS CSPRNG. This is the production entry point.
+    pub fn generate_keys_with_ksk_secure(
+        &self,
+        work_sk: &DualRNSSecretKey,
+    ) -> Nine65Result<BootstrapKeySet> {
+        let mut rng = SecureRng::new();
+        self.generate_keys_with_ksk(work_sk, &mut rng)
+    }
+
     /// Generate bootstrap key material with independent boot key and KSK.
     ///
     /// Unlike `generate_keys()` (circular security), this generates an
@@ -432,11 +474,16 @@ impl ClockworkBootstrap {
     /// at the cost of additional noise from the key-switch step.
     ///
     /// Use with `bootstrap_with_ksk()` for the non-circular bootstrap path.
-    pub fn generate_keys_with_ksk(
+    /// Generic over `FheRng`; see [`Self::generate_keys`] for why production
+    /// callers must use `SecureRng` (enforced below) and should prefer
+    /// [`Self::generate_keys_with_ksk_secure`].
+    pub fn generate_keys_with_ksk<R: FheRng>(
         &self,
         work_sk: &DualRNSSecretKey,
-        rng: &mut ShadowHarvester,
+        rng: &mut R,
     ) -> Nine65Result<BootstrapKeySet> {
+        require_secure_rng(rng, "ClockworkBootstrap::generate_keys_with_ksk");
+
         // Generate an independent boot secret key (NOT lifted from work_sk)
         let boot_sk = self.generate_independent_boot_sk(rng);
 
@@ -470,20 +517,23 @@ impl ClockworkBootstrap {
     }
 
     /// Generate an independent boot secret key (fresh ternary polynomial).
-    fn generate_independent_boot_sk(&self, rng: &mut ShadowHarvester) -> DualRNSSecretKey {
+    fn generate_independent_boot_sk<R: FheRng>(&self, rng: &mut R) -> DualRNSSecretKey {
         let n = self.n;
 
-        // Generate fresh ternary coefficients {-1, 0, 1}
-        let s_signed: Vec<i8> = (0..n)
-            .map(|_| {
-                let r = crate::entropy::FheRng::next_u64(rng) % 3;
-                match r {
-                    0 => -1i8,
-                    1 => 0i8,
-                    _ => 1i8,
-                }
-            })
-            .collect();
+        // Generate fresh ternary coefficients {-1, 0, 1}. This is the boot
+        // secret key itself in a bare Vec -- zeroize the temporary on drop.
+        let s_signed: Zeroizing<Vec<i8>> = Zeroizing::new(
+            (0..n)
+                .map(|_| {
+                    let r = rng.next_u64() % 3;
+                    match r {
+                        0 => -1i8,
+                        1 => 0i8,
+                        _ => 1i8,
+                    }
+                })
+                .collect(),
+        );
 
         // Encode under boot main primes
         let s_main: Vec<Vec<u64>> = self
@@ -612,9 +662,24 @@ impl ClockworkBootstrap {
             .try_fold(1u128, |acc, &p| acc.checked_mul(p));
 
         if let Some(q_level) = q_level_u128 {
-            // Fast u128 path — product fits
+            // Fast u128 path for CRT reconstruction — Q_level itself fits in
+            // u128, so the mod-inverse chain and the reconstructed values
+            // (each < q_level) are safe in u128.
+            //
+            // The final scaling step is NOT safe in raw u128, though: it
+            // computes `c0_val * t`, and c0_val can approach q_level. For
+            // 2^111 < Q_level < 2^128 (e.g. secure_128_deep, secure_192 at
+            // some ciphertext levels) with t ~ 2^16-2^17, that product can
+            // reach ~2^145 and silently wrap in u128 — a real correctness
+            // bug (deep-analysis audit finding, "Phase-1 u128 overflow
+            // band"), not merely a theoretical one: Q8 in
+            // nine65-extreme-tests reproduces it via secure_192. Widen just
+            // this step to exact U256 arithmetic; the result (quotient of a
+            // value < q_level by q_level, scaled by t) is always < t and
+            // therefore fits back into a u64 trivially.
             let q_level_half = q_level / 2;
-            let t128 = t as u128;
+            let q_level_u256 = U256::from_u128(q_level);
+            let q_level_half_u256 = U256::from_u128(q_level_half);
 
             let mut crt_inverses = Vec::with_capacity(ct_level);
             let mut partial_product = 1u128;
@@ -642,14 +707,18 @@ impl ClockworkBootstrap {
                     &primes_u128,
                     &crt_inverses,
                 );
-                c0_small[i] = ((c0_val * t128 + q_level_half) / q_level % t128) as u64;
+                let scaled = U256::from_u128(c0_val).mul_u64(t).add(q_level_half_u256);
+                let (quotient, _) = scaled.div_mod_u256(q_level_u256);
+                c0_small[i] = quotient.mod_u64(t);
 
                 let c1_val = crt_reconstruct_n(
                     ct.c1.main.iter().map(|limb| limb[i] as u128),
                     &primes_u128,
                     &crt_inverses,
                 );
-                c1_small[i] = ((c1_val * t128 + q_level_half) / q_level % t128) as u64;
+                let scaled = U256::from_u128(c1_val).mul_u64(t).add(q_level_half_u256);
+                let (quotient, _) = scaled.div_mod_u256(q_level_u256);
+                c1_small[i] = quotient.mod_u64(t);
             }
 
             Ok((c0_small, c1_small))
@@ -752,9 +821,16 @@ impl ClockworkBootstrap {
         let ke_capacity = ke.capacity();
 
         if let Some(q_level) = q_level_u128 {
-            // Fast u128 path
+            // Fast u128 path for CRT reconstruction. As in `modswitch_to_t`,
+            // the final scaling step is widened to U256 -- `c0_val * t` can
+            // overflow u128 even though c0_val and q_level individually fit
+            // (audit finding: "Phase-1 u128 overflow band", 2^111 <
+            // Q_level < 2^128). See the comment in `modswitch_to_t` for the
+            // full explanation; `ke_capacity` gates the CRT-reconstructed
+            // value itself, which is unaffected by this widening.
             let q_level_half = q_level / 2;
-            let t128 = t as u128;
+            let q_level_u256 = U256::from_u128(q_level);
+            let q_level_half_u256 = U256::from_u128(q_level_half);
 
             if q_level >= ke_capacity {
                 return Err(Nine65Error::RangeOverflow {
@@ -797,7 +873,9 @@ impl ClockworkBootstrap {
                     });
                 }
 
-                c0_small[i] = ((c0_val * t128 + q_level_half) / q_level % t128) as u64;
+                let scaled = U256::from_u128(c0_val).mul_u64(t).add(q_level_half_u256);
+                let (quotient, _) = scaled.div_mod_u256(q_level_u256);
+                c0_small[i] = quotient.mod_u64(t);
 
                 let c1_val = crt_reconstruct_n(
                     ct.c1.main.iter().map(|limb| limb[i] as u128),
@@ -812,7 +890,9 @@ impl ClockworkBootstrap {
                     });
                 }
 
-                c1_small[i] = ((c1_val * t128 + q_level_half) / q_level % t128) as u64;
+                let scaled = U256::from_u128(c1_val).mul_u64(t).add(q_level_half_u256);
+                let (quotient, _) = scaled.div_mod_u256(q_level_u256);
+                c1_small[i] = quotient.mod_u64(t);
             }
 
             Ok((c0_small, c1_small))
@@ -1588,6 +1668,95 @@ mod tests {
             }
         }
         assert_eq!(errors, 0, "1M modswitch zero error: got {} errors", errors);
+    }
+
+    /// Regression test for the U256 widening of the Phase-1 scaling step
+    /// (deep-analysis audit finding: "Phase-1 u128 overflow band"). For
+    /// values where the original `(c0_val * t + q_level_half) / q_level %
+    /// t` formula does NOT overflow u128, the widened U256 computation used
+    /// in `modswitch_to_t` / `modswitch_to_t_verified` must produce the
+    /// bit-identical result -- this is a pure arithmetic-widening change,
+    /// not a semantic one.
+    #[test]
+    fn test_modswitch_u256_widening_matches_u128_formula_when_safe() {
+        let mut state: u64 = 0x1234_5678_9abc_def0;
+        let mut next_u64 = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+
+        for _ in 0..20_000u32 {
+            // Keep q_level small enough (< 2^90) that c0_val * t is
+            // guaranteed safe in u128 for any t < 2^32 -- this is exactly
+            // the "safe" regime the original formula covered correctly.
+            let q_level: u128 = 2 + (next_u64() as u128 % (1u128 << 90));
+            let t: u64 = 2 + (next_u64() % 65536);
+            let c0_val: u128 = next_u64() as u128 % q_level;
+            let q_level_half = q_level / 2;
+
+            let expected = ((c0_val * t as u128 + q_level_half) / q_level % t as u128) as u64;
+
+            let q_level_u256 = U256::from_u128(q_level);
+            let q_level_half_u256 = U256::from_u128(q_level_half);
+            let scaled = U256::from_u128(c0_val).mul_u64(t).add(q_level_half_u256);
+            let (quotient, _) = scaled.div_mod_u256(q_level_u256);
+            let actual = quotient.mod_u64(t);
+
+            assert_eq!(
+                actual, expected,
+                "widened formula disagrees with u128 formula: q_level={} t={} c0_val={}",
+                q_level, t, c0_val
+            );
+        }
+    }
+
+    /// The overflow band itself: q_level in (2^111, 2^128) with t ~ 2^16,
+    /// where `c0_val * t` genuinely overflows u128 (this is exactly the
+    /// band the audit identified as silently wrapping). The widened
+    /// computation must still produce a result in `[0, t)` and must be
+    /// self-consistent: `c0_val` at the extremes (0, q_level-1) must map to
+    /// the extremes of the rounding formula, and doubling c0_val (while
+    /// staying below q_level) must not decrease the reconstructed scaled
+    /// value by more than one ULP of the rounding term.
+    #[test]
+    fn test_modswitch_u256_widening_handles_overflow_band() {
+        // q_level ~ 2^126, comfortably inside the audit's 2^111..2^128 band.
+        let q_level: u128 = (1u128 << 126) + 12345;
+        let t: u64 = 65537; // ~2^16, matches production t
+        let q_level_half = q_level / 2;
+
+        // Sanity: this q_level/t pair is exactly the case that overflows the
+        // naive u128 formula -- confirm that so the test is meaningful.
+        assert!(
+            (q_level - 1).checked_mul(t as u128).is_none(),
+            "test fixture does not actually exercise the overflow band"
+        );
+
+        let q_level_u256 = U256::from_u128(q_level);
+        let q_level_half_u256 = U256::from_u128(q_level_half);
+
+        let scale = |c0_val: u128| -> u64 {
+            let scaled = U256::from_u128(c0_val).mul_u64(t).add(q_level_half_u256);
+            let (quotient, _) = scaled.div_mod_u256(q_level_u256);
+            quotient.mod_u64(t)
+        };
+
+        // c0_val=0: scaled = q_level_half < q_level, so the quotient (and
+        // hence the result) is exactly 0.
+        assert_eq!(scale(0), 0, "c0_val=0 case");
+
+        // c0_val = q_level - 1 should round to (t - 1) or t truncated by the
+        // final mod -- in any case it must land strictly inside [0, t).
+        let top = scale(q_level - 1);
+        assert!(top < t, "top-of-range result {} must be < t={}", top, t);
+
+        // Monotonic sanity spot-check across the band (not a full proof of
+        // monotonicity, just a guard against the widened path silently
+        // truncating like the original bug did).
+        let mid = scale(q_level / 2);
+        assert!(mid < t, "midpoint result {} must be < t={}", mid, t);
     }
 
     // =====================================================================

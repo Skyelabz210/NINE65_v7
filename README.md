@@ -11,7 +11,6 @@ The repository has moved beyond the historical “v7 Bootstrap Complete” snaps
 - symmetric protected decrypt→re-encrypt refresh;
 - K-Elimination rescaling with explicit anchor/range state;
 - exact large-modulus and noise-budget accounting;
-- SBNI validation and bounded rerandomization;
 - CRAM residue-native architecture gates;
 - service, WASM, MANA, and UNHAL deployment surfaces;
 - an evaluator-only private-feedback reference application.
@@ -167,9 +166,16 @@ user answer
 |---|---|
 | `SecureRng` / OS CSPRNG | key generation, production encryption randomness, bootstrap-key generation, security-critical sampling |
 | `ShadowHarvester` | deterministic tests, reproducible diagnostics, explicitly reviewed non-secret streams |
-| SBNI | bounded ciphertext rerandomization/timing-noise mechanism; not key generation and not bootstrap |
 
 Statistical-test success does not establish cryptographic unpredictability.
+
+SBNI (Shadow Butterfly Noise Injection) was retired 2026-08-09: its only
+production call site is gone, and its entropy source was a deterministic,
+publicly recomputable function of the operation index — it never delivered
+the rerandomization or timing-resistance claims made for it. See
+`docs/LADDER_REMOVAL.md` §1 for the record and `docs/RETIRED_MECHANISMS.md`
+for the companion retirement of modulus switching and the noise-exhaustion
+ladder it was paired with.
 
 ## Parameter and Claim Discipline
 

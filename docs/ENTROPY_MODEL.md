@@ -41,21 +41,24 @@ Prohibited uses:
 
 The phrase “shadow entropy” does not authorize replacing a CSPRNG. Code and documentation must state the seed source and intended security role.
 
-## 3. Shadow Butterfly Noise Injection
+## 3. Shadow Butterfly Noise Injection — retired
 
-SBNI is a ciphertext rerandomization and timing-noise mechanism. It derives bounded injection values from butterfly-associated material, a monotonic operation counter, lane identity, and a cryptographic hash.
+SBNI is retired (2026-08-09) and is not part of the current entropy model.
+`crates/nine65/src/ops/sbni.rs` is kept on disk as the record of the removal
+but is not compiled into the crate (`pub mod sbni;` was removed from
+`ops/mod.rs`). See `docs/LADDER_REMOVAL.md` §1 for the full record and
+`docs/RETIRED_MECHANISMS.md` for the companion retirement of modulus
+switching and the noise-exhaustion ladder.
 
-SBNI must satisfy:
-
-- injection bounds are exact integers;
-- the same signed polynomial is represented consistently across all live main and anchor lanes;
-- lane counts are taken from the live ciphertext state after modulus switching;
-- empty entropy input is rejected;
-- injection never indexes beyond a live limb;
-- decrypt-after-injection correctness is tested for every production parameter candidate;
-- SBNI is not counted as bootstrap and does not reset the noise budget by itself.
-
-SBNI may strengthen rerandomization and timing resistance. Its existence does not independently establish IND-CCA security or remove the need for authenticated service boundaries.
+The mechanism never delivered the properties this section used to claim for
+it: its "butterfly entropy" was an NTT over a hardcoded constant through
+fixed twiddles, producing an identical shadow vector on every call, keyed
+only by a monotonic counter through an unkeyed hash — a deterministic,
+publicly recomputable function of the operation index. It masked nothing,
+and its numerical effect on the emitted ciphertext was, with overwhelming
+probability, already a no-op before removal (`docs/LADDER_REMOVAL.md` §1.2).
+Any prior claim that SBNI strengthened rerandomization, timing resistance,
+or IND-CPA/IND-CCA security is retracted.
 
 ## Required terminology
 
@@ -63,12 +66,10 @@ SBNI may strengthen rerandomization and timing resistance. Its existence does no
 |---|---|---|
 | OS CSPRNG / `SecureRng` | cryptographic entropy | shadow entropy |
 | `ShadowHarvester` | deterministic harvester or OS-seeded deterministic harvester | CSPRNG replacement |
-| SBNI | bounded ciphertext noise injection / rerandomization | bootstrap, key refresh, free entropy |
 
 ## Release gates
 
 1. Secret-key constructors use only secure entropy APIs.
 2. Fixed deterministic seeds are absent from non-test key paths.
-3. SBNI tests cover empty inputs, live-lane shrinkage, coefficient bounds, anchor consistency, and decrypt correctness.
-4. Entropy mechanism names appear in the claim ledger with their exact scope.
-5. Security documentation does not infer unpredictability from NIST-style statistical tests alone.
+3. Entropy mechanism names appear in the claim ledger with their exact scope.
+4. Security documentation does not infer unpredictability from NIST-style statistical tests alone.

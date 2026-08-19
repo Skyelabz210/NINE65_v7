@@ -1,5 +1,43 @@
 # Lattice Estimator Baseline (2026-02-25)
 
+> **Provenance and staleness (2026-08-19):** this is the most recent baseline
+> in `docs/`, and CLAUDE.md cites it as the confirmed evidence for the
+> `secure_128`/`secure_192`/`secure_256` bit-security figures it lists. Two
+> caveats an implementer needs before relying on the numbers below:
+>
+> 1. **The `secure_128` row was computed at `n=4096`.** Current code
+>    (`crates/nine65/src/params/secure_configs.rs::SecureConfig::secure_128`)
+>    uses `n=8192`. A larger `n` at the same `log2(q)` only *improves*
+>    Core-SVP/MATZOV security under the estimator's `3.36 * (n / log_q)`
+>    formula, so the 129-bit/116-bit figures below are a **lower bound**, not
+>    the current number — but they are not the current number either, and
+>    should not be quoted as if freshly computed against `n=8192`.
+> 2. **No run in this repository since 2026-01-27 has used the real external
+>    `lattice-estimator` tool** (`malb/lattice-estimator` via SageMath). This
+>    file and the 2026-02-05/2026-02-09 baselines were produced by the
+>    in-tree `LatticeSecurityEstimator` Rust binary
+>    (`cargo run -p nine65 --release --bin security_estimator_baseline`),
+>    which is a deterministic integer heuristic, not an independent
+>    certificate (its own module doc says so —
+>    `crates/nine65/src/params/security_estimator.rs`). The 2026-01-27
+>    baseline is the one run that did use the external tool, but it too used
+>    now-superseded parameters (`secure_128` n=4096, `secure_192` n=8192).
+>    `secure_configs.rs:4-7`'s stated policy — "every release that carries a
+>    named security claim must archive an external lattice-estimator result
+>    for the exact tuple `(N, Q, t, secret distribution, error
+>    distribution)`" — is currently unmet for the parameters actually shipped
+>    (`n=8192`/`16384`).
+>
+> **To regenerate once a `lattice-estimator`/SageMath toolchain is
+> available** (none is installed in this sandbox, confirmed): run it against
+> the exact tuples in `secure_configs.rs` for `secure_128`, `secure_128_deep`,
+> `secure_192`, and `secure_256` at their current `n`, `q` chain, and `t`;
+> archive the raw output the same way `LATTICE_ESTIMATOR_BASELINE_2026-01-27.md`
+> did (tool commit hash, runtime image, raw `rop` figures per attack); and add
+> a new dated file rather than editing this one, following the existing
+> naming convention. Update CLAUDE.md's "Lattice Estimator confirmed" line to
+> point at the new file once it exists.
+
 Track E — Depth Ceiling Investigation: Formal Security Parameter Validation
 
 ## Command

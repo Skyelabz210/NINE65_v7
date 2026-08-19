@@ -24,7 +24,16 @@ pub mod homomorphic;
 pub mod neural;
 pub mod parallel;
 pub mod rns_fhe;
-pub mod rns_mul;
+// REMOVED (G19, legacy duplicate stack): `pub mod rns_mul;` used to define a
+// second, independent RNSEvaluator/DualRNS* stack (duplicate DualRNSPoly,
+// DualRNSCiphertext, DualRNSSecretKey, DualRNSPublicKey types distinct from
+// the ones in `rns_fhe`) with a u128-only K-Elimination path that lacked the
+// signed-k fix. It had zero callers outside its own file and tests
+// (`RNSEvaluator` was only ever referenced from rns_mul.rs itself and this
+// mod.rs re-export) -- the live ct×ct multiplication path is rns_fhe.rs. The
+// file has been deleted outright rather than feature-gated, since deleting
+// was safe (no external references) per the removal criteria this was
+// reviewed against.
 pub mod symmetric_bootstrap;
 
 pub use batch::BatchEncoder;
@@ -39,4 +48,3 @@ pub use parallel::{ParallelDecryptor, ParallelEncryptor};
 pub use rns_fhe::{
     RNSCiphertext, RNSEvalKey, RNSFHEContext, RNSKeySet, RNSPublicKey, RNSSecretKey,
 };
-pub use rns_mul::RNSEvaluator;

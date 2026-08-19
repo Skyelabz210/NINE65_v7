@@ -1,7 +1,7 @@
 # CLAUDE.md — Project Context for Claude Code
 
 ## Project Overview
-**NINE65 v8 "Shadow Butterfly"** — A proprietary, unlimited-depth Fully Homomorphic Encryption (FHE) system built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic across all crates.
+**NINE65 v8 "Shadow Butterfly"** — A proprietary, unlimited-depth Fully Homomorphic Encryption (FHE) system built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic in its crypto/arithmetic hot paths (see "Important Coding Rules" below for the one documented, non-cryptographic exception).
 
 Key achievement: First FHE system with fully verified bootstrap roundtrip across all three paths (circular, non-circular KSK, and auto-triggered), enabling truly unlimited-depth computation.
 
@@ -89,7 +89,7 @@ Depth benchmarks:
 ---
 
 ## Important Coding Rules
-- ZERO floats — no f32/f64 anywhere in the workspace, ever
+- ZERO floats in crypto/arithmetic hot paths — no f32/f64 in K-Elimination, Montgomery, NTT, RNS, or any encrypt/decrypt/eval code path, ever. (`compiler.rs::NoiseModel` is a planning-only noise estimator with `pub f64` fields — it never touches ciphertext coefficients — and is the one documented exception; do not extend float usage beyond it.)
 - Integer-only arithmetic throughout (K-Elimination, Montgomery, NTT)
 - Constant-time operations required for all security-sensitive code paths
 - Test configs (allow_insecure) are blocked in release builds — never use in production

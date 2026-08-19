@@ -20,8 +20,29 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 
 
+class MissingTarget(Exception):
+    """A configured recumbency check target does not exist in the tree.
+
+    REPAIRED 2026-08-19 (NINE65_v7_DEEP_ANALYSIS_20260817.md G9): `read()`
+    used to be a bare `Path.read_text`, so a configured target that had been
+    renamed or deleted (e.g. `crates/nine65/src/ops/rns_mul.rs`, removed by a
+    concurrent G19 cleanup) crashed this script with an unhandled
+    `FileNotFoundError` traceback instead of reporting a clean, actionable
+    failure. `scripts/check_residue_native_architecture.py` already treats a
+    missing configured target as a hard, reported failure rather than a
+    silent skip or a crash; this brings the two gates into agreement.
+    """
+
+    def __init__(self, relative: str):
+        super().__init__(relative)
+        self.relative = relative
+
+
 def read(relative: str) -> str:
-    return (ROOT / relative).read_text(encoding="utf-8")
+    path = ROOT / relative
+    if not path.exists():
+        raise MissingTarget(relative)
+    return path.read_text(encoding="utf-8")
 
 
 def _code_without_strings_or_line_comment(line: str) -> str:
@@ -208,7 +229,13 @@ def _line_of(text: str, offset: int) -> int:
 
 
 def require_absent(relative: str, patterns: list[tuple[str, str]]) -> list[str]:
-    text = production_view(relative)
+    try:
+        text = production_view(relative)
+    except MissingTarget:
+        return [
+            f"{relative}: configured recumbency target does not exist — "
+            "fix the file list in main()"
+        ]
     failures: list[str] = []
     for expression, explanation in patterns:
         matches = list(
@@ -225,7 +252,13 @@ def require_absent(relative: str, patterns: list[tuple[str, str]]) -> list[str]:
 
 
 def require_present(relative: str, patterns: list[tuple[str, str]]) -> list[str]:
-    text = production_view(relative)
+    try:
+        text = production_view(relative)
+    except MissingTarget:
+        return [
+            f"{relative}: configured recumbency target does not exist — "
+            "fix the file list in main()"
+        ]
     failures: list[str] = []
     for expression, explanation in patterns:
         if not re.search(expression, text, flags=re.MULTILINE | re.DOTALL):
@@ -236,27 +269,31 @@ def require_present(relative: str, patterns: list[tuple[str, str]]) -> list[str]
 def main() -> int:
     failures: list[str] = []
 
+    # REPAIRED 2026-08-19 (NINE65_v7_DEEP_ANALYSIS_20260817.md G9): every
+    # `\bGarner\b` pattern below is now `\bGarner[A-Za-z0-9_]*` so it also
+    # catches identifier-suffixed forms (`garner_reconstruct`,
+    # `GarnerLift`, ...), matching the same repair already applied to
+    # `scripts/check_residue_native_architecture.py`'s `garner_call`
+    # pattern. `\bGarner\b` alone missed exactly this shape of identifier —
+    # none of the files this gate scans currently use one (confirmed: every
+    # "Garner" mention in bootstrap.rs/rns.rs/k_elimination.rs today is
+    # comment-only and already blanked by `executable_view`), so this is a
+    # forward-looking hardening, not a behavior change at the current
+    # commit.
+
     failures += require_absent(
         "crates/nine65/src/ops/bootstrap.rs",
         [
             (r"\bcrt_reconstruct_n\s*\(", "number-line CRT reconstruction in bootstrap"),
             (r"\bcrt_reconstruct_u256\s*\(", "U256 number-line reconstruction in bootstrap"),
-            (r"\bGarner\b", "Garner language in active bootstrap"),
+            (r"\bGarner[A-Za-z0-9_]*", "Garner language in active bootstrap"),
             (r"mixed[- ]radix", "mixed-radix language in active bootstrap"),
         ],
     )
 
-    failures += require_absent(
-        "crates/nine65/src/ops/rns_mul.rs",
-        [
-            (r"\bself\.rns\.to_int\s*\(", "main coefficient reconstruction in production rescale"),
-            (r"\bextract_k_rns(?:_level)?\s*\(", "scalar/U256 k reconstruction in production rescale"),
-            (r"\bcrt_reconstruct_n\s*\(", "CRT reconstruction in production multiplication"),
-            (r"\bcrt_reconstruct_u256\s*\(", "U256 reconstruction in production multiplication"),
-            (r"\bGarner\b", "Garner language in active multiplication"),
-            (r"mixed[- ]radix", "mixed-radix language in active multiplication"),
-        ],
-    )
+    # rns_mul.rs removed (G19): legacy duplicate of rns_fhe.rs's RNS multiply
+    # stack, superseded and permanently deleted rather than gated -- nothing
+    # left to check here (see crates/nine65/src/ops/mod.rs).
 
     failures += require_absent(
         "crates/nine65/src/ops/rns_fhe.rs",
@@ -267,7 +304,7 @@ def main() -> int:
                 r"map\s*\(\s*\|&p\|\s*\(64\s*-\s*p\.leading_zeros\(\)\).*?\.sum",
                 "summed lane widths used instead of exact product bit length",
             ),
-            (r"\bGarner\b", "Garner language in active RNS FHE path"),
+            (r"\bGarner[A-Za-z0-9_]*", "Garner language in active RNS FHE path"),
             (r"mixed[- ]radix", "mixed-radix language in active RNS FHE path"),
         ],
     )
@@ -287,7 +324,7 @@ def main() -> int:
                 r"fn\s+extract_k_rns(?:_level)?\b.*?(?:crt_reconstruct_n|crt_reconstruct_u256)\s*\(",
                 "bounded k extraction reconstructs a number-line representative",
             ),
-            (r"\bGarner\b", "Garner language in active DualRNS arithmetic"),
+            (r"\bGarner[A-Za-z0-9_]*", "Garner language in active DualRNS arithmetic"),
             (r"mixed[- ]radix", "mixed-radix language in active DualRNS arithmetic"),
         ],
     )
@@ -299,7 +336,7 @@ def main() -> int:
                 r"pub\s+fn\s+capacity\s*\([^)]*\).*?saturating_mul",
                 "saturating scalar capacity accessor",
             ),
-            (r"\bGarner\b", "Garner language in active K-Elimination module"),
+            (r"\bGarner[A-Za-z0-9_]*", "Garner language in active K-Elimination module"),
             (r"mixed[- ]radix", "mixed-radix language in active K-Elimination module"),
         ],
     )
@@ -332,8 +369,14 @@ def main() -> int:
         ],
     )
 
+    # G9: was pointed at the now-deleted rns_mul.rs. `project_bounded` is
+    # implemented (KElimResidueDivider, the coupled-anchor-law variant) in
+    # kelim_residue_divider.rs, but as of this check is not yet called from
+    # any production division call site in rns_fhe.rs/rns.rs -- the trait
+    # went from zero implementors to one, closing that half of G9, but full
+    # replacement of ad-hoc division with this contract is still open.
     failures += require_present(
-        "crates/nine65/src/ops/rns_mul.rs",
+        "crates/nine65/src/arithmetic/kelim_residue_divider.rs",
         [
             (r"project_bounded\s*\(", "proof-carrying bounded residue quotient projection"),
         ],

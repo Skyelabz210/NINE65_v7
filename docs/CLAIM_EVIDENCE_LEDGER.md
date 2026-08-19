@@ -84,7 +84,7 @@ The CSV registry is the machine-enforced index. This ledger supplies the scope a
 
 - **Status:** documented source invariant; focused source/runtime gates pending on combined head.
 - **Artifact:** `docs/ENTROPY_MODEL.md`.
-- **Scope:** OS CSPRNG, deterministic `ShadowHarvester`, and SBNI are separate mechanisms.
+- **Scope:** OS CSPRNG and deterministic `ShadowHarvester` are separate mechanisms. SBNI, formerly listed here as a third mechanism, was retired 2026-08-09 (`docs/LADDER_REMOVAL.md` §1) and is out of scope for this claim.
 
 ### `security.ct_ntt_source_hardening`
 

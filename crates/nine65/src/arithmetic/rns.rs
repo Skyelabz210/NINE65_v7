@@ -12,6 +12,7 @@ use super::montgomery::MontgomeryContext;
 use super::ntt_fft::NTTEngineFFT as NTTEngine;
 #[cfg(feature = "reference_ntt")]
 use super::ntt::NTTEngine;
+use crate::errors::{Nine65Error, Nine65Result};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use core::cmp::Ordering;
@@ -1093,6 +1094,14 @@ pub(crate) fn mod_inverse_u128(a: u128, m: u128) -> u128 {
 /// NOTE: With 5+ anchor primes, anchor_product may not fit in u128.
 /// K-Elimination is done per-limb in RNS domain, then k is reconstructed
 /// using a subset of 3 primes (sufficient since k < N×Q²/M ≈ 10²¹).
+/// Per-anchor modular inverses of a fixed `M_level`, precomputed once and
+/// reused across many `extract_k_rns_level_cached` calls against that same
+/// level. See `DualRNSContext::precompute_m_level_inverses`.
+#[derive(Clone, Debug)]
+pub(crate) struct MLevelInverses {
+    inv: Vec<u64>,
+}
+
 pub struct DualRNSContext {
     /// Main RNS system for FHE computation
     pub main: RNSContext,
@@ -1550,24 +1559,88 @@ impl DualRNSContext {
     ///
     /// Returns k as a 256-bit unsigned value in [0, A_k), where A_k is the product of the anchor primes
     /// used for reconstruction.
+    /// # Errors
+    ///
+    /// Returns `Err(Nine65Error::InvalidParameter)` when the winding number
+    /// `k` has reached the anchor-basis capacity boundary (deep-circuit
+    /// overflow) or when a witness anchor lane disagrees with the
+    /// reconstructed `k` (capacity exhaustion or data corruption). Both
+    /// conditions used to `panic!`/`assert!` directly; on a network-facing
+    /// path (`crates/fhe-service`) an unhandled panic here can take down the
+    /// whole process instead of failing just the one request, so this is a
+    /// `Result` at the point of origin. Callers that cannot cheaply thread
+    /// `Result` through their own signature may still convert `Err` back
+    /// into a panic at their boundary — see `k_elim_rescale_dual` in
+    /// `ops/rns_fhe.rs` — but the check itself is now independently
+    /// testable and the failure is explicit rather than an unwind.
     pub(crate) fn extract_k_rns_level(
         &self,
         v_main: U256,
         v_anchor_rns: &[u64],
         level_main_primes: &[u64],
-    ) -> U256 {
+    ) -> Nine65Result<U256> {
         assert!(
             level_main_primes.len() <= self.main.primes.len(),
             "Level exceeds main prime count"
         );
+
+        // Compute M_level = product(level_main_primes) as U256 (fits for current parameter sets).
+        let m_level = U256::product_u64s(level_main_primes);
+        let inverses = self.precompute_m_level_inverses(m_level);
+        self.extract_k_rns_level_cached(v_main, v_anchor_rns, m_level, &inverses)
+    }
+
+    /// Precompute, once, the per-anchor modular inverses of `M_level` that
+    /// `extract_k_rns_level_cached` needs.
+    ///
+    /// `mod_inverse` is an extended-Euclid computation (tens of iterations).
+    /// `extract_k_rns_level` is called once per polynomial coefficient from
+    /// its hot-path callers (`k_elim_rescale_dual`, `extract_digit_dual`),
+    /// but `M_level` (hence every one of these inverses) is the SAME for
+    /// every coefficient in a single rescale/digit-extraction call -- only
+    /// `v_main`/`v_anchor_rns` vary. Recomputing the inverses from scratch
+    /// on every coefficient redid identical work up to N times per rescale;
+    /// computing them once here and passing the result to
+    /// `extract_k_rns_level_cached` for every coefficient removes that.
+    pub(crate) fn precompute_m_level_inverses(&self, m_level: U256) -> MLevelInverses {
+        let inv = self
+            .anchor
+            .primes
+            .iter()
+            .map(|&a_i| {
+                let m_level_mod_ai = m_level.mod_u64(a_i);
+                mod_inverse(m_level_mod_ai, a_i)
+            })
+            .collect();
+        MLevelInverses { inv }
+    }
+
+    /// Same contract as `extract_k_rns_level`, but takes an already-computed
+    /// `M_level` and its `MLevelInverses` (see `precompute_m_level_inverses`)
+    /// instead of recomputing both from `level_main_primes` on every call.
+    pub(crate) fn extract_k_rns_level_cached(
+        &self,
+        v_main: U256,
+        v_anchor_rns: &[u64],
+        // Not read directly -- `inverses` already encodes everything this
+        // function needs from it. Kept as a parameter so the call site
+        // states the level it's operating against, and so a mismatched
+        // `(m_level, inverses)` pair (from mixing up two different levels'
+        // precomputed tables) is visible in the signature, not just latent
+        // in `inverses`'s contents.
+        _m_level: U256,
+        inverses: &MLevelInverses,
+    ) -> Nine65Result<U256> {
         assert_eq!(
             v_anchor_rns.len(),
             self.anchor.primes.len(),
             "Anchor RNS length mismatch"
         );
-
-        // Compute M_level = product(level_main_primes) as U256 (fits for current parameter sets).
-        let m_level = U256::product_u64s(level_main_primes);
+        assert_eq!(
+            inverses.inv.len(),
+            self.anchor.primes.len(),
+            "MLevelInverses length mismatch"
+        );
 
         // Choose how many anchor primes to reconstruct k from.
         //
@@ -1609,8 +1682,7 @@ impl DualRNSContext {
         // Compute k residues in each anchor modulus: k_i = (v_a - v_m) * (M_level^{-1} mod a_i) mod a_i
         let mut k_rns = vec![0u64; self.anchor.primes.len()];
         for (i, &a_i) in self.anchor.primes.iter().enumerate() {
-            let m_level_mod_ai = m_level.mod_u64(a_i);
-            let inv = mod_inverse(m_level_mod_ai, a_i);
+            let inv = inverses.inv[i];
             let v_m_mod_ai = v_main.mod_u64(a_i);
             let diff = (v_anchor_rns[i] + a_i - v_m_mod_ai) % a_i;
             k_rns[i] = ((diff as u128) * (inv as u128) % (a_i as u128)) as u64;
@@ -1624,9 +1696,14 @@ impl DualRNSContext {
         let a_recon_half = a_recon.shr1();
         let safety_margin = U256::from_u64(1_000_000);
         if k_u.ge(a_recon_half.sub(safety_margin)) && k_u.le(a_recon_half.add(safety_margin)) {
-            panic!("CAPACITY ERROR: Winding number k reached the anchor boundary A/2. \
-                   This indicates a deep circuit overflow or anchor basis exhaustion. \
-                   Current k_u: {:?}, A/2: {:?}", k_u, a_recon_half);
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "CAPACITY ERROR: Winding number k reached the anchor boundary A/2. \
+                     This indicates a deep circuit overflow or anchor basis exhaustion. \
+                     Current k_u: {:?}, A/2: {:?}",
+                    k_u, a_recon_half
+                ),
+            });
         }
 
         // Witness verification: any anchor lane beyond the U256 reconstruction
@@ -1642,19 +1719,22 @@ impl DualRNSContext {
                 } else {
                     mag_mod
                 };
-                assert!(
-                    expected == k_rns[i],
-                    "K-Elimination witness dissent: anchor lane {i} (prime {a_w}) \
-                     disagrees with k reconstructed from the first {k_primes} anchors \
-                     (expected residue {expected}, lane holds {}). The winding k has \
-                     exceeded the {}-bit reconstruction capacity.",
-                    k_rns[i],
-                    a_recon.bitlen(),
-                );
+                if expected != k_rns[i] {
+                    return Err(Nine65Error::InvalidParameter {
+                        message: format!(
+                            "K-Elimination witness dissent: anchor lane {i} (prime {a_w}) \
+                             disagrees with k reconstructed from the first {k_primes} anchors \
+                             (expected residue {expected}, lane holds {}). The winding k has \
+                             exceeded the {}-bit reconstruction capacity.",
+                            k_rns[i],
+                            a_recon.bitlen(),
+                        ),
+                    });
+                }
             }
         }
 
-        k_u
+        Ok(k_u)
     }
 
     /// K-Elimination: Reconstruct full value from dual-RNS representation
@@ -2868,7 +2948,7 @@ mod tests {
                 .collect();
 
             // Use extract_k_rns_level to recover k
-            let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes);
+            let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes).unwrap();
 
             assert_eq!(
                 k_reconstructed,
@@ -3038,7 +3118,7 @@ mod tests {
         // secure_128_deep (4 main primes, ct_level == 4 always post-ladder-
         // removal): extract_k_rns_level now always reconstructs from the
         // full 5-anchor canonical set, independent of level_main_primes.len().
-        let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes);
+        let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes).unwrap();
 
         assert_eq!(
             k_reconstructed, k_true,
@@ -3217,7 +3297,7 @@ mod tests {
                 })
                 .collect();
 
-            let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes);
+            let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes).unwrap();
 
             assert_eq!(
                 k_reconstructed,

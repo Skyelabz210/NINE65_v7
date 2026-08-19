@@ -121,6 +121,27 @@
 //! - **NIST SP 800-22**: Shadow Entropy passes statistical tests
 //! - **Memory Safety**: Key zeroization via `zeroize` crate
 
+// CLAUDE.md states plainly: "Test configs (allow_insecure) are blocked in
+// release builds — never use in production." This gate enforces that, but
+// it is commented out -- re-enabling it as-is breaks the documented
+// `cargo test --release --workspace` command:
+// `crates/fhe-service/Cargo.toml` enables `nine65/allow_insecure` from
+// `[dev-dependencies]` for its own `--release` test suite, and `cfg(test)`/
+// `debug_assertions` do NOT propagate from a dependent crate's test build
+// into this crate when it is compiled as a (dev-)dependency -- there is no
+// cfg-based way here to distinguish "a legitimate --release test run of a
+// crate that dev-depends on this feature" from "a real production release
+// binary that mistakenly enabled it". Verified by direct experiment
+// (2026-08-19, NINE65_v7_DEEP_ANALYSIS_20260817.md G2 follow-up): enabling
+// this exact check makes `cargo test --release --workspace` fail to
+// compile `nine65` via fhe-service's dev-dependency, for a build that is
+// not the production misuse this check is meant to catch.
+// TODO: fix by restructuring fhe-service's test architecture (e.g. its
+// allow_insecure-dependent tests should not require `--release`, or should
+// use a secure config instead) so this can be re-enabled without breaking
+// the standard test command. Do not re-enable this without first confirming
+// `cargo test --release --workspace --exclude nine65-python --exclude
+// nine65-wasm` still passes.
 // #[cfg(all(feature = "allow_insecure", not(any(test, debug_assertions))))]
 // compile_error!("The `allow_insecure` feature must not be enabled in release builds");
 

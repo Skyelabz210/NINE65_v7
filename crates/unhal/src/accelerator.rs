@@ -1,18 +1,41 @@
 //! # Accelerator - Unified Hardware Abstraction
 //!
-//! High-level interface that automatically selects the best execution path:
-//! - SIMD when available (4× throughput per lane)
-//! - Rayon when multiple lanes (cores× throughput)
-//! - Sequential fallback
+//! **The production hot path is [`Accelerator::run_lanes`].** nine65's
+//! per-limb NTT and per-coefficient K-Elimination loops call it directly:
+//! UNHAL decides the execution strategy, MANA's dependency-free,
+//! deterministic scoped-thread lane executor (`mana::executor`) runs it, and
+//! output is bit-identical regardless of thread count or scheduling — see
+//! that method's doc comment for the full contract. This does not depend on
+//! the `parallel` feature and does not use rayon.
+//!
+//! The rest of this module — `add_streams`/`sub_streams`/`mul_streams` and
+//! the `ExecutionMode`/ `AcceleratorConfig` machinery below — is a separate,
+//! older stream-level API with its own dispatch:
+//! - **SIMD**: `ExecutionMode::Simd`/`Full` route here, but the SIMD
+//!   implementations (`add_simd`, `sub_simd`) are currently dead-code
+//!   fallbacks to the sequential path — "the SIMD module removed, fallback
+//!   to sequential" per their own bodies. There is no vectorized speedup on
+//!   this path today; any prior "4× throughput" claim for it was not
+//!   backed by an implementation and should not be repeated.
+//! - **Rayon**: `ExecutionMode::Parallel`/`Full` route to
+//!   `mana::parallel::ParallelStream`, gated behind the opt-in `parallel`
+//!   feature (off by default in this workspace). This is legacy relative to
+//!   `run_lanes` and is not the mechanism nine65's hot path uses.
+//! - **Sequential**: always available, no dependencies.
 //!
 //! ## Usage
 //!
 //! ```ignore
 //! use unhal::prelude::*;
 //!
+//! // Production path: UNHAL decides, MANA executes.
+//! let accel = Accelerator::auto();
+//! let results = accel.run_lanes(lanes, |lane_idx| compute_lane(lane_idx));
+//!
+//! // Legacy stream-level API (SIMD path is a no-op fallback; Rayon path
+//! // requires the `parallel` feature):
 //! let config = AcceleratorConfig::auto_detect();
 //! let accel = Accelerator::new(config);
-//!
 //! let result = accel.add_streams(&a, &b);
 //! ```
 

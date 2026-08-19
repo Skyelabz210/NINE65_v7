@@ -32,15 +32,27 @@ PRODUCTION_TARGETS = (
     ROOT / "crates" / "exact_transcendentals" / "src" / "cram_ct.rs",
     ROOT / "crates" / "nine65" / "src" / "cram_ct_wrap.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
-    ROOT / "crates" / "nine65" / "src" / "ops" / "rns_mul.rs",
+    # rns_mul.rs removed (G19): legacy duplicate of rns_fhe.rs's RNS multiply
+    # stack, superseded and deleted rather than gated -- see ops/mod.rs.
     ROOT / "crates" / "nine65" / "src" / "ops" / "bootstrap.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "auto_bootstrap.rs",
 )
 
 # The patterns target executable identifiers and type names. Documentation and
 # instrumentation counters are not execution mechanisms and are excluded below.
+#
+# REPAIRED 2026-08-19 (NINE65_v7_DEEP_ANALYSIS_20260817.md G9): `garner_call`
+# used to be anchored directly on `(::|\()`, so it matched `garner(` and
+# `garner::` but not an identifier-suffixed call like `garner_reconstruct(`
+# or `garner_reconstruct_subset(` — both real, live calls in
+# crates/exact_transcendentals/src/cram_ct.rs (lines ~1622, ~1826/1930 at the
+# analyzed commit) that this gate silently missed. The pattern now allows any
+# run of identifier characters between `garner` and the call/path syntax, so
+# every `garner<suffix>(` or `garner<suffix>::` form is caught.
 PROHIBITED = {
-    "garner_call": re.compile(r"\b" + "gar" + "ner" + r"\s*(?:::|\()", re.IGNORECASE),
+    "garner_call": re.compile(
+        r"\b" + "gar" + "ner" + r"[A-Za-z0-9_]*\s*(?:::|\()", re.IGNORECASE
+    ),
     "mixed_radix_call": re.compile(
         r"\bmixed[_ -]?" + "radix" + r"\s*(?:::|\()", re.IGNORECASE
     ),

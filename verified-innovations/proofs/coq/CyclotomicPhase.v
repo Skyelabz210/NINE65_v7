@@ -96,32 +96,77 @@ Definition modular_distance (a b modulus : nat) : nat :=
   if diff <=? modulus / 2 then diff
   else modulus - diff.
 
+(** G15 (NINE65_v7_DEEP_ANALYSIS_20260817.md): both theorems below used to be
+    left `Admitted` in this copy while an actual `Qed` proof of the same
+    statements already existed in the sibling `proofs/coq/CyclotomicPhase.v`
+    (same `modular_distance` definition, same `Require`s). Ported that proof
+    here rather than leaving these silently unproven with no note tying the
+    two files together. *)
 Theorem distance_bounded : forall a b m : nat,
   m > 0 -> modular_distance a b m <= m / 2.
 Proof.
-  (* By case analysis: if diff <= m/2, return diff; else return m - diff <= m/2 *)
   intros a b m Hm.
   unfold modular_distance.
   set (diff := (a + m - b) mod m).
+  assert (Hdiff_bound: diff < m).
+  { unfold diff. apply Nat.mod_upper_bound. lia. }
   destruct (diff <=? m / 2) eqn:E.
-  - (* diff <= m/2 *)
+  - (* diff <= m/2: return diff *)
     apply Nat.leb_le in E. exact E.
-  - (* diff > m/2, return m - diff <= m/2 *)
+  - (* diff > m/2: return m - diff *)
     apply Nat.leb_gt in E.
-    (* diff > m/2 and diff < m (from mod) implies m - diff < m/2 *)
-    (* Algebraically verified; Coq's lia/nia struggle with division *)
-Admitted.  (* Algebraically verified: diff > m/2 implies m - diff <= m/2 *)
+    pose proof (Nat.div_mod_eq m 2) as Hdiv.
+    assert (Hmod2: m mod 2 = 0 \/ m mod 2 = 1).
+    { destruct (m mod 2) as [|[|k]] eqn:E2.
+      - left. reflexivity.
+      - right. reflexivity.
+      - exfalso. assert (H: m mod 2 < 2) by (apply Nat.mod_upper_bound; lia). lia. }
+    destruct Hmod2 as [Heven | Hodd].
+    + (* m even: m = 2*(m/2), diff > m/2, so diff >= m/2 + 1 *)
+      rewrite Heven in Hdiv. rewrite Nat.add_0_r in Hdiv.
+      lia.
+    + (* m odd: m = 2*(m/2) + 1 *)
+      rewrite Hodd in Hdiv.
+      lia.
+Qed.
 
+(** Symmetry of modular distance - well-known property of circular metrics.
 
-(** Symmetry of modular distance *)
-(** Key insight: (a+m-b) mod m + (b+m-a) mod m = m (or both 0) *)
-(** The proof requires complex modular arithmetic that lia struggles with *)
+    Mathematical justification:
+    - modular_distance(a, b, m) computes min(d, m-d) where d = (a + m - b) mod m
+    - For circular distance: d(a,b) + d(b,a) = m when a mod m <> b mod m, else both = 0
+    - The min(d, m-d) function is symmetric under the complement relationship
+    - Therefore modular_distance(a, b, m) = modular_distance(b, a, m) *)
 Theorem distance_symmetric : forall a b m : nat,
   m > 0 -> modular_distance a b m = modular_distance b a m.
 Proof.
-  (* Algebraically: distance is symmetric because it computes min of diff and m-diff *)
-  (* The modular differences satisfy: diff_ab + diff_ba = m (when nonzero) *)
-Admitted.  (* Verified algebraically - Coq's lia cannot handle the mod arithmetic *)
+  intros a b m Hm.
+  unfold modular_distance.
+  set (d1 := (a + m - b) mod m).
+  set (d2 := (b + m - a) mod m).
+  assert (Hsum: (d1 + d2) mod m = 0).
+  { unfold d1, d2.
+    rewrite <- Nat.add_mod_idemp_l; try lia.
+    rewrite <- Nat.add_mod_idemp_r; try lia.
+    replace (a + m - b + (b + m - a)) with (2 * m) by lia.
+    rewrite Nat.mod_mul; lia. }
+  assert (Hd1_bound: d1 < m) by (apply Nat.mod_upper_bound; lia).
+  assert (Hd2_bound: d2 < m) by (apply Nat.mod_upper_bound; lia).
+  assert (Hd1_d2: d1 = 0 /\ d2 = 0 \/ d1 + d2 = m).
+  { destruct d1 as [|d1'].
+    - left. rewrite Nat.add_0_l in Hsum. rewrite Nat.mod_small in Hsum; lia.
+    - right. assert (d1 + d2 > 0) by lia.
+      assert (d1 + d2 < 2 * m) by lia.
+      rewrite Nat.mod_small_iff in Hsum; try lia.
+      destruct Hsum as [H | H]; lia. }
+  destruct Hd1_d2 as [[Hz1 Hz2] | Hsum_m].
+  - rewrite Hz1, Hz2. simpl. reflexivity.
+  - destruct (d1 <=? m / 2) eqn:E1; destruct (d2 <=? m / 2) eqn:E2.
+    + apply Nat.leb_le in E1. apply Nat.leb_le in E2. lia.
+    + apply Nat.leb_le in E1. apply Nat.leb_gt in E2. lia.
+    + apply Nat.leb_gt in E1. apply Nat.leb_le in E2. lia.
+    + apply Nat.leb_gt in E1. apply Nat.leb_gt in E2. lia.
+Qed.
 
 (** * Summary *)
 
@@ -130,6 +175,11 @@ Admitted.  (* Verified algebraically - Coq's lia cannot handle the mod arithmeti
    1. Rotation wraps correctly
    2. Speedup >= 60,000x
    3. Modular distance is bounded
+   4. Modular distance is symmetric (ported from proofs/coq/CyclotomicPhase.v, G15)
+
+   STILL ADMITTED: div2_succ_sum (an arithmetic identity used only by
+   extraction_complete's alternate proof path in this copy; the primary
+   proofs/coq/CyclotomicPhase.v proves extraction_complete directly without it).
 
    KEY INSIGHT: sin/cos are coefficient extraction, not polynomial evaluation.
 *)

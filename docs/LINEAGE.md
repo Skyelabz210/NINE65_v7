@@ -21,11 +21,20 @@ The repository added:
 - real Clockwork bootstrap integration;
 - circular and KSK-separated bootstrap paths;
 - `AutoBootstrapEvaluator`;
-- SBNI rerandomization and timing-noise hardening;
+- SBNI rerandomization and timing-noise hardening (added here, later retired — see below);
 - CLASS-F / CLASS-R modulus separation;
 - exact parameter-product accounting and fail-closed budget preflight.
 
 A software noise-counter reset is not a bootstrap. Only a live ciphertext refresh that restores a usable budget may be reported as bootstrap.
+
+**Stage C amendment (2026-08-09):** SBNI was retired. Its entropy source was
+a deterministic, publicly recomputable function of the operation index and
+delivered none of the rerandomization or timing-resistance properties
+claimed for it in Stage C. See `docs/LADDER_REMOVAL.md` §1 and
+`docs/RETIRED_MECHANISMS.md`. Modulus switching, added in Stage B, was
+retired the same day for the same-scoped reason recorded in
+`docs/RETIRED_MECHANISMS.md`: exact residue-space division unfuses "divide"
+from "drop a lane," so the level ladder it depended on no longer exists.
 
 ### Stage D — service, WASM, edge, and acceleration surfaces
 

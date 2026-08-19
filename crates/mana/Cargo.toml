@@ -27,6 +27,11 @@ zeroize = { workspace = true }
 criterion = { workspace = true }
 proptest = { workspace = true }
 
-# [[bench]]
-# name = "lane_ops"
-# harness = false
+# benches/lane_ops.rs uses criterion's own `criterion_main!`, which needs
+# `harness = false` so cargo does not also wrap it in the default libtest
+# harness. This was commented out, so `cargo bench -p mana` had no declared
+# target for it; declaring it here is the fix (see also
+# .github/workflows/ci.yml's benchmark-regression job, T4 tier).
+[[bench]]
+name = "lane_ops"
+harness = false

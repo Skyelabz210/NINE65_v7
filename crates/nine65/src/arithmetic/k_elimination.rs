@@ -58,6 +58,38 @@
 //!     .build()
 //!     .unwrap();
 //! ```
+//!
+//! # Relationship to the production K-Elimination record (G14 consolidation)
+//!
+//! This is **not** the canonical production K-Elimination for the live
+//! DualRNS BFV engine. That role belongs to `extract_k_rns_level` in
+//! `nine65::arithmetic::rns`, which operates over the DualRNS engine's own
+//! multi-anchor RNS lane vectors (Garner-style reconstruction across N
+//! anchor primes), not a fixed two-modulus (alpha, beta) split.
+//!
+//! This module is instead the **validated, CT-tested, two-modulus reference
+//! implementation** — the one piece of K-Elimination-shaped code in this
+//! workspace with a matching Coq lemma (`k_elimination_complete`) and actual
+//! branchless CT primitives (`sub_mod_u128_ct`/`mul_mod_u128_ct` below), and
+//! the target of the statistical CT verification suite
+//! (`nine65::security::ct_verification`). It is kept as a distinct,
+//! intentional variant rather than merged into `extract_k_rns_level`
+//! because:
+//! 1. Its algebraic structure (two aggregated scalar residues, not N
+//!    per-lane residues) is not a drop-in substitute for the RNS-level API
+//!    without changing the data layout at every call site.
+//! 2. It is the current backing implementation for the **legacy
+//!    single-modulus BFV path** (`ops::homomorphic::BFVEvaluator`, used by
+//!    `kat.rs` known-answer tests and `entropy::shadow_entropy_monitor`) and
+//!    for the quarantined Clockwork bootstrap paths (`ops::bootstrap`,
+//!    `bootstrap::clockwork`) — both depend on this exact two-scalar
+//!    signature.
+//!
+//! `mana::anchor::KAnchor::for_fhe()` independently duplicates this file's
+//! `KElimConfig::Standard` prime constants bit-for-bit (documented at the
+//! `mana` side, since `mana` cannot depend on `nine65` — the dependency
+//! runs the other way — so true single-sourcing isn't possible without a
+//! new cross-crate dependency edge, out of scope for this pass).
 
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::params::is_prime;

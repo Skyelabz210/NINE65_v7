@@ -358,6 +358,43 @@ def incrementalCRTStep (k_partial : ℕ) (partial_product : ℕ) (k_a3 : ℕ) (a
   let coeff := (diff * partial_inv_a3) % a3
   k_partial + coeff * partial_product
 
+/--
+  Soundness of the incremental CRT step (NINE65_v7_DEEP_ANALYSIS_20260817.md,
+  finding G15: `incrementalCRTStep` previously had zero theorems anywhere).
+
+  `incrementalCRTStep` is a special case of `Soundness.k_elimination_sound`
+  with the value being reconstructed, `k`, playing the role of `X`, the
+  already-combined modulus `partial_product` playing the role of `M`, and
+  the new anchor `a3` playing the role of `A`. Given the correct partial
+  residue `k % partial_product`, the correct new anchor residue `k % a3`,
+  and a valid modular inverse `partial_inv_a3` of `partial_product` mod `a3`,
+  the step exactly reconstructs `k`, provided `k` fits in the combined
+  modulus `partial_product * a3` — exactly the range hypothesis the caller
+  (4-prime CRT reconstruction) is responsible for maintaining at each step.
+-/
+theorem incrementalCRTStep_sound (partial_product a3 : ℕ)
+    (hpp : partial_product > 0) (ha3 : a3 > 1)
+    (hcop : Nat.Coprime partial_product a3)
+    (k partial_inv_a3 : ℕ) (hRange : k < partial_product * a3)
+    (hInv : (partial_product * partial_inv_a3) % a3 = 1) :
+    incrementalCRTStep (k % partial_product) partial_product (k % a3) a3 partial_inv_a3 = k := by
+  show (k % partial_product)
+      + ((k % a3 + a3 - k % partial_product % a3) % a3 * partial_inv_a3) % a3 * partial_product
+      = k
+  let cfg : KElimination.RNSConfig := {
+    M := partial_product
+    A := a3
+    coprime := hcop
+    M_pos := hpp
+    A_pos := Nat.lt_trans Nat.zero_lt_one ha3
+  }
+  have hsound :
+      ((k % a3 + a3 - k % partial_product % a3) % a3 * partial_inv_a3) % a3
+        = k / partial_product :=
+    Soundness.k_elimination_sound cfg k hRange partial_inv_a3 hInv
+  rw [hsound]
+  exact (KElimination.div_mod_identity k partial_product).symm
+
 /-- 4-Prime anchor configuration -/
 structure FourPrimeConfig where
   a1 : ℕ  -- First anchor prime
@@ -677,7 +714,8 @@ end LevelAware
 /-! ## Summary of 4-Prime CRT Proofs
 
 Proved in this extension:
-1. Incremental CRT step definition (incrementalCRTStep)
+1. Incremental CRT step definition (incrementalCRTStep) and its soundness
+   (incrementalCRTStep_sound — added for G15, NINE65_v7_DEEP_ANALYSIS_20260817.md)
 2. 4-Prime CRT uniqueness (fourPrime_crt_unique) - partial
 3. 4-Prime K-Elimination soundness (kElimination_4prime_sound) - partial
 4. Signed-k interpretation (signedInterpret, signed_k_positive, signed_k_negative)

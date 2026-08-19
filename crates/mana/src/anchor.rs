@@ -19,6 +19,36 @@
 //! FHE rescaling requires dividing ciphertext coefficients by primes.
 //! Traditional RNS division needs full O(k²) reconstruction.
 //! K-Elimination: O(k) anchor-first division.
+//!
+//! ## Relationship to the production K-Elimination record (G14 consolidation)
+//!
+//! This is a **self-contained, zero-dependency duplicate** of the two-modulus
+//! K-Elimination formula also implemented (with full validation and CT
+//! primitives) as `nine65::arithmetic::k_elimination::KElimination`. The
+//! duplication is not accidental sloppiness so much as an unavoidable
+//! consequence of the workspace's dependency direction: `mana` is
+//! deliberately a leaf crate with **zero** dependencies (see
+//! `crates/mana/Cargo.toml`), and `nine65` depends on `mana` — not the
+//! reverse — so this file cannot import `nine65`'s implementation without
+//! creating a dependency cycle. `KAnchor::for_fhe()`'s prime set
+//! (`alpha_primes = [65537, 65521, 65519]`,
+//! `beta_moduli = [4611686018427387847]`) is bit-for-bit identical to
+//! `nine65`'s `KElimConfig::Standard`.
+//!
+//! Consolidating these into one source of truth (e.g. a shared,
+//! already-zero-dependency crate like `math_utils`) would require adding a
+//! new dependency edge to `crates/mana/Cargo.toml`, which is a
+//! workspace-dependency-graph change out of scope for this file-level pass
+//! (this pass does not own `Cargo.toml` files). Not deleted, because
+//! `KAnchor`/`AnchorContext` are `pub` API re-exported through
+//! `mana::prelude` and `unhal::lib`, and constructed by
+//! `nine65::accelerated::AcceleratedContext` (also out of scope here) —
+//! though as of this audit pass, nothing in `nine65`'s own src/tests/benches
+//! calls `AcceleratedContext` itself, so this path is currently dead beyond
+//! its own unit tests below. The canonical production K-Elimination remains
+//! `nine65::arithmetic::rns::extract_k_rns_level`; the canonical validated
+//! two-modulus *reference* implementation remains
+//! `nine65::arithmetic::k_elimination::KElimination`.
 
 use crate::stream::ManaStream;
 

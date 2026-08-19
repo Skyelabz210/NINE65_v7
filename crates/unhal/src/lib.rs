@@ -1,28 +1,32 @@
 //! # UNHAL - Universal Neuromorphic Hardware Abstraction Layer
 //!
 //! Higher-level interface over MANA for FHE acceleration.
-//! Provides a unified API that abstracts over SIMD and parallel execution.
 //!
-//! ## Architecture
+//! ## Pipeline
+//!
+//! The production data flow is **nine65 → UNHAL (decides) → MANA
+//! (executes)**: nine65's hot loops call [`accelerator::Accelerator::run_lanes`],
+//! UNHAL's `Accelerator` picks the execution strategy, and delegates to
+//! MANA's dependency-free, deterministic scoped-thread lane executor
+//! (`mana::executor`), which is not a SIMD engine and does not use rayon —
+//! output is bit-identical regardless of thread count or scheduling order.
+//! See `accelerator::Accelerator::run_lanes`'s doc comment for the full
+//! contract.
 //!
 //! ```text
 //! ┌──────────────────────────────────────────────────────┐
-//! │                     UNHAL                            │
-//! │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │
-//! │  │ Accelerator │  │  Pipeline   │  │   Batch     │  │
-//! │  │  (auto-     │  │  (staged    │  │  (bulk      │  │
-//! │  │   detect)   │  │   compute)  │  │   process)  │  │
-//! │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  │
-//! └─────────┼────────────────┼────────────────┼─────────┘
-//!           │                │                │
-//!           └────────────────┴────────────────┘
-//!                            │
-//! ┌──────────────────────────┴───────────────────────────┐
-//! │                      MANA                            │
-//! │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐ │
-//! │  │  Lane   │  │ Stream  │  │ Anchor  │  │   GSO   │ │
-//! │  │ (SIMD)  │  │ (CRT)   │  │ (K-Elim)│  │ (Qbit)  │ │
-//! │  └─────────┘  └─────────┘  └─────────┘  └─────────┘ │
+//! │                     UNHAL (decides)                   │
+//! │  Accelerator::run_lanes — the production entry point  │
+//! │  (also: legacy Pipeline / Batch / stream-level API,    │
+//! │  SIMD-fallback and opt-in-rayon dispatch — see          │
+//! │  accelerator.rs module docs)                            │
+//! └───────────────────────┬─────────────────────────────┘
+//!                         │
+//! ┌───────────────────────┴─────────────────────────────┐
+//! │                    MANA (executes)                    │
+//! │  executor (deterministic scoped-thread lane runner —   │
+//! │  the production path) · Lane · Stream (CRT) ·          │
+//! │  Anchor (K-Elim) · GSO (Qbit) · parallel (opt-in rayon) │
 //! └──────────────────────────────────────────────────────┘
 //! ```
 //!
@@ -31,20 +35,23 @@
 //! ```ignore
 //! use unhal::prelude::*;
 //!
-//! // Auto-detect best execution path
+//! // Production path: UNHAL decides, MANA executes.
 //! let accel = Accelerator::auto();
+//! let results = accel.run_lanes(lanes, |lane_idx| compute_lane(lane_idx));
 //!
-//! // Simple operation
+//! // Legacy stream-level API — SIMD is a no-op fallback to sequential, and
+//! // the parallel path here requires the opt-in `parallel` (rayon) feature;
+//! // see accelerator.rs module docs before relying on either.
 //! let result = accel.add_streams(&a, &b);
 //!
-//! // Pipeline of operations
+//! // Pipeline of operations (built on the legacy stream-level API above)
 //! let pipe = Pipeline::new()
 //!     .add(Stage::Add)
 //!     .add(Stage::ScalarMul(2))
 //!     .build();
 //! let result = pipe.execute(&a, &b);
 //!
-//! // Bulk processing
+//! // Bulk processing (also built on the legacy stream-level API)
 //! let batch = BatchProcessor::auto();
 //! let results = batch.add_batch_par(&pairs);
 //! ```

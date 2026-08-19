@@ -8,14 +8,29 @@
 //! - **T16** (GRO-Garner Composition): When implemented constant-time + GRO gated,
 //!   no timing information about X leaks through k computation.
 //!
-//! ## Constant-Time Guarantee
-//! The `k_eliminate_ct` function uses `subtle::ConditionallySelectable` to ensure
-//! no secret-dependent branches or memory access patterns. This is REQUIRED by
-//! formal spec INV-7 and security theorem T16 for any path touching secrets.
+//! ## Constant-Time Guarantee (G14 correction)
+//! `k_eliminate_ct` and `garner_decompose_ct` are branchless: no
+//! secret-dependent `if`/`match` on `r`/`s`/digit values, and no
+//! secret-indexed memory access. That branchlessness comes from
+//! [`reduce_u128_ct`] — a bit-serial, fixed-iteration-count (128 steps)
+//! shift-and-conditional-subtract reduction using only compare/shift/wrap
+//! arithmetic — used everywhere a modulus reduction is needed on
+//! secret-dependent data, instead of the native `%`/`/` operators (whose
+//! latency on most CPUs *does* vary with operand magnitude, which is exactly
+//! the "not really constant-time" gap an earlier version of this module had:
+//! it claimed CT via `subtle::ConditionallySelectable` while never actually
+//! calling into `subtle`, and every reduction was a plain data-dependent
+//! `%`). `subtle` is not used or imported here; the technique instead
+//! mirrors the accepted branchless mask pattern already used and CT-tested
+//! elsewhere in this workspace (see
+//! `nine65::arithmetic::k_elimination::{sub_mod_u128_ct, mul_mod_u128_ct}`
+//! and `nine65::security::ct_verification`), reimplemented locally because
+//! this crate does not depend on `nine65` (the dependency runs the other
+//! way). `mod_inverse` calls inside `garner_decompose_ct` operate only on
+//! the (public, fixed-per-basis) *moduli*, never on secret residues, so its
+//! variable-time Euclidean algorithm is not a secret-dependent side channel.
 
 use crate::basis::mod_inverse;
-// subtle crate imported for constant-time selection in production paths
-// Currently used conceptually; direct CT operations use modular arithmetic patterns
 
 // ─── D6: K-Elimination (2-Gear Garner Step) ─────────────────────────────────
 
@@ -65,35 +80,63 @@ pub fn k_eliminate(r: u64, s: u64, m: u64, a: u64, m_inv_mod_a: u64) -> u64 {
     k as u64
 }
 
+/// Branchless (data-independent iteration count and control flow) reduction
+/// of `x` modulo `modulus`, for `x` up to 128 bits and `modulus` up to 64
+/// bits. Processes `x` one bit at a time from the most significant bit using
+/// only shifts, wrapping arithmetic, and a mask-selected conditional
+/// subtract — never the native `%`/`/` operators, whose instruction latency
+/// on most CPUs depends on operand magnitude and is therefore not a safe
+/// primitive for secret-dependent values.
+///
+/// Fixed 128 iterations regardless of `x` or `modulus`; each iteration does
+/// the same shift/compare/mask/subtract sequence regardless of the running
+/// remainder's value, so there is no data-dependent branch and no
+/// data-dependent number of steps.
+#[inline]
+fn reduce_u128_ct(x: u128, modulus: u128) -> u128 {
+    debug_assert!(modulus != 0, "reduce_u128_ct: modulus must be nonzero");
+    let mut remainder: u128 = 0;
+    for bit in (0..128).rev() {
+        // remainder = remainder*2 + next bit of x. remainder stays < modulus
+        // (<= 2^64 - 1) after every prior step, so this shift cannot overflow
+        // u128 (result < 2*modulus <= 2^65).
+        let next_bit = (x >> bit) & 1;
+        remainder = (remainder << 1) | next_bit;
+        // Branchless conditional subtract: `>=` is a plain compare (fixed
+        // latency), never a DIV/MOD instruction.
+        let mask = ((remainder >= modulus) as u128).wrapping_neg();
+        remainder = remainder.wrapping_sub(modulus & mask);
+    }
+    remainder
+}
+
 /// Constant-time K-Elimination for secret-dependent paths.
 ///
 /// **Formal Spec T16 requirement**: This version ensures:
 /// - No secret-dependent branches
 /// - No secret-dependent memory access
-/// - Uniform execution time regardless of input values
-///
-/// Uses `subtle` crate for constant-time conditional operations.
+/// - Uniform, data-independent operation sequence regardless of input values
+///   (see [`reduce_u128_ct`] for what "constant-time" means concretely here)
 ///
 /// # Arguments
-/// Same as `k_eliminate`, but all operations are constant-time.
+/// Same as `k_eliminate`, but all reductions go through [`reduce_u128_ct`]
+/// instead of the native `%` operator.
 ///
 /// # Safety
 /// This function is safe to call on secret-dependent values without
 /// creating timing side channels, PROVIDED it runs under GRO gating (T16).
 pub fn k_eliminate_ct(r: u64, s: u64, _m: u64, a: u64, m_inv_mod_a: u64) -> u64 {
-    // Constant-time subtraction mod a:
-    // diff = (s - r_mod_a) mod a
-    // Without branching on whether s >= r_mod_a
     let a128 = a as u128;
     let s128 = s as u128;
-    let r_mod_a = (r as u128) % a128;
+    let r_mod_a = reduce_u128_ct(r as u128, a128);
 
-    // Compute both (s - r_mod_a) and (s + a - r_mod_a), select based on borrow
-    let no_borrow = s128 + a128 - r_mod_a; // always >= 0
-    let diff = no_borrow % a128; // mod a normalizes both cases identically
+    // diff = (s - r_mod_a) mod a, without branching on whether s >= r_mod_a:
+    // s128 < a128 and r_mod_a < a128, so s128 + a128 - r_mod_a lies in
+    // (0, 2*a128) — always representable and always reducible by one mod.
+    let no_borrow = s128 + a128 - r_mod_a;
+    let diff = reduce_u128_ct(no_borrow, a128);
 
-    // Multiply — this is naturally constant-time for fixed-width integers
-    let k = (diff * (m_inv_mod_a as u128)) % a128;
+    let k = reduce_u128_ct(diff * (m_inv_mod_a as u128), a128);
     k as u64
 }
 
@@ -216,7 +259,11 @@ pub fn garner_decompose(residues: &[u64], moduli: &[u64]) -> GarnerDigits {
 
 /// Constant-time version of garner_decompose for secret-dependent values.
 ///
-/// Uses k_eliminate_ct internally. Required by T16 for secret paths.
+/// Uses [`k_eliminate_ct`] internally for every inner Garner step (this is
+/// now literally true — previously this function reimplemented the same
+/// computation inline using native `%`, which contradicted its own "uses
+/// k_eliminate_ct" doc comment and was not actually constant-time; see the
+/// module-level G14 correction note). Required by T16 for secret paths.
 pub fn garner_decompose_ct(residues: &[u64], moduli: &[u64]) -> GarnerDigits {
     assert_eq!(residues.len(), moduli.len());
     let k = moduli.len();
@@ -236,18 +283,16 @@ pub fn garner_decompose_ct(residues: &[u64], moduli: &[u64]) -> GarnerDigits {
         let mut current = working[i];
 
         for j in 0..i {
-            let p_i = moduli[i] as u128;
-            let d_j = digits[j] as u128;
-            let cur = current as u128;
-
-            // Constant-time subtraction mod p_i
-            let diff = (cur + p_i - (d_j % p_i)) % p_i;
-
+            // moduli[i]/moduli[j] are the (public) RNS basis — fixed for a
+            // given context and identical across every call, so computing
+            // their inverse with a variable-time Euclidean algorithm here
+            // does not leak anything about the secret residues/digits.
             let inv = mod_inverse(moduli[j] as i128, moduli[i] as i128)
                 .expect("Moduli must be pairwise coprime");
 
-            // Constant-time multiplication mod p_i
-            current = ((diff * inv as u128) % p_i) as u64;
+            // current = (current - digits[j]) * moduli[j]^{-1} mod moduli[i],
+            // via the genuinely constant-time step (see k_eliminate_ct doc).
+            current = k_eliminate_ct(digits[j], current, moduli[j], moduli[i], inv);
         }
 
         digits.push(current);

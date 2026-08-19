@@ -1,9 +1,16 @@
 name: CRAM Real Refresh Evidence
 
+# Branch gating repaired: the pull_request trigger named
+# `hardening/beyond-100-app-platform`, a branch that no longer exists (the
+# repo has only `main` and `claude/*`), so this workflow's PR trigger never
+# fired on real PR activity -- only `workflow_dispatch` reached it. Re-pointed
+# at the real trunk, matching the fix already applied to
+# app_platform_gates.yml and the other cram_*.yml workflows on 2026-08-12.
+
 on:
   pull_request:
     branches:
-      - "hardening/beyond-100-app-platform"
+      - main
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "crates/nine65/src/bin/nine65_bench.rs"
@@ -11,7 +18,6 @@ on:
       - "crates/nine65/src/ops/auto_bootstrap.rs"
       - "crates/nine65/src/ops/bootstrap.rs"
       - "crates/nine65/src/ops/rns_fhe.rs"
-      - "crates/nine65/src/ops/rns_mul.rs"
       - "crates/nine65/tests/refresh_preflight_regression.rs"
       - ".github/workflows/cram_real_refresh_evidence.yml"
   workflow_dispatch:

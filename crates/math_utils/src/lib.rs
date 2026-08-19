@@ -1,8 +1,24 @@
 //! # Math Utils — Unified Core Mathematical Primitives
 //!
-//! Single source of truth for modular arithmetic, primality testing, GCD, and
-//! modular inverse. All QMNF, CRAM, and Hydra crates depend on this instead of
-//! duplicating primitives.
+//! Intended as a single source of truth for modular arithmetic, primality
+//! testing, GCD, and modular inverse, so QMNF, CRAM, and Hydra crates can
+//! depend on this instead of duplicating primitives.
+//!
+//! **Status (G14 audit correction, 2026-08-19):** that goal is not yet
+//! reality. As of this pass, no crate in this workspace (`nine65`, `mana`,
+//! `clockwork-core`, `exact_transcendentals`, or any other) actually
+//! declares a dependency on `math_utils` or calls into it — the previous
+//! wording ("All QMNF, CRAM, and Hydra crates depend on this") was
+//! aspirational, not descriptive of the current graph. This crate itself has
+//! zero dependencies, so it *could* be adopted by any of the above without
+//! introducing a cycle; doing so is a workspace-dependency-graph change
+//! (editing other crates' `Cargo.toml`) out of scope for this pass. Until
+//! then, treat this module's [`k_eliminate`]/[`k_reconstruct`] as a
+//! reference implementation of the two-modulus K-Elimination formula, not a
+//! wired-in dependency of the production path. The canonical production
+//! K-Elimination is `nine65::arithmetic::rns::extract_k_rns_level`; the
+//! canonical validated, CT-tested two-modulus reference implementation is
+//! `nine65::arithmetic::k_elimination::KElimination`.
 //!
 //! ## Zero-Float Guarantee
 //!
@@ -178,6 +194,10 @@ pub fn garner_reconstruct(residues: &[u64], moduli: &[u64]) -> u128 {
 /// K-Elimination: recover winding number k from two coprime residues.
 /// Given X ≡ r (mod m) and X ≡ s (mod a) where gcd(m, a) = 1,
 /// returns k such that X = r + k*m, unique for 0 ≤ X < m*a.
+///
+/// Reference implementation only — see the module-level "Status" note above.
+/// Not the production K-Elimination (`nine65::arithmetic::rns::extract_k_rns_level`)
+/// and not constant-time (uses native `%`/`/`; no CT claim is made here).
 pub fn k_eliminate(r: u64, s: u64, m: u64, a: u64) -> u64 {
     debug_assert_eq!(gcd(m, a), 1, "m and a must be coprime");
     let m_inv = mod_inverse(m % a, a).expect("m must be invertible mod a");

@@ -8,6 +8,7 @@
 #[cfg(all(feature = "allow_insecure", not(debug_assertions)))]
 compile_error!("The `allow_insecure` feature must not be used in release builds");
 
+mod auth;
 mod handlers;
 mod http;
 mod session;
@@ -115,7 +116,7 @@ fn serve_connection(stream: &mut TcpStream, state: &AppState) {
     }
 
     loop {
-        let request = match http::read_http_request(stream) {
+        let mut request = match http::read_http_request(stream) {
             Ok(req) => req,
             Err(http::RequestParseError::ConnectionClosed) => return,
             Err(http::RequestParseError::Io(io_err))
@@ -143,14 +144,34 @@ fn serve_connection(stream: &mut TcpStream, state: &AppState) {
 
         let keep_alive = http::should_keep_alive(&request);
 
-        // Handle potential CSPRNG failures gracefully
-        let response = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            handlers::route(&request, &state.store, &state.metrics)
-        }))
-        .unwrap_or_else(|_| {
-            // If a panic occurred (e.g., CSPRNG failure), return a 500 error
-            error_response(500, "INTERNAL_ERROR", "service temporarily unavailable")
-        });
+        // Tenant-bound ingress authentication (G17 fix): `auth.rs` defines
+        // `authorize_and_normalize`, which cryptographically binds the
+        // caller's claimed `x-fhe-tenant-id` to a tenant-specific credential
+        // in `FHE_TENANT_TOKENS`, then replaces the request's
+        // `x-fhe-api-token` header with the internal-only token from
+        // `FHE_API_TOKEN`. This module previously existed but was never
+        // declared in this binary's module tree (no `mod auth;`) and was
+        // never called, so the only auth actually enforced was
+        // `handlers::protected_access`'s single global `FHE_API_TOKEN` check
+        // against a *self-asserted* `x-fhe-tenant-id` header -- any caller
+        // holding that one shared token could claim to be any tenant and
+        // both read/rate-limit as, and reach session lookups scoped to, that
+        // tenant. Running this first closes that gap; `protected_access`
+        // downstream still re-checks the (now server-normalized) API token
+        // as a fail-closed invariant.
+        let response = match auth::authorize_and_normalize(&mut request) {
+            Err(unauthorized) => unauthorized,
+            Ok(()) => {
+                // Handle potential CSPRNG failures gracefully
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    handlers::route(&request, &state.store, &state.metrics)
+                }))
+                .unwrap_or_else(|_| {
+                    // If a panic occurred (e.g., CSPRNG failure), return a 500 error
+                    error_response(500, "INTERNAL_ERROR", "service temporarily unavailable")
+                })
+            }
+        };
 
         if let Err(e) = http::write_http_response_with_request(stream, &response, &request) {
             eprintln!("write error: {e}");
