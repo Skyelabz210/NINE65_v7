@@ -1600,7 +1600,22 @@ impl RNSFHEContext {
         self.relinearize(&e0, &e1, &e2, ek)
     }
 
-    /// BFV-style rescaling after tensor product
+    /// BFV-style rescaling after tensor product.
+    ///
+    /// NAME CAVEAT (do not be misled): despite the historical `exact_` prefix,
+    /// this operation ROUNDS and is inexact by mathematical necessity. Under
+    /// BFV `Δ·m` encoding the divisor is `Δ = floor(Q/t)`, which is not a
+    /// factor of `Q`, and the post-multiply noise term `e·e` is not a multiple
+    /// of `Δ` — so `round(x·t/Q)` cannot be turned into an exact integer
+    /// division no matter how it is arranged (the `+ q_i/2` below is the round
+    /// step). It is NOT the K-Elimination align-and-drop division.
+    ///
+    /// For a genuinely exact residue-native division by a basis prime, see
+    /// `exact_modulus_switch_drop_poly` — that computes `floor(X/q_k)` with no
+    /// rounding term, but it divides by an RNS prime `q_k`, not by `Δ`, so it
+    /// is a modulus switch (BGV-style), not the BFV message rescale. The two
+    /// are distinct operations; see the "Two Rescales Distinguished" note in
+    /// docs/MODULUS_SWITCHING.md.
     ///
     /// Computes: round(x × t / Q) for each coefficient.
     ///
@@ -5056,6 +5071,166 @@ fn round_div_signed_mod_u256(
 /// Convert signed i64 to modular representation
 /// For v >= 0: return v
 /// For v < 0: return p - |v|
+/// Exact modulus-switch by dropping one main-basis prime, via the
+/// K-Elimination align-and-drop phase differential.
+///
+/// This is EXACT integer division of each per-coefficient value `X` by the
+/// dropped prime `q_k`: it produces the residue tuple of `floor(X / q_k)` on
+/// every surviving lane, with NO rounding term, and it never leaves residue
+/// space. It is the operation specified in Diaz, "Modulus Switching in QMNF"
+/// §4.2 (align-and-drop) — the residue-native sibling of the phase
+/// differential used in `DualRNSContext::extract_k_rns_level`.
+///
+/// IMPORTANT — this is NOT the BFV message rescale. It divides by an RNS prime
+/// `q_k`, not by `Δ = floor(Q/t)`. Substituting it for `k_elim_rescale_dual`
+/// under BFV `Δ·m` encoding would mis-scale the message and break decryption
+/// (`Δ ≈ 2^74` versus `q_k ≈ 2^30` at secure_128, and `Δ` is not a factor of
+/// `Q` at all). Its intended use is a BGV-style modulus-switch / Clockwork
+/// bootstrap path where the message rides in the low bits mod `t`; adopting
+/// that path is a scheme migration, tracked separately. This function is a
+/// verified, standalone primitive and is deliberately not wired into the
+/// production multiply.
+///
+/// For each surviving lane with modulus `q_i` and per-coefficient residue
+/// `x_i`, and the dropped lane's residue `r_k = X mod q_k`:
+/// ```text
+///     x_i' = (x_i - r_k) * q_k^{-1}   (mod q_i)
+/// ```
+/// which equals `floor(X / q_k) mod q_i`, because `X - r_k` is an exact
+/// integer multiple of `q_k`.
+///
+/// Returns `Err(InvalidParameter)` (error class E-X2 / basis integrity) if the
+/// dropped prime is not coprime to a surviving lane, or on shape/index
+/// violations — the failure path is a typed error, never a wrong value.
+///
+/// `allow(dead_code)`: verified standalone primitive with no production caller
+/// yet by design (the BGV/Clockwork migration that would call it is separate
+/// work; see docs/MODULUS_SWITCHING.md). Covered by exhaustive tests.
+#[allow(dead_code)]
+pub(crate) fn exact_modulus_switch_drop_poly(
+    poly: &DualRNSPoly,
+    main_primes: &[u64],
+    anchor_primes: &[u64],
+    drop_idx: usize,
+) -> Nine65Result<DualRNSPoly> {
+    fn gcd(mut a: u64, mut b: u64) -> u64 {
+        while b != 0 {
+            let t = b;
+            b = a % b;
+            a = t;
+        }
+        a
+    }
+
+    let n_main = poly.main.len();
+    if drop_idx >= n_main {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!(
+                "exact_modulus_switch_drop: drop_idx {drop_idx} >= main lanes {n_main}"
+            ),
+        });
+    }
+    if main_primes.len() != n_main {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!(
+                "exact_modulus_switch_drop: main_primes {} != main lanes {n_main}",
+                main_primes.len()
+            ),
+        });
+    }
+    if anchor_primes.len() != poly.anchor.len() {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!(
+                "exact_modulus_switch_drop: anchor_primes {} != anchor lanes {}",
+                anchor_primes.len(),
+                poly.anchor.len()
+            ),
+        });
+    }
+    let q_k = main_primes[drop_idx];
+    if q_k == 0 {
+        return Err(Nine65Error::InvalidParameter {
+            message: "exact_modulus_switch_drop: dropped prime is zero".to_string(),
+        });
+    }
+
+    let dropped = &poly.main[drop_idx]; // r_k per coefficient
+    let n = poly.n;
+
+    // Surviving main lanes.
+    let mut new_main: Vec<Vec<u64>> = Vec::with_capacity(n_main.saturating_sub(1));
+    for (i, q_i) in main_primes.iter().copied().enumerate() {
+        if i == drop_idx {
+            continue;
+        }
+        if gcd(q_k, q_i) != 1 {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "exact_modulus_switch_drop: dropped prime {q_k} not coprime to main lane {q_i} (E-X2)"
+                ),
+            });
+        }
+        let inv = mod_inverse(q_k % q_i, q_i);
+        let src = &poly.main[i];
+        let mut out = vec![0u64; n];
+        for c in 0..n {
+            let r_k = dropped[c] % q_i;
+            let x = src[c] % q_i;
+            let diff = (x + q_i - r_k) % q_i;
+            out[c] = ((diff as u128 * inv as u128) % q_i as u128) as u64;
+        }
+        new_main.push(out);
+    }
+
+    // Anchor lanes are all retained (only a main prime is dropped).
+    let mut new_anchor: Vec<Vec<u64>> = Vec::with_capacity(anchor_primes.len());
+    for (j, a_j) in anchor_primes.iter().copied().enumerate() {
+        if gcd(q_k, a_j) != 1 {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "exact_modulus_switch_drop: dropped prime {q_k} not coprime to anchor lane {a_j} (E-X2)"
+                ),
+            });
+        }
+        let inv = mod_inverse(q_k % a_j, a_j);
+        let src = &poly.anchor[j];
+        let mut out = vec![0u64; n];
+        for c in 0..n {
+            let r_k = dropped[c] % a_j;
+            let x = src[c] % a_j;
+            let diff = (x + a_j - r_k) % a_j;
+            out[c] = ((diff as u128 * inv as u128) % a_j as u128) as u64;
+        }
+        new_anchor.push(out);
+    }
+
+    Ok(DualRNSPoly {
+        main: new_main,
+        anchor: new_anchor,
+        n,
+    })
+}
+
+/// Ciphertext-level exact modulus-switch drop: applies
+/// [`exact_modulus_switch_drop_poly`] to both `c0` and `c1` and decrements the
+/// level. See that function for the exactness contract and the important
+/// caveat that this is a modulus switch, not the BFV message rescale.
+#[allow(dead_code)]
+pub(crate) fn exact_modulus_switch_drop_ct(
+    ct: &DualRNSCiphertext,
+    main_primes: &[u64],
+    anchor_primes: &[u64],
+    drop_idx: usize,
+) -> Nine65Result<DualRNSCiphertext> {
+    let c0 = exact_modulus_switch_drop_poly(&ct.c0, main_primes, anchor_primes, drop_idx)?;
+    let c1 = exact_modulus_switch_drop_poly(&ct.c1, main_primes, anchor_primes, drop_idx)?;
+    Ok(DualRNSCiphertext {
+        c0,
+        c1,
+        level: ct.level.saturating_sub(1),
+    })
+}
+
 fn signed_to_mod(v: i64, p: u64) -> u64 {
     if v >= 0 {
         (v as u64) % p
@@ -12553,5 +12728,114 @@ mod tests {
         let per = t0.elapsed() / iters;
         println!("ACCEL_TIMING mul_dual_public secure_128: {:?} per op", per);
         assert_eq!(ctx.decrypt_dual(&last.unwrap(), &keys.secret_key), (11*13) % ctx.t);
+    }
+
+    // ------------------------------------------------------------------
+    // Exact align-and-drop modulus switch (Diaz "Modulus Switching in QMNF"
+    // §4.2/§4.4). Differential test against direct integer division; the
+    // whole point is that it is EXACT — no rounding term anywhere.
+    // ------------------------------------------------------------------
+
+    fn make_dual_poly(x: u64, main: &[u64], anchor: &[u64]) -> DualRNSPoly {
+        DualRNSPoly {
+            main: main.iter().map(|&p| vec![x % p]).collect(),
+            anchor: anchor.iter().map(|&p| vec![x % p]).collect(),
+            n: 1,
+        }
+    }
+
+    #[test]
+    fn exact_modulus_switch_drop_matches_integer_division_exhaustive() {
+        // Small coprime dual basis; test EVERY value across the full dual
+        // range [0, M*A), dropping each main prime in turn.
+        let main = [5u64, 7, 11]; // M = 385
+        let anchor = [13u64, 17]; // A = 221
+        let m: u64 = main.iter().product();
+        let a: u64 = anchor.iter().product();
+        let total = m * a; // 85_085
+
+        for drop_idx in 0..main.len() {
+            let q_k = main[drop_idx];
+            let surviving_main: Vec<u64> = main
+                .iter()
+                .copied()
+                .enumerate()
+                .filter(|&(i, _)| i != drop_idx)
+                .map(|(_, p)| p)
+                .collect();
+
+            for x in 0..total {
+                let poly = make_dual_poly(x, &main, &anchor);
+                let out = exact_modulus_switch_drop_poly(&poly, &main, &anchor, drop_idx)
+                    .expect("exact drop must succeed on a coprime prime basis");
+
+                // Ground truth: exact integer floor division.
+                let expected = x / q_k;
+
+                assert_eq!(out.main.len(), surviving_main.len());
+                for (lane, &p) in surviving_main.iter().enumerate() {
+                    assert_eq!(
+                        out.main[lane][0],
+                        expected % p,
+                        "main lane {p}: x={x}, drop q_k={q_k}, floor={expected}"
+                    );
+                }
+                for (lane, &p) in anchor.iter().enumerate() {
+                    assert_eq!(
+                        out.anchor[lane][0],
+                        expected % p,
+                        "anchor lane {p}: x={x}, drop q_k={q_k}, floor={expected}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn exact_modulus_switch_drop_ct_applies_to_both_components() {
+        let main = [5u64, 7, 11];
+        let anchor = [13u64, 17];
+        let (x0, x1) = (40_000u64, 12_345u64);
+        let ct = DualRNSCiphertext {
+            c0: make_dual_poly(x0, &main, &anchor),
+            c1: make_dual_poly(x1, &main, &anchor),
+            level: 3,
+        };
+        let out = exact_modulus_switch_drop_ct(&ct, &main, &anchor, 1).unwrap(); // drop 7
+        assert_eq!(out.level, 2);
+        let surviving_main = [5u64, 11];
+        for (component, x) in [(&out.c0, x0), (&out.c1, x1)] {
+            let expected = x / 7;
+            for (lane, &p) in surviving_main.iter().enumerate() {
+                assert_eq!(component.main[lane][0], expected % p);
+            }
+            for (lane, &p) in anchor.iter().enumerate() {
+                assert_eq!(component.anchor[lane][0], expected % p);
+            }
+        }
+    }
+
+    #[test]
+    fn exact_modulus_switch_drop_rejects_noncoprime_lane() {
+        // Anchor lane equals the dropped prime -> gcd != 1 -> E-X2 error,
+        // never a silently wrong value.
+        let main = [5u64, 7, 11];
+        let anchor = [13u64, 11]; // 11 collides with dropped main prime
+        let poly = make_dual_poly(9, &main, &anchor);
+        let res = exact_modulus_switch_drop_poly(&poly, &main, &anchor, 2); // drop 11
+        assert!(res.is_err(), "must reject a dropped prime not coprime to a lane");
+    }
+
+    #[test]
+    fn exact_modulus_switch_drop_rejects_bad_shape() {
+        let main = [5u64, 7, 11];
+        let anchor = [13u64, 17];
+        let poly = make_dual_poly(3, &main, &anchor);
+        // drop_idx out of range
+        assert!(exact_modulus_switch_drop_poly(&poly, &main, &anchor, 9).is_err());
+        // main_primes count mismatch vs poly.main lanes
+        assert!(exact_modulus_switch_drop_poly(&poly, &main[..2], &anchor, 0).is_err());
+        // anchor_primes count mismatch
+        assert!(exact_modulus_switch_drop_poly(&poly, &main, &anchor[..1], 0).is_err());
     }
 }
