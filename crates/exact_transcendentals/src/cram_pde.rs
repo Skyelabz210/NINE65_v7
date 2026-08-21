@@ -26,7 +26,7 @@
 #![allow(clippy::needless_range_loop)]
 
 #[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 #[cfg(feature = "std")]
 use std::vec::Vec;
 

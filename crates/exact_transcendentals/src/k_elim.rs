@@ -48,7 +48,7 @@
 //! implementation for that eventual migration, not deleted or merged.
 
 #[cfg(not(feature = "std"))]
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 #[cfg(feature = "std")]
 use std::vec::Vec;
 
