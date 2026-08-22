@@ -7,11 +7,15 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 authors = ["Acidlabz210 <acid@hackfate.us>"]
-# The repository LICENSE is proprietary (all rights reserved). Package
-# metadata is what crawlers and downstream consumers read, so every crate in
-# this workspace declares the same marker. New crates should either inherit
-# this via `license.workspace = true` or repeat the literal string.
-license = "LicenseRef-Proprietary-Permissive"
+# The repository LICENSE is proprietary: "All rights reserved", and
+# "Permission is not granted to use, copy, modify, publish, distribute,
+# sublicense, and/or sell". Package metadata is what crawlers, registries and
+# downstream consumers read, so every crate declares a marker that matches
+# that grant. The idstring says AllRightsReserved deliberately: an earlier
+# marker read "-Permissive", which contradicted the LICENSE it was standing
+# in for. New crates inherit via `license.workspace = true` or repeat the
+# literal string.
+license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [workspace.dependencies]
 # SIMD acceleration

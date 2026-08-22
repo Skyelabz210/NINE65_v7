@@ -3,7 +3,7 @@ name = "qmnf-security-analysis"
 version = "0.1.0"
 edition = "2021"
 description = "Cryptanalysis toolkit for QMNF/MANA FHE - breaking our own encryption"
-license = "LicenseRef-Proprietary-Permissive"
+license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [dependencies]
 # No external dependencies - we implement everything ourselves for verifiability
