@@ -1308,18 +1308,31 @@ fn g6_public_multiply_refuses_when_anchor_capacity_cannot_hold_the_tensor_produc
 
 /// Non-canonical residues at the deserialization boundary.
 ///
-/// HONEST SCOPE, and this is a finding in its own right: the serde entry
-/// points `DualRNSCiphertext::from_json_validated` /
-/// `from_bytes_validated` call `validate()` only. `validate()` checks SHAPE
-/// -- degree, limb counts, limb lengths, level bounds -- and has no prime
-/// list, so it cannot and does not reject a limb that is >= its lane's
-/// prime. A `u64::MAX` sitting in a ~30-bit lane therefore survives
-/// deserialization. The config-aware `RNSFHEContext::validate_dual_ciphertext`
-/// is the gate that catches it, and an untrusted-input boundary MUST call
-/// that one; the validated constructors alone are not sufficient.
+/// This pins a DOCUMENTED TWO-LAYER CONTRACT. It is not a defect report, and
+/// an earlier revision of this comment wrongly described it as one.
 ///
-/// Both halves are asserted below so the gap cannot close silently in either
-/// direction.
+/// Layer 1, type-level. `DualRNSCiphertext::from_json_validated` /
+/// `from_bytes_validated` document their scope precisely: reject "DoS attacks
+/// via excessive allocation" (the MAX_*_PAYLOAD pre-flight size check) and
+/// "inconsistent internal state" (`validate()`). They deliver exactly that.
+/// `validate()` checks SHAPE -- degree, limb counts, limb lengths, level
+/// bounds -- and takes no arguments, so it structurally has no prime list and
+/// never claimed residue canonicality.
+///
+/// Layer 2, context-level. `DualRNSPoly::validate_residues` states why the
+/// split is deliberate: `validate()`'s zero-argument signature is used by many
+/// callers that have no prime-list context, so canonicality is "a SEPARATE,
+/// additive check ... meant for boundaries that DO have the context".
+/// `RNSFHEContext::validate_dual_ciphertext` is that boundary check.
+///
+/// So the operational requirement is real and worth pinning -- an
+/// untrusted-input boundary MUST call the config-aware validator, because the
+/// validated constructors alone are not sufficient to establish canonicality
+/// and do not claim to be -- but the layering itself is by design.
+///
+/// Both halves are asserted below so neither layer's behaviour can drift:
+/// layer 1 must keep accepting a shape-valid ciphertext with a poisoned limb,
+/// and layer 2 must keep rejecting it.
 #[test]
 fn g6_non_canonical_residues_are_refused_by_the_config_aware_validator() {
     for h in harnesses() {
