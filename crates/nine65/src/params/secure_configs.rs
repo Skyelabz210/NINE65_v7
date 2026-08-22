@@ -72,17 +72,31 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
 // (`SymmetricBootstrap::bootstrap`) takes the secret key and is a different,
 // single-party path — none of the predicates below apply to it.
 //
-// MEASURED EVIDENCE (2026-08-22, `cargo test -p nine65 --lib --release
-// diag_measure_noise_growth -- --nocapture`, which encrypts under each config,
-// runs one public refresh, and checks the result against the decryption
-// oracle):
+// MEASURED EVIDENCE (`cargo test -p nine65 --lib --release
+// diag_measure_noise_growth -- --nocapture`, defined in `ops::bootstrap`'s test
+// module, seed 20260822). It encrypts `7` under each config, runs the three
+// refresh phases with THIS gate bypassed — otherwise the gate would be its own
+// evidence — decrypts, then squares the refreshed ciphertext through the public
+// eval-key multiply and decrypts again:
 //
-//   secure_128       3 lanes  bootstrap(fresh 7) -> decrypts 8   WRONG (+1)
-//                             bootstrap(7)^2     -> decrypts 51445, expected 49
-//   secure_128_deep  4 lanes  bootstrap(fresh 7) -> decrypts 7   correct
-//                             bootstrap(7)^2     -> decrypts 49  correct
-//   secure_192       5 lanes  bootstrap(fresh 7) -> decrypts 7   correct
-//                             bootstrap(7)^2     -> decrypts 49  correct
+//   secure_128       3 lanes  refresh(7)   -> 7      correct
+//                             refresh(7)^2 -> 34037, expected 49   WRONG
+//   secure_128_deep  4 lanes  refresh(7)   -> 7      correct
+//                             refresh(7)^2 -> 49     correct
+//   secure_192       5 lanes  refresh(7)   -> 7      correct
+//                             refresh(7)^2 -> 49     correct
+//
+// CORRECTION (2026-08-22, integration pass). Earlier revisions of this block,
+// of README.md, of CLAUDE.md and of the runtime refusal string below stated
+// that a `secure_128` refresh returns `encrypt(7)` as `8`. That is NOT what the
+// diagnostic measures, and the diagnostic it cited did not exist when the claim
+// was written. The refresh output itself decrypts correctly on all three
+// configs. What `secure_128` cannot do is survive the FIRST MULTIPLY after the
+// refresh — which is precisely the bar `post_refresh_required_bits` encodes, so
+// the corrected measurement supports the gate's derivation more directly than
+// the withdrawn one did. The failure is still silent: no error is raised
+// anywhere in the pipeline, which is why the gate is fail-closed at the refresh
+// rather than a warning at the multiply.
 //
 // The refusal predicate below is derived from the noise ledger, not from that
 // table and not from a name match — the table is what it is checked against.
@@ -100,9 +114,9 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
 // of `n` — `log2(n)` bits. `noise::budget::bootstrap_noise_bit_bound` instead
 // charges `sqrt(n)` (`root_n_bits`), the averaged/heuristic growth. That
 // difference is exactly what decides this question: under the averaged bound
-// secure_128 is predicted to clear the bar with 49 bits against a 45-bit
+// secure_128 is predicted to clear the bar with 49 bits against a 47-bit
 // requirement, and the decryption oracle above says it does not. Under the
-// worst-case bound it is 42 bits against 45 and is correctly refused, while
+// worst-case bound it is 42 bits against 47 and is correctly refused, while
 // every 4+-lane config still clears by 23 bits or more. The worst-case bound is
 // therefore what this gate uses; the averaged bound stays where it is, for the
 // budget ledger's own purposes.
@@ -161,6 +175,26 @@ pub fn exact_delta_bit_length(config: &FHEConfig) -> u32 {
 /// term, the error distribution contributes `eta`, and Phase 2's `n`-term
 /// accumulation contributes at most a factor of `n`. See the module-level
 /// derivation above for why `log2(n)` and not `sqrt(n)`.
+///
+/// # On `eta_bits = scalar_bit_length(eta)`, which looks tight and is not
+///
+/// `FHEConfig::initial_noise_budget_millibits` (`params::mod`) uses
+/// `eta_bits = self.eta + 1` — 4 bits for `eta = 3`, against the 2 bits here.
+/// The two are not both conventions for the same quantity, and this one is the
+/// one that matches the sampler.
+///
+/// `entropy::secure::try_secure_cbd` sums `eta` independent draws of
+/// `a - b ∈ {-1, 0, 1}`, so its support is exactly `[-eta, eta]` and
+/// `||e||_inf <= eta`. The bit width of that magnitude bound is
+/// `scalar_bit_length(eta)`: 2 bits for `eta = 3`, since `3 < 2^2`. The
+/// `eta + 1` form is the bound you would want if `eta` named a *bit width*
+/// (support `[-2^eta, 2^eta]`), which it does not here — it would assert
+/// `||e|| <= 15` for a sampler that cannot exceed 3. `noise::budget` uses the
+/// same `scalar_bit_length` form, so this gate and the ledger agree; the
+/// `eta + 1` site is the outlier, and it errs toward a smaller budget, which is
+/// the safe direction, so it is left alone rather than churned.
+///
+/// Pinned by `tests::error_width_bits_bound_the_sampler_that_produces_them`.
 pub fn public_refresh_noise_bits(config: &FHEConfig) -> u32 {
     let t_bits = scalar_bit_length(config.t);
     let eta_bits = scalar_bit_length(config.eta as u64).max(1);
@@ -172,6 +206,115 @@ pub fn public_refresh_noise_bits(config: &FHEConfig) -> u32 {
 /// Negative means the refresh output is already past the decryption boundary.
 pub fn public_refresh_headroom_bits(config: &FHEConfig) -> i64 {
     exact_delta_bit_length(config) as i64 - public_refresh_noise_bits(config) as i64
+}
+
+/// Number of boot primes `ClockworkBootstrap::new` allocates for a work config.
+///
+/// Mirrors that constructor exactly: `required = max(bootstrap_depth + 2,
+/// work_primes + 1)` with `bootstrap_depth = 2`, capped by the length of
+/// `keys::bootstrap::BOOTSTRAP_PRIMES`. Kept in step by
+/// `tests::ksk_bound_tracks_the_boot_chain_clockwork_actually_builds`.
+fn boot_prime_count(config: &FHEConfig) -> usize {
+    let required = 4_usize.max(config.primes.len() + 1);
+    required.min(crate::keys::bootstrap::BOOTSTRAP_PRIMES.len())
+}
+
+/// Gadget decomposition base used by `KeySwitchKey::generate`, in bits
+/// (`decomp_base = 1 << 10`).
+const KSK_DECOMP_BASE_BITS: u32 = 10;
+
+/// Worst-case noise, in bits, that the Phase 3a **key switch** of
+/// [`ClockworkBootstrap::bootstrap_with_ksk`] deposits, on top of the refresh
+/// circuit's own deposit.
+///
+/// `key_switch` CRT-reconstructs `c1` over the boot chain and decomposes it into
+/// `ell = ceil(q_boot_bits / 10)` base-`2^10` digits, then accumulates
+/// `sum_l digit_l * ksk_l` where each `ksk_l` carries a fresh CBD error
+/// (`||e_l|| <= eta`). Ring expansion gives
+/// `||v_ks|| <= ell * n * 2^10 * eta`, i.e.
+/// `ell_bits + n_bits + 10 + eta_bits`.
+///
+/// No credit is taken for the Phase 3b division by the extra boot prime.
+///
+/// [`ClockworkBootstrap::bootstrap_with_ksk`]: crate::ops::bootstrap::ClockworkBootstrap::bootstrap_with_ksk
+pub fn public_refresh_key_switch_noise_bits(config: &FHEConfig) -> u32 {
+    let boot_primes = &crate::keys::bootstrap::BOOTSTRAP_PRIMES[..boot_prime_count(config)];
+    let q_boot_bits = exact_product_bit_length(boot_primes);
+    let digits = q_boot_bits.div_ceil(KSK_DECOMP_BASE_BITS).max(1);
+
+    scalar_bit_length(digits as u64)
+        + config.n.trailing_zeros()
+        + KSK_DECOMP_BASE_BITS
+        + scalar_bit_length(config.eta as u64).max(1)
+}
+
+/// Worst-case noise, in bits, that one **non-circular (KSK)** public refresh
+/// deposits in its output.
+///
+/// The two deposits are additive, so `v_total <= v_phase2 + v_ks <=
+/// 2 * max(v_phase2, v_ks)`: one bit above the larger of the two.
+///
+/// # Why this is not simply [`public_refresh_noise_bits`]
+///
+/// `bootstrap_with_ksk` was previously gated by the identical predicate as the
+/// circular path, justified by "a chain that cannot carry the circular path
+/// cannot carry this one either". That is true and beside the point. A
+/// fail-closed gate's job is to reject chains that CAN carry the circular path
+/// but CANNOT carry the noisier KSK path, and a bound with no key-switch term
+/// cannot do that: a tuple sitting exactly at `headroom == required` would be
+/// admitted on the KSK entry point with zero margin for the key-switch deposit.
+/// The named configs all clear by 20+ bits so nothing misfires today, but
+/// `SecureConfig::custom` admits arbitrary user tuples, and a bound documented
+/// as worst-case must be a worst-case bound on the path it actually guards.
+pub fn public_refresh_ksk_noise_bits(config: &FHEConfig) -> u32 {
+    public_refresh_noise_bits(config).max(public_refresh_key_switch_noise_bits(config)) + 1
+}
+
+/// Bits of `Delta` headroom left after one non-circular (KSK) public refresh.
+pub fn public_refresh_ksk_headroom_bits(config: &FHEConfig) -> i64 {
+    exact_delta_bit_length(config) as i64 - public_refresh_ksk_noise_bits(config) as i64
+}
+
+/// Whether this config's chain can carry a **non-circular (KSK)** public
+/// refresh (`ClockworkBootstrap::bootstrap_with_ksk`) and still decrypt.
+///
+/// Strictly stronger than [`supports_public_refresh`]: the KSK bound is at
+/// least one bit larger than the circular bound by construction, so anything
+/// this admits the circular predicate admits too.
+pub fn supports_public_refresh_with_ksk(config: &FHEConfig) -> bool {
+    public_refresh_ksk_headroom_bits(config) >= post_refresh_required_bits(config)
+}
+
+/// Typed refusal for configs whose chain cannot carry a non-circular (KSK)
+/// public refresh. Counterpart of [`ensure_public_refresh_supported`], wired
+/// into `ClockworkBootstrap::bootstrap_with_ksk`.
+pub fn ensure_public_refresh_with_ksk_supported(config: &FHEConfig) -> Nine65Result<()> {
+    let headroom = public_refresh_ksk_headroom_bits(config);
+    let required = post_refresh_required_bits(config);
+    if headroom >= required {
+        return Ok(());
+    }
+    Err(Nine65Error::BootstrapConfigMismatch {
+        reason: format!(
+            "config '{}' cannot carry a non-circular (KSK) public refresh: its \
+             {}-prime chain leaves {} bits of Delta headroom after the refresh \
+             circuit's worst-case {}-bit noise deposit (refresh circuit {} bits, \
+             Phase 3a key switch {} bits; Delta is {} bits), but {} bits are \
+             required to fund one ct x ct multiply plus relinearization \
+             afterwards. The failure is silent — the refresh output still \
+             decrypts, and the first multiply after it does not. Use a config \
+             with a longer main chain (e.g. SecureConfig::secure_128_deep), or \
+             use the symmetric secret-key refresh path.",
+            config.name,
+            config.primes.len(),
+            headroom,
+            public_refresh_ksk_noise_bits(config),
+            public_refresh_noise_bits(config),
+            public_refresh_key_switch_noise_bits(config),
+            exact_delta_bit_length(config),
+            required,
+        ),
+    })
 }
 
 /// Bits a refreshed ciphertext must retain to fund the smallest unit of work a
@@ -204,9 +347,12 @@ pub fn ensure_public_refresh_supported(config: &FHEConfig) -> Nine65Result<()> {
             "config '{}' cannot carry a public refresh: its {}-prime chain leaves \
              {} bits of Delta headroom after the refresh circuit's worst-case \
              {}-bit noise deposit (Delta is {} bits), but {} bits are required to \
-             fund one ct x ct multiply plus relinearization afterwards. A public \
-             refresh on this chain returns a wrong-but-plausible plaintext \
-             (measured: encrypt(7) -> refresh -> decrypt yields 8). Use a config \
+             fund one ct x ct multiply plus relinearization afterwards. The \
+             refresh output still decrypts, but the first multiply after it \
+             returns a wrong-but-plausible plaintext with no error raised \
+             anywhere in the pipeline (measured: refresh(encrypt(7)) decrypts to \
+             7, then squaring it decrypts to 34037 instead of 49 — see \
+             ops::bootstrap::tests::diag_measure_noise_growth). Use a config \
              with a longer main chain (e.g. SecureConfig::secure_128_deep, which \
              carries the same 128-bit claim with 4 primes), or use the symmetric \
              secret-key refresh path.",
@@ -432,9 +578,11 @@ impl SecureConfig {
     /// an overclaim; both models clear 128.
     ///
     /// **No public refresh on this chain.** Three main primes leave 42 bits of
-    /// `Delta` headroom after a public refresh against the 45 bits one
-    /// subsequent multiply needs, and the refresh output is already wrong at the
-    /// decryption oracle (`encrypt(7) -> refresh -> decrypt` yields `8`).
+    /// `Delta` headroom after a public refresh against the 47 bits one
+    /// subsequent multiply needs, and the decryption oracle confirms it: the
+    /// refresh output still decrypts to `7`, but squaring it decrypts to
+    /// `34037` instead of `49`, silently
+    /// (`ops::bootstrap::tests::diag_measure_noise_growth`).
     /// [`ensure_public_refresh_supported`] refuses it, and
     /// `ClockworkBootstrap::bootstrap` returns that refusal. Use
     /// [`SecureConfig::secure_128_deep`] — same 128-bit claim, four primes — when
@@ -456,7 +604,7 @@ impl SecureConfig {
     /// 128-bit name. The longer chain costs screened margin relative to
     /// `secure_128` (log2(q) 119 vs 90 at the same N) and buys arithmetic
     /// headroom: this is the shortest chain that carries a **public** refresh
-    /// (71 bits of post-refresh `Delta` headroom against a 45-bit requirement),
+    /// (71 bits of post-refresh `Delta` headroom against a 47-bit requirement),
     /// verified against the decryption oracle.
     pub fn secure_128_deep() -> Self {
         Self::new_verified(
@@ -473,7 +621,7 @@ impl SecureConfig {
     ///
     /// Screened 2026-08-22: Core-SVP 320 bits, MATZOV 288 bits — the widest
     /// margin over its name of any config here. Carries a public refresh
-    /// (96 bits of post-refresh `Delta` headroom against a 48-bit requirement).
+    /// (96 bits of post-refresh `Delta` headroom against a 49-bit requirement).
     pub fn secure_192() -> Self {
         Self::new_verified(
             16384,
@@ -684,11 +832,15 @@ mod tests {
     /// The predicate must split the named configs exactly where the decryption
     /// oracle splits them.
     ///
-    /// Ground truth (`cargo test -p nine65 --lib --release
-    /// diag_measure_noise_growth -- --nocapture`, run 2026-08-22):
-    /// `secure_128` refreshes `encrypt(7)` into a ciphertext that decrypts to
-    /// `8`; `secure_128_deep` and `secure_192` decrypt to `7` and then square
-    /// correctly to `49`.
+    /// Ground truth is `ops::bootstrap::tests::diag_measure_noise_growth`
+    /// (`cargo test -p nine65 --lib --release diag_measure_noise_growth --
+    /// --nocapture`), which runs the refresh phases with this gate bypassed and
+    /// checks the result against the decryption oracle. Measured: all three
+    /// configs refresh `encrypt(7)` back to `7`, but only `secure_128_deep` and
+    /// `secure_192` then square correctly to `49` — `secure_128` squares to
+    /// `34037`. That diagnostic asserts the agreement in the other direction
+    /// (oracle vs predicate); this test pins the predicate's verdicts for all
+    /// five named configs, including the two the diagnostic does not run.
     ///
     /// This test pins the predicate against that split. It is deliberately
     /// sensitive to the noise ledger it reads (`NoiseBudget::mul_ct_cost`,
@@ -858,11 +1010,15 @@ mod tests {
             "secure_128 bootstrap() returned the wrong error: {circular}"
         );
 
+        // The KSK entry point refuses through its OWN, strictly stronger
+        // predicate — the one that carries a Phase 3a key-switch term. The
+        // distinct needle is what proves the two gates are not the same gate.
+        const KSK_REFUSAL: &str = "cannot carry a non-circular (KSK) public refresh";
         let non_circular = boot
             .bootstrap_with_ksk(&ct, &bsk, &ksk)
             .expect_err("secure_128 non-circular public refresh must be refused");
         assert!(
-            non_circular.to_string().contains(REFUSAL),
+            non_circular.to_string().contains(KSK_REFUSAL),
             "secure_128 bootstrap_with_ksk() returned the wrong error: {non_circular}"
         );
 
@@ -882,6 +1038,159 @@ mod tests {
                 !error.to_string().contains(REFUSAL),
                 "secure_128_deep must not be refused by the public-refresh gate, got: {error}"
             ),
+        }
+
+        let deep_ksk_outcome = boot_deep.bootstrap_with_ksk(&deep_ct, &deep_bsk, &empty_ksk());
+        match deep_ksk_outcome {
+            Ok(_) => panic!("an empty ciphertext cannot bootstrap successfully"),
+            Err(error) => assert!(
+                !error.to_string().contains(KSK_REFUSAL),
+                "secure_128_deep must not be refused by the KSK gate, got: {error}"
+            ),
+        }
+    }
+
+    /// The `eta_bits` term in the refresh bound must actually bound the
+    /// sampler that produces the error it stands for.
+    ///
+    /// `public_refresh_noise_bits` uses `scalar_bit_length(eta)` — 2 bits at
+    /// `eta = 3`. That is only sound if the CBD sampler's support really is
+    /// `[-eta, eta]`. This draws from the sampler and checks it, rather than
+    /// trusting the docstring: if anyone ever widens `try_secure_cbd` (to
+    /// `[-2^eta, 2^eta]`, say), this fails and takes the whole
+    /// public-refresh gate's error term with it, instead of the gate silently
+    /// becoming optimistic.
+    #[test]
+    fn error_width_bits_bound_the_sampler_that_produces_them() {
+        use crate::entropy::{FheRng, ShadowHarvester};
+
+        for eta in [2_usize, 3, 5] {
+            let mut rng = ShadowHarvester::with_seed(0xE7A_u64.wrapping_add(eta as u64));
+            let claimed_bits = scalar_bit_length(eta as u64).max(1);
+            let mut observed_max = 0_i64;
+
+            for _ in 0..20_000 {
+                let sample = rng.cbd(eta);
+                observed_max = observed_max.max(sample.abs());
+                assert!(
+                    sample.abs() <= eta as i64,
+                    "CBD({eta}) produced {sample}, outside its documented \
+                     support [-{eta}, {eta}]; public_refresh_noise_bits's \
+                     eta_bits term is derived from that support"
+                );
+            }
+
+            assert!(
+                (eta as i64) < (1_i64 << claimed_bits),
+                "eta={eta} does not fit in the {claimed_bits} bits the refresh \
+                 bound charges for it"
+            );
+            // The bound must be tight enough to be meaningful: the sampler
+            // should actually reach into the top bit it is charged for.
+            assert!(
+                observed_max > (1_i64 << claimed_bits) / 4,
+                "eta={eta}: observed max |e| = {observed_max} over 20k draws is \
+                 far below the {claimed_bits}-bit charge; either the sampler \
+                 changed or the charge is measuring the wrong thing"
+            );
+        }
+    }
+
+    /// The KSK gate must be strictly stronger than the circular gate, and its
+    /// key-switch term must describe the boot chain `ClockworkBootstrap`
+    /// actually builds.
+    ///
+    /// Two failure modes this closes:
+    ///
+    /// 1. The KSK path reusing the circular predicate, which has no term for
+    ///    the Phase 3a gadget key switch it performs. A bound documented as
+    ///    worst-case must bound the path it guards.
+    /// 2. `boot_prime_count` here drifting from
+    ///    `ClockworkBootstrap::new`'s allocation, silently changing `ell` and
+    ///    with it the key-switch term. Asserted against the real constructor,
+    ///    not against a copied constant.
+    #[test]
+    fn ksk_bound_tracks_the_boot_chain_clockwork_actually_builds() {
+        use crate::ops::bootstrap::ClockworkBootstrap;
+
+        let configs = [
+            SecureConfig::secure_128(),
+            SecureConfig::hardware_opt(),
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+        ];
+
+        println!(
+            "\n{:<18} {:>6} {:>10} {:>10} {:>10} {:>9} {:>9}",
+            "config", "lanes", "circ_noise", "ks_noise", "ksk_noise", "ksk_head", "required"
+        );
+
+        for secure in configs {
+            let config = secure.into_config();
+            let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
+
+            // 1. The boot chain modelled here is the boot chain built there.
+            assert_eq!(
+                boot_prime_count(&config),
+                boot.boot_config.primes.len(),
+                "{}: boot_prime_count drifted from ClockworkBootstrap::new",
+                config.name
+            );
+
+            let circular = public_refresh_noise_bits(&config);
+            let key_switch = public_refresh_key_switch_noise_bits(&config);
+            let ksk = public_refresh_ksk_noise_bits(&config);
+
+            println!(
+                "{:<18} {:>6} {:>10} {:>10} {:>10} {:>9} {:>9}",
+                config.name,
+                config.primes.len(),
+                circular,
+                key_switch,
+                ksk,
+                public_refresh_ksk_headroom_bits(&config),
+                post_refresh_required_bits(&config),
+            );
+
+            // 2. The KSK bound is STRICTLY larger than the circular bound, so
+            //    the KSK gate can refuse a tuple the circular gate admits.
+            assert!(
+                ksk > circular,
+                "{}: KSK bound ({ksk}) must exceed the circular bound ({circular}); \
+                 a gate that cannot be stricter than the one it wraps is not a \
+                 separate gate",
+                config.name
+            );
+
+            // 3. The key-switch term is real, not a rounding artefact.
+            assert!(
+                key_switch >= 20,
+                "{}: key-switch term {key_switch} is implausibly small; \
+                 ell*n*2^10*eta cannot be under 2^20 for any supported config",
+                config.name
+            );
+
+            // 4. Admissibility is monotone: KSK admitted implies circular
+            //    admitted. Never the reverse by accident.
+            assert!(
+                !supports_public_refresh_with_ksk(&config) || supports_public_refresh(&config),
+                "{}: KSK admitted a config the circular gate refuses",
+                config.name
+            );
+
+            // 5. The named configs must not have moved across the line. The
+            //    KSK term costs at most a couple of bits on these tuples, and
+            //    if it ever costs enough to flip one, that is a finding, not a
+            //    number to quietly update.
+            assert_eq!(
+                supports_public_refresh_with_ksk(&config),
+                supports_public_refresh(&config),
+                "{}: adding the key-switch term flipped this config's verdict. \
+                 That is a real change in what the library will refresh — \
+                 report it, do not relax this assertion.",
+                config.name
+            );
         }
     }
 
@@ -951,6 +1260,81 @@ mod tests {
                 config.config.name
             );
         }
+
+        // ------------------------------------------------------------------
+        // THE NUMBERS THEMSELVES, PINNED.
+        //
+        // The three invariants above are true BY CONSTRUCTION and cannot
+        // catch a parameter regression: `dual_estimate` computes
+        // `binding_bits` as the min, and MATZOV's model factor (900/1000) is
+        // strictly below Core-SVP's (1000/1000), so MATZOV can never exceed
+        // Core-SVP. A change that halved a screened level would have passed
+        // every one of them while this test reported ok -- and README.md and
+        // CLAUDE.md both cite THIS test as the source of their published
+        // security tables.
+        //
+        // So pin the published table. These are screening numbers from a
+        // deterministic integer heuristic, not lattice-security certificates
+        // (see the module header and item 5 of
+        // docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md) -- but they are what is
+        // published, and a published number that no test reproduces is a
+        // number nobody is holding.
+        //
+        // Measured 2026-08-22. (name, n, lanes, log2 q, Core-SVP, MATZOV)
+        let expected: &[(&str, usize, usize, u32, u32, u32)] = &[
+            ("secure_128", 8192, 3, 90, 259, 233),
+            ("secure_128_deep", 8192, 4, 119, 196, 176),
+            ("secure_192", 16384, 5, 146, 320, 288),
+            ("secure_256", 16384, 6, 175, 267, 240),
+            ("hardware_opt", 8192, 3, 90, 259, 233),
+        ];
+        assert_eq!(
+            configs.len(),
+            expected.len(),
+            "a named config was added or removed without updating the pinned              screening table"
+        );
+        for (config, &(name, n, lanes, log_q, core_svp, matzov)) in
+            configs.iter().zip(expected)
+        {
+            assert_eq!(config.config.name, name, "config order changed");
+            assert_eq!(config.config.n, n, "{name}: ring degree moved");
+            assert_eq!(config.config.primes.len(), lanes, "{name}: lane count moved");
+            assert_eq!(config.log_q(), log_q, "{name}: log2(q) moved");
+
+            let dual = config.screened_security_dual();
+            assert_eq!(
+                dual.core_svp_bits, core_svp,
+                "{name}: Core-SVP screened level moved from {core_svp} to {}.                  README.md and CLAUDE.md publish the old number. Re-measure and                  update all three together.",
+                dual.core_svp_bits
+            );
+            assert_eq!(
+                dual.matzov_bits, matzov,
+                "{name}: MATZOV screened level moved from {matzov} to {}.                  README.md and CLAUDE.md publish the old number. Re-measure and                  update all three together.",
+                dual.matzov_bits
+            );
+        }
+
+        // The disclosed shortfall, asserted rather than merely written down.
+        //
+        // `secure_256` is the one name its own screen does not fully support:
+        // it clears 256 under Core-SVP (the model the constructor gates on)
+        // and falls short under MATZOV. `named_production_configs_meet_their_
+        // internal_claims` checks the Core-SVP hybrid figure only, so without
+        // this the gap lived in prose alone.
+        let s256 = SecureConfig::secure_256();
+        let s256_dual = s256.screened_security_dual();
+        assert!(
+            s256_dual.core_svp_bits >= s256.claimed_security,
+            "secure_256 no longer clears its own name even under Core-SVP              ({} < {})",
+            s256_dual.core_svp_bits,
+            s256.claimed_security
+        );
+        assert!(
+            s256_dual.matzov_bits < s256.claimed_security,
+            "secure_256 now CLEARS 256 bits under MATZOV ({} >= {}). That is              good news and it invalidates the documented shortfall in the              module header, README.md and CLAUDE.md -- update them rather than              deleting this assertion.",
+            s256_dual.matzov_bits,
+            s256.claimed_security
+        );
     }
 
     #[test]

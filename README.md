@@ -19,19 +19,31 @@ The repository has moved beyond the historical “v7 Bootstrap Complete” snaps
 
 ## Verified Capability
 
-Measured against a decryption oracle. Everything outside this table is outside
-the claim surface.
+Correctness columns are checked against a decryption oracle. Everything outside
+this table is outside the claim surface.
 
-| Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth | public refresh |
+| Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth † | public refresh |
 |---|---|---|---|---|---|---|---|
 | `secure_128` | 8192 | 3 | 90 | 158.994 ms (4x5) | 44.371 ms | 2 | **refused in code** |
 | `secure_128_deep` | 8192 | 4 | 119 | 207.956 ms | 47.262 ms | 2 | pass |
 | `secure_192` | 16384 | 5 | 146 | 564.238 ms | 122.927 ms | 3 | pass |
-| `secure_256` | 16384 | 6 | 175 | 520.801 ms | 129.971 ms | 4 | admitted, unexercised |
+| `secure_256` | 16384 | 6 | 175 | 520.801 ms | 129.971 ms | 4 ‡ | pass ‡ |
+
+† Direct squaring **without** refresh — the last depth that still decrypts
+correctly. ‡ Timings throughout, and the `secure_256` row's depth, are from the
+correctness-gated benchmark run and were not re-measured on 2026-08-22;
+`secure_256`'s refresh is covered by the auto-refresh acceptance suite rather
+than exercised standalone. Per-number provenance is in
+`docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 
 `secure_128`'s three-lane chain leaves too little `Delta` headroom for a public
-refresh: the refresh returns a wrong-but-plausible plaintext (`encrypt(7)` comes
-back as `8`) with no error raised anywhere in the pipeline.
+refresh: 42 bits remain after the refresh's worst-case noise deposit against the
+47 bits one subsequent multiply needs. Measured by
+`ops::bootstrap::tests::diag_measure_noise_growth` — which runs the refresh
+phases with the gate bypassed, so the gate is not its own evidence — the refresh
+output itself still decrypts to `7`, but squaring it returns a
+wrong-but-plausible `34037` instead of `49`, with no error raised anywhere in
+the pipeline.
 `ClockworkBootstrap::bootstrap` and `bootstrap_with_ksk` therefore refuse that
 config with a typed `Nine65Error`. The predicate is arithmetic on the chain, not
 a name match — see `params::secure_configs::ensure_public_refresh_supported`.
@@ -61,11 +73,8 @@ lattice-security certificates — see "Parameter and Claim Discipline" below.
   `docs/LINEAGE.md`'s deprecation list and are not claimed here.
 - **Nonlinear public FHE beyond the direct boundary is not established.** What is
   measured is direct multiply/square chains, not general circuits.
-- **`secure_256` public bootstrap is not exercised end to end.** Its chain is
-  admitted by the refresh predicate; that is a statement about the chain, not a
-  verified roundtrip.
 - **No external lattice-estimator attestation** exists for the shipped
-  `n = 8192 / 16384` tuples.
+  `n = 8192 / 16384` tuples. The numbers above are in-tree screening results.
 - **No public constant-time claim.** Blocked on the CT-NTT/cache gates in
   `docs/CT_NTT_CACHE_ROADMAP.md`.
 
@@ -197,9 +206,12 @@ println!("result mod t = {result}");
 
 `AutoBootstrapEvaluator::mul_auto` drives the same refresh automatically from the
 tracked noise budget. It inherits the admissibility gate above: on a refused
-profile the first triggered refresh returns an error instead of continuing. Long
-auto-refreshed chains are not part of the verified capability set — the measured
-public direct-square depths are 2–4.
+profile the first triggered refresh returns an error instead of continuing.
+
+The depths in the capability table are **direct-square depths without refresh**.
+How far an auto-refreshed chain extends past them is a separate question, tracked
+by the acceptance suite in `ops::auto_bootstrap`, and no unbounded-depth claim
+follows from it — see `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 
 A software counter reset is not a bootstrap. The auto evaluator must perform a live ciphertext transition and restore usable post-refresh budget.
 

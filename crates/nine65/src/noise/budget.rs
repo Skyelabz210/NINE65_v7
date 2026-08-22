@@ -49,6 +49,23 @@
 //!   from `effective_start_bits(v0) = max(v0_bits, t_bits) + 1`: the additive
 //!   term is accounted for exactly, once, at the start of the chain, rather
 //!   than being assumed away.
+//! * **Plaintext multiply, and when the `n` disappears.** Multiplying by an
+//!   arbitrary plaintext polynomial with coefficients bounded by `b` costs the
+//!   full ring expansion, `||v_out|| <= n * b * ||v_in||` (`mul_plain_cost`).
+//!   Multiplying by a **constant** (a degree-0 polynomial `c`) does not: the
+//!   negacyclic convolution collapses to `(a*b)_k = a_k * c`, so
+//!   `||v_out|| = c * ||v_in||` exactly, with no summation over `n` terms
+//!   (`mul_plain_scalar_cost`). Every in-tree plaintext multiply is the
+//!   constant case — `RNSFHEContext::mul_plain_dual` builds its multiplier with
+//!   `scalar_to_constant_dual_poly`, and `BFVEvaluator::mul_plain` is a
+//!   coefficient-wise `scalar_mul`. Charging them the `n` factor is not
+//!   conservatism, it is a term for an expansion that provably does not occur,
+//!   and it costs `log2(n)` = 13 bits per scalar multiply at n=8192.
+//!   Confirmed on hardware by
+//!   `tests::scalar_multiply_grows_noise_by_the_scalar_not_by_n`, which reads
+//!   the growth factor off successive decryption margins: measured exactly
+//!   2, 3, 4 and 16 for those scalars, against `n * c` = 16384..131072 if ring
+//!   expansion were occurring.
 //! * **Relinearization.** Gadget decomposition of `c2` in base `2^16` into
 //!   `ell = ceil(log2(Q)/16)` digits against a public-key-style relin key:
 //!   `v_relin <= ell * n * 2^16 * (4*n*eta)`, i.e.
@@ -446,14 +463,49 @@ impl NoiseBudget {
         100
     }
 
-    /// Multiply by a plaintext whose coefficients are bounded by `scalar`:
-    /// `||v_out|| <= n * scalar * ||v_in||` by ring expansion.
+    /// Multiply by an arbitrary plaintext POLYNOMIAL whose coefficients are
+    /// bounded by `scalar`: `||v_out|| <= n * scalar * ||v_in||` by ring
+    /// expansion.
     ///
     /// A caller multiplying by an arbitrary plaintext polynomial must pass the
     /// plaintext modulus `t` as the bound.
+    ///
+    /// **Do not use this for a scalar multiply.** The `n` factor is ring
+    /// expansion, and it does not occur when the multiplier is a constant —
+    /// see [`Self::mul_plain_scalar_cost`].
     pub fn mul_plain_cost(scalar: u64, config: &FHEConfig) -> i64 {
         let scalar_bits = scalar_bit_length(scalar).max(1);
         (ring_degree_bits(config) + scalar_bits) * 1000
+    }
+
+    /// Multiply by a plaintext SCALAR, i.e. by a degree-0 polynomial.
+    ///
+    /// `||v_out|| = scalar * ||v_in||` — exactly, with no `n`.
+    ///
+    /// # Derivation, and why the `n` in [`Self::mul_plain_cost`] is wrong here
+    ///
+    /// Ring expansion `||a*b|| <= n * ||a|| * ||b||` is a bound on the
+    /// negacyclic convolution, and it is tight only when `b` has support on
+    /// many coefficients: each output coefficient sums up to `n` products.
+    /// When `b` is a constant `c` (`b_0 = c`, `b_i = 0` for `i > 0`), the
+    /// convolution collapses — `(a*b)_k = a_k * c` for every `k` — so
+    /// `||a*b||_inf = |c| * ||a||_inf` with no summation and no factor of `n`.
+    /// The noise polynomial transforms the same way: `e |-> c*e`.
+    ///
+    /// This is not a looser bound chosen for convenience; it is the exact
+    /// bound for the operation, and the `n_bits` term is a term for an
+    /// expansion that provably does not happen.
+    ///
+    /// `RNSFHEContext::mul_plain_dual` is exactly this case: it builds its
+    /// multiplier with `scalar_to_constant_dual_poly`, which sets `coeffs[0]`
+    /// and leaves every other coefficient zero. Charging it
+    /// `mul_plain_cost` over-charged it by `log2(n)` — 13 bits at n=8192 —
+    /// which is enough to make the ledger refuse chains that are comfortably
+    /// inside the true bound.
+    ///
+    /// Pinned by `tests::scalar_multiply_grows_noise_by_the_scalar_not_by_n`.
+    pub fn mul_plain_scalar_cost(scalar: u64) -> i64 {
+        scalar_bit_length(scalar).max(1) * 1000
     }
 
     /// Multiplicative noise growth of one ct x ct multiply: `G = 8*n^2*t`.
@@ -483,12 +535,47 @@ impl NoiseBudget {
     /// **charged** for the drop residue -- `j in [0, t)` per drop on the exact
     /// align-and-drop path, `<= (n+1)/2` on the rounding path -- so the drop is
     /// accounted rather than assumed free. Net credit: `t_bits - 1` bits.
+    ///
+    /// # This credit belongs to a LEVEL DROP, and to nothing else
+    ///
+    /// "Rescale" is overloaded in BFV and the two meanings must not be mixed:
+    ///
+    /// * The **`Delta`-rescale inside a ct x ct multiply** divides the tensor
+    ///   product by `Delta = M_level / t`. It moves no basis and consumes no
+    ///   level. It is *already inside* [`Self::mul_ct_cost`]: the Fan-Vercauteren
+    ///   Lemma-2 bound this module derives is the bound **after** that division
+    ///   (see the module header, "ct x ct multiply", where `F` is named as the
+    ///   deposit left *by* the `Delta`-rescaling). Charging `mul_ct_cost` and
+    ///   then taking this credit counts the same division twice, in the
+    ///   optimistic direction, which is a correctness bug rather than tuning.
+    /// * The **prime drop** (`mod_switch_ct_down` / `mod_switch_ct_to_level` /
+    ///   `exact_modulus_switch_drop_ct`) removes an RNS lane, so `level`
+    ///   strictly decreases. That, and only that, earns this credit.
+    ///
+    /// `RNSFHEContext::mul_dual_public` and `mul_dual_symmetric` both leave
+    /// `level` where they found it (see the "RETIRED (Step 5)" note in
+    /// `ops::rns_fhe`), so **neither of their tracked wrappers may take this
+    /// credit**. Pinned by
+    /// `tests::prime_drop_credit_is_only_earned_by_an_actual_level_drop`.
     pub fn rescale_cost(config: &FHEConfig) -> i64 {
         -((plaintext_bits(config) - 1).max(0) * 1000)
     }
 
+    /// Cost of one multiply cycle **that also drops a level**.
+    ///
+    /// Only correct for a caller that follows the multiply with a real prime
+    /// drop. A caller whose multiply leaves `level` unchanged -- which is every
+    /// caller of `mul_dual_public` / `mul_dual_symmetric` today -- must charge
+    /// `mul_ct_cost + relin_cost` and take no drop credit. See
+    /// [`Self::rescale_cost`].
     pub fn multiplication_cycle_cost(config: &FHEConfig) -> i64 {
         Self::mul_ct_cost(config) + Self::relin_cost(config) + Self::rescale_cost(config)
+    }
+
+    /// Cost of one multiply cycle that does **not** drop a level: the charge
+    /// every current ct x ct path in the workspace should use.
+    pub fn multiplication_cycle_cost_no_drop(config: &FHEConfig) -> i64 {
+        Self::mul_ct_cost(config) + Self::relin_cost(config)
     }
 
     pub fn remaining_millibits(&self) -> i64 {
@@ -737,6 +824,110 @@ mod tests {
                 config.name,
                 relin,
                 smallest_post_multiply,
+            );
+        }
+    }
+
+    #[test]
+    fn scalar_multiply_grows_noise_by_the_scalar_not_by_n() {
+        // The claim `mul_plain_scalar_cost` rests on: multiplying a ciphertext
+        // by a CONSTANT polynomial `c` multiplies its noise by exactly `c`,
+        // with no ring-expansion factor of `n`. `mul_plain_cost` charges
+        // `n_bits + scalar_bits`; `mul_plain_scalar_cost` charges `scalar_bits`.
+        //
+        // Measured, not taken from the algebra. `decrypt_dual_with_diagnostics`
+        // returns a margin of the form `C - |e|` for a fixed `C`, so a single
+        // reading cannot separate `|e|` from `C`. Scaling TWICE does:
+        //
+        //   margin0 = C - e          drop1 = margin0 - margin1 = (c - 1) * e
+        //   margin1 = C - c*e        drop2 = margin1 - margin2 = c * (c - 1) * e
+        //   margin2 = C - c^2*e      => drop2 / drop1 = c, exactly, C cancels.
+        //
+        // So the ratio of successive margin drops IS the growth factor, read
+        // straight off the hardware. If ring expansion were occurring, that
+        // ratio would be `n * c` — 8192 times larger at secure_128.
+        use crate::entropy::ShadowHarvester;
+        use crate::ops::rns_fhe::RNSFHEContext;
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::try_new(&config).expect("context");
+        let mut rng = ShadowHarvester::with_seed(0x5CA1A2);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+
+        let n_bits = ring_degree_bits(&config);
+        assert_eq!(n_bits, 13, "secure_128 is n=8192");
+
+        // Scalars bounded so the MESSAGE stays far inside `t` after two
+        // multiplies (`scalar^2 << t = 65537`). This is not cherry-picking: at
+        // `scalar = 255` the message reaches 65025, i.e. 99.2% of `t`, and the
+        // margin the decryptor reports stops isolating noise from the distance
+        // to the plaintext boundary — measured drop2/drop1 = 3.4e22 there, on a
+        // ciphertext that still decrypts correctly to 65025. That reading is an
+        // artefact of the metric, not noise growth, and a test of noise growth
+        // must stay in the range where the metric measures noise growth.
+        for scalar in [2u64, 3, 4, 16] {
+            let scalar_bits = scalar_bit_length(scalar);
+
+            let ct0 = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
+            let (v0, m0) = ctx.decrypt_dual_with_diagnostics(&ct0, &keys.secret_key);
+            assert_eq!(v0, 1);
+
+            let ct1 = ctx.mul_plain_dual(&ct0, scalar);
+            let (v1, m1) = ctx.decrypt_dual_with_diagnostics(&ct1, &keys.secret_key);
+            assert_eq!(v1, scalar, "first scalar multiply must be plaintext-exact");
+
+            let ct2 = ctx.mul_plain_dual(&ct1, scalar);
+            let (v2, m2) = ctx.decrypt_dual_with_diagnostics(&ct2, &keys.secret_key);
+            assert_eq!(
+                v2,
+                (scalar * scalar) % config.t,
+                "second scalar multiply must be plaintext-exact"
+            );
+
+            let drop1 = m0 - m1;
+            let drop2 = m1 - m2;
+
+            println!(
+                "scalar={scalar} ({scalar_bits} bits): drop1={drop1} drop2={drop2} \
+                 ratio={} (expected {scalar}); charges: scalar={} mb, polynomial={} mb",
+                if drop1 != 0 { drop2 / drop1 } else { 0 },
+                NoiseBudget::mul_plain_scalar_cost(scalar),
+                NoiseBudget::mul_plain_cost(scalar, &config),
+            );
+
+            assert!(
+                drop1 > 0 && drop2 > 0,
+                "scalar={scalar}: noise did not grow at all (drop1={drop1}, \
+                 drop2={drop2}) -- the measurement is not seeing the operation"
+            );
+
+            // THE MEASUREMENT. Growth factor is exactly `scalar`.
+            assert_eq!(
+                drop2,
+                drop1 * scalar as i128,
+                "scalar={scalar}: successive noise growth ratio is {}, not {scalar}. \
+                 Noise is NOT growing by the scalar alone, so the derivation \
+                 behind mul_plain_scalar_cost is wrong -- restore the \
+                 ring-expansion term rather than adjusting this assertion.",
+                drop2 as f64 / drop1 as f64,
+            );
+
+            // And it is emphatically not `n * scalar`.
+            assert!(
+                drop2 < drop1 * (config.n as i128),
+                "scalar={scalar}: growth is at ring-expansion scale; the `n` \
+                 factor in mul_plain_cost would be the right charge after all"
+            );
+
+            // The two charges differ by exactly the ring-expansion term, so
+            // the relationship between them is pinned rather than incidental.
+            assert_eq!(
+                NoiseBudget::mul_plain_cost(scalar, &config)
+                    - NoiseBudget::mul_plain_scalar_cost(scalar),
+                n_bits * 1000,
+                "the polynomial charge must exceed the scalar charge by exactly \
+                 log2(n) -- that difference IS the ring-expansion factor"
             );
         }
     }

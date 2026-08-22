@@ -1,7 +1,7 @@
 # Constant-Time Verification — Measured Results and CI Posture
 
 **Measurement date:** 2026-08-22
-**Status:** Measured. Four open findings, five paths gated as blocking CI.
+**Status:** Measured. Five open findings (F-5 added on the integration pass), five paths gated as blocking CI.
 **Harness:** `crates/nine65/src/security/ct_verification.rs`
 **Workflow:** `.github/workflows/ct_verification.yml`
 
@@ -85,10 +85,30 @@ run 5: Montgomery reduce: median=29.00ns, MAD=0.00, Robust CV=0.0000%   PASS
 run 6: Montgomery reduce: median=28.00ns, MAD=1.00, Robust CV=5.2950%   FAIL
 ```
 
-The harness now derives `CV_RESOLVABLE_MEDIAN_NS = 2 · 1.4826 / 0.05 ≈ 59.3 ns`
-and asserts the CV only above it, reporting `NOT ASSERTED` with the arithmetic
-below it. Every operation that falls below the line is covered instead by a
-batched dudect test in family (b) — coverage moved, it was not dropped.
+The harness derives `CV_RESOLVABLE_MEDIAN_NS = 2 · 1.4826 / 0.05 ≈ 59.3 ns` and
+applies the 5% CV band only above it. Every operation that falls below the line
+is additionally covered by a batched dudect test in family (b) — coverage moved,
+it was not dropped.
+
+**Correction (integration pass).** The first version of that repair returned
+`None` unconditionally below the line, which left `test_ct_montgomery_reduce`,
+`test_ct_montgomery_mul` and `test_ct_barrett_reduce` reporting `ok` while
+asserting **nothing at all** about the operations they name, with nothing in the
+test name or the CI job listing saying so. A gate that cannot fail is not a
+gate.
+
+Quantisation bounds what those tests can check; it does not reduce it to
+nothing. Below the resolution floor the timer can still distinguish "MAD within
+one tick" from "MAD of several ticks", so `cv_failure` now asserts
+`MAD ≤ MAX_UNRESOLVABLE_MAD_TICKS = 1` there and reports which rule it applied.
+Both arms of the `0.0000% / 5.2950%` flip above are MAD ≤ 1, so both now pass
+**deterministically** — the instability that motivated not gating these numbers
+is fixed at the assertion rather than routed around in CI.
+
+Re-measured after the change: two full runs of all eight family-(a) tests,
+16 / 16 exit 0, including a run that reproduced the 5.2950% value verbatim. On
+that basis the `diagnostics` job now gates on the assertions instead of
+downgrading a nonzero cargo exit to `::warning::` (see §3(a) and the job table).
 
 **Defect 3 — the cross-class t-tests were block-measured.** All samples of class
 A were collected, then all of class B, so drift between the blocks is
@@ -222,11 +242,32 @@ leaks, the sign does not.
 | contrast | control t | signal t | medians (per 4096-call batch) |
 |---|---|---|---|
 | 20-bit vs near-cap operands | 0.19 – 2.54 | **4.46 (600 rounds) → 6.80 / 11.42 / 10.52 / 7.84 (2000 rounds)** | 2.4132 ms vs 2.4023 ms |
+| *re-measured, integration pass* | 0.07 – 1.17 | 4.35 / 13.63 / 10.20 (2000 rounds) → **18.46 / 20.53 / 29.27 (8000 rounds)** | ~13–15 µs apart |
 
-Effect size ≈ 2.6–3.9 ns on a ~588 ns call (0.45–0.67%), with near-cap operands
-consistently **faster** in 4 of 5 runs. `|t|` grows with round count, which is
-the signature of a real effect rather than noise — noise leaves `|t|` bounded
-while a real difference grows as √n.
+Effect size ≈ 2.6–3.9 ns on a ~588 ns call (0.45–0.67%). `|t|` grows with round
+count, which is the signature of a real effect rather than noise — noise leaves
+`|t|` bounded while a real difference grows as √n.
+
+**Two corrections from the integration-pass re-measurement.**
+
+1. **The VERDICT was not stable at 2000 rounds.** One of three runs read
+   `t_signal = 4.35` and reported `CONSTANT-TIME`. That matters because this
+   test is the subject of the scheduled *inverted* tripwire, which hard-fails on
+   a `CONSTANT-TIME` verdict: roughly a third of scheduled runs would have
+   raised "the documented leak has been fixed" against an unchanged tree. The
+   test's own `#[ignore]` reason said "not a flake", which was not established
+   at that round count.
+
+   Fixed by raising the round count for this test alone to
+   `DUDECT_EXTRACT_K_ROUNDS = 8000`, where 6 of 6 runs across both counts show
+   the effect and the 8000-round runs clear the threshold by 3.7× or better with
+   controls two orders of magnitude below it. More power, not a wider threshold.
+
+2. **The SIGN is not stable.** The earlier text said near-cap operands were
+   "consistently **faster** in 4 of 5 runs". Re-measured, near-cap was slower in
+   some runs and faster in others (the per-run median baseline itself moved by
+   ~300 µs as the machine's frequency shifted). Only the *magnitude* of the
+   dependence is established; its direction is not.
 
 This contradicts the docstring on `extract_k`, which claims
 `operations = 6 (fixed)`, `branches = "none"`. The claim of branch-freedom is
@@ -247,14 +288,38 @@ on numbers that were the cost of `Instant::now()`.
 
 ### 4.3 Measured, under threshold, but not blockable
 
-| Operation | contrast | control t | signal t (5 runs) | note |
+| Operation | contrast | control t | signal t | note |
 |---|---|---|---|---|
-| `KElimination::exact_divide` | divisor 2 vs 3, identical operands | 0.28 – 3.03 | 0.76 / 2.54 / 3.24 / **4.32 / 4.89** | never crossed 5, but came within 0.11 |
+| `KElimination::exact_divide` | divisor 2 vs 3, identical operands | 0.28 – 3.03 | 0.76 / 2.54 / 3.24 / **4.32 / 4.89** (2000 rounds) | never crossed 5, but came within 0.11 |
+| *re-measured, 8000 rounds* | 0.46 – 1.27 | **8.18 / 6.73 / 4.94** | crosses in 2 of 3 |
+| *re-measured, 32000 rounds* | 1.14, then **9.20 / 11.19** | 11.42, then 20.22 / 20.26 | control blew past 5 → `INCONCLUSIVE` ×2 |
 
-Promotion candidate for the blocking job once measured on a quiesced runner. It
-is not wired as blocking here because a gate that spends 20% of its budget on
-headroom will eventually go red on a bad afternoon and be disabled by whoever is
-on call — which is how the previous thresholds got widened to t < 100.
+**Re-measured on the integration pass, and it is no longer "under threshold".**
+`|t|` grows with round count (mean ≈ 3 at 2000, ≈ 6.6 at 8000, 11.4 at the one
+clean 32000-round run) while the control stays near zero, and the sign is stable
+across every clean run: **divisor 3 is consistently slower than divisor 2** by
+~1–3 µs per 4096-call batch. That is the same signature as F-3. This is a real
+divisor-dependent timing dependence — promoted from "under threshold" to an
+**open finding** (F-5).
+
+It is also **not gateable in either direction today**:
+
+* not in `dudect-blocking`, because it is not constant-time and a passing gate
+  would be a coin flip;
+* not in the inverted `open-findings` tripwire, because that needs a *stable*
+  `TIMING DEPENDENCE MEASURED` verdict and this reads dependence in only 2 of 3
+  runs at 8000 rounds;
+* not above 8000 rounds on the reference machine at all, because at 32000 the
+  **control arm itself** exceeds the threshold (9.20, 11.19) and the harness
+  correctly reports `INCONCLUSIVE` — the measurement stops being about the code.
+
+So `DUDECT_DIVISOR_CLASS_ROUNDS = 8000` (the most power this machine can buy
+while the control stays clean), and the test is collected in a clearly-labelled
+**harness-gated, not verdict-gated** step of the `open-findings` job: the job
+asserts the harness ran and produced a verdict, surfaces the verdict as a
+warning, and archives it. That is a smaller gate than the others in this file
+and it is named as such rather than dressed up. Settling it needs a quiesced,
+frequency-pinned runner.
 
 ### 4.4 Robust-CV measurements, for the record
 
@@ -267,9 +332,9 @@ With `black_box` in place. "Asserted" reflects the 59.3 ns resolvability rule.
 | `montgomery_pow` | 437 ns | 1 – 2 | 0.34 – 0.68% | yes — passes |
 | `ct_vs_vartime` (CT arm) | 688 – 808 ns | — | 3.49 – 3.68% | yes — passes |
 | `input_class_analysis` | 695 – 777 ns | — | 2.99 – 3.63% | yes (median spread) — passes |
-| `montgomery_reduce` | 28 – 29 ns | 0 – 1 | 0.00% / 5.30% | no — below 59.3 ns |
-| `montgomery_mul` | 32 – 33 ns | 0 – 1 | 0.00% / 4.49% | no — below 59.3 ns |
-| `barrett_reduce` | 32 ns | 0 – 1 | 0.00% / 4.63% | no — below 59.3 ns |
+| `montgomery_reduce` | 28 – 29 ns | 0 – 1 | 0.00% / 5.30% | CV no (below 59.3 ns) — **MAD ≤ 1 tick asserted instead** |
+| `montgomery_mul` | 32 – 33 ns | 0 – 1 | 0.00% / 4.49% | CV no (below 59.3 ns) — **MAD ≤ 1 tick asserted instead** |
+| `barrett_reduce` | 32 ns | 0 – 1 | 0.00% / 4.63% | CV no (below 59.3 ns) — **MAD ≤ 1 tick asserted instead** |
 
 `exact_divide`'s CV blowout to 14.88% happened when a concurrent build landed
 mid-test and its median shifted 832 → 1072 ns inside a single run. In that same
@@ -534,7 +599,7 @@ ciphertext path today, and both need this contrast before either is put on one.
 | `verify` | push / PR | yes | source-pattern gates, NTT + Montgomery correctness, harness inventory (18 tests) | n/a |
 | `dudect-blocking` | push / PR | **yes** | the 5 operations of §4.1 | **t < 5, undiluted** |
 | `open-findings` | weekly cron + dispatch | yes, inverted | the 4 findings of §4.2 | verdict must still be TIMING DEPENDENCE MEASURED |
-| `diagnostics` | weekly cron + dispatch | gated on producing measurements | the 8 robust-CV tests + `exact_divide` divisor classes | none — see §3(a) |
+| `diagnostics` | weekly cron + dispatch | gated on producing measurements **and on their assertions passing** | the 8 robust-CV tests | the `::warning::` downgrade of a nonzero cargo exit is gone; `exact_divide` divisor classes moved out to `open-findings` |
 
 Three points about this arrangement:
 

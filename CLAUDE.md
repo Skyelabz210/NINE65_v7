@@ -92,9 +92,12 @@ VESTIGIAL/RETIRED, so "verified exact" cannot be sourced to the running suite.
 **Admissibility gate.** All three refuse configs whose main chain cannot carry a
 public refresh, via `params::secure_configs::ensure_public_refresh_supported`
 (typed `Nine65Error::BootstrapConfigMismatch`, never a panic). `secure_128` and
-`hardware_opt` (3 lanes) are refused: measured 2026-08-22, a public refresh there
-turns `encrypt(7)` into a ciphertext that decrypts to `8`, with no error raised
-anywhere in the pipeline. `secure_128_deep`, `secure_192` and `secure_256`
+`hardware_opt` (3 lanes) are refused: 42 bits of post-refresh `Delta` headroom
+against the 47 one multiply needs. Measured by
+`ops::bootstrap::tests::diag_measure_noise_growth`, the refresh output still
+decrypts correctly, but the first multiply after it returns a
+wrong-but-plausible plaintext (`refresh(7)` squares to `34037`, not `49`) with
+no error raised anywhere in the pipeline. `secure_128_deep`, `secure_192` and `secure_256`
 (4/5/6 lanes) are admitted. The symmetric secret-key refresh
 (`SymmetricBootstrap::bootstrap`) is a separate path and is not gated by this.
 

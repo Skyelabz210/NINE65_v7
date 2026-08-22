@@ -480,7 +480,19 @@ fn fingerprint_ct(ct: &DualRNSCiphertext) -> u64 {
 
 #[test]
 fn g1_winding_is_derivable_from_residues_and_is_never_carried_as_state() {
+    // Coverage counters for the library cross-check below. That check sits
+    // behind an `if let Some(..)` that is EXPECTED to skip at secure_192 /
+    // secure_256 (M is 147 / 177 bits, and `extract_k_rns` takes a u128) and
+    // expected to RUN at secure_128 / secure_128_deep. Nothing used to pin
+    // which, so a level-accounting regression that made `try_to_int_level`
+    // return `None` everywhere would silently delete the strongest half of
+    // G1 while this test still reported ok. Counted per config, asserted at
+    // the end.
+    let mut cross_checked: std::collections::BTreeMap<&str, usize> =
+        std::collections::BTreeMap::new();
+
     for h in harnesses() {
+        cross_checked.entry(h.name).or_insert(0);
         for mode in MODES {
             let a = encrypt_seeded(h, 5, 0x6100_0001);
             let b = encrypt_seeded(h, 7, 0x6100_0002);
@@ -533,6 +545,7 @@ fn g1_winding_is_derivable_from_residues_and_is_never_carried_as_state() {
                     // independent derivation still runs and G4's phase lock
                     // is what falsifies it.
                     if let Some(v_main_u128) = h.ctx.rns.try_to_int_level(&m_res, level) {
+                        *cross_checked.entry(h.name).or_insert(0) += 1;
                         assert_eq!(
                             Some(v_main_u128),
                             w.v_main.to_u128(),
@@ -556,6 +569,29 @@ fn g1_winding_is_derivable_from_residues_and_is_never_carried_as_state() {
                 }
             }
         }
+    }
+
+    // The cross-check must have actually run where it is supposed to run.
+    for (name, count) in &cross_checked {
+        let expected_to_run = matches!(*name, "secure_128" | "secure_128_deep");
+        if expected_to_run {
+            assert!(
+                *count > 0,
+                "{name}: the independent-vs-library winding cross-check never \
+                 ran. `try_to_int_level` returned None on a config whose modulus \
+                 fits in u128, so the strongest half of G1 silently evaporated \
+                 rather than failing. Investigate level accounting before \
+                 touching this assertion."
+            );
+        } else {
+            assert_eq!(
+                *count, 0,
+                "{name}: the cross-check ran on a config whose modulus does not \
+                 fit in u128 ({count} times). Either the modulus shrank or \
+                 `try_to_int_level` is now returning a truncated value."
+            );
+        }
+        println!("g1 cross-check ran {count} times on {name}");
     }
 }
 
@@ -804,12 +840,18 @@ fn g3_distinct_plaintexts_stay_distinct_through_a_multiply_in_both_modes() {
     for h in harnesses() {
         for mode in MODES {
             let mut seen = HashSet::new();
-            // Distinct products, so distinct result states are required
-            // rather than merely likely.
-            for (i, (x, y)) in [(2u64, 3u64), (5, 7), (11, 13)].into_iter().enumerate()
-            {
-                let cx = encrypt_seeded(h, x, 0x6320_0000 + i as u64 * 2);
-                let cy = encrypt_seeded(h, y, 0x6320_0001 + i as u64 * 2);
+            // FIXED randomness across all three pairs, so only the PLAINTEXTS
+            // vary. That is what makes distinct result states "required rather
+            // than merely likely": with a fresh seed per pair the outputs would
+            // be overwhelmingly determined by the randomness alone, and the
+            // multiply and the plaintexts would contribute nothing this test
+            // could isolate. Holding the seeds fixed is what turns this into a
+            // statement about the operation.
+            const SEED_X: u64 = 0x6320_0000;
+            const SEED_Y: u64 = 0x6320_0001;
+            for (x, y) in [(2u64, 3u64), (5, 7), (11, 13)] {
+                let cx = encrypt_seeded(h, x, SEED_X);
+                let cy = encrypt_seeded(h, y, SEED_Y);
                 let prod = mul_in_mode(h, mode, &cx, &cy);
                 assert!(
                     seen.insert(fingerprint_ct(&prod)),
@@ -1505,6 +1547,28 @@ fn g7_redacted_debug_does_not_print_residues() {
     }
 }
 
+/// Largest number of coefficient positions at which a public artifact may
+/// coincide with the secret key before this gate fails.
+///
+/// The secret is ternary and every public artifact lane is ~uniform mod a
+/// ~30-bit prime, so the chance-level coincidence count is `n / p` — about
+/// `8192 / 2^30`, i.e. indistinguishable from zero. An earlier form of this
+/// gate used `matches * 100 < n`, tolerating up to 81 of 8192 coefficients:
+/// roughly 10^7 times chance, so a public artifact reproducing eighty secret
+/// coefficients passed cleanly while the failure message said "far above
+/// chance".
+///
+/// This bound is still enormously generous against the null — 8 coincidences
+/// is ~10^6 times chance — but it is now a bound that a structural leak could
+/// actually trip. It is deliberately not zero: `assert_ne!` on the whole lane
+/// already covers exact reproduction, and a handful of positional collisions
+/// across many lanes and configs is the kind of thing a nonzero null produces.
+///
+/// This gate remains structural, not cryptographic — see the caveat block
+/// above. It shows a public artifact is not a copy of the key; it does not
+/// bound what an adversary can infer.
+const MAX_SECRET_COINCIDENCES: usize = 8;
+
 #[test]
 fn g7_public_artifacts_never_reproduce_a_secret_key_lane() {
     for h in harnesses() {
@@ -1535,19 +1599,16 @@ fn g7_public_artifacts_never_reproduce_a_secret_key_lane() {
                      to the secret key lane",
                     h.name
                 );
-                // Positional coincidences should be at the level of chance
-                // (the secret is ternary, the artifacts are ~uniform mod p),
-                // so anything above 1% of the ring is a structural signal.
                 let matches = limb
                     .iter()
                     .zip(sk.main[lane].iter())
                     .filter(|(a, b)| a == b)
                     .count();
                 assert!(
-                    matches * 100 < h.n(),
+                    matches <= MAX_SECRET_COINCIDENCES,
                     "{}: public artifact {label} main lane {lane} agrees with the \
                      secret key at {matches}/{} coefficient positions -- far above \
-                     chance",
+                     chance (bound {MAX_SECRET_COINCIDENCES})",
                     h.name,
                     h.n()
                 );
@@ -1561,6 +1622,19 @@ fn g7_public_artifacts_never_reproduce_a_secret_key_lane() {
                     "{}: public artifact {label} anchor lane {lane} is \
                      BIT-IDENTICAL to the secret key lane",
                     h.name
+                );
+                let matches = limb
+                    .iter()
+                    .zip(sk.anchor[lane].iter())
+                    .filter(|(a, b)| a == b)
+                    .count();
+                assert!(
+                    matches <= MAX_SECRET_COINCIDENCES,
+                    "{}: public artifact {label} anchor lane {lane} agrees with \
+                     the secret key at {matches}/{} coefficient positions -- far \
+                     above chance (bound {MAX_SECRET_COINCIDENCES})",
+                    h.name,
+                    h.n()
                 );
             }
         }

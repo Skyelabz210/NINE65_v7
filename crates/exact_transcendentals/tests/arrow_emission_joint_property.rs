@@ -21,7 +21,15 @@
 //! | `[1,3,1]` | 6  | `{2, 5}`    | **dim only** |
 //! | `[1,3,1]` | 4  | `{3, 5}`    | **dim only** |
 //! | `[2,5,2]` | 8  | `{3, 5, 17}`| **operator only** |
+//! | `[2,7,2]` | 8  | `{3, 7, 11}`| **operator only** |
 //! | `[1,2,1]` | 8  | ALL lanes   | **operator only** — structurally one-way |
+//! | `[1,2,1]` | 6  | ALL lanes   | operator + dim — one-way at another even dim |
+//!
+//! Every row above is asserted below. The table and the assertions are meant
+//! to be read together, so a row that exists in one and not the other is a
+//! defect in a file whose whole purpose is to pin measured facts: the
+//! `[2,7,2]` dim=8 and `[1,2,1]` dim=6 rows were asserted before they were
+//! listed here.
 //!
 //! Two conclusions the original file could not reach:
 //!

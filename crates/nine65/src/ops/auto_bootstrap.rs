@@ -237,6 +237,11 @@ fn same_ciphertext(ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> bool {
     }
     ct1.level == ct2.level
         && ct1.c0.n == ct2.c0.n
+        // `c1.n` is compared too, not just `c0.n`. For a well-formed poly it is
+        // implied by equal limb vectors, but this predicate governs OPERAND
+        // SUBSTITUTION, so it should assert the invariant it documents rather
+        // than rely on well-formedness holding at every call site.
+        && ct1.c1.n == ct2.c1.n
         && ct1.c0.main == ct2.c0.main
         && ct1.c0.anchor == ct2.c0.anchor
         && ct1.c1.main == ct2.c1.main
@@ -480,6 +485,9 @@ mod tests {
     fn trigger_fires_before_the_refresh_window_closes_not_after() {
         use crate::noise::budget::bootstrap_input_reserve_mb;
 
+        let mut total_permitted = 0usize;
+        let mut total_permitted_decryption_only = 0usize;
+
         for secure in [
             SecureConfig::secure_128(),
             SecureConfig::secure_128_deep(),
@@ -506,23 +514,49 @@ mod tests {
                 );
             }
 
-            // From below: the state the trigger stopped at must still hold at
-            // least the whole reserve, i.e. the trigger fired strictly before
-            // the ciphertext left the refresh window.
             assert!(
                 budget.remaining_millibits() >= 0,
                 "{}: budget went negative before the trigger fired",
                 config.name
             );
-            assert!(
-                budget.remaining_millibits() < cost + reserve,
-                "{}: trigger fired later than the boundary it is supposed to guard",
-                config.name
-            );
 
-            // From above: the decryption-only predicate is strictly more
-            // permissive at the moment the trigger fires. That difference is
-            // the margin the trigger is spending, and it must be positive.
+            // NOTE ON WHAT IS AND IS NOT A GATE HERE.
+            //
+            // `remaining < cost + reserve` and `remaining_multiplications_
+            // before_refresh() == 0` are algebraic CONSEQUENCES of the loop's
+            // own exit condition (`remaining - reserve < cost`). They cannot
+            // fail, and an earlier revision of this test presented them as the
+            // acceptance gate, which overstated it. They are kept below as an
+            // internal consistency check on `divide_budget`, labelled as such.
+            //
+            // The discriminating measurement is the counterfactual walk: run
+            // the SAME descent again with the decryption-only predicate and
+            // compare how far each gets. If the reserve were ever dropped,
+            // ignored, or set to zero, the two walks would agree everywhere,
+            // and the aggregate assertion below is what catches that.
+            let mut decryption_only = NoiseBudget::from_config(&config);
+            let mut permitted_decryption_only = 0usize;
+            while decryption_only.can_perform(cost) {
+                decryption_only
+                    .consume(NoiseOpType::MulCt, cost)
+                    .expect("decryption predicate promised this operation was affordable");
+                permitted_decryption_only += 1;
+                assert!(permitted_decryption_only < 64, "{}: runaway", config.name);
+            }
+
+            assert!(
+                permitted <= permitted_decryption_only,
+                "{}: the reserve-aware predicate permitted {} multiplies where the \
+                 decryption-only predicate permitted {} -- the trigger must never \
+                 be MORE permissive than the boundary it sits inside",
+                config.name,
+                permitted,
+                permitted_decryption_only,
+            );
+            total_permitted += permitted;
+            total_permitted_decryption_only += permitted_decryption_only;
+
+            // Internal consistency of `divide_budget` with the loop condition.
             let decryption_bounded = budget.remaining_multiplications(&config);
             let refresh_bounded = budget.remaining_multiplications_before_refresh(&config);
             assert!(
@@ -534,20 +568,38 @@ mod tests {
             );
             assert_eq!(
                 refresh_bounded, 0,
-                "{}: the trigger stopped while it still claimed {} affordable multiplies",
-                config.name, refresh_bounded,
+                "{}: divide_budget disagrees with can_perform_with_reserve at the \
+                 state the walk stopped at",
+                config.name,
             );
             println!(
-                "{}: {} multiplies permitted before refresh, {} mb left \
+                "{}: {} multiplies permitted before refresh ({} under the \
+                 decryption-only predicate), {} mb left \
                  (cost {} mb, reserve {} mb, decryption-bounded depth still {})",
                 config.name,
                 permitted,
+                permitted_decryption_only,
                 budget.remaining_millibits(),
                 cost,
                 reserve,
                 decryption_bounded,
             );
         }
+
+        // The reserve must COST something somewhere. Per-config strictness does
+        // not hold -- on some tuples the leftover slack is smaller than the
+        // reserve, so both walks stop at the same count -- but if the reserve
+        // stopped being withheld at all, every walk would agree and this sum
+        // would come out equal.
+        assert!(
+            total_permitted < total_permitted_decryption_only,
+            "the refresh reserve is inert: the reserve-aware walk permitted {} \
+             multiplies in total and the decryption-only walk permitted {}. A \
+             trigger that never fires earlier than the decryption boundary is \
+             not a conservative trigger.",
+            total_permitted,
+            total_permitted_decryption_only,
+        );
     }
 
     /// The ledger must fund at least one multiply immediately after a refresh
@@ -569,13 +621,24 @@ mod tests {
             let mut budget = NoiseBudget::from_config(&config);
             budget.reset_after_bootstrap(&config);
             let cost = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+            // `can_perform`, not `can_perform_with_reserve`, and deliberately.
+            // Forward progress in `mul_auto` is decided by the `budget.consume`
+            // that follows `preflight_refresh`, and `consume` gates on the
+            // DECRYPTION boundary. `can_perform_with_reserve` decides only
+            // whether `preflight_refresh` refreshes first -- it is the trigger,
+            // not the funding check. Asserting the reserve-aware predicate here
+            // would assert something `mul_auto` never asks.
             let funds_a_multiply = budget.can_perform(cost);
+            let would_trigger_again = !budget.can_perform_with_reserve(cost, &config);
             println!(
                 "{}: post-refresh budget {} mb, one multiply costs {} mb, \
+                 funds a multiply = {}, would trigger another refresh first = {}, \
                  chain admitted for public refresh = {}",
                 config.name,
                 budget.remaining_millibits(),
                 cost,
+                funds_a_multiply,
+                would_trigger_again,
                 supports_public_refresh(&config),
             );
             if supports_public_refresh(&config) {
@@ -588,6 +651,17 @@ mod tests {
                     budget.remaining_millibits(),
                     cost,
                 );
+                // Record the steady state honestly: the trigger is latched on
+                // after a refresh, so `mul_auto` refreshes before every
+                // subsequent multiply. See
+                // `a_refresh_cycle_never_funds_more_than_one_multiply`.
+                // Whether the trigger is already latched on again at this
+                // point differs per config and is NOT uniform -- see the
+                // measured table in
+                // `a_refresh_cycle_never_funds_more_than_one_multiply`, which
+                // pins it. Asserting it uniformly here would be wrong:
+                // `secure_192` clears the reserve post-refresh and
+                // `secure_128_deep` does not.
             }
         }
     }
@@ -612,6 +686,7 @@ mod tests {
     /// past the measured envelope will not.
     #[test]
     fn a_refresh_cycle_never_funds_more_than_one_multiply() {
+        use crate::noise::budget::bootstrap_input_reserve_mb;
         use crate::params::secure_configs::supports_public_refresh;
 
         for secure in [
@@ -628,12 +703,56 @@ mod tests {
             let mut budget = NoiseBudget::from_config(&config);
             budget.reset_after_bootstrap(&config);
             let funded = budget.remaining_multiplications_before_refresh(&config);
+            let cost = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+
+            println!(
+                "{}: post-refresh {} mb, reserve {} mb, one multiply {} mb -> \
+                 trigger-funded multiplies = {}",
+                config.name,
+                budget.remaining_millibits(),
+                bootstrap_input_reserve_mb(&config),
+                cost,
+                funded,
+            );
+
             assert!(
                 funded <= 1,
                 "{}: a refresh cycle is modelled as funding {} multiplies, but the refresh \
                  is only measured plaintext-exact for an input carrying one multiply",
                 config.name,
                 funded,
+            );
+
+            // `funded <= 1` above is the load-bearing invariant, but on its
+            // own it does not say which side of the boundary each config
+            // actually sits on, so pin the MEASURED value per config too.
+            //
+            // Measured on this commit:
+            //   secure_128_deep  post-refresh  54000 mb, reserve 14000, cost 47000 -> 0
+            //   secure_192       post-refresh  78000 mb, reserve 15000, cost 49000 -> 1
+            //   secure_256       post-refresh 107000 mb, reserve 15000, cost 49000 -> 1
+            //
+            // `0` means the trigger is latched on: `mul_auto` refreshes before
+            // every post-refresh multiply, so `trigger_permille` /
+            // `should_bootstrap` are inert in steady state on that config. `1`
+            // means one multiply fits inside the cycle. Both are safe; which
+            // one holds is a real behavioural fact about the config and should
+            // fail loudly when it moves, in either direction.
+            let expected_funded = match config.name {
+                "secure_128_deep" => 0,
+                "secure_192" => 1,
+                "secure_256" => 1,
+                other => panic!("unhandled config in the measured table: {other}"),
+            };
+            assert_eq!(
+                funded, expected_funded,
+                "{}: the post-refresh trigger funds {} multiplies where {} was \
+                 measured. Rising ABOVE 1 means a refresh cycle is modelled as \
+                 carrying more than one multiply's noise past the refresh \
+                 window, which the k=2 measurement above says it cannot. Any \
+                 other move is a behaviour change -- re-measure the envelope \
+                 before updating this table.",
+                config.name, funded, expected_funded,
             );
         }
     }

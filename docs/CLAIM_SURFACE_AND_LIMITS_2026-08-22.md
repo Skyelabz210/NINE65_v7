@@ -9,6 +9,23 @@ in the README itself.
 Governed by `docs/LINEAGE.md` (deprecation rules for claim language),
 `docs/BENCHMARK_PROFILE_POLICY.md`, and `docs/CLAIM_EVIDENCE_LEDGER.md`.
 
+Indexed in `docs/CLAIM_REGISTRY.csv` as three rows, all pointing here:
+
+| claim_id | visibility | why |
+|---|---|---|
+| `readme.verified_capability_2026_08_22` | public / secure | §1: decryption-oracle-checked correctness on named secure profiles. |
+| `params.public_refresh_admissibility` | public / secure | §3: a refusal enforced in code and covered by three passing tests. |
+| `params.screened_security_disclosure` | **internal** / exploratory | §2 deliberately does **not** go on the public evidence surface. |
+
+The third row is internal on purpose. `docs/CLAIM_RETIREMENTS_2026-07-13.md`
+retired the README's named-profile estimator claim precisely because such a
+claim needs pinned *independent* estimator inputs and raw outputs for the exact
+tuple, and no such artifact exists for the shipped `n = 8192 / 16384` tuples
+(§2.5). §2 is a disclosure of what the in-tree screen returns, published so the
+`secure_256` MATZOV gap is visible — it is not evidence of a security level and
+must not be registered or quoted as if it were. Nothing here re-admits the
+retired claim.
+
 ---
 
 ## 1. Verified capability table
@@ -18,22 +35,24 @@ Governed by `docs/LINEAGE.md` (deprecation rules for claim language),
 | `secure_128` | 8192 | 3 | 90 | 158.994 ms (4x5) | 44.371 ms | 2 | **refused — corrupts** |
 | `secure_128_deep` | 8192 | 4 | 119 | 207.956 ms | 47.262 ms | 2 (see §4) | pass |
 | `secure_192` | 16384 | 5 | 146 | 564.238 ms | 122.927 ms | 3 | pass |
-| `secure_256` | 16384 | 6 | 175 | 520.801 ms | 129.971 ms | 4 (unverified here) | admitted, unexercised |
+| `secure_256` | 16384 | 6 | 175 | 520.801 ms | 129.971 ms | 4 (unverified here) | pass (via acceptance suite) |
 
 Provenance, column by column:
 
 - **N, main lanes, log2(q)** — read off `crates/nine65/src/params/secure_configs.rs`
   and recomputed exactly by `exact_product_bit_length`. Re-measured 2026-08-22.
-- **public mul / symmetric mul timings** — from the orchestrator's
-  correctness-gated benchmark run. **Not re-measured in this pass.** Treat as
-  indicative until reproduced under `docs/BENCHMARK_PROFILE_POLICY.md`.
+- **public mul / symmetric mul timings** — from the Phase 0 correctness-gated
+  benchmark run (decryption-oracle checked). **Not re-measured in this pass**,
+  and no raw artifact is archived for them here. Treat as indicative until
+  reproduced under `docs/BENCHMARK_PROFILE_POLICY.md`.
 - **public direct-square depth** — re-measured 2026-08-22 for `secure_128`,
   `secure_128_deep`, `secure_192` (see §3). `secure_256` is the benchmark's
   figure, not re-measured.
 - **public refresh** — re-measured 2026-08-22 for the same three configs
-  (§3). `secure_256` is admitted by the predicate but was not exercised end to
-  end in this pass; "admitted" is a statement about the chain, not a verified
-  roundtrip.
+  (§3). `secure_256` was not exercised standalone in this pass; its "pass" comes
+  from `ops::auto_bootstrap`'s
+  `repeated_squaring_is_exact_under_auto_refresh_secure_256`, observed passing
+  2026-08-22 while that suite was still in flight.
 
 ---
 
@@ -95,38 +114,45 @@ the evaluator refreshes using public bootstrap key material only. The
 **symmetric** refresh (`SymmetricBootstrap::bootstrap`) takes the secret key and
 is a different, single-party path; none of this applies to it.
 
-Measured 2026-08-22 with the in-tree diagnostic, which encrypts under each
-config, performs one public refresh, and checks against the decryption oracle:
+> **CORRECTION (integration pass, 2026-08-22).** This section previously printed
+> a raw log attributed to a test named `diag_measure_noise_growth` that **did not
+> exist in any commit**, and its headline claim — that a `secure_128` refresh
+> returns `encrypt(7)` as `8` — is not what the hardware does. The diagnostic now
+> exists (`crates/nine65/src/ops/bootstrap.rs`,
+> `ops::bootstrap::tests::diag_measure_noise_growth`), the log below is its real
+> output, and the claim is restated to match. The refusal itself stands, and on
+> better evidence than before: the failure is at the first multiply after the
+> refresh, which is exactly the bar the predicate encodes.
+
+Measured with the in-tree diagnostic, which encrypts `7` under each config, runs
+the three refresh phases **with the admissibility gate bypassed** (otherwise the
+gate would be its own evidence), decrypts, then squares the refreshed ciphertext
+through the public eval-key multiply and decrypts again:
 
 ```
 cargo test -p nine65 --lib --release diag_measure_noise_growth -- --nocapture
 ```
 
 ```
-=== secure_128 : budget 63000 mb, mul_ct 32000 + relin 13000 = 45000 mb, remaining_muls 1
-  depth 1: dec=4     expected=4     OK=true
-  depth 2: dec=16    expected=16    OK=true
-  depth 3: dec=18121 expected=256   OK=false
-  bootstrap(fresh 7): dec=8                          <-- WRONG, plaintext was 7
-  bootstrap(7)^2:     dec=51445 expected=49          <-- margin 0 bits
-
-=== secure_128_deep : budget 92000 mb, mul_ct 32000 + relin 13000 = 45000 mb, remaining_muls 2
-  depth 3: dec=255   expected=256   OK=false         <-- off by one, see §4
-  bootstrap(fresh 7): dec=7                          correct
-  bootstrap(7)^2:     dec=49 expected=49             correct, 102 margin bits
-
-=== secure_192 : budget 117000 mb, mul_ct 34000 + relin 14000 = 48000 mb, remaining_muls 2
-  depth 3: dec=256   expected=256   OK=true
-  depth 4: dec=4150  expected=65536 OK=false
-  bootstrap(fresh 7): dec=7                          correct
-  bootstrap(7)^2:     dec=49 expected=49             correct
+=== diag_measure_noise_growth: public refresh vs the decryption oracle ===
+config              lanes  headroom  required    admits |   refresh(7)     refresh(7)^2
+secure_128              3        42        47     false |       7 (ok)    34037 (WRONG)
+secure_128_deep         4        71        47      true |       7 (ok)          49 (ok)
+secure_192              5        96        49      true |       7 (ok)          49 (ok)
+=== end diag_measure_noise_growth ===
 ```
 
-`secure_128`'s public refresh returns a wrong-but-plausible plaintext: 7 comes
-back as 8. Nothing in the pipeline reports an error — the noise diagnostic still
-prints "73 margin bits" for that refresh. Only the decryption oracle catches it.
-That is the worst failure shape a crypto library has, and it is why this is
-refused in code rather than noted in a report.
+The refresh output itself decrypts correctly on all three configs, `secure_128`
+included. What `secure_128` cannot do is survive the **first multiply after the
+refresh**: `7` refreshes to `7`, and squaring that returns `34037` where `49` was
+expected. Nothing in the pipeline reports an error. Only the decryption oracle
+catches it. That is the worst failure shape a crypto library has, and it is why
+this is refused in code rather than noted in a report.
+
+The diagnostic asserts the agreement rather than just printing it: a config the
+predicate admits must survive both steps, and a config it refuses must be
+observed corrupting at least one — so if the refusal ever stops reproducing, the
+test fails loudly instead of leaving an unfalsifiable claim in the docs.
 
 ### The refusal
 
@@ -145,11 +171,17 @@ supported     = headroom_bits >= required_bits
 
 | config | lanes | Delta bits | refresh noise | headroom | required | supported |
 |---|---|---|---|---|---|---|
-| secure_128 | 3 | 74 | 32 | 42 | 45 | **no** |
-| hardware_opt | 3 | 74 | 32 | 42 | 45 | **no** |
-| secure_128_deep | 4 | 103 | 32 | 71 | 45 | yes |
-| secure_192 | 5 | 130 | 34 | 96 | 48 | yes |
-| secure_256 | 6 | 159 | 34 | 125 | 48 | yes |
+| secure_128 | 3 | 74 | 32 | 42 | 47 | **no** |
+| hardware_opt | 3 | 74 | 32 | 42 | 47 | **no** |
+| secure_128_deep | 4 | 103 | 32 | 71 | 47 | yes |
+| secure_192 | 5 | 130 | 34 | 96 | 49 | yes |
+| secure_256 | 6 | 159 | 34 | 125 | 49 | yes |
+
+Re-measured on the integration pass by
+`params::secure_configs::tests::public_refresh_predicate_matches_the_decryption_oracle`.
+The `required` column reads 47/49, not the 45/48 published earlier: those were
+correct when written and were invalidated by a concurrent rewrite of
+`noise::budget`, which is exactly the drift this table exists to catch.
 
 Two derivation choices are load-bearing and should be challenged if this gate
 ever misfires:
@@ -167,7 +199,7 @@ ever misfires:
   a single ct×ct multiply plus relinearization has not accomplished anything a
   caller can use.
 
-The 3-bit margin by which `secure_128` fails is thin. If the noise ledger moves,
+The 5-bit margin by which `secure_128` fails is thin. If the noise ledger moves,
 `params::secure_configs::tests::public_refresh_predicate_matches_the_decryption_oracle`
 fails loudly rather than silently re-admitting a corrupting path — that is
 deliberate. Re-run the diagnostic before changing the constants, not after.
@@ -201,10 +233,16 @@ without a dated artifact:
   here establishes general nonlinear circuits under the public evaluator.
 - **Any unbounded-depth claim.** "Unlimited depth", "depth 50", and
   "bootstrap-free" are on `docs/LINEAGE.md`'s deprecation list. The measured
-  public direct-square depths are 2–4. The public refresh that would extend them
-  is refused on `secure_128` and unexercised end to end on `secure_256`.
-- **`secure_256` public bootstrap.** Admitted by the predicate; no verified
-  roundtrip in this pass.
+  public direct-square depths — *without* refresh — are 2–4, and the public
+  refresh that would extend them is refused on `secure_128`.
+
+  How far an auto-refreshed chain extends past those depths is a separate
+  question. An acceptance suite for it landed in `ops::auto_bootstrap` while
+  this pass was in flight (`repeated_squaring_is_exact_under_auto_refresh_*` for
+  `secure_128_deep` / `secure_192` / `secure_256`, observed passing 2026-08-22).
+  Whatever depth that suite establishes, it is a *measured circuit depth on a
+  named profile*, not an unbounded-depth claim, and it must be quoted with the
+  profile, seed and commit per `docs/LINEAGE.md`.
 - **"Fully verified bootstrap roundtrip across all three paths."** The bootstrap
   roundtrip tests in `ops/bootstrap.rs`, `tests/bootstrap_integration.rs`,
   `tests/bootstrap_parameter_exploration.rs` and

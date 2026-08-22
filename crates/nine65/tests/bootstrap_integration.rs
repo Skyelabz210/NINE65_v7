@@ -11,6 +11,30 @@
 //! - Security properties
 //! - Stress/depth testing
 //! - Edge cases
+//!
+//! # STANDING NOTE: the roundtrip fixtures are built on a config that is now
+//! # REFUSED for public refresh
+//!
+//! `setup_bootstrap` (and its seeded variants) build every fixture in this file
+//! from `SecureConfig::secure_128()`. Since the public-refresh admissibility
+//! gate landed, `ClockworkBootstrap::bootstrap` and `bootstrap_with_ksk` return
+//! `Nine65Error::BootstrapConfigMismatch` for that config before doing any
+//! work — three main lanes leave 42 bits of `Delta` headroom against the 47
+//! one subsequent multiply needs. See
+//! `params::secure_configs`'s PUBLIC-REFRESH ADMISSIBILITY section and the
+//! measurement in `ops::bootstrap::tests::diag_measure_noise_growth`.
+//!
+//! The consequence, stated plainly because it was not stated when the gate
+//! landed: the ~30 tests here that call `.bootstrap(..).expect("Bootstrap
+//! failed")` **can no longer pass as written**. They are all already
+//! `#[ignore]`d for unrelated (VESTIGIAL/RETIRED) reasons predating the gate,
+//! so this is not a current regression and nothing here is being suppressed to
+//! hide it. But anyone un-ignoring one of them will hit the refusal, and the
+//! fix is to rebuild the fixture on `SecureConfig::secure_128_deep()` — same
+//! 128-bit claim, four lanes, admitted — **not** to weaken the gate.
+//!
+//! The tests in this file that DO run (proptest, statistical, and error-variant
+//! tests) do not perform a roundtrip and are unaffected.
 
 use nine65::entropy::ShadowHarvester;
 use nine65::errors::{Nine65Error, Nine65Result};

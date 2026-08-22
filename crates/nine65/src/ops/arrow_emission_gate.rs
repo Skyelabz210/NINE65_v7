@@ -24,11 +24,26 @@
 //!
 //! # What this module is NOT
 //!
-//! It performs no arithmetic of its own, adds no new contract, and changes
-//! nothing about the primitives' behaviour or their `pub(crate)` visibility
-//! inside the crate — the wrappers below are pure forwarding. It
-//! deliberately exposes nothing secret-bearing: both entry points take and
-//! return residue containers that the caller already holds.
+//! It performs no arithmetic of its own and adds no new contract — the
+//! wrappers below are pure forwarding. It deliberately exposes nothing
+//! secret-bearing: both entry points take and return residue containers that
+//! the caller already holds.
+//!
+//! # What it DOES do, stated plainly
+//!
+//! It widens this crate's public API. An earlier version of this paragraph
+//! said the module "changes nothing about the primitives' ... `pub(crate)`
+//! visibility inside the crate", which is literally true and beside the
+//! point: `exact_drop_poly` and `exact_drop_ct` make a deliberately
+//! crate-private primitive callable by any external consumer of `nine65`,
+//! under a new public name, on a proprietary crypto crate, for a function
+//! this same doc describes as having no production caller yet.
+//!
+//! The module is therefore `#[doc(hidden)]` (see `ops/mod.rs`): it is
+//! reachable, because an integration-test target must link from outside, but
+//! it is not part of the documented API surface and carries no stability
+//! promise. Prefer an in-crate `#[cfg(test)]` unit test over adding anything
+//! else here.
 //!
 //! Re-read the caveat on the underlying function before using it for
 //! anything other than a gate: this is a modulus switch by an RNS prime
