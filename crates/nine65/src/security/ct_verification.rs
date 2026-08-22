@@ -1863,9 +1863,14 @@ See docs/CT_VERIFICATION_PLAN.md."]
         }
 
         let (mg, ma) = (median_of(&t_general), median_of(&t_adjacent));
+        // The `median=` spelling is load-bearing: the diagnostics job in
+        // .github/workflows/ct_verification.yml gates on each test having
+        // actually produced numbers by grepping for `median=|median class|
+        // VERDICT:`. A test that emits no recognised marker is treated as not
+        // having run at all, which is the correct default.
         println!("  K-Elimination extraction cost over {DUDECT_BATCH} calls, {COST_ROUNDS} rounds");
-        println!("    general  (v_beta - v_alpha) * M^-1 mod A : median {mg:.0} ns/batch");
-        println!("    adjacency (v_alpha - v_beta) mod A       : median {ma:.0} ns/batch");
+        println!("    general  (v_beta - v_alpha) * M^-1 mod A : median={mg:.0}ns per batch");
+        println!("    adjacency (v_alpha - v_beta) mod A       : median={ma:.0}ns per batch");
         if ma > 0.0 {
             println!("    ratio general/adjacency                  : {:.2}x", mg / ma);
         }
@@ -2143,6 +2148,111 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
         assert_dudect(
             "MontgomeryContext::montgomery_pow — exponent Hamming weight 8 vs 56 (batched)",
             &result,
+        );
+    }
+}
+
+/// The CT workflow and this file must name the same tests — enforced here,
+/// because CI is not enforcing it.
+///
+/// `.github/workflows/ct_verification.yml` names each timing test explicitly, in
+/// one of three jobs (blocking, open-findings tripwire, diagnostics). Two ways
+/// that correspondence rots:
+///
+/// * a test is **added here and named nowhere**, so it never runs in CI and
+///   nobody notices — which is exactly what happened to the three tests added on
+///   2026-08-22;
+/// * a test is **renamed or removed here while the workflow still names it**, so
+///   the job's `--exact` filter matches nothing. `cargo test` exits 0 on an empty
+///   filter, so a phantom name is silent unless something checks.
+///
+/// This lives in the test suite rather than in a CI script deliberately. As of
+/// 2026-08-22 no GitHub Actions workflow in this repository has run since
+/// February, and twelve of the thirteen registered workflows have never run at
+/// all — so a gate that only exists in YAML is not a gate. `cargo test` runs.
+#[cfg(test)]
+mod workflow_correspondence {
+    use std::collections::BTreeSet;
+    use std::path::PathBuf;
+
+    fn repo_root() -> PathBuf {
+        // CARGO_MANIFEST_DIR is <root>/crates/nine65
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+    }
+
+    /// Every `test_ct_*` identifier appearing in `text`, however it appears.
+    fn ct_test_names(text: &str, after: &str) -> BTreeSet<String> {
+        let mut out = BTreeSet::new();
+        for (idx, _) in text.match_indices(after) {
+            let rest = &text[idx + after.len()..];
+            let name: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            if !name.is_empty() {
+                out.insert(format!("{after}{name}"));
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn every_ct_timing_test_is_named_by_the_workflow_and_vice_versa() {
+        let workflow = repo_root()
+            .join(".github")
+            .join("workflows")
+            .join("ct_verification.yml");
+
+        let Ok(yaml) = std::fs::read_to_string(&workflow) else {
+            // The crate can legitimately be built outside a git checkout (a
+            // vendored source tarball has no .github/). Say so loudly rather
+            // than passing quietly, so a real absence is never mistaken for a
+            // real check.
+            println!(
+                "SKIPPED: {} is not present, so the workflow correspondence \
+                 could not be checked from this build tree",
+                workflow.display()
+            );
+            return;
+        };
+
+        let source = include_str!("ct_verification.rs");
+
+        // Definitions in this file: `fn test_ct_...`.
+        let defined: BTreeSet<String> = ct_test_names(source, "test_ct_")
+            .into_iter()
+            .filter(|n| source.contains(&format!("fn {n}(")))
+            .collect();
+
+        let named_in_yaml = ct_test_names(&yaml, "test_ct_");
+
+        let orphans: Vec<_> = defined.difference(&named_in_yaml).cloned().collect();
+        let phantoms: Vec<_> = named_in_yaml.difference(&defined).cloned().collect();
+
+        assert!(
+            defined.len() >= 15,
+            "only {} timing tests were discovered in this file, which means the \
+             scan is broken rather than the file being empty",
+            defined.len()
+        );
+
+        assert!(
+            orphans.is_empty(),
+            "these timing tests exist in ct_verification.rs but are named by NO job \
+             in .github/workflows/ct_verification.yml, so CI would never run them: \
+             {orphans:?}. Add each to the job that matches what it measures — \
+             dudect-blocking if it must stay constant-time, open-findings if it is \
+             a documented leak, diagnostics if it only records numbers."
+        );
+
+        assert!(
+            phantoms.is_empty(),
+            "these test names appear in .github/workflows/ct_verification.yml but are \
+             not defined in ct_verification.rs: {phantoms:?}. `cargo test --exact` \
+             exits 0 when its filter matches nothing, so each of these is a job step \
+             that silently measures nothing."
         );
     }
 }

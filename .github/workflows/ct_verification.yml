@@ -4,16 +4,23 @@ name: Constant-Time Verification
 #
 #   verify              — deterministic source-level and functional CT gates.
 #                         Blocking, every relevant push/PR.
-#   dudect-blocking     — the five two-class timing tests that MEASURE constant
+#   dudect-blocking     — the nine two-class timing tests that MEASURE constant
 #                         time reliably. Blocking, every relevant push/PR, at
 #                         the tight documented threshold (t < 5). See the job
 #                         header for why these are safe to block on and the
 #                         robust-CV tests are not.
-#   open-findings       — the four two-class tests that measure a REAL timing
-#                         leak. Scheduled. These are state tripwires: the job
-#                         fails if a documented leak stops reproducing (which
-#                         means the docs are now wrong), not because the leak
-#                         exists.
+#   open-findings       — the two two-class tests that still measure a REAL
+#                         timing leak. Scheduled. These are state tripwires:
+#                         the job fails if a documented leak stops reproducing
+#                         (which means the docs are now wrong), not because the
+#                         leak exists.
+#
+# 2026-08-22: the two exact_prime_drop tests MOVED from open-findings to
+# dudect-blocking. F-1 is closed (CT_VERIFICATION_PLAN.md section 4.8), so they
+# now measure constant-time and belong on the blocking side; leaving them in the
+# tripwire job would have asserted a leak that no longer exists. The two new
+# AdjacencyKElim tests were added to dudect-blocking at the same time. That is
+# the transition the tripwire job was built to force, and it worked as designed.
 #   diagnostics         — the eight robust-CV tests plus the one borderline
 #                         dudect test, run for the record and uploaded.
 #                         Scheduled. Gated on producing measurements, not on
@@ -165,7 +172,11 @@ jobs:
             test_ct_dudect_montgomery_reduce_operand_magnitude \
             test_ct_dudect_montgomery_mul_operand_magnitude \
             test_ct_dudect_barrett_reduce_operand_magnitude \
-            test_ct_dudect_mod_switch_rescale_sign_classes
+            test_ct_dudect_mod_switch_rescale_sign_classes \
+            test_ct_dudect_exact_prime_drop_fixed_vs_random \
+            test_ct_dudect_exact_prime_drop_small_vs_large_residues \
+            test_ct_dudect_adjacency_k_elim_operand_magnitude \
+            test_ct_dudect_adjacency_k_elim_operand_order
           do
             echo "::group::$t"
             cargo test -p nine65 --lib --release -- \
@@ -185,8 +196,9 @@ jobs:
   # ---------------------------------------------------------------------------
   # OPEN FINDINGS — known-red tripwires, scheduled.
   #
-  # These four tests measure timing leaks that are real, reproducible and
-  # currently unfixed. They are recorded in docs/CT_VERIFICATION_PLAN.md with
+  # These two tests measure timing leaks that are real, reproducible and
+  # currently unfixed. (There were four. The two exact_prime_drop tests moved to
+  # dudect-blocking on 2026-08-22 when F-1 was closed.) They are recorded in docs/CT_VERIFICATION_PLAN.md with
   # their measured statistics. Running them as an ordinary blocking gate would
   # paint CI permanently red for a state that is already documented, and the
   # red would stop meaning anything within a week.
@@ -224,8 +236,6 @@ jobs:
           status=0
           : > open_findings_output.txt
           for t in \
-            test_ct_dudect_exact_prime_drop_fixed_vs_random \
-            test_ct_dudect_exact_prime_drop_small_vs_large_residues \
             test_ct_dudect_mod_switch_rescale_fixed_vs_random \
             test_ct_dudect_k_elim_extract_k_operand_magnitude
           do
@@ -373,7 +383,8 @@ jobs:
             test_ct_montgomery_pow \
             test_ct_barrett_reduce \
             test_ct_vs_vartime_comparison \
-            test_ct_input_class_analysis
+            test_ct_input_class_analysis \
+            test_ct_adjacency_vs_general_k_elim_cost
           do
             echo "::group::$t"
             out=$(cargo test -p nine65 --lib --release -- \
