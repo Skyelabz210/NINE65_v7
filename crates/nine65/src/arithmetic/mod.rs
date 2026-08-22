@@ -38,6 +38,7 @@ pub mod persistent_montgomery; // MONTGOMERY FORM
 pub mod residue_division; // PROOF-CARRYING BOUNDED QUOTIENT PROJECTION
 pub mod rns;
 pub mod transcendental_backend; // FEATURE-GATED EXACT TRANSCENDENTAL ADAPTER
+pub mod unified_rescale; // EXACT-Δ UNIFIED RESCALE (manufactured chains, two exits)
 pub mod valuation; // INTEGER UTILITIES (log2, sqrt, format, trig LUT)
 
 pub use barrett::{BarrettContext, HybridModContext};
