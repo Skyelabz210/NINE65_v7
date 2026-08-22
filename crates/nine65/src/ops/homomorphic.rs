@@ -1294,7 +1294,25 @@ mod tests {
         let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
         let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
         let evaluator = BFVEvaluator::new(&ntt, &encoder, None);
-        let mut tracked = super::TrackedEvaluator::new(evaluator, &config);
+        // Explicit budget, not `TrackedEvaluator::new`, and deliberately so.
+        //
+        // This test exercises the LEDGER MECHANICS: that `try_add` succeeds
+        // while budget remains and that it debits the ledger. It is not a
+        // claim that `test_fast_insecure` can fund an add.
+        //
+        // It cannot. That config is n=1024 with a single 30-bit prime and
+        // t=65537, giving Delta/2 = 7615 against a worst-case fresh noise of
+        // (2n+1)*eta = 4098 — 0.894 bits of provable headroom. A single ct+ct
+        // add doubles the worst-case bound to 8196 > 7615, so a fail-closed
+        // ledger correctly refuses to certify it. The add happens to decrypt
+        // because average-case noise (~400) sits far below the worst case;
+        // the previous ledger only permitted it because its `sqrt(n)` term
+        // was a heuristic rather than an upper bound.
+        //
+        // Deriving the budget from this config would therefore test the
+        // config's headroom, not the ledger. Seeding it explicitly keeps the
+        // subject of the test intact without weakening the bound.
+        let mut tracked = super::TrackedEvaluator::with_budget(evaluator, &config, 64);
 
         let ct_a = encryptor.encrypt(100, &mut harvester);
         let ct_b = encryptor.encrypt(200, &mut harvester);

@@ -5,6 +5,90 @@
 //! post-bootstrap reset derive their size from the exact multi-limb quotient
 //! `floor(Q / t)`; per-lane bit-width sums, saturated products, floating point,
 //! Garner reconstruction, and mixed-radix conversion are not used.
+//!
+//! # Derivation of the ledger
+//!
+//! Every quantity below is a **conservative upper bound** on the true noise, in
+//! integer bit-widths, with every rounding taken **upward**. `scalar_bit_length`
+//! is a ceiling (`scalar_bit_length(x) = floor(log2 x) + 1 >= log2 x`), so a sum
+//! of bit lengths is an upper bound on the bit length of the product. Residual
+//! uncertainty is spent as margin, never as optimism: the trigger therefore
+//! fires strictly before the true boundary, never after.
+//!
+//! ## Notation
+//!
+//! * `R = Z[X]/(X^n + 1)`, `n` a power of two, so `n_bits = log2(n)` exactly.
+//! * Ring expansion: `||a*b||_inf <= n * ||a||_inf * ||b||_inf` in `R`. The
+//!   factor `n` (not `sqrt(n)`) is the worst case and is what this module uses.
+//! * `s` and the encryption mask `u` are ternary: `||s||_inf, ||u||_inf <= 1`.
+//! * The CBD_eta error distribution is supported on `[-eta, eta]`, so every
+//!   error polynomial has `||e||_inf <= eta`.
+//! * `Delta = floor(Q / t)`; a ciphertext decrypts correctly while its noise
+//!   satisfies `||e||_inf < Delta / 2`, i.e. while `noise_bits <= delta_bits - 1`.
+//!
+//! ## Terms
+//!
+//! * **Fresh encryption.** `e_fresh = e_pk * u + e1 + e2 * s`, hence
+//!   `||e_fresh|| <= n*eta + eta + n*eta = (2n+1)*eta <= 4*n*eta`.
+//!   Bits: `n_bits + eta_bits + 2`. (`fresh_noise_bit_bound`)
+//! * **ct x ct multiply.** The BFV tensor bound (Fan-Vercauteren, *Somewhat
+//!   Practical Fully Homomorphic Encryption*, Lemma 2) has the shape
+//!   `v_out <= 2*n*t*(v1 + v2)*(1 + n*||s||) + F`, with `F` the input-independent
+//!   deposit left by the `Delta`-rescaling of the tensor product. With
+//!   `||s|| <= 1` and `v1, v2 <= v` the multiplicative part is bounded by
+//!   `4*n*t*v*(1+n) <= 8*n^2*t*v`, so the growth factor is
+//!   `G = 8*n^2*t`, i.e. `mul_growth_bit_cost = t_bits + 2*n_bits + 3`.
+//!   The input-independent deposit obeys `F <= 4*n^2*t^2`.
+//! * **Folding `F` into the starting level (why the ledger stays linear).**
+//!   The true recurrence is `v_{k+1} = G*v_k + F`. Substituting
+//!   `w_k = v_k + F/(G-1)` gives `w_{k+1} = G*w_k`, hence exactly
+//!   `v_k = G^k * (v_0 + F/(G-1)) - F/(G-1) <= G^k * (v_0 + F/(G-1))`,
+//!   and for `G >= 2`, `F/(G-1) <= 2F/G = 2*(4*n^2*t^2)/(8*n^2*t) = t`.
+//!   So `v_k <= G^k * (v_0 + t) <= G^k * 2^(max(v0_bits, t_bits) + 1)`.
+//!   That is why the ledger charges a *constant* `G` per multiply and starts
+//!   from `effective_start_bits(v0) = max(v0_bits, t_bits) + 1`: the additive
+//!   term is accounted for exactly, once, at the start of the chain, rather
+//!   than being assumed away.
+//! * **Relinearization.** Gadget decomposition of `c2` in base `2^16` into
+//!   `ell = ceil(log2(Q)/16)` digits against a public-key-style relin key:
+//!   `v_relin <= ell * n * 2^16 * (4*n*eta)`, i.e.
+//!   `relin_noise_bit_bound = ell_bits + 2*n_bits + eta_bits + 18`.
+//!   Relin noise is **additive**, so `v_mul + v_relin <= 2 * max(v_mul, v_relin)`
+//!   and one single bit covers it *provided* `v_relin <= v_mul`. That side
+//!   condition is not assumed: it is asserted for every supported config by
+//!   `relin_bound_never_dominates_the_multiply_bound`.
+//! * **Rescale / exact prime drop (the `1.5` delta term).** Dropping an RNS
+//!   prime `p` divides the noise by `p` and deposits a residue: the exact
+//!   align-and-drop primitive contributes `j in [0, t)` per drop, and the
+//!   rounding form contributes at most `(n+1)/2`. The credit taken is only
+//!   `t_bits`, never the full `log2(p)`, which is a deliberate under-credit
+//!   (every config satisfies `t < p`, so `t_bits <= p_bits`), and one bit is
+//!   *charged* for the drop residue. The path is therefore accounted, not free.
+//! * **Refresh output.** Phase 2 of `ClockworkBootstrap` deposits
+//!   `c1' * e_bsk` with `||c1'|| < t` and `||e_bsk|| <= 4*n*eta`, so
+//!   `v_boot <= n * t * 4 * n * eta = 4*n^2*t*eta`:
+//!   `bootstrap_output_noise_bit_bound = t_bits + 2*n_bits + eta_bits + 2`.
+//!   No credit is taken for the `Q_boot -> Q_work` division, and the Phase 3
+//!   rounding residue `<= (n+1)/2` is dominated by that deposit. This is
+//!   strictly worse than a fresh encryption, so `reset_after_bootstrap`
+//!   necessarily returns **less** budget than `from_config`.
+//! * **Refresh-input reserve (the `1.4` conservative trigger).** The decryption
+//!   boundary is not the binding constraint on a *refreshable* ciphertext.
+//!   Phase 1 of the refresh (`modswitch_to_t`) maps each coefficient
+//!   `c |-> round(c*t/Q)`; writing `c0 + c1*s = Delta*m + e (mod Q)`, the value
+//!   the refresh re-encrypts is
+//!   `m*(t*Delta/Q) + (t/Q)*e + (r0 + r1*s) + k*t`, where `r0, r1` are the
+//!   per-coefficient rounding residues. The noise-dependent part of that
+//!   perturbation, expanded through the ring product, is bounded by
+//!   `n*t*||e||_inf / Q`. Requiring it to stay below one Phase-1 quantisation
+//!   step, `n*t*||e||/Q < 1/2`, gives `||e||_inf < Delta/(2n)`: the noise must
+//!   sit at least `n_bits + 1` bits below the decryption boundary for the
+//!   ciphertext to still be an exact refresh input. That is
+//!   `bootstrap_input_reserve_mb`, and `can_perform_with_reserve` is what the
+//!   auto-refresh trigger consults. The noise-*independent* residue `r0 + r1*s`
+//!   is a property of `modswitch_to_t`, not of the noise level; no ledger term
+//!   can bound it away, which is why some configs cannot carry a public refresh
+//!   at all (see `params::secure_configs::supports_public_refresh`).
 
 use crate::params::FHEConfig;
 
@@ -13,6 +97,12 @@ use crate::params::FHEConfig;
 pub struct NoiseBudget {
     remaining_mb: i64,
     initial_mb: i64,
+    /// Budget at the start of the current refresh cycle. Equal to `initial_mb`
+    /// until the first `reset_after_bootstrap`, then the post-refresh budget.
+    /// `should_bootstrap` measures against this rather than against the fresh
+    /// budget, so a percentage trigger keeps meaning the same thing after a
+    /// refresh has lowered the ceiling.
+    cycle_initial_mb: i64,
     operations: Vec<NoiseOperation>,
 }
 
@@ -133,36 +223,147 @@ fn exact_delta_bit_length(config: &FHEConfig) -> i64 {
     limbs_bit_length(&quotient)
 }
 
-fn initial_noise_bit_bound(config: &FHEConfig) -> i64 {
-    // Exact integer bound for CBD noise at N=n, width=eta
-    // Bound ≈ 6 * eta * sqrt(n)
-    let eta_bits = scalar_bit_length(config.eta as u64).max(1);
-    let root_n_bits = (config.n.trailing_zeros() / 2) as i64;
-    // 3 bits for factor 6-8 safety margin
-    eta_bits + root_n_bits + 3
+/// `log2(n)`, exact: every supported `n` is a power of two.
+fn ring_degree_bits(config: &FHEConfig) -> i64 {
+    debug_assert!(config.n.is_power_of_two(), "ring degree must be a power of two");
+    config.n.trailing_zeros() as i64
 }
 
-fn bootstrap_noise_bit_bound(config: &FHEConfig) -> i64 {
-    let t_bits = scalar_bit_length(config.t);
-    let eta_bits = scalar_bit_length(config.eta as u64).max(1);
-    let root_n_bits = (config.n.trailing_zeros() / 2) as i64;
-    t_bits + eta_bits + root_n_bits
+fn plaintext_bits(config: &FHEConfig) -> i64 {
+    scalar_bit_length(config.t)
+}
+
+fn error_width_bits(config: &FHEConfig) -> i64 {
+    scalar_bit_length(config.eta as u64).max(1)
+}
+
+/// Noise a fresh public-key encryption deposits, in bits.
+///
+/// `e_fresh = e_pk*u + e1 + e2*s` with `||u||,||s|| <= 1` (ternary) and
+/// `||e_pk||,||e1||,||e2|| <= eta` (CBD_eta is supported on `[-eta, eta]`).
+/// Ring expansion gives `||e_fresh|| <= n*eta + eta + n*eta = (2n+1)*eta`,
+/// which is at most `4*n*eta` for every `n >= 1`. Bits round up.
+fn fresh_noise_bit_bound(config: &FHEConfig) -> i64 {
+    ring_degree_bits(config) + error_width_bits(config) + 2
+}
+
+/// Noise a `ClockworkBootstrap` refresh deposits in its output, in bits.
+///
+/// Phase 2 forms `Delta_boot*(c0' + c1'*s) + c1'*e_bsk`; the only noise term is
+/// `c1'*e_bsk` with `||c1'|| < t` and `||e_bsk|| <= 4*n*eta` (the bootstrap key
+/// is itself a public-key encryption), so `||v_boot|| <= n*t*4*n*eta`.
+/// No credit is taken for the `Q_boot -> Q_work` division in Phase 3, and that
+/// step's own rounding residue (`<= (n+1)/2`) is dominated by this deposit.
+///
+/// This is strictly larger than [`fresh_noise_bit_bound`] by `t_bits + n_bits`,
+/// which is the whole point: a refreshed ciphertext is *not* as clean as a
+/// fresh one, and `reset_after_bootstrap` must not pretend otherwise.
+fn bootstrap_output_noise_bit_bound(config: &FHEConfig) -> i64 {
+    plaintext_bits(config) + 2 * ring_degree_bits(config) + error_width_bits(config) + 2
+}
+
+/// Number of gadget digits used by relinearization: base `2^16`, `ceil(log2 Q / 16)`.
+///
+/// Mirrors `RNSFHEContext::generate_eval_key_dual` (`decomp_base = 1 << 16`,
+/// `num_digits = q_bits.div_ceil(16)`).
+fn relin_digit_count(config: &FHEConfig) -> i64 {
+    let q_bits: i64 = config
+        .primes
+        .iter()
+        .map(|&prime| scalar_bit_length(prime))
+        .sum();
+    // Integer ceiling division; `i64::div_ceil` is not stable on this toolchain.
+    ((q_bits + RELIN_DECOMP_BASE_BITS - 1) / RELIN_DECOMP_BASE_BITS).max(1)
+}
+
+/// Gadget decomposition base used by relinearization, in bits.
+const RELIN_DECOMP_BASE_BITS: i64 = 16;
+
+/// Noise relinearization deposits, in bits: `ell * n * 2^16 * (4*n*eta)`.
+///
+/// Public so the side condition that justifies charging relinearization a
+/// single bit (`v_mul + v_relin <= 2*max(v_mul, v_relin)`) can be asserted
+/// rather than assumed.
+pub fn relin_noise_bit_bound(config: &FHEConfig) -> i64 {
+    scalar_bit_length(relin_digit_count(config) as u64)
+        + 2 * ring_degree_bits(config)
+        + error_width_bits(config)
+        + RELIN_DECOMP_BASE_BITS
+        + 2
+}
+
+/// Multiplicative noise growth of one ct x ct multiply, in bits: `G = 8*n^2*t`.
+fn mul_growth_bit_cost(config: &FHEConfig) -> i64 {
+    plaintext_bits(config) + 2 * ring_degree_bits(config) + 3
+}
+
+/// Bits of noise a chain effectively starts from, given a starting level.
+///
+/// The `+ t` absorbs the input-independent deposit `F <= 4*n^2*t^2` of the
+/// tensor rescaling exactly once, via `v_k <= G^k * (v_0 + F/(G-1))` and
+/// `F/(G-1) <= t`. `max(.., t_bits) + 1` is an upper bound on `v_0 + t`.
+fn effective_start_bits(start_noise_bits: i64, config: &FHEConfig) -> i64 {
+    start_noise_bits.max(plaintext_bits(config)) + 1
+}
+
+/// Bits of noise a ciphertext may carry and still decrypt: `||e|| < Delta/2`.
+fn decryption_capacity_bits(config: &FHEConfig) -> i64 {
+    (exact_delta_bit_length(config) - 1).max(0)
+}
+
+/// Budget, in millibits, that must remain unspent for the ciphertext to still
+/// be an **exact refresh input** (see the module derivation, "Refresh-input
+/// reserve"). `n_bits + 1` bits below the decryption boundary.
+///
+/// This is the term that makes the auto-refresh trigger conservative *by
+/// construction*: the refresh fires while the ciphertext is still inside the
+/// window `modswitch_to_t` can carry exactly, not merely while it still
+/// decrypts.
+pub fn bootstrap_input_reserve_mb(config: &FHEConfig) -> i64 {
+    (ring_degree_bits(config) + 1) * 1000
+}
+
+/// Worst-case noise *level* of a fresh encryption, in millibits.
+///
+/// This is a level, not a ledger charge: it says where a fresh ciphertext sits,
+/// which is what a caller reporting "post-refresh noise" for a decrypt-then-
+/// re-encrypt refresh wants. The corresponding ledger charge is
+/// [`NoiseBudget::encrypt_cost`], which is zero because [`NoiseBudget::from_config`]
+/// has already accounted for this level.
+pub fn fresh_noise_millibits(config: &FHEConfig) -> i64 {
+    fresh_noise_bit_bound(config) * 1000
+}
+
+/// Worst-case noise *level* of a `ClockworkBootstrap` refresh output, in millibits.
+pub fn refresh_output_noise_millibits(config: &FHEConfig) -> i64 {
+    bootstrap_output_noise_bit_bound(config) * 1000
 }
 
 impl NoiseBudget {
     /// Construct a budget from exact RNS quotient size.
+    ///
+    /// `capacity - effective_start_bits(fresh)`: the decryption capacity
+    /// `Delta/2` less the fresh-encryption noise and the once-only additive
+    /// deposit of the tensor rescaling (see the module derivation).
     pub fn from_config(config: &FHEConfig) -> Self {
-        let delta_bits = exact_delta_bit_length(config);
-        let budget_bits = (delta_bits - initial_noise_bit_bound(config)).max(0);
-        let budget_mb = budget_bits
-            .checked_mul(1000)
-            .expect("initial noise budget exceeds i64 millibits");
+        let budget_mb = Self::budget_mb_from_start_noise(fresh_noise_bit_bound(config), config);
 
         Self {
             remaining_mb: budget_mb,
             initial_mb: budget_mb,
+            cycle_initial_mb: budget_mb,
             operations: Vec::new(),
         }
+    }
+
+    /// Millibits available above a ciphertext whose noise is `start_noise_bits`.
+    fn budget_mb_from_start_noise(start_noise_bits: i64, config: &FHEConfig) -> i64 {
+        let budget_bits =
+            (decryption_capacity_bits(config) - effective_start_bits(start_noise_bits, config))
+                .max(0);
+        budget_bits
+            .checked_mul(1000)
+            .expect("noise budget exceeds i64 millibits")
     }
 
     /// Construct an explicit test budget.
@@ -173,6 +374,7 @@ impl NoiseBudget {
         Self {
             remaining_mb: millibits,
             initial_mb: millibits,
+            cycle_initial_mb: millibits,
             operations: Vec::new(),
         }
     }
@@ -210,42 +412,79 @@ impl NoiseBudget {
         }
     }
 
-    pub fn encrypt_cost(config: &FHEConfig) -> i64 {
-        let eta_bits = scalar_bit_length(config.eta as u64).max(1);
-        let root_n_bits = (config.n.trailing_zeros() / 2) as i64;
-        (eta_bits + root_n_bits) * 1000
+    /// Budget a fresh encryption consumes: **zero**.
+    ///
+    /// [`Self::from_config`] already seats the ledger at the fresh-encryption
+    /// noise level -- its budget is `capacity - effective_start(fresh)`, i.e.
+    /// what remains *above* a fresh ciphertext. Charging encryption again
+    /// double-counts the same noise, and charging it once per encrypted value
+    /// (as a session-based caller naturally does) compounds the error linearly
+    /// in the number of inputs, which is not how noise behaves at all: two
+    /// independently encrypted ciphertexts each carry one fresh-noise term, not
+    /// two between them.
+    ///
+    /// The previous value hid this because it was a `sqrt(n)` heuristic small
+    /// enough to be absorbed by the slack in the old budget. Under a true
+    /// worst-case bound the double-count is large enough to exhaust a real
+    /// config before its first multiply, which is how it was found.
+    ///
+    /// Callers that want the fresh-encryption noise *level* -- rather than a
+    /// ledger charge -- want [`fresh_noise_millibits`].
+    pub fn encrypt_cost(_config: &FHEConfig) -> i64 {
+        0
     }
 
+    /// `v_out = v1 + v2 <= 2*max(v1, v2)`: exactly one bit.
     pub fn add_cost() -> i64 {
         1000
     }
 
+    /// Adding a plaintext adds `Delta*m`, which is signal, not noise, so the
+    /// true cost is zero. A tenth of a bit is retained as strictly conservative
+    /// bookkeeping so an unbounded add-plain chain still terminates.
     pub fn add_plain_cost() -> i64 {
         100
     }
 
+    /// Multiply by a plaintext whose coefficients are bounded by `scalar`:
+    /// `||v_out|| <= n * scalar * ||v_in||` by ring expansion.
+    ///
+    /// A caller multiplying by an arbitrary plaintext polynomial must pass the
+    /// plaintext modulus `t` as the bound.
     pub fn mul_plain_cost(scalar: u64, config: &FHEConfig) -> i64 {
         let scalar_bits = scalar_bit_length(scalar).max(1);
-        let t_bits = scalar_bit_length(config.t);
-        (scalar_bits + t_bits) * 1000
+        (ring_degree_bits(config) + scalar_bits) * 1000
     }
 
+    /// Multiplicative noise growth of one ct x ct multiply: `G = 8*n^2*t`.
+    ///
+    /// The input-independent part of the tensor bound is not dropped; it is
+    /// folded exactly once into the chain's starting level by
+    /// `effective_start_bits` (see the module derivation).
     pub fn mul_ct_cost(config: &FHEConfig) -> i64 {
-        let t_bits = scalar_bit_length(config.t);
-        let n_bits = config.n.trailing_zeros() as i64;
-        let eta_bits = scalar_bit_length(config.eta as u64).max(1);
-        (t_bits + n_bits + eta_bits) * 1000
+        mul_growth_bit_cost(config) * 1000
     }
 
-    pub fn relin_cost(config: &FHEConfig) -> i64 {
-        config.n.trailing_zeros() as i64 * 1000
+    /// Relinearization noise is **additive**, so one bit covers it:
+    /// `v_mul + v_relin <= 2 * max(v_mul, v_relin)`.
+    ///
+    /// The side condition `v_relin <= v_mul` is asserted for every supported
+    /// config by `relin_bound_never_dominates_the_multiply_bound`; it is not
+    /// assumed. [`relin_noise_bit_bound`] exposes the absolute bound.
+    pub fn relin_cost(_config: &FHEConfig) -> i64 {
+        1000
     }
 
-    /// K-Elimination rescaling returns the conservative bit-width of `t` to
-    /// the ledger. This is an accounting transition only; the arithmetic path
-    /// remains resident in DualRNS main and anchor lanes.
+    /// Rescale / exact prime drop, net of its residue deposit.
+    ///
+    /// Dropping an RNS prime `p` divides the noise by `p`. Only `t_bits` of
+    /// that credit is taken, never the full `log2(p)`: every supported config
+    /// satisfies `t < p`, so this is a deliberate under-credit. One bit is then
+    /// **charged** for the drop residue -- `j in [0, t)` per drop on the exact
+    /// align-and-drop path, `<= (n+1)/2` on the rounding path -- so the drop is
+    /// accounted rather than assumed free. Net credit: `t_bits - 1` bits.
     pub fn rescale_cost(config: &FHEConfig) -> i64 {
-        -(scalar_bit_length(config.t) * 1000)
+        -((plaintext_bits(config) - 1).max(0) * 1000)
     }
 
     pub fn multiplication_cycle_cost(config: &FHEConfig) -> i64 {
@@ -260,30 +499,73 @@ impl NoiseBudget {
         self.initial_mb
     }
 
+    /// Whether the budget covers `cost_mb` against the **decryption** boundary.
+    ///
+    /// This is the weaker of the two constraints. An auto-refresh trigger must
+    /// use [`Self::can_perform_with_reserve`] instead: a ciphertext can be well
+    /// inside the decryption boundary and already outside the window a refresh
+    /// can carry exactly.
     pub fn can_perform(&self, cost_mb: i64) -> bool {
         cost_mb < 0 || self.remaining_mb >= cost_mb
     }
 
+    /// Whether the budget covers `cost_mb` **and still leaves the ciphertext an
+    /// exact refresh input** afterwards.
+    ///
+    /// This is the conservative-by-construction trigger predicate of item 1.4:
+    /// it fires strictly before the boundary, because the reserve is subtracted
+    /// from the available budget before the comparison rather than after.
+    pub fn can_perform_with_reserve(&self, cost_mb: i64, config: &FHEConfig) -> bool {
+        if cost_mb < 0 {
+            return true;
+        }
+        let usable = self
+            .remaining_mb
+            .saturating_sub(bootstrap_input_reserve_mb(config));
+        usable >= cost_mb
+    }
+
+    /// Multiplies still fundable before **decryption** would fail.
     pub fn remaining_multiplications(&self, config: &FHEConfig) -> usize {
+        Self::divide_budget(self.remaining_mb, config)
+    }
+
+    /// Multiplies still fundable before a **refresh becomes mandatory**.
+    ///
+    /// Always less than or equal to [`Self::remaining_multiplications`]: the
+    /// refresh-input reserve is withheld first.
+    pub fn remaining_multiplications_before_refresh(&self, config: &FHEConfig) -> usize {
+        Self::divide_budget(
+            self.remaining_mb
+                .saturating_sub(bootstrap_input_reserve_mb(config)),
+            config,
+        )
+    }
+
+    fn divide_budget(available_mb: i64, config: &FHEConfig) -> usize {
         let cost = Self::mul_ct_cost(config) + Self::relin_cost(config);
         if cost <= 0 {
             return usize::MAX;
         }
-        if self.remaining_mb <= 0 {
+        if available_mb <= 0 {
             return 0;
         }
-        (self.remaining_mb / cost) as usize
+        (available_mb / cost) as usize
     }
 
-    /// Reset after a successful real bootstrap using exact `floor(Q / t)` size.
+    /// Reset after a successful real refresh, to the **refresh output** level.
+    ///
+    /// The credit is `capacity - effective_start_bits(bootstrap_output)`, and
+    /// `bootstrap_output_noise_bit_bound` exceeds `fresh_noise_bit_bound` by
+    /// `t_bits + n_bits`. A refresh therefore returns strictly less budget than
+    /// a fresh encryption -- it does not restore the ciphertext to fresh, and
+    /// this ledger no longer implies that it does.
     pub fn reset_after_bootstrap(&mut self, config: &FHEConfig) {
-        let delta_bits = exact_delta_bit_length(config);
-        let budget_bits = (delta_bits - bootstrap_noise_bit_bound(config)).max(0);
-        let budget_mb = budget_bits
-            .checked_mul(1000)
-            .expect("post-bootstrap noise budget exceeds i64 millibits");
+        let budget_mb =
+            Self::budget_mb_from_start_noise(bootstrap_output_noise_bit_bound(config), config);
 
         self.remaining_mb = budget_mb;
+        self.cycle_initial_mb = budget_mb;
         self.operations.push(NoiseOperation {
             op_type: NoiseOpType::Bootstrap,
             cost_mb: 0,
@@ -292,10 +574,16 @@ impl NoiseBudget {
     }
 
     /// Trigger when the remaining budget is at or below the configured
-    /// permille fraction of the initial fresh budget.
+    /// permille fraction of the **current refresh cycle's** starting budget.
+    ///
+    /// Measuring against the cycle start rather than the fresh budget keeps a
+    /// percentage trigger meaning the same thing after a refresh has lowered
+    /// the ceiling; against the fresh budget a 25% trigger silently becomes a
+    /// far more permissive one once `reset_after_bootstrap` has run.
     pub fn should_bootstrap(&self, threshold_permille: u32) -> bool {
         assert!(threshold_permille <= 1000, "threshold must be in 0..=1000");
-        let threshold_mb = (self.initial_mb as i128 * threshold_permille as i128 / 1000) as i64;
+        let threshold_mb =
+            (self.cycle_initial_mb as i128 * threshold_permille as i128 / 1000) as i64;
         self.remaining_mb <= threshold_mb
     }
 
@@ -403,9 +691,224 @@ mod tests {
         let mut budget = NoiseBudget {
             remaining_mb: i64::MAX,
             initial_mb: i64::MAX,
+            cycle_initial_mb: i64::MAX,
             operations: Vec::new(),
         };
         assert!(budget.consume(NoiseOpType::Rescale, i64::MIN).is_err());
+    }
+
+    // =====================================================================
+    // DERIVED-BOUND SIDE CONDITIONS
+    //
+    // The ledger charges relinearization and the prime drop a single bit each,
+    // which is only an upper bound while the additive term they contribute is
+    // dominated by the term it is being added to. Those side conditions are
+    // asserted here rather than assumed in a comment.
+    // =====================================================================
+
+    fn production_configs() -> Vec<FHEConfig> {
+        vec![
+            SecureConfig::secure_128().into_config(),
+            SecureConfig::secure_128_deep().into_config(),
+            SecureConfig::secure_192().into_config(),
+            SecureConfig::secure_256().into_config(),
+            SecureConfig::hardware_opt().into_config(),
+        ]
+    }
+
+    #[test]
+    fn relin_bound_never_dominates_the_multiply_bound() {
+        // `relin_cost` charges one bit on the strength of
+        // `v_mul + v_relin <= 2*max(v_mul, v_relin)`. That is an upper bound
+        // only while `v_relin <= v_mul`. The smallest `v_mul` any chain can
+        // present is the one produced by multiplying the cleanest possible
+        // operands -- a pair of refresh outputs, which is the cleanest state
+        // the auto path ever reaches after its first operation.
+        for config in production_configs() {
+            let cleanest_start = fresh_noise_bit_bound(&config)
+                .min(bootstrap_output_noise_bit_bound(&config));
+            let smallest_post_multiply =
+                effective_start_bits(cleanest_start, &config) + mul_growth_bit_cost(&config);
+            let relin = relin_noise_bit_bound(&config);
+            assert!(
+                relin <= smallest_post_multiply,
+                "{}: relin bound {} bits exceeds the smallest post-multiply bound {} bits, \
+                 so charging relinearization a single bit would under-count",
+                config.name,
+                relin,
+                smallest_post_multiply,
+            );
+        }
+    }
+
+    #[test]
+    fn prime_drop_credit_is_never_larger_than_the_true_credit() {
+        // `rescale_cost` credits `t_bits` for a drop that truly divides by a
+        // prime `p > t`. Under-crediting is the safe direction; assert it.
+        for config in production_configs() {
+            let smallest_prime_bits = config
+                .primes
+                .iter()
+                .map(|&prime| scalar_bit_length(prime))
+                .min()
+                .expect("non-empty RNS chain");
+            assert!(
+                plaintext_bits(&config) <= smallest_prime_bits,
+                "{}: t is {} bits but the smallest lane is {} bits -- the rescale credit \
+                 would exceed the true credit",
+                config.name,
+                plaintext_bits(&config),
+                smallest_prime_bits,
+            );
+            assert!(
+                NoiseBudget::rescale_cost(&config) < 0,
+                "{}: rescale must remain a net credit",
+                config.name
+            );
+            // The credit is strictly smaller than `t_bits` because one bit is
+            // charged back for the drop residue -- the 1.5 delta term.
+            assert_eq!(
+                NoiseBudget::rescale_cost(&config),
+                -((plaintext_bits(&config) - 1) * 1000),
+                "{}: drop residue must be charged",
+                config.name
+            );
+        }
+    }
+
+    #[test]
+    fn refresh_output_is_strictly_worse_than_fresh_encryption() {
+        for config in production_configs() {
+            assert!(
+                bootstrap_output_noise_bit_bound(&config) > fresh_noise_bit_bound(&config),
+                "{}: refresh output must be modelled as noisier than fresh",
+                config.name
+            );
+            let mut refreshed = NoiseBudget::from_config(&config);
+            let fresh_budget = refreshed.remaining_millibits();
+            refreshed.reset_after_bootstrap(&config);
+            assert!(
+                refreshed.remaining_millibits() < fresh_budget,
+                "{}: reset_after_bootstrap returned {} mb, which is not less than the \
+                 fresh budget {} mb -- that would over-credit the refresh",
+                config.name,
+                refreshed.remaining_millibits(),
+                fresh_budget,
+            );
+        }
+    }
+
+    #[test]
+    fn refresh_reserve_is_withheld_before_the_boundary_not_after() {
+        // Adversarial: walk the budget to the boundary from both sides and
+        // confirm the reserve-aware predicate flips strictly earlier than the
+        // decryption-only predicate, and never later.
+        for config in production_configs() {
+            let cost = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+            let reserve = bootstrap_input_reserve_mb(&config);
+            assert!(reserve > 0, "{}: reserve must be positive", config.name);
+
+            // One millibit above the reserve-aware boundary: still permitted.
+            let above = NoiseBudget {
+                remaining_mb: cost + reserve,
+                initial_mb: cost + reserve,
+                cycle_initial_mb: cost + reserve,
+                operations: Vec::new(),
+            };
+            assert!(above.can_perform_with_reserve(cost, &config));
+
+            // Exactly one millibit below: refused, while the decryption-only
+            // predicate still says yes. That gap is the margin.
+            let below = NoiseBudget {
+                remaining_mb: cost + reserve - 1,
+                initial_mb: cost + reserve - 1,
+                cycle_initial_mb: cost + reserve - 1,
+                operations: Vec::new(),
+            };
+            assert!(
+                !below.can_perform_with_reserve(cost, &config),
+                "{}: reserve-aware predicate admitted an operation that eats the reserve",
+                config.name
+            );
+            assert!(
+                below.can_perform(cost),
+                "{}: decryption-only predicate should still admit it -- the reserve is \
+                 exactly the difference between the two",
+                config.name
+            );
+
+            // A negative cost (a credit, e.g. rescale) is always permitted.
+            assert!(below.can_perform_with_reserve(-1, &config));
+        }
+    }
+
+    #[test]
+    fn encryption_is_not_charged_twice() {
+        // `from_config` seats the ledger at the fresh level, so a fresh
+        // encryption costs nothing further. A non-zero `encrypt_cost` would
+        // double-count -- and, in a per-value caller, compound with the number
+        // of inputs.
+        for config in production_configs() {
+            assert_eq!(
+                NoiseBudget::encrypt_cost(&config),
+                0,
+                "{}: encryption must not be charged on top of from_config",
+                config.name
+            );
+            let budget = NoiseBudget::from_config(&config);
+            assert_eq!(
+                budget.remaining_millibits(),
+                (decryption_capacity_bits(&config)
+                    - effective_start_bits(fresh_noise_bit_bound(&config), &config))
+                    .max(0)
+                    * 1000,
+                "{}: from_config must be exactly the headroom above a fresh ciphertext",
+                config.name,
+            );
+            // The level is still available to callers that want it.
+            assert_eq!(
+                fresh_noise_millibits(&config),
+                fresh_noise_bit_bound(&config) * 1000
+            );
+            assert!(refresh_output_noise_millibits(&config) > fresh_noise_millibits(&config));
+        }
+    }
+
+    #[test]
+    fn reserve_aware_multiplication_count_never_exceeds_decryption_bound() {
+        for config in production_configs() {
+            let budget = NoiseBudget::from_config(&config);
+            assert!(
+                budget.remaining_multiplications_before_refresh(&config)
+                    <= budget.remaining_multiplications(&config),
+                "{}: refresh-bounded depth exceeded decryption-bounded depth",
+                config.name
+            );
+        }
+    }
+
+    #[test]
+    fn percentage_trigger_tracks_the_current_cycle_not_the_fresh_budget() {
+        let config = SecureConfig::secure_128_deep().into_config();
+        let mut budget = NoiseBudget::from_config(&config);
+        budget.reset_after_bootstrap(&config);
+        let post = budget.remaining_millibits();
+        assert!(post < budget.initial_millibits());
+
+        // Immediately after a reset the budget is full *for this cycle*, so a
+        // 25% trigger must not fire. Measured against the fresh budget it would
+        // not fire either; the distinguishing case is just below the cycle's
+        // own quarter mark, which is far above the fresh budget's quarter mark.
+        assert!(!budget.should_bootstrap(250));
+        budget
+            .consume(NoiseOpType::MulCt, post - post / 4 + 1)
+            .expect("drive to just under a quarter of the cycle budget");
+        assert!(
+            budget.should_bootstrap(250),
+            "trigger must measure against the cycle budget {} mb, not the fresh budget {} mb",
+            post,
+            budget.initial_millibits()
+        );
     }
 
     #[ignore = "VESTIGIAL: asserts NoiseBudget::reset_after_bootstrap raises remaining_millibits above its pre-reset value and appends a NoiseOpType::Bootstrap entry. A reset only means something against a budget that depletes per multiply. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
