@@ -212,6 +212,14 @@ required-features = ["allow_insecure"]
 name = "anchor_drift_diagnostics"
 required-features = ["allow_insecure"]
 
+# Arrow-emission no-leak gate matrix over the real FHE surface
+# (CONFIGS x MODES x GATES, secure_128 .. secure_256, PUBLIC and SYMMETRIC).
+# Drives keygen/encrypt with a seeded ShadowHarvester, so it needs the same
+# feature as every other target in this block.
+[[test]]
+name = "arrow_emission_fhe_gate_matrix"
+required-features = ["allow_insecure"]
+
 [[test]]
 name = "basis_invariance"
 required-features = ["allow_insecure"]

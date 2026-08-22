@@ -10,6 +10,9 @@
 //! - CRT batching for SIMD packing (N/2 slots per ciphertext)
 //! - Parallel encrypt/decrypt for throughput
 
+pub mod arrow_emission_gate; // Public forwarding layer for the exact
+                             // align-and-drop primitive, consumed by the
+                             // arrow-emission gate matrix in tests/.
 pub mod auto_bootstrap;
 pub mod batch;
 pub mod bootstrap;
