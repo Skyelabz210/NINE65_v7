@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 publish = false
+license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [lib]
 path = "src/lib.rs"

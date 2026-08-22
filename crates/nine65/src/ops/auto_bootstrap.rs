@@ -78,19 +78,47 @@ impl<'a> AutoBootstrapEvaluator<'a> {
     /// that already-corrupted value -- it could never repair it. Checking
     /// and refreshing before the operation, on the operands, is the only
     /// ordering under which "refresh" actually means what it says.
+    ///
+    /// Two further properties of this predicate are load-bearing.
+    ///
+    /// **The trigger is reserve-aware.** It consults
+    /// [`NoiseBudget::can_perform_with_reserve`], not `can_perform`. The
+    /// decryption boundary is *not* the binding constraint on a ciphertext
+    /// that is about to be refreshed: Phase 1 of the refresh
+    /// (`ClockworkBootstrap::modswitch_to_t`) carries a ciphertext exactly only
+    /// while its noise sits a further `log2(n) + 1` bits below `Delta/2`. A
+    /// ciphertext that has merely stayed decryptable can already be past that
+    /// point, and refreshing it then re-encrypts a value the refresh itself
+    /// has perturbed. Withholding the reserve makes the trigger fire strictly
+    /// before that window closes rather than after it.
+    ///
+    /// **A squaring refreshes once, not twice.** For `ct * ct` the same
+    /// ciphertext arrives as both operands. Bootstrapping it twice costs two
+    /// refreshes, produces two independent encryptions of the same value for no
+    /// benefit, and made `bootstrap_count` report double the work actually
+    /// done. [`same_ciphertext`] detects the case and one refresh result is
+    /// used for both operands.
     fn preflight_refresh(
         &mut self,
         ct1: &DualRNSCiphertext,
         ct2: &DualRNSCiphertext,
         operation_cost: i64,
     ) -> Nine65Result<(DualRNSCiphertext, DualRNSCiphertext)> {
-        if !self.budget.can_perform(operation_cost)
+        let config = &self.work_ctx.config;
+        if !self.budget.can_perform_with_reserve(operation_cost, config)
             || self.budget.should_bootstrap(self.trigger_permille)
         {
-            let fresh1 = self.bootstrap.bootstrap(ct1, self.bsk, self.ksk)?;
-            let fresh2 = self.bootstrap.bootstrap(ct2, self.bsk, self.ksk)?;
+            let (fresh1, fresh2) = if same_ciphertext(ct1, ct2) {
+                let refreshed = self.bootstrap.bootstrap(ct1, self.bsk, self.ksk)?;
+                self.bootstrap_count += 1;
+                (refreshed.clone(), refreshed)
+            } else {
+                let fresh1 = self.bootstrap.bootstrap(ct1, self.bsk, self.ksk)?;
+                let fresh2 = self.bootstrap.bootstrap(ct2, self.bsk, self.ksk)?;
+                self.bootstrap_count += 2;
+                (fresh1, fresh2)
+            };
             self.budget.reset_after_bootstrap(&self.work_ctx.config);
-            self.bootstrap_count += 2;
             Ok((fresh1, fresh2))
         } else {
             Ok((ct1.clone(), ct2.clone()))
@@ -189,6 +217,32 @@ impl<'a> AutoBootstrapEvaluator<'a> {
     }
 }
 
+/// Whether two operands are the same ciphertext, so one refresh serves both.
+///
+/// Pointer equality is the cheap exact test and catches the shape that matters
+/// -- `evaluator.mul_auto(&ct, &ct)`, a squaring. It is only a sufficient
+/// condition, so a limb-wise comparison follows as a fallback for operands that
+/// are equal by value but distinct by address (a clone, or the same ciphertext
+/// reached through two bindings). The comparison is `O(n * lanes)` integer
+/// equality against the cost of a full bootstrap, so the fallback is free in
+/// any accounting that matters.
+///
+/// Being conservative in the right direction matters here: a false *negative*
+/// costs one redundant refresh, while a false *positive* would substitute one
+/// operand for another. Only exact limb equality is accepted, so a false
+/// positive means the two ciphertexts are bit-identical and interchangeable.
+fn same_ciphertext(ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> bool {
+    if std::ptr::eq(ct1, ct2) {
+        return true;
+    }
+    ct1.level == ct2.level
+        && ct1.c0.n == ct2.c0.n
+        && ct1.c0.main == ct2.c0.main
+        && ct1.c0.anchor == ct2.c0.anchor
+        && ct1.c1.main == ct2.c1.main
+        && ct1.c1.anchor == ct2.c1.anchor
+}
+
 /// Validate an auto-bootstrap trigger threshold expressed in permille.
 ///
 /// Legal thresholds lie in the closed interval `0..=1000` (0% to 100% of the
@@ -204,6 +258,385 @@ fn assert_valid_trigger_threshold(permille: u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::entropy::ShadowHarvester;
+    use crate::ops::bootstrap::ClockworkBootstrap;
+    use crate::params::SecureConfig;
+
+    struct Harness {
+        ctx: RNSFHEContext,
+        boot: ClockworkBootstrap,
+        keys: crate::ops::rns_fhe::DualRNSFullKeySet,
+        boot_keys: crate::keys::bootstrap::BootstrapKeySet,
+        config: FHEConfig,
+    }
+
+    fn harness(secure: SecureConfig, seed: u64) -> Harness {
+        let config = secure.into_config();
+        let ctx = RNSFHEContext::try_new(&config).expect("context");
+        let boot = ClockworkBootstrap::new(&config).expect("bootstrap");
+        let mut rng = ShadowHarvester::with_seed(seed);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let boot_keys = boot
+            .generate_keys(&keys.secret_key, &mut rng)
+            .expect("bootstrap keys");
+        Harness {
+            ctx,
+            boot,
+            keys,
+            boot_keys,
+            config,
+        }
+    }
+
+    /// Repeated squaring under `mul_auto`, checking the plaintext after *every*
+    /// operation and reporting where a refresh fired.
+    ///
+    /// Base 3 is used rather than base 2: `2^(2^k) mod 65537` collapses to 1 at
+    /// `k = 5` (because `2^16 = -1 mod 65537`), after which the circuit is only
+    /// squaring 1 and proves nothing. `3` has order 65536, so `3^(2^k)` stays
+    /// non-trivial for every `k < 16`.
+    fn squaring_run(h: &Harness, depth: usize) -> (Vec<bool>, Vec<usize>, usize) {
+        let mut rng = ShadowHarvester::with_seed(4242);
+        let mut evaluator = AutoBootstrapEvaluator::new(
+            &h.ctx,
+            &h.boot,
+            &h.boot_keys.bsk,
+            &h.boot_keys.ksk,
+            &h.keys.eval_key,
+            &h.config,
+        );
+
+        let mut ct = h.ctx.encrypt_dual(3, &h.keys.public_key, &mut rng);
+        assert_eq!(
+            h.ctx.decrypt_dual(&ct, &h.keys.secret_key),
+            3,
+            "fresh encryption must round-trip before the circuit starts"
+        );
+
+        let mut expected: u128 = 3;
+        let mut correct = Vec::with_capacity(depth);
+        let mut refreshed_at = Vec::new();
+        let mut before = evaluator.bootstrap_count;
+
+        for level in 1..=depth {
+            ct = evaluator
+                .mul_auto(&ct, &ct)
+                .unwrap_or_else(|e| panic!("mul_auto failed at depth {}: {}", level, e));
+            expected = expected * expected % h.config.t as u128;
+            let decrypted = h.ctx.decrypt_dual(&ct, &h.keys.secret_key);
+            let ok = decrypted as u128 == expected;
+            if !ok {
+                println!(
+                    "  {} depth {}: decrypted {} expected {}",
+                    h.config.name, level, decrypted, expected
+                );
+            }
+            correct.push(ok);
+            if evaluator.bootstrap_count > before {
+                refreshed_at.push(level);
+                assert_eq!(
+                    evaluator.bootstrap_count - before,
+                    1,
+                    "{}: a squaring passes one ciphertext as both operands, so its refresh \
+                     must cost exactly one bootstrap -- got {} at depth {}",
+                    h.config.name,
+                    evaluator.bootstrap_count - before,
+                    level,
+                );
+                before = evaluator.bootstrap_count;
+            }
+        }
+        (correct, refreshed_at, evaluator.bootstrap_count)
+    }
+
+    fn assert_squaring_circuit_is_exact(secure: SecureConfig, seed: u64, depth: usize) {
+        let name = secure.config.name;
+        let h = harness(secure, seed);
+        let (correct, refreshed_at, bootstraps) = squaring_run(&h, depth);
+
+        println!(
+            "{}: depth {} squaring, refreshes at {:?}, {} bootstraps total",
+            name, depth, refreshed_at, bootstraps
+        );
+
+        let first_bad = correct.iter().position(|ok| !ok).map(|i| i + 1);
+        assert!(
+            first_bad.is_none(),
+            "{}: repeated squaring under auto-refresh first decrypted incorrectly at \
+             depth {:?} (refreshes fired at {:?})",
+            name,
+            first_bad,
+            refreshed_at,
+        );
+
+        // ACCEPTANCE: automatic refresh must actually fire, otherwise this test
+        // proves nothing about the refresh path.
+        let first_refresh = *refreshed_at
+            .first()
+            .unwrap_or_else(|| panic!("{}: no automatic refresh fired in {} levels", name, depth));
+
+        // ACCEPTANCE: the plaintext is correct at the triggering operation and
+        // stays correct for at least three subsequent nonlinear operations.
+        assert!(
+            depth >= first_refresh + 3,
+            "{}: circuit too short to observe three nonlinear operations after the first \
+             refresh (first refresh at depth {}, circuit depth {})",
+            name,
+            first_refresh,
+            depth,
+        );
+        for level in first_refresh..=(first_refresh + 3) {
+            assert!(
+                correct[level - 1],
+                "{}: depth {} is wrong -- the refresh at depth {} did not keep the plaintext",
+                name,
+                level,
+                first_refresh,
+            );
+        }
+    }
+
+    /// ACCEPTANCE (secure_128_deep): a repeated-square circuit runs to the
+    /// model-predicted depth with every intermediate decryption correct.
+    ///
+    /// "Model-predicted depth" is unbounded here: the ledger funds one ct x ct
+    /// multiply per refresh cycle (`remaining_multiplications_before_refresh`),
+    /// and the refresh re-funds it, so depth is bounded only by how long the
+    /// test is willing to run. Eight levels is four full refresh cycles.
+    #[test]
+    fn repeated_squaring_is_exact_under_auto_refresh_secure_128_deep() {
+        assert_squaring_circuit_is_exact(SecureConfig::secure_128_deep(), 11, 8);
+    }
+
+    /// ACCEPTANCE (secure_192): same circuit, larger chain.
+    #[test]
+    fn repeated_squaring_is_exact_under_auto_refresh_secure_192() {
+        assert_squaring_circuit_is_exact(SecureConfig::secure_192(), 11, 8);
+    }
+
+    /// secure_256 is the one admitted config whose fresh budget funds **two**
+    /// multiplies before the reserve-aware trigger fires (its chain is 158
+    /// Delta bits against 49 mb per multiply and a 15 mb reserve), so its first
+    /// refresh input carries two levels of noise rather than one. That is the
+    /// case the ledger is least corroborated on, which is exactly why it is
+    /// tested rather than assumed.
+    #[test]
+    fn repeated_squaring_is_exact_under_auto_refresh_secure_256() {
+        assert_squaring_circuit_is_exact(SecureConfig::secure_256(), 11, 8);
+    }
+
+    /// ACCEPTANCE: `bootstrap_count` increments by exactly one per squaring
+    /// refresh.
+    ///
+    /// Before the `same_ciphertext` fix, `ct * ct` bootstrapped the one operand
+    /// twice and added two to the counter: twice the work, no benefit, and a
+    /// counter that reported double the refreshes actually performed.
+    #[test]
+    fn squaring_refresh_costs_exactly_one_bootstrap() {
+        let h = harness(SecureConfig::secure_128_deep(), 11);
+        let (_, refreshed_at, bootstraps) = squaring_run(&h, 6);
+        assert!(
+            !refreshed_at.is_empty(),
+            "no refresh fired, so the counter is untested"
+        );
+        // `squaring_run` already asserts the per-refresh delta is 1; this pins
+        // the total as well, so a compensating double-count cannot hide.
+        assert_eq!(
+            bootstraps,
+            refreshed_at.len(),
+            "{} refreshes fired but bootstrap_count reached {}",
+            refreshed_at.len(),
+            bootstraps,
+        );
+    }
+
+    #[test]
+    fn same_ciphertext_accepts_identity_and_bit_identical_clones() {
+        let h = harness(SecureConfig::secure_128_deep(), 11);
+        let mut rng = ShadowHarvester::with_seed(9);
+        let ct = h.ctx.encrypt_dual(5, &h.keys.public_key, &mut rng);
+        let clone = ct.clone();
+        let other = h.ctx.encrypt_dual(5, &h.keys.public_key, &mut rng);
+
+        assert!(same_ciphertext(&ct, &ct), "identity must be detected");
+        assert!(
+            same_ciphertext(&ct, &clone),
+            "a bit-identical clone is interchangeable and must be detected"
+        );
+        assert!(
+            !same_ciphertext(&ct, &other),
+            "two independent encryptions of the same message are NOT interchangeable"
+        );
+    }
+
+    /// ACCEPTANCE: drive the ledger to the trigger boundary from both sides and
+    /// confirm the refresh fires BEFORE it, never after.
+    ///
+    /// The boundary under test is the refresh-input boundary, not the
+    /// decryption boundary: `can_perform_with_reserve` must refuse an operation
+    /// that `can_perform` would still allow, and the gap between the two is
+    /// exactly `bootstrap_input_reserve_mb`.
+    #[test]
+    fn trigger_fires_before_the_refresh_window_closes_not_after() {
+        use crate::noise::budget::bootstrap_input_reserve_mb;
+
+        for secure in [
+            SecureConfig::secure_128(),
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+        ] {
+            let config = secure.into_config();
+            let cost = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+            let reserve = bootstrap_input_reserve_mb(&config);
+
+            // Walk a fresh budget down one operation at a time and record the
+            // last state at which the reserve-aware predicate still says yes.
+            let mut budget = NoiseBudget::from_config(&config);
+            let mut permitted = 0usize;
+            while budget.can_perform_with_reserve(cost, &config) {
+                budget
+                    .consume(NoiseOpType::MulCt, cost)
+                    .expect("reserve-aware predicate promised this operation was affordable");
+                permitted += 1;
+                assert!(
+                    permitted < 64,
+                    "{}: trigger never fires -- the reserve is not being withheld",
+                    config.name
+                );
+            }
+
+            // From below: the state the trigger stopped at must still hold at
+            // least the whole reserve, i.e. the trigger fired strictly before
+            // the ciphertext left the refresh window.
+            assert!(
+                budget.remaining_millibits() >= 0,
+                "{}: budget went negative before the trigger fired",
+                config.name
+            );
+            assert!(
+                budget.remaining_millibits() < cost + reserve,
+                "{}: trigger fired later than the boundary it is supposed to guard",
+                config.name
+            );
+
+            // From above: the decryption-only predicate is strictly more
+            // permissive at the moment the trigger fires. That difference is
+            // the margin the trigger is spending, and it must be positive.
+            let decryption_bounded = budget.remaining_multiplications(&config);
+            let refresh_bounded = budget.remaining_multiplications_before_refresh(&config);
+            assert!(
+                refresh_bounded <= decryption_bounded,
+                "{}: refresh-bounded depth {} exceeded decryption-bounded depth {}",
+                config.name,
+                refresh_bounded,
+                decryption_bounded,
+            );
+            assert_eq!(
+                refresh_bounded, 0,
+                "{}: the trigger stopped while it still claimed {} affordable multiplies",
+                config.name, refresh_bounded,
+            );
+            println!(
+                "{}: {} multiplies permitted before refresh, {} mb left \
+                 (cost {} mb, reserve {} mb, decryption-bounded depth still {})",
+                config.name,
+                permitted,
+                budget.remaining_millibits(),
+                cost,
+                reserve,
+                decryption_bounded,
+            );
+        }
+    }
+
+    /// The ledger must fund at least one multiply immediately after a refresh
+    /// on every config whose chain is admitted for public refresh -- otherwise
+    /// `mul_auto` would refresh and then fail, making forward progress
+    /// impossible. Configs that are *not* admitted are expected to fail closed.
+    #[test]
+    fn a_refreshed_budget_funds_at_least_one_multiply_where_refresh_is_supported() {
+        use crate::params::secure_configs::supports_public_refresh;
+
+        for secure in [
+            SecureConfig::secure_128(),
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+            SecureConfig::hardware_opt(),
+        ] {
+            let config = secure.into_config();
+            let mut budget = NoiseBudget::from_config(&config);
+            budget.reset_after_bootstrap(&config);
+            let cost = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+            let funds_a_multiply = budget.can_perform(cost);
+            println!(
+                "{}: post-refresh budget {} mb, one multiply costs {} mb, \
+                 chain admitted for public refresh = {}",
+                config.name,
+                budget.remaining_millibits(),
+                cost,
+                supports_public_refresh(&config),
+            );
+            if supports_public_refresh(&config) {
+                assert!(
+                    funds_a_multiply,
+                    "{}: chain is admitted for public refresh but a refreshed budget \
+                     ({} mb) cannot fund one multiply ({} mb) -- mul_auto could never \
+                     make forward progress",
+                    config.name,
+                    budget.remaining_millibits(),
+                    cost,
+                );
+            }
+        }
+    }
+
+    /// Regression guard on the measured refresh envelope.
+    ///
+    /// Measured on this commit (`ClockworkBootstrap::bootstrap`, circular path,
+    /// repeated squaring of an encrypted 3, every intermediate decrypted):
+    ///
+    /// | policy | secure_128_deep | secure_192 |
+    /// |--------|-----------------|------------|
+    /// | refresh after every multiply (k=1) | correct through depth 9 | correct through depth 9 |
+    /// | refresh after every 2nd multiply (k=2) | refresh before depth 3 returned 65534 for 16 | refresh before depth 3 returned 65508 for 16 |
+    ///
+    /// The refresh is plaintext-exact only while its input carries at most one
+    /// multiply's worth of noise above a refresh output. That envelope is what
+    /// `bootstrap_input_reserve_mb` exists to enforce, and it is not something
+    /// the ledger can re-derive from `Delta` alone -- the noise-independent
+    /// residue of `modswitch_to_t` sets it. So pin it: a steady-state refresh
+    /// cycle must never be modelled as funding more than one ct x ct multiply.
+    /// Widening the reserve is safe and will keep this test green; narrowing it
+    /// past the measured envelope will not.
+    #[test]
+    fn a_refresh_cycle_never_funds_more_than_one_multiply() {
+        use crate::params::secure_configs::supports_public_refresh;
+
+        for secure in [
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+        ] {
+            let config = secure.into_config();
+            assert!(
+                supports_public_refresh(&config),
+                "{}: expected an admitted config",
+                config.name
+            );
+            let mut budget = NoiseBudget::from_config(&config);
+            budget.reset_after_bootstrap(&config);
+            let funded = budget.remaining_multiplications_before_refresh(&config);
+            assert!(
+                funded <= 1,
+                "{}: a refresh cycle is modelled as funding {} multiplies, but the refresh \
+                 is only measured plaintext-exact for an input carrying one multiply",
+                config.name,
+                funded,
+            );
+        }
+    }
 
     #[ignore = "VESTIGIAL: asserts assert_valid_trigger_threshold(1001) panics — argument validation for the auto-bootstrap refresh trigger. A refresh trigger threshold only means something if there is a budget to be at 25 percent of. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]

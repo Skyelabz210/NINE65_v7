@@ -243,7 +243,10 @@ to keep it that way.
 
 ## License
 
-MIT OR Apache-2.0
+Proprietary — see the repository `LICENSE` (all rights reserved).
+Package metadata declares `LicenseRef-Proprietary-AllRightsReserved`, matching every
+other crate in this workspace. The earlier "MIT OR Apache-2.0" line here and in
+`Cargo.toml` was inconsistent with that `LICENSE` and was corrected 2026-08-22.
 
 ## CRAM Opportunity Index — open action item (2026-08-12)
 
