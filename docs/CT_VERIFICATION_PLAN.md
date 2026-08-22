@@ -161,12 +161,16 @@ explicit secret-dependent branches (`if rem >= q_last_half`, and
 between classes so only the sign differs, no timing dependence is measurable. The
 branches are not the leak. The dividend magnitude is — see 4.2.
 
-### 4.2 NOT constant-time by measurement — four open findings
+### 4.2 NOT constant-time by measurement — four findings as first recorded
+
+F-1 has since been closed (§4.8), and the diagnosis recorded below for it —
+`__umodti3` — turned out to be the wrong cause. The section is kept as written
+so the correction is visible rather than overwritten.
 
 All four have clean control arms (max 2.54), so the machine is not the
 explanation.
 
-#### F-1 · `exact_modulus_switch_drop_poly` — magnitude leak, 8–17%
+#### F-1 · `exact_modulus_switch_drop_poly` — magnitude leak, 8–17% · **CLOSED, see §4.8**
 
 `crates/nine65/src/ops/rns_fhe.rs:5110`
 
@@ -290,6 +294,238 @@ F-3 (`extract_k`) is the broader exposure: K-Elimination is on the critical path
 of the rescale used by the multiply, not an unwired primitive.
 
 ---
+
+### 4.6 F-3 answered by construction — measured, not argued
+
+Date: 2026-08-22. Same container, same harness, same session as §4.2.
+
+F-3's cause is not a branch. `KElimination::extract_k` is
+
+```rust
+let diff = sub_mod_kelim_ct(v_beta, v_alpha, self.beta_cap); // v_alpha % beta_cap
+mul_mod_u128_ct(diff, self.alpha_inv_beta, self.beta_cap)    // a % beta_cap, then 128 rounds
+```
+
+and both halves contain a `u128 % u128` by a *runtime* modulus, which lowers to
+`__umodti3`. The usual remedy is to rewrite the reduction. The alternative tried
+here is to remove it: manufacture the CLASS-R anchor **adjacent** to the CLASS-F
+product, `A = M + 1`. Then `M ≡ −1 (mod A)`, so `M⁻¹ ≡ M`, and the extraction
+collapses to
+
+```text
+    k = (v_α − v_β) mod A
+```
+
+`v_α < M < A`, so `v_α` is already reduced and the pre-reduction is *absent*, not
+merely cheap. What remains is `wrapping_sub`, a mask, and `wrapping_add`.
+
+Implemented as `arithmetic::k_elimination::AdjacencyKElim`.
+
+**Correctness first.** The shortcut is differential-tested against the general
+`KElimination` over the *same* `(M, A)` pair — same anchor, but with `M⁻¹`
+obtained by extended Euclid instead of by construction — and both against ground
+truth `k = ⌊X/M⌋`:
+
+| check | coverage | result |
+|---|---|---|
+| exhaustive, `M = 105`, `A = 106` | all 11,130 values of `X < M·A` | shortcut = general = truth |
+| random, `KElimConfig::Standard` | 200,000 draws over the 96-bit range | shortcut = general = truth |
+| boundary probes | `0, 1, M±1, A±1, capacity−1, k·M, k·M+(M−1)` | shortcut = general = truth |
+| `M⁻¹ mod A == M` | Minimal / Standard / Maximum, vs extended Euclid | holds |
+
+**Then timing.** The comparison is only worth reading if both arms were measured
+with the same power, so the adjacency sweep is repeated `ADJ_REGION_REPEATS = 340`
+times per measured region to bring it to the same duration as the general form's,
+and it runs at the same `DUDECT_EXTRACT_K_ROUNDS = 8_000`:
+
+| form | region | rounds | kept | median A | median B | t_control | t_signal | verdict |
+|---|---|---|---|---|---|---|---|---|
+| general `(v_β − v_α)·M⁻¹ mod A` | 2.40 ms | 8,000 | 21,601/24,000 | 2,403,289 ns | 2,388,188 ns | 0.090 | **25.61** | leaks, +0.63% |
+| adjacency `(v_α − v_β) mod A` | 3.22 ms | 8,000 | 21,601/24,000 | 3,221,927 ns | 3,222,676 ns | 0.629 | **1.10** | constant-time |
+
+The general arm *is* the positive control: it establishes that this harness, at
+this region size and round count, resolves a 0.63% relative effect at t = 25.6.
+The adjacency arm's region is 34% *longer*, so it had at least as much power and
+returned t = 1.10. That is a null with a demonstrated ability to see the thing it
+did not see — not an underpowered shrug.
+
+Cost, over identical inputs, 400 rounds of 4,096 calls:
+
+| form | ns per call |
+|---|---|
+| general | 668.31 |
+| adjacency | 1.71 |
+
+390×. Worth stating in absolute terms rather than as a ratio: **the adjacency
+form's entire per-call cost (1.71 ns) is under half the general form's measured
+leak (3.7 ns).** Any timing channel it could carry is bounded above by its own
+runtime.
+
+**What it costs.** Capacity. Adjacency forces `A = M + 1`, so the representable
+range is `M·(M+1) ≈ M²` — 96 bits for `KElimConfig::Standard`, against 110 bits
+for the current 48-bit `M` paired with an independently chosen 62-bit `β`.
+Recovering the 14 bits means widening the alpha basis, not hunting a wider
+anchor.
+
+**Not adopted.** `AdjacencyKElim` has no production caller. Switching
+`KElimConfig` to adjacency anchors changes a cryptographic parameter and the
+capacity envelope of every path that reads it; that is an owner decision, and
+this section exists so the decision can be made against measurements instead of
+against an argument.
+
+### 4.7 The same construction does NOT close F-1 — and here is why
+
+Recorded because it was asserted in the affirmative before it was checked, and
+the code says otherwise.
+
+The reasoning that failed: the star family `q = c·t + 1` yields `t⁻¹ mod q = q − c`
+by inspection, so a manufactured basis gets its inverses free; therefore F-1's
+`(x_i − r_k)·q_k⁻¹ mod q_i` should collapse the same way F-3 did.
+
+It does not, for two independent reasons.
+
+1. **Wrong inverse.** The star identity gives `t⁻¹ mod q` — the *plaintext*
+   modulus inverted in a lane. F-1 needs `q_k⁻¹ mod q_i`, a cross-lane inverse
+   between two main primes. Adjacency could supply it for one pair (`q_i = q_k+1`
+   ⟹ `q_k⁻¹ = q_k`), but lanes cannot be pairwise adjacent to each other.
+2. **Wrong cost, and this one is fatal on its own.** `inv` is already hoisted out
+   of the per-coefficient loop in `exact_modulus_switch_drop_poly` — one
+   `mod_inverse` per lane, amortised over `n` = 1,024–16,384 coefficients.
+   Obtaining it for free saves setup, not runtime. The leak is the four divisions
+   *inside* the loop, and the construction does not touch them.
+
+F-1's fix is therefore arithmetic, not architectural: eliminate the runtime
+division from the inner kernel. See §4.8.
+
+### 4.8 F-1 closed — and the actual defect was not the one recorded
+
+Date: 2026-08-22. Same container as §4.2; the baseline was re-measured on the
+day rather than quoted, and reproduced the recorded numbers to within 0.5%
+(127,970 / 149,782 ns against the recorded 128,200 / 150,100), so the machine is
+the same instrument.
+
+**The recorded diagnosis was right about the symptom and wrong about the cause.**
+F-1 was attributed to `__umodti3`. Removing every division from the kernel made
+the function twice as fast and left the leak *larger*. The cause was a branch.
+
+#### How it was localised
+
+The kernel was replaced with progressively smaller probes, each measured under
+both class contrasts, serially (two dudect tests run concurrently contend for the
+CPU and invalidate each other — the first attempt at this made that mistake).
+
+| probe | kernel body | class A | class B | gap | verdict |
+|---|---|---|---|---|---|
+| P0 | `src[c] ^ dropped[c] ^ inv ^ q` — touches all data, no data-dependent arithmetic | 9,058 | 9,068 | 10 ns | flat, t = 0.67 |
+| P1 | two `Barrett::reduce_ct` on `u64` dividends | 43,365 | 43,375 | 10 ns | flat, t = 0.30 |
+| P2 | one `Barrett::reduce_ct` on a `u128` product | 32,517 | 32,523 | 6 ns | flat, t = 2.24 |
+| P3 | P1 **plus one `Barrett::sub_ct`** | 35,722 | 58,794 | **23,072 ns** | **t = 442** |
+
+P0 is the load-bearing one: it clears the harness, the pools, the allocator and
+cache locality of any responsibility. P1 and P2 clear the Barrett reduction. P3
+adds a single modular subtraction and the leak appears whole.
+
+`objdump` on the kernel: **16 conditional jumps, 3 `cmov`/`sbb`** — in a function
+whose comment said branch-free.
+
+#### The defect
+
+```rust
+/// Constant-time modular subtraction
+pub fn sub_ct(&self, a: u64, b: u64) -> u64 {
+    let diff = a.wrapping_sub(b);
+    let borrow = (a < b) as u64;          // <-- lowered to a branch
+    let mask = borrow.wrapping_neg();
+    diff.wrapping_add(self.q & mask)
+}
+```
+
+`((a < b) as u64).wrapping_neg()` is the standard branchless-mask idiom and it
+carries **no guarantee whatsoever**. LLVM lowered it to a conditional branch, and
+a branch's cost depends on its prediction rate, which here is a property of the
+secret operands:
+
+| class | `a < b` rate | prediction | measured |
+|---|---|---|---|
+| all-zero residues | 0% (`0 < 0` never) | perfect | fast |
+| uniform residues | ~50% | worst case | slow |
+| 20-bit residues | ~50% (independent small draws) | worst case | slowest |
+| near-modulus residues | near-deterministic (lane primes differ in size, so the order of `x ≈ q_i` and `r_k ≈ q_k` is fixed) | near-perfect | fast |
+
+That table also explains the sign flip that the first Barrett attempt produced:
+under the original divisions the magnitude effect dominated and small residues
+were *faster*; once division was removed, branch prediction dominated and small
+residues became *slower* than near-modulus ones.
+
+#### The fix, and why the first two attempts did not work
+
+1. Replacing `%` with `BarrettContext::reduce_ct` — 2× faster, leak unchanged
+   (the absolute gap stayed at ~21.7 µs while the total halved, which is what
+   first suggested the arithmetic was not the culprit).
+2. Rewriting the mask as `((a as u128).wrapping_sub(b as u128) >> 127)` — no
+   boolean anywhere in the source. Leak unchanged: LLVM recognises the pattern
+   as `a < b`, canonicalises it back to an `icmp`, and branches again.
+3. Adding `core::hint::black_box` on the extracted borrow bit, so the compiler
+   cannot reason about the value and the arithmetic form survives to codegen.
+   This one worked.
+
+`black_box` is a hint with no language-level guarantee. It is used here *because
+the result is measured*, not in place of measuring.
+
+#### Result
+
+| kernel | contrast | class A | class B | gap | t_signal | t_control | verdict |
+|---|---|---|---|---|---|---|---|
+| division (baseline) | zero vs uniform | 127,970 | 149,782 | +17.0% | 96.82 | 0.67 | leaks |
+| division (baseline) | small vs near-mod | 128,362 | 138,420 | +7.8% | 48.40 | 0.85 | leaks |
+| Barrett, branchy mask | zero vs uniform | 62,402 | 84,120 | +34.8% | 175.66 | 2.43 | leaks worse |
+| Barrett, branchy mask | small vs near-mod | 99,872 | 62,755 | −37.2% | 185.29 | 0.43 | leaks, flipped |
+| **Barrett + barrier** | zero vs uniform | 110,927 | 110,977 | **+0.045%** | **0.96** | 1.16 | **constant-time** |
+| **Barrett + barrier** | small vs near-mod | 110,782 | 110,798 | **+0.014%** | **0.45** | 0.11 | **constant-time** |
+
+And it is **13% faster than the original division kernel** (110.9 µs vs 128.0 µs),
+so constant-time did not cost throughput here — it bought some.
+
+Correctness is unchanged: `exact_modulus_switch_drop_matches_integer_division_exhaustive`
+and the three companion tests pass, and the full `nine65` library suite is
+760 passed / 0 failed.
+
+#### The general lesson, and what it costs elsewhere
+
+Four other sites in this workspace use the same `((cond) as T).wrapping_neg()`
+mask:
+
+| site | function | status |
+|---|---|---|
+| `arithmetic/k_elimination.rs:942` | `sub_mod_u128_ct` | **measured branchless** — see below |
+| `arithmetic/k_elimination.rs:959` | `add_mod_u128_ct` | reached only through `mul_mod_u128_ct` |
+| `arithmetic/kelim_residue_divider.rs:270,277` | duplicates of the above | unmeasured |
+| `clockwork-core/src/garner.rs:107` | Garner step | unmeasured; A2-prohibited path |
+
+`sub_mod_u128_ct` is what `AdjacencyKElim::extract_k` (§4.6) reduces to, so its
+compiled form decides whether that result stands. The magnitude contrast in §4.6
+**cannot see a branch**: it draws `v_α` and `v_β` independently, so `a < b` holds
+about half the time in *both* arms, and a conditional with equal taken-rates
+across classes is invisible however badly it is compiled.
+
+`test_ct_dudect_adjacency_k_elim_operand_order` supplies the contrast that can
+see it. Both classes present the identical multiset of operand values and differ
+only in order: class A always passes `(larger, smaller)` so the borrow never
+fires; class B randomises the order so a branch would mispredict half the time.
+
+| contrast | class A | class B | gap | t_signal | t_control | verdict |
+|---|---|---|---|---|---|---|
+| sorted vs randomised order | 3,196,712 | 3,197,193 | 0.015% | **0.45** | 0.90 | constant-time |
+
+So the same idiom compiled branchlessly in `k_elimination.rs` and branchfully in
+`barrett.rs`. That is the finding worth keeping: **the idiom is not the
+guarantee — the measurement is.** Working code was left alone and the contrast
+that can falsify it was added as a permanent test, rather than churning a
+primitive that measures clean.
+
+Unmeasured sites stay listed as unmeasured. `kelim_residue_divider.rs` and
+`clockwork-core/garner.rs` have no dudect coverage; neither is on a production
+ciphertext path today, and both need this contrast before either is put on one.
 
 ## 5. CI posture
 

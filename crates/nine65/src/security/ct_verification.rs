@@ -56,7 +56,7 @@ mod constant_time_statistical {
     use crate::arithmetic::{
         BarrettContext, KElimination, MontgomeryContext,
     };
-    use crate::arithmetic::k_elimination::KElimConfig;
+    use crate::arithmetic::k_elimination::{AdjacencyKElim, KElimConfig};
     use crate::entropy::ShadowHarvester;
     use crate::ops::rns_fhe::{exact_modulus_switch_drop_poly, DualRNSPoly, RNSFHEContext};
     use crate::params::SecureConfig;
@@ -176,10 +176,54 @@ mod constant_time_statistical {
             self.median >= CV_RESOLVABLE_MEDIAN_NS
         }
 
+        /// Largest MAD, in timer ticks, that the "too coarse to resolve"
+        /// explanation can actually account for.
+        ///
+        /// Below `CV_RESOLVABLE_MEDIAN_NS` the CV threshold is unusable because
+        /// MAD is quantised to whole nanoseconds. That argument explains a MAD
+        /// of 0 or 1 tick. It does NOT explain a MAD of 5 ticks on a 30 ns
+        /// median — that is a genuinely spread distribution, and quantisation
+        /// is no excuse for declining to fail on it.
+        const MAX_UNRESOLVABLE_MAD_TICKS: f64 = 1.0;
+
         /// Non-panicking form of the CV check, so a test can report EVERY
         /// class it measured before failing on any of them.
+        ///
+        /// # Below the resolvable median this still asserts something
+        ///
+        /// An earlier form returned `None` unconditionally when
+        /// `!cv_is_resolvable()`, which left `test_ct_montgomery_reduce`,
+        /// `test_ct_montgomery_mul` and `test_ct_barrett_reduce` reporting
+        /// `ok` while asserting nothing whatsoever about the operation named in
+        /// the test. A gate that cannot fail is not a gate, and nothing in the
+        /// test name or the CI job listing said so.
+        ///
+        /// The quantisation argument bounds what those tests can check; it does
+        /// not reduce it to nothing. At a sub-`CV_RESOLVABLE_MEDIAN_NS` median
+        /// the timer can still distinguish "MAD within one tick" from "MAD of
+        /// several ticks", and the former is the claim the batched dudect
+        /// counterpart is relied on to sharpen — not a claim to skip. So below
+        /// the resolvable median this asserts the tick bound instead of the CV
+        /// threshold, and says which one it applied.
         fn cv_failure(&self, label: &str) -> Option<String> {
-            if !self.cv_is_resolvable() || self.is_constant_time_robust() {
+            if !self.cv_is_resolvable() {
+                return if self.mad <= Self::MAX_UNRESOLVABLE_MAD_TICKS {
+                    None
+                } else {
+                    Some(format!(
+                        "{label}: median {:.1}ns is below the {:.1}ns CV \
+                         resolution floor, but MAD={:.2} ticks exceeds the \
+                         {:.1}-tick bound that timer quantisation can explain. \
+                         The distribution is genuinely spread, not merely \
+                         unresolvable.",
+                        self.median,
+                        CV_RESOLVABLE_MEDIAN_NS,
+                        self.mad,
+                        Self::MAX_UNRESOLVABLE_MAD_TICKS,
+                    ))
+                };
+            }
+            if self.is_constant_time_robust() {
                 None
             } else {
                 Some(format!(
@@ -310,13 +354,16 @@ mod constant_time_statistical {
         );
         if !stats.cv_is_resolvable() {
             println!(
-                "  NOT ASSERTED: median {:.1}ns is below the {:.1}ns at which a \
-                 1ns-quantised MAD can land inside the {:.1}% band. This CV is \
-                 reported for the record only; the constant-time evidence for \
-                 this operation is its batched test_ct_dudect_* counterpart.",
+                "  CV NOT ASSERTED (median {:.1}ns is below the {:.1}ns at which \
+                 a 1ns-quantised MAD can land inside the {:.1}% band). ASSERTED \
+                 INSTEAD: MAD={:.2} <= {:.1} tick — the bound quantisation can \
+                 explain. The sharper constant-time evidence for this operation \
+                 is its batched test_ct_dudect_* counterpart.",
                 stats.median,
                 CV_RESOLVABLE_MEDIAN_NS,
-                ROBUST_CV_THRESHOLD * 100.0
+                ROBUST_CV_THRESHOLD * 100.0,
+                stats.mad,
+                TimingStats::MAX_UNRESOLVABLE_MAD_TICKS,
             );
         } else if stats.cv_is_vacuous() {
             println!(
@@ -1091,14 +1138,13 @@ mod constant_time_statistical {
     }
 
     #[test]
-    #[ignore = "OPEN FINDING, not a flake: exact_modulus_switch_drop_poly is NOT constant-time. \
-Measured on an Intel Xeon 2.80GHz container over 5 runs: t_signal = 71.9 / 79.5 / 129.6 / 89.8 / 98.7 \
-against same-class control t = 0.12-1.06, medians 128.2us (all-zero residues) vs 150.1us (uniform \
-residues), a 17% gap. Cause: the per-coefficient kernel divides by a runtime modulus \
-((diff as u128 * inv as u128) % q_i as u128 lowers to __umodti3, a shift/subtract loop whose trip \
-count depends on operand bit length). Ignored so `cargo test` stays deterministic, NOT to hide it - \
-the scheduled CI job runs it with --ignored and treats the leak as a tracked state. \
-See docs/CT_VERIFICATION_PLAN.md."]
+    #[ignore = "Statistical timing test - run in a controlled environment only. WAS finding F-1, \
+now CLOSED and kept as its regression gate: medians 110,927ns vs 110,977ns (+0.045%), t_signal 0.96 \
+against control 1.16. It previously measured 128.2us vs 150.1us (+17%) at t = 71.9-129.6. The \
+recorded cause was wrong: removing every division made the function 2x faster and the leak LARGER. \
+The real cause was BarrettContext::sub_ct, whose ((a < b) as u64).wrapping_neg() mask compiled to a \
+conditional branch whose prediction rate depends on the operands. See docs/CT_VERIFICATION_PLAN.md \
+section 4.8 for the probe-by-probe localisation."]
     fn test_ct_dudect_exact_prime_drop_fixed_vs_random() {
         print_environment_info();
         warmup();
@@ -1142,11 +1188,12 @@ See docs/CT_VERIFICATION_PLAN.md."]
     }
 
     #[test]
-    #[ignore = "OPEN FINDING, not a flake: exact_modulus_switch_drop_poly leaks operand MAGNITUDE, \
-not merely the all-zero special case. Measured over 5 runs: t_signal = 39.0 / 46.5 / 54.8 / 47.4 / 47.3 \
-against control t = 0.10-1.34, medians 129.7us (20-bit residues) vs 139.1us (near-modulus residues), \
-an 8% gap with both classes non-zero. Same cause as the fixed-vs-random test. \
-See docs/CT_VERIFICATION_PLAN.md."]
+    #[ignore = "Statistical timing test - run in a controlled environment only. WAS finding F-1's \
+magnitude contrast, now CLOSED and kept as its regression gate: medians 110,782ns vs 110,798ns \
+(+0.014%), t_signal 0.45 against control 0.11. It previously measured 128.4us vs 138.4us (+7.8%) at \
+t = 48.4. This contrast is the one that exposed the sign flip during the fix - under the original \
+divisions small residues were faster, and once division was removed branch prediction dominated and \
+they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
     fn test_ct_dudect_exact_prime_drop_small_vs_large_residues() {
         print_environment_info();
         warmup();
@@ -1390,6 +1437,77 @@ dividend magnitude is. See docs/CT_VERIFICATION_PLAN.md."]
     /// is therefore resolved by adding rounds, not by widening the threshold.
     const DUDECT_BATCHED_ROUNDS: usize = 2_000;
 
+    /// Rounds for the `extract_k` operand-magnitude test specifically.
+    ///
+    /// This test is the subject of the scheduled INVERTED tripwire in
+    /// `.github/workflows/ct_verification.yml`: that job hard-fails if the
+    /// documented leak stops reproducing. A tripwire whose verdict is a coin
+    /// flip is worse than no tripwire, because roughly a third of scheduled
+    /// runs would raise "the leak was fixed" for an unchanged tree.
+    ///
+    /// At `DUDECT_BATCHED_ROUNDS` (2000) the verdict is exactly that unstable.
+    /// Measured on this machine, six runs:
+    ///
+    /// ```text
+    ///   2000 rounds:  t_signal = 4.3547 -> CONSTANT-TIME   (verdict flip)
+    ///                            13.6314 -> DEPENDENCE
+    ///                            10.2013 -> DEPENDENCE
+    ///   8000 rounds:  t_signal = 18.4584 -> DEPENDENCE
+    ///                            20.5285 -> DEPENDENCE
+    ///                            29.2741 -> DEPENDENCE
+    ///   controls across all six: 0.0715 .. 1.1686, never near 5.
+    /// ```
+    ///
+    /// This is the textbook signature of a real effect measured with too little
+    /// power: `|t|` grows like `sqrt(rounds)` for a genuine class difference and
+    /// stays bounded for noise, and 2000 rounds simply sat on the threshold.
+    /// The fix is more rounds, not a wider threshold — 6/6 runs at 8000 clear
+    /// the threshold by 3.7x or better, with the control arm two orders of
+    /// magnitude below it.
+    ///
+    /// Cost: about 40s per run, inside the scheduled job's 60-minute budget.
+    const DUDECT_EXTRACT_K_ROUNDS: usize = 8_000;
+
+    /// Rounds for the `exact_divide` divisor-class test specifically.
+    ///
+    /// This test was written as the interleaved replacement for the deleted
+    /// block-measured `d=2 vs d=3` cross-class t-test in
+    /// `test_ct_k_elimination_exact_divide`. The open question was whether it
+    /// could be promoted into the blocking job. Measured on this machine:
+    ///
+    /// ```text
+    ///    2000 rounds: t_signal = 0.76 / 2.54 / 3.24 / 4.32 / 4.89
+    ///    8000 rounds: t_signal = 8.1821 / 6.7307 / 4.9425
+    ///                 controls   1.2701 / 0.6210 / 0.4564   (clean)
+    ///   32000 rounds: t_signal = 11.4212  control 1.1433    (clean)
+    ///                            20.2218  control 11.1909   INCONCLUSIVE
+    ///                            20.2598  control  9.2015   INCONCLUSIVE
+    /// ```
+    ///
+    /// Two conclusions, and the second is why this constant is 8000 rather
+    /// than higher:
+    ///
+    /// 1. **The effect is real.** `|t|` grows with round count (mean ~3 at
+    ///    2000, ~6.6 at 8000, 11.4 at the one clean 32000 run) while the
+    ///    control stays near zero, and the sign is stable across every clean
+    ///    run — divisor 3 is consistently SLOWER than divisor 2 by ~1-3us per
+    ///    4096-call batch. That is a genuine divisor-dependent timing
+    ///    dependence, not the block-measurement artefact the deleted test was
+    ///    criticised for. So this test cannot be promoted into the blocking
+    ///    job as a passing gate; it is an OPEN FINDING.
+    /// 2. **The verdict is not yet stable at any round count this runner can
+    ///    sustain.** At 8000 it reads DEPENDENCE in 2 of 3 runs, and at 32000
+    ///    the control arm itself exceeds the threshold and the harness
+    ///    correctly reports INCONCLUSIVE. So it cannot go into the inverted
+    ///    open-findings tripwire either, which requires a stable
+    ///    "TIMING DEPENDENCE MEASURED".
+    ///
+    /// 8000 is the largest count at which the control arm stayed clean in
+    /// every run, i.e. the most power this machine can buy without measuring
+    /// its own noise instead. Settling this needs a quiesced, frequency-pinned
+    /// runner; see `docs/CT_VERIFICATION_PLAN.md`.
+    const DUDECT_DIVISOR_CLASS_ROUNDS: usize = 8_000;
+
     type OperandPair = (u128, u128);
 
     /// Pool count for the batched scalar tests. Each pool entry is a whole
@@ -1409,13 +1527,18 @@ dividend magnitude is. See docs/CT_VERIFICATION_PLAN.md."]
     }
 
     #[test]
-    #[ignore = "OPEN FINDING, not a flake: KElimination::extract_k shows a small but reproducible \
-operand-magnitude timing dependence, contradicting its docstring claim of fixed-cost, branch-free \
-execution. Measured with interleaved class allocation: t_signal = 10.5 against control t = 0.19, \
-medians 2.4100ms vs 2.3939ms per 4096-call batch, i.e. ~3.9ns on a ~588ns call (0.67%), with \
-near-cap operands consistently FASTER. |t| grows with round count (4.5 at 600 rounds, 6.8-11.4 at \
-2000), which is the signature of a real effect rather than noise. Effect size is small enough that \
-a quiesced, frequency-pinned machine should confirm it before any code change. \
+    #[ignore = "OPEN FINDING, and now measured with enough power to be one: KElimination::extract_k \
+shows a small but reproducible operand-magnitude timing dependence, contradicting its docstring \
+claim of fixed-cost, branch-free execution. Interleaved class allocation, 8000 rounds \
+(DUDECT_EXTRACT_K_ROUNDS): t_signal = 18.5 / 20.5 / 29.3 over three runs, against controls of \
+0.07-1.17; medians differ by ~13-15us per 4096-call batch, i.e. ~3.5ns on a ~590ns call (0.6%). \
+|t| grows with round count (4.4-13.6 at 2000 rounds, 18.5-29.3 at 8000), the signature of a real \
+effect rather than noise. CORRECTION to the earlier reason string: at 2000 rounds the VERDICT was \
+not stable (one of three runs read 4.35 and reported CONSTANT-TIME), so 'not a flake' was not \
+established until the round count was raised; and the SIGN of the median difference is not stable \
+either - near-cap operands were slower in some runs and faster in others - so only the magnitude \
+of the dependence is established, not its direction. Effect size is small enough that a quiesced, \
+frequency-pinned machine should confirm it before any code change. \
 See docs/CT_VERIFICATION_PLAN.md."]
     fn test_ct_dudect_k_elim_extract_k_operand_magnitude() {
         print_environment_info();
@@ -1451,7 +1574,7 @@ See docs/CT_VERIFICATION_PLAN.md."]
         );
 
         let mut rng = ShadowHarvester::with_seed(404);
-        let result = dudect_two_class(&mut rng, &pool_a, &pool_a2, &pool_b, DUDECT_BATCHED_ROUNDS, |batch| {
+        let result = dudect_two_class(&mut rng, &pool_a, &pool_a2, &pool_b, DUDECT_EXTRACT_K_ROUNDS, |batch| {
             let mut acc = 0u128;
             for &(a, b) in batch.iter() {
                 acc ^= ke.extract_k(std::hint::black_box(a), std::hint::black_box(b));
@@ -1465,8 +1588,305 @@ See docs/CT_VERIFICATION_PLAN.md."]
         );
     }
 
+    // ========================================================================
+    // F-3, structurally: adjacency-anchored K-Elimination
+    // ========================================================================
+    //
+    // `KElimination::extract_k` measured a small but reproducible
+    // operand-magnitude dependence (test above: t_signal = 10.5 vs control
+    // 0.19). Its body is
+    //
+    //     diff = sub_mod_kelim_ct(v_beta, v_alpha, beta_cap)   // v_alpha % beta_cap
+    //     mul_mod_u128_ct(diff, alpha_inv_beta, beta_cap)      // a % beta_cap, then 128 rounds
+    //
+    // Both halves contain a `u128 % u128` by a RUNTIME modulus, which LLVM
+    // lowers to `__umodti3`: a shift/subtract loop whose trip count tracks the
+    // operands' bit lengths. Branch-free at the source level is not
+    // constant-time when the *instruction* is not.
+    //
+    // The adjacency construction A = M + 1 makes M ≡ −1 (mod A), so
+    // M⁻¹ ≡ M and the extraction collapses to k = (v_α − v_β) mod A: one
+    // `wrapping_sub`, one mask, one `wrapping_add`. There is no modulo left to
+    // make constant-time. These two tests measure whether that is actually
+    // true on this machine, using the SAME classes, the SAME batch size and
+    // the SAME round count as the finding above, so the numbers are directly
+    // comparable.
+
+    /// Repeats of the adjacency sweep per measured region.
+    ///
+    /// **This constant is what makes the comparison honest.** One adjacency
+    /// extraction costs ~1.7 ns against the general form's ~587 ns, so a
+    /// `DUDECT_BATCH`-sized adjacency region is ~7 us where the general one is
+    /// ~2.4 ms. Comparing a null result on a 7 us region against a positive on
+    /// a 2.4 ms region would compare two different experiments: shorter regions
+    /// carry a larger share of timer noise and less accumulated signal, so a
+    /// null there is weak evidence, not strong.
+    ///
+    /// Sweeping the same batch `ADJ_REGION_REPEATS` times brings the adjacency
+    /// region to the same ~2.4 ms, and the test below runs it at
+    /// `DUDECT_EXTRACT_K_ROUNDS` — the same 8,000 rounds as the general test,
+    /// not the 2,000 used elsewhere. Equal region duration, equal round count,
+    /// identical operand classes, identical harness.
+    ///
+    /// That also supplies the positive control the null result needs: the
+    /// general test demonstrates that THIS harness, at THIS region size and
+    /// round count, resolves a 0.63% relative effect (t = 25.6). A t below
+    /// threshold here is therefore a measurement made with proven power, not
+    /// an underpowered shrug.
+    const ADJ_REGION_REPEATS: usize = 340;
+
+    /// The adjacency form under the operand classes that make the general form
+    /// leak. This is the falsifiable half of the structural argument: if the
+    /// construction closes F-3, this test passes where the one above fails.
     #[test]
     #[ignore] // Statistical timing test — run in controlled environment only
+    fn test_ct_dudect_adjacency_k_elim_operand_magnitude() {
+        print_environment_info();
+        warmup();
+
+        let adj = AdjacencyKElim::from_config(KElimConfig::Standard).expect("adjacency context");
+        let (mcap, acap) = (adj.alpha_cap(), adj.anchor());
+
+        let mut ra = ShadowHarvester::with_seed(401);
+        let mut rb = ShadowHarvester::with_seed(403);
+        let (pool_a, pool_a2, pool_b) = interleaved_pools(
+            DUDECT_POOLS_BATCHED,
+            || {
+                (0..DUDECT_BATCH)
+                    .map(|_| {
+                        (
+                            windowed(&mut ra, mcap, 20, false),
+                            windowed(&mut ra, acap, 20, false),
+                        )
+                    })
+                    .collect::<Vec<OperandPair>>()
+            },
+            || {
+                (0..DUDECT_BATCH)
+                    .map(|_| {
+                        (
+                            windowed(&mut rb, mcap, 20, true),
+                            windowed(&mut rb, acap, 20, true),
+                        )
+                    })
+                    .collect::<Vec<OperandPair>>()
+            },
+        );
+
+        let mut rng = ShadowHarvester::with_seed(404);
+        let result = dudect_two_class(
+            &mut rng,
+            &pool_a,
+            &pool_a2,
+            &pool_b,
+            DUDECT_EXTRACT_K_ROUNDS,
+            |batch| {
+                let mut acc = 0u128;
+                for _ in 0..ADJ_REGION_REPEATS {
+                    for &(a, b) in batch.iter() {
+                        acc ^= adj.extract_k(std::hint::black_box(a), std::hint::black_box(b));
+                    }
+                    std::hint::black_box(&acc);
+                }
+                std::hint::black_box(acc);
+            },
+        );
+
+        println!(
+            "  region size check: adjacency median {:.0}ns vs the general form's \
+             ~2.40e6ns — these must be the same order for the comparison to hold",
+            result.median_a
+        );
+        assert_dudect(
+            "AdjacencyKElim::extract_k — small operands vs near-cap operands (batched)",
+            &result,
+        );
+    }
+
+    /// Operand ORDER, at identical operand magnitudes.
+    ///
+    /// The magnitude test above cannot see a branch. Both of its classes draw
+    /// `v_α` and `v_β` independently, so `v_α < v_β` holds about half the time
+    /// in *both* arms — a conditional whose taken-rate is equal across classes
+    /// is invisible to a two-class test, however badly it is compiled. That is
+    /// not a hypothetical: `BarrettContext::sub_ct` used the same
+    /// `((a < b) as T).wrapping_neg()` mask, compiled to a real branch, and
+    /// leaked 23 us at t = 442 once a class contrast could see it
+    /// (`docs/CT_VERIFICATION_PLAN.md` §4.8).
+    ///
+    /// This test supplies that contrast. Both classes draw the same pairs and
+    /// present the **identical multiset of operand values**; they differ only
+    /// in which element of each pair is passed first:
+    ///
+    /// * class A always passes `(larger, smaller)`, so the borrow never fires
+    ///   and a branch is perfectly predicted;
+    /// * class B randomises the order, so a branch mispredicts about half the
+    ///   time.
+    ///
+    /// Magnitude is therefore held constant by construction and only
+    /// predictability varies. A null here is a statement about the compiled
+    /// form, not just about the algebra.
+    #[test]
+    #[ignore] // Statistical timing test — run in controlled environment only
+    fn test_ct_dudect_adjacency_k_elim_operand_order() {
+        print_environment_info();
+        warmup();
+
+        let adj = AdjacencyKElim::from_config(KElimConfig::Standard).expect("adjacency context");
+        let anchor = adj.anchor();
+
+        let mut ra = ShadowHarvester::with_seed(801);
+        let mut rb = ShadowHarvester::with_seed(803);
+
+        // Sorted: v_alpha >= v_beta on every pair, so `a < b` is always false.
+        let mut sorted_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
+            (0..DUDECT_BATCH)
+                .map(|_| {
+                    let x = random_u128(rng) % anchor;
+                    let y = random_u128(rng) % anchor;
+                    if x >= y { (x, y) } else { (y, x) }
+                })
+                .collect()
+        };
+        // Shuffled: the same construction, then each pair independently
+        // swapped, so `a < b` holds about half the time. The VALUES are drawn
+        // identically; only their order differs.
+        let mut shuffled_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
+            (0..DUDECT_BATCH)
+                .map(|_| {
+                    let x = random_u128(rng) % anchor;
+                    let y = random_u128(rng) % anchor;
+                    let (hi, lo) = if x >= y { (x, y) } else { (y, x) };
+                    if rng.next_u64() & 1 == 0 { (hi, lo) } else { (lo, hi) }
+                })
+                .collect()
+        };
+
+        let (pool_a, pool_a2, pool_b) = interleaved_pools(
+            DUDECT_POOLS_BATCHED,
+            || sorted_batch(&mut ra),
+            || shuffled_batch(&mut rb),
+        );
+
+        let mut rng = ShadowHarvester::with_seed(804);
+        let result = dudect_two_class(
+            &mut rng,
+            &pool_a,
+            &pool_a2,
+            &pool_b,
+            DUDECT_EXTRACT_K_ROUNDS,
+            |batch| {
+                let mut acc = 0u128;
+                for _ in 0..ADJ_REGION_REPEATS {
+                    for &(a, b) in batch.iter() {
+                        acc ^= adj.extract_k(std::hint::black_box(a), std::hint::black_box(b));
+                    }
+                    std::hint::black_box(&acc);
+                }
+                std::hint::black_box(acc);
+            },
+        );
+
+        assert_dudect(
+            "AdjacencyKElim::extract_k — sorted operands vs randomised order (batched)",
+            &result,
+        );
+    }
+
+    /// Head-to-head cost of the two extractions over identical inputs.
+    ///
+    /// Reports only; it asserts correctness (the two forms must agree on every
+    /// sample) but never asserts a speed ratio, because a ratio measured on a
+    /// shared, unpinned runner is not a number anyone should gate on. The
+    /// medians are printed so a human reading CI output sees the size of the
+    /// difference rather than being told about it.
+    #[test]
+    #[ignore] // Timing measurement — run in controlled environment only
+    fn test_ct_adjacency_vs_general_k_elim_cost() {
+        print_environment_info();
+        warmup();
+
+        let adj = AdjacencyKElim::from_config(KElimConfig::Standard).expect("adjacency context");
+        let general = adj.general_equivalent().expect("general partner over the same (M, A)");
+        assert_eq!(
+            general.alpha_inv_beta,
+            adj.alpha_cap(),
+            "the general partner must be extracting against the same anchor"
+        );
+
+        let mut rng = ShadowHarvester::with_seed(1201);
+        let batch: Vec<OperandPair> = (0..DUDECT_BATCH)
+            .map(|_| {
+                let x = random_u128(&mut rng) % adj.try_capacity().expect("M * A fits");
+                (x % adj.alpha_cap(), x % adj.anchor())
+            })
+            .collect();
+
+        // Same (M, A), same inputs, two implementations: any disagreement here
+        // would make the timing comparison meaningless.
+        for &(a, b) in batch.iter() {
+            assert_eq!(adj.extract_k(a, b), general.extract_k(a, b));
+        }
+
+        const COST_ROUNDS: usize = 400;
+        let mut t_general: Vec<u64> = Vec::with_capacity(COST_ROUNDS);
+        let mut t_adjacent: Vec<u64> = Vec::with_capacity(COST_ROUNDS);
+
+        for _ in 0..COST_ROUNDS {
+            // Alternate the order every round so drift is shared.
+            let general_first = rng.next_u64() & 1 == 0;
+            let mut run_general = || {
+                let start = Instant::now();
+                let mut acc = 0u128;
+                for &(a, b) in batch.iter() {
+                    acc ^= general.extract_k(std::hint::black_box(a), std::hint::black_box(b));
+                }
+                std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
+            };
+            let mut run_adjacent = || {
+                let start = Instant::now();
+                let mut acc = 0u128;
+                for &(a, b) in batch.iter() {
+                    acc ^= adj.extract_k(std::hint::black_box(a), std::hint::black_box(b));
+                }
+                std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
+            };
+            if general_first {
+                t_general.push(run_general());
+                t_adjacent.push(run_adjacent());
+            } else {
+                t_adjacent.push(run_adjacent());
+                t_general.push(run_general());
+            }
+        }
+
+        let (mg, ma) = (median_of(&t_general), median_of(&t_adjacent));
+        println!("  K-Elimination extraction cost over {DUDECT_BATCH} calls, {COST_ROUNDS} rounds");
+        println!("    general  (v_beta - v_alpha) * M^-1 mod A : median {mg:.0} ns/batch");
+        println!("    adjacency (v_alpha - v_beta) mod A       : median {ma:.0} ns/batch");
+        if ma > 0.0 {
+            println!("    ratio general/adjacency                  : {:.2}x", mg / ma);
+        }
+        println!(
+            "    per call: general {:.2} ns, adjacency {:.2} ns",
+            mg / DUDECT_BATCH as f64,
+            ma / DUDECT_BATCH as f64
+        );
+    }
+
+    #[test]
+    #[ignore = "OPEN FINDING with an UNSTABLE VERDICT: KElimination::exact_divide shows a real \
+divisor-dependent timing dependence (divisor 3 consistently slower than divisor 2 by ~1-3us per \
+4096-call batch, sign stable across every clean run, |t| growing with round count: mean ~3 at 2000 \
+rounds, ~6.6 at 8000, 11.4 at the one clean 32000-round run, against controls of 0.46-1.27). It is \
+therefore NOT promotable into the dudect-blocking job as a passing gate. It is also not placeable \
+in the inverted open-findings tripwire, which needs a stable DEPENDENCE verdict: at 8000 rounds it \
+read DEPENDENCE in only 2 of 3 runs, and at 32000 rounds this machine's own control arm exceeded \
+the threshold (9.2-11.2) so the harness correctly reported INCONCLUSIVE. Neither CI job can gate \
+this deterministically today; it is collected and reported, and settling it needs a quiesced, \
+frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATION_PLAN.md."]
     fn test_ct_dudect_k_elim_exact_divide_divisor_classes() {
         print_environment_info();
         warmup();
@@ -1505,7 +1925,7 @@ See docs/CT_VERIFICATION_PLAN.md."]
         );
 
         let mut rng = ShadowHarvester::with_seed(504);
-        let result = dudect_two_class(&mut rng, &a, &a2, &b, DUDECT_BATCHED_ROUNDS, |(batch, d)| {
+        let result = dudect_two_class(&mut rng, &a, &a2, &b, DUDECT_DIVISOR_CLASS_ROUNDS, |(batch, d)| {
             let mut acc = 0u128;
             for &(x, y) in batch.iter() {
                 acc ^= ke.exact_divide(

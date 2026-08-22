@@ -584,6 +584,199 @@ impl KElimination {
         })
     }
 }
+// ═══════════════════════════════════════════════════════════════════════════
+// ADJACENCY-ANCHORED K-ELIMINATION  (A = M + 1)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// K-Elimination whose CLASS-R anchor is *manufactured adjacent* to the
+/// CLASS-F product: `A = M + 1`, where `M = ∏ alpha_primes`.
+///
+/// # What the construction buys
+///
+/// The general two-family extraction is
+///
+/// ```text
+///     k = (v_β − v_α mod A) · M⁻¹  (mod A)
+/// ```
+///
+/// which costs, on `u128`: one reduction of `v_α` modulo `A`, and one modular
+/// multiplication by the precomputed `M⁻¹`. On this codebase that multiply is
+/// [`mul_mod_u128_ct`] — a fixed 128-iteration double-and-add — and the
+/// reduction is a `u128 % u128` by a *runtime* modulus, which LLVM lowers to
+/// `__umodti3`.
+///
+/// Under adjacency, `M ≡ −1 (mod A)`, so `M⁻¹ ≡ M ≡ −1 (mod A)` and the whole
+/// expression collapses:
+///
+/// ```text
+///     k = (v_β − v_α) · (−1)  ≡  v_α − v_β   (mod A)
+/// ```
+///
+/// One branchless modular subtraction. Three consequences, in decreasing order
+/// of how much they matter:
+///
+/// 1. **No `__umodti3`.** `v_α < M` and `M < A`, so `v_α` is *already* reduced
+///    modulo `A` and the pre-reduction is not merely cheap — it is absent. The
+///    remaining subtraction is `wrapping_sub` + mask + `wrapping_add`, whose
+///    instruction sequence does not depend on operand magnitude. This is the
+///    structural answer to the operand-magnitude timing dependence measured on
+///    [`KElimination::extract_k`] (finding F-3); it is not a constant-time
+///    *rewrite* of the division, it removes the division.
+/// 2. **No inverse bank.** `M⁻¹ mod A` never has to be computed, stored, or
+///    key-scheduled, because it is `M`. See
+///    [`crate::params::manufactured::AdjacencyAnchor::p_inverse_mod_a`].
+/// 3. **No primality requirement on `A`.** `gcd(M, M+1) = 1` holds for every
+///    `M ≥ 1` — the coprimality precondition is discharged by construction
+///    rather than by search. `A` is CLASS-R, exactly as the Separation
+///    Principle already permits, and is composite for every alpha basis used
+///    here.
+///
+/// # What it costs
+///
+/// Capacity. The general form pairs a ~48-bit `M` with an independently chosen
+/// 62-bit `β`, for a 110-bit `M·β`. Adjacency forces `A = M + 1`, so capacity
+/// is `M·(M+1) ≈ M²`. For `KElimConfig::Standard` that is 96 bits instead of
+/// 110 — a real reduction, recovered (if needed) by widening the alpha basis
+/// rather than by hunting a wider anchor.
+///
+/// # Sign
+///
+/// The winding read is `X ≡ γ − K (mod A)`, with a **minus**. The published
+/// white-paper form `γ + K` is a sign error; see
+/// [`crate::params::manufactured::adjacency_read`], where the wrong form is
+/// pinned as failing so it cannot quietly return.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdjacencyKElim {
+    alpha_primes: Vec<u64>,
+    /// `M = ∏ alpha_primes`.
+    alpha_cap: u128,
+    /// `A = M + 1`.
+    anchor: u128,
+}
+
+impl AdjacencyKElim {
+    /// Build the adjacency-anchored context from a CLASS-F alpha family.
+    ///
+    /// The alpha family is validated exactly as for [`KElimination`]
+    /// (non-empty, prime, pairwise distinct). No validation of `A` is required
+    /// or performed beyond overflow: coprimality with `M` is a theorem, not a
+    /// check.
+    #[must_use = "this returns a Result that must be handled"]
+    pub fn try_new(alpha_primes: &[u64]) -> Nine65Result<Self> {
+        validate_alpha_family(alpha_primes)?;
+        let alpha_cap = checked_product(alpha_primes, "adjacency K-Elimination alpha product")?;
+        let anchor = alpha_cap.checked_add(1).ok_or(Nine65Error::Overflow {
+            operation: "adjacency K-Elimination anchor A = M + 1",
+        })?;
+        Ok(Self {
+            alpha_primes: alpha_primes.to_vec(),
+            alpha_cap,
+            anchor,
+        })
+    }
+
+    /// Adjacency context over the alpha family of a standard configuration.
+    pub fn from_config(config: KElimConfig) -> Nine65Result<Self> {
+        Self::try_new(&config.alpha_primes())
+    }
+
+    /// The CLASS-F product `M`.
+    pub fn alpha_cap(&self) -> u128 {
+        self.alpha_cap
+    }
+
+    /// The CLASS-R anchor `A = M + 1`.
+    pub fn anchor(&self) -> u128 {
+        self.anchor
+    }
+
+    /// The CLASS-F lanes.
+    pub fn alpha_primes(&self) -> &[u64] {
+        &self.alpha_primes
+    }
+
+    /// `M⁻¹ mod A`, which by construction is `M`.
+    ///
+    /// Checked against extended Euclid in
+    /// `tests::adjacency_inverse_is_the_partner_itself`.
+    pub fn alpha_inv_anchor(&self) -> u128 {
+        self.alpha_cap
+    }
+
+    /// Representable range `M · A`, or `None` if it exceeds `u128`.
+    pub fn try_capacity(&self) -> Option<u128> {
+        self.alpha_cap.checked_mul(self.anchor)
+    }
+
+    /// Reject residues outside their lane ranges.
+    pub fn validate_residues(&self, v_alpha: u128, v_beta: u128) -> Nine65Result<()> {
+        if v_alpha >= self.alpha_cap {
+            return Err(Nine65Error::RangeOverflow {
+                x: v_alpha,
+                bound: self.alpha_cap,
+            });
+        }
+        if v_beta >= self.anchor {
+            return Err(Nine65Error::RangeOverflow {
+                x: v_beta,
+                bound: self.anchor,
+            });
+        }
+        Ok(())
+    }
+
+    /// Extract the winding index `k` from `(v_α, v_β)`.
+    ///
+    /// **One branchless modular subtraction, no division of any kind.**
+    ///
+    /// Preconditions (`v_α < M`, `v_β < A`) are the caller's, exactly as for
+    /// [`KElimination::extract_k`]; use [`Self::extract_k_validated`] when the
+    /// inputs are not already known to be in range. The preconditions are what
+    /// make the pre-reduction unnecessary: `v_α < M < A`, so `v_α mod A = v_α`.
+    #[inline]
+    pub fn extract_k(&self, v_alpha: u128, v_beta: u128) -> u128 {
+        debug_assert!(v_alpha < self.anchor, "v_alpha must already be reduced mod A");
+        debug_assert!(v_beta < self.anchor, "v_beta must already be reduced mod A");
+        sub_mod_u128_ct(v_alpha, v_beta, self.anchor)
+    }
+
+    /// Range-checked [`Self::extract_k`].
+    pub fn extract_k_validated(&self, v_alpha: u128, v_beta: u128) -> Nine65Result<u128> {
+        self.validate_residues(v_alpha, v_beta)?;
+        Ok(self.extract_k(v_alpha, v_beta))
+    }
+
+    /// Rebuild `X = v_α + k·M`, failing closed on overflow.
+    pub fn reconstruct(&self, v_alpha: u128, k: u128) -> Nine65Result<u128> {
+        let winding = k.checked_mul(self.alpha_cap).ok_or(Nine65Error::Overflow {
+            operation: "adjacency K-Elimination winding multiplication",
+        })?;
+        v_alpha.checked_add(winding).ok_or(Nine65Error::Overflow {
+            operation: "adjacency K-Elimination winding addition",
+        })
+    }
+
+    /// The *general* [`KElimination`] over the same `(M, A)` pair.
+    ///
+    /// This is the differential-test partner: it computes the same `k` through
+    /// the generic `(v_β − v_α)·M⁻¹ mod A` path, with `M⁻¹` obtained by
+    /// extended Euclid rather than by construction. Any disagreement between
+    /// the two is a defect in one of them.
+    ///
+    /// Fails if `A` does not fit in `u64`, which is the width
+    /// [`KElimination::try_new`] accepts for CLASS-R lanes.
+    pub fn general_equivalent(&self) -> Nine65Result<KElimination> {
+        let anchor = u64::try_from(self.anchor).map_err(|_| Nine65Error::InvalidParameter {
+            message: format!(
+                "adjacency anchor A = {} exceeds the u64 lane width accepted by \
+                 KElimination::try_new; the general partner cannot be built for \
+                 this alpha basis",
+                self.anchor
+            ),
+        })?;
+        KElimination::try_new(&self.alpha_primes, &[anchor])
+    }
+}
 
 fn validate_alpha_family(values: &[u64]) -> Nine65Result<()> {
     if values.is_empty() {
@@ -1273,5 +1466,206 @@ mod bench_compat {
             if i > 1000000 { break; } // Limit for bench speed
         }
         true
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADJACENCY K-ELIMINATION — correctness by execution
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// The adjacency shortcut replaces a modular multiply by a precomputed inverse
+// with a bare subtraction. That is only worth having if it computes the SAME
+// winding index as the general path, so every test here is differential: the
+// shortcut is checked against `KElimination::extract_k` over the identical
+// (M, A) pair, and both are checked against ground truth `k = X / M`.
+#[cfg(test)]
+mod adjacency_tests {
+    use super::*;
+
+    /// Deterministic xorshift64*, so these tests are reproducible on every
+    /// platform and carry no dependency and no floating point.
+    struct Xorshift(u64);
+
+    impl Xorshift {
+        fn new(seed: u64) -> Self {
+            Self(seed | 1)
+        }
+        fn next_u64(&mut self) -> u64 {
+            let mut x = self.0;
+            x ^= x >> 12;
+            x ^= x << 25;
+            x ^= x >> 27;
+            self.0 = x;
+            x.wrapping_mul(0x2545_F491_4F6C_DD1D)
+        }
+        fn next_u128(&mut self) -> u128 {
+            ((self.next_u64() as u128) << 64) | self.next_u64() as u128
+        }
+    }
+
+    #[test]
+    fn adjacency_inverse_is_the_partner_itself() {
+        // M^-1 mod A == M, checked against extended Euclid rather than assumed.
+        for config in [
+            KElimConfig::Minimal,
+            KElimConfig::Standard,
+            KElimConfig::Maximum,
+        ] {
+            let adj = AdjacencyKElim::from_config(config).expect("adjacency context");
+            let by_euclid = mod_inverse_u128(adj.alpha_cap(), adj.anchor())
+                .expect("gcd(M, M+1) = 1, so the inverse exists");
+            assert_eq!(
+                by_euclid,
+                adj.alpha_cap(),
+                "{config:?}: M^-1 mod A must be M itself under adjacency"
+            );
+            assert_eq!(by_euclid, adj.alpha_inv_anchor());
+        }
+    }
+
+    #[test]
+    fn adjacency_matches_general_exhaustively() {
+        // M = 105, A = 106 = 2 * 53 (composite CLASS-R anchor, as expected).
+        let adj = AdjacencyKElim::try_new(&[3, 5, 7]).expect("adjacency context");
+        assert_eq!(adj.alpha_cap(), 105);
+        assert_eq!(adj.anchor(), 106);
+
+        let general = adj.general_equivalent().expect("general partner");
+        assert_eq!(general.beta_cap, 106, "the general partner uses the same A");
+        assert_eq!(
+            general.alpha_inv_beta,
+            105,
+            "the general partner's extended-Euclid inverse agrees with construction"
+        );
+
+        let capacity = adj.try_capacity().expect("105 * 106 fits");
+        assert_eq!(capacity, 105 * 106);
+
+        for x in 0..capacity {
+            let v_alpha = x % adj.alpha_cap();
+            let v_beta = x % adj.anchor();
+            let truth = x / adj.alpha_cap(); // X = v_alpha + k*M  =>  k = floor(X/M)
+
+            let fast = adj.extract_k(v_alpha, v_beta);
+            let slow = general.extract_k(v_alpha, v_beta);
+
+            assert_eq!(fast, truth, "adjacency k wrong at X={x}");
+            assert_eq!(slow, truth, "general k wrong at X={x}");
+            assert_eq!(
+                adj.reconstruct(v_alpha, fast).expect("no overflow"),
+                x,
+                "reconstruction wrong at X={x}"
+            );
+        }
+    }
+
+    #[test]
+    fn adjacency_matches_general_on_the_standard_basis() {
+        let adj = AdjacencyKElim::from_config(KElimConfig::Standard).expect("adjacency context");
+        let general = adj.general_equivalent().expect("general partner");
+        assert_eq!(general.alpha_inv_beta, adj.alpha_cap());
+
+        let capacity = adj.try_capacity().expect("M * A fits in u128");
+        let mut rng = Xorshift::new(0x9E37_79B9_7F4A_7C15);
+
+        for _ in 0..200_000 {
+            let x = rng.next_u128() % capacity;
+            let v_alpha = x % adj.alpha_cap();
+            let v_beta = x % adj.anchor();
+            let truth = x / adj.alpha_cap();
+
+            assert_eq!(adj.extract_k(v_alpha, v_beta), truth, "adjacency k wrong at X={x}");
+            assert_eq!(general.extract_k(v_alpha, v_beta), truth, "general k wrong at X={x}");
+        }
+    }
+
+    #[test]
+    fn adjacency_covers_the_extremes_of_the_range() {
+        // Random sampling over a 2^96 space never lands on the boundary, so
+        // the boundary is enumerated explicitly.
+        let adj = AdjacencyKElim::from_config(KElimConfig::Standard).expect("adjacency context");
+        let general = adj.general_equivalent().expect("general partner");
+        let capacity = adj.try_capacity().expect("M * A fits in u128");
+        let (m, a) = (adj.alpha_cap(), adj.anchor());
+
+        let mut probes: Vec<u128> = vec![0, 1, 2, m - 1, m, m + 1, a - 1, a, a + 1];
+        probes.extend([capacity - 1, capacity - 2, capacity - m, capacity - a]);
+        for k in [0u128, 1, 2, a - 1] {
+            probes.push(k * m);
+            probes.push(k * m + (m - 1));
+        }
+
+        for x in probes {
+            let x = x % capacity;
+            let v_alpha = x % m;
+            let v_beta = x % a;
+            let truth = x / m;
+            assert_eq!(adj.extract_k(v_alpha, v_beta), truth, "adjacency k wrong at X={x}");
+            assert_eq!(general.extract_k(v_alpha, v_beta), truth, "general k wrong at X={x}");
+        }
+    }
+
+    #[test]
+    fn adjacency_sign_is_minus_not_plus() {
+        // The white paper publishes X == gamma + K (mod A). It is gamma - K.
+        // If the two ever agreed everywhere this test would be vacuous, so it
+        // asserts a *disagreement* as well as which side is right.
+        let adj = AdjacencyKElim::try_new(&[3, 5, 7]).expect("adjacency context");
+        let (m, a) = (adj.alpha_cap(), adj.anchor());
+        let mut disagreements = 0usize;
+
+        for x in 0..adj.try_capacity().unwrap() {
+            let v_alpha = x % m;
+            let v_beta = x % a;
+            let truth = x / m;
+
+            assert_eq!(sub_mod_u128_ct(v_alpha, v_beta, a), truth);
+            let published = (v_alpha + v_beta) % a;
+            if published != truth {
+                disagreements += 1;
+            }
+        }
+        assert!(
+            disagreements > 0,
+            "the published (gamma + K) form must be measurably wrong, not merely unused"
+        );
+    }
+
+    #[test]
+    fn adjacency_validates_residue_ranges() {
+        let adj = AdjacencyKElim::try_new(&[3, 5, 7]).expect("adjacency context");
+        assert!(adj.extract_k_validated(104, 105).is_ok());
+        assert!(adj.extract_k_validated(105, 0).is_err(), "v_alpha == M is out of range");
+        assert!(adj.extract_k_validated(0, 106).is_err(), "v_beta == A is out of range");
+    }
+
+    #[test]
+    fn adjacency_rejects_a_non_class_f_alpha_family() {
+        // A is CLASS-R and needs no primality. The alpha family still does.
+        assert!(AdjacencyKElim::try_new(&[15, 17]).is_err());
+        assert!(AdjacencyKElim::try_new(&[17, 17]).is_err());
+        assert!(AdjacencyKElim::try_new(&[]).is_err());
+    }
+
+    #[test]
+    fn adjacency_capacity_is_m_times_m_plus_one() {
+        // The tradeoff, stated as a number rather than as prose: the general
+        // Standard context reaches 110 bits, adjacency reaches ~97.
+        let adj = AdjacencyKElim::from_config(KElimConfig::Standard).expect("adjacency context");
+        let general = KElimination::from_config(KElimConfig::Standard);
+
+        let adj_cap = adj.try_capacity().expect("fits");
+        assert_eq!(adj_cap, adj.alpha_cap() * (adj.alpha_cap() + 1));
+
+        let general_cap = general.try_capacity().expect("fits");
+        assert!(
+            adj_cap < general_cap,
+            "adjacency trades capacity for the free inverse: {} vs {}",
+            adj_cap.ilog2(),
+            general_cap.ilog2()
+        );
+        // Bit-length, i.e. ilog2 + 1: adjacency 96 bits, general 110 bits.
+        assert_eq!(adj_cap.ilog2() + 1, 96);
+        assert_eq!(general_cap.ilog2() + 1, 110);
     }
 }
