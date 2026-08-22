@@ -372,3 +372,99 @@ fn measure_lane_budget_at_n8192_for_128_bits() {
     println!("        secure_128 ships 3; secure_128_deep ships 4.");
     println!("=== end measurement 5 ===\n");
 }
+
+// ===================================================================
+// MEASUREMENT 6 — can the security screen SEE the modulus it screens?
+// ===================================================================
+//
+// The constraint-dissolution architecture (manufactured Q = t * prod(D_i),
+// star-family lanes q = c*t+1, adjacency anchors A = P+1, composite and
+// prime-power lanes) is an argument about EXACT ARITHMETIC. It says nothing
+// about RLWE hardness.
+//
+// That distinction matters because CRT decomposes the PROBLEM, not just the
+// representation: RLWE mod q1*q2 splits into RLWE mod q1 x RLWE mod q2, and
+// an attacker works the weakest lane. Prime-power lanes such as Z/8 or Z/2^90
+// additionally put nilpotents in the ring, outside where the standard
+// hardness reductions and every published estimator were validated.
+//
+// This test asks one narrow, checkable question about THIS repo: does the
+// in-tree screen have any term for modulus structure? Its signature is
+//
+//     estimate(n, log_q, secret_distribution, claimed_security)
+//
+// so structurally it cannot -- the screen is a function of bit length alone.
+// This measures that directly: every modulus below has a 90-bit product, and
+// they receive byte-identical scores despite one of them (2^90) being
+// trivially broken for RLWE.
+//
+// This is a REPORTING test. It documents a gap in what the screen can see; it
+// does not assert that the architecture is insecure.
+
+#[test]
+fn measure_whether_the_security_screen_can_see_modulus_structure() {
+    println!("\n=== MEASUREMENT 6: does the security screen model modulus structure? ===");
+
+    // All four are ~90-bit moduli. Only their FACTORIZATION differs.
+    let constructions: Vec<(&str, &str)> = vec![
+        (
+            "3 x 30-bit NTT primes",
+            "what secure_128 ships; each lane a field, RLWE as studied",
+        ),
+        (
+            "2^90 — one smooth lane",
+            "TRIVIALLY BROKEN for RLWE: Z/2^90 is nilpotent-rich, secret peels off lanewise",
+        ),
+        (
+            "prime-power basis {8,9,25,49}^k",
+            "the composite family the NTT-independence claim cites",
+        ),
+        (
+            "manufactured Q = t * D (star family)",
+            "t divides Q by construction — the exact-Delta route",
+        ),
+    ];
+
+    const LOG_Q: u32 = 90;
+    let core = LatticeSecurityEstimator::new(CostModel::CoreSVP).estimate(
+        8192,
+        LOG_Q,
+        SecretDistribution::Ternary,
+        128,
+    );
+    let matz = LatticeSecurityEstimator::new(CostModel::MATZOV).estimate(
+        8192,
+        LOG_Q,
+        SecretDistribution::Ternary,
+        128,
+    );
+
+    println!(
+        "{:<38} {:>7} {:>9} {:>9} {:>9}",
+        "modulus construction (all 90-bit)", "CoreSVP", "MATZOV", "binding", "meets128"
+    );
+    for (label, note) in &constructions {
+        println!(
+            "{:<38} {:>7} {:>9} {:>9} {:>9}",
+            label,
+            core.effective_bits,
+            matz.effective_bits,
+            core.effective_bits.min(matz.effective_bits),
+            core.meets_claim && matz.meets_claim
+        );
+        println!("{:>40}{}", "", note);
+    }
+
+    // The screen takes no factorization argument, so every row above is the
+    // SAME call. That is the finding, stated as an executable fact.
+    assert!(
+        core.meets_claim,
+        "sanity: a 90-bit modulus at n=8192 is expected to pass a 128-bit screen"
+    );
+
+    println!(
+        "\n    FINDING: the four rows are one call. estimate() takes\n         \x20     (n, log_q, secret_distribution, claimed_security)\n         \x20   and has no parameter for the factorization, so a chain of NTT primes and\n         \x20   2^90 receive identical scores and identical meets128={}.\n         \x20   A 2^90 modulus is not a 128-bit-secure RLWE instance by any account; the\n         \x20   screen cannot say so because it never sees the modulus, only its width.\n         \x20   Constraint dissolution is a correctness argument. This is the security\n         \x20   question it does not answer -- and the current screen cannot answer it\n         \x20   either. Extending estimate() to take the factorization is the prerequisite\n         \x20   for screening any manufactured-modulus config.",
+        core.meets_claim && matz.meets_claim
+    );
+    println!("=== end measurement 6 ===\n");
+}
