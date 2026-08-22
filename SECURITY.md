@@ -1,6 +1,6 @@
 # Security Policy
 
-This document describes the security policy for NINE65, an unlimited-depth Fully Homomorphic Encryption system with three verified bootstrap paths. NINE65 is a proprietary Rust workspace comprising the following crates: `nine65`, `clockwork-core`, `mana`, `unhal`, and `nexgen_rational`. Formal verification is provided via Coq and Lean4 proofs.
+This document describes the security policy for NINE65, an exact-integer BFV/DualRNS Fully Homomorphic Encryption substrate providing finite leveled computation plus low-depth refresh paths. It is not an unlimited-depth system; see `README.md` for the verified capability table and `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md` for what is and is not established. NINE65 is a proprietary Rust workspace comprising the following crates: `nine65`, `clockwork-core`, `mana`, `unhal`, and `nexgen_rational`. Lean 4 is the machine-checked formalization of record; the `proofs/coq/` tree is a legacy exploration and is not the verification basis.
 
 ## Supported Versions
 

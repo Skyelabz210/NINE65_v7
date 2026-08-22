@@ -1,8 +1,15 @@
-//! Clockwork Bootstrap — Full Unlimited-Depth FHE
+//! Clockwork Bootstrap — public (evaluator-side) ciphertext refresh
 //!
 //! When q_small = t, mod-switch from Q to t IS the BFV decryption — polynomial
-//! approximation disappears entirely. Combined with K-Elimination exact arithmetic,
-//! this gives unlimited depth with zero approximation error.
+//! approximation disappears entirely. Combined with K-Elimination exact
+//! arithmetic, the refresh carries no approximation error of its own.
+//!
+//! This does NOT make the system unlimited-depth, and no such claim is made
+//! here: refresh admissibility is bounded by the config's `Delta` headroom (see
+//! `bootstrap` below and `params::secure_configs`'s PUBLIC-REFRESH
+//! ADMISSIBILITY section), and the roundtrip test suites for all three paths are
+//! currently `#[ignore]`d as VESTIGIAL/RETIRED. Measured public direct-square
+//! depths are 2-4; see `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 //!
 //! # Three-Phase Bootstrap (Circular Security)
 //!
@@ -27,6 +34,7 @@ use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSEvalKey, DualRNSFullKeySet, DualRNSPoly, DualRNSPublicKey,
     DualRNSSecretKey, RNSFHEContext,
 };
+use crate::params::secure_configs::ensure_public_refresh_supported;
 use crate::params::FHEConfig;
 use zeroize::Zeroizing;
 
@@ -579,12 +587,21 @@ impl ClockworkBootstrap {
     /// Phase 3: ModSwitch Q_boot -> Q_work (circular security, no key switch)
     ///
     /// Use with keys from `generate_keys()` (circular security mode).
+    ///
+    /// Refuses configs whose main chain cannot carry a public refresh — see
+    /// [`ensure_public_refresh_supported`] and the PUBLIC-REFRESH
+    /// ADMISSIBILITY section of `params::secure_configs`. The refusal is a
+    /// typed `Nine65Error::BootstrapConfigMismatch`, returned before any work,
+    /// because the alternative is returning a wrong-but-plausible plaintext.
     pub fn bootstrap(
         &self,
         ct: &DualRNSCiphertext,
         bsk: &BootstrapKey,
         _ksk: &KeySwitchKey,
     ) -> Nine65Result<DualRNSCiphertext> {
+        // Gate 0: this chain must be able to carry a public refresh at all.
+        ensure_public_refresh_supported(&self.work_config)?;
+
         // Phase 1: ModSwitch Q_min -> t (exact integer rounding)
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
@@ -608,12 +625,19 @@ impl ClockworkBootstrap {
     /// The KSK converts the Phase 2 output from boot_sk to work_sk,
     /// avoiding the circular security assumption at the cost of additional
     /// noise from the key-switch operation.
+    ///
+    /// Subject to the same public-refresh admissibility gate as
+    /// [`Self::bootstrap`]; the key switch adds noise, so a chain that cannot
+    /// carry the circular path cannot carry this one either.
     pub fn bootstrap_with_ksk(
         &self,
         ct: &DualRNSCiphertext,
         bsk: &BootstrapKey,
         ksk: &KeySwitchKey,
     ) -> Nine65Result<DualRNSCiphertext> {
+        // Gate 0: this chain must be able to carry a public refresh at all.
+        ensure_public_refresh_supported(&self.work_config)?;
+
         // Phase 1: ModSwitch Q_min -> t (exact integer rounding)
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
