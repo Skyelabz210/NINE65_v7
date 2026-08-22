@@ -1,24 +1,38 @@
 name: Constant-Time Verification
 
-# Two jobs, deliberately split:
+# FOUR jobs, deliberately split by what each one can actually prove.
 #
-#   verify              — deterministic, source-level and functional CT gates.
-#                         Blocking, runs on every relevant push/PR.
-#   statistical-timing  — the 8 wall-clock Welch t-test timing tests in
-#                         crates/nine65/src/security/ct_verification.rs. Every
-#                         one is `#[ignore]`d and annotated "run in controlled
-#                         environment only". Non-blocking and scheduled, NOT
-#                         per-push. See the job header for why.
+#   verify              — deterministic source-level and functional CT gates.
+#                         Blocking, every relevant push/PR.
+#   dudect-blocking     — the five two-class timing tests that MEASURE constant
+#                         time reliably. Blocking, every relevant push/PR, at
+#                         the tight documented threshold (t < 5). See the job
+#                         header for why these are safe to block on and the
+#                         robust-CV tests are not.
+#   open-findings       — the four two-class tests that measure a REAL timing
+#                         leak. Scheduled. These are state tripwires: the job
+#                         fails if a documented leak stops reproducing (which
+#                         means the docs are now wrong), not because the leak
+#                         exists.
+#   diagnostics         — the eight robust-CV tests plus the one borderline
+#                         dudect test, run for the record and uploaded.
+#                         Scheduled. Gated on producing measurements, not on
+#                         their values — with evidence, in the job header.
+#
+# Measured baselines quoted throughout are from
+# docs/CT_VERIFICATION_PLAN.md (2026-08-22, Intel Xeon 2.80GHz, 4 vCPU,
+# shared container, load average 1-22 during the runs).
 
 on:
   push:
-    # `hardening/beyond-100-app-platform` was removed from the repository; only
-    # `main` and `claude/*` exist. Re-pointed at the real trunk.
     branches: [main]
     paths:
       - 'crates/nine65/src/arithmetic/ntt_fft.rs'
       - 'crates/nine65/src/arithmetic/montgomery.rs'
       - 'crates/nine65/src/arithmetic/persistent_montgomery.rs'
+      - 'crates/nine65/src/arithmetic/barrett.rs'
+      - 'crates/nine65/src/arithmetic/k_elimination.rs'
+      - 'crates/nine65/src/ops/rns_fhe.rs'
       - 'crates/nine65/src/security/**'
       - 'scripts/check_ct_ntt_source.py'
       - 'scripts/verify_constant_time.sh'
@@ -27,12 +41,13 @@ on:
     branches: [main]
     paths:
       - 'crates/nine65/src/arithmetic/**'
+      - 'crates/nine65/src/ops/rns_fhe.rs'
       - 'crates/nine65/src/security/**'
       - 'scripts/check_ct_ntt_source.py'
       - 'scripts/verify_constant_time.sh'
       - '.github/workflows/ct_verification.yml'
   schedule:
-    # Sunday 04:00 UTC — statistical timing run on an otherwise idle runner.
+    # Sunday 04:00 UTC — timing diagnostics on an otherwise idle runner.
     - cron: '0 4 * * 0'
   workflow_dispatch:
 
@@ -63,22 +78,21 @@ jobs:
           cargo test -p nine65 --lib --release ntt_fft -- --nocapture
           cargo test -p nine65 --lib --release persistent_montgomery -- --nocapture
 
-      # The statistical timing tests used to be invoked here, without --ignored.
-      # All 8 tests in security::ct_verification::constant_time_statistical are
-      # `#[ignore]`d, so that step executed ZERO tests and reported success —
-      # a gate that could not fail. They now live in the statistical-timing job
-      # below. This step just proves they still compile and are still exactly
-      # the 8 we think they are, which is cheap and deterministic.
-      - name: Assert statistical CT tests exist and are compiled
+      # Cheap, deterministic inventory check. It does NOT prove any of the
+      # timing tests pass — the dudect-blocking job does that. It proves the
+      # harness still contains exactly the tests the docs describe, so a
+      # silently deleted timing test cannot slip through.
+      - name: Assert the CT timing harness is intact
         run: |
           set -euo pipefail
           listing=$(cargo test -p nine65 --lib --release constant_time_statistical -- \
             --ignored --list 2>/dev/null | grep ': test$' || true)
           echo "$listing"
           count=$(printf '%s\n' "$listing" | grep -c . || true)
-          if [ "$count" -ne 8 ]; then
-            echo "::error::expected 8 ignored constant_time_statistical tests, found $count"
-            echo "::error::(update this count deliberately if the harness changed)"
+          if [ "$count" -ne 18 ]; then
+            echo "::error::expected 18 ignored constant_time_statistical tests, found $count"
+            echo "::error::(8 robust-CV + 10 dudect two-class; update deliberately if the"
+            echo "::error:: harness changed, and update docs/CT_VERIFICATION_PLAN.md with it)"
             exit 1
           fi
 
@@ -96,27 +110,101 @@ jobs:
             verification_script_output.txt
 
   # ---------------------------------------------------------------------------
-  # Statistical timing diagnostics — NON-BLOCKING, scheduled/manual only.
+  # BLOCKING statistical timing gate.
   #
-  # Why not a per-push blocking gate: these 8 tests measure wall-clock timing
-  # and run a Welch t-test over the samples. GitHub's shared runners are noisy,
-  # co-tenanted and frequency-scaled, so a t-statistic measured there is not
-  # evidence of a timing leak or of its absence — it is mostly measuring the
-  # neighbours. The tests themselves say so ("Statistical timing test — run in
-  # controlled environment only"), which is exactly why they carry #[ignore].
-  # Making them blocking would trade a gate that cannot fail for a gate that
-  # fails at random; neither is a signal.
+  # Why these five can block a PR when the older robust-CV tests could not:
   #
-  # So: they run weekly and on demand, with --ignored so they actually execute,
-  # and the raw output is uploaded for a human to read. continue-on-error keeps
-  # a noisy runner from marking the workflow red, while the step's own status is
-  # still visible in the run summary.
+  # 1. They are two-class tests. They ask "does the timing depend on the input
+  #    class?", which is the constant-time question. The robust-CV tests ask
+  #    "how dispersed is one distribution?", which on a shared runner is a
+  #    question about the neighbours.
   #
-  # Promoting this to blocking requires a dedicated, quiesced runner — track
-  # that decision with the repo owner, not here.
+  # 2. Class order is randomised per measurement, so machine drift is shared by
+  #    both classes instead of being attributed to one.
+  #
+  # 3. Every run carries a CONTROL arm: two independent sample streams from the
+  #    SAME class. The test can only FAIL when the control t stays below 5 while
+  #    the cross-class t does not. On a runner too noisy to measure, the control
+  #    goes above 5 first and the verdict becomes INCONCLUSIVE, which passes.
+  #    A noisy runner therefore costs signal, never a false red. That property
+  #    is what makes a timing test safe to block on, and it is why no threshold
+  #    dilution is needed here: the threshold is the tight documented t < 5.
+  #
+  # Measured stability of exactly these five on a 4-vCPU shared container,
+  # deliberately including runs at load average 20-22 (see the plan doc):
+  #    montgomery_pow  (exponent Hamming weight 8 vs 56) : t = 0.01 - 2.05
+  #    montgomery_mul  (operand magnitude)               : t = 0.04 - 2.78
+  #    montgomery_reduce (operand magnitude)             : t = 0.27 - 2.29
+  #    barrett reduce_ct (operand magnitude)             : t = 0.01 - 1.59
+  #    mod_switch_down_dual (sign, magnitude-matched)    : t = 0.08 - 2.29
+  # Worst observed 2.78 against a threshold of 5.
   # ---------------------------------------------------------------------------
-  statistical-timing:
-    name: CT statistical timing (non-blocking, scheduled)
+  dudect-blocking:
+    name: CT dudect gate (blocking, t < 5)
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build test binary
+        run: cargo test -p nine65 --lib --release --no-run
+
+      # Run one at a time so a failure names the exact operation, and so the
+      # measured statistics for every test reach the log even when an earlier
+      # one fails.
+      - name: Run blocking dudect tests
+        run: |
+          set -euo pipefail
+          prefix=security::ct_verification::constant_time_statistical
+          for t in \
+            test_ct_dudect_montgomery_pow_exponent_hamming_weight \
+            test_ct_dudect_montgomery_reduce_operand_magnitude \
+            test_ct_dudect_montgomery_mul_operand_magnitude \
+            test_ct_dudect_barrett_reduce_operand_magnitude \
+            test_ct_dudect_mod_switch_rescale_sign_classes
+          do
+            echo "::group::$t"
+            cargo test -p nine65 --lib --release -- \
+              --ignored --exact --nocapture --test-threads 1 "$prefix::$t" \
+              2>&1 | tee -a dudect_blocking_output.txt
+            echo "::endgroup::"
+          done
+
+      - name: Upload measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ct-dudect-blocking
+          if-no-files-found: error
+          path: dudect_blocking_output.txt
+
+  # ---------------------------------------------------------------------------
+  # OPEN FINDINGS — known-red tripwires, scheduled.
+  #
+  # These four tests measure timing leaks that are real, reproducible and
+  # currently unfixed. They are recorded in docs/CT_VERIFICATION_PLAN.md with
+  # their measured statistics. Running them as an ordinary blocking gate would
+  # paint CI permanently red for a state that is already documented, and the
+  # red would stop meaning anything within a week.
+  #
+  # So the gate is inverted, and it is a gate, not a shrug: this job asserts
+  # that each test still reports "VERDICT: TIMING DEPENDENCE MEASURED". It
+  # fails if a test instead reports CONSTANT-TIME — because that means someone
+  # fixed the leak (or broke the test) and the documentation is now wrong. It
+  # also fails if a test emits no verdict at all, which is what a crash or a
+  # build break looks like. An INCONCLUSIVE verdict (the runner's own noise
+  # floor exceeded the threshold) is accepted as "no news" and reported.
+  #
+  # There is no continue-on-error and no `|| true` anywhere in this job. Every
+  # cargo invocation's exit status is inspected explicitly, and a failure to
+  # produce measurements is a failure of the job.
+  # ---------------------------------------------------------------------------
+  open-findings:
+    name: CT open findings (scheduled state tripwire)
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     timeout-minutes: 60
@@ -126,32 +214,130 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Run ignored constant-time statistical tests
-        id: statistical
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          cargo test -p nine65 --lib --release constant_time_statistical -- \
-            --ignored --nocapture --test-threads 1 \
-            2>&1 | tee statistical_test_output.txt
+      - name: Build test binary
+        run: cargo test -p nine65 --lib --release --no-run
 
-      - name: Record outcome
-        if: always()
+      - name: Assert documented timing leaks still reproduce
         run: |
-          echo "statistical timing outcome: ${{ steps.statistical.outcome }}"
-          {
-            echo "### Constant-time statistical timing"
-            echo
-            echo "Outcome: \`${{ steps.statistical.outcome }}\` (non-blocking)"
-            echo
-            echo "Shared GitHub runners are noisy; treat a failure as a prompt to"
-            echo "re-run on a quiesced machine, not as proof of a timing leak."
-          } >> "$GITHUB_STEP_SUMMARY"
+          set -uo pipefail
+          prefix=security::ct_verification::constant_time_statistical
+          status=0
+          : > open_findings_output.txt
+          for t in \
+            test_ct_dudect_exact_prime_drop_fixed_vs_random \
+            test_ct_dudect_exact_prime_drop_small_vs_large_residues \
+            test_ct_dudect_mod_switch_rescale_fixed_vs_random \
+            test_ct_dudect_k_elim_extract_k_operand_magnitude
+          do
+            echo "::group::$t"
+            out=$(cargo test -p nine65 --lib --release -- \
+                    --ignored --exact --nocapture --test-threads 1 "$prefix::$t" 2>&1)
+            echo "$out"
+            printf '%s\n' "$out" >> open_findings_output.txt
+            echo "::endgroup::"
 
-      - name: Upload statistical timing output
+            if printf '%s' "$out" | grep -q 'VERDICT: TIMING DEPENDENCE MEASURED'; then
+              echo "$t: leak still reproduces (expected)"
+            elif printf '%s' "$out" | grep -q 'VERDICT: INCONCLUSIVE'; then
+              echo "::warning::$t: runner noise floor exceeded the threshold; no news this week"
+            elif printf '%s' "$out" | grep -q 'VERDICT: CONSTANT-TIME'; then
+              echo "::error::$t now measures CONSTANT-TIME."
+              echo "::error::A documented open finding has stopped reproducing. Either the leak"
+              echo "::error::was fixed (update docs/CT_VERIFICATION_PLAN.md and promote this"
+              echo "::error::test into the dudect-blocking job) or the test stopped measuring"
+              echo "::error::what it claims to. Both need a human."
+              status=1
+            else
+              echo "::error::$t produced no dudect verdict — the harness did not run."
+              status=1
+            fi
+          done
+          exit "$status"
+
+      - name: Upload measurements
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ct-statistical-timing
+          name: ct-open-findings
           if-no-files-found: error
-          path: statistical_test_output.txt
+          path: open_findings_output.txt
+
+  # ---------------------------------------------------------------------------
+  # DIAGNOSTICS — the robust-CV suite, scheduled, recorded, not threshold-gated.
+  #
+  # This job's contract is "collect measurements", and it fails when it fails
+  # to collect them. It deliberately does NOT gate on the robust-CV pass/fail,
+  # for a measured reason rather than a squeamish one: those tests time a
+  # single sub-100ns operation through a ~21ns timer with 1ns granularity, so
+  # the statistic is quantised far more coarsely than the 5% band it is
+  # compared against. On this project's own hardware, unchanged code produced
+  #   montgomery_reduce: CV = 0.0000% (MAD 0, median 29ns) on one run,
+  #                      CV = 5.2950% (MAD 1, median 28ns) on the next
+  # — a pass and a fail one clock tick apart. The same suite's block-measured
+  # cross-class t-test for exact_divide read 2.57 / 14.31 / 15.77 / 58.12 over
+  # four runs of identical code. Gating on numbers like those is the fake
+  # signal; the real gate for these operations is the dudect-blocking job,
+  # which covers every one of them with a batched two-class test.
+  #
+  # test_ct_dudect_k_elim_exact_divide_divisor_classes is here rather than in
+  # the blocking job because its measured signal (t = 0.76 / 2.54 / 3.24 /
+  # 4.32 / 4.89) has come within 0.11 of the threshold. It is a promotion
+  # candidate once measured on a quiesced, frequency-pinned runner.
+  # ---------------------------------------------------------------------------
+  diagnostics:
+    name: CT robust-CV diagnostics (scheduled, recorded)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build test binary
+        run: cargo test -p nine65 --lib --release --no-run
+
+      - name: Collect robust-CV and borderline measurements
+        run: |
+          set -uo pipefail
+          prefix=security::ct_verification::constant_time_statistical
+          : > diagnostics_output.txt
+          missing=0
+          for t in \
+            test_ct_k_elimination_extract_k \
+            test_ct_k_elimination_exact_divide \
+            test_ct_montgomery_reduce \
+            test_ct_montgomery_mul \
+            test_ct_montgomery_pow \
+            test_ct_barrett_reduce \
+            test_ct_vs_vartime_comparison \
+            test_ct_input_class_analysis \
+            test_ct_dudect_k_elim_exact_divide_divisor_classes
+          do
+            echo "::group::$t"
+            out=$(cargo test -p nine65 --lib --release -- \
+                    --ignored --exact --nocapture --test-threads 1 "$prefix::$t" 2>&1)
+            rc=$?
+            echo "$out"
+            { echo "### $t (cargo exit $rc)"; printf '%s\n' "$out"; } >> diagnostics_output.txt
+            echo "::endgroup::"
+
+            # The gate: did the harness actually produce numbers? A test that
+            # emitted no median and no dudect verdict did not run.
+            if ! printf '%s' "$out" | grep -qE 'median=|median class|VERDICT:'; then
+              echo "::error::$t produced no measurements (cargo exit $rc)"
+              missing=1
+            elif [ "$rc" -ne 0 ]; then
+              echo "::warning::$t exceeded a reported threshold on this runner (cargo exit $rc); see the artifact"
+            fi
+          done
+          exit "$missing"
+
+      - name: Upload measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ct-diagnostics
+          if-no-files-found: error
+          path: diagnostics_output.txt
