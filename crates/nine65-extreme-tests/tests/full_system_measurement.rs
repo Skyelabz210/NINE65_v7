@@ -321,3 +321,54 @@ fn measure_post_bootstrap_headroom_that_the_ban_rests_on() {
     }
     println!("=== end measurement 4 ===\n");
 }
+
+// ===================================================================
+// MEASUREMENT 5 — how many lanes can n=8192 actually carry at 128 bits?
+// ===================================================================
+//
+// secure_128 is secure_128_deep minus one prime, and screens at 259
+// effective bits against a 128-bit claim. That is a parameter choice, not a
+// ceiling. This sweeps log_q at n=8192 to find the largest chain that still
+// screens >= 128 under BOTH cost models, which is the number a refusal
+// should be measured against.
+
+#[test]
+fn measure_lane_budget_at_n8192_for_128_bits() {
+    println!("\n=== MEASUREMENT 5: usable modulus budget at n=8192, claim=128 ===");
+    println!(
+        "{:>7} {:>8} {:>10} {:>9} {:>9} {:>8}",
+        "primes", "log_q~", "CoreSVP", "MATZOV", "binding", "ok>=128"
+    );
+    // Production primes here are ~30 bits each.
+    let mut best = 0usize;
+    for primes in 1..=10usize {
+        let log_q = (primes as u32) * 30;
+        let core = LatticeSecurityEstimator::new(CostModel::CoreSVP).estimate(
+            8192,
+            log_q,
+            SecretDistribution::Ternary,
+            128,
+        );
+        let matz = LatticeSecurityEstimator::new(CostModel::MATZOV).estimate(
+            8192,
+            log_q,
+            SecretDistribution::Ternary,
+            128,
+        );
+        let binding = core.effective_bits.min(matz.effective_bits);
+        let ok = binding >= 128;
+        if ok {
+            best = primes;
+        }
+        println!(
+            "{:>7} {:>8} {:>10} {:>9} {:>9} {:>8}",
+            primes, log_q, core.effective_bits, matz.effective_bits, binding, ok
+        );
+    }
+    println!(
+        "    --> MEASURED: n=8192 carries up to {} x ~30-bit primes at a 128-bit claim",
+        best
+    );
+    println!("        secure_128 ships 3; secure_128_deep ships 4.");
+    println!("=== end measurement 5 ===\n");
+}
