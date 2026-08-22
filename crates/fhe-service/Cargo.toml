@@ -3,6 +3,7 @@ name = "fhe-service"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license = "LicenseRef-Proprietary-Permissive"
 
 [features]
 default = []

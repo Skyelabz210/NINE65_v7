@@ -3,6 +3,7 @@ name = "nine65-extreme-tests"
 version = "0.1.0"
 edition = "2021"
 description = "Extreme boundary and adversarial test harness for NINE65 v7"
+license = "LicenseRef-Proprietary-Permissive"
 
 [features]
 # Off by default — opt-in for CI scheduled runs and pre-release validation.

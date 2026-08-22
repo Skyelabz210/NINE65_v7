@@ -9,6 +9,7 @@ authors.workspace = true
 # comparison bench for a rejected parallelism approach) is not pulled into
 # the build merely by existing on disk.
 autobenches = false
+license = "LicenseRef-Proprietary-Permissive"
 
 [features]
 # Default build: O(N log N) FFT-based NTT + exact transcendentals backend +

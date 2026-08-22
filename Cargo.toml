@@ -7,6 +7,11 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 authors = ["Acidlabz210 <acid@hackfate.us>"]
+# The repository LICENSE is proprietary (all rights reserved). Package
+# metadata is what crawlers and downstream consumers read, so every crate in
+# this workspace declares the same marker. New crates should either inherit
+# this via `license.workspace = true` or repeat the literal string.
+license = "LicenseRef-Proprietary-Permissive"
 
 [workspace.dependencies]
 # SIMD acceleration

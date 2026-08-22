@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 publish = false
+license = "LicenseRef-Proprietary-Permissive"
 
 [lib]
 name = "nine65_python"

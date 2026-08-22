@@ -4,6 +4,7 @@ description = "Modular Anchored Number Arithmetic - FHE Stream Accelerator"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license = "LicenseRef-Proprietary-Permissive"
 
 [features]
 # MANA defaults to no external parallelism. Its lane-parallel acceleration
