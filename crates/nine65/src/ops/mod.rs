@@ -10,6 +10,14 @@
 //! - CRT batching for SIMD packing (N/2 slots per ciphertext)
 //! - Parallel encrypt/decrypt for throughput
 
+// Public forwarding layer for the exact align-and-drop primitive, consumed by
+// the arrow-emission gate matrix in tests/. `#[doc(hidden)]`: it exists only
+// so an integration-test target can reach a deliberately `pub(crate)`
+// primitive from outside the crate. It is reachable, but it is not part of the
+// documented API surface and carries no stability promise. See the module's
+// own header for the full rationale.
+#[doc(hidden)]
+pub mod arrow_emission_gate;
 pub mod auto_bootstrap;
 pub mod batch;
 pub mod bootstrap;

@@ -3,6 +3,7 @@ name = "nine65-fuzz"
 version = "0.0.0"
 publish = false
 edition = "2021"
+license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [package.metadata]
 cargo-fuzz = true

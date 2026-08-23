@@ -12,3 +12,6 @@ bench.external_fhe_matrix_protocol,internal,exploratory,docs/EXTERNAL_FHE_BENCHM
 security.ct_ntt_source_hardening,internal,exploratory,docs/CT_NTT_AUDIT_2026-07-13.md
 formal.app_critical_spine,internal,exploratory,docs/FORMAL_APP_CRITICAL_SPINE.md
 docs.claim_evidence_ledger,internal,exploratory,docs/CLAIM_EVIDENCE_LEDGER.md
+readme.verified_capability_2026_08_22,public,secure,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
+params.public_refresh_admissibility,public,secure,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
+params.screened_security_disclosure,internal,exploratory,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md

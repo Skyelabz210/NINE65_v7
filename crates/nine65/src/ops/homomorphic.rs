@@ -350,9 +350,14 @@ impl<'a> TrackedEvaluator<'a> {
 
     /// Check if plaintext multiplication can be performed
     pub fn can_mul_plain(&self) -> bool {
-        // Use a conservative scalar (3) for pre-flight check
+        // Use a conservative scalar (3) for pre-flight check.
+        //
+        // `mul_plain_scalar_cost`, not `mul_plain_cost`: `BFVEvaluator::mul_plain`
+        // is `scalar_mul`, a coefficient-wise multiply by a constant, so the
+        // `n` ring-expansion factor in `mul_plain_cost` does not apply. See
+        // `NoiseBudget::mul_plain_scalar_cost` for the derivation.
         self.budget
-            .can_perform(NoiseBudget::mul_plain_cost(3, self.config))
+            .can_perform(NoiseBudget::mul_plain_scalar_cost(3))
     }
 
     /// Check if ciphertext multiplication can be performed
@@ -406,11 +411,17 @@ impl<'a> TrackedEvaluator<'a> {
         Ok(self.evaluator.add_plain(ct, m))
     }
 
-    /// Multiply by plaintext with noise tracking
+    /// Multiply by plaintext with noise tracking.
+    ///
+    /// Charged as a SCALAR multiply: `self.evaluator.mul_plain` calls
+    /// `scalar_mul(m, ..)`, which multiplies every coefficient by the constant
+    /// `m`. That is a degree-0 multiplier, so `||v_out|| = m * ||v_in||`
+    /// exactly and there is no ring-expansion factor of `n` to charge. See
+    /// `NoiseBudget::mul_plain_scalar_cost`.
     pub fn try_mul_plain(&mut self, ct: &Ciphertext, m: u64) -> Result<Ciphertext, NoiseExhausted> {
         self.budget.consume(
             NoiseOpType::MulPlain,
-            NoiseBudget::mul_plain_cost(m, self.config),
+            NoiseBudget::mul_plain_scalar_cost(m),
         )?;
         Ok(self.evaluator.mul_plain(ct, m))
     }
@@ -1294,7 +1305,36 @@ mod tests {
         let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
         let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
         let evaluator = BFVEvaluator::new(&ntt, &encoder, None);
-        let mut tracked = super::TrackedEvaluator::new(evaluator, &config);
+        // Explicit budget, not `TrackedEvaluator::new`, and deliberately so.
+        //
+        // This test exercises the LEDGER MECHANICS: that `try_add` succeeds
+        // while budget remains and that it debits the ledger. It is not a
+        // claim that `test_fast_insecure` can fund an add.
+        //
+        // It cannot, and the reason is arithmetic the ledger performs in whole
+        // bits — not a real-number headroom argument. For `test_fast_insecure`
+        // (n=1024, one 30-bit prime, t=65537, eta=2):
+        //
+        //   Delta          = floor(998244353 / 65537) = 15231  -> delta_bits 14
+        //   capacity       = delta_bits - 1                    = 13 bits
+        //   fresh noise    = n_bits(10) + eta_bits(2) + 2      = 14 bits
+        //   effective start= max(fresh 14, t_bits 17) + 1      = 18 bits
+        //   budget         = max(capacity - effective_start, 0) = 0 millibits
+        //
+        // So the config is already five bits underwater at encryption time,
+        // dominated by the `t_bits` floor that `effective_start_bits` applies
+        // to absorb the tensor deposit `F` once per chain. It is not the add
+        // that crosses the line, and the fail-closed ledger is right to refuse.
+        //
+        // Deriving the budget from this config would therefore test the
+        // config's headroom, not the ledger. Seeding it explicitly keeps the
+        // subject of the test intact without weakening the bound.
+        //
+        // `TrackedEvaluator::new` is NOT left uncovered by that choice: see
+        // `tracked_evaluator_new_derives_its_budget_from_the_config_ledger`
+        // below, which exercises both of its branches (a config the ledger
+        // funds, and a config it refuses) against `NoiseBudget::from_config`.
+        let mut tracked = super::TrackedEvaluator::with_budget(evaluator, &config, 64);
 
         let ct_a = encryptor.encrypt(100, &mut harvester);
         let ct_b = encryptor.encrypt(200, &mut harvester);
@@ -1306,6 +1346,95 @@ mod tests {
 
         // Budget should be reduced
         assert!(tracked.budget().remaining_millibits() < tracked.budget().initial_millibits());
+    }
+
+    /// `TrackedEvaluator::new` must derive its budget from the config ledger,
+    /// on BOTH sides of the line.
+    ///
+    /// This is the coverage that `test_tracked_evaluator_add` gives up by
+    /// seeding an explicit budget. Without it `TrackedEvaluator::new` — the
+    /// constructor every production caller uses — has no test anywhere in the
+    /// workspace, and a regression that silently zeroed or inflated the
+    /// derived budget would be invisible.
+    ///
+    /// Two branches, both asserted against `NoiseBudget::from_config` so the
+    /// test pins the wiring rather than restating a constant:
+    ///
+    /// * `test_medium_insecure` (n=2048, two 30-bit primes, t=65537): the
+    ///   ledger funds work, so `new` must produce a positive budget, the add
+    ///   must succeed, decrypt correctly, and debit the ledger.
+    /// * `test_fast_insecure` (n=1024, one 30-bit prime, t=65537): the ledger
+    ///   is underwater before the first operation (derivation in
+    ///   `test_tracked_evaluator_add` above), so `new` must produce a zero
+    ///   budget and `try_add` must REFUSE. A fail-closed ledger refusing is
+    ///   the correct behaviour; asserting it is what stops the refusal from
+    ///   being quietly traded away for a green test.
+    #[test]
+    fn tracked_evaluator_new_derives_its_budget_from_the_config_ledger() {
+        // --- Branch 1: a config the ledger funds. ------------------------
+        let funded = SecureConfig::test_medium_insecure().into_config();
+        let ntt = NTTEngine::new(funded.q, funded.n);
+        let mut harvester = ShadowHarvester::with_seed(42);
+        let keys = KeySet::generate(&funded, &ntt, &mut harvester);
+        let encoder = BFVEncoder::new(&funded);
+
+        let expected_mb = NoiseBudget::from_config(&funded).remaining_millibits();
+        assert!(
+            expected_mb > 0,
+            "{}: the ledger must fund this config for the positive branch to \
+             mean anything (got {} mb)",
+            funded.name,
+            expected_mb
+        );
+
+        let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, funded.eta);
+        let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
+        let mut tracked =
+            super::TrackedEvaluator::new(BFVEvaluator::new(&ntt, &encoder, None), &funded);
+
+        assert_eq!(
+            tracked.budget().remaining_millibits(),
+            expected_mb,
+            "{}: TrackedEvaluator::new must seed exactly NoiseBudget::from_config",
+            funded.name
+        );
+
+        let ct_a = encryptor.encrypt(100, &mut harvester);
+        let ct_b = encryptor.encrypt(200, &mut harvester);
+        let ct_sum = tracked
+            .try_add(&ct_a, &ct_b)
+            .expect("ledger funds this config, so try_add must succeed");
+        assert_eq!(decryptor.decrypt(&ct_sum), 300 % funded.t);
+        assert!(
+            tracked.budget().remaining_millibits() < expected_mb,
+            "{}: the add must debit the ledger",
+            funded.name
+        );
+
+        // --- Branch 2: a config the ledger refuses. ----------------------
+        let (starved, ntt2, keys2, mut harvester2, encoder2) = setup();
+        assert_eq!(
+            NoiseBudget::from_config(&starved).remaining_millibits(),
+            0,
+            "{}: derivation in test_tracked_evaluator_add says this config is \
+             underwater before the first operation; if that changed, update \
+             the derivation rather than this assertion",
+            starved.name
+        );
+
+        let encryptor2 = BFVEncryptor::new(&keys2.public_key, &encoder2, &ntt2, starved.eta);
+        let mut tracked2 =
+            super::TrackedEvaluator::new(BFVEvaluator::new(&ntt2, &encoder2, None), &starved);
+        assert_eq!(tracked2.budget().remaining_millibits(), 0);
+
+        let ct_c = encryptor2.encrypt(100, &mut harvester2);
+        let ct_d = encryptor2.encrypt(200, &mut harvester2);
+        assert!(
+            tracked2.try_add(&ct_c, &ct_d).is_err(),
+            "{}: a fail-closed ledger with zero budget must REFUSE the add, \
+             not certify it",
+            starved.name
+        );
     }
 
     #[test]

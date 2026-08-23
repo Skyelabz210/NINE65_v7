@@ -1,8 +1,28 @@
-//! Clockwork Bootstrap — Full Unlimited-Depth FHE
+//! Clockwork Bootstrap — public (evaluator-side) ciphertext refresh
 //!
-//! When q_small = t, mod-switch from Q to t IS the BFV decryption — polynomial
-//! approximation disappears entirely. Combined with K-Elimination exact arithmetic,
-//! this gives unlimited depth with zero approximation error.
+//! When `q_small = t`, the Phase 1 mod-switch from `Q` to `t` IS the BFV
+//! decryption, so the refresh needs no *polynomial approximation* of a
+//! decryption circuit — the step other bootstrapping designs spend their error
+//! budget on. That is the exactness claimed here, and it is the only one.
+//!
+//! It is NOT a claim that Phase 1 is error-free. `modswitch_to_t` computes
+//! `round(c * t / Q)` using `q_level_half` as the rounding offset; that is the
+//! ordinary BFV mod-switch rounding, it deposits a per-coefficient residue
+//! `r0 + r1*s`, and `docs/MODULUS_SWITCHING.md` records that the BFV rescale
+//! rounds by necessity. The residue is noise-*independent*, so no noise bound
+//! can shrink it away — which is precisely why some chains cannot carry a
+//! public refresh at all (see `params::secure_configs`'s PUBLIC-REFRESH
+//! ADMISSIBILITY section, and `noise::budget`'s "refresh-input reserve"). Do
+//! not conflate this rounding step with the exact align-and-drop primitive
+//! `ops::rns_fhe::exact_modulus_switch_drop_poly`, which divides by a whole RNS
+//! prime with no rounding term at all.
+//!
+//! This does NOT make the system unlimited-depth, and no such claim is made
+//! here: refresh admissibility is bounded by the config's `Delta` headroom (see
+//! `bootstrap` below and `params::secure_configs`'s PUBLIC-REFRESH
+//! ADMISSIBILITY section), and the roundtrip test suites for all three paths are
+//! currently `#[ignore]`d as VESTIGIAL/RETIRED. Measured public direct-square
+//! depths are 2-4; see `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 //!
 //! # Three-Phase Bootstrap (Circular Security)
 //!
@@ -26,6 +46,9 @@ use crate::keys::bootstrap::{
 use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSEvalKey, DualRNSFullKeySet, DualRNSPoly, DualRNSPublicKey,
     DualRNSSecretKey, RNSFHEContext,
+};
+use crate::params::secure_configs::{
+    ensure_public_refresh_supported, ensure_public_refresh_with_ksk_supported,
 };
 use crate::params::FHEConfig;
 use zeroize::Zeroizing;
@@ -579,12 +602,21 @@ impl ClockworkBootstrap {
     /// Phase 3: ModSwitch Q_boot -> Q_work (circular security, no key switch)
     ///
     /// Use with keys from `generate_keys()` (circular security mode).
+    ///
+    /// Refuses configs whose main chain cannot carry a public refresh — see
+    /// [`ensure_public_refresh_supported`] and the PUBLIC-REFRESH
+    /// ADMISSIBILITY section of `params::secure_configs`. The refusal is a
+    /// typed `Nine65Error::BootstrapConfigMismatch`, returned before any work,
+    /// because the alternative is returning a wrong-but-plausible plaintext.
     pub fn bootstrap(
         &self,
         ct: &DualRNSCiphertext,
         bsk: &BootstrapKey,
         _ksk: &KeySwitchKey,
     ) -> Nine65Result<DualRNSCiphertext> {
+        // Gate 0: this chain must be able to carry a public refresh at all.
+        ensure_public_refresh_supported(&self.work_config)?;
+
         // Phase 1: ModSwitch Q_min -> t (exact integer rounding)
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
@@ -608,12 +640,28 @@ impl ClockworkBootstrap {
     /// The KSK converts the Phase 2 output from boot_sk to work_sk,
     /// avoiding the circular security assumption at the cost of additional
     /// noise from the key-switch operation.
+    ///
+    /// Subject to a **strictly stronger** admissibility gate than
+    /// [`Self::bootstrap`]: [`ensure_public_refresh_with_ksk_supported`], whose
+    /// bound carries a term for the Phase 3a gadget key switch that this path
+    /// performs and the circular path does not.
+    ///
+    /// The earlier justification for reusing the circular predicate here — "the
+    /// key switch adds noise, so a chain that cannot carry the circular path
+    /// cannot carry this one either" — is true and does not do the job. A
+    /// fail-closed gate exists to reject chains that CAN carry the circular
+    /// path but CANNOT carry this noisier one, and a bound with no key-switch
+    /// term cannot make that distinction. See
+    /// `params::secure_configs::public_refresh_ksk_noise_bits`.
     pub fn bootstrap_with_ksk(
         &self,
         ct: &DualRNSCiphertext,
         bsk: &BootstrapKey,
         ksk: &KeySwitchKey,
     ) -> Nine65Result<DualRNSCiphertext> {
+        // Gate 0: this chain must be able to carry a KSK public refresh.
+        ensure_public_refresh_with_ksk_supported(&self.work_config)?;
+
         // Phase 1: ModSwitch Q_min -> t (exact integer rounding)
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
@@ -1358,6 +1406,148 @@ pub fn crt_reconstruct_n(
 mod tests {
     use super::*;
     use crate::keys::bootstrap::mod_inverse_u128;
+
+    // =====================================================================
+    // THE MEASUREMENT THE PUBLIC-REFRESH REFUSAL RESTS ON
+    // =====================================================================
+
+    /// Run the three refresh phases with the admissibility gate BYPASSED.
+    ///
+    /// `ClockworkBootstrap::bootstrap` calls `ensure_public_refresh_supported`
+    /// first, so it refuses exactly the configs a measurement of the refusal
+    /// needs to reach. Going through the public entry point would make the gate
+    /// its own evidence. This helper is the same three phases in the same order,
+    /// minus Gate 0, and is `#[cfg(test)]`-only for that single reason — it does
+    /// not widen the crate's API and no production path can reach it.
+    fn refresh_bypassing_the_gate(
+        boot: &ClockworkBootstrap,
+        ct: &DualRNSCiphertext,
+        bsk: &BootstrapKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let (c0_small, c1_small) = boot.modswitch_to_t(ct)?;
+        let ct_boot = boot.homomorphic_inner_product(&c0_small, &c1_small, bsk)?;
+        boot.modswitch_boot_to_work(&ct_boot)
+    }
+
+    /// `diag_measure_noise_growth` — the decryption oracle for public refresh.
+    ///
+    /// Run it with:
+    ///
+    /// ```text
+    /// cargo test -p nine65 --lib --release diag_measure_noise_growth -- --nocapture
+    /// ```
+    ///
+    /// This is the measurement cited by the PUBLIC-REFRESH ADMISSIBILITY
+    /// section of `params::secure_configs`, by the runtime refusal string in
+    /// `ensure_public_refresh_supported`, and by §3 of
+    /// `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`. Those citations named a
+    /// test that did not exist in any commit; this is that test, written so the
+    /// claim can be reproduced rather than taken on trust.
+    ///
+    /// What it does, per config: encrypt `7`, run one public refresh with the
+    /// admissibility gate bypassed, decrypt; then square the refreshed
+    /// ciphertext with the public (eval-key) multiply and decrypt again. It
+    /// asserts nothing about how the refresh *should* behave — it asserts that
+    /// `supports_public_refresh` predicts what actually happens. A config the
+    /// predicate admits must survive both steps; a config it refuses must be
+    /// observed corrupting at least one of them, because a refusal nobody can
+    /// reproduce is a refusal nobody should trust.
+    #[test]
+    fn diag_measure_noise_growth() {
+        use crate::params::secure_configs::{
+            post_refresh_required_bits, public_refresh_headroom_bits, supports_public_refresh,
+        };
+        use crate::params::SecureConfig;
+
+        let cases = [
+            ("secure_128", SecureConfig::secure_128().into_config()),
+            (
+                "secure_128_deep",
+                SecureConfig::secure_128_deep().into_config(),
+            ),
+            ("secure_192", SecureConfig::secure_192().into_config()),
+        ];
+
+        println!(
+            "\n=== diag_measure_noise_growth: public refresh vs the decryption oracle ===\n\
+             {:<18} {:>6} {:>9} {:>9} {:>9} | {:>12} {:>16}",
+            "config",
+            "lanes",
+            "headroom",
+            "required",
+            "admits",
+            "refresh(7)",
+            "refresh(7)^2"
+        );
+
+        let mut verdicts: Vec<(&str, bool, bool)> = Vec::new();
+
+        for (name, config) in &cases {
+            let admits = supports_public_refresh(config);
+            let ctx = RNSFHEContext::try_new(config).expect("context");
+            let mut rng = ShadowHarvester::with_seed(20_260_822);
+            let keys = ctx.generate_keys_dual_full(&mut rng);
+
+            let boot = ClockworkBootstrap::new(config).expect("bootstrap context");
+            let boot_keys = boot
+                .generate_keys(&keys.secret_key, &mut rng)
+                .expect("bootstrap keygen");
+
+            let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+            let refreshed = refresh_bypassing_the_gate(&boot, &ct, &boot_keys.bsk)
+                .expect("the three phases must run; only Gate 0 is bypassed");
+            let after_refresh = ctx.decrypt_dual(&refreshed, &keys.secret_key);
+
+            // Square the refreshed ciphertext through the PUBLIC multiply: the
+            // refusal's whole subject is what an untrusted evaluator can do
+            // with a refreshed ciphertext.
+            let squared = ctx
+                .mul_dual_public(&refreshed, &refreshed, &keys.eval_key)
+                .map(|ct| ctx.decrypt_dual(&ct, &keys.secret_key));
+
+            let refresh_ok = after_refresh == 7;
+            let square_ok = matches!(squared, Ok(49));
+
+            println!(
+                "{:<18} {:>6} {:>9} {:>9} {:>9} | {:>12} {:>16}",
+                name,
+                config.primes.len(),
+                public_refresh_headroom_bits(config),
+                post_refresh_required_bits(config),
+                admits,
+                format!("{} ({})", after_refresh, if refresh_ok { "ok" } else { "WRONG" }),
+                match &squared {
+                    Ok(value) => format!("{} ({})", value, if square_ok { "ok" } else { "WRONG" }),
+                    Err(error) => format!("Err: {error}"),
+                },
+            );
+
+            verdicts.push((name, admits, refresh_ok && square_ok));
+        }
+        println!("=== end diag_measure_noise_growth ===\n");
+
+        for (name, admits, survived) in verdicts {
+            if admits {
+                assert!(
+                    survived,
+                    "{name}: supports_public_refresh admits this config, but the \
+                     decryption oracle says a public refresh corrupts it. The gate \
+                     is admitting a corrupting path — fix the predicate, do not \
+                     relax this assertion."
+                );
+            } else {
+                assert!(
+                    !survived,
+                    "{name}: supports_public_refresh REFUSES this config, but the \
+                     decryption oracle says a public refresh survives it. The \
+                     refusal is no longer reproducible and must be re-derived or \
+                     withdrawn, along with every citation of it in \
+                     params::secure_configs, README.md, CLAUDE.md and \
+                     docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md."
+                );
+            }
+        }
+    }
 
     // =====================================================================
     // EXISTING TESTS (Category 2 overlap)

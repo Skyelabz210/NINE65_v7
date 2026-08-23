@@ -14,6 +14,49 @@ pub struct BarrettContext {
     pub k: u32,
 }
 
+/// Branchless "borrow" mask: `u64::MAX` when `a < b`, `0` otherwise.
+///
+/// # Why not `((a < b) as u64).wrapping_neg()`
+///
+/// That idiom is the usual way to write this, it is what every mask in this
+/// file used, and on this codebase it is **not reliably branchless**. LLVM is
+/// free to lower the comparison to a conditional branch, and it does: with the
+/// old `sub_ct`, `exact_modulus_switch_drop_poly` measured a 23 us class gap at
+/// t = 442 while the same kernel with `sub_ct` removed measured a 10 ns gap at
+/// t = 0.30 (`docs/CT_VERIFICATION_PLAN.md` §4.8). The cost was not the
+/// subtraction — it was branch misprediction, whose rate depends on how often
+/// `a < b` holds, which is a property of the secret operands.
+///
+/// This formulation never materialises a boolean. The subtraction is widened to
+/// `u128`, where a borrow out of the low 64 bits sets bit 127 and nothing else
+/// can; the mask is then an arithmetic property of that bit. There is no
+/// comparison for a compiler to branch on.
+#[inline(always)]
+fn borrow_mask_u64(a: u64, b: u64) -> u64 {
+    let widened = (a as u128).wrapping_sub(b as u128);
+    // The `black_box` is load-bearing, not decoration. Without it LLVM
+    // recognises `((a as u128 - b as u128) >> 127) != 0` as `a < b`,
+    // canonicalises it back to an `icmp`, and lowers that to a conditional
+    // branch — measured, not assumed: `objdump` showed 16 conditional jumps in
+    // the align-and-drop kernel against 3 `cmov`/`sbb`. The barrier stops the
+    // compiler reasoning about this value, so the arithmetic form survives to
+    // codegen. It costs one opaque register move per call.
+    //
+    // `black_box` is a hint with no language-level guarantee, which is exactly
+    // why the effect is measured rather than trusted: see
+    // `security::ct_verification` and `docs/CT_VERIFICATION_PLAN.md` §4.8.
+    let borrow = core::hint::black_box((widened >> 127) as u64);
+    borrow.wrapping_neg()
+}
+
+/// Branchless "at least" mask: `u64::MAX` when `a >= b`, `0` otherwise.
+///
+/// The complement of [`borrow_mask_u64`], and branchless for the same reason.
+#[inline(always)]
+fn geq_mask_u64(a: u64, b: u64) -> u64 {
+    !borrow_mask_u64(a, b)
+}
+
 impl BarrettContext {
     /// Create a new Barrett context for modulus q
     pub fn new(q: u64) -> Self {
@@ -132,11 +175,11 @@ impl BarrettContext {
         let mut result = r as u64;
 
         // First correction: result = result - q if result >= q
-        let mask1 = ((result >= self.q) as u64).wrapping_neg(); // 0 or u64::MAX
+        let mask1 = geq_mask_u64(result, self.q); // 0 or u64::MAX, no comparison
         result = result.wrapping_sub(self.q & mask1);
 
         // Second correction (rare but possible)
-        let mask2 = ((result >= self.q) as u64).wrapping_neg();
+        let mask2 = geq_mask_u64(result, self.q);
         result = result.wrapping_sub(self.q & mask2);
 
         result
@@ -157,11 +200,12 @@ impl BarrettContext {
     #[inline(always)]
     pub fn add_ct(&self, a: u64, b: u64) -> u64 {
         let sum = a.wrapping_add(b);
-        // If sum >= q or sum < a (overflow), subtract q
-        let overflow = (sum < a) as u64;
-        let geq = (sum >= self.q) as u64;
-        let mask = (overflow | geq).wrapping_neg();
-        sum.wrapping_sub(self.q & mask)
+        // If sum >= q, or the addition wrapped (sum < a), subtract q. Both
+        // conditions are derived without materialising a boolean; see
+        // `borrow_mask_u64`.
+        let wrapped = borrow_mask_u64(sum, a);
+        let geq = geq_mask_u64(sum, self.q);
+        sum.wrapping_sub(self.q & (wrapped | geq))
     }
 
     /// Modular subtraction
@@ -178,10 +222,9 @@ impl BarrettContext {
     #[inline(always)]
     pub fn sub_ct(&self, a: u64, b: u64) -> u64 {
         let diff = a.wrapping_sub(b);
-        // If a < b (borrow occurred), add q
-        let borrow = (a < b) as u64;
-        let mask = borrow.wrapping_neg();
-        diff.wrapping_add(self.q & mask)
+        // If a < b (borrow occurred), add q. See `borrow_mask_u64` for why this
+        // is not written as `((a < b) as u64).wrapping_neg()`.
+        diff.wrapping_add(self.q & borrow_mask_u64(a, b))
     }
 
     /// Modular exponentiation
@@ -391,6 +434,45 @@ mod tests {
             let result_ct = ctx.add_ct(a, b);
             let result_vt = ctx.add(a, b);
             assert_eq!(result_ct, result_vt, "CT add mismatch for {} + {}", a, b);
+        }
+    }
+
+    /// The branchless masks, checked against the comparisons they replace.
+    ///
+    /// Exhaustive over an 8-bit analogue of the arithmetic plus every u64 edge
+    /// case, because a mask that is wrong at `0` or at `u64::MAX` would be a
+    /// silent wrong answer rather than a slow one.
+    #[test]
+    fn branchless_masks_match_the_comparisons_they_replace() {
+        for a in 0u64..=255 {
+            for b in 0u64..=255 {
+                assert_eq!(borrow_mask_u64(a, b), if a < b { u64::MAX } else { 0 }, "a={a} b={b}");
+                assert_eq!(geq_mask_u64(a, b), if a >= b { u64::MAX } else { 0 }, "a={a} b={b}");
+            }
+        }
+
+        let edges = [0u64, 1, 2, u64::MAX, u64::MAX - 1, 1 << 63, (1 << 63) - 1, (1 << 63) + 1];
+        for &a in &edges {
+            for &b in &edges {
+                assert_eq!(borrow_mask_u64(a, b), if a < b { u64::MAX } else { 0 }, "a={a} b={b}");
+                assert_eq!(geq_mask_u64(a, b), if a >= b { u64::MAX } else { 0 }, "a={a} b={b}");
+            }
+        }
+    }
+
+    /// `sub_ct` and `add_ct` over a full small modulus, against exact integer
+    /// arithmetic. The masks changed; the semantics must not have.
+    #[test]
+    fn sub_ct_and_add_ct_are_exhaustively_exact_on_a_small_modulus() {
+        for q in [2u64, 3, 5, 97, 251] {
+            let ctx = BarrettContext::new(q);
+            for a in 0..q {
+                for b in 0..q {
+                    assert_eq!(ctx.sub_ct(a, b), (a + q - b) % q, "q={q} a={a} b={b}");
+                    assert_eq!(ctx.add_ct(a, b), (a + b) % q, "q={q} a={a} b={b}");
+                    assert_eq!(ctx.reduce_ct(a as u128 * b as u128), (a * b) % q, "q={q} a={a} b={b}");
+                }
+            }
         }
     }
 

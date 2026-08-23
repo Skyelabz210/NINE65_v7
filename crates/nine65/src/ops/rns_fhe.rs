@@ -15,7 +15,8 @@ use std::mem;
 use crate::arithmetic::NTTEngine;
 
 use crate::arithmetic::{
-    compute_delta_rns_overflow_safe, DualRNSContext, KElimination, RNSContext, RNSPolynomial, U256,
+    compute_delta_rns_overflow_safe, BarrettContext, DualRNSContext, KElimination, RNSContext,
+    RNSPolynomial, U256,
 };
 use crate::entropy::{FheRng, SecureRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
@@ -4011,10 +4012,27 @@ impl RNSFHEContext {
     // These variants integrate NoiseBudget tracking into the FHE operations.
     // Use these for production code that needs to monitor noise consumption.
 
-    /// Tracked multiplication: mul + relin + rescale with noise budget tracking
+    /// Tracked multiplication: mul + relin with noise budget tracking.
     ///
     /// Returns `Err(NoiseExhausted)` if there's insufficient budget.
     /// On success, updates the budget and returns the result ciphertext.
+    ///
+    /// # No prime-drop credit is taken, and that is the fix
+    ///
+    /// This used to charge `mul + relin + rescale_cost`, where `rescale_cost`
+    /// is negative — a `t_bits - 1` = 16-bit *credit* per multiply on
+    /// `secure_128`. `NoiseBudget::rescale_cost` credits the division by a
+    /// dropped RNS prime, and [`Self::mul_dual_public`] drops none: it rescales
+    /// the tensor product by `Delta = M_level / t` and leaves `level` exactly
+    /// where it found it (see the "RETIRED (Step 5)" note in that function).
+    /// That `Delta`-division is already inside `NoiseBudget::mul_ct_cost`,
+    /// which is the Fan-Vercauteren Lemma-2 bound *after* the rescaling. Taking
+    /// the credit as well counted the same division twice and under-charged
+    /// every tracked public multiply by ~16 bits — optimism in a ledger whose
+    /// whole contract is to be a conservative upper bound.
+    ///
+    /// A caller that really does drop a level after the multiply should charge
+    /// `NoiseBudget::rescale_cost` itself, at the drop.
     pub fn mul_dual_public_tracked(
         &self,
         ct1: &DualRNSCiphertext,
@@ -4024,15 +4042,13 @@ impl RNSFHEContext {
     ) -> Result<DualRNSCiphertext, crate::noise::budget::NoiseExhausted> {
         use crate::noise::budget::{NoiseBudget, NoiseOpType};
 
-        // Calculate total cost: mul + relin + rescale(gain)
+        // Cost: mul + relin. No rescale credit — this path drops no prime.
         let mul_cost = NoiseBudget::mul_ct_cost(&self.config);
         let relin_cost = NoiseBudget::relin_cost(&self.config);
-        let rescale_gain = NoiseBudget::rescale_cost(&self.config); // Negative
 
         // Try to consume for multiplication
         budget.consume(NoiseOpType::MulCt, mul_cost)?;
         budget.consume(NoiseOpType::Relin, relin_cost)?;
-        budget.consume(NoiseOpType::Rescale, rescale_gain)?; // This adds back budget
 
         // Perform the actual operation
         self.mul_dual_public(ct1, ct2, evk)
@@ -5068,6 +5084,126 @@ fn round_div_signed_mod_u256(
     }
 }
 
+/// One surviving lane of the exact align-and-drop, with **no runtime division
+/// in the per-coefficient kernel**.
+///
+/// ```text
+///     out[c] = (src[c] - dropped[c]) * q_k^{-1}   (mod modulus)
+/// ```
+///
+/// # Why this is not the obvious loop
+///
+/// The obvious loop — and the one this replaced — is
+///
+/// ```text
+///     let r_k  = dropped[c] % modulus;
+///     let x    = src[c] % modulus;
+///     let diff = (x + modulus - r_k) % modulus;
+///     out[c]   = ((diff as u128 * inv as u128) % modulus as u128) as u64;
+/// ```
+///
+/// It is branch-free at the source level and *not* constant-time, which
+/// `security::ct_verification` measured directly (finding F-1: +16.7% on
+/// all-zero vs uniform residues at t = 71.9-129.6, and +8.1% on 20-bit vs
+/// near-modulus residues at t = 39.0-54.8, both against a control t under
+/// 1.4). Four divisions per coefficient by a *runtime* divisor: three `u64 %
+/// u64`, and one `u128 % u128` that LLVM lowers to `__umodti3`, a
+/// shift/subtract loop whose trip count tracks the operand's bit length.
+/// Branch-free is not constant-time when the instruction is not.
+///
+/// Every one of the four is removed here rather than made constant-time:
+///
+/// | original | replacement | cost |
+/// |---|---|---|
+/// | `dropped[c] % modulus` | `BarrettContext::reduce_ct` | 4 mul + 2 masked sub |
+/// | `src[c] % modulus` | `BarrettContext::reduce_ct` | 4 mul + 2 masked sub |
+/// | `(x + modulus - r_k) % modulus` | `BarrettContext::sub_ct` | 1 sub + 1 masked add |
+/// | `(diff * inv) % modulus` | `BarrettContext::reduce_ct` | 4 mul + 2 masked sub |
+///
+/// `inv` was already hoisted out of the coefficient loop before this change and
+/// still is: it is one `mod_inverse` per lane amortised over `n` coefficients,
+/// computed from public moduli only. That is also why a *manufactured* basis
+/// with construction-read inverses (star family, adjacency) does not address
+/// F-1 — a free inverse saves setup, and the leak is in the loop. See
+/// `docs/CT_VERIFICATION_PLAN.md` §4.7.
+///
+/// # Preconditions, enforced rather than assumed
+///
+/// `BarrettContext::reduce_ct` is exact for dividends below `modulus^2`. Two
+/// things could violate that, and both are checked:
+///
+/// * `dropped[c] < q_k`, so `q_k <= modulus^2` is verified once per lane from
+///   public values.
+/// * `src[c]` must be a reduced residue of its own lane. Rather than trust it,
+///   the loop accumulates an out-of-range flag with a comparison and an `OR` —
+///   no branch on ciphertext-derived data — and the lane fails closed
+///   afterwards. A violated invariant becomes a typed error, never a silently
+///   wrong coefficient.
+fn align_and_drop_lane(
+    dropped: &[u64],
+    src: &[u64],
+    modulus: u64,
+    q_k: u64,
+    n: usize,
+    lane_kind: &str,
+) -> Nine65Result<Vec<u64>> {
+    if modulus < 2 {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!(
+                "exact_modulus_switch_drop: {lane_kind} lane modulus {modulus} must be at least 2"
+            ),
+        });
+    }
+    if dropped.len() < n || src.len() < n {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!(
+                "exact_modulus_switch_drop: {lane_kind} lane has {} coefficients and the dropped \
+                 lane has {}, but the polynomial declares n = {n}",
+                src.len(),
+                dropped.len()
+            ),
+        });
+    }
+
+    let modulus_squared = (modulus as u128) * (modulus as u128);
+    if (q_k as u128) >= modulus_squared {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!(
+                "exact_modulus_switch_drop: dropped prime {q_k} is not below the square of \
+                 {lane_kind} lane modulus {modulus}, so the division-free reduction would be \
+                 out of range"
+            ),
+        });
+    }
+
+    let inv = mod_inverse(q_k % modulus, modulus);
+    let barrett = BarrettContext::new(modulus);
+
+    let mut out = vec![0u64; n];
+    let mut out_of_range = 0u64;
+    for c in 0..n {
+        // Branchless range flag: no control flow depends on a residue value.
+        out_of_range |= ((src[c] as u128) >= modulus_squared) as u64;
+
+        let r_k = barrett.reduce_ct(dropped[c] as u128);
+        let x = barrett.reduce_ct(src[c] as u128);
+        let diff = barrett.sub_ct(x, r_k);
+        out[c] = barrett.reduce_ct(diff as u128 * inv as u128);
+    }
+
+    if out_of_range != 0 {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!(
+                "exact_modulus_switch_drop: a {lane_kind} lane coefficient is not a reduced \
+                 residue below {modulus}^2; the input polynomial violates the RNS invariant"
+            ),
+        });
+    }
+
+    Ok(out)
+}
+
+
 /// Convert signed i64 to modular representation
 /// For v >= 0: return v
 /// For v < 0: return p - |v|
@@ -5170,16 +5306,7 @@ pub(crate) fn exact_modulus_switch_drop_poly(
                 ),
             });
         }
-        let inv = mod_inverse(q_k % q_i, q_i);
-        let src = &poly.main[i];
-        let mut out = vec![0u64; n];
-        for c in 0..n {
-            let r_k = dropped[c] % q_i;
-            let x = src[c] % q_i;
-            let diff = (x + q_i - r_k) % q_i;
-            out[c] = ((diff as u128 * inv as u128) % q_i as u128) as u64;
-        }
-        new_main.push(out);
+        new_main.push(align_and_drop_lane(dropped, &poly.main[i], q_i, q_k, n, "main")?);
     }
 
     // Anchor lanes are all retained (only a main prime is dropped).
@@ -5192,16 +5319,7 @@ pub(crate) fn exact_modulus_switch_drop_poly(
                 ),
             });
         }
-        let inv = mod_inverse(q_k % a_j, a_j);
-        let src = &poly.anchor[j];
-        let mut out = vec![0u64; n];
-        for c in 0..n {
-            let r_k = dropped[c] % a_j;
-            let x = src[c] % a_j;
-            let diff = (x + a_j - r_k) % a_j;
-            out[c] = ((diff as u128 * inv as u128) % a_j as u128) as u64;
-        }
-        new_anchor.push(out);
+        new_anchor.push(align_and_drop_lane(dropped, &poly.anchor[j], a_j, q_k, n, "anchor")?);
     }
 
     Ok(DualRNSPoly {
@@ -11204,11 +11322,13 @@ mod tests {
         );
         println!("Operations performed: {}", budget.operations().len());
 
-        // Verify the tracking recorded the right operations
+        // Verify the tracking recorded the right operations.
+        // Two, not three: this path drops no prime, so it takes no prime-drop
+        // credit. See `mul_dual_public_tracked` and `NoiseBudget::rescale_cost`.
         assert_eq!(
             budget.operations().len(),
-            3,
-            "Should have 3 operations: mul, relin, rescale"
+            2,
+            "Should have 2 operations: mul, relin (no prime drop, so no rescale credit)"
         );
 
         // Verify result
@@ -11216,6 +11336,76 @@ mod tests {
         assert_eq!(result, 42, "7 * 6 should decrypt to 42");
 
         println!("=== Tracked multiplication test PASSED ===");
+    }
+
+    /// The prime-drop credit is only earned by an actual level drop.
+    ///
+    /// `NoiseBudget::rescale_cost` is a *credit* (`-(t_bits - 1)` bits) for the
+    /// division by a dropped RNS prime. `mul_dual_public` performs the
+    /// `Delta = M_level / t` rescale of the tensor product but drops no prime,
+    /// and that `Delta`-division is already inside `NoiseBudget::mul_ct_cost`
+    /// (the FV Lemma-2 bound is stated *after* the rescaling). Taking the
+    /// credit here would count the same division twice, in the optimistic
+    /// direction.
+    ///
+    /// This test ties the two facts together so neither can drift alone:
+    /// the operation's level is unchanged, AND the debit is exactly
+    /// `mul_ct_cost + relin_cost` with no credit entry. If someone ever makes
+    /// this path drop a level, the level assertion fires and whoever fixes it
+    /// is looking straight at the charge that must change with it.
+    #[test]
+    fn prime_drop_credit_is_only_earned_by_an_actual_level_drop() {
+        use crate::noise::budget::{NoiseBudget, NoiseOpType};
+
+        let config = FHEConfig::depth2_128_insecure();
+        let ctx = RNSFHEContext::new(&config);
+        let mut rng = ShadowHarvester::with_seed(42);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+
+        let ct1 = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+        let ct2 = ctx.encrypt_dual(6, &keys.public_key, &mut rng);
+
+        let mut budget = NoiseBudget::with_budget_bits(200);
+        let before = budget.remaining_millibits();
+        let out = ctx
+            .mul_dual_public_tracked(&ct1, &ct2, &keys.eval_key, &mut budget)
+            .expect("budget is ample");
+
+        // 1. The operation consumes no level.
+        assert_eq!(
+            out.level, ct1.level,
+            "mul_dual_public must not drop a prime; if this changed, the drop \
+             credit in mul_dual_public_tracked must be revisited"
+        );
+        assert_eq!(out.c0.main.len(), ct1.c0.main.len());
+
+        // 2. So it must take no drop credit.
+        let expected = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+        assert!(
+            expected > 0,
+            "the no-drop multiply charge must be a net debit, got {expected} mb"
+        );
+        assert_eq!(
+            before - budget.remaining_millibits(),
+            expected,
+            "tracked public multiply must charge exactly mul + relin"
+        );
+        assert!(
+            !budget
+                .operations()
+                .iter()
+                .any(|op| op.op_type == NoiseOpType::Rescale),
+            "no Rescale entry may be recorded by a path that drops no prime"
+        );
+
+        // 3. And the credit it declined is not negligible: this pins the size
+        //    of the error that was being made, so a silent reintroduction is
+        //    visible in the diff rather than only in the arithmetic.
+        assert_eq!(
+            NoiseBudget::rescale_cost(&config),
+            -16_000,
+            "t = 65537 -> t_bits = 17 -> credit = -(17 - 1) bits"
+        );
     }
 
     #[test]

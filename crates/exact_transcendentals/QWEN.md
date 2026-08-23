@@ -152,4 +152,7 @@ cargo bench
 
 ## License
 
-MIT OR Apache-2.0
+Proprietary — `LicenseRef-Proprietary-AllRightsReserved`, matching this crate's
+`Cargo.toml` and the repository `LICENSE` ("All rights reserved"). This file
+previously read "MIT OR Apache-2.0"; no permission to use, copy, modify or
+distribute is granted by that stale line or by any other copy of it.

@@ -29,6 +29,21 @@
 //! All calculations use integer arithmetic with millibits precision (1000 = 1 bit).
 //! No floating-point operations.
 //!
+//! # Structural modulus screening (additive)
+//!
+//! `estimate` below is a function of the modulus **width** only. It cannot
+//! distinguish a chain of NTT primes from `2^90` from a manufactured
+//! `Q = t * D`, because it never sees the modulus. That is fine while every
+//! lane is guaranteed to be a large prime by the prime hunt; it stops being
+//! fine the moment moduli are manufactured by construction.
+//!
+//! [`LatticeSecurityEstimator::estimate_with_factorization`] is the additive
+//! extension that takes the factorization and is allowed to REFUSE. See the
+//! "STRUCTURAL MODULUS SCREEN" section further down this file for the
+//! thresholds, what a refusal means, and what it does not mean. Both entry
+//! points are engineering screens, never a substitute for an external
+//! lattice-estimator run on the concrete parameter set.
+//!
 //! # References
 //! - Albrecht et al. "On the concrete hardness of Learning with Errors" (2015)
 //! - HE Standard v1.1 (homomorphicencryption.org)
@@ -380,6 +395,846 @@ impl LatticeSecurityEstimator {
         // Convert millibits to bits
         (best_cost / 1000).max(1) as u32
     }
+}
+
+// =============================================================================
+// STRUCTURAL MODULUS SCREEN (additive; `estimate` above is unchanged)
+// =============================================================================
+//
+// `estimate` takes `log_q`, a bare bit count. It therefore scores every 90-bit
+// modulus identically at a given `n`: three 30-bit NTT primes, `2^90`, a
+// prime-power basis `{8,9,25,49}^k`, and a manufactured `Q = t * D` all return
+// the same number. That is recorded as an executable fact in
+// `crates/nine65-extreme-tests/tests/full_system_measurement.rs`, MEASUREMENT 6.
+//
+// The screen below is the part that can SEE the modulus. It takes the
+// factorization instead of the width and returns a type that is allowed to say
+// *I cannot screen this*. That refusal is the point: a screen that is forced to
+// emit a number is what produced the defect above.
+//
+// # What it does and does not claim
+//
+// This is an ENGINEERING SCREEN. It is a deterministic integer filter over
+// modulus structure. It is not a lattice-security certificate and it is not a
+// substitute for running an external lattice estimator (e.g. the Albrecht et
+// al. `lattice-estimator`) on the concrete parameter set. Nothing here proves a
+// refused parameter set is insecure, and nothing here proves a screened one is
+// secure. A `Screened` verdict means only: "every lane has the shape the
+// in-tree cost model was calibrated on, and here is that model's number."
+//
+// # Why refusal, rather than a number, for the non-prime shapes
+//
+// Two independent reasons, both checkable rather than asserted:
+//
+// 1. **The model's own output is nonsense on narrow lanes.** `estimate` is
+//    `3360 * n / log_q` with no term for the error width. It is monotonically
+//    *increasing* as `log_q` shrinks, so a 3-bit lane at `n = 8192` scores
+//    ~2.7 million bits. Any number the model emits for a narrow lane is an
+//    artefact of the formula, not an estimate.
+//
+// 2. **The instance's hardness there turns on a quantity this model has no
+//    parameter for.** CRT splits RLWE mod `Q = q1 * q2` into components mod
+//    `q1` and mod `q2`. Whether the component modulo a narrow lane leaks the
+//    secret depends entirely on the error distribution *reduced modulo that
+//    lane* — and `estimate` takes no error width at all. For a ternary secret
+//    and a lane of 3, `s mod 3` determines `s` exactly; whether that is
+//    exploitable is a question about the noise, which this screen cannot see.
+//    It refuses rather than guessing.
+//
+// For prime-power lanes (`p^k`, `k >= 2`) the reason is different again: the
+// standard worst-case-to-average-case RLWE reductions are stated for prime
+// moduli, the ring `Z_{p^k}[X]/f` carries nilpotents, and the published
+// estimator tables this module is calibrated against were validated on chains
+// of large primes. That is an *unscreened regime*, reported as such. Note what
+// this module does NOT say: it does not claim a power-of-two modulus is broken.
+// Deployed lattice schemes (Saber, TFHE-style torus discretisations) use
+// power-of-two moduli, so "trivially broken" would be an overclaim. The honest
+// output is that the regime is outside this screen's calibration, and that no
+// number from this model is meaningful there.
+//
+// # QMNF compliance
+// Integer-only throughout: `u64`/`u128` modular arithmetic, limb-wise big
+// multiplication for exact product bit lengths. No `f32`/`f64` anywhere.
+
+/// Minimum bit length of a CRT lane this screen is willing to put a number on.
+///
+/// **This is an engineering threshold, not a cryptographic derivation.** It is
+/// chosen to bracket a specific interval, and the bracket is the whole
+/// justification:
+///
+/// - It must be **above 17 bits**, so that a lane equal to the BFV plaintext
+///   modulus `t = 65537` is caught. The manufactured-modulus route
+///   (`Q = t * D`, `q = c*t + 1`) makes exactly that lane reachable by
+///   construction, which is why this screen exists at all.
+/// - It must be low enough to stay inert for every config shipped in
+///   `secure_configs.rs`. The narrowest lane in any of them is `754974721`,
+///   which is 30 bits. The classification test is the strict `lane_bits <
+///   MIN_MODELLED_LANE_BITS`, so a 30-bit lane still screens when the constant
+///   is exactly 30: the true inert bound is therefore **`<= 30`**, and the
+///   fully inert interval is the closed range `[18, 30]`.
+///
+/// The constant is pinned at `24`, and
+/// `min_modelled_lane_bits_brackets_the_documented_interval` asserts `> 17` and
+/// `<= 29` — one bit tighter than the true inert bound of 30, kept deliberately
+/// as margin so that a future config introducing a 30-bit lane does not sit
+/// exactly on the boundary. Any value in `[18, 30]` screens every in-tree
+/// config identically; moving it is a policy decision, and the bracket test
+/// pins the reasoning so it cannot drift away from the constant.
+pub const MIN_MODELLED_LANE_BITS: u32 = 24;
+
+/// Upper bound on the number of factorization entries this screen will accept.
+///
+/// The cross-lane coprimality scan is `O(k^2)` in the number of distinct lanes.
+/// A real RNS chain has fewer than a dozen lanes; 256 is far past any sane
+/// chain and keeps the pairwise scan bounded at 32640 gcds.
+pub const MAX_SCREENED_LANES: usize = 256;
+
+/// Upper bound, in 64-bit limbs, on the product this screen will represent
+/// exactly (512 limbs = 32768 bits). Beyond this the screen reports the
+/// factorization as unreadable rather than truncating a modulus width.
+const MAX_PRODUCT_LIMBS: usize = 512;
+
+/// Trial-division ceiling used when a declared lane base turns out composite.
+/// Finding *a* small factor is decisive; failing to find one is reported as
+/// "structure unknown", never as "no small factor exists".
+const TRIAL_DIVISION_CEILING: u64 = 1 << 20;
+
+/// One structural finding about one lane (or one pair of lanes) of a factored
+/// modulus.
+///
+/// Every variant is a statement about the *modulus*, not about an attack cost.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LaneFinding {
+    /// `prime^1` with `prime` at least [`MIN_MODELLED_LANE_BITS`] wide. This is
+    /// the only lane shape the in-tree cost model was calibrated on.
+    PrimeField { prime: u64, bits: u32 },
+
+    /// `2^exponent`. Reported as an unscreened regime: the standard RLWE
+    /// reductions are stated for prime moduli and the estimator tables this
+    /// module reproduces were validated on prime chains. Not a claim of a break.
+    PowerOfTwo { exponent: u32, bits: u32 },
+
+    /// `prime^exponent` with `exponent >= 2` and `prime` odd. `Z_{p^k}[X]/f`
+    /// carries nilpotents; unscreened regime.
+    PrimePower {
+        prime: u64,
+        exponent: u32,
+        bits: u32,
+    },
+
+    /// A lane narrower than [`MIN_MODELLED_LANE_BITS`]. The cost model's output
+    /// is an artefact here (it grows without bound as the width shrinks) and
+    /// the lane's hardness turns on the error distribution modulo that lane,
+    /// which this model has no parameter for.
+    ///
+    /// `bits` is the exact bit length of `base^exponent`, i.e. the width of the
+    /// CRT component itself, not of `base`. When this finding is raised for a
+    /// small prime factor discovered inside a composite base, `exponent` is 1
+    /// and `bits` is that factor's own width — a lower bound on the true
+    /// component, since the rest of the base's factorization is not visible.
+    NarrowLane {
+        base: u64,
+        exponent: u32,
+        bits: u32,
+    },
+
+    /// The declared base is composite, so the caller's "factorization" is not
+    /// one and the true lane structure is not visible to the screen.
+    /// `smallest_prime_factor` is `Some` only when trial division below
+    /// [`TRIAL_DIVISION_CEILING`] actually found one.
+    CompositeBase {
+        base: u64,
+        smallest_prime_factor: Option<u64>,
+    },
+
+    /// Two lanes are not coprime. Reported, never fatal on its own: the CRAM
+    /// architecture treats a shared factor as a syndrome regime rather than an
+    /// error, so this screen records it and lets the caller decide.
+    SharedFactor { lane_a: u64, lane_b: u64, common: u64 },
+
+    /// `base < 2` or `exponent == 0`: not a modulus lane at all.
+    DegenerateLane { base: u64, exponent: u32 },
+
+    /// The factorization slice was empty.
+    EmptyFactorization,
+
+    /// More entries than [`MAX_SCREENED_LANES`].
+    TooManyLanes { count: usize },
+
+    /// The product exceeds [`MAX_PRODUCT_LIMBS`] 64-bit limbs, so its exact bit
+    /// length was not computed. The screen refuses rather than truncating.
+    ProductTooWide { limb_cap: usize },
+}
+
+/// Why the screen declined to emit a number, with every contributing finding
+/// kept in its own bucket. Nothing is collapsed to a single "reason", because a
+/// modulus can be several kinds of unscreenable at once (each lane of
+/// `{8,9,25,49}` is both a prime power and narrower than
+/// [`MIN_MODELLED_LANE_BITS`]) and forcing a precedence would discard
+/// information the caller needs.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RefusalReport {
+    /// Lanes outside the regime where the standard hardness reductions and the
+    /// published estimator tables were validated: prime powers, powers of two,
+    /// and bases whose factorization the screen could not read.
+    pub outside_regime: Vec<LaneFinding>,
+    /// Lanes narrower than [`MIN_MODELLED_LANE_BITS`].
+    pub narrow_lane: Vec<LaneFinding>,
+    /// The factorization itself could not be read.
+    pub malformed: Vec<LaneFinding>,
+}
+
+impl RefusalReport {
+    /// True when nothing blocks a number being emitted.
+    pub fn is_empty(&self) -> bool {
+        self.outside_regime.is_empty() && self.narrow_lane.is_empty() && self.malformed.is_empty()
+    }
+}
+
+/// The verdict of the structural screen.
+///
+/// [`ScreenVerdict::Refused`] is the reason this type exists: the screen is
+/// permitted to decline. A screen that always returns a number is what let a
+/// `2^90` modulus and a chain of NTT primes receive the same score.
+#[derive(Debug, Clone)]
+pub enum ScreenVerdict {
+    /// Every lane is a prime field at least [`MIN_MODELLED_LANE_BITS`] wide.
+    /// Carries the **binding** estimate: the minimum over the full-width
+    /// instance and every individual CRT lane instance.
+    Screened(SecurityEstimate),
+    /// No number. See [`RefusalReport`].
+    Refused(RefusalReport),
+}
+
+/// Result of screening a modulus by its factorization.
+#[derive(Debug, Clone)]
+pub struct FactoredSecurityEstimate {
+    /// Screened (with a number) or Refused (without one).
+    pub verdict: ScreenVerdict,
+    /// Every finding, lane findings in first-appearance order followed by
+    /// cross-lane findings.
+    ///
+    /// The vector exists for both verdicts, but note what a `Screened` verdict
+    /// implies: reaching it requires every lane to be a distinct prime with
+    /// exponent 1 and width at least [`MIN_MODELLED_LANE_BITS`]. Distinct
+    /// primes are pairwise coprime, so the cross-lane scan cannot fire, and
+    /// repeated bases merge to exponent >= 2 and force `Refused`. A `Screened`
+    /// estimate therefore carries **no** refusal findings and in particular
+    /// [`Self::shared_factors`] on it is provably always empty. Findings are
+    /// worth reading on `Refused`; on `Screened` they are informational only.
+    pub findings: Vec<LaneFinding>,
+    /// Exact bit length of the product of all well-formed lanes; 0 when the
+    /// product could not be represented.
+    pub total_log_q: u32,
+    /// Bit length of the widest single lane (`base^exponent`); 0 when none.
+    pub widest_lane_bits: u32,
+    /// Number of distinct bases after merging repeated entries.
+    pub distinct_lane_count: usize,
+    /// The claim this was screened against.
+    pub claimed_security: u32,
+    /// The cost model used.
+    pub cost_model: CostModel,
+    /// Human-readable report.
+    pub analysis: String,
+}
+
+impl FactoredSecurityEstimate {
+    /// The screened effective security, or `None` when the screen declined.
+    ///
+    /// `None` is a real answer, not a failure: it means the modulus structure
+    /// is outside what this model can speak to.
+    pub fn effective_bits(&self) -> Option<u32> {
+        match &self.verdict {
+            ScreenVerdict::Screened(est) => Some(est.effective_bits),
+            ScreenVerdict::Refused(_) => None,
+        }
+    }
+
+    /// The full binding estimate, or `None` when the screen declined.
+    pub fn estimate(&self) -> Option<&SecurityEstimate> {
+        match &self.verdict {
+            ScreenVerdict::Screened(est) => Some(est),
+            ScreenVerdict::Refused(_) => None,
+        }
+    }
+
+    /// A refusal never meets a claim. This is the whole point: `2^90` cannot
+    /// come back as meeting 128 bits, because no number is produced for it.
+    pub fn meets_claim(&self) -> bool {
+        match &self.verdict {
+            ScreenVerdict::Screened(est) => est.meets_claim,
+            ScreenVerdict::Refused(_) => false,
+        }
+    }
+
+    /// True when a number was produced.
+    pub fn is_screened(&self) -> bool {
+        matches!(self.verdict, ScreenVerdict::Screened(_))
+    }
+
+    /// The refusal detail, when the screen declined.
+    pub fn refusal(&self) -> Option<&RefusalReport> {
+        match &self.verdict {
+            ScreenVerdict::Screened(_) => None,
+            ScreenVerdict::Refused(report) => Some(report),
+        }
+    }
+
+    /// True when at least one lane put this modulus outside the regime the
+    /// hardness reductions and the published estimators were validated on.
+    pub fn is_unscreened_regime(&self) -> bool {
+        self.refusal()
+            .map(|r| !r.outside_regime.is_empty())
+            .unwrap_or(false)
+    }
+
+    /// True when at least one lane is narrower than [`MIN_MODELLED_LANE_BITS`].
+    pub fn has_narrow_lane(&self) -> bool {
+        self.refusal()
+            .map(|r| !r.narrow_lane.is_empty())
+            .unwrap_or(false)
+    }
+
+    /// True when the factorization itself could not be read.
+    pub fn is_malformed(&self) -> bool {
+        self.refusal()
+            .map(|r| !r.malformed.is_empty())
+            .unwrap_or(false)
+    }
+
+    /// Every non-coprime lane pair the screen noticed. Reported, never fatal.
+    pub fn shared_factors(&self) -> Vec<&LaneFinding> {
+        self.findings
+            .iter()
+            .filter(|f| matches!(f, LaneFinding::SharedFactor { .. }))
+            .collect()
+    }
+}
+
+/// Structural screen run under both cost models.
+#[derive(Debug, Clone)]
+pub struct FactoredDualEstimate {
+    /// Core-SVP (conservative).
+    pub core_svp: FactoredSecurityEstimate,
+    /// MATZOV (aggressive).
+    pub matzov: FactoredSecurityEstimate,
+    /// Minimum across both models, or `None` if either model declined.
+    /// A refusal is structural, so both models always refuse together.
+    pub binding_bits: Option<u32>,
+    /// Whether the claim is met under both models. Always false on a refusal.
+    pub meets_both: bool,
+}
+
+impl LatticeSecurityEstimator {
+    /// Screen a modulus by its **factorization** rather than by its bit width.
+    ///
+    /// `factors` is a list of `(base, exponent)` entries whose product is the
+    /// ciphertext modulus. Repeated bases are merged (and reported as a shared
+    /// factor), so `[(p,1),(p,1)]` is screened as `p^2`.
+    ///
+    /// Returns [`FactoredSecurityEstimate`], which may decline to produce a
+    /// number. See the module section "STRUCTURAL MODULUS SCREEN" for what a
+    /// refusal does and does not mean. This is an engineering screen; it is
+    /// never a substitute for an external lattice-estimator run on the
+    /// concrete parameter set.
+    ///
+    /// `estimate` is untouched and every existing caller keeps its behaviour.
+    pub fn estimate_with_factorization(
+        &self,
+        n: usize,
+        factors: &[(u64, u32)],
+        secret_distribution: SecretDistribution,
+        claimed_security: u32,
+    ) -> FactoredSecurityEstimate {
+        let mut findings: Vec<LaneFinding> = Vec::new();
+        let mut refusal = RefusalReport::default();
+
+        if factors.is_empty() {
+            findings.push(LaneFinding::EmptyFactorization);
+            refusal.malformed.push(LaneFinding::EmptyFactorization);
+            return Self::refused(
+                findings,
+                refusal,
+                0,
+                0,
+                0,
+                claimed_security,
+                self.cost_model,
+                n,
+            );
+        }
+        if factors.len() > MAX_SCREENED_LANES {
+            let f = LaneFinding::TooManyLanes {
+                count: factors.len(),
+            };
+            findings.push(f.clone());
+            refusal.malformed.push(f);
+            return Self::refused(
+                findings,
+                refusal,
+                0,
+                0,
+                0,
+                claimed_security,
+                self.cost_model,
+                n,
+            );
+        }
+
+        // ---- merge repeated bases, first-appearance order (deterministic) ----
+        let mut lanes: Vec<(u64, u32)> = Vec::with_capacity(factors.len());
+        let mut duplicate_findings: Vec<LaneFinding> = Vec::new();
+        for &(base, exponent) in factors {
+            if let Some(slot) = lanes.iter_mut().find(|(b, _)| *b == base) {
+                slot.1 = slot.1.saturating_add(exponent);
+                duplicate_findings.push(LaneFinding::SharedFactor {
+                    lane_a: base,
+                    lane_b: base,
+                    common: base,
+                });
+            } else {
+                lanes.push((base, exponent));
+            }
+        }
+
+        // ---- classify each distinct lane -------------------------------------
+        // `screenable_lane_bits` collects the widths that may be fed to the
+        // cost model, i.e. large prime fields only.
+        let mut screenable_lane_bits: Vec<u32> = Vec::with_capacity(lanes.len());
+        let mut widest_lane_bits: u32 = 0;
+
+        for &(base, exponent) in &lanes {
+            if base < 2 || exponent == 0 {
+                let f = LaneFinding::DegenerateLane { base, exponent };
+                findings.push(f.clone());
+                refusal.malformed.push(f);
+                continue;
+            }
+
+            let lane_bits = match product_bit_length(&[(base, exponent)]) {
+                Some(bits) => bits,
+                None => {
+                    let f = LaneFinding::ProductTooWide {
+                        limb_cap: MAX_PRODUCT_LIMBS,
+                    };
+                    findings.push(f.clone());
+                    refusal.malformed.push(f);
+                    continue;
+                }
+            };
+            if lane_bits > widest_lane_bits {
+                widest_lane_bits = lane_bits;
+            }
+
+            let base_bits = bit_length_u64(base);
+            let base_is_prime = is_prime_u64(base);
+
+            // Narrow-lane check first: it is independent of primality, and a
+            // narrow lane is unscreenable whatever else it is.
+            if lane_bits < MIN_MODELLED_LANE_BITS {
+                let f = LaneFinding::NarrowLane {
+                    base,
+                    exponent,
+                    bits: lane_bits,
+                };
+                findings.push(f.clone());
+                refusal.narrow_lane.push(f);
+            }
+
+            if base == 2 {
+                let f = LaneFinding::PowerOfTwo {
+                    exponent,
+                    bits: lane_bits,
+                };
+                findings.push(f.clone());
+                refusal.outside_regime.push(f);
+                continue;
+            }
+
+            if base_is_prime {
+                if exponent >= 2 {
+                    let f = LaneFinding::PrimePower {
+                        prime: base,
+                        exponent,
+                        bits: lane_bits,
+                    };
+                    findings.push(f.clone());
+                    refusal.outside_regime.push(f);
+                    continue;
+                }
+                // LIVE, not dead: the narrow-lane check above records its
+                // finding and falls through without `continue`, so a narrow
+                // prime lane with exponent 1 reaches here. This guard is the
+                // only thing stopping it from *also* being counted as a
+                // screenable `PrimeField`. Removing it makes t = 65537 screen
+                // as a real 17-bit lane; see
+                // `narrow_prime_lane_is_recorded_narrow_and_never_as_a_screenable_field`.
+                if base_bits < MIN_MODELLED_LANE_BITS {
+                    continue;
+                }
+                findings.push(LaneFinding::PrimeField {
+                    prime: base,
+                    bits: base_bits,
+                });
+                screenable_lane_bits.push(base_bits);
+                continue;
+            }
+
+            // Composite declared base: the caller did not hand a factorization.
+            let spf = smallest_prime_factor_below_ceiling(base);
+            let f = LaneFinding::CompositeBase {
+                base,
+                smallest_prime_factor: spf,
+            };
+            findings.push(f.clone());
+            refusal.outside_regime.push(f.clone());
+            if let Some(factor) = spf {
+                if bit_length_u64(factor) < MIN_MODELLED_LANE_BITS {
+                    let narrow = LaneFinding::NarrowLane {
+                        base: factor,
+                        exponent: 1,
+                        bits: bit_length_u64(factor),
+                    };
+                    findings.push(narrow.clone());
+                    refusal.narrow_lane.push(narrow);
+                }
+            }
+        }
+
+        // ---- cross-lane coprimality -----------------------------------------
+        findings.extend(duplicate_findings);
+        for i in 0..lanes.len() {
+            for j in (i + 1)..lanes.len() {
+                let (a, b) = (lanes[i].0, lanes[j].0);
+                if a < 2 || b < 2 {
+                    continue;
+                }
+                let g = gcd_u64(a, b);
+                if g > 1 {
+                    findings.push(LaneFinding::SharedFactor {
+                        lane_a: a,
+                        lane_b: b,
+                        common: g,
+                    });
+                }
+            }
+        }
+
+        // ---- exact total width ----------------------------------------------
+        let well_formed: Vec<(u64, u32)> = lanes
+            .iter()
+            .copied()
+            .filter(|&(b, e)| b >= 2 && e >= 1)
+            .collect();
+        let total_log_q = if well_formed.is_empty() {
+            0
+        } else {
+            match product_bit_length(&well_formed) {
+                Some(bits) => bits,
+                None => {
+                    let f = LaneFinding::ProductTooWide {
+                        limb_cap: MAX_PRODUCT_LIMBS,
+                    };
+                    findings.push(f.clone());
+                    refusal.malformed.push(f);
+                    0
+                }
+            }
+        };
+
+        let distinct = lanes.len();
+
+        if !refusal.is_empty() {
+            return Self::refused(
+                findings,
+                refusal,
+                total_log_q,
+                widest_lane_bits,
+                distinct,
+                claimed_security,
+                self.cost_model,
+                n,
+            );
+        }
+
+        // ---- binding numeric result -----------------------------------------
+        //
+        // The binding result is the MINIMUM over the full-width instance and
+        // every individual CRT lane instance. The full-width term is included
+        // because it is the instance an adversary is actually handed; the lane
+        // terms are included because CRT genuinely splits the problem and an
+        // adversary may work any component.
+        //
+        // Under this cost model (`3360 * n / log_q`, monotonically decreasing
+        // in `log_q`) the full-width term always binds, since no lane is wider
+        // than the product. That is stated here as an observation, not hidden:
+        // the lane terms can only ever TIGHTEN the result, never loosen it, so
+        // adding them cannot move an existing config's number. That is exactly
+        // the no-regression property `factored_screen_leaves_every_secure_config_unchanged`
+        // asserts by execution.
+        let mut binding = self.estimate(n, total_log_q, secret_distribution, claimed_security);
+        for &lane_bits in &screenable_lane_bits {
+            let lane_est = self.estimate(n, lane_bits, secret_distribution, claimed_security);
+            if lane_est.effective_bits < binding.effective_bits {
+                binding = lane_est;
+            }
+        }
+
+        let analysis = format!(
+            "STRUCTURAL SCREEN (engineering filter, NOT a lattice-estimator run)\n\
+             n={}, lanes={}, total log2(Q)={}, widest lane={} bits\n\
+             verdict: SCREENED — every lane is a prime field >= {} bits\n\
+             binding estimate (min over full width and each CRT lane): {} bits\n\
+             {}",
+            n,
+            distinct,
+            total_log_q,
+            widest_lane_bits,
+            MIN_MODELLED_LANE_BITS,
+            binding.effective_bits,
+            binding.analysis,
+        );
+
+        FactoredSecurityEstimate {
+            verdict: ScreenVerdict::Screened(binding),
+            findings,
+            total_log_q,
+            widest_lane_bits,
+            distinct_lane_count: distinct,
+            claimed_security,
+            cost_model: self.cost_model,
+            analysis,
+        }
+    }
+
+    /// Structural screen under both cost models.
+    ///
+    /// A refusal is a property of the modulus, not of the cost model, so both
+    /// models refuse together; `binding_bits` is `None` in that case.
+    pub fn dual_estimate_with_factorization(
+        &self,
+        n: usize,
+        factors: &[(u64, u32)],
+        secret_distribution: SecretDistribution,
+        claimed_security: u32,
+    ) -> FactoredDualEstimate {
+        let core_svp = LatticeSecurityEstimator::new(CostModel::CoreSVP)
+            .estimate_with_factorization(n, factors, secret_distribution, claimed_security);
+        let matzov = LatticeSecurityEstimator::new(CostModel::MATZOV)
+            .estimate_with_factorization(n, factors, secret_distribution, claimed_security);
+
+        let binding_bits = match (core_svp.effective_bits(), matzov.effective_bits()) {
+            (Some(a), Some(b)) => Some(a.min(b)),
+            _ => None,
+        };
+        let meets_both = core_svp.meets_claim() && matzov.meets_claim();
+
+        FactoredDualEstimate {
+            core_svp,
+            matzov,
+            binding_bits,
+            meets_both,
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn refused(
+        findings: Vec<LaneFinding>,
+        refusal: RefusalReport,
+        total_log_q: u32,
+        widest_lane_bits: u32,
+        distinct_lane_count: usize,
+        claimed_security: u32,
+        cost_model: CostModel,
+        n: usize,
+    ) -> FactoredSecurityEstimate {
+        let analysis = format!(
+            "STRUCTURAL SCREEN (engineering filter, NOT a lattice-estimator run)\n\
+             n={}, lanes={}, total log2(Q)={}, widest lane={} bits\n\
+             verdict: REFUSED — NO SECURITY NUMBER IS EMITTED\n\
+             outside-regime lanes: {}\n\
+             narrow lanes (< {} bits): {}\n\
+             malformed entries: {}\n\
+             findings: {:?}\n\
+             A refusal is not a proof of insecurity. It states that this model's \
+             calibration does not cover this modulus structure, so any number it \
+             produced would be an artefact of the formula rather than an estimate. \
+             Screen the concrete parameter set with an external lattice estimator.",
+            n,
+            distinct_lane_count,
+            total_log_q,
+            widest_lane_bits,
+            refusal.outside_regime.len(),
+            MIN_MODELLED_LANE_BITS,
+            refusal.narrow_lane.len(),
+            refusal.malformed.len(),
+            findings,
+        );
+        FactoredSecurityEstimate {
+            verdict: ScreenVerdict::Refused(refusal),
+            findings,
+            total_log_q,
+            widest_lane_bits,
+            distinct_lane_count,
+            claimed_security,
+            cost_model,
+            analysis,
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Integer-only number-theoretic helpers (no f32/f64 anywhere)
+// -----------------------------------------------------------------------------
+
+/// Bit length of a `u64` (`bit_length_u64(0) == 0`).
+fn bit_length_u64(value: u64) -> u32 {
+    if value == 0 {
+        0
+    } else {
+        u64::BITS - value.leading_zeros()
+    }
+}
+
+/// `a * b mod m` via `u128`. Integer-only.
+fn mul_mod_u64(a: u64, b: u64, m: u64) -> u64 {
+    (((a as u128) * (b as u128)) % (m as u128)) as u64
+}
+
+/// `base^exp mod m` by square-and-multiply. Integer-only.
+fn pow_mod_u64(mut base: u64, mut exp: u64, m: u64) -> u64 {
+    if m == 1 {
+        return 0;
+    }
+    let mut acc: u64 = 1;
+    base %= m;
+    while exp > 0 {
+        if exp & 1 == 1 {
+            acc = mul_mod_u64(acc, base, m);
+        }
+        base = mul_mod_u64(base, base, m);
+        exp >>= 1;
+    }
+    acc
+}
+
+/// Deterministic Miller-Rabin primality test, exact for the whole `u64` range.
+///
+/// The witness set `{2, 325, 9375, 28178, 450775, 9780504, 1795265022}` is the
+/// standard 7-base set that is deterministic for all `n < 2^64` (Sinclair /
+/// Sorenson-Webster). Integer-only.
+fn is_prime_u64(n: u64) -> bool {
+    if n < 2 {
+        return false;
+    }
+    for small in [2u64, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37] {
+        if n % small == 0 {
+            return n == small;
+        }
+    }
+    let mut d = n - 1;
+    let mut s: u32 = 0;
+    while d & 1 == 0 {
+        d >>= 1;
+        s += 1;
+    }
+    'witness: for &a in &[2u64, 325, 9375, 28178, 450775, 9780504, 1795265022] {
+        let a = a % n;
+        if a == 0 {
+            continue;
+        }
+        let mut x = pow_mod_u64(a, d, n);
+        if x == 1 || x == n - 1 {
+            continue;
+        }
+        for _ in 1..s {
+            x = mul_mod_u64(x, x, n);
+            if x == n - 1 {
+                continue 'witness;
+            }
+        }
+        return false;
+    }
+    true
+}
+
+/// Smallest prime factor of `n` found by trial division below
+/// [`TRIAL_DIVISION_CEILING`], or `None` if none was found in that range.
+///
+/// `None` means "not found within the budget", never "none exists".
+fn smallest_prime_factor_below_ceiling(n: u64) -> Option<u64> {
+    if n < 2 {
+        return None;
+    }
+    for small in [2u64, 3, 5] {
+        if n % small == 0 {
+            return Some(small);
+        }
+    }
+    // mod-30 wheel from 7: gaps 4,2,4,2,4,6,2,6
+    const WHEEL: [u64; 8] = [4, 2, 4, 2, 4, 6, 2, 6];
+    let mut candidate: u64 = 7;
+    let mut index: usize = 0;
+    while candidate <= TRIAL_DIVISION_CEILING {
+        if candidate > n / candidate {
+            break; // candidate^2 > n: no factor below sqrt(n) remains
+        }
+        if n % candidate == 0 {
+            return Some(candidate);
+        }
+        candidate += WHEEL[index];
+        index = (index + 1) % WHEEL.len();
+    }
+    None
+}
+
+/// Binary-free Euclidean gcd. Integer-only.
+fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
+    while b != 0 {
+        let t = a % b;
+        a = b;
+        b = t;
+    }
+    a
+}
+
+/// Exact bit length of `prod(base_i ^ exp_i)` via little-endian `u64` limbs.
+///
+/// Returns `None` when the product would exceed [`MAX_PRODUCT_LIMBS`] limbs, so
+/// a width is never silently truncated. Bases below 2 are skipped (they are
+/// reported as degenerate lanes elsewhere); this also keeps the loop bounded,
+/// since every accepted multiply adds at least one bit.
+fn product_bit_length(factors: &[(u64, u32)]) -> Option<u32> {
+    let mut limbs: Vec<u64> = vec![1];
+    for &(base, exponent) in factors {
+        if base < 2 {
+            continue;
+        }
+        for _ in 0..exponent {
+            let mut carry: u128 = 0;
+            for limb in limbs.iter_mut() {
+                let product = (*limb as u128) * (base as u128) + carry;
+                *limb = product as u64;
+                carry = product >> 64;
+            }
+            while carry > 0 {
+                if limbs.len() >= MAX_PRODUCT_LIMBS {
+                    return None;
+                }
+                limbs.push(carry as u64);
+                carry >>= 64;
+            }
+        }
+    }
+    while limbs.len() > 1 && *limbs.last().unwrap_or(&0) == 0 {
+        limbs.pop();
+    }
+    let top = *limbs.last().unwrap_or(&0);
+    if limbs.len() == 1 && top <= 1 {
+        // Product is 0 or 1: no modulus width to report.
+        return Some(0);
+    }
+    Some((limbs.len() as u32 - 1) * 64 + bit_length_u64(top))
 }
 
 /// Secret key distribution type
@@ -962,5 +1817,598 @@ mod tests {
                 "Binding bits should equal MATZOV"
             );
         }
+    }
+
+    // =========================================================================
+    // STRUCTURAL MODULUS SCREEN
+    //
+    // These tests pin the property the width-only screen could not have: the
+    // ability to decline. Every assertion below is about a modulus SHAPE, and
+    // the no-regression tests assert against the numbers the existing screen
+    // produces today so this extension cannot silently move them.
+    // =========================================================================
+
+    /// The three 30-bit NTT primes `secure_128` ships.
+    const NTT_CHAIN_90_BIT: [(u64, u32); 3] = [(998244353, 1), (985661441, 1), (754974721, 1)];
+
+    #[test]
+    fn factored_screen_refuses_power_of_two_2_pow_90_at_n_8192() {
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+        let screened =
+            estimator.estimate_with_factorization(8192, &[(2, 90)], SecretDistribution::Ternary, 128);
+        println!("\n2^90 @ n=8192:\n{}", screened.analysis);
+
+        // The requirement: 2^90 must NOT come back as meeting 128 bits.
+        assert!(
+            !screened.meets_claim(),
+            "2^90 must not screen as meeting 128 bits"
+        );
+        // Stronger: no number at all is emitted.
+        assert_eq!(
+            screened.effective_bits(),
+            None,
+            "the screen must decline rather than emit a number for 2^90"
+        );
+        assert!(!screened.is_screened());
+        assert!(
+            screened.is_unscreened_regime(),
+            "a power-of-two lane is an unscreened regime"
+        );
+        assert!(screened.findings.iter().any(|f| matches!(
+            f,
+            LaneFinding::PowerOfTwo {
+                exponent: 90,
+                bits: 91
+            }
+        )));
+        // 2^90 is a WIDE lane (91 bits), so it is not flagged narrow. The
+        // refusal is about regime, not about width.
+        assert!(!screened.has_narrow_lane());
+        assert_eq!(screened.total_log_q, 91);
+        assert_eq!(screened.distinct_lane_count, 1);
+
+        // And the recorded defect, restated as an executable contrast: the
+        // width-only entry point does emit a number here, and it passes.
+        let width_only = estimator.estimate(8192, 90, SecretDistribution::Ternary, 128);
+        assert!(
+            width_only.meets_claim,
+            "documents MEASUREMENT 6: the width-only screen passes a 90-bit 2-power"
+        );
+        println!(
+            "  width-only screen on the same modulus: {} bits, meets128={}",
+            width_only.effective_bits, width_only.meets_claim
+        );
+    }
+
+    #[test]
+    fn factored_screen_reproduces_todays_numbers_for_three_30_bit_primes() {
+        // No regression: the three-prime 90-bit chain must screen exactly as it
+        // does today. These are the numbers `secure_configs.rs` documents for
+        // `secure_128` (Core-SVP 259, MATZOV 233).
+        let dual = LatticeSecurityEstimator::new(CostModel::CoreSVP)
+            .dual_estimate_with_factorization(
+                8192,
+                &NTT_CHAIN_90_BIT,
+                SecretDistribution::Ternary,
+                128,
+            );
+        println!("\n3 x 30-bit NTT primes @ n=8192:\n{}", dual.core_svp.analysis);
+
+        assert!(dual.core_svp.is_screened());
+        assert!(dual.matzov.is_screened());
+        assert_eq!(dual.core_svp.total_log_q, 90, "exact product bit length");
+        assert_eq!(dual.core_svp.widest_lane_bits, 30);
+        assert_eq!(dual.core_svp.distinct_lane_count, 3);
+
+        assert_eq!(
+            dual.core_svp.effective_bits(),
+            Some(259),
+            "Core-SVP must stay at today's 259"
+        );
+        assert_eq!(
+            dual.matzov.effective_bits(),
+            Some(233),
+            "MATZOV must stay at today's 233"
+        );
+        assert_eq!(dual.binding_bits, Some(233));
+        assert!(dual.meets_both);
+
+        // Byte-for-byte agreement with the width-only entry point.
+        for model in [CostModel::CoreSVP, CostModel::MATZOV] {
+            let estimator = LatticeSecurityEstimator::new(model);
+            let width_only = estimator.estimate(8192, 90, SecretDistribution::Ternary, 128);
+            let structural = estimator.estimate_with_factorization(
+                8192,
+                &NTT_CHAIN_90_BIT,
+                SecretDistribution::Ternary,
+                128,
+            );
+            assert_eq!(structural.effective_bits(), Some(width_only.effective_bits));
+            assert_eq!(structural.meets_claim(), width_only.meets_claim);
+        }
+
+        // All three lanes classified as prime fields, nothing else.
+        assert_eq!(
+            dual.core_svp
+                .findings
+                .iter()
+                .filter(|f| matches!(f, LaneFinding::PrimeField { .. }))
+                .count(),
+            3
+        );
+        assert!(dual.core_svp.shared_factors().is_empty());
+    }
+
+    #[test]
+    fn factored_screen_reports_prime_power_basis_as_unscreened_regime() {
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+
+        // Wide prime-power lanes: p^2 for two 30-bit primes. The lanes are not
+        // narrow, so the ONLY thing wrong with them is the regime.
+        let wide = estimator.estimate_with_factorization(
+            8192,
+            &[(998244353, 2), (985661441, 2)],
+            SecretDistribution::Ternary,
+            128,
+        );
+        println!("\nwide prime-power basis:\n{}", wide.analysis);
+        assert_eq!(
+            wide.effective_bits(),
+            None,
+            "a prime-power basis must come back unscreened, not as a number"
+        );
+        assert!(wide.is_unscreened_regime());
+        assert!(
+            !wide.has_narrow_lane(),
+            "these lanes are 60 bits each; the refusal is regime, not width"
+        );
+        assert!(!wide.meets_claim());
+        assert_eq!(wide.refusal().unwrap().outside_regime.len(), 2);
+        assert!(wide.findings.iter().any(|f| matches!(
+            f,
+            LaneFinding::PrimePower {
+                prime: 998244353,
+                exponent: 2,
+                ..
+            }
+        )));
+
+        // The literal basis from MEASUREMENT 6: {8, 9, 25, 49}^k = 2^3k 3^2k 5^2k 7^2k.
+        for k in [1u32, 2, 5] {
+            let basis = [(2, 3 * k), (3, 2 * k), (5, 2 * k), (7, 2 * k)];
+            let est = estimator.estimate_with_factorization(
+                8192,
+                &basis,
+                SecretDistribution::Ternary,
+                128,
+            );
+            assert_eq!(
+                est.effective_bits(),
+                None,
+                "k={}: prime-power basis must not produce a number",
+                k
+            );
+            assert!(est.is_unscreened_regime(), "k={}", k);
+            assert!(!est.meets_claim(), "k={}", k);
+            assert_eq!(
+                est.refusal().unwrap().outside_regime.len(),
+                4,
+                "k={}: all four lanes are outside the regime",
+                k
+            );
+            if k == 1 {
+                println!("\n{{8,9,25,49}} basis:\n{}", est.analysis);
+                // At k=1 every lane is also narrower than the modelled floor,
+                // so BOTH refusal buckets are populated. Nothing is collapsed.
+                assert!(est.has_narrow_lane());
+                assert_eq!(est.refusal().unwrap().narrow_lane.len(), 4);
+                assert_eq!(est.total_log_q, 17); // 8*9*25*49 = 88200
+            }
+        }
+    }
+
+    #[test]
+    fn factored_screen_leaves_every_secure_config_unchanged() {
+        use crate::params::secure_configs::SecureConfig;
+
+        // Guard against this extension silently moving a production number.
+        let configs = [
+            ("secure_128", SecureConfig::secure_128(), 128u32),
+            ("secure_128_deep", SecureConfig::secure_128_deep(), 128),
+            ("secure_192", SecureConfig::secure_192(), 192),
+            ("secure_256", SecureConfig::secure_256(), 256),
+        ];
+
+        for (name, secure_config, claim) in configs {
+            let log_q = secure_config.log_q();
+            let config = secure_config.into_config();
+            let n = config.n;
+            let factors: Vec<(u64, u32)> = config.primes.iter().map(|&p| (p, 1)).collect();
+
+            for model in [CostModel::CoreSVP, CostModel::MATZOV] {
+                let estimator = LatticeSecurityEstimator::new(model);
+                let width_only = estimator.estimate(n, log_q, SecretDistribution::Ternary, claim);
+                let structural = estimator.estimate_with_factorization(
+                    n,
+                    &factors,
+                    SecretDistribution::Ternary,
+                    claim,
+                );
+
+                assert!(
+                    structural.is_screened(),
+                    "{} must still screen under {:?}: {}",
+                    name,
+                    model,
+                    structural.analysis
+                );
+                assert_eq!(
+                    structural.total_log_q, log_q,
+                    "{}: exact product bit length must agree with the config",
+                    name
+                );
+                assert_eq!(
+                    structural.effective_bits(),
+                    Some(width_only.effective_bits),
+                    "{} under {:?}: structural screen moved a production number",
+                    name,
+                    model
+                );
+                assert_eq!(
+                    structural.meets_claim(),
+                    width_only.meets_claim,
+                    "{} under {:?}: meets_claim moved",
+                    name,
+                    model
+                );
+                assert_eq!(structural.distinct_lane_count, config.primes.len());
+                assert!(structural.shared_factors().is_empty(), "{}", name);
+            }
+
+            println!(
+                "{:<16} n={:<6} log2(Q)={:<4} lanes={} — unchanged",
+                name,
+                n,
+                log_q,
+                config.primes.len()
+            );
+        }
+    }
+
+    #[test]
+    fn factored_screen_catches_the_plaintext_modulus_lane_of_a_manufactured_q() {
+        // Manufacturing Q = t * D is what makes Delta = Q/t = D exact. It also
+        // puts a CRT lane equal to t in the modulus. With the in-tree
+        // t = 65537 that lane is 17 bits wide, and the width-only screen
+        // cannot see it.
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+        let manufactured = [(65537u64, 1u32), (998244353, 1)];
+        let screened = estimator.estimate_with_factorization(
+            8192,
+            &manufactured,
+            SecretDistribution::Ternary,
+            128,
+        );
+        println!("\nmanufactured Q = t * D (t=65537):\n{}", screened.analysis);
+
+        assert_eq!(screened.effective_bits(), None);
+        assert!(!screened.meets_claim());
+        assert!(screened.has_narrow_lane());
+        assert!(screened.findings.iter().any(|f| matches!(
+            f,
+            LaneFinding::NarrowLane {
+                base: 65537,
+                exponent: 1,
+                bits: 17
+            }
+        )));
+        // 65537 is prime and exponent 1, so the lane is a prime FIELD; the only
+        // thing wrong with it is that it is narrower than the modelled floor.
+        assert!(!screened.is_unscreened_regime());
+
+        // The width-only screen passes the very same modulus.
+        let width_only = estimator.estimate(
+            8192,
+            screened.total_log_q,
+            SecretDistribution::Ternary,
+            128,
+        );
+        assert!(
+            width_only.meets_claim,
+            "the width-only screen sees only {} bits and passes it",
+            screened.total_log_q
+        );
+    }
+
+    #[test]
+    fn factored_screen_reports_non_pairwise_coprime_lanes() {
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+
+        // Same prime twice: merged to p^2 and reported as a shared factor.
+        let repeated = estimator.estimate_with_factorization(
+            8192,
+            &[(998244353, 1), (998244353, 1)],
+            SecretDistribution::Ternary,
+            128,
+        );
+        assert_eq!(repeated.distinct_lane_count, 1, "repeated bases merge");
+        assert!(!repeated.shared_factors().is_empty());
+        assert!(
+            repeated.is_unscreened_regime(),
+            "p listed twice is p^2, a prime power"
+        );
+        assert_eq!(repeated.effective_bits(), None);
+
+        // Two distinct composite lanes sharing the factor 3.
+        let shared = estimator.estimate_with_factorization(
+            8192,
+            &[(3 * 998244353, 1), (3 * 985661441, 1)],
+            SecretDistribution::Ternary,
+            128,
+        );
+        println!("\nnon-coprime composite lanes:\n{}", shared.analysis);
+        assert!(shared
+            .shared_factors()
+            .iter()
+            .any(|f| matches!(f, LaneFinding::SharedFactor { common: 3, .. })));
+        assert!(shared.findings.iter().any(|f| matches!(
+            f,
+            LaneFinding::CompositeBase {
+                smallest_prime_factor: Some(3),
+                ..
+            }
+        )));
+        assert_eq!(shared.effective_bits(), None);
+    }
+
+    #[test]
+    fn factored_screen_refuses_a_malformed_factorization() {
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+
+        let empty =
+            estimator.estimate_with_factorization(8192, &[], SecretDistribution::Ternary, 128);
+        assert!(empty.is_malformed());
+        assert_eq!(empty.effective_bits(), None);
+        assert!(!empty.meets_claim());
+        assert!(empty.findings.contains(&LaneFinding::EmptyFactorization));
+
+        let unit_base = estimator.estimate_with_factorization(
+            8192,
+            &[(1, 5), (998244353, 1)],
+            SecretDistribution::Ternary,
+            128,
+        );
+        assert!(unit_base.is_malformed());
+        assert_eq!(unit_base.effective_bits(), None);
+        assert!(unit_base.findings.contains(&LaneFinding::DegenerateLane {
+            base: 1,
+            exponent: 5
+        }));
+
+        let zero_exponent = estimator.estimate_with_factorization(
+            8192,
+            &[(998244353, 0)],
+            SecretDistribution::Ternary,
+            128,
+        );
+        assert!(zero_exponent.is_malformed());
+        assert_eq!(zero_exponent.effective_bits(), None);
+
+        let too_many: Vec<(u64, u32)> = (0..(MAX_SCREENED_LANES + 1))
+            .map(|_| (998244353u64, 1u32))
+            .collect();
+        let overflowing = estimator.estimate_with_factorization(
+            8192,
+            &too_many,
+            SecretDistribution::Ternary,
+            128,
+        );
+        assert!(overflowing.is_malformed());
+        assert_eq!(overflowing.effective_bits(), None);
+    }
+
+    #[test]
+    fn min_modelled_lane_bits_brackets_the_documented_interval() {
+        use crate::params::secure_configs::SecureConfig;
+
+        // The threshold is an engineering choice; the bracket is its whole
+        // justification, so the bracket is asserted rather than described.
+        assert!(
+            MIN_MODELLED_LANE_BITS > 17,
+            "must be above a t = 65537 lane (17 bits) or the manufactured-Q case escapes"
+        );
+        // The narrowest shipped lane is 754974721 at 30 bits, and the classify
+        // test is the strict `lane_bits < MIN_MODELLED_LANE_BITS`, so 30 is
+        // itself still inert. 29 is asserted instead of 30 on purpose: one bit
+        // of margin so a future 30-bit lane does not land on the boundary.
+        assert!(
+            MIN_MODELLED_LANE_BITS <= 29,
+            "must stay one bit below the narrowest shipped lane (754974721, 30 bits); \
+             the true inert bound is 30, and 29 is the deliberate margin"
+        );
+
+        for secure_config in [
+            SecureConfig::secure_128(),
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+        ] {
+            for &prime in &secure_config.into_config().primes {
+                assert!(
+                    bit_length_u64(prime) >= MIN_MODELLED_LANE_BITS,
+                    "shipped lane {} is {} bits, below the modelled floor {}",
+                    prime,
+                    bit_length_u64(prime),
+                    MIN_MODELLED_LANE_BITS
+                );
+            }
+        }
+    }
+
+    /// The narrow-prime guard inside the `base_is_prime` arm is LIVE, not dead.
+    ///
+    /// An integration review claimed the `base_bits < MIN_MODELLED_LANE_BITS`
+    /// check in the `exponent == 1` path was unreachable. It is not: the
+    /// narrow-lane check earlier in the loop records its finding and falls
+    /// through *without* `continue`, so a narrow prime lane with exponent 1
+    /// arrives here and this guard is the only thing stopping it from also
+    /// being recorded as a screenable `PrimeField` and having its width pushed
+    /// into `screenable_lane_bits`. Deleting it would let `t = 65537` — the
+    /// exact lane the manufactured-Q route makes reachable, and the reason
+    /// this screen exists — count as a real lane. This test pins that.
+    #[test]
+    fn narrow_prime_lane_is_recorded_narrow_and_never_as_a_screenable_field() {
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+
+        // t = 65537 is prime, exponent 1, and 17 bits — below the floor.
+        let narrow = estimator.estimate_with_factorization(
+            8192,
+            &[(65537, 1)],
+            SecretDistribution::Ternary,
+            128,
+        );
+
+        let narrow_findings = narrow
+            .findings
+            .iter()
+            .filter(|f| matches!(f, LaneFinding::NarrowLane { base: 65537, .. }))
+            .count();
+        assert_eq!(
+            narrow_findings, 1,
+            "a 17-bit prime lane must be reported as NarrowLane, findings were {:?}",
+            narrow.findings
+        );
+
+        let prime_field_findings = narrow
+            .findings
+            .iter()
+            .filter(|f| matches!(f, LaneFinding::PrimeField { .. }))
+            .count();
+        assert_eq!(
+            prime_field_findings, 0,
+            "the narrow guard must stop a 17-bit prime from also counting as a \
+             screenable PrimeField; if this is 1 the guard was deleted as 'dead code'. \
+             findings were {:?}",
+            narrow.findings
+        );
+
+        assert_eq!(
+            narrow.effective_bits(),
+            None,
+            "a chain whose only lane is narrower than the modelled floor must refuse"
+        );
+
+        // Control: the same shape one bit-class up screens normally, which is
+        // what makes the assertions above about narrowness and not about
+        // single-lane chains being rejected wholesale.
+        let wide = estimator.estimate_with_factorization(
+            8192,
+            &[(998244353, 1)],
+            SecretDistribution::Ternary,
+            128,
+        );
+        assert_eq!(
+            wide.findings
+                .iter()
+                .filter(|f| matches!(f, LaneFinding::PrimeField { .. }))
+                .count(),
+            1,
+            "a 30-bit prime lane must screen as a PrimeField, findings were {:?}",
+            wide.findings
+        );
+    }
+
+    #[test]
+    fn structural_screen_integer_helpers_are_exact() {
+        // Deterministic Miller-Rabin over the whole u64 range.
+        assert!(is_prime_u64(2));
+        assert!(is_prime_u64(65537));
+        assert!(is_prime_u64(998244353));
+        assert!(is_prime_u64(985661441));
+        assert!(is_prime_u64(754974721));
+        assert!(is_prime_u64(18_446_744_073_709_551_557)); // largest u64 prime
+        assert!(!is_prime_u64(0));
+        assert!(!is_prime_u64(1));
+        assert!(!is_prime_u64(4_294_967_295));
+        // 3215031751 = 151 * 751 * 28351: strong pseudoprime to bases 2,3,5,7.
+        assert!(!is_prime_u64(3_215_031_751));
+
+        assert_eq!(gcd_u64(3 * 998244353, 3 * 985661441), 3);
+        assert_eq!(gcd_u64(998244353, 985661441), 1);
+
+        assert_eq!(smallest_prime_factor_below_ceiling(3 * 998244353), Some(3));
+        assert_eq!(smallest_prime_factor_below_ceiling(88200), Some(2));
+        assert_eq!(
+            smallest_prime_factor_below_ceiling(998244353),
+            None,
+            "a prime has no factor below sqrt(n)"
+        );
+
+        assert_eq!(bit_length_u64(0), 0);
+        assert_eq!(bit_length_u64(1), 1);
+        assert_eq!(bit_length_u64(65537), 17);
+        assert_eq!(bit_length_u64(998244353), 30);
+
+        // Exact product bit lengths, integer-only limb arithmetic.
+        assert_eq!(product_bit_length(&[(2, 90)]), Some(91));
+        assert_eq!(product_bit_length(&[(2, 3), (3, 2), (5, 2), (7, 2)]), Some(17)); // 88200
+        assert_eq!(product_bit_length(&NTT_CHAIN_90_BIT), Some(90));
+        assert_eq!(product_bit_length(&[(65537, 1), (998244353, 1)]), Some(46));
+        // Beyond the limb cap the screen declines rather than truncating.
+        assert_eq!(product_bit_length(&[(2, 1_000_000)]), None);
+    }
+
+    #[test]
+    fn factored_screen_separates_the_four_measurement_6_constructions() {
+        // MEASUREMENT 6 showed these four 90-bit constructions receiving
+        // byte-identical scores. This is the same table through the screen that
+        // can see the modulus.
+        let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
+        let cases: [(&str, Vec<(u64, u32)>); 4] = [
+            ("3 x 30-bit NTT primes", NTT_CHAIN_90_BIT.to_vec()),
+            ("2^90", vec![(2, 90)]),
+            (
+                "prime-power basis {8,9,25,49}^6",
+                vec![(2, 18), (3, 12), (5, 12), (7, 12)],
+            ),
+            (
+                "manufactured Q = t * D, t = 65537",
+                vec![(65537, 1), (998244353, 1)],
+            ),
+        ];
+
+        println!(
+            "\n{:<36} {:>9} {:>12} {:>10}",
+            "construction", "log2(Q)", "screened", "meets128"
+        );
+        let mut screened_count = 0usize;
+        for (label, factors) in &cases {
+            let result = estimator.estimate_with_factorization(
+                8192,
+                factors,
+                SecretDistribution::Ternary,
+                128,
+            );
+            let shown = match result.effective_bits() {
+                Some(bits) => format!("{} bits", bits),
+                None => "REFUSED".to_string(),
+            };
+            println!(
+                "{:<36} {:>9} {:>12} {:>10}",
+                label,
+                result.total_log_q,
+                shown,
+                result.meets_claim()
+            );
+            if result.is_screened() {
+                screened_count += 1;
+            }
+        }
+
+        // Exactly one of the four is inside the regime this model covers.
+        assert_eq!(
+            screened_count, 1,
+            "only the prime chain may receive a number"
+        );
     }
 }

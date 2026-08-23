@@ -3,7 +3,7 @@ name = "clockwork-core"
 version = "0.1.0"
 edition = "2021"
 description = "Formal-spec-compliant Clockwork RNS arithmetic for RLWE FHE — no floating point, ever"
-license = "MIT OR Apache-2.0"
+license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [dependencies]
 # Constant-time operations for secret-dependent paths (T16 requirement)

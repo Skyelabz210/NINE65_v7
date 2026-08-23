@@ -595,9 +595,15 @@ fn handle_evaluate(
                     }
                     session
                         .noise_budget
+                        // `mul_plain_scalar_cost`, not `mul_plain_cost`:
+                        // `mul_plain_dual` builds its multiplier with
+                        // `scalar_to_constant_dual_poly`, a degree-0 polynomial,
+                        // so no ring expansion occurs and the `n` factor would
+                        // over-charge by log2(n) — 13 bits at n=8192. See
+                        // `NoiseBudget::mul_plain_scalar_cost`.
                         .consume(
                             NoiseOpType::MulPlain,
-                            NoiseBudget::mul_plain_cost(scalar, &session.config),
+                            NoiseBudget::mul_plain_scalar_cost(scalar),
                         )
                         .map_err(|error| format!("noise exhausted: {error}"))?;
                     session.rns_ctx.mul_plain_dual(&ciphertexts[0], scalar)
@@ -617,13 +623,15 @@ fn handle_evaluate(
                         .noise_budget
                         .consume(NoiseOpType::Relin, NoiseBudget::relin_cost(&session.config))
                         .map_err(|error| format!("noise exhausted: {error}"))?;
-                    session
-                        .noise_budget
-                        .consume(
-                            NoiseOpType::Rescale,
-                            NoiseBudget::rescale_cost(&session.config),
-                        )
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
+                    // No `NoiseBudget::rescale_cost` here, deliberately.
+                    //
+                    // That credit belongs to an RNS prime drop. `mul_dual_public`
+                    // rescales the tensor product by `Delta = M_level / t` and
+                    // consumes no level, and that division is already inside
+                    // `mul_ct_cost` (the FV Lemma-2 bound is stated *after* the
+                    // rescaling). Charging both credited the same division twice
+                    // and under-charged this untrusted-caller-facing path by
+                    // ~16 bits per multiply. See `NoiseBudget::rescale_cost`.
                     session
                         .rns_ctx
                         .mul_dual_public(

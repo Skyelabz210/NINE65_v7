@@ -2,18 +2,27 @@
 
 ## Project Overview
 
-**NINE65 v7 "Bootstrap Complete"** is a proprietary, unlimited-depth Fully Homomorphic Encryption (FHE) system built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with **zero floating-point arithmetic** across all cryptographic runtime paths.
+> **Stale-context warning (2026-08-22):** this file describes the v7 "Bootstrap
+> Complete" snapshot. `CLAUDE.md` and `README.md` are current; prefer them.
+> The claims corrected below were corrected there too.
 
-### Key Achievement
+**NINE65** is a proprietary exact-integer BFV/DualRNS Fully Homomorphic Encryption substrate built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with **zero floating-point arithmetic** across all cryptographic runtime paths.
 
-First FHE system with **fully verified bootstrap roundtrip** across all three paths:
+### Refresh paths
+
 | Path | Method | Status |
 |------|--------|--------|
-| **Circular Bootstrap** | `bootstrap()` — boot_sk = lift(work_sk) | Verified exact |
-| **Non-Circular (KSK)** | `bootstrap_with_ksk()` — independent boot_sk, gadget key switch | Verified exact |
-| **Auto-Bootstrap** | `AutoBootstrapEvaluator::mul_auto()` — auto-trigger on noise threshold | Verified 10+ chained muls |
+| **Circular Bootstrap** | `bootstrap()` — boot_sk = lift(work_sk) | roundtrip tests `#[ignore]`d as VESTIGIAL/RETIRED |
+| **Non-Circular (KSK)** | `bootstrap_with_ksk()` — independent boot_sk, gadget key switch | roundtrip tests `#[ignore]`d as VESTIGIAL/RETIRED |
+| **Auto-Bootstrap** | `AutoBootstrapEvaluator::mul_auto()` — auto-trigger on noise threshold | roundtrip tests `#[ignore]`d as VESTIGIAL/RETIRED |
 
-This enables **truly unlimited-depth FHE computation** with deterministic, bit-identical results across all platforms.
+All three are public (evaluator-side) refresh paths and all three refuse configs
+whose main chain cannot carry a refresh — `secure_128` and `hardware_opt` are
+refused, `secure_128_deep`/`secure_192`/`secure_256` are admitted. See
+`params::secure_configs::ensure_public_refresh_supported`.
+
+This is **not** an unlimited-depth system: measured public direct-square depths
+are 2–4. Results are deterministic and bit-identical across platforms.
 
 ---
 

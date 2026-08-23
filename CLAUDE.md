@@ -1,9 +1,9 @@
 # CLAUDE.md — Project Context for Claude Code
 
 ## Project Overview
-**NINE65 v8 "Shadow Butterfly"** — A proprietary, unlimited-depth Fully Homomorphic Encryption (FHE) system built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic in its crypto/arithmetic hot paths (see "Important Coding Rules" below for the one documented, non-cryptographic exception).
+**NINE65 v8 "Shadow Butterfly"** — A proprietary exact-integer BFV/DualRNS FHE substrate built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic in its crypto/arithmetic hot paths (see "Important Coding Rules" below for the one documented, non-cryptographic exception).
 
-Key achievement: First FHE system with fully verified bootstrap roundtrip across all three paths (circular, non-circular KSK, and auto-triggered), enabling truly unlimited-depth computation.
+It provides finite leveled computation plus low-depth refresh paths. **It is not an unlimited-depth system and does not claim to be** — `docs/LINEAGE.md` places "unlimited depth", "depth 50" and "bootstrap-free" on the deprecation list, and the measured public direct-square depths are 2–4. The verified capability table is in `README.md`; per-number provenance and the not-established list are in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 
 ---
 
@@ -78,19 +78,64 @@ Depth benchmarks:
 ---
 
 ## Bootstrap Paths
-- Circular: bootstrap() — boot_sk = lift(work_sk) — Verified exact
-- Non-Circular (KSK): bootstrap_with_ksk() — independent boot_sk, gadget key switch — Verified exact
-- Auto-Bootstrap: AutoBootstrapEvaluator::mul_auto() — auto trigger on noise threshold — Verified 10+ chained muls
+All three are **public** refresh paths (evaluator-side, public bootstrap key
+material only). None of their roundtrip tests currently runs: the suites in
+`ops/bootstrap.rs`, `tests/bootstrap_integration.rs`,
+`tests/bootstrap_parameter_exploration.rs` and
+`tests/bootstrap_residue_shape_regression.rs` are `#[ignore]`d as
+VESTIGIAL/RETIRED, so "verified exact" cannot be sourced to the running suite.
+
+- Circular: `bootstrap()` — boot_sk = lift(work_sk)
+- Non-Circular (KSK): `bootstrap_with_ksk()` — independent boot_sk, gadget key switch
+- Auto-Bootstrap: `AutoBootstrapEvaluator::mul_auto()` — auto trigger on noise threshold
+
+**Admissibility gate.** All three refuse configs whose main chain cannot carry a
+public refresh, via `params::secure_configs::ensure_public_refresh_supported`
+(typed `Nine65Error::BootstrapConfigMismatch`, never a panic). `secure_128` and
+`hardware_opt` (3 lanes) are refused: 42 bits of post-refresh `Delta` headroom
+against the 47 one multiply needs. Measured by
+`ops::bootstrap::tests::diag_measure_noise_growth`, the refresh output still
+decrypts correctly, but the first multiply after it returns a
+wrong-but-plausible plaintext (`refresh(7)` squares to `34037`, not `49`) with
+no error raised anywhere in the pipeline. `secure_128_deep`, `secure_192` and `secure_256`
+(4/5/6 lanes) are admitted. The symmetric secret-key refresh
+(`SymmetricBootstrap::bootstrap`) is a separate path and is not gated by this.
 
 ## Security Configs
-- SecureConfig::secure_128() — n=8192, log2(q)=90, classical=129/quantum=86/hybrid=129
-- SecureConfig::secure_192() — n=16384, log2(q)=147, classical=374/quantum=213/hybrid=318
-- SecureConfig::secure_256() — n=16384, log2(q)=177, classical=311/quantum=177/hybrid=264
+Screened 2026-08-22 by `params::secure_configs::tests::screened_levels_for_named_configs`
+against the tuples actually in `secure_configs.rs`. `log2(q)` is the exact bit
+length of the prime product.
 
-# Lattice Estimator confirmed (2026-02-25, NINE65 built-in estimator):
-# Core-SVP: secure_128=129 bits, secure_192=318 bits, secure_256=264 bits
-# MATZOV:   secure_128=116 bits, secure_192=286 bits, secure_256=237 bits
-# See: docs/LATTICE_ESTIMATOR_BASELINE_2026-02-25.md
+| constructor | n | lanes | log2(q) | claimed | Core-SVP | MATZOV | binding | public refresh |
+|---|---|---|---|---|---|---|---|---|
+| `secure_128()` | 8192 | 3 | 90 | 128 | 259 | 233 | 233 | refused |
+| `secure_128_deep()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | yes |
+| `secure_192()` | 16384 | 5 | 146 | 192 | 320 | 288 | 288 | yes |
+| `secure_256()` | 16384 | 6 | 175 | 256 | 267 | **240** | **240** | yes |
+| `hardware_opt()` | 8192 | 3 | 90 | 128 | 259 | 233 | 233 | refused |
+
+Every name clears its own number under Core-SVP, the model `new_verified` gates
+on. `secure_256` falls 16 bits short under MATZOV; that gap is documented on the
+constructor and readable via `SecureConfig::screened_security_dual()`. No config
+is renamed.
+
+Two stale figures to stop quoting:
+
+- The previous table here (secure_128 129/86/129, secure_192 374/213/318,
+  secure_256 311/177/264) came from `docs/LATTICE_ESTIMATOR_BASELINE_2026-02-25.md`.
+  Its `secure_128` row was computed at **n=4096**, not the shipped 8192. Its
+  192/256 rows used the `security_estimator_baseline` binary's floor-sum
+  `log2(q)` (147/177) rather than the exact product bit length the constructor
+  gates on (146/175) — a conservative over-estimate of `q`, hence the slightly
+  lower bits.
+- "secure_256 screens at ~227 bits" describes the **superseded** chain at
+  `log2(q)=203`, replaced 2026-02-25. It does not describe the current 175-bit
+  chain.
+
+These are screening numbers from a deterministic integer heuristic, not
+independent lattice-security certificates. `secure_configs.rs`'s own policy — an
+archived external estimator run for the exact shipped tuple — remains unmet for
+n=8192/16384. See `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 
 ---
 

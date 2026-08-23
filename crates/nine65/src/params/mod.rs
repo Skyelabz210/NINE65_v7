@@ -7,6 +7,7 @@
 //! are checked and exact multi-limb accounting is used when the product exceeds
 //! `u128`.
 
+pub mod manufactured;
 pub mod primes;
 pub mod production;
 pub mod secure_configs;

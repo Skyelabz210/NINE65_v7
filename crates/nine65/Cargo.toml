@@ -9,6 +9,7 @@ authors.workspace = true
 # comparison bench for a rejected parallelism approach) is not pulled into
 # the build merely by existing on disk.
 autobenches = false
+license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [features]
 # Default build: O(N log N) FFT-based NTT + exact transcendentals backend +
@@ -209,6 +210,14 @@ required-features = ["allow_insecure"]
 # required in standalone `-p nine65 --release` runs).
 [[test]]
 name = "anchor_drift_diagnostics"
+required-features = ["allow_insecure"]
+
+# Arrow-emission no-leak gate matrix over the real FHE surface
+# (CONFIGS x MODES x GATES, secure_128 .. secure_256, PUBLIC and SYMMETRIC).
+# Drives keygen/encrypt with a seeded ShadowHarvester, so it needs the same
+# feature as every other target in this block.
+[[test]]
+name = "arrow_emission_fhe_gate_matrix"
 required-features = ["allow_insecure"]
 
 [[test]]
