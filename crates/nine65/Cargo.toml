@@ -162,6 +162,10 @@ required-features = ["serde"]
 # `-p nine65` runs of these targets do. `required-features` makes the
 # requirement explicit: Cargo reports the missing feature instead of the
 # library panicking mid-test.
+[[test]]
+name = "op_timings"
+required-features = ["allow_insecure"]
+
 [[bench]]
 name = "fhe_scaling"
 harness = false

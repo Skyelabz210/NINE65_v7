@@ -13,8 +13,20 @@
 //! ## Zero Floating Point Guarantee
 //!
 //! This crate contains ZERO floating-point operations. All arithmetic is
-//! exact integer computation. This is enforced by `#![deny(clippy::float_arithmetic)]`
-//! and verified by grep in CI.
+//! exact integer computation.
+//!
+//! The enforcement is weaker than this comment used to claim, on two
+//! independent grounds, so check it locally rather than assuming:
+//!
+//! * `#![deny(clippy::float_arithmetic)]` below is a **clippy** lint, not a
+//!   rustc one. It binds under `cargo clippy` and is inert under a plain
+//!   `cargo build` or `cargo test`.
+//! * The repo's float grep, `scripts/check_no_floats_runtime.sh`, sets
+//!   `CRATE_DIR="crates/nine65/src"` and has never scanned this crate at all.
+//!   It is wired into `ci.yml`, which has not completed a run since
+//!   2026-02-25 and whose last ~25 runs all failed.
+//!
+//! So: `cargo clippy -p clockwork-core --all-targets -- -D warnings`.
 
 // NOTE: unsafe is used ONLY in key_lifecycle::zero_u64 for volatile memory zeroing (A4).
 // All other code is safe Rust.
