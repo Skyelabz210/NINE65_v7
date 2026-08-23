@@ -24,17 +24,20 @@ this table is outside the claim surface.
 
 | Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth † | public refresh |
 |---|---|---|---|---|---|---|---|
-| `secure_128` | 8192 | 3 | 90 | 158.994 ms (4x5) | 44.371 ms | 2 | **refused in code** |
-| `secure_128_deep` | 8192 | 4 | 119 | 207.956 ms | 47.262 ms | 2 | pass |
-| `secure_192` | 16384 | 5 | 146 | 564.238 ms | 122.927 ms | 3 | pass |
-| `secure_256` | 16384 | 6 | 175 | 520.801 ms | 129.971 ms | 4 ‡ | pass ‡ |
+| `secure_128` | 8192 | 3 | 90 | 292.40 ms | 82.07 ms | 2 | **refused in code** |
+| `secure_128_deep` | 8192 | 4 | 119 | 408.66 ms | 93.14 ms | 2 | pass |
+| `secure_192` | 16384 | 5 | 146 | 1114.12 ms | 247.21 ms | 3 | pass |
+| `secure_256` | 16384 | 6 | 175 | 1017.91 ms | 262.96 ms | 4 ‡ | pass ‡ |
 
 † Direct squaring **without** refresh — the last depth that still decrypts
-correctly. ‡ Timings throughout, and the `secure_256` row's depth, are from the
-correctness-gated benchmark run and were not re-measured on 2026-08-22;
-`secure_256`'s refresh is covered by the auto-refresh acceptance suite rather
-than exercised standalone. Per-number provenance is in
+correctly. ‡ `secure_256`'s depth is from the correctness-gated benchmark run;
+its refresh is covered by the auto-refresh acceptance suite rather than
+exercised standalone. Per-number provenance is in
 `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
+
+**Timings re-measured 2026-08-23** by `tests/op_timings.rs` — see
+[Measured performance](#measured-performance) for the machine, the method, and
+why the figures that used to sit in this column were replaced.
 
 `secure_128`'s three-lane chain leaves too little `Delta` headroom for a public
 refresh: 42 bits remain after the refresh's worst-case noise deposit against the
@@ -77,6 +80,101 @@ lattice-security certificates — see "Parameter and Claim Discipline" below.
   `n = 8192 / 16384` tuples. The numbers above are in-tree screening results.
 - **No public constant-time claim.** Blocked on the CT-NTT/cache gates in
   `docs/CT_NTT_CACHE_ROADMAP.md`.
+
+## Measured performance
+
+Every figure below was produced by `crates/nine65/tests/op_timings.rs` on
+**2026-08-23**, on the machine described under Method. Nothing here is
+inherited.
+
+| Config | N | main lanes | Encrypt | Add | Public mul | Symmetric mul | Decrypt |
+|---|---|---|---|---|---|---|---|
+| `secure_128` | 8192 | 3 | 5.38 ms | 1.405 ms | 292.40 ms | 82.07 ms | 1.83 ms |
+| `secure_128_deep` | 8192 | 4 | 6.60 ms | 1.528 ms | 408.66 ms | 93.14 ms | 2.51 ms |
+| `secure_192` | 16384 | 5 | 23.09 ms | 5.488 ms | 1114.12 ms | 247.21 ms | 7.51 ms |
+| `secure_256` | 16384 | 6 | 22.41 ms | 5.943 ms | 1017.91 ms | 262.96 ms | 7.78 ms |
+
+Reproduce:
+
+```bash
+cargo test -p nine65 --test op_timings --release --features allow_insecure \
+  -- --ignored --nocapture
+```
+
+**Method.** Medians over 5 rounds (3 at N=16384), default features — which
+means MANA and UNHAL are active, see below. Every round decrypts both the sum
+and the product and asserts exactness, so a timing figure cannot come from a
+run that computed the wrong answer. Machine: 4 vCPU shared container, Intel
+Xeon 2.80 GHz, load average 1–22 during the runs. Run-to-run spread on
+`secure_128` public mul across four separate invocations was 281–302 ms, so
+treat the third significant figure as noise.
+
+### These numbers replaced smaller ones, and the smaller ones were not ours
+
+The previous table quoted 158.994 ms for `secure_128` public mul; `CLAUDE.md`
+quoted 152.13 ms, with 23.56 ms encrypt and 11.06 ms decrypt. Measured here,
+public mul is roughly **2× slower** than those figures while encrypt and
+decrypt are **4–5× faster**. A split like that is not hardware scaling — it
+means the old figures did not come from one machine running this code.
+
+That was checked rather than assumed. The pre-session baseline commit
+`b03aa4a` was built in a separate worktree and measured with the identical
+harness: **301.55 ms** for `secure_128` public mul, against 281–302 ms at
+`HEAD`. Every config matched within noise. **No change in this repository made
+anything slower** — the older figures simply describe a different machine, and
+had no provenance recorded.
+
+### MANA and UNHAL are the default, and are verified to engage
+
+`nine65`'s default feature set is
+`["exact_transcendentals_backend", "accelerated"]`, and `accelerated = ["mana",
+"unhal"]`. Rayon is not in any default graph: `unhal` is consumed with
+`default-features = false` specifically so its own `parallel` default cannot
+pull rayon in behind the acceleration flag.
+
+Declared-by-default is not the same as active, so the dispatch path was traced
+end to end: `RNSFHEContext::run_limb_lanes` → `unhal::accelerator::Accelerator::auto()`
+→ `mana::executor::run_lanes`. On this machine `available_parallelism` reports
+4, `lane_parallel_threshold` is 2, and `secure_128` dispatches 8 lanes (3 main
++ 5 anchor), so the parallel path is taken rather than the sequential fallback.
+`accelerated_dual_poly_mul_is_bit_identical_to_sequential_reference` pins that
+the accelerated result equals the sequential one bit for bit, so the
+accelerator is a wall-clock choice and never a numerical one.
+
+To measure without it: `--no-default-features --features exact_transcendentals_backend`.
+
+### Constant-time status: 9 of 9 blocking gates pass, 2 findings remain open
+
+Re-measured 2026-08-23 with the interleaved two-class dudect harness, run
+serially — concurrent timing tests contend for the CPU and invalidate each
+other.
+
+| gate | t_signal | t_control | verdict |
+|---|---|---|---|
+| `montgomery_pow_exponent_hamming_weight` | 1.54 | 0.75 | constant-time |
+| `montgomery_reduce_operand_magnitude` | 1.62 | 1.81 | constant-time |
+| `montgomery_mul_operand_magnitude` | 1.81 | 0.48 | constant-time |
+| `barrett_reduce_operand_magnitude` | 3.37 | 3.09 | constant-time |
+| `mod_switch_rescale_sign_classes` | 0.34 | 0.22 | constant-time |
+| `exact_prime_drop_fixed_vs_random` | 0.77 | 1.26 | constant-time |
+| `exact_prime_drop_small_vs_large_residues` | 0.23 | 1.56 | constant-time |
+| `adjacency_k_elim_operand_magnitude` | 1.38 | 0.47 | constant-time |
+| `adjacency_k_elim_operand_order` | 1.17 | 0.52 | constant-time |
+
+All nine sit below the `t < 5` threshold with clean control arms. **This is not
+a claim that the system is constant-time**, and the two tests that say so are
+run on the same schedule rather than hidden:
+
+| open finding | measured | gap |
+|---|---|---|
+| `mod_switch_down_dual` (F-2) | 18.05 ms vs 53.50 ms, t = 616.3 | **2.96×** |
+| `KElimination::extract_k` (F-3) | 2,083,963 ns vs 2,071,605 ns, t = 34.1 | 0.60% |
+
+F-2's cause is `U256::div_mod_u64`, a long division over the reconstructed
+coefficient. F-3 has a measured structural answer that is built but not adopted
+— see `AdjacencyKElim` and `docs/CT_VERIFICATION_PLAN.md` §4.6. Beyond these,
+source-level constant-time paths do not close hardware channels; see
+`docs/CT_NTT_CACHE_ROADMAP.md`.
 
 ## Execution Contract
 

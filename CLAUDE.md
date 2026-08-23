@@ -189,9 +189,34 @@ contain `Admitted` lemmas. Do not cite the Coq tree as machine-checked.
 ---
 
 ## Performance Baselines (CPU only, no GPU required)
-secure_128: Encrypt 23.56ms | Add 0.83ms | Mul 152.13ms | Decrypt 11.06ms | Depth 50 in 6.29s
-secure_192: Encrypt 61.59ms | Add 2.10ms | Mul 459.02ms | Decrypt 29.00ms | Depth 50 in 10.10s
-RNS 4-lane: ADD 65.7ns (15.2M/s) | MUL 95.6ns (10.5M/s)
+
+Measured 2026-08-23 by `crates/nine65/tests/op_timings.rs`, default features
+(MANA + UNHAL active), 4 vCPU shared container @ 2.80 GHz. Medians; every round
+decrypts and asserts exactness, so no timing comes from a wrong answer.
+
+| config | Encrypt | Add | Public mul | Symmetric mul | Decrypt |
+|---|---|---|---|---|---|
+| secure_128 | 5.38ms | 1.405ms | 292.40ms | 82.07ms | 1.83ms |
+| secure_128_deep | 6.60ms | 1.528ms | 408.66ms | 93.14ms | 2.51ms |
+| secure_192 | 23.09ms | 5.488ms | 1114.12ms | 247.21ms | 7.51ms |
+| secure_256 | 22.41ms | 5.943ms | 1017.91ms | 262.96ms | 7.78ms |
+
+Reproduce:
+  cargo test -p nine65 --test op_timings --release --features allow_insecure -- --ignored --nocapture
+
+The figures previously recorded here (secure_128 Encrypt 23.56ms | Mul 152.13ms
+| Decrypt 11.06ms; secure_192 Mul 459.02ms; "Depth 50" wall-clocks) had no
+recorded provenance and do not describe this machine — public mul measures ~2x
+slower than they state while encrypt and decrypt measure 4-5x faster, which is
+not a hardware-scaling pattern. Checked rather than assumed: the pre-session
+baseline commit b03aa4a, built in a separate worktree and measured with the
+identical harness, gives 301.55ms for secure_128 public mul against 281-302ms at
+HEAD. Nothing in this repository made anything slower. The "Depth 50" line is
+also inconsistent with the measured public direct-square depths of 2-4 in
+README.md and is not reinstated.
+
+RNS 4-lane micro-numbers (ADD 65.7ns / MUL 95.6ns) are likewise un-provenanced
+and were not re-measured; treat them as unverified until they are.
 
 ---
 
