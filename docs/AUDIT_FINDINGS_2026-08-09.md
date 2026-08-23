@@ -363,8 +363,12 @@ against inferred architecture.
 | `crates/exact_transcendentals/tests/cram_gates.rs` | quality gates C1–C6, C8, P1–P3, P3b, P5–P9 | 16 |
 
 `exact_transcendentals`: **478 passed / 0 failed** (457 lib + 5
-`a2_residue_native` + 16 `cram_gates`). `cram_gates` is a required CI step in
-`.github/workflows/ci.yml`.
+`a2_residue_native` + 16 `cram_gates`). `cram_gates` was recorded here as a required CI step in
+`.github/workflows/ci.yml`. **That was wrong when written and is corrected
+2026-08-22:** no file under `.github/workflows/` names `cram_gates` at all, so
+nothing selects it beyond `ci.yml`'s blanket `cargo test --workspace` — and
+`ci.yml` has not completed a run since 2026-02-25. The counts above were
+produced by running the target locally, which is the only way it has ever run.
 
 Two results worth recording because they were measured rather than assumed:
 

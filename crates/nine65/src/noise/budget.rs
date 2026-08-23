@@ -903,14 +903,23 @@ mod tests {
             );
 
             // THE MEASUREMENT. Growth factor is exactly `scalar`.
+            // Integer-only, deliberately: this module's whole contract is exact
+            // integer arithmetic, and a ratio printed as a float in the failure
+            // message would be the only floating-point value in the file.
             assert_eq!(
                 drop2,
                 drop1 * scalar as i128,
-                "scalar={scalar}: successive noise growth ratio is {}, not {scalar}. \
-                 Noise is NOT growing by the scalar alone, so the derivation \
-                 behind mul_plain_scalar_cost is wrong -- restore the \
-                 ring-expansion term rather than adjusting this assertion.",
-                drop2 as f64 / drop1 as f64,
+                "scalar={scalar}: successive noise growth was {drop1} then {drop2} \
+                 (ratio {}, remainder {}), not a clean factor of {scalar}. Noise \
+                 is NOT growing by the scalar alone, so the derivation behind \
+                 mul_plain_scalar_cost is wrong -- restore the ring-expansion \
+                 term rather than adjusting this assertion.",
+                // Guarded: these format arguments are only evaluated when the
+                // assertion fails, and one way it can fail is `drop1 == 0`.
+                // An unguarded `drop2 / drop1` would then panic with a divide
+                // by zero INSTEAD of printing why the test failed.
+                if drop1 == 0 { 0 } else { drop2 / drop1 },
+                if drop1 == 0 { drop2 } else { drop2 % drop1 },
             );
 
             // And it is emphatically not `n * scalar`.

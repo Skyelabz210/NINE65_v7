@@ -775,7 +775,28 @@ mod constant_time_statistical {
             class_stats.insert(class_name.clone(), stats);
         }
 
-        // All classes should have similar medians (within 50%)
+        // All classes should have similar medians (within 50%).
+        //
+        // READ THE THRESHOLD BEFORE READING THE VERDICT. 50% is a
+        // gross-breakage tripwire, not a constant-time gate, and the gap
+        // between it and reality is two orders of magnitude: the operand-
+        // magnitude effect actually present in `extract_k` on this machine is
+        // 0.63% (medians 2,403,289ns vs 2,388,188ns per 4096-call batch,
+        // t = 25.6), measured by
+        // `test_ct_dudect_k_elim_extract_k_operand_magnitude`. This test
+        // reports `ok` while that leak is present, and always would.
+        //
+        // It cannot do better, for a reason that is structural rather than a
+        // matter of threshold choice: it times ONE ~590ns call per sample
+        // through a timer whose own floor is ~21ns, so per-call timer noise
+        // swamps a single-digit-nanosecond class difference. Resolving that
+        // effect requires moving the clock outside a batch, which is what the
+        // dudect family does.
+        //
+        // Kept because a gross regression -- a class that suddenly costs 2x --
+        // would still trip it, and that is worth having. Reported loudly so
+        // nobody reads its `ok` as evidence of constant time.
+        //
         // Note: Different input sizes may have different timing characteristics
         // due to division/modulo overhead and cache effects
         let max_median = medians.iter().cloned().fold(0.0f64, f64::max);
@@ -788,6 +809,12 @@ mod constant_time_statistical {
             (max_median - min_median) / max_median
         );
 
+        println!(
+            "  RESOLUTION: this check only fails at >=50% median spread. The real \
+             operand-magnitude effect on extract_k is 0.63% (t=25.6), measured by \
+             test_ct_dudect_k_elim_extract_k_operand_magnitude. An `ok` here is NOT \
+             evidence of constant time."
+        );
         let mut failures: Vec<String> = Vec::new();
         if (max_median - min_median) / max_median >= 0.5 {
             failures.push(format!(

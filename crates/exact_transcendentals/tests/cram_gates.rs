@@ -4,10 +4,16 @@
 //!
 //! The `cram_*` modules each carry their own `#[cfg(test)]` suite. Those test
 //! internals. This target tests the **public contract** — everything here goes
-//! through `exact_transcendentals::…` exactly as a consumer would — and it is
-//! the target CI names as a required step. A regression that a module's own
-//! tests would not see, because it moved a boundary rather than a formula, has
-//! to fail here.
+//! through `exact_transcendentals::…` exactly as a consumer would.
+//!
+//! It is the target that SHOULD be CI's required step for the public contract.
+//! It is not one today: no file under `.github/workflows/` names `cram_gates`,
+//! so nothing selects it beyond the blanket `cargo test --workspace` in
+//! `ci.yml` — and that workflow has not completed a run since 2026-02-25.
+//! Until that changes, this target is a gate only when someone runs it.
+//!
+//! A regression that a module's own tests would not see, because it moved a
+//! boundary rather than a formula, fails here when this target is run.
 //!
 //! # Why gates rather than tests
 //!

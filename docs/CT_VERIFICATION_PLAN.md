@@ -594,6 +594,43 @@ ciphertext path today, and both need this contrast before either is put on one.
 
 ## 5. CI posture
 
+> **NOTHING BELOW IS CURRENTLY RUNNING. Read this before reading the table.**
+>
+> Checked against the GitHub API on 2026-08-22. Thirteen workflows are
+> registered on `Skyelabz210/NINE65_v7` and all report `state: active`.
+> **Twelve of the thirteen have never run once** — `total_count: 0` — and
+> `ct_verification.yml`, the workflow this whole section describes, is one of
+> them. The single workflow that has ever run is `ci.yml`: 39 runs, of which
+> the last ~25 all concluded `failure`; its last run that actually completed
+> was 2026-02-25 and it failed; its most recent run (2026-02-27,
+> `workflow_dispatch`) has been sitting in `queued` ever since and never
+> started. **No workflow of any kind has run in this repository since
+> 2026-02-27.**
+>
+> This is not a trigger misconfiguration. `ct_verification.yml` declares
+> `pull_request` with a paths filter covering `barrett.rs`, `k_elimination.rs`,
+> `rns_fhe.rs` and `security/**`; PR #49 touches all four and still shows zero
+> check runs and zero commit statuses. A commit on `main` records
+> "(CI Fix): Reverted multi-platform builds and fuzzing to resolve
+> billing/spending limit issues", and `CLAUDE.md` records the Cloud Run
+> deployment as "billing paused". Re-enabling Actions is an owner action, not
+> a code change, so this document cannot fix it — only stop misreporting it.
+>
+> **So read the table below as a specification of what these jobs would do,
+> not as a record of what is being enforced.** Every measurement quoted
+> anywhere in this document was produced by running the tests by hand in a
+> session, never by CI. The word "blocking" in the table describes a job's
+> configured behaviour; nothing is blocking anything today.
+>
+> Two consequences worth acting on rather than noting:
+>
+> 1. The YAML/source correspondence — every `test_ct_*` being named by exactly
+>    one job — is now enforced by a unit test,
+>    `workflow_correspondence::every_ct_timing_test_is_named_by_the_workflow_and_vice_versa`,
+>    rather than by a workflow. `cargo test` runs; the workflow does not.
+> 2. A gate that exists only in YAML in this repository is not a gate. When
+>    adding one, put the enforceable part where `cargo test` will reach it.
+
 | Job | Trigger | Blocking | Contents | Threshold |
 |---|---|---|---|---|
 | `verify` | push / PR | yes | source-pattern gates, NTT + Montgomery correctness, harness inventory (18 tests) | n/a |
