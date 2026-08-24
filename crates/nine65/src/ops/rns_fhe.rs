@@ -13028,4 +13028,203 @@ mod tests {
         // anchor_primes count mismatch
         assert!(exact_modulus_switch_drop_poly(&poly, &main, &anchor[..1], 0).is_err());
     }
+
+    // ========================================================================
+    // SEED SURVEY -- public direct-square depth for `secure_128_deep`.
+    //
+    // Resolves the open item in §4 of
+    // `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`. That section recorded two
+    // disagreeing measurements of `secure_128_deep`'s public direct-square
+    // depth: a benchmark run reporting depth 3, and a 2026-08-22 diagnostic
+    // reporting depth 3 decrypting to 255 where 256 was expected -- off by
+    // exactly one, which is the signature of a configuration sitting at the
+    // decryption threshold rather than of a coding error. The section's own
+    // stated resolution was "until someone runs it across seeds", and the
+    // README states the conservative depth 2 in the meantime.
+    //
+    // This is that run. It repeats the identical chain -- encrypt 2, square
+    // through `mul_dual_public`, decrypt against a plaintext tracked in the
+    // clear -- once per seed, and reports the last correct depth for each.
+    //
+    // What the survey can conclude:
+    //   * every seed reaching depth 3  -> depth 3 is a property of the config
+    //     and the README is under-stating it;
+    //   * some seeds reaching 3 and some stopping at 2 -> depth 3 is
+    //     seed-dependent, and 2 is the only depth quotable per §4;
+    //   * every seed stopping at depth 2 -> the benchmark's 3 was the outlier.
+    //
+    // The assertion below is deliberately only the floor (depth >= 2), which is
+    // what the README quotes. The depth-3 question is answered by reading the
+    // printed table, and the answer is recorded in §4 rather than frozen into
+    // an assertion that would convert a seed-dependent observation into a
+    // contract.
+    //
+    // Base 2 is used because it is what the §4 measurement used, so the numbers
+    // are comparable. Note that the chain is degenerate past depth 4: with
+    // t = 65537, depth 4 is 65536 == -1 mod t and every later depth is 1, so a
+    // corrupted chain could re-agree by coincidence. The ceiling is set below
+    // that region.
+
+    /// Seeds surveyed. Fixed and committed so the table is reproducible.
+    #[cfg(test)]
+    const PUBLIC_SQUARE_SURVEY_SEEDS: [u64; 12] = [
+        42, 1, 7, 1234, 20_260_822, 99_991, 31_337, 8_675_309, 2, 555, 123_456_789, 4_294_967_291,
+    ];
+
+    /// Depth ceiling for the survey. Depth 5 and beyond are degenerate for
+    /// base 2 at t = 65537 (every value is 1), so the chain stops at 4.
+    #[cfg(test)]
+    const PUBLIC_SQUARE_SURVEY_MAX_DEPTH: u32 = 4;
+
+    /// Why a chain stopped.
+    #[cfg(test)]
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    enum SquareStop {
+        /// Decryption disagreed with the plaintext tracked in the clear.
+        WrongPlaintext,
+        /// `mul_dual_public` refused (e.g. the tensor-product capacity audit).
+        MultiplyRefused,
+        /// Reached the ceiling still correct -- the depth is a LOWER BOUND.
+        CeilingReached,
+    }
+
+    /// One correctness-gated public squaring chain. Returns the last depth that
+    /// still decrypted correctly, why it stopped, and what the first wrong
+    /// depth decrypted to (so an off-by-one stays visible instead of collapsing
+    /// into "failed").
+    #[cfg(test)]
+    fn public_square_chain_secure_128_deep(seed: u64) -> (u32, SquareStop, Option<(u32, u64, u64)>) {
+        use crate::params::secure_configs::SecureConfig;
+
+        let config = SecureConfig::secure_128_deep().into_config();
+        let ctx = RNSFHEContext::new(&config);
+        let mut rng = ShadowHarvester::with_seed(seed);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+
+        let mut ct = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
+        let mut expected = 2u64 % ctx.t;
+
+        assert_eq!(
+            ctx.decrypt_dual(&ct, &keys.secret_key),
+            expected,
+            "seed {seed}: the FRESH encryption did not decrypt -- setup is \
+             broken and no depth from this chain means anything"
+        );
+
+        let mut last_correct = 0u32;
+
+        for depth in 1..=PUBLIC_SQUARE_SURVEY_MAX_DEPTH {
+            let squared = match ctx.mul_dual_public(&ct, &ct, &keys.eval_key) {
+                Ok(next) => next,
+                Err(_) => return (last_correct, SquareStop::MultiplyRefused, None),
+            };
+            ct = squared;
+            expected = (expected * expected) % ctx.t;
+
+            let decrypted = ctx.decrypt_dual(&ct, &keys.secret_key);
+            if decrypted != expected {
+                return (
+                    last_correct,
+                    SquareStop::WrongPlaintext,
+                    Some((depth, expected, decrypted)),
+                );
+            }
+            last_correct = depth;
+        }
+
+        (last_correct, SquareStop::CeilingReached, None)
+    }
+
+    /// `diag_public_square_depth_seed_survey_secure_128_deep` -- run with:
+    ///
+    /// ```text
+    /// cargo test -p nine65 --lib --release \
+    ///   diag_public_square_depth_seed_survey_secure_128_deep -- --ignored --nocapture
+    /// ```
+    ///
+    /// Ignored by default because it runs twelve independent keygens plus
+    /// forty-eight public multiplies at n = 8192; it is a survey, not a
+    /// regression gate. The floor it asserts (depth >= 2 on every seed) is the
+    /// README's number, and `test_secure_128_deep_public_square_depth_2_floor`
+    /// pins that same floor on one seed inside the running suite.
+    #[test]
+    #[ignore = "SURVEY: 12 keygens + 48 public multiplies at n=8192. Answers §4 of docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md; run with --ignored --nocapture"]
+    fn diag_public_square_depth_seed_survey_secure_128_deep() {
+        println!(
+            "\n=== secure_128_deep: public direct-square depth across {} seeds ===\n\
+             base 2, mul_dual_public, decryption-oracle gated, ceiling {}\n\
+             {:<14} {:>12}  {:<18} {}",
+            PUBLIC_SQUARE_SURVEY_SEEDS.len(),
+            PUBLIC_SQUARE_SURVEY_MAX_DEPTH,
+            "seed",
+            "last correct",
+            "stop",
+            "first wrong depth"
+        );
+
+        let mut results: Vec<(u64, u32)> = Vec::new();
+
+        for &seed in PUBLIC_SQUARE_SURVEY_SEEDS.iter() {
+            let (depth, stop, first_wrong) = public_square_chain_secure_128_deep(seed);
+            println!(
+                "{:<14} {:>12}  {:<18} {}",
+                seed,
+                depth,
+                format!("{stop:?}"),
+                match first_wrong {
+                    Some((d, want, got)) => format!("depth {d}: want {want}, got {got}"),
+                    None => "-".to_string(),
+                }
+            );
+            results.push((seed, depth));
+        }
+
+        let min = results.iter().map(|(_, d)| *d).min().unwrap();
+        let max = results.iter().map(|(_, d)| *d).max().unwrap();
+        let reached_3 = results.iter().filter(|(_, d)| *d >= 3).count();
+
+        println!(
+            "\nlast-correct depth: min {min}, max {max}; {reached_3}/{} seeds reached depth 3\n\
+             {}\n=== end survey ===\n",
+            results.len(),
+            if min == max {
+                format!("VERDICT: depth {min} is seed-independent across this sample.")
+            } else {
+                format!(
+                    "VERDICT: SEED-DEPENDENT between {min} and {max}. Only depth {min} is \
+                     quotable; §4's off-by-one reading stands."
+                )
+            }
+        );
+
+        for (seed, depth) in results {
+            assert!(
+                depth >= 2,
+                "seed {seed}: public direct-square depth {depth} is below the \
+                 depth 2 the README states for secure_128_deep. Either the \
+                 README is wrong or this is a regression -- do not relax this \
+                 floor without re-running the survey and updating §4."
+            );
+        }
+    }
+
+    /// The README's `secure_128_deep` public direct-square depth is 2. Pin that
+    /// floor inside the RUNNING suite on one seed, so a regression below it is
+    /// caught without waiting for someone to run the ignored survey above.
+    ///
+    /// This asserts the floor only. Whether depth 3 also holds is a seed
+    /// question answered by
+    /// `diag_public_square_depth_seed_survey_secure_128_deep` and recorded in
+    /// §4 of `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
+    #[test]
+    fn test_secure_128_deep_public_square_depth_2_floor() {
+        let (depth, stop, first_wrong) = public_square_chain_secure_128_deep(42);
+        assert!(
+            depth >= 2,
+            "secure_128_deep public direct-square depth is {depth} on seed 42 \
+             (stop: {stop:?}, first wrong: {first_wrong:?}), below the depth 2 \
+             stated in README.md's verified capability table"
+        );
+    }
+
 }
