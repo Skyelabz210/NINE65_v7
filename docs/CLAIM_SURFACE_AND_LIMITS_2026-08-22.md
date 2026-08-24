@@ -33,7 +33,7 @@ retired claim.
 | Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth (last correct) | public refresh |
 |---|---|---|---|---|---|---|---|
 | `secure_128` | 8192 | 3 | 90 | 158.994 ms (4x5) | 44.371 ms | 2 | **refused — corrupts** |
-| `secure_128_deep` | 8192 | 4 | 119 | 207.956 ms | 47.262 ms | 2 (see §4) | pass |
+| `secure_128_deep` | 8192 | 4 | 119 | 207.956 ms | 47.262 ms | 2 (seed-robust floor; §4) | pass |
 | `secure_192` | 16384 | 5 | 146 | 564.238 ms | 122.927 ms | 3 | pass |
 | `secure_256` | 16384 | 6 | 175 | 520.801 ms | 129.971 ms | 4 (unverified here) | pass (via acceptance suite) |
 
@@ -46,8 +46,10 @@ Provenance, column by column:
   and no raw artifact is archived for them here. Treat as indicative until
   reproduced under `docs/BENCHMARK_PROFILE_POLICY.md`.
 - **public direct-square depth** — re-measured 2026-08-22 for `secure_128`,
-  `secure_128_deep`, `secure_192` (see §3). `secure_256` is the benchmark's
-  figure, not re-measured.
+  `secure_128_deep`, `secure_192` (see §3). `secure_128_deep`'s figure was
+  surveyed across twelve seeds on 2026-08-24 and is the seed-robust floor: 11
+  of 12 seeds reach depth 3 and one does not, so 2 is the number that holds on
+  every seed (§4). `secure_256` is the benchmark's figure, not re-measured.
 - **public refresh** — re-measured 2026-08-22 for the same three configs
   (§3). `secure_256` was not exercised standalone in this pass; its "pass" comes
   from `ops::auto_bootstrap`'s
@@ -206,20 +208,82 @@ deliberate. Re-run the diagnostic before changing the constants, not after.
 
 ---
 
-## 4. Open discrepancy: `secure_128_deep` public depth 3
+## 4. Resolved: `secure_128_deep` public depth 3 is seed-dependent
 
-The benchmark table (§1) records `secure_128_deep` at public direct-square
-depth 3. The 2026-08-22 diagnostic re-measurement records depth 3 returning
-**255 where 256 was expected** — off by exactly one — making the last correct
-depth 2 under that run.
+**Status: closed 2026-08-24.** This section previously recorded an unresolved
+disagreement — the benchmark table (§1) put `secure_128_deep` at public
+direct-square depth 3, while the 2026-08-22 diagnostic re-measurement recorded
+depth 3 returning **255 where 256 was expected**, off by exactly one, which made
+the last correct depth 2 under that run. The stated resolution path was to run
+the chain across seeds. That has now been done, and the off-by-one reading was
+correct: **depth 3 holds on most seeds and fails on some.** Both measurements
+were describing the same configuration honestly; neither was an error.
 
-Not resolved in this pass. The two runs differ in at least seed and harness
-(`ShadowHarvester::with_seed(42)`, `mul_dual_public`, repeated squaring of 2).
-An off-by-one at the boundary is the signature of a configuration sitting right
-at the decryption threshold rather than of a coding error, which would make
-`secure_128_deep`'s depth-3 public capability **seed-dependent**. Until someone
-runs it across seeds, the README states depth 2 for this config and this
-paragraph is the reason.
+Produced by `ops::rns_fhe::tests::diag_public_square_depth_seed_survey_secure_128_deep`:
+
+```
+cargo test -p nine65 --lib --release \
+  diag_public_square_depth_seed_survey_secure_128_deep -- --ignored --nocapture
+```
+
+Twelve independent chains, one per seed. Each encrypts `2`, squares through
+`mul_dual_public`, and decrypts against a plaintext tracked in the clear; a
+depth counts as reached only if the decryption agrees. Ceiling 4, because base 2
+at `t = 65537` is degenerate past that point (depth 4 is `65536 == -1 mod t`,
+and every later depth is 1, so a corrupted chain could re-agree by coincidence).
+
+| seed | last correct depth | first wrong depth | expected | decrypted |
+|---|---|---|---|---|
+| 42 | 3 | 4 | 65536 | 45632 |
+| 1 | 3 | 4 | 65536 | 36479 |
+| 7 | 3 | 4 | 65536 | 58909 |
+| 1234 | 3 | 4 | 65536 | 15705 |
+| 20260822 | 3 | 4 | 65536 | 44749 |
+| 99991 | 3 | 4 | 65536 | 18738 |
+| 31337 | 3 | 4 | 65536 | 50007 |
+| 8675309 | 3 | 4 | 65536 | 19279 |
+| 2 | 3 | 4 | 65536 | 25181 |
+| **555** | **2** | **3** | **256** | **257** |
+| 123456789 | 3 | 4 | 65536 | 18397 |
+| 4294967291 | 3 | 4 | 65536 | 42146 |
+
+Three readings, and the third is the one that matters:
+
+1. **Depth 3 is seed-dependent: 11 of 12 seeds reach it, seed 555 does not.**
+   A capability that fails on 1 seed in 12 is not a capability that can be
+   quoted as a flat number. `secure_128_deep`'s public direct-square depth is
+   **2** on the public claim surface — the seed-robust floor, not the modal
+   result. The README's number stands and is now measured rather than assumed.
+
+2. **The failure at depth 3 is an off-by-one, and the failure at depth 4 is
+   not.** Seed 555 misses depth 3 by exactly one in the *positive* direction
+   (257 for 256); the 2026-08-22 diagnostic missed it by exactly one in the
+   negative direction (255 for 256). Every depth-4 failure, by contrast, is
+   wrong by tens of thousands. That is the difference between a chain sitting
+   *at* the decryption threshold, where which side of it a given key lands on is
+   decided by the noise a particular seed happens to draw, and a chain that has
+   simply run out of budget. Depth 3 is the threshold; depth 4 is the wall.
+   No seed reached depth 4, so 3 is the ceiling of the capability even where it
+   works.
+
+3. **Neither original measurement was wrong.** The benchmark saw a seed that
+   cleared the threshold; the diagnostic saw one that did not. Recording the
+   disagreement rather than picking a winner is what made this resolvable —
+   averaging them, or quietly keeping the higher number, would have shipped a
+   depth that one run in twelve contradicts.
+
+The survey is `#[ignore]`d: it is twelve keygens plus forty-eight public
+multiplies at `n = 8192` (~37 s), which is a survey, not a regression gate. The
+floor it establishes is pinned inside the **running** suite by
+`ops::rns_fhe::tests::test_secure_128_deep_public_square_depth_2_floor`, so a
+regression below depth 2 fails the ordinary test run. Nothing asserts depth 3,
+deliberately: freezing a seed-dependent observation into a contract is the
+failure mode this section exists to document.
+
+Not measured here: whether the seed-dependence narrows under a different base,
+a different chain shape (`ct x Enc(1)` rather than `ct x ct`), or the
+`generate_keys_dual_full_public_deep` key path. Twelve seeds bound the effect;
+they do not explain it.
 
 ---
 

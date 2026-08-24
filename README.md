@@ -30,7 +30,13 @@ this table is outside the claim surface.
 | `secure_256` | 16384 | 6 | 175 | 1017.91 ms | 262.96 ms | 4 ‡ | pass ‡ |
 
 † Direct squaring **without** refresh — the last depth that still decrypts
-correctly. ‡ `secure_256`'s depth is from the correctness-gated benchmark run;
+correctly. These depths are seed-sensitive at the boundary, so where a config
+has been surveyed the column states the depth that holds on *every* seed, not
+the modal one. Only `secure_128_deep` has been surveyed so far (12 seeds,
+2026-08-24): 11 reach depth 3 and one fails it by exactly one, so the column
+states 2. The other three rows are single-seed measurements and their depths
+should be read as provisional in the same way. See §4 of the claim-surface doc.
+‡ `secure_256`'s depth is from the correctness-gated benchmark run;
 its refresh is covered by the auto-refresh acceptance suite rather than
 exercised standalone. Per-number provenance is in
 `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
