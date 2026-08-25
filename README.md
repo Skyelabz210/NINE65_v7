@@ -115,20 +115,70 @@ Xeon 2.80 GHz, load average 1–22 during the runs. Run-to-run spread on
 `secure_128` public mul across four separate invocations was 281–302 ms, so
 treat the third significant figure as noise.
 
-### These numbers replaced smaller ones, and the smaller ones were not ours
+### Why these replaced the previous figures
 
 The previous table quoted 158.994 ms for `secure_128` public mul; `CLAUDE.md`
-quoted 152.13 ms, with 23.56 ms encrypt and 11.06 ms decrypt. Measured here,
-public mul is roughly **2× slower** than those figures while encrypt and
-decrypt are **4–5× faster**. A split like that is not hardware scaling — it
-means the old figures did not come from one machine running this code.
+quoted 152.13 ms alongside 23.56 ms encrypt, 0.83 ms add and 11.06 ms decrypt.
 
-That was checked rather than assumed. The pre-session baseline commit
-`b03aa4a` was built in a separate worktree and measured with the identical
-harness: **301.55 ms** for `secure_128` public mul, against 281–302 ms at
-`HEAD`. Every config matched within noise. **No change in this repository made
-anything slower** — the older figures simply describe a different machine, and
-had no provenance recorded.
+Rather than guess at the discrepancy, the commit that recorded those numbers —
+`364bd6a`, 2026-02-24 — was checked out in a worktree and measured on **this**
+machine with an equivalent harness:
+
+| | recorded at `364bd6a` | measured at `364bd6a`, here | verdict |
+|---|---|---|---|
+| Encrypt | 23.56 ms | 21.96 ms | reproduces |
+| Add | 0.83 ms | 0.672 ms | reproduces |
+| **Public mul** | **152.13 ms** | **316.54 ms** | **does not reproduce, 2.1× off** |
+| Decrypt | 11.06 ms | 10.14 ms | reproduces |
+
+Three of the four reproduce within 20%, stable over three runs. So this machine
+is comparable to whatever produced them, and the discrepancy is **not**
+hardware. One number was simply wrong, and was already wrong when it was
+written: `secure_128` public mul has never measured ~152 ms on this code.
+
+The `158.994 ms` figure was worse — it was introduced during the 2026-08-22
+session at `877e227`, into a table with no stated source, and never measured at
+all.
+
+### The February figures are not comparable to these, and neither is any
+### cross-time comparison keyed on a config name
+
+`secure_128` was **redefined** between February and August:
+
+| | `364bd6a` (2026-02-24) | current |
+|---|---|---|
+| ring degree | **N = 4096** | **N = 8192** |
+| lanes | 3 main | 3 main + 5 anchor = 8 |
+
+The constructor's own comment records why — "Increased from 4096 to maintain
+security with larger Q". `add`, `encrypt` and `decrypt` are all O(N × lanes), so
+the current `secure_128` does roughly **3.2× the work** of February's under the
+same name.
+
+That makes every February-to-now delta meaningless as stated, and an earlier
+revision of this section published one anyway — including a claimed "~2× `add`
+regression" (0.672 ms → 1.405 ms). **There is no such regression.** Measured
+with a tight-loop probe, `add` is 0.207 ms at `364bd6a` and 1.04 ms now, a 5.0×
+ratio against a ~3.2× work ratio; the remainder is memory and allocation
+scaling, not a defect. The claim has been withdrawn rather than rescaled,
+because dividing measurements by an estimated work ratio produces an estimate,
+not a measurement.
+
+Two things were checked and eliminated before the shape change was found: the
+release profile (`lto = "fat"`, `codegen-units = 1` versus cargo's defaults
+measures 1.03 ms against 0.85–1.01 ms at `HEAD` — overlapping, nowhere near
+5×), and a `git bisect` across all 274 commits in the range, which converged on
+a commit whose tree is a divergent re-import rather than a behavioural change.
+
+What survives, because it was measured at a single commit with a single config:
+the `152.13 ms` public-mul figure recorded at `364bd6a` does not reproduce **at
+`364bd6a` itself**, where the same N=4096 `secure_128` measures 316.54 ms over
+three runs. That figure was wrong when written.
+
+And the session-scope conclusion is unaffected, because it compares two commits
+that share a config definition: `b03aa4a` built in a separate worktree measured
+301.55 ms for `secure_128` public mul against 281–302 ms at `HEAD`, with every
+config matching within noise.
 
 ### MANA and UNHAL are the default, and are verified to engage
 

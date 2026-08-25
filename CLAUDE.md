@@ -204,16 +204,46 @@ decrypts and asserts exactness, so no timing comes from a wrong answer.
 Reproduce:
   cargo test -p nine65 --test op_timings --release --features allow_insecure -- --ignored --nocapture
 
-The figures previously recorded here (secure_128 Encrypt 23.56ms | Mul 152.13ms
-| Decrypt 11.06ms; secure_192 Mul 459.02ms; "Depth 50" wall-clocks) had no
-recorded provenance and do not describe this machine — public mul measures ~2x
-slower than they state while encrypt and decrypt measure 4-5x faster, which is
-not a hardware-scaling pattern. Checked rather than assumed: the pre-session
-baseline commit b03aa4a, built in a separate worktree and measured with the
-identical harness, gives 301.55ms for secure_128 public mul against 281-302ms at
-HEAD. Nothing in this repository made anything slower. The "Depth 50" line is
-also inconsistent with the measured public direct-square depths of 2-4 in
-README.md and is not reinstated.
+On the figures previously recorded here (secure_128 Encrypt 23.56ms | Add 0.83ms
+| Mul 152.13ms | Decrypt 11.06ms): the commit that wrote them, 364bd6a
+(2026-02-24), was checked out in a worktree and measured on this machine.
+Encrypt (21.96ms), Add (0.672ms) and Decrypt (10.14ms) all REPRODUCE within 20%,
+stable over three runs. Public mul does not: 316.54ms measured against 152.13ms
+recorded. So this machine is comparable to whatever produced them and the
+discrepancy is not hardware — the mul figure was simply wrong when written, and
+secure_128 public mul has never measured ~152ms on this code.
+
+A caution that matters more than the numbers: `secure_128` was REDEFINED
+between February and August. At 364bd6a it was N=4096 with 3 main primes; it is
+now N=8192 with 3 main + 5 anchor lanes ("Increased from 4096 to maintain
+security with larger Q"). Encrypt, add and decrypt are all O(N x lanes), so the
+current secure_128 does roughly 3.2x the work of February's under the same name.
+Any Feb-to-now delta keyed on the config NAME is therefore meaningless.
+
+An earlier revision of this file published such a delta anyway, including a
+claimed ~2x `add` regression. THERE IS NO ADD REGRESSION. Measured with a
+tight-loop probe, add is 0.207ms at 364bd6a and 1.04ms now -- a 5.0x ratio
+against a ~3.2x work ratio, the remainder being memory and allocation scaling.
+The claim is withdrawn rather than rescaled: dividing a measurement by an
+estimated work ratio yields an estimate, not a measurement. Eliminated first:
+the release profile (lto=fat/cgu=1 measures 1.03ms vs cargo defaults 0.85-1.01ms
+at HEAD, nowhere near 5x) and a git bisect over all 274 commits in the range,
+which converged on a commit whose tree is a divergent re-import rather than a
+behavioural change.
+
+What survives, because it was measured at ONE commit with ONE config: the
+152.13ms public-mul figure recorded at 364bd6a does not reproduce at 364bd6a
+itself, where the same N=4096 secure_128 measures 316.54ms over three runs. That
+figure was wrong when written. Encrypt (21.96ms), Add (0.672ms) and Decrypt
+(10.14ms) all DO reproduce there within 20%, so the machine is not the
+explanation.
+
+The session-scope conclusion is unaffected, because it compares two commits that
+share a config definition: b03aa4a built in a separate worktree gives 301.55ms
+for secure_128 public mul against 281-302ms at HEAD. Nothing in the 2026-08-22
+session made anything slower. The "Depth 50" line is separately inconsistent
+with the measured public direct-square depths of 2-4 in README.md and is not
+reinstated.
 
 RNS 4-lane micro-numbers (ADD 65.7ns / MUL 95.6ns) are likewise un-provenanced
 and were not re-measured; treat them as unverified until they are.
