@@ -140,24 +140,45 @@ The `158.994 ms` figure was worse — it was introduced during the 2026-08-22
 session at `877e227`, into a table with no stated source, and never measured at
 all.
 
-What the February baseline does show, once measured instead of quoted:
+### The February figures are not comparable to these, and neither is any
+### cross-time comparison keyed on a config name
 
-| | `364bd6a` (Feb) | current | change |
-|---|---|---|---|
-| Encrypt | 21.96 ms | 5.38 ms | **4.1× faster** |
-| Add | 0.672 ms | 1.405 ms | **2.1× slower** |
-| Public mul | 316.54 ms | 292.40 ms | 1.08× faster |
-| Decrypt | 10.14 ms | 1.83 ms | **5.5× faster** |
+`secure_128` was **redefined** between February and August:
 
-Encrypt and decrypt improved substantially over six months; public mul is
-roughly flat. **`add` is a genuine ~2× regression** — small in absolute terms
-(0.7 ms) but real, and it predates the 2026-08-22 baseline `b03aa4a`, which
-measured 1.219 ms. It is recorded here rather than fixed, and is not yet
-root-caused.
+| | `364bd6a` (2026-02-24) | current |
+|---|---|---|
+| ring degree | **N = 4096** | **N = 8192** |
+| lanes | 3 main | 3 main + 5 anchor = 8 |
 
-Nothing in the 2026-08-22 session made anything slower: `b03aa4a` built in a
-separate worktree measured **301.55 ms** for `secure_128` public mul against
-281–302 ms at `HEAD`, with every config matching within noise.
+The constructor's own comment records why — "Increased from 4096 to maintain
+security with larger Q". `add`, `encrypt` and `decrypt` are all O(N × lanes), so
+the current `secure_128` does roughly **3.2× the work** of February's under the
+same name.
+
+That makes every February-to-now delta meaningless as stated, and an earlier
+revision of this section published one anyway — including a claimed "~2× `add`
+regression" (0.672 ms → 1.405 ms). **There is no such regression.** Measured
+with a tight-loop probe, `add` is 0.207 ms at `364bd6a` and 1.04 ms now, a 5.0×
+ratio against a ~3.2× work ratio; the remainder is memory and allocation
+scaling, not a defect. The claim has been withdrawn rather than rescaled,
+because dividing measurements by an estimated work ratio produces an estimate,
+not a measurement.
+
+Two things were checked and eliminated before the shape change was found: the
+release profile (`lto = "fat"`, `codegen-units = 1` versus cargo's defaults
+measures 1.03 ms against 0.85–1.01 ms at `HEAD` — overlapping, nowhere near
+5×), and a `git bisect` across all 274 commits in the range, which converged on
+a commit whose tree is a divergent re-import rather than a behavioural change.
+
+What survives, because it was measured at a single commit with a single config:
+the `152.13 ms` public-mul figure recorded at `364bd6a` does not reproduce **at
+`364bd6a` itself**, where the same N=4096 `secure_128` measures 316.54 ms over
+three runs. That figure was wrong when written.
+
+And the session-scope conclusion is unaffected, because it compares two commits
+that share a config definition: `b03aa4a` built in a separate worktree measured
+301.55 ms for `secure_128` public mul against 281–302 ms at `HEAD`, with every
+config matching within noise.
 
 ### MANA and UNHAL are the default, and are verified to engage
 
