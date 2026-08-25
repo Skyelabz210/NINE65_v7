@@ -115,20 +115,49 @@ Xeon 2.80 GHz, load average 1–22 during the runs. Run-to-run spread on
 `secure_128` public mul across four separate invocations was 281–302 ms, so
 treat the third significant figure as noise.
 
-### These numbers replaced smaller ones, and the smaller ones were not ours
+### Why these replaced the previous figures
 
 The previous table quoted 158.994 ms for `secure_128` public mul; `CLAUDE.md`
-quoted 152.13 ms, with 23.56 ms encrypt and 11.06 ms decrypt. Measured here,
-public mul is roughly **2× slower** than those figures while encrypt and
-decrypt are **4–5× faster**. A split like that is not hardware scaling — it
-means the old figures did not come from one machine running this code.
+quoted 152.13 ms alongside 23.56 ms encrypt, 0.83 ms add and 11.06 ms decrypt.
 
-That was checked rather than assumed. The pre-session baseline commit
-`b03aa4a` was built in a separate worktree and measured with the identical
-harness: **301.55 ms** for `secure_128` public mul, against 281–302 ms at
-`HEAD`. Every config matched within noise. **No change in this repository made
-anything slower** — the older figures simply describe a different machine, and
-had no provenance recorded.
+Rather than guess at the discrepancy, the commit that recorded those numbers —
+`364bd6a`, 2026-02-24 — was checked out in a worktree and measured on **this**
+machine with an equivalent harness:
+
+| | recorded at `364bd6a` | measured at `364bd6a`, here | verdict |
+|---|---|---|---|
+| Encrypt | 23.56 ms | 21.96 ms | reproduces |
+| Add | 0.83 ms | 0.672 ms | reproduces |
+| **Public mul** | **152.13 ms** | **316.54 ms** | **does not reproduce, 2.1× off** |
+| Decrypt | 11.06 ms | 10.14 ms | reproduces |
+
+Three of the four reproduce within 20%, stable over three runs. So this machine
+is comparable to whatever produced them, and the discrepancy is **not**
+hardware. One number was simply wrong, and was already wrong when it was
+written: `secure_128` public mul has never measured ~152 ms on this code.
+
+The `158.994 ms` figure was worse — it was introduced during the 2026-08-22
+session at `877e227`, into a table with no stated source, and never measured at
+all.
+
+What the February baseline does show, once measured instead of quoted:
+
+| | `364bd6a` (Feb) | current | change |
+|---|---|---|---|
+| Encrypt | 21.96 ms | 5.38 ms | **4.1× faster** |
+| Add | 0.672 ms | 1.405 ms | **2.1× slower** |
+| Public mul | 316.54 ms | 292.40 ms | 1.08× faster |
+| Decrypt | 10.14 ms | 1.83 ms | **5.5× faster** |
+
+Encrypt and decrypt improved substantially over six months; public mul is
+roughly flat. **`add` is a genuine ~2× regression** — small in absolute terms
+(0.7 ms) but real, and it predates the 2026-08-22 baseline `b03aa4a`, which
+measured 1.219 ms. It is recorded here rather than fixed, and is not yet
+root-caused.
+
+Nothing in the 2026-08-22 session made anything slower: `b03aa4a` built in a
+separate worktree measured **301.55 ms** for `secure_128` public mul against
+281–302 ms at `HEAD`, with every config matching within noise.
 
 ### MANA and UNHAL are the default, and are verified to engage
 

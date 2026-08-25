@@ -204,16 +204,24 @@ decrypts and asserts exactness, so no timing comes from a wrong answer.
 Reproduce:
   cargo test -p nine65 --test op_timings --release --features allow_insecure -- --ignored --nocapture
 
-The figures previously recorded here (secure_128 Encrypt 23.56ms | Mul 152.13ms
-| Decrypt 11.06ms; secure_192 Mul 459.02ms; "Depth 50" wall-clocks) had no
-recorded provenance and do not describe this machine — public mul measures ~2x
-slower than they state while encrypt and decrypt measure 4-5x faster, which is
-not a hardware-scaling pattern. Checked rather than assumed: the pre-session
-baseline commit b03aa4a, built in a separate worktree and measured with the
-identical harness, gives 301.55ms for secure_128 public mul against 281-302ms at
-HEAD. Nothing in this repository made anything slower. The "Depth 50" line is
-also inconsistent with the measured public direct-square depths of 2-4 in
-README.md and is not reinstated.
+On the figures previously recorded here (secure_128 Encrypt 23.56ms | Add 0.83ms
+| Mul 152.13ms | Decrypt 11.06ms): the commit that wrote them, 364bd6a
+(2026-02-24), was checked out in a worktree and measured on this machine.
+Encrypt (21.96ms), Add (0.672ms) and Decrypt (10.14ms) all REPRODUCE within 20%,
+stable over three runs. Public mul does not: 316.54ms measured against 152.13ms
+recorded. So this machine is comparable to whatever produced them and the
+discrepancy is not hardware — the mul figure was simply wrong when written, and
+secure_128 public mul has never measured ~152ms on this code.
+
+Measured Feb -> now: Encrypt 21.96 -> 5.38ms (4.1x faster), Decrypt 10.14 ->
+1.83ms (5.5x faster), Mul 316.54 -> 292.40ms (roughly flat), Add 0.672 ->
+1.405ms (2.1x SLOWER). That add regression is real, predates the 2026-08-22
+baseline b03aa4a (which measured 1.219ms), and is not yet root-caused.
+
+Nothing in the 2026-08-22 session made anything slower: b03aa4a built in a
+separate worktree gives 301.55ms for secure_128 public mul against 281-302ms at
+HEAD. The "Depth 50" line is separately inconsistent with the measured public
+direct-square depths of 2-4 in README.md and is not reinstated.
 
 RNS 4-lane micro-numbers (ADD 65.7ns / MUL 95.6ns) are likewise un-provenanced
 and were not re-measured; treat them as unverified until they are.
