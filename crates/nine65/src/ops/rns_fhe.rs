@@ -3712,6 +3712,208 @@ impl RNSFHEContext {
         }
     }
 
+    /// M2b — the elimination-first rescale on a MANUFACTURED chain.
+    ///
+    /// Computes `round((X + Δ/2)/Δ)` per coefficient with **no materialization
+    /// of the value**: no `to_u256_level`, no U256, no Garner. The pipeline is
+    /// `arithmetic::unified_rescale`'s align-and-drop (each Δ-lane drop is a
+    /// cross-lane READ of the dropped lane's residue — never a running value),
+    /// a direct γ read off the surviving t-lane, and a winding read over a
+    /// capacity-certified anchor subset merged by parallel-summation CRT (R8).
+    ///
+    /// # Signedness (the shift trick)
+    ///
+    /// Tensor coefficients are signed (negacyclic convolution subtracts),
+    /// and the dual-tracked exact integer is the product of the UNSIGNED
+    /// representative polynomials — coefficients in `[0, Q)`, NOT centered
+    /// (assuming centered inputs here under-sizes every bound by 2× and the
+    /// winding then aliases by exactly the ladder capacity C; measured, the
+    /// recovered offset was t·C to the digit). Sound bounds: a single
+    /// negacyclic product is within `±N·Q²`; the `d1` component is a SUM OF
+    /// TWO products, within `±2N·Q²`. The unsigned drop pipeline is applied
+    /// to `X'' = X + S` with `S = 2N·Q² ≥ |X|`, a multiple of `Δ`
+    /// (`S = Δ·2N·Q·t`), so `round((X+S+Δ/2)/Δ) = round((X+Δ/2)/Δ) + 2NQt`
+    /// exactly. `S` and the correction are `≡ 0` modulo every MAIN lane and
+    /// modulo `Q` itself (`Q | S`), so the shift touches only anchor lanes,
+    /// with constants derived from the construction (G5-clean), and
+    /// canonicalization below reduces to `Y'' mod Q`.
+    ///
+    /// # Capacity certificate (lift-inventory R5 / `K_EXACT_BOUNDED`)
+    ///
+    /// The shifted winding satisfies `K'' = ⌊Y''/t⌋ ≤ 4·N·Q + 1`. The anchor
+    /// subset is chosen so its product `C` exceeds that bound within
+    /// `u128::MAX`; the method returns a typed error when no such subset
+    /// exists rather than aliasing the winding.
+    ///
+    /// # Preconditions
+    ///
+    /// Manufactured chain (`t | Q` with `t` itself a main lane), ciphertext at
+    /// full level. Typed errors otherwise — this path never rounds or guesses.
+    fn k_elim_rescale_manufactured(&self, poly: &DualRNSPoly) -> Nine65Result<DualRNSPoly> {
+        use crate::arithmetic::unified_rescale::{
+            exact_delta_rescale, DeltaRounding, RescaleChain, RescaleExit,
+        };
+
+        if self.q_product % self.t as u128 != 0 {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "manufactured rescale requires t | Q (manufactured chain); \
+                     Q mod t = {} — this is a hunted chain",
+                    self.q_product % self.t as u128
+                ),
+            });
+        }
+        let lanes: Vec<u64> = self.config.primes.clone();
+        if poly.main.len() != lanes.len() {
+            return Err(Nine65Error::InvalidParameter {
+                message: "manufactured rescale requires a full-level ciphertext".into(),
+            });
+        }
+        let t_idx = lanes.iter().position(|&p| p == self.t).ok_or_else(|| {
+            Nine65Error::InvalidParameter {
+                message: "manufactured rescale requires t itself to be a main lane".into(),
+            }
+        })?;
+        let delta_idx: Vec<usize> = (0..lanes.len()).filter(|&i| i != t_idx).collect();
+
+        // Winding capacity certificate: C > 4·N·Q + 1, C within u128.
+        let two_nq = (4 * self.n as u128)
+            .checked_mul(self.q_product)
+            .and_then(|x| x.checked_add(1))
+            .ok_or(Nine65Error::Overflow {
+                operation: "manufactured rescale: 4·N·Q + 1",
+            })?;
+        let mut sel: Vec<u64> = Vec::new();
+        let mut cap: u128 = 1;
+        for &a in &self.dual_rns.anchor.primes {
+            match cap.checked_mul(a as u128) {
+                Some(nc) => {
+                    cap = nc;
+                    sel.push(a);
+                    if cap > two_nq {
+                        break;
+                    }
+                }
+                None => break,
+            }
+        }
+        if cap <= two_nq {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "manufactured rescale: winding capacity certificate unsatisfiable \
+                     in u128 (need > 2NQ = {two_nq}, best C = {cap})"
+                ),
+            });
+        }
+        let chain = RescaleChain::new(&lanes, &delta_idx, self.t, &sel)?;
+
+        // Shift constants, derived per anchor: S = N·Q² and NQt = N·Q·t.
+        let n_u = self.n as u128;
+        let all_anchors = &self.dual_rns.anchor.primes;
+        // S = 2N·Q² per selected anchor, derived from the construction.
+        let s_mod: Vec<u64> = sel
+            .iter()
+            .map(|&a| {
+                let a128 = a as u128;
+                let q_a = self.q_product % a128;
+                (((2 * n_u) % a128) * (q_a * q_a % a128) % a128) as u64
+            })
+            .collect();
+
+        let n_coeff = poly.n;
+        let mut main_out: Vec<Vec<u64>> = lanes.iter().map(|_| vec![0u64; n_coeff]).collect();
+        let mut anchor_out: Vec<Vec<u64>> =
+            all_anchors.iter().map(|_| vec![0u64; n_coeff]).collect();
+
+        let mut main_res = vec![0u64; lanes.len()];
+        let mut sel_res = vec![0u64; sel.len()];
+        for j in 0..n_coeff {
+            for (i, limb) in poly.main.iter().enumerate() {
+                main_res[i] = limb[j];
+            }
+            for (k, &sm) in s_mod.iter().enumerate() {
+                let a = sel[k];
+                sel_res[k] = ((poly.anchor[k][j] as u128 + sm as u128) % a as u128) as u64;
+            }
+            let out = exact_delta_rescale(
+                &chain,
+                &main_res,
+                &sel_res,
+                DeltaRounding::NearestHalfUp,
+                RescaleExit::ModulusReduced,
+            )?;
+            // Y'' mod Q semantics: the result represents round((X+S+Δ/2)/Δ)
+            // reduced mod Q. The shift S contributes S/Δ = N·Q·t/2 ≡ 0
+            // (mod Q), so this equals round((X+Δ/2)/Δ) mod Q — the full-
+            // integer rescale reduced to canonical range. Per-component
+            // centering is deliberately NOT applied: the three components'
+            // t·k̂ terms must survive so the s-weighted sum telescopes back
+            // to X_total/Δ (per-component centering breaks the degree-2
+            // decryption identity; measured). Composed base-plus-lift from
+            // (γ, K) under the K < C certificate — lift-inventory R4,
+            // fixed-width U256, not the retired iterative-CRT path.
+            let y = U256::from_u128(out.winding_k)
+                .mul_u64(self.t)
+                .add(U256::from_u128(out.gamma));
+            let y_star = y.rem_u256(U256::from_u128(self.q_product));
+            for (i, &p) in self.config.primes.iter().enumerate() {
+                main_out[i][j] = y_star.mod_u64(p);
+            }
+            for (k, &a) in all_anchors.iter().enumerate() {
+                anchor_out[k][j] = y_star.mod_u64(a);
+            }
+        }
+        Ok(DualRNSPoly {
+            main: main_out,
+            anchor: anchor_out,
+            n: n_coeff,
+        })
+    }
+
+    /// M2b — public ct × ct multiplication with the elimination-first rescale.
+    ///
+    /// Identical pipeline to [`Self::mul_dual_public`] (tensor → rescale →
+    /// relinearize → fold → winding reset) with the rescale swapped from the
+    /// materializing `k_elim_rescale_dual` to
+    /// [`Self::k_elim_rescale_manufactured`]. Requires a manufactured chain.
+    /// The relinearization step (`extract_digit_dual`) still materializes —
+    /// that is milestone M3; until it lands this multiply remains recorded as
+    /// an R8 materialization in the CRAM-public ledger, with the rescale half
+    /// already elimination-first.
+    pub fn mul_dual_public_manufactured(
+        &self,
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+        evk: &DualRNSEvalKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let log2_n = 64 - self.n.leading_zeros() - 1;
+        let q_bits =
+            crate::noise::boundary::rns_product_bit_length(&self.config.primes[..ct1.level]);
+        let required_bits = log2_n + 2 * q_bits;
+        let diag = self.dual_rns.audit_capacity(required_bits, false);
+        diag.to_result(false)?;
+
+        let d0 = self.dual_poly_mul(&ct1.c0, &ct2.c0);
+        let c0_1_c1_2 = self.dual_poly_mul(&ct1.c0, &ct2.c1);
+        let c1_1_c0_2 = self.dual_poly_mul(&ct1.c1, &ct2.c0);
+        let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
+        let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
+
+        let d0_s = self.k_elim_rescale_manufactured(&d0)?;
+        let d1_s = self.k_elim_rescale_manufactured(&d1)?;
+        let d2_s = self.k_elim_rescale_manufactured(&d2)?;
+
+        let (relin_c0, relin_c1) = self.relinearize_dual(&d2_s, evk)?;
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&d0_s, &relin_c0));
+        let c1_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&d1_s, &relin_c1));
+        let level = c0_new.main.len();
+        Ok(DualRNSCiphertext {
+            c0: c0_new,
+            c1: c1_new,
+            level,
+        })
+    }
+
     fn k_elim_rescale_dual(&self, poly: &DualRNSPoly) -> Nine65Result<DualRNSPoly> {
         let ct_level = poly.main.len();
         let level_primes = &self.config.primes[..ct_level];
@@ -13227,4 +13429,93 @@ mod tests {
         );
     }
 
+
+    /// M2b isolation: the manufactured rescale on CONSTRUCTED known values,
+    /// checked against U256 ground truth round((X + Delta/2)/Delta) mod p —
+    /// no crypto, no noise, every winding regime.
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn manufactured_rescale_matches_ground_truth_on_known_values() {
+        let cfg = crate::params::FHEConfig::manufactured_m2b_insecure();
+        let ctx = RNSFHEContext::new(&cfg);
+        let q = ctx.q_product;                      // u128
+        let delta = q / ctx.t as u128;              // exact
+        let n_u = ctx.n as u128;
+
+        // X = w*Q + xc, spanning winding regimes up to the d1 bound N*Q/2.
+        let xcs: [u128; 5] = [0, 1, delta / 2, delta / 2 + 1, q - 1];
+        let ws: [u128; 6] = [0, 1, 7, n_u * 3 / 7, n_u - 1, n_u];
+        // windings up to the sound d1 bound 2NQ.
+        let big_ws: [u128; 4] = [0, (2 * n_u * q) / 1000, (2 * n_u * q) / 3, 2 * n_u * q - 1];
+
+        let mut checked = 0usize;
+        let mut make_poly = |x_w: u128, x_c: u128| -> DualRNSPoly {
+            // X = x_w * Q + x_c, residues computed modularly (X itself ~2^238).
+            let main = ctx
+                .config
+                .primes
+                .iter()
+                .map(|&p| {
+                    let p128 = p as u128;
+                    vec![(((x_w % p128) * (q % p128) + x_c % p128) % p128) as u64]
+                })
+                .collect();
+            let anchor = ctx
+                .dual_rns
+                .anchor
+                .primes
+                .iter()
+                .map(|&a| {
+                    let a128 = a as u128;
+                    vec![(((x_w % a128) * (q % a128) + x_c % a128) % a128) as u64]
+                })
+                .collect();
+            DualRNSPoly { main, anchor, n: 1 }
+        };
+
+        for &w in ws.iter().chain(big_ws.iter()) {
+            for &xc in xcs.iter() {
+                let poly = make_poly(w, xc);
+                let out = ctx
+                    .k_elim_rescale_manufactured(&poly)
+                    .expect("manufactured rescale");
+                // ground truth: Y = floor((X + floor(Delta/2)) / Delta), R* = Y mod Q,
+                // computed in U256.
+                let x = U256::from_u128(w)
+                    .mul_low(U256::from_u128(q))
+                    .add(U256::from_u128(xc));
+                let shifted = x.add(U256::from_u128(delta / 2));
+                // floor division by delta via div_mod against u128: U256 has
+                // div_mod_u64 only, so divide by delta's lane factors in turn.
+                let mut y = shifted;
+                for (i, &p) in ctx.config.primes.iter().enumerate() {
+                    if p == ctx.t {
+                        continue;
+                    }
+                    let _ = i;
+                    let (qt, _r) = y.div_mod_u64(p);
+                    y = qt;
+                }
+                // Y'' mod Q semantics: ground truth ⌊(X+Δ/2)/Δ⌋ mod Q (the
+                // internal shift S/Δ = 2NQt ≡ 0 mod Q is invisible here).
+                let y_star = y.rem_u256(U256::from_u128(q));
+                for (i, &p) in ctx.config.primes.iter().enumerate() {
+                    assert_eq!(
+                        out.main[i][0],
+                        y_star.mod_u64(p),
+                        "main lane {p} wrong at w={w} xc={xc}"
+                    );
+                }
+                for (k, &a) in ctx.dual_rns.anchor.primes.iter().enumerate() {
+                    assert_eq!(
+                        out.anchor[k][0],
+                        y_star.mod_u64(a),
+                        "anchor {a} wrong at w={w} xc={xc}"
+                    );
+                }
+                checked += 1;
+            }
+        }
+        assert!(checked >= 50, "sweep must not go vacuous");
+    }
 }

@@ -299,6 +299,23 @@ impl CramPublicEvaluator {
     /// (G5). Elimination-first replacement of the two materialization sites
     /// is milestones M2/M3; until then the ledger tells the truth about
     /// every chain that includes a multiply.
+    /// M2b variant: public multiply with the elimination-first rescale
+    /// (`k_elim_rescale_manufactured` — no value materialization in the
+    /// rescale; align-and-drop + certified anchor-ladder winding read).
+    /// Requires a manufactured chain (`t | Q`, `t` a main lane). Still
+    /// recorded as an R8 materialization because relinearization
+    /// (`extract_digit_dual`) materializes until milestone M3 lands.
+    pub fn mul_manufactured(
+        &mut self,
+        a: &DualRNSCiphertext,
+        b: &DualRNSCiphertext,
+        keys: &CramPublicKeys,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let out = self.ctx.mul_dual_public_manufactured(a, b, &keys.eval_key)?;
+        self.ledger.record("mul_m2b", EmissionClass::Materialization);
+        Ok(out)
+    }
+
     pub fn mul(
         &mut self,
         a: &DualRNSCiphertext,

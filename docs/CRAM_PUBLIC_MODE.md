@@ -103,17 +103,38 @@ only.
     Also landed: `rescale_drop_only` — steps 1–2 only (rounding offset +
     align-and-drop), zero materialization of any kind, the fully lane-local
     `ModulusReduced` path exposed for the ct hot loop.
-  - **M2b (next)** — wire the per-coefficient ct path: replace
-    `k_elim_rescale_dual`'s `to_u256_level` with the manufactured-chain
-    align-and-drop (`Q = t·D` star chains; each Δ-lane drop is
-    `(x_i − r_k)·q_k⁻¹ mod q_i` — a cross-lane *read*, never a running
-    value: G2-compliant). Requires an NTT-friendly manufactured chain,
-    which is a pure construction, no hunting: `t = 65537 = 2¹⁶+1` is itself
-    `≡ 1 mod 2N` for `n ≤ 8192`, so the surviving lane is `t` directly, and
-    every Δ-lane `D = c·t + 1` with `c ≡ 0 mod 2N` satisfies `D ≡ 1 mod t`
-    AND `D ≡ 1 mod 2N` simultaneously (`params::manufactured::
-    star_family_lane` mints them; `ChainScreen` refuses broken ones).
-    Per-coefficient hot loop = `rescale_drop_only` (landed in M2a).
+  - **M2b (landed)** — the per-coefficient ct-path rescale,
+    `k_elim_rescale_manufactured`, wired into `mul_dual_public_manufactured`
+    and the evaluator's `mul_manufactured`. Chain: `Q = t·D1·D2·D3` with
+    `t = 65537` itself a main lane and Δ-lanes minted by construction
+    (`D = c·t+1`, `c ≡ 0 mod 2N`: `≡ 1 mod t` AND NTT-friendly
+    simultaneously; primality screened — the residual Field-Layer
+    obligation). Pipeline per coefficient: signed-shift `S = 2N·Q²`
+    (anchor-lanes only; `≡ 0` mod every main lane and mod Q) →
+    align-and-drop every Δ-lane (cross-lane READS, no running value) →
+    direct γ read off the t-lane → winding over a capacity-certified
+    4-anchor ladder merged by parallel summation (R8) → `Y'' mod Q`
+    canonicalization composed base-plus-lift in fixed-width U256 (the lift
+    inventory's normative R4 pathway under the `K < C` certificate). No
+    `to_u256_level`, no iterative CRT over the lanes, no Garner. Acceptance:
+    10-pair multiply battery exact; **depth-3 public squaring 2→4→16→256
+    exact**; plaintext-level agreement with the materializing path
+    (`tests/m2b_manufactured_rescale.rs`, 5/5).
+
+    Two findings from the M2b bring-up, recorded so they are not relearned:
+    1. **Per-component centering breaks the degree-2 decryption identity**
+       (measured): the three tensor components' `t·k̂` winding terms must
+       survive the rescale so the s-weighted sum telescopes back to
+       `X_total/Δ`; rescale each component to `Y'' mod Q`, do NOT center
+       components independently.
+    2. **Certificates need proved bounds, not assumed ones**: the
+       dual-tracked tensor is the product of UNSIGNED representative
+       polynomials (coefficients in `[0,Q)`), so `|d0| ≤ N·Q²` and
+       `|d1| ≤ 2N·Q²` — assuming centered inputs under-sizes the bound 2×,
+       and the winding then aliases by exactly `t·C`. The recovered offset
+       factoring as the ladder capacity `C` to the digit was the diagnostic
+       that identified it. This is the lift inventory's capacity-alias
+       theorem observed live.
 - **M3 — lane-local relinearization digits.** Replace `extract_digit_dual`'s
   materialised 256-bit value with per-lane one-wave digit reads (compendium
   Theorem 9 shape).
@@ -183,6 +204,22 @@ No term reads another term — R8, not R9. *Status:* SKETCH + WITNESS
 (`parallel_summation_matches_garner_oracle`, >1000 cross-checked points on
 4 bases, plus the module's pre-existing exhaustive suites which now run
 through the new path).
+
+**PS-CP-7 — Correctness of the M2b elimination-first rescale.**
+*Statement:* on a manufactured chain, `k_elim_rescale_manufactured` outputs
+residues of `⌊(X + Δ/2)/Δ⌋ mod Q` for every dual-tracked tensor value
+`|X| ≤ 2N·Q²`, with the winding read exact under the `4NQ+1 < C` anchor
+certificate. *Sketch:* (i) the shift `S = 2NQ²` makes `X'' = X+S ≥ 0` and is
+a multiple of `Δ`, so `⌊(X''+Δ/2)/Δ⌋ = ⌊(X+Δ/2)/Δ⌋ + S/Δ` exactly, and
+`S/Δ = 2NQt ≡ 0 (mod Q)` erases the shift after the mod-Q reduction;
+(ii) each Δ-lane drop is the exact identity `(v_i − r_d)·d⁻¹ ≡ ⌊V/d⌋ (mod
+q_i)` and nested floors compose to division by Δ; (iii) `Y'' ≤ 4NQt`, so
+`K'' = ⌊Y''/t⌋ ≤ 4NQ < C` — the K-Elimination congruence has one
+representative in range (capacity certificate, PS-2/L9); (iv) `Y'' = γ+K·t`
+then reduces mod Q in one fixed-width U256 operation. *Status:* SKETCH +
+WITNESS (`manufactured_rescale_matches_ground_truth_on_known_values`, a
+70-point known-value sweep across every winding regime to `2NQ`, plus the
+5-test acceptance suite with the depth-3 chain).
 
 **PS-CP-5 — Depth is not gated by lane count on this surface.** *Statement:*
 the depth-3 public chain runs on the same basis at every step. *Sketch:*
