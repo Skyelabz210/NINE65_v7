@@ -11,7 +11,7 @@
 //! value materialization, no Garner anywhere in the rescale.
 
 use nine65::entropy::ShadowHarvester;
-use nine65::ops::cram_public::CramPublicEvaluator;
+use nine65::ops::cram_public::{CramPublicEvaluator, EmissionClass};
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::FHEConfig;
 
@@ -142,6 +142,62 @@ fn m3_gadget_depth2_squaring_chain_through_evaluator() {
     }
     assert_eq!(expected, 16);
     println!("{}", eval.ledger().report());
+}
+
+/// M4 — the gadget-relin multiply's ledger classification. Never-vacuous
+/// both directions: the digit-based `mul_manufactured` (unchanged, still
+/// `Materialization`) is checked on the SAME evaluator/ledger instance, so
+/// a change that made everything read as `EliminationFirst` regardless of
+/// path would be caught here too.
+#[test]
+fn manufactured_gadget_multiply_ledger_shows_elimination_first() {
+    let eval = CramPublicEvaluator::new(&cfg());
+    let mut rng = ShadowHarvester::with_seed(48120);
+    let (pk, gadget, client) = eval
+        .keygen_with_gadget_with_rng(&mut rng)
+        .expect("gadget keygen");
+    let mut eval = eval;
+
+    let mut r1 = ShadowHarvester::with_seed(48121);
+    let mut r2 = ShadowHarvester::with_seed(48122);
+    let a = eval.encrypt_with_rng(3, &client.public_key, &mut r1);
+    let b = eval.encrypt_with_rng(5, &client.public_key, &mut r2);
+
+    let materialization_before = eval.ledger().materialization_count();
+    let elimination_first_before = eval.ledger().elimination_first_count();
+
+    let gadget_ct = eval
+        .mul_manufactured_gadget(&a, &b, &gadget)
+        .expect("gadget multiply");
+    assert_eq!(eval.decrypt(&gadget_ct, &client), 15, "gadget multiply correctness");
+    assert_eq!(
+        eval.ledger().materialization_count(),
+        materialization_before,
+        "REGRESSION: mul_manufactured_gadget must NOT add a Materialization \
+         ledger entry — its rescale (M2b) and relin (M3) are both \
+         elimination-first"
+    );
+    assert_eq!(
+        eval.ledger().elimination_first_count(),
+        elimination_first_before + 1,
+        "mul_manufactured_gadget must record exactly one new EliminationFirst event"
+    );
+    assert_eq!(
+        eval.ledger().events().last().unwrap().class,
+        EmissionClass::EliminationFirst
+    );
+
+    // Never-vacuous: the digit-based path, same evaluator/ledger, must
+    // still record Materialization.
+    let digit_ct = eval.mul_manufactured(&a, &b, &pk).expect("digit multiply");
+    assert_eq!(eval.decrypt(&digit_ct, &client), 15, "digit multiply correctness");
+    assert_eq!(
+        eval.ledger().materialization_count(),
+        materialization_before + 1,
+        "guardrail-shape failure: the digit-based path must still record \
+         Materialization — if this fails, the classifications aren't \
+         actually distinguishing anything"
+    );
 }
 
 /// Both rescale paths on the same inputs must agree at the plaintext level.

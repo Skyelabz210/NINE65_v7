@@ -179,11 +179,34 @@ only.
   what is measured, not what was estimated. Reaching depth-3 parity is
   escalated future work — likely a hybrid gadget (RNS lane × base-`2^b`
   sub-decomposition within each lane) — not attempted here.
-- **M4 — invert the pins.** When M2+M3 land,
-  `ct_multiply_is_not_lane_independent_every_lane_moves` starts failing —
-  invert it into a lane-independence assertion (its own instructions), invert
-  `multiply_is_recorded_as_a_materialization_pinned`, reclassify `mul` as
-  LaneLocal, and the ledger's materialization count goes to zero.
+- **M4 — re-pin the measured verdicts (landed, scoped).** Doctrine-driven
+  re-scope, not blind inversion (`docs/roadmap/T4_M4_REPIN_VERDICTS.md`).
+  There are two separate multiply paths, and only the manufactured one
+  changed:
+  - `mul_dual_public` / `eval.mul()` (general configs — `secure_128`,
+    `secure_192`, `test_medium_insecure`, ...): UNCHANGED by M2b/M3, which
+    only touch the manufactured chain. `multiply_is_recorded_as_a_
+    materialization_pinned` and `ct_multiply_is_not_lane_independent_every_
+    lane_moves` still measure this path and are correctly NOT inverted —
+    it still takes an R8 materialization and still couples every lane.
+  - `mul_dual_public_manufactured_gadget` /
+    `CramPublicEvaluator::mul_manufactured_gadget` (manufactured chains,
+    M3's RNS-limb relin): a NEW `EmissionClass::EliminationFirst` records
+    that this path's rescale (M2b) and relin (M3) core is materialization-
+    free (`manufactured_gadget_multiply_ledger_shows_elimination_first`,
+    never-vacuous against the digit-based path on the same ledger).
+    **Precise scope, not "LaneLocal" and not "zero materialization
+    anywhere":** `canonicalize_dual_anchor`'s winding-reset — part of the
+    M1 gut manifest's KEPT surface, never a target of M2/M3 — still
+    materializes via `to_u256_level`; it is a separate, already gate-
+    qualified R8 site, not eliminated by this milestone. The multiply also
+    still couples lanes through compliant cross-lane reads (Δ-lane drops,
+    the anchor certificate ladder) — not lane-independent, not a fault
+    (roadmap README rule 3). The honest claim is "elimination-first
+    rescale+relin core, gate-compliant coupling remains," never i.i.d.
+    lane-locality. Also scoped to depth ≤ 2 (see the M3 finding above) —
+    `EliminationFirst` is a claim about WHAT COMPUTATION RAN, not a
+    depth/noise guarantee.
 
 ## Proof sketches (per the standing submission policy)
 

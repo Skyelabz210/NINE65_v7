@@ -3,6 +3,17 @@
 **Tier: FABLE-TIER.** This is doctrine-driven re-scoping, not blind test
 inversion — get the SCOPE distinction below right before touching any test.
 
+**Status: LANDED (2026-08-26).** `EmissionClass::EliminationFirst` added;
+`mul_manufactured_gadget` records it (never-vacuous test:
+`manufactured_gadget_multiply_ledger_shows_elimination_first` in
+`tests/m2b_manufactured_rescale.rs`). The general-path discriminators
+(`multiply_is_recorded_as_a_materialization_pinned`,
+`ct_multiply_is_not_lane_independent_every_lane_moves`) were correctly
+LEFT UNCHANGED, per the scope distinction below — see
+`docs/CRAM_PUBLIC_MODE.md` M4 for the landed, precisely-scoped claim
+(rescale+relin core only; `canonicalize_dual_anchor` still materializes
+separately; depth ≤ 2 per the M3 finding).
+
 ## Goal
 
 After M3 (T3) lands, the manufactured-chain multiply path
