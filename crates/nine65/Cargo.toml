@@ -273,6 +273,18 @@ name = "cram_public_mode"
 required-features = ["allow_insecure"]
 
 [[test]]
+name = "m2b_manufactured_rescale"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "cram_public_guardrails"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "cram_public_timings"
+required-features = ["allow_insecure"]
+
+[[test]]
 name = "security_integration"
 required-features = ["allow_insecure"]
 

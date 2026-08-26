@@ -117,6 +117,37 @@ impl FHEConfig {
         }
     }
 
+    /// MANUFACTURED chain for the M2b elimination-first rescale (test only).
+    ///
+    /// `Q = t · D1 · D2` with `t = 65537` itself a main lane (prime, and
+    /// `≡ 1 mod 2N` for every `n ≤ 32768` since `2N | 2^16`), and the two
+    /// Δ-lanes minted by `params::manufactured::manufactured_ntt_delta_lanes`:
+    /// `D = (2N·j)·t + 1`, prime, so `D ≡ 1 (mod t)` AND `D ≡ 1 (mod 2N)`
+    /// by construction. Consequently `Δ = Q/t = D1·D2` EXACTLY — the
+    /// hunted-chain floor never appears — and `Δ ≡ 1 (mod t)` (star-family
+    /// message transparency on the t-lane).
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    pub fn manufactured_m2b_insecure() -> Self {
+        let n = 512usize;
+        let t = 65_537u64;
+        let avoid = crate::arithmetic::DualRNSContext::canonical_anchor_primes_for_n(n);
+        let deltas = crate::params::manufactured::manufactured_ntt_delta_lanes(
+            t, 2 * n as u64, 3, 1 << 28, &avoid,
+        )
+        .expect("deterministic lane scan for the test chain");
+        let mut primes = vec![t];
+        primes.extend_from_slice(&deltas);
+        Self {
+            n,
+            primes,
+            q: t,
+            t,
+            eta: 2,
+            security_bits: 80,
+            name: "manufactured_m2b_insecure",
+        }
+    }
+
     /// Configuration for ct×ct multiplication using a large single modulus.
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn large_single_insecure() -> Self {

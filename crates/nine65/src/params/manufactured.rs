@@ -301,6 +301,65 @@ impl StarLane {
 ///
 /// Thin free-function form of [`StarLane::new`], matching the naming used in
 /// the architecture notes.
+/// Mint NTT-friendly star Delta-lanes by construction: `D = (two_n·j)·t + 1`
+/// for ascending `j`, keeping those that are prime, in range, and absent
+/// from `avoid`.
+///
+/// Every returned lane satisfies, by construction rather than search:
+///   * `D ≡ 1 (mod t)`   — star-family message transparency, and the
+///     derived inverse `t⁻¹ mod D = D − c` with `c = two_n·j`;
+///   * `D ≡ 1 (mod two_n)` — NTT-friendliness for ring dimension
+///     `n = two_n/2`.
+///
+/// Primality is still SCREENED (not constructed): the NTT is Field-Layer —
+/// it needs a primitive `two_n`-th root of unity, which the screening
+/// guarantees for a prime `D ≡ 1 (mod two_n)`. The identities above are the
+/// manufactured part; the primality test is the residual Field-Layer
+/// obligation, applied per candidate with `is_prime`.
+pub fn manufactured_ntt_delta_lanes(
+    t: u64,
+    two_n: u64,
+    count: usize,
+    min_modulus: u64,
+    avoid: &[u64],
+) -> Nine65Result<Vec<u64>> {
+    if t < 2 || two_n < 2 {
+        return Err(Nine65Error::InvalidParameter {
+            message: format!("manufactured_ntt_delta_lanes: t={t}, two_n={two_n}"),
+        });
+    }
+    let mut lanes = Vec::with_capacity(count);
+    let mut j: u64 = 1;
+    while lanes.len() < count {
+        let c = two_n.checked_mul(j).ok_or(Nine65Error::Overflow {
+            operation: "manufactured_ntt_delta_lanes: c = two_n * j",
+        })?;
+        let d = c
+            .checked_mul(t)
+            .and_then(|x| x.checked_add(1))
+            .ok_or(Nine65Error::Overflow {
+                operation: "manufactured_ntt_delta_lanes: D = c*t + 1",
+            })?;
+        if d < (1u64 << 62)
+            && d >= min_modulus
+            && crate::params::primes::is_prime(d)
+            && !avoid.contains(&d)
+            && !lanes.contains(&d)
+        {
+            debug_assert_eq!(d % t, 1);
+            debug_assert_eq!(d % two_n, 1);
+            lanes.push(d);
+        }
+        j += 1;
+        if j > 1_000_000 {
+            return Err(Nine65Error::InvalidParameter {
+                message: "manufactured_ntt_delta_lanes: lane scan exhausted".into(),
+            });
+        }
+    }
+    Ok(lanes)
+}
+
 pub fn star_family_lane(t: u64, c: u64) -> Nine65Result<StarLane> {
     StarLane::new(t, c)
 }
