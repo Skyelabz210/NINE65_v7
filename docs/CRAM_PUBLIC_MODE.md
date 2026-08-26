@@ -41,7 +41,10 @@ Emission classifications are qualified by the arrow test harness, not by
 predispositions. Lane coupling per se is not the fault — Universal
 Projection reads every lane and is A2-compliant; transduction carries
 lane-wise. The faults are what the gates measure: undeclared discard (G1),
-a running-value cascade (G2), stored non-derivable state (G5). Measured
+a running-value cascade (G2), stored non-derivable state (G5 — a
+derivability discipline, not a stored-constant ban: caching is fine when
+the derivation is known; believed-hard quantities route to the derivation
+tooling — see cram-substrate `docs/A2_GATES.md`, G5 addendum). Measured
 verdicts for `mul_dual_public`:
 
 | Probe | Instrument | Verdict |
