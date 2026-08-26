@@ -7,6 +7,14 @@ It provides finite leveled computation plus low-depth refresh paths. **It is not
 
 ---
 
+## Open Work — read this first
+
+`docs/OPEN_WORK_2026-08-26.md` is the current handoff: what is decided, what is
+blocked on an owner decision, what is measured-but-unfixed, and — section D — a
+list of settled questions that LOOK open and must not be re-derived. Two
+retractions in the 2026-08-22..26 session came from re-reasoning instead of
+re-reading; section D exists to stop a third.
+
 ## Cloud Run Deployment
 - **Platform:** Google Cloud Run
 - **Service name:** nine65-v7
