@@ -1,0 +1,82 @@
+name: CRAM-public gates
+
+# Builds and runs the full CRAM-public + M2b/M3 guardrail test surface.
+# Modeled on cram_residue_native_gates.yml's structure (checkout + stable
+# Rust toolchain + explicit cargo invocations, no path-filter cleverness
+# beyond the files this surface actually touches).
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'crates/nine65/src/ops/cram_public.rs'
+      - 'crates/nine65/src/ops/rns_fhe.rs'
+      - 'crates/nine65/src/arithmetic/unified_rescale.rs'
+      - 'crates/nine65/src/arithmetic/rns.rs'
+      - 'crates/nine65/src/params/manufactured.rs'
+      - 'crates/nine65/src/params/mod.rs'
+      - 'crates/nine65/tests/cram_public_mode.rs'
+      - 'crates/nine65/tests/cram_public_guardrails.rs'
+      - 'crates/nine65/tests/cram_public_timings.rs'
+      - 'crates/nine65/tests/m2b_manufactured_rescale.rs'
+      - 'crates/nine65/tests/residue_space_ciphertext.rs'
+      - 'crates/nine65/Cargo.toml'
+      - '.github/workflows/cram_public_gates.yml'
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cram-public-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cram-public-correctness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build (allow_insecure, release)
+        run: cargo build -p nine65 --release --features allow_insecure
+
+      - name: CRAM-public mode surface (M1)
+        run: cargo test -p nine65 --test cram_public_mode --release --features allow_insecure
+
+      - name: M2b manufactured rescale + M3 gadget relin
+        run: cargo test -p nine65 --test m2b_manufactured_rescale --release --features allow_insecure
+
+      - name: T2 guardrail tripwires (public-API-only)
+        run: cargo test -p nine65 --test cram_public_guardrails --release --features allow_insecure
+
+      - name: T2/T3 in-module guardrails (no-centering, no-Garner, M3 counter)
+        run: cargo test -p nine65 --lib --release cram_public_guardrail
+
+      - name: M3 correctness tests (in-module)
+        run: cargo test -p nine65 --lib --release m3_
+
+      - name: Arrow-harness witnesses (G2 order-invariance, i.i.d. discriminator)
+        run: cargo test -p nine65 --test residue_space_ciphertext --release --features allow_insecure -- ct_multiply
+
+      - name: unified_rescale module tests (M2a de-cascade)
+        run: cargo test -p nine65 --lib --release arithmetic::unified_rescale
+
+  cram-public-timings:
+    needs: cram-public-correctness
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Perf numbers are informational, not a merge gate — only correctness
+    # gates block. See docs/CRAM_PUBLIC_BASELINE_*.md for the tracked
+    # baseline and its regression rule.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: CRAM-public op timings (informational)
+        run: >-
+          cargo test -p nine65 --test cram_public_timings --release
+          --features allow_insecure -- --ignored --nocapture

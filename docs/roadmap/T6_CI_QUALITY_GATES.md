@@ -3,6 +3,17 @@
 **Tier: HANDOFF-SAFE.** Mechanical workflow-file authoring, modeled directly
 on an existing house pattern. No evaluator logic changes.
 
+**Status: LANDED (2026-08-26).**
+`NINE65_v7/.github/workflows/cram_public_gates.yml` (correctness job:
+build + cram_public_mode + m2b_manufactured_rescale + cram_public_guardrails
++ in-module guardrails + M3 tests + arrow-harness witnesses +
+unified_rescale module tests, all blocking; timings job: informational,
+`continue-on-error: true`) and `cram-substrate/.github/workflows/audit.yml`
+(audit.py 8/8 + pytest, no extra deps beyond pytest — the package and
+audit script use only the standard library). Every command in both
+workflows was run locally before being committed to the workflow file, per
+this card's verification requirement.
+
 ## Goal
 
 Two new CI workflows:
