@@ -200,6 +200,68 @@ fn cram_public_guardrail_derived_inverse_matches_egcd_for_every_delta_lane() {
     assert!(checked >= 2, "sweep must not go vacuous — manufactured chain must expose Delta-lanes");
 }
 
+/// T2 tripwire 2b — pins the SHIPPED certificate constant itself.
+///
+/// **Why this exists (found the hard way, 2026-08-26).** The sibling test
+/// `cram_public_guardrail_unsigned_bound_certificate_must_be_4nq_not_2nq`
+/// demonstrates the *mathematical principle* that an under-provisioned
+/// certificate aliases — but it builds its own chains and re-derives its own
+/// `4*N*Q+1` locally, so it never reads the constant the shipped code uses.
+/// It was therefore VACUOUS with respect to the real code: flipping
+/// `k_elim_rescale_manufactured`'s certificate from `4 * self.n` to
+/// `2 * self.n` left it, and the entire rest of the suite (13 tests, every
+/// guardrail, the ground-truth sweep, the depth-3 chain), fully GREEN.
+///
+/// It went undetected by the correctness tests too, and that part is not a
+/// test gap but arithmetic: on `manufactured_m2b_insecure`, Q ~ 2^108, so
+/// 4NQ ~ 2^119 and 2NQ ~ 2^118 both fall inside the same 31-bit-wide gap
+/// between the 3-anchor prefix (2^94) and the 4-anchor prefix (2^125). Both
+/// bounds select the SAME four anchors, giving a 90x capacity margin, so the
+/// halved bound is behaviourally inert on THIS chain. It would become live on
+/// a chain whose two bounds straddle an anchor boundary — which is exactly
+/// the kind of latent, config-dependent break a guardrail is supposed to
+/// catch before it ships.
+///
+/// So this test pins the shipped source text directly, in the same style as
+/// the no-Garner tripwire in `arithmetic/unified_rescale.rs`. Never-vacuous:
+/// it asserts the surrounding context still exists, so a refactor that moves
+/// or renames the certificate fails here loudly instead of passing silently.
+#[test]
+fn cram_public_guardrail_shipped_certificate_constant_is_4n_not_2n() {
+    const SRC: &str = include_str!("../src/ops/rns_fhe.rs");
+
+    // Context anchor: if this vanishes, the certificate moved or was renamed,
+    // and the constant assertion below would pass vacuously.
+    assert!(
+        SRC.contains("Winding capacity certificate"),
+        "REGRESSION-SHAPE FAILURE: the 'Winding capacity certificate' comment is \
+         gone from rns_fhe.rs, so this guardrail no longer knows where to look. \
+         Re-point it at the certificate's new home; do NOT delete it."
+    );
+
+    // The shipped constant. `4 * self.n` is the SOUND bound: the d1 tensor
+    // component is a SUM OF TWO products of UNSIGNED representative polys, so
+    // |d1| <= 2*N*Q^2 and the shifted winding needs 4*N*Q + 1 (charter M2b
+    // finding #2). Halving it to `2 * self.n` assumes centered inputs, which
+    // is measurably false here.
+    assert!(
+        SRC.contains("let two_nq = (4 * self.n as u128)"),
+        "REGRESSION: the M2b winding capacity certificate is no longer \
+         `4 * self.n`. The sound bound is 4*N*Q+1 because the dual-tracked \
+         tensor multiplies UNSIGNED representatives (|d1| <= 2*N*Q^2); assuming \
+         centered inputs under-sizes it 2x and the winding aliases by exactly \
+         the ladder capacity C (charter M2b finding #2, observed live). Do NOT \
+         'simplify' this to 2*N*Q."
+    );
+    assert!(
+        !SRC.contains("let two_nq = (2 * self.n as u128)"),
+        "REGRESSION: the certificate was halved to `2 * self.n`. See above — \
+         this is the exact documented regression, and on a chain whose 2NQ and \
+         4NQ bounds straddle an anchor-prefix boundary it silently aliases the \
+         winding instead of erroring."
+    );
+}
+
 /// T2 tripwire 5 pointer: the Y''-mod-Q semantics pin lives in-module as
 /// `manufactured_rescale_matches_ground_truth_on_known_values` (extended
 /// with a DO-NOT header) and

@@ -24,6 +24,20 @@ its doc comment and the charter finding it cites.** A red guardrail after a
 change means the change regressed something, not that the guardrail is
 stale — investigate before touching it.
 
+> **A guardrail can itself be vacuous — verify each one by flipping the thing
+> it guards.** Measured 2026-08-26: tripwire 2 re-derived its own `4*N*Q+1`
+> locally instead of reading the shipped constant, so flipping
+> `k_elim_rescale_manufactured`'s certificate to `2 * self.n` left it — and
+> all 13 other tests, every guardrail included — **green**. (On
+> `manufactured_m2b_insecure` the halved bound is also behaviourally inert:
+> `Q ~ 2^108`, so `4NQ ~ 2^119` and `2NQ ~ 2^118` both land in the same gap
+> between the 3-anchor prefix at `2^94` and the 4-anchor prefix at `2^125`,
+> selecting identical anchors with a 90x margin. It would bite on a chain
+> whose two bounds straddle an anchor boundary.) Tripwire 2b now pins the
+> shipped source text and was verified to go red under exactly that flip.
+> **When adding a guardrail, inject the regression and watch it fail before
+> trusting it.**
+
 ## Task tiers
 
 - **FABLE-TIER** (judgment-heavy, regression-prone — a frontier-capable
@@ -100,7 +114,8 @@ Defined once here; used freely in every card without re-expansion.
 | Tripwire | Test | Protects | Textbook trap it pins against |
 |---|---|---|---|
 | 1 — no centering | `cram_public_guardrail_no_centering_regression_measurably_fails` (`ops/rns_fhe.rs`) | M2b finding #1: `Y'' mod Q` reconstruction, uncentered | "Simplify" the rescale to per-component `round(centered(X mod Q)/Δ)` |
-| 2 — unsigned bound | `cram_public_guardrail_unsigned_bound_certificate_must_be_4nq_not_2nq` (`tests/cram_public_guardrails.rs`) | M2b finding #2: certificate `4NQ+1`, tensor is UNSIGNED-representative | "The inputs are surely centered, halve the certificate to `2NQ`" |
+| 2 — unsigned bound (principle) | `cram_public_guardrail_unsigned_bound_certificate_must_be_4nq_not_2nq` (`tests/cram_public_guardrails.rs`) | Demonstrates that an under-provisioned certificate aliases | **Does NOT pin the shipped constant** — see 2b |
+| 2b — unsigned bound (shipped constant) | `cram_public_guardrail_shipped_certificate_constant_is_4n_not_2n` (`tests/cram_public_guardrails.rs`) | M2b finding #2: the certificate in `k_elim_rescale_manufactured` is `4 * self.n` | "The inputs are surely centered, halve the certificate to `2NQ`" |
 | 3 — no Garner | `cram_public_guardrail_manufactured_multiply_never_calls_garner` (`arithmetic/unified_rescale.rs`) | M2a de-cascade: `parallel_summation_crt` (R8) only | Reintroducing a sequential-cascade winding read, or promoting `garner` out of `#[cfg(test)]` |
 | 4 — derived inverse | `cram_public_guardrail_derived_inverse_matches_egcd_for_every_delta_lane` (`tests/cram_public_guardrails.rs`) | G5 discipline: `t⁻¹ mod D = D − c` read-off | Caching an inverse table disconnected from its derivation |
 | 5 — Y″ mod Q semantics | `manufactured_rescale_matches_ground_truth_on_known_values` (`ops/rns_fhe.rs`, DO-NOT header added) | The reconstruction's ground-truth pin | Same as tripwire 1, from the ground-truth-sweep angle |
