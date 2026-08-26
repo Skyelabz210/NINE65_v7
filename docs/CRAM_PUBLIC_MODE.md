@@ -107,9 +107,13 @@ only.
     `k_elim_rescale_dual`'s `to_u256_level` with the manufactured-chain
     align-and-drop (`Q = t·D` star chains; each Δ-lane drop is
     `(x_i − r_k)·q_k⁻¹ mod q_i` — a cross-lane *read*, never a running
-    value: G2-compliant). Requires an NTT-friendly manufactured chain
-    (`q = c·t + 1` with `c ≡ 0 mod 2N` gives `q ≡ 1 mod t` AND
-    `q ≡ 1 mod 2N` simultaneously).
+    value: G2-compliant). Requires an NTT-friendly manufactured chain,
+    which is a pure construction, no hunting: `t = 65537 = 2¹⁶+1` is itself
+    `≡ 1 mod 2N` for `n ≤ 8192`, so the surviving lane is `t` directly, and
+    every Δ-lane `D = c·t + 1` with `c ≡ 0 mod 2N` satisfies `D ≡ 1 mod t`
+    AND `D ≡ 1 mod 2N` simultaneously (`params::manufactured::
+    star_family_lane` mints them; `ChainScreen` refuses broken ones).
+    Per-coefficient hot loop = `rescale_drop_only` (landed in M2a).
 - **M3 — lane-local relinearization digits.** Replace `extract_digit_dual`'s
   materialised 256-bit value with per-lane one-wave digit reads (compendium
   Theorem 9 shape).
