@@ -90,11 +90,26 @@ only.
   every step on `secure_128_deep`; the v6-era green re-expressed on
   unbounded-depth semantics with public entry points only), and the pinned
   honesty assertion that `mul` takes an R8 materialization.
-- **M2 — lane-local rescale.** Replace `k_elim_rescale_dual`'s
-  `to_u256_level` ("Iterative CRT (Garner-style)", `arithmetic/rns.rs`) with
-  the manufactured-chain align-and-drop of `arithmetic/unified_rescale.rs`
-  (`Q = t·D` star chains; each Δ-lane drop is `(x_i − r_k)·q_k⁻¹ mod q_i` — a
-  cross-lane *read*, never a running value: G2-compliant).
+- **M2 — lane-local rescale.**
+  - **M2a (landed)** — de-cascade `unified_rescale.rs` itself: its winding
+    read and ladder merge called a sequential Garner/MRC (`garner()`) at
+    runtime — an R9 mechanism hiding inside the otherwise lane-local
+    pipeline, precisely what the lift inventory's ladder policy forbids
+    ("must not be silently substituted with a runtime Garner cascade").
+    Both call sites now use `parallel_summation_crt` (R8: every term
+    independent, no running value), result-identical to the Garner ORACLE
+    (`garner` is now `#[cfg(test)]`-only, its licensed role), cross-checked
+    over >1000 points and the pre-existing exhaustive suites (21/21 tests).
+    Also landed: `rescale_drop_only` — steps 1–2 only (rounding offset +
+    align-and-drop), zero materialization of any kind, the fully lane-local
+    `ModulusReduced` path exposed for the ct hot loop.
+  - **M2b (next)** — wire the per-coefficient ct path: replace
+    `k_elim_rescale_dual`'s `to_u256_level` with the manufactured-chain
+    align-and-drop (`Q = t·D` star chains; each Δ-lane drop is
+    `(x_i − r_k)·q_k⁻¹ mod q_i` — a cross-lane *read*, never a running
+    value: G2-compliant). Requires an NTT-friendly manufactured chain
+    (`q = c·t + 1` with `c ≡ 0 mod 2N` gives `q ≡ 1 mod t` AND
+    `q ≡ 1 mod 2N` simultaneously).
 - **M3 — lane-local relinearization digits.** Replace `extract_digit_dual`'s
   materialised 256-bit value with per-lane one-wave digit reads (compendium
   Theorem 9 shape).
@@ -150,6 +165,20 @@ appears in no method signature except `decrypt(client: &CramClientKeys)`,
 which delegates to client-side decryption and performs no evaluation.
 *Status:* SKETCH (enforced by the compiler; a negative compile-test could
 pin it further).
+
+**PS-CP-6 — Parallel-summation CRT is result-identical to Garner and
+cascade-free.** *Statement:* `parallel_summation_crt(residues, mods)` equals
+the CRT representative in `[0, M)` for pairwise-coprime `mods`, with every
+term computed independently. *Sketch:* the Lagrange basis `E_i = M_i·(M_i⁻¹
+mod m_i)` satisfies `E_i ≡ δ_ij (mod m_j)` (Kronecker delta: `m_j | M_i` for
+`i ≠ j`; the inverse cancels for `i = j`), so `Σ r_i·E_i ≡ r_j (mod m_j)`
+for every `j`, and CRT uniqueness gives the representative after one
+reduction mod `M`. The reduced-term form `M_i·((r_i·inv_i) mod m_i)` equals
+`r_i·E_i (mod M)` because the difference is a multiple of `M_i·m_i = M`.
+No term reads another term — R8, not R9. *Status:* SKETCH + WITNESS
+(`parallel_summation_matches_garner_oracle`, >1000 cross-checked points on
+4 bases, plus the module's pre-existing exhaustive suites which now run
+through the new path).
 
 **PS-CP-5 — Depth is not gated by lane count on this surface.** *Statement:*
 the depth-3 public chain runs on the same basis at every step. *Sketch:*

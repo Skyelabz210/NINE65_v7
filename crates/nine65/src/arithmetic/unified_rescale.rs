@@ -198,6 +198,53 @@ fn mul_mod(a: u64, b: u64, m: u64) -> u64 {
 /// `0 ≤ x < M`, and `M = ∏ mods`. Fails with [`Nine65Error::NotCoprime`] if the
 /// moduli are not pairwise coprime and [`Nine65Error::Overflow`] if `M` exceeds
 /// `u128`.
+/// Parallel-summation CRT (R8, direct sum): every term is computed
+/// independently — `term_i = M_i · ((r_i · (M_i⁻¹ mod m_i)) mod m_i)` — and
+/// the terms are summed and reduced mod `M = ∏ m_i`. No digit reads any
+/// other digit; no running value threads the lanes. This is the
+/// materialization the lift inventory licenses (R8) where the sequential
+/// Garner/MRC cascade (R9) is retired from runtime paths. Result-identical
+/// to `garner` (the `#[cfg(test)]` oracle below cross-checks them).
+fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
+    let mut m_prod: u128 = 1;
+    for &m in mods {
+        if m < 2 {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!("unified_rescale: CRT modulus {m} < 2"),
+            });
+        }
+        m_prod = m_prod
+            .checked_mul(m as u128)
+            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum modulus" })?;
+    }
+    let mut x: u128 = 0;
+    for (&r, &m) in residues.iter().zip(mods.iter()) {
+        let mi = m_prod / m as u128;
+        let mi_mod = (mi % m as u128) as u64;
+        let inv = mod_inverse_checked(mi_mod, m).ok_or(Nine65Error::NotCoprime {
+            m: mi_mod,
+            a: m,
+            gcd: gcd(mi_mod, m),
+        })?;
+        // r·M_i·inv ≡ M_i·((r·inv) mod m_i) (mod M); the reduced form keeps
+        // every term below M, so the running sum stays below k·M.
+        let s = ((r % m) as u128 * inv as u128 % m as u128) as u64;
+        let term = mi
+            .checked_mul(s as u128)
+            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum term" })?;
+        x = x
+            .checked_add(term)
+            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum sum" })?;
+        x %= m_prod;
+    }
+    Ok((x, m_prod))
+}
+
+/// Sequential Garner/MRC reconstruction. R9 in the lift-inventory taxonomy:
+/// retired from runtime paths, retained here strictly as the independent
+/// TEST ORACLE the corpus licenses it to be. Runtime code must call
+/// `parallel_summation_crt` instead.
+#[cfg(test)]
 fn garner(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
     let mut x: u128 = 0;
     let mut m_acc: u128 = 1;
@@ -711,6 +758,72 @@ impl RescaleOutput {
 ///
 /// Shape mismatches, non-invertible drop lanes, and target moduli below `2`
 /// all return typed errors. No path returns an approximate value.
+/// Steps 1–2 only: the rounding offset and the align-and-drop, with **no
+/// winding read and no materialization of any kind** — every operation is a
+/// per-lane update using a cross-lane *read* of the dropped lane's residue
+/// (never a running value). This is the fully lane-local
+/// `RescaleExit::ModulusReduced` path, exposed for the ct-path hot loop
+/// (charter milestone M2b): the output IS the carried state — residues of
+/// `Y = ⌊(X+offset)/Δ⌋` on the surviving and anchor lanes.
+pub fn rescale_drop_only(
+    chain: &RescaleChain,
+    main_residues: &[u64],
+    anchor_residues: &[u64],
+    rounding: DeltaRounding,
+) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
+    if main_residues.len() != chain.lanes.len() || anchor_residues.len() != chain.anchors.len() {
+        return Err(Nine65Error::InvalidParameter {
+            message: "unified_rescale: residue count does not match chain shape".into(),
+        });
+    }
+    let mut main: Vec<u64> = Vec::with_capacity(chain.lanes.len());
+    for (i, &q) in chain.lanes.iter().enumerate() {
+        let mut x = main_residues[i] % q;
+        if rounding == DeltaRounding::NearestHalfUp {
+            x = (x + chain.delta_half_mod(q)) % q;
+        }
+        main.push(x);
+    }
+    let mut anchor: Vec<u64> = Vec::with_capacity(chain.anchors.len());
+    for (j, &a) in chain.anchors.iter().enumerate() {
+        let mut x = anchor_residues[j] % a;
+        if rounding == DeltaRounding::NearestHalfUp {
+            x = (x + chain.delta_half_mod(a)) % a;
+        }
+        anchor.push(x);
+    }
+    let mut alive: Vec<bool> = vec![true; chain.lanes.len()];
+    for &k in &chain.delta_lanes {
+        let d = chain.lanes[k];
+        let r_d = main[k] % d;
+        for i in 0..chain.lanes.len() {
+            if i == k || !alive[i] {
+                continue;
+            }
+            let q = chain.lanes[i];
+            let inv = mod_inverse_checked(d % q, q).ok_or(Nine65Error::NotCoprime {
+                m: d,
+                a: q,
+                gcd: gcd(d, q),
+            })?;
+            let diff = (main[i] + q - r_d % q) % q;
+            main[i] = mul_mod(diff, inv, q);
+        }
+        for (j, &a) in chain.anchors.iter().enumerate() {
+            let inv = mod_inverse_checked(d % a, a).ok_or(Nine65Error::NotCoprime {
+                m: d,
+                a,
+                gcd: gcd(d, a),
+            })?;
+            let diff = (anchor[j] + a - r_d % a) % a;
+            anchor[j] = mul_mod(diff, inv, a);
+        }
+        alive[k] = false;
+    }
+    let surviving: Vec<u64> = chain.surviving_idx.iter().map(|&i| main[i]).collect();
+    Ok((surviving, anchor))
+}
+
 pub fn exact_delta_rescale(
     chain: &RescaleChain,
     main_residues: &[u64],
@@ -799,7 +912,9 @@ pub fn exact_delta_rescale(
     // γ = Y mod t from the surviving lanes; K = ⌊Y/t⌋ from the anchors via
     // K ≡ (Y − γ)·t⁻¹ (mod a_j). Together they give Y = γ + K·t exactly,
     // without ever forming Y in the residue domain.
-    let (gamma, m_prod) = garner(&surviving_residues, &chain.surviving_lanes)?;
+    // R8 parallel summation, not a Garner cascade: the winding read is a
+    // boundary materialization and must not smuggle R9 into the runtime.
+    let (gamma, m_prod) = parallel_summation_crt(&surviving_residues, &chain.surviving_lanes)?;
     debug_assert_eq!(m_prod, chain.surviving_product());
     let winding_k = if chain.anchors.is_empty() {
         0u128
@@ -816,7 +931,9 @@ pub fn exact_delta_rescale(
             let diff = (anchor[j] + a - g_mod_a) % a;
             k_res.push(mul_mod(diff, inv, a));
         }
-        garner(&k_res, &chain.anchors)?.0
+        // The ladder merge, likewise R8 — "must not be silently substituted
+        // with a runtime Garner cascade" (lift inventory, ladder policy).
+        parallel_summation_crt(&k_res, &chain.anchors)?.0
     };
 
     // ── step 4: the exit ────────────────────────────────────────────
@@ -1513,5 +1630,68 @@ mod tests {
         assert_eq!(residual, 24);
         assert_eq!(hunted_errors, 3_084);
         assert_eq!(hunted_max_dev, 1);
+    }
+
+    /// The R8 parallel summation must agree with the R9 Garner ORACLE on
+    /// every input — result-identical reconstruction, cascade-free
+    /// implementation. Garner's licensed role is exactly this: independent
+    /// test oracle, never the runtime path.
+    #[test]
+    fn parallel_summation_matches_garner_oracle() {
+        let cases: &[&[u64]] = &[
+            &[7, 11, 13],
+            &[36, 37],
+            &[97, 101, 103, 107],
+            &[3, 5, 7, 11, 13, 17, 19],
+        ];
+        let mut checked = 0usize;
+        for mods in cases {
+            let m: u128 = mods.iter().map(|&x| x as u128).product();
+            let step = (m / 257).max(1);
+            let mut x: u128 = 0;
+            while x < m {
+                let res: Vec<u64> = mods.iter().map(|&q| (x % q as u128) as u64).collect();
+                let (a, ma) = parallel_summation_crt(&res, mods).expect("psum");
+                let (b, mb) = garner(&res, mods).expect("garner oracle");
+                assert_eq!((a, ma), (b, mb), "psum vs garner at x={x} mods={mods:?}");
+                assert_eq!(a, x, "reconstruction must equal ground truth");
+                checked += 1;
+                x += step;
+            }
+        }
+        assert!(checked > 1000, "oracle cross-check must not go vacuous");
+    }
+
+    /// The drop-only primitive (steps 1-2, no winding read, no
+    /// materialization of any kind) must agree with the full pipeline's
+    /// surviving and anchor residues at every point of the exhaustive range.
+    #[test]
+    fn drop_only_agrees_with_full_pipeline_exhaustively() {
+        // Same manufactured shape the exhaustive tests use: t=30, delta lanes
+        // {7, 11, 13} -> Q = 30 * 1001, one anchor.
+        let chain = RescaleChain::new(&[2, 3, 5, 7, 11, 13], &[3, 4, 5], 30, &[30031])
+            .expect("manufactured chain");
+        let q: u128 = chain.lanes().iter().map(|&x| x as u128).product();
+        let a_prod: u128 = 30031;
+        let step = 977u128; // prime stride over the full dual range
+        let mut x: u128 = 0;
+        let mut checked = 0usize;
+        while x < q * a_prod {
+            let main: Vec<u64> = chain.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
+            let anch: Vec<u64> = chain.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            for rounding in [DeltaRounding::Floor, DeltaRounding::NearestHalfUp] {
+                let (surv, anchor_out) =
+                    rescale_drop_only(&chain, &main, &anch, rounding).expect("drop only");
+                let full = exact_delta_rescale(
+                    &chain, &main, &anch, rounding, RescaleExit::ModulusReduced,
+                )
+                .expect("full pipeline");
+                assert_eq!(surv, full.surviving_residues, "surviving residues at x={x}");
+                assert_eq!(anchor_out, full.anchor_residues, "anchor residues at x={x}");
+            }
+            checked += 1;
+            x += step;
+        }
+        assert!(checked > 10_000, "sweep must not go vacuous");
     }
 }
