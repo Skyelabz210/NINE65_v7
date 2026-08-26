@@ -89,7 +89,7 @@ only.
   corrupt division, depth-3 public squaring chain (2→4→16→256, exact at
   every step on `secure_128_deep`; the v6-era green re-expressed on
   unbounded-depth semantics with public entry points only), and the pinned
-  honesty assertion that `mul` is a reconstruction.
+  honesty assertion that `mul` takes an R8 materialization.
 - **M2 — lane-local rescale.** Replace `k_elim_rescale_dual`'s
   `to_u256_level` ("Iterative CRT (Garner-style)", `arithmetic/rns.rs`) with
   the manufactured-chain align-and-drop of `arithmetic/unified_rescale.rs`
@@ -101,8 +101,8 @@ only.
 - **M4 — invert the pins.** When M2+M3 land,
   `ct_multiply_is_not_lane_independent_every_lane_moves` starts failing —
   invert it into a lane-independence assertion (its own instructions), invert
-  `multiply_is_recorded_as_a_reconstruction_pinned`, reclassify `mul` as
-  LaneLocal, and the ledger's reconstruction count goes to zero.
+  `multiply_is_recorded_as_a_materialization_pinned`, reclassify `mul` as
+  LaneLocal, and the ledger's materialization count goes to zero.
 
 ## Proof sketches (per the standing submission policy)
 
