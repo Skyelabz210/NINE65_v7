@@ -138,6 +138,19 @@ only.
        factoring as the ladder capacity `C` to the digit was the diagnostic
        that identified it. This is the lift inventory's capacity-alias
        theorem observed live.
+- **T2 — regression guardrail layer (landed).** Five never-vacuous tripwires
+  protecting the M2a/M2b non-standard decisions from a lower-tier agent's
+  regression to textbook defaults:
+  `crates/nine65/tests/cram_public_guardrails.rs` (tripwires 2 and 4,
+  public-API-only) plus two in-module tests co-located with the code they
+  guard — `cram_public_guardrail_no_centering_regression_measurably_fails`
+  in `ops/rns_fhe.rs` (tripwire 1) and
+  `cram_public_guardrail_manufactured_multiply_never_calls_garner` in
+  `arithmetic/unified_rescale.rs` (tripwire 3). Tripwire 5 (the `Y'' mod Q`
+  semantics pin) is the pre-existing
+  `manufactured_rescale_matches_ground_truth_on_known_values`, now carrying
+  an explicit DO-NOT header. See `docs/roadmap/README.md` for the full
+  anti-regression rationale and the task-card handoff this layer protects.
 - **M3 — lane-local relinearization digits.** Replace `extract_digit_dual`'s
   materialised 256-bit value with per-lane one-wave digit reads (compendium
   Theorem 9 shape).

@@ -3870,6 +3870,138 @@ impl RNSFHEContext {
         })
     }
 
+    /// GUARDRAIL ONLY (T2 tripwire 1) — the historically-measured regression
+    /// for [`Self::k_elim_rescale_manufactured`]: identical to the shipped
+    /// pipeline (same certificate, same S-shift, same `Y'' = K·t + γ mod Q`
+    /// for `y_star` and for the MAIN lanes — those agree with the shipped
+    /// path unconditionally since every main lane divides `Q`) EXCEPT for
+    /// how the ANCHOR lanes are populated: this textbook variant re-centers
+    /// `y_star` around `Q/2` first (`y_star - Q` when `y_star > Q/2`) and
+    /// derives anchor residues from that signed representative instead of
+    /// the canonical unsigned `y_star`. That is a no-op for main lanes (they
+    /// divide `Q`, so `(y_star - Q) mod p == y_star mod p`) but corrupts the
+    /// anchor lanes for roughly half of all coefficients — the corruption is
+    /// invisible on the multiply that produced it (decrypt only reads main
+    /// lanes) and only surfaces at the NEXT multiply, whose rescale reads
+    /// those anchor lanes for its own winding certificate. This matches the
+    /// measured M2b finding #1 signature exactly ("broke the degree-2
+    /// decryption identity"): the t·k̂ winding terms must survive uncentered
+    /// so the next level's s-weighted sum telescopes. Exists ONLY so
+    /// `cram_public_guardrail_no_centering_regression_measurably_fails` can
+    /// pin the failure. Never call this outside that test.
+    #[cfg(test)]
+    fn k_elim_rescale_manufactured_centered_wrong(
+        &self,
+        poly: &DualRNSPoly,
+    ) -> Nine65Result<DualRNSPoly> {
+        use crate::arithmetic::unified_rescale::{
+            exact_delta_rescale, DeltaRounding, RescaleChain, RescaleExit,
+        };
+
+        let lanes: Vec<u64> = self.config.primes.clone();
+        let t_idx = lanes
+            .iter()
+            .position(|&p| p == self.t)
+            .ok_or_else(|| Nine65Error::InvalidParameter {
+                message: "centered-wrong guardrail: t must be a main lane".into(),
+            })?;
+        let delta_idx: Vec<usize> = (0..lanes.len()).filter(|&i| i != t_idx).collect();
+
+        // Identical certificate, anchor selection and S-shift to the shipped
+        // path (`k_elim_rescale_manufactured`) — this guardrail isolates the
+        // FINAL RECONSTRUCTION regression only, not the anchor-selection
+        // certificate (that is tripwire 2) or the shift derivation (G5).
+        let two_nq = (4 * self.n as u128)
+            .checked_mul(self.q_product)
+            .and_then(|x| x.checked_add(1))
+            .ok_or(Nine65Error::Overflow {
+                operation: "centered-wrong guardrail: 4*N*Q + 1",
+            })?;
+        let mut sel: Vec<u64> = Vec::new();
+        let mut cap: u128 = 1;
+        for &a in &self.dual_rns.anchor.primes {
+            match cap.checked_mul(a as u128) {
+                Some(nc) => {
+                    cap = nc;
+                    sel.push(a);
+                    if cap > two_nq {
+                        break;
+                    }
+                }
+                None => break,
+            }
+        }
+        let chain = RescaleChain::new(&lanes, &delta_idx, self.t, &sel)?;
+        let q = U256::from_u128(self.q_product);
+
+        let n_u = self.n as u128;
+        let all_anchors = &self.dual_rns.anchor.primes;
+        let s_mod: Vec<u64> = sel
+            .iter()
+            .map(|&a| {
+                let a128 = a as u128;
+                let q_a = self.q_product % a128;
+                (((2 * n_u) % a128) * (q_a * q_a % a128) % a128) as u64
+            })
+            .collect();
+
+        let n_coeff = poly.n;
+        let mut main_out: Vec<Vec<u64>> = lanes.iter().map(|_| vec![0u64; n_coeff]).collect();
+        let mut anchor_out: Vec<Vec<u64>> = all_anchors
+            .iter()
+            .map(|_| vec![0u64; n_coeff])
+            .collect();
+        let mut main_res = vec![0u64; lanes.len()];
+        let mut sel_res = vec![0u64; sel.len()];
+
+        for j in 0..n_coeff {
+            for (i, limb) in poly.main.iter().enumerate() {
+                main_res[i] = limb[j];
+            }
+            for (k, &sm) in s_mod.iter().enumerate() {
+                let a = sel[k];
+                sel_res[k] = ((poly.anchor[k][j] as u128 + sm as u128) % a as u128) as u64;
+            }
+            let out = exact_delta_rescale(
+                &chain,
+                &main_res,
+                &sel_res,
+                DeltaRounding::NearestHalfUp,
+                RescaleExit::ModulusReduced,
+            )?;
+
+            // Identical to shipped: Y'' = K''*t + gamma, y_star = Y'' mod Q.
+            let y = U256::from_u128(out.winding_k)
+                .mul_u64(self.t)
+                .add(U256::from_u128(out.gamma));
+            let y_star = y.rem_u256(q);
+
+            for (i, &p) in self.config.primes.iter().enumerate() {
+                main_out[i][j] = y_star.mod_u64(p);
+            }
+
+            // TEXTBOOK (WRONG) STEP: center y_star around Q/2 before
+            // deriving the ANCHOR residues — this is exactly the regression
+            // T2 pins. The shipped path always writes anchor residues from
+            // the canonical unsigned y_star.
+            let q_half = q.shr1();
+            let (mag, is_neg) = if y_star.gt(q_half) {
+                (q.sub(y_star), true)
+            } else {
+                (y_star, false)
+            };
+            for (k, &a) in all_anchors.iter().enumerate() {
+                let r = mag.mod_u64(a);
+                anchor_out[k][j] = if is_neg && r != 0 { a - r } else { r };
+            }
+        }
+        Ok(DualRNSPoly {
+            main: main_out,
+            anchor: anchor_out,
+            n: n_coeff,
+        })
+    }
+
     /// M2b — public ct × ct multiplication with the elimination-first rescale.
     ///
     /// Identical pipeline to [`Self::mul_dual_public`] (tensor → rescale →
@@ -13433,6 +13565,13 @@ mod tests {
     /// M2b isolation: the manufactured rescale on CONSTRUCTED known values,
     /// checked against U256 ground truth round((X + Delta/2)/Delta) mod p —
     /// no crypto, no noise, every winding regime.
+    ///
+    /// GUARDRAIL (T2 tripwire 5): this sweep is the pin for the `Y'' mod Q`
+    /// semantics. DO NOT "simplify" the reconstruction to per-component
+    /// centering (`round(centered(X mod Q)/Δ)`) — textbook BFV intuition,
+    /// measurably wrong here; see
+    /// `cram_public_guardrail_no_centering_regression_measurably_fails`
+    /// below, which pins the failure directly on a full multiply.
     #[test]
     #[cfg(any(test, feature = "allow_insecure"))]
     fn manufactured_rescale_matches_ground_truth_on_known_values() {
@@ -13517,5 +13656,114 @@ mod tests {
             }
         }
         assert!(checked >= 50, "sweep must not go vacuous");
+    }
+
+    /// T2 tripwire 1 (never-vacuous, both directions, on CONSTRUCTED known
+    /// values — same method as `manufactured_rescale_matches_ground_truth_
+    /// on_known_values` above): centering `y_star` before deriving anchor
+    /// residues is the historically-measured M2b regression (charter
+    /// finding #1) — textbook BFV intuition, wrong here. Centering can
+    /// never perturb the MAIN lanes (they all divide `Q`, so
+    /// `(y_star - Q) mod p == y_star mod p` identically) — the corruption is
+    /// only visible on the ANCHOR lanes, and only for inputs whose true
+    /// `y_star > Q/2`. `w = ⌊Δ/2⌋ + 1` is chosen so `y_star` deterministically
+    /// lands in the upper half, forcing the trigger every run (no reliance
+    /// on where a real ciphertext's winding happens to fall).
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn cram_public_guardrail_no_centering_regression_measurably_fails() {
+        let cfg = crate::params::FHEConfig::manufactured_m2b_insecure();
+        let ctx = RNSFHEContext::new(&cfg);
+        let q = ctx.q_product;
+        let delta = q / ctx.t as u128;
+
+        // w chosen so the true Y'' = ⌊(X+Δ/2)/Δ⌋ lands with y_star = Y'' mod Q
+        // strictly above Q/2 — deterministic, not dependent on real
+        // ciphertext noise ever landing there.
+        let w: u128 = delta / 2 + 1;
+        let xc: u128 = 0;
+
+        let main: Vec<Vec<u64>> = ctx
+            .config
+            .primes
+            .iter()
+            .map(|&p| {
+                let p128 = p as u128;
+                vec![(((w % p128) * (q % p128) + xc % p128) % p128) as u64]
+            })
+            .collect();
+        let anchor: Vec<Vec<u64>> = ctx
+            .dual_rns
+            .anchor
+            .primes
+            .iter()
+            .map(|&a| {
+                let a128 = a as u128;
+                vec![(((w % a128) * (q % a128) + xc % a128) % a128) as u64]
+            })
+            .collect();
+        let poly = DualRNSPoly { main, anchor, n: 1 };
+
+        // Ground truth: Y = floor((X + floor(Delta/2))/Delta), y_star = Y mod Q.
+        let x = U256::from_u128(w).mul_low(U256::from_u128(q)).add(U256::from_u128(xc));
+        let shifted = x.add(U256::from_u128(delta / 2));
+        let mut y = shifted;
+        for &p in &ctx.config.primes {
+            if p == ctx.t {
+                continue;
+            }
+            let (qt, _r) = y.div_mod_u64(p);
+            y = qt;
+        }
+        let y_star = y.rem_u256(U256::from_u128(q));
+        let q_half = U256::from_u128(q).shr1();
+        assert!(
+            y_star.gt(q_half),
+            "test construction bug: chosen (w, xc) must put y_star above Q/2 for \
+             this guardrail to exercise the centering trigger at all"
+        );
+
+        // Shipped path: MAIN and ANCHOR lanes both match ground truth
+        // (already pinned by the sweep test above; re-asserted here so a
+        // regression on the shipped function fails THIS guardrail too).
+        let shipped = ctx.k_elim_rescale_manufactured(&poly).unwrap();
+        for (i, &p) in ctx.config.primes.iter().enumerate() {
+            assert_eq!(shipped.main[i][0], y_star.mod_u64(p), "shipped main lane {p} wrong");
+        }
+        for (k, &a) in ctx.dual_rns.anchor.primes.iter().enumerate() {
+            assert_eq!(
+                shipped.anchor[k][0],
+                y_star.mod_u64(a),
+                "shipped anchor lane {a} wrong — the shipped path must never center"
+            );
+        }
+
+        // Textbook-centered variant: MAIN lanes still agree (centering is a
+        // mathematical no-op there), but ANCHOR lanes must NOT — that
+        // divergence is exactly what T2 pins.
+        let centered = ctx.k_elim_rescale_manufactured_centered_wrong(&poly).unwrap();
+        for (i, &p) in ctx.config.primes.iter().enumerate() {
+            assert_eq!(
+                centered.main[i][0],
+                y_star.mod_u64(p),
+                "centered variant's main lane {p} diverged from ground truth — main \
+                 lanes divide Q, so centering can never move them; something else \
+                 changed"
+            );
+        }
+        let mut anchor_mismatch = false;
+        for (k, &a) in ctx.dual_rns.anchor.primes.iter().enumerate() {
+            if centered.anchor[k][0] != y_star.mod_u64(a) {
+                anchor_mismatch = true;
+            }
+        }
+        assert!(
+            anchor_mismatch,
+            "REGRESSION: the textbook-centered reconstruction's anchor lanes matched \
+             ground truth even with y_star > Q/2 — the centering-corrupts-anchors \
+             failure mode (charter M2b finding #1) no longer holds, or this guardrail \
+             has gone vacuous. Do not 'fix' this by making the centered variant \
+             agree; investigate why it stopped disagreeing."
+        );
     }
 }
