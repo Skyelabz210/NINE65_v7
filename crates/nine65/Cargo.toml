@@ -281,6 +281,10 @@ name = "cram_public_guardrails"
 required-features = ["allow_insecure"]
 
 [[test]]
+name = "cram_public_timings"
+required-features = ["allow_insecure"]
+
+[[test]]
 name = "security_integration"
 required-features = ["allow_insecure"]
 

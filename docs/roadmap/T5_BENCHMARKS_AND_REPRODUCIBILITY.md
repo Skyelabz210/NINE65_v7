@@ -4,6 +4,17 @@
 pattern exactly. The guardrails from T2 catch any accidental behavior
 change; this task only measures, it does not modify evaluator logic.
 
+**Status: LANDED (2026-08-26).** `crates/nine65/tests/cram_public_timings.rs`
+covers encrypt/add/mul_plain/exact_divide/mul(general)/mul_manufactured
+(M2b)/mul_manufactured_gadget (M3)/decrypt on `manufactured_m2b_insecure`
+and the general-path subset on `secure_128_deep`; determinism check passed
+(byte-identical ciphertexts across identical seeds). Baseline doc:
+`docs/CRAM_PUBLIC_BASELINE_2026-08-26.md` (3-run medians, full config
+tuples, seeds, reproduce command, raw per-run figures). Notable finding:
+M3's gadget relin measures ~3.8x FASTER than M2b's digit-based relin
+(19.56ms vs 74.71ms median) despite its documented depth-2 noise
+limitation — speed and noise margin are independent axes.
+
 ## Goal
 
 A new `crates/nine65/tests/cram_public_timings.rs`, structured identically
