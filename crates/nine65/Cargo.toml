@@ -269,6 +269,10 @@ name = "residue_space_ciphertext"
 required-features = ["allow_insecure"]
 
 [[test]]
+name = "cram_public_mode"
+required-features = ["allow_insecure"]
+
+[[test]]
 name = "security_integration"
 required-features = ["allow_insecure"]
 
