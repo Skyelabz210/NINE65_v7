@@ -151,9 +151,34 @@ only.
   `manufactured_rescale_matches_ground_truth_on_known_values`, now carrying
   an explicit DO-NOT header. See `docs/roadmap/README.md` for the full
   anti-regression rationale and the task-card handoff this layer protects.
-- **M3 — lane-local relinearization digits.** Replace `extract_digit_dual`'s
-  materialised 256-bit value with per-lane one-wave digit reads (compendium
-  Theorem 9 shape).
+- **M3 — lane-local relinearization digits (landed, depth-2 scope).**
+  Replaces `extract_digit_dual`'s materialised 256-bit value with a
+  CRT-idempotent RNS-limb gadget: `generate_gadget_key_with_rng` (keygen,
+  one `(rlk0_i, rlk1_i)` pair per main lane, keyed by `g_i = (Q/q_i)·[(Q/q_i)⁻¹
+  mod q_i]`, derived by extended Euclid) and `relinearize_rns_limb`
+  (relin — the "digits" are the ciphertext's own per-lane residues,
+  broadcast via ordinary `% p`, no CRT reconstruction). Wired additively
+  behind new entry points (`mul_dual_public_manufactured_gadget` /
+  `CramPublicEvaluator::mul_manufactured_gadget`); the digit-based path is
+  unchanged and still exercised by its own tests. Guardrail-pinned: the
+  relin step performs zero `to_u256_level` calls
+  (`m3_guardrail_gadget_relin_never_calls_to_u256_level`, T2-style,
+  never-vacuous against the digit-based path on the same input).
+
+  **Finding: depth-2 reliable, depth-3 is a measured noise-budget limit,
+  not a correctness bug.** A 30-seed sweep of the depth-3 squaring chain
+  showed 0/30 failures at depth 1-2 and 18/30 (60%) failures at depth 3,
+  every failure first appearing at exactly depth 3, off by a small margin
+  (e.g. decrypted 255 instead of 256) — the signature of noise overrunning
+  `Δ/2`, not an algebraic error (the CRT-idempotent identity `Σ [P]_{q_i}·g_i
+  ≡ P (mod Q)` holds regardless of representation; what differs from the
+  digit-based scheme is per-term noise: each RNS-limb "digit" is up to
+  `q_i - 1` (~2^31 on this chain) versus the digit-based scheme's `2^16`,
+  and that gap compounds through the tensor product's noise growth across
+  levels). Tests and the public entry points are scoped to depth 2, matching
+  what is measured, not what was estimated. Reaching depth-3 parity is
+  escalated future work — likely a hybrid gadget (RNS lane × base-`2^b`
+  sub-decomposition within each lane) — not attempted here.
 - **M4 — invert the pins.** When M2+M3 land,
   `ct_multiply_is_not_lane_independent_every_lane_moves` starts failing —
   invert it into a lane-independence assertion (its own instructions), invert
@@ -244,3 +269,30 @@ the multiply divides by Δ via K-Elimination instead of dropping a lane
 constant and depth is bounded by noise, not by prime supply. *Status:*
 SKETCH + WITNESS (`depth3_public_squaring_chain_reaches_256`;
 `full_chain_encrypt_mul_divide_decrypt_leaves_the_basis_byte_identical`).
+
+**PS-CP-8 — Correctness of the M3 RNS-limb relinearization gadget (depth
+≤ 2).** *Statement:* `relinearize_rns_limb` correctly recovers `P·s²
+(mod Q)` from a manufactured-chain ciphertext component `P` (already
+canonical mod `Q`, e.g. the output of `k_elim_rescale_manufactured`), using
+only `P`'s own per-lane residues as gadget digits — no CRT reconstruction,
+no `to_u256_level`. *Sketch:* for each main lane `q_i`, `g_i = (Q/q_i)·
+[(Q/q_i)⁻¹ mod q_i]` is the CRT idempotent (`g_i ≡ 1 mod q_i`, `g_i ≡ 0 mod
+q_j` for `j ≠ i` — the main-lane residues of `g_i` are the Kronecker delta
+by construction, no computation needed); the CRT reconstruction identity
+`Σ_i [P]_{q_i}·g_i ≡ P (mod Q)` holds per coefficient; embedding `g_i·s²`
+into the encrypted `rlk0_i = -a_i·s-e_i+g_i·s²` and summing
+`Σ_i digit_i(x)·rlk_i(x)` (ring convolution, `digit_i` a scalar constant per
+coefficient broadcast into every lane) distributes the scalar `g_i` through
+the convolution exactly as the base-`2^b` digit scheme distributes
+`decomp_base^i`, since both are per-coefficient scalar constants, not
+polynomials — so the identity is the SAME mechanism, only the digit
+granularity differs (RNS lane vs. positional base-`2^b`). *Caveat, measured
+not assumed:* the larger per-lane digit magnitude (`~q_i`, vs.
+`decomp_base` for the base-`2^b` scheme) grows noise faster per level; a
+30-seed sweep showed 0/30 failures at depth 1-2 and 18/30 at depth 3 (see
+the M3 charter finding above) — this proof sketch's claim is therefore
+scoped to depth ≤ 2, not depth 3. *Status:* SKETCH + WITNESS
+(`m3_rns_limb_relin_matches_digit_relin_at_plaintext_level`,
+`m3_rns_limb_relin_depth2_squaring_chain`,
+`m3_gadget_depth2_squaring_chain_through_evaluator`,
+`m3_guardrail_gadget_relin_never_calls_to_u256_level`).

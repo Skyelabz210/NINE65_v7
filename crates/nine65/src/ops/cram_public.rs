@@ -192,6 +192,30 @@ impl CramPublicEvaluator {
         )
     }
 
+    /// M3 — same key split as [`Self::keygen_with_rng`], plus the RNS-limb
+    /// gadget key ([`crate::ops::rns_fhe::DualRNSGadgetKey`]) for
+    /// [`Self::mul_manufactured_gadget`]. Requires a manufactured chain
+    /// (typed error otherwise). Additive: [`Self::keygen_with_rng`] is
+    /// unchanged and still the entry point for the digit-based path.
+    pub fn keygen_with_gadget_with_rng<R: FheRng>(
+        &self,
+        rng: &mut R,
+    ) -> Nine65Result<(CramPublicKeys, crate::ops::rns_fhe::DualRNSGadgetKey, CramClientKeys)> {
+        let keys = self.ctx.generate_keys_dual_full_public_deep_with_rng(rng);
+        let gadget = self.ctx.generate_gadget_key_with_rng(&keys.secret_key, rng)?;
+        Ok((
+            CramPublicKeys {
+                public_key: keys.public_key.clone(),
+                eval_key: keys.eval_key,
+            },
+            gadget,
+            CramClientKeys {
+                secret_key: keys.secret_key,
+                public_key: keys.public_key,
+            },
+        ))
+    }
+
     // ── client half (encrypt / decrypt) ──────────────────────────────────
 
     /// Public-key encryption (client side).
@@ -313,6 +337,26 @@ impl CramPublicEvaluator {
     ) -> Nine65Result<DualRNSCiphertext> {
         let out = self.ctx.mul_dual_public_manufactured(a, b, &keys.eval_key)?;
         self.ledger.record("mul_m2b", EmissionClass::Materialization);
+        Ok(out)
+    }
+
+    /// M3 — manufactured-chain multiply with the RNS-limb gadget relin
+    /// (elimination-first: zero `to_u256_level` calls in relinearization,
+    /// guardrail-pinned by
+    /// `ops::rns_fhe::tests::m3_guardrail_gadget_relin_never_calls_to_u256_level`).
+    /// Recorded as `Materialization` for now, matching [`Self::mul_manufactured`]
+    /// — the ledger-class reclassification to `EliminationFirst` is M4's
+    /// job (`docs/roadmap/T4_M4_REPIN_VERDICTS.md`), not this method's;
+    /// `canonicalize_dual_anchor` (called by both paths) still materializes,
+    /// so an unqualified `EliminationFirst` label here would overclaim.
+    pub fn mul_manufactured_gadget(
+        &mut self,
+        a: &DualRNSCiphertext,
+        b: &DualRNSCiphertext,
+        gadget: &crate::ops::rns_fhe::DualRNSGadgetKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let out = self.ctx.mul_dual_public_manufactured_gadget(a, b, gadget)?;
+        self.ledger.record("mul_m3_gadget", EmissionClass::Materialization);
         Ok(out)
     }
 

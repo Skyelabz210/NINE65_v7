@@ -207,7 +207,7 @@ fn mul_mod(a: u64, b: u64, m: u64) -> u64 {
 /// to `garner` (the `#[cfg(test)]` oracle below cross-checks them).
 fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
     #[cfg(test)]
-    PSUM_CALLS.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    call_counters::PSUM_CALLS.with(|c| c.set(c.get() + 1));
     let mut m_prod: u128 = 1;
     for &m in mods {
         if m < 2 {
@@ -246,14 +246,26 @@ fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128,
 /// retired from runtime paths, retained here strictly as the independent
 /// TEST ORACLE the corpus licenses it to be. Runtime code must call
 /// `parallel_summation_crt` instead.
+/// T2 tripwire-3 call counters, THREAD-LOCAL rather than process-global:
+/// `cargo test` runs each test function on its own thread by default, and a
+/// global counter would be incremented by whatever OTHER tests happen to
+/// call `garner`/`parallel_summation_crt` concurrently, making a
+/// before/after delta check flaky (the same bug measured and fixed for
+/// `arithmetic::rns::to_u256_level_calls` — see its doc comment). A
+/// thread-local counter only sees calls made by the thread running the
+/// guardrail test itself.
 #[cfg(test)]
-static PSUM_CALLS: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
-#[cfg(test)]
-static GARNER_CALLS: core::sync::atomic::AtomicUsize = core::sync::atomic::AtomicUsize::new(0);
+mod call_counters {
+    use core::cell::Cell;
+    thread_local! {
+        pub(super) static PSUM_CALLS: Cell<usize> = const { Cell::new(0) };
+        pub(super) static GARNER_CALLS: Cell<usize> = const { Cell::new(0) };
+    }
+}
 
 #[cfg(test)]
 fn garner(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
-    GARNER_CALLS.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
+    call_counters::GARNER_CALLS.with(|c| c.set(c.get() + 1));
     let mut x: u128 = 0;
     let mut m_acc: u128 = 1;
     for (&r, &m) in residues.iter().zip(mods.iter()) {
@@ -1728,8 +1740,8 @@ mod tests {
         use crate::ops::cram_public::CramPublicEvaluator;
         use crate::params::FHEConfig;
 
-        let garner_before = GARNER_CALLS.load(core::sync::atomic::Ordering::Relaxed);
-        let psum_before = PSUM_CALLS.load(core::sync::atomic::Ordering::Relaxed);
+        let garner_before = call_counters::GARNER_CALLS.with(|c| c.get());
+        let psum_before = call_counters::PSUM_CALLS.with(|c| c.get());
 
         let eval = CramPublicEvaluator::new(&FHEConfig::manufactured_m2b_insecure());
         let mut rng = ShadowHarvester::with_seed(77001);
@@ -1747,8 +1759,8 @@ mod tests {
              proves nothing about which reconstruction path ran"
         );
 
-        let garner_after = GARNER_CALLS.load(core::sync::atomic::Ordering::Relaxed);
-        let psum_after = PSUM_CALLS.load(core::sync::atomic::Ordering::Relaxed);
+        let garner_after = call_counters::GARNER_CALLS.with(|c| c.get());
+        let psum_after = call_counters::PSUM_CALLS.with(|c| c.get());
 
         assert_eq!(
             garner_after, garner_before,

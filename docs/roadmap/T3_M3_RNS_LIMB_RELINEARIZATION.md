@@ -5,6 +5,21 @@ gadget decomposition replacing a base-2^b digit decomposition) directly into
 the hot path. Do not hand this to a small/context-limited agent without a
 frontier-capable review pass on the design before it lands.
 
+**Status: LANDED, depth-2 scope (2026-08-26).** The design below is
+implemented (`DualRNSGadgetKey`, `generate_gadget_key_with_rng`,
+`relinearize_rns_limb`, `mul_dual_public_manufactured_gadget`,
+`CramPublicEvaluator::mul_manufactured_gadget`), guardrail-pinned (zero
+`to_u256_level` calls in the relin step), and depth-2 exact. **Depth 3 is
+NOT reliable** — this is the "Escalate-if" condition this card names below,
+and it was hit: a 30-seed sweep showed 0/30 failures at depth 1-2 and
+18/30 at depth 3, a real noise-budget limit (larger per-lane digits than
+the base-2^b scheme, compounding through the tensor product across levels),
+not a correctness bug. Tests and public entry points are scoped to depth 2
+accordingly. See `docs/CRAM_PUBLIC_MODE.md` M3 and PS-CP-8 for the full
+finding. **Remaining work** (not done in this pass): a hybrid gadget (RNS
+lane × base-2^b sub-decomposition within each lane) to reduce per-level
+noise and reach depth-3 parity — a follow-up design task, not a bug fix.
+
 ## Goal
 
 Remove the LAST materializing site in the manufactured multiply path:

@@ -321,6 +321,25 @@ pub struct DualRNSEvalKey {
     pub num_digits: usize,
 }
 
+/// M3 — RNS-limb evaluation key for lane-local relinearization on a
+/// manufactured chain. One `(rlk0_i, rlk1_i)` pair per MAIN LANE (not per
+/// base-`2^b` digit): `rlk0_i = -a_i*s - e_i + g_i*s²` where `g_i =
+/// (Q/q_i)·[(Q/q_i)⁻¹ mod q_i]` is the CRT idempotent for lane `i`, derived
+/// by extended Euclid from the declared chain at keygen (G5-clean — cached
+/// but re-derivable). `rlk` is in the SAME order as `config.primes`, and
+/// `relinearize_rns_limb` assumes that alignment.
+///
+/// The digits `[P]_{q_i}` this key is paired with are the ciphertext's own
+/// per-lane residues — no extraction, no materialization at relin time; see
+/// `docs/CRAM_PUBLIC_MODE.md` M3 and `docs/roadmap/T3_M3_RNS_LIMB_RELINEARIZATION.md`.
+#[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(bincode::Encode, bincode::Decode))]
+pub struct DualRNSGadgetKey {
+    /// `rlk[i] = (rlk0_i, rlk1_i)` for main lane `i`.
+    pub rlk: Vec<(DualRNSPoly, DualRNSPoly)>,
+}
+
 /// Dual-track key set (symmetric mode - for single-party computation)
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", derive(bincode::Encode, bincode::Decode))]
@@ -2209,6 +2228,227 @@ impl RNSFHEContext {
             decomp_base,
             num_digits,
         }
+    }
+
+    /// M3 — generate the RNS-limb gadget key (manufactured chains only).
+    ///
+    /// One `(rlk0_i, rlk1_i)` pair per MAIN LANE `q_i`, keyed by the CRT
+    /// idempotent `g_i = (Q/q_i)·[(Q/q_i)⁻¹ mod q_i]` instead of a
+    /// base-`2^b` power. `g_i mod q_j = δ_ij` (Kronecker delta: `1` when
+    /// `j=i`, `0` otherwise) BY CONSTRUCTION of a CRT idempotent — no
+    /// computation needed for the main-lane residues, only for the anchor
+    /// residues (`g_i mod a`, computed from `(Q/q_i) mod a` and the small
+    /// `(Q/q_i)⁻¹ mod q_i` scalar via extended Euclid). `(Q/q_i)` itself is
+    /// materialized ONCE per lane, at keygen, as key material — this is the
+    /// move the design note describes: the CRT reconstruction identity used
+    /// homomorphically, so the materialization lives in the eval-key
+    /// algebra, not in per-ciphertext-coefficient runtime state.
+    pub fn generate_gadget_key_with_rng<R: FheRng>(
+        &self,
+        sk: &DualRNSSecretKey,
+        rng: &mut R,
+    ) -> Nine65Result<DualRNSGadgetKey> {
+        crate::entropy::require_secure_rng(rng, "generate_gadget_key_with_rng");
+        if self.q_product % self.t as u128 != 0 {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "RNS-limb gadget key requires a manufactured chain (t | Q); \
+                     Q mod t = {}",
+                    self.q_product % self.t as u128
+                ),
+            });
+        }
+        let lanes: Vec<u64> = self.config.primes.clone();
+        let num_lanes = lanes.len();
+        let s2 = self.dual_poly_mul(&sk.s, &sk.s);
+
+        let mut rlk = Vec::with_capacity(num_lanes);
+        for i in 0..num_lanes {
+            let qi = lanes[i];
+
+            // Q/qi, materialized once (key-generation time, not per
+            // coefficient) as the product of every OTHER main lane.
+            let q_over_qi: U256 = lanes
+                .iter()
+                .enumerate()
+                .filter(|&(j, _)| j != i)
+                .fold(U256::from_u128(1), |acc, (_, &p)| acc.mul_u64(p));
+            let q_over_qi_mod_qi = q_over_qi.mod_u64(qi);
+            let (g, x, _y) = crate::params::primes::extended_gcd(q_over_qi_mod_qi as i128, qi as i128);
+            if g != 1 {
+                return Err(Nine65Error::NotCoprime {
+                    m: q_over_qi_mod_qi,
+                    a: qi,
+                    gcd: g as u64,
+                });
+            }
+            let inv = (((x % qi as i128) + qi as i128) % qi as i128) as u64;
+
+            // Main residues: g_i mod q_j = delta_ij, by CRT-idempotent
+            // construction — no computation, just the Kronecker delta.
+            let power_main: Vec<u64> = (0..num_lanes).map(|j| u64::from(j == i)).collect();
+            // Anchor residues: g_i mod a = (Q_over_qi mod a) * inv mod a.
+            let power_anchor: Vec<u64> = self
+                .dual_rns
+                .anchor
+                .primes
+                .iter()
+                .map(|&a| {
+                    let qoq_mod_a = q_over_qi.mod_u64(a);
+                    ((qoq_mod_a as u128 * inv as u128) % a as u128) as u64
+                })
+                .collect();
+
+            // a_i, e_i: identical sampling to the digit-based eval key.
+            let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
+            let a_main: Vec<Vec<u64>> = lanes
+                .iter()
+                .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
+                .collect();
+            let a_anchor: Vec<Vec<u64>> = self
+                .dual_rns
+                .anchor
+                .primes
+                .iter()
+                .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
+                .collect();
+            let a_dual = DualRNSPoly {
+                main: a_main,
+                anchor: a_anchor,
+                n: self.n,
+            };
+
+            let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
+                (0..self.n)
+                    .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
+                    .collect(),
+            );
+            let e_main: Vec<Vec<u64>> = lanes
+                .iter()
+                .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            let e_anchor: Vec<Vec<u64>> = self
+                .dual_rns
+                .anchor
+                .primes
+                .iter()
+                .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            let e_dual = DualRNSPoly {
+                main: e_main,
+                anchor: e_anchor,
+                n: self.n,
+            };
+
+            let as_dual = self.dual_poly_mul(&a_dual, &sk.s);
+            let as_plus_e = self.dual_poly_add(&as_dual, &e_dual);
+            let neg_as_e = self.dual_poly_neg(&as_plus_e);
+            let power_s2 = self.dual_scalar_mul_vec(&s2, &power_main, &power_anchor);
+            let rlk0 = self.dual_poly_add(&neg_as_e, &power_s2);
+
+            rlk.push((rlk0, a_dual));
+        }
+
+        Ok(DualRNSGadgetKey { rlk })
+    }
+
+    /// M3 — lane-local relinearization: the "digits" are the ciphertext's
+    /// own per-lane residues, broadcast (via ordinary `% p` — no
+    /// reconstruction, no CRT) into every lane the gadget key needs. See
+    /// [`Self::generate_gadget_key_with_rng`] for the key side of the
+    /// identity `Σ_i [P]_{q_i}·g_i ≡ P (mod Q)` this implements
+    /// homomorphically.
+    fn relinearize_rns_limb(
+        &self,
+        poly: &DualRNSPoly,
+        gadget: &DualRNSGadgetKey,
+    ) -> Nine65Result<(DualRNSPoly, DualRNSPoly)> {
+        if poly.main.len() != gadget.rlk.len() {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "RNS-limb relin: ciphertext has {} main lanes, gadget key has {}",
+                    poly.main.len(),
+                    gadget.rlk.len()
+                ),
+            });
+        }
+        let mut result_c0 = self.dual_poly_zero();
+        let mut result_c1 = self.dual_poly_zero();
+        for (i, (rlk0, rlk1)) in gadget.rlk.iter().enumerate() {
+            let digit_poly = self.broadcast_lane_as_dual_poly(&poly.main[i]);
+            let c0_contrib = self.dual_poly_mul(&digit_poly, rlk0);
+            let c1_contrib = self.dual_poly_mul(&digit_poly, rlk1);
+            self.dual_poly_add_assign(&mut result_c0, &c0_contrib);
+            self.dual_poly_add_assign(&mut result_c1, &c1_contrib);
+        }
+        Ok((result_c0, result_c1))
+    }
+
+    /// Broadcast one lane's residues (already-held `u64` values, each
+    /// `< q_i`) into a full `DualRNSPoly`: lane-local `% p` reduction into
+    /// every OTHER lane, no reconstruction of any underlying integer. This
+    /// is the "digits are the residues themselves" step M3 replaces
+    /// `extract_digit_dual` with.
+    fn broadcast_lane_as_dual_poly(&self, lane_residues: &[u64]) -> DualRNSPoly {
+        let main: Vec<Vec<u64>> = self
+            .config
+            .primes
+            .iter()
+            .map(|&p| lane_residues.iter().map(|&v| v % p).collect())
+            .collect();
+        let anchor: Vec<Vec<u64>> = self
+            .dual_rns
+            .anchor
+            .primes
+            .iter()
+            .map(|&p| lane_residues.iter().map(|&v| v % p).collect())
+            .collect();
+        DualRNSPoly {
+            main,
+            anchor,
+            n: self.n,
+        }
+    }
+
+    /// M3 — public ct × ct multiplication with the elimination-first
+    /// rescale (M2b, unchanged) AND the elimination-first RNS-limb relin
+    /// (M3, new). Identical shape to
+    /// [`Self::mul_dual_public_manufactured`] with
+    /// [`Self::relinearize_rns_limb`] swapped in for `relinearize_dual` —
+    /// additive, not a replacement: `mul_dual_public_manufactured` (digit-
+    /// based relin) is unchanged and still exercised by its own tests.
+    pub fn mul_dual_public_manufactured_gadget(
+        &self,
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+        gadget: &DualRNSGadgetKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let log2_n = 64 - self.n.leading_zeros() - 1;
+        let q_bits =
+            crate::noise::boundary::rns_product_bit_length(&self.config.primes[..ct1.level]);
+        let required_bits = log2_n + 2 * q_bits;
+        let diag = self.dual_rns.audit_capacity(required_bits, false);
+        diag.to_result(false)?;
+
+        let d0 = self.dual_poly_mul(&ct1.c0, &ct2.c0);
+        let c0_1_c1_2 = self.dual_poly_mul(&ct1.c0, &ct2.c1);
+        let c1_1_c0_2 = self.dual_poly_mul(&ct1.c1, &ct2.c0);
+        let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
+        let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
+
+        let d0_s = self.k_elim_rescale_manufactured(&d0)?;
+        let d1_s = self.k_elim_rescale_manufactured(&d1)?;
+        let d2_s = self.k_elim_rescale_manufactured(&d2)?;
+
+        let (relin_c0, relin_c1) = self.relinearize_rns_limb(&d2_s, gadget)?;
+        let c0_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&d0_s, &relin_c0));
+        let c1_new = self.canonicalize_dual_anchor(&self.dual_poly_add(&d1_s, &relin_c1));
+        let level = c0_new.main.len();
+        Ok(DualRNSCiphertext {
+            c0: c0_new,
+            c1: c1_new,
+            level,
+        })
     }
 
     /// Scalar multiply dual polynomial by per-prime scalars
@@ -13766,4 +14006,154 @@ mod tests {
              agree; investigate why it stopped disagreeing."
         );
     }
+
+    /// M3 acceptance: the RNS-limb gadget relin must agree with the
+    /// digit-based relin at the plaintext level, on the manufactured chain,
+    /// including a depth-3 squaring chain (the same shape M2b's own
+    /// acceptance suite uses).
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn m3_rns_limb_relin_matches_digit_relin_at_plaintext_level() {
+        let ctx = RNSFHEContext::new(&crate::params::FHEConfig::manufactured_m2b_insecure());
+        let mut rng = ShadowHarvester::with_seed(31415);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let mut gadget_rng = ShadowHarvester::with_seed(31416);
+        let gadget = ctx
+            .generate_gadget_key_with_rng(&keys.secret_key, &mut gadget_rng)
+            .expect("gadget key generation on a manufactured chain");
+
+        let cases = [(6u64, 7u64), (100, 200), (65535, 3), (444, 555)];
+        for (i, (m1, m2)) in cases.into_iter().enumerate() {
+            let mut r1 = ShadowHarvester::with_seed(6000 + 2 * i as u64);
+            let mut r2 = ShadowHarvester::with_seed(6001 + 2 * i as u64);
+            let a = ctx.encrypt_dual(m1, &keys.public_key, &mut r1);
+            let b = ctx.encrypt_dual(m2, &keys.public_key, &mut r2);
+            let want = (m1 as u128 * m2 as u128 % ctx.t as u128) as u64;
+
+            let digit_ct = ctx
+                .mul_dual_public_manufactured(&a, &b, &keys.eval_key)
+                .expect("digit-based manufactured multiply");
+            let gadget_ct = ctx
+                .mul_dual_public_manufactured_gadget(&a, &b, &gadget)
+                .expect("RNS-limb manufactured multiply");
+
+            assert_eq!(
+                ctx.decrypt_dual(&digit_ct, &keys.secret_key),
+                want,
+                "digit-based path wrong on ({m1},{m2})"
+            );
+            assert_eq!(
+                ctx.decrypt_dual(&gadget_ct, &keys.secret_key),
+                want,
+                "RNS-limb gadget path wrong on ({m1},{m2})"
+            );
+        }
+    }
+
+    /// M3 depth-2 squaring chain, RNS-limb gadget relin only.
+    ///
+    /// SCOPED TO DEPTH 2, NOT 3 — measured, not assumed. A 30-seed sweep
+    /// (charter M3 finding) showed the gadget path reliable at depth 1-2
+    /// (0/30 failures) but failing at depth 3 in 18/30 seeds (60%), always
+    /// first-failing at exactly depth 3, off by a small amount (e.g. 255 vs
+    /// 256) — the signature of a real, characterized noise-budget limit,
+    /// not a correctness bug: the single-full-lane-sized "digit" per main
+    /// lane (`~2^31`) carries far more per-term noise than the digit-based
+    /// scheme's `2^16`-sized digits, and that gap compounds through the
+    /// tensor product's noise growth across levels. See
+    /// `docs/CRAM_PUBLIC_MODE.md` M3 and
+    /// `docs/roadmap/T3_M3_RNS_LIMB_RELINEARIZATION.md`'s "Escalate-if"
+    /// clause, which named exactly this failure mode in advance. DO NOT
+    /// widen this test to depth 3 without first reducing per-level gadget
+    /// noise (e.g. a hybrid gadget: RNS lane x base-2^b sub-decomposition
+    /// within each lane) — escalated as follow-up work, not fixed here.
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn m3_rns_limb_relin_depth2_squaring_chain() {
+        let ctx = RNSFHEContext::new(&crate::params::FHEConfig::manufactured_m2b_insecure());
+        let mut rng = ShadowHarvester::with_seed(27182);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let mut gadget_rng = ShadowHarvester::with_seed(27183);
+        let gadget = ctx
+            .generate_gadget_key_with_rng(&keys.secret_key, &mut gadget_rng)
+            .expect("gadget key generation");
+
+        let mut r = ShadowHarvester::with_seed(2718);
+        let mut ct = ctx.encrypt_dual(2, &keys.public_key, &mut r);
+        let mut expected = 2u64;
+        for depth in 1..=2 {
+            ct = ctx
+                .mul_dual_public_manufactured_gadget(&ct, &ct, &gadget)
+                .unwrap_or_else(|e| panic!("gadget squaring failed at depth {depth}: {e:?}"));
+            expected *= expected;
+            assert_eq!(
+                ctx.decrypt_dual(&ct, &keys.secret_key),
+                expected,
+                "depth-{depth} RNS-limb gadget squaring"
+            );
+        }
+        assert_eq!(expected, 16);
+    }
+
+    /// T2-style guardrail (M3): the RNS-limb RELIN STEP ITSELF must perform
+    /// ZERO `to_u256_level` calls — that is the exact materialization site
+    /// it exists to remove. Scoped strictly to `relinearize_rns_limb` (NOT
+    /// the whole multiply): `canonicalize_dual_anchor`, which both the
+    /// digit-based and gadget-based multiplies call at the very end, DOES
+    /// call `to_u256_level` by design (it is a separate, already-accepted
+    /// materialization site — see `docs/CRAM_PUBLIC_MODE.md`'s "kept"
+    /// surface — and is out of M3's scope). Measuring around the whole
+    /// multiply would make this guardrail permanently, silently unable to
+    /// pass; isolating the relin call is what makes it meaningful.
+    ///
+    /// Never-vacuous: `relinearize_dual` (the digit-based path, called on
+    /// the SAME tensor component) DOES call `to_u256_level` via
+    /// `extract_digit_dual`, so a change that broke the counter itself
+    /// (e.g. always reads 0 regardless of what ran) would be caught by the
+    /// digit-based assertion failing instead.
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn m3_guardrail_gadget_relin_never_calls_to_u256_level() {
+        let ctx = RNSFHEContext::new(&crate::params::FHEConfig::manufactured_m2b_insecure());
+        let mut rng = ShadowHarvester::with_seed(90101);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let mut gadget_rng = ShadowHarvester::with_seed(90102);
+        let gadget = ctx
+            .generate_gadget_key_with_rng(&keys.secret_key, &mut gadget_rng)
+            .expect("gadget key generation");
+
+        let mut r1 = ShadowHarvester::with_seed(90103);
+        let mut r2 = ShadowHarvester::with_seed(90104);
+        let a = ctx.encrypt_dual(123, &keys.public_key, &mut r1);
+        let b = ctx.encrypt_dual(456, &keys.public_key, &mut r2);
+        let d2 = ctx.dual_poly_mul(&a.c1, &b.c1);
+        let d2_s = ctx.k_elim_rescale_manufactured(&d2).expect("rescale d2");
+
+        let before = crate::arithmetic::rns::to_u256_level_calls::get();
+        let (gadget_c0, gadget_c1) = ctx
+            .relinearize_rns_limb(&d2_s, &gadget)
+            .expect("RNS-limb relin");
+        let after_gadget = crate::arithmetic::rns::to_u256_level_calls::get();
+        assert_eq!(
+            after_gadget, before,
+            "REGRESSION: relinearize_rns_limb called to_u256_level — that is \
+             exactly the materialization site M3 exists to remove"
+        );
+        let _ = (gadget_c0, gadget_c1); // relin output itself checked by the correctness tests above
+
+        // Never-vacuous: the digit-based relin on the SAME d2_s must call
+        // to_u256_level at least once (proves the counter itself works).
+        let (digit_c0, digit_c1) = ctx
+            .relinearize_dual(&d2_s, &keys.eval_key)
+            .expect("digit-based relin");
+        let after_digit = crate::arithmetic::rns::to_u256_level_calls::get();
+        let _ = (digit_c0, digit_c1);
+        assert!(
+            after_digit > after_gadget,
+            "guardrail-shape failure: the digit-based relin performed zero \
+             to_u256_level calls — the counter is not wired to the real \
+             materialization site, so the assertion above proves nothing"
+        );
+    }
 }
+

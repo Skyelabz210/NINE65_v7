@@ -109,6 +109,41 @@ fn m2b_depth3_squaring_chain() {
     assert_eq!(expected, 256);
 }
 
+/// M3 — the RNS-limb gadget relin through the PUBLIC evaluator surface
+/// (`keygen_with_gadget_with_rng` / `mul_manufactured_gadget`).
+///
+/// SCOPED TO DEPTH 2, NOT 3 — see the DO-NOT header on
+/// `ops::rns_fhe::tests::m3_rns_limb_relin_depth2_squaring_chain` for the
+/// measured finding (30-seed sweep: depth 1-2 reliable, depth 3 fails in
+/// 18/30 seeds — a real noise-budget limit of the single-full-lane-digit
+/// gadget, not a correctness bug). Do not widen to depth 3 here either.
+#[test]
+fn m3_gadget_depth2_squaring_chain_through_evaluator() {
+    let eval = CramPublicEvaluator::new(&cfg());
+    let mut rng = ShadowHarvester::with_seed(9797);
+    let (_pk, gadget, client) = eval
+        .keygen_with_gadget_with_rng(&mut rng)
+        .expect("gadget keygen on a manufactured chain");
+    let mut eval = eval;
+
+    let mut r = ShadowHarvester::with_seed(70);
+    let mut ct = eval.encrypt_with_rng(2, &client.public_key, &mut r);
+    let mut expected = 2u64;
+    for depth in 1..=2 {
+        ct = eval
+            .mul_manufactured_gadget(&ct, &ct, &gadget)
+            .unwrap_or_else(|e| panic!("m3 gadget squaring failed at depth {depth}: {e:?}"));
+        expected *= expected;
+        assert_eq!(
+            eval.decrypt(&ct, &client),
+            expected,
+            "depth-{depth} m3 gadget squaring"
+        );
+    }
+    assert_eq!(expected, 16);
+    println!("{}", eval.ledger().report());
+}
+
 /// Both rescale paths on the same inputs must agree at the plaintext level.
 /// (Bit-level ciphertext equality is NOT asserted: the materializing path
 /// centers signed values around Q/2 while the M2b path uses the derived
