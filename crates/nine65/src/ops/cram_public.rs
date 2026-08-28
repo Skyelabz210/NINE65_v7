@@ -79,6 +79,23 @@ pub enum EmissionClass {
     /// declared Delta-discard (G1 METERED), derivable constants (G5 PASS).
     /// Not elimination-first; see docs/CRAM_PUBLIC_MODE.md M2/M3.
     Materialization,
+    /// M4 — the multiply's RESCALE and RELINEARIZATION steps perform zero
+    /// raw-tensor CRT materialization (M2b's `k_elim_rescale_manufactured`
+    /// and M3's `relinearize_rns_limb`, both R4-under-certificate
+    /// composition: align-and-drop / CRT-idempotent reads, never a running
+    /// value). **Scope, precisely:** this does NOT claim the whole
+    /// operation is free of every materialization anywhere in its call
+    /// graph — `canonicalize_dual_anchor`'s winding-reset (part of the M1
+    /// gut manifest's KEPT surface, not a target of M2/M3) still recomputes
+    /// anchor lanes from main lanes via `to_u256_level`, and remains a
+    /// separate, already gate-qualified R8 site. `EliminationFirst`
+    /// certifies the core multiply computation (tensor → rescale → relin);
+    /// it is not an i.i.d.-lane-locality claim (cross-lane reads —
+    /// Δ-lane drops, the anchor-certificate ladder, canonicalize's own
+    /// reconstruction — remain, and are compliant, not lane-independent).
+    /// See docs/CRAM_PUBLIC_MODE.md M2b/M3/M4 and
+    /// docs/roadmap/T4_M4_REPIN_VERDICTS.md.
+    EliminationFirst,
 }
 
 /// One ledger entry: which operation ran, in which class.
@@ -117,15 +134,32 @@ impl EmissionLedger {
             .count()
     }
 
+    /// M4 — count of operations whose rescale+relin core is elimination-
+    /// first. See [`EmissionClass::EliminationFirst`] for the precise scope
+    /// (`canonicalize_dual_anchor`'s separate materialization is not part
+    /// of this claim).
+    pub fn elimination_first_count(&self) -> usize {
+        self.events
+            .iter()
+            .filter(|e| e.class == EmissionClass::EliminationFirst)
+            .count()
+    }
+
     /// Human-readable summary, suitable for test output and audits.
     pub fn report(&self) -> String {
         format!(
-            "cram-public emission ledger: {} ops ({} lane-local, {} R8 materialization){}",
+            "cram-public emission ledger: {} ops ({} lane-local, {} R8 materialization, \
+             {} elimination-first){}",
             self.events.len(),
             self.lane_local_count(),
             self.materialization_count(),
-            if self.materialization_count() == 0 {
+            self.elimination_first_count(),
+            if self.materialization_count() == 0 && self.elimination_first_count() == 0 {
                 " — elimination-first throughout"
+            } else if self.materialization_count() == 0 {
+                " — elimination-first rescale+relin core throughout (canonicalize_dual_anchor's \
+                 separate winding-reset materialization is a distinct, gate-qualified site — \
+                 see docs/CRAM_PUBLIC_MODE.md M4)"
             } else {
                 " — R8 materialization on the hot path (gate-qualified: order-invariant, \
                  metered discard, no cascade; see docs/CRAM_PUBLIC_MODE.md M2/M3)"
@@ -190,6 +224,30 @@ impl CramPublicEvaluator {
                 public_key: keys.public_key,
             },
         )
+    }
+
+    /// M3 — same key split as [`Self::keygen_with_rng`], plus the RNS-limb
+    /// gadget key ([`crate::ops::rns_fhe::DualRNSGadgetKey`]) for
+    /// [`Self::mul_manufactured_gadget`]. Requires a manufactured chain
+    /// (typed error otherwise). Additive: [`Self::keygen_with_rng`] is
+    /// unchanged and still the entry point for the digit-based path.
+    pub fn keygen_with_gadget_with_rng<R: FheRng>(
+        &self,
+        rng: &mut R,
+    ) -> Nine65Result<(CramPublicKeys, crate::ops::rns_fhe::DualRNSGadgetKey, CramClientKeys)> {
+        let keys = self.ctx.generate_keys_dual_full_public_deep_with_rng(rng);
+        let gadget = self.ctx.generate_gadget_key_with_rng(&keys.secret_key, rng)?;
+        Ok((
+            CramPublicKeys {
+                public_key: keys.public_key.clone(),
+                eval_key: keys.eval_key,
+            },
+            gadget,
+            CramClientKeys {
+                secret_key: keys.secret_key,
+                public_key: keys.public_key,
+            },
+        ))
     }
 
     // ── client half (encrypt / decrypt) ──────────────────────────────────
@@ -299,6 +357,49 @@ impl CramPublicEvaluator {
     /// (G5). Elimination-first replacement of the two materialization sites
     /// is milestones M2/M3; until then the ledger tells the truth about
     /// every chain that includes a multiply.
+    /// M2b variant: public multiply with the elimination-first rescale
+    /// (`k_elim_rescale_manufactured` — no value materialization in the
+    /// rescale; align-and-drop + certified anchor-ladder winding read).
+    /// Requires a manufactured chain (`t | Q`, `t` a main lane). Still
+    /// recorded as an R8 materialization because relinearization
+    /// (`extract_digit_dual`) materializes until milestone M3 lands.
+    pub fn mul_manufactured(
+        &mut self,
+        a: &DualRNSCiphertext,
+        b: &DualRNSCiphertext,
+        keys: &CramPublicKeys,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let out = self.ctx.mul_dual_public_manufactured(a, b, &keys.eval_key)?;
+        self.ledger.record("mul_m2b", EmissionClass::Materialization);
+        Ok(out)
+    }
+
+    /// M3+M4 — manufactured-chain multiply with the RNS-limb gadget relin.
+    /// Rescale (M2b) and relin (M3) are both elimination-first — zero
+    /// `to_u256_level` calls in either step, guardrail-pinned by
+    /// `ops::rns_fhe::tests::m3_guardrail_gadget_relin_never_calls_to_u256_level`
+    /// — so this is recorded as [`EmissionClass::EliminationFirst`], NOT
+    /// `Materialization`. Read that variant's doc comment for the precise
+    /// scope: `canonicalize_dual_anchor` (called at the end of this
+    /// multiply, same as the digit-based path) still performs its own,
+    /// separate, already gate-qualified materialization — this
+    /// classification is about the multiply's rescale+relin CORE, not a
+    /// claim that the whole call graph is materialization-free.
+    /// **Depth scope:** only measured reliable to depth 2 (see
+    /// `docs/CRAM_PUBLIC_MODE.md` M3 finding) — this classification is
+    /// about WHAT COMPUTATION RAN, not a noise/correctness guarantee at
+    /// arbitrary depth.
+    pub fn mul_manufactured_gadget(
+        &mut self,
+        a: &DualRNSCiphertext,
+        b: &DualRNSCiphertext,
+        gadget: &crate::ops::rns_fhe::DualRNSGadgetKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let out = self.ctx.mul_dual_public_manufactured_gadget(a, b, gadget)?;
+        self.ledger.record("mul_m3_gadget", EmissionClass::EliminationFirst);
+        Ok(out)
+    }
+
     pub fn mul(
         &mut self,
         a: &DualRNSCiphertext,

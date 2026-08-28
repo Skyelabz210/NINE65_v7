@@ -206,6 +206,8 @@ fn mul_mod(a: u64, b: u64, m: u64) -> u64 {
 /// Garner/MRC cascade (R9) is retired from runtime paths. Result-identical
 /// to `garner` (the `#[cfg(test)]` oracle below cross-checks them).
 fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
+    #[cfg(test)]
+    call_counters::PSUM_CALLS.with(|c| c.set(c.get() + 1));
     let mut m_prod: u128 = 1;
     for &m in mods {
         if m < 2 {
@@ -244,8 +246,26 @@ fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128,
 /// retired from runtime paths, retained here strictly as the independent
 /// TEST ORACLE the corpus licenses it to be. Runtime code must call
 /// `parallel_summation_crt` instead.
+/// T2 tripwire-3 call counters, THREAD-LOCAL rather than process-global:
+/// `cargo test` runs each test function on its own thread by default, and a
+/// global counter would be incremented by whatever OTHER tests happen to
+/// call `garner`/`parallel_summation_crt` concurrently, making a
+/// before/after delta check flaky (the same bug measured and fixed for
+/// `arithmetic::rns::to_u256_level_calls` — see its doc comment). A
+/// thread-local counter only sees calls made by the thread running the
+/// guardrail test itself.
+#[cfg(test)]
+mod call_counters {
+    use core::cell::Cell;
+    thread_local! {
+        pub(super) static PSUM_CALLS: Cell<usize> = const { Cell::new(0) };
+        pub(super) static GARNER_CALLS: Cell<usize> = const { Cell::new(0) };
+    }
+}
+
 #[cfg(test)]
 fn garner(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
+    call_counters::GARNER_CALLS.with(|c| c.set(c.get() + 1));
     let mut x: u128 = 0;
     let mut m_acc: u128 = 1;
     for (&r, &m) in residues.iter().zip(mods.iter()) {
@@ -1693,5 +1713,69 @@ mod tests {
             x += step;
         }
         assert!(checked > 10_000, "sweep must not go vacuous");
+    }
+
+    /// T2 tripwire 3 (no-Garner): the manufactured CRAM-public hot path must
+    /// use `parallel_summation_crt` (R8, order-invariant, no cascade) and
+    /// never `garner` (R9, sequential MRC cascade — retired from runtime,
+    /// kept only as the `#[cfg(test)]` oracle above). This is enforced at
+    /// COMPILE TIME already (`garner` does not exist in a release build:
+    /// non-test code cannot even name it), so this test adds the runtime
+    /// half — a call counter — to catch a regression that reintroduces a
+    /// sequential-cascade equivalent under a different name while still
+    /// calling through `garner` itself (e.g. a debug cross-check left
+    /// enabled, or `garner` promoted out of `#[cfg(test)]`).
+    ///
+    /// Never-vacuous both directions: runs one full manufactured public
+    /// multiply (tensor → 3x rescale → relinearize → fold → canonicalize)
+    /// through [`crate::ops::cram_public::CramPublicEvaluator::mul_manufactured`]
+    /// and asserts `garner` was called exactly 0 times, while
+    /// `parallel_summation_crt` was called MORE than 0 times — so a change
+    /// that stops calling `parallel_summation_crt` at all (e.g. the rescale
+    /// silently short-circuiting) also fails this guardrail, not just a
+    /// change that reintroduces `garner`.
+    #[test]
+    fn cram_public_guardrail_manufactured_multiply_never_calls_garner() {
+        use crate::entropy::ShadowHarvester;
+        use crate::ops::cram_public::CramPublicEvaluator;
+        use crate::params::FHEConfig;
+
+        let garner_before = call_counters::GARNER_CALLS.with(|c| c.get());
+        let psum_before = call_counters::PSUM_CALLS.with(|c| c.get());
+
+        let eval = CramPublicEvaluator::new(&FHEConfig::manufactured_m2b_insecure());
+        let mut rng = ShadowHarvester::with_seed(77001);
+        let (pk, client) = eval.keygen_with_rng(&mut rng);
+        let mut eval = eval;
+        let mut r1 = ShadowHarvester::with_seed(77002);
+        let mut r2 = ShadowHarvester::with_seed(77003);
+        let a = eval.encrypt_with_rng(123, &client.public_key, &mut r1);
+        let b = eval.encrypt_with_rng(456, &client.public_key, &mut r2);
+        let ab = eval.mul_manufactured(&a, &b, &pk).expect("manufactured multiply");
+        assert_eq!(
+            eval.decrypt(&ab, &client),
+            123 * 456,
+            "guardrail setup: the multiply itself must be correct, or this test \
+             proves nothing about which reconstruction path ran"
+        );
+
+        let garner_after = call_counters::GARNER_CALLS.with(|c| c.get());
+        let psum_after = call_counters::PSUM_CALLS.with(|c| c.get());
+
+        assert_eq!(
+            garner_after, garner_before,
+            "REGRESSION: a manufactured public multiply called the retired \
+             sequential Garner/MRC cascade (R9) — the CRAM-public hot path must \
+             use parallel_summation_crt (R8) exclusively. Do not 'fix' this by \
+             promoting garner out of #[cfg(test)]; investigate the call site."
+        );
+        assert!(
+            psum_after > psum_before,
+            "REGRESSION-SHAPE FAILURE: a manufactured public multiply performed \
+             zero parallel_summation_crt calls — the rescale did not run the \
+             reconstruction it was supposed to, so the garner_after==garner_before \
+             assertion above proves nothing. Investigate why the winding read \
+             stopped calling parallel_summation_crt."
+        );
     }
 }

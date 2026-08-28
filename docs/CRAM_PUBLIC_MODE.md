@@ -41,7 +41,10 @@ Emission classifications are qualified by the arrow test harness, not by
 predispositions. Lane coupling per se is not the fault — Universal
 Projection reads every lane and is A2-compliant; transduction carries
 lane-wise. The faults are what the gates measure: undeclared discard (G1),
-a running-value cascade (G2), stored non-derivable state (G5). Measured
+a running-value cascade (G2), stored non-derivable state (G5 — a
+derivability discipline, not a stored-constant ban: caching is fine when
+the derivation is known; believed-hard quantities route to the derivation
+tooling — see cram-substrate `docs/A2_GATES.md`, G5 addendum). Measured
 verdicts for `mul_dual_public`:
 
 | Probe | Instrument | Verdict |
@@ -103,25 +106,107 @@ only.
     Also landed: `rescale_drop_only` — steps 1–2 only (rounding offset +
     align-and-drop), zero materialization of any kind, the fully lane-local
     `ModulusReduced` path exposed for the ct hot loop.
-  - **M2b (next)** — wire the per-coefficient ct path: replace
-    `k_elim_rescale_dual`'s `to_u256_level` with the manufactured-chain
-    align-and-drop (`Q = t·D` star chains; each Δ-lane drop is
-    `(x_i − r_k)·q_k⁻¹ mod q_i` — a cross-lane *read*, never a running
-    value: G2-compliant). Requires an NTT-friendly manufactured chain,
-    which is a pure construction, no hunting: `t = 65537 = 2¹⁶+1` is itself
-    `≡ 1 mod 2N` for `n ≤ 8192`, so the surviving lane is `t` directly, and
-    every Δ-lane `D = c·t + 1` with `c ≡ 0 mod 2N` satisfies `D ≡ 1 mod t`
-    AND `D ≡ 1 mod 2N` simultaneously (`params::manufactured::
-    star_family_lane` mints them; `ChainScreen` refuses broken ones).
-    Per-coefficient hot loop = `rescale_drop_only` (landed in M2a).
-- **M3 — lane-local relinearization digits.** Replace `extract_digit_dual`'s
-  materialised 256-bit value with per-lane one-wave digit reads (compendium
-  Theorem 9 shape).
-- **M4 — invert the pins.** When M2+M3 land,
-  `ct_multiply_is_not_lane_independent_every_lane_moves` starts failing —
-  invert it into a lane-independence assertion (its own instructions), invert
-  `multiply_is_recorded_as_a_materialization_pinned`, reclassify `mul` as
-  LaneLocal, and the ledger's materialization count goes to zero.
+  - **M2b (landed)** — the per-coefficient ct-path rescale,
+    `k_elim_rescale_manufactured`, wired into `mul_dual_public_manufactured`
+    and the evaluator's `mul_manufactured`. Chain: `Q = t·D1·D2·D3` with
+    `t = 65537` itself a main lane and Δ-lanes minted by construction
+    (`D = c·t+1`, `c ≡ 0 mod 2N`: `≡ 1 mod t` AND NTT-friendly
+    simultaneously; primality screened — the residual Field-Layer
+    obligation). Pipeline per coefficient: signed-shift `S = 2N·Q²`
+    (anchor-lanes only; `≡ 0` mod every main lane and mod Q) →
+    align-and-drop every Δ-lane (cross-lane READS, no running value) →
+    direct γ read off the t-lane → winding over a capacity-certified
+    4-anchor ladder merged by parallel summation (R8) → `Y'' mod Q`
+    canonicalization composed base-plus-lift in fixed-width U256 (the lift
+    inventory's normative R4 pathway under the `K < C` certificate). No
+    `to_u256_level`, no iterative CRT over the lanes, no Garner. Acceptance:
+    10-pair multiply battery exact; **depth-3 public squaring 2→4→16→256
+    exact**; plaintext-level agreement with the materializing path
+    (`tests/m2b_manufactured_rescale.rs`, 5/5).
+
+    Two findings from the M2b bring-up, recorded so they are not relearned:
+    1. **Per-component centering breaks the degree-2 decryption identity**
+       (measured): the three tensor components' `t·k̂` winding terms must
+       survive the rescale so the s-weighted sum telescopes back to
+       `X_total/Δ`; rescale each component to `Y'' mod Q`, do NOT center
+       components independently.
+    2. **Certificates need proved bounds, not assumed ones**: the
+       dual-tracked tensor is the product of UNSIGNED representative
+       polynomials (coefficients in `[0,Q)`), so `|d0| ≤ N·Q²` and
+       `|d1| ≤ 2N·Q²` — assuming centered inputs under-sizes the bound 2×,
+       and the winding then aliases by exactly `t·C`. The recovered offset
+       factoring as the ladder capacity `C` to the digit was the diagnostic
+       that identified it. This is the lift inventory's capacity-alias
+       theorem observed live.
+- **T2 — regression guardrail layer (landed).** Five never-vacuous tripwires
+  protecting the M2a/M2b non-standard decisions from a lower-tier agent's
+  regression to textbook defaults:
+  `crates/nine65/tests/cram_public_guardrails.rs` (tripwires 2 and 4,
+  public-API-only) plus two in-module tests co-located with the code they
+  guard — `cram_public_guardrail_no_centering_regression_measurably_fails`
+  in `ops/rns_fhe.rs` (tripwire 1) and
+  `cram_public_guardrail_manufactured_multiply_never_calls_garner` in
+  `arithmetic/unified_rescale.rs` (tripwire 3). Tripwire 5 (the `Y'' mod Q`
+  semantics pin) is the pre-existing
+  `manufactured_rescale_matches_ground_truth_on_known_values`, now carrying
+  an explicit DO-NOT header. See `docs/roadmap/README.md` for the full
+  anti-regression rationale and the task-card handoff this layer protects.
+- **M3 — lane-local relinearization digits (landed, depth-2 scope).**
+  Replaces `extract_digit_dual`'s materialised 256-bit value with a
+  CRT-idempotent RNS-limb gadget: `generate_gadget_key_with_rng` (keygen,
+  one `(rlk0_i, rlk1_i)` pair per main lane, keyed by `g_i = (Q/q_i)·[(Q/q_i)⁻¹
+  mod q_i]`, derived by extended Euclid) and `relinearize_rns_limb`
+  (relin — the "digits" are the ciphertext's own per-lane residues,
+  broadcast via ordinary `% p`, no CRT reconstruction). Wired additively
+  behind new entry points (`mul_dual_public_manufactured_gadget` /
+  `CramPublicEvaluator::mul_manufactured_gadget`); the digit-based path is
+  unchanged and still exercised by its own tests. Guardrail-pinned: the
+  relin step performs zero `to_u256_level` calls
+  (`m3_guardrail_gadget_relin_never_calls_to_u256_level`, T2-style,
+  never-vacuous against the digit-based path on the same input).
+
+  **Finding: depth-2 reliable, depth-3 is a measured noise-budget limit,
+  not a correctness bug.** A 30-seed sweep of the depth-3 squaring chain
+  showed 0/30 failures at depth 1-2 and 18/30 (60%) failures at depth 3,
+  every failure first appearing at exactly depth 3, off by a small margin
+  (e.g. decrypted 255 instead of 256) — the signature of noise overrunning
+  `Δ/2`, not an algebraic error (the CRT-idempotent identity `Σ [P]_{q_i}·g_i
+  ≡ P (mod Q)` holds regardless of representation; what differs from the
+  digit-based scheme is per-term noise: each RNS-limb "digit" is up to
+  `q_i - 1` (~2^31 on this chain) versus the digit-based scheme's `2^16`,
+  and that gap compounds through the tensor product's noise growth across
+  levels). Tests and the public entry points are scoped to depth 2, matching
+  what is measured, not what was estimated. Reaching depth-3 parity is
+  escalated future work — likely a hybrid gadget (RNS lane × base-`2^b`
+  sub-decomposition within each lane) — not attempted here.
+- **M4 — re-pin the measured verdicts (landed, scoped).** Doctrine-driven
+  re-scope, not blind inversion (`docs/roadmap/T4_M4_REPIN_VERDICTS.md`).
+  There are two separate multiply paths, and only the manufactured one
+  changed:
+  - `mul_dual_public` / `eval.mul()` (general configs — `secure_128`,
+    `secure_192`, `test_medium_insecure`, ...): UNCHANGED by M2b/M3, which
+    only touch the manufactured chain. `multiply_is_recorded_as_a_
+    materialization_pinned` and `ct_multiply_is_not_lane_independent_every_
+    lane_moves` still measure this path and are correctly NOT inverted —
+    it still takes an R8 materialization and still couples every lane.
+  - `mul_dual_public_manufactured_gadget` /
+    `CramPublicEvaluator::mul_manufactured_gadget` (manufactured chains,
+    M3's RNS-limb relin): a NEW `EmissionClass::EliminationFirst` records
+    that this path's rescale (M2b) and relin (M3) core is materialization-
+    free (`manufactured_gadget_multiply_ledger_shows_elimination_first`,
+    never-vacuous against the digit-based path on the same ledger).
+    **Precise scope, not "LaneLocal" and not "zero materialization
+    anywhere":** `canonicalize_dual_anchor`'s winding-reset — part of the
+    M1 gut manifest's KEPT surface, never a target of M2/M3 — still
+    materializes via `to_u256_level`; it is a separate, already gate-
+    qualified R8 site, not eliminated by this milestone. The multiply also
+    still couples lanes through compliant cross-lane reads (Δ-lane drops,
+    the anchor certificate ladder) — not lane-independent, not a fault
+    (roadmap README rule 3). The honest claim is "elimination-first
+    rescale+relin core, gate-compliant coupling remains," never i.i.d.
+    lane-locality. Also scoped to depth ≤ 2 (see the M3 finding above) —
+    `EliminationFirst` is a claim about WHAT COMPUTATION RAN, not a
+    depth/noise guarantee.
 
 ## Proof sketches (per the standing submission policy)
 
@@ -184,6 +269,22 @@ No term reads another term — R8, not R9. *Status:* SKETCH + WITNESS
 4 bases, plus the module's pre-existing exhaustive suites which now run
 through the new path).
 
+**PS-CP-7 — Correctness of the M2b elimination-first rescale.**
+*Statement:* on a manufactured chain, `k_elim_rescale_manufactured` outputs
+residues of `⌊(X + Δ/2)/Δ⌋ mod Q` for every dual-tracked tensor value
+`|X| ≤ 2N·Q²`, with the winding read exact under the `4NQ+1 < C` anchor
+certificate. *Sketch:* (i) the shift `S = 2NQ²` makes `X'' = X+S ≥ 0` and is
+a multiple of `Δ`, so `⌊(X''+Δ/2)/Δ⌋ = ⌊(X+Δ/2)/Δ⌋ + S/Δ` exactly, and
+`S/Δ = 2NQt ≡ 0 (mod Q)` erases the shift after the mod-Q reduction;
+(ii) each Δ-lane drop is the exact identity `(v_i − r_d)·d⁻¹ ≡ ⌊V/d⌋ (mod
+q_i)` and nested floors compose to division by Δ; (iii) `Y'' ≤ 4NQt`, so
+`K'' = ⌊Y''/t⌋ ≤ 4NQ < C` — the K-Elimination congruence has one
+representative in range (capacity certificate, PS-2/L9); (iv) `Y'' = γ+K·t`
+then reduces mod Q in one fixed-width U256 operation. *Status:* SKETCH +
+WITNESS (`manufactured_rescale_matches_ground_truth_on_known_values`, a
+70-point known-value sweep across every winding regime to `2NQ`, plus the
+5-test acceptance suite with the depth-3 chain).
+
 **PS-CP-5 — Depth is not gated by lane count on this surface.** *Statement:*
 the depth-3 public chain runs on the same basis at every step. *Sketch:*
 the multiply divides by Δ via K-Elimination instead of dropping a lane
@@ -191,3 +292,30 @@ the multiply divides by Δ via K-Elimination instead of dropping a lane
 constant and depth is bounded by noise, not by prime supply. *Status:*
 SKETCH + WITNESS (`depth3_public_squaring_chain_reaches_256`;
 `full_chain_encrypt_mul_divide_decrypt_leaves_the_basis_byte_identical`).
+
+**PS-CP-8 — Correctness of the M3 RNS-limb relinearization gadget (depth
+≤ 2).** *Statement:* `relinearize_rns_limb` correctly recovers `P·s²
+(mod Q)` from a manufactured-chain ciphertext component `P` (already
+canonical mod `Q`, e.g. the output of `k_elim_rescale_manufactured`), using
+only `P`'s own per-lane residues as gadget digits — no CRT reconstruction,
+no `to_u256_level`. *Sketch:* for each main lane `q_i`, `g_i = (Q/q_i)·
+[(Q/q_i)⁻¹ mod q_i]` is the CRT idempotent (`g_i ≡ 1 mod q_i`, `g_i ≡ 0 mod
+q_j` for `j ≠ i` — the main-lane residues of `g_i` are the Kronecker delta
+by construction, no computation needed); the CRT reconstruction identity
+`Σ_i [P]_{q_i}·g_i ≡ P (mod Q)` holds per coefficient; embedding `g_i·s²`
+into the encrypted `rlk0_i = -a_i·s-e_i+g_i·s²` and summing
+`Σ_i digit_i(x)·rlk_i(x)` (ring convolution, `digit_i` a scalar constant per
+coefficient broadcast into every lane) distributes the scalar `g_i` through
+the convolution exactly as the base-`2^b` digit scheme distributes
+`decomp_base^i`, since both are per-coefficient scalar constants, not
+polynomials — so the identity is the SAME mechanism, only the digit
+granularity differs (RNS lane vs. positional base-`2^b`). *Caveat, measured
+not assumed:* the larger per-lane digit magnitude (`~q_i`, vs.
+`decomp_base` for the base-`2^b` scheme) grows noise faster per level; a
+30-seed sweep showed 0/30 failures at depth 1-2 and 18/30 at depth 3 (see
+the M3 charter finding above) — this proof sketch's claim is therefore
+scoped to depth ≤ 2, not depth 3. *Status:* SKETCH + WITNESS
+(`m3_rns_limb_relin_matches_digit_relin_at_plaintext_level`,
+`m3_rns_limb_relin_depth2_squaring_chain`,
+`m3_gadget_depth2_squaring_chain_through_evaluator`,
+`m3_guardrail_gadget_relin_never_calls_to_u256_level`).

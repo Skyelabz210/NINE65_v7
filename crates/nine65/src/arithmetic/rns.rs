@@ -17,6 +17,36 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use core::cmp::Ordering;
 
+/// T2/M3-style regression-guardrail counter: every call to
+/// [`RNSContext::to_u256_level`] increments this. Used by
+/// `ops::rns_fhe::tests::m3_guardrail_gadget_relin_never_calls_to_u256_level`
+/// to prove the M3 RNS-limb relinearization path performs zero CRT
+/// materialization — `to_u256_level` is the exact site that reconstructs an
+/// exact integer from residues, which M3 exists to avoid on the relin hot
+/// path.
+///
+/// THREAD-LOCAL, not a process-global static: `cargo test` runs each test
+/// function on its own thread by default, and a global counter would be
+/// incremented by whatever OTHER tests happen to call `to_u256_level`
+/// concurrently, making a before/after delta check flaky (measured: this
+/// guardrail false-failed under `cargo test ... m3_` — three tests running
+/// in parallel — and passed every time run alone, which is the signature of
+/// exactly this bug). A thread-local counter only sees calls made by the
+/// thread running THIS test.
+#[cfg(test)]
+pub(crate) mod to_u256_level_calls {
+    use core::cell::Cell;
+    thread_local! {
+        static COUNT: Cell<usize> = const { Cell::new(0) };
+    }
+    pub(crate) fn increment() {
+        COUNT.with(|c| c.set(c.get() + 1));
+    }
+    pub(crate) fn get() -> usize {
+        COUNT.with(|c| c.get())
+    }
+}
+
 /// Minimal 512-bit unsigned integer for intermediate reconstruction.
 ///
 /// Representation: 4 x u128 (little-endian).
@@ -692,6 +722,8 @@ impl RNSContext {
     ///
     /// This is used for secure_192 / secure_256 paths where the level product exceeds u128.
     pub(crate) fn to_u256_level(&self, rns: &[u64], level: usize) -> U256 {
+        #[cfg(test)]
+        to_u256_level_calls::increment();
         assert!(level <= self.primes.len(), "Level exceeds prime count");
         assert!(rns.len() >= level, "RNS length mismatch");
         crt_reconstruct_u256(&rns[..level], &self.primes[..level])
