@@ -1050,11 +1050,33 @@ impl RNSFHEContext {
     /// alone. Decrypting under an all-zero secret key recovered the message in
     /// 6.25% of ciphertexts at 3 main lanes and 100% at 4 or more.
     ///
-    /// Each coefficient is now drawn as a full-width integer on `[0, Q)` by
-    /// rejection, then reduced into every lane. Reducing one integer keeps the
-    /// main and anchor tracks consistent representations of the same value,
-    /// which K-Elimination depends on, while restoring `a`'s full range so the
-    /// mask scales with `Q` again.
+    /// Each coefficient is drawn once as a full-width integer on `[0, M)` by
+    /// rejection, then reduced independently into every main and anchor lane.
+    /// One value reduced into all lanes is what keeps the two tracks describing
+    /// the SAME integer, which is what K-Elimination downstream depends on.
+    ///
+    /// # Why not transduction here
+    ///
+    /// Deriving the anchors by transduction -- draw the main lanes
+    /// independently, then apply `y_j = (sum_i x_i * alpha_ij) mod b_j` with
+    /// `alpha_ij` the CRT unit vectors -- was tried and is WRONG in this
+    /// position. That dot product yields the CRT sum, but the value is that sum
+    /// reduced mod `M`: the sum overshoots by `t * M` for some
+    /// `0 <= t < lanes`, so reducing it mod `b_j` gives `(x + t*M) mod b_j`
+    /// rather than `x mod b_j`. `t` is precisely a winding term, and CRAM
+    /// section 12 Definition 12.1 requires a transduction to preserve winding
+    /// identity as well as value identity. Recovering `t` needs either a
+    /// redundant lane or the reconstruction the transduction was there to
+    /// avoid, so it buys nothing at this site.
+    ///
+    /// Sampling the value directly sidesteps `t` entirely: the winding is zero
+    /// because the draw is inside `[0, M)` by construction. Reduction is also
+    /// not a Garner cascade -- each lane is an independent `f_i(value)`, no
+    /// lane reads another -- and A2 scopes reconstruction out of the *hot path*
+    /// specifically, permitting it in key generation, which is where this runs.
+    ///
+    /// `sampled_mask_anchor_lanes_agree_with_the_main_lanes` asserts the
+    /// two tracks agree; it is what caught the transduction attempt above.
     fn sample_uniform_dual_poly<R: FheRng>(
         &self,
         rng: &mut R,
@@ -1074,8 +1096,8 @@ impl RNSFHEContext {
             .collect();
 
         for _ in 0..self.n {
-            // Rejection sampling: draw `bits` uniform bits, keep the first
-            // draw below Q. Uniform on [0, Q) exactly, with no modulo bias.
+            // Rejection sampling: draw `bits` uniform bits and keep the first
+            // draw below M. Uniform on [0, M) exactly, with no modulo bias.
             let value = loop {
                 let mut lo = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
                 let mut hi: u128 = 0;
@@ -1094,6 +1116,10 @@ impl RNSFHEContext {
                 }
             };
 
+            // Every lane is an independent reduction of ONE sampled value, so
+            // the two tracks describe the same integer by construction and the
+            // winding is zero. Lane-independent (A2 permits `output[i] =
+            // f_i(input)`), and not a Garner cascade: no lane reads another.
             for (lane, &prime) in main.iter_mut().zip(main_primes.iter()) {
                 lane.push(value.mod_u64(prime));
             }
@@ -9537,6 +9563,76 @@ mod tests {
             "overflow-Q configs must force KElimDual"
         );
         println!("[PASS]secure_192: q_bits={}, routes to KElimDual", ctx.q_bits);
+    }
+
+    /// The transduction invariant, asserted rather than trusted.
+    ///
+    /// `sample_uniform_dual_poly` draws the main lanes independently and then
+    /// TRANSDUCES to the anchor lanes with precomputed CRT-unit-vector
+    /// constants, never rebuilding the integer. That is only correct while the
+    /// sampled value stays inside `[0, M)` so its winding is zero (CRAM
+    /// section 12, Definition 12.1: a transduction must preserve value
+    /// identity AND winding identity). If the winding ever stops being zero,
+    /// the missing `K * M` term is invisible from the lanes themselves -- the
+    /// anchors just come out wrong, and every K-Elimination downstream of them
+    /// inherits it silently.
+    ///
+    /// So this reconstructs each coefficient from the MAIN lanes and checks the
+    /// anchors against it directly. It is the check that catches a broken
+    /// invariant at its source instead of as a wrong plaintext three
+    /// operations later.
+    #[test]
+    fn sampled_mask_anchor_lanes_agree_with_the_main_lanes() {
+        use crate::params::secure_configs::SecureConfig;
+
+        // A prefix of coefficients is enough: any breakage here is systematic
+        // (a wrong alpha row, a dropped winding term), never one unlucky slot.
+        const COEFFS: usize = 256;
+
+        for secure in [
+            SecureConfig::hardware_opt(),
+            SecureConfig::secure_128(),
+            SecureConfig::secure_192(),
+        ] {
+            let config = secure.into_config();
+            let ctx = RNSFHEContext::try_new(&config).expect("context");
+            let mut rng = ShadowHarvester::with_seed(0x7A11);
+            let poly = ctx.sample_uniform_dual_poly(&mut rng, &config.primes);
+
+            let level = config.primes.len();
+            assert_eq!(poly.main.len(), level);
+            assert_eq!(poly.anchor.len(), ctx.dual_rns.anchor.primes.len());
+
+            for coeff in 0..COEFFS.min(ctx.n) {
+                let main_residues: Vec<u64> =
+                    poly.main.iter().map(|lane| lane[coeff]).collect();
+
+                // Every main residue must be in range for its own lane, or the
+                // reconstruction below is meaningless.
+                for (residue, &prime) in main_residues.iter().zip(config.primes.iter()) {
+                    assert!(*residue < prime, "{}: main residue out of lane", config.name);
+                }
+
+                // CRT-reconstruct from the main lanes only. This lands in
+                // [0, M) by construction, which IS the zero-winding condition
+                // the transduction depends on.
+                let value = ctx.rns.to_u256_level(&main_residues, level);
+
+                for (j, &anchor_prime) in ctx.dual_rns.anchor.primes.iter().enumerate() {
+                    assert_eq!(
+                        value.mod_u64(anchor_prime),
+                        poly.anchor[j][coeff],
+                        "{}: transduced anchor lane {} disagrees with the main lanes at \
+                         coefficient {}. The anchor track is no longer the same integer as \
+                         the main track -- check the alpha coefficients and whether the \
+                         sampled value can now reach M (nonzero winding).",
+                        config.name,
+                        anchor_prime,
+                        coeff
+                    );
+                }
+            }
+        }
     }
 
     #[test]
