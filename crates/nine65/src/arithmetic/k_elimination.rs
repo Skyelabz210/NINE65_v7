@@ -785,9 +785,18 @@ fn validate_alpha_family(values: &[u64]) -> Nine65Result<()> {
         });
     }
     for (index, &value) in values.iter().enumerate() {
-        if value <= 1 || !is_prime(value) {
+        // Primality is NOT required here. The K-Elimination lift
+        // `X = v_alpha + k * alpha_cap` needs only gcd(alpha_cap, beta_cap) = 1
+        // so that the inverse exists, and `mod_inverse_u128` obtains that
+        // inverse by extended Euclid (returning None when the gcd is not 1)
+        // rather than by Fermat's little theorem, which would need a prime.
+        // The previous `!is_prime(value)` rejection was therefore stricter than
+        // the arithmetic, and blocked the Safe-Basis composite lanes this
+        // constructor is otherwise happy to compute with. Pairwise coprimality
+        // is still enforced below, and it is what soundness actually rests on.
+        if value <= 1 {
             return Err(Nine65Error::InvalidParameter {
-                message: format!("CLASS-F alpha modulus {value} is not prime"),
+                message: format!("alpha modulus {value} must be greater than 1"),
             });
         }
         for &previous in &values[..index] {
@@ -995,10 +1004,18 @@ mod tests {
     #[test]
     fn safe_basis_validation() {
         assert!(KElimination::try_new(&[17, 19], &[23, 29]).is_ok());
-        assert!(KElimination::try_new(&[15, 17], &[23]).is_err());
-        assert!(KElimination::try_new(&[17, 17], &[23]).is_err());
-        assert!(KElimination::try_new(&[17, 19], &[23, 46]).is_err());
-        assert!(KElimination::try_new(&[17, 19], &[17, 23]).is_err());
+        // A COMPOSITE alpha lane is accepted so long as it stays coprime to the
+        // rest. 15 = 3*5 is not prime, and does not need to be: the lift takes
+        // its inverse by extended Euclid, which only needs gcd = 1. This used
+        // to be rejected, which blocked Safe-Basis composite lanes for no
+        // arithmetic reason.
+        assert!(KElimination::try_new(&[15, 17], &[23]).is_ok());
+        // Coprimality is the real invariant, and is still enforced everywhere:
+        assert!(KElimination::try_new(&[17, 17], &[23]).is_err()); // repeated lane
+        assert!(KElimination::try_new(&[15, 21], &[23]).is_err()); // composites sharing 3
+        assert!(KElimination::try_new(&[17, 19], &[23, 46]).is_err()); // beta shares 23
+        assert!(KElimination::try_new(&[17, 19], &[17, 23]).is_err()); // alpha/beta overlap
+        assert!(KElimination::try_new(&[1, 17], &[23]).is_err()); // degenerate lane
     }
 
     #[test]
@@ -1641,9 +1658,15 @@ mod adjacency_tests {
 
     #[test]
     fn adjacency_rejects_a_non_class_f_alpha_family() {
-        // A is CLASS-R and needs no primality. The alpha family still does.
-        assert!(AdjacencyKElim::try_new(&[15, 17]).is_err());
-        assert!(AdjacencyKElim::try_new(&[17, 17]).is_err());
+        // Neither family needs primality: A = M+1 is coprime to M by
+        // construction, and the alpha lanes only need to stay pairwise coprime
+        // so the extended-Euclid inverse exists. 15 = 3*5 is composite and fine.
+        assert!(AdjacencyKElim::try_new(&[15, 17]).is_ok());
+        // What is still rejected is anything that breaks coprimality, or a
+        // degenerate lane:
+        assert!(AdjacencyKElim::try_new(&[17, 17]).is_err()); // repeated lane
+        assert!(AdjacencyKElim::try_new(&[15, 21]).is_err()); // share 3
+        assert!(AdjacencyKElim::try_new(&[1, 17]).is_err()); // degenerate lane
         assert!(AdjacencyKElim::try_new(&[]).is_err());
     }
 
