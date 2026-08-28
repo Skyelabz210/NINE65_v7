@@ -1065,9 +1065,18 @@ impl RNSFHEContext {
     /// `0 <= t < lanes`, so reducing it mod `b_j` gives `(x + t*M) mod b_j`
     /// rather than `x mod b_j`. `t` is precisely a winding term, and CRAM
     /// section 12 Definition 12.1 requires a transduction to preserve winding
-    /// identity as well as value identity. Recovering `t` needs either a
-    /// redundant lane or the reconstruction the transduction was there to
-    /// avoid, so it buys nothing at this site.
+    /// identity as well as value identity.
+    ///
+    /// That failure is a property of THIS anchor track, not of transduction.
+    /// A winding is recoverable in O(1) against a shadow anchor --
+    /// `K = (r_s - r) * M^-1 mod p_s` -- which is the whole role of the 11-lane
+    /// in a Safe Basis (CRAM section 13; `11 = shadow anchor`, and `11^6` is
+    /// what phase-locks the shallow residues to the deep winding). This anchor
+    /// track has no such lane: it is `2013265921, 2281701377, ...`, chosen as
+    /// large NTT-friendly moduli for capacity, with no parity witness, no
+    /// shadow anchor and therefore no phase lock. So `t` is unrecoverable
+    /// *here* for want of the lane that would recover it, and the transduction
+    /// route reopens the moment this track is given a Safe-Basis shape.
     ///
     /// Sampling the value directly sidesteps `t` entirely: the winding is zero
     /// because the draw is inside `[0, M)` by construction. Reduction is also
