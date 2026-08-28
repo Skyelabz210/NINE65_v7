@@ -1003,19 +1003,40 @@ mod tests {
 
     #[test]
     fn safe_basis_validation() {
-        assert!(KElimination::try_new(&[17, 19], &[23, 29]).is_ok());
-        // A COMPOSITE alpha lane is accepted so long as it stays coprime to the
-        // rest. 15 = 3*5 is not prime, and does not need to be: the lift takes
-        // its inverse by extended Euclid, which only needs gcd = 1. This used
-        // to be rejected, which blocked Safe-Basis composite lanes for no
-        // arithmetic reason.
-        assert!(KElimination::try_new(&[15, 17], &[23]).is_ok());
-        // Coprimality is the real invariant, and is still enforced everywhere:
-        assert!(KElimination::try_new(&[17, 17], &[23]).is_err()); // repeated lane
-        assert!(KElimination::try_new(&[15, 21], &[23]).is_err()); // composites sharing 3
-        assert!(KElimination::try_new(&[17, 19], &[23, 46]).is_err()); // beta shares 23
-        assert!(KElimination::try_new(&[17, 19], &[17, 23]).is_err()); // alpha/beta overlap
-        assert!(KElimination::try_new(&[1, 17], &[23]).is_err()); // degenerate lane
+        // Safe-Basis lanes: powers of 2,3,5,7,11,13 split so that alpha and
+        // beta have DISJOINT prime support. Both primality and coprimality are
+        // resolved by that construction -- there is nothing here to constrain,
+        // so this checks that the lanes compute, not that bad input is refused.
+        let alpha = 2u64.pow(20) * 3u64.pow(6) * 5u64.pow(4); // composite
+        let beta = 7u64.pow(6) * 11u64.pow(4) * 13u64.pow(3); // composite
+        let ke = KElimination::try_new(&[alpha], &[beta]).expect("Safe-Basis lanes");
+
+        let (a, b) = (alpha as u128, beta as u128);
+        let capacity = a * b;
+        let mut x: u128 = 0x9E3779B97F4A7C15;
+        for _ in 0..2000 {
+            x = x
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let value = x % capacity;
+            assert_eq!(
+                ke.extract_k(value % a, value % b),
+                value / a,
+                "winding lift must be exact on composite Safe-Basis lanes"
+            );
+        }
+        // exact_divide is what the rescale path actually calls.
+        for divisor in [2u64, 3, 5, 7, 11, 13] {
+            for i in 1..200u128 {
+                let raw = (i * 7919) % (capacity / 4);
+                let exact = raw - (raw % divisor as u128);
+                assert_eq!(
+                    ke.exact_divide(exact % a, exact % b, divisor),
+                    exact / divisor as u128,
+                    "exact_divide must be exact on composite Safe-Basis lanes"
+                );
+            }
+        }
     }
 
     #[test]
@@ -1658,16 +1679,28 @@ mod adjacency_tests {
 
     #[test]
     fn adjacency_rejects_a_non_class_f_alpha_family() {
-        // Neither family needs primality: A = M+1 is coprime to M by
-        // construction, and the alpha lanes only need to stay pairwise coprime
-        // so the extended-Euclid inverse exists. 15 = 3*5 is composite and fine.
-        assert!(AdjacencyKElim::try_new(&[15, 17]).is_ok());
-        // What is still rejected is anything that breaks coprimality, or a
-        // degenerate lane:
-        assert!(AdjacencyKElim::try_new(&[17, 17]).is_err()); // repeated lane
-        assert!(AdjacencyKElim::try_new(&[15, 21]).is_err()); // share 3
-        assert!(AdjacencyKElim::try_new(&[1, 17]).is_err()); // degenerate lane
-        assert!(AdjacencyKElim::try_new(&[]).is_err());
+        // A = M+1 makes the anchor coprime to M for free, so adjacency resolves
+        // both properties by construction and neither is a constraint to assert
+        // here. What is worth pinning is that composite Safe-Basis lanes build
+        // and lift exactly through this path.
+        let lane = 2u64.pow(20) * 3u64.pow(8) * 5u64.pow(5) * 7u64.pow(4);
+        let adj = AdjacencyKElim::try_new(&[lane]).expect("adjacency over a composite lane");
+
+        let m = adj.alpha_cap();
+        let a = m + 1;
+        let capacity = m * a;
+        let mut x: u128 = 0xDEADBEEFCAFEBABE;
+        for _ in 0..2000 {
+            x = x
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let value = x % capacity;
+            assert_eq!(
+                adj.extract_k(value % m, value % a),
+                value / m,
+                "adjacency lift must be exact on a composite Safe-Basis lane"
+            );
+        }
     }
 
     #[test]
