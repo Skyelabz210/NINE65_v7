@@ -1262,35 +1262,27 @@ impl DualRNSContext {
         // every supported ring dimension up to n = 16384 is covered)
         // All > 2×10^9 (above max rescaled coefficient ~1.3×10^9)
         //
-        // n <= 8192 (secure_128, secure_128_deep, hardware_opt): 8 primes,
-        //   A ≈ 252 bits. RAISED FROM 5 (A ≈ 157 bits) on 2026-08-28, and the
-        //   reason is worth stating plainly because it is not a tuning change.
+        // n <= 8192 (secure_128, secure_128_deep, hardware_opt): 5 primes,
+        //   A ≈ 157 bits.
         //
-        //   The five-anchor basis was only ever sufficient because the RLWE
-        //   mask `a` was undersized: it was drawn as one u64 per coefficient
-        //   and reduced into every lane, so it lived in [0, 2^64) rather than
-        //   [0, Q). That was a semantic-security defect (see
-        //   `RNSFHEContext::sample_uniform_dual_poly`) — and it was also,
-        //   silently, what kept the tensor product small enough to fit. Once
-        //   `a` became genuinely uniform over R_Q, the ct×ct product grew to
-        //   its true N×Q² size and the 4-lane chain landed at ~90%
-        //   utilization, where multiplication returns wrong-but-plausible
-        //   plaintexts (measured: 2 of 4 cases wrong for secure_128, while the
-        //   3-lane hardware_opt at 77% stayed correct). The strict >=90%
-        //   diagnostics gate was reporting a real failure, not a conservative
-        //   one.
+        //   This was briefly raised to 8 on 2026-08-28 and is now reverted. The
+        //   reasoning behind the raise was wrong in kind, and the note is left
+        //   here so it is not repeated: a ct x ct product was overflowing the
+        //   anchors, and the response was to add lanes until it fit. That
+        //   treats the basis as a magnitude container, which is precisely what
+        //   this substrate is built not to do -- the basis product is kept
+        //   small on purpose and carries STRUCTURE (role coverage), while
+        //   magnitude is tracked orthogonally by the winding
+        //   (X = kappa*M + CRT^-1(r), CRAM section 5). A tensor product is not
+        //   supposed to fit inside M*A; the part above M is winding, and the
+        //   anchor set's job is to RESOLVE that winding by the phase
+        //   differential (k = (v_A - v_M) * M^-1 mod A, CRAM section 7.3,
+        //   exact while k < A) rather than to contain the product.
         //
-        //   With 8 anchors: secure_128/secure_128_deep (M ≈ 119 bits) sit at
-        //   M×A ≈ 371 bits against N×Q² ≈ 251 required, ~67% utilization;
-        //   hardware_opt (M ≈ 90 bits) at ~56%. Both are back under the 80%
-        //   strict gate. The three added lanes are the first three of the
-        //   n = 16384 extension — every one satisfies 2^15 | p-1, so they are
-        //   NTT-compatible at n = 8192 (which needs only 2^14 | p-1) and were
-        //   simply never offered to this tier.
-        //
-        //   Cost: the anchor track carries 8 lanes instead of 5 at n <= 8192,
-        //   so anchor-side work rises by ~60%. That is the price of a mask
-        //   that actually scales with Q.
+        //   Growing the anchor set for capacity is therefore answering a
+        //   winding question on the lane axis. If a config genuinely cannot
+        //   resolve its winding here, the fix is in how k is recovered, not in
+        //   how many anchors there are.
         //
         // n = 16384 (secure_192, secure_256): 10 primes, A ≈ 315 bits.
         //   secure_256 (Q ≈ 175 bits): M×A ≈ 490 bits > N×Q² ≈ 364 bits,
@@ -1313,12 +1305,12 @@ impl DualRNSContext {
             2483027969, // 37 × 2^26 + 1    (~32 bits)
             2885681153, // 43 × 2^26 + 1    (~32 bits)
             3221225473, // 3 × 2^30 + 1     (~32 bits)
-            3221422081, // 98310 × 2^15 + 1 (~32 bits)
-            3222306817, // 98337 × 2^15 + 1 (~32 bits)
-            3222372353, // 98339 × 2^15 + 1 (~32 bits)
         ];
         if n >= 16384 {
             primes.extend_from_slice(&[
+                3221422081, // 98310 × 2^15 + 1 (~32 bits)
+                3222306817, // 98337 × 2^15 + 1 (~32 bits)
+                3222372353, // 98339 × 2^15 + 1 (~32 bits)
                 3222568961, // 98345 × 2^15 + 1 (~32 bits)
                 3222962177, // 98357 × 2^15 + 1 (~32 bits)
             ]);
@@ -3044,10 +3036,7 @@ mod tests {
         let anchors = DualRNSContext::canonical_anchor_primes_for_n(8192);
         assert_eq!(
             anchors,
-            vec![
-                2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081,
-                3222306817, 3222372353
-            ],
+            vec![2013265921, 2281701377, 2483027969, 2885681153, 3221225473],
             "canonical anchor set must match what production actually uses at n=8192"
         );
 
@@ -3131,18 +3120,14 @@ mod tests {
     fn test_extract_k_rns_level_recovers_depth2_k_beyond_4anchor_capacity_secure_128_deep() {
         let main_primes = vec![998244353u64, 985661441, 754974721, 469762049]; // secure_128_deep, verbatim
         let ctx = DualRNSContext::for_fhe(&main_primes, 8192);
-        // Raised from 5 to 8 on 2026-08-28 when the RLWE mask `a` became
-        // genuinely uniform over R_Q; see `canonical_anchor_primes_for_n`. The
-        // first five entries are unchanged, so the A4/A5 boundary this test is
-        // about is untouched -- it is read off the same prefix.
-        assert_eq!(ctx.anchor.primes.len(), 8);
+        assert_eq!(ctx.anchor.primes.len(), 5);
 
         let m_level = U256::product_u64s(&main_primes);
         assert_eq!(m_level.bitlen(), 119); // matches "4 NTT primes (~120 bits)" doc comment
 
         let a4: U256 = U256::product_u64s(&ctx.anchor.primes[..4]);
         assert_eq!(a4.bitlen(), 125);
-        let a5: U256 = U256::product_u64s(&ctx.anchor.primes[..5]);
+        let a5: U256 = U256::product_u64s(&ctx.anchor.primes);
         assert_eq!(a5.bitlen(), 157);
 
         // Same k_true as PROOF #1: exceeds A4 (125 bits), fits comfortably
