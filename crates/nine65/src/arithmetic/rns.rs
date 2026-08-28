@@ -1262,7 +1262,7 @@ impl DualRNSContext {
         // every supported ring dimension up to n = 16384 is covered)
         // All > 2×10^9 (above max rescaled coefficient ~1.3×10^9)
         //
-        // n <= 8192 (secure_128, secure_128_deep, hardware_opt): 5 primes,
+        // n <= 8192 (secure_128, secure_128_deep): 5 primes,
         //   A ≈ 157 bits.
         //
         //   This was briefly raised to 8 on 2026-08-28 and is now reverted. The

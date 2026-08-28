@@ -470,9 +470,9 @@ impl SecureConfig {
             name
         );
         // Conservative production floor: any >= 128-bit security claim
-        // requires N >= 8192 (see hardware_opt's note — the lattice estimator
-        // blesses smaller N, but the audited N >= 8192 floor governs
-        // production claims). Insecure test tiers are exempt.
+        // requires N >= 8192: the lattice estimator blesses smaller N, but the
+        // audited N >= 8192 floor governs production claims. Insecure test
+        // tiers are exempt.
         assert!(
             is_insecure_tier || claimed_security < 128 || n >= 8192,
             "SECURITY ERROR: config '{}' claims {}-bit security but dimension N={} is below the 8192 floor",
@@ -687,23 +687,6 @@ impl SecureConfig {
         )
     }
 
-    /// Hardware-optimized configuration using composite anchors (Separation Principle showcase)
-    pub fn hardware_opt() -> Self {
-        // N=8192 satisfies the audited production floor for the 128-bit claim.
-        // (The lattice estimator blesses 4096 at hybrid≈129, but the conservative
-        // N>=8192 floor governs any >=128-bit production claim.)
-        Self::new_verified(
-            8192,
-            vec![
-                998244353, 985661441, 754974721,
-            ],
-            65537,
-            3,
-            128,
-            "hardware_opt",
-        )
-    }
-
     // =========================================================================
     // TEST/BENCHMARK CONFIGURATIONS (NOT FOR PRODUCTION)
     // =========================================================================
@@ -843,9 +826,9 @@ mod tests {
     /// checks the result against the decryption oracle. Historically (pre the
     /// 2026-08-26 `secure_128` re-cut, `docs/OPEN_WORK_2026-08-26.md` A3), the
     /// three-prime `secure_128` refreshed `encrypt(7)` back to `7` but then
-    /// squared it to `34037` instead of `49`; `hardware_opt` still carries that
-    /// three-prime tuple today and reproduces the same corruption. This test
-    /// pins the predicate's verdicts for all five named configs.
+    /// squared it to `34037` instead of `49`. That chain has since been removed
+    /// from the tree. This test pins the predicate's verdicts for the named
+    /// configs that remain.
     ///
     /// This test pins the predicate against that split. It is deliberately
     /// sensitive to the noise ledger it reads (`NoiseBudget::mul_ct_cost`,
@@ -862,10 +845,6 @@ mod tests {
             Case {
                 config: SecureConfig::secure_128().into_config(),
                 expect_supported: true,
-            },
-            Case {
-                config: SecureConfig::hardware_opt().into_config(),
-                expect_supported: false,
             },
             Case {
                 config: SecureConfig::secure_128_deep().into_config(),
@@ -928,25 +907,24 @@ mod tests {
     }
 
     /// The predicate reads arithmetic, not names: the refusal is driven by the
-    /// chain, so lengthening a refused 3-prime chain by one prime admits it and
-    /// shortening `secure_128_deep`'s by one refuses it. `hardware_opt` is used
-    /// for the lengthened case because it, not `secure_128`, is the named
-    /// config that still ships the retired 3-prime tuple (see the 2026-08-26
-    /// `secure_128` re-cut, `docs/OPEN_WORK_2026-08-26.md` A3).
+    /// chain, so lengthening a chain admits it and shortening one refuses it,
+    /// whatever the config is called. Both cases are built by editing a named
+    /// config's chain rather than by naming a short config, because no short
+    /// named config exists.
     #[test]
     fn public_refresh_predicate_is_not_a_name_match() {
-        let mut lengthened = SecureConfig::hardware_opt().into_config();
-        lengthened.primes.push(469_762_049);
+        let mut lengthened = SecureConfig::secure_128().into_config();
+        lengthened.primes.push(167_772_161);
         assert!(
             supports_public_refresh(&lengthened),
-            "a 4-prime chain must be admitted even while still named hardware_opt"
+            "a lengthened chain must be admitted on its arithmetic, not its name"
         );
 
         let mut shortened = SecureConfig::secure_128_deep().into_config();
         shortened.primes.pop();
         assert!(
             !supports_public_refresh(&shortened),
-            "a 3-prime chain must be refused even while still named secure_128_deep"
+            "a shortened chain must be refused even while still named secure_128_deep"
         );
     }
 
@@ -1003,10 +981,14 @@ mod tests {
 
         const REFUSAL: &str = "cannot carry a public refresh";
 
-        // hardware_opt (3 lanes): both public entry points must refuse. This
-        // is the retired secure_128 tuple — see the 2026-08-26 secure_128
-        // re-cut, docs/OPEN_WORK_2026-08-26.md A3.
-        let refused = SecureConfig::hardware_opt().into_config();
+        // A chain deliberately too short to carry a public refresh: both entry
+        // points must refuse it. Built ad hoc by shortening secure_128, NOT by
+        // naming a config -- no short named config exists, and this exists only
+        // to prove the gate fires, never as a usable chain. Three lanes is the
+        // shortest ClockworkBootstrap::new will build a context for (it wants
+        // exactly one extra boot prime).
+        let mut refused = SecureConfig::secure_128().into_config();
+        refused.primes.truncate(3);
         let boot = ClockworkBootstrap::new(&refused).expect("bootstrap context");
         let ct = empty_ct(refused.n);
         let bsk = empty_bsk(refused.n);
@@ -1014,10 +996,10 @@ mod tests {
 
         let circular = boot
             .bootstrap(&ct, &bsk, &ksk)
-            .expect_err("hardware_opt public refresh must be refused");
+            .expect_err("a short chain's public refresh must be refused");
         assert!(
             circular.to_string().contains(REFUSAL),
-            "hardware_opt bootstrap() returned the wrong error: {circular}"
+            "short chain bootstrap() returned the wrong error: {circular}"
         );
 
         // The KSK entry point refuses through its OWN, strictly stronger
@@ -1026,10 +1008,10 @@ mod tests {
         const KSK_REFUSAL: &str = "cannot carry a non-circular (KSK) public refresh";
         let non_circular = boot
             .bootstrap_with_ksk(&ct, &bsk, &ksk)
-            .expect_err("hardware_opt non-circular public refresh must be refused");
+            .expect_err("a short chain's non-circular public refresh must be refused");
         assert!(
             non_circular.to_string().contains(KSK_REFUSAL),
-            "hardware_opt bootstrap_with_ksk() returned the wrong error: {non_circular}"
+            "short chain bootstrap_with_ksk() returned the wrong error: {non_circular}"
         );
 
         // secure_128_deep (4 lanes): the gate must NOT fire. The empty
@@ -1125,7 +1107,6 @@ mod tests {
 
         let configs = [
             SecureConfig::secure_128(),
-            SecureConfig::hardware_opt(),
             SecureConfig::secure_128_deep(),
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
@@ -1222,7 +1203,6 @@ mod tests {
             SecureConfig::secure_128_deep(),
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
-            SecureConfig::hardware_opt(),
         ];
 
         println!(
@@ -1293,14 +1273,12 @@ mod tests {
         // Measured 2026-08-22, secure_128 re-cut 2026-08-26 (name, n, lanes,
         // log2 q, Core-SVP, MATZOV). secure_128 now carries the four-prime
         // chain previously exclusive to secure_128_deep -- see the 2026-08-26
-        // secure_128 re-cut, docs/OPEN_WORK_2026-08-26.md A3. hardware_opt
-        // keeps the retired three-prime tuple secure_128 used to ship.
+        // secure_128 re-cut, docs/OPEN_WORK_2026-08-26.md A3.
         let expected: &[(&str, usize, usize, u32, u32, u32)] = &[
             ("secure_128", 8192, 4, 119, 196, 176),
             ("secure_128_deep", 8192, 4, 119, 196, 176),
             ("secure_192", 16384, 5, 146, 320, 288),
             ("secure_256", 16384, 6, 175, 267, 240),
-            ("hardware_opt", 8192, 3, 90, 259, 233),
         ];
         assert_eq!(
             configs.len(),
@@ -1367,7 +1345,6 @@ mod tests {
             SecureConfig::secure_128_deep(),
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
-            SecureConfig::hardware_opt(),
         ] {
             // Each named production config must clear its own claimed bar.
             assert!(
@@ -1392,7 +1369,6 @@ mod tests {
             SecureConfig::secure_128_deep(),
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
-            SecureConfig::hardware_opt(),
         ] {
             for (index, &prime) in config.config.primes.iter().enumerate() {
                 assert!(
@@ -1419,8 +1395,8 @@ mod tests {
     #[test]
     fn exact_product_bit_length_matches_known_chains() {
         assert_eq!(
-            exact_product_bit_length(&[998244353, 985661441, 754974721]),
-            90
+            exact_product_bit_length(&[998244353, 985661441, 754974721, 469762049]),
+            119
         );
         assert!(
             exact_product_bit_length(&[
@@ -1441,7 +1417,6 @@ mod tests {
             ("test_medium", SecureConfig::test_medium_insecure()),
             ("secure_128", SecureConfig::secure_128()),
             ("secure_192", SecureConfig::secure_192()),
-            ("hardware_opt", SecureConfig::hardware_opt()),
         ];
 
         for (name, config) in configs {
@@ -1480,9 +1455,6 @@ mod tests {
 
         let secure_256 = SecureConfig::secure_256();
         assert!(verify_production_safety(&secure_256).is_ok());
-
-        let hardware_opt = SecureConfig::hardware_opt();
-        assert!(verify_production_safety(&hardware_opt).is_ok());
 
         // Test configs should fail
         let test_fast = SecureConfig::test_fast_insecure();

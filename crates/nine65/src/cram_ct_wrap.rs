@@ -96,7 +96,7 @@ pub const FPD_AUX_PRIMES: &[u32] = &[23, 29, 31, 37, 41, 43, 47];
 pub enum CramLiftError {
     /// The context's coefficient modulus is too wide for the `i128` witness
     /// API. `secure_192` (Q=146 bits) and `secure_256` (Q=175 bits) hit this;
-    /// `secure_128` (90), `secure_128_deep` (119) and `hardware_opt` (90)
+    /// `secure_128` (119) and `secure_128_deep` (119)
     /// do not.
     ModulusTooWideForWitness { q_bits: u32 },
     /// An aux prime shares a factor with the divisor, so it cannot carry the

@@ -18,7 +18,6 @@ fn every_named_production_config_satisfies_its_complete_claim() {
         SecureConfig::secure_128_deep(),
         SecureConfig::secure_192(),
         SecureConfig::secure_256(),
-        SecureConfig::hardware_opt(),
     ] {
         assert!(
             secure.hybrid_security >= secure.claimed_security,

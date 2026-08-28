@@ -9599,7 +9599,6 @@ mod tests {
         const COEFFS: usize = 256;
 
         for secure in [
-            SecureConfig::hardware_opt(),
             SecureConfig::secure_128(),
             SecureConfig::secure_192(),
         ] {

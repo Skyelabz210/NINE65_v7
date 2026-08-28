@@ -75,37 +75,6 @@ fn test_five_anchor_basis_would_still_be_insufficient_for_secure_256() {
     );
 }
 
-/// `hardware_opt` keeps the three-prime chain `secure_128` shipped before its
-/// 2026-08-26 re-cut (`docs/OPEN_WORK_2026-08-26.md` A3): at the 5-anchor
-/// basis for n=8192 (A ~= 157 bits) that chain (M ~= 90 bits) has real margin
-/// under the strict diagnostics-mode capacity gate, so this is the config
-/// that is actually "safe from anchor drift" today. `secure_128` itself is
-/// no longer this test's subject -- see
-/// `secure_128_now_shares_secure_128_deeps_anchor_capacity_ceiling` below for
-/// what changed.
-#[test]
-fn test_anchor_capacity_safe_secure_128() {
-    let config = SecureConfig::hardware_opt().into_config();
-    let mut ctx = RNSFHEContext::try_new(&config).expect("Context");
-    ctx.set_diagnostics(true);
-
-    let mut rng = ShadowHarvester::with_seed(42);
-    let full_keys = ctx.generate_keys_dual_full(&mut rng);
-
-    let ct1 = ctx.encrypt_dual(2, &full_keys.public_key, &mut rng);
-    let ct2 = ctx.encrypt_dual(3, &full_keys.public_key, &mut rng);
-
-    let result = ctx.mul_dual_public(&ct1, &ct2, &full_keys.eval_key);
-    assert!(
-        result.is_ok(),
-        "hardware_opt should be safe from anchor drift: {:?}",
-        result.err()
-    );
-
-    let decrypted = ctx.decrypt_dual(&result.unwrap(), &full_keys.secret_key);
-    assert_eq!(decrypted, 6);
-}
-
 /// Pin a real consequence of the `secure_128` re-cut rather than let it
 /// disappear silently: the four-prime chain (M ~= 119 bits) leaves only
 /// ~25 bits of margin against the 5-anchor basis's ~276-bit capacity for a

@@ -799,7 +799,6 @@ mod tests {
             SecureConfig::secure_128_deep().into_config(),
             SecureConfig::secure_192().into_config(),
             SecureConfig::secure_256().into_config(),
-            SecureConfig::hardware_opt().into_config(),
         ]
     }
 

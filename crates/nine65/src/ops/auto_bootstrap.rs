@@ -615,7 +615,6 @@ mod tests {
             SecureConfig::secure_128_deep(),
             SecureConfig::secure_192(),
             SecureConfig::secure_256(),
-            SecureConfig::hardware_opt(),
         ] {
             let config = secure.into_config();
             let mut budget = NoiseBudget::from_config(&config);
