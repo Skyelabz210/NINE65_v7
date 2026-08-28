@@ -1032,6 +1032,83 @@ impl RNSFHEContext {
         self.diagnostics_enabled = enabled;
     }
 
+    /// Sample the RLWE mask `a` uniformly from the ring `R_Q`, returning its
+    /// residues in the main basis (`main_primes`) and in the anchor basis.
+    ///
+    /// `a` has to be uniform over the WHOLE ring, because it is the only thing
+    /// hiding `a*s` in `pk0 = -(a*s + e)` and in `c1`. This used to draw ONE
+    /// `u64` per coefficient and reduce that single value into every lane. Each
+    /// lane's residue did then cover its full modulus -- which is what the old
+    /// comment here checked -- but the lanes were all reductions of the same
+    /// 64-bit draw, so the integer they jointly encode was confined to
+    /// `[0, 2^64)` instead of `[0, Q)`. Uniform per lane, degenerate jointly.
+    ///
+    /// The consequence was measured, not theorised: `|a*s|` stayed pinned near
+    /// `2^78` however large `Q` grew (identical error distribution from
+    /// `log2(Q) = 95` through `118`), so once `Delta/2` passed it the mask
+    /// could no longer move the decode and the plaintext fell out of `c0`
+    /// alone. Decrypting under an all-zero secret key recovered the message in
+    /// 6.25% of ciphertexts at 3 main lanes and 100% at 4 or more.
+    ///
+    /// Each coefficient is now drawn as a full-width integer on `[0, Q)` by
+    /// rejection, then reduced into every lane. Reducing one integer keeps the
+    /// main and anchor tracks consistent representations of the same value,
+    /// which K-Elimination depends on, while restoring `a`'s full range so the
+    /// mask scales with `Q` again.
+    fn sample_uniform_dual_poly<R: FheRng>(
+        &self,
+        rng: &mut R,
+        main_primes: &[u64],
+    ) -> DualRNSPoly {
+        let modulus = U256::product_u64s(main_primes);
+        let bits = modulus.bitlen();
+        let anchor_primes = &self.dual_rns.anchor.primes;
+
+        let mut main: Vec<Vec<u64>> = main_primes
+            .iter()
+            .map(|_| Vec::with_capacity(self.n))
+            .collect();
+        let mut anchor: Vec<Vec<u64>> = anchor_primes
+            .iter()
+            .map(|_| Vec::with_capacity(self.n))
+            .collect();
+
+        for _ in 0..self.n {
+            // Rejection sampling: draw `bits` uniform bits, keep the first
+            // draw below Q. Uniform on [0, Q) exactly, with no modulo bias.
+            let value = loop {
+                let mut lo = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                let mut hi: u128 = 0;
+                if bits > 128 {
+                    hi = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                    let high_bits = bits - 128;
+                    if high_bits < 128 {
+                        hi &= (1u128 << high_bits) - 1;
+                    }
+                } else if bits < 128 {
+                    lo &= (1u128 << bits) - 1;
+                }
+                let candidate = U256 { lo, hi };
+                if candidate.lt(modulus) {
+                    break candidate;
+                }
+            };
+
+            for (lane, &prime) in main.iter_mut().zip(main_primes.iter()) {
+                lane.push(value.mod_u64(prime));
+            }
+            for (lane, &prime) in anchor.iter_mut().zip(anchor_primes.iter()) {
+                lane.push(value.mod_u64(prime));
+            }
+        }
+
+        DualRNSPoly {
+            main,
+            anchor,
+            n: self.n,
+        }
+    }
+
     // ========================================================================
     // AUTO-ROUTING: Regime Selection
     // ========================================================================
@@ -1929,25 +2006,7 @@ impl RNSFHEContext {
             !self.config.primes.is_empty() && !self.dual_rns.anchor.primes.is_empty(),
             "Invariant violated: primes cannot be empty"
         );
-        let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-        let a_main: Vec<Vec<u64>> = self
-            .config
-            .primes
-            .iter()
-            .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-            .collect();
-        let a_anchor: Vec<Vec<u64>> = self
-            .dual_rns
-            .anchor
-            .primes
-            .iter()
-            .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-            .collect();
-        let a_dual = DualRNSPoly {
-            main: a_main,
-            anchor: a_anchor,
-            n: self.n,
-        };
+        let a_dual = self.sample_uniform_dual_poly(rng, &self.config.primes);
 
         // Generate error e (using signed encoding for consistency across moduli)
         // (secret material: zeroized on drop)
@@ -2166,25 +2225,7 @@ impl RNSFHEContext {
             // modulus (~30-32 bit reduction bias is negligible, ~2^-32)
             // instead of being confined to `[0, min_prime)` as a prior
             // version of this sampling did.
-            let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-            let a_main: Vec<Vec<u64>> = self
-                .config
-                .primes
-                .iter()
-                .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-                .collect();
-            let a_anchor: Vec<Vec<u64>> = self
-                .dual_rns
-                .anchor
-                .primes
-                .iter()
-                .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-                .collect();
-            let a_dual = DualRNSPoly {
-                main: a_main,
-                anchor: a_anchor,
-                n: self.n,
-            };
+            let a_dual = self.sample_uniform_dual_poly(rng, &self.config.primes);
 
             // Generate error e_i (secret material: zeroized on drop)
             let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
@@ -2300,23 +2341,7 @@ impl RNSFHEContext {
                 .collect();
 
             // a_i, e_i: identical sampling to the digit-based eval key.
-            let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-            let a_main: Vec<Vec<u64>> = lanes
-                .iter()
-                .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-                .collect();
-            let a_anchor: Vec<Vec<u64>> = self
-                .dual_rns
-                .anchor
-                .primes
-                .iter()
-                .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-                .collect();
-            let a_dual = DualRNSPoly {
-                main: a_main,
-                anchor: a_anchor,
-                n: self.n,
-            };
+            let a_dual = self.sample_uniform_dual_poly(rng, &lanes);
 
             let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
                 (0..self.n)

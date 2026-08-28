@@ -92,7 +92,6 @@
 //! new cross-crate dependency edge, out of scope for this pass).
 
 use crate::errors::{Nine65Error, Nine65Result};
-use crate::params::is_prime;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURATION
