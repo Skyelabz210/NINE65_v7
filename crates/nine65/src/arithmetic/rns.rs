@@ -1231,10 +1231,17 @@ impl DualRNSContext {
         // All > 2×10^9 (above max rescaled coefficient ~1.3×10^9)
         //
         // n <= 8192 (secure_128, secure_128_deep, hardware_opt): 5 primes,
-        //   A ≈ 157 bits. M×A ≈ 246 bits for secure_128 > N×Q² ≈ 191 bits.
-        //   Unchanged from the original set — no extra anchor lanes, no
-        //   per-multiply cost increase for the 128-bit tiers, and k
-        //   reconstruction is byte-identical to the previous behavior.
+        //   A ≈ 157 bits. hardware_opt keeps the original 3-prime chain
+        //   (M ≈ 90 bits): M×A ≈ 246 bits > N×Q² ≈ 191 bits, real margin.
+        //   secure_128 was re-cut 2026-08-26 to the 4-prime chain
+        //   (docs/OPEN_WORK_2026-08-26.md A3) and is now numerically the same
+        //   as secure_128_deep (M ≈ 119 bits): M×A ≈ 276 bits vs N×Q² ≈ 251
+        //   bits required, ~91% utilization — clears the unconditional
+        //   >=100% overflow gate but trips the opt-in, strict >=90%
+        //   diagnostics-mode gate deterministically (see
+        //   `secure_128_now_shares_secure_128_deeps_anchor_capacity_ceiling`
+        //   in tests/anchor_drift_diagnostics.rs). No extra anchor lanes were
+        //   added for this; k reconstruction is otherwise unchanged.
         //
         // n = 16384 (secure_192, secure_256): 10 primes, A ≈ 315 bits.
         //   secure_256 (Q ≈ 175 bits): M×A ≈ 490 bits > N×Q² ≈ 364 bits,

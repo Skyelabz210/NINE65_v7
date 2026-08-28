@@ -570,27 +570,28 @@ impl SecureConfig {
     /// Audited 128-bit production candidate.
     ///
     /// N was raised from 4096 to 8192 after the July 2026 independent audit
-    /// assessed the former tuple below its 128-bit claim. The RNS chain remains
-    /// three NTT-friendly primes so the arithmetic/noise capacity is unchanged;
-    /// this change increases the lattice dimension and security margin.
+    /// assessed the former tuple below its 128-bit claim.
     ///
-    /// Screened 2026-08-22: Core-SVP 259 bits, MATZOV 233 bits. The name is not
-    /// an overclaim; both models clear 128.
+    /// Re-cut 2026-08-26 (see `docs/OPEN_WORK_2026-08-26.md` A3) from three
+    /// main primes to four: at N=8192 the three-prime chain was
+    /// under-provisioned rather than incapable, and left only 42 bits of
+    /// post-refresh `Delta` headroom against the 47 a single subsequent
+    /// multiply needs — [`ensure_public_refresh_supported`] refused it, and
+    /// the decryption oracle confirmed the corruption directly (refresh
+    /// output still decrypted to `7`, but squaring it silently produced
+    /// `34037` instead of `49`). The fourth prime is the same one
+    /// `secure_128_deep` already carried; this chain is now that tuple.
     ///
-    /// **No public refresh on this chain.** Three main primes leave 42 bits of
-    /// `Delta` headroom after a public refresh against the 47 bits one
-    /// subsequent multiply needs, and the decryption oracle confirms it: the
-    /// refresh output still decrypts to `7`, but squaring it decrypts to
-    /// `34037` instead of `49`, silently
-    /// (`ops::bootstrap::tests::diag_measure_noise_growth`).
-    /// [`ensure_public_refresh_supported`] refuses it, and
-    /// `ClockworkBootstrap::bootstrap` returns that refusal. Use
-    /// [`SecureConfig::secure_128_deep`] — same 128-bit claim, four primes — when
-    /// the workload needs evaluator-side refresh.
+    /// Screened 2026-08-22 (pre-recut, three primes): Core-SVP 259 bits,
+    /// MATZOV 233 bits. Screened for the four-prime chain: Core-SVP 196 bits,
+    /// MATZOV 176 bits — both still clear the 128-bit name, at less margin
+    /// than the retired three-prime tuple in exchange for carrying a public
+    /// refresh (71 bits of post-refresh `Delta` headroom against a 47-bit
+    /// requirement).
     pub fn secure_128() -> Self {
         Self::new_verified(
             8192,
-            vec![998244353, 985661441, 754974721],
+            vec![998244353, 985661441, 754974721, 469762049],
             65537,
             3,
             128,
@@ -600,12 +601,16 @@ impl SecureConfig {
 
     /// 128-bit candidate with a four-prime chain for deeper leveled work.
     ///
+    /// Since the 2026-08-26 re-cut (`docs/OPEN_WORK_2026-08-26.md` A3) this is
+    /// numerically identical to [`SecureConfig::secure_128`] — both use the
+    /// same four-prime chain. Kept as a distinct named entry point for
+    /// call sites that spell out "deep" explicitly; prefer `secure_128` in new
+    /// code.
+    ///
     /// Screened 2026-08-22: Core-SVP 196 bits, MATZOV 176 bits — both clear the
-    /// 128-bit name. The longer chain costs screened margin relative to
-    /// `secure_128` (log2(q) 119 vs 90 at the same N) and buys arithmetic
-    /// headroom: this is the shortest chain that carries a **public** refresh
-    /// (71 bits of post-refresh `Delta` headroom against a 47-bit requirement),
-    /// verified against the decryption oracle.
+    /// 128-bit name. This is the shortest chain that carries a **public**
+    /// refresh (71 bits of post-refresh `Delta` headroom against a 47-bit
+    /// requirement), verified against the decryption oracle.
     pub fn secure_128_deep() -> Self {
         Self::new_verified(
             8192,
@@ -835,12 +840,12 @@ mod tests {
     /// Ground truth is `ops::bootstrap::tests::diag_measure_noise_growth`
     /// (`cargo test -p nine65 --lib --release diag_measure_noise_growth --
     /// --nocapture`), which runs the refresh phases with this gate bypassed and
-    /// checks the result against the decryption oracle. Measured: all three
-    /// configs refresh `encrypt(7)` back to `7`, but only `secure_128_deep` and
-    /// `secure_192` then square correctly to `49` — `secure_128` squares to
-    /// `34037`. That diagnostic asserts the agreement in the other direction
-    /// (oracle vs predicate); this test pins the predicate's verdicts for all
-    /// five named configs, including the two the diagnostic does not run.
+    /// checks the result against the decryption oracle. Historically (pre the
+    /// 2026-08-26 `secure_128` re-cut, `docs/OPEN_WORK_2026-08-26.md` A3), the
+    /// three-prime `secure_128` refreshed `encrypt(7)` back to `7` but then
+    /// squared it to `34037` instead of `49`; `hardware_opt` still carries that
+    /// three-prime tuple today and reproduces the same corruption. This test
+    /// pins the predicate's verdicts for all five named configs.
     ///
     /// This test pins the predicate against that split. It is deliberately
     /// sensitive to the noise ledger it reads (`NoiseBudget::mul_ct_cost`,
@@ -856,7 +861,7 @@ mod tests {
         let cases = [
             Case {
                 config: SecureConfig::secure_128().into_config(),
-                expect_supported: false,
+                expect_supported: true,
             },
             Case {
                 config: SecureConfig::hardware_opt().into_config(),
@@ -923,15 +928,18 @@ mod tests {
     }
 
     /// The predicate reads arithmetic, not names: the refusal is driven by the
-    /// chain, so lengthening `secure_128`'s chain by one prime admits it and
-    /// shortening `secure_128_deep`'s by one refuses it.
+    /// chain, so lengthening a refused 3-prime chain by one prime admits it and
+    /// shortening `secure_128_deep`'s by one refuses it. `hardware_opt` is used
+    /// for the lengthened case because it, not `secure_128`, is the named
+    /// config that still ships the retired 3-prime tuple (see the 2026-08-26
+    /// `secure_128` re-cut, `docs/OPEN_WORK_2026-08-26.md` A3).
     #[test]
     fn public_refresh_predicate_is_not_a_name_match() {
-        let mut lengthened = SecureConfig::secure_128().into_config();
+        let mut lengthened = SecureConfig::hardware_opt().into_config();
         lengthened.primes.push(469_762_049);
         assert!(
             supports_public_refresh(&lengthened),
-            "a 4-prime chain must be admitted even while still named secure_128"
+            "a 4-prime chain must be admitted even while still named hardware_opt"
         );
 
         let mut shortened = SecureConfig::secure_128_deep().into_config();
@@ -995,8 +1003,10 @@ mod tests {
 
         const REFUSAL: &str = "cannot carry a public refresh";
 
-        // secure_128 (3 lanes): both public entry points must refuse.
-        let refused = SecureConfig::secure_128().into_config();
+        // hardware_opt (3 lanes): both public entry points must refuse. This
+        // is the retired secure_128 tuple — see the 2026-08-26 secure_128
+        // re-cut, docs/OPEN_WORK_2026-08-26.md A3.
+        let refused = SecureConfig::hardware_opt().into_config();
         let boot = ClockworkBootstrap::new(&refused).expect("bootstrap context");
         let ct = empty_ct(refused.n);
         let bsk = empty_bsk(refused.n);
@@ -1004,10 +1014,10 @@ mod tests {
 
         let circular = boot
             .bootstrap(&ct, &bsk, &ksk)
-            .expect_err("secure_128 public refresh must be refused");
+            .expect_err("hardware_opt public refresh must be refused");
         assert!(
             circular.to_string().contains(REFUSAL),
-            "secure_128 bootstrap() returned the wrong error: {circular}"
+            "hardware_opt bootstrap() returned the wrong error: {circular}"
         );
 
         // The KSK entry point refuses through its OWN, strictly stronger
@@ -1016,10 +1026,10 @@ mod tests {
         const KSK_REFUSAL: &str = "cannot carry a non-circular (KSK) public refresh";
         let non_circular = boot
             .bootstrap_with_ksk(&ct, &bsk, &ksk)
-            .expect_err("secure_128 non-circular public refresh must be refused");
+            .expect_err("hardware_opt non-circular public refresh must be refused");
         assert!(
             non_circular.to_string().contains(KSK_REFUSAL),
-            "secure_128 bootstrap_with_ksk() returned the wrong error: {non_circular}"
+            "hardware_opt bootstrap_with_ksk() returned the wrong error: {non_circular}"
         );
 
         // secure_128_deep (4 lanes): the gate must NOT fire. The empty
@@ -1280,9 +1290,13 @@ mod tests {
         // published, and a published number that no test reproduces is a
         // number nobody is holding.
         //
-        // Measured 2026-08-22. (name, n, lanes, log2 q, Core-SVP, MATZOV)
+        // Measured 2026-08-22, secure_128 re-cut 2026-08-26 (name, n, lanes,
+        // log2 q, Core-SVP, MATZOV). secure_128 now carries the four-prime
+        // chain previously exclusive to secure_128_deep -- see the 2026-08-26
+        // secure_128 re-cut, docs/OPEN_WORK_2026-08-26.md A3. hardware_opt
+        // keeps the retired three-prime tuple secure_128 used to ship.
         let expected: &[(&str, usize, usize, u32, u32, u32)] = &[
-            ("secure_128", 8192, 3, 90, 259, 233),
+            ("secure_128", 8192, 4, 119, 196, 176),
             ("secure_128_deep", 8192, 4, 119, 196, 176),
             ("secure_192", 16384, 5, 146, 320, 288),
             ("secure_256", 16384, 6, 175, 267, 240),

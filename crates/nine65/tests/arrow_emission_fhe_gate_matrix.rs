@@ -1701,9 +1701,12 @@ fn matrix_covers_all_four_production_tiers_and_both_modes() {
 
     // Pin the frame shapes the gates above reason about, so a config change
     // that alters lane counts cannot quietly invalidate the reasoning.
+    // secure_128 was re-cut 2026-08-26 from 3 to 4 main lanes -- it is now
+    // numerically the same chain as secure_128_deep (see
+    // docs/OPEN_WORK_2026-08-26.md A3).
     let expected: [(usize, usize, usize); 4] = [
         // (n, main lanes, anchor lanes)
-        (8192, 3, 5),
+        (8192, 4, 5),
         (8192, 4, 5),
         (16384, 5, 10),
         (16384, 6, 10),
