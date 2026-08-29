@@ -127,6 +127,7 @@
 //! change, because it requires shipping a manufactured chain. Nothing under
 //! `ops/` is touched.
 
+use crate::arithmetic::rns::U256;
 use crate::errors::{Nine65Error, Nine65Result};
 
 /// Largest lane modulus this kernel accepts, exclusive.
@@ -238,6 +239,47 @@ fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128,
             .checked_add(term)
             .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum sum" })?;
         x %= m_prod;
+    }
+    Ok((x, m_prod))
+}
+
+/// [`parallel_summation_crt`] over a basis whose product exceeds `u128`.
+///
+/// Same R8 parallel summation — NOT a Garner cascade — carried in `U256` so
+/// the anchor basis that certifies a manufactured rescale's winding is not
+/// silently truncated to the first 128 bits' worth of anchors. Every term is
+/// reduced modulo its own lane before the wide multiply, so the running sum
+/// stays below `k·M` and `U256` is never overrun for the bases this kernel
+/// accepts (`M < 2^192` covers every canonical anchor set).
+fn parallel_summation_crt_u256(residues: &[u64], mods: &[u64]) -> Nine65Result<(U256, U256)> {
+    #[cfg(test)]
+    call_counters::PSUM_CALLS.with(|c| c.set(c.get() + 1));
+    for &m in mods {
+        if m < 2 {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!("unified_rescale: CRT modulus {m} < 2"),
+            });
+        }
+    }
+    let m_prod = U256::product_u64s(mods);
+    let mut x = U256::zero();
+    for (idx, (&r, &m)) in residues.iter().zip(mods.iter()).enumerate() {
+        // M_i = ∏_{j≠i} m_j, formed by product rather than division so no
+        // wide division is needed on the hot path.
+        let mut mi = U256::from_u64(1);
+        for (j, &mj) in mods.iter().enumerate() {
+            if j != idx {
+                mi = mi.mul_u64(mj);
+            }
+        }
+        let mi_mod = mi.mod_u64(m);
+        let inv = mod_inverse_checked(mi_mod, m).ok_or(Nine65Error::NotCoprime {
+            m: mi_mod,
+            a: m,
+            gcd: gcd(mi_mod, m),
+        })?;
+        let s = mul_mod(r % m, inv, m);
+        x = x.add(mi.mul_u64(s)).rem_u256(m_prod);
     }
     Ok((x, m_prod))
 }
@@ -437,7 +479,7 @@ pub struct RescaleChain {
     surviving_idx: Vec<usize>,
     surviving_lanes: Vec<u64>,
     anchors: Vec<u64>,
-    anchor_product: u128,
+    anchor_product: U256,
     t: u64,
 }
 
@@ -602,12 +644,13 @@ impl RescaleChain {
                 return Err(Nine65Error::NotCoprime { m: t, a: anchors[x], gcd: g });
             }
         }
-        let mut anchor_product: u128 = 1;
-        for &a in anchors {
-            anchor_product = anchor_product
-                .checked_mul(a as u128)
-                .ok_or(Nine65Error::Overflow { operation: "unified_rescale: anchor product" })?;
-        }
+        // U256, not u128: the manufactured rescale's winding bound scales with
+        // the OPERAND magnitude, and dual-RNS ciphertext coefficients are not
+        // canonical in [0,Q) (measured: |V| up to 2·N·Q). The anchor product
+        // that certifies that winding therefore has to be allowed past 128
+        // bits — capping it here was what forced the shipped path onto a
+        // 4-anchor, 125-bit subset that silently aliased.
+        let anchor_product = U256::product_u64s(anchors);
 
         Ok(Self {
             lanes: lanes.to_vec(),
@@ -654,8 +697,21 @@ impl RescaleChain {
     }
 
     /// Product of the anchor lanes; `1` when there are no anchors.
-    pub fn anchor_product(&self) -> u128 {
+    ///
+    /// `U256` because the winding capacity a manufactured rescale needs can
+    /// exceed 128 bits — see [`Self::anchor_product_u128`] for the narrow
+    /// read used by callers whose bases are small by construction.
+    pub fn anchor_product(&self) -> U256 {
         self.anchor_product
+    }
+
+    /// The anchor product as a `u128`, or `None` when it does not fit.
+    pub fn anchor_product_u128(&self) -> Option<u128> {
+        if self.anchor_product.hi == 0 {
+            Some(self.anchor_product.lo)
+        } else {
+            None
+        }
     }
 
     /// `Q mod t`. Always `0` for a constructed chain — that is the invariant.
@@ -732,7 +788,12 @@ pub struct RescaleOutput {
     pub gamma: u128,
     /// `K = ⌊Y/t⌋`, the winding number, from the anchors. `0` when the chain
     /// has no anchors.
-    pub winding_k: u128,
+    ///
+    /// `U256`: the winding a manufactured rescale carries is bounded by the
+    /// shift `S` it applies, and `S` is sized from the OPERAND magnitude, not
+    /// from `Q`. On `manufactured_m2b_insecure` that puts `K` at ~2^139,
+    /// past `u128`, where a narrow read wrapped silently.
+    pub winding_k: U256,
     /// Residues of `Y` on the target lanes. Empty on
     /// [`RescaleExit::ModulusReduced`].
     pub target_residues: Vec<u64>,
@@ -744,13 +805,36 @@ impl RescaleOutput {
     /// The pipeline does not need this; it is here so tests and callers can
     /// compare against directly computed ground truth.
     pub fn reconstruct(&self, chain: &RescaleChain) -> Nine65Result<u128> {
-        let term = self
+        let y = self
             .winding_k
-            .checked_mul(chain.surviving_product())
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale: reconstruct K·M" })?;
-        self.gamma
-            .checked_add(term)
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale: reconstruct γ+K·M" })
+            .mul_u64(chain.t())
+            .add(U256::from_u128(self.gamma));
+        if y.hi != 0 {
+            return Err(Nine65Error::Overflow {
+                operation: "unified_rescale: reconstruct γ+K·M exceeds u128",
+            });
+        }
+        Ok(y.lo)
+    }
+
+    /// The winding as a `u128`, or `None` when it does not fit.
+    ///
+    /// Callers whose anchor basis is narrow by construction can use this;
+    /// the manufactured rescale cannot, which is why the field is `U256`.
+    pub fn winding_k_u128(&self) -> Option<u128> {
+        if self.winding_k.hi == 0 {
+            Some(self.winding_k.lo)
+        } else {
+            None
+        }
+    }
+
+    /// `Y = γ + K·t` as a `U256` — always exact for the chains this kernel
+    /// accepts, and the form the manufactured rescale actually consumes.
+    pub fn reconstruct_wide(&self, chain: &RescaleChain) -> U256 {
+        self.winding_k
+            .mul_u64(chain.t())
+            .add(U256::from_u128(self.gamma))
     }
 }
 
@@ -937,7 +1021,7 @@ pub fn exact_delta_rescale(
     let (gamma, m_prod) = parallel_summation_crt(&surviving_residues, &chain.surviving_lanes)?;
     debug_assert_eq!(m_prod, chain.surviving_product());
     let winding_k = if chain.anchors.is_empty() {
-        0u128
+        U256::zero()
     } else {
         let mut k_res: Vec<u64> = Vec::with_capacity(chain.anchors.len());
         for (j, &a) in chain.anchors.iter().enumerate() {
@@ -953,7 +1037,7 @@ pub fn exact_delta_rescale(
         }
         // The ladder merge, likewise R8 — "must not be silently substituted
         // with a runtime Garner cascade" (lift inventory, ladder policy).
-        parallel_summation_crt(&k_res, &chain.anchors)?.0
+        parallel_summation_crt_u256(&k_res, &chain.anchors)?.0
     };
 
     // ── step 4: the exit ────────────────────────────────────────────
@@ -962,7 +1046,10 @@ pub fn exact_delta_rescale(
         RescaleExit::Reraise { target_lanes } => {
             let mut out = Vec::with_capacity(target_lanes.len());
             for &a in target_lanes {
-                out.push(universal_project(gamma, winding_k, m_prod, a)?);
+                // K is reduced modulo the target first; universal projection
+                // only ever uses `K mod A`, so this is the identical value
+                // with no u128 truncation.
+                out.push(universal_project(gamma, winding_k.mod_u64(a) as u128, m_prod, a)?);
             }
             out
         }
@@ -1123,7 +1210,7 @@ mod tests {
         let c = small_chain();
         let q = c.try_q_u128().unwrap(); // 546
         let d = c.try_delta_u128().unwrap(); // 91
-        let a = c.anchor_product(); // 55
+        let a = c.anchor_product_u128().unwrap(); // 55
         let t = c.t() as u128; // 6
         let off = d / 2;
         let limit = q * a - off; // full dual range minus offset headroom
@@ -1153,7 +1240,7 @@ mod tests {
             let y = out.reconstruct(&c).unwrap();
             assert_eq!(y, truth_bfv, "kernel != round(X·t/Q) at x={x}");
             assert_eq!(out.gamma, y % t, "γ wrong at x={x}");
-            assert_eq!(out.winding_k, y / t, "winding K wrong at x={x}");
+            assert_eq!(out.winding_k_u128().unwrap(), y / t, "winding K wrong at x={x}");
             for (i, &tg) in targets.iter().enumerate() {
                 assert_eq!(
                     out.target_residues[i] as u128,
@@ -1161,7 +1248,7 @@ mod tests {
                     "projection onto {tg} wrong at x={x}"
                 );
             }
-            max_k = max_k.max(out.winding_k);
+            max_k = max_k.max(out.winding_k_u128().unwrap());
             checked += 1;
         }
         assert_eq!(checked, limit as u64);
@@ -1180,7 +1267,7 @@ mod tests {
         let c = composite_chain();
         let q = c.try_q_u128().unwrap(); // 62220
         let d = c.try_delta_u128().unwrap(); // 5185
-        let a = c.anchor_product(); // 77
+        let a = c.anchor_product_u128().unwrap(); // 77
         let t = c.t() as u128; // 12
         let off = d / 2;
         let limit = q * a - off;
@@ -1270,7 +1357,7 @@ mod tests {
     fn two_exits_are_one_primitive() {
         let c = small_chain();
         let q = c.try_q_u128().unwrap();
-        let a = c.anchor_product();
+        let a = c.anchor_product_u128().unwrap();
         let d = c.try_delta_u128().unwrap();
         let targets: Vec<u64> = vec![6, 7, 13, 546, 40];
         let mut n = 0u64;
@@ -1321,7 +1408,7 @@ mod tests {
     fn floor_mode_is_exact_floor_division() {
         let c = composite_chain();
         let q = c.try_q_u128().unwrap();
-        let a = c.anchor_product();
+        let a = c.anchor_product_u128().unwrap();
         let d = c.try_delta_u128().unwrap();
         let mut n = 0u64;
         for x in (0..(q * a)).step_by(13) {
@@ -1351,7 +1438,7 @@ mod tests {
         let c = composite_chain(); // t = 12, so M = 12 shares 2 and 3 freely
         let targets: Vec<u64> = vec![2, 3, 4, 6, 8, 12, 12, 16, 1024, 85, 61, 62220, 9, 15, 100];
         let q = c.try_q_u128().unwrap();
-        let a = c.anchor_product();
+        let a = c.anchor_product_u128().unwrap();
         let d = c.try_delta_u128().unwrap();
         let mut n = 0u64;
         for x in (0..(q * a - d / 2)).step_by(11) {
@@ -1443,7 +1530,7 @@ mod tests {
     fn adjacency_agrees_with_universal_projection_on_the_chain() {
         let c = small_chain();
         let q = c.try_q_u128().unwrap();
-        let a = c.anchor_product();
+        let a = c.anchor_product_u128().unwrap();
         let d = c.try_delta_u128().unwrap();
         let anchor_mod = c.surviving_product() as u64 + 1; // A = t + 1 = 7
         let mut n = 0u64;
@@ -1458,7 +1545,9 @@ mod tests {
                 RescaleExit::Reraise { target_lanes: &[anchor_mod] },
             )
             .unwrap();
-            let fast = adjacency_project(out.gamma, out.winding_k, c.surviving_product()).unwrap();
+            let fast =
+                adjacency_project(out.gamma, out.winding_k_u128().unwrap(), c.surviving_product())
+                    .unwrap();
             assert_eq!(fast, out.target_residues[0], "adjacency fast path disagrees at x={x}");
             n += 1;
         }
@@ -1484,7 +1573,7 @@ mod tests {
             .unwrap();
             let truth = (x + d / 2) / d;
             assert!(truth < c.t() as u128, "range precondition");
-            assert_eq!(out.winding_k, 0);
+            assert_eq!(out.winding_k_u128().unwrap(), 0);
             assert_eq!(out.reconstruct(&c).unwrap(), truth, "x={x}");
         }
     }
@@ -1543,7 +1632,7 @@ mod tests {
         ] {
             let q = c.try_q_u128().unwrap();
             let d = c.try_delta_u128().unwrap();
-            let a = c.anchor_product();
+            let a = c.anchor_product_u128().unwrap();
             let t = c.t() as u128;
 
             // Δ = Q/t EXACTLY. This is the premise the whole result rests on.
