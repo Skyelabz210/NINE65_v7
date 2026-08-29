@@ -255,12 +255,21 @@ fn cram_public_guardrail_shipped_certificate_constant_is_4n_not_2n() {
     // The operand bound V = 2*N*Q must be carried explicitly. Deriving S from
     // Q alone is the measured silent-wrap regression.
     assert!(
-        SRC.contains("let v_scale = 2u128.checked_mul(n_u)"),
+        SRC.contains("let v_scale = 2u128") && SRC.contains(".checked_mul(n_u)"),
         "REGRESSION: the manufactured shift no longer derives its operand bound \
          V = 2*N*Q. Sizing S from Q alone assumes canonical operands; measured \
          max |V| is 2^118 = 2*N*Q on manufactured_m2b_insecure, so S = 2N*Q^2 \
          under-shifts by 20 bits, X + S stays negative, and the rescale wraps \
          silently. Do NOT 'simplify' S back to a function of Q."
+    );
+    assert!(
+        SRC.contains("const OPERAND_MARGIN: u128 = 16;")
+            && SRC.contains(".checked_mul(Self::OPERAND_MARGIN)"),
+        "REGRESSION: the reserve over the MEASURED operand maximum is gone. 2*N*Q \
+         is a measurement, not a proof — the analytic worst case is N^2*Q, which no \
+         anchor basis here can carry — so the shift carries a 16x reserve and the \
+         per-coefficient tripwire refuses past it. Removing the reserve puts the \
+         path back one unlucky draw away from a typed refusal in production."
     );
     assert!(
         SRC.contains("let s_scale = v_scale")
