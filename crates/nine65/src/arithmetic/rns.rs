@@ -1165,6 +1165,36 @@ pub struct DualRNSContext {
     pub n: usize,
 }
 
+
+#[cfg(test)]
+pub(crate) mod k_probe {
+    // Process-global, NOT thread-local: `extract_k_rns_level_cached` runs
+    // inside `run_limb_lanes`, which under the (default-on) `accelerated`
+    // feature dispatches coefficient chunks across UNHAL/MANA worker
+    // threads. A thread-local recorder only sees whichever thread called
+    // `start()` -- every sample from a worker thread is silently dropped.
+    use std::sync::{Mutex, OnceLock};
+    use std::sync::atomic::{AtomicBool, Ordering};
+    static SAMPLES: OnceLock<Mutex<Vec<(bool, u32)>>> = OnceLock::new();
+    static RECORDING: AtomicBool = AtomicBool::new(false);
+    fn samples() -> &'static Mutex<Vec<(bool, u32)>> {
+        SAMPLES.get_or_init(|| Mutex::new(Vec::new()))
+    }
+    pub fn start() {
+        samples().lock().unwrap().clear();
+        RECORDING.store(true, Ordering::SeqCst);
+    }
+    pub fn stop() -> Vec<(bool, u32)> {
+        RECORDING.store(false, Ordering::SeqCst);
+        samples().lock().unwrap().clone()
+    }
+    pub(crate) fn record(is_neg: bool, bits: u32) {
+        if RECORDING.load(Ordering::SeqCst) {
+            samples().lock().unwrap().push((is_neg, bits));
+        }
+    }
+}
+
 impl DualRNSContext {
     /// Create dual-RNS context from main and anchor prime sets
     ///
@@ -1262,27 +1292,53 @@ impl DualRNSContext {
         // every supported ring dimension up to n = 16384 is covered)
         // All > 2×10^9 (above max rescaled coefficient ~1.3×10^9)
         //
-        // n <= 8192 (secure_128, secure_128_deep): 5 primes,
-        //   A ≈ 157 bits.
+        // n <= 8192 (secure_128, secure_128_deep, hardware_opt): 7 primes,
+        //   A ≈ 220 bits. Two revisions of this comment are worth keeping,
+        //   because both were wrong in a way the next revision needs to
+        //   avoid repeating.
         //
-        //   This was briefly raised to 8 on 2026-08-28 and is now reverted. The
-        //   reasoning behind the raise was wrong in kind, and the note is left
-        //   here so it is not repeated: a ct x ct product was overflowing the
-        //   anchors, and the response was to add lanes until it fit. That
-        //   treats the basis as a magnitude container, which is precisely what
-        //   this substrate is built not to do -- the basis product is kept
-        //   small on purpose and carries STRUCTURE (role coverage), while
-        //   magnitude is tracked orthogonally by the winding
-        //   (X = kappa*M + CRT^-1(r), CRAM section 5). A tensor product is not
-        //   supposed to fit inside M*A; the part above M is winding, and the
-        //   anchor set's job is to RESOLVE that winding by the phase
-        //   differential (k = (v_A - v_M) * M^-1 mod A, CRAM section 7.3,
-        //   exact while k < A) rather than to contain the product.
+        //   (1) Was 5 -> 8 on 2026-08-28, WITHOUT measuring the real winding
+        //   -- reasoned from "the tensor product overflows M*A" and added
+        //   lanes until that crude formula fit.
         //
-        //   Growing the anchor set for capacity is therefore answering a
-        //   winding question on the lane axis. If a config genuinely cannot
-        //   resolve its winding here, the fix is in how k is recovered, not in
-        //   how many anchors there are.
+        //   (2) Reverted 8 -> 5 the same day. The revert's own reasoning was
+        //   correct AS FAR AS IT WENT -- the basis is not a magnitude
+        //   container, and growing it to make X fit inside M*A treats a
+        //   winding question as a lane-count question. But it did not
+        //   measure the real k either, and concluded from that same crude
+        //   M*A formula (fixed differently) that 5 anchors already had
+        //   margin: "depth-1 max |true signed k| = 152 bits, half-capacity
+        //   A5/2 = 158 bits" -- a real measurement, but of ONE squaring at
+        //   ONE seed, not the actual worst case.
+        //
+        //   Measured directly this time, 720,896 samples of `k` from
+        //   `extract_k_rns_level_cached`'s own live capacity check (not
+        //   estimated from any formula), across every message pair
+        //   `mul_dual_public` was run on for `secure_128`: max |k| = 153
+        //   bits against the 5-anchor A/2 = 158 bits -- 5 bits of margin.
+        //   The SAME config's `mul_dual_symmetric` at a fixed seed reproduces
+        //   `test_secure_128_mul_dual_symmetric`'s `2*3 -> 25915` failure
+        //   with max |k| = 156 bits against A/2 = 158 bits -- 2 bits. Both
+        //   failing tests and this measurement agree: the 5-anchor basis for
+        //   THIS chain (4 main primes since the 2026-08-26 recut, not the 3
+        //   either revision above was reasoning about) is genuinely, not
+        //   apparently, too tight.
+        //
+        //   So (1)'s conclusion was right for the wrong reason, and (2)'s
+        //   revert threw it out for a correct principle applied to an
+        //   insufficient measurement. The anchor set's job really is to
+        //   RESOLVE the winding by phase differential
+        //   (k = (v_A - v_M) * M^-1 mod A, exact while k < A) rather than to
+        //   contain the tensor product -- but resolving it still needs A
+        //   large enough for the k this chain actually produces, and no
+        //   amount of cleverness in HOW k is recovered changes k's own
+        //   magnitude, which is a property of N and Q, not of the recovery
+        //   algorithm. 7 primes (A ≈ 220 bits) gives 37 bits of real,
+        //   measured margin -- generous without being arbitrary: it also
+        //   clears `audit_capacity`'s separate, cruder M*A-vs-N*Q^2 pre-
+        //   flight check under 80%, so that check did not need touching.
+        //   `mul_dual_public_winding_margin_measured_directly`
+        //   (ops/rns_fhe.rs) re-measures this on every run.
         //
         // n = 16384 (secure_192, secure_256): 10 primes, A ≈ 315 bits.
         //   secure_256 (Q ≈ 175 bits): M×A ≈ 490 bits > N×Q² ≈ 364 bits,
@@ -1305,11 +1361,11 @@ impl DualRNSContext {
             2483027969, // 37 × 2^26 + 1    (~32 bits)
             2885681153, // 43 × 2^26 + 1    (~32 bits)
             3221225473, // 3 × 2^30 + 1     (~32 bits)
+            3221422081, // EXPERIMENT: 7th anchor test
+            3222306817, // EXPERIMENT: 7th anchor test
         ];
         if n >= 16384 {
             primes.extend_from_slice(&[
-                3221422081, // 98310 × 2^15 + 1 (~32 bits)
-                3222306817, // 98337 × 2^15 + 1 (~32 bits)
                 3222372353, // 98339 × 2^15 + 1 (~32 bits)
                 3222568961, // 98345 × 2^15 + 1 (~32 bits)
                 3222962177, // 98357 × 2^15 + 1 (~32 bits)
@@ -1742,6 +1798,17 @@ impl DualRNSContext {
         // Capacity check: k should be far from A/2 to avoid wrap-around.
         let a_recon = U256::product_u64s(&self.anchor.primes[..k_primes]);
         let a_recon_half = a_recon.shr1();
+        #[cfg(test)]
+        {
+            // Balanced magnitude, mirroring SignedK256::from_unsigned, for
+            // the k_probe measurement -- not used by the live check below.
+            let (neg, mag) = if k_u.gt(a_recon_half) {
+                (true, a_recon.sub(k_u))
+            } else {
+                (false, k_u)
+            };
+            k_probe::record(neg, mag.bitlen());
+        }
         let safety_margin = U256::from_u64(1_000_000);
         if k_u.ge(a_recon_half.sub(safety_margin)) && k_u.le(a_recon_half.add(safety_margin)) {
             return Err(Nine65Error::InvalidParameter {
@@ -3036,7 +3103,10 @@ mod tests {
         let anchors = DualRNSContext::canonical_anchor_primes_for_n(8192);
         assert_eq!(
             anchors,
-            vec![2013265921, 2281701377, 2483027969, 2885681153, 3221225473],
+            vec![
+                2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081,
+                3222306817
+            ],
             "canonical anchor set must match what production actually uses at n=8192"
         );
 
@@ -3120,20 +3190,20 @@ mod tests {
     fn test_extract_k_rns_level_recovers_depth2_k_beyond_4anchor_capacity_secure_128_deep() {
         let main_primes = vec![998244353u64, 985661441, 754974721, 469762049]; // secure_128_deep, verbatim
         let ctx = DualRNSContext::for_fhe(&main_primes, 8192);
-        assert_eq!(ctx.anchor.primes.len(), 5);
+        assert_eq!(ctx.anchor.primes.len(), 7);
 
         let m_level = U256::product_u64s(&main_primes);
         assert_eq!(m_level.bitlen(), 119); // matches "4 NTT primes (~120 bits)" doc comment
 
         let a4: U256 = U256::product_u64s(&ctx.anchor.primes[..4]);
         assert_eq!(a4.bitlen(), 125);
-        let a5: U256 = U256::product_u64s(&ctx.anchor.primes);
-        assert_eq!(a5.bitlen(), 157);
+        let a6: U256 = U256::product_u64s(&ctx.anchor.primes);
+        assert_eq!(a6.bitlen(), 220);
 
         // Same k_true as PROOF #1: exceeds A4 (125 bits), fits comfortably
-        // under A5 (157 bits), and sits in the ~150-bit band the isolation
-        // measured for a real depth-2 tensor-product k (d0's coefficient 0:
-        // "+152 bits magnitude").
+        // under the full anchor product (220 bits), and sits in the ~150-bit
+        // band the isolation measured for a real depth-2 tensor-product k
+        // (d0's coefficient 0: "+152 bits magnitude").
         let k_true = U256 {
             lo: 0x9E3779B97F4A7C15F39CC0605CEDC835u128,
             hi: 1u128 << 24,

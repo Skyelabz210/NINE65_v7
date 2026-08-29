@@ -14174,6 +14174,79 @@ mod tests {
         );
     }
 
+    /// The REAL winding `mul_dual_public` carries, measured directly off
+    /// `extract_k_rns_level_cached`'s own live capacity check -- not
+    /// estimated from `audit_capacity`'s `N*Q^2` vs `M*A` proxy.
+    ///
+    /// `audit_capacity`'s pre-flight formula and the live per-coefficient
+    /// tripwire inside `extract_k_rns_level_cached` (a `k` vs `A/2` check
+    /// with a ~20-bit safety margin) are checking DIFFERENT quantities: the
+    /// pre-flight compares the raw uncentered tensor `X` (up to `N*Q^2`)
+    /// against the FULL dual-RNS capacity `M*A`; the live check compares the
+    /// winding `k = (X-gamma)/M` directly against the anchor capacity `A`
+    /// alone. These are not the same bound, and the pre-flight is the
+    /// stricter of the two for `secure_128`'s 4-prime chain: it reports 91%
+    /// utilization (CRITICAL under diagnostics) while the value the live
+    /// check actually enforces has real margin. This test measures that
+    /// margin directly, so any fix to the pre-flight formula is grounded in
+    /// what the runtime code provably needs rather than in another formula.
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn mul_dual_public_winding_margin_measured_directly() {
+        use crate::arithmetic::rns::k_probe;
+        use crate::params::secure_configs::SecureConfig;
+
+        for (name, sc) in [
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_192", SecureConfig::secure_192()),
+            ("secure_256", SecureConfig::secure_256()),
+        ] {
+            let config = sc.into_config();
+            let ctx = RNSFHEContext::try_new(&config).expect("context");
+            let mut rng = ShadowHarvester::with_seed(20260829);
+            let keys = ctx.generate_keys_dual_full(&mut rng);
+
+            let a_bits = ctx
+                .dual_rns
+                .anchor
+                .primes
+                .iter()
+                .map(|&p| 64 - p.leading_zeros())
+                .sum::<u32>();
+
+            k_probe::start();
+            for i in 0..8u64 {
+                let mut r1 = ShadowHarvester::with_seed(500_000 + 2 * i);
+                let mut r2 = ShadowHarvester::with_seed(500_001 + 2 * i);
+                let m1 = (i * 7919 + 3) % ctx.t;
+                let m2 = (i * 104_729 + 11) % ctx.t;
+                let a = ctx.encrypt_dual(m1, &keys.public_key, &mut r1);
+                let b = ctx.encrypt_dual(m2, &keys.public_key, &mut r2);
+                let want = (m1 as u128 * m2 as u128 % ctx.t as u128) as u64;
+                let ct = ctx
+                    .mul_dual_public(&a, &b, &keys.eval_key)
+                    .unwrap_or_else(|e| panic!("{name}: mul_dual_public failed: {e:?}"));
+                assert_eq!(
+                    ctx.decrypt_dual(&ct, &keys.secret_key),
+                    want,
+                    "{name}: mul_dual_public wrong on ({m1},{m2})"
+                );
+            }
+            let samples = k_probe::stop();
+            assert!(!samples.is_empty(), "{name}: sweep recorded nothing");
+            let max_bits = samples.iter().map(|&(_, b)| b).max().unwrap();
+            // Margin against A/2 (the boundary the live tripwire actually
+            // checks), not against the full A this printout also reports.
+            let margin_half = (a_bits as i64 - 1) - max_bits as i64;
+
+            println!(
+                "{name}: {} k samples, max |k| {max_bits} bits, anchor capacity {a_bits} \
+                 bits (A/2 margin {margin_half} bits)",
+                samples.len()
+            );
+        }
+    }
+
     /// The winding the manufactured rescale actually carries, measured.
     ///
     /// This is the test that pins the whole point of deleting the shift. The

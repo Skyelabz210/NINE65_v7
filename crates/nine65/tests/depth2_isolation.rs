@@ -355,7 +355,7 @@ fn naive_k0_mismatch_count(poly: &DualRNSPoly, main_primes: &[u64], anchor_prime
     mismatches
 }
 
-/// For every coefficient, does the FULL k-extraction (via all 5 anchors),
+/// For every coefficient, does the FULL k-extraction (via all anchors),
 /// and returns the max |signed k| bit length seen -- the from-scratch
 /// equivalent of the in-crate probe's `max |true signed k|` column, but
 /// computed by a completely independent implementation.
@@ -393,7 +393,7 @@ fn depth2_isolation_capacity_and_coefficient_texture() {
         .map(|&p| 64 - p.leading_zeros())
         .collect();
     let a4_bits: u32 = anchor_bits[..4].iter().sum();
-    let a5_bits: u32 = anchor_bits[..5].iter().sum();
+    let a_full_bits: u32 = anchor_bits.iter().sum();
 
     println!(
         "[depth2_isolation] secure_128_deep: N={} main_primes={:?} (M_level={} bits) anchor_primes={:?}",
@@ -401,8 +401,8 @@ fn depth2_isolation_capacity_and_coefficient_texture() {
     );
     println!(
         "[depth2_isolation] A4 (production capacity for this 4-main-prime config) = {} bits (signed half = {} bits); \
-         A5 (full anchor) = {} bits (signed half = {} bits)",
-        a4_bits, a4_bits - 1, a5_bits, a5_bits - 1
+         full anchor set ({} primes) = {} bits (signed half = {} bits)",
+        a4_bits, a4_bits - 1, ctx.dual_rns.anchor.primes.len(), a_full_bits, a_full_bits - 1
     );
     println!(
         "[depth2_isolation] ctx.ke.capacity_bit_length() = {} bits -- this is the KElimination::for_fhe(config.primes[0]) \
@@ -412,9 +412,9 @@ fn depth2_isolation_capacity_and_coefficient_texture() {
         ctx.ke.capacity_bit_length()
     );
     assert_eq!(ctx.ke.capacity_bit_length(), 110);
-    assert_eq!(ctx.dual_rns.anchor.primes.len(), 5);
+    assert_eq!(ctx.dual_rns.anchor.primes.len(), 7);
     assert_eq!(a4_bits, 127, "4-anchor production capacity for secure_128_deep");
-    assert_eq!(a5_bits, 159, "full 5-anchor capacity");
+    assert_eq!(a_full_bits, 223, "full 7-anchor capacity");
     assert_eq!(m_bits, 119, "secure_128_deep M_level bit length");
 
     // ------------------------------------------------------------------
