@@ -789,11 +789,24 @@ pub struct RescaleOutput {
     /// `K = ⌊Y/t⌋`, the winding number, from the anchors. `0` when the chain
     /// has no anchors.
     ///
-    /// `U256`: the winding a manufactured rescale carries is bounded by the
-    /// shift `S` it applies, and `S` is sized from the OPERAND magnitude, not
-    /// from `Q`. On `manufactured_m2b_insecure` that puts `K` at ~2^139,
-    /// past `u128`, where a narrow read wrapped silently.
+    /// `U256`: the winding a manufactured rescale carries can exceed `u128`,
+    /// where a narrow read wrapped silently.
+    ///
+    /// This is the LEAST NON-NEGATIVE representative, `K mod C`. When `X` is
+    /// negative — which it routinely is, the negacyclic convolution subtracts
+    /// — the true winding is negative and this field holds `C − |K|`. Read
+    /// [`Self::winding_signed`] instead unless you specifically want the
+    /// unsigned residue.
     pub winding_k: U256,
+    /// Sign of the winding under the BALANCED lift about `C/2`.
+    ///
+    /// The balanced lift is what lets the rescale carry a signed `X` with no
+    /// positive shift at all — the same convention `SignedK256::from_unsigned`
+    /// applies on the materializing path, which never needed a shift.
+    pub winding_k_neg: bool,
+    /// `|K|` under the balanced lift. `winding_k` when non-negative,
+    /// `C − winding_k` when negative.
+    pub winding_k_mag: U256,
     /// Residues of `Y` on the target lanes. Empty on
     /// [`RescaleExit::ModulusReduced`].
     pub target_residues: Vec<u64>,
@@ -829,6 +842,13 @@ impl RescaleOutput {
         }
     }
 
+    /// The winding under the balanced lift: `(is_negative, |K|)`.
+    ///
+    /// Prefer this to [`Self::winding_k`] anywhere `X` may be negative.
+    pub fn winding_signed(&self) -> (bool, U256) {
+        (self.winding_k_neg, self.winding_k_mag)
+    }
+
     /// `Y = γ + K·t` as a `U256` — always exact for the chains this kernel
     /// accepts, and the form the manufactured rescale actually consumes.
     pub fn reconstruct_wide(&self, chain: &RescaleChain) -> U256 {
@@ -851,11 +871,18 @@ impl RescaleOutput {
 ///
 /// # Range precondition
 ///
-/// The dual representation holds `X < Q·A`, where `A` is the anchor product;
-/// equivalently `⌊X/Q⌋ < A`. When [`DeltaRounding::NearestHalfUp`] is used the
-/// caller must additionally leave headroom for the offset, i.e.
-/// `X + ⌊Δ/2⌋ < Q·A`. This is the ordinary RNS capacity condition and cannot
-/// be detected from residues alone; violating it wraps the winding number.
+/// `X` may be SIGNED. The align-and-drop is exact over all of ℤ — `r_d` is the
+/// least non-negative residue, so `X − r_d = d·⌊X/d⌋` holds for negative `X`
+/// too, and the drops compose. What the representation bounds is the
+/// magnitude: under the balanced lift the condition is
+/// `|X + ⌊Δ/2⌋| < Q·A/2`, equivalently `|K| < C/2`. This is the ordinary
+/// BALANCED RNS capacity condition and cannot be detected from residues
+/// alone; violating it wraps the winding number.
+///
+/// A caller that keeps `X ≥ 0` may use the full range `X + ⌊Δ/2⌋ < Q·A` and
+/// read [`RescaleOutput::winding_k`] directly; one that carries a signed `X`
+/// reads [`RescaleOutput::winding_signed`] and gets half the range. The
+/// manufactured rescale does the latter, which is why it needs no shift.
 /// With no anchors, the condition is `X/Δ < t`.
 ///
 /// # Errors
@@ -1055,11 +1082,31 @@ pub fn exact_delta_rescale(
         }
     };
 
+    // ── the balanced lift ───────────────────────────────────────────
+    //
+    // `parallel_summation_crt_u256` reduces into `[0, C)`, which erases the
+    // sign of a negative winding. Recover it about `C/2` — the identical
+    // convention `SignedK256::from_unsigned` uses on the materializing path.
+    // This is a read of a value that function already returned, not a second
+    // reconstruction: no CRT, no Garner, three U256 ops.
+    let (winding_k_neg, winding_k_mag) = if chain.anchors.is_empty() {
+        (false, U256::zero())
+    } else {
+        let half = chain.anchor_product.shr1();
+        if winding_k.gt(half) {
+            (true, chain.anchor_product.sub(winding_k))
+        } else {
+            (false, winding_k)
+        }
+    };
+
     Ok(RescaleOutput {
         surviving_residues,
         anchor_residues: anchor,
         gamma,
         winding_k,
+        winding_k_neg,
+        winding_k_mag,
         target_residues,
     })
 }
