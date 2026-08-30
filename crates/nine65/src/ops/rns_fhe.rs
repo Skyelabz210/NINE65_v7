@@ -14699,6 +14699,156 @@ mod tests {
              materialization site, so the assertion above proves nothing"
         );
     }
+
+    /// F-2 step 1 (`docs/F2_SCOPE_2026-08-25.md` §6): the decisive, cheap,
+    /// test-only move before anything is built on the §4b claims. Exhaustive
+    /// over every `X` in `[0, M)` for a tiny 3-main-lane chain (n=4, primes
+    /// all ≡ 1 mod 8 so `RNSFHEContext::new` accepts them; the real,
+    /// large NTT-friendly anchor primes for n<16384 come along unchanged via
+    /// `DualRNSContext::for_fhe`), comparing `mod_switch_down_dual`
+    /// (reconstruct, center, divide) against the lanewise
+    /// `exact_modulus_switch_drop_poly` plus the branchless half-up rounding
+    /// correction from §4a — main and anchor lanes checked separately.
+    ///
+    /// §4b claims, from `f - M' ≡ f (mod M')`: centering is a no-op for the
+    /// *surviving main lanes* (so the lanewise path needs no correction
+    /// there beyond rounding), but anchor lanes live outside `M'` and do
+    /// need the offset. Both halves of that claim get checked, not assumed.
+    #[test]
+    fn f2_step1_lanewise_rounding_vs_mod_switch_down_dual_exhaustive() {
+        let main_primes = vec![17u64, 41, 73]; // all ≡ 1 (mod 8): NTT-legal at n=4
+        let config = FHEConfig {
+            n: 4,
+            primes: main_primes.clone(),
+            q: main_primes.iter().product(),
+            t: 2,
+            eta: 2,
+            security_bits: 1,
+            name: "f2_step1_diff_test",
+        };
+        let ctx = RNSFHEContext::new(&config);
+        let anchor_primes = ctx.dual_rns.anchor.primes.clone();
+        assert!(anchor_primes.len() >= 5, "canonical anchor set for n<16384");
+
+        let m_level: u64 = main_primes.iter().product();
+        let half = m_level / 2; // matches SignedU256::center's m_level.shr1()
+        let drop_idx = main_primes.len() - 1;
+        let q_k = main_primes[drop_idx];
+        let q_k_half = q_k / 2;
+
+        let mut main_mismatches: u64 = 0;
+        let mut anchor_mismatches_at_or_below_half: u64 = 0;
+        let mut anchor_matches_above_half: u64 = 0;
+        let mut anchor_total_above_half: u64 = 0;
+
+        for x in 0..m_level {
+            // Every lane, main and anchor, reads the SAME integer X --
+            // align-and-drop's algebra depends on that joint consistency.
+            let main_res: Vec<Vec<u64>> = main_primes
+                .iter()
+                .map(|&p| {
+                    let mut v = vec![0u64; 4];
+                    v[0] = x % p;
+                    v
+                })
+                .collect();
+            let anchor_res: Vec<Vec<u64>> = anchor_primes
+                .iter()
+                .map(|&a| {
+                    let mut v = vec![0u64; 4];
+                    v[0] = x % a;
+                    v
+                })
+                .collect();
+            let poly = DualRNSPoly {
+                main: main_res,
+                anchor: anchor_res,
+                n: 4,
+            };
+
+            let old = ctx
+                .mod_switch_down_dual(&poly)
+                .expect("3 main lanes >= mod_switch_down_dual's minimum of 3");
+            let dropped =
+                exact_modulus_switch_drop_poly(&poly, &main_primes, &anchor_primes, drop_idx)
+                    .expect("dropped prime is coprime to every surviving lane by construction");
+
+            let r_k = x % q_k;
+            let correction = if r_k >= q_k_half { 1u64 } else { 0 };
+            let above_half = x > half;
+
+            for i in 0..drop_idx {
+                let q_i = main_primes[i];
+                let new_val = (dropped.main[i][0] + correction) % q_i;
+                if new_val != old.main[i][0] {
+                    main_mismatches += 1;
+                    // §4b's floor/no-reconstruction claim (f - M' ≡ f mod q_i)
+                    // is unconditional; every mismatch traces to a DIFFERENT
+                    // cause the doc also flagged and left open: the rounding
+                    // convention. `mod_switch_down_dual` rounds the signed
+                    // value half-AWAY-FROM-ZERO (symmetric under negation);
+                    // the naive correction here rounds the unsigned X
+                    // half-UP (not symmetric under negation), and the two
+                    // conventions provably disagree only when X > M/2 and
+                    // `X mod q_k` lands on one of the two residues adjacent
+                    // to q_k's own half. Anywhere else, this loop must not
+                    // fire at all.
+                    assert!(
+                        above_half,
+                        "main-lane mismatch at X={x} <= M/2 (q_i={q_i}) — outside every \
+                         predicted region; the floor claim itself is refuted, not just \
+                         the rounding convention"
+                    );
+                    assert!(
+                        r_k == q_k_half || r_k == q_k_half + 1,
+                        "main-lane mismatch at X={x} (q_i={q_i}) has r_k={r_k}, outside the \
+                         predicted boundary residues {{{q_k_half}, {}}} — the rounding \
+                         mismatch is wider than the half-up/half-away-from-zero boundary \
+                         explains",
+                        q_k_half + 1
+                    );
+                }
+            }
+
+            for (k, &a_j) in anchor_primes.iter().enumerate() {
+                let new_val = (dropped.anchor[k][0] + correction) % a_j;
+                let matches = new_val == old.anchor[k][0];
+                if above_half {
+                    anchor_total_above_half += 1;
+                    if matches {
+                        anchor_matches_above_half += 1;
+                    }
+                } else if !matches {
+                    anchor_mismatches_at_or_below_half += 1;
+                }
+            }
+        }
+
+        let main_comparisons = m_level * drop_idx as u64;
+        println!(
+            "F2 step 1: main lanes {main_mismatches}/{main_comparisons} mismatched, every one \
+             confined to X > M/2 with X mod {q_k} in {{{q_k_half}, {}}} — the floor/no-\
+             reconstruction claim (§4b) holds exactly; only the naive rounding correction's \
+             sign-asymmetry at the half boundary does not carry over as written.",
+            q_k_half + 1
+        );
+        assert_eq!(
+            anchor_mismatches_at_or_below_half, 0,
+            "anchor lanes diverged from mod_switch_down_dual at or below M/2, where no \
+             centering correction should be needed either way"
+        );
+        assert!(
+            anchor_matches_above_half < anchor_total_above_half,
+            "anchor lanes agreed with the centered path above M/2 with no correction applied \
+             ({anchor_matches_above_half}/{anchor_total_above_half}) — the premise that anchor \
+             lanes need the M' offset is worth re-checking too, not just assumed"
+        );
+        println!(
+            "F2 step 1: anchor lanes above M/2: {anchor_matches_above_half}/{anchor_total_above_half} \
+             matched with no correction applied — confirms anchor lanes need real work (§4b), \
+             not just main lanes' narrow rounding fix."
+        );
+    }
 }
 
 
