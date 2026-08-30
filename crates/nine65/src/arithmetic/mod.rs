@@ -19,6 +19,11 @@
 
 pub mod barrett;
 pub mod base_ext; // SHENOY-KUMARESAN BASE EXTENSION (kernel only, not wired in — see module docs)
+pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (kernel only, not wired in — see module docs)
+#[cfg(test)]
+mod compare_bit_vectors; // external (Python) oracle vectors for compare_bit
+#[cfg(test)]
+mod compare_bit_verify; // compare_bit vs that external oracle, on real chains
 pub mod boundary; // CAPACITY PROXIMITY CHECKS (80%/90%/post-switch margins)
 pub mod ct_mul_exact; // EXACT CT×CT
 pub mod cyclotomic_phase; // NATIVE RING TRIGONOMETRY
