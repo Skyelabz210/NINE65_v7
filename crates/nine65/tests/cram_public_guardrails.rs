@@ -209,26 +209,28 @@ fn cram_public_guardrail_derived_inverse_matches_egcd_for_every_delta_lane() {
 /// bound locally, so it never reads the constant the shipped code uses. It
 /// was therefore VACUOUS with respect to the real code: flipping
 /// `k_elim_rescale_manufactured`'s certificate from `4 * self.n` to
-/// `2 * self.n` left it, and the entire rest of the suite (13 tests, every
-/// guardrail, the ground-truth sweep, the depth-3 chain), fully GREEN.
+/// `2 * self.n` left it, and the entire rest of the suite, fully GREEN.
 ///
-/// **Why the pinned constant changed (2026-08-29).** `4*N*Q + 1` was itself
-/// an under-provision, for the same reason it warned about one level down.
-/// It bounds the winding only if the tensor's operands are canonical in
-/// `[0, Q)`. They are not: a dual-RNS ciphertext coefficient carries the
-/// integer its lanes were computed from, and a fresh encryption's `a·s` is a
-/// negacyclic convolution over `N` terms. Measured on
-/// `manufactured_m2b_insecure` over 24,576 sampled coefficients, max
-/// `|V| = 118` bits — exactly `2·N·Q` — and the resulting tensor measured
-/// max `|X| = 241` bits over 18,432 samples against a shift of
-/// `S = 2·N·Q² = 2^225`. `X + S` stayed NEGATIVE and wrapped silently:
-/// wrong-but-plausible plaintexts (`m3_rns_limb_relin`'s 603-for-42) with no
-/// error raised anywhere.
+/// **History of the pinned constant.** Three derivations have shipped here,
+/// and the two superseded ones stay refused below:
 ///
-/// So the operand bound `V ≤ 2·N·Q` is now carried explicitly, giving
-/// `S = 2·N·V² = 8·N³·Q²` and the certificate `K'' ≤ 16·N³·Q + 1` (2^139 at
-/// `n=512`, measured windings all exactly 138 bits). This test pins that
-/// derivation and keeps refusing BOTH superseded constants.
+/// 1. `4·N·Q + 1`, with `S = 2·N·Q²`. Sound only for operands canonical in
+///    `[0,Q)`. Measured max `|V| = 2^118 = 2·N·Q`, so `X + S` stayed negative
+///    and wrapped silently — wrong plaintexts, no error.
+/// 2. `2·S/Q` with `S` sized from `V`. Correct, but `S` entered the winding
+///    at `2·S/Q ≈ 2^150` against a `2^157` capacity — seven bits of headroom
+///    spent on a constant, and the 16× operand reserve multiplied in
+///    *cubically*.
+/// 3. **Current:** no shift at all. The drop pipeline was never unsigned
+///    (`r_d` is the least non-negative residue, so `X − r_d = d·⌊X/d⌋` over
+///    all of ℤ); only the winding READ was. Reading it under the balanced
+///    lift about `C/2` costs one bit of capacity instead of twenty-two.
+///    Measured: max `|K|` 150 → 132 bits, 9,629 of 18,432 windings negative.
+///
+/// So this pins (a) that the operand bound `V` and its reserve still govern
+/// the certificate, (b) that the bound is `2·N·V²/Q` on the VALUE rather than
+/// on a shift, (c) that selection is against the HALF capacity the balanced
+/// lift requires, and (d) that no positive shift has come back.
 ///
 /// Never-vacuous: it asserts the surrounding context still exists, so a
 /// refactor that moves or renames the certificate fails here loudly instead
@@ -237,8 +239,8 @@ fn cram_public_guardrail_derived_inverse_matches_egcd_for_every_delta_lane() {
 fn cram_public_guardrail_shipped_certificate_constant_is_4n_not_2n() {
     const SRC: &str = include_str!("../src/ops/rns_fhe.rs");
 
-    // Context anchor: if this vanishes, the certificate moved or was renamed,
-    // and the constant assertions below would pass vacuously.
+    // Context anchors: if these vanish, the certificate moved or was renamed,
+    // and the assertions below would pass vacuously.
     assert!(
         SRC.contains("Winding capacity certificate"),
         "REGRESSION-SHAPE FAILURE: the 'Winding capacity certificate' comment is \
@@ -252,46 +254,67 @@ fn cram_public_guardrail_shipped_certificate_constant_is_4n_not_2n() {
          take their certificate from; splitting them lets the two drift."
     );
 
-    // The operand bound V = 2*N*Q must be carried explicitly. Deriving S from
-    // Q alone is the measured silent-wrap regression.
+    // (a) The operand bound and its reserve still govern.
     assert!(
         SRC.contains("let v_scale = 2u128") && SRC.contains(".checked_mul(n_u)"),
-        "REGRESSION: the manufactured shift no longer derives its operand bound \
-         V = 2*N*Q. Sizing S from Q alone assumes canonical operands; measured \
-         max |V| is 2^118 = 2*N*Q on manufactured_m2b_insecure, so S = 2N*Q^2 \
-         under-shifts by 20 bits, X + S stays negative, and the rescale wraps \
-         silently. Do NOT 'simplify' S back to a function of Q."
+        "REGRESSION: the certificate no longer derives its operand bound V = 2*N*Q. \
+         Dual-RNS coefficients are NOT canonical in [0,Q); measured max |V| is \
+         2^118 = 2*N*Q on manufactured_m2b_insecure. A bound derived from Q alone \
+         under-counts the winding by 20 bits."
     );
     assert!(
         SRC.contains("const OPERAND_MARGIN: u128 = 16;")
             && SRC.contains(".checked_mul(Self::OPERAND_MARGIN)"),
         "REGRESSION: the reserve over the MEASURED operand maximum is gone. 2*N*Q \
          is a measurement, not a proof — the analytic worst case is N^2*Q, which no \
-         anchor basis here can carry — so the shift carries a 16x reserve and the \
-         per-coefficient tripwire refuses past it. Removing the reserve puts the \
-         path back one unlucky draw away from a typed refusal in production."
-    );
-    assert!(
-        SRC.contains("let s_scale = v_scale")
-            && SRC.contains("K'' ≤ k_scale·Q + 1 = 2·S/Q + 1"),
-        "REGRESSION: S is no longer 2*N*V^2, or the winding bound is no longer \
-         derived from S as 2*S/Q. These two must move together — a bound derived \
-         from anything but the shipped S is not a certificate."
+         anchor basis here can carry — so the certificate carries a 16x reserve and \
+         the per-coefficient tripwire refuses past it."
     );
 
-    // Both superseded certificates stay refused.
+    // (b) The bound is on the VALUE, 2*N*V^2/Q, not on a shift.
+    assert!(
+        SRC.contains("winding scale 2N·V²/Q"),
+        "REGRESSION: the winding bound is no longer 2*N*V^2/Q. It must be a bound on \
+         the value the rescale actually carries — a bound derived from a constant \
+         chosen to dominate that value is a proxy, and the tripwire that tests it \
+         is correspondingly weaker."
+    );
+
+    // (c) Selection against the HALF capacity the balanced lift requires.
+    assert!(
+        SRC.contains("cap.shr1().gt(k_bound)"),
+        "REGRESSION: the anchor subset is no longer selected against C/2. The \
+         balanced lift resolves K in (-C/2, C/2); selecting against the full C lets \
+         a winding just under C alias to a small negative one."
+    );
+    assert!(
+        SRC.contains("out.winding_k_neg") && SRC.contains("winding_k_mag"),
+        "REGRESSION: the sign-aware lift is gone from the reconstruction. Without it \
+         a negative winding reconstructs as C - |K|, which is wrong by C*t."
+    );
+
+    // (d) No positive shift has come back. This is the whole point of the
+    //     current derivation and the reason the winding dropped 18 bits.
+    assert!(
+        !SRC.contains("let s_scale")
+            && !SRC.contains("s_mod: Vec<u64>")
+            && !SRC.contains("+ sm as u128"),
+        "REGRESSION: a positive shift S has been re-introduced. The drop pipeline \
+         never needed X >= 0 — only the winding READ was unsigned. A shift big \
+         enough to dominate |X| reappears in the winding as 2*S/Q and costs ~22 \
+         bits of anchor capacity to buy what the balanced lift gives for one."
+    );
+
+    // Both superseded certificates stay refused, forever.
     assert!(
         !SRC.contains("let two_nq = (4 * self.n as u128)"),
-        "REGRESSION: the certificate reverted to 4*N*Q + 1. That bound is sound \
-         only for operands canonical in [0,Q); measured operands reach 2*N*Q, and \
-         the shift derived alongside it (S = 2N*Q^2) under-shifts the tensor by 16 \
-         bits. See this test's doc comment for the measurement."
+        "REGRESSION: the certificate reverted to 4*N*Q + 1. That bound is sound only \
+         for operands canonical in [0,Q); measured operands reach 2*N*Q."
     );
     assert!(
         !SRC.contains("let two_nq = (2 * self.n as u128)"),
-        "REGRESSION: the certificate was halved to 2*N*Q. This is the original \
-         documented regression: the d1 tensor component is a SUM OF TWO products \
-         of unsigned representatives, so halving under-sizes it 2x on top of the \
+        "REGRESSION: the certificate was halved to 2*N*Q. The d1 tensor component is \
+         a SUM OF TWO products, so halving under-sizes it 2x on top of the \
          operand-magnitude gap, and the winding aliases by exactly the ladder \
          capacity C."
     );

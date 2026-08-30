@@ -895,6 +895,35 @@ impl AutoCiphertext {
 ///
 /// **Note**: The RNG passed to encryption methods must be thread-local.
 /// Do NOT share a single `ShadowHarvester` across threads.
+/// Per-coefficient winding observations from the manufactured rescale.
+///
+/// Test-only. Exists so
+/// `manufactured_winding_stays_below_half_capacity` can measure the quantity
+/// the rescale actually carries, rather than a proxy recomputed in the test.
+#[cfg(test)]
+pub(crate) mod winding_probe {
+    use std::cell::RefCell;
+    thread_local! {
+        /// `(is_negative, |K| bit length)` per rescaled coefficient.
+        pub(crate) static SAMPLES: RefCell<Vec<(bool, u32)>> = const { RefCell::new(Vec::new()) };
+        /// Whether recording is on. Off by default so the hot path stays hot.
+        pub(crate) static RECORDING: RefCell<bool> = const { RefCell::new(false) };
+    }
+    pub(crate) fn start() {
+        SAMPLES.with(|s| s.borrow_mut().clear());
+        RECORDING.with(|r| *r.borrow_mut() = true);
+    }
+    pub(crate) fn stop() -> Vec<(bool, u32)> {
+        RECORDING.with(|r| *r.borrow_mut() = false);
+        SAMPLES.with(|s| s.borrow().clone())
+    }
+    pub(crate) fn record(neg: bool, bits: u32) {
+        if RECORDING.with(|r| *r.borrow()) {
+            SAMPLES.with(|s| s.borrow_mut().push((neg, bits)));
+        }
+    }
+}
+
 /// Certificate + shift constants for the manufactured (CRAM) rescale.
 ///
 /// Built once per rescale call by
@@ -905,12 +934,11 @@ impl AutoCiphertext {
 struct ManufacturedShift {
     /// The certified anchor subset, always a prefix of the anchor basis.
     sel: Vec<u64>,
-    /// `C = ∏ sel`, the winding capacity that subset provides.
+    /// `C = ∏ sel`, the winding capacity that subset provides. The BALANCED
+    /// lift halves it: the usable range is `(−C/2, C/2)`.
     cap: U256,
-    /// `16·N³·Q + 1`, the bound the shift `S = 8·N³·Q²` implies on `K''`.
+    /// `2·N·V²/Q + 1`, the bound the operand magnitude `V` implies on `|K|`.
     k_bound: U256,
-    /// `S mod a` for each selected anchor.
-    s_mod: Vec<u64>,
 }
 
 pub struct RNSFHEContext {
@@ -4047,95 +4075,83 @@ impl RNSFHEContext {
     /// (assuming centered inputs here under-sizes every bound by 2× and the
     /// winding then aliases by exactly the ladder capacity C; measured, the
     /// recovered offset was t·C to the digit). Sound bounds: a single
-    /// negacyclic product is within `±N·Q²`; the `d1` component is a SUM OF
-    /// TWO products, within `±2N·Q²`. The unsigned drop pipeline is applied
-    /// to `X'' = X + S` with `S = 2N·Q² ≥ |X|`, a multiple of `Δ`
-    /// (`S = Δ·2N·Q·t`), so `round((X+S+Δ/2)/Δ) = round((X+Δ/2)/Δ) + 2NQt`
-    /// exactly. `S` and the correction are `≡ 0` modulo every MAIN lane and
-    /// modulo `Q` itself (`Q | S`), so the shift touches only anchor lanes,
-    /// with constants derived from the construction (G5-clean), and
-    /// canonicalization below reduces to `Y'' mod Q`.
+    /// negacyclic product is within `±N·V²`; the `d1` component is a SUM OF
+    /// TWO products, within `±2N·V²`, where `V` is the operand bound (NOT `Q`
+    /// — dual-RNS coefficients are not canonical; see
+    /// [`Self::manufactured_shift_certificate`]).
+    ///
+    /// No positive shift is applied. `X` goes into the drop pipeline signed,
+    /// which it has always tolerated, and the winding comes back under the
+    /// balanced lift about `C/2`.
     ///
     /// # Capacity certificate (lift-inventory R5 / `K_EXACT_BOUNDED`)
     ///
-    /// The shifted winding satisfies `K'' = ⌊Y''/t⌋ ≤ 4·N·Q + 1`. The anchor
-    /// subset is chosen so its product `C` exceeds that bound within
-    /// `u128::MAX`; the method returns a typed error when no such subset
-    /// exists rather than aliasing the winding.
+    /// The winding satisfies `|K| = |⌊Y/t⌋| ≤ 2·N·V²/Q`. The anchor subset is
+    /// chosen so that HALF its product `C/2` exceeds that bound; the method
+    /// returns a typed error when no such subset exists rather than aliasing
+    /// the winding.
     ///
     /// # Preconditions
     ///
     /// Manufactured chain (`t | Q` with `t` itself a main lane), ciphertext at
     /// full level. Typed errors otherwise — this path never rounds or guesses.
     /// Reserve over the MEASURED operand maximum `2·N·Q`, applied when the
-    /// manufactured shift `S = 2·N·V²` is sized. See
+    /// winding certificate is sized. See
     /// [`Self::manufactured_shift_certificate`].
     const OPERAND_MARGIN: u128 = 16;
 
-    /// Winding-capacity certificate and `S`-shift constants for the
-    /// manufactured rescale.
+    /// Winding-capacity certificate for the manufactured rescale.
     ///
-    /// # Why `S` is sized from the OPERAND, not from `Q`
+    /// # There is no shift, and there never needed to be one
     ///
-    /// The shift has one job: make `X + S` non-negative so the unsigned drop
-    /// pipeline is valid. `S` was `2·N·Q²`, which is the right bound only if
-    /// tensor operands are canonical in `[0, Q)`. **They are not.** A dual-RNS
-    /// ciphertext coefficient carries the integer its lanes were computed
-    /// from, and for a fresh encryption that is `Δ·m − (a·s + e)` with `a·s` a
-    /// negacyclic convolution over `N` terms — magnitude `~N·Q`, not `<Q`.
+    /// This path used to add `S ≥ |X|` to make the tensor non-negative before
+    /// an "unsigned" drop pipeline. The drop pipeline is not unsigned. `r_d`
+    /// is the least non-negative residue, so `X − r_d = d·⌊X/d⌋` holds for
+    /// negative `X` too, and `⌊⌊X/d₀⌋/d₁⌋ = ⌊X/(d₀d₁)⌋` composes over all of
+    /// ℤ. Only the winding READ was unsigned: `parallel_summation_crt_u256`
+    /// reduces into `[0, C)`, which erases the sign.
     ///
-    /// Measured on `manufactured_m2b_insecure` (24,576 sampled coefficients,
-    /// 12 seeds, both `c0` and `c1` of both operands), max `|V| = 118` bits,
-    /// which is exactly `2·N·Q = 2^118`. The tensor of two such operands
-    /// measured at max `|X| = 241` bits over 18,432 samples, against the old
-    /// `S = 2·N·Q² = 2^225`. `X + S` therefore stayed NEGATIVE and wrapped —
-    /// silently, with a wrong-but-plausible plaintext and no error anywhere.
+    /// Reading it under the BALANCED lift about `C/2` — the identical
+    /// convention `SignedK256::from_unsigned` has always used on the
+    /// materializing path, which never needed a shift — carries the sign for
+    /// one bit of capacity. The shift was buying the same thing for
+    /// twenty-two, because `S` had to dominate `|X|` and then reappeared in
+    /// the winding as `2·S/Q`.
     ///
-    /// So `V = 2·N·Q·OPERAND_MARGIN` and `S = 2·N·V²`, which for `N = 512` and
-    /// the 16× reserve below is `2^254`, covering the measured `2^241`. `S`
-    /// stays a multiple of `Q` and `S/Δ ≡ 0 (mod Q)` for any such scale, so it
-    /// still touches only anchor lanes and the `Y'' mod Q` semantics are
-    /// unchanged — the shift is derived from the construction (G5-clean), with
-    /// the measurement fixing only the scale.
+    /// Measured on `manufactured_m2b_insecure`, 18,432 coefficients: max
+    /// `|K|` went from **150 bits** under the shift to **132**, against a
+    /// half-capacity of 156. 9,629 of those windings are negative, so the
+    /// signed branch is not decoration — the negacyclic convolution
+    /// subtracts. `manufactured_winding_stays_below_half_capacity` pins all
+    /// of that.
     ///
-    /// # The certificate that follows from it
+    /// # What `V` is still for
     ///
-    /// `K'' = ⌊Y''/t⌋ ≤ 2·S/Q` — `2^147` here, measured `2^138` on every one
-    /// of 18,432 sampled coefficients. That exceeds `u128`, which is why the
-    /// winding read is `U256`: the previous code capped the anchor subset at
-    /// whatever fit in 128 bits and aliased everything above it. The anchor
-    /// basis itself is wide enough (`A = 2^157` at `n=512`); only the
-    /// arithmetic carrying it was narrow.
+    /// The operand bound has not gone away; it just no longer sizes a
+    /// constant. Dual-RNS ciphertext coefficients are NOT canonical in
+    /// `[0, Q)` — a fresh encryption carries `Δ·m − (a·s + e)`, and `a·s` is a
+    /// negacyclic convolution over `N` terms, magnitude `~N·Q`. Measured over
+    /// 24,576 sampled coefficients, max `|V| = 118` bits, exactly `2·N·Q`.
     ///
-    /// That widening is also what makes the tripwire in the caller effective.
-    /// An under-sized `S` leaves `X + S` negative, so the residues carry
-    /// `X + S + Q·C` and the winding comes out near `C`. Under the old
-    /// 4-anchor, 125-bit subset that aliased to something plausible; over the
-    /// full basis it lands above the bound and is refused. Measured by
-    /// deliberately under-sizing `V`: every manufactured multiply then returns
-    /// `InvalidParameter` naming the winding, the bound and the capacity,
-    /// where it previously returned a wrong plaintext.
+    /// `2·N·Q` is a measurement, not a proof: the analytic worst case is
+    /// `N²·Q` (126 bits here), since `pk0` is itself non-canonical and `c0`
+    /// sums `N` of those. The gap is the usual `√N`-vs-`N` cancellation. So
+    /// `V = 2·N·Q·OPERAND_MARGIN` keeps a 16× reserve, and
+    /// `manufactured_operand_magnitude_stays_within_the_measured_bound` pins
+    /// the measurement so the reserve being consumed shows up as a test
+    /// failure rather than a production refusal.
     ///
-    /// # The margin, and what is NOT claimed
+    /// # The certificate
     ///
-    /// `2·N·Q` is the MEASURED maximum, not a proof. The analytic worst case
-    /// is larger: `pk0 = −(a·s + e)` is itself non-canonical (its negacyclic
-    /// sum over `N` terms reaches `N·Q`), and `c0 = pk0·u + e1 + Δm` sums `N`
-    /// of those, so the sign-aligned worst case is `N²·Q` — 126 bits here
-    /// against the 118 measured. The gap is the usual `√N`-vs-`N`
-    /// cancellation, and sizing `S` for `N²·Q` would leave ONE bit of anchor
-    /// capacity at `n=512` and none at all on a wider chain, which is not
-    /// margin.
+    /// `|K| ≤ |X|/Q ≤ 2·N·V²/Q` — the `d1` component is a sum of two products
+    /// of operands bounded by `V`. It is a bound on the VALUE, not on a
+    /// constant chosen to dominate it, and the per-coefficient tripwire in the
+    /// caller tests it directly rather than testing a proxy.
     ///
-    /// So `V = 2·N·Q·OPERAND_MARGIN` with a 16× reserve (4 bits of tail
-    /// headroom, still leaving ~10 bits of anchor-capacity margin), and the
-    /// per-coefficient tripwire in the caller REFUSES a winding above the
-    /// certified bound rather than letting it alias. An operand past `V` is
-    /// therefore a typed error, never a wrong plaintext — which is the
-    /// property that was missing before.
-    /// `manufactured_operand_magnitude_stays_within_the_bound_the_shift_assumes`
-    /// pins the measurement itself, so the reserve being consumed shows up as
-    /// a test failure and not as a production refusal.
+    /// The balanced lift needs `|K| < C/2`, so the anchor subset is selected
+    /// against the HALF capacity. `K` can still exceed `u128` (2^132 here),
+    /// which is why the winding read is `U256` — capping the subset at
+    /// whatever fit in 128 bits is what aliased silently before.
     ///
     /// Returns a typed refusal when no anchor subset certifies the bound.
     fn manufactured_shift_certificate(&self) -> Nine65Result<ManufacturedShift> {
@@ -4149,17 +4165,18 @@ impl RNSFHEContext {
             .ok_or(Nine65Error::Overflow {
                 operation: "manufactured rescale: operand bound 2N·margin",
             })?;
-        // S = s_scale·Q² = 2N·V².
-        let s_scale = v_scale
-            .checked_mul(v_scale)
-            .and_then(|x| x.checked_mul(v_scale))
-            .ok_or(Nine65Error::Overflow {
-                operation: "manufactured rescale: shift scale 8N³",
-            })?;
-        // K'' ≤ k_scale·Q + 1 = 2·S/Q + 1.
-        let k_scale = u64::try_from(s_scale.checked_mul(2).ok_or(Nine65Error::Overflow {
-            operation: "manufactured rescale: winding scale 16N³",
-        })?)
+        // |K| ≤ |X|/Q ≤ 2·N·V²/Q = k_scale·Q, since a d1 component is a sum of
+        // two products of operands bounded by V. No shift enters this — the
+        // bound is on the VALUE, not on a constant chosen to dominate it.
+        let k_scale = u64::try_from(
+            v_scale
+                .checked_mul(v_scale)
+                .and_then(|x| x.checked_mul(2))
+                .and_then(|x| x.checked_mul(n_u))
+                .ok_or(Nine65Error::Overflow {
+                    operation: "manufactured rescale: winding scale 2N·V²/Q",
+                })?,
+        )
         .map_err(|_| Nine65Error::Overflow {
             operation: "manufactured rescale: winding scale exceeds u64",
         })?;
@@ -4170,22 +4187,25 @@ impl RNSFHEContext {
             .mul_u64(k_scale)
             .add(U256::from_u64(1));
 
+        // The balanced lift needs |K| < C/2, so select against the HALF
+        // capacity. This is the whole cost of carrying a signed winding, and
+        // it is one bit against the ~22 the shift was buying.
         let mut sel: Vec<u64> = Vec::new();
         let mut cap = U256::from_u64(1);
         for &a in &self.dual_rns.anchor.primes {
             cap = cap.mul_u64(a);
             sel.push(a);
-            if cap.gt(k_bound) {
+            if cap.shr1().gt(k_bound) {
                 break;
             }
         }
-        if !cap.gt(k_bound) {
+        if !cap.shr1().gt(k_bound) {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
                     "manufactured rescale: winding capacity certificate unsatisfiable \
-                     — need C > 2·S/Q ({} bits), best C over all {} anchors is {} \
-                     bits. Widen the anchor basis; do NOT shrink S, which would \
-                     re-open the silent negative-wrap.",
+                     — need C/2 > 2·N·V²/Q ({} bits), best C over all {} anchors is {} \
+                     bits. Widen the anchor basis; do NOT re-introduce a positive \
+                     shift, which costs ~22 bits of the same capacity.",
                     k_bound.bitlen(),
                     self.dual_rns.anchor.primes.len(),
                     cap.bitlen()
@@ -4193,22 +4213,7 @@ impl RNSFHEContext {
             });
         }
 
-        // S mod each selected anchor, derived per anchor from the
-        // construction: S = s_scale·Q².
-        let s_mod: Vec<u64> = sel
-            .iter()
-            .map(|&a| {
-                let a128 = a as u128;
-                let q_a = self
-                    .config
-                    .primes
-                    .iter()
-                    .fold(1u128, |acc, &p| acc * (p as u128 % a128) % a128);
-                ((s_scale % a128) * (q_a * q_a % a128) % a128) as u64
-            })
-            .collect();
-
-        Ok(ManufacturedShift { sel, cap, k_bound, s_mod })
+        Ok(ManufacturedShift { sel, cap, k_bound })
     }
 
     fn k_elim_rescale_manufactured(&self, poly: &DualRNSPoly) -> Nine65Result<DualRNSPoly> {
@@ -4216,6 +4221,17 @@ impl RNSFHEContext {
             exact_delta_rescale, DeltaRounding, RescaleChain, RescaleExit,
         };
 
+        if self.q_product == 0 {
+            // 0 is the "Q exceeds u128" sentinel, and `0 % t == 0` would let
+            // it slip through the manufactured-chain guard below and then
+            // divide by zero in `rem_u256`. This path is u128-Q only; say so.
+            return Err(Nine65Error::InvalidParameter {
+                message: "manufactured rescale requires Q within u128 \
+                          (q_product is the overflow sentinel); this chain is \
+                          too wide for this path"
+                    .into(),
+            });
+        }
         if self.q_product % self.t as u128 != 0 {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
@@ -4238,10 +4254,10 @@ impl RNSFHEContext {
         })?;
         let delta_idx: Vec<usize> = (0..lanes.len()).filter(|&i| i != t_idx).collect();
 
-        // Winding capacity certificate and S-shift: see
-        // `manufactured_shift_certificate` for why S is sized from the
-        // operand magnitude (2·N·Q) rather than from Q.
-        let ManufacturedShift { sel, cap, k_bound, s_mod } =
+        // Winding capacity certificate: see `manufactured_shift_certificate`
+        // for why there is no shift, and why the bound is on the operand
+        // magnitude (2·N·Q) rather than on Q.
+        let ManufacturedShift { sel, cap, k_bound } =
             self.manufactured_shift_certificate()?;
         let chain = RescaleChain::new(&lanes, &delta_idx, self.t, &sel)?;
         let all_anchors = &self.dual_rns.anchor.primes;
@@ -4257,9 +4273,10 @@ impl RNSFHEContext {
             for (i, limb) in poly.main.iter().enumerate() {
                 main_res[i] = limb[j];
             }
-            for (k, &sm) in s_mod.iter().enumerate() {
-                let a = sel[k];
-                sel_res[k] = ((poly.anchor[k][j] as u128 + sm as u128) % a as u128) as u64;
+            // No shift. The anchor residues go in as they are; the winding
+            // comes back signed under the balanced lift.
+            for (k, &a) in sel.iter().enumerate() {
+                sel_res[k] = poly.anchor[k][j] % a;
             }
             let out = exact_delta_rescale(
                 &chain,
@@ -4268,18 +4285,20 @@ impl RNSFHEContext {
                 DeltaRounding::NearestHalfUp,
                 RescaleExit::ModulusReduced,
             )?;
+            #[cfg(test)]
+            winding_probe::record(out.winding_k_neg, out.winding_k_mag.bitlen());
             // Tripwire: the certificate is only worth having if a violation
             // REFUSES instead of aliasing. A winding above the bound means S
             // was under-sized for these operands — the exact failure this
             // path shipped with — and the answer would be wrong but plausible.
-            if out.winding_k.gt(k_bound) {
+            if out.winding_k_mag.gt(k_bound) {
                 return Err(Nine65Error::InvalidParameter {
                     message: format!(
-                        "manufactured rescale: winding {} bits exceeds the certified \
-                         bound 2·S/Q ({} bits) at coefficient {j}; capacity C is {} \
-                         bits. Operands are larger than the bound S was derived from \
-                         — refusing rather than wrapping.",
-                        out.winding_k.bitlen(),
+                        "manufactured rescale: |winding| {} bits exceeds the certified \
+                         bound 2·N·V²/Q ({} bits) at coefficient {j}; half-capacity C/2 \
+                         is {} bits. Operands are larger than the V the certificate was \
+                         derived from — refusing rather than wrapping.",
+                        out.winding_k_mag.bitlen(),
                         k_bound.bitlen(),
                         cap.bitlen()
                     ),
@@ -4295,11 +4314,29 @@ impl RNSFHEContext {
             // decryption identity; measured). Composed base-plus-lift from
             // (γ, K) under the K < C certificate — lift-inventory R4,
             // fixed-width U256, not the retired iterative-CRT path.
-            let y = out
-                .winding_k
-                .mul_u64(self.t)
-                .add(U256::from_u128(out.gamma));
-            let y_star = y.rem_u256(U256::from_u128(self.q_product));
+            // Sign-aware lift. `Y = K·t + γ` with K under the BALANCED lift,
+            // so a negative winding reconstructs as `−(|K|·t − γ)` and
+            // `y_star` is its canonical residue mod Q. `|K| ≥ 1` whenever the
+            // sign is negative (the lift only flips above C/2 > 0), so
+            // `|K|·t ≥ t > γ` and the subtraction cannot underflow.
+            let qq = U256::from_u128(self.q_product);
+            let y_star = if out.winding_k_neg {
+                let y_mag = out
+                    .winding_k_mag
+                    .mul_u64(self.t)
+                    .sub(U256::from_u128(out.gamma));
+                let r = y_mag.rem_u256(qq);
+                if r.is_zero() {
+                    U256::zero()
+                } else {
+                    qq.sub(r)
+                }
+            } else {
+                out.winding_k_mag
+                    .mul_u64(self.t)
+                    .add(U256::from_u128(out.gamma))
+                    .rem_u256(qq)
+            };
             for (i, &p) in self.config.primes.iter().enumerate() {
                 main_out[i][j] = y_star.mod_u64(p);
             }
@@ -4355,7 +4392,7 @@ impl RNSFHEContext {
         // path (`k_elim_rescale_manufactured`) — this guardrail isolates the
         // FINAL RECONSTRUCTION regression only, not the anchor-selection
         // certificate (that is tripwire 2) or the shift derivation (G5).
-        let ManufacturedShift { sel, cap: _cap, k_bound: _k_bound, s_mod } =
+        let ManufacturedShift { sel, cap: _cap, k_bound: _k_bound } =
             self.manufactured_shift_certificate()?;
         let chain = RescaleChain::new(&lanes, &delta_idx, self.t, &sel)?;
         let q = U256::from_u128(self.q_product);
@@ -4374,9 +4411,10 @@ impl RNSFHEContext {
             for (i, limb) in poly.main.iter().enumerate() {
                 main_res[i] = limb[j];
             }
-            for (k, &sm) in s_mod.iter().enumerate() {
-                let a = sel[k];
-                sel_res[k] = ((poly.anchor[k][j] as u128 + sm as u128) % a as u128) as u64;
+            // No shift. The anchor residues go in as they are; the winding
+            // comes back signed under the balanced lift.
+            for (k, &a) in sel.iter().enumerate() {
+                sel_res[k] = poly.anchor[k][j] % a;
             }
             let out = exact_delta_rescale(
                 &chain,
@@ -4386,12 +4424,24 @@ impl RNSFHEContext {
                 RescaleExit::ModulusReduced,
             )?;
 
-            // Identical to shipped: Y'' = K''*t + gamma, y_star = Y'' mod Q.
-            let y = out
-                .winding_k
-                .mul_u64(self.t)
-                .add(U256::from_u128(out.gamma));
-            let y_star = y.rem_u256(q);
+            // Identical to shipped: the same sign-aware balanced lift.
+            let y_star = if out.winding_k_neg {
+                let y_mag = out
+                    .winding_k_mag
+                    .mul_u64(self.t)
+                    .sub(U256::from_u128(out.gamma));
+                let r = y_mag.rem_u256(q);
+                if r.is_zero() {
+                    U256::zero()
+                } else {
+                    q.sub(r)
+                }
+            } else {
+                out.winding_k_mag
+                    .mul_u64(self.t)
+                    .add(U256::from_u128(out.gamma))
+                    .rem_u256(q)
+            };
 
             for (i, &p) in self.config.primes.iter().enumerate() {
                 main_out[i][j] = y_star.mod_u64(p);
@@ -14072,7 +14122,7 @@ mod tests {
     /// has to move with it.
     #[test]
     #[cfg(any(test, feature = "allow_insecure"))]
-    fn manufactured_operand_magnitude_stays_within_the_bound_the_shift_assumes() {
+    fn manufactured_operand_magnitude_stays_within_the_measured_bound() {
         let ctx = RNSFHEContext::new(&crate::params::FHEConfig::manufactured_m2b_insecure());
         let mut rng = ShadowHarvester::with_seed(4242);
         let keys = ctx.generate_keys_dual_full(&mut rng);
@@ -14121,6 +14171,178 @@ mod tests {
         println!(
             "operand magnitude: {sampled} coefficients, max {max_bits} bits, bound {} bits",
             bound.bitlen()
+        );
+    }
+
+    /// The REAL winding `mul_dual_public` carries, measured directly off
+    /// `extract_k_rns_level_cached`'s own live capacity check -- not
+    /// estimated from `audit_capacity`'s `N*Q^2` vs `M*A` proxy.
+    ///
+    /// `audit_capacity`'s pre-flight formula and the live per-coefficient
+    /// tripwire inside `extract_k_rns_level_cached` (a `k` vs `A/2` check
+    /// with a ~20-bit safety margin) are checking DIFFERENT quantities: the
+    /// pre-flight compares the raw uncentered tensor `X` (up to `N*Q^2`)
+    /// against the FULL dual-RNS capacity `M*A`; the live check compares the
+    /// winding `k = (X-gamma)/M` directly against the anchor capacity `A`
+    /// alone. These are not the same bound, and the pre-flight is the
+    /// stricter of the two for `secure_128`'s 4-prime chain: it reports 91%
+    /// utilization (CRITICAL under diagnostics) while the value the live
+    /// check actually enforces has real margin. This test measures that
+    /// margin directly, so any fix to the pre-flight formula is grounded in
+    /// what the runtime code provably needs rather than in another formula.
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn mul_dual_public_winding_margin_measured_directly() {
+        use crate::arithmetic::rns::k_probe;
+        use crate::params::secure_configs::SecureConfig;
+
+        for (name, sc) in [
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_192", SecureConfig::secure_192()),
+            ("secure_256", SecureConfig::secure_256()),
+        ] {
+            let config = sc.into_config();
+            let ctx = RNSFHEContext::try_new(&config).expect("context");
+            let mut rng = ShadowHarvester::with_seed(20260829);
+            let keys = ctx.generate_keys_dual_full(&mut rng);
+
+            let a_bits = ctx
+                .dual_rns
+                .anchor
+                .primes
+                .iter()
+                .map(|&p| 64 - p.leading_zeros())
+                .sum::<u32>();
+
+            k_probe::start();
+            for i in 0..8u64 {
+                let mut r1 = ShadowHarvester::with_seed(500_000 + 2 * i);
+                let mut r2 = ShadowHarvester::with_seed(500_001 + 2 * i);
+                let m1 = (i * 7919 + 3) % ctx.t;
+                let m2 = (i * 104_729 + 11) % ctx.t;
+                let a = ctx.encrypt_dual(m1, &keys.public_key, &mut r1);
+                let b = ctx.encrypt_dual(m2, &keys.public_key, &mut r2);
+                let want = (m1 as u128 * m2 as u128 % ctx.t as u128) as u64;
+                let ct = ctx
+                    .mul_dual_public(&a, &b, &keys.eval_key)
+                    .unwrap_or_else(|e| panic!("{name}: mul_dual_public failed: {e:?}"));
+                assert_eq!(
+                    ctx.decrypt_dual(&ct, &keys.secret_key),
+                    want,
+                    "{name}: mul_dual_public wrong on ({m1},{m2})"
+                );
+            }
+            let samples = k_probe::stop();
+            assert!(!samples.is_empty(), "{name}: sweep recorded nothing");
+            let max_bits = samples.iter().map(|&(_, b)| b).max().unwrap();
+            // Margin against A/2 (the boundary the live tripwire actually
+            // checks), not against the full A this printout also reports.
+            let margin_half = (a_bits as i64 - 1) - max_bits as i64;
+
+            println!(
+                "{name}: {} k samples, max |k| {max_bits} bits, anchor capacity {a_bits} \
+                 bits (A/2 margin {margin_half} bits)",
+                samples.len()
+            );
+        }
+    }
+
+    /// The winding the manufactured rescale actually carries, measured.
+    ///
+    /// This is the test that pins the whole point of deleting the shift. The
+    /// path used to add `S = 2·N·V²·margin³` to make `X` non-negative for an
+    /// unsigned drop pipeline; `S` dominated everything, and the winding it
+    /// produced was `2·S/Q ≈ 2^150` against a 5-anchor capacity of `2^157` —
+    /// seven bits of headroom, all of it spent on a constant.
+    ///
+    /// The drop pipeline never needed `X ≥ 0`: `r_d` is the least
+    /// non-negative residue, so `X − r_d = d·⌊X/d⌋` holds over all of ℤ. Only
+    /// the winding READ was unsigned. Reading it under the balanced lift about
+    /// `C/2` — the identical convention the materializing path
+    /// (`SignedK256::from_unsigned`) has always used — carries the sign for
+    /// one bit of capacity instead of twenty-two.
+    ///
+    /// Never-vacuous in three directions: the winding must have SHRUNK, it
+    /// must still be large enough to be measuring the real tensor, and the
+    /// negative branch must actually be exercised. Without that last one the
+    /// entire signed path could be dead code and everything else would still
+    /// pass.
+    #[test]
+    #[cfg(any(test, feature = "allow_insecure"))]
+    fn manufactured_winding_stays_below_half_capacity() {
+        let ctx = RNSFHEContext::new(&crate::params::FHEConfig::manufactured_m2b_insecure());
+        let mut rng = ShadowHarvester::with_seed(5150);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+
+        let cap = U256::product_u64s(&ctx.dual_rns.anchor.primes);
+        let half_bits = cap.shr1().bitlen();
+
+        winding_probe::start();
+        for i in 0..12u64 {
+            let mut r1 = ShadowHarvester::with_seed(880_000 + 2 * i);
+            let mut r2 = ShadowHarvester::with_seed(880_001 + 2 * i);
+            let m1 = (i * 7919 + 3) % ctx.t;
+            let m2 = (i * 104_729 + 11) % ctx.t;
+            let a = ctx.encrypt_dual(m1, &keys.public_key, &mut r1);
+            let b = ctx.encrypt_dual(m2, &keys.public_key, &mut r2);
+            let ct = ctx
+                .mul_dual_public_manufactured(&a, &b, &keys.eval_key)
+                .expect("manufactured multiply");
+            let want = (m1 as u128 * m2 as u128 % ctx.t as u128) as u64;
+            assert_eq!(
+                ctx.decrypt_dual(&ct, &keys.secret_key),
+                want,
+                "manufactured multiply wrong on ({m1},{m2}) — the winding measurement \
+                 below is meaningless if the answer is wrong"
+            );
+        }
+        let samples = winding_probe::stop();
+
+        assert!(
+            samples.len() >= 12 * 3 * 512,
+            "sweep went vacuous: only {} coefficients recorded",
+            samples.len()
+        );
+        let max_bits = samples.iter().map(|&(_, b)| b).max().unwrap();
+        let negatives = samples.iter().filter(|&&(n, _)| n).count();
+
+        // 1. It SHRANK. Under the shift this measured 150 bits.
+        assert!(
+            max_bits <= 140,
+            "max |winding| is {max_bits} bits over {} coefficients. Under the deleted \
+             positive shift this was 150 bits; anything near that means S has crept \
+             back or the winding read regressed to unsigned.",
+            samples.len()
+        );
+        // 2. It is still measuring the real tensor, not a degenerate case.
+        assert!(
+            max_bits >= 120,
+            "max |winding| is only {max_bits} bits — too small to be the tensor of two \
+             non-canonical operands. Either the sweep stopped exercising the multiply \
+             or the operands became canonical, which would change the certificate."
+        );
+        // 3. The signed path is LIVE. Without this the negative branch could be
+        //    dead and every other assertion here would still pass.
+        assert!(
+            negatives > 0,
+            "not one of {} sampled windings was negative. The negacyclic convolution \
+             subtracts, so negative tensor coefficients are expected — zero of them \
+             means the balanced lift is dead code and the sign branch is untested.",
+            samples.len()
+        );
+        // 4. The invariant itself, per coefficient, not a proxy for it.
+        assert!(
+            max_bits < half_bits,
+            "max |winding| {max_bits} bits is not below the half-capacity C/2 = \
+             {half_bits} bits that the balanced lift requires"
+        );
+        println!(
+            "manufactured winding: {} coefficients, max |K| {} bits, {} negative, \
+             C/2 = {} bits",
+            samples.len(),
+            max_bits,
+            negatives,
+            half_bits
         );
     }
 
@@ -14479,3 +14701,98 @@ mod tests {
     }
 }
 
+
+/// CANONICAL GATE HARNESS. Every node re-runs this and diffs against the
+/// recorded baseline. Fixed output format — do not reformat, the diff depends
+/// on it. Run:
+///   cargo test --release -p nine65 --features allow_insecure --lib \
+///       gate_harness -- --nocapture --test-threads=1
+#[cfg(all(test, feature = "allow_insecure"))]
+mod gate {
+    use super::*;
+    use std::time::Instant;
+
+    #[test]
+    fn gate_harness() {
+        let ctx = RNSFHEContext::new(&crate::params::FHEConfig::manufactured_m2b_insecure());
+        let mut rng = ShadowHarvester::with_seed(424242);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let mut gr = ShadowHarvester::with_seed(424243);
+        let gadget = ctx.generate_gadget_key_with_rng(&keys.secret_key, &mut gr).unwrap();
+        let mut r1 = ShadowHarvester::with_seed(424244);
+        let mut r2 = ShadowHarvester::with_seed(424245);
+        let a = ctx.encrypt_dual(7, &keys.public_key, &mut r1);
+        let b = ctx.encrypt_dual(11, &keys.public_key, &mut r2);
+        let cnt = || crate::arithmetic::rns::to_u256_level_calls::get();
+        let reps = 10u128;
+
+        macro_rules! row {
+            ($name:expr, $body:expr) => {{
+                let c0 = cnt(); let t = Instant::now();
+                let mut out = None;
+                for _ in 0..reps { out = Some($body); }
+                let ns = t.elapsed().as_nanos() / reps;
+                let rc = (cnt() - c0) as u128 / reps;
+                println!("GATE {:<28} {:>12} {:>8}", $name, ns, rc);
+                out.unwrap()
+            }};
+        }
+
+        println!("GATE {:<28} {:>12} {:>8}", "stage", "ns", "recon");
+        println!("GATE {}", "-".repeat(50));
+
+        {
+            crate::arithmetic::unified_rescale::mod_inverse_calls::reset();
+            let d0 = ctx.dual_poly_mul(&a.c0, &b.c0);
+            let _ = ctx.k_elim_rescale_manufactured(&d0).unwrap();
+            let calls = crate::arithmetic::unified_rescale::mod_inverse_calls::get();
+            println!(
+                "GATE mod_inverse_checked calls per single rescale.manufactured: {calls} \
+                 ({} per coefficient, n={})",
+                calls / ctx.n,
+                ctx.n
+            );
+        }
+        let d0 = row!("tensor.d0", ctx.dual_poly_mul(&a.c0, &b.c0));
+        let d2 = ctx.dual_poly_mul(&a.c1, &b.c1);
+        let d0_s = row!("rescale.manufactured",
+                        ctx.k_elim_rescale_manufactured(&d0).unwrap());
+        let d2_s = ctx.k_elim_rescale_manufactured(&d2).unwrap();
+        let (rc0, _) = row!("relin.digit",
+                            ctx.relinearize_dual(&d2_s, &keys.eval_key).unwrap());
+        let _ = row!("relin.gadget",
+                     ctx.relinearize_rns_limb(&d2_s, &gadget).unwrap());
+        let sum = ctx.dual_poly_add(&d0_s, &rc0);
+        let _ = row!("canonicalize", ctx.canonicalize_dual_anchor(&sum));
+        let _ = row!("MUL.digit",
+                     ctx.mul_dual_public_manufactured(&a, &b, &keys.eval_key).unwrap());
+        let _ = row!("MUL.gadget",
+                     ctx.mul_dual_public_manufactured_gadget(&a, &b, &gadget).unwrap());
+
+        // primitive floor: what a modular multiply costs, three ways
+        let p = ctx.config.primes[0];
+        let pm = crate::arithmetic::persistent_montgomery::PersistentMontgomery::new(p);
+        let v: Vec<(u64,u64)> = (0..200_000)
+            .map(|_| (rng.next_u64() % p, rng.next_u64() % p)).collect();
+        let t = Instant::now(); let mut s = 0u64;
+        for &(x,y) in &v { s = s.wrapping_add(((x as u128 * y as u128) % p as u128) as u64); }
+        let hw = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let t = Instant::now(); let mut s2 = 0u64;
+        for &(x,y) in &v { s2 = s2.wrapping_add(pm.mul(x,y)); }
+        let mont = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let t = Instant::now(); let mut s3 = 0u128;
+        for &(x,y) in v.iter().take(4000) {
+            s3 = s3.wrapping_add(crate::arithmetic::k_elimination::bench_mul_mod_u128_ct(
+                x as u128, y as u128, p as u128));
+        }
+        let ct = t.elapsed().as_nanos() as f64 / 4000.0;
+        println!("GATE {}", "-".repeat(50));
+        println!("GATE modmul.hardware              {hw:>12.2}");
+        println!("GATE modmul.montgomery            {mont:>12.2}");
+        println!("GATE modmul.ct_loop               {ct:>12.2}");
+        println!("GATE FLOAT_REFERENCE f64 modmul measured 1.10-1.28x vs hardware,");
+        println!("GATE   vectorized only. montgomery/hardware = {:.2}x -- must stay > 1.28",
+                 hw / mont.max(0.001));
+        assert!(s | s2 as u64 | s3 as u64 != 12345678);
+    }
+}

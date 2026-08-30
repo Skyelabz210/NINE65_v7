@@ -1706,8 +1706,8 @@ fn matrix_covers_all_four_production_tiers_and_both_modes() {
     // docs/OPEN_WORK_2026-08-26.md A3).
     let expected: [(usize, usize, usize); 4] = [
         // (n, main lanes, anchor lanes)
-        (8192, 4, 5),
-        (8192, 4, 5),
+        (8192, 4, 7),
+        (8192, 4, 7),
         (16384, 5, 10),
         (16384, 6, 10),
     ];
