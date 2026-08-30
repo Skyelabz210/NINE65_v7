@@ -14705,9 +14705,13 @@ mod tests {
 /// CANONICAL GATE HARNESS. Every node re-runs this and diffs against the
 /// recorded baseline. Fixed output format — do not reformat, the diff depends
 /// on it. Run:
-///   cargo test --release -p nine65 --features allow_insecure --lib \
+///   cargo test --release -p nine65 --features allow_insecure,benchmarks --lib \
 ///       gate_harness -- --nocapture --test-threads=1
-#[cfg(all(test, feature = "allow_insecure"))]
+///
+/// Requires `benchmarks` (not just `allow_insecure`): the primitive-floor
+/// section below calls `k_elimination::bench_mul_mod_u128_ct`, which is
+/// itself gated `#[cfg(feature = "benchmarks")]`.
+#[cfg(all(test, feature = "allow_insecure", feature = "benchmarks"))]
 mod gate {
     use super::*;
     use std::time::Instant;
