@@ -152,12 +152,31 @@ fn gcd(mut a: u64, mut b: u64) -> u64 {
     a
 }
 
+#[cfg(test)]
+pub(crate) mod mod_inverse_calls {
+    use std::cell::Cell;
+    thread_local! {
+        static COUNT: Cell<usize> = const { Cell::new(0) };
+    }
+    pub(crate) fn increment() {
+        COUNT.with(|c| c.set(c.get() + 1));
+    }
+    pub(crate) fn get() -> usize {
+        COUNT.with(|c| c.get())
+    }
+    pub(crate) fn reset() {
+        COUNT.with(|c| c.set(0));
+    }
+}
+
 /// Modular inverse via the extended Euclidean algorithm.
 ///
 /// Returns `None` when `gcd(a, m) ≠ 1` — the caller turns that into a typed
 /// error rather than a wrong value.
 #[inline]
 fn mod_inverse_checked(a: u64, m: u64) -> Option<u64> {
+    #[cfg(test)]
+    mod_inverse_calls::increment();
     if m == 0 {
         return None;
     }
@@ -206,7 +225,11 @@ fn mul_mod(a: u64, b: u64, m: u64) -> u64 {
 /// materialization the lift inventory licenses (R8) where the sequential
 /// Garner/MRC cascade (R9) is retired from runtime paths. Result-identical
 /// to `garner` (the `#[cfg(test)]` oracle below cross-checks them).
-fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
+fn parallel_summation_crt(
+    residues: &[u64],
+    mods: &[u64],
+    precomputed_inv: Option<&[u64]>,
+) -> Nine65Result<(u128, u128)> {
     #[cfg(test)]
     call_counters::PSUM_CALLS.with(|c| c.set(c.get() + 1));
     let mut m_prod: u128 = 1;
@@ -221,14 +244,26 @@ fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128,
             .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum modulus" })?;
     }
     let mut x: u128 = 0;
-    for (&r, &m) in residues.iter().zip(mods.iter()) {
+    for (idx, (&r, &m)) in residues.iter().zip(mods.iter()).enumerate() {
         let mi = m_prod / m as u128;
-        let mi_mod = (mi % m as u128) as u64;
-        let inv = mod_inverse_checked(mi_mod, m).ok_or(Nine65Error::NotCoprime {
-            m: mi_mod,
-            a: m,
-            gcd: gcd(mi_mod, m),
-        })?;
+        // `(M_i)^-1 mod m_i` depends only on `mods` (never on `residues`), so
+        // a caller iterating this basis across many coefficients can compute
+        // it once and pass it here instead of re-deriving it by extended
+        // Euclid on every call -- see `RescaleChain`'s `gamma_merge_inv` /
+        // `winding_merge_inv`, which is exactly this table precomputed once
+        // per manufactured rescale instead of once per coefficient (measured
+        // regression otherwise: this was the second instance of the same
+        // per-coefficient-recompute bug the `drop_*_inv` tables fixed).
+        let inv = if let Some(table) = precomputed_inv {
+            table[idx]
+        } else {
+            let mi_mod = (mi % m as u128) as u64;
+            mod_inverse_checked(mi_mod, m).ok_or(Nine65Error::NotCoprime {
+                m: mi_mod,
+                a: m,
+                gcd: gcd(mi_mod, m),
+            })?
+        };
         // r·M_i·inv ≡ M_i·((r·inv) mod m_i) (mod M); the reduced form keeps
         // every term below M, so the running sum stays below k·M.
         let s = ((r % m) as u128 * inv as u128 % m as u128) as u64;
@@ -251,7 +286,11 @@ fn parallel_summation_crt(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128,
 /// reduced modulo its own lane before the wide multiply, so the running sum
 /// stays below `k·M` and `U256` is never overrun for the bases this kernel
 /// accepts (`M < 2^192` covers every canonical anchor set).
-fn parallel_summation_crt_u256(residues: &[u64], mods: &[u64]) -> Nine65Result<(U256, U256)> {
+fn parallel_summation_crt_u256(
+    residues: &[u64],
+    mods: &[u64],
+    precomputed_inv: Option<&[u64]>,
+) -> Nine65Result<(U256, U256)> {
     #[cfg(test)]
     call_counters::PSUM_CALLS.with(|c| c.set(c.get() + 1));
     for &m in mods {
@@ -272,12 +311,18 @@ fn parallel_summation_crt_u256(residues: &[u64], mods: &[u64]) -> Nine65Result<(
                 mi = mi.mul_u64(mj);
             }
         }
-        let mi_mod = mi.mod_u64(m);
-        let inv = mod_inverse_checked(mi_mod, m).ok_or(Nine65Error::NotCoprime {
-            m: mi_mod,
-            a: m,
-            gcd: gcd(mi_mod, m),
-        })?;
+        // Same precomputable quantity as `parallel_summation_crt` above,
+        // widened to U256's `mi`: depends only on `mods`, not `residues`.
+        let inv = if let Some(table) = precomputed_inv {
+            table[idx]
+        } else {
+            let mi_mod = mi.mod_u64(m);
+            mod_inverse_checked(mi_mod, m).ok_or(Nine65Error::NotCoprime {
+                m: mi_mod,
+                a: m,
+                gcd: gcd(mi_mod, m),
+            })?
+        };
         let s = mul_mod(r % m, inv, m);
         x = x.add(mi.mul_u64(s)).rem_u256(m_prod);
     }
@@ -481,6 +526,28 @@ pub struct RescaleChain {
     anchors: Vec<u64>,
     anchor_product: U256,
     t: u64,
+    // Precomputed inverses for the per-coefficient hot path. Every value
+    // `mod_inverse_checked` used to compute inside `exact_delta_rescale` /
+    // `rescale_drop_only` depends only on this chain's fixed lane and anchor
+    // structure -- never on the coefficient's residues -- so recomputing it
+    // once per coefficient (measured: 32 extended-Euclid calls/coefficient,
+    // 16,384 for one 512-coefficient rescale) redid identical work up to N
+    // times. Same disease `precompute_m_level_inverses` (arithmetic/rns.rs)
+    // already exists to cure for `extract_k_rns_level`; this applies the
+    // same fix here. `drop_main_inv[step][i] = Some(inv)` when main lane `i`
+    // is still alive (not yet dropped, not the lane being dropped) at drop
+    // step `step`, mirroring the align-and-drop loop's own `alive[]`
+    // bookkeeping exactly so the set of populated entries matches what the
+    // original loop would have computed, one-for-one.
+    drop_main_inv: Vec<Vec<Option<u64>>>,
+    drop_anchor_inv: Vec<Vec<u64>>,
+    winding_anchor_inv: Vec<u64>,
+    // The second instance of the same disease, in the CRT-basis merge
+    // (`parallel_summation_crt`/`_u256`) both hot-path calls run into once
+    // per coefficient: `(M_i)^-1 mod m_i` depends only on the merge basis
+    // (`surviving_lanes` / `anchors`), never on the coefficient's residues.
+    gamma_merge_inv: Vec<u64>,
+    winding_merge_inv: Vec<u64>,
 }
 
 impl RescaleChain {
@@ -652,6 +719,84 @@ impl RescaleChain {
         // 4-anchor, 125-bit subset that silently aliased.
         let anchor_product = U256::product_u64s(anchors);
 
+        // Precompute the hot-path inverses. Every coprimality check this
+        // needs already ran above (the "coprimality the division needs" and
+        // "surviving/anchors pairwise coprime" blocks), so every
+        // `mod_inverse_checked` call here is guaranteed `Some` -- a `None`
+        // here would mean this function should already have returned
+        // `NotCoprime` earlier, which is a bug in THIS function, not a
+        // reachable runtime state.
+        let mut alive: Vec<bool> = vec![true; lanes.len()];
+        let mut drop_main_inv: Vec<Vec<Option<u64>>> = Vec::with_capacity(delta_lanes.len());
+        let mut drop_anchor_inv: Vec<Vec<u64>> = Vec::with_capacity(delta_lanes.len());
+        for &k in delta_lanes {
+            let d = lanes[k];
+            let mut main_row: Vec<Option<u64>> = vec![None; lanes.len()];
+            for i in 0..lanes.len() {
+                if i == k || !alive[i] {
+                    continue;
+                }
+                let q = lanes[i];
+                main_row[i] = Some(
+                    mod_inverse_checked(d % q, q)
+                        .expect("RescaleChain::new: coprimality already verified above"),
+                );
+            }
+            drop_main_inv.push(main_row);
+            let anchor_row: Vec<u64> = anchors
+                .iter()
+                .map(|&a| {
+                    mod_inverse_checked(d % a, a)
+                        .expect("RescaleChain::new: coprimality already verified above")
+                })
+                .collect();
+            drop_anchor_inv.push(anchor_row);
+            alive[k] = false;
+        }
+        // Winding-read inverses: `m_mod_a = surviving_product() mod a = t mod a`,
+        // fixed for the whole chain (surviving_product() == t always).
+        let winding_anchor_inv: Vec<u64> = anchors
+            .iter()
+            .map(|&a| {
+                let m_mod_a = t % a;
+                mod_inverse_checked(m_mod_a, a)
+                    .expect("RescaleChain::new: coprimality already verified above")
+            })
+            .collect();
+
+        // gamma_merge_inv: (M_i)^-1 mod m_i for the surviving-lane CRT merge
+        // `parallel_summation_crt` runs in step 3. M_i = surviving_product / m_i;
+        // both are chain-fixed, so this is computable here once instead of
+        // once per coefficient in the merge itself.
+        let surviving_product_u128: u128 = surviving_lanes.iter().map(|&m| m as u128).product();
+        let gamma_merge_inv: Vec<u64> = surviving_lanes
+            .iter()
+            .map(|&m| {
+                let mi = surviving_product_u128 / m as u128;
+                let mi_mod = (mi % m as u128) as u64;
+                mod_inverse_checked(mi_mod, m)
+                    .expect("RescaleChain::new: coprimality already verified above")
+            })
+            .collect();
+
+        // winding_merge_inv: the same quantity for the anchor-basis CRT merge
+        // `parallel_summation_crt_u256` runs to combine the winding K.
+        let winding_merge_inv: Vec<u64> = anchors
+            .iter()
+            .enumerate()
+            .map(|(idx, &m)| {
+                let mut mi = U256::from_u64(1);
+                for (j, &mj) in anchors.iter().enumerate() {
+                    if j != idx {
+                        mi = mi.mul_u64(mj);
+                    }
+                }
+                let mi_mod = mi.mod_u64(m);
+                mod_inverse_checked(mi_mod, m)
+                    .expect("RescaleChain::new: coprimality already verified above")
+            })
+            .collect();
+
         Ok(Self {
             lanes: lanes.to_vec(),
             delta_lanes: delta_lanes.to_vec(),
@@ -660,6 +805,11 @@ impl RescaleChain {
             anchors: anchors.to_vec(),
             anchor_product,
             t,
+            drop_main_inv,
+            drop_anchor_inv,
+            winding_anchor_inv,
+            gamma_merge_inv,
+            winding_merge_inv,
         })
     }
 
@@ -923,33 +1073,25 @@ pub fn rescale_drop_only(
         }
         anchor.push(x);
     }
-    let mut alive: Vec<bool> = vec![true; chain.lanes.len()];
-    for &k in &chain.delta_lanes {
+    // Inverses read from `chain.drop_main_inv`/`drop_anchor_inv` -- precomputed
+    // once in `RescaleChain::new`, since they depend only on the chain's
+    // fixed lane structure, never on these residues. See that struct's docs.
+    for (step, &k) in chain.delta_lanes.iter().enumerate() {
         let d = chain.lanes[k];
         let r_d = main[k] % d;
         for i in 0..chain.lanes.len() {
-            if i == k || !alive[i] {
+            let Some(inv) = chain.drop_main_inv[step][i] else {
                 continue;
-            }
+            };
             let q = chain.lanes[i];
-            let inv = mod_inverse_checked(d % q, q).ok_or(Nine65Error::NotCoprime {
-                m: d,
-                a: q,
-                gcd: gcd(d, q),
-            })?;
             let diff = (main[i] + q - r_d % q) % q;
             main[i] = mul_mod(diff, inv, q);
         }
         for (j, &a) in chain.anchors.iter().enumerate() {
-            let inv = mod_inverse_checked(d % a, a).ok_or(Nine65Error::NotCoprime {
-                m: d,
-                a,
-                gcd: gcd(d, a),
-            })?;
+            let inv = chain.drop_anchor_inv[step][j];
             let diff = (anchor[j] + a - r_d % a) % a;
             anchor[j] = mul_mod(diff, inv, a);
         }
-        alive[k] = false;
     }
     let surviving: Vec<u64> = chain.surviving_idx.iter().map(|&i| main[i]).collect();
     Ok((surviving, anchor))
@@ -1008,33 +1150,25 @@ pub fn exact_delta_rescale(
     // ⌊⌊V/d₀⌋/d₁⌋ = ⌊V/(d₀d₁)⌋, so the composition divides by Δ exactly.
     // This is the step that would round under a hunted chain, where Δ is not
     // a product of lanes at all.
-    let mut alive: Vec<bool> = vec![true; chain.lanes.len()];
-    for &k in &chain.delta_lanes {
+    // Inverses read from `chain.drop_main_inv`/`drop_anchor_inv` -- precomputed
+    // once in `RescaleChain::new`, since they depend only on the chain's
+    // fixed lane structure, never on these residues. See that struct's docs.
+    for (step, &k) in chain.delta_lanes.iter().enumerate() {
         let d = chain.lanes[k];
         let r_d = main[k] % d;
         for i in 0..chain.lanes.len() {
-            if i == k || !alive[i] {
+            let Some(inv) = chain.drop_main_inv[step][i] else {
                 continue;
-            }
+            };
             let q = chain.lanes[i];
-            let inv = mod_inverse_checked(d % q, q).ok_or(Nine65Error::NotCoprime {
-                m: d,
-                a: q,
-                gcd: gcd(d, q),
-            })?;
             let diff = (main[i] + q - r_d % q) % q;
             main[i] = mul_mod(diff, inv, q);
         }
         for (j, &a) in chain.anchors.iter().enumerate() {
-            let inv = mod_inverse_checked(d % a, a).ok_or(Nine65Error::NotCoprime {
-                m: d,
-                a,
-                gcd: gcd(d, a),
-            })?;
+            let inv = chain.drop_anchor_inv[step][j];
             let diff = (anchor[j] + a - r_d % a) % a;
             anchor[j] = mul_mod(diff, inv, a);
         }
-        alive[k] = false;
     }
     let surviving_residues: Vec<u64> = chain.surviving_idx.iter().map(|&i| main[i]).collect();
 
@@ -1045,26 +1179,30 @@ pub fn exact_delta_rescale(
     // without ever forming Y in the residue domain.
     // R8 parallel summation, not a Garner cascade: the winding read is a
     // boundary materialization and must not smuggle R9 into the runtime.
-    let (gamma, m_prod) = parallel_summation_crt(&surviving_residues, &chain.surviving_lanes)?;
+    let (gamma, m_prod) = parallel_summation_crt(
+        &surviving_residues,
+        &chain.surviving_lanes,
+        Some(&chain.gamma_merge_inv),
+    )?;
     debug_assert_eq!(m_prod, chain.surviving_product());
     let winding_k = if chain.anchors.is_empty() {
         U256::zero()
     } else {
+        // `chain.winding_anchor_inv[j]` is the precomputed inverse of
+        // `t mod a` -- `m_prod` is always `chain.surviving_product() == t`
+        // (the debug_assert above), so this is the same value the original
+        // per-coefficient `mod_inverse_checked(m_mod_a, a)` computed, read
+        // instead of recomputed.
         let mut k_res: Vec<u64> = Vec::with_capacity(chain.anchors.len());
         for (j, &a) in chain.anchors.iter().enumerate() {
-            let m_mod_a = (m_prod % a as u128) as u64;
-            let inv = mod_inverse_checked(m_mod_a, a).ok_or(Nine65Error::NotCoprime {
-                m: m_mod_a,
-                a,
-                gcd: gcd(m_mod_a, a),
-            })?;
+            let inv = chain.winding_anchor_inv[j];
             let g_mod_a = (gamma % a as u128) as u64;
             let diff = (anchor[j] + a - g_mod_a) % a;
             k_res.push(mul_mod(diff, inv, a));
         }
         // The ladder merge, likewise R8 — "must not be silently substituted
         // with a runtime Garner cascade" (lift inventory, ladder policy).
-        parallel_summation_crt_u256(&k_res, &chain.anchors)?.0
+        parallel_summation_crt_u256(&k_res, &chain.anchors, Some(&chain.winding_merge_inv))?.0
     };
 
     // ── step 4: the exit ────────────────────────────────────────────
@@ -1115,6 +1253,131 @@ pub fn exact_delta_rescale(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Pins `RescaleChain::new`'s precomputed inverse tables against fresh
+    /// `mod_inverse_checked` calls computed independently here, on the real
+    /// manufactured chain. Regression guard for the 2026-08-30 fix: these
+    /// tables replaced 16,384 redundant extended-Euclid calls per rescale
+    /// (32/coefficient, all chain-derived, none coefficient-derived) with 32
+    /// computed once — if a future edit desyncs the tables from what the
+    /// hot-path loops actually need, this catches it as a wrong VALUE, not
+    /// just a slow one.
+    #[test]
+    fn precomputed_inverses_match_fresh_computation_on_the_real_chain() {
+        let lanes = [65_537u64, 738_208_769, 1_409_307_649, 2_617_285_633];
+        let delta_idx = [1usize, 2, 3];
+        let anchors = [
+            2_013_265_921u64,
+            2_281_701_377,
+            2_483_027_969,
+            2_885_681_153,
+            3_221_225_473,
+        ];
+        let chain = RescaleChain::new(&lanes, &delta_idx, 65_537, &anchors).unwrap();
+
+        let mut alive = vec![true; lanes.len()];
+        for (step, &k) in chain.delta_lanes.iter().enumerate() {
+            let d = lanes[k];
+            for i in 0..lanes.len() {
+                let expected = if i == k || !alive[i] {
+                    None
+                } else {
+                    Some(mod_inverse_checked(d % lanes[i], lanes[i]).unwrap())
+                };
+                assert_eq!(
+                    chain.drop_main_inv[step][i], expected,
+                    "drop_main_inv mismatch at step {step}, lane {i}"
+                );
+            }
+            for (j, &a) in anchors.iter().enumerate() {
+                let expected = mod_inverse_checked(d % a, a).unwrap();
+                assert_eq!(
+                    chain.drop_anchor_inv[step][j], expected,
+                    "drop_anchor_inv mismatch at step {step}, anchor {j}"
+                );
+            }
+            alive[k] = false;
+        }
+        for (j, &a) in anchors.iter().enumerate() {
+            let expected = mod_inverse_checked(65_537u64 % a, a).unwrap();
+            assert_eq!(
+                chain.winding_anchor_inv[j], expected,
+                "winding_anchor_inv mismatch at anchor {j}"
+            );
+        }
+    }
+
+    /// Same regression class, for the SECOND instance of the bug: the
+    /// `(M_i)^-1 mod m_i` cofactor inverses `parallel_summation_crt` /
+    /// `parallel_summation_crt_u256` need for their basis merge, which are
+    /// likewise chain-fixed (depend on `surviving_lanes`/`anchors` alone).
+    /// Pins `gamma_merge_inv` and `winding_merge_inv` against inverses
+    /// computed independently here, over both the real manufactured chain
+    /// (single surviving lane, exercising the trivial-cofactor case since
+    /// `M_i = M_prod` when there is only one lane) and a multi-lane
+    /// synthetic basis (`small_chain`, three anchors — no chain in this
+    /// module's own fixtures has more than one surviving lane, so a
+    /// standalone multi-element merge is checked directly below instead of
+    /// only through the single-lane chains).
+    #[test]
+    fn merge_inverses_match_fresh_computation() {
+        let lanes = [65_537u64, 738_208_769, 1_409_307_649, 2_617_285_633];
+        let delta_idx = [1usize, 2, 3];
+        let anchors = [
+            2_013_265_921u64,
+            2_281_701_377,
+            2_483_027_969,
+            2_885_681_153,
+            3_221_225_473,
+        ];
+        let chain = RescaleChain::new(&lanes, &delta_idx, 65_537, &anchors).unwrap();
+
+        // Single surviving lane (t = 65537 itself): M_i = M_prod / t = 1,
+        // so the cofactor inverse is trivially 1 -- still computed via the
+        // real path here, not asserted from the mathematical shortcut.
+        assert_eq!(chain.surviving_lanes.len(), 1);
+        let m_prod: u128 = chain.surviving_lanes[0] as u128;
+        for (idx, &m) in chain.surviving_lanes.iter().enumerate() {
+            let mi = m_prod / m as u128;
+            let expected = mod_inverse_checked((mi % m as u128) as u64, m).unwrap();
+            assert_eq!(chain.gamma_merge_inv[idx], expected, "gamma_merge_inv[{idx}]");
+        }
+        for (idx, &a) in anchors.iter().enumerate() {
+            let mut mi = U256::from_u64(1);
+            for (j, &aj) in anchors.iter().enumerate() {
+                if j != idx {
+                    mi = mi.mul_u64(aj);
+                }
+            }
+            let expected = mod_inverse_checked(mi.mod_u64(a), a).unwrap();
+            assert_eq!(chain.winding_merge_inv[idx], expected, "winding_merge_inv[{idx}]");
+        }
+
+        // The multi-lane case, standalone: `parallel_summation_crt` and its
+        // U256 sibling agree with `None` (fresh) vs an explicitly supplied
+        // table over a basis with more than one modulus, so the trivial
+        // single-lane case above isn't the only shape exercised.
+        let mods = [7u64, 11, 13, 17];
+        let residues = [3u64, 5, 9, 2];
+        let m_prod_multi: u128 = mods.iter().map(|&m| m as u128).product();
+        let table: Vec<u64> = mods
+            .iter()
+            .map(|&m| {
+                let mi = m_prod_multi / m as u128;
+                mod_inverse_checked((mi % m as u128) as u64, m).unwrap()
+            })
+            .collect();
+        let fresh = parallel_summation_crt(&residues, &mods, None).unwrap();
+        let cached = parallel_summation_crt(&residues, &mods, Some(&table)).unwrap();
+        assert_eq!(fresh, cached, "parallel_summation_crt: fresh vs precomputed must agree");
+
+        let fresh_u256 = parallel_summation_crt_u256(&residues, &mods, None).unwrap();
+        let cached_u256 = parallel_summation_crt_u256(&residues, &mods, Some(&table)).unwrap();
+        assert_eq!(
+            fresh_u256, cached_u256,
+            "parallel_summation_crt_u256: fresh vs precomputed must agree"
+        );
+    }
 
     /// `round(a/b)` with ties up, integer-only. Ground-truth helper.
     fn round_half_up(a: u128, b: u128) -> u128 {
@@ -1807,7 +2070,7 @@ mod tests {
             let mut x: u128 = 0;
             while x < m {
                 let res: Vec<u64> = mods.iter().map(|&q| (x % q as u128) as u64).collect();
-                let (a, ma) = parallel_summation_crt(&res, mods).expect("psum");
+                let (a, ma) = parallel_summation_crt(&res, mods, None).expect("psum");
                 let (b, mb) = garner(&res, mods).expect("garner oracle");
                 assert_eq!((a, ma), (b, mb), "psum vs garner at x={x} mods={mods:?}");
                 assert_eq!(a, x, "reconstruction must equal ground truth");

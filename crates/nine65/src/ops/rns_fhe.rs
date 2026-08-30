@@ -14741,6 +14741,18 @@ mod gate {
         println!("GATE {:<28} {:>12} {:>8}", "stage", "ns", "recon");
         println!("GATE {}", "-".repeat(50));
 
+        {
+            crate::arithmetic::unified_rescale::mod_inverse_calls::reset();
+            let d0 = ctx.dual_poly_mul(&a.c0, &b.c0);
+            let _ = ctx.k_elim_rescale_manufactured(&d0).unwrap();
+            let calls = crate::arithmetic::unified_rescale::mod_inverse_calls::get();
+            println!(
+                "GATE mod_inverse_checked calls per single rescale.manufactured: {calls} \
+                 ({} per coefficient, n={})",
+                calls / ctx.n,
+                ctx.n
+            );
+        }
         let d0 = row!("tensor.d0", ctx.dual_poly_mul(&a.c0, &b.c0));
         let d2 = ctx.dual_poly_mul(&a.c1, &b.c1);
         let d0_s = row!("rescale.manufactured",
