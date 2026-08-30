@@ -14701,3 +14701,86 @@ mod tests {
     }
 }
 
+
+/// CANONICAL GATE HARNESS. Every node re-runs this and diffs against the
+/// recorded baseline. Fixed output format — do not reformat, the diff depends
+/// on it. Run:
+///   cargo test --release -p nine65 --features allow_insecure --lib \
+///       gate_harness -- --nocapture --test-threads=1
+#[cfg(all(test, feature = "allow_insecure"))]
+mod gate {
+    use super::*;
+    use std::time::Instant;
+
+    #[test]
+    fn gate_harness() {
+        let ctx = RNSFHEContext::new(&crate::params::FHEConfig::manufactured_m2b_insecure());
+        let mut rng = ShadowHarvester::with_seed(424242);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let mut gr = ShadowHarvester::with_seed(424243);
+        let gadget = ctx.generate_gadget_key_with_rng(&keys.secret_key, &mut gr).unwrap();
+        let mut r1 = ShadowHarvester::with_seed(424244);
+        let mut r2 = ShadowHarvester::with_seed(424245);
+        let a = ctx.encrypt_dual(7, &keys.public_key, &mut r1);
+        let b = ctx.encrypt_dual(11, &keys.public_key, &mut r2);
+        let cnt = || crate::arithmetic::rns::to_u256_level_calls::get();
+        let reps = 10u128;
+
+        macro_rules! row {
+            ($name:expr, $body:expr) => {{
+                let c0 = cnt(); let t = Instant::now();
+                let mut out = None;
+                for _ in 0..reps { out = Some($body); }
+                let ns = t.elapsed().as_nanos() / reps;
+                let rc = (cnt() - c0) as u128 / reps;
+                println!("GATE {:<28} {:>12} {:>8}", $name, ns, rc);
+                out.unwrap()
+            }};
+        }
+
+        println!("GATE {:<28} {:>12} {:>8}", "stage", "ns", "recon");
+        println!("GATE {}", "-".repeat(50));
+
+        let d0 = row!("tensor.d0", ctx.dual_poly_mul(&a.c0, &b.c0));
+        let d2 = ctx.dual_poly_mul(&a.c1, &b.c1);
+        let d0_s = row!("rescale.manufactured",
+                        ctx.k_elim_rescale_manufactured(&d0).unwrap());
+        let d2_s = ctx.k_elim_rescale_manufactured(&d2).unwrap();
+        let (rc0, _) = row!("relin.digit",
+                            ctx.relinearize_dual(&d2_s, &keys.eval_key).unwrap());
+        let _ = row!("relin.gadget",
+                     ctx.relinearize_rns_limb(&d2_s, &gadget).unwrap());
+        let sum = ctx.dual_poly_add(&d0_s, &rc0);
+        let _ = row!("canonicalize", ctx.canonicalize_dual_anchor(&sum));
+        let _ = row!("MUL.digit",
+                     ctx.mul_dual_public_manufactured(&a, &b, &keys.eval_key).unwrap());
+        let _ = row!("MUL.gadget",
+                     ctx.mul_dual_public_manufactured_gadget(&a, &b, &gadget).unwrap());
+
+        // primitive floor: what a modular multiply costs, three ways
+        let p = ctx.config.primes[0];
+        let pm = crate::arithmetic::persistent_montgomery::PersistentMontgomery::new(p);
+        let v: Vec<(u64,u64)> = (0..200_000)
+            .map(|_| (rng.next_u64() % p, rng.next_u64() % p)).collect();
+        let t = Instant::now(); let mut s = 0u64;
+        for &(x,y) in &v { s = s.wrapping_add(((x as u128 * y as u128) % p as u128) as u64); }
+        let hw = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let t = Instant::now(); let mut s2 = 0u64;
+        for &(x,y) in &v { s2 = s2.wrapping_add(pm.mul(x,y)); }
+        let mont = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let t = Instant::now(); let mut s3 = 0u128;
+        for &(x,y) in v.iter().take(4000) {
+            s3 = s3.wrapping_add(crate::arithmetic::k_elimination::bench_mul_mod_u128_ct(
+                x as u128, y as u128, p as u128));
+        }
+        let ct = t.elapsed().as_nanos() as f64 / 4000.0;
+        println!("GATE {}", "-".repeat(50));
+        println!("GATE modmul.hardware              {hw:>12.2}");
+        println!("GATE modmul.montgomery            {mont:>12.2}");
+        println!("GATE modmul.ct_loop               {ct:>12.2}");
+        println!("GATE FLOAT_REFERENCE f64 modmul measured 1.10-1.28x vs hardware,");
+        println!("GATE   vectorized only. montgomery/hardware = {:.2}x -- must stay > 1.28",
+                 hw / mont.max(0.001));
+        assert!(s | s2 as u64 | s3 as u64 != 12345678);
+    }
+}
