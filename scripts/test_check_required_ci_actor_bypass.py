@@ -12,7 +12,7 @@ from unittest import mock
 from scripts import check_required_ci_actor_bypass as guard
 
 
-def workflow(*, fast_if: str = "", include_full: bool = True) -> str:
+def workflow(*, fast_if: str = "", ai_if: str = "", include_full: bool = True) -> str:
     """Build a minimal workflow fixture with all required mechanical jobs."""
     full = "  full-test:\n    runs-on: ubuntu-latest\n" if include_full else ""
     return (
@@ -25,7 +25,7 @@ def workflow(*, fast_if: str = "", include_full: bool = True) -> str:
         "    runs-on: ubuntu-latest\n"
         f"{full}"
         "  ai-review:\n"
-        "    if: github.actor != 'dependabot[bot]'\n"
+        f"{ai_if}"
     )
 
 
@@ -35,9 +35,9 @@ class ActorBypassGuardTests(unittest.TestCase):
             path = pathlib.Path(directory, "ci.yml")
             path.write_text(contents, encoding="utf-8")
             output = io.StringIO()
-            with mock.patch("sys.argv", ["guard", str(path)]), contextlib.redirect_stdout(
-                output
-            ), contextlib.redirect_stderr(output):
+            with mock.patch(
+                "sys.argv", ["guard", str(path)]
+            ), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
                 status = guard.main()
         return status, output.getvalue()
 
@@ -53,9 +53,21 @@ class ActorBypassGuardTests(unittest.TestCase):
         self.assertEqual(status, 1)
         self.assertIn("fast-gate", output)
 
-    def test_allows_actor_condition_on_optional_review_job(self) -> None:
-        status, _ = self.run_guard(workflow())
-        self.assertEqual(status, 0)
+    def test_rejects_actor_condition_on_optional_review_job(self) -> None:
+        status, output = self.run_guard(
+            workflow(ai_if="    if: github.actor != 'dependabot[bot]'\n")
+        )
+        self.assertEqual(status, 1)
+        self.assertIn("ai-review", output)
+
+    def test_rejects_fork_condition_on_required_job(self) -> None:
+        status, output = self.run_guard(
+            workflow(
+                fast_if="    if: github.event.pull_request.head.repo.fork == false\n"
+            )
+        )
+        self.assertEqual(status, 1)
+        self.assertIn("fast-gate", output)
 
     def test_rejects_missing_required_job(self) -> None:
         status, output = self.run_guard(workflow(include_full=False))

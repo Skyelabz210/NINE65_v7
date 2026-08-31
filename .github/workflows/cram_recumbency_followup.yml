@@ -8,6 +8,9 @@ name: CRAM Recumbency Follow-up Gate
 # app_platform_gates.yml and the other cram_*.yml workflows on 2026-08-12.
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main

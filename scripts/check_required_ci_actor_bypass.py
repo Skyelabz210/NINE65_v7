@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Fail if required mechanical CI jobs are conditional on GitHub actor identity.
 
-Optional review/notification jobs may remain actor-specific. Required deterministic
-correctness/security jobs may not skip execution solely because the author is a bot.
+No workflow job may be actor-specific. Required deterministic correctness/security
+jobs additionally may not inspect fork origin or PR head-branch names.
 """
 
 from __future__ import annotations
@@ -11,6 +11,12 @@ import pathlib
 import sys
 
 REQUIRED_JOBS = {"fast-gate", "static-analysis", "full-test"}
+FORBIDDEN_REQUIRED_CONTEXTS = (
+    "github.head_ref",
+    "github.event.pull_request.head.ref",
+    "github.event.pull_request.head.repo",
+    "github.event.pull_request.head.label",
+)
 
 
 def job_blocks(text: str) -> dict[str, str]:
@@ -44,7 +50,9 @@ def job_blocks(text: str) -> dict[str, str]:
 
 
 def main() -> int:
-    workflow = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".github/workflows/ci.yml")
+    workflow = pathlib.Path(
+        sys.argv[1] if len(sys.argv) > 1 else ".github/workflows/ci.yml"
+    )
     text = workflow.read_text(encoding="utf-8")
     blocks = job_blocks(text)
 
@@ -53,16 +61,26 @@ def main() -> int:
         print(f"ERROR: required CI jobs missing: {', '.join(missing)}", file=sys.stderr)
         return 1
 
-    failures: list[str] = []
+    actor_failures = sorted(
+        name for name, block in blocks.items() if "github.actor" in block
+    )
+    context_failures: list[str] = []
     for name in sorted(REQUIRED_JOBS):
         block = blocks[name]
-        if "github.actor" in block:
-            failures.append(name)
+        if any(context in block for context in FORBIDDEN_REQUIRED_CONTEXTS):
+            context_failures.append(name)
 
-    if failures:
+    if actor_failures:
         print(
-            "ERROR: actor-dependent bypass found in required mechanical CI job(s): "
-            + ", ".join(failures),
+            "ERROR: actor-dependent workflow job(s) found: "
+            + ", ".join(actor_failures),
+            file=sys.stderr,
+        )
+        return 1
+    if context_failures:
+        print(
+            "ERROR: branch/fork-dependent bypass found in required mechanical CI job(s): "
+            + ", ".join(context_failures),
             file=sys.stderr,
         )
         return 1

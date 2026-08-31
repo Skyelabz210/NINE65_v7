@@ -32,7 +32,7 @@ name: CI
 # Tier structure:
 #   T1 — Fast gate:  fmt + clippy + deny + static analysis (~3 min, every push)
 #   T2 — Full suite: all tests + clockwork (every PR, main pushes, [full-ci])
-#   T3 — AI review:  Gemini Flash diff review posted to PR (every non-bot PR)
+#   T3 — AI review:  Gemini Flash diff review posted to every PR
 #   T4 — Deep:       benchmarks + coverage + Qwen claim audit (Sunday or [deep-ci])
 # =============================================================================
 
@@ -246,7 +246,8 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # T3 — Gemini Flash AI Code Review
-  # Every PR that is not from a bot.
+  # Every PR, independent of actor identity. Secret availability controls only
+  # whether Gemini runs; it never controls the mechanical correctness gates.
   # Posts a structured review comment via Gemini 2.0 Flash free tier API.
   # Requires secret: GEMINI_API_KEY
   # If key is absent the step logs a skip message and exits cleanly.
@@ -254,10 +255,7 @@ jobs:
   ai-review:
     name: "T3 · Gemini AI Review"
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'pull_request' &&
-      github.actor != 'google-labs-jules[bot]' &&
-      github.actor != 'dependabot[bot]'
+    if: github.event_name == 'pull_request'
     permissions:
       pull-requests: write
     steps:
