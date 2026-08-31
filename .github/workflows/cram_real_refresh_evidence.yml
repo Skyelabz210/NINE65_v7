@@ -8,6 +8,17 @@ name: CRAM Real Refresh Evidence
 # app_platform_gates.yml and the other cram_*.yml workflows on 2026-08-12.
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "crates/nine65/src/bin/nine65_bench.rs"
+      - "crates/nine65/src/noise/budget.rs"
+      - "crates/nine65/src/ops/auto_bootstrap.rs"
+      - "crates/nine65/src/ops/bootstrap.rs"
+      - "crates/nine65/src/ops/rns_fhe.rs"
+      - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - ".github/workflows/cram_real_refresh_evidence.yml"
   pull_request:
     branches:
       - main

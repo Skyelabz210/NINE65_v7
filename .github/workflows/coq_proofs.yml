@@ -8,13 +8,16 @@ name: Coq Proofs (legacy)
 
 on:
   push:
+    branches: [main]
     paths:
       - 'proofs/coq/**'
       - 'verified-innovations/proofs/coq/**'
   pull_request:
+    branches: [main]
     paths:
       - 'proofs/coq/**'
       - 'verified-innovations/proofs/coq/**'
+  workflow_dispatch:
 
 jobs:
   verify:

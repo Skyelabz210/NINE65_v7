@@ -7,11 +7,14 @@ name: Lean Formal Verification
 
 on:
   push:
+    branches: [main]
     paths:
       - 'lean4/**'
   pull_request:
+    branches: [main]
     paths:
       - 'lean4/**'
+  workflow_dispatch:
 
 jobs:
   build:

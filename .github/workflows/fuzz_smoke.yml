@@ -12,6 +12,12 @@ name: Fuzz Smoke
 # not something a weekly CI job should attempt on shared runners.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'fuzz/**'
+      - 'crates/nine65/src/**'
+      - '.github/workflows/fuzz_smoke.yml'
   schedule:
     - cron: '0 5 * * 0' # Sunday 05:00 UTC
   pull_request:
