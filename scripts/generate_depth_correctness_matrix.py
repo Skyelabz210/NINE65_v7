@@ -7,9 +7,12 @@ a structured JSON matrix showing correctness at each depth level.
 """
 
 import json
+import pathlib
 import re
 import subprocess
 import sys
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 from datetime import datetime
 
 def run_depth_benchmarks():
@@ -36,7 +39,7 @@ def run_depth_benchmarks():
             ]
         
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd='/home/acid/Projects/NINE65/v5')
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
             
             if result.returncode != 0:
                 print(f"Warning: Benchmark for {config} failed with return code {result.returncode}")
@@ -150,12 +153,12 @@ def main():
     }
     
     # Write JSON file
-    with open('/home/acid/Projects/NINE65/v5/docs/DEPTH_CORRECTNESS_MATRIX.json', 'w') as f:
+    with open(str(ROOT / 'docs' / 'DEPTH_CORRECTNESS_MATRIX.json'), 'w') as f:
         json.dump(json_data, f, indent=2)
     
     # Generate and write markdown file
     md_content = generate_markdown_table(results)
-    with open('/home/acid/Projects/NINE65/v5/docs/DEPTH_CORRECTNESS_MATRIX.md', 'w') as f:
+    with open(str(ROOT / 'docs' / 'DEPTH_CORRECTNESS_MATRIX.md'), 'w') as f:
         f.write(md_content)
     
     print("Depth-correctness matrix generated:")

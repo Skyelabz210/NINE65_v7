@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-02-14T09:51:41.806271Z",
+  "generated_at": "2026-08-31T09:38:22.344016Z",
   "benchmark_type": "symmetric_max_depth",
   "results": {
     "secure_128": {
       "max_depth_achieved": 50,
       "total_collapses": 0,
-      "total_time": "6.070771014s",
-      "avg_time_per_mul_ms": "121.41ms",
+      "total_time": "5.007604872s",
+      "avg_time_per_mul_ms": "100.15ms",
       "correctness_verified": true
     },
     "secure_192": {
       "max_depth_achieved": 50,
       "total_collapses": 0,
-      "total_time": "9.597523382s",
-      "avg_time_per_mul_ms": "191.95ms",
+      "total_time": "11.73021583s",
+      "avg_time_per_mul_ms": "234.60ms",
       "correctness_verified": true
     }
   }
