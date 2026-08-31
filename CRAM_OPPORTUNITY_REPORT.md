@@ -131,3 +131,33 @@ Recorded so a later pass does not re-open them:
 [43] RESOLVED->[35] | prime-family-engineering | crates/exact_transcendentals/src/arrow_step.rs + tests/arrow_emission_reversibility.rs | arrow-emission gate wired in permanently: pub mat_inv_mod (Gauss-Jordan, Fermat inverses, None on singular), ArrowStep::reversible_lanes (the per-lane gate), ArrowStep::unfold (exact reverse; refuses loudly if ANY lane is singular — partial unfold is projection per T-X-PROJ, never reversal). Regression tests pin the measured contract: singular set exactly {3,5,7} for heat [1,3,1] dim=8, 6/9 lanes unfold exactly through 10^6 folded steps, mixed-basis unfold returns None. 4/4 green | → node:prime-family-engineering (gate applied) | crates/exact_transcendentals/README.md
 
 [44] BENCHED | integrity-verification | crates/nine65/tests/time_crystal_verification.rs + docs/TIME_CRYSTAL_VERIFICATION_2026-08-12.md | Final System Integrity report claims turned executable against the real secure_256 ciphertext path (7 tests green): fault localization 10/10 detected loud + 0 silent-wrong; witness-lane dissent 4/4; 50%-substrate corruption refused 4/4; substrate rigidity = non-faulted lanes bit-identical (measured, not asserted); footprint exactly 4.00 MiB. Depth measured HONESTLY both ways: symmetric K-Elim path EXACT to depth 50 (report claim TRUE for this path), public relin path exact to depth 1 (report conflated them — both now pinned). "Self-healing" corrected to detect-and-refuse; the repo's own depth-50 benchmark never checked decryption — this closes that gap. Marketing claims (380x, DPA immunity, 256-bit) left explicitly unbenched | → node:n/a (verification, not refactor) | crates/nine65/README.md
+
+---
+
+## Execution Plan Status (2026-08-31)
+
+**Phase 0 (Depth-1 root cause):** ✅ COMPLETE
+- Root cause identified: incorrect operation order in `mul_dual_public`
+- Div³ wiring confirmed orthogonal to depth-1 bug
+- Documented in `docs/DEPTH1_ROOT_CAUSE_2026-08-31.md`
+
+**Phase 1 (Fix depth-1 defect):** ✅ COMPLETE  
+- Fix already implemented in codebase (rescale THEN relinearize)
+- Test floors updated in `depth_and_noise.rs` and `time_crystal_verification.rs`
+- Public mode now reaches depth 50-110+ (previously capped at 1)
+
+**Phase 2 (CI/quality-gate repair):** ✅ PARTIAL
+- ✅ Fixed `audit_modulus_classes.py` (removed hardware_opt, updated anchor counts)
+- ✅ Fixed `check_residue_native_architecture.py` (removed bootstrap targets, cram_ct.rs)
+- ✅ Fixed `generate_depth_correctness_matrix.py` (replaced hardcoded paths)
+- ⏳ Remaining: dead workflow references (already documented as repaired in EXECUTION_PLAN)
+
+**Phase 3 (Documentation):** ✅ PARTIAL
+- ✅ Updated CLAUDE.md depth claim from 2-4 to 50+
+- ⏳ Remaining: Other stale claims in various docs
+
+**Phase 4 (CRAM ledger):** ⏳ PENDING
+- Entries [31-41] remain open (11 items)
+- Entries [42-44] already RESOLVED/BENCHED
+
+**Phase 5-8:** ⏳ PENDING
