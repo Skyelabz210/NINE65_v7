@@ -25,7 +25,6 @@ PROFILE_NAMES = (
     "secure_128_deep",
     "secure_192",
     "secure_256",
-    "hardware_opt",
 )
 SUPPORTED_N = (1024, 2048, 8192, 16384)
 MR_BASES = (2, 325, 9375, 28178, 450775, 9780504, 1795265022)
@@ -35,7 +34,7 @@ MR_BASES = (2, 325, 9375, 28178, 450775, 9780504, 1795265022)
 # for n >= 16384. Asserted during parsing so a regex regression fails loudly
 # instead of silently auditing the wrong set.
 ANCHOR_EXTENSION_N = 16384
-EXPECTED_BASE_ANCHORS = 5
+EXPECTED_BASE_ANCHORS = 7
 EXPECTED_EXTENDED_ANCHORS = 10
 
 
@@ -173,7 +172,7 @@ def parse_anchors(source: str) -> dict[str, list[int]]:
             "canonical_anchor_primes_for_n shape drifted"
         )
 
-    # The Rust source documents 5 anchors for n <= 8192 and 10 for n >= 16384.
+    # The Rust source documents 7 anchors for n <= 8192 and 10 for n >= 16384.
     # Assert the parse matches so a silent regex regression cannot pass again.
     if len(base) != EXPECTED_BASE_ANCHORS:
         raise AssertionError(
