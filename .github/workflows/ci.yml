@@ -7,8 +7,8 @@ name: CI
 #
 #   Jules (google-labs-jules[bot])
 #     Deep autonomous work: architecture, security hardening, multi-file refactors.
-#     Assigned via GitHub Issues. BYPASSES CI — its commits skip all tiers to
-#     avoid burning Actions minutes on work it has already validated internally.
+#     Assigned via GitHub Issues. Its commits run the same deterministic gates as
+#     every other contributor; authorship must never bypass correctness checks.
 #
 #   Gemini Flash (free tier, GEMINI_API_KEY secret)
 #     PR code review via API. Posts structured analysis as PR comment.
@@ -30,7 +30,6 @@ name: CI
 #
 # =============================================================================
 # Tier structure:
-#   T0 — Bot bypass: Jules and Dependabot commits skip CI entirely
 #   T1 — Fast gate:  fmt + clippy + deny + static analysis (~3 min, every push)
 #   T2 — Full suite: all tests + clockwork (every PR, main pushes, [full-ci])
 #   T3 — AI review:  Gemini Flash diff review posted to PR (every non-bot PR)
@@ -61,14 +60,11 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # T1a — Fast Gate: fmt + clippy + deny
-  # Every push/PR. Skipped for Jules and Dependabot.
+  # Every push/PR, independent of the commit or PR author.
   # ---------------------------------------------------------------------------
   fast-gate:
     name: "T1 · Fast Gate (fmt + clippy + deny)"
     runs-on: ubuntu-latest
-    if: |
-      github.actor != 'google-labs-jules[bot]' &&
-      github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -107,12 +103,15 @@ jobs:
   static-analysis:
     name: "T1 · Static Analysis & Proofs"
     runs-on: ubuntu-latest
-    if: |
-      github.actor != 'google-labs-jules[bot]' &&
-      github.actor != 'dependabot[bot]'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Reject actor-dependent required-job bypasses
+        run: python3 scripts/check_required_ci_actor_bypass.py
+
+      - name: Test required-job bypass scanner
+        run: python3 -m unittest scripts.test_check_required_ci_actor_bypass
 
       - name: Validate claim registry
         run: bash scripts/check_claim_registry.sh
@@ -204,8 +203,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: fast-gate
     if: |
-      github.actor != 'google-labs-jules[bot]' &&
-      github.actor != 'dependabot[bot]' &&
       (
         github.event_name == 'pull_request' ||
         github.ref == 'refs/heads/main' ||
