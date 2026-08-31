@@ -3,7 +3,7 @@
 ## Project Overview
 **NINE65 v8 "Shadow Butterfly"** — A proprietary exact-integer BFV/DualRNS FHE substrate built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with zero floating-point arithmetic in its crypto/arithmetic hot paths (see "Important Coding Rules" below for the one documented, non-cryptographic exception).
 
-It provides finite leveled computation plus low-depth refresh paths. **It is not an unlimited-depth system and does not claim to be** — `docs/LINEAGE.md` places "unlimited depth", "depth 50" and "bootstrap-free" on the deprecation list, and the measured public direct-square depths are 2–4. The verified capability table is in `README.md`; per-number provenance and the not-established list are in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
+It provides finite leveled computation plus low-depth refresh paths. **It is not an unlimited-depth system and does not claim to be** — `docs/LINEAGE.md` places "unlimited depth", "depth 50" and "bootstrap-free" on the deprecation list, and the measured public direct-square depths are 50+ (after 2026-08-12 fix). The verified capability table is in `README.md`; per-number provenance and the not-established list are in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 
 ---
 
