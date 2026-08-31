@@ -7,10 +7,14 @@ a structured JSON matrix showing correctness at each depth level.
 """
 
 import json
+import pathlib
 import re
 import subprocess
 import sys
 from datetime import datetime
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+
 
 def run_depth_benchmarks():
     """Run the depth benchmark tests and capture output."""
@@ -36,7 +40,7 @@ def run_depth_benchmarks():
             ]
         
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, cwd='/home/acid/Projects/NINE65/v5')
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
             
             if result.returncode != 0:
                 print(f"Warning: Benchmark for {config} failed with return code {result.returncode}")
@@ -50,6 +54,7 @@ def run_depth_benchmarks():
             print(f"Error running benchmark for {config}: {e}")
     
     return results
+
 
 def parse_benchmark_output(output, config):
     """Parse the benchmark output to extract depth and correctness data."""
@@ -94,6 +99,7 @@ def parse_benchmark_output(output, config):
         'correctness_verified': max_depth > 0 and total_collapses == 0  # Assuming no collapses means correctness
     }
 
+
 def generate_markdown_table(results):
     """Generate a markdown table from the results."""
     
@@ -132,6 +138,7 @@ This matrix shows the maximum depth achieved and correctness verification for ea
     
     return md_content
 
+
 def main():
     print("Generating depth-correctness matrix from benchmark output...")
     
@@ -150,12 +157,12 @@ def main():
     }
     
     # Write JSON file
-    with open('/home/acid/Projects/NINE65/v5/docs/DEPTH_CORRECTNESS_MATRIX.json', 'w') as f:
+    with open(str(ROOT / 'docs' / 'DEPTH_CORRECTNESS_MATRIX.json'), 'w') as f:
         json.dump(json_data, f, indent=2)
     
     # Generate and write markdown file
     md_content = generate_markdown_table(results)
-    with open('/home/acid/Projects/NINE65/v5/docs/DEPTH_CORRECTNESS_MATRIX.md', 'w') as f:
+    with open(str(ROOT / 'docs' / 'DEPTH_CORRECTNESS_MATRIX.md'), 'w') as f:
         f.write(md_content)
     
     print("Depth-correctness matrix generated:")
@@ -168,6 +175,7 @@ def main():
         print(f"- {config}: {data.get('max_depth_achieved', 0)} levels, "
               f"{data.get('total_collapses', 0)} collapses, "
               f"correctness: {'PASS' if data.get('correctness_verified', False) else 'FAIL'}")
+
 
 if __name__ == '__main__':
     main()
