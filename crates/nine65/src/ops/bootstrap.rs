@@ -1,9 +1,11 @@
 //! Clockwork Bootstrap — public (evaluator-side) ciphertext refresh
 //!
-//! When `q_small = t`, the Phase 1 mod-switch from `Q` to `t` IS the BFV
-//! decryption, so the refresh needs no *polynomial approximation* of a
-//! decryption circuit — the step other bootstrapping designs spend their error
-//! budget on. That is the exactness claimed here, and it is the only one.
+//! The historical Phase 1 component switch is **not** BFV decryption.  BFV
+//! rounds the combined phase `c0 + c1*s`; rounding `c0` and `c1` separately
+//! displaces a secret-dependent quotient/carry term.  The legacy component
+//! switch remains below only as a diagnostic oracle while the exact CRAM
+//! Safe-Root/Lift transducer is built.  Both public entry points fail closed
+//! before invoking it; see [`public_phase1_soundness_gate`].
 //!
 //! It is NOT a claim that Phase 1 is error-free. `modswitch_to_t` computes
 //! `round(c * t / Q)` using `q_level_half` as the rounding offset; that is the
@@ -26,7 +28,7 @@
 //!
 //! # Three-Phase Bootstrap (Circular Security)
 //!
-//! 1. **ModSwitch Q_min -> t** (exact integer rounding, in the clear)
+//! 1. **Displaced-state transduction** (not implemented; public path refused)
 //! 2. **Homomorphic inner product** (TrivialEnc + PlaintextMul, depth ~1)
 //! 3. **ModSwitch Q_boot -> Q_work** (drop extra boot prime, circular security)
 //!
@@ -36,9 +38,9 @@
 
 use crate::arithmetic::k_elimination::KElimination;
 use crate::arithmetic::rns::{crt_reconstruct_u256, DualRNSContext, U256};
-use crate::entropy::{require_secure_rng, FheRng, SecureRng};
 #[cfg(test)]
 use crate::entropy::ShadowHarvester;
+use crate::entropy::{require_secure_rng, FheRng, SecureRng};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::bootstrap::{
     mod_inverse_u128, BootstrapKey, BootstrapKeySet, KeySwitchKey, BOOTSTRAP_PRIMES,
@@ -69,6 +71,25 @@ pub struct ClockworkBootstrap {
     pub bootstrap_depth: usize,
     /// Boot RNSFHEContext for NTT operations within bootstrap.
     pub boot_ctx: RNSFHEContext,
+}
+
+/// Refuse the public refresh until its displaced BFV state is carried exactly.
+///
+/// For centered representatives, independently rounded components leave the
+/// correction
+///
+/// `K_j = round((R0_j + (R1 * s)_j) / Q)`,
+///
+/// where `*` is negacyclic convolution.  CRAM can *represent* this bounded
+/// quotient/carry in its lift state, but this module does not yet homomorphically
+/// transduce the secret-dependent convolution and rounding.  Silently omitting
+/// `K` returns a plausible ciphertext of the wrong plaintext, so production
+/// callers must receive a typed error instead.
+fn public_phase1_soundness_gate() -> Nine65Result<()> {
+    Err(Nine65Error::BootstrapFailed {
+        reason: "public BFV refresh disabled: Phase 1 does not yet propagate the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
+            .into(),
+    })
 }
 
 /// Validate critical structural invariants after boot context creation.
@@ -230,9 +251,7 @@ impl ClockworkBootstrap {
         // drop so it does not linger in freed heap memory after the lifted
         // DualRNSSecretKey (which is itself Zeroize + ZeroizeOnDrop) is built.
         let s_signed: Zeroizing<Vec<i8>> = Zeroizing::new(
-            work_sk
-                .s
-                .main[0]
+            work_sk.s.main[0]
                 .iter()
                 .map(|&c| {
                     if c == 0 {
@@ -414,7 +433,10 @@ impl ClockworkBootstrap {
 
     /// Generate all bootstrap key material (circular security) using the OS
     /// CSPRNG. This is the production entry point.
-    pub fn generate_keys_secure(&self, work_sk: &DualRNSSecretKey) -> Nine65Result<BootstrapKeySet> {
+    pub fn generate_keys_secure(
+        &self,
+        work_sk: &DualRNSSecretKey,
+    ) -> Nine65Result<BootstrapKeySet> {
         let mut rng = SecureRng::new();
         self.generate_keys(work_sk, &mut rng)
     }
@@ -597,17 +619,20 @@ impl ClockworkBootstrap {
 
     /// Bootstrap a ciphertext to refresh its noise budget (circular security).
     ///
-    /// Phase 1: ModSwitch Q_min -> t (exact, in the clear)
+    /// Phase 1: exact displaced-state transduction (currently unavailable)
     /// Phase 2: Homomorphic inner product (Enc_boot(m))
     /// Phase 3: ModSwitch Q_boot -> Q_work (circular security, no key switch)
     ///
     /// Use with keys from `generate_keys()` (circular security mode).
     ///
-    /// Refuses configs whose main chain cannot carry a public refresh — see
+    /// Currently refuses every call because the secret-dependent Phase-1 carry
+    /// is not yet propagated. It also refuses configs whose main chain cannot
+    /// carry a public refresh — see
     /// [`ensure_public_refresh_supported`] and the PUBLIC-REFRESH
-    /// ADMISSIBILITY section of `params::secure_configs`. The refusal is a
-    /// typed `Nine65Error::BootstrapConfigMismatch`, returned before any work,
-    /// because the alternative is returning a wrong-but-plausible plaintext.
+    /// ADMISSIBILITY section of `params::secure_configs`. The Phase-1 refusal
+    /// is a typed `Nine65Error::BootstrapFailed` (while an ineligible chain is
+    /// still `BootstrapConfigMismatch`), returned before any ciphertext work
+    /// because the alternative is a wrong-but-plausible plaintext.
     pub fn bootstrap(
         &self,
         ct: &DualRNSCiphertext,
@@ -617,7 +642,12 @@ impl ClockworkBootstrap {
         // Gate 0: this chain must be able to carry a public refresh at all.
         ensure_public_refresh_supported(&self.work_config)?;
 
-        // Phase 1: ModSwitch Q_min -> t (exact integer rounding)
+        // Gate 1: component-wise rounding drops the BFV displaced-state term.
+        // This must remain before Phase 1 until an exact encrypted CRAM
+        // quotient/carry transducer replaces `modswitch_to_t`.
+        public_phase1_soundness_gate()?;
+
+        // Legacy diagnostic Phase 1. Unreachable while Gate 1 is active.
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
         // Phase 2: Homomorphic inner product
@@ -632,7 +662,7 @@ impl ClockworkBootstrap {
 
     /// Bootstrap with key switching (non-circular security).
     ///
-    /// Phase 1: ModSwitch Q_min -> t (exact, in the clear)
+    /// Phase 1: exact displaced-state transduction (currently unavailable)
     /// Phase 2: Homomorphic inner product -> Enc_{boot_sk, Q_boot}(m)
     /// Phase 3: Key switch from boot_sk to work_sk via gadget decomposition
     ///
@@ -662,7 +692,11 @@ impl ClockworkBootstrap {
         // Gate 0: this chain must be able to carry a KSK public refresh.
         ensure_public_refresh_with_ksk_supported(&self.work_config)?;
 
-        // Phase 1: ModSwitch Q_min -> t (exact integer rounding)
+        // The non-circular path shares the same unsound Phase 1 and therefore
+        // must fail closed independently of its stronger noise admission gate.
+        public_phase1_soundness_gate()?;
+
+        // Legacy diagnostic Phase 1. Unreachable while Gate 1 is active.
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
         // Phase 2: Homomorphic inner product -> Enc_{boot_sk, Q_boot}(m)
@@ -690,7 +724,10 @@ impl ClockworkBootstrap {
     /// Level-aware: uses the ciphertext's actual number of RNS limbs (not just 2).
     /// For a fresh ciphertext at level 3, uses all 3 primes. For a post-multiply
     /// ciphertext at level 2, uses 2 primes.
-    pub(crate) fn modswitch_to_t(&self, ct: &DualRNSCiphertext) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
+    pub(crate) fn modswitch_to_t(
+        &self,
+        ct: &DualRNSCiphertext,
+    ) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
         let n = self.n;
         let t = self.t;
         let ct_level = ct.c0.main.len();
@@ -1407,6 +1444,125 @@ mod tests {
     use super::*;
     use crate::keys::bootstrap::mod_inverse_u128;
 
+    fn round_ratio_nearest(numerator: i128, denominator: i128) -> i128 {
+        assert!(denominator > 0);
+        if numerator >= 0 {
+            (numerator + denominator / 2) / denominator
+        } else {
+            -((-numerator + denominator / 2) / denominator)
+        }
+    }
+
+    fn negacyclic_convolution(lhs: &[i128], rhs: &[i128]) -> Vec<i128> {
+        assert_eq!(lhs.len(), rhs.len());
+        let n = lhs.len();
+        let mut out = vec![0i128; n];
+        for (i, &a) in lhs.iter().enumerate() {
+            for (j, &b) in rhs.iter().enumerate() {
+                let degree = i + j;
+                if degree < n {
+                    out[degree] += a * b;
+                } else {
+                    out[degree - n] -= a * b;
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn displaced_state_scalar_counterexample_is_the_missing_carry() {
+        let (q, t, c0, c1, s) = (17i128, 5i128, 1i128, 1i128, 1i128);
+        let a0 = round_ratio_nearest(t * c0, q);
+        let a1 = round_ratio_nearest(t * c1, q);
+        let r0 = t * c0 - q * a0;
+        let r1 = t * c1 - q * a1;
+        let displaced = round_ratio_nearest(r0 + r1 * s, q);
+        let decoded = round_ratio_nearest(t * (c0 + c1 * s), q);
+
+        assert_eq!(decoded, 1);
+        assert_eq!(a0 + a1 * s, 0, "component rounding loses state");
+        assert_eq!(displaced, 1);
+        assert_eq!(decoded, a0 + a1 * s + displaced);
+
+        // Centering does not repair distributivity: every representative in
+        // this counterexample is already centered in (-Q/2, Q/2].
+        assert!(c0.abs() <= q / 2 && c1.abs() <= q / 2);
+    }
+
+    #[test]
+    fn displaced_state_is_negacyclic_and_exactly_representable() {
+        let (q, t) = (17i128, 5i128);
+        let c0 = [1i128, 0];
+        let c1 = [1i128, 1];
+        let secret = [1i128, -1];
+
+        let a0: Vec<_> = c0.iter().map(|&x| round_ratio_nearest(t * x, q)).collect();
+        let a1: Vec<_> = c1.iter().map(|&x| round_ratio_nearest(t * x, q)).collect();
+        let r0: Vec<_> = c0.iter().zip(&a0).map(|(&x, &a)| t * x - q * a).collect();
+        let r1: Vec<_> = c1.iter().zip(&a1).map(|(&x, &a)| t * x - q * a).collect();
+        let phase = {
+            let product = negacyclic_convolution(&c1, &secret);
+            c0.iter()
+                .zip(product)
+                .map(|(&x, y)| x + y)
+                .collect::<Vec<_>>()
+        };
+        let component = {
+            let product = negacyclic_convolution(&a1, &secret);
+            a0.iter()
+                .zip(product)
+                .map(|(&x, y)| x + y)
+                .collect::<Vec<_>>()
+        };
+        let correction_input = {
+            let product = negacyclic_convolution(&r1, &secret);
+            r0.iter()
+                .zip(product)
+                .map(|(&x, y)| x + y)
+                .collect::<Vec<_>>()
+        };
+        let displaced: Vec<_> = correction_input
+            .iter()
+            .map(|&x| round_ratio_nearest(x, q))
+            .collect();
+        let decoded: Vec<_> = phase
+            .iter()
+            .map(|&x| round_ratio_nearest(t * x, q))
+            .collect();
+
+        assert_eq!(decoded, vec![1, 0]);
+        assert_eq!(component, vec![0, 0]);
+        assert_eq!(displaced, vec![1, 0]);
+        assert_eq!(
+            decoded,
+            component
+                .iter()
+                .zip(&displaced)
+                .map(|(a, k)| a + k)
+                .collect::<Vec<_>>()
+        );
+
+        // For ternary s and |Ri| <= Q/2, the conservative integer bound
+        // |Kj| <= N+1 follows immediately. This proves the missing term fits a
+        // tiny signed CRAM lift state here; representation is not the blocker.
+        // The absent encrypted transduction is.
+        let bound = c0.len() as i128 + 1;
+        assert!(displaced.iter().all(|k| k.abs() <= bound));
+    }
+
+    #[test]
+    fn public_phase1_is_typed_fail_closed() {
+        let error = public_phase1_soundness_gate().expect_err("public Phase 1 must be disabled");
+        match error {
+            Nine65Error::BootstrapFailed { reason } => {
+                assert!(reason.contains("displaced quotient/carry"));
+                assert!(reason.contains("CRAM Safe-Root/Lift"));
+            }
+            other => panic!("expected BootstrapFailed, got {other:?}"),
+        }
+    }
+
     // =====================================================================
     // THE MEASUREMENT THE PUBLIC-REFRESH REFUSAL RESTS ON
     // =====================================================================
@@ -1471,13 +1627,7 @@ mod tests {
         println!(
             "\n=== diag_measure_noise_growth: public refresh vs the decryption oracle ===\n\
              {:<18} {:>6} {:>9} {:>9} {:>9} | {:>12} {:>16}",
-            "config",
-            "lanes",
-            "headroom",
-            "required",
-            "admits",
-            "refresh(7)",
-            "refresh(7)^2"
+            "config", "lanes", "headroom", "required", "admits", "refresh(7)", "refresh(7)^2"
         );
 
         let mut verdicts: Vec<(&str, bool, bool)> = Vec::new();
@@ -1515,7 +1665,11 @@ mod tests {
                 public_refresh_headroom_bits(config),
                 post_refresh_required_bits(config),
                 admits,
-                format!("{} ({})", after_refresh, if refresh_ok { "ok" } else { "WRONG" }),
+                format!(
+                    "{} ({})",
+                    after_refresh,
+                    if refresh_ok { "ok" } else { "WRONG" }
+                ),
                 match &squared {
                     Ok(value) => format!("{} ({})", value, if square_ok { "ok" } else { "WRONG" }),
                     Err(error) => format!("Err: {error}"),

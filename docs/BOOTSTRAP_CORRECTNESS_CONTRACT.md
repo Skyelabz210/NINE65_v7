@@ -1,6 +1,44 @@
 # Clockwork Bootstrap Correctness Contract
 
-Revision: 2026-02-22 (v7 "Bootstrap Complete")
+Revision: 2026-08-31 (public BFV refresh fail-closed)
+
+## 0. Public BFV Phase-1 Soundness Gate
+
+**Status:** The circular and non-circular public refresh entry points are
+disabled with a typed `Nine65Error::BootstrapFailed`. The symmetric,
+secret-key refresh is a separate path and is unaffected.
+
+The old Phase 1 rounded `c0` and `c1` independently before combining them with
+the encrypted secret. That loses the displaced BFV quotient/carry
+
+```text
+K_j = round((R0_j + (R1 * s)_j) / Q),
+```
+
+where `*` is negacyclic convolution. The scalar case
+`Q=17, t=5, C0=C1=s=1` already produces `K=1`: combined BFV decoding returns
+one while component-wise rounding returns zero.
+
+The exact regression tests establish two separate facts:
+
+1. `K` is a bounded signed value and can be represented in CRAM lift state;
+2. representation alone is insufficient because the public path still lacks
+   the encrypted Safe-Root/Lift transduction of the secret-dependent
+   convolution and quotient.
+
+**Enforcement:** `public_phase1_soundness_gate()` is called before
+`modswitch_to_t()` by both `ClockworkBootstrap::bootstrap()` and
+`ClockworkBootstrap::bootstrap_with_ksk()`.
+
+**Tests:** `displaced_state_scalar_counterexample_is_the_missing_carry`,
+`displaced_state_is_negacyclic_and_exactly_representable`, and
+`public_phase1_is_typed_fail_closed`.
+
+**Re-enable condition:** Replace the diagnostic component switch with an exact
+encrypted CRAM transducer that preserves `K`, then validate fresh, added,
+multiplied, relinearized, and boundary-noise ciphertexts across every admitted
+configuration. A declared lossy transition may discard state only when its
+public contract explicitly permits loss; BFV refresh does not.
 
 This document extracts the structural invariants enforced by the Clockwork
 Bootstrap implementation into a reviewable contract. Each invariant is
