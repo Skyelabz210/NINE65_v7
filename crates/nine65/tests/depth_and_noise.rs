@@ -665,7 +665,8 @@ fn depth_and_noise_curve_squaring_chain() {
     );
 
     assert_lane_count_constant(&r.samples, "CHAIN A'");
-    assert!(r.max_correct_depth >= 1, "squaring died before depth 1");
+    // Updated 2026-08-31: Squaring chain should reach depth 50+ on secure_128
+    assert!(r.max_correct_depth >= 50, "squaring chain should reach depth 50+ after fix");
 }
 
 // ============================================================================
@@ -704,9 +705,12 @@ fn depth_and_noise_curve_public_mode() {
     // call site the auto modulus-switch was removed from, so a lane moving
     // here is the specific regression to catch.
     assert_lane_count_constant(&r.samples, "CHAIN A''");
+    // Updated 2026-08-31: After fixing the operation order (rescale THEN relinearize),
+    // public mode now reaches depth 110+ on secure_128. See docs/DEPTH1_ROOT_CAUSE_2026-08-31.md
     assert!(
-        r.max_correct_depth >= 1,
-        "public mode failed before a single multiply completed"
+        r.max_correct_depth >= 50,
+        "public mode should reach at least depth 50 after the 2026-08-12 fix. \
+         Current measured: 110+. If this fails, the depth-1 fix has regressed."
     );
 }
 

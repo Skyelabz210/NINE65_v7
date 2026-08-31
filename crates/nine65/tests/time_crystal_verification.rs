@@ -291,13 +291,13 @@ fn public_relin_chain_depth_measured() {
         }
     }
     println!("SECURE_128 public-relin mul-by-1 chain: EXACT to depth {reached}");
-    // No floor asserted — this documents the measured public-path limit.
-    assert!(reached >= 1, "public relin must survive at least one multiply");
-}
-
-/// Report claim on footprint: measure the REAL sizes, no normalization games.
-/// The report's "4.2 MB" corresponds to one secure_256 ciphertext
-/// (2 polys x 16 lanes x 16384 coeffs x 8 bytes = 4.0 MiB).
+    // Updated 2026-08-31: After fixing the operation order (rescale THEN relinearize),
+    // public mode now reaches depth 50+ on secure_128. See docs/DEPTH1_ROOT_CAUSE_2026-08-31.md
+    assert!(
+        reached >= 50,
+        "public relin must reach at least depth 50 after the 2026-08-12 fix. \
+         Current measured: 50+. If this fails, the depth-1 fix has regressed."
+    );
 #[test]
 fn footprint_measured_honestly() {
     let config = SecureConfig::secure_256().into_config();
