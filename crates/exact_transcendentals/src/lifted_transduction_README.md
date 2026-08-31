@@ -1,1 +1,0 @@
-This marker file is temporary documentation for the lift-aware transduction module added by this PR. The Rust module is intended to be exported from `lib.rs` before merge. If the execution agent finds this file without the export, treat the PR as incomplete and add `pub mod lifted_transduction;` beside the existing `pub mod transduction;` declaration.
