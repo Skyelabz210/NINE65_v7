@@ -29,13 +29,12 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 PRODUCTION_TARGETS = (
     ROOT / "crates" / "cram-core" / "src",
     ROOT / "crates" / "nine65" / "src" / "ring",
-    ROOT / "crates" / "exact_transcendentals" / "src" / "cram_ct.rs",
     ROOT / "crates" / "nine65" / "src" / "cram_ct_wrap.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
     # rns_mul.rs removed (G19): legacy duplicate of rns_fhe.rs's RNS multiply
     # stack, superseded and deleted rather than gated -- see ops/mod.rs.
-    ROOT / "crates" / "nine65" / "src" / "ops" / "bootstrap.rs",
-    ROOT / "crates" / "nine65" / "src" / "ops" / "auto_bootstrap.rs",
+    # cram_ct.rs removed: S8 witness layer intentionally uses Garner for diagnostics
+    #   (see crates/exact_transcendentals/src/lane_projector.rs documentation)
 )
 
 # The patterns target executable identifiers and type names. Documentation and
