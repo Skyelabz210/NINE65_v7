@@ -18,6 +18,7 @@ use crate::arithmetic::{
     compute_delta_rns_overflow_safe, BarrettContext, DualRNSContext, KElimination, RNSContext,
     RNSPolynomial, U256,
 };
+use crate::arithmetic::compare_bit::CompareBit;
 use crate::entropy::{FheRng, SecureRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::params::{mod_inverse, FHEConfig};
@@ -969,6 +970,9 @@ pub struct RNSFHEContext {
     /// Scaling factor Δ = floor(Q/t) in RNS form
     /// delta_rns[i] = Δ mod main_primes[i]
     pub delta_rns: Vec<u64>,
+    /// Fixed-work D2 half-modulus decision kernels, indexed by `level - 2`.
+    /// Every supported ciphertext level retains at least two main primes.
+    compare_bits_by_level: Vec<CompareBit>,
     /// Config reference
     pub config: FHEConfig,
     /// Deep diagnostics mode enabled
@@ -1047,6 +1051,13 @@ impl RNSFHEContext {
         // Legacy K-Elimination (now using dual_rns internally)
         let ke = KElimination::for_fhe(config.primes[0]);
 
+        // Centering decisions are basis-dependent. Build one immutable kernel
+        // for every supported main-prime prefix so decryption never performs
+        // variable-time basis setup on secret-dependent data.
+        let compare_bits_by_level: Vec<CompareBit> = (2..=config.primes.len())
+            .map(|level| CompareBit::new(&config.primes[..level]))
+            .collect();
+
         Ok(Self {
             dual_rns,
             rns,
@@ -1058,6 +1069,7 @@ impl RNSFHEContext {
             q_product_limbs: config.rns_product_limbs(),
             q_bits,
             delta_rns,
+            compare_bits_by_level,
             n: config.n,
             config: config.clone(),
             diagnostics_enabled: false, // Disabled by default
@@ -1076,6 +1088,21 @@ impl RNSFHEContext {
     /// Enable or disable deep diagnostics mode.
     pub fn set_diagnostics(&mut self, enabled: bool) {
         self.diagnostics_enabled = enabled;
+    }
+
+    /// Fixed-work upper-half decision over a supported main-prime prefix.
+    ///
+    /// `residues` must be canonical standard-domain residues. The level is
+    /// public ciphertext metadata, so selecting its precomputed kernel does
+    /// not disclose coefficient data.
+    #[inline]
+    fn is_upper_half_main(&self, residues: &[u64], level: usize) -> bool {
+        assert!(
+            (2..=self.config.primes.len()).contains(&level),
+            "decrypt centering requires a supported level of at least two lanes"
+        );
+        assert_eq!(residues.len(), level, "one residue per active main lane");
+        self.compare_bits_by_level[level - 2].decide_ct(residues)
     }
 
     /// Sample the RLWE mask `a` uniformly from the ring `R_Q`, returning its
@@ -1707,16 +1734,24 @@ impl RNSFHEContext {
         let c1_s = self.rns_poly_mul(&ct.c1, &sk.s);
         let inner = ct.c0.add(&c1_s, &self.rns);
 
-        // Reconstruct constant term from RNS
-        let rns_coeff: Vec<u64> = inner.limbs.iter().map(|limb| limb[0]).collect();
-        let full_value = self.to_int_montgomery(&rns_coeff);
+        // Convert the active coefficient to canonical standard residues once.
+        // The fixed-work CompareBit kernel consumes these residues directly;
+        // reconstruction remains only for the final D2 plaintext projection.
+        let rns_coeff_mont: Vec<u64> = inner.limbs.iter().map(|limb| limb[0]).collect();
+        let rns_coeff: Vec<u64> = rns_coeff_mont
+            .iter()
+            .zip(self.rns.mont_contexts.iter())
+            .map(|(&c, mont)| mont.from_montgomery(c))
+            .collect();
+        let is_negative = self.is_upper_half_main(&rns_coeff, rns_coeff.len());
+        let full_value = self.rns.to_int(&rns_coeff);
 
         // Decode: round(inner / Δ) mod t where Δ = Q/t
         // = round(inner * t / Q) mod t
         // Handle potential overflow by using u128 carefully
         // For values close to Q, we need centered reduction
         let q_half = self.q_product / 2;
-        if full_value > q_half {
+        if is_negative {
             // Negative value in centered representation
             // inner - Q, but we need to be careful with signs
             // (Q - full_value) * t / Q gives the negative magnitude
@@ -3043,9 +3078,9 @@ impl RNSFHEContext {
             .take(ct_level)
             .map(|limb| limb[0])
             .collect();
+        let is_negative = self.is_upper_half_main(&rns_coeff, ct_level);
         let full_value = self.rns.to_u256_level(&rns_coeff, ct_level);
         let q_level = U256::product_u64s(&self.config.primes[..ct_level]);
-        let q_half = q_level.shr1();
         // Deliberately the FLOORED delta (matches the u128 path's `delta`).
         // `decoded` is derived from a rounding against the *exact* Q/t ratio,
         // so reconstructing `ideal_point` from the floored delta reintroduces
@@ -3055,7 +3090,7 @@ impl RNSFHEContext {
         // always finds the nearest grid point), which carries no signal.
         let (delta, _) = q_level.div_mod_u256(U256::from_u64(self.t));
 
-        let (decoded, ideal_point) = if full_value.gt(q_half) {
+        let (decoded, ideal_point) = if is_negative {
             let neg_mag = q_level.sub(full_value);
             let scaled = round_div_u256_small(neg_mag.mul_u64(self.t), q_level, self.t);
             let decoded = if scaled == 0 { 0 } else { self.t - (scaled % self.t) };
@@ -3132,6 +3167,7 @@ impl RNSFHEContext {
 
         // Reconstruct constant term from main RNS (level-aware)
         let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
+        let is_negative = self.is_upper_half_main(&rns_coeff, ct_level);
         let full_value = self.rns.to_int_level(&rns_coeff, ct_level);
 
         // Use the computed q_level and delta (already level-aware from above)
@@ -3139,7 +3175,7 @@ impl RNSFHEContext {
         let q_half = q_level / 2;
 
         // Decode: round(inner * t / Q_level) mod t
-        let (decoded, margin) = if full_value > q_half {
+        let (decoded, margin) = if is_negative {
             // Negative case (value in upper half of [0, Q_level))
             let neg_magnitude = q_level - full_value;
             let scaled_neg = (neg_magnitude * self.t as u128 + q_half) / q_level;
@@ -3214,6 +3250,7 @@ impl RNSFHEContext {
 
         // Reconstruct constant term from main RNS (level-aware)
         let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
+        let is_negative = self.is_upper_half_main(&rns_coeff, ct_level);
         let full_value = self.rns.to_int_level(&rns_coeff, ct_level);
 
         let delta = q_level / self.t as u128;
@@ -3221,7 +3258,7 @@ impl RNSFHEContext {
         let q_half = q_level / 2;
 
         // Decode: round(inner * t / Q_level) mod t, with margin computation
-        let (decoded, margin) = if full_value > q_half {
+        let (decoded, margin) = if is_negative {
             let neg_magnitude = q_level - full_value;
             let scaled_neg = (neg_magnitude * self.t as u128 + q_half) / q_level;
             let decoded = if scaled_neg == 0 {
@@ -6217,6 +6254,38 @@ const _: () = {
 #[allow(deprecated)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn decrypt_centering_fixed_work_bit_is_exact_at_every_supported_small_value() {
+        let primes = vec![17u64, 41, 73];
+        let config = FHEConfig {
+            n: 4,
+            q: primes.iter().product(),
+            primes: primes.clone(),
+            t: 17,
+            eta: 2,
+            security_bits: 1,
+            name: "compare_bit_decrypt_integration",
+        };
+        let ctx = RNSFHEContext::new(&config);
+        let mut checked = 0u64;
+
+        for level in 2..=primes.len() {
+            let active = &primes[..level];
+            let modulus: u64 = active.iter().product();
+            for x in 0..modulus {
+                let residues: Vec<u64> = active.iter().map(|&p| x % p).collect();
+                assert_eq!(
+                    ctx.is_upper_half_main(&residues, level),
+                    2 * x >= modulus,
+                    "decrypt centering mismatch at X={x}, level={level}"
+                );
+                checked += 1;
+            }
+        }
+
+        assert_eq!(checked, 51_578);
+    }
 
     // ========================================================================
     // DIAGNOSTIC HELPERS (per-prime, overflow-proof)

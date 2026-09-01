@@ -88,14 +88,14 @@
 //! primes) with adversarial biasing at all three boundary regions — zero
 //! wrong, fallback firing only on the biased half.
 //!
-//! Status: kernel only, NOT wired into any call site — same posture as
-//! `base_ext`. The integration target is any site that currently does
-//! `to_u256_level(...)` solely to compare against `M/2` (see module tests
-//! for the ground-truth pattern). Garner/MRC remains retired from the
-//! runtime core; the fallback below is a parallel idempotent sum, not a
-//! Garner walk.
+//! Status: the fixed-work [`CompareBit::decide_ct`] route is wired into the D2
+//! decrypt/centering decisions in `ops/rns_fhe.rs`. The original certified
+//! fast/fallback API remains available for public-data callers and comparative
+//! tests. The exact D2 fallback is an output-boundary parallel idempotent sum,
+//! not a Garner/MRC walk; evaluator kernels must not use it as a reconstruction
+//! shortcut.
 
-use super::rns::U256;
+use super::{barrett::BarrettContext, rns::U256};
 
 /// Guard bits for the fixed-point fast path. `B = 64` keeps every per-lane
 /// product `c_i * 2^B` inside u128 (`c_i < m_i < 2^64`) and makes the
@@ -121,6 +121,8 @@ pub struct CompareBit {
     main: Vec<u64>,
     /// `(M/m_i)^-1 mod m_i`.
     inv: Vec<u64>,
+    /// Fixed-work modular reducers for `c_i = x_i * inv_i mod m_i`.
+    reducers: Vec<BarrettContext>,
     /// `M/m_i` at full width (fallback only).
     mi_full: Vec<U256>,
     /// `M = prod m_i`.
@@ -135,8 +137,8 @@ impl CompareBit {
     /// Panics (construction-time contract violations, same posture as
     /// `BaseExt::new`):
     /// - fewer than 2 lanes;
-    /// - any even or non-coprime pair of lanes (the capacity-alias theorem's
-    ///   coprimality premise);
+    /// - any lane at or above `2^63`, or any even or non-coprime pair of lanes
+    ///   (the fixed-work reducer and capacity-alias premises);
     /// - `bitlen(M) + 8 > 256` (the fallback's `S < kM` must fit U256;
     ///   `k < 256` is asserted separately).
     pub fn new(main: &[u64]) -> Self {
@@ -144,6 +146,7 @@ impl CompareBit {
         assert!(main.len() < 256, "lane count must fit the overshoot bound");
         for (i, &a) in main.iter().enumerate() {
             assert!(a >= 3 && a % 2 == 1, "lanes must be odd primes >= 3");
+            assert!(a < (1u64 << 63), "fixed-work lanes must be below 2^63");
             for &b in &main[i + 1..] {
                 assert!(crate::arithmetic::compare_bit::gcd_u64(a, b) == 1,
                     "lanes must be pairwise coprime");
@@ -153,6 +156,7 @@ impl CompareBit {
         assert!(m.bitlen() + 8 <= 256, "S < kM must fit U256 in the fallback");
 
         let mut inv = Vec::with_capacity(main.len());
+        let mut reducers = Vec::with_capacity(main.len());
         let mut mi_full = Vec::with_capacity(main.len());
         for &mi in main.iter() {
             // (M/m_i) as full-width, then its inverse mod m_i via u128 Fermat
@@ -160,10 +164,11 @@ impl CompareBit {
             let big = m.div_mod_u64(mi).0; // exact: mi divides M
             let r = big.mod_u64(mi);
             inv.push(inv_mod_u64(r, mi));
+            reducers.push(BarrettContext::new(mi));
             mi_full.push(big);
         }
         let m_ceil_half = m.sub(m.shr1()); // M odd => (M+1)/2
-        Self { main: main.to_vec(), inv, mi_full, m, m_ceil_half }
+        Self { main: main.to_vec(), inv, reducers, mi_full, m, m_ceil_half }
     }
 
     /// CRT idempotent coefficients `c_i = (x_i * (M/m_i)^-1) mod m_i`.
@@ -175,6 +180,27 @@ impl CompareBit {
             .map(|((&mi, &iv), &ri)| {
                 let r = ri % mi;
                 (((r as u128) * (iv as u128)) % (mi as u128)) as u64
+            })
+            .collect()
+    }
+
+    /// Fixed-work idempotent coefficients for canonical lane residues.
+    ///
+    /// The caller must supply `residues[i] < main[i]`. Runtime decrypt callers
+    /// satisfy this through the RNS arithmetic invariant, and untrusted
+    /// ciphertexts are checked by the context-aware residue validator before
+    /// use. Avoiding `ri % mi` here is intentional: secret-dependent hardware
+    /// division is outside the constant-work contract.
+    #[inline]
+    fn coefficients_ct(&self, residues: &[u64]) -> Vec<u64> {
+        self.main
+            .iter()
+            .zip(self.inv.iter())
+            .zip(self.reducers.iter())
+            .zip(residues.iter())
+            .map(|(((&mi, &iv), reducer), &ri)| {
+                debug_assert!(ri < mi, "CompareBit::decide_ct requires canonical residues");
+                reducer.mul_ct(ri, iv)
             })
             .collect()
     }
@@ -223,6 +249,42 @@ impl CompareBit {
         // s is now exactly X. b = [2X >= M] <=> [X >= ceil(M/2)] (M odd) —
         // compared without doubling, so no overflow even for M near 2^255.
         (s.ge(self.m_ceil_half), ComparePath::ExactFallback)
+    }
+
+    /// Fixed-work decision for secret-holder centering.
+    ///
+    /// This path deliberately skips the certified fast-path split: even a
+    /// correct early return reveals whether the secret value lies near one of
+    /// the ambiguity bands. It always forms the parallel idempotent sum, always
+    /// performs exactly `lane_count - 1` conditional reductions, and uses
+    /// mask selection for every reduction. It contains no secret-dependent
+    /// `%`, division, early return, or loop bound.
+    ///
+    /// The exact accumulator is permitted here only at the D2 decrypt/output
+    /// boundary. Evaluator kernels must continue to use residue-native
+    /// transduction and may not adopt this boundary helper as a reconstruction
+    /// shortcut.
+    #[inline]
+    pub fn decide_ct(&self, residues: &[u64]) -> bool {
+        assert_eq!(residues.len(), self.main.len(), "one residue per lane");
+        let cs = self.coefficients_ct(residues);
+
+        // S = sum_i c_i * (M/m_i), with every term below M and S < kM.
+        let mut s = U256::zero();
+        for (&c, big) in cs.iter().zip(self.mi_full.iter()) {
+            s = s.add_ct(big.mul_u64_ct(c));
+        }
+
+        // The overshoot is in [0, k-1]. Run all k-1 reductions regardless of
+        // its value. A wrapped subtraction is harmless because the mask keeps
+        // the original value whenever s < M.
+        for _ in 1..self.main.len() {
+            let reduced = s.sub_ct(self.m);
+            let reduce_mask = s.ge_mask_ct(self.m);
+            s = U256::select_mask_ct(s, reduced, reduce_mask);
+        }
+
+        s.ge_ct(self.m_ceil_half)
     }
 
     /// The basis product, exposed for tests/oracles.
@@ -390,6 +452,71 @@ mod tests {
         // exhaustive sweep (the boundary bands are non-empty for any basis).
         assert!(fallback > 0, "fallback never fired on an exhaustive sweep — vacuous guard");
         assert!(fast > 0);
+    }
+
+    #[test]
+    fn fixed_work_decision_is_exact_for_every_small_basis_value() {
+        let bases: [&[u64]; 3] = [
+            &[3, 5],
+            &[3, 5, 7],
+            &[3, 5, 7, 11, 13],
+        ];
+
+        let mut checked = 0u64;
+        for primes in bases {
+            let kernel = CompareBit::new(primes);
+            let modulus: u128 = primes.iter().map(|&p| p as u128).product();
+            for x in 0..modulus {
+                let residues: Vec<u64> = primes
+                    .iter()
+                    .map(|&p| (x % p as u128) as u64)
+                    .collect();
+                assert_eq!(
+                    kernel.decide_ct(&residues),
+                    2 * x >= modulus,
+                    "fixed-work decision mismatch at X={x}, basis={primes:?}"
+                );
+                checked += 1;
+            }
+        }
+        assert_eq!(checked, 15_135);
+    }
+
+    #[test]
+    fn fixed_work_decision_matches_oracle_at_wide_unsigned_boundaries() {
+        let bases: [&[u64]; 2] = [
+            &[2_013_265_921, 2_281_701_377, 3_221_225_473],
+            &[
+                2_013_265_921,
+                2_281_701_377,
+                3_221_225_473,
+                3_489_660_929,
+                2_483_027_969,
+            ],
+        ];
+
+        for primes in bases {
+            let kernel = CompareBit::new(primes);
+            let modulus = U256::product_u64s(primes);
+            let half = modulus.shr1();
+            let candidates = [
+                U256::zero(),
+                U256::one(),
+                half,
+                half.add(U256::one()),
+                modulus.sub(U256::from_u64(2)),
+                modulus.sub(U256::one()),
+            ];
+
+            for x in candidates {
+                let residues: Vec<u64> = primes.iter().map(|&p| x.mod_u64(p)).collect();
+                assert_eq!(
+                    kernel.decide_ct(&residues),
+                    x.ge(modulus.sub(modulus.shr1())),
+                    "fixed-work wide-boundary mismatch: X={x:?}, basis={primes:?}"
+                );
+            }
+        }
     }
 
     #[test]

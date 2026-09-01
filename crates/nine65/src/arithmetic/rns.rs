@@ -257,15 +257,55 @@ impl U256 {
 
     /// Constant-time greater-than-or-equal comparison
     #[inline]
-    #[allow(dead_code)]
     pub(crate) fn ge_ct(self, other: Self) -> bool {
-        // (self.hi > other.hi) || (self.hi == other.hi && self.lo >= other.lo)
-        let hi_lt = (self.hi.wrapping_sub(other.hi) >> 127) & 1;
-        let hi_gt = (other.hi.wrapping_sub(self.hi) >> 127) & 1;
-        let lo_ge = ((self.lo.wrapping_sub(other.lo) >> 127) & 1) ^ 1;
+        self.ge_mask_ct(other) != 0
+    }
 
-        // (hi_gt == 1) || (hi_lt == 0 && lo_ge == 1)
-        (hi_gt | ((hi_lt ^ 1) & lo_ge)) != 0
+    /// All-ones mask exactly when `self >= other`, derived from the final
+    /// borrow of a fixed four-word subtraction.
+    ///
+    /// The previous implementation inferred unsigned ordering from the top
+    /// bit of a wrapping `u128` subtraction. That identity is false when the
+    /// unsigned difference crosses `2^127` (for example, `1` versus
+    /// `2^127 + 1`). Borrow propagation is the exact unsigned comparison and
+    /// gives one fixed instruction/data-flow shape for every operand.
+    #[inline(always)]
+    pub(crate) fn ge_mask_ct(self, other: Self) -> u128 {
+        #[inline(always)]
+        fn subborrow_word(a: u64, b: u64, borrow: u64) -> u64 {
+            let widened = (a as u128).wrapping_sub((b as u128) + (borrow as u128));
+            // Preserve the arithmetic borrow form through optimization. The
+            // same barrier is measured and documented for Barrett reduction.
+            core::hint::black_box((widened >> 127) as u64)
+        }
+
+        let a = [
+            self.lo as u64,
+            (self.lo >> 64) as u64,
+            self.hi as u64,
+            (self.hi >> 64) as u64,
+        ];
+        let b = [
+            other.lo as u64,
+            (other.lo >> 64) as u64,
+            other.hi as u64,
+            (other.hi >> 64) as u64,
+        ];
+        let borrow0 = subborrow_word(a[0], b[0], 0);
+        let borrow1 = subborrow_word(a[1], b[1], borrow0);
+        let borrow2 = subborrow_word(a[2], b[2], borrow1);
+        let borrow3 = subborrow_word(a[3], b[3], borrow2);
+        0u128.wrapping_sub((borrow3 ^ 1) as u128)
+    }
+
+    /// Select `if_true` when `true_mask` is all ones and `if_false` when it is
+    /// zero. Callers obtain the mask from [`Self::ge_mask_ct`].
+    #[inline(always)]
+    pub(crate) fn select_mask_ct(if_false: Self, if_true: Self, true_mask: u128) -> Self {
+        Self {
+            lo: (if_false.lo & !true_mask) | (if_true.lo & true_mask),
+            hi: (if_false.hi & !true_mask) | (if_true.hi & true_mask),
+        }
     }
     #[inline]
     pub(crate) fn gt(self, other: Self) -> bool {
@@ -385,8 +425,8 @@ impl U256 {
         // mid_carry means the true mid sum had bit 128 set (value 2^128).
         // In the full product, mid contributes at bit offset 64, so bit 128 of
         // mid lands at bit 192 of the product = bit 64 of result_hi.
-        let mid_carry_hi = if mid_carry { 1u128 << 64 } else { 0 };
-        let result_hi = hi_hi + carry2 + mid_carry_hi + if carry1 { 1 } else { 0 };
+        let mid_carry_hi = (mid_carry as u128) << 64;
+        let result_hi = hi_hi + carry2 + mid_carry_hi + (carry1 as u128);
 
         (result_lo, result_hi)
     }
@@ -406,6 +446,21 @@ impl U256 {
             p1_hi == 0 && !carry,
             "U256::mul_u64 overflow: product exceeds 256 bits"
         );
+        Self { lo: p0_lo, hi }
+    }
+
+    /// Fixed-work multiplication by a `u64`, returning the low 256 bits.
+    ///
+    /// The caller must prove the true product fits in 256 bits. This variant
+    /// omits the value-dependent overflow assertion used by the general
+    /// helper; `CompareBit` proves the stronger bound `c_i * (M/m_i) < M` at
+    /// construction and therefore cannot overflow here.
+    #[inline(always)]
+    pub(crate) fn mul_u64_ct(self, m: u64) -> Self {
+        let b = m as u128;
+        let (p0_lo, p0_hi) = Self::wide_mul_256(self.lo, b);
+        let (p1_lo, _) = Self::wide_mul_256(self.hi, b);
+        let (hi, _) = p0_hi.overflowing_add(p1_lo);
         Self { lo: p0_lo, hi }
     }
 
@@ -2554,6 +2609,52 @@ mod tests {
         let result = ctx.to_int(&prod);
 
         assert_eq!(result, 408);
+    }
+
+    #[test]
+    fn u256_fixed_work_compare_matches_unsigned_order_at_word_boundaries() {
+        let values = [
+            U256::zero(),
+            U256::one(),
+            U256 { lo: (1u128 << 127) - 1, hi: 0 },
+            U256 { lo: 1u128 << 127, hi: 0 },
+            U256 { lo: (1u128 << 127) + 1, hi: 0 },
+            U256 { lo: u128::MAX, hi: 0 },
+            U256 { lo: 0, hi: 1 },
+            U256 { lo: u128::MAX, hi: 1u128 << 127 },
+            U256 { lo: u128::MAX, hi: u128::MAX },
+        ];
+
+        for &left in &values {
+            for &right in &values {
+                assert_eq!(
+                    left.ge_ct(right),
+                    left.ge(right),
+                    "fixed-work U256 ordering mismatch: left={left:?}, right={right:?}"
+                );
+                let selected = U256::select_mask_ct(
+                    right,
+                    left,
+                    left.ge_mask_ct(right),
+                );
+                assert_eq!(selected, if left.ge(right) { left } else { right });
+            }
+        }
+    }
+
+    #[test]
+    fn u256_fixed_work_mul_u64_matches_checked_helper_under_proved_bound() {
+        let values = [
+            U256::zero(),
+            U256::one(),
+            U256::from_u128((1u128 << 120) + 17),
+            U256 { lo: u128::MAX, hi: (1u128 << 60) - 1 },
+        ];
+        for value in values {
+            for multiplier in [0u64, 1, 3, 17, u32::MAX as u64] {
+                assert_eq!(value.mul_u64_ct(multiplier), value.mul_u64(multiplier));
+            }
+        }
     }
 
     #[test]

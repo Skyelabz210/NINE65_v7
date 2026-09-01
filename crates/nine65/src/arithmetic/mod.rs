@@ -19,7 +19,7 @@
 
 pub mod barrett;
 pub mod base_ext; // SHENOY-KUMARESAN BASE EXTENSION (kernel only, not wired in — see module docs)
-pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (kernel only, not wired in — see module docs)
+pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (fixed-work D2 decrypt integration)
 #[cfg(test)]
 mod compare_bit_vectors; // external (Python) oracle vectors for compare_bit
 #[cfg(test)]
