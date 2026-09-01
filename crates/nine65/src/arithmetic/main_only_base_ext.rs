@@ -310,11 +310,93 @@ impl MainOnlyBaseExt {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::arithmetic::rns::U512;
 
     /// Ground-truth `X mod a` for a `u128`-range `X` (works for main products
     /// up to 128 bits, i.e. the 4-lane production prefix and all small bases).
     fn residues(x: u128, m: &[u64]) -> Vec<u64> {
         m.iter().map(|&mi| (x % mi as u128) as u64).collect()
+    }
+
+    /// Real production main-prime prefixes (secure_128_deep / 192 / 256).
+    /// 6 lanes ≈ 2^175 — exceeds u128, so ground truth uses `U512`.
+    const MAIN_4: [u64; 4] = [998244353, 985661441, 754974721, 469762049];
+    const MAIN_5: [u64; 5] = [998244353, 985661441, 754974721, 469762049, 167772161];
+    const MAIN_6: [u64; 6] = [
+        998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
+    ];
+    const AUX7: [u64; 7] = [
+        2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081, 3222306817,
+    ];
+
+    /// Build a known `X = sum_i d_i * prod(main[0..i])` in `[0, M)` as `U512`
+    /// from mixed-radix digits `d_i` (Horner over the main primes, high→low).
+    /// Independent of the primitive under test: the oracle owns `X` directly.
+    fn build_x_u512(digits: &[u64], main: &[u64]) -> U512 {
+        let mut acc = U512::zero();
+        for i in (0..main.len()).rev() {
+            acc = acc.mul_u128(main[i] as u128).add(U512::from_u64(digits[i]));
+        }
+        acc
+    }
+
+    /// U512 differential oracle over a real production prefix. Small `X` forces
+    /// the exact fallback; mid-range forces the certified path. No Python.
+    fn oracle_check_u512(main: &[u64], aux: &[u64]) {
+        let ext = MainOnlyBaseExt::new(main, aux).unwrap();
+        let mut out = vec![0u64; aux.len()];
+        let (mut saw_fixed, mut saw_fallback) = (false, false);
+
+        let mut check = |x: &U512| {
+            let r: Vec<u64> = main.iter().map(|&m| x.mod_u64(m)).collect();
+            let path = ext.project(&r, &mut out).unwrap();
+            match path {
+                RankPath::CertifiedFixedPoint => {}
+                RankPath::ExactFallback => {}
+            }
+            for (j, &a) in aux.iter().enumerate() {
+                assert_eq!(out[j], x.mod_u64(a), "x mod {a} mismatch");
+            }
+            path
+        };
+
+        // Small X (0..64): frac(S) ~ 2^-175, forces the exact fallback.
+        for small in 0u64..64 {
+            let digits: Vec<u64> = std::iter::once(small)
+                .chain(std::iter::repeat(0))
+                .take(main.len())
+                .collect();
+            if check(&build_x_u512(&digits, main)) == RankPath::ExactFallback {
+                saw_fallback = true;
+            }
+        }
+
+        // Pseudo-random mid-range X: exercises the certified common path.
+        let mut state: u64 = 0xDEADBEEFCAFEF00D;
+        for _ in 0..4000 {
+            let digits: Vec<u64> = main
+                .iter()
+                .map(|&m| {
+                    state = state
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(1442695040888963407);
+                    state % m
+                })
+                .collect();
+            if check(&build_x_u512(&digits, main)) == RankPath::CertifiedFixedPoint {
+                saw_fixed = true;
+            }
+        }
+
+        assert!(saw_fixed, "certified path never exercised for {main:?}");
+        assert!(saw_fallback, "exact fallback never exercised for {main:?}");
+    }
+
+    #[test]
+    fn production_prefixes_u512_oracle_4_5_6_lanes() {
+        oracle_check_u512(&MAIN_4, &AUX7);
+        oracle_check_u512(&MAIN_5, &AUX7);
+        oracle_check_u512(&MAIN_6, &AUX7);
     }
 
     #[test]
