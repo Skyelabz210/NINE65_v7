@@ -159,7 +159,8 @@ fn parse_args() -> Result<Args, String> {
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         let value = |args: &mut std::iter::Skip<std::env::Args>, flag: &str| {
-            args.next().ok_or_else(|| format!("missing value for {flag}"))
+            args.next()
+                .ok_or_else(|| format!("missing value for {flag}"))
         };
         match arg.as_str() {
             "--config" => parsed.config_name = value(&mut args, "--config")?,
@@ -251,9 +252,7 @@ fn operation_cost(operation: Operation, config: &FHEConfig, rhs: u64) -> i64 {
     match operation {
         Operation::AddCt => NoiseBudget::add_cost(),
         Operation::MulPlain => NoiseBudget::mul_plain_cost(rhs, config),
-        Operation::MulCt => {
-            NoiseBudget::mul_ct_cost(config) + NoiseBudget::relin_cost(config)
-        }
+        Operation::MulCt => NoiseBudget::mul_ct_cost(config) + NoiseBudget::relin_cost(config),
     }
 }
 
@@ -278,8 +277,7 @@ fn should_refresh(
         RefreshMode::Threshold => budget.should_bootstrap(trigger_permille),
         RefreshMode::Exhaustion => !budget.can_perform(next_cost),
         RefreshMode::CandidateWall => {
-            next_is_multiplication
-                && multiplication_count.saturating_add(1) >= candidate_wall
+            next_is_multiplication && multiplication_count.saturating_add(1) >= candidate_wall
         }
     }
 }
@@ -299,9 +297,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         eprintln!("{message}");
         std::io::Error::new(std::io::ErrorKind::InvalidInput, message)
     })?;
-    let config = select_config(&args.config_name).map_err(|message| {
-        std::io::Error::new(std::io::ErrorKind::InvalidInput, message)
-    })?;
+    let config = select_config(&args.config_name)
+        .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidInput, message))?;
 
     let ctx = RNSFHEContext::new(&config);
     let mut rng = ShadowHarvester::with_seed(args.seed);

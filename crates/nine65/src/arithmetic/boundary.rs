@@ -205,24 +205,40 @@ mod tests {
     fn test_capacity_proximity_warn80() {
         // 127*100/158 = 80 → Warn80
         let r = capacity_proximity_bits(127, 158);
-        assert_eq!(r.region, CapacityRegion::Warn80,
-            "127/158 = {}% should be Warn80", r.utilization_pct);
+        assert_eq!(
+            r.region,
+            CapacityRegion::Warn80,
+            "127/158 = {}% should be Warn80",
+            r.utilization_pct
+        );
         // 126*100/158 = 79 → Safe (just below 80% threshold)
         let r_below = capacity_proximity_bits(126, 158);
-        assert_eq!(r_below.region, CapacityRegion::Safe,
-            "126/158 = {}% should be Safe (below 80%)", r_below.utilization_pct);
+        assert_eq!(
+            r_below.region,
+            CapacityRegion::Safe,
+            "126/158 = {}% should be Safe (below 80%)",
+            r_below.utilization_pct
+        );
     }
 
     #[test]
     fn test_capacity_proximity_warn90() {
         // 143*100/158 = 90 → Warn90
         let r = capacity_proximity_bits(143, 158);
-        assert_eq!(r.region, CapacityRegion::Warn90,
-            "143/158 = {}% should be Warn90", r.utilization_pct);
+        assert_eq!(
+            r.region,
+            CapacityRegion::Warn90,
+            "143/158 = {}% should be Warn90",
+            r.utilization_pct
+        );
         // 142*100/158 = 89 → Warn80 (just below 90% threshold)
         let r_below = capacity_proximity_bits(142, 158);
-        assert_eq!(r_below.region, CapacityRegion::Warn80,
-            "142/158 = {}% should be Warn80 (below 90%)", r_below.utilization_pct);
+        assert_eq!(
+            r_below.region,
+            CapacityRegion::Warn80,
+            "142/158 = {}% should be Warn80 (below 90%)",
+            r_below.utilization_pct
+        );
     }
 
     #[test]
@@ -254,7 +270,11 @@ mod tests {
     fn test_post_switch_margin_critical() {
         // value = 248 bits in U256: 248*100/256=96, headroom=4 → critical (< 5)
         let m = post_switch_margin_bits(248, 256);
-        assert!(m.is_critical, "248 bits in U256: headroom={}% should be critical", m.headroom_pct);
+        assert!(
+            m.is_critical,
+            "248 bits in U256: headroom={}% should be critical",
+            m.headroom_pct
+        );
     }
 
     #[test]

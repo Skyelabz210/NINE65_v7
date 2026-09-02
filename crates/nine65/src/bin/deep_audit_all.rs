@@ -1,14 +1,20 @@
 //! Deep Correctness Audit for NINE65 v7.
 //! Checks all security levels (128, 192, 256) and modes (Symmetric, Public, Dual).
 
-use nine65::prelude::*;
-use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::ops::bootstrap::ClockworkBootstrap;
+use nine65::ops::rns_fhe::RNSFHEContext;
+use nine65::prelude::*;
 
 fn audit_config(config_name: &str, secure_config: SecureConfig) {
     let config = secure_config.into_config();
     println!("\n=== Auditing Config: {} ===", config_name);
-    println!("N={}, lanes={}, q0={}, t={}", config.n, config.primes.len(), config.q, config.t);
+    println!(
+        "N={}, lanes={}, q0={}, t={}",
+        config.n,
+        config.primes.len(),
+        config.q,
+        config.t
+    );
 
     let ntt = NTTEngine::new(config.q, config.n);
     let mut rng = ShadowHarvester::with_seed(42);
@@ -19,7 +25,9 @@ fn audit_config(config_name: &str, secure_config: SecureConfig) {
     // Setup Bootstrap for secure_256
     let mut bootstrap = ClockworkBootstrap::new(&config).ok();
     let bootstrap_keys = bootstrap.as_ref().map(|engine| {
-        engine.generate_keys(&dual_keys.secret_key, &mut rng).expect("Bootstrap keygen")
+        engine
+            .generate_keys(&dual_keys.secret_key, &mut rng)
+            .expect("Bootstrap keygen")
     });
 
     let test_val_a: u64 = 42;
@@ -55,7 +63,11 @@ fn audit_config(config_name: &str, secure_config: SecureConfig) {
     if dec_dual == test_val_a % config.t {
         println!("PASS");
     } else {
-        println!("FAIL (Expected {}, got {})", test_val_a % config.t, dec_dual);
+        println!(
+            "FAIL (Expected {}, got {})",
+            test_val_a % config.t,
+            dec_dual
+        );
     }
 
     // 4. Deep Circuit Correctness (Iterative Addition/Multiplication)
@@ -74,8 +86,12 @@ fn audit_config(config_name: &str, secure_config: SecureConfig) {
 
         // Bootstrap if budget low
         if budget.remaining_millibits() < cost {
-            if let (Some(ref engine), Some(ref b_keys)) = (bootstrap.as_ref(), bootstrap_keys.as_ref()) {
-                curr_ct = engine.bootstrap(&curr_ct, &b_keys.bsk, &b_keys.ksk).expect("Bootstrap failed");
+            if let (Some(ref engine), Some(ref b_keys)) =
+                (bootstrap.as_ref(), bootstrap_keys.as_ref())
+            {
+                curr_ct = engine
+                    .bootstrap(&curr_ct, &b_keys.bsk, &b_keys.ksk)
+                    .expect("Bootstrap failed");
                 budget.reset_after_bootstrap(&config);
             }
         }
@@ -90,7 +106,7 @@ fn audit_config(config_name: &str, secure_config: SecureConfig) {
             expected = (expected * 2) % config.t;
             budget.consume(NoiseOpType::MulPlain, cost).ok();
         }
-        
+
         let dec = ctx.decrypt_dual(&curr_ct, &dual_keys.secret_key);
         if dec != expected {
             println!("FAIL at step {} (Expected {}, got {})", i, expected, dec);

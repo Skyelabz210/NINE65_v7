@@ -42,9 +42,7 @@ impl S8Signature {
 
     /// Look up a single residue by prime modulus.
     pub fn residue_mod(&self, p: u32) -> Option<u32> {
-        S8.iter()
-            .position(|&q| q == p)
-            .map(|i| self.residues[i])
+        S8.iter().position(|&q| q == p).map(|i| self.residues[i])
     }
 
     /// True iff every lane matches.

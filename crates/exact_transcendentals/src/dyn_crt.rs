@@ -68,11 +68,9 @@ pub const S8_PRODUCT: u64 = 2 * 3 * 5 * 7 * 11 * 13 * 17 * 19;
 /// Extended SCALE-coprime primes for lane growth beyond S8.
 /// These are coprime to SCALE (gcd(p, 10^4) = 1), appended after S8.
 const SCALE_EXT_PRIMES: [u64; 46] = [
-    23, 29, 31, 37, 41, 43, 47, 53, 59, 61,
-    67, 71, 73, 79, 83, 89, 97, 101, 103, 107,
-    109, 113, 127, 131, 137, 139, 149, 151, 157, 163,
-    167, 173, 179, 181, 191, 193, 197, 199, 211, 223,
-    227, 229, 233, 239, 241, 251,
+    23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
+    127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227,
+    229, 233, 239, 241, 251,
 ];
 
 /// Winding tower moduli: the S8 primes themselves serve as the mixed-radix
@@ -188,10 +186,7 @@ impl WindingCRT {
     /// Lane-parallel addition. NO reconstruction during computation.
     /// Residues are added mod each prime; winding towers are added with carry.
     pub fn add(&self, other: &WindingCRT) -> WindingCRT {
-        assert_eq!(
-            self.primes, other.primes,
-            "WindingCRT::add: basis mismatch"
-        );
+        assert_eq!(self.primes, other.primes, "WindingCRT::add: basis mismatch");
 
         if self.sign == other.sign {
             // Same sign: add residues, add windings
@@ -231,10 +226,7 @@ impl WindingCRT {
     /// Residues multiply mod each prime — this is the noise-free operation.
     /// The winding tower absorbs the overflow exactly.
     pub fn mul(&self, other: &WindingCRT) -> WindingCRT {
-        assert_eq!(
-            self.primes, other.primes,
-            "WindingCRT::mul: basis mismatch"
-        );
+        assert_eq!(self.primes, other.primes, "WindingCRT::mul: basis mismatch");
 
         let result_sign = self.sign != other.sign;
 
@@ -438,8 +430,7 @@ impl PartialEq for WindingCRT {
             // Different bases — fall back to value comparison
             return self.to_i128() == other.to_i128();
         }
-        self.lanes == other.lanes
-            && self.winding_matches(&other.winding)
+        self.lanes == other.lanes && self.winding_matches(&other.winding)
     }
 }
 

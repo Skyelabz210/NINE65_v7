@@ -60,9 +60,11 @@ pub fn cram_mul_dual(
     b.verify().map_err(CramOpError::InputVerifyFailed)?;
     let new_base = ctx
         .mul_dual_public(&a.base, &b.base, eval_key)
-        .map_err(|_| CramOpError::OutputVerifyFailed(
-            exact_transcendentals::cram_ct::LockFailure::TopologyIllFormed,
-        ))?;
+        .map_err(|_| {
+            CramOpError::OutputVerifyFailed(
+                exact_transcendentals::cram_ct::LockFailure::TopologyIllFormed,
+            )
+        })?;
     rewrap_after_op(new_base, a.witness.op_counter.max(b.witness.op_counter) + 1)
 }
 
@@ -410,7 +412,10 @@ mod tests {
             !picked.contains(&23) && !picked.contains(&29),
             "23 and 29 divide the divisor and must be excluded, got {picked:?}"
         );
-        assert!(!picked.is_empty(), "remaining catalogue must still be usable");
+        assert!(
+            !picked.is_empty(),
+            "remaining catalogue must still be usable"
+        );
         for p in &picked {
             assert_ne!(
                 (23i128 * 29) % (*p as i128),

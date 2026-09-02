@@ -362,7 +362,11 @@ fn every_stored_limb_is_a_canonically_reduced_residue_through_the_chain() {
             );
             for (i, limb) in poly.main.iter().enumerate() {
                 let p = ctx.config.primes[i];
-                assert_eq!(limb.len(), ctx.n, "{step}/{which}: main lane {i} wrong width");
+                assert_eq!(
+                    limb.len(),
+                    ctx.n,
+                    "{step}/{which}: main lane {i} wrong width"
+                );
                 if let Some((k, &bad)) = limb.iter().enumerate().find(|(_, &r)| r >= p) {
                     panic!(
                         "{step}/{which}: main lane {i} (p={p}) holds {bad} at coefficient {k} — \
@@ -602,7 +606,11 @@ fn changed_anchor_lanes(a: &DualRNSPoly, b: &DualRNSPoly) -> Vec<usize> {
 }
 
 /// Bump one residue in one main lane by +1 mod p. Nothing else moves.
-fn perturb_main_lane(ctx: &RNSFHEContext, ct: &DualRNSCiphertext, lane: usize) -> DualRNSCiphertext {
+fn perturb_main_lane(
+    ctx: &RNSFHEContext,
+    ct: &DualRNSCiphertext,
+    lane: usize,
+) -> DualRNSCiphertext {
     let p = ctx.config.primes[lane];
     let mut out = ct.clone();
     out.c0.main[lane][0] = (out.c0.main[lane][0] + 1) % p;
@@ -873,7 +881,11 @@ fn exact_division_is_order_equivariant() {
     for &d in &[2u64, 3, 97, 65521] {
         let out_f = exact_divide_dual(&ctx_f, &ct_f, d);
         let out_r = exact_divide_dual(&ctx_r, &ct_r, d);
-        assert_ct_eq(&format!("exact_divide by {d}"), &perm_ct(&out_f, &perm), &out_r);
+        assert_ct_eq(
+            &format!("exact_divide by {d}"),
+            &perm_ct(&out_f, &perm),
+            &out_r,
+        );
     }
 }
 

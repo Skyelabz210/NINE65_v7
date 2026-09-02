@@ -301,8 +301,7 @@ impl Cram {
     /// winding, so this is refused loudly rather than saturated. Use
     /// [`Cram::try_new`] to handle it as a value.
     pub fn new(basis: &[u64], n_regs: usize) -> Self {
-        Self::try_new(basis, n_regs)
-            .expect("basis product must fit i128 with room for its anchor")
+        Self::try_new(basis, n_regs).expect("basis product must fit i128 with room for its anchor")
     }
 
     /// Fallible constructor. `None` if `M + 1` does not fit `i128`.
@@ -379,7 +378,11 @@ impl Cram {
         let (sign, bounds) = match k {
             // Winding only. No lane is consulted.
             Winding::Known(kk) => (
-                if *kk < 0 { Sign::Negative } else { Sign::NonNegative },
+                if *kk < 0 {
+                    Sign::Negative
+                } else {
+                    Sign::NonNegative
+                },
                 Some((kk * self.m, kk * self.m + self.m)),
             ),
             Winding::Undefined(_) => (Sign::Unavailable, None),
@@ -533,12 +536,11 @@ impl Cram {
             Winding::Known(_) => self.canonical(&s),
             Winding::Undefined(_) => {
                 self.destructive_reads += 1;
-                let residues: Vec<(i128, i128)> = s
-                    .r
-                    .iter()
-                    .zip(self.basis.iter())
-                    .map(|(&r, &p)| (r as i128, p as i128))
-                    .collect();
+                let residues: Vec<(i128, i128)> =
+                    s.r.iter()
+                        .zip(self.basis.iter())
+                        .map(|(&r, &p)| (r as i128, p as i128))
+                        .collect();
                 Ok(crate::k_elim::garner_reconstruct(&residues).unwrap_or(0))
             }
         }
@@ -583,7 +585,10 @@ impl Cram {
     /// ```
     fn propagate(&self, s: &Schema, x: &Adelic, y: &Adelic) -> Result<(Winding, i128), CramError> {
         let ops = s.ops();
-        let uniform = ops.first().copied().filter(|first| ops.iter().all(|o| o == first));
+        let uniform = ops
+            .first()
+            .copied()
+            .filter(|first| ops.iter().all(|o| o == first));
         let op = match uniform {
             Some(op) => op,
             None => {
@@ -712,8 +717,7 @@ impl Cram {
                     self.check_reg(*b)?;
                     let s = self.schema(schema)?;
                     let out = s.apply(&self.regs[*a].r, &self.regs[*b].r)?;
-                    let (k, anchor) =
-                        self.propagate(&s, &self.regs[*a], &self.regs[*b])?;
+                    let (k, anchor) = self.propagate(&s, &self.regs[*a], &self.regs[*b])?;
                     let sigma = self.signature_of(&out, &k);
                     let topology = self.regs[*dst].topology;
                     self.regs[*dst] = Adelic {
@@ -866,13 +870,17 @@ mod tests {
         let a = [20 % 3, 20 % 5, 20 % 7, 20 % 11, 20 % 13];
         let b = [6 % 3, 6 % 5, 6 % 7, 6 % 11, 6 % 13];
         let want = [
-            (a[0] + b[0]) % 3,          // Add on ground
-            (a[1] + 5 - b[1]) % 5,      // Sub on surface
-            (a[2] * b[2]) % 7,          // Mul on bridge
-            (a[3] * a[3]) % 11,         // Sqr on shadow (unary, ignores b)
-            a[4],                       // Id on boundary
+            (a[0] + b[0]) % 3,     // Add on ground
+            (a[1] + 5 - b[1]) % 5, // Sub on surface
+            (a[2] * b[2]) % 7,     // Mul on bridge
+            (a[3] * a[3]) % 11,    // Sqr on shadow (unary, ignores b)
+            a[4],                  // Id on boundary
         ];
-        assert_eq!(m.read(2).unwrap(), &want, "each lane must run its own operator");
+        assert_eq!(
+            m.read(2).unwrap(),
+            &want,
+            "each lane must run its own operator"
+        );
     }
 
     /// Direction matters — a schema and its reverse are different machines.
@@ -904,9 +912,24 @@ mod tests {
         m.exec(&[
             Instr::Load { dst: 0, value: 41 },
             Instr::Load { dst: 1, value: 17 },
-            Instr::Apply { dst: 2, a: 0, b: 1, schema: "AAMM_".into() },
-            Instr::Apply { dst: 3, a: 2, b: 1, schema: "MMAA_".into() },
-            Instr::Apply { dst: 0, a: 3, b: 2, schema: "QQQQQ".into() },
+            Instr::Apply {
+                dst: 2,
+                a: 0,
+                b: 1,
+                schema: "AAMM_".into(),
+            },
+            Instr::Apply {
+                dst: 3,
+                a: 2,
+                b: 1,
+                schema: "MMAA_".into(),
+            },
+            Instr::Apply {
+                dst: 0,
+                a: 3,
+                b: 2,
+                schema: "QQQQQ".into(),
+            },
         ])
         .unwrap();
 
@@ -920,7 +943,11 @@ mod tests {
 
         // The single explicit exit is counted.
         let _ = m.project(0).unwrap();
-        assert_eq!(m.projections(), 1, "project() is the only exit and is counted");
+        assert_eq!(
+            m.projections(),
+            1,
+            "project() is the only exit and is counted"
+        );
     }
 
     /// DKAM is gated, not assumed: a basis containing 2 has rho = 2, which no
@@ -975,7 +1002,10 @@ mod tests {
             assert_eq!(m.project(0).unwrap(), v, "v={v}");
             checked += 1;
         }
-        assert!(checked > 100, "must actually sweep the corridor, got {checked}");
+        assert!(
+            checked > 100,
+            "must actually sweep the corridor, got {checked}"
+        );
     }
 
     // ─── Configuration: each lane gets an operator ─────────────────────────
@@ -1040,7 +1070,11 @@ mod tests {
             checked += 1;
         }
         assert_eq!(checked, 1000, "must sweep, not sample");
-        assert_eq!(m.projections(), 0, "the whole sweep stayed in residue space");
+        assert_eq!(
+            m.projections(),
+            0,
+            "the whole sweep stayed in residue space"
+        );
     }
 
     /// Channels come from the aspect table; distinct signatures must not
@@ -1095,7 +1129,11 @@ mod tests {
         assert_eq!(m.anchor(), 15_016);
 
         m.load(0, 3).unwrap();
-        assert_eq!(m.winding(0).unwrap(), &Winding::Known(0), "3 is in the corridor");
+        assert_eq!(
+            m.winding(0).unwrap(),
+            &Winding::Known(0),
+            "3 is in the corridor"
+        );
 
         let powers: [i128; 6] = [
             9,
@@ -1155,11 +1193,11 @@ mod tests {
         let cases: [(i128, i128); 8] = [
             (0, 0),
             (1, 1),
-            (15_014, 1),          // exactly onto the boundary
-            (15_014, 15_014),     // carry
-            (30_030, 30_030),     // both already wound
+            (15_014, 1),      // exactly onto the boundary
+            (15_014, 15_014), // carry
+            (30_030, 30_030), // both already wound
             (123_456, 987_654),
-            (-5, 12),             // negative winding
+            (-5, 12), // negative winding
             (-15_015, -15_015),
         ];
         let mut carried = 0;
@@ -1296,7 +1334,10 @@ mod tests {
             schema: "AAAAA".into(),
         }])
         .unwrap();
-        assert!(m.winding(0).unwrap().known().is_none(), "loss must propagate");
+        assert!(
+            m.winding(0).unwrap().known().is_none(),
+            "loss must propagate"
+        );
     }
 
     /// Chimera 1, enforced. `Div` and `Inv` give `a·b⁻¹ mod p`, which is not
@@ -1404,7 +1445,10 @@ mod tests {
         let mut small = Cram::new(&[3, 5, 7], 1);
         small.load(0, 8).unwrap();
         assert_eq!(small.signature(0).unwrap().parity, Parity::Unavailable);
-        assert_eq!(small.signature(0).unwrap().shadow, ShadowStatus::Unavailable);
+        assert_eq!(
+            small.signature(0).unwrap().shadow,
+            ShadowStatus::Unavailable
+        );
     }
 
     /// The corridor topology pins the winding and wraps. It is a different
@@ -1480,7 +1524,11 @@ mod tests {
         .unwrap();
         let g = m.project(2).unwrap();
         assert_eq!(m.projections(), 2);
-        assert_eq!(m.destructive_reads(), 1, "this one had to consume the residues");
+        assert_eq!(
+            m.destructive_reads(),
+            1,
+            "this one had to consume the residues"
+        );
         assert!((0..15_015).contains(&g), "and it still returns a value");
     }
 

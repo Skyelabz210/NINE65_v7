@@ -252,11 +252,9 @@ impl StarLane {
                     .to_string(),
             });
         }
-        let product = multiplier
-            .checked_mul(base)
-            .ok_or(Nine65Error::Overflow {
-                operation: "star_family_lane: c * t exceeds u64",
-            })?;
+        let product = multiplier.checked_mul(base).ok_or(Nine65Error::Overflow {
+            operation: "star_family_lane: c * t exceeds u64",
+        })?;
         let modulus = product.checked_add(1).ok_or(Nine65Error::Overflow {
             operation: "star_family_lane: c * t + 1 exceeds u64",
         })?;
@@ -973,7 +971,10 @@ mod tests {
     fn star_family_rejects_degenerate_input() {
         assert!(star_family_lane(1, 5).is_err(), "t < 2 must be rejected");
         assert!(star_family_lane(0, 5).is_err(), "t = 0 must be rejected");
-        assert!(star_family_lane(65537, 0).is_err(), "c = 0 must be rejected");
+        assert!(
+            star_family_lane(65537, 0).is_err(),
+            "c = 0 must be rejected"
+        );
         assert!(star_family_lane(2, 1).is_ok(), "smallest legal lane");
     }
 
@@ -1084,7 +1085,10 @@ mod tests {
             }
         }
 
-        assert_eq!(corrected_ok, total, "corrected (gamma - K) must always hold");
+        assert_eq!(
+            corrected_ok, total,
+            "corrected (gamma - K) must always hold"
+        );
         assert!(
             as_written_ok < total,
             "published (gamma + K) form must NOT hold in general; if this ever \
@@ -1188,11 +1192,9 @@ mod tests {
     fn manufactured_delta_exact_for_composite_plaintext_modulus() {
         // t need not be prime: manufacturing does not care.
         for &t in &[12u64, 100, 1024, 65536] {
-            let chain = manufacture_chain(
-                t,
-                &[LaneSpec::new(t, 1_000_003), LaneSpec::new(7, 999_983)],
-            )
-            .expect("chain");
+            let chain =
+                manufacture_chain(t, &[LaneSpec::new(t, 1_000_003), LaneSpec::new(7, 999_983)])
+                    .expect("chain");
             chain.verify_exact_delta().expect("Q/t must be exact");
             let (_, remainder) = chain.modulus().div_rem_u64(t).expect("nonzero");
             assert_eq!(remainder, 0, "t={t}: Q mod t must be 0");
@@ -1210,7 +1212,10 @@ mod tests {
 
         let delta_bits = chain.delta_bit_length();
         let modulus_bits = chain.modulus_bit_length();
-        assert!(delta_bits > 256, "delta should exceed 256 bits, got {delta_bits}");
+        assert!(
+            delta_bits > 256,
+            "delta should exceed 256 bits, got {delta_bits}"
+        );
         assert!(chain.exact_delta().try_to_u128().is_none());
         assert!(chain.exact_delta().try_to_u256().is_none());
 
@@ -1232,9 +1237,15 @@ mod tests {
     fn exact_magnitude_bridges_to_u256_and_agrees_with_it() {
         // Three ~62-bit lanes: fits in U256, exceeds u128.
         let moduli: Vec<u64> = vec![
-            star_family_lane(1 << 31, (1 << 31) - 1).expect("lane").modulus(),
-            star_family_lane(1 << 31, (1 << 31) - 3).expect("lane").modulus(),
-            star_family_lane(1 << 31, (1 << 31) - 5).expect("lane").modulus(),
+            star_family_lane(1 << 31, (1 << 31) - 1)
+                .expect("lane")
+                .modulus(),
+            star_family_lane(1 << 31, (1 << 31) - 3)
+                .expect("lane")
+                .modulus(),
+            star_family_lane(1 << 31, (1 << 31) - 5)
+                .expect("lane")
+                .modulus(),
         ];
         let magnitude = ExactMagnitude::from_factors(&moduli);
         assert!(magnitude.try_to_u128().is_none(), "should exceed u128");
@@ -1269,7 +1280,10 @@ mod tests {
 
     #[test]
     fn manufacture_chain_rejects_degenerate_requests() {
-        assert!(manufacture_chain(1, &[LaneSpec::new(7, 3)]).is_err(), "t < 2");
+        assert!(
+            manufacture_chain(1, &[LaneSpec::new(7, 3)]).is_err(),
+            "t < 2"
+        );
         assert!(manufacture_chain(65537, &[]).is_err(), "empty lane list");
         let err = manufacture_chain(65537, &[LaneSpec::new(u64::MAX, 3)])
             .expect_err("lane must overflow");
@@ -1388,7 +1402,10 @@ mod tests {
             "bound above MAX_SCREEN_BOUND rejected"
         );
         assert!(chain.screen_with_bound(MAX_SCREEN_BOUND).is_ok());
-        assert_eq!(chain.screen().expect("screen").bound(), DEFAULT_MIN_PRIME_FACTOR);
+        assert_eq!(
+            chain.screen().expect("screen").bound(),
+            DEFAULT_MIN_PRIME_FACTOR
+        );
     }
 
     #[test]
@@ -1432,7 +1449,10 @@ mod tests {
                 found += 1;
             }
         }
-        assert!(found >= 2, "expected at least two lanes refused at bound 65537");
+        assert!(
+            found >= 2,
+            "expected at least two lanes refused at bound 65537"
+        );
         for line in wide.report_lines() {
             println!("{line}");
         }
@@ -1443,9 +1463,17 @@ mod tests {
         assert_eq!(smallest_factor_below(16, 256), Some(2));
         assert_eq!(smallest_factor_below(9, 256), Some(3));
         assert_eq!(smallest_factor_below(15, 256), Some(3));
-        assert_eq!(smallest_factor_below(13, 256), Some(13), "value below bound");
+        assert_eq!(
+            smallest_factor_below(13, 256),
+            Some(13),
+            "value below bound"
+        );
         assert_eq!(smallest_factor_below(998_244_353, 256), None, "large prime");
-        assert_eq!(smallest_factor_below(257 * 263, 256), None, "no small factor");
+        assert_eq!(
+            smallest_factor_below(257 * 263, 256),
+            None,
+            "no small factor"
+        );
         assert_eq!(smallest_factor_below(257 * 263, 258), Some(257));
     }
 }

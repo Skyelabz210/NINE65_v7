@@ -26,16 +26,27 @@ fn chain_is_manufactured_by_construction() {
     let q_product: u128 = c.primes.iter().map(|&p| p as u128).product();
 
     assert_eq!(c.primes[0], c.t, "t itself is the surviving main lane");
-    assert_eq!(q_product % c.t as u128, 0, "t | Q exactly — manufactured, not hunted");
+    assert_eq!(
+        q_product % c.t as u128,
+        0,
+        "t | Q exactly — manufactured, not hunted"
+    );
     let delta = q_product / c.t as u128;
     let delta_expected: u128 = c.primes[1..].iter().map(|&p| p as u128).product();
-    assert_eq!(delta, delta_expected, "Delta = Q/t is exactly the Delta-lane product");
+    assert_eq!(
+        delta, delta_expected,
+        "Delta = Q/t is exactly the Delta-lane product"
+    );
 
     for &p in &c.primes {
         assert_eq!(p % two_n, 1, "lane {p} must be NTT-friendly (≡ 1 mod 2N)");
     }
     for &d in &c.primes[1..] {
-        assert_eq!(d % c.t, 1, "Delta-lane {d} must be ≡ 1 mod t (star transparency)");
+        assert_eq!(
+            d % c.t,
+            1,
+            "Delta-lane {d} must be ≡ 1 mod t (star transparency)"
+        );
         let cc = (d - 1) / c.t;
         assert_eq!(cc % two_n, 0, "multiplier of {d} must be ≡ 0 mod 2N");
     }
@@ -49,7 +60,10 @@ fn encrypt_decrypt_roundtrip_on_manufactured_chain() {
     let ctx = RNSFHEContext::new(&cfg());
     let mut rng = ShadowHarvester::with_seed(42);
     let keys = ctx.generate_keys_dual_full(&mut rng);
-    for (i, m) in [0u64, 1, 2, 97, 30030, 65535, 65536].into_iter().enumerate() {
+    for (i, m) in [0u64, 1, 2, 97, 30030, 65535, 65536]
+        .into_iter()
+        .enumerate()
+    {
         let mut r = ShadowHarvester::with_seed(1000 + i as u64);
         let ct = ctx.encrypt_dual(m, &keys.public_key, &mut r);
         assert_eq!(ctx.decrypt_dual(&ct, &keys.secret_key), m % ctx.t);
@@ -65,8 +79,16 @@ fn m2b_public_multiply_roundtrip_battery() {
 
     let t = eval.context().t;
     let pairs: Vec<(u64, u64)> = vec![
-        (2, 3), (6, 7), (0, 5), (1, 1), (255, 255), (251, 257),
-        (1000, 65), (12345, 5), (100, 100), (65535, 1),
+        (2, 3),
+        (6, 7),
+        (0, 5),
+        (1, 1),
+        (255, 255),
+        (251, 257),
+        (1000, 65),
+        (12345, 5),
+        (100, 100),
+        (65535, 1),
     ];
     for (i, (m1, m2)) in pairs.into_iter().enumerate() {
         let mut r1 = ShadowHarvester::with_seed(2000 + 2 * i as u64);
@@ -169,7 +191,11 @@ fn manufactured_gadget_multiply_ledger_shows_elimination_first() {
     let gadget_ct = eval
         .mul_manufactured_gadget(&a, &b, &gadget)
         .expect("gadget multiply");
-    assert_eq!(eval.decrypt(&gadget_ct, &client), 15, "gadget multiply correctness");
+    assert_eq!(
+        eval.decrypt(&gadget_ct, &client),
+        15,
+        "gadget multiply correctness"
+    );
     assert_eq!(
         eval.ledger().materialization_count(),
         materialization_before,
@@ -190,7 +216,11 @@ fn manufactured_gadget_multiply_ledger_shows_elimination_first() {
     // Never-vacuous: the digit-based path, same evaluator/ledger, must
     // still record Materialization.
     let digit_ct = eval.mul_manufactured(&a, &b, &pk).expect("digit multiply");
-    assert_eq!(eval.decrypt(&digit_ct, &client), 15, "digit multiply correctness");
+    assert_eq!(
+        eval.decrypt(&digit_ct, &client),
+        15,
+        "digit multiply correctness"
+    );
     assert_eq!(
         eval.ledger().materialization_count(),
         materialization_before + 1,

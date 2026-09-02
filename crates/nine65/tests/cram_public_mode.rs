@@ -41,8 +41,12 @@ fn setup(
     (eval, public_keys, client_keys)
 }
 
-fn encrypt(eval: &CramPublicEvaluator, keys: &nine65::ops::cram_public::CramClientKeys,
-           m: u64, seed: u64) -> DualRNSCiphertext {
+fn encrypt(
+    eval: &CramPublicEvaluator,
+    keys: &nine65::ops::cram_public::CramClientKeys,
+    m: u64,
+    seed: u64,
+) -> DualRNSCiphertext {
     let mut rng = ShadowHarvester::with_seed(seed);
     eval.encrypt_with_rng(m, &keys.public_key, &mut rng)
 }
@@ -174,7 +178,11 @@ fn lane_local_ops_stay_lane_local_through_the_public_surface() {
 
         let cases: Vec<(&str, DualRNSCiphertext, DualRNSCiphertext)> = vec![
             ("add", eval.add(&a, &b), eval.add(&ap, &b)),
-            ("add_plain", eval.add_plain(&a, 12345), eval.add_plain(&ap, 12345)),
+            (
+                "add_plain",
+                eval.add_plain(&a, 12345),
+                eval.add_plain(&ap, 12345),
+            ),
             ("mul_plain", eval.mul_plain(&a, 97), eval.mul_plain(&ap, 97)),
             ("negate", eval.negate(&a), eval.negate(&ap)),
             (
@@ -225,7 +233,11 @@ fn multiply_is_recorded_as_a_materialization_pinned() {
     let b = encrypt(&eval, &client, 7, 13);
     let before = eval.ledger().materialization_count();
     let ab = eval.mul(&a, &b, &pk).expect("public multiply");
-    assert_eq!(eval.decrypt(&ab, &client), 42, "correctness is not in question");
+    assert_eq!(
+        eval.decrypt(&ab, &client),
+        42,
+        "correctness is not in question"
+    );
     assert_eq!(
         eval.ledger().materialization_count(),
         before + 1,
@@ -234,5 +246,8 @@ fn multiply_is_recorded_as_a_materialization_pinned() {
     let last = eval.ledger().events().last().unwrap();
     assert_eq!(last.op, "mul");
     assert_eq!(last.class, EmissionClass::Materialization);
-    assert!(eval.ledger().report().contains("R8 materialization on the hot path"));
+    assert!(eval
+        .ledger()
+        .report()
+        .contains("R8 materialization on the hot path"));
 }

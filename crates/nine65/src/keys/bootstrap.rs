@@ -355,9 +355,7 @@ impl KeySwitchKey {
         // We need to re-encode under each boot prime. This is the working
         // secret key in a bare Vec -- zeroize the temporary on drop.
         let work_s_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
-            work_sk
-                .s
-                .main[0]
+            work_sk.s.main[0]
                 .iter()
                 .map(|&c| {
                     if c == 0 {

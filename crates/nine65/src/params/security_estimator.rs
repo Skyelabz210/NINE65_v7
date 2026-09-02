@@ -532,11 +532,7 @@ pub enum LaneFinding {
     /// small prime factor discovered inside a composite base, `exponent` is 1
     /// and `bits` is that factor's own width — a lower bound on the true
     /// component, since the rest of the base's factorization is not visible.
-    NarrowLane {
-        base: u64,
-        exponent: u32,
-        bits: u32,
-    },
+    NarrowLane { base: u64, exponent: u32, bits: u32 },
 
     /// The declared base is composite, so the caller's "factorization" is not
     /// one and the true lane structure is not visible to the screen.
@@ -550,7 +546,11 @@ pub enum LaneFinding {
     /// Two lanes are not coprime. Reported, never fatal on its own: the CRAM
     /// architecture treats a shared factor as a syndrome regime rather than an
     /// error, so this screen records it and lets the caller decide.
-    SharedFactor { lane_a: u64, lane_b: u64, common: u64 },
+    SharedFactor {
+        lane_a: u64,
+        lane_b: u64,
+        common: u64,
+    },
 
     /// `base < 2` or `exponent == 0`: not a modulus lane at all.
     DegenerateLane { base: u64, exponent: u32 },
@@ -1020,8 +1020,12 @@ impl LatticeSecurityEstimator {
     ) -> FactoredDualEstimate {
         let core_svp = LatticeSecurityEstimator::new(CostModel::CoreSVP)
             .estimate_with_factorization(n, factors, secret_distribution, claimed_security);
-        let matzov = LatticeSecurityEstimator::new(CostModel::MATZOV)
-            .estimate_with_factorization(n, factors, secret_distribution, claimed_security);
+        let matzov = LatticeSecurityEstimator::new(CostModel::MATZOV).estimate_with_factorization(
+            n,
+            factors,
+            secret_distribution,
+            claimed_security,
+        );
 
         let binding_bits = match (core_svp.effective_bits(), matzov.effective_bits()) {
             (Some(a), Some(b)) => Some(a.min(b)),
@@ -1834,8 +1838,12 @@ mod tests {
     #[test]
     fn factored_screen_refuses_power_of_two_2_pow_90_at_n_8192() {
         let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
-        let screened =
-            estimator.estimate_with_factorization(8192, &[(2, 90)], SecretDistribution::Ternary, 128);
+        let screened = estimator.estimate_with_factorization(
+            8192,
+            &[(2, 90)],
+            SecretDistribution::Ternary,
+            128,
+        );
         println!("\n2^90 @ n=8192:\n{}", screened.analysis);
 
         // The requirement: 2^90 must NOT come back as meeting 128 bits.
@@ -1892,7 +1900,10 @@ mod tests {
                 SecretDistribution::Ternary,
                 128,
             );
-        println!("\n3 x 30-bit NTT primes @ n=8192:\n{}", dual.core_svp.analysis);
+        println!(
+            "\n3 x 30-bit NTT primes @ n=8192:\n{}",
+            dual.core_svp.analysis
+        );
 
         assert!(dual.core_svp.is_screened());
         assert!(dual.matzov.is_screened());
@@ -2107,12 +2118,8 @@ mod tests {
         assert!(!screened.is_unscreened_regime());
 
         // The width-only screen passes the very same modulus.
-        let width_only = estimator.estimate(
-            8192,
-            screened.total_log_q,
-            SecretDistribution::Ternary,
-            128,
-        );
+        let width_only =
+            estimator.estimate(8192, screened.total_log_q, SecretDistribution::Ternary, 128);
         assert!(
             width_only.meets_claim,
             "the width-only screen sees only {} bits and passes it",
@@ -2351,7 +2358,10 @@ mod tests {
 
         // Exact product bit lengths, integer-only limb arithmetic.
         assert_eq!(product_bit_length(&[(2, 90)]), Some(91));
-        assert_eq!(product_bit_length(&[(2, 3), (3, 2), (5, 2), (7, 2)]), Some(17)); // 88200
+        assert_eq!(
+            product_bit_length(&[(2, 3), (3, 2), (5, 2), (7, 2)]),
+            Some(17)
+        ); // 88200
         assert_eq!(product_bit_length(&NTT_CHAIN_90_BIT), Some(90));
         assert_eq!(product_bit_length(&[(65537, 1), (998244353, 1)]), Some(46));
         // Beyond the limb cap the screen declines rather than truncating.

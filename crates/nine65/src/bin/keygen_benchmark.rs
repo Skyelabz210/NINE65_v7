@@ -1,8 +1,8 @@
 //! Key Generation Benchmark for NINE65 v7.
 //! Measures latency and estimates key sizes across all security tiers.
 
-use nine65::prelude::*;
 use nine65::ops::rns_fhe::RNSFHEContext;
+use nine65::prelude::*;
 use std::time::Instant;
 
 fn main() {
@@ -34,7 +34,7 @@ fn main() {
         // A ciphertext is 2 polynomials, each N * primes * u64.
         let poly_size = config.n * config.primes.len() * 8;
         let ct_size = 2 * poly_size;
-        
+
         // KeySet structure:
         // public_key: 1 ciphertext
         // eval_key: relin_key (vector of ciphertexts) + rotation_keys (map of ciphertexts)

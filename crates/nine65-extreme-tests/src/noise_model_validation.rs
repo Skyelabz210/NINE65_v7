@@ -6,10 +6,10 @@
 
 #[cfg(test)]
 mod tests {
+    use nine65::entropy::shadow::ShadowHarvester;
     use nine65::noise::budget::{NoiseBudget, NoiseOpType};
     use nine65::ops::rns_fhe::RNSFHEContext;
     use nine65::params::secure_configs::SecureConfig;
-    use nine65::entropy::shadow::ShadowHarvester;
 
     /// Q1: Noise estimates must be conservative (budget coverage for 1 mul).
     #[test]
@@ -29,7 +29,8 @@ mod tests {
         assert!(
             estimated_remaining_after_1_mul > 0,
             "secure_128 budget exhausted by first multiplication: initial={} mul_cost={}",
-            initial_mb, mul_cost
+            initial_mb,
+            mul_cost
         );
 
         println!(
@@ -40,11 +41,16 @@ mod tests {
         // Encrypt and multiply once — must decrypt correctly.
         let ct_a = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
         let ct_b = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
-        let ct_mul = ctx.mul_dual_public(&ct_a, &ct_b, &keys.eval_key).expect("multiplication");
+        let ct_mul = ctx
+            .mul_dual_public(&ct_a, &ct_b, &keys.eval_key)
+            .expect("multiplication");
         let recovered = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
         let expected = (m * m) % config.t;
-        assert_eq!(recovered, expected,
-            "Decryption failed after 1 mul: got {} expected {}", recovered, expected);
+        assert_eq!(
+            recovered, expected,
+            "Decryption failed after 1 mul: got {} expected {}",
+            recovered, expected
+        );
     }
 
     /// Q2: Noise accumulation must be deterministic — same circuit, same cost.
@@ -110,14 +116,16 @@ mod tests {
         assert!(
             post_bootstrap_remaining > pre_bootstrap_remaining,
             "Bootstrap must increase noise budget: pre={} post={}",
-            pre_bootstrap_remaining, post_bootstrap_remaining
+            pre_bootstrap_remaining,
+            post_bootstrap_remaining
         );
 
         // Must be deterministic.
         let mut budget2 = NoiseBudget::from_config(&config);
         budget2.reset_after_bootstrap(&config);
         assert_eq!(
-            post_bootstrap_remaining, budget2.remaining_millibits(),
+            post_bootstrap_remaining,
+            budget2.remaining_millibits(),
             "Post-bootstrap budget is non-deterministic"
         );
 
@@ -137,12 +145,15 @@ mod tests {
         let before = budget.remaining_millibits();
 
         if rescale_cost < 0 {
-            budget.consume(NoiseOpType::Rescale, rescale_cost).expect("rescale should succeed");
+            budget
+                .consume(NoiseOpType::Rescale, rescale_cost)
+                .expect("rescale should succeed");
             let after = budget.remaining_millibits();
             assert!(
                 after > before,
                 "Rescaling must increase remaining budget: before={} after={}",
-                before, after
+                before,
+                after
             );
         } else {
             let _ = budget.consume(NoiseOpType::Rescale, rescale_cost);

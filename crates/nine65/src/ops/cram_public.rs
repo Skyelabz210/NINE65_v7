@@ -234,9 +234,15 @@ impl CramPublicEvaluator {
     pub fn keygen_with_gadget_with_rng<R: FheRng>(
         &self,
         rng: &mut R,
-    ) -> Nine65Result<(CramPublicKeys, crate::ops::rns_fhe::DualRNSGadgetKey, CramClientKeys)> {
+    ) -> Nine65Result<(
+        CramPublicKeys,
+        crate::ops::rns_fhe::DualRNSGadgetKey,
+        CramClientKeys,
+    )> {
         let keys = self.ctx.generate_keys_dual_full_public_deep_with_rng(rng);
-        let gadget = self.ctx.generate_gadget_key_with_rng(&keys.secret_key, rng)?;
+        let gadget = self
+            .ctx
+            .generate_gadget_key_with_rng(&keys.secret_key, rng)?;
         Ok((
             CramPublicKeys {
                 public_key: keys.public_key.clone(),
@@ -330,7 +336,10 @@ impl CramPublicEvaluator {
         let divide_lane = |limb: &[u64], prime: u64| -> Nine65Result<Vec<u64>> {
             let inv = Self::lane_reciprocal(d, prime)? as u128;
             let p = prime as u128;
-            Ok(limb.iter().map(|&r| ((r as u128 * inv) % p) as u64).collect())
+            Ok(limb
+                .iter()
+                .map(|&r| ((r as u128 * inv) % p) as u64)
+                .collect())
         };
         let mut main = Vec::with_capacity(poly.main.len());
         for (i, limb) in poly.main.iter().enumerate() {
@@ -369,8 +378,11 @@ impl CramPublicEvaluator {
         b: &DualRNSCiphertext,
         keys: &CramPublicKeys,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let out = self.ctx.mul_dual_public_manufactured(a, b, &keys.eval_key)?;
-        self.ledger.record("mul_m2b", EmissionClass::Materialization);
+        let out = self
+            .ctx
+            .mul_dual_public_manufactured(a, b, &keys.eval_key)?;
+        self.ledger
+            .record("mul_m2b", EmissionClass::Materialization);
         Ok(out)
     }
 
@@ -396,7 +408,8 @@ impl CramPublicEvaluator {
         gadget: &crate::ops::rns_fhe::DualRNSGadgetKey,
     ) -> Nine65Result<DualRNSCiphertext> {
         let out = self.ctx.mul_dual_public_manufactured_gadget(a, b, gadget)?;
-        self.ledger.record("mul_m3_gadget", EmissionClass::EliminationFirst);
+        self.ledger
+            .record("mul_m3_gadget", EmissionClass::EliminationFirst);
         Ok(out)
     }
 

@@ -89,10 +89,7 @@ pub fn validate_residue_division_request(
 ) -> Nine65Result<()> {
     validate_main_family(request.basis.main_moduli)?;
     validate_anchor_family(request.basis.anchor_moduli)?;
-    validate_cross_family(
-        request.basis.main_moduli,
-        request.basis.anchor_moduli,
-    )?;
+    validate_cross_family(request.basis.main_moduli, request.basis.anchor_moduli)?;
 
     if output_modulus < 2 {
         return Err(Nine65Error::InvalidParameter {
@@ -157,10 +154,7 @@ pub fn validate_residue_division_request(
         request.basis.anchor_moduli,
     )?;
 
-    if !anchor_capacity_covers_bound(
-        request.basis.anchor_moduli,
-        request.quotient_bound,
-    ) {
+    if !anchor_capacity_covers_bound(request.basis.anchor_moduli, request.quotient_bound) {
         return Err(Nine65Error::InvalidParameter {
             message: format!(
                 "anchor capacity does not cover quotient bound {}",
@@ -387,39 +381,56 @@ mod tests {
 
     #[test]
     fn class_f_and_class_r_rules_are_enforced() {
-        let composite_main = valid_request(
-            &[15, 17], &[23], &[1, 1], &[1], &[0, 0], &[1], &[15, 17], 2,
-        );
+        let composite_main =
+            valid_request(&[15, 17], &[23], &[1, 1], &[1], &[0, 0], &[1], &[15, 17], 2);
         assert!(validate_residue_division_request(composite_main, 31).is_err());
 
         let noncoprime_anchor = valid_request(
-            &[17, 19], &[23, 46], &[1, 1], &[1, 1], &[0, 0], &[1, 1], &[17, 19], 2,
+            &[17, 19],
+            &[23, 46],
+            &[1, 1],
+            &[1, 1],
+            &[0, 0],
+            &[1, 1],
+            &[17, 19],
+            2,
         );
         assert!(validate_residue_division_request(noncoprime_anchor, 31).is_err());
     }
 
     #[test]
     fn shape_and_reduction_errors_fail_closed() {
-        let wrong_shape = valid_request(
-            &[17, 19], &[23], &[1], &[1], &[0, 0], &[1], &[17, 19], 2,
-        );
+        let wrong_shape = valid_request(&[17, 19], &[23], &[1], &[1], &[0, 0], &[1], &[17, 19], 2);
         assert!(validate_residue_division_request(wrong_shape, 31).is_err());
 
         let unreduced = valid_request(
-            &[17, 19], &[23], &[17, 1], &[1], &[0, 0], &[1], &[17, 19], 2,
+            &[17, 19],
+            &[23],
+            &[17, 1],
+            &[1],
+            &[0, 0],
+            &[1],
+            &[17, 19],
+            2,
         );
         assert!(validate_residue_division_request(unreduced, 31).is_err());
     }
 
     #[test]
     fn anchor_capacity_must_cover_quotient_bound() {
-        let insufficient = valid_request(
-            &[17, 19], &[5], &[1, 1], &[1], &[0, 0], &[1], &[17, 19], 6,
-        );
+        let insufficient =
+            valid_request(&[17, 19], &[5], &[1, 1], &[1], &[0, 0], &[1], &[17, 19], 6);
         assert!(validate_residue_division_request(insufficient, 31).is_err());
 
         let sufficient = valid_request(
-            &[17, 19], &[5, 7], &[1, 1], &[1, 1], &[0, 0], &[1, 1], &[17, 19], 31,
+            &[17, 19],
+            &[5, 7],
+            &[1, 1],
+            &[1, 1],
+            &[0, 0],
+            &[1, 1],
+            &[17, 19],
+            31,
         );
         assert!(validate_residue_division_request(sufficient, 31).is_ok());
     }
@@ -427,7 +438,14 @@ mod tests {
     #[test]
     fn incomplete_certificate_is_rejected() {
         let request = valid_request(
-            &[17, 19], &[23, 29], &[3, 5], &[7, 11], &[0, 0], &[2, 3], &[17, 19], 31,
+            &[17, 19],
+            &[23, 29],
+            &[3, 5],
+            &[7, 11],
+            &[0, 0],
+            &[2, 3],
+            &[17, 19],
+            31,
         );
         let result = ResidueDivisionResult {
             quotient_mod_output: 4,

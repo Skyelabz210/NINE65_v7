@@ -519,7 +519,10 @@ where
     for depth in 1..=dmax {
         if start.elapsed() > cap {
             stop = Stop::Timeout;
-            println!("-- wall-clock cap {}s reached before depth {depth}", cap.as_secs());
+            println!(
+                "-- wall-clock cap {}s reached before depth {depth}",
+                cap.as_secs()
+            );
             break;
         }
 
@@ -748,7 +751,10 @@ fn exact_division_reduces_noise_in_proportion_to_the_divisor() {
         let m = 1u64;
         let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
         let before = measure(&ctx, &ct, sk, 0, m);
-        assert!(before.correct, "d={d}: the fresh ciphertext did not decrypt");
+        assert!(
+            before.correct,
+            "d={d}: the fresh ciphertext did not decrypt"
+        );
 
         let scaled = ctx.mul_plain_dual(&ct, d);
         let after_mul = measure(&ctx, &scaled, sk, 0, d * m);
@@ -763,7 +769,11 @@ fn exact_division_reduces_noise_in_proportion_to_the_divisor() {
         let after_div = measure(&ctx, &divided, sk, 0, m);
 
         // The basis did not move.
-        assert_eq!(divided.c0.main.len(), ct.c0.main.len(), "d={d}: lane dropped");
+        assert_eq!(
+            divided.c0.main.len(),
+            ct.c0.main.len(),
+            "d={d}: lane dropped"
+        );
         assert_eq!(
             divided.c0.anchor.len(),
             ct.c0.anchor.len(),
@@ -954,8 +964,16 @@ fn two_chains_compared_plain_vs_exact_division() {
         println!(
             "{:>6} | {:>12} | {:>12} | {:>12}",
             i,
-            if x.correct { mb(x.noise_mb) } else { "-".into() },
-            if y.correct { mb(y.noise_mb) } else { "-".into() },
+            if x.correct {
+                mb(x.noise_mb)
+            } else {
+                "-".into()
+            },
+            if y.correct {
+                mb(y.noise_mb)
+            } else {
+                "-".into()
+            },
             if x.correct && y.correct {
                 mb(y.noise_mb - x.noise_mb)
             } else {

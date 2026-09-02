@@ -458,13 +458,19 @@ mod tests {
         let auto = Accelerator::auto();
         let seq = Accelerator::new(AcceleratorConfig::sequential());
 
-        assert!(auto.config.lane_parallel_threshold <= 8,
-            "auto config must engage at production lane counts (8-16)");
+        assert!(
+            auto.config.lane_parallel_threshold <= 8,
+            "auto config must engage at production lane counts (8-16)"
+        );
         assert_eq!(seq.config.lane_parallel_threshold, usize::MAX);
 
         let work = |i: usize| -> Vec<u64> {
-            let p = [23u64, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89][i % 16];
-            (0..128u64).map(|x| x.wrapping_mul(p).wrapping_add(i as u64) % p).collect()
+            let p = [
+                23u64, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89,
+            ][i % 16];
+            (0..128u64)
+                .map(|x| x.wrapping_mul(p).wrapping_add(i as u64) % p)
+                .collect()
         };
 
         for lanes in [1usize, 2, 8, 16] {

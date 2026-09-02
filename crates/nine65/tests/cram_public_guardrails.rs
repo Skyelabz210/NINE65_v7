@@ -19,7 +19,9 @@
 //! `extended_gcd`, `FHEConfig::manufactured_m2b_insecure`).
 
 use nine65::arithmetic::rns::U256;
-use nine65::arithmetic::unified_rescale::{exact_delta_rescale, DeltaRounding, RescaleChain, RescaleExit};
+use nine65::arithmetic::unified_rescale::{
+    exact_delta_rescale, DeltaRounding, RescaleChain, RescaleExit,
+};
 use nine65::params::primes::extended_gcd;
 use nine65::params::FHEConfig;
 
@@ -48,7 +50,10 @@ fn cram_public_guardrail_unsigned_bound_certificate_must_be_4nq_not_2nq() {
     let n = cfg.n as u128;
     let t = cfg.t;
     let lanes: Vec<u64> = cfg.primes.clone();
-    let t_idx = lanes.iter().position(|&p| p == t).expect("t must be a main lane");
+    let t_idx = lanes
+        .iter()
+        .position(|&p| p == t)
+        .expect("t must be a main lane");
     let delta_idx: Vec<usize> = (0..lanes.len()).filter(|&i| i != t_idx).collect();
 
     let q_product: u128 = lanes.iter().map(|&p| p as u128).product();
@@ -57,20 +62,28 @@ fn cram_public_guardrail_unsigned_bound_certificate_must_be_4nq_not_2nq() {
     // Anchor primes available to build subsets from — the same canonical
     // set the manufactured chain draws its certificate anchors from.
     let avoid = nine65::arithmetic::DualRNSContext::canonical_anchor_primes_for_n(cfg.n);
-    assert!(avoid.len() >= 2, "test setup: need at least 2 anchor primes to build a short-by-one subset");
+    assert!(
+        avoid.len() >= 2,
+        "test setup: need at least 2 anchor primes to build a short-by-one subset"
+    );
 
     // Correctly sized subset: smallest prefix whose product clears the real
     // certificate 4*N*Q+1 (the same threshold the shipped rescale uses).
     let mut correct: Vec<u64> = Vec::new();
     let mut cap_correct: u128 = 1;
     for &a in &avoid {
-        cap_correct = cap_correct.checked_mul(a as u128).expect("test bound: capacity overflow");
+        cap_correct = cap_correct
+            .checked_mul(a as u128)
+            .expect("test bound: capacity overflow");
         correct.push(a);
         if cap_correct > four_nq_plus_1 {
             break;
         }
     }
-    assert!(cap_correct > four_nq_plus_1, "test setup: correct subset must clear 4*N*Q+1");
+    assert!(
+        cap_correct > four_nq_plus_1,
+        "test setup: correct subset must clear 4*N*Q+1"
+    );
     assert!(correct.len() >= 2, "test setup: correct subset needs >=2 anchors for a meaningful short-by-one undersized subset");
 
     // Undersized subset: exactly ONE fewer anchor than the certificate
@@ -81,14 +94,23 @@ fn cram_public_guardrail_unsigned_bound_certificate_must_be_4nq_not_2nq() {
     // worst-case winding strictly between the two.
     let undersized: Vec<u64> = correct[..correct.len() - 1].to_vec();
     let cap_under: u128 = undersized.iter().map(|&a| a as u128).product();
-    assert!(cap_under < four_nq_plus_1, "test setup: undersized subset must NOT clear the real certificate");
+    assert!(
+        cap_under < four_nq_plus_1,
+        "test setup: undersized subset must NOT clear the real certificate"
+    );
 
     // K_true = the true sound worst-case bound from the charter analysis
     // (4*N*Q, just under the certificate 4*N*Q+1) — realistic, not
     // adversarially tiny-but-technically-over-cap_under.
     let k_true: u128 = 4 * n * q_product;
-    assert!(k_true > cap_under, "test setup: K_true must exceed the undersized capacity to alias");
-    assert!(k_true < cap_correct, "test setup: K_true must fit under the correct capacity to reconstruct exactly");
+    assert!(
+        k_true > cap_under,
+        "test setup: K_true must exceed the undersized capacity to alias"
+    );
+    assert!(
+        k_true < cap_correct,
+        "test setup: K_true must fit under the correct capacity to reconstruct exactly"
+    );
 
     let chain_under = RescaleChain::new(&lanes, &delta_idx, t, &undersized).unwrap();
     let chain_correct = RescaleChain::new(&lanes, &delta_idx, t, &correct).unwrap();
@@ -144,12 +166,14 @@ fn cram_public_guardrail_unsigned_bound_certificate_must_be_4nq_not_2nq() {
     .unwrap();
 
     assert_eq!(
-        out_correct.winding_k_u128().unwrap(), k_true,
+        out_correct.winding_k_u128().unwrap(),
+        k_true,
         "the correctly-certified (4*N*Q+1) anchor subset must recover the true \
          winding exactly — if this fails, the certificate math itself is broken"
     );
     assert_ne!(
-        out_under.winding_k_u128().unwrap(), k_true,
+        out_under.winding_k_u128().unwrap(),
+        k_true,
         "REGRESSION-SHAPE FAILURE: the short-by-one-anchor subset recovered the \
          true winding anyway — either K_true was not actually placed above the \
          undersized capacity (widen the test construction), or aliasing stopped \
@@ -177,16 +201,26 @@ fn cram_public_guardrail_derived_inverse_matches_egcd_for_every_delta_lane() {
     let cfg = FHEConfig::manufactured_m2b_insecure();
     let t = cfg.t;
     let delta_lanes = &cfg.primes[1..];
-    assert!(delta_lanes.len() >= 2, "test setup: manufactured chain must have Delta-lanes");
+    assert!(
+        delta_lanes.len() >= 2,
+        "test setup: manufactured chain must have Delta-lanes"
+    );
 
     let mut checked = 0usize;
     for &d in delta_lanes {
-        assert_eq!((d - 1) % t, 0, "Delta-lane {d} must satisfy D = c*t + 1 by construction");
+        assert_eq!(
+            (d - 1) % t,
+            0,
+            "Delta-lane {d} must satisfy D = c*t + 1 by construction"
+        );
         let c = (d - 1) / t;
         let derived_inv = d - c; // the star-family free read-off, G5-clean
 
         let (g, x, _y) = extended_gcd(t as i128, d as i128);
-        assert_eq!(g, 1, "t and Delta-lane {d} must be coprime (D ≡ 1 mod t by construction)");
+        assert_eq!(
+            g, 1,
+            "t and Delta-lane {d} must be coprime (D ≡ 1 mod t by construction)"
+        );
         let egcd_inv = ((x % d as i128) + d as i128) % d as i128;
 
         assert_eq!(
@@ -197,7 +231,10 @@ fn cram_public_guardrail_derived_inverse_matches_egcd_for_every_delta_lane() {
         );
         checked += 1;
     }
-    assert!(checked >= 2, "sweep must not go vacuous — manufactured chain must expose Delta-lanes");
+    assert!(
+        checked >= 2,
+        "sweep must not go vacuous — manufactured chain must expose Delta-lanes"
+    );
 }
 
 /// T2 tripwire 2b — pins the SHIPPED certificate derivation itself.

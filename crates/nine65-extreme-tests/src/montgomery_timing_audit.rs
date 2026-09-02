@@ -40,8 +40,11 @@ mod tests {
         for &a in test_values {
             let a_mont = ctx.to_montgomery(a);
             let recovered = ctx.from_montgomery(a_mont);
-            assert_eq!(recovered, a,
-                "Montgomery roundtrip failed for {}: got {}", a, recovered);
+            assert_eq!(
+                recovered, a,
+                "Montgomery roundtrip failed for {}: got {}",
+                a, recovered
+            );
         }
     }
 
@@ -59,9 +62,11 @@ mod tests {
                 let b_mont = ctx.to_montgomery(b);
                 let result_mont = ctx.montgomery_mul(a_mont, b_mont);
                 let result = ctx.from_montgomery(result_mont);
-                assert_eq!(result, expected,
+                assert_eq!(
+                    result, expected,
                     "Montgomery mul({}, {}) = {} expected {} (q={})",
-                    a, b, result, expected, q);
+                    a, b, result, expected, q
+                );
             }
         }
     }
@@ -107,7 +112,11 @@ mod tests {
         let test_cases = [
             ("all_zero", 0u64, 0u64),
             ("all_max", q - 1, q - 1),
-            ("alternating", 0xAAAA_AAAA_AAAA_AAAA & (q - 1), 0x5555_5555_5555_5555 & (q - 1)),
+            (
+                "alternating",
+                0xAAAA_AAAA_AAAA_AAAA & (q - 1),
+                0x5555_5555_5555_5555 & (q - 1),
+            ),
             ("small_large", 1u64, q - 1),
         ];
 
@@ -120,10 +129,11 @@ mod tests {
 
             let start = std::time::Instant::now();
             for _ in 0..iterations {
-                let _ = core::hint::black_box(ctx.montgomery_mul(
-                    core::hint::black_box(a_mont),
-                    core::hint::black_box(b_mont),
-                ));
+                let _ =
+                    core::hint::black_box(ctx.montgomery_mul(
+                        core::hint::black_box(a_mont),
+                        core::hint::black_box(b_mont),
+                    ));
             }
             let elapsed = start.elapsed().as_nanos();
             timings.push((label, elapsed));
@@ -134,8 +144,10 @@ mod tests {
         let max_time = timings.iter().map(|t| t.1).max().unwrap_or(1);
 
         for (label, ns) in &timings {
-            println!("[montgomery_timing] {}: {}ns ({} iterations)",
-                label, ns, iterations);
+            println!(
+                "[montgomery_timing] {}: {}ns ({} iterations)",
+                label, ns, iterations
+            );
         }
 
         let ratio = max_time / min_time.max(1);
@@ -145,11 +157,17 @@ mod tests {
         // A ratio > 5x would indicate potential data-dependent branches, but can also
         // result from system load. Run this test in isolation for meaningful results.
         if ratio >= 5 {
-            println!("[montgomery_timing] NOTICE: max/min ratio = {}x (max={}ns, min={}ns). \
+            println!(
+                "[montgomery_timing] NOTICE: max/min ratio = {}x (max={}ns, min={}ns). \
                      This may indicate data-dependent branches OR system scheduling noise. \
-                     Re-run in isolation to distinguish.", ratio, max_time, min_time);
+                     Re-run in isolation to distinguish.",
+                ratio, max_time, min_time
+            );
         } else {
-            println!("[montgomery_timing] max/min ratio = {}x — within acceptable bounds", ratio);
+            println!(
+                "[montgomery_timing] max/min ratio = {}x — within acceptable bounds",
+                ratio
+            );
         }
     }
 }

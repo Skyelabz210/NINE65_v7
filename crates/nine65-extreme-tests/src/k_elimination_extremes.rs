@@ -72,7 +72,8 @@ mod tests {
         assert!(
             result.is_err(),
             "validate_value({}) should fail (capacity={}), but returned Ok",
-            over_capacity, capacity
+            over_capacity,
+            capacity
         );
     }
 
@@ -91,16 +92,19 @@ mod tests {
             // This calls for_fhe() which now has startup assertions.
             // It will panic if anchor capacity is insufficient — that IS the test.
             let _ctx = DualRNSContext::for_fhe(&config.primes, config.n);
-            println!("[k_elim] {} anchor capacity check: PASSED (n={}, {} main primes)",
-                name, config.n, config.primes.len());
+            println!(
+                "[k_elim] {} anchor capacity check: PASSED (n={}, {} main primes)",
+                name,
+                config.n,
+                config.primes.len()
+            );
         }
     }
 
     /// Adversarial residue inputs: both residues zero.
     #[test]
     fn test_k_elimination_adversarial_residues_both_zero() {
-        let ke = KElimination::try_new(&[17u64, 19], &[23u64, 29])
-            .expect("valid construction");
+        let ke = KElimination::try_new(&[17u64, 19], &[23u64, 29]).expect("valid construction");
 
         // V = 0: both residues should be 0.
         let k = ke.extract_k(0, 0);
@@ -111,8 +115,7 @@ mod tests {
     /// Adversarial residue inputs: v_beta = 0, v_alpha = alpha_cap - 1.
     #[test]
     fn test_k_elimination_adversarial_residues_extreme_crt() {
-        let ke = KElimination::try_new(&[17u64, 19], &[23u64, 29])
-            .expect("valid construction");
+        let ke = KElimination::try_new(&[17u64, 19], &[23u64, 29]).expect("valid construction");
 
         // Find a value V such that V mod alpha_cap = alpha_cap - 1 and V mod beta_cap = 0.
         // By CRT: V = 0 * alpha_cap + alpha_cap - 1 is a candidate only if it's < capacity.
@@ -152,7 +155,8 @@ mod tests {
         assert!(
             product.is_some(),
             "k ({}) * alpha_cap ({}) overflows u128 — reconstruction would be wrong",
-            k, ke.alpha_cap
+            k,
+            ke.alpha_cap
         );
 
         let reconstructed = v_alpha + product.unwrap();

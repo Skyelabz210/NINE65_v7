@@ -67,11 +67,7 @@ pub fn modinv_u128(a: u128, m: u128) -> u128 {
         old_s = s;
         s = new_s;
     }
-    assert_eq!(
-        old_r, 1,
-        "modinv_u128({}, {}): gcd = {} != 1",
-        a, m, old_r
-    );
+    assert_eq!(old_r, 1, "modinv_u128({}, {}): gcd = {} != 1", a, m, old_r);
     old_s.rem_euclid(m_i) as u128
 }
 
@@ -96,14 +92,7 @@ pub const LANE_COMPOSITE_V5: u128 = LANE_2POW_V5 * LANE_7POW_V5;
 
 pub const LANE_5POW_V5: u128 = 5u128.pow(25);
 
-pub const EXT_BASIS_V5: [u128; 6] = [
-    769,
-    929,
-    1153,
-    1217,
-    LANE_COMPOSITE_V5,
-    LANE_5POW_V5,
-];
+pub const EXT_BASIS_V5: [u128; 6] = [769, 929, 1153, 1217, LANE_COMPOSITE_V5, LANE_5POW_V5];
 
 pub const M_NTT_V5: u128 = 769u128 * 929u128 * 1153u128 * 1217u128;
 
@@ -199,10 +188,10 @@ fn mixed_radix_to_i128_positive(a: &[u128; 6]) -> i128 {
         } else {
             let prev = x;
             let mk = m[k] as i128;
-            let prod = mk
-                .checked_mul(prev)
-                .expect("to_i128 v5: Horner overflow");
-            x = (a[k] as i128).checked_add(prod).expect("to_i128 v5: add overflow");
+            let prod = mk.checked_mul(prev).expect("to_i128 v5: Horner overflow");
+            x = (a[k] as i128)
+                .checked_add(prod)
+                .expect("to_i128 v5: add overflow");
         }
     }
     x
@@ -358,12 +347,7 @@ pub fn cram_div_exact_pos_v5(x: &ExtResV5, d: u128) -> Result<ExtResV5, V5Divisi
     Ok(ExtResV5 { res: q_res })
 }
 
-fn small_lane_partial_v5(
-    x_lane: u128,
-    r: u128,
-    d: u128,
-    lane_mod: u128,
-) -> (u128, u128) {
+fn small_lane_partial_v5(x_lane: u128, r: u128, d: u128, lane_mod: u128) -> (u128, u128) {
     let xr = submod_u128(x_lane, r % lane_mod, lane_mod);
     let g = gcd_u128(d, lane_mod);
     let lane_g = lane_mod / g;
@@ -561,7 +545,10 @@ mod tests {
         let er = ExtResV5::from_i128(330);
         assert_eq!(
             cram_div_exact_pos_v5(&er, 33),
-            Err(V5DivisionError::DivisorOutsideSupportedFactors { d: 33, residual: 33 })
+            Err(V5DivisionError::DivisorOutsideSupportedFactors {
+                d: 33,
+                residual: 33
+            })
         );
         // 20 = 4 * 5 (supported) but 60 = 4 * 3 * 5 has a residual factor
         // of 3 once every 2 and 5 is stripped out.

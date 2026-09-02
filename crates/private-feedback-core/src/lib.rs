@@ -133,8 +133,7 @@ impl ResidueSignal {
         while slot_index < SLOT_COUNT {
             let mut lane_index = 0;
             while lane_index < LANE_COUNT {
-                residues[slot_index][lane_index] =
-                    slots[slot_index] % SAFE_BASIS[lane_index];
+                residues[slot_index][lane_index] = slots[slot_index] % SAFE_BASIS[lane_index];
                 lane_index += 1;
             }
             slot_index += 1;
@@ -156,10 +155,9 @@ impl ResidueSignal {
             let mut lane_index = 0;
             while lane_index < LANE_COUNT {
                 let modulus = SAFE_BASIS[lane_index];
-                self.residues[slot_index][lane_index] =
-                    (self.residues[slot_index][lane_index]
-                        + rhs.residues[slot_index][lane_index])
-                        % modulus;
+                self.residues[slot_index][lane_index] = (self.residues[slot_index][lane_index]
+                    + rhs.residues[slot_index][lane_index])
+                    % modulus;
                 lane_index += 1;
             }
             slot_index += 1;

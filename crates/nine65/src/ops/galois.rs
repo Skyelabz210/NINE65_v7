@@ -30,7 +30,6 @@ use crate::entropy::ShadowHarvester;
 
 use crate::arithmetic::NTTEngine;
 
-
 /// Galois key for a specific automorphism exponent
 ///
 /// Enables key switching after applying σ_k to a ciphertext.

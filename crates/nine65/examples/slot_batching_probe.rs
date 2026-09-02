@@ -85,7 +85,10 @@ fn report(label: &str, samples: &[u64]) -> (u128, u128) {
     println!("    n_samples      : {}", s.len());
     println!("    min_ns         : {}", s[0]);
     println!("    max_ns         : {}", s[s.len() - 1]);
-    println!("    median_ns      : {} / {}  (exact numerator/denominator)", num, den);
+    println!(
+        "    median_ns      : {} / {}  (exact numerator/denominator)",
+        num, den
+    );
     println!("    median_ns_floor: {}", num / den);
     println!("    p95_ns         : {}  (nearest-rank, integer)", p95);
     println!("    samples_ns     : {:?}", s);
@@ -144,7 +147,11 @@ fn main() {
     let ct_prod = ctx.mul_dual_symmetric(&ct_5, &ct_7, &keys.secret_key);
     let dec = ctx.decrypt_dual(&ct_prod, &keys.secret_key);
     let ok_5x7 = dec == 35;
-    println!("  dec(E(5)*E(7)) = {}  expected 35  -> {}", dec, if ok_5x7 { "PASS" } else { "FAIL" });
+    println!(
+        "  dec(E(5)*E(7)) = {}  expected 35  -> {}",
+        dec,
+        if ok_5x7 { "PASS" } else { "FAIL" }
+    );
 
     // Correctness trials over several pairs, integer-exact expectations.
     let pairs: [(u64, u64); 6] = [(0, 0), (1, 1), (2, 3), (7, 11), (100, 200), (t - 1, 2)];
@@ -192,8 +199,15 @@ fn main() {
     let lhs = lo_num * hi_den;
     let rhs = hi_num * lo_den;
     let (bigger, smaller) = if lhs > rhs { (lhs, rhs) } else { (rhs, lhs) };
-    let delta_permille = if smaller == 0 { 0 } else { (bigger - smaller) * 1000 / smaller };
-    println!("  median delta between low/high plaintext: {} per-mille", delta_permille);
+    let delta_permille = if smaller == 0 {
+        0
+    } else {
+        (bigger - smaller) * 1000 / smaller
+    };
+    println!(
+        "  median delta between low/high plaintext: {} per-mille",
+        delta_permille
+    );
     println!();
 
     // ---------------------------------------------------------------
@@ -232,17 +246,35 @@ fn main() {
     let proj_num = med_num;
     let proj_den = med_den * n as u128;
     println!("  projected amortized ns/slot = median_ns / max_slots");
-    println!("                              = ({} / {}) / {}", med_num, med_den, n);
-    println!("                              = {} / {}", proj_num, proj_den);
-    println!("                              = {} ns/slot (floor)", proj_num / proj_den);
+    println!(
+        "                              = ({} / {}) / {}",
+        med_num, med_den, n
+    );
+    println!(
+        "                              = {} / {}",
+        proj_num, proj_den
+    );
+    println!(
+        "                              = {} ns/slot (floor)",
+        proj_num / proj_den
+    );
     println!("  ASSUMES, UNVERIFIED: a packed mul costs the same as a scalar mul,");
-    println!("  and that all {} slots decrypt correctly at dense-plaintext noise.", n);
+    println!(
+        "  and that all {} slots decrypt correctly at dense-plaintext noise.",
+        n
+    );
     println!("  Neither assumption has been tested. B4 (dense-plaintext noise) is open.");
     println!();
 
     println!("=== SUMMARY ===");
-    println!("  MEASURED  scalar mul_ct median : {} ns (exact {}/{})", median_floor, med_num, med_den);
-    println!("  MEASURED  correctness          : {}/{} trials failed", failures, trials);
+    println!(
+        "  MEASURED  scalar mul_ct median : {} ns (exact {}/{})",
+        median_floor, med_num, med_den
+    );
+    println!(
+        "  MEASURED  correctness          : {}/{} trials failed",
+        failures, trials
+    );
     println!("  NOT MEASURED packed mul_ct     : batching unimplemented");
     println!("  PROJECTED amortized ns/slot    : {}", proj_num / proj_den);
 }

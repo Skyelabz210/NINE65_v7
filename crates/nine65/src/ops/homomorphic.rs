@@ -17,7 +17,6 @@
 
 use crate::arithmetic::NTTEngine;
 
-
 use crate::arithmetic::KElimination;
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::EvaluationKey;
@@ -419,10 +418,8 @@ impl<'a> TrackedEvaluator<'a> {
     /// exactly and there is no ring-expansion factor of `n` to charge. See
     /// `NoiseBudget::mul_plain_scalar_cost`.
     pub fn try_mul_plain(&mut self, ct: &Ciphertext, m: u64) -> Result<Ciphertext, NoiseExhausted> {
-        self.budget.consume(
-            NoiseOpType::MulPlain,
-            NoiseBudget::mul_plain_scalar_cost(m),
-        )?;
+        self.budget
+            .consume(NoiseOpType::MulPlain, NoiseBudget::mul_plain_scalar_cost(m))?;
         Ok(self.evaluator.mul_plain(ct, m))
     }
 

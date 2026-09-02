@@ -164,7 +164,10 @@ impl SessionStore {
     }
 
     pub fn insert(&self, session: Session) -> Result<String, &'static str> {
-        let mut map = self.sessions.write().map_err(|_| "session store poisoned")?;
+        let mut map = self
+            .sessions
+            .write()
+            .map_err(|_| "session store poisoned")?;
         if map.len() >= self.max_sessions {
             return Err("max sessions reached");
         }
@@ -175,7 +178,12 @@ impl SessionStore {
 
     /// Read a session only when both random ID and authenticated tenant match.
     /// A mismatch and an absent ID return the same `None` result.
-    pub fn with_session_for_tenant<F, R>(&self, id: &str, tenant_id: &str, operation: F) -> Option<R>
+    pub fn with_session_for_tenant<F, R>(
+        &self,
+        id: &str,
+        tenant_id: &str,
+        operation: F,
+    ) -> Option<R>
     where
         F: FnOnce(&Session) -> R,
     {
@@ -289,12 +297,12 @@ mod tests {
         let session = Session::new_test("secure_128", 7).expect("test session");
         let id = session.session_id.clone();
         store.insert(session).expect("insert");
-        assert!(store.with_session_for_tenant(&id, "other", |_| ()).is_none());
-        assert!(
-            store
-                .with_session_for_tenant("sess_missing", "test", |_| ())
-                .is_none()
-        );
+        assert!(store
+            .with_session_for_tenant(&id, "other", |_| ())
+            .is_none());
+        assert!(store
+            .with_session_for_tenant("sess_missing", "test", |_| ())
+            .is_none());
     }
 
     #[test]

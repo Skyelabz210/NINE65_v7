@@ -45,24 +45,14 @@ fn circular_bootstrap_preserves_plaintext_and_dual_rns_shape() {
     let ciphertext = context.encrypt_dual(message, &keys.public_key, &mut rng);
     let anchor_lanes = context.dual_rns.anchor.primes.len();
 
-    assert_ciphertext_shape(
-        &ciphertext,
-        config.n,
-        config.primes.len(),
-        anchor_lanes,
-    );
+    assert_ciphertext_shape(&ciphertext, config.n, config.primes.len(), anchor_lanes);
     assert_eq!(context.decrypt_dual(&ciphertext, &keys.secret_key), message);
 
     let refreshed = bootstrap
         .bootstrap(&ciphertext, &bootstrap_keys.bsk, &bootstrap_keys.ksk)
         .expect("circular bootstrap must succeed");
 
-    assert_ciphertext_shape(
-        &refreshed,
-        config.n,
-        config.primes.len(),
-        anchor_lanes,
-    );
+    assert_ciphertext_shape(&refreshed, config.n, config.primes.len(), anchor_lanes);
     assert_eq!(refreshed.level, config.primes.len());
     assert_eq!(context.decrypt_dual(&refreshed, &keys.secret_key), message);
 }

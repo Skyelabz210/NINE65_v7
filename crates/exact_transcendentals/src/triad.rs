@@ -483,7 +483,10 @@ mod tests {
     fn provenance_is_preserved() {
         assert_eq!(pi_table(0).provenance, EngineTag::PrecomputedTable);
         assert_eq!(pi_machin(0).provenance, EngineTag::BinarySplittingMachin);
-        assert_eq!(e_binary_split(0).provenance, EngineTag::BinarySplittingSeries);
+        assert_eq!(
+            e_binary_split(0).provenance,
+            EngineTag::BinarySplittingSeries
+        );
     }
 
     #[test]

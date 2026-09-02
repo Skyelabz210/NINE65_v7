@@ -301,10 +301,17 @@ mod tests {
         // 2×2: eigenvalues are 1 and trace − 1.
         let trace = p[0][0].add(p[1][1]);
         let second = trace.sub(Frac::new(1, 1));
-        assert_eq!(second, Frac::new(1, 36), "second eigenvalue is the shell 1/36");
+        assert_eq!(
+            second,
+            Frac::new(1, 36),
+            "second eigenvalue is the shell 1/36"
+        );
 
         // Stationary law is uniform for n = 2.
-        assert_eq!(eulerian_stationary(2), vec![Frac::new(1, 2), Frac::new(1, 2)]);
+        assert_eq!(
+            eulerian_stationary(2),
+            vec![Frac::new(1, 2), Frac::new(1, 2)]
+        );
     }
 
     /// The Eulerian law must actually be stationary — asserted, not assumed.

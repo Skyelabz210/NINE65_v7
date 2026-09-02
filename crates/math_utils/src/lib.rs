@@ -171,8 +171,7 @@ pub fn garner_reconstruct(residues: &[u64], moduli: &[u64]) -> u128 {
                 temp += mi;
             }
             temp -= vj;
-            let mj_inv = mod_inverse(moduli[j] % mi, mi)
-                .expect("moduli must be pairwise coprime");
+            let mj_inv = mod_inverse(moduli[j] % mi, mi).expect("moduli must be pairwise coprime");
             temp = mulmod(temp, mj_inv, mi);
         }
         v[i] = temp;
@@ -254,10 +253,10 @@ mod tests {
 
     #[test]
     fn test_mod_inverse() {
-        assert_eq!(mod_inverse(3, 11), Some(4));   // 3·4 = 12 ≡ 1 (mod 11)
-        assert_eq!(mod_inverse(7, 13), Some(2));   // 7·2 = 14 ≡ 1 (mod 13)
+        assert_eq!(mod_inverse(3, 11), Some(4)); // 3·4 = 12 ≡ 1 (mod 11)
+        assert_eq!(mod_inverse(7, 13), Some(2)); // 7·2 = 14 ≡ 1 (mod 13)
         assert_eq!(mod_inverse(0, 7), None);
-        assert_eq!(mod_inverse(6, 9), None);       // gcd(6,9) = 3
+        assert_eq!(mod_inverse(6, 9), None); // gcd(6,9) = 3
 
         // Verify for all invertible elements mod 13
         for a in 1..13u64 {
@@ -283,7 +282,11 @@ mod tests {
         let primes = vec![2, 3, 5, 7];
         for v in [0u64, 1, 42, 100, 209] {
             let res: Vec<u64> = primes.iter().map(|&p| v % p).collect();
-            assert_eq!(garner_reconstruct(&res, &primes), v as u128, "failed for v={v}");
+            assert_eq!(
+                garner_reconstruct(&res, &primes),
+                v as u128,
+                "failed for v={v}"
+            );
         }
     }
 
@@ -292,7 +295,11 @@ mod tests {
         let primes = vec![2, 3, 5, 7, 11, 13];
         for v in [0u64, 1, 42, 12345, 30029] {
             let res: Vec<u64> = primes.iter().map(|&p| v % p).collect();
-            assert_eq!(garner_reconstruct(&res, &primes), v as u128, "failed for v={v}");
+            assert_eq!(
+                garner_reconstruct(&res, &primes),
+                v as u128,
+                "failed for v={v}"
+            );
         }
     }
 

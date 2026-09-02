@@ -152,7 +152,10 @@ mod tests {
             assert_eq!(ExactState::from_i128(x).to_i128_exact(), x, "x={x}");
             checked += 1;
         }
-        assert_eq!(checked, M_SAFE, "must sweep the whole corridor, not a sample");
+        assert_eq!(
+            checked, M_SAFE,
+            "must sweep the whole corridor, not a sample"
+        );
     }
 
     /// Addition must agree with i128 ground truth, including across the
@@ -182,7 +185,10 @@ mod tests {
                 carried += 1;
             }
         }
-        assert!(carried > 0, "cases must actually exercise the winding carry");
+        assert!(
+            carried > 0,
+            "cases must actually exercise the winding carry"
+        );
     }
 
     /// Multiplication must agree with i128 ground truth, including cases where
@@ -209,7 +215,10 @@ mod tests {
                 wound += 1;
             }
         }
-        assert!(wound > 0, "cases must include operands that already carry winding");
+        assert!(
+            wound > 0,
+            "cases must include operands that already carry winding"
+        );
     }
 
     /// The magnitude reader must track the real value, and a chain of squarings
@@ -262,7 +271,11 @@ mod tests {
         assert_eq!(decode_text(&enc).as_deref(), Some(msg));
 
         for st in &enc {
-            assert_eq!(winding_bits(st), 0, "a fresh character must sit in the corridor");
+            assert_eq!(
+                winding_bits(st),
+                0,
+                "a fresh character must sit in the corridor"
+            );
         }
 
         // Push one character out of byte range; decode must report the loss

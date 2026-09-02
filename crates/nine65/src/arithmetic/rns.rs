@@ -8,10 +8,10 @@
 #![allow(clippy::needless_range_loop)]
 
 use super::montgomery::MontgomeryContext;
-#[cfg(not(feature = "reference_ntt"))]
-use super::ntt_fft::NTTEngineFFT as NTTEngine;
 #[cfg(feature = "reference_ntt")]
 use super::ntt::NTTEngine;
+#[cfg(not(feature = "reference_ntt"))]
+use super::ntt_fft::NTTEngineFFT as NTTEngine;
 use crate::errors::{Nine65Error, Nine65Result};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -61,23 +61,46 @@ pub struct U512 {
 
 impl U512 {
     pub const fn zero() -> Self {
-        Self { d0: 0, d1: 0, d2: 0, d3: 0 }
+        Self {
+            d0: 0,
+            d1: 0,
+            d2: 0,
+            d3: 0,
+        }
     }
 
     pub const fn from_u64(x: u64) -> Self {
-        Self { d0: x as u128, d1: 0, d2: 0, d3: 0 }
+        Self {
+            d0: x as u128,
+            d1: 0,
+            d2: 0,
+            d3: 0,
+        }
     }
 
     pub const fn from_u128(x: u128) -> Self {
-        Self { d0: x, d1: 0, d2: 0, d3: 0 }
+        Self {
+            d0: x,
+            d1: 0,
+            d2: 0,
+            d3: 0,
+        }
     }
 
     pub fn from_u256(x: U256) -> Self {
-        Self { d0: x.lo, d1: x.hi, d2: 0, d3: 0 }
+        Self {
+            d0: x.lo,
+            d1: x.hi,
+            d2: 0,
+            d3: 0,
+        }
     }
 
     pub fn to_u256_truncated(self) -> U256 {
-        U256 { lo: self.d0, hi: self.d1 }
+        U256 {
+            lo: self.d0,
+            hi: self.d1,
+        }
     }
 
     pub fn add(self, other: Self) -> Self {
@@ -108,31 +131,55 @@ impl U512 {
         let (lo2, hi2) = U256::wide_mul_256(self.d2, x);
         let (lo3, _) = U256::wide_mul_256(self.d3, x);
 
-        let mut res = Self { d0: lo0, d1: hi0, d2: 0, d3: 0 };
-        res = res.add(Self { d0: 0, d1: lo1, d2: hi1, d3: 0 });
-        res = res.add(Self { d0: 0, d1: 0, d2: lo2, d3: hi2 });
-        res = res.add(Self { d0: 0, d1: 0, d2: 0, d3: lo3 });
+        let mut res = Self {
+            d0: lo0,
+            d1: hi0,
+            d2: 0,
+            d3: 0,
+        };
+        res = res.add(Self {
+            d0: 0,
+            d1: lo1,
+            d2: hi1,
+            d3: 0,
+        });
+        res = res.add(Self {
+            d0: 0,
+            d1: 0,
+            d2: lo2,
+            d3: hi2,
+        });
+        res = res.add(Self {
+            d0: 0,
+            d1: 0,
+            d2: 0,
+            d3: lo3,
+        });
         res
     }
 
     pub fn div_u64(self, d: u64) -> Self {
         let d128 = d as u128;
         let mut rem: u128 = 0;
-        
+
         let mut limbs = [
-            (self.d3 >> 64) as u64, (self.d3 & 0xFFFFFFFFFFFFFFFF) as u64,
-            (self.d2 >> 64) as u64, (self.d2 & 0xFFFFFFFFFFFFFFFF) as u64,
-            (self.d1 >> 64) as u64, (self.d1 & 0xFFFFFFFFFFFFFFFF) as u64,
-            (self.d0 >> 64) as u64, (self.d0 & 0xFFFFFFFFFFFFFFFF) as u64,
+            (self.d3 >> 64) as u64,
+            (self.d3 & 0xFFFFFFFFFFFFFFFF) as u64,
+            (self.d2 >> 64) as u64,
+            (self.d2 & 0xFFFFFFFFFFFFFFFF) as u64,
+            (self.d1 >> 64) as u64,
+            (self.d1 & 0xFFFFFFFFFFFFFFFF) as u64,
+            (self.d0 >> 64) as u64,
+            (self.d0 & 0xFFFFFFFFFFFFFFFF) as u64,
         ];
-        
+
         let mut q_limbs = [0u64; 8];
         for i in 0..8 {
             let acc = (rem << 64) | (limbs[i] as u128);
             q_limbs[i] = (acc / d128) as u64;
             rem = acc % d128;
         }
-        
+
         Self {
             d0: (q_limbs[6] as u128) << 64 | (q_limbs[7] as u128),
             d1: (q_limbs[4] as u128) << 64 | (q_limbs[5] as u128),
@@ -162,7 +209,10 @@ impl U512 {
                 rem = rem.sub(m_512);
             }
         }
-        U256 { lo: rem.d0, hi: rem.d1 }
+        U256 {
+            lo: rem.d0,
+            hi: rem.d1,
+        }
     }
 
     pub fn mod_u64(self, m: u64) -> u64 {
@@ -198,9 +248,15 @@ impl U512 {
     }
 
     fn ge(self, other: Self) -> bool {
-        if self.d3 != other.d3 { return self.d3 > other.d3; }
-        if self.d2 != other.d2 { return self.d2 > other.d2; }
-        if self.d1 != other.d1 { return self.d1 > other.d1; }
+        if self.d3 != other.d3 {
+            return self.d3 > other.d3;
+        }
+        if self.d2 != other.d2 {
+            return self.d2 > other.d2;
+        }
+        if self.d1 != other.d1 {
+            return self.d1 > other.d1;
+        }
         self.d0 >= other.d0
     }
 }
@@ -1049,7 +1105,9 @@ pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     for i in 0..primes.len() {
         let pi = primes[i];
         let ri = residues[i] % pi;
-        if ri == 0 { continue; }
+        if ri == 0 {
+            continue;
+        }
 
         let mi = m.div_u64(pi);
         let mi_mod_pi = mi.mod_u64(pi);
@@ -1165,7 +1223,6 @@ pub struct DualRNSContext {
     pub n: usize,
 }
 
-
 #[cfg(test)]
 pub(crate) mod k_probe {
     // Process-global, NOT thread-local: `extract_k_rns_level_cached` runs
@@ -1173,8 +1230,8 @@ pub(crate) mod k_probe {
     // feature dispatches coefficient chunks across UNHAL/MANA worker
     // threads. A thread-local recorder only sees whichever thread called
     // `start()` -- every sample from a worker thread is silently dropped.
-    use std::sync::{Mutex, OnceLock};
     use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::{Mutex, OnceLock};
     static SAMPLES: OnceLock<Mutex<Vec<(bool, u32)>>> = OnceLock::new();
     static RECORDING: AtomicBool = AtomicBool::new(false);
     fn samples() -> &'static Mutex<Vec<(bool, u32)>> {
@@ -1434,7 +1491,10 @@ impl DualRNSContext {
                 "Anchor capacity insufficient for config n={}, max_prime={}: \
                  first-3-anchor product ({}) must exceed k_max bound ({}). \
                  Increase anchor prime count or use larger anchors.",
-                n, q_max, anchor3_product, k_max_bound
+                n,
+                q_max,
+                anchor3_product,
+                k_max_bound
             );
         }
 
@@ -2250,11 +2310,7 @@ impl DualRNSPolynomial {
                 *a = if *a == 0 { 0 } else { q - *a };
             }
         }
-        for (a_limb, &q) in self
-            .anchor_limbs
-            .iter_mut()
-            .zip(ctx.anchor.primes.iter())
-        {
+        for (a_limb, &q) in self.anchor_limbs.iter_mut().zip(ctx.anchor.primes.iter()) {
             for a in a_limb.iter_mut() {
                 *a = if *a == 0 { 0 } else { q - *a };
             }
@@ -3063,7 +3119,9 @@ mod tests {
                 .collect();
 
             // Use extract_k_rns_level to recover k
-            let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes).unwrap();
+            let k_reconstructed = ctx
+                .extract_k_rns_level(v_main, &v_anchor_rns, &main_primes)
+                .unwrap();
 
             assert_eq!(
                 k_reconstructed,
@@ -3104,8 +3162,7 @@ mod tests {
         assert_eq!(
             anchors,
             vec![
-                2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081,
-                3222306817
+                2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081, 3222306817
             ],
             "canonical anchor set must match what production actually uses at n=8192"
         );
@@ -3126,9 +3183,19 @@ mod tests {
             lo: 0x9E3779B97F4A7C15F39CC0605CEDC835u128,
             hi: 1u128 << 24,
         };
-        assert_eq!(k_true.bitlen(), 153, "sanity: chosen test value's bit length");
-        assert!(k_true.bitlen() > a4.bitlen(), "test value must exceed A4 capacity");
-        assert!(k_true.bitlen() < a5.bitlen(), "test value must still fit A5 capacity");
+        assert_eq!(
+            k_true.bitlen(),
+            153,
+            "sanity: chosen test value's bit length"
+        );
+        assert!(
+            k_true.bitlen() > a4.bitlen(),
+            "test value must exceed A4 capacity"
+        );
+        assert!(
+            k_true.bitlen() < a5.bitlen(),
+            "test value must still fit A5 capacity"
+        );
 
         // Residues of k_true in each of the 5 anchor primes. This per-lane
         // reduction is plain modular arithmetic and is not in question --
@@ -3236,7 +3303,9 @@ mod tests {
         // secure_128_deep (4 main primes, ct_level == 4 always post-ladder-
         // removal): extract_k_rns_level now always reconstructs from the
         // full 5-anchor canonical set, independent of level_main_primes.len().
-        let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes).unwrap();
+        let k_reconstructed = ctx
+            .extract_k_rns_level(v_main, &v_anchor_rns, &main_primes)
+            .unwrap();
 
         assert_eq!(
             k_reconstructed, k_true,
@@ -3415,7 +3484,9 @@ mod tests {
                 })
                 .collect();
 
-            let k_reconstructed = ctx.extract_k_rns_level(v_main, &v_anchor_rns, &main_primes).unwrap();
+            let k_reconstructed = ctx
+                .extract_k_rns_level(v_main, &v_anchor_rns, &main_primes)
+                .unwrap();
 
             assert_eq!(
                 k_reconstructed,

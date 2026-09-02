@@ -145,12 +145,17 @@ impl CompareBit {
         for (i, &a) in main.iter().enumerate() {
             assert!(a >= 3 && a % 2 == 1, "lanes must be odd primes >= 3");
             for &b in &main[i + 1..] {
-                assert!(crate::arithmetic::compare_bit::gcd_u64(a, b) == 1,
-                    "lanes must be pairwise coprime");
+                assert!(
+                    crate::arithmetic::compare_bit::gcd_u64(a, b) == 1,
+                    "lanes must be pairwise coprime"
+                );
             }
         }
         let m = U256::product_u64s(main);
-        assert!(m.bitlen() + 8 <= 256, "S < kM must fit U256 in the fallback");
+        assert!(
+            m.bitlen() + 8 <= 256,
+            "S < kM must fit U256 in the fallback"
+        );
 
         let mut inv = Vec::with_capacity(main.len());
         let mut mi_full = Vec::with_capacity(main.len());
@@ -163,7 +168,13 @@ impl CompareBit {
             mi_full.push(big);
         }
         let m_ceil_half = m.sub(m.shr1()); // M odd => (M+1)/2
-        Self { main: main.to_vec(), inv, mi_full, m, m_ceil_half }
+        Self {
+            main: main.to_vec(),
+            inv,
+            mi_full,
+            m,
+            m_ceil_half,
+        }
     }
 
     /// CRT idempotent coefficients `c_i = (x_i * (M/m_i)^-1) mod m_i`.
@@ -388,7 +399,10 @@ mod tests {
         }
         // Never-vacuous: the fallback must actually fire somewhere on the
         // exhaustive sweep (the boundary bands are non-empty for any basis).
-        assert!(fallback > 0, "fallback never fired on an exhaustive sweep — vacuous guard");
+        assert!(
+            fallback > 0,
+            "fallback never fired on an exhaustive sweep — vacuous guard"
+        );
         assert!(fast > 0);
     }
 
@@ -420,8 +434,7 @@ mod tests {
                 if x >= m {
                     continue;
                 }
-                let residues: Vec<u64> =
-                    primes.iter().map(|&p| (x % p as u128) as u64).collect();
+                let residues: Vec<u64> = primes.iter().map(|&p| (x % p as u128) as u64).collect();
                 let (b, path) = kb.decide_with_path(&residues);
                 assert_eq!(b, 2 * x >= m, "wrong bit at X={x} (basis {primes:?})");
                 saw_fallback |= path == ComparePath::ExactFallback;
@@ -445,8 +458,7 @@ mod tests {
             let (b, _path) = kb.decide_with_path(&residues);
             assert!(b, "X = M-1-{d} must decide 1 (X >= ceil(M/2))");
             let x0 = d;
-            let residues0: Vec<u64> =
-                primes.iter().map(|&p| (x0 % p as u128) as u64).collect();
+            let residues0: Vec<u64> = primes.iter().map(|&p| (x0 % p as u128) as u64).collect();
             let (b0, _p0) = kb.decide_with_path(&residues0);
             assert!(!b0, "X = {d} must decide 0");
         }
@@ -487,8 +499,7 @@ mod tests {
                 } else {
                     ((rng() as u128) << 64 | rng() as u128) % m
                 };
-                let residues: Vec<u64> =
-                    primes.iter().map(|&p| (x % p as u128) as u64).collect();
+                let residues: Vec<u64> = primes.iter().map(|&p| (x % p as u128) as u64).collect();
                 let (b, path) = kb.decide_with_path(&residues);
                 let x_truth = crt_ground_truth_x(primes, &residues);
                 assert_eq!(x_truth, x, "oracle disagreement (test bug)");
@@ -498,7 +509,10 @@ mod tests {
             }
         }
         assert_eq!(total, 60_000);
-        assert!(fallbacks > 0, "fallback never fired across 60k trials — vacuous");
+        assert!(
+            fallbacks > 0,
+            "fallback never fired across 60k trials — vacuous"
+        );
     }
 
     #[test]
@@ -572,7 +586,10 @@ mod tests {
             }
         }
         // Never-vacuous: the r-refinement branch must actually fire.
-        assert!(boundary_hits > 0, "boundary branch never exercised — vacuous guard");
+        assert!(
+            boundary_hits > 0,
+            "boundary branch never exercised — vacuous guard"
+        );
     }
 
     #[test]
@@ -603,7 +620,11 @@ mod tests {
                     hi = mid;
                 }
             }
-            if two_m.mul_u64(lo) == q { lo } else { lo + 1 }
+            if two_m.mul_u64(lo) == q {
+                lo
+            } else {
+                lo + 1
+            }
         };
         let mut boundary_hits = 0u64;
         for i in 0..100_000u64 {
@@ -611,7 +632,10 @@ mod tests {
                 // Adversarial: land exactly on the boundary winding value.
                 (U256::from_u64(t_hi - 1), U256::from_u128(rng() % m.lo))
             } else {
-                (U256::from_u64(rng() as u64 % (2 * t_hi)), U256::from_u128(rng() % m.lo))
+                (
+                    U256::from_u64(rng() as u64 % (2 * t_hi)),
+                    U256::from_u128(rng() % m.lo),
+                )
             };
             let x = m.mul_u64(k.lo as u64).add(r); // K < 2^64 here
             if x.ge(q) {
@@ -621,6 +645,9 @@ mod tests {
             assert_eq!(ls.is_above_half(k, r), truth, "wrong sign at trial {i}");
             boundary_hits += (k == U256::from_u64(t_hi - 1)) as u64;
         }
-        assert!(boundary_hits > 0, "boundary branch never exercised — vacuous guard");
+        assert!(
+            boundary_hits > 0,
+            "boundary branch never exercised — vacuous guard"
+        );
     }
 }

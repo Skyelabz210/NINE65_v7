@@ -139,8 +139,10 @@ fn main() {
             #[cfg(not(any(debug_assertions, feature = "allow_insecure")))]
             {
                 use nine65::params::secure_configs::SecureConfig;
-                eprintln!("INFO: Using secure_128 for 'high_192' in release builds. \
-                           For the insecure test config, build with: --features allow_insecure");
+                eprintln!(
+                    "INFO: Using secure_128 for 'high_192' in release builds. \
+                           For the insecure test config, build with: --features allow_insecure"
+                );
                 SecureConfig::secure_128().into_config()
             }
         }

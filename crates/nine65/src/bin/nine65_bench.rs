@@ -75,11 +75,7 @@ fn main() {
         match arg.as_str() {
             "--config" => config_name = args.next().unwrap_or_default(),
             "--max-depth" => {
-                requested_operations = args
-                    .next()
-                    .unwrap_or_default()
-                    .parse()
-                    .unwrap_or(80);
+                requested_operations = args.next().unwrap_or_default().parse().unwrap_or(80);
             }
             "--output" | "-o" => output_path = args.next(),
             "--a" => init_a = args.next().unwrap_or_default().parse().unwrap_or(8),
@@ -87,9 +83,7 @@ fn main() {
             "--with-bootstrap" => with_bootstrap = true,
             "--auto-bootstrap" => auto_bootstrap = true,
             "--statistical-test" => statistical_test = true,
-            "--trigger-pct" => {
-                trigger_pct = args.next().unwrap_or_default().parse().unwrap_or(25)
-            }
+            "--trigger-pct" => trigger_pct = args.next().unwrap_or_default().parse().unwrap_or(25),
             "-h" | "--help" => {
                 usage();
                 return;
@@ -215,7 +209,10 @@ fn main() {
         let generated = engine
             .generate_keys(&dual_keys.secret_key, &mut rng)
             .expect("bootstrap key generation failed");
-        eprintln!("Bootstrap key generation: {}us", started.elapsed().as_micros());
+        eprintln!(
+            "Bootstrap key generation: {}us",
+            started.elapsed().as_micros()
+        );
         Some(generated)
     } else {
         None
@@ -330,7 +327,9 @@ fn main() {
         if !correct {
             eprintln!(
                 "CORRECTNESS FAILURE at operation {}: expected {}, got {}",
-                index + 1, plaintext, decrypted
+                index + 1,
+                plaintext,
+                decrypted
             );
             break;
         }
@@ -343,7 +342,9 @@ fn main() {
     let completed_requested = operations_achieved == requested_operations;
 
     let statistical_summary = if statistical_test {
-        let engine = bootstrap.as_ref().expect("statistical test bootstrap engine");
+        let engine = bootstrap
+            .as_ref()
+            .expect("statistical test bootstrap engine");
         let keys = bootstrap_keys
             .as_ref()
             .expect("statistical test bootstrap keys");
@@ -354,10 +355,7 @@ fn main() {
             let mut expected = rng.next_u64() % config.t;
             let mut ct = ctx.encrypt_dual(expected, &dual_keys.public_key, &mut rng);
             let mut trial_budget = NoiseBudget::from_config(&config);
-            let _ = trial_budget.consume(
-                NoiseOpType::Encrypt,
-                NoiseBudget::encrypt_cost(&config),
-            );
+            let _ = trial_budget.consume(NoiseOpType::Encrypt, NoiseBudget::encrypt_cost(&config));
 
             for step in 0..80usize {
                 let (_, operand) = chain_ops[step % chain_ops.len()];

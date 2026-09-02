@@ -39,8 +39,10 @@ mod tests {
         });
         match result {
             Ok(v) => println!("[ema] i64::MIN input produced value {} (no overflow)", v),
-            Err(_) => println!("[ema] FINDING: EMA panics on i64::MIN input (integer overflow in update()). \
-                               Matches i64::MAX behavior — EMA is millibit-range-only."),
+            Err(_) => println!(
+                "[ema] FINDING: EMA panics on i64::MIN input (integer overflow in update()). \
+                               Matches i64::MAX behavior — EMA is millibit-range-only."
+            ),
         }
         // Documenting behavior only.
     }
@@ -60,9 +62,14 @@ mod tests {
             ema.value_millibits()
         });
         match result {
-            Ok(v) => println!("[ema] alternating extremes produced value {} (no overflow)", v),
-            Err(_) => println!("[ema] FINDING: EMA panics on alternating i64::MAX/MIN inputs. \
-                               Confirms EMA is not safe for out-of-range inputs."),
+            Ok(v) => println!(
+                "[ema] alternating extremes produced value {} (no overflow)",
+                v
+            ),
+            Err(_) => println!(
+                "[ema] FINDING: EMA panics on alternating i64::MAX/MIN inputs. \
+                               Confirms EMA is not safe for out-of-range inputs."
+            ),
         }
         // Documenting behavior only.
     }
@@ -77,7 +84,10 @@ mod tests {
         let v = ema.value_millibits();
         // After many zero updates, EMA should converge toward 0.
         // With standard alpha, after 1000 updates it should be very close to 0.
-        println!("[ema] after 1000 x 0: value = {} (should converge toward 0)", v);
+        println!(
+            "[ema] after 1000 x 0: value = {} (should converge toward 0)",
+            v
+        );
     }
 
     /// EMA reset must return to initial state.
@@ -99,9 +109,11 @@ mod tests {
         ema2.update(100_000);
 
         assert_eq!(
-            ema1.value_millibits(), ema2.value_millibits(),
+            ema1.value_millibits(),
+            ema2.value_millibits(),
             "EMA after reset should match fresh EMA for same input: {} vs {}",
-            ema1.value_millibits(), ema2.value_millibits()
+            ema1.value_millibits(),
+            ema2.value_millibits()
         );
     }
 
@@ -120,12 +132,16 @@ mod tests {
         let fast_val = fast_ema.value_millibits();
         let slow_val = slow_ema.value_millibits();
 
-        println!("[ema] after spike={}: fast={}, slow={}", spike, fast_val, slow_val);
+        println!(
+            "[ema] after spike={}: fast={}, slow={}",
+            spike, fast_val, slow_val
+        );
 
         assert!(
             fast_val >= slow_val,
             "Fast EMA ({}) should be >= slow EMA ({}) after a spike",
-            fast_val, slow_val
+            fast_val,
+            slow_val
         );
     }
 }

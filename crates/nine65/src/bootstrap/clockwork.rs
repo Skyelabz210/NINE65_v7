@@ -42,8 +42,8 @@
 //! K-Elimination provides exact integer division for the RNS context.
 //! Here, standard integer rounding suffices because we operate in single-modulus mode.
 
-use crate::arithmetic::NTTEngine;
 use crate::arithmetic::KElimination;
+use crate::arithmetic::NTTEngine;
 use crate::bootstrap::mask::CiphertextMask;
 use crate::entropy::SecureRng;
 use crate::keys::SecretKey;

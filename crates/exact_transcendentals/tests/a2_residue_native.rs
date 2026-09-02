@@ -44,7 +44,10 @@ fn a1_exact_over_full_corridor() {
         }
         checked += 1;
     }
-    assert_eq!(checked, 30_030, "must sweep the whole corridor, not a sample");
+    assert_eq!(
+        checked, 30_030,
+        "must sweep the whole corridor, not a sample"
+    );
 }
 
 /// A2 — no threaded accumulator. Permuting the source basis must not move the
@@ -95,7 +98,11 @@ fn a1_exact_on_disjoint_target_basis() {
     for v in 0..m_a {
         let out = map.apply(&residues(v, &a));
         for (j, &b_j) in b.iter().enumerate() {
-            assert_eq!(out[j], v.rem_euclid(b_j), "disjoint lane {b_j} wrong at v={v}");
+            assert_eq!(
+                out[j],
+                v.rem_euclid(b_j),
+                "disjoint lane {b_j} wrong at v={v}"
+            );
         }
     }
 }
@@ -104,7 +111,10 @@ fn a1_exact_on_disjoint_target_basis() {
 #[test]
 fn roundtrip_exact_within_corridor() {
     for v in (0..30_030i128).step_by(11) {
-        assert!(verify_roundtrip(&S6_BASIS, &S8_BASIS, v), "S6->S8->S6 failed at {v}");
+        assert!(
+            verify_roundtrip(&S6_BASIS, &S8_BASIS, v),
+            "S6->S8->S6 failed at {v}"
+        );
     }
     for v in (0..3_003i128).step_by(7) {
         assert!(

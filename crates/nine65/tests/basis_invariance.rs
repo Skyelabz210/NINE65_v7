@@ -585,11 +585,9 @@ fn fpd_ciphertext_shell_keeps_all_eight_lanes() {
     let quotient_bound = 10_000i128;
     let divisor = 6i128;
 
-    let aux = exact_transcendentals::cram_ct::AuxResidueSet::select_for_divisor(
-        divisor,
-        quotient_bound,
-    )
-    .expect("aux pool must be able to size this divisor");
+    let aux =
+        exact_transcendentals::cram_ct::AuxResidueSet::select_for_divisor(divisor, quotient_bound)
+            .expect("aux pool must be able to size this divisor");
 
     let ct = CramCiphertext::<()>::wrap_with_fpd_aux((), &coeffs, None, &aux);
     assert!(ct.verify().is_ok(), "wrapped witness must verify");
@@ -750,7 +748,10 @@ fn sixty_four_divisions_still_do_not_move_the_basis() {
         residues_at_start,
         "after {ROUNDS} divisions the residues should be exactly the originals"
     );
-    assert_eq!(ct.level, 3, "level must not have moved across {ROUNDS} divisions");
+    assert_eq!(
+        ct.level, 3,
+        "level must not have moved across {ROUNDS} divisions"
+    );
 }
 
 // ============================================================================
@@ -789,13 +790,29 @@ fn no_level_like_counter_moves_under_exact_division() {
             ct_anchor_lanes,
             "[{name}] anchor lane count moved"
         );
-        assert_eq!(ctx.rns.num_primes(), ctx_num_moduli, "[{name}] num_moduli moved");
+        assert_eq!(
+            ctx.rns.num_primes(),
+            ctx_num_moduli,
+            "[{name}] num_moduli moved"
+        );
         assert_eq!(ctx.dual_rns.main.primes.len(), ctx_main_moduli, "[{name}]");
-        assert_eq!(ctx.dual_rns.anchor.primes.len(), ctx_anchor_moduli, "[{name}]");
+        assert_eq!(
+            ctx.dual_rns.anchor.primes.len(),
+            ctx_anchor_moduli,
+            "[{name}]"
+        );
         assert_eq!(ctx.q_bits, ctx_q_bits, "[{name}] q_bits moved");
         assert_eq!(ctx.q_product, ctx_q_product, "[{name}] Q moved");
-        assert_eq!(ctx.delta_rns.len(), ctx_delta_len, "[{name}] delta chain moved");
-        assert_eq!(ctx.config.primes.len(), cfg_chain_len, "[{name}] config chain moved");
+        assert_eq!(
+            ctx.delta_rns.len(),
+            ctx_delta_len,
+            "[{name}] delta chain moved"
+        );
+        assert_eq!(
+            ctx.config.primes.len(),
+            cfg_chain_len,
+            "[{name}] config chain moved"
+        );
 
         // The level field must also still be a truthful description of the
         // ciphertext: it must not have been "kept constant" by decoupling it
@@ -905,8 +922,9 @@ fn k_elim_divide_primitive_agrees_on_real_ciphertext_residues() {
             if coeff >= src.len() {
                 continue;
             }
-            let via_primitive = k_elim::k_elim_divide(&[src[coeff] as i128], &[p as i128], d as i128)
-                .unwrap_or_else(|| panic!("k_elim_divide rejected lane {p}"));
+            let via_primitive =
+                k_elim::k_elim_divide(&[src[coeff] as i128], &[p as i128], d as i128)
+                    .unwrap_or_else(|| panic!("k_elim_divide rejected lane {p}"));
             assert_eq!(
                 via_primitive.len(),
                 1,

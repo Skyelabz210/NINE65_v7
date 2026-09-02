@@ -178,7 +178,10 @@ fn c5_out_of_range_is_refused_and_never_wrapped() {
     for over in [cap, cap + 1, cap + 7, 2 * cap, 5 * cap + 11, i128::MAX / 4] {
         assert_eq!(
             anchor.decompose(over),
-            Err(AnchorError::OutOfRange { x: over, capacity: cap }),
+            Err(AnchorError::OutOfRange {
+                x: over,
+                capacity: cap
+            }),
             "x = {over}"
         );
         refused += 1;
@@ -200,11 +203,17 @@ fn c5_out_of_range_is_refused_and_never_wrapped() {
     assert_eq!(fcap, 1806 * 1807);
     assert_eq!(
         family.decompose(fcap),
-        Err(AnchorError::OutOfRange { x: fcap, capacity: fcap })
+        Err(AnchorError::OutOfRange {
+            x: fcap,
+            capacity: fcap
+        })
     );
     assert_eq!(
         family.lift_state(&ExactState::from_i128(fcap + 1)),
-        Err(AnchorError::OutOfRange { x: fcap + 1, capacity: fcap })
+        Err(AnchorError::OutOfRange {
+            x: fcap + 1,
+            capacity: fcap
+        })
     );
 }
 
@@ -235,7 +244,10 @@ fn c6_every_value_in_range_reconstructs_bit_exact() {
         checked += 1;
     }
     assert_eq!(checked, 1806, "sweep must not shrink");
-    assert!(upper_level_fired > 0, "the sweep must reach the upper level");
+    assert!(
+        upper_level_fired > 0,
+        "the sweep must reach the upper level"
+    );
 
     // Safe Basis corridor: every value, through ExactState.
     let mut checked = 0i128;
@@ -253,7 +265,11 @@ fn c6_every_value_in_range_reconstructs_bit_exact() {
         let (g, k) = (x.rem_euclid(M), x.div_euclid(M));
         let a = (g - k).rem_euclid(M + 1);
         assert_eq!(canonical_from(a, k, M), Ok(g), "x = {x}");
-        assert_eq!(g + k * M, x, "the pair must name x, not merely be consistent");
+        assert_eq!(
+            g + k * M,
+            x,
+            "the pair must name x, not merely be consistent"
+        );
         checked += 1;
     }
     assert_eq!(checked, 1_000, "sweep must not shrink");
@@ -288,7 +304,10 @@ fn c8_overflow_refuses_rather_than_wraps() {
             Err(e) => panic!("unexpected error at depth {depth}: {e:?}"),
         }
     }
-    assert_eq!(last_ok, 4, "the 36-tower is representable to exactly depth 4");
+    assert_eq!(
+        last_ok, 4,
+        "the 36-tower is representable to exactly depth 4"
+    );
     assert!(matches!(
         AnchorFamily::telescoping(36, 5),
         Err(AnchorError::CapacityOverflow { .. })
@@ -373,7 +392,10 @@ fn p1_no_cram_module_contains_a_float() {
     // The stripper must not be a function that deletes everything — a scan over
     // an empty string would pass trivially.
     let code = production_code(include_str!("../src/cram_anchor.rs"));
-    assert!(code.contains("pub fn winding"), "stripper removed live code");
+    assert!(
+        code.contains("pub fn winding"),
+        "stripper removed live code"
+    );
     assert!(
         !code.contains("no floating point"),
         "stripper failed to remove comments"
@@ -428,8 +450,18 @@ fn p3_exec_never_leaves_residue_space_but_project_does() {
     m.exec(&[
         Instr::Load { dst: 0, value: 41 },
         Instr::Load { dst: 1, value: 17 },
-        Instr::Apply { dst: 2, a: 0, b: 1, schema: "AMS__".into() },
-        Instr::Apply { dst: 2, a: 2, b: 1, schema: "AMS__".into() },
+        Instr::Apply {
+            dst: 2,
+            a: 0,
+            b: 1,
+            schema: "AMS__".into(),
+        },
+        Instr::Apply {
+            dst: 2,
+            a: 2,
+            b: 1,
+            schema: "AMS__".into(),
+        },
     ])
     .unwrap();
 
@@ -446,7 +478,11 @@ fn p3_exec_never_leaves_residue_space_but_project_does() {
 
     // Positive control: the counter is live.
     m.project(2).unwrap();
-    assert_eq!(m.projections(), 1, "project must be the thing that increments");
+    assert_eq!(
+        m.projections(),
+        1,
+        "project must be the thing that increments"
+    );
     m.project(0).unwrap();
     assert_eq!(m.projections(), 2);
 }
@@ -475,7 +511,10 @@ fn p5_each_signature_field_reads_exactly_one_source() {
 
     let one_lane_apart = |m: &Cram, target: u64| {
         let (a, b) = (m.read(0).unwrap(), m.read(1).unwrap());
-        let differing: Vec<u64> = (0..S6.len()).filter(|&i| a[i] != b[i]).map(|i| S6[i]).collect();
+        let differing: Vec<u64> = (0..S6.len())
+            .filter(|&i| a[i] != b[i])
+            .map(|i| S6[i])
+            .collect();
         assert_eq!(differing, vec![target], "exactly one lane may differ");
     };
 
@@ -512,14 +551,21 @@ fn p5_each_signature_field_reads_exactly_one_source() {
         "no lane-sourced field may move"
     );
     m.load(1, -1).unwrap();
-    assert_eq!(m.signature(1).unwrap().sign, Sign::Negative, "sign is winding-sourced");
+    assert_eq!(
+        m.signature(1).unwrap().sign,
+        Sign::Negative,
+        "sign is winding-sourced"
+    );
 
     // A basis without those lanes declines to report, rather than
     // reconstructing across lanes to manufacture an answer.
     let mut small = Cram::new(&[3, 5, 7], 1);
     small.load(0, 8).unwrap();
     assert_eq!(small.signature(0).unwrap().parity, Parity::Unavailable);
-    assert_eq!(small.signature(0).unwrap().shadow, ShadowStatus::Unavailable);
+    assert_eq!(
+        small.signature(0).unwrap().shadow,
+        ShadowStatus::Unavailable
+    );
     assert_eq!(
         small.signature(0).unwrap().sign,
         Sign::NonNegative,
@@ -542,8 +588,13 @@ fn p3b_the_winding_is_measured_and_absent_when_it_should_be() {
     let powers: [i128; 5] = [9, 81, 6_561, 43_046_721, 1_853_020_188_851_841];
     let mut windings = Vec::new();
     for want in powers {
-        m.exec(&[Instr::Apply { dst: 0, a: 0, b: 0, schema: "QQQQQ".into() }])
-            .unwrap();
+        m.exec(&[Instr::Apply {
+            dst: 0,
+            a: 0,
+            b: 0,
+            schema: "QQQQQ".into(),
+        }])
+        .unwrap();
         assert_eq!(m.project_integer(0).unwrap(), want, "ground truth");
         windings.push(m.winding(0).unwrap().known().unwrap());
     }
@@ -555,8 +606,13 @@ fn p3b_the_winding_is_measured_and_absent_when_it_should_be() {
     // Heterogeneous: no winding, and the machine says which schema cost it.
     m.load(0, 41).unwrap();
     m.load(1, 17).unwrap();
-    m.exec(&[Instr::Apply { dst: 2, a: 0, b: 1, schema: "AMSQ_".into() }])
-        .unwrap();
+    m.exec(&[Instr::Apply {
+        dst: 2,
+        a: 0,
+        b: 1,
+        schema: "AMSQ_".into(),
+    }])
+    .unwrap();
     assert_eq!(
         m.project_integer(2),
         Err(CramError::NoWinding(WindingLoss::Heterogeneous {
@@ -566,16 +622,26 @@ fn p3b_the_winding_is_measured_and_absent_when_it_should_be() {
 
     // Chimera 1 again, at the machine level: even a *homogeneous* Div schema
     // loses the winding, because `a·b⁻¹ mod p` is not `⌊a/b⌋`.
-    m.exec(&[Instr::Apply { dst: 2, a: 0, b: 1, schema: "DDDDD".into() }])
-        .unwrap();
+    m.exec(&[Instr::Apply {
+        dst: 2,
+        a: 0,
+        b: 1,
+        schema: "DDDDD".into(),
+    }])
+    .unwrap();
     assert_eq!(
         m.project_integer(2),
         Err(CramError::NoWinding(WindingLoss::ModularOnly { op: 'D' }))
     );
 
     // Control: homogeneous and integer-meaningful keeps it.
-    m.exec(&[Instr::Apply { dst: 2, a: 0, b: 1, schema: "MMMMM".into() }])
-        .unwrap();
+    m.exec(&[Instr::Apply {
+        dst: 2,
+        a: 0,
+        b: 1,
+        schema: "MMMMM".into(),
+    }])
+    .unwrap();
     assert_eq!(m.project_integer(2).unwrap(), 41 * 17);
 }
 
@@ -651,9 +717,14 @@ fn p7_one_faulty_lane_is_contained_but_garner_spreads_it() {
     let dirty_k = family.windings(&dirty_pairs).unwrap();
     let dirty_v = family.group_values(&dirty_pairs, &dirty_k).unwrap();
 
-    let moved_k = (0..clean_k.len()).filter(|&i| clean_k[i] != dirty_k[i]).count();
+    let moved_k = (0..clean_k.len())
+        .filter(|&i| clean_k[i] != dirty_k[i])
+        .count();
     assert_eq!(moved_k, 1, "exactly one winding may move");
-    assert_ne!(clean_k[faulty], dirty_k[faulty], "and it is the faulty lane's");
+    assert_ne!(
+        clean_k[faulty], dirty_k[faulty],
+        "and it is the faulty lane's"
+    );
     for j in 0..clean_v.len() {
         if j != faulty {
             assert_eq!(clean_v[j], dirty_v[j], "group {j} must be bit-identical");
@@ -687,8 +758,15 @@ fn p7_one_faulty_lane_is_contained_but_garner_spreads_it() {
     let cp = partials(&clean_res);
     let dp = partials(&dirty_res);
     let spread = (0..cp.len()).filter(|&i| cp[i] != dp[i]).count();
-    assert_eq!(spread, moduli.len() - faulty, "damage reaches every later partial");
-    assert!(spread > moved_k, "the control must spread further: {spread} vs {moved_k}");
+    assert_eq!(
+        spread,
+        moduli.len() - faulty,
+        "damage reaches every later partial"
+    );
+    assert!(
+        spread > moved_k,
+        "the control must spread further: {spread} vs {moved_k}"
+    );
     assert_ne!(
         garner_reconstruct(&clean_res),
         garner_reconstruct(&dirty_res),
@@ -717,7 +795,11 @@ fn p8_basis_registers_are_distinct_and_derived_not_asserted() {
         .copied()
         .filter(|&p| gcd(p as i128, SCALE) == 1)
         .collect();
-    assert_eq!(derived, TRANSPORT_CORE.to_vec(), "Transport Core is a derivation");
+    assert_eq!(
+        derived,
+        TRANSPORT_CORE.to_vec(),
+        "Transport Core is a derivation"
+    );
 
     // 2 and 5 are excluded on identical grounds; neither exclusion is about ρ.
     assert_eq!(gcd(2, SCALE), 2);
@@ -727,7 +809,11 @@ fn p8_basis_registers_are_distinct_and_derived_not_asserted() {
     // Products and resonance orders, so the registers cannot be swapped.
     assert_eq!(SAFE_BASIS.iter().product::<u64>() as i128, M_SAFE);
     assert_eq!(M_SAFE, 30_030);
-    assert_eq!(TRANSPORT_CORE.iter().product::<u64>(), 3_003, "M_safe of the core");
+    assert_eq!(
+        TRANSPORT_CORE.iter().product::<u64>(),
+        3_003,
+        "M_safe of the core"
+    );
     assert_eq!(*TRANSPORT_CORE.iter().min().unwrap(), 3, "ρ = 3");
     assert_eq!(*DISCRIMINATING_BASIS.iter().min().unwrap(), 3, "ρ = 3");
 
@@ -737,7 +823,11 @@ fn p8_basis_registers_are_distinct_and_derived_not_asserted() {
     assert_ne!(SAFE_BASIS.to_vec(), TRANSPORT_CORE.to_vec());
 
     // Each is internally pairwise coprime — the one property all of them share.
-    for reg in [&SAFE_BASIS[..], &TRANSPORT_CORE[..], &DISCRIMINATING_BASIS[..]] {
+    for reg in [
+        &SAFE_BASIS[..],
+        &TRANSPORT_CORE[..],
+        &DISCRIMINATING_BASIS[..],
+    ] {
         for i in 0..reg.len() {
             for j in (i + 1)..reg.len() {
                 assert_eq!(gcd(reg[i] as i128, reg[j] as i128), 1, "{reg:?}");
@@ -768,11 +858,18 @@ fn p9_div_root_is_modular_and_is_not_the_integer_quotient() {
             }
         }
     }
-    assert!(differ > agree, "the two must differ on most inputs: {differ} vs {agree}");
+    assert!(
+        differ > agree,
+        "the two must differ on most inputs: {differ} vs {agree}"
+    );
 
     // A named, checkable instance.
     let (a, b, p) = (5i128, 3i128, 7i128);
-    assert_eq!((a * mod_inv(b, p).unwrap()).rem_euclid(p), 4, "5·3⁻¹ ≡ 4 (mod 7)");
+    assert_eq!(
+        (a * mod_inv(b, p).unwrap()).rem_euclid(p),
+        4,
+        "5·3⁻¹ ≡ 4 (mod 7)"
+    );
     assert_eq!(a.div_euclid(b), 1, "⌊5/3⌋ = 1");
     assert_ne!(4, 1, "and 4 is not 1");
 

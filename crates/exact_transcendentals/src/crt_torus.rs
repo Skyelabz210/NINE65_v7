@@ -71,8 +71,8 @@ impl TorusConfig {
         }
 
         let inv2_mod_p_odd = k_elim::mod_inv(2, p_odd).expect("2 invertible mod odd product");
-        let inv_p_odd_mod_p2 = k_elim::mod_inv(k_elim::modd(p_odd, p_two), p_two)
-            .expect("p_odd invertible mod 2^k");
+        let inv_p_odd_mod_p2 =
+            k_elim::mod_inv(k_elim::modd(p_odd, p_two), p_two).expect("p_odd invertible mod 2^k");
 
         TorusConfig {
             odd_primes: odd_primes.to_vec(),
@@ -151,11 +151,15 @@ impl TorusConfig {
 
 impl fmt::Display for TorusConfig {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let primes_str: Vec<_> = self.odd_primes.iter().map(|p| {
-            let mut buf = [0u8; 40];
-            let s = fmt_i128(*p, &mut buf);
-            s.to_owned()
-        }).collect();
+        let primes_str: Vec<_> = self
+            .odd_primes
+            .iter()
+            .map(|p| {
+                let mut buf = [0u8; 40];
+                let s = fmt_i128(*p, &mut buf);
+                s.to_owned()
+            })
+            .collect();
         write!(
             f,
             "({})[{}] x 2^{} [{}]  total={}",

@@ -8,9 +8,9 @@
 
 #[cfg(test)]
 mod tests {
+    use nine65::entropy::shadow::ShadowHarvester;
     use nine65::ops::rns_fhe::RNSFHEContext;
     use nine65::params::secure_configs::SecureConfig;
-    use nine65::entropy::shadow::ShadowHarvester;
 
     fn encode_signed(v: i64, t: u64) -> u64 {
         if v >= 0 {
@@ -70,8 +70,11 @@ mod tests {
             let decrypted = ctx.decrypt_dual(&ct, &keys.secret_key);
             let decoded = decode_signed(decrypted, t);
 
-            assert_eq!(decoded, v,
-                "secure_192 negative plaintext failed: input={}, decoded={}", v, decoded);
+            assert_eq!(
+                decoded, v,
+                "secure_192 negative plaintext failed: input={}, decoded={}",
+                v, decoded
+            );
         }
     }
 
@@ -99,9 +102,11 @@ mod tests {
         let decrypted = ctx.decrypt_dual(&ct_sum, &keys.secret_key);
         let decoded = decode_signed(decrypted, t);
 
-        assert_eq!(decoded, expected,
+        assert_eq!(
+            decoded, expected,
             "Enc({}) + Enc({}) = {} expected {}",
-            a, b, decoded, expected);
+            a, b, decoded, expected
+        );
     }
 
     /// Homomorphic multiplication: Enc(-3) * Enc(2) = Enc(-6).
@@ -127,8 +132,10 @@ mod tests {
         let decrypted = ctx.decrypt_dual(&ct_mul, &keys.secret_key);
         let decoded = decode_signed(decrypted, t);
 
-        assert_eq!(decoded, expected,
+        assert_eq!(
+            decoded, expected,
             "Enc({}) * Enc({}) = {} expected {}",
-            a, b, decoded, expected);
+            a, b, decoded, expected
+        );
     }
 }

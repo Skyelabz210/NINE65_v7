@@ -72,15 +72,22 @@ fn determinism_check_manufactured(cfg: &FHEConfig) {
     let b1 = eval1.encrypt_with_rng(5678, &client1.public_key, &mut r3);
     let b2 = eval2.encrypt_with_rng(5678, &client2.public_key, &mut r4);
 
-    let ab1 = eval1.mul_manufactured(&a1, &b1, &pk1).expect("manufactured mul 1");
-    let ab2 = eval2.mul_manufactured(&a2, &b2, &pk2).expect("manufactured mul 2");
+    let ab1 = eval1
+        .mul_manufactured(&a1, &b1, &pk1)
+        .expect("manufactured mul 1");
+    let ab2 = eval2
+        .mul_manufactured(&a2, &b2, &pk2)
+        .expect("manufactured mul 2");
     assert_eq!(
         ciphertext_fingerprint(&ab1),
         ciphertext_fingerprint(&ab2),
         "determinism: two manufactured multiplies with identical seeds must be \
          byte-identical"
     );
-    assert_eq!(eval1.decrypt(&ab1, &client1), (1234u64 * 5678) % eval1.context().t);
+    assert_eq!(
+        eval1.decrypt(&ab1, &client1),
+        (1234u64 * 5678) % eval1.context().t
+    );
 }
 
 /// Timing + correctness pass over the CRAM-public surface for one
@@ -94,8 +101,16 @@ fn time_cram_public_manufactured(name: &str, cfg: &FHEConfig, rounds: usize) {
     let mut eval = eval;
     let t = eval.context().t;
 
-    let (mut enc, mut add, mut mulp, mut divide, mut mul_general, mut mul_m2b, mut mul_m3, mut dec) =
-        (vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![]);
+    let (mut enc, mut add, mut mulp, mut divide, mut mul_general, mut mul_m2b, mut mul_m3, mut dec) = (
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+    );
 
     for i in 0..rounds {
         let a = (i as u64 % 17) + 2;
@@ -112,32 +127,60 @@ fn time_cram_public_manufactured(name: &str, cfg: &FHEConfig, rounds: usize) {
         let t1 = Instant::now();
         let sum = eval.add(&ct_a, &ct_b);
         add.push(t1.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&sum, &client), (a + b) % t, "{name}: add must stay exact");
+        assert_eq!(
+            eval.decrypt(&sum, &client),
+            (a + b) % t,
+            "{name}: add must stay exact"
+        );
 
         let t2 = Instant::now();
         let scaled = eval.mul_plain(&ct_a, 3);
         mulp.push(t2.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&scaled, &client), (a * 3) % t, "{name}: mul_plain must stay exact");
+        assert_eq!(
+            eval.decrypt(&scaled, &client),
+            (a * 3) % t,
+            "{name}: mul_plain must stay exact"
+        );
 
         let t3 = Instant::now();
-        let divided = eval.exact_divide(&scaled, 3).expect("3 is a unit on every lane");
+        let divided = eval
+            .exact_divide(&scaled, 3)
+            .expect("3 is a unit on every lane");
         divide.push(t3.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&divided, &client), a % t, "{name}: exact_divide must invert mul_plain");
+        assert_eq!(
+            eval.decrypt(&divided, &client),
+            a % t,
+            "{name}: exact_divide must invert mul_plain"
+        );
 
         let t4 = Instant::now();
         let prod_general = eval.mul(&ct_a, &ct_b, &pk).expect("general mul");
         mul_general.push(t4.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&prod_general, &client), (a * b) % t, "{name}: general mul must stay exact");
+        assert_eq!(
+            eval.decrypt(&prod_general, &client),
+            (a * b) % t,
+            "{name}: general mul must stay exact"
+        );
 
         let t5 = Instant::now();
         let prod_m2b = eval.mul_manufactured(&ct_a, &ct_b, &pk).expect("m2b mul");
         mul_m2b.push(t5.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&prod_m2b, &client), (a * b) % t, "{name}: m2b mul must stay exact");
+        assert_eq!(
+            eval.decrypt(&prod_m2b, &client),
+            (a * b) % t,
+            "{name}: m2b mul must stay exact"
+        );
 
         let t6 = Instant::now();
-        let prod_m3 = eval.mul_manufactured_gadget(&ct_a, &ct_b, &gadget).expect("m3 gadget mul");
+        let prod_m3 = eval
+            .mul_manufactured_gadget(&ct_a, &ct_b, &gadget)
+            .expect("m3 gadget mul");
         mul_m3.push(t6.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&prod_m3, &client), (a * b) % t, "{name}: m3 gadget mul must stay exact");
+        assert_eq!(
+            eval.decrypt(&prod_m3, &client),
+            (a * b) % t,
+            "{name}: m3 gadget mul must stay exact"
+        );
 
         let t7 = Instant::now();
         let got = eval.decrypt(&sum, &client);
@@ -187,22 +230,40 @@ fn time_cram_public_general(name: &str, cfg: &FHEConfig, rounds: usize) {
         let t1 = Instant::now();
         let sum = eval.add(&ct_a, &ct_b);
         add.push(t1.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&sum, &client), (a + b) % t, "{name}: add must stay exact");
+        assert_eq!(
+            eval.decrypt(&sum, &client),
+            (a + b) % t,
+            "{name}: add must stay exact"
+        );
 
         let t2 = Instant::now();
         let scaled = eval.mul_plain(&ct_a, 3);
         mulp.push(t2.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&scaled, &client), (a * 3) % t, "{name}: mul_plain must stay exact");
+        assert_eq!(
+            eval.decrypt(&scaled, &client),
+            (a * 3) % t,
+            "{name}: mul_plain must stay exact"
+        );
 
         let t3 = Instant::now();
-        let divided = eval.exact_divide(&scaled, 3).expect("3 is a unit on every lane");
+        let divided = eval
+            .exact_divide(&scaled, 3)
+            .expect("3 is a unit on every lane");
         divide.push(t3.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&divided, &client), a % t, "{name}: exact_divide must invert mul_plain");
+        assert_eq!(
+            eval.decrypt(&divided, &client),
+            a % t,
+            "{name}: exact_divide must invert mul_plain"
+        );
 
         let t4 = Instant::now();
         let prod_general = eval.mul(&ct_a, &ct_b, &pk).expect("general mul");
         mul_general.push(t4.elapsed().as_nanos());
-        assert_eq!(eval.decrypt(&prod_general, &client), (a * b) % t, "{name}: general mul must stay exact");
+        assert_eq!(
+            eval.decrypt(&prod_general, &client),
+            (a * b) % t,
+            "{name}: general mul must stay exact"
+        );
 
         let t7 = Instant::now();
         let got = eval.decrypt(&sum, &client);
@@ -238,7 +299,11 @@ fn measure_cram_public_op_timings() {
         &FHEConfig::manufactured_m2b_insecure(),
         5,
     );
-    time_cram_public_general("secure_128_deep", &SecureConfig::secure_128_deep().config, 5);
+    time_cram_public_general(
+        "secure_128_deep",
+        &SecureConfig::secure_128_deep().config,
+        5,
+    );
     println!();
 }
 

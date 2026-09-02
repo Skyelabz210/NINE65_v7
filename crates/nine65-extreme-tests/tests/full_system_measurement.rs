@@ -18,9 +18,7 @@
 
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::rns_fhe::RNSFHEContext;
-use nine65::params::security_estimator::{
-    CostModel, LatticeSecurityEstimator, SecretDistribution,
-};
+use nine65::params::security_estimator::{CostModel, LatticeSecurityEstimator, SecretDistribution};
 use nine65::params::SecureConfig;
 
 /// The four named configurations, in the order the claim surface lists them.
@@ -51,8 +49,16 @@ fn measure_screened_security_all_configs() {
     println!("\n=== MEASUREMENT 1: screened security (this tree, this run) ===");
     println!(
         "{:<18} {:>6} {:>7} {:>8} | {:>9} {:>9} {:>9} {:>9} | {:>8} {:>7}",
-        "config", "n", "log_q", "claimed", "cSVP:cls", "cSVP:hyb", "cSVP:qnt", "cSVP:eff",
-        "MATZOV", "meets"
+        "config",
+        "n",
+        "log_q",
+        "claimed",
+        "cSVP:cls",
+        "cSVP:hyb",
+        "cSVP:qnt",
+        "cSVP:eff",
+        "MATZOV",
+        "meets"
     );
 
     for (name, sc) in named_configs() {
@@ -127,7 +133,11 @@ fn measure_public_depth_to_actual_failure() {
         let fresh_ok = d0 as u128 == expected;
         print!(
             "{:<18} depth0 dec={} exp={} margin_bits={} ok={}",
-            name, d0, expected, margin_bits(m0), fresh_ok
+            name,
+            d0,
+            expected,
+            margin_bits(m0),
+            fresh_ok
         );
 
         let mut last_good: i32 = if fresh_ok { 0 } else { -1 };
@@ -156,7 +166,10 @@ fn measure_public_depth_to_actual_failure() {
             }
             last_good = depth as i32;
         }
-        println!("\n    --> {} MEASURED public direct-square depth = {}", name, last_good);
+        println!(
+            "\n    --> {} MEASURED public direct-square depth = {}",
+            name, last_good
+        );
     }
     println!("=== end measurement 2 ===\n");
 }
@@ -212,7 +225,10 @@ fn measure_symmetric_depth_to_actual_failure() {
             }
             last_good = depth as i32;
         }
-        println!("\n    --> {} MEASURED symmetric direct-square depth = {}", name, last_good);
+        println!(
+            "\n    --> {} MEASURED symmetric direct-square depth = {}",
+            name, last_good
+        );
     }
     println!("=== end measurement 3 ===\n");
 }

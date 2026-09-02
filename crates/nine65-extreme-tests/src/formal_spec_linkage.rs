@@ -53,14 +53,21 @@ mod tests {
             let capacity = alpha_cap * beta_cap;
 
             // Verify precondition: gcd(alpha_cap, beta_cap) = 1.
-            assert_eq!(gcd(alpha_cap, beta_cap), 1,
-                "Coprimality precondition violated for ({}, {})", a_prime, b_prime);
+            assert_eq!(
+                gcd(alpha_cap, beta_cap),
+                1,
+                "Coprimality precondition violated for ({}, {})",
+                a_prime,
+                b_prime
+            );
 
             // Test 200 evenly-spaced values across [0, capacity).
             let step = capacity / 200;
             for i in 0..200u128 {
                 let v = i * step;
-                if v >= capacity { break; }
+                if v >= capacity {
+                    break;
+                }
 
                 let v_alpha = v % alpha_cap;
                 let v_beta = v % beta_cap;
@@ -69,15 +76,20 @@ mod tests {
                 let k = ke.extract_k(v_alpha, v_beta);
                 let reconstructed = v_alpha + k * alpha_cap;
 
-                assert_eq!(reconstructed, v,
+                assert_eq!(
+                    reconstructed, v,
                     "K-Elimination theorem violated: V={}, alpha={}, beta={}, got {}",
-                    v, alpha_cap, beta_cap, reconstructed);
+                    v, alpha_cap, beta_cap, reconstructed
+                );
 
                 total_tests += 1;
             }
         }
 
-        println!("[formal_spec] K-Elimination Coq theorem verified for {} test vectors", total_tests);
+        println!(
+            "[formal_spec] K-Elimination Coq theorem verified for {} test vectors",
+            total_tests
+        );
     }
 
     /// Verify Montgomery correctness property: montgomery_reduce(a * R) == a mod q
@@ -100,13 +112,22 @@ mod tests {
             let recovered = ctx.from_montgomery(a_mont);
             if recovered != a {
                 failures += 1;
-                eprintln!("[formal_spec] Montgomery theorem violated: a={}, got {}", a, recovered);
+                eprintln!(
+                    "[formal_spec] Montgomery theorem violated: a={}, got {}",
+                    a, recovered
+                );
             }
         }
 
-        assert_eq!(failures, 0,
-            "Montgomery correctness theorem violated for {}/{} inputs", failures, n_tests);
-        println!("[formal_spec] Montgomery correctness verified for {} inputs", n_tests);
+        assert_eq!(
+            failures, 0,
+            "Montgomery correctness theorem violated for {}/{} inputs",
+            failures, n_tests
+        );
+        println!(
+            "[formal_spec] Montgomery correctness verified for {} inputs",
+            n_tests
+        );
     }
 
     /// Verify that K-Elimination is exact for the specific secure_128 configuration.
@@ -120,10 +141,15 @@ mod tests {
         let ctx = DualRNSContext::for_fhe(&config.primes, config.n);
 
         // Verify anchor count meets the requirement from the Coq proof.
-        assert!(ctx.anchor.primes.len() >= 5,
-            "Secure_128 must have >= 5 anchor primes for K-Elimination completeness");
+        assert!(
+            ctx.anchor.primes.len() >= 5,
+            "Secure_128 must have >= 5 anchor primes for K-Elimination completeness"
+        );
 
-        println!("[formal_spec] secure_128 K-Elimination config: {} main primes, {} anchors",
-            ctx.main.primes.len(), ctx.anchor.primes.len());
+        println!(
+            "[formal_spec] secure_128 K-Elimination config: {} main primes, {} anchors",
+            ctx.main.primes.len(),
+            ctx.anchor.primes.len()
+        );
     }
 }

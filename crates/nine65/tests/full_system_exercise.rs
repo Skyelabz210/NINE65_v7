@@ -59,13 +59,24 @@ impl OpResult {
         match self.input_b {
             Some(b) => format!(
                 "[{}] {} on {}: {}({}, {}) = {} (expected {})",
-                status, self.op_name, self.config_name, self.op_name, self.input_a, b,
-                self.actual, self.expected
+                status,
+                self.op_name,
+                self.config_name,
+                self.op_name,
+                self.input_a,
+                b,
+                self.actual,
+                self.expected
             ),
             None => format!(
                 "[{}] {} on {}: {}({}) = {} (expected {})",
-                status, self.op_name, self.config_name, self.op_name, self.input_a,
-                self.actual, self.expected
+                status,
+                self.op_name,
+                self.config_name,
+                self.op_name,
+                self.input_a,
+                self.actual,
+                self.expected
             ),
         }
     }
@@ -111,7 +122,12 @@ fn test_all_secure_configs_construct() {
     ];
 
     for (name, sc) in &configs {
-        let log_q: u32 = sc.config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        let log_q: u32 = sc
+            .config
+            .primes
+            .iter()
+            .map(|&p| 64 - p.leading_zeros())
+            .sum();
         println!(
             "{:<20} {:>6} {:>8} {:>10} {:>10} {:>10} {:>5}",
             name,
@@ -120,7 +136,11 @@ fn test_all_secure_configs_construct() {
             sc.classical_security,
             sc.hybrid_security,
             sc.quantum_security,
-            if sc.he_standard_compliant { "yes" } else { "no" }
+            if sc.he_standard_compliant {
+                "yes"
+            } else {
+                "no"
+            }
         );
     }
 
@@ -135,7 +155,10 @@ fn test_all_secure_configs_construct() {
         }
     }
 
-    println!("\nAll {} SecureConfig variants constructed successfully.", configs.len());
+    println!(
+        "\nAll {} SecureConfig variants constructed successfully.",
+        configs.len()
+    );
 }
 
 #[test]
@@ -160,7 +183,10 @@ fn test_all_insecure_configs_construct() {
         ("deep_128", FHEConfig::deep_128_insecure()),
         ("batched", FHEConfig::batched_insecure()),
         ("he_standard_128", FHEConfig::he_standard_128_insecure()),
-        ("he_standard_128_deep", FHEConfig::he_standard_128_deep_insecure()),
+        (
+            "he_standard_128_deep",
+            FHEConfig::he_standard_128_deep_insecure(),
+        ),
         ("depth2_128", FHEConfig::depth2_128_insecure()),
         ("depth3_128", FHEConfig::depth3_128_insecure()),
         ("deep_circuit", FHEConfig::deep_circuit_insecure()),
@@ -185,7 +211,10 @@ fn test_all_insecure_configs_construct() {
         );
     }
 
-    println!("\nAll {} FHEConfig variants constructed successfully.", configs.len());
+    println!(
+        "\nAll {} FHEConfig variants constructed successfully.",
+        configs.len()
+    );
 }
 
 #[test]
@@ -194,7 +223,10 @@ fn test_custom_config_validation() {
 
     // Valid custom config
     let result = FHEConfig::custom(1024, vec![998244353], 65537, 2);
-    println!("Valid custom(1024, [998244353], 65537, 2): {:?}", result.is_ok());
+    println!(
+        "Valid custom(1024, [998244353], 65537, 2): {:?}",
+        result.is_ok()
+    );
     assert!(result.is_ok(), "Valid custom config should succeed");
 
     // Invalid: N not power of 2
@@ -219,7 +251,10 @@ fn test_custom_config_validation() {
     println!("t >= q accepted (known gap): {:?}", result.is_ok());
     if result.is_ok() {
         let cfg = result.unwrap();
-        println!("  delta = {} (should be 0, which breaks encryption)", cfg.delta());
+        println!(
+            "  delta = {} (should be 0, which breaks encryption)",
+            cfg.delta()
+        );
     }
 
     println!("\nCustom config validation: all checks passed.");
@@ -235,11 +270,20 @@ fn test_rns_context_from_all_multi_prime_configs() {
 
     let configs: Vec<(&str, FHEConfig)> = vec![
         ("secure_128", SecureConfig::secure_128().into_config()),
-        ("secure_128_deep", SecureConfig::secure_128_deep().into_config()),
+        (
+            "secure_128_deep",
+            SecureConfig::secure_128_deep().into_config(),
+        ),
         ("secure_192", SecureConfig::secure_192().into_config()),
         ("secure_256", SecureConfig::secure_256().into_config()),
-        ("test_fast", SecureConfig::test_fast_insecure().into_config()),
-        ("test_medium", SecureConfig::test_medium_insecure().into_config()),
+        (
+            "test_fast",
+            SecureConfig::test_fast_insecure().into_config(),
+        ),
+        (
+            "test_medium",
+            SecureConfig::test_medium_insecure().into_config(),
+        ),
     ];
 
     println!(
@@ -269,7 +313,11 @@ fn test_rns_context_from_all_multi_prime_configs() {
                 );
                 // Single-prime configs may not support RNSFHEContext
                 if cfg.primes.len() >= 2 {
-                    panic!("{} with {} primes should construct RNSFHEContext", name, cfg.primes.len());
+                    panic!(
+                        "{} with {} primes should construct RNSFHEContext",
+                        name,
+                        cfg.primes.len()
+                    );
                 }
             }
         }
@@ -288,9 +336,18 @@ fn test_dual_symmetric_roundtrip_all_configs() {
 
     let configs: Vec<(&str, FHEConfig)> = vec![
         ("secure_128", SecureConfig::secure_128().into_config()),
-        ("secure_128_deep", SecureConfig::secure_128_deep().into_config()),
-        ("test_fast", SecureConfig::test_fast_insecure().into_config()),
-        ("test_medium", SecureConfig::test_medium_insecure().into_config()),
+        (
+            "secure_128_deep",
+            SecureConfig::secure_128_deep().into_config(),
+        ),
+        (
+            "test_fast",
+            SecureConfig::test_fast_insecure().into_config(),
+        ),
+        (
+            "test_medium",
+            SecureConfig::test_medium_insecure().into_config(),
+        ),
     ];
 
     let mut all_results: Vec<RoundtripResult> = Vec::new();
@@ -326,7 +383,10 @@ fn test_dual_symmetric_roundtrip_all_configs() {
     let passed = all_results.iter().filter(|r| r.correct).count();
     let failed = total - passed;
 
-    println!("\n--- Summary: {}/{} passed, {} failed ---", passed, total, failed);
+    println!(
+        "\n--- Summary: {}/{} passed, {} failed ---",
+        passed, total, failed
+    );
     assert_eq!(failed, 0, "{} roundtrips failed", failed);
 }
 
@@ -348,11 +408,24 @@ fn test_dual_symmetric_roundtrip_secure_192() {
         let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
         let dec = ctx.decrypt_dual(&ct, &keys.secret_key);
         let ok = dec == m;
-        println!("  [{}] m={}, dec={}", if ok { "OK" } else { "FAIL" }, m, dec);
-        if ok { passed += 1; } else { failed += 1; }
+        println!(
+            "  [{}] m={}, dec={}",
+            if ok { "OK" } else { "FAIL" },
+            m,
+            dec
+        );
+        if ok {
+            passed += 1;
+        } else {
+            failed += 1;
+        }
     }
 
-    println!("\n--- secure_192: {}/{} passed ---", passed, passed + failed);
+    println!(
+        "\n--- secure_192: {}/{} passed ---",
+        passed,
+        passed + failed
+    );
     assert_eq!(failed, 0);
 }
 
@@ -374,11 +447,24 @@ fn test_dual_symmetric_roundtrip_secure_256() {
         let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
         let dec = ctx.decrypt_dual(&ct, &keys.secret_key);
         let ok = dec == m;
-        println!("  [{}] m={}, dec={}", if ok { "OK" } else { "FAIL" }, m, dec);
-        if ok { passed += 1; } else { failed += 1; }
+        println!(
+            "  [{}] m={}, dec={}",
+            if ok { "OK" } else { "FAIL" },
+            m,
+            dec
+        );
+        if ok {
+            passed += 1;
+        } else {
+            failed += 1;
+        }
     }
 
-    println!("\n--- secure_256: {}/{} passed ---", passed, passed + failed);
+    println!(
+        "\n--- secure_256: {}/{} passed ---",
+        passed,
+        passed + failed
+    );
     assert_eq!(failed, 0);
 }
 
@@ -392,7 +478,10 @@ fn test_dual_public_mode_roundtrip() {
 
     let configs: Vec<(&str, FHEConfig)> = vec![
         ("secure_128", SecureConfig::secure_128().into_config()),
-        ("test_medium", SecureConfig::test_medium_insecure().into_config()),
+        (
+            "test_medium",
+            SecureConfig::test_medium_insecure().into_config(),
+        ),
     ];
 
     for (name, cfg) in &configs {
@@ -412,8 +501,17 @@ fn test_dual_public_mode_roundtrip() {
             let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
             let dec = ctx.decrypt_dual(&ct, &keys.secret_key);
             let ok = dec == m;
-            println!("    [{}] encrypt/decrypt m={}, got={}", if ok { "OK" } else { "FAIL" }, m, dec);
-            assert_eq!(dec, m, "Public mode roundtrip failed for m={} on {}", m, name);
+            println!(
+                "    [{}] encrypt/decrypt m={}, got={}",
+                if ok { "OK" } else { "FAIL" },
+                m,
+                dec
+            );
+            assert_eq!(
+                dec, m,
+                "Public mode roundtrip failed for m={} on {}",
+                m, name
+            );
         }
     }
 
@@ -430,7 +528,10 @@ fn test_auto_mode_roundtrip() {
 
     let configs: Vec<(&str, FHEConfig)> = vec![
         ("secure_128", SecureConfig::secure_128().into_config()),
-        ("test_fast", SecureConfig::test_fast_insecure().into_config()),
+        (
+            "test_fast",
+            SecureConfig::test_fast_insecure().into_config(),
+        ),
     ];
 
     for (name, cfg) in &configs {
@@ -453,7 +554,12 @@ fn test_auto_mode_roundtrip() {
             match ctx.decrypt_auto(&ct, &keys) {
                 Ok(dec) => {
                     let ok = dec == m;
-                    println!("    [{}] m={}, dec={}", if ok { "OK" } else { "FAIL" }, m, dec);
+                    println!(
+                        "    [{}] m={}, dec={}",
+                        if ok { "OK" } else { "FAIL" },
+                        m,
+                        dec
+                    );
                     assert_eq!(dec, m, "Auto mode failed for m={} on {}", m, name);
                 }
                 Err(e) => {
@@ -484,7 +590,7 @@ fn test_homomorphic_add_dual() {
         (0, 0),
         (1, 1),
         (42, 58),
-        (cfg.t - 1, 1),  // wraparound: (t-1)+1 = 0 mod t
+        (cfg.t - 1, 1), // wraparound: (t-1)+1 = 0 mod t
         (cfg.t / 2, cfg.t / 2),
         (100, 200),
         (cfg.t - 2, cfg.t - 3),
@@ -513,7 +619,11 @@ fn test_homomorphic_add_dual() {
     }
 
     let failed = results.iter().filter(|r| !r.correct).count();
-    println!("\n--- Add: {}/{} passed ---", results.len() - failed, results.len());
+    println!(
+        "\n--- Add: {}/{} passed ---",
+        results.len() - failed,
+        results.len()
+    );
     assert_eq!(failed, 0, "{} addition tests failed", failed);
 }
 
@@ -533,9 +643,9 @@ fn test_homomorphic_sub_dual() {
     let pairs: Vec<(u64, u64)> = vec![
         (0, 0),
         (1, 0),
-        (0, 1),     // wraparound: 0 - 1 = t-1 mod t
+        (0, 1), // wraparound: 0 - 1 = t-1 mod t
         (100, 50),
-        (50, 100),  // wraparound
+        (50, 100), // wraparound
         (cfg.t - 1, cfg.t - 1),
         (cfg.t - 1, 0),
     ];
@@ -563,7 +673,11 @@ fn test_homomorphic_sub_dual() {
     }
 
     let failed = results.iter().filter(|r| !r.correct).count();
-    println!("\n--- Sub: {}/{} passed ---", results.len() - failed, results.len());
+    println!(
+        "\n--- Sub: {}/{} passed ---",
+        results.len() - failed,
+        results.len()
+    );
     assert_eq!(failed, 0, "{} subtraction tests failed", failed);
 }
 
@@ -586,8 +700,8 @@ fn test_homomorphic_mul_symmetric() {
         (2, 3),
         (7, 11),
         (100, 200),
-        (cfg.t - 1, 1),    // (t-1)*1 = t-1
-        (cfg.t - 1, 2),    // (t-1)*2 = t-2 mod t
+        (cfg.t - 1, 1), // (t-1)*1 = t-1
+        (cfg.t - 1, 2), // (t-1)*2 = t-2 mod t
     ];
 
     let mut results: Vec<OpResult> = Vec::new();
@@ -613,7 +727,11 @@ fn test_homomorphic_mul_symmetric() {
     }
 
     let failed = results.iter().filter(|r| !r.correct).count();
-    println!("\n--- Mul Symmetric: {}/{} passed ---", results.len() - failed, results.len());
+    println!(
+        "\n--- Mul Symmetric: {}/{} passed ---",
+        results.len() - failed,
+        results.len()
+    );
     assert_eq!(failed, 0, "{} multiplication tests failed", failed);
 }
 
@@ -630,13 +748,7 @@ fn test_homomorphic_mul_public() {
     let mut rng = ShadowHarvester::with_seed(600);
     let keys = ctx.generate_keys_dual_full(&mut rng);
 
-    let pairs: Vec<(u64, u64)> = vec![
-        (0, 1),
-        (1, 1),
-        (2, 3),
-        (5, 7),
-        (42, 100),
-    ];
+    let pairs: Vec<(u64, u64)> = vec![(0, 1), (1, 1), (2, 3), (5, 7), (42, 100)];
 
     let mut results: Vec<OpResult> = Vec::new();
 
@@ -677,7 +789,11 @@ fn test_homomorphic_mul_public() {
     }
 
     let failed = results.iter().filter(|r| !r.correct).count();
-    println!("\n--- Mul Public: {}/{} passed ---", results.len() - failed, results.len());
+    println!(
+        "\n--- Mul Public: {}/{} passed ---",
+        results.len() - failed,
+        results.len()
+    );
     assert_eq!(failed, 0, "{} public multiplication tests failed", failed);
 }
 
@@ -700,7 +816,10 @@ fn test_mul_depth_chain_symmetric_secure_128() {
     let max_depth = 20;
 
     println!("  Base value: {}", base);
-    println!("  {:>5} {:>15} {:>15} {:>8}", "Depth", "Expected", "Decrypted", "Status");
+    println!(
+        "  {:>5} {:>15} {:>15} {:>8}",
+        "Depth", "Expected", "Decrypted", "Status"
+    );
     println!("  {}", "-".repeat(50));
 
     let mut max_correct_depth = 0u32;
@@ -715,7 +834,10 @@ fn test_mul_depth_chain_symmetric_secure_128() {
                 let ok = dec == expected;
                 println!(
                     "  {:>5} {:>15} {:>15} {:>8}",
-                    depth, expected, dec, if ok { "OK" } else { "WRONG" }
+                    depth,
+                    expected,
+                    dec,
+                    if ok { "OK" } else { "WRONG" }
                 );
                 if ok {
                     max_correct_depth = depth as u32;
@@ -726,7 +848,13 @@ fn test_mul_depth_chain_symmetric_secure_128() {
                 }
             }
             Err(e) => {
-                println!("  {:>5} {:>15} {:>15} {:>8}", depth, expected, format!("ERR: {}", e), "NOISE");
+                println!(
+                    "  {:>5} {:>15} {:>15} {:>8}",
+                    depth,
+                    expected,
+                    format!("ERR: {}", e),
+                    "NOISE"
+                );
                 break;
             }
         }
@@ -756,7 +884,10 @@ fn test_mul_depth_chain_public_secure_128() {
     let max_depth = 20;
 
     println!("  Base value: {}", base);
-    println!("  {:>5} {:>15} {:>15} {:>8}", "Depth", "Expected", "Decrypted", "Status");
+    println!(
+        "  {:>5} {:>15} {:>15} {:>8}",
+        "Depth", "Expected", "Decrypted", "Status"
+    );
     println!("  {}", "-".repeat(50));
 
     let mut max_correct_depth = 0u32;
@@ -772,7 +903,10 @@ fn test_mul_depth_chain_public_secure_128() {
                         let ok = dec == expected;
                         println!(
                             "  {:>5} {:>15} {:>15} {:>8}",
-                            depth, expected, dec, if ok { "OK" } else { "WRONG" }
+                            depth,
+                            expected,
+                            dec,
+                            if ok { "OK" } else { "WRONG" }
                         );
                         if ok {
                             max_correct_depth = depth as u32;
@@ -783,7 +917,12 @@ fn test_mul_depth_chain_public_secure_128() {
                         }
                     }
                     Err(e) => {
-                        println!("  {:>5} {:>15} {:>15}", depth, expected, format!("ERR: {}", e));
+                        println!(
+                            "  {:>5} {:>15} {:>15}",
+                            depth,
+                            expected,
+                            format!("ERR: {}", e)
+                        );
                         break;
                     }
                 }
@@ -795,8 +934,14 @@ fn test_mul_depth_chain_public_secure_128() {
         }
     }
 
-    println!("\n--- Max correct depth (public): {} ---", max_correct_depth);
-    assert!(max_correct_depth >= 1, "Should achieve at least depth 1 in public mode");
+    println!(
+        "\n--- Max correct depth (public): {} ---",
+        max_correct_depth
+    );
+    assert!(
+        max_correct_depth >= 1,
+        "Should achieve at least depth 1 in public mode"
+    );
 }
 
 // ============================================================================
@@ -835,7 +980,10 @@ fn test_deterministic_encryption() {
 
     assert_eq!(dec1, m, "Run 1 decryption wrong");
     assert_eq!(dec2, m, "Run 2 decryption wrong");
-    assert_eq!(dec1, dec2, "Determinism violated: different decryptions from same seed");
+    assert_eq!(
+        dec1, dec2,
+        "Determinism violated: different decryptions from same seed"
+    );
     assert!(c0_match, "Determinism violated: c0 differs between runs");
     assert!(c1_match, "Determinism violated: c1 differs between runs");
 
@@ -870,7 +1018,10 @@ fn test_different_seeds_different_ciphertexts() {
 
     assert_eq!(dec1, m);
     assert_eq!(dec2, m);
-    assert!(c0_differ, "Different seeds should produce different ciphertexts");
+    assert!(
+        c0_differ,
+        "Different seeds should produce different ciphertexts"
+    );
 
     println!("\nSemantic security (different seeds): VERIFIED.");
 }
@@ -942,13 +1093,12 @@ fn test_mul_with_precomputed_s2() {
     // Precompute s^2
     let s2 = ctx.precompute_s_squared(&keys.secret_key);
 
-    let pairs: Vec<(u64, u64)> = vec![
-        (2, 3),
-        (7, 11),
-        (100, 200),
-    ];
+    let pairs: Vec<(u64, u64)> = vec![(2, 3), (7, 11), (100, 200)];
 
-    println!("  {:>8} {:>8} {:>15} {:>15} {:>8}", "a", "b", "expected", "actual", "status");
+    println!(
+        "  {:>8} {:>8} {:>15} {:>15} {:>8}",
+        "a", "b", "expected", "actual", "status"
+    );
     println!("  {}", "-".repeat(60));
 
     let mut all_ok = true;
@@ -960,9 +1110,18 @@ fn test_mul_with_precomputed_s2() {
         let dec = ctx.decrypt_dual(&ct_prod, &keys.secret_key);
         let expected = ((*a as u128 * *b as u128) % cfg.t as u128) as u64;
         let ok = dec == expected;
-        if !ok { all_ok = false; }
+        if !ok {
+            all_ok = false;
+        }
 
-        println!("  {:>8} {:>8} {:>15} {:>15} {:>8}", a, b, expected, dec, if ok { "OK" } else { "FAIL" });
+        println!(
+            "  {:>8} {:>8} {:>15} {:>15} {:>8}",
+            a,
+            b,
+            expected,
+            dec,
+            if ok { "OK" } else { "FAIL" }
+        );
     }
 
     assert!(all_ok, "Precomputed s^2 multiplication had failures");
@@ -994,7 +1153,13 @@ fn test_mod_switch_down() {
             println!("  Correct: {}", dec == m);
             // Mod switch may introduce small error — allow tolerance
             let error = if dec > m { dec - m } else { m - dec };
-            assert!(error <= 1, "Mod switch error too large: {} (expected {}, got {})", error, m, dec);
+            assert!(
+                error <= 1,
+                "Mod switch error too large: {} (expected {}, got {})",
+                error,
+                m,
+                dec
+            );
         }
         None => {
             println!("  Mod switch not available (already at minimum level)");
@@ -1024,7 +1189,10 @@ fn test_gso_fhe_roundtrip() {
 
     let values = [0u64, 1, 42, cfg.t - 1, cfg.t / 2];
 
-    println!("  {:>8} {:>8} {:>10} {:>10}", "input", "output", "noise", "status");
+    println!(
+        "  {:>8} {:>8} {:>10} {:>10}",
+        "input", "output", "noise", "status"
+    );
     println!("  {}", "-".repeat(45));
 
     let mut all_ok = true;
@@ -1033,11 +1201,16 @@ fn test_gso_fhe_roundtrip() {
         let noise = ct.noise.distance;
         let dec = ctx.decrypt(&ct, &keys.secret_key);
         let ok = dec == m;
-        if !ok { all_ok = false; }
+        if !ok {
+            all_ok = false;
+        }
 
         println!(
             "  {:>8} {:>8} {:>10} {:>10}",
-            m, dec, noise, if ok { "OK" } else { "FAIL" }
+            m,
+            dec,
+            noise,
+            if ok { "OK" } else { "FAIL" }
         );
     }
 
@@ -1093,7 +1266,10 @@ fn test_rns_single_modulus_roundtrip() {
 
     let configs: Vec<(&str, FHEConfig)> = vec![
         ("secure_128", SecureConfig::secure_128().into_config()),
-        ("test_fast", SecureConfig::test_fast_insecure().into_config()),
+        (
+            "test_fast",
+            SecureConfig::test_fast_insecure().into_config(),
+        ),
     ];
 
     for (name, cfg) in &configs {
@@ -1107,14 +1283,28 @@ fn test_rns_single_modulus_roundtrip() {
         let mut rng = ShadowHarvester::with_seed(1200);
         let keys = ctx.generate_keys(&mut rng);
 
-        println!("  Config: {} (N={}, primes={})", name, cfg.n, cfg.primes.len());
+        println!(
+            "  Config: {} (N={}, primes={})",
+            name,
+            cfg.n,
+            cfg.primes.len()
+        );
 
         for &m in &[0u64, 1, 42, cfg.t - 1] {
             let ct = ctx.encrypt(m, &keys.public_key, &mut rng);
             let dec = ctx.decrypt(&ct, &keys.secret_key);
             let ok = dec == m;
-            println!("    [{}] m={}, dec={}", if ok { "OK" } else { "FAIL" }, m, dec);
-            assert_eq!(dec, m, "Single-modulus roundtrip failed for m={} on {}", m, name);
+            println!(
+                "    [{}] m={}, dec={}",
+                if ok { "OK" } else { "FAIL" },
+                m,
+                dec
+            );
+            assert_eq!(
+                dec, m,
+                "Single-modulus roundtrip failed for m={} on {}",
+                m, name
+            );
         }
     }
 
@@ -1143,7 +1333,14 @@ fn test_rns_multi_modulus_add() {
         let dec = ctx.decrypt(&ct_sum, &keys.secret_key);
         let expected = (*a + *b) % cfg.t;
         let ok = dec == expected;
-        println!("  [{}] {} + {} = {} (expected {})", if ok { "OK" } else { "FAIL" }, a, b, dec, expected);
+        println!(
+            "  [{}] {} + {} = {} (expected {})",
+            if ok { "OK" } else { "FAIL" },
+            a,
+            b,
+            dec,
+            expected
+        );
         assert_eq!(dec, expected);
     }
 
@@ -1175,8 +1372,17 @@ fn test_rns_multi_modulus_mul_bajard() {
         let expected = ((*a as u128 * *b as u128) % cfg.t as u128) as u64;
         let ok = dec == expected;
         total += 1;
-        if ok { correct += 1; }
-        println!("  [{}] {} * {} = {} (expected {})", if ok { "OK" } else { "ERR" }, a, b, dec, expected);
+        if ok {
+            correct += 1;
+        }
+        println!(
+            "  [{}] {} * {} = {} (expected {})",
+            if ok { "OK" } else { "ERR" },
+            a,
+            b,
+            dec,
+            expected
+        );
     }
 
     println!("\n--- Bajard path: {}/{} correct ---", correct, total);
@@ -1203,14 +1409,25 @@ fn test_auto_mode_add() {
     let pairs: Vec<(u64, u64)> = vec![(1, 2), (42, 58), (cfg.t - 1, 1), (0, 0)];
 
     for (a, b) in &pairs {
-        let ct_a = ctx.encrypt_auto(*a, &keys, &mut rng).expect("encrypt_auto a");
-        let ct_b = ctx.encrypt_auto(*b, &keys, &mut rng).expect("encrypt_auto b");
+        let ct_a = ctx
+            .encrypt_auto(*a, &keys, &mut rng)
+            .expect("encrypt_auto a");
+        let ct_b = ctx
+            .encrypt_auto(*b, &keys, &mut rng)
+            .expect("encrypt_auto b");
         match ctx.add_auto(&ct_a, &ct_b) {
             Ok(ct_sum) => {
                 let dec = ctx.decrypt_auto(&ct_sum, &keys).expect("decrypt");
                 let expected = (*a + *b) % cfg.t;
                 let ok = dec == expected;
-                println!("  [{}] {} + {} = {} (expected {})", if ok { "OK" } else { "FAIL" }, a, b, dec, expected);
+                println!(
+                    "  [{}] {} + {} = {} (expected {})",
+                    if ok { "OK" } else { "FAIL" },
+                    a,
+                    b,
+                    dec,
+                    expected
+                );
                 assert_eq!(dec, expected);
             }
             Err(e) => {
@@ -1235,14 +1452,25 @@ fn test_auto_mode_mul() {
     let pairs: Vec<(u64, u64)> = vec![(2, 3), (7, 11), (1, cfg.t - 1)];
 
     for (a, b) in &pairs {
-        let ct_a = ctx.encrypt_auto(*a, &keys, &mut rng).expect("encrypt_auto a");
-        let ct_b = ctx.encrypt_auto(*b, &keys, &mut rng).expect("encrypt_auto b");
+        let ct_a = ctx
+            .encrypt_auto(*a, &keys, &mut rng)
+            .expect("encrypt_auto a");
+        let ct_b = ctx
+            .encrypt_auto(*b, &keys, &mut rng)
+            .expect("encrypt_auto b");
         match ctx.mul_auto(&ct_a, &ct_b, &keys) {
             Ok(ct_prod) => {
                 let dec = ctx.decrypt_auto(&ct_prod, &keys).expect("decrypt");
                 let expected = ((*a as u128 * *b as u128) % cfg.t as u128) as u64;
                 let ok = dec == expected;
-                println!("  [{}] {} * {} = {} (expected {})", if ok { "OK" } else { "FAIL" }, a, b, dec, expected);
+                println!(
+                    "  [{}] {} * {} = {} (expected {})",
+                    if ok { "OK" } else { "FAIL" },
+                    a,
+                    b,
+                    dec,
+                    expected
+                );
                 assert_eq!(dec, expected);
             }
             Err(e) => {
@@ -1269,7 +1497,10 @@ fn test_encrypt_decrypt_all_insecure_configs() {
         ("light_rns_exact", FHEConfig::light_rns_exact_insecure()),
         ("standard_128", FHEConfig::standard_128_insecure()),
         ("he_standard_128", FHEConfig::he_standard_128_insecure()),
-        ("he_standard_128_deep", FHEConfig::he_standard_128_deep_insecure()),
+        (
+            "he_standard_128_deep",
+            FHEConfig::he_standard_128_deep_insecure(),
+        ),
         ("depth2_128", FHEConfig::depth2_128_insecure()),
         ("depth3_128", FHEConfig::depth3_128_insecure()),
     ];
@@ -1287,7 +1518,15 @@ fn test_encrypt_decrypt_all_insecure_configs() {
         let ctx = match RNSFHEContext::try_new(cfg) {
             Ok(c) => c,
             Err(e) => {
-                println!("  {:<25} {:>6} {:>8} {:>8} {:>8} {:>10}", name, cfg.n, cfg.primes.len(), cfg.t, "-", format!("SKIP: {}", e));
+                println!(
+                    "  {:<25} {:>6} {:>8} {:>8} {:>8} {:>10}",
+                    name,
+                    cfg.n,
+                    cfg.primes.len(),
+                    cfg.t,
+                    "-",
+                    format!("SKIP: {}", e)
+                );
                 continue;
             }
         };
@@ -1301,16 +1540,29 @@ fn test_encrypt_decrypt_all_insecure_configs() {
             let dec = ctx.decrypt_dual(&ct, &keys.secret_key);
             total += 1;
             let ok = dec == m;
-            if ok { passed += 1; }
+            if ok {
+                passed += 1;
+            }
             println!(
                 "  {:<25} {:>6} {:>8} {:>8} {:>8} {:>10}",
-                name, cfg.n, cfg.primes.len(), cfg.t, m,
-                if ok { format!("OK({})", dec) } else { format!("FAIL({})", dec) }
+                name,
+                cfg.n,
+                cfg.primes.len(),
+                cfg.t,
+                m,
+                if ok {
+                    format!("OK({})", dec)
+                } else {
+                    format!("FAIL({})", dec)
+                }
             );
         }
     }
 
-    println!("\n--- Insecure config sweep: {}/{} passed ---", passed, total);
+    println!(
+        "\n--- Insecure config sweep: {}/{} passed ---",
+        passed, total
+    );
     assert_eq!(passed, total, "Some insecure config roundtrips failed");
 }
 
@@ -1332,8 +1584,15 @@ fn test_depth_chain_secure_128_deep() {
     let mut expected: u64 = base;
     let max_depth = 30;
 
-    println!("  Config: secure_128_deep (N={}, primes={})", cfg.n, cfg.primes.len());
-    println!("  {:>5} {:>15} {:>15} {:>8}", "Depth", "Expected", "Decrypted", "Status");
+    println!(
+        "  Config: secure_128_deep (N={}, primes={})",
+        cfg.n,
+        cfg.primes.len()
+    );
+    println!(
+        "  {:>5} {:>15} {:>15} {:>8}",
+        "Depth", "Expected", "Decrypted", "Status"
+    );
     println!("  {}", "-".repeat(50));
 
     let mut max_correct_depth = 0u32;
@@ -1348,7 +1607,10 @@ fn test_depth_chain_secure_128_deep() {
                 let ok = dec == expected;
                 println!(
                     "  {:>5} {:>15} {:>15} {:>8}",
-                    depth, expected, dec, if ok { "OK" } else { "WRONG" }
+                    depth,
+                    expected,
+                    dec,
+                    if ok { "OK" } else { "WRONG" }
                 );
                 if ok {
                     max_correct_depth = depth as u32;
@@ -1366,7 +1628,10 @@ fn test_depth_chain_secure_128_deep() {
 
     println!("\n--- secure_128_deep max depth: {} ---", max_correct_depth);
     // Deep config should handle more depth than standard
-    assert!(max_correct_depth >= 1, "Deep config should achieve at least depth 1");
+    assert!(
+        max_correct_depth >= 1,
+        "Deep config should achieve at least depth 1"
+    );
 }
 
 // ============================================================================
@@ -1387,7 +1652,8 @@ fn test_key_serialization_roundtrip() {
     let json = keys.to_json().expect("serialize");
     println!("  JSON size: {} bytes", json.len());
 
-    let keys2 = nine65::ops::rns_fhe::DualRNSKeySet::from_json_validated(&json).expect("deserialize");
+    let keys2 =
+        nine65::ops::rns_fhe::DualRNSKeySet::from_json_validated(&json).expect("deserialize");
 
     // Verify roundtrip
     let m: u64 = 42;
@@ -1513,10 +1779,16 @@ fn test_comprehensive_summary() {
     for (name, ok) in &subsystems {
         let status = if *ok { "PASS" } else { "FAIL" };
         println!("  {:<35} {:>10}", name, status);
-        if !*ok { all_pass = false; }
+        if !*ok {
+            all_pass = false;
+        }
     }
 
-    println!("\n  {}/{} subsystems operational.", subsystems.len(), subsystems.len());
+    println!(
+        "\n  {}/{} subsystems operational.",
+        subsystems.len(),
+        subsystems.len()
+    );
     println!("========================================\n");
 
     assert!(all_pass, "One or more subsystems failed");

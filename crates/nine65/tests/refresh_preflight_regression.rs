@@ -82,13 +82,9 @@ fn secure_128_deep_budget_matches_independent_exact_limb_oracle() {
     let mut budget = NoiseBudget::from_config(&config);
 
     assert_eq!(budget.initial_millibits(), expected_fresh_budget(&config));
-    assert_eq!(
-        budget.remaining_millibits(),
-        expected_fresh_budget(&config)
-    );
+    assert_eq!(budget.remaining_millibits(), expected_fresh_budget(&config));
 
-    let operation_cost =
-        NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+    let operation_cost = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
     let mut funded_operations = 0usize;
 
     while budget.can_perform(operation_cost) && !budget.should_bootstrap(250) {
@@ -96,7 +92,10 @@ fn secure_128_deep_budget_matches_independent_exact_limb_oracle() {
             .consume(NoiseOpType::MulCt, operation_cost)
             .expect("preflighted multiplication must consume exactly");
         funded_operations += 1;
-        assert!(funded_operations < 1024, "refresh preflight failed to converge");
+        assert!(
+            funded_operations < 1024,
+            "refresh preflight failed to converge"
+        );
     }
 
     assert!(funded_operations > 0);
@@ -118,8 +117,7 @@ fn secure_128_deep_budget_matches_independent_exact_limb_oracle() {
 fn full_threshold_requires_refresh_before_first_operation() {
     let config = SecureConfig::secure_128_deep().into_config();
     let budget = NoiseBudget::from_config(&config);
-    let operation_cost =
-        NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
+    let operation_cost = NoiseBudget::mul_ct_cost(&config) + NoiseBudget::relin_cost(&config);
 
     assert!(budget.can_perform(operation_cost));
     assert!(

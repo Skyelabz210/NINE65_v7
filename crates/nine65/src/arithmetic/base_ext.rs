@@ -138,7 +138,10 @@ impl BaseExt {
         let k = self.main.len();
         debug_assert_eq!(r.len(), k);
         debug_assert_eq!(out.len(), self.anchors.len());
-        assert!(k <= 16, "base_ext: fixed-size c[] buffer holds at most 16 lanes");
+        assert!(
+            k <= 16,
+            "base_ext: fixed-size c[] buffer holds at most 16 lanes"
+        );
         let mut c = [0u64; 16];
         for i in 0..k {
             c[i] = ((r[i] as u128 * self.xi[i] as u128) % self.main[i] as u128) as u64;

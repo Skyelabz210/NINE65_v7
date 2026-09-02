@@ -4,9 +4,9 @@
 
 #[cfg(test)]
 mod tests {
-    use nine65::ops::rns_fhe::{RNSFHEContext, DualRNSKeySet};
-    use nine65::params::secure_configs::SecureConfig;
     use nine65::entropy::shadow::ShadowHarvester;
+    use nine65::ops::rns_fhe::{DualRNSKeySet, RNSFHEContext};
+    use nine65::params::secure_configs::SecureConfig;
 
     /// Q19: DualRNSKeySet JSON serialization roundtrip — encrypt after deserialization
     /// must produce the same plaintext as before.
@@ -28,9 +28,15 @@ mod tests {
         let ct = ctx.encrypt_dual(m, &keys2.public_key, &mut rng);
         let recovered = ctx.decrypt_dual(&ct, &keys2.secret_key);
 
-        assert_eq!(recovered, m,
-            "Key serialization roundtrip failed: got {} expected {}", recovered, m);
-        println!("[key_ser] DualRNSKeySet JSON roundtrip: OK ({}b)", json.len());
+        assert_eq!(
+            recovered, m,
+            "Key serialization roundtrip failed: got {} expected {}",
+            recovered, m
+        );
+        println!(
+            "[key_ser] DualRNSKeySet JSON roundtrip: OK ({}b)",
+            json.len()
+        );
     }
 
     /// Bytes (bincode) serialization roundtrip for DualRNSKeySet.
@@ -53,8 +59,11 @@ mod tests {
         let ct = ctx.encrypt_dual(m, &keys2.public_key, &mut rng);
         let recovered = ctx.decrypt_dual(&ct, &keys2.secret_key);
 
-        assert_eq!(recovered, m,
-            "Key bytes roundtrip failed: got {} expected {}", recovered, m);
+        assert_eq!(
+            recovered, m,
+            "Key bytes roundtrip failed: got {} expected {}",
+            recovered, m
+        );
     }
 
     /// Full key set (with eval key) multiplication roundtrip.
@@ -67,13 +76,17 @@ mod tests {
 
         let m: u64 = 7;
         let ct = ctx.encrypt_dual(m, &full_keys.public_key, &mut rng);
-        let ct_mul = ctx.mul_dual_public(&ct, &ct, &full_keys.eval_key)
+        let ct_mul = ctx
+            .mul_dual_public(&ct, &ct, &full_keys.eval_key)
             .expect("multiplication");
         let recovered = ctx.decrypt_dual(&ct_mul, &full_keys.secret_key);
         let expected = (m * m) % config.t;
 
-        assert_eq!(recovered, expected,
-            "Full key set mul roundtrip failed: got {} expected {}", recovered, expected);
+        assert_eq!(
+            recovered, expected,
+            "Full key set mul roundtrip failed: got {} expected {}",
+            recovered, expected
+        );
         println!("[key_ser] DualRNSFullKeySet mul roundtrip: OK");
     }
 
@@ -95,8 +108,11 @@ mod tests {
         let ct = ctx.encrypt_dual_secure(m, &keys.public_key);
         let recovered = ctx.decrypt_dual(&ct, &keys2.secret_key);
 
-        assert_eq!(recovered, m,
-            "Secret key bytes roundtrip failed: got {} expected {}", recovered, m);
+        assert_eq!(
+            recovered, m,
+            "Secret key bytes roundtrip failed: got {} expected {}",
+            recovered, m
+        );
     }
 
     /// Key sizes must be within documented bounds (regression test for key bloat).
@@ -113,6 +129,10 @@ mod tests {
         // Sanity bounds: keys should not be unreasonably large.
         // For n=4096, 3 primes: expected DualRNSKeySet size is in the tens of KB range.
         let keyset_mb = keyset_size / (1024 * 1024);
-        assert!(keyset_mb < 10, "Keyset exceeds 10 MB: {} bytes — possible key bloat regression", keyset_size);
+        assert!(
+            keyset_mb < 10,
+            "Keyset exceeds 10 MB: {} bytes — possible key bloat regression",
+            keyset_size
+        );
     }
 }

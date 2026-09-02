@@ -228,7 +228,10 @@ fn scalar_bit_length(value: u64) -> i64 {
 
 /// Exact bit length of `floor(Q / t)`, where `Q` is the full RNS product.
 fn exact_delta_bit_length(config: &FHEConfig) -> i64 {
-    assert!(!config.primes.is_empty(), "RNS factor vector must not be empty");
+    assert!(
+        !config.primes.is_empty(),
+        "RNS factor vector must not be empty"
+    );
     assert!(config.t >= 2, "plaintext modulus must be at least two");
     assert!(
         config.primes.iter().all(|&prime| config.t < prime),
@@ -242,7 +245,10 @@ fn exact_delta_bit_length(config: &FHEConfig) -> i64 {
 
 /// `log2(n)`, exact: every supported `n` is a power of two.
 fn ring_degree_bits(config: &FHEConfig) -> i64 {
-    debug_assert!(config.n.is_power_of_two(), "ring degree must be a power of two");
+    debug_assert!(
+        config.n.is_power_of_two(),
+        "ring degree must be a power of two"
+    );
     config.n.trailing_zeros() as i64
 }
 
@@ -375,9 +381,9 @@ impl NoiseBudget {
 
     /// Millibits available above a ciphertext whose noise is `start_noise_bits`.
     fn budget_mb_from_start_noise(start_noise_bits: i64, config: &FHEConfig) -> i64 {
-        let budget_bits =
-            (decryption_capacity_bits(config) - effective_start_bits(start_noise_bits, config))
-                .max(0);
+        let budget_bits = (decryption_capacity_bits(config)
+            - effective_start_bits(start_noise_bits, config))
+        .max(0);
         budget_bits
             .checked_mul(1000)
             .expect("noise budget exceeds i64 millibits")
@@ -397,11 +403,7 @@ impl NoiseBudget {
     }
 
     /// Consume or refund budget using checked integer arithmetic.
-    pub fn consume(
-        &mut self,
-        op_type: NoiseOpType,
-        cost_mb: i64,
-    ) -> Result<i64, NoiseExhausted> {
+    pub fn consume(&mut self, op_type: NoiseOpType, cost_mb: i64) -> Result<i64, NoiseExhausted> {
         if cost_mb > 0 && self.remaining_mb < cost_mb {
             return Err(self.exhausted(op_type, cost_mb));
         }
@@ -811,8 +813,8 @@ mod tests {
         // operands -- a pair of refresh outputs, which is the cleanest state
         // the auto path ever reaches after its first operation.
         for config in production_configs() {
-            let cleanest_start = fresh_noise_bit_bound(&config)
-                .min(bootstrap_output_noise_bit_bound(&config));
+            let cleanest_start =
+                fresh_noise_bit_bound(&config).min(bootstrap_output_noise_bit_bound(&config));
             let smallest_post_multiply =
                 effective_start_bits(cleanest_start, &config) + mul_growth_bit_cost(&config);
             let relin = relin_noise_bit_bound(&config);
@@ -1059,7 +1061,7 @@ mod tests {
                 budget.remaining_millibits(),
                 (decryption_capacity_bits(&config)
                     - effective_start_bits(fresh_noise_bit_bound(&config), &config))
-                    .max(0)
+                .max(0)
                     * 1000,
                 "{}: from_config must be exactly the headroom above a fresh ciphertext",
                 config.name,
@@ -1120,7 +1122,10 @@ mod tests {
         let before = budget.remaining_millibits();
         budget.reset_after_bootstrap(&config);
         assert!(budget.remaining_millibits() > before);
-        assert_eq!(budget.operations().last().unwrap().op_type, NoiseOpType::Bootstrap);
+        assert_eq!(
+            budget.operations().last().unwrap().op_type,
+            NoiseOpType::Bootstrap
+        );
     }
 
     #[ignore = "VESTIGIAL: asserts should_bootstrap(250) is inclusive at exactly 75000 millibits consumed and false one millibit below — the auto-refresh trigger boundary. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]

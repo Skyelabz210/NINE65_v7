@@ -21,7 +21,7 @@ fn main() {
 
     println!("NINE65 v7 - Efficiency & Resource Audit");
     println!("=======================================");
-    
+
     let mem_start = get_memory_usage();
     println!("Baseline Memory: {} KB", mem_start);
 
@@ -30,7 +30,11 @@ fn main() {
     let keygen_time = t0.elapsed().as_millis();
     let mem_keys = get_memory_usage();
     println!("KeyGen Time: {} ms", keygen_time);
-    println!("Memory after KeyGen: {} KB (Delta: {} KB)", mem_keys, mem_keys - mem_start);
+    println!(
+        "Memory after KeyGen: {} KB (Delta: {} KB)",
+        mem_keys,
+        mem_keys - mem_start
+    );
 
     let encoder = BFVEncoder::new(&config);
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
@@ -47,10 +51,14 @@ fn main() {
     }
     let avg_mul = t0.elapsed().as_millis() as f64 / iterations as f64;
     let mem_ops = get_memory_usage();
-    
+
     println!("Avg Mul (ct*ct) Time: {:.2} ms", avg_mul);
-    println!("Memory during Ops: {} KB (Delta from Keys: {} KB)", mem_ops, mem_ops - mem_keys);
-    
+    println!(
+        "Memory during Ops: {} KB (Delta from Keys: {} KB)",
+        mem_ops,
+        mem_ops - mem_keys
+    );
+
     println!("\nEfficiency Metrics:");
     println!("- Memory footprint is extremely lean (< 100MB).");
     println!("- Core-ms per Mul: {:.2} (on 6 cores)", avg_mul * 6.0);

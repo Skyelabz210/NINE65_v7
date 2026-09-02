@@ -76,7 +76,10 @@ impl RingPolynomial {
     /// Caller must guarantee all coefficients are in [0, q).
     #[inline]
     pub fn from_coeffs_unchecked(coeffs: Vec<u64>, q: u64) -> Self {
-        debug_assert!(coeffs.iter().all(|&c| c < q), "from_coeffs_unchecked: coefficient >= q");
+        debug_assert!(
+            coeffs.iter().all(|&c| c < q),
+            "from_coeffs_unchecked: coefficient >= q"
+        );
         Self { coeffs, q }
     }
 

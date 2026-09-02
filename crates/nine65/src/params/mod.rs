@@ -132,7 +132,11 @@ impl FHEConfig {
         let t = 65_537u64;
         let avoid = crate::arithmetic::DualRNSContext::canonical_anchor_primes_for_n(n);
         let deltas = crate::params::manufactured::manufactured_ntt_delta_lanes(
-            t, 2 * n as u64, 3, 1 << 28, &avoid,
+            t,
+            2 * n as u64,
+            3,
+            1 << 28,
+            &avoid,
         )
         .expect("deterministic lane scan for the test chain");
         let mut primes = vec![t];
@@ -602,7 +606,11 @@ mod tests {
         ];
 
         for config in configs {
-            assert!(config.n.is_power_of_two(), "{} n not power of 2", config.name);
+            assert!(
+                config.n.is_power_of_two(),
+                "{} n not power of 2",
+                config.name
+            );
             assert!(!config.primes.is_empty(), "{} has no primes", config.name);
             assert!(config.t >= 2, "{} t too small", config.name);
             assert!(
@@ -662,8 +670,7 @@ mod tests {
 
     #[test]
     fn test_custom_config() {
-        let config =
-            FHEConfig::custom(2048, vec![998244353], 1024, 2).expect("valid config");
+        let config = FHEConfig::custom(2048, vec![998244353], 1024, 2).expect("valid config");
         assert_eq!(config.n, 2048);
         assert_eq!(config.t, 1024);
     }
@@ -702,7 +709,9 @@ mod tests {
     fn exact_noise_budget_accepts_large_products_without_scalar_projection() {
         let config = FHEConfig {
             n: 16384,
-            primes: vec![998244353, 985661441, 754974721, 469762049, 167772161, 595591169],
+            primes: vec![
+                998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
+            ],
             q: 998244353,
             t: 65537,
             eta: 5,

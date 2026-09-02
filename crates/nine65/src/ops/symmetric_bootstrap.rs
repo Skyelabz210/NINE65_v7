@@ -189,8 +189,7 @@ impl SymmetricBootstrap {
         let total_ns = total_start.elapsed().as_nanos() as u64;
 
         // Estimate post-bootstrap noise
-        let post_noise_mb =
-            crate::noise::budget::NoiseBudget::encrypt_cost(&self.config);
+        let post_noise_mb = crate::noise::budget::NoiseBudget::encrypt_cost(&self.config);
 
         let stats = SymBootstrapStats {
             decrypt_ns,
@@ -302,8 +301,8 @@ impl SymmetricBootstrap {
             let delta_anchor = (p / self.config.t) as u128;
             let delta_m = (delta_anchor * m as u128 % p128) as u64;
 
-            let as_prod = self.ctx.dual_rns.anchor.ntt_engines[i]
-                .multiply(&a_anchor[i], &sk.s.anchor[i]);
+            let as_prod =
+                self.ctx.dual_rns.anchor.ntt_engines[i].multiply(&a_anchor[i], &sk.s.anchor[i]);
 
             for j in 0..n {
                 let e_mod_p = if e_signed[j] >= 0 {
@@ -977,7 +976,9 @@ mod tests {
             if dec != expected {
                 println!(
                     "[depth survey] secure_128 noise exhaustion at depth {}: expected {} got {}",
-                    i + 1, expected, dec
+                    i + 1,
+                    expected,
+                    dec
                 );
                 break;
             }
@@ -1091,8 +1092,7 @@ mod tests {
             }
 
             // m = c0[0] + (c1·s)[0] mod t
-            let m_recovered =
-                ((c0_small[0] as i128 + c1s[0] + t * 2) % t) as u64;
+            let m_recovered = ((c0_small[0] as i128 + c1s[0] + t * 2) % t) as u64;
 
             // This should match the original message
             assert_eq!(

@@ -232,7 +232,11 @@ impl CRTShadowContext {
         // Verify pairwise coprimality (CLASS-R requirement)
         for i in 0..moduli.len() {
             for j in (i + 1)..moduli.len() {
-                assert_eq!(Self::gcd_u64(moduli[i], moduli[j]), 1, "Moduli must be pairwise coprime");
+                assert_eq!(
+                    Self::gcd_u64(moduli[i], moduli[j]),
+                    1,
+                    "Moduli must be pairwise coprime"
+                );
             }
         }
 

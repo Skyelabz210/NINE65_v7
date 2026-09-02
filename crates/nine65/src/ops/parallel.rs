@@ -40,7 +40,6 @@ use rayon::prelude::*;
 
 use crate::arithmetic::NTTEngine;
 
-
 use crate::entropy::ShadowHarvester;
 use crate::errors::Nine65Result;
 use crate::keys::{PublicKey, SecretKey};

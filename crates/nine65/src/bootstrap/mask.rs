@@ -26,7 +26,6 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::arithmetic::NTTEngine;
 
-
 /// Information-theoretic mask for a single polynomial.
 ///
 /// The mask is a uniformly random polynomial in R_q. When added to a

@@ -170,9 +170,7 @@ fn measure(
     // Guard limit (2): above this the diagnostic returns margin = 0 from the
     // U256 fallback and there is no measurement to report.
     assert!(
-        q_at(ctx, lanes)
-            .checked_mul(ctx.t as u128)
-            .is_some(),
+        q_at(ctx, lanes).checked_mul(ctx.t as u128).is_some(),
         "Q*t >= 2^128 at {lanes} lanes: decrypt_dual_with_diagnostics would take \
          its U256 fallback and return margin = 0. That is not a measurement."
     );
@@ -274,7 +272,10 @@ struct Curve {
 /// * more                                     -> UNBOUNDED GROWTH
 ///   (magnitude super-linear; the ceiling arrives at finite, small depth)
 fn classify(samples: &[Sample]) -> Curve {
-    let good: Vec<&Sample> = samples.iter().filter(|s| s.correct && s.depth >= 1).collect();
+    let good: Vec<&Sample> = samples
+        .iter()
+        .filter(|s| s.correct && s.depth >= 1)
+        .collect();
     if good.len() < 4 {
         return Curve {
             shape: Shape::NotMeasurable,
@@ -422,7 +423,10 @@ where
 
     let mut samples = vec![measure(ctx, &ct, sk, 0, expected)];
     row(&samples[0], None);
-    assert!(samples[0].correct, "{title}: fresh encryption did not decrypt");
+    assert!(
+        samples[0].correct,
+        "{title}: fresh encryption did not decrypt"
+    );
 
     let start = Instant::now();
     let cap = wall_cap();
@@ -433,7 +437,10 @@ where
     for depth in 1..=dmax {
         if start.elapsed() > cap {
             stop = Stop::Timeout;
-            println!("--  wall-clock cap {}s hit before depth {depth}", cap.as_secs());
+            println!(
+                "--  wall-clock cap {}s hit before depth {depth}",
+                cap.as_secs()
+            );
             break;
         }
 
@@ -499,10 +506,17 @@ fn assert_lanes_constant(samples: &[Sample], what: &str) {
             "{what}: MAIN LANE COUNT MOVED at depth {} ({m0} -> {}) — the ladder is back",
             s.depth, s.main_lanes
         );
-        assert_eq!(s.anchor_lanes, a0, "{what}: anchor lanes moved at depth {}", s.depth);
+        assert_eq!(
+            s.anchor_lanes, a0,
+            "{what}: anchor lanes moved at depth {}",
+            s.depth
+        );
         assert_eq!(s.level, l0, "{what}: ct.level moved at depth {}", s.depth);
     }
-    println!("  LANES CONSTANT over 0..={}: main={m0} anchor={a0} level={l0}", samples.last().unwrap().depth);
+    println!(
+        "  LANES CONSTANT over 0..={}: main={m0} anchor={a0} level={l0}",
+        samples.last().unwrap().depth
+    );
 }
 
 // ===========================================================================
@@ -550,7 +564,11 @@ fn noise_profile_1_fresh_encryption_baseline() {
         let ct = ctx.encrypt_dual(m, &keys.public_key, &mut rng);
         let s = measure(&ctx, &ct, sk, 0, m);
         // ppm of the ceiling, integer-only.
-        let ppm = if dh == 0 { 0 } else { (s.noise_abs * 1_000_000) / dh };
+        let ppm = if dh == 0 {
+            0
+        } else {
+            (s.noise_abs * 1_000_000) / dh
+        };
         println!(
             "{:>8} | {:>12} | {:>10}ppm | {:>10} | {}",
             m,
@@ -622,7 +640,10 @@ fn noise_profile_2_multiplication_chain_public() {
     if let Some(d) = r.panic_depth {
         panic!("public chain PANICKED at depth {d} — the vestigial ladder is live");
     }
-    assert!(r.max_correct_depth >= 1, "public mode died before one multiply");
+    assert!(
+        r.max_correct_depth >= 1,
+        "public mode died before one multiply"
+    );
 }
 
 /// Symmetric mode — same tensor+rescale core, cheaper relinearization, so the
@@ -754,8 +775,16 @@ fn noise_profile_5_exact_division_vs_divisor() {
         let after_div = measure(&ctx, &divided, sk, 0, m);
 
         // The basis did not move.
-        assert_eq!(divided.c0.main.len(), ct.c0.main.len(), "d={d}: lane dropped");
-        assert_eq!(divided.c0.anchor.len(), ct.c0.anchor.len(), "d={d}: anchor dropped");
+        assert_eq!(
+            divided.c0.main.len(),
+            ct.c0.main.len(),
+            "d={d}: lane dropped"
+        );
+        assert_eq!(
+            divided.c0.anchor.len(),
+            ct.c0.anchor.len(),
+            "d={d}: anchor dropped"
+        );
         assert_eq!(divided.level, ct.level, "d={d}: level decremented");
         assert!(
             after_div.correct,
@@ -883,9 +912,15 @@ fn noise_profile_7_two_curves_compared() {
     let ct_one_a = ctx.encrypt_dual(1, &keys.public_key, &mut rng_a);
     let m0 = 5u64;
     let ct_a = ctx.encrypt_dual(m0, &keys.public_key, &mut rng_a);
-    let a = run_chain(&ctx, sk, "CHAIN A — multiply only", ct_a, m0, dmax, |ct, e| {
-        (ctx.mul_dual_symmetric_with_s2(ct, &ct_one_a, sk, &s2), e)
-    });
+    let a = run_chain(
+        &ctx,
+        sk,
+        "CHAIN A — multiply only",
+        ct_a,
+        m0,
+        dmax,
+        |ct, e| (ctx.mul_dual_symmetric_with_s2(ct, &ct_one_a, sk, &s2), e),
+    );
 
     // Identical RNG stream so the two chains start from the same ciphertext.
     let mut rng_b = ShadowHarvester::with_seed(9001);
@@ -909,7 +944,10 @@ fn noise_profile_7_two_curves_compared() {
     assert_lanes_constant(&b.samples, "CHAIN B");
 
     println!("\n  SIDE BY SIDE (measured noise, bits)");
-    println!("{:>6} | {:>12} | {:>12} | {:>12}", "depth", "A mul", "B mul+/d", "B - A");
+    println!(
+        "{:>6} | {:>12} | {:>12} | {:>12}",
+        "depth", "A mul", "B mul+/d", "B - A"
+    );
     println!("-------+--------------+--------------+-------------");
     let n = a.samples.len().min(b.samples.len());
     let mut identical = true;
@@ -942,7 +980,10 @@ fn noise_profile_7_two_curves_compared() {
     );
 
     if b.max_correct_depth > a.max_correct_depth {
-        println!("  => exact division BOUGHT {} extra depth", b.max_correct_depth - a.max_correct_depth);
+        println!(
+            "  => exact division BOUGHT {} extra depth",
+            b.max_correct_depth - a.max_correct_depth
+        );
     } else if b.max_correct_depth == a.max_correct_depth {
         println!(
             "  => exact division bought NO extra depth. The x d / / d pair is a\n     \
@@ -950,7 +991,10 @@ fn noise_profile_7_two_curves_compared() {
             and leaves the multiplication's own noise untouched."
         );
     } else {
-        println!("  => exact division COST {} depth", a.max_correct_depth - b.max_correct_depth);
+        println!(
+            "  => exact division COST {} depth",
+            a.max_correct_depth - b.max_correct_depth
+        );
     }
 }
 
@@ -997,12 +1041,24 @@ fn noise_profile_8_verdict() {
         .expect("no correct sample");
 
     println!("\n  ============================================================");
-    println!("  MAX DEPTH WITH CORRECT DECRYPTION : {}", r.max_correct_depth);
+    println!(
+        "  MAX DEPTH WITH CORRECT DECRYPTION : {}",
+        r.max_correct_depth
+    );
     println!("  STOPPED BY                        : {:?}", r.stop);
     println!("  CURVE SHAPE                       : {:?}", curve.shape);
-    println!("  NOISE AT MAX DEPTH                : {} bits", mb(last.noise_mb));
-    println!("  CEILING log2(delta/2)             : {} bits", mb(ceiling_mb));
-    println!("  HEADROOM REMAINING                : {} bits", mb(ceiling_mb - last.noise_mb));
+    println!(
+        "  NOISE AT MAX DEPTH                : {} bits",
+        mb(last.noise_mb)
+    );
+    println!(
+        "  CEILING log2(delta/2)             : {} bits",
+        mb(ceiling_mb)
+    );
+    println!(
+        "  HEADROOM REMAINING                : {} bits",
+        mb(ceiling_mb - last.noise_mb)
+    );
     println!("  ============================================================");
 
     // Never report a depth as reached unless it decrypted.
