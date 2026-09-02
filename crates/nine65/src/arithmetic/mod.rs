@@ -30,6 +30,7 @@ pub mod ct_mul_exact; // EXACT CT×CT
 pub mod cyclotomic_phase; // NATIVE RING TRIGONOMETRY
 pub mod exact_coeff; // DUAL-TRACK COEFFICIENTS
 pub mod exact_divider; // K-ELIMINATION PRIMITIVE
+pub mod exact_scale_round; // EXACT BFV SCALE-AND-ROUND over a derived-transient aux base (Track 1 T1.3)
 pub mod integer_math;
 pub mod integer_softmax; // EXACT SUM SOFTMAX
 pub mod k_elimination; // EXACT DIVISION

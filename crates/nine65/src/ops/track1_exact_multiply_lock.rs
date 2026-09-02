@@ -63,10 +63,7 @@ fn rescale_one_coefficient(ctx: &RNSFHEContext, x: u128) -> u128 {
     for (i, &p) in ctx.config.primes.iter().enumerate() {
         limbs[i][0] = (x % p as u128) as u64;
     }
-    let poly = RNSPolynomial {
-        limbs,
-        n: ctx.n,
-    };
+    let poly = RNSPolynomial { limbs, n: ctx.n };
     let mont = ctx.to_montgomery_form(&poly);
     let out = ctx.exact_rescale(&mont);
     let coeffs: Vec<u64> = out.limbs.iter().map(|l| l[0]).collect();
@@ -82,16 +79,7 @@ fn lock_context() -> RNSFHEContext {
 /// Sample points: the structural corners the contract names, plus seeded
 /// pseudo-random draws. Deterministic — no RNG dependency.
 fn sample_points(q: u128) -> Vec<u128> {
-    let mut xs = vec![
-        0,
-        1,
-        2,
-        q / 2 - 1,
-        q / 2,
-        q / 2 + 1,
-        q - 2,
-        q - 1,
-    ];
+    let mut xs = vec![0, 1, 2, q / 2 - 1, q / 2, q / 2 + 1, q - 2, q - 1];
     // Deterministic LCG draws spread across [0, Q).
     let mut state: u128 = 0x9E37_79B9_7F4A_7C15;
     for _ in 0..64 {
@@ -227,7 +215,10 @@ fn public_mul_silently_returns_wrong_plaintext_off_contract() {
         let product = ctx.mul(&ct_a, &ct_b, &keys.eval_key);
         let got = ctx.decrypt(&product, &keys.secret_key);
         let want = (a as u128 * b as u128 % ctx.t as u128) as u64;
-        assert!(want < ctx.t, "test operands must not wrap the plaintext modulus");
+        assert!(
+            want < ctx.t,
+            "test operands must not wrap the plaintext modulus"
+        );
         if got != want {
             wrong += 1;
             if witness.is_none() {
@@ -417,7 +408,10 @@ fn wire_q_lock_dual_ciphertext_publishes_anchor_lanes_coprime_to_q() {
     let mut rng = ShadowHarvester::with_seed(0x7115_0001);
     let keys = ctx.generate_keys(&mut rng);
     let ct = ctx.encrypt(42, &keys.public_key, &mut rng);
-    assert_eq!(ct.num_primes, main_lanes, "single-RNS ct must carry only Q lanes");
+    assert_eq!(
+        ct.num_primes, main_lanes,
+        "single-RNS ct must carry only Q lanes"
+    );
     assert_eq!(ct.c0.limbs.len(), main_lanes);
     assert_eq!(ct.c1.limbs.len(), main_lanes);
 
