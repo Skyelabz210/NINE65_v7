@@ -125,21 +125,28 @@ impl Session {
         }
     }
 
-    pub fn dual_ct_to_b64(&self, ciphertext: &DualRNSCiphertext) -> Result<String, String> {
-        let bytes = ciphertext
-            .to_bytes()
-            .map_err(|error| format!("bincode serialize: {error}"))?;
-        Ok(base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            &bytes,
-        ))
+    /// Deliberately refuses to export a dual-RNS ciphertext.
+    ///
+    /// The anchor limbs are operation-local CRAM state.  Publishing them with
+    /// the mod-Q ciphertext violates the WIRE-Q boundary.  A future transport
+    /// path must project a verified transient computation to the single-RNS
+    /// mod-Q wire type before it reaches this service boundary.
+    pub fn dual_ct_to_b64(&self, _ciphertext: &DualRNSCiphertext) -> Result<String, String> {
+        Err(
+            "WIRE-Q: dual-RNS ciphertext export is disabled; project to the single-RNS mod-Q wire type first"
+                .to_string(),
+        )
     }
 
-    pub fn dual_ct_from_b64(&self, encoded: &str) -> Result<DualRNSCiphertext, String> {
-        let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, encoded)
-            .map_err(|error| format!("base64 decode: {error}"))?;
-        DualRNSCiphertext::from_bytes_validated(&bytes)
-            .map_err(|error| format!("ciphertext validation: {error}"))
+    /// Deliberately refuses to import a dual-RNS ciphertext from the wire.
+    ///
+    /// This rejects before base64 decoding or allocation so untrusted input
+    /// cannot revive the retired anchor-bearing wire format.
+    pub fn dual_ct_from_b64(&self, _encoded: &str) -> Result<DualRNSCiphertext, String> {
+        Err(
+            "WIRE-Q: dual-RNS ciphertext import is disabled; accept only the single-RNS mod-Q wire type"
+                .to_string(),
+        )
     }
 }
 
@@ -313,5 +320,14 @@ mod tests {
         store.insert(session).expect("insert");
         assert!(!store.remove_for_tenant(&id, "other"));
         assert!(store.remove_for_tenant(&id, "test"));
+    }
+
+    #[test]
+    fn dual_rns_wire_boundary_is_fail_closed() {
+        let session = Session::new_test("secure_128", 11).expect("test session");
+        let err = session
+            .dual_ct_from_b64("AA==")
+            .expect_err("dual-RNS wire input must be rejected");
+        assert!(err.starts_with("WIRE-Q:"));
     }
 }
