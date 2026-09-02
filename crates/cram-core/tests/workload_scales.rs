@@ -106,8 +106,7 @@ fn topology(lane_count: usize) -> OperatorTopology {
                 4 => LaneOperator::Neg,
                 5 => LaneOperator::Identity,
                 _ => LaneOperator::Transduce(
-                    u32::try_from((index + 1) % lane_count)
-                        .expect("test lane count fits u32"),
+                    u32::try_from((index + 1) % lane_count).expect("test lane count fits u32"),
                 ),
             };
             (lane, operator)
@@ -240,8 +239,8 @@ fn anchor_phase_winding_is_exhaustively_exact_on_small_pairs() {
     for (main, anchor) in pairs {
         assert_eq!(cram_core::gcd(main, anchor), 1);
         for value in 0..main * anchor {
-            let witness = recover_winding(value % main, value % anchor, main, anchor)
-                .expect("coprime pair");
+            let witness =
+                recover_winding(value % main, value % anchor, main, anchor).expect("coprime pair");
             assert_eq!(
                 witness.winding_mod_anchor,
                 value / main,

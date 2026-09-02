@@ -5,7 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use nine65::arithmetic::rns::{RNSContext, DualRNSContext};
+    use nine65::arithmetic::rns::{DualRNSContext, RNSContext};
     use nine65::params::secure_configs::SecureConfig;
 
     /// Verify partial prime products for secure_192 don't overflow u128 at any level.
@@ -22,8 +22,11 @@ mod tests {
             let next = product.checked_mul(p as u128);
             if let Some(next_product) = next {
                 product = next_product;
-                println!("[rns_boundary] secure_192 level {}: partial product fits in u128 ({} bits)",
-                    i, 128 - product.leading_zeros());
+                println!(
+                    "[rns_boundary] secure_192 level {}: partial product fits in u128 ({} bits)",
+                    i,
+                    128 - product.leading_zeros()
+                );
             } else {
                 println!("[rns_boundary] secure_192 level {}: partial product overflows u128 (expected for {} primes)",
                     i, primes.len());
@@ -48,13 +51,19 @@ mod tests {
             match product.checked_mul(p as u128) {
                 Some(next) => {
                     product = next;
-                    println!("[rns_boundary] secure_256 level {}: product={} bits",
-                        i, 128 - product.leading_zeros());
+                    println!(
+                        "[rns_boundary] secure_256 level {}: product={} bits",
+                        i,
+                        128 - product.leading_zeros()
+                    );
                 }
                 None => {
                     overflow_at_level = Some(i);
-                    println!("[rns_boundary] secure_256 level {}: product overflows u128 — \
-                              this level requires U256 arithmetic", i);
+                    println!(
+                        "[rns_boundary] secure_256 level {}: product overflows u128 — \
+                              this level requires U256 arithmetic",
+                        i
+                    );
                     break;
                 }
             }
@@ -62,10 +71,15 @@ mod tests {
 
         // For secure_256 with 6 primes each ~30 bits, expect overflow at some level.
         if let Some(level) = overflow_at_level {
-            println!("[rns_boundary] secure_256 u128 capacity exhausted at prime index {}", level);
+            println!(
+                "[rns_boundary] secure_256 u128 capacity exhausted at prime index {}",
+                level
+            );
         } else {
-            println!("[rns_boundary] secure_256 all primes fit in u128 ({} bits total)",
-                128 - product.leading_zeros());
+            println!(
+                "[rns_boundary] secure_256 all primes fit in u128 ({} bits total)",
+                128 - product.leading_zeros()
+            );
         }
     }
 
@@ -83,16 +97,27 @@ mod tests {
 
             // Verify the context has the correct number of main primes.
             assert_eq!(
-                ctx.main.primes.len(), config.primes.len(),
-                "{}: main primes count mismatch", name
+                ctx.main.primes.len(),
+                config.primes.len(),
+                "{}: main primes count mismatch",
+                name
             );
 
             // Verify anchor primes (canonical: 5).
-            assert!(ctx.anchor.primes.len() >= 5,
-                "{}: insufficient anchor primes: {}", name, ctx.anchor.primes.len());
+            assert!(
+                ctx.anchor.primes.len() >= 5,
+                "{}: insufficient anchor primes: {}",
+                name,
+                ctx.anchor.primes.len()
+            );
 
-            println!("[rns_boundary] {}: n={}, main_primes={}, anchor_primes={}",
-                name, config.n, ctx.main.primes.len(), ctx.anchor.primes.len());
+            println!(
+                "[rns_boundary] {}: n={}, main_primes={}, anchor_primes={}",
+                name,
+                config.n,
+                ctx.main.primes.len(),
+                ctx.anchor.primes.len()
+            );
         }
     }
 
@@ -111,8 +136,14 @@ mod tests {
         let val: u64 = 7;
         let residues = ctx.from_int(val);
         for (i, (&p, &r)) in primes.iter().zip(residues.iter()).enumerate() {
-            assert_eq!(r, val % p,
-                "Residue {} incorrect: got {} expected {}", i, r, val % p);
+            assert_eq!(
+                r,
+                val % p,
+                "Residue {} incorrect: got {} expected {}",
+                i,
+                r,
+                val % p
+            );
         }
         println!("[rns_boundary] basic encoding: {} → {:?}", val, residues);
     }

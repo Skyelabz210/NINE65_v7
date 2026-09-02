@@ -198,12 +198,7 @@ fn main() {
         .as_nanos()
         .min(u64::MAX as u128) as u64;
     let encoder = BFVEncoder::new(&config);
-    let encryptor = BFVEncryptor::new(
-        &legacy_keys.public_key,
-        &encoder,
-        &ntt,
-        config.eta,
-    );
+    let encryptor = BFVEncryptor::new(&legacy_keys.public_key, &encoder, &ntt, config.eta);
     let decryptor = BFVDecryptor::new(&legacy_keys.secret_key, &encoder, &ntt);
     let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&legacy_keys.eval_key));
 
@@ -235,8 +230,8 @@ fn main() {
         black_box(evaluator.mul(&legacy_a, &legacy_b));
     });
     #[allow(deprecated)]
-    let legacy_mul_correct = decryptor.decrypt(&evaluator.mul(&legacy_a, &legacy_b))
-        == (a * b) % config.t;
+    let legacy_mul_correct =
+        decryptor.decrypt(&evaluator.mul(&legacy_a, &legacy_b)) == (a * b) % config.t;
 
     let legacy_correctness = json!({
         "encrypt": decryptor.decrypt(&legacy_a) == a,
@@ -301,16 +296,9 @@ fn main() {
     for depth in 1..=args.ct_mul_depth {
         let level_before = depth_ciphertext.level;
         let started = Instant::now();
-        match dual.mul_dual_public(
-            &depth_ciphertext,
-            &depth_ciphertext,
-            &dual_keys.eval_key,
-        ) {
+        match dual.mul_dual_public(&depth_ciphertext, &depth_ciphertext, &dual_keys.eval_key) {
             Ok(next) => {
-                let operation_ns = started
-                    .elapsed()
-                    .as_nanos()
-                    .min(u64::MAX as u128) as u64;
+                let operation_ns = started.elapsed().as_nanos().min(u64::MAX as u128) as u64;
                 depth_ciphertext = next;
                 depth_expected = (depth_expected * depth_expected) % config.t;
                 let decrypted = dual.decrypt_dual(&depth_ciphertext, &dual_keys.secret_key);
@@ -331,10 +319,7 @@ fn main() {
                 }
             }
             Err(error) => {
-                let operation_ns = started
-                    .elapsed()
-                    .as_nanos()
-                    .min(u64::MAX as u128) as u64;
+                let operation_ns = started.elapsed().as_nanos().min(u64::MAX as u128) as u64;
                 depth_entries.push(json!({
                     "depth": depth,
                     "operation_ns": operation_ns,

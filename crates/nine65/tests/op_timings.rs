@@ -27,8 +27,7 @@ fn time_config(name: &str, secure: SecureConfig, rounds: usize) {
     let mut rng = ShadowHarvester::with_seed(4242);
     let keys = ctx.generate_keys_dual_full(&mut rng);
 
-    let (mut enc, mut add, mut mul, mut dec, mut smul) =
-        (vec![], vec![], vec![], vec![], vec![]);
+    let (mut enc, mut add, mut mul, mut dec, mut smul) = (vec![], vec![], vec![], vec![], vec![]);
     let s2 = ctx.precompute_s_squared(&keys.secret_key);
 
     for i in 0..rounds {

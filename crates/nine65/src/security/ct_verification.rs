@@ -53,10 +53,8 @@
 
 #[cfg(test)]
 mod constant_time_statistical {
-    use crate::arithmetic::{
-        BarrettContext, KElimination, MontgomeryContext,
-    };
     use crate::arithmetic::k_elimination::{AdjacencyKElim, KElimConfig};
+    use crate::arithmetic::{BarrettContext, KElimination, MontgomeryContext};
     use crate::entropy::ShadowHarvester;
     use crate::ops::rns_fhe::{exact_modulus_switch_drop_poly, DualRNSPoly, RNSFHEContext};
     use crate::params::SecureConfig;
@@ -64,9 +62,9 @@ mod constant_time_statistical {
     use std::time::Instant;
 
     // Test parameters - UPDATED for robust statistical analysis
-    const SAMPLE_SIZE: usize = 100_000;  // Increased from 10,000
-    const WARMUP_SAMPLES: usize = 100_000;  // Increased from 100
-    const DISCARD_TOP_PERCENT: f64 = 10.0;  // Discard top 10% outliers
+    const SAMPLE_SIZE: usize = 100_000; // Increased from 10,000
+    const WARMUP_SAMPLES: usize = 100_000; // Increased from 100
+    const DISCARD_TOP_PERCENT: f64 = 10.0; // Discard top 10% outliers
 
     // Thresholds. These are the values the module header has always documented
     // and they are back where they belong.
@@ -79,8 +77,8 @@ mod constant_time_statistical {
     // measuring anything. The fix for an environment-sensitive test is to run
     // it on a quiesced machine and to add a control arm (see `dudect_two_class`
     // below), not to move the goalposts.
-    const ROBUST_CV_THRESHOLD: f64 = 0.05;  // 5% — documented value, restored
-    const T_TEST_THRESHOLD: f64 = 5.0;      // dudect's canonical ~4.5, rounded up
+    const ROBUST_CV_THRESHOLD: f64 = 0.05; // 5% — documented value, restored
+    const T_TEST_THRESHOLD: f64 = 5.0; // dudect's canonical ~4.5, rounded up
 
     /// Smallest median (ns) at which the robust-CV statistic can even LAND
     /// inside the pass band, given a 1 ns timer tick.
@@ -111,8 +109,8 @@ mod constant_time_statistical {
     struct TimingStats {
         samples: Vec<u128>,
         median: f64,
-        mad: f64,  // Median Absolute Deviation
-        robust_cv: f64,  // 1.4826 * MAD / median
+        mad: f64,       // Median Absolute Deviation
+        robust_cv: f64, // 1.4826 * MAD / median
         min: u128,
         max: u128,
     }
@@ -153,7 +151,8 @@ mod constant_time_statistical {
             self.median = self.samples[self.samples.len() / 2] as f64;
 
             // Compute MAD (Median Absolute Deviation)
-            let abs_devs: Vec<f64> = self.samples
+            let abs_devs: Vec<f64> = self
+                .samples
                 .iter()
                 .map(|&x| (x as f64 - self.median).abs())
                 .collect();
@@ -253,12 +252,16 @@ mod constant_time_statistical {
         let mean_a = class_a.iter().sum::<u128>() as f64 / class_a.len() as f64;
         let mean_b = class_b.iter().sum::<u128>() as f64 / class_b.len() as f64;
 
-        let var_a = class_a.iter()
+        let var_a = class_a
+            .iter()
             .map(|&x| (x as f64 - mean_a).powi(2))
-            .sum::<f64>() / class_a.len() as f64;
-        let var_b = class_b.iter()
+            .sum::<f64>()
+            / class_a.len() as f64;
+        let var_b = class_b
+            .iter()
             .map(|&x| (x as f64 - mean_b).powi(2))
-            .sum::<f64>() / class_b.len() as f64;
+            .sum::<f64>()
+            / class_b.len() as f64;
 
         let pooled_se = (var_a / class_a.len() as f64 + var_b / class_b.len() as f64).sqrt();
 
@@ -311,7 +314,9 @@ mod constant_time_statistical {
         // Check CPU governor (Linux)
         #[cfg(target_os = "linux")]
         {
-            if let Ok(governor) = std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor") {
+            if let Ok(governor) =
+                std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+            {
                 println!("CPU Governor: {}", governor.trim());
                 if governor.trim() != "performance" {
                     eprintln!("WARNING: CPU governor is not 'performance'! Timing measurements may be unreliable.");
@@ -323,10 +328,16 @@ mod constant_time_statistical {
         // Check for turbo boost (should be disabled)
         #[cfg(target_os = "linux")]
         {
-            if let Ok(turbo) = std::fs::read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo") {
+            if let Ok(turbo) =
+                std::fs::read_to_string("/sys/devices/system/cpu/intel_pstate/no_turbo")
+            {
                 if turbo.trim() == "0" {
-                    eprintln!("WARNING: Turbo boost is enabled! Timing measurements may be unreliable.");
-                    eprintln!("Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo");
+                    eprintln!(
+                        "WARNING: Turbo boost is enabled! Timing measurements may be unreliable."
+                    );
+                    eprintln!(
+                        "Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo"
+                    );
                 }
             }
         }
@@ -350,7 +361,11 @@ mod constant_time_statistical {
     fn report_cv(label: &str, stats: &TimingStats) {
         println!(
             "{label}: median={:.2}ns, MAD={:.2}, Robust CV={:.4}%, min={}, max={}",
-            stats.median, stats.mad, stats.robust_cv * 100.0, stats.min, stats.max
+            stats.median,
+            stats.mad,
+            stats.robust_cv * 100.0,
+            stats.min,
+            stats.max
         );
         if !stats.cv_is_resolvable() {
             println!(
@@ -730,12 +745,22 @@ mod constant_time_statistical {
 
         let alpha_cap = ke.alpha_cap;
         let classes: Vec<(&str, Box<dyn Fn(&mut ShadowHarvester) -> u128>)> = vec![
-            ("small", Box::new(|rng: &mut ShadowHarvester| random_u128(rng) % 1000)),
-            ("medium", Box::new(|rng: &mut ShadowHarvester| random_u128(rng) % (1u128 << 32))),
-            ("large", Box::new(move |rng: &mut ShadowHarvester| {
-                random_u128(rng) % (alpha_cap / 2)
-            })),
-            ("full", Box::new(move |rng: &mut ShadowHarvester| random_u128(rng) % alpha_cap)),
+            (
+                "small",
+                Box::new(|rng: &mut ShadowHarvester| random_u128(rng) % 1000),
+            ),
+            (
+                "medium",
+                Box::new(|rng: &mut ShadowHarvester| random_u128(rng) % (1u128 << 32)),
+            ),
+            (
+                "large",
+                Box::new(move |rng: &mut ShadowHarvester| random_u128(rng) % (alpha_cap / 2)),
+            ),
+            (
+                "full",
+                Box::new(move |rng: &mut ShadowHarvester| random_u128(rng) % alpha_cap),
+            ),
         ];
 
         for (class_name, gen_fn) in &classes {
@@ -842,7 +867,11 @@ mod constant_time_statistical {
                     class_names[i],
                     class_names[j],
                     t_value,
-                    if t_value < T_TEST_THRESHOLD { "(under)" } else { "(over)" }
+                    if t_value < T_TEST_THRESHOLD {
+                        "(under)"
+                    } else {
+                        "(over)"
+                    }
                 );
                 // Reported, not asserted — same block-measurement defect as in
                 // `test_ct_k_elimination_exact_divide`. The asserted form of
@@ -948,7 +977,11 @@ mod constant_time_statistical {
     /// revision of these tests produced for `extract_k`. `mk_a` is called twice
     /// per iteration to give two independent draws of the same class, so the
     /// control arm sees exactly the placement diversity the signal arm does.
-    fn interleaved_pools<I, F, G>(count: usize, mut mk_a: F, mut mk_b: G) -> (Vec<I>, Vec<I>, Vec<I>)
+    fn interleaved_pools<I, F, G>(
+        count: usize,
+        mut mk_a: F,
+        mut mk_b: G,
+    ) -> (Vec<I>, Vec<I>, Vec<I>)
     where
         F: FnMut() -> I,
         G: FnMut() -> I,
@@ -1197,13 +1230,9 @@ section 4.8 for the probe-by-probe localisation."]
             &pool_b,
             DUDECT_ROUNDS,
             |poly| {
-                let out = exact_modulus_switch_drop_poly(
-                    std::hint::black_box(poly),
-                    &main,
-                    &anchor,
-                    0,
-                )
-                .expect("prime drop must succeed on the secure_128 dual basis");
+                let out =
+                    exact_modulus_switch_drop_poly(std::hint::black_box(poly), &main, &anchor, 0)
+                        .expect("prime drop must succeed on the secure_128 dual basis");
                 std::hint::black_box(&out);
             },
         );
@@ -1251,13 +1280,9 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
             &pool_b,
             DUDECT_ROUNDS,
             |poly| {
-                let out = exact_modulus_switch_drop_poly(
-                    std::hint::black_box(poly),
-                    &main,
-                    &anchor,
-                    0,
-                )
-                .expect("prime drop must succeed on the secure_128 dual basis");
+                let out =
+                    exact_modulus_switch_drop_poly(std::hint::black_box(poly), &main, &anchor, 0)
+                        .expect("prime drop must succeed on the secure_128 dual basis");
                 std::hint::black_box(&out);
             },
         );
@@ -1355,11 +1380,8 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
         };
         let mut ra = ShadowHarvester::with_seed(201);
         let mut rb = ShadowHarvester::with_seed(203);
-        let (pool_a, pool_a2, pool_b) = interleaved_pools(
-            DUDECT_POOL,
-            || one(&mut ra, false),
-            || one(&mut rb, true),
-        );
+        let (pool_a, pool_a2, pool_b) =
+            interleaved_pools(DUDECT_POOL, || one(&mut ra, false), || one(&mut rb, true));
 
         let mut rng = ShadowHarvester::with_seed(204);
         let result = dudect_two_class(
@@ -1601,13 +1623,20 @@ See docs/CT_VERIFICATION_PLAN.md."]
         );
 
         let mut rng = ShadowHarvester::with_seed(404);
-        let result = dudect_two_class(&mut rng, &pool_a, &pool_a2, &pool_b, DUDECT_EXTRACT_K_ROUNDS, |batch| {
-            let mut acc = 0u128;
-            for &(a, b) in batch.iter() {
-                acc ^= ke.extract_k(std::hint::black_box(a), std::hint::black_box(b));
-            }
-            std::hint::black_box(acc);
-        });
+        let result = dudect_two_class(
+            &mut rng,
+            &pool_a,
+            &pool_a2,
+            &pool_b,
+            DUDECT_EXTRACT_K_ROUNDS,
+            |batch| {
+                let mut acc = 0u128;
+                for &(a, b) in batch.iter() {
+                    acc ^= ke.extract_k(std::hint::black_box(a), std::hint::black_box(b));
+                }
+                std::hint::black_box(acc);
+            },
+        );
 
         assert_dudect(
             "KElimination::extract_k — small operands vs near-cap operands (batched)",
@@ -1771,7 +1800,11 @@ See docs/CT_VERIFICATION_PLAN.md."]
                 .map(|_| {
                     let x = random_u128(rng) % anchor;
                     let y = random_u128(rng) % anchor;
-                    if x >= y { (x, y) } else { (y, x) }
+                    if x >= y {
+                        (x, y)
+                    } else {
+                        (y, x)
+                    }
                 })
                 .collect()
         };
@@ -1784,7 +1817,11 @@ See docs/CT_VERIFICATION_PLAN.md."]
                     let x = random_u128(rng) % anchor;
                     let y = random_u128(rng) % anchor;
                     let (hi, lo) = if x >= y { (x, y) } else { (y, x) };
-                    if rng.next_u64() & 1 == 0 { (hi, lo) } else { (lo, hi) }
+                    if rng.next_u64() & 1 == 0 {
+                        (hi, lo)
+                    } else {
+                        (lo, hi)
+                    }
                 })
                 .collect()
         };
@@ -1834,7 +1871,9 @@ See docs/CT_VERIFICATION_PLAN.md."]
         warmup();
 
         let adj = AdjacencyKElim::from_config(KElimConfig::Standard).expect("adjacency context");
-        let general = adj.general_equivalent().expect("general partner over the same (M, A)");
+        let general = adj
+            .general_equivalent()
+            .expect("general partner over the same (M, A)");
         assert_eq!(
             general.alpha_inv_beta,
             adj.alpha_cap(),
@@ -1899,7 +1938,10 @@ See docs/CT_VERIFICATION_PLAN.md."]
         println!("    general  (v_beta - v_alpha) * M^-1 mod A : median={mg:.0}ns per batch");
         println!("    adjacency (v_alpha - v_beta) mod A       : median={ma:.0}ns per batch");
         if ma > 0.0 {
-            println!("    ratio general/adjacency                  : {:.2}x", mg / ma);
+            println!(
+                "    ratio general/adjacency                  : {:.2}x",
+                mg / ma
+            );
         }
         println!(
             "    per call: general {:.2} ns, adjacency {:.2} ns",
@@ -1957,17 +1999,24 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
         );
 
         let mut rng = ShadowHarvester::with_seed(504);
-        let result = dudect_two_class(&mut rng, &a, &a2, &b, DUDECT_DIVISOR_CLASS_ROUNDS, |(batch, d)| {
-            let mut acc = 0u128;
-            for &(x, y) in batch.iter() {
-                acc ^= ke.exact_divide(
-                    std::hint::black_box(x),
-                    std::hint::black_box(y),
-                    std::hint::black_box(*d),
-                );
-            }
-            std::hint::black_box(acc);
-        });
+        let result = dudect_two_class(
+            &mut rng,
+            &a,
+            &a2,
+            &b,
+            DUDECT_DIVISOR_CLASS_ROUNDS,
+            |(batch, d)| {
+                let mut acc = 0u128;
+                for &(x, y) in batch.iter() {
+                    acc ^= ke.exact_divide(
+                        std::hint::black_box(x),
+                        std::hint::black_box(y),
+                        std::hint::black_box(*d),
+                    );
+                }
+                std::hint::black_box(acc);
+            },
+        );
 
         assert_dudect(
             "KElimination::exact_divide — divisor 2 vs divisor 3, identical operands (batched)",
@@ -1991,27 +2040,44 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             DUDECT_POOLS_BATCHED,
             || {
                 (0..DUDECT_BATCH)
-                    .map(|_| (windowed(&mut ra, cap, 12, false), windowed(&mut ra, cap, 12, false)))
+                    .map(|_| {
+                        (
+                            windowed(&mut ra, cap, 12, false),
+                            windowed(&mut ra, cap, 12, false),
+                        )
+                    })
                     .collect::<Vec<OperandPair>>()
             },
             || {
                 (0..DUDECT_BATCH)
-                    .map(|_| (windowed(&mut rb, cap, 12, true), windowed(&mut rb, cap, 12, true)))
+                    .map(|_| {
+                        (
+                            windowed(&mut rb, cap, 12, true),
+                            windowed(&mut rb, cap, 12, true),
+                        )
+                    })
                     .collect::<Vec<OperandPair>>()
             },
         );
 
         let mut rng = ShadowHarvester::with_seed(604);
-        let result = dudect_two_class(&mut rng, &pool_a, &pool_a2, &pool_b, DUDECT_BATCHED_ROUNDS, |batch| {
-            let mut acc = 0u64;
-            for &(a, b) in batch.iter() {
-                acc ^= ctx.montgomery_mul(
-                    std::hint::black_box(a as u64),
-                    std::hint::black_box(b as u64),
-                );
-            }
-            std::hint::black_box(acc);
-        });
+        let result = dudect_two_class(
+            &mut rng,
+            &pool_a,
+            &pool_a2,
+            &pool_b,
+            DUDECT_BATCHED_ROUNDS,
+            |batch| {
+                let mut acc = 0u64;
+                for &(a, b) in batch.iter() {
+                    acc ^= ctx.montgomery_mul(
+                        std::hint::black_box(a as u64),
+                        std::hint::black_box(b as u64),
+                    );
+                }
+                std::hint::black_box(acc);
+            },
+        );
 
         assert_dudect(
             "MontgomeryContext::montgomery_mul — small operands vs near-modulus operands (batched)",
@@ -2049,13 +2115,20 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
         );
 
         let mut rng = ShadowHarvester::with_seed(704);
-        let result = dudect_two_class(&mut rng, &pool_a, &pool_a2, &pool_b, DUDECT_BATCHED_ROUNDS, |batch| {
-            let mut acc = 0u64;
-            for &(t, _) in batch.iter() {
-                acc ^= ctx.montgomery_reduce(std::hint::black_box(t));
-            }
-            std::hint::black_box(acc);
-        });
+        let result = dudect_two_class(
+            &mut rng,
+            &pool_a,
+            &pool_a2,
+            &pool_b,
+            DUDECT_BATCHED_ROUNDS,
+            |batch| {
+                let mut acc = 0u64;
+                for &(t, _) in batch.iter() {
+                    acc ^= ctx.montgomery_reduce(std::hint::black_box(t));
+                }
+                std::hint::black_box(acc);
+            },
+        );
 
         assert_dudect(
             "MontgomeryContext::montgomery_reduce — small cofactor vs top-bit cofactor (batched)",
@@ -2090,13 +2163,20 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
         );
 
         let mut rng = ShadowHarvester::with_seed(804);
-        let result = dudect_two_class(&mut rng, &pool_a, &pool_a2, &pool_b, DUDECT_BATCHED_ROUNDS, |batch| {
-            let mut acc = 0u64;
-            for &(a, _) in batch.iter() {
-                acc ^= ctx.reduce_ct(std::hint::black_box(a));
-            }
-            std::hint::black_box(acc);
-        });
+        let result = dudect_two_class(
+            &mut rng,
+            &pool_a,
+            &pool_a2,
+            &pool_b,
+            DUDECT_BATCHED_ROUNDS,
+            |batch| {
+                let mut acc = 0u64;
+                for &(a, _) in batch.iter() {
+                    acc ^= ctx.reduce_ct(std::hint::black_box(a));
+                }
+                std::hint::black_box(acc);
+            },
+        );
 
         assert_dudect(
             "BarrettContext::reduce_ct — 40-bit dividends vs 128-bit dividends (batched)",
@@ -2161,16 +2241,23 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
         );
 
         let mut rng = ShadowHarvester::with_seed(904);
-        let result = dudect_two_class(&mut rng, &pool_a, &pool_a2, &pool_b, DUDECT_BATCHED_ROUNDS, |batch| {
-            let mut acc = 0u64;
-            for &(base, exp) in batch.iter() {
-                acc ^= ctx.montgomery_pow(
-                    std::hint::black_box(base as u64),
-                    std::hint::black_box(exp as u64),
-                );
-            }
-            std::hint::black_box(acc);
-        });
+        let result = dudect_two_class(
+            &mut rng,
+            &pool_a,
+            &pool_a2,
+            &pool_b,
+            DUDECT_BATCHED_ROUNDS,
+            |batch| {
+                let mut acc = 0u64;
+                for &(base, exp) in batch.iter() {
+                    acc ^= ctx.montgomery_pow(
+                        std::hint::black_box(base as u64),
+                        std::hint::black_box(exp as u64),
+                    );
+                }
+                std::hint::black_box(acc);
+            },
+        );
 
         assert_dudect(
             "MontgomeryContext::montgomery_pow — exponent Hamming weight 8 vs 56 (batched)",

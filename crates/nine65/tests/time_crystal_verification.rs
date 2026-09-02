@@ -59,8 +59,8 @@ fn anchor_fault_trial(
     }));
 
     match result {
-        Err(_) => Outcome::Detected,       // witness dissent panicked — loud
-        Ok(Err(_)) => Outcome::Detected,   // gate refused — loud
+        Err(_) => Outcome::Detected,     // witness dissent panicked — loud
+        Ok(Err(_)) => Outcome::Detected, // gate refused — loud
         Ok(Ok(ct)) => {
             let dec = ctx.decrypt_dual(&ct, &keys.secret_key);
             if dec == 6 {
@@ -129,8 +129,7 @@ fn witness_lanes_dissent_on_direct_corruption() {
     let mut detected = 0u32;
     with_quiet_panics(|| {
         for (i, &lane) in [8usize, 9, 8, 9].iter().enumerate() {
-            if let Outcome::Detected =
-                anchor_fault_trial(&ctx, &keys, 2000 + i as u64, Some(lane))
+            if let Outcome::Detected = anchor_fault_trial(&ctx, &keys, 2000 + i as u64, Some(lane))
             {
                 detected += 1;
             }
@@ -176,7 +175,10 @@ fn half_substrate_corruption_is_detected() {
             }
         }
     });
-    assert_eq!(detected as u64, TRIALS, "half-substrate corruption must always be refused");
+    assert_eq!(
+        detected as u64, TRIALS,
+        "half-substrate corruption must always be refused"
+    );
 }
 
 /// Report claim 2.1 (substrate rigidity / independent periodic oscillators):
@@ -222,7 +224,10 @@ fn unperturbed_lanes_stay_pristine() {
         }
     }
     for (clean_lane, dirty_lane) in clean.c0.main.iter().zip(dirty.c0.main.iter()) {
-        assert_eq!(clean_lane, dirty_lane, "main lanes must be untouched by an anchor fault");
+        assert_eq!(
+            clean_lane, dirty_lane,
+            "main lanes must be untouched by an anchor fault"
+        );
     }
 }
 
@@ -292,7 +297,10 @@ fn public_relin_chain_depth_measured() {
     }
     println!("SECURE_128 public-relin mul-by-1 chain: EXACT to depth {reached}");
     // No floor asserted — this documents the measured public-path limit.
-    assert!(reached >= 1, "public relin must survive at least one multiply");
+    assert!(
+        reached >= 1,
+        "public relin must survive at least one multiply"
+    );
 }
 
 /// Report claim on footprint: measure the REAL sizes, no normalization games.
@@ -307,8 +315,7 @@ fn footprint_measured_honestly() {
     let ct = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
 
     let poly_bytes = |p: &nine65::ops::rns_fhe::DualRNSPoly| -> usize {
-        (p.main.iter().map(Vec::len).sum::<usize>()
-            + p.anchor.iter().map(Vec::len).sum::<usize>())
+        (p.main.iter().map(Vec::len).sum::<usize>() + p.anchor.iter().map(Vec::len).sum::<usize>())
             * core::mem::size_of::<u64>()
     };
     let ct_bytes = poly_bytes(&ct.c0) + poly_bytes(&ct.c1);
@@ -320,6 +327,12 @@ fn footprint_measured_honestly() {
         config.n
     );
     // 6 main + 10 anchor lanes x 16384 x 8B x 2 polys = 4.0 MiB
-    assert!(ct_bytes <= 5 * 1024 * 1024, "ciphertext footprint must stay ~4 MiB");
-    assert!(ct_bytes >= 3 * 1024 * 1024, "sanity: lanes actually populated");
+    assert!(
+        ct_bytes <= 5 * 1024 * 1024,
+        "ciphertext footprint must stay ~4 MiB"
+    );
+    assert!(
+        ct_bytes >= 3 * 1024 * 1024,
+        "sanity: lanes actually populated"
+    );
 }

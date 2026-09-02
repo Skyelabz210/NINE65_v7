@@ -56,7 +56,11 @@ fn reversible_lanes_unfold_exactly_through_a_million_steps() {
         .filter(|(_, &ok)| ok)
         .map(|(&p, _)| p)
         .collect();
-    assert_eq!(rev.len(), 6, "6/9 lanes reversible per the measured contract");
+    assert_eq!(
+        rev.len(),
+        6,
+        "6/9 lanes reversible per the measured contract"
+    );
 
     let arrow = ArrowStep::for_heat(DIM, A, B, STEPS, &rev);
     let initial: Vec<Vec<u64>> = rev
@@ -97,8 +101,8 @@ fn unfold_refuses_partial_reversal_loudly() {
 fn inverse_sanity_on_reversible_lanes() {
     for &p in &[2u64, 11, 13, 17, 19, 998244353] {
         let single = heat_circulant(DIM, A, B, p);
-        let inv = mat_inv_mod(&single, DIM, p)
-            .unwrap_or_else(|| panic!("lane {p} expected reversible"));
+        let inv =
+            mat_inv_mod(&single, DIM, p).unwrap_or_else(|| panic!("lane {p} expected reversible"));
         // A * A^-1 == I, lanewise exact
         let prod = exact_transcendentals::arrow_step::mat_mul_mod(&single, &inv, DIM, p);
         let mut id = vec![0u64; DIM * DIM];

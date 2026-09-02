@@ -239,9 +239,9 @@ fn parallel_summation_crt(
                 message: format!("unified_rescale: CRT modulus {m} < 2"),
             });
         }
-        m_prod = m_prod
-            .checked_mul(m as u128)
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum modulus" })?;
+        m_prod = m_prod.checked_mul(m as u128).ok_or(Nine65Error::Overflow {
+            operation: "unified_rescale::psum modulus",
+        })?;
     }
     let mut x: u128 = 0;
     for (idx, (&r, &m)) in residues.iter().zip(mods.iter()).enumerate() {
@@ -267,12 +267,12 @@ fn parallel_summation_crt(
         // r·M_i·inv ≡ M_i·((r·inv) mod m_i) (mod M); the reduced form keeps
         // every term below M, so the running sum stays below k·M.
         let s = ((r % m) as u128 * inv as u128 % m as u128) as u64;
-        let term = mi
-            .checked_mul(s as u128)
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum term" })?;
-        x = x
-            .checked_add(term)
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::psum sum" })?;
+        let term = mi.checked_mul(s as u128).ok_or(Nine65Error::Overflow {
+            operation: "unified_rescale::psum term",
+        })?;
+        x = x.checked_add(term).ok_or(Nine65Error::Overflow {
+            operation: "unified_rescale::psum sum",
+        })?;
         x %= m_prod;
     }
     Ok((x, m_prod))
@@ -372,15 +372,15 @@ fn garner(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
             gcd: gcd(acc_mod, m),
         })?;
         let k = mul_mod(diff, inv, m);
-        let term = m_acc
-            .checked_mul(k as u128)
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::garner term" })?;
-        x = x
-            .checked_add(term)
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::garner sum" })?;
-        m_acc = m_acc
-            .checked_mul(m128)
-            .ok_or(Nine65Error::Overflow { operation: "unified_rescale::garner modulus" })?;
+        let term = m_acc.checked_mul(k as u128).ok_or(Nine65Error::Overflow {
+            operation: "unified_rescale::garner term",
+        })?;
+        x = x.checked_add(term).ok_or(Nine65Error::Overflow {
+            operation: "unified_rescale::garner sum",
+        })?;
+        m_acc = m_acc.checked_mul(m128).ok_or(Nine65Error::Overflow {
+            operation: "unified_rescale::garner modulus",
+        })?;
     }
     Ok((x, m_acc))
 }
@@ -402,7 +402,12 @@ fn garner(residues: &[u64], mods: &[u64]) -> Nine65Result<(u128, u128)> {
 /// would demand a coprime target basis.
 ///
 /// `X` itself is never formed, so this stays correct for `X` far beyond `u128`.
-pub fn universal_project(gamma: u128, winding_k: u128, main_modulus: u128, target: u64) -> Nine65Result<u64> {
+pub fn universal_project(
+    gamma: u128,
+    winding_k: u128,
+    main_modulus: u128,
+    target: u64,
+) -> Nine65Result<u64> {
     if target < 2 {
         return Err(Nine65Error::InvalidParameter {
             message: format!("unified_rescale: projection target {target} < 2"),
@@ -617,7 +622,10 @@ impl RescaleChain {
                 q_full = q_full.and_then(|v| v.checked_mul(q as u128));
             }
             return match q_full {
-                Some(q) => Err(Nine65Error::InexactDivision { value: q, divisor: t }),
+                Some(q) => Err(Nine65Error::InexactDivision {
+                    value: q,
+                    divisor: t,
+                }),
                 None => Err(Nine65Error::InvalidParameter {
                     message: format!(
                         "unified_rescale: t={t} does not divide Q (Q mod t = {q_mod_t}); \
@@ -651,9 +659,12 @@ impl RescaleChain {
 
         let mut surviving_product: u128 = 1;
         for &q in &surviving_lanes {
-            surviving_product = surviving_product.checked_mul(q as u128).ok_or(
-                Nine65Error::Overflow { operation: "unified_rescale: surviving product" },
-            )?;
+            surviving_product =
+                surviving_product
+                    .checked_mul(q as u128)
+                    .ok_or(Nine65Error::Overflow {
+                        operation: "unified_rescale: surviving product",
+                    })?;
         }
         if surviving_product != t as u128 {
             return Err(Nine65Error::InvalidParameter {
@@ -703,12 +714,20 @@ impl RescaleChain {
             for y in (x + 1)..anchors.len() {
                 let g = gcd(anchors[x], anchors[y]);
                 if g != 1 {
-                    return Err(Nine65Error::NotCoprime { m: anchors[x], a: anchors[y], gcd: g });
+                    return Err(Nine65Error::NotCoprime {
+                        m: anchors[x],
+                        a: anchors[y],
+                        gcd: g,
+                    });
                 }
             }
             let g = gcd((surviving_product % anchors[x] as u128) as u64, anchors[x]);
             if g != 1 {
-                return Err(Nine65Error::NotCoprime { m: t, a: anchors[x], gcd: g });
+                return Err(Nine65Error::NotCoprime {
+                    m: t,
+                    a: anchors[x],
+                    gcd: g,
+                });
             }
         }
         // U256, not u128: the manufactured rescale's winding bound scales with
@@ -1214,7 +1233,12 @@ pub fn exact_delta_rescale(
                 // K is reduced modulo the target first; universal projection
                 // only ever uses `K mod A`, so this is the identical value
                 // with no u128 truncation.
-                out.push(universal_project(gamma, winding_k.mod_u64(a) as u128, m_prod, a)?);
+                out.push(universal_project(
+                    gamma,
+                    winding_k.mod_u64(a) as u128,
+                    m_prod,
+                    a,
+                )?);
             }
             out
         }
@@ -1340,7 +1364,10 @@ mod tests {
         for (idx, &m) in chain.surviving_lanes.iter().enumerate() {
             let mi = m_prod / m as u128;
             let expected = mod_inverse_checked((mi % m as u128) as u64, m).unwrap();
-            assert_eq!(chain.gamma_merge_inv[idx], expected, "gamma_merge_inv[{idx}]");
+            assert_eq!(
+                chain.gamma_merge_inv[idx], expected,
+                "gamma_merge_inv[{idx}]"
+            );
         }
         for (idx, &a) in anchors.iter().enumerate() {
             let mut mi = U256::from_u64(1);
@@ -1350,7 +1377,10 @@ mod tests {
                 }
             }
             let expected = mod_inverse_checked(mi.mod_u64(a), a).unwrap();
-            assert_eq!(chain.winding_merge_inv[idx], expected, "winding_merge_inv[{idx}]");
+            assert_eq!(
+                chain.winding_merge_inv[idx], expected,
+                "winding_merge_inv[{idx}]"
+            );
         }
 
         // The multi-lane case, standalone: `parallel_summation_crt` and its
@@ -1369,7 +1399,10 @@ mod tests {
             .collect();
         let fresh = parallel_summation_crt(&residues, &mods, None).unwrap();
         let cached = parallel_summation_crt(&residues, &mods, Some(&table)).unwrap();
-        assert_eq!(fresh, cached, "parallel_summation_crt: fresh vs precomputed must agree");
+        assert_eq!(
+            fresh, cached,
+            "parallel_summation_crt: fresh vs precomputed must agree"
+        );
 
         let fresh_u256 = parallel_summation_crt_u256(&residues, &mods, None).unwrap();
         let cached_u256 = parallel_summation_crt_u256(&residues, &mods, Some(&table)).unwrap();
@@ -1460,7 +1493,10 @@ mod tests {
             "expected InvalidParameter, got {err:?}"
         );
         let msg = format!("{err}");
-        assert!(msg.contains("78"), "message should name the actual product: {msg}");
+        assert!(
+            msg.contains("78"),
+            "message should name the actual product: {msg}"
+        );
     }
 
     #[test]
@@ -1480,7 +1516,11 @@ mod tests {
         let c = small_chain();
         let x = 1234u128;
         let main: Vec<u64> = c.lanes().iter().map(|&q| (x % q as u128) as u64).collect();
-        let anc: Vec<u64> = c.anchors().iter().map(|&a| (x % a as u128) as u64).collect();
+        let anc: Vec<u64> = c
+            .anchors()
+            .iter()
+            .map(|&a| (x % a as u128) as u64)
+            .collect();
         let err = exact_delta_rescale(
             &c,
             &main,
@@ -1489,7 +1529,10 @@ mod tests {
             RescaleExit::Reraise { target_lanes: &[1] },
         )
         .unwrap_err();
-        assert!(matches!(err, Nine65Error::InvalidParameter { .. }), "{err:?}");
+        assert!(
+            matches!(err, Nine65Error::InvalidParameter { .. }),
+            "{err:?}"
+        );
     }
 
     #[test]
@@ -1503,7 +1546,10 @@ mod tests {
             RescaleExit::ModulusReduced,
         )
         .unwrap_err();
-        assert!(matches!(err, Nine65Error::InvalidParameter { .. }), "{err:?}");
+        assert!(
+            matches!(err, Nine65Error::InvalidParameter { .. }),
+            "{err:?}"
+        );
     }
 
     // ── item 3: THE DECISIVE TEST ────────────────────────────────────
@@ -1530,13 +1576,19 @@ mod tests {
         let mut max_k = 0u128;
         for x in 0..limit {
             let main: Vec<u64> = c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-            let anc: Vec<u64> = c.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            let anc: Vec<u64> = c
+                .anchors()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
             let out = exact_delta_rescale(
                 &c,
                 &main,
                 &anc,
                 DeltaRounding::NearestHalfUp,
-                RescaleExit::Reraise { target_lanes: &targets },
+                RescaleExit::Reraise {
+                    target_lanes: &targets,
+                },
             )
             .unwrap();
 
@@ -1550,7 +1602,11 @@ mod tests {
             let y = out.reconstruct(&c).unwrap();
             assert_eq!(y, truth_bfv, "kernel != round(X·t/Q) at x={x}");
             assert_eq!(out.gamma, y % t, "γ wrong at x={x}");
-            assert_eq!(out.winding_k_u128().unwrap(), y / t, "winding K wrong at x={x}");
+            assert_eq!(
+                out.winding_k_u128().unwrap(),
+                y / t,
+                "winding K wrong at x={x}"
+            );
             for (i, &tg) in targets.iter().enumerate() {
                 assert_eq!(
                     out.target_residues[i] as u128,
@@ -1563,7 +1619,11 @@ mod tests {
         }
         assert_eq!(checked, limit as u64);
         assert_eq!(checked, 29_985, "expected the full dual range");
-        assert_eq!(max_k, a - 1, "winding read must exercise the full anchor range");
+        assert_eq!(
+            max_k,
+            a - 1,
+            "winding read must exercise the full anchor range"
+        );
         println!(
             "EXACT-Δ small chain (t=6, Q=546, Δ=91, A=55): {checked} values, \
              0 rounding error, max winding K = {max_k}"
@@ -1586,20 +1646,34 @@ mod tests {
         let mut checked = 0u64;
         for x in 0..limit {
             let main: Vec<u64> = c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-            let anc: Vec<u64> = c.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            let anc: Vec<u64> = c
+                .anchors()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
             let out = exact_delta_rescale(
                 &c,
                 &main,
                 &anc,
                 DeltaRounding::NearestHalfUp,
-                RescaleExit::Reraise { target_lanes: &targets },
+                RescaleExit::Reraise {
+                    target_lanes: &targets,
+                },
             )
             .unwrap();
             let truth = round_half_up(x * t, q);
             assert_eq!((x + off) / d, truth, "exact-Δ identity broken at x={x}");
-            assert_eq!(out.reconstruct(&c).unwrap(), truth, "kernel != truth at x={x}");
+            assert_eq!(
+                out.reconstruct(&c).unwrap(),
+                truth,
+                "kernel != truth at x={x}"
+            );
             for (i, &tg) in targets.iter().enumerate() {
-                assert_eq!(out.target_residues[i] as u128, truth % tg as u128, "x={x} tgt={tg}");
+                assert_eq!(
+                    out.target_residues[i] as u128,
+                    truth % tg as u128,
+                    "x={x} tgt={tg}"
+                );
             }
             checked += 1;
         }
@@ -1627,7 +1701,11 @@ mod tests {
         assert_ne!(residual, 0, "hunted chain must not divide");
         assert_eq!(residual, 24);
         let delta_hunted = q / t; // ⌊Q/t⌋ — the classical BFV divisor
-        assert_ne!(delta_hunted * t, q, "⌊Q/t⌋·t != Q — that gap is the rounding term");
+        assert_ne!(
+            delta_hunted * t,
+            q,
+            "⌊Q/t⌋·t != Q — that gap is the rounding term"
+        );
 
         let mut mismatches: u64 = 0;
         let mut max_dev: u128 = 0;
@@ -1643,9 +1721,15 @@ mod tests {
 
         // Manufactured chains: exhaustively zero (the two tests above).
         // Hunted chain: nonzero, measured here.
-        assert!(mismatches > 0, "the classical divisor must deviate somewhere");
+        assert!(
+            mismatches > 0,
+            "the classical divisor must deviate somewhere"
+        );
         assert_eq!(max_dev, 1);
-        assert_eq!(mismatches, 3_084, "measured constant; exhaustive and deterministic");
+        assert_eq!(
+            mismatches, 3_084,
+            "measured constant; exhaustive and deterministic"
+        );
         println!(
             "CONTRAST hunted (t=257, Q=769·3329=2560001): Q mod t = {residual} (nonzero), \
              round(X/⌊Q/t⌋) != round(X·t/Q) on {mismatches}/{q} values \
@@ -1673,7 +1757,11 @@ mod tests {
         let mut n = 0u64;
         for x in (0..(q * a - d / 2)).step_by(7) {
             let main: Vec<u64> = c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-            let anc: Vec<u64> = c.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            let anc: Vec<u64> = c
+                .anchors()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
             let bgv = exact_delta_rescale(
                 &c,
                 &main,
@@ -1687,7 +1775,9 @@ mod tests {
                 &main,
                 &anc,
                 DeltaRounding::NearestHalfUp,
-                RescaleExit::Reraise { target_lanes: &targets },
+                RescaleExit::Reraise {
+                    target_lanes: &targets,
+                },
             )
             .unwrap();
 
@@ -1723,13 +1813,19 @@ mod tests {
         let mut n = 0u64;
         for x in (0..(q * a)).step_by(13) {
             let main: Vec<u64> = c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-            let anc: Vec<u64> = c.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            let anc: Vec<u64> = c
+                .anchors()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
             let out = exact_delta_rescale(
                 &c,
                 &main,
                 &anc,
                 DeltaRounding::Floor,
-                RescaleExit::Reraise { target_lanes: &[61] },
+                RescaleExit::Reraise {
+                    target_lanes: &[61],
+                },
             )
             .unwrap();
             assert_eq!(out.reconstruct(&c).unwrap(), x / d, "⌊X/Δ⌋ wrong at x={x}");
@@ -1753,13 +1849,19 @@ mod tests {
         let mut n = 0u64;
         for x in (0..(q * a - d / 2)).step_by(11) {
             let main: Vec<u64> = c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-            let anc: Vec<u64> = c.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            let anc: Vec<u64> = c
+                .anchors()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
             let out = exact_delta_rescale(
                 &c,
                 &main,
                 &anc,
                 DeltaRounding::NearestHalfUp,
-                RescaleExit::Reraise { target_lanes: &targets },
+                RescaleExit::Reraise {
+                    target_lanes: &targets,
+                },
             )
             .unwrap();
             let y = out.reconstruct(&c).unwrap();
@@ -1772,7 +1874,10 @@ mod tests {
             }
             n += 1;
         }
-        println!("UNIVERSAL PROJECTION exact on {n} values × {} hostile targets", targets.len());
+        println!(
+            "UNIVERSAL PROJECTION exact on {n} values × {} hostile targets",
+            targets.len()
+        );
     }
 
     #[test]
@@ -1846,19 +1951,31 @@ mod tests {
         let mut n = 0u64;
         for x in (0..(q * a - d / 2)).step_by(3) {
             let main: Vec<u64> = c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-            let anc: Vec<u64> = c.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            let anc: Vec<u64> = c
+                .anchors()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
             let out = exact_delta_rescale(
                 &c,
                 &main,
                 &anc,
                 DeltaRounding::NearestHalfUp,
-                RescaleExit::Reraise { target_lanes: &[anchor_mod] },
+                RescaleExit::Reraise {
+                    target_lanes: &[anchor_mod],
+                },
             )
             .unwrap();
-            let fast =
-                adjacency_project(out.gamma, out.winding_k_u128().unwrap(), c.surviving_product())
-                    .unwrap();
-            assert_eq!(fast, out.target_residues[0], "adjacency fast path disagrees at x={x}");
+            let fast = adjacency_project(
+                out.gamma,
+                out.winding_k_u128().unwrap(),
+                c.surviving_product(),
+            )
+            .unwrap();
+            assert_eq!(
+                fast, out.target_residues[0],
+                "adjacency fast path disagrees at x={x}"
+            );
             n += 1;
         }
         println!("ADJACENCY fast path agrees with A3 on {n} values");
@@ -1878,7 +1995,9 @@ mod tests {
                 &main,
                 &[],
                 DeltaRounding::NearestHalfUp,
-                RescaleExit::Reraise { target_lanes: &[6, 7] },
+                RescaleExit::Reraise {
+                    target_lanes: &[6, 7],
+                },
             )
             .unwrap();
             let truth = (x + d / 2) / d;
@@ -1957,10 +2076,12 @@ mod tests {
             let mut checked: u64 = 0;
 
             for x in 0..limit {
-                let main: Vec<u64> =
-                    c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-                let anc: Vec<u64> =
-                    c.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+                let main: Vec<u64> = c.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
+                let anc: Vec<u64> = c
+                    .anchors()
+                    .iter()
+                    .map(|&m| (x % m as u128) as u64)
+                    .collect();
                 let out = exact_delta_rescale(
                     &c,
                     &main,
@@ -2034,9 +2155,15 @@ mod tests {
                 "MANUFACTURED chain {label} must rescale with ZERO error, got {errors} \
                  over {checked} values"
             );
-            assert_eq!(*max_dev, 0, "MANUFACTURED chain {label} max deviation must be 0");
+            assert_eq!(
+                *max_dev, 0,
+                "MANUFACTURED chain {label} max deviation must be 0"
+            );
         }
-        assert_ne!(residual, 0, "the hunted chain must not divide — that is what makes it hunted");
+        assert_ne!(
+            residual, 0,
+            "the hunted chain must not divide — that is what makes it hunted"
+        );
         assert!(
             hunted_errors > 0,
             "the classical ⌊Q/t⌋ divisor must deviate from round(X·t/Q) somewhere"
@@ -2096,13 +2223,25 @@ mod tests {
         let mut x: u128 = 0;
         let mut checked = 0usize;
         while x < q * a_prod {
-            let main: Vec<u64> = chain.lanes().iter().map(|&m| (x % m as u128) as u64).collect();
-            let anch: Vec<u64> = chain.anchors().iter().map(|&m| (x % m as u128) as u64).collect();
+            let main: Vec<u64> = chain
+                .lanes()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
+            let anch: Vec<u64> = chain
+                .anchors()
+                .iter()
+                .map(|&m| (x % m as u128) as u64)
+                .collect();
             for rounding in [DeltaRounding::Floor, DeltaRounding::NearestHalfUp] {
                 let (surv, anchor_out) =
                     rescale_drop_only(&chain, &main, &anch, rounding).expect("drop only");
                 let full = exact_delta_rescale(
-                    &chain, &main, &anch, rounding, RescaleExit::ModulusReduced,
+                    &chain,
+                    &main,
+                    &anch,
+                    rounding,
+                    RescaleExit::ModulusReduced,
                 )
                 .expect("full pipeline");
                 assert_eq!(surv, full.surviving_residues, "surviving residues at x={x}");
@@ -2150,7 +2289,9 @@ mod tests {
         let mut r2 = ShadowHarvester::with_seed(77003);
         let a = eval.encrypt_with_rng(123, &client.public_key, &mut r1);
         let b = eval.encrypt_with_rng(456, &client.public_key, &mut r2);
-        let ab = eval.mul_manufactured(&a, &b, &pk).expect("manufactured multiply");
+        let ab = eval
+            .mul_manufactured(&a, &b, &pk)
+            .expect("manufactured multiply");
         assert_eq!(
             eval.decrypt(&ab, &client),
             123 * 456,

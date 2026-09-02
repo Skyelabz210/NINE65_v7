@@ -1,26 +1,31 @@
 //! Expanded Differential Power Analysis (DPA) Simulation for NINE65 v7.
 //! Verifies side-channel resistance of the Parallel Summation CRT implementation.
 
-use nine65::prelude::*;
 use nine65::arithmetic::rns::U512;
+use nine65::prelude::*;
 use std::time::Instant;
 
 /// Simulate a power trace for a Parallel Summation CRT operation.
 /// Power is modeled as Hamming Weight of intermediate sums + Gaussian noise.
-fn simulate_power_trace(residues: &[u64], basis: &[u64], weights: &[U512], noise_level: f64) -> Vec<f64> {
+fn simulate_power_trace(
+    residues: &[u64],
+    basis: &[u64],
+    weights: &[U512],
+    noise_level: f64,
+) -> Vec<f64> {
     let mut trace = Vec::new();
     let mut current_sum = U512::zero();
-    
+
     for i in 0..residues.len() {
         // Step 1: Multiply residue by precomputed weight (Mi * [Mi^-1 mod pi])
         let term = weights[i].mul_u128(residues[i] as u128);
-        
+
         // Model power leakage of the multiplication
         trace.push(hamming_weight_u512(&term) as f64 + rand_noise(noise_level));
-        
+
         // Step 2: Parallel Summation (Accumulation)
         current_sum = current_sum.add(term);
-        
+
         // Model power leakage of the addition
         trace.push(hamming_weight_u512(&current_sum) as f64 + rand_noise(noise_level));
     }
@@ -99,7 +104,7 @@ fn main() {
     println!("  Target Residue: {}", target_residue);
     println!("  Best Guess:     {}", best_guess);
     println!("  Max Correlation: {:.4}", max_corr);
-    
+
     if max_corr < 0.1 {
         println!("  Status: RESISTANT (Zero Shadow Entropy verified)");
     } else {
@@ -113,7 +118,9 @@ fn mod_inv(a: u64, m: u64) -> u64 {
     let mut m = m as i128;
     let m0 = m;
     let (mut y, mut x) = (0, 1);
-    if m == 1 { return 0; }
+    if m == 1 {
+        return 0;
+    }
     while a > 1 {
         let q = a / m;
         let mut t = m;
@@ -123,7 +130,9 @@ fn mod_inv(a: u64, m: u64) -> u64 {
         y = x - q * y;
         x = t;
     }
-    if x < 0 { x += m0; }
+    if x < 0 {
+        x += m0;
+    }
     x as u64
 }
 
@@ -149,5 +158,9 @@ fn calculate_correlation(traces: &[Vec<f64>], guess: u32, weight: &U512) -> f64 
 
     let numerator = n * sum_xy - sum_x * sum_y;
     let denominator = ((n * sum_x2 - sum_x * sum_x) * (n * sum_y2 - sum_y * sum_y)).sqrt();
-    if denominator == 0.0 { 0.0 } else { (numerator / denominator).abs() }
+    if denominator == 0.0 {
+        0.0
+    } else {
+        (numerator / denominator).abs()
+    }
 }

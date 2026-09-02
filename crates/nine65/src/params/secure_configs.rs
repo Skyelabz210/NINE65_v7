@@ -440,14 +440,8 @@ impl SecureConfig {
         let q = primes[0];
         let log_q = exact_product_bit_length(&primes);
         let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
-        let estimate = estimator.estimate(
-            n,
-            log_q,
-            SecretDistribution::Ternary,
-            claimed_security,
-        );
-        let he_standard_compliant =
-            HEStandardBounds::is_compliant(n, log_q, claimed_security);
+        let estimate = estimator.estimate(n, log_q, SecretDistribution::Ternary, claimed_security);
+        let he_standard_compliant = HEStandardBounds::is_compliant(n, log_q, claimed_security);
 
         // Fail closed. A named claim must pass the complete internal screen;
         // Fail closed for real claims. Configs explicitly marked insecure
@@ -630,13 +624,7 @@ impl SecureConfig {
     pub fn secure_192() -> Self {
         Self::new_verified(
             16384,
-            vec![
-                998244353,
-                985661441,
-                754974721,
-                469762049,
-                167772161,
-            ],
+            vec![998244353, 985661441, 754974721, 469762049, 167772161],
             65537,
             4,
             192,
@@ -673,12 +661,7 @@ impl SecureConfig {
         Self::new_verified(
             16_384,
             vec![
-                998244353,
-                985661441,
-                754974721,
-                469762049,
-                167772161,
-                595591169,
+                998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
             ],
             65_537,
             5,
@@ -694,14 +677,7 @@ impl SecureConfig {
     /// Fast test configuration. Never deploy with sensitive data.
     #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     pub fn test_fast_insecure() -> Self {
-        Self::new_verified(
-            1024,
-            vec![998_244_353],
-            65_537,
-            2,
-            40,
-            "test_fast_insecure",
-        )
+        Self::new_verified(1024, vec![998_244_353], 65_537, 2, 40, "test_fast_insecure")
     }
 
     /// Medium test configuration. Never deploy with sensitive data.
@@ -1285,12 +1261,14 @@ mod tests {
             expected.len(),
             "a named config was added or removed without updating the pinned              screening table"
         );
-        for (config, &(name, n, lanes, log_q, core_svp, matzov)) in
-            configs.iter().zip(expected)
-        {
+        for (config, &(name, n, lanes, log_q, core_svp, matzov)) in configs.iter().zip(expected) {
             assert_eq!(config.config.name, name, "config order changed");
             assert_eq!(config.config.n, n, "{name}: ring degree moved");
-            assert_eq!(config.config.primes.len(), lanes, "{name}: lane count moved");
+            assert_eq!(
+                config.config.primes.len(),
+                lanes,
+                "{name}: lane count moved"
+            );
             assert_eq!(config.log_q(), log_q, "{name}: log2(q) moved");
 
             let dual = config.screened_security_dual();
@@ -1400,12 +1378,7 @@ mod tests {
         );
         assert!(
             exact_product_bit_length(&[
-                998244353,
-                985661441,
-                754974721,
-                469762049,
-                167772161,
-                595591169,
+                998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
             ]) > 128
         );
     }
@@ -1476,4 +1449,3 @@ mod tests {
         test_config.require_production_safe();
     }
 }
-

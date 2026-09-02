@@ -4,9 +4,9 @@
 
 #[cfg(test)]
 mod tests {
+    use nine65::entropy::shadow::ShadowHarvester;
     use nine65::ops::rns_fhe::RNSFHEContext;
     use nine65::params::secure_configs::SecureConfig;
-    use nine65::entropy::shadow::ShadowHarvester;
 
     /// Encrypting under one config and attempting to add to a ciphertext from another
     /// must fail with an error, not silently produce a wrong result or UB.
@@ -22,7 +22,8 @@ mod tests {
         let ct_a = ctx_a.encrypt_dual(5, &keys_a.public_key, &mut rng_a);
 
         // Validate ct_a against its own config — must succeed.
-        ct_a.validate().expect("ct_a must validate against config_a");
+        ct_a.validate()
+            .expect("ct_a must validate against config_a");
 
         // Validate ct_a against a different config (n=1024 vs n=4096, different prime set).
         // light_rns() has n=1024 and different primes, so dimensions will differ.
@@ -36,8 +37,16 @@ mod tests {
         // We check this by trying to add the two ciphertexts.
         // add_dual does a debug_assert on dimensions — in release builds it may silently produce
         // garbage. This test documents the current behavior.
-        println!("[cross_config] ct_a: n={}, num_primes={}", config_a.n, ct_a.c0.main.len());
-        println!("[cross_config] ct_light: n={}, num_primes={}", config_light.n, ct_light.c0.main.len());
+        println!(
+            "[cross_config] ct_a: n={}, num_primes={}",
+            config_a.n,
+            ct_a.c0.main.len()
+        );
+        println!(
+            "[cross_config] ct_light: n={}, num_primes={}",
+            config_light.n,
+            ct_light.c0.main.len()
+        );
 
         // If dimensions differ, the ciphertexts are structurally incompatible.
         if config_a.n != config_light.n || ct_a.c0.main.len() != ct_light.c0.main.len() {
@@ -67,7 +76,10 @@ mod tests {
 
         // Wrong-key decryption produces garbage, not the plaintext.
         // Astronomically unlikely to coincidentally equal m, but not asserted.
-        println!("[cross_config] Wrong-key decrypt returned {} (expected not {})", wrong_value, m);
+        println!(
+            "[cross_config] Wrong-key decrypt returned {} (expected not {})",
+            wrong_value, m
+        );
         // The test passes as long as no panic occurred above.
     }
 
@@ -83,7 +95,8 @@ mod tests {
 
         let work_keys = ctx_128.generate_keys_dual(&mut rng);
         let boot = ClockworkBootstrap::new(&config_128).expect("bootstrap");
-        let boot_keys = boot.generate_keys(&work_keys.secret_key, &mut rng)
+        let boot_keys = boot
+            .generate_keys(&work_keys.secret_key, &mut rng)
             .expect("bootstrap keys");
 
         // Encrypt under the correct config.
@@ -92,7 +105,11 @@ mod tests {
 
         // Bootstrap with correct keys — must succeed.
         let result = boot.bootstrap(&ct_mul, &boot_keys.bsk, &boot_keys.ksk);
-        assert!(result.is_ok(), "Bootstrap with correct keys failed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Bootstrap with correct keys failed: {:?}",
+            result.err()
+        );
         println!("[cross_config] Bootstrap with correct keys: OK");
     }
 }

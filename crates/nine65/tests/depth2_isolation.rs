@@ -95,7 +95,12 @@ fn add_mag(a: Mag, b: Mag) -> Mag {
         r[i] = s as u64;
         carry = s >> 64;
     }
-    assert_eq!(carry, 0, "magnitude add overflow beyond {} bits", LIMBS * 64);
+    assert_eq!(
+        carry,
+        0,
+        "magnitude add overflow beyond {} bits",
+        LIMBS * 64
+    );
     r
 }
 
@@ -337,7 +342,12 @@ fn mag_shr1(a: Mag) -> Mag {
 /// Returns the mismatch count -- expected to be nonzero and NOT a bug (see
 /// module doc point 2); coefficients representing small negative true values
 /// legitimately need k != 0.
-fn naive_k0_mismatch_count(poly: &DualRNSPoly, main_primes: &[u64], anchor_primes: &[u64], n: usize) -> usize {
+fn naive_k0_mismatch_count(
+    poly: &DualRNSPoly,
+    main_primes: &[u64],
+    anchor_primes: &[u64],
+    n: usize,
+) -> usize {
     let mut mismatches = 0;
     let mut main_residues = vec![0u64; main_primes.len()];
     for i in 0..n {
@@ -359,7 +369,12 @@ fn naive_k0_mismatch_count(poly: &DualRNSPoly, main_primes: &[u64], anchor_prime
 /// and returns the max |signed k| bit length seen -- the from-scratch
 /// equivalent of the in-crate probe's `max |true signed k|` column, but
 /// computed by a completely independent implementation.
-fn max_signed_k_bits(poly: &DualRNSPoly, main_primes: &[u64], anchor_primes: &[u64], n: usize) -> u32 {
+fn max_signed_k_bits(
+    poly: &DualRNSPoly,
+    main_primes: &[u64],
+    anchor_primes: &[u64],
+    n: usize,
+) -> u32 {
     let mut max_bits = 0u32;
     let mut main_residues = vec![0u64; main_primes.len()];
     let mut anchor_residues = vec![0u64; anchor_primes.len()];
@@ -370,7 +385,8 @@ fn max_signed_k_bits(poly: &DualRNSPoly, main_primes: &[u64], anchor_primes: &[u
         for (j, limb) in poly.anchor.iter().enumerate() {
             anchor_residues[j] = limb[i];
         }
-        let (_, mag) = reconstruct_signed_coeff(&main_residues, &anchor_residues, main_primes, anchor_primes);
+        let (_, mag) =
+            reconstruct_signed_coeff(&main_residues, &anchor_residues, main_primes, anchor_primes);
         max_bits = max_bits.max(bitlen_mag(mag));
     }
     max_bits
@@ -384,7 +400,12 @@ fn depth2_isolation_capacity_and_coefficient_texture() {
     let secure_config = SecureConfig::secure_128_deep();
     let ctx = RNSFHEContext::new(&secure_config.config);
 
-    let m_bits: u32 = ctx.config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+    let m_bits: u32 = ctx
+        .config
+        .primes
+        .iter()
+        .map(|&p| 64 - p.leading_zeros())
+        .sum();
     let anchor_bits: Vec<u32> = ctx
         .dual_rns
         .anchor
@@ -413,7 +434,10 @@ fn depth2_isolation_capacity_and_coefficient_texture() {
     );
     assert_eq!(ctx.ke.capacity_bit_length(), 110);
     assert_eq!(ctx.dual_rns.anchor.primes.len(), 7);
-    assert_eq!(a4_bits, 127, "4-anchor production capacity for secure_128_deep");
+    assert_eq!(
+        a4_bits, 127,
+        "4-anchor production capacity for secure_128_deep"
+    );
     assert_eq!(a_full_bits, 223, "full 7-anchor capacity");
     assert_eq!(m_bits, 119, "secure_128_deep M_level bit length");
 
@@ -430,7 +454,10 @@ fn depth2_isolation_capacity_and_coefficient_texture() {
     let ct_d1 = ctx.mul_dual_symmetric(&ct_base, &ct_base, &keys.secret_key);
     let dec_d1 = ctx.decrypt_dual(&ct_d1, &keys.secret_key);
     println!("[depth2_isolation] depth-1 decrypt = {} (want 9)", dec_d1);
-    assert_eq!(dec_d1, 9, "depth-1 must still be correct (sanity check, not the bug under test)");
+    assert_eq!(
+        dec_d1, 9,
+        "depth-1 must still be correct (sanity check, not the bug under test)"
+    );
 
     let main_primes = &ctx.config.primes;
     let anchor_primes = &ctx.dual_rns.anchor.primes;
@@ -457,7 +484,13 @@ fn depth2_isolation_capacity_and_coefficient_texture() {
     // get the original residues back.
     // ------------------------------------------------------------------
     {
-        let test_primes = [2013265921u64, 2281701377, 2483027969, 2885681153, 3221225473];
+        let test_primes = [
+            2013265921u64,
+            2281701377,
+            2483027969,
+            2885681153,
+            3221225473,
+        ];
         let test_cases: [[u64; 5]; 4] = [
             [0, 0, 0, 0, 0],
             [1, 1, 1, 1, 1],

@@ -33,17 +33,17 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 pub mod agm;
+pub mod arrow_step;
 pub mod binary_splitting;
 pub mod chimera;
 pub mod chimera_division;
+pub mod composite_division;
 pub mod constants;
 pub mod continued_fraction;
 pub mod cordic;
-pub mod arrow_step;
-pub mod composite_division;
-pub mod cram_ct;
 pub mod cram_anchor;
 pub mod cram_carry;
+pub mod cram_ct;
 pub mod cram_machine;
 pub mod cram_ops;
 pub mod cram_pde;
@@ -57,11 +57,11 @@ pub mod time_crystal;
 pub mod transduction;
 pub mod triad;
 
-pub mod dyn_crt;
 pub mod chimera_page;
-pub mod recumbent;
 pub mod cram_fhe_bridge;
 pub mod cram_harness;
+pub mod dyn_crt;
+pub mod recumbent;
 
 #[cfg(feature = "arbitrary-precision")]
 pub mod bigint;

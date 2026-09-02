@@ -202,7 +202,13 @@ pub trait PolynomialMap {
 /// Use `step_lane_parallel_winding` for full exact K tracking.
 pub fn step_lane_parallel(states: &[ExactState], f: &dyn PolynomialMap) -> Vec<ExactState> {
     let n = states.len();
-    let mut out = vec![ExactState { lanes: [0u64; 6], winding: 0 }; n];
+    let mut out = vec![
+        ExactState {
+            lanes: [0u64; 6],
+            winding: 0
+        };
+        n
+    ];
 
     for (li, &p) in SAFE_BASIS.iter().enumerate() {
         let lane: Vec<u64> = states.iter().map(|s| s.lanes[li]).collect();
@@ -219,14 +225,17 @@ pub fn step_lane_parallel(states: &[ExactState], f: &dyn PolynomialMap) -> Vec<E
 /// Two paths:
 /// - LINEAR (propagate_winding returns Some): garner carry + analytic propagation.
 /// - NONLINEAR (propagate_winding returns None): lift to true integers, evaluate.
-pub fn step_lane_parallel_winding(
-    states: &[ExactState],
-    f: &dyn PolynomialMap,
-) -> Vec<ExactState> {
+pub fn step_lane_parallel_winding(states: &[ExactState], f: &dyn PolynomialMap) -> Vec<ExactState> {
     let n = states.len();
 
     // Step 1: lane-parallel residue update.
-    let mut out = vec![ExactState { lanes: [0u64; 6], winding: 0 }; n];
+    let mut out = vec![
+        ExactState {
+            lanes: [0u64; 6],
+            winding: 0
+        };
+        n
+    ];
     for (li, &p) in SAFE_BASIS.iter().enumerate() {
         let lane: Vec<u64> = states.iter().map(|s| s.lanes[li]).collect();
         let new_lane = f.evaluate_lane(&lane, p);
@@ -559,8 +568,9 @@ mod tests {
             assert_eq!(
                 s.to_i128_exact(),
                 init[i].to_i128_exact(),
-                "cell {} value should be unchanged"
-            , i);
+                "cell {} value should be unchanged",
+                i
+            );
         }
     }
 

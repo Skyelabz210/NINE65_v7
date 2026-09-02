@@ -19,12 +19,12 @@
 
 pub mod barrett;
 pub mod base_ext; // SHENOY-KUMARESAN BASE EXTENSION (kernel only, not wired in — see module docs)
+pub mod boundary; // CAPACITY PROXIMITY CHECKS (80%/90%/post-switch margins)
 pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (kernel only, not wired in — see module docs)
 #[cfg(test)]
 mod compare_bit_vectors; // external (Python) oracle vectors for compare_bit
 #[cfg(test)]
 mod compare_bit_verify; // compare_bit vs that external oracle, on real chains
-pub mod boundary; // CAPACITY PROXIMITY CHECKS (80%/90%/post-switch margins)
 pub mod ct_mul_exact; // EXACT CT×CT
 pub mod cyclotomic_phase; // NATIVE RING TRIGONOMETRY
 pub mod exact_coeff; // DUAL-TRACK COEFFICIENTS
@@ -57,10 +57,10 @@ pub use persistent_montgomery::{PersistentMontgomery, PersistentPolynomial};
 
 // NTT: FFT O(N log N) is the unconditional default.
 // Use --features reference_ntt to fall back to O(N^2) DFT for validation.
-#[cfg(not(feature = "reference_ntt"))]
-pub use ntt_fft::NTTEngineFFT as NTTEngine;
 #[cfg(feature = "reference_ntt")]
 pub use ntt::NTTEngine;
+#[cfg(not(feature = "reference_ntt"))]
+pub use ntt_fft::NTTEngineFFT as NTTEngine;
 
 // Also export both explicitly for users who need specific version
 pub use ct_mul_exact::{ExactCiphertext, ExactCiphertext2, ExactFHEContext};

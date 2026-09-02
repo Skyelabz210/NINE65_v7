@@ -82,9 +82,9 @@ impl Recumbent {
 
         self.parking = 0;
         self.phase_lock_count += 1;
-        self.activation_level = self.activation_level.max(
-            self.phase_lock_count.min(u32::MAX - 1) + 1,
-        );
+        self.activation_level = self
+            .activation_level
+            .max(self.phase_lock_count.min(u32::MAX - 1) + 1);
     }
 
     /// Reconstruct the exact full value: primary + parking + hot.
@@ -156,9 +156,7 @@ impl Recumbent {
         };
 
         // If either had parking/hot, fold those contributions
-        if self.parking != 0 || !self.hot.is_zero()
-            || other.parking != 0 || !other.hot.is_zero()
-        {
+        if self.parking != 0 || !self.hot.is_zero() || other.parking != 0 || !other.hot.is_zero() {
             let a = self.reconstruct_exact();
             let b = other.reconstruct_exact();
             let prod = a.checked_mul(b).expect("Recumbent::mul overflow");

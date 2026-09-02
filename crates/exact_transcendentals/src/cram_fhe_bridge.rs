@@ -174,7 +174,11 @@ pub struct DepthResult {
 ///
 /// Performs repeated multiplications tracking noise budget.
 /// Multiply by 1 isolates noise-budget tracking from magnitude growth.
-pub fn depth_test(base_value: i128, initial_budget_millibits: u64, target_depth: u32) -> DepthResult {
+pub fn depth_test(
+    base_value: i128,
+    initial_budget_millibits: u64,
+    target_depth: u32,
+) -> DepthResult {
     let mut state = CramFheState::from_plaintext_with_budget(base_value, initial_budget_millibits);
 
     for _ in 0..target_depth {
@@ -278,7 +282,10 @@ mod tests {
         let a = CramFheState::from_plaintext(100);
         let b = CramFheState::from_plaintext(200);
         let sum = cram_add(&a, &b);
-        assert_eq!(sum.noise_budget_millibits(), INITIAL_NOISE_BUDGET_MILLIBITS - 1);
+        assert_eq!(
+            sum.noise_budget_millibits(),
+            INITIAL_NOISE_BUDGET_MILLIBITS - 1
+        );
     }
 
     #[test]
@@ -298,7 +305,12 @@ mod tests {
     #[test]
     fn cram_beats_traditional() {
         let (cram, traditional) = compare_depth_capacity(90);
-        assert!(cram > traditional, "CRAM {} should exceed BFV {}", cram, traditional);
+        assert!(
+            cram > traditional,
+            "CRAM {} should exceed BFV {}",
+            cram,
+            traditional
+        );
     }
 
     #[test]

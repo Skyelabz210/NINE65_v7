@@ -195,10 +195,10 @@ fn a_minus_two_b_zero_operator_is_one_way_on_every_lane() {
 fn unfold_refuses_loudly_at_every_new_operator_dim_point() {
     // (dim, a, b, a basis containing at least one lane measured singular there)
     let cases: &[(usize, u64, u64, &[u64])] = &[
-        (6, 3, 1, &[2, 11, 13]),      // 2 singular at dim=6
-        (4, 3, 1, &[3, 11, 13]),      // 3 singular at dim=4
-        (8, 5, 2, &[17, 11, 13]),     // 17 singular for [2,5,2] dim=8
-        (8, 7, 2, &[11, 13, 19]),     // 11 singular for [2,7,2] dim=8
+        (6, 3, 1, &[2, 11, 13]),  // 2 singular at dim=6
+        (4, 3, 1, &[3, 11, 13]),  // 3 singular at dim=4
+        (8, 5, 2, &[17, 11, 13]), // 17 singular for [2,5,2] dim=8
+        (8, 7, 2, &[11, 13, 19]), // 11 singular for [2,7,2] dim=8
     ];
 
     for &(dim, a, b, lanes) in cases {
@@ -247,10 +247,10 @@ fn structurally_one_way_operator_refuses_over_every_basis() {
 fn reversible_sub_basis_unfolds_exactly_at_every_new_operator_dim_point() {
     const STEPS: u64 = 1_000_000;
     let cases: &[(usize, u64, u64, usize)] = &[
-        (6, 3, 1, 7),  // 9 lanes - 2 singular
-        (4, 3, 1, 7),  // 9 lanes - 2 singular
-        (8, 5, 2, 6),  // 9 lanes - 3 singular
-        (8, 7, 2, 6),  // 9 lanes - 3 singular
+        (6, 3, 1, 7), // 9 lanes - 2 singular
+        (4, 3, 1, 7), // 9 lanes - 2 singular
+        (8, 5, 2, 6), // 9 lanes - 3 singular
+        (8, 7, 2, 6), // 9 lanes - 3 singular
     ];
 
     for &(dim, a, b, expected_rev) in cases {

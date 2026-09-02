@@ -52,11 +52,7 @@ impl EncryptedFeedback {
 
     /// Homomorphically aggregate two structured feedback objects slot-by-slot.
     /// Values remain ciphertexts in DualRNS form.
-    pub fn add_assign(
-        &mut self,
-        context: &RNSFHEContext,
-        rhs: &Self,
-    ) -> Result<(), AdapterError> {
+    pub fn add_assign(&mut self, context: &RNSFHEContext, rhs: &Self) -> Result<(), AdapterError> {
         if self.ciphertexts.len() != SLOT_COUNT || rhs.ciphertexts.len() != SLOT_COUNT {
             return Err(AdapterError::InvalidCiphertextCount);
         }
@@ -106,9 +102,8 @@ mod tests {
         let mut encrypted_left =
             EncryptedFeedback::encrypt(&context, &keys.public_key, left_signal)
                 .expect("encrypt left");
-        let encrypted_right =
-            EncryptedFeedback::encrypt(&context, &keys.public_key, right_signal)
-                .expect("encrypt right");
+        let encrypted_right = EncryptedFeedback::encrypt(&context, &keys.public_key, right_signal)
+            .expect("encrypt right");
 
         assert!(encrypted_left.validate_shape());
         assert!(encrypted_right.validate_shape());

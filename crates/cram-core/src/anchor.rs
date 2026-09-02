@@ -42,12 +42,7 @@ pub fn recover_winding(
     main_modulus: u64,
     anchor_modulus: u64,
 ) -> Result<AnchorWitness, AnchorError> {
-    validate_inputs(
-        main_residue,
-        anchor_residue,
-        main_modulus,
-        anchor_modulus,
-    )?;
+    validate_inputs(main_residue, anchor_residue, main_modulus, anchor_modulus)?;
 
     let inverse = inverse_mod(main_modulus % anchor_modulus, anchor_modulus)?;
     let reduced_main = main_residue % anchor_modulus;
@@ -78,12 +73,7 @@ pub fn recover_adjacent_winding(
     let anchor_modulus = main_modulus
         .checked_add(1)
         .ok_or(AnchorError::InvalidModulus)?;
-    validate_inputs(
-        main_residue,
-        anchor_residue,
-        main_modulus,
-        anchor_modulus,
-    )?;
+    validate_inputs(main_residue, anchor_residue, main_modulus, anchor_modulus)?;
     let winding_mod_anchor =
         (main_residue % anchor_modulus + anchor_modulus - anchor_residue) % anchor_modulus;
     let witness = AnchorWitness {

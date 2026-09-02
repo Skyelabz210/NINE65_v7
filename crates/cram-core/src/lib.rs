@@ -36,10 +36,23 @@ pub enum ProjectionCapability {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CramError {
     EmptyBasis,
-    InvalidModulus { index: usize, modulus: u64 },
-    DuplicateOrNonCoprimeModuli { left: usize, right: usize },
-    LaneCountMismatch { expected: usize, actual: usize },
-    NonCanonicalResidue { lane: usize, residue: u64, modulus: u64 },
+    InvalidModulus {
+        index: usize,
+        modulus: u64,
+    },
+    DuplicateOrNonCoprimeModuli {
+        left: usize,
+        right: usize,
+    },
+    LaneCountMismatch {
+        expected: usize,
+        actual: usize,
+    },
+    NonCanonicalResidue {
+        lane: usize,
+        residue: u64,
+        modulus: u64,
+    },
     TopologyLaneMismatch,
     UnauthorizedProjection,
 }
@@ -74,7 +87,9 @@ impl BasisFrame {
                 }
             }
         }
-        Ok(Self { moduli: moduli.into_boxed_slice() })
+        Ok(Self {
+            moduli: moduli.into_boxed_slice(),
+        })
     }
 
     pub fn moduli(&self) -> &[u64] {
@@ -96,7 +111,10 @@ pub struct ResidueLane {
 impl ResidueLane {
     pub fn try_new(lane_id: LaneId, modulus: u64, residue: u64) -> Result<Self, CramError> {
         if modulus < 2 {
-            return Err(CramError::InvalidModulus { index: lane_id.0 as usize, modulus });
+            return Err(CramError::InvalidModulus {
+                index: lane_id.0 as usize,
+                modulus,
+            });
         }
         if residue >= modulus {
             return Err(CramError::NonCanonicalResidue {
@@ -105,13 +123,20 @@ impl ResidueLane {
                 modulus,
             });
         }
-        Ok(Self { lane_id, modulus, residue })
+        Ok(Self {
+            lane_id,
+            modulus,
+            residue,
+        })
     }
 
     pub fn add(self, rhs: Self) -> Result<Self, CramError> {
         self.compatible(rhs)?;
         let sum = self.residue as u128 + rhs.residue as u128;
-        Ok(Self { residue: (sum % self.modulus as u128) as u64, ..self })
+        Ok(Self {
+            residue: (sum % self.modulus as u128) as u64,
+            ..self
+        })
     }
 
     pub fn sub(self, rhs: Self) -> Result<Self, CramError> {
@@ -127,7 +152,10 @@ impl ResidueLane {
     pub fn mul(self, rhs: Self) -> Result<Self, CramError> {
         self.compatible(rhs)?;
         let product = self.residue as u128 * rhs.residue as u128;
-        Ok(Self { residue: (product % self.modulus as u128) as u64, ..self })
+        Ok(Self {
+            residue: (product % self.modulus as u128) as u64,
+            ..self
+        })
     }
 
     fn compatible(self, rhs: Self) -> Result<(), CramError> {
@@ -157,7 +185,10 @@ pub struct OperatorTopology {
 }
 
 impl OperatorTopology {
-    pub fn try_new(assignments: Vec<(LaneId, LaneOperator)>, lane_count: usize) -> Result<Self, CramError> {
+    pub fn try_new(
+        assignments: Vec<(LaneId, LaneOperator)>,
+        lane_count: usize,
+    ) -> Result<Self, CramError> {
         if assignments.len() != lane_count {
             return Err(CramError::TopologyLaneMismatch);
         }
@@ -169,7 +200,9 @@ impl OperatorTopology {
             }
             seen[index] = true;
         }
-        Ok(Self { assignments: assignments.into_boxed_slice() })
+        Ok(Self {
+            assignments: assignments.into_boxed_slice(),
+        })
     }
 
     pub fn assignments(&self) -> &[(LaneId, LaneOperator)] {
@@ -239,7 +272,10 @@ impl CramState {
         domain: DomainState,
     ) -> Result<Self, CramError> {
         if lanes.len() != basis.lane_count() {
-            return Err(CramError::LaneCountMismatch { expected: basis.lane_count(), actual: lanes.len() });
+            return Err(CramError::LaneCountMismatch {
+                expected: basis.lane_count(),
+                actual: lanes.len(),
+            });
         }
         for (index, lane) in lanes.iter().enumerate() {
             if lane.lane_id.0 as usize != index || lane.modulus != basis.moduli()[index] {
@@ -368,7 +404,9 @@ mod tests {
     fn architecture_gate_detects_prohibited_activity() {
         let counters = ArchitectureCounters::default();
         assert!(counters.assert_production_clean().is_ok());
-        counters.internal_projections.fetch_add(1, Ordering::Relaxed);
+        counters
+            .internal_projections
+            .fetch_add(1, Ordering::Relaxed);
         assert!(counters.assert_production_clean().is_err());
     }
 

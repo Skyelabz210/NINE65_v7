@@ -439,7 +439,10 @@ pub enum LockEvidence {
     /// Snapshot of the target lane's residues.
     Shadow { expected_residues: Vec<u32> },
     /// Winding corridor `[low, high]` with `high - low < target` (anchor prime).
-    Boundary { corridor_low: i128, corridor_high: i128 },
+    Boundary {
+        corridor_low: i128,
+        corridor_high: i128,
+    },
     /// Expected signature-lane hash mod 19.
     Signature { expected: u32 },
     /// Multiplicative locks have no Phase-2 evidence yet.
@@ -501,11 +504,7 @@ fn anchor_k(sig: &S8Signature, source: u32, target: u32) -> u32 {
 impl LockWitnessSet {
     /// Build evidence for every lock in `graph` from the current signature
     /// and op counter.
-    pub fn compute(
-        graph: &PhaseLockGraph,
-        sig: &PolynomialS8Signature,
-        op_counter: i128,
-    ) -> Self {
+    pub fn compute(graph: &PhaseLockGraph, sig: &PolynomialS8Signature, op_counter: i128) -> Self {
         let mut entries = Vec::with_capacity(graph.locks.len());
         for &lock in &graph.locks {
             // Defensive: locks referencing primes outside S8 cannot have
@@ -783,9 +782,11 @@ impl<C> CramCiphertext<C> {
     /// current witness state. Returns the first failure with enough
     /// detail to identify the divergent coefficient.
     pub fn verify_locks(&self) -> Result<(), LockFailure> {
-        self.witness
-            .lock_witness
-            .verify(&self.locks, &self.witness.c0_signature, self.witness.op_counter)
+        self.witness.lock_witness.verify(
+            &self.locks,
+            &self.witness.c0_signature,
+            self.witness.op_counter,
+        )
     }
 
     /// Phase-1 + Phase-2 combined verification.
@@ -884,7 +885,9 @@ fn negacyclic_convolve_signatures(
     let n = a.signatures.len();
     let mut signatures = Vec::with_capacity(n);
     for _ in 0..n {
-        signatures.push(S8Signature { residues: [0u32; 8] });
+        signatures.push(S8Signature {
+            residues: [0u32; 8],
+        });
     }
     for (lane_idx, &p) in crate::triad::S8.iter().enumerate() {
         let p_u64 = p as u64;
@@ -990,8 +993,12 @@ impl<C> CramCiphertext<C> {
             .checked_add(1)
             .ok_or(CramOpError::OpCounterOverflow)?;
 
-        let new_lock_witness =
-            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+        let new_lock_witness = recompute_post_op(
+            &self.witness.lock_witness,
+            &self.locks,
+            &new_c0,
+            new_op_counter,
+        );
 
         let new_base = add_base(self.base, other.base);
 
@@ -1036,8 +1043,12 @@ impl<C> CramCiphertext<C> {
             .checked_add(1)
             .ok_or(CramOpError::OpCounterOverflow)?;
 
-        let new_lock_witness =
-            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+        let new_lock_witness = recompute_post_op(
+            &self.witness.lock_witness,
+            &self.locks,
+            &new_c0,
+            new_op_counter,
+        );
 
         let new_base = mul_base(self.base, scalar);
 
@@ -1095,8 +1106,12 @@ impl<C> CramCiphertext<C> {
             .checked_add(1)
             .ok_or(CramOpError::OpCounterOverflow)?;
 
-        let new_lock_witness =
-            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+        let new_lock_witness = recompute_post_op(
+            &self.witness.lock_witness,
+            &self.locks,
+            &new_c0,
+            new_op_counter,
+        );
 
         let new_base = mul_base(self.base, other.base);
 
@@ -1258,8 +1273,8 @@ impl<C> CramCiphertext<C> {
             });
         }
 
-        let inverses = s8_lane_inverses(divisor)
-            .ok_or(CramOpError::DivisionLaneNotImplemented {
+        let inverses =
+            s8_lane_inverses(divisor).ok_or(CramOpError::DivisionLaneNotImplemented {
                 primary: plan.primary,
                 gcd_with_basis: plan.gcd_with_basis,
             })?;
@@ -1277,8 +1292,12 @@ impl<C> CramCiphertext<C> {
             .checked_add(1)
             .ok_or(CramOpError::OpCounterOverflow)?;
 
-        let new_lock_witness =
-            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+        let new_lock_witness = recompute_post_op(
+            &self.witness.lock_witness,
+            &self.locks,
+            &new_c0,
+            new_op_counter,
+        );
 
         let new_base = rescale_base(self.base, divisor);
 
@@ -1301,16 +1320,12 @@ impl<C> CramCiphertext<C> {
 
 /// Multiply each coefficient's S8 signature lane-wise by precomputed
 /// per-lane inverses (D0 path).
-fn apply_lane_inverses(
-    a: &PolynomialS8Signature,
-    inverses: &[u32; 8],
-) -> PolynomialS8Signature {
+fn apply_lane_inverses(a: &PolynomialS8Signature, inverses: &[u32; 8]) -> PolynomialS8Signature {
     let mut signatures = Vec::with_capacity(a.signatures.len());
     for sa in &a.signatures {
         let mut residues = [0u32; 8];
         for (i, &p) in crate::triad::S8.iter().enumerate() {
-            residues[i] =
-                ((sa.residues[i] as u64 * inverses[i] as u64) % p as u64) as u32;
+            residues[i] = ((sa.residues[i] as u64 * inverses[i] as u64) % p as u64) as u32;
         }
         signatures.push(S8Signature { residues });
     }
@@ -1417,8 +1432,8 @@ fn crt_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
         let m_i = m as i128;
         let cofactor = modulus / m_i; // M / m_i, coprime to m_i
         let cofactor_mod = cofactor.rem_euclid(m_i) as u32;
-        let inv = mod_inv_u32(cofactor_mod, m)
-            .expect("FPD: lane moduli must be pairwise coprime") as i128;
+        let inv = mod_inv_u32(cofactor_mod, m).expect("FPD: lane moduli must be pairwise coprime")
+            as i128;
         let term = (r as i128) * cofactor % modulus * inv % modulus;
         value = (value + term).rem_euclid(modulus);
     }
@@ -1459,7 +1474,10 @@ pub enum FpdError {
     /// it holds iff the numerator was exactly divisible by `d`. A mismatch
     /// means it was not, and the fused "quotient" is meaningless — this is
     /// the exactness check that was previously entirely absent.
-    BadLaneDisagreement { coeff_index: usize, s8_lane_modulus: u32 },
+    BadLaneDisagreement {
+        coeff_index: usize,
+        s8_lane_modulus: u32,
+    },
 }
 
 /// Per-coefficient FPD division: fuse the good S8 lanes and the aux lanes
@@ -1485,8 +1503,8 @@ fn fpd_one_coefficient(
     let mut bad_lanes: Vec<(usize, u32)> = Vec::new();
     for (i, &p) in crate::triad::S8.iter().enumerate() {
         if gcd_u64(p as u64, abs_d) == 1 {
-            let inv = mod_inv_u32((abs_d % p as u64) as u32, p)
-                .ok_or(FpdError::LaneInverseMissing)?;
+            let inv =
+                mod_inv_u32((abs_d % p as u64) as u32, p).ok_or(FpdError::LaneInverseMissing)?;
             let q = (s8_residues[i] as u64 * inv as u64 % p as u64) as u32;
             pairs.push((p, q));
         } else {
@@ -1650,8 +1668,12 @@ impl<C> CramCiphertext<C> {
             .op_counter
             .checked_add(1)
             .ok_or(CramOpError::OpCounterOverflow)?;
-        let new_lock_witness =
-            recompute_post_op(&self.witness.lock_witness, &self.locks, &new_c0, new_op_counter);
+        let new_lock_witness = recompute_post_op(
+            &self.witness.lock_witness,
+            &self.locks,
+            &new_c0,
+            new_op_counter,
+        );
         let new_base = rescale_base(self.base, divisor);
 
         let out = CramCiphertext {
@@ -1817,7 +1839,8 @@ impl<C> CramCiphertext<C> {
 
         // Try D0.
         if plan.evaluable.modular_inverse {
-            if let Ok((result_ct, _)) = self.clone().cram_rescale_by_scalar(divisor, &rescale_base) {
+            if let Ok((result_ct, _)) = self.clone().cram_rescale_by_scalar(divisor, &rescale_base)
+            {
                 let recon = result_ct.reconstruct_c0_coeffs_signed();
                 if let Some(prev) = agreed_result.as_ref() {
                     if prev != &recon {
@@ -1855,9 +1878,9 @@ impl<C> CramCiphertext<C> {
         // M_main = S8_PRODUCT / 17.
         let m_main_default: u64 = crate::triad::S8_PRODUCT as u64 / 17;
         if gcd_u64(divisor.unsigned_abs() as u64, m_main_default) == 1 && divisor != 0 {
-            if let Ok((result_ct, _)) = self
-                .clone()
-                .cram_rescale_by_scalar_kelim(divisor, 17, &rescale_base)
+            if let Ok((result_ct, _)) =
+                self.clone()
+                    .cram_rescale_by_scalar_kelim(divisor, 17, &rescale_base)
             {
                 let recon = result_ct.reconstruct_c0_coeffs_signed();
                 if let Some(prev) = agreed_result.as_ref() {
@@ -1945,8 +1968,7 @@ fn garner_reconstruct_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128
         let x_mod_mi = x.rem_euclid(m_i);
         let diff = (a_i - x_mod_mi).rem_euclid(m_i);
         let radix_mod_mi = radix.rem_euclid(m_i) as u32;
-        let inv = mod_inv_u32(radix_mod_mi, m_i as u32)
-            .expect("S8 lanes are pairwise coprime");
+        let inv = mod_inv_u32(radix_mod_mi, m_i as u32).expect("S8 lanes are pairwise coprime");
         let v = (diff * inv as i128).rem_euclid(m_i);
         x += v * radix;
         radix *= m_i;
@@ -1960,8 +1982,7 @@ fn k_elim_winding(x_main: i128, m_main: i128, r_anchor: u32, m_anchor: u32) -> i
     let m_anchor_i = m_anchor as i128;
     let diff = (r_anchor as i128 - x_main.rem_euclid(m_anchor_i)).rem_euclid(m_anchor_i);
     let radix_mod = m_main.rem_euclid(m_anchor_i) as u32;
-    let inv = mod_inv_u32(radix_mod, m_anchor)
-        .expect("anchor coprime to M_main by precondition");
+    let inv = mod_inv_u32(radix_mod, m_anchor).expect("anchor coprime to M_main by precondition");
     let kappa = (diff * inv as i128).rem_euclid(m_anchor_i);
     // Recentre to (-m_anchor/2, m_anchor/2].
     if kappa > m_anchor_i / 2 {
@@ -2008,9 +2029,9 @@ impl<C> CramCiphertext<C> {
             .position(|&p| p == anchor)
             .ok_or(CramOpError::KElim(KElimError::AnchorNotInBasis { anchor }))?;
         if divisor == 0 {
-            return Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain {
-                divisor,
-            }));
+            return Err(CramOpError::KElim(
+                KElimError::DivisorIncompatibleWithMain { divisor },
+            ));
         }
         // Build main-lane index list: every S8 index except the anchor.
         let main_indices: Vec<usize> = (0..crate::triad::S8.len())
@@ -2026,9 +2047,9 @@ impl<C> CramCiphertext<C> {
         // be well-defined.
         let abs_d = divisor.unsigned_abs() as i128;
         if gcd_u64(abs_d as u64, m_main as u64) != 1 {
-            return Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain {
-                divisor,
-            }));
+            return Err(CramOpError::KElim(
+                KElimError::DivisorIncompatibleWithMain { divisor },
+            ));
         }
         // gcd(M_main, m_anchor) is automatic for distinct S8 primes, but
         // surface a typed error if a future basis breaks the invariant.
@@ -2209,7 +2230,9 @@ impl<C> CramCiphertext<C> {
         // when the current cert is failing (it's a recovery operation).
         // Verify metadata structure but tolerate lock-witness failure.
         if !self.verify_metadata() {
-            return Err(CramOpError::InputVerifyFailed(LockFailure::TopologyIllFormed));
+            return Err(CramOpError::InputVerifyFailed(
+                LockFailure::TopologyIllFormed,
+            ));
         }
 
         let triggers = self.bootstrap_triggers();
@@ -2228,15 +2251,10 @@ impl<C> CramCiphertext<C> {
         // Reset op_counter; rebuild lock evidence (boundary corridor
         // gets a fresh window starting at op_counter = 0).
         let new_op_counter: i128 = 0;
-        let new_lock_witness = LockWitnessSet::compute(
-            &self.locks,
-            &pre_signature,
-            new_op_counter,
-        );
+        let new_lock_witness = LockWitnessSet::compute(&self.locks, &pre_signature, new_op_counter);
 
         let post_signature = pre_signature.clone();
-        let signature_preserved =
-            pre_signature.signatures == post_signature.signatures;
+        let signature_preserved = pre_signature.signatures == post_signature.signatures;
 
         let out = CramCiphertext {
             base: new_base,
@@ -2511,7 +2529,10 @@ mod tests {
             (ct.witness.c0_signature.signatures[1].residues[lane_11_index] + 1) % 11;
         let err = ct.verify_locks().expect_err("must fail");
         assert!(
-            matches!(err, LockFailure::AgreementDivergence { .. } | LockFailure::ShadowDivergence { .. }),
+            matches!(
+                err,
+                LockFailure::AgreementDivergence { .. } | LockFailure::ShadowDivergence { .. }
+            ),
             "lane-11 tampering must be caught by an 11-bearing lock, got {:?}",
             err
         );
@@ -2993,7 +3014,9 @@ mod tests {
     fn cram_rescale_rejects_zero_divisor() {
         let ct = CramCiphertext::wrap_default((), &[1i128, 2], None);
         match ct.cram_rescale_by_scalar(0, |_, _| ()) {
-            Err(CramOpError::DivisionLaneNotImplemented { gcd_with_basis: 0, .. }) => {}
+            Err(CramOpError::DivisionLaneNotImplemented {
+                gcd_with_basis: 0, ..
+            }) => {}
             other => panic!("expected zero-divisor rejection, got {:?}", other),
         }
     }
@@ -3002,11 +3025,19 @@ mod tests {
     fn is_basis_smooth_recognises_known_smooth_numbers() {
         // S8 = {2,3,5,7,11,13,17,19}. Smooth examples:
         for n in [1u64, 2, 3, 5, 7, 30, 42, 9_699_690] {
-            assert!(is_basis_smooth(n, SafeBasis::S8), "{} should be S8-smooth", n);
+            assert!(
+                is_basis_smooth(n, SafeBasis::S8),
+                "{} should be S8-smooth",
+                n
+            );
         }
         // Non-smooth: contains 23, 29, 31, 37, ...
         for n in [23u64, 29, 100_003] {
-            assert!(!is_basis_smooth(n, SafeBasis::S8), "{} should NOT be smooth", n);
+            assert!(
+                !is_basis_smooth(n, SafeBasis::S8),
+                "{} should NOT be smooth",
+                n
+            );
         }
     }
 
@@ -3042,9 +3073,13 @@ mod tests {
         let coeffs: Vec<i128> = vec![6, 12, 18, -24, -30, 60, 102, 1_200];
         let aux_primes = AuxResidueSet::select_for_divisor(6, 1_000_000).unwrap();
         let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
-        let (rescaled, plan) =
-            ct.cram_rescale_by_scalar_fpd(6, 1_000_000, |_, _| ()).unwrap();
-        assert_eq!(plan.primary, crate::chimera_division::ChimeraLane::FusedPiggyback);
+        let (rescaled, plan) = ct
+            .cram_rescale_by_scalar_fpd(6, 1_000_000, |_, _| ())
+            .unwrap();
+        assert_eq!(
+            plan.primary,
+            crate::chimera_division::ChimeraLane::FusedPiggyback
+        );
         assert_eq!(plan.gcd_with_basis, 6);
         let recon = rescaled.reconstruct_c0_coeffs_signed();
         let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 6) as i32).collect();
@@ -3058,8 +3093,9 @@ mod tests {
         let coeffs: Vec<i128> = vec![30, 60, 90, -150, -210, 300_000];
         let aux_primes = AuxResidueSet::select_for_divisor(30, 100_000).unwrap();
         let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
-        let (rescaled, _) =
-            ct.cram_rescale_by_scalar_fpd(30, 100_000, |_, _| ()).unwrap();
+        let (rescaled, _) = ct
+            .cram_rescale_by_scalar_fpd(30, 100_000, |_, _| ())
+            .unwrap();
         let recon = rescaled.reconstruct_c0_coeffs_signed();
         let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 30) as i32).collect();
         assert_eq!(recon, expected);
@@ -3080,9 +3116,7 @@ mod tests {
         let aux_primes = AuxResidueSet::select_for_divisor(6, 100).unwrap();
         let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
         match ct.cram_rescale_by_scalar_fpd(6, 100, |_, _| ()) {
-            Err(CramOpError::Fpd(FpdError::BadLaneDisagreement {
-                coeff_index: 1, ..
-            })) => {}
+            Err(CramOpError::Fpd(FpdError::BadLaneDisagreement { coeff_index: 1, .. })) => {}
             other => panic!(
                 "expected a bad-lane disagreement on coefficient index 1, got {:?}",
                 other
@@ -3097,8 +3131,7 @@ mod tests {
         let coeffs: Vec<i128> = vec![6, -12, 18, -24];
         let aux_primes = AuxResidueSet::select_for_divisor(-6, 100).unwrap();
         let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
-        let (rescaled, _) =
-            ct.cram_rescale_by_scalar_fpd(-6, 100, |_, _| ()).unwrap();
+        let (rescaled, _) = ct.cram_rescale_by_scalar_fpd(-6, 100, |_, _| ()).unwrap();
         assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![-1, 2, -3, 4]);
     }
 
@@ -3150,8 +3183,7 @@ mod tests {
         let coeffs: Vec<i128> = vec![60, 120, 180, 240];
         let aux_primes = AuxResidueSet::select_for_divisor(6, 100).unwrap();
         let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
-        let (after_first, _) =
-            ct.cram_rescale_by_scalar_fpd(6, 100, |_, _| ()).unwrap();
+        let (after_first, _) = ct.cram_rescale_by_scalar_fpd(6, 100, |_, _| ()).unwrap();
         assert!(
             after_first.witness.c0_aux.is_some(),
             "FPD output must carry aux residues for chaining"
@@ -3176,8 +3208,7 @@ mod tests {
     fn d2_divides_by_two() {
         let coeffs: Vec<i128> = vec![2, 4, 6, -8, -10, 100, -1000, 1_000_000];
         let ct = CramCiphertext::wrap_default((), &coeffs, None);
-        let (rescaled, plan) =
-            ct.cram_rescale_by_scalar_div_exact(2, |_, _| ()).unwrap();
+        let (rescaled, plan) = ct.cram_rescale_by_scalar_div_exact(2, |_, _| ()).unwrap();
         assert_eq!(plan.gcd_with_basis, 2);
         let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 2) as i32).collect();
         assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), expected);
@@ -3196,8 +3227,7 @@ mod tests {
     fn d2_divides_by_thirty() {
         let coeffs: Vec<i128> = vec![30, 60, 90, -150, -3000];
         let ct = CramCiphertext::wrap_default((), &coeffs, None);
-        let (rescaled, _) =
-            ct.cram_rescale_by_scalar_div_exact(30, |_, _| ()).unwrap();
+        let (rescaled, _) = ct.cram_rescale_by_scalar_div_exact(30, |_, _| ()).unwrap();
         let expected: Vec<i32> = coeffs.iter().map(|&c| (c / 30) as i32).collect();
         assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), expected);
     }
@@ -3290,10 +3320,7 @@ mod tests {
             .unwrap();
         assert!(mask.div_exact);
         assert!(mask.fused_piggyback);
-        assert_eq!(
-            result.reconstruct_c0_coeffs_signed(),
-            vec![1, 2, 3, -4, -5]
-        );
+        assert_eq!(result.reconstruct_c0_coeffs_signed(), vec![1, 2, 3, -4, -5]);
     }
 
     #[test]
@@ -3305,7 +3332,9 @@ mod tests {
         // cases. Use 0 as divisor to force all lanes to bail.
         let ct = CramCiphertext::wrap_default((), &[5i128, 10], None);
         match ct.cram_rescale_with_chimera_router(0, 1000, |_, _| ()) {
-            Err(CramOpError::DivisionLaneNotImplemented { gcd_with_basis: 0, .. }) => {}
+            Err(CramOpError::DivisionLaneNotImplemented {
+                gcd_with_basis: 0, ..
+            }) => {}
             other => panic!("expected DivisionLaneNotImplemented, got {:?}", other),
         }
     }
@@ -3376,8 +3405,7 @@ mod tests {
     fn d1_handles_negative_divisor() {
         let coeffs: Vec<i128> = vec![23, -46, 69, -92];
         let ct = CramCiphertext::wrap_default((), &coeffs, None);
-        let (rescaled, _) =
-            ct.cram_rescale_by_scalar_kelim(-23, 17, |_, _| ()).unwrap();
+        let (rescaled, _) = ct.cram_rescale_by_scalar_kelim(-23, 17, |_, _| ()).unwrap();
         assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![-1, 2, -3, 4]);
     }
 
@@ -3427,10 +3455,7 @@ mod tests {
             .unwrap();
         assert!(mask.modular_inverse, "D0 should succeed");
         assert!(mask.kelim, "D1 should succeed");
-        assert_eq!(
-            result.reconstruct_c0_coeffs_signed(),
-            vec![1, 2, 3, -1, -2]
-        );
+        assert_eq!(result.reconstruct_c0_coeffs_signed(), vec![1, 2, 3, -1, -2]);
     }
 
     // ---- Phase 5 — bootstrap witness ------------------------------------
@@ -3446,8 +3471,7 @@ mod tests {
         let (after, cert) = ct.cram_bootstrap(|b| b).unwrap();
         assert!(cert.signature_preserved);
         assert_eq!(
-            after.witness.c0_signature.signatures,
-            pre_sig.signatures,
+            after.witness.c0_signature.signatures, pre_sig.signatures,
             "signature must be preserved across bootstrap"
         );
     }

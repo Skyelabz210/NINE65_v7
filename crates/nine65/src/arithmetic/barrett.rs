@@ -446,16 +446,41 @@ mod tests {
     fn branchless_masks_match_the_comparisons_they_replace() {
         for a in 0u64..=255 {
             for b in 0u64..=255 {
-                assert_eq!(borrow_mask_u64(a, b), if a < b { u64::MAX } else { 0 }, "a={a} b={b}");
-                assert_eq!(geq_mask_u64(a, b), if a >= b { u64::MAX } else { 0 }, "a={a} b={b}");
+                assert_eq!(
+                    borrow_mask_u64(a, b),
+                    if a < b { u64::MAX } else { 0 },
+                    "a={a} b={b}"
+                );
+                assert_eq!(
+                    geq_mask_u64(a, b),
+                    if a >= b { u64::MAX } else { 0 },
+                    "a={a} b={b}"
+                );
             }
         }
 
-        let edges = [0u64, 1, 2, u64::MAX, u64::MAX - 1, 1 << 63, (1 << 63) - 1, (1 << 63) + 1];
+        let edges = [
+            0u64,
+            1,
+            2,
+            u64::MAX,
+            u64::MAX - 1,
+            1 << 63,
+            (1 << 63) - 1,
+            (1 << 63) + 1,
+        ];
         for &a in &edges {
             for &b in &edges {
-                assert_eq!(borrow_mask_u64(a, b), if a < b { u64::MAX } else { 0 }, "a={a} b={b}");
-                assert_eq!(geq_mask_u64(a, b), if a >= b { u64::MAX } else { 0 }, "a={a} b={b}");
+                assert_eq!(
+                    borrow_mask_u64(a, b),
+                    if a < b { u64::MAX } else { 0 },
+                    "a={a} b={b}"
+                );
+                assert_eq!(
+                    geq_mask_u64(a, b),
+                    if a >= b { u64::MAX } else { 0 },
+                    "a={a} b={b}"
+                );
             }
         }
     }
@@ -470,7 +495,11 @@ mod tests {
                 for b in 0..q {
                     assert_eq!(ctx.sub_ct(a, b), (a + q - b) % q, "q={q} a={a} b={b}");
                     assert_eq!(ctx.add_ct(a, b), (a + b) % q, "q={q} a={a} b={b}");
-                    assert_eq!(ctx.reduce_ct(a as u128 * b as u128), (a * b) % q, "q={q} a={a} b={b}");
+                    assert_eq!(
+                        ctx.reduce_ct(a as u128 * b as u128),
+                        (a * b) % q,
+                        "q={q} a={a} b={b}"
+                    );
                 }
             }
         }

@@ -81,9 +81,7 @@ use std::time::{Duration, Instant};
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 use nine65::entropy::ShadowHarvester;
-use nine65::ops::rns_fhe::{
-    DualRNSCiphertext, DualRNSFullKeySet, DualRNSSecretKey, RNSFHEContext,
-};
+use nine65::ops::rns_fhe::{DualRNSCiphertext, DualRNSFullKeySet, DualRNSSecretKey, RNSFHEContext};
 use nine65::params::secure_configs::SecureConfig;
 
 // ============================================================================
@@ -199,7 +197,10 @@ where
     for depth in 1..=dmax {
         if start.elapsed() > cap {
             stop = Stop::Timeout;
-            println!("  wall-clock cap {}s hit before depth {depth}", cap.as_secs());
+            println!(
+                "  wall-clock cap {}s hit before depth {depth}",
+                cap.as_secs()
+            );
             break;
         }
 

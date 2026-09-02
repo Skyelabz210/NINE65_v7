@@ -100,9 +100,7 @@ impl NTTEngineFFT {
             psi_inv,
             omega_inv,
             n_inv,
-            psi_powers: (0..n)
-                .map(|index| mod_pow(psi, index as u64, q))
-                .collect(),
+            psi_powers: (0..n).map(|index| mod_pow(psi, index as u64, q)).collect(),
             psi_inv_powers: (0..n)
                 .map(|index| mod_pow(psi_inv, index as u64, q))
                 .collect(),
@@ -183,15 +181,14 @@ impl NTTEngineFFT {
                     let upper_index = block + offset;
                     let lower_index = upper_index + half;
                     let upper = values[upper_index];
-                    let product = self.twiddles_fwd[twiddle_index] as u128
-                        * values[lower_index] as u128;
+                    let product =
+                        self.twiddles_fwd[twiddle_index] as u128 * values[lower_index] as u128;
                     let lower = self.mont.montgomery_reduce(product);
 
                     if let Some(captured) = shadow.as_mut() {
                         let correction = (product as u64).wrapping_mul(self.mont.q_inv_neg);
-                        let quotient = product
-                            .wrapping_add(correction as u128 * self.q as u128)
-                            >> 64;
+                        let quotient =
+                            product.wrapping_add(correction as u128 * self.q as u128) >> 64;
                         captured.push(quotient as u64);
                     }
 
@@ -310,26 +307,23 @@ impl NTTEngineFFT {
         output
     }
 
-    pub fn multiply_persistent_into(
-        &self,
-        left: &[u64],
-        right: &[u64],
-        output: &mut Vec<u64>,
-    ) {
+    pub fn multiply_persistent_into(&self, left: &[u64], right: &[u64], output: &mut Vec<u64>) {
         debug_assert_eq!(left.len(), self.n);
         debug_assert_eq!(right.len(), self.n);
 
         output.clear();
         output.reserve(self.n.saturating_sub(output.capacity()));
-        output.extend(
-            left.iter()
-                .enumerate()
-                .map(|(index, value)| self.mont.montgomery_mul(*value, self.psi_powers_mont[index])),
-        );
+        output.extend(left.iter().enumerate().map(|(index, value)| {
+            self.mont
+                .montgomery_mul(*value, self.psi_powers_mont[index])
+        }));
         let mut right_work: Vec<u64> = right
             .iter()
             .enumerate()
-            .map(|(index, value)| self.mont.montgomery_mul(*value, self.psi_powers_mont[index]))
+            .map(|(index, value)| {
+                self.mont
+                    .montgomery_mul(*value, self.psi_powers_mont[index])
+            })
             .collect();
 
         self.ntt_inplace(output);
@@ -438,7 +432,10 @@ mod tests {
         let engine = NTTEngineFFT::new(TEST_PRIME, 8);
         let left = vec![1, 2, 3, 0, 0, 0, 0, 0];
         let right = vec![4, 5, 0, 0, 0, 0, 0, 0];
-        assert_eq!(engine.multiply(&left, &right), vec![4, 13, 22, 15, 0, 0, 0, 0]);
+        assert_eq!(
+            engine.multiply(&left, &right),
+            vec![4, 13, 22, 15, 0, 0, 0, 0]
+        );
     }
 
     #[test]
@@ -446,7 +443,10 @@ mod tests {
         let engine = NTTEngineFFT::new(TEST_PRIME, 4);
         let left = vec![0, 0, 0, 1];
         let right = vec![0, 1, 0, 0];
-        assert_eq!(engine.multiply(&left, &right), vec![TEST_PRIME - 1, 0, 0, 0]);
+        assert_eq!(
+            engine.multiply(&left, &right),
+            vec![TEST_PRIME - 1, 0, 0, 0]
+        );
     }
 
     #[test]

@@ -114,7 +114,11 @@ fn protected_access(request: &HttpRequest) -> Result<AccessContext, HttpResponse
         let expected = std::env::var("FHE_API_TOKEN").ok();
         let provided = request.headers.get("x-fhe-api-token").map(String::as_str);
         if !token_matches(expected.as_deref(), provided) {
-            return Err(error_response(401, "UNAUTHORIZED", "authentication required"));
+            return Err(error_response(
+                401,
+                "UNAUTHORIZED",
+                "authentication required",
+            ));
         }
 
         let Some(tenant_id) = request.headers.get("x-fhe-tenant-id") else {
@@ -146,10 +150,7 @@ fn decrypt_route_authorized(request: &HttpRequest) -> bool {
 
     #[cfg(not(test))]
     {
-        let enabled = std::env::var("FHE_ENABLE_DECRYPT")
-            .ok()
-            .as_deref()
-            == Some("1");
+        let enabled = std::env::var("FHE_ENABLE_DECRYPT").ok().as_deref() == Some("1");
         let expected = std::env::var("FHE_DECRYPT_TOKEN").ok();
         let provided = request
             .headers
@@ -244,9 +245,7 @@ pub fn route(request: &HttpRequest, store: &SessionStore, metrics: &AppMetrics) 
             handle_metrics(store, metrics)
         }
         ("GET", "/v1/metrics") => error_response(404, "NOT_FOUND", "unknown endpoint"),
-        ("POST", "/v1/sessions") => {
-            handle_create_session(request, &access.tenant_id, store)
-        }
+        ("POST", "/v1/sessions") => handle_create_session(request, &access.tenant_id, store),
         ("DELETE", path) if path.starts_with("/v1/sessions/") => {
             let id = &path["/v1/sessions/".len()..];
             handle_delete_session(id, &access.tenant_id, store)
@@ -686,7 +685,11 @@ mod policy_tests {
 
     #[test]
     fn decrypt_policy_is_fail_closed() {
-        assert!(!decrypt_authorized_with(false, Some("token"), Some("token")));
+        assert!(!decrypt_authorized_with(
+            false,
+            Some("token"),
+            Some("token")
+        ));
         assert!(!decrypt_authorized_with(true, None, Some("token")));
         assert!(!decrypt_authorized_with(true, Some("token"), None));
         assert!(!decrypt_authorized_with(

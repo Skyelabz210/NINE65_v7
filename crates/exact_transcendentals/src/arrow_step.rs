@@ -430,10 +430,7 @@ mod tests {
         let a3 = mat_mul_mod(&a2, &a, n, p);
         let a4_slow = mat_mul_mod(&a3, &a, n, p);
 
-        assert_eq!(
-            a4_fast, a4_slow,
-            "mat_pow_mod(A, 4) should match A*A*A*A"
-        );
+        assert_eq!(a4_fast, a4_slow, "mat_pow_mod(A, 4) should match A*A*A*A");
     }
 
     // ------------------------------------------------------------------
@@ -467,9 +464,7 @@ mod tests {
         // Initial state per lane
         let initial_states: Vec<Vec<u64>> = basis
             .iter()
-            .map(|&p| {
-                (0..dim as u64).map(|i| (i + 1) % p).collect()
-            })
+            .map(|&p| (0..dim as u64).map(|i| (i + 1) % p).collect())
             .collect();
 
         // ArrowStep (matrix-power path)

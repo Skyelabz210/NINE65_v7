@@ -299,10 +299,12 @@ mod tests {
         for exponent in [0, 1, 2, 3, 31, 64, 255] {
             let mut expected = 1_u64;
             for _ in 0..exponent {
-                expected =
-                    (expected as u128 * base as u128 % TEST_PRIME as u128) as u64;
+                expected = (expected as u128 * base as u128 % TEST_PRIME as u128) as u64;
             }
-            assert_eq!(context.exit(context.pow(context.enter(base), exponent)), expected);
+            assert_eq!(
+                context.exit(context.pow(context.enter(base), exponent)),
+                expected
+            );
         }
     }
 

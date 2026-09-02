@@ -32,7 +32,11 @@ fn parse_args() -> Result<Args, String> {
                 moduli = value
                     .split(',')
                     .filter(|item| !item.trim().is_empty())
-                    .map(|item| item.trim().parse().map_err(|_| format!("invalid modulus: {item}")))
+                    .map(|item| {
+                        item.trim()
+                            .parse()
+                            .map_err(|_| format!("invalid modulus: {item}"))
+                    })
                     .collect::<Result<Vec<u64>, String>>()?;
             }
             "--seed" => {
@@ -42,7 +46,9 @@ fn parse_args() -> Result<Args, String> {
                     .parse()
                     .map_err(|_| "invalid --seed")?;
             }
-            "--output" | "-o" => output = Some(PathBuf::from(args.next().ok_or("missing --output")?)),
+            "--output" | "-o" => {
+                output = Some(PathBuf::from(args.next().ok_or("missing --output")?))
+            }
             "--help" | "-h" => {
                 return Err(
                     "usage: cram_modulus_probe --n 256 --moduli 998244353,1006632961 --seed 42 --output result.json"
@@ -61,7 +67,12 @@ fn parse_args() -> Result<Args, String> {
     if moduli.is_empty() {
         return Err("at least one modulus is required".to_string());
     }
-    Ok(Args { n, moduli, seed, output })
+    Ok(Args {
+        n,
+        moduli,
+        seed,
+        output,
+    })
 }
 
 #[derive(Clone, Copy)]
@@ -145,7 +156,8 @@ fn schoolbook_negacyclic(left: &[u64], right: &[u64], modulus: u64) -> Vec<u64> 
             let product = mul_mod(left_value, right_value, modulus);
             let raw_index = left_index + right_index;
             if raw_index < n {
-                output[raw_index] = ((output[raw_index] as u128 + product as u128) % modulus as u128) as u64;
+                output[raw_index] =
+                    ((output[raw_index] as u128 + product as u128) % modulus as u128) as u64;
             } else {
                 let index = raw_index - n;
                 output[index] = if output[index] >= product {
@@ -229,9 +241,8 @@ fn probe_modulus(n: usize, modulus: u64, seed: u64) -> Value {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let args = parse_args().map_err(|message| {
-        std::io::Error::new(std::io::ErrorKind::InvalidInput, message)
-    })?;
+    let args = parse_args()
+        .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidInput, message))?;
     let results: Vec<Value> = args
         .moduli
         .iter()

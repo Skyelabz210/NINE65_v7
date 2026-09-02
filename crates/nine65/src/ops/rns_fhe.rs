@@ -24,7 +24,7 @@ use crate::params::{mod_inverse, FHEConfig};
 
 #[cfg(test)]
 use crate::params::secure_configs::SecureConfig;
-use zeroize::{Zeroize, Zeroizing, ZeroizeOnDrop};
+use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
@@ -512,7 +512,11 @@ impl DualRNSPoly {
     /// `main_primes.len()` and `anchor_primes.len()` must match `self.main`
     /// and `self.anchor` respectively; call `validate()` first to establish
     /// the shape invariants this depends on.
-    pub fn validate_residues(&self, main_primes: &[u64], anchor_primes: &[u64]) -> Nine65Result<()> {
+    pub fn validate_residues(
+        &self,
+        main_primes: &[u64],
+        anchor_primes: &[u64],
+    ) -> Nine65Result<()> {
         if main_primes.len() != self.main.len() {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
@@ -634,7 +638,11 @@ impl DualRNSCiphertext {
     /// `anchor_primes` should be sliced to this ciphertext's level (the
     /// context's full prime list up to `self.level` main primes, and the
     /// full anchor list).
-    pub fn validate_residues(&self, main_primes: &[u64], anchor_primes: &[u64]) -> Nine65Result<()> {
+    pub fn validate_residues(
+        &self,
+        main_primes: &[u64],
+        anchor_primes: &[u64],
+    ) -> Nine65Result<()> {
         self.c0.validate_residues(main_primes, anchor_primes)?;
         self.c1.validate_residues(main_primes, anchor_primes)?;
         Ok(())
@@ -1132,11 +1140,7 @@ impl RNSFHEContext {
     ///
     /// `sampled_mask_anchor_lanes_agree_with_the_main_lanes` asserts the
     /// two tracks agree; it is what caught the transduction attempt above.
-    fn sample_uniform_dual_poly<R: FheRng>(
-        &self,
-        rng: &mut R,
-        main_primes: &[u64],
-    ) -> DualRNSPoly {
+    fn sample_uniform_dual_poly<R: FheRng>(&self, rng: &mut R, main_primes: &[u64]) -> DualRNSPoly {
         let modulus = U256::product_u64s(main_primes);
         let bits = modulus.bitlen();
         let anchor_primes = &self.dual_rns.anchor.primes;
@@ -1604,7 +1608,12 @@ impl RNSFHEContext {
     }
 
     /// Encrypt plaintext with a caller-provided RNG.
-    pub fn encrypt_with_rng<R: FheRng>(&self, m: u64, pk: &RNSPublicKey, rng: &mut R) -> RNSCiphertext {
+    pub fn encrypt_with_rng<R: FheRng>(
+        &self,
+        m: u64,
+        pk: &RNSPublicKey,
+        rng: &mut R,
+    ) -> RNSCiphertext {
         crate::entropy::require_secure_rng(rng, "encrypt_with_rng");
         assert!(m < self.t, "Plaintext must be < t");
         let q_min = self.smallest_prime();
@@ -1902,7 +1911,10 @@ impl RNSFHEContext {
 
     /// Decompose RNS polynomial into base-T digits
     fn decompose_rns_poly(&self, poly: &RNSPolynomial, base: u64) -> Vec<RNSPolynomial> {
-        debug_assert!(base.is_power_of_two(), "decompose_rns_poly: base must be a power of two");
+        debug_assert!(
+            base.is_power_of_two(),
+            "decompose_rns_poly: base must be a power of two"
+        );
         let poly_standard = self.convert_from_montgomery_form(poly);
         // Number of digits based on Q (use stored q_bits, not leading_zeros).
         // `base_bits` must be the EXPONENT of the power-of-two base (e.g. 16
@@ -1970,11 +1982,7 @@ impl RNSFHEContext {
                 .limbs
                 .iter()
                 .zip(b.limbs.iter())
-                .zip(
-                    self.ntt_engines
-                        .iter()
-                        .zip(self.rns.mont_contexts.iter()),
-                )
+                .zip(self.ntt_engines.iter().zip(self.rns.mont_contexts.iter()))
             {
                 let a_std: Vec<u64> = a_limb.iter().map(|&c| mont.from_montgomery(c)).collect();
                 let b_std: Vec<u64> = b_limb.iter().map(|&c| mont.from_montgomery(c)).collect();
@@ -2396,7 +2404,8 @@ impl RNSFHEContext {
                 .filter(|&(j, _)| j != i)
                 .fold(U256::from_u128(1), |acc, (_, &p)| acc.mul_u64(p));
             let q_over_qi_mod_qi = q_over_qi.mod_u64(qi);
-            let (g, x, _y) = crate::params::primes::extended_gcd(q_over_qi_mod_qi as i128, qi as i128);
+            let (g, x, _y) =
+                crate::params::primes::extended_gcd(q_over_qi_mod_qi as i128, qi as i128);
             if g != 1 {
                 return Err(Nine65Error::NotCoprime {
                     m: q_over_qi_mod_qi,
@@ -2949,11 +2958,7 @@ impl RNSFHEContext {
         let level = a.main.len().min(b.main.len());
         let anchor_engines = &self.dual_rns.anchor.ntt_engines;
         // Anchors always carry all limbs; zip semantics preserved.
-        let anchor_count = a
-            .anchor
-            .len()
-            .min(b.anchor.len())
-            .min(anchor_engines.len());
+        let anchor_count = a.anchor.len().min(b.anchor.len()).min(anchor_engines.len());
 
         // Main limbs at this level + all anchor limbs as one deterministic
         // lane set (see run_limb_lanes for the bit-identity contract).
@@ -3058,7 +3063,11 @@ impl RNSFHEContext {
         let (decoded, ideal_point) = if full_value.gt(q_half) {
             let neg_mag = q_level.sub(full_value);
             let scaled = round_div_u256_small(neg_mag.mul_u64(self.t), q_level, self.t);
-            let decoded = if scaled == 0 { 0 } else { self.t - (scaled % self.t) };
+            let decoded = if scaled == 0 {
+                0
+            } else {
+                self.t - (scaled % self.t)
+            };
             let ideal_point = q_level.sub(delta.mul_u64(decoded));
             (decoded, ideal_point)
         } else {
@@ -3313,7 +3322,7 @@ impl RNSFHEContext {
         // Step 2: Symmetric relinearization on d2 (BEFORE rescale!)
         let s2 = self.dual_poly_mul(&sk.s, &sk.s);
         let d2_s2 = self.dual_poly_mul(&d2, &s2);
-        
+
         // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
         let c0_pre = self.dual_poly_add(&d0, &d2_s2);
         let c1_pre = d1;
@@ -3391,7 +3400,10 @@ impl RNSFHEContext {
 
             let diag = self.dual_rns.audit_capacity(required_bits, false);
             if let Err(e) = diag.to_result(true) {
-                eprintln!("[DIAGNOSTIC] mul_dual_symmetric_with_s2 capacity warning: {}", e);
+                eprintln!(
+                    "[DIAGNOSTIC] mul_dual_symmetric_with_s2 capacity warning: {}",
+                    e
+                );
             }
         }
 
@@ -3425,7 +3437,7 @@ impl RNSFHEContext {
         // CORRECT ORDER: relinearize THEN rescale (not rescale then relinearize!)
         // Step 2: Symmetric relinearization on d2 (BEFORE rescale!)
         let d2_s2 = self.dual_poly_mul(&d2, s2);
-        
+
         // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
         let c0_pre = self.dual_poly_add(&d0, &d2_s2);
         let c1_pre = d1;
@@ -4257,8 +4269,7 @@ impl RNSFHEContext {
         // Winding capacity certificate: see `manufactured_shift_certificate`
         // for why there is no shift, and why the bound is on the operand
         // magnitude (2·N·Q) rather than on Q.
-        let ManufacturedShift { sel, cap, k_bound } =
-            self.manufactured_shift_certificate()?;
+        let ManufacturedShift { sel, cap, k_bound } = self.manufactured_shift_certificate()?;
         let chain = RescaleChain::new(&lanes, &delta_idx, self.t, &sel)?;
         let all_anchors = &self.dual_rns.anchor.primes;
 
@@ -4380,30 +4391,30 @@ impl RNSFHEContext {
         };
 
         let lanes: Vec<u64> = self.config.primes.clone();
-        let t_idx = lanes
-            .iter()
-            .position(|&p| p == self.t)
-            .ok_or_else(|| Nine65Error::InvalidParameter {
+        let t_idx = lanes.iter().position(|&p| p == self.t).ok_or_else(|| {
+            Nine65Error::InvalidParameter {
                 message: "centered-wrong guardrail: t must be a main lane".into(),
-            })?;
+            }
+        })?;
         let delta_idx: Vec<usize> = (0..lanes.len()).filter(|&i| i != t_idx).collect();
 
         // Identical certificate, anchor selection and S-shift to the shipped
         // path (`k_elim_rescale_manufactured`) — this guardrail isolates the
         // FINAL RECONSTRUCTION regression only, not the anchor-selection
         // certificate (that is tripwire 2) or the shift derivation (G5).
-        let ManufacturedShift { sel, cap: _cap, k_bound: _k_bound } =
-            self.manufactured_shift_certificate()?;
+        let ManufacturedShift {
+            sel,
+            cap: _cap,
+            k_bound: _k_bound,
+        } = self.manufactured_shift_certificate()?;
         let chain = RescaleChain::new(&lanes, &delta_idx, self.t, &sel)?;
         let q = U256::from_u128(self.q_product);
         let all_anchors = &self.dual_rns.anchor.primes;
 
         let n_coeff = poly.n;
         let mut main_out: Vec<Vec<u64>> = lanes.iter().map(|_| vec![0u64; n_coeff]).collect();
-        let mut anchor_out: Vec<Vec<u64>> = all_anchors
-            .iter()
-            .map(|_| vec![0u64; n_coeff])
-            .collect();
+        let mut anchor_out: Vec<Vec<u64>> =
+            all_anchors.iter().map(|_| vec![0u64; n_coeff]).collect();
         let mut main_res = vec![0u64; lanes.len()];
         let mut sel_res = vec![0u64; sel.len()];
 
@@ -4547,68 +4558,66 @@ impl RNSFHEContext {
         // argument (each chunk is a pure function of its columns; assembly
         // is by chunk index).
         type RescaleChunk = Result<(Vec<Vec<u64>>, Vec<Vec<u64>>), Nine65Error>;
-        let chunks: Vec<RescaleChunk> =
-            Self::run_limb_lanes(self.coeff_chunk_count(), |c| {
-                let (lo, hi) = self.coeff_chunk_bounds(c);
-                let w = hi - lo;
-                let mut cm: Vec<Vec<u64>> = vec![vec![0u64; w]; ct_level];
-                let mut ca: Vec<Vec<u64>> = vec![vec![0u64; w]; num_anchor_out];
-                let mut main_residues = vec![0u64; poly.main.len()];
-                let mut anchor_residues = vec![0u64; poly.anchor.len()];
+        let chunks: Vec<RescaleChunk> = Self::run_limb_lanes(self.coeff_chunk_count(), |c| {
+            let (lo, hi) = self.coeff_chunk_bounds(c);
+            let w = hi - lo;
+            let mut cm: Vec<Vec<u64>> = vec![vec![0u64; w]; ct_level];
+            let mut ca: Vec<Vec<u64>> = vec![vec![0u64; w]; num_anchor_out];
+            let mut main_residues = vec![0u64; poly.main.len()];
+            let mut anchor_residues = vec![0u64; poly.anchor.len()];
 
-                for i in lo..hi {
-                    // Reconstruct v_m and extract k
-                    for (j, limb) in poly.main.iter().enumerate() {
-                        main_residues[j] = limb[i];
-                    }
-                    for (j, limb) in poly.anchor.iter().enumerate() {
-                        anchor_residues[j] = limb[i];
-                    }
-
-                    let v_m = self.rns.to_u256_level(&main_residues, ct_level);
-                    let k_u = self.dual_rns.extract_k_rns_level_cached(
-                        v_m,
-                        &anchor_residues,
-                        m_level,
-                        &m_level_inverses,
-                    )?;
-
-                    let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
-                    let v_centered = SignedU256::center(v_m, m_level, q_half);
-
-                    // k_mod_delta = k (mod delta) (magnitude; sign handled separately)
-                    let k_mod_delta = k_signed.magnitude.rem_u256(delta);
-
-                    // k_base = k_mod_delta * t   (k_mod_delta < delta, so k_base < M_level)
-                    let k_base = k_mod_delta.mul_u64(self.t);
-
-                    // r = M_level % t is < t, so k_rem fits comfortably in 256 bits
-                    let k_rem = k_mod_delta.mul_u64(r_u64);
-
-                    // rem_term = round((v_centered +/- k_rem)/delta) mod M_level
-                    let add_rem = !k_signed.is_neg;
-                    let rem_term = round_div_signed_mod_u256(
-                        v_centered, k_rem, add_rem, delta, m_level, q_upper,
-                    );
-
-                    // scaled = (k_base +/- rem_term) mod M_level
-                    let scaled = if !k_signed.is_neg {
-                        k_base.add_mod(rem_term, m_level)
-                    } else {
-                        rem_term.sub_mod(k_base, m_level)
-                    };
-
-                    // Store residues at this level
-                    let col = i - lo;
-                    for (j, &p) in level_primes.iter().enumerate() {
-                        cm[j][col] = scaled.mod_u64(p);
-                    }
-                    for (j, &a) in self.dual_rns.anchor.primes.iter().enumerate() {
-                        ca[j][col] = scaled.mod_u64(a);
-                    }
+            for i in lo..hi {
+                // Reconstruct v_m and extract k
+                for (j, limb) in poly.main.iter().enumerate() {
+                    main_residues[j] = limb[i];
                 }
-                Ok((cm, ca))
-            });
+                for (j, limb) in poly.anchor.iter().enumerate() {
+                    anchor_residues[j] = limb[i];
+                }
+
+                let v_m = self.rns.to_u256_level(&main_residues, ct_level);
+                let k_u = self.dual_rns.extract_k_rns_level_cached(
+                    v_m,
+                    &anchor_residues,
+                    m_level,
+                    &m_level_inverses,
+                )?;
+
+                let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
+                let v_centered = SignedU256::center(v_m, m_level, q_half);
+
+                // k_mod_delta = k (mod delta) (magnitude; sign handled separately)
+                let k_mod_delta = k_signed.magnitude.rem_u256(delta);
+
+                // k_base = k_mod_delta * t   (k_mod_delta < delta, so k_base < M_level)
+                let k_base = k_mod_delta.mul_u64(self.t);
+
+                // r = M_level % t is < t, so k_rem fits comfortably in 256 bits
+                let k_rem = k_mod_delta.mul_u64(r_u64);
+
+                // rem_term = round((v_centered +/- k_rem)/delta) mod M_level
+                let add_rem = !k_signed.is_neg;
+                let rem_term =
+                    round_div_signed_mod_u256(v_centered, k_rem, add_rem, delta, m_level, q_upper);
+
+                // scaled = (k_base +/- rem_term) mod M_level
+                let scaled = if !k_signed.is_neg {
+                    k_base.add_mod(rem_term, m_level)
+                } else {
+                    rem_term.sub_mod(k_base, m_level)
+                };
+
+                // Store residues at this level
+                let col = i - lo;
+                for (j, &p) in level_primes.iter().enumerate() {
+                    cm[j][col] = scaled.mod_u64(p);
+                }
+                for (j, &a) in self.dual_rns.anchor.primes.iter().enumerate() {
+                    ca[j][col] = scaled.mod_u64(a);
+                }
+            }
+            Ok((cm, ca))
+        });
 
         let mut result_main = vec![vec![0u64; self.n]; ct_level];
         let mut result_anchor = vec![vec![0u64; self.n]; num_anchor_out];
@@ -5212,12 +5221,15 @@ impl RNSFHEContext {
         let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
 
         // K-Elimination rescale in COEFFICIENT domain (the only valid approach)
-        let e0 = self.k_elim_rescale_dual(&d0)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}"));
-        let e1 = self.k_elim_rescale_dual(&d1)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}"));
-        let e2 = self.k_elim_rescale_dual(&d2)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}"));
+        let e0 = self.k_elim_rescale_dual(&d0).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}")
+        });
+        let e1 = self.k_elim_rescale_dual(&d1).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}")
+        });
+        let e2 = self.k_elim_rescale_dual(&d2).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}")
+        });
 
         // Relinearize: fold e2 into e0 using s²
         // c0' = e0 + e2 * s²
@@ -5273,12 +5285,15 @@ impl RNSFHEContext {
         let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
 
         // K-Elimination rescale in COEFFICIENT domain (the only valid approach)
-        let e0 = self.k_elim_rescale_dual(&d0)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}"));
-        let e1 = self.k_elim_rescale_dual(&d1)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}"));
-        let e2 = self.k_elim_rescale_dual(&d2)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}"));
+        let e0 = self.k_elim_rescale_dual(&d0).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}")
+        });
+        let e1 = self.k_elim_rescale_dual(&d1).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}")
+        });
+        let e2 = self.k_elim_rescale_dual(&d2).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}")
+        });
 
         // Relinearize: fold e2 into e0 using precomputed s²
         let e2_s2 = self.dual_poly_mul(&e2, s2);
@@ -5349,12 +5364,15 @@ impl RNSFHEContext {
         let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
 
         // K-Elimination rescale in coefficient domain
-        let e0 = self.k_elim_rescale_dual(&d0)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}"));
-        let e1 = self.k_elim_rescale_dual(&d1)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}"));
-        let e2 = self.k_elim_rescale_dual(&d2)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}"));
+        let e0 = self.k_elim_rescale_dual(&d0).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}")
+        });
+        let e1 = self.k_elim_rescale_dual(&d1).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}")
+        });
+        let e2 = self.k_elim_rescale_dual(&d2).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}")
+        });
 
         // Relinearize: fold e2 into e0 using s²
         // c0' = e0 + e2 * s²
@@ -5410,12 +5428,15 @@ impl RNSFHEContext {
         let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
 
         // K-Elimination rescale in coefficient domain
-        let e0 = self.k_elim_rescale_dual(&d0)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}"));
-        let e1 = self.k_elim_rescale_dual(&d1)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}"));
-        let e2 = self.k_elim_rescale_dual(&d2)
-            .unwrap_or_else(|e| panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}"));
+        let e0 = self.k_elim_rescale_dual(&d0).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d0 failed: {e}")
+        });
+        let e1 = self.k_elim_rescale_dual(&d1).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d1 failed: {e}")
+        });
+        let e2 = self.k_elim_rescale_dual(&d2).unwrap_or_else(|e| {
+            panic!("mul_ntt_domain/mul_coeff_domain: rescale of d2 failed: {e}")
+        });
 
         // Relinearize using precomputed s²
         let e2_s2 = self.dual_poly_mul(&e2, s2);
@@ -5683,17 +5704,9 @@ impl RNSFHEContext {
     fn dual_poly_mul(&self, a: &DualRNSPoly, b: &DualRNSPoly) -> DualRNSPoly {
         // Same effective counts as the original zip chains: the shorter of
         // the two polys and the engine list on each track.
-        let main_count = a
-            .main
-            .len()
-            .min(b.main.len())
-            .min(self.ntt_engines.len());
+        let main_count = a.main.len().min(b.main.len()).min(self.ntt_engines.len());
         let anchor_engines = &self.dual_rns.anchor.ntt_engines;
-        let anchor_count = a
-            .anchor
-            .len()
-            .min(b.anchor.len())
-            .min(anchor_engines.len());
+        let anchor_count = a.anchor.len().min(b.anchor.len()).min(anchor_engines.len());
 
         // All main + anchor limbs form one lane set: independent negacyclic
         // NTT convolutions over distinct primes — 8 lanes at secure_128,
@@ -6004,7 +6017,6 @@ fn align_and_drop_lane(
     Ok(out)
 }
 
-
 /// Convert signed i64 to modular representation
 /// For v >= 0: return v
 /// For v < 0: return p - |v|
@@ -6107,7 +6119,14 @@ pub(crate) fn exact_modulus_switch_drop_poly(
                 ),
             });
         }
-        new_main.push(align_and_drop_lane(dropped, &poly.main[i], q_i, q_k, n, "main")?);
+        new_main.push(align_and_drop_lane(
+            dropped,
+            &poly.main[i],
+            q_i,
+            q_k,
+            n,
+            "main",
+        )?);
     }
 
     // Anchor lanes are all retained (only a main prime is dropped).
@@ -6120,7 +6139,14 @@ pub(crate) fn exact_modulus_switch_drop_poly(
                 ),
             });
         }
-        new_anchor.push(align_and_drop_lane(dropped, &poly.anchor[j], a_j, q_k, n, "anchor")?);
+        new_anchor.push(align_and_drop_lane(
+            dropped,
+            &poly.anchor[j],
+            a_j,
+            q_k,
+            n,
+            "anchor",
+        )?);
     }
 
     Ok(DualRNSPoly {
@@ -6184,7 +6210,6 @@ fn sample_cbd_rng<R: FheRng>(rng: &mut R, eta: usize, q: u64) -> u64 {
         (q as i64 + sum) as u64
     }
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THREAD SAFETY STATIC ASSERTIONS
@@ -7187,7 +7212,9 @@ mod tests {
         if dec120 == 120 {
             println!("\n[PASS]PUBLIC MODE DEPTH-2 WORKS!");
         } else {
-            println!("\n[FAIL]Depth-2 failed. Check coefficient magnitudes above for blow-up point.");
+            println!(
+                "\n[FAIL]Depth-2 failed. Check coefficient magnitudes above for blow-up point."
+            );
         }
     }
 
@@ -8135,7 +8162,10 @@ mod tests {
         println!("Result: {} × {} = {} (expected {})", a, b, result, expected);
 
         if result == expected {
-            println!("[PASS]NTT-domain full CT×CT PASSED: {} × {} = {}", a, b, result);
+            println!(
+                "[PASS]NTT-domain full CT×CT PASSED: {} × {} = {}",
+                a, b, result
+            );
         } else {
             println!(
                 ">>> NTT-domain CT×CT incorrect: {} vs {} <<<",
@@ -9738,7 +9768,10 @@ mod tests {
             MulRoute::KElimDual,
             "overflow-Q configs must force KElimDual"
         );
-        println!("[PASS]secure_192: q_bits={}, routes to KElimDual", ctx.q_bits);
+        println!(
+            "[PASS]secure_192: q_bits={}, routes to KElimDual",
+            ctx.q_bits
+        );
     }
 
     /// The transduction invariant, asserted rather than trusted.
@@ -9765,10 +9798,7 @@ mod tests {
         // (a wrong alpha row, a dropped winding term), never one unlucky slot.
         const COEFFS: usize = 256;
 
-        for secure in [
-            SecureConfig::secure_128(),
-            SecureConfig::secure_192(),
-        ] {
+        for secure in [SecureConfig::secure_128(), SecureConfig::secure_192()] {
             let config = secure.into_config();
             let ctx = RNSFHEContext::try_new(&config).expect("context");
             let mut rng = ShadowHarvester::with_seed(0x7A11);
@@ -9779,13 +9809,16 @@ mod tests {
             assert_eq!(poly.anchor.len(), ctx.dual_rns.anchor.primes.len());
 
             for coeff in 0..COEFFS.min(ctx.n) {
-                let main_residues: Vec<u64> =
-                    poly.main.iter().map(|lane| lane[coeff]).collect();
+                let main_residues: Vec<u64> = poly.main.iter().map(|lane| lane[coeff]).collect();
 
                 // Every main residue must be in range for its own lane, or the
                 // reconstruction below is meaningless.
                 for (residue, &prime) in main_residues.iter().zip(config.primes.iter()) {
-                    assert!(*residue < prime, "{}: main residue out of lane", config.name);
+                    assert!(
+                        *residue < prime,
+                        "{}: main residue out of lane",
+                        config.name
+                    );
                 }
 
                 // CRT-reconstruct from the main lanes only. This lands in
@@ -9877,7 +9910,10 @@ mod tests {
             MulRoute::KElimDual,
             "overflow-Q configs must force KElimDual"
         );
-        println!("[PASS]secure_256: q_bits={}, routes to KElimDual", ctx.q_bits);
+        println!(
+            "[PASS]secure_256: q_bits={}, routes to KElimDual",
+            ctx.q_bits
+        );
     }
 
     /// Deterministic PRNG for test reproducibility
@@ -10939,7 +10975,12 @@ mod tests {
             let ntt_result = ntt.ntt(&test_poly);
             let recovered = ntt.intt(&ntt_result);
             let ok = (0..n).all(|j| test_poly[j] == recovered[j]);
-            println!("  Prime {}: {} - {}", i, p, if ok { "[OK]" } else { "[FAIL]" });
+            println!(
+                "  Prime {}: {} - {}",
+                i,
+                p,
+                if ok { "[OK]" } else { "[FAIL]" }
+            );
         }
     }
 
@@ -11724,8 +11765,8 @@ mod tests {
         println!("Bincode size: {} bytes", bytes.len());
 
         // Deserialize with validation
-        let ct_restored =
-            DualRNSCiphertext::from_bytes_validated(&bytes).expect("Bincode deserialization failed");
+        let ct_restored = DualRNSCiphertext::from_bytes_validated(&bytes)
+            .expect("Bincode deserialization failed");
 
         // Verify correctness
         let original = ctx.decrypt_dual(&ct, &keys.secret_key);
@@ -11864,7 +11905,9 @@ mod tests {
             n: 4,
         };
         poly.main[0][2] = 7; // == prime, not canonical (must be < 7)
-        assert!(poly.validate_residues(&main_primes, &anchor_primes).is_err());
+        assert!(poly
+            .validate_residues(&main_primes, &anchor_primes)
+            .is_err());
     }
 
     #[test]
@@ -11877,7 +11920,9 @@ mod tests {
             n: 4,
         };
         poly.anchor[0][1] = u64::MAX;
-        assert!(poly.validate_residues(&main_primes, &anchor_primes).is_err());
+        assert!(poly
+            .validate_residues(&main_primes, &anchor_primes)
+            .is_err());
     }
 
     #[test]
@@ -13147,7 +13192,11 @@ mod tests {
                 ctx.decrypt_dual_with_diagnostics(&ct, &keys.secret_key);
             let (decoded_u256, margin_u256) = ctx.decrypt_dual_u256(&inner, ct_level);
 
-            assert_eq!(decoded_u128, val, "u128 path must decode correctly for {}", val);
+            assert_eq!(
+                decoded_u128, val,
+                "u128 path must decode correctly for {}",
+                val
+            );
             assert_eq!(
                 decoded_u256, decoded_u128,
                 "U256 path must agree with u128 path on decoded value for {}",
@@ -13175,7 +13224,10 @@ mod tests {
 
         let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
         let (decoded, margin) = ctx.decrypt_dual_with_diagnostics(&ct, &keys.secret_key);
-        assert_eq!(decoded, 42, "fresh secure_256 ciphertext must decode correctly");
+        assert_eq!(
+            decoded, 42,
+            "fresh secure_256 ciphertext must decode correctly"
+        );
         assert_ne!(
             margin, 0,
             "margin must no longer be the hardcoded sentinel 0 on the U256 path"
@@ -13739,8 +13791,14 @@ mod tests {
                 .map(|j| anchor_engines[j].multiply(&a.anchor[j], &b.anchor[j]))
                 .collect();
 
-            assert_eq!(accel.main, ref_main, "main track diverged from sequential reference");
-            assert_eq!(accel.anchor, ref_anchor, "anchor track diverged from sequential reference");
+            assert_eq!(
+                accel.main, ref_main,
+                "main track diverged from sequential reference"
+            );
+            assert_eq!(
+                accel.anchor, ref_anchor,
+                "anchor track diverged from sequential reference"
+            );
         }
 
         // Level-aware variant, same contract.
@@ -13787,7 +13845,10 @@ mod tests {
         }
         let per = t0.elapsed() / iters;
         println!("ACCEL_TIMING mul_dual_public secure_128: {:?} per op", per);
-        assert_eq!(ctx.decrypt_dual(&last.unwrap(), &keys.secret_key), (11*13) % ctx.t);
+        assert_eq!(
+            ctx.decrypt_dual(&last.unwrap(), &keys.secret_key),
+            (11 * 13) % ctx.t
+        );
     }
 
     // ------------------------------------------------------------------
@@ -13883,7 +13944,10 @@ mod tests {
         let anchor = [13u64, 11]; // 11 collides with dropped main prime
         let poly = make_dual_poly(9, &main, &anchor);
         let res = exact_modulus_switch_drop_poly(&poly, &main, &anchor, 2); // drop 11
-        assert!(res.is_err(), "must reject a dropped prime not coprime to a lane");
+        assert!(
+            res.is_err(),
+            "must reject a dropped prime not coprime to a lane"
+        );
     }
 
     #[test]
@@ -13938,7 +14002,18 @@ mod tests {
     /// Seeds surveyed. Fixed and committed so the table is reproducible.
     #[cfg(test)]
     const PUBLIC_SQUARE_SURVEY_SEEDS: [u64; 12] = [
-        42, 1, 7, 1234, 20_260_822, 99_991, 31_337, 8_675_309, 2, 555, 123_456_789, 4_294_967_291,
+        42,
+        1,
+        7,
+        1234,
+        20_260_822,
+        99_991,
+        31_337,
+        8_675_309,
+        2,
+        555,
+        123_456_789,
+        4_294_967_291,
     ];
 
     /// Depth ceiling for the survey. Depth 5 and beyond are degenerate for
@@ -13963,7 +14038,9 @@ mod tests {
     /// depth decrypted to (so an off-by-one stays visible instead of collapsing
     /// into "failed").
     #[cfg(test)]
-    fn public_square_chain_secure_128_deep(seed: u64) -> (u32, SquareStop, Option<(u32, u64, u64)>) {
+    fn public_square_chain_secure_128_deep(
+        seed: u64,
+    ) -> (u32, SquareStop, Option<(u32, u64, u64)>) {
         use crate::params::secure_configs::SecureConfig;
 
         let config = SecureConfig::secure_128_deep().into_config();
@@ -14096,7 +14173,6 @@ mod tests {
              stated in README.md's verified capability table"
         );
     }
-
 
     /// The operand bound the manufactured shift is DERIVED FROM, measured on
     /// the real encryption path.
@@ -14361,8 +14437,8 @@ mod tests {
     fn manufactured_rescale_matches_ground_truth_on_known_values() {
         let cfg = crate::params::FHEConfig::manufactured_m2b_insecure();
         let ctx = RNSFHEContext::new(&cfg);
-        let q = ctx.q_product;                      // u128
-        let delta = q / ctx.t as u128;              // exact
+        let q = ctx.q_product; // u128
+        let delta = q / ctx.t as u128; // exact
         let n_u = ctx.n as u128;
 
         // X = w*Q + xc, spanning winding regimes up to the d1 bound N*Q/2.
@@ -14489,7 +14565,9 @@ mod tests {
         let poly = DualRNSPoly { main, anchor, n: 1 };
 
         // Ground truth: Y = floor((X + floor(Delta/2))/Delta), y_star = Y mod Q.
-        let x = U256::from_u128(w).mul_low(U256::from_u128(q)).add(U256::from_u128(xc));
+        let x = U256::from_u128(w)
+            .mul_low(U256::from_u128(q))
+            .add(U256::from_u128(xc));
         let shifted = x.add(U256::from_u128(delta / 2));
         let mut y = shifted;
         for &p in &ctx.config.primes {
@@ -14512,7 +14590,11 @@ mod tests {
         // regression on the shipped function fails THIS guardrail too).
         let shipped = ctx.k_elim_rescale_manufactured(&poly).unwrap();
         for (i, &p) in ctx.config.primes.iter().enumerate() {
-            assert_eq!(shipped.main[i][0], y_star.mod_u64(p), "shipped main lane {p} wrong");
+            assert_eq!(
+                shipped.main[i][0],
+                y_star.mod_u64(p),
+                "shipped main lane {p} wrong"
+            );
         }
         for (k, &a) in ctx.dual_rns.anchor.primes.iter().enumerate() {
             assert_eq!(
@@ -14525,7 +14607,9 @@ mod tests {
         // Textbook-centered variant: MAIN lanes still agree (centering is a
         // mathematical no-op there), but ANCHOR lanes must NOT — that
         // divergence is exactly what T2 pins.
-        let centered = ctx.k_elim_rescale_manufactured_centered_wrong(&poly).unwrap();
+        let centered = ctx
+            .k_elim_rescale_manufactured_centered_wrong(&poly)
+            .unwrap();
         for (i, &p) in ctx.config.primes.iter().enumerate() {
             assert_eq!(
                 centered.main[i][0],
@@ -14851,7 +14935,6 @@ mod tests {
     }
 }
 
-
 /// CANONICAL GATE HARNESS. Every node re-runs this and diffs against the
 /// recorded baseline. Fixed output format — do not reformat, the diff depends
 /// on it. Run:
@@ -14872,7 +14955,9 @@ mod gate {
         let mut rng = ShadowHarvester::with_seed(424242);
         let keys = ctx.generate_keys_dual_full(&mut rng);
         let mut gr = ShadowHarvester::with_seed(424243);
-        let gadget = ctx.generate_gadget_key_with_rng(&keys.secret_key, &mut gr).unwrap();
+        let gadget = ctx
+            .generate_gadget_key_with_rng(&keys.secret_key, &mut gr)
+            .unwrap();
         let mut r1 = ShadowHarvester::with_seed(424244);
         let mut r2 = ShadowHarvester::with_seed(424245);
         let a = ctx.encrypt_dual(7, &keys.public_key, &mut r1);
@@ -14882,9 +14967,12 @@ mod gate {
 
         macro_rules! row {
             ($name:expr, $body:expr) => {{
-                let c0 = cnt(); let t = Instant::now();
+                let c0 = cnt();
+                let t = Instant::now();
                 let mut out = None;
-                for _ in 0..reps { out = Some($body); }
+                for _ in 0..reps {
+                    out = Some($body);
+                }
                 let ns = t.elapsed().as_nanos() / reps;
                 let rc = (cnt() - c0) as u128 / reps;
                 println!("GATE {:<28} {:>12} {:>8}", $name, ns, rc);
@@ -14909,35 +14997,56 @@ mod gate {
         }
         let d0 = row!("tensor.d0", ctx.dual_poly_mul(&a.c0, &b.c0));
         let d2 = ctx.dual_poly_mul(&a.c1, &b.c1);
-        let d0_s = row!("rescale.manufactured",
-                        ctx.k_elim_rescale_manufactured(&d0).unwrap());
+        let d0_s = row!(
+            "rescale.manufactured",
+            ctx.k_elim_rescale_manufactured(&d0).unwrap()
+        );
         let d2_s = ctx.k_elim_rescale_manufactured(&d2).unwrap();
-        let (rc0, _) = row!("relin.digit",
-                            ctx.relinearize_dual(&d2_s, &keys.eval_key).unwrap());
-        let _ = row!("relin.gadget",
-                     ctx.relinearize_rns_limb(&d2_s, &gadget).unwrap());
+        let (rc0, _) = row!(
+            "relin.digit",
+            ctx.relinearize_dual(&d2_s, &keys.eval_key).unwrap()
+        );
+        let _ = row!(
+            "relin.gadget",
+            ctx.relinearize_rns_limb(&d2_s, &gadget).unwrap()
+        );
         let sum = ctx.dual_poly_add(&d0_s, &rc0);
         let _ = row!("canonicalize", ctx.canonicalize_dual_anchor(&sum));
-        let _ = row!("MUL.digit",
-                     ctx.mul_dual_public_manufactured(&a, &b, &keys.eval_key).unwrap());
-        let _ = row!("MUL.gadget",
-                     ctx.mul_dual_public_manufactured_gadget(&a, &b, &gadget).unwrap());
+        let _ = row!(
+            "MUL.digit",
+            ctx.mul_dual_public_manufactured(&a, &b, &keys.eval_key)
+                .unwrap()
+        );
+        let _ = row!(
+            "MUL.gadget",
+            ctx.mul_dual_public_manufactured_gadget(&a, &b, &gadget)
+                .unwrap()
+        );
 
         // primitive floor: what a modular multiply costs, three ways
         let p = ctx.config.primes[0];
         let pm = crate::arithmetic::persistent_montgomery::PersistentMontgomery::new(p);
-        let v: Vec<(u64,u64)> = (0..200_000)
-            .map(|_| (rng.next_u64() % p, rng.next_u64() % p)).collect();
-        let t = Instant::now(); let mut s = 0u64;
-        for &(x,y) in &v { s = s.wrapping_add(((x as u128 * y as u128) % p as u128) as u64); }
+        let v: Vec<(u64, u64)> = (0..200_000)
+            .map(|_| (rng.next_u64() % p, rng.next_u64() % p))
+            .collect();
+        let t = Instant::now();
+        let mut s = 0u64;
+        for &(x, y) in &v {
+            s = s.wrapping_add(((x as u128 * y as u128) % p as u128) as u64);
+        }
         let hw = t.elapsed().as_nanos() as f64 / v.len() as f64;
-        let t = Instant::now(); let mut s2 = 0u64;
-        for &(x,y) in &v { s2 = s2.wrapping_add(pm.mul(x,y)); }
+        let t = Instant::now();
+        let mut s2 = 0u64;
+        for &(x, y) in &v {
+            s2 = s2.wrapping_add(pm.mul(x, y));
+        }
         let mont = t.elapsed().as_nanos() as f64 / v.len() as f64;
-        let t = Instant::now(); let mut s3 = 0u128;
-        for &(x,y) in v.iter().take(4000) {
+        let t = Instant::now();
+        let mut s3 = 0u128;
+        for &(x, y) in v.iter().take(4000) {
             s3 = s3.wrapping_add(crate::arithmetic::k_elimination::bench_mul_mod_u128_ct(
-                x as u128, y as u128, p as u128));
+                x as u128, y as u128, p as u128,
+            ));
         }
         let ct = t.elapsed().as_nanos() as f64 / 4000.0;
         println!("GATE {}", "-".repeat(50));
@@ -14945,8 +15054,10 @@ mod gate {
         println!("GATE modmul.montgomery            {mont:>12.2}");
         println!("GATE modmul.ct_loop               {ct:>12.2}");
         println!("GATE FLOAT_REFERENCE f64 modmul measured 1.10-1.28x vs hardware,");
-        println!("GATE   vectorized only. montgomery/hardware = {:.2}x -- must stay > 1.28",
-                 hw / mont.max(0.001));
+        println!(
+            "GATE   vectorized only. montgomery/hardware = {:.2}x -- must stay > 1.28",
+            hw / mont.max(0.001)
+        );
         assert!(s | s2 as u64 | s3 as u64 != 12345678);
     }
 }

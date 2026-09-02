@@ -154,13 +154,16 @@ impl KElimConfig {
             ],
             KElimConfig::HardwareOpt => vec![
                 1152921515344265237, // 1,073,741,827 × 1,073,741,831 (61-bit)
-                4294967291,           // 2^32 - 5 (32-bit prime)
+                4294967291,          // 2^32 - 5 (32-bit prime)
             ],
         }
     }
 
     /// Get the beta moduli for this configuration (deprecated name).
-    #[deprecated(since = "8.0.0", note = "Use beta_moduli(). Primality not required (Separation Principle).")]
+    #[deprecated(
+        since = "8.0.0",
+        note = "Use beta_moduli(). Primality not required (Separation Principle)."
+    )]
     pub fn beta_primes(&self) -> Vec<u64> {
         self.beta_moduli()
     }
@@ -171,7 +174,7 @@ impl KElimConfig {
             KElimConfig::Minimal => 64,
             KElimConfig::Standard => 110,
             KElimConfig::Extended => 138,
-            KElimConfig::Maximum => 188, // 64 alpha + 124 beta
+            KElimConfig::Maximum => 188,     // 64 alpha + 124 beta
             KElimConfig::HardwareOpt => 140, // α_cap·β_cap = 140 bits (48-bit α × 93-bit β; product bit-length, not the sum)
         }
     }
@@ -309,13 +312,12 @@ impl KElimination {
                 message: "beta_moduli product overflows u128".to_string(),
             })?;
 
-        let alpha_inv_beta = mod_inverse_u128(alpha_cap, beta_cap).ok_or_else(|| {
-            Nine65Error::NotCoprime {
+        let alpha_inv_beta =
+            mod_inverse_u128(alpha_cap, beta_cap).ok_or_else(|| Nine65Error::NotCoprime {
                 m: diagnostic_u64(alpha_cap),
                 a: diagnostic_u64(beta_cap),
                 gcd: diagnostic_u64(gcd_u128(alpha_cap, beta_cap)),
-            }
-        })?;
+            })?;
 
         Ok(Self {
             alpha_primes: alpha_primes.to_vec(),
@@ -411,10 +413,7 @@ impl KElimination {
         self.beta_cap
     }
 
-    pub fn capacity_proximity(
-        &self,
-        value: u128,
-    ) -> crate::arithmetic::boundary::CapacityReport {
+    pub fn capacity_proximity(&self, value: u128) -> crate::arithmetic::boundary::CapacityReport {
         use crate::arithmetic::boundary::{capacity_proximity_bits, u128_bit_length};
         capacity_proximity_bits(u128_bit_length(value), self.capacity_bit_length())
     }
@@ -495,12 +494,7 @@ impl KElimination {
         value / divisor as u128
     }
 
-    pub fn exact_divide_checked(
-        &self,
-        v_alpha: u128,
-        v_beta: u128,
-        divisor: u64,
-    ) -> Option<u128> {
+    pub fn exact_divide_checked(&self, v_alpha: u128, v_beta: u128, divisor: u64) -> Option<u128> {
         if divisor == 0 {
             return None;
         }
@@ -529,12 +523,7 @@ impl KElimination {
         note = "Use exact_divide(); variable-time division is for public reference data only"
     )]
     #[allow(deprecated)]
-    pub fn exact_divide_vartime(
-        &self,
-        v_alpha: u128,
-        v_beta: u128,
-        divisor: u64,
-    ) -> u128 {
+    pub fn exact_divide_vartime(&self, v_alpha: u128, v_beta: u128, divisor: u64) -> u128 {
         assert!(divisor != 0, "divisor must be nonzero");
         let k = self.extract_k_vartime(v_alpha, v_beta);
         let value = v_alpha
@@ -566,18 +555,12 @@ impl KElimination {
         ((full_numerator / q as u128) % q as u128) as u64
     }
 
-    fn reconstruct_boundary_checked(
-        &self,
-        v_alpha: u128,
-        v_beta: u128,
-    ) -> Nine65Result<u128> {
+    fn reconstruct_boundary_checked(&self, v_alpha: u128, v_beta: u128) -> Nine65Result<u128> {
         self.validate_residues(v_alpha, v_beta)?;
         let k = self.extract_k(v_alpha, v_beta);
-        let winding = k
-            .checked_mul(self.alpha_cap)
-            .ok_or(Nine65Error::Overflow {
-                operation: "K-Elimination scalar boundary multiplication",
-            })?;
+        let winding = k.checked_mul(self.alpha_cap).ok_or(Nine65Error::Overflow {
+            operation: "K-Elimination scalar boundary multiplication",
+        })?;
         v_alpha.checked_add(winding).ok_or(Nine65Error::Overflow {
             operation: "K-Elimination scalar boundary addition",
         })
@@ -734,7 +717,10 @@ impl AdjacencyKElim {
     /// make the pre-reduction unnecessary: `v_α < M < A`, so `v_α mod A = v_α`.
     #[inline]
     pub fn extract_k(&self, v_alpha: u128, v_beta: u128) -> u128 {
-        debug_assert!(v_alpha < self.anchor, "v_alpha must already be reduced mod A");
+        debug_assert!(
+            v_alpha < self.anchor,
+            "v_alpha must already be reduced mod A"
+        );
         debug_assert!(v_beta < self.anchor, "v_beta must already be reduced mod A");
         sub_mod_u128_ct(v_alpha, v_beta, self.anchor)
     }
@@ -1049,10 +1035,7 @@ mod tests {
         ] {
             let value = KElimination::from_config(config);
             if let Some(capacity) = value.try_capacity() {
-                assert_eq!(
-                    value.alpha_cap.checked_mul(value.beta_cap),
-                    Some(capacity)
-                );
+                assert_eq!(value.alpha_cap.checked_mul(value.beta_cap), Some(capacity));
                 assert_eq!(
                     value.capacity_limbs().len(),
                     if capacity >> 64 == 0 { 1 } else { 2 }
@@ -1099,16 +1082,10 @@ mod tests {
     #[test]
     fn validated_division_rejects_range_and_inexactness() {
         let value = KElimination::new(&[17, 19], &[23, 29]);
-        assert!(value
-            .exact_divide_validated(value.alpha_cap, 0, 1)
-            .is_err());
+        assert!(value.exact_divide_validated(value.alpha_cap, 0, 1).is_err());
         let scalar = 1001u128;
         assert!(value
-            .exact_divide_validated(
-                scalar % value.alpha_cap,
-                scalar % value.beta_cap,
-                2,
-            )
+            .exact_divide_validated(scalar % value.alpha_cap, scalar % value.beta_cap, 2,)
             .is_err());
     }
 
@@ -1116,8 +1093,7 @@ mod tests {
     fn scale_and_round_matches_integer_reference() {
         let value = KElimination::for_fhe(65537);
         for coefficient in [0u64, 1, 100, 1000, 10_000, 32_768, 65_536] {
-            let expected =
-                ((coefficient as u128 * 257 + 65537 / 2) / 65537) as u64;
+            let expected = ((coefficient as u128 * 257 + 65537 / 2) / 65537) as u64;
             assert_eq!(value.scale_and_round(coefficient, 257, 65537), expected);
         }
     }
@@ -1157,12 +1133,20 @@ mod tests {
 
     /// Verified primality check for CLASS-F verification.
     fn is_prime(n: u64) -> bool {
-        if n < 2 { return false; }
-        if n == 2 || n == 3 { return true; }
-        if n % 2 == 0 || n % 3 == 0 { return false; }
+        if n < 2 {
+            return false;
+        }
+        if n == 2 || n == 3 {
+            return true;
+        }
+        if n % 2 == 0 || n % 3 == 0 {
+            return false;
+        }
         let mut i = 5;
         while i * i <= n {
-            if n % i == 0 || n % (i + 2) == 0 { return false; }
+            if n % i == 0 || n % (i + 2) == 0 {
+                return false;
+            }
             i += 6;
         }
         true
@@ -1206,7 +1190,9 @@ mod tests {
 
     #[test]
     fn test_class_r_moduli_are_coprime() {
-        let ntt_primes = [998244353, 985661441, 754974721, 469762049, 167772161, 595591169];
+        let ntt_primes = [
+            998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
+        ];
         let configs = [
             KElimConfig::Minimal,
             KElimConfig::Standard,
@@ -1222,28 +1208,49 @@ mod tests {
             let beta_cap: u128 = betas.iter().map(|&b| b as u128).product();
 
             // Alpha-beta coprimality (required for the K-Elim winding-lift inverse α_cap⁻¹ mod β_cap)
-            assert_eq!(gcd_u128(alpha_cap, beta_cap), 1,
-                "{:?}: alpha_cap and beta_cap must be coprime", config);
+            assert_eq!(
+                gcd_u128(alpha_cap, beta_cap),
+                1,
+                "{:?}: alpha_cap and beta_cap must be coprime",
+                config
+            );
 
             // Beta pairwise coprimality
             for i in 0..betas.len() {
-                for j in (i+1)..betas.len() {
-                    assert_eq!(gcd_u64(betas[i], betas[j]), 1,
-                        "{:?}: beta moduli {} and {} must be coprime", config, betas[i], betas[j]);
+                for j in (i + 1)..betas.len() {
+                    assert_eq!(
+                        gcd_u64(betas[i], betas[j]),
+                        1,
+                        "{:?}: beta moduli {} and {} must be coprime",
+                        config,
+                        betas[i],
+                        betas[j]
+                    );
                 }
             }
 
             // Beta-NTT coprimality
             for &b in &betas {
                 for &q in &ntt_primes {
-                    assert_eq!(gcd_u64(b, q), 1,
-                        "{:?}: beta {} must be coprime to NTT prime {}", config, b, q);
+                    assert_eq!(
+                        gcd_u64(b, q),
+                        1,
+                        "{:?}: beta {} must be coprime to NTT prime {}",
+                        config,
+                        b,
+                        q
+                    );
                 }
             }
 
             // Odd modulus (required for Montgomery)
             for &b in &betas {
-                assert!(b % 2 == 1, "{:?}: beta {} must be odd for Montgomery", config, b);
+                assert!(
+                    b % 2 == 1,
+                    "{:?}: beta {} must be odd for Montgomery",
+                    config,
+                    b
+                );
             }
         }
     }
@@ -1468,7 +1475,7 @@ mod bench_compat {
             let start = Instant::now();
             // We simulate prime generation by finding a large prime
             // In a real scenario, this involves primality testing
-            let mut p = (1u128 << (b-1)) + 1;
+            let mut p = (1u128 << (b - 1)) + 1;
             while !is_prime_u128(p) {
                 p += 2;
             }
@@ -1479,28 +1486,44 @@ mod bench_compat {
             let start = Instant::now();
             // We simulate composite generation by multiplying two smaller primes
             let half = b / 2;
-            let mut p1 = (1u128 << (half-1)) + 1;
-            while !is_prime_u128(p1) { p1 += 2; }
+            let mut p1 = (1u128 << (half - 1)) + 1;
+            while !is_prime_u128(p1) {
+                p1 += 2;
+            }
             let mut p2 = (1u128 << (b - half - 1)) + 1;
-            while !is_prime_u128(p2) { p2 += 2; }
+            while !is_prime_u128(p2) {
+                p2 += 2;
+            }
             let _c = p1 * p2;
             let composite_time = start.elapsed();
             println!("  Composite: {:?}", composite_time);
 
             if b >= 128 {
-                assert!(composite_time < prime_time, "Composite should be faster at {} bits", b);
+                assert!(
+                    composite_time < prime_time,
+                    "Composite should be faster at {} bits",
+                    b
+                );
             }
         }
     }
 
     fn is_prime_u128(n: u128) -> bool {
-        if n < 2 { return false; }
-        if n % 2 == 0 { return n == 2; }
+        if n < 2 {
+            return false;
+        }
+        if n % 2 == 0 {
+            return n == 2;
+        }
         let mut i = 3;
         while i * i <= n {
-            if n % i == 0 { return false; }
+            if n % i == 0 {
+                return false;
+            }
             i += 2;
-            if i > 1000000 { break; } // Limit for bench speed
+            if i > 1000000 {
+                break;
+            } // Limit for bench speed
         }
         true
     }
@@ -1570,8 +1593,7 @@ mod adjacency_tests {
         let general = adj.general_equivalent().expect("general partner");
         assert_eq!(general.beta_cap, 106, "the general partner uses the same A");
         assert_eq!(
-            general.alpha_inv_beta,
-            105,
+            general.alpha_inv_beta, 105,
             "the general partner's extended-Euclid inverse agrees with construction"
         );
 
@@ -1611,8 +1633,16 @@ mod adjacency_tests {
             let v_beta = x % adj.anchor();
             let truth = x / adj.alpha_cap();
 
-            assert_eq!(adj.extract_k(v_alpha, v_beta), truth, "adjacency k wrong at X={x}");
-            assert_eq!(general.extract_k(v_alpha, v_beta), truth, "general k wrong at X={x}");
+            assert_eq!(
+                adj.extract_k(v_alpha, v_beta),
+                truth,
+                "adjacency k wrong at X={x}"
+            );
+            assert_eq!(
+                general.extract_k(v_alpha, v_beta),
+                truth,
+                "general k wrong at X={x}"
+            );
         }
     }
 
@@ -1637,8 +1667,16 @@ mod adjacency_tests {
             let v_alpha = x % m;
             let v_beta = x % a;
             let truth = x / m;
-            assert_eq!(adj.extract_k(v_alpha, v_beta), truth, "adjacency k wrong at X={x}");
-            assert_eq!(general.extract_k(v_alpha, v_beta), truth, "general k wrong at X={x}");
+            assert_eq!(
+                adj.extract_k(v_alpha, v_beta),
+                truth,
+                "adjacency k wrong at X={x}"
+            );
+            assert_eq!(
+                general.extract_k(v_alpha, v_beta),
+                truth,
+                "general k wrong at X={x}"
+            );
         }
     }
 
@@ -1672,8 +1710,14 @@ mod adjacency_tests {
     fn adjacency_validates_residue_ranges() {
         let adj = AdjacencyKElim::try_new(&[3, 5, 7]).expect("adjacency context");
         assert!(adj.extract_k_validated(104, 105).is_ok());
-        assert!(adj.extract_k_validated(105, 0).is_err(), "v_alpha == M is out of range");
-        assert!(adj.extract_k_validated(0, 106).is_err(), "v_beta == A is out of range");
+        assert!(
+            adj.extract_k_validated(105, 0).is_err(),
+            "v_alpha == M is out of range"
+        );
+        assert!(
+            adj.extract_k_validated(0, 106).is_err(),
+            "v_beta == A is out of range"
+        );
     }
 
     #[test]

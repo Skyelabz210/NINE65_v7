@@ -21,9 +21,7 @@
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::secure_configs::SecureConfig;
-use nine65::params::security_estimator::{
-    CostModel, LatticeSecurityEstimator, SecretDistribution,
-};
+use nine65::params::security_estimator::{CostModel, LatticeSecurityEstimator, SecretDistribution};
 use nine65::params::FHEConfig;
 use std::time::Instant;
 
@@ -183,7 +181,14 @@ fn main() {
     }
     let mut add_trials = 0u32;
     let mut add_failures = 0u32;
-    for (a, b) in [(0u64, 0u64), (1, 1), (2, 3), (7, 11), (100, 200), (t - 1, 2)] {
+    for (a, b) in [
+        (0u64, 0u64),
+        (1, 1),
+        (2, 3),
+        (7, 11),
+        (100, 200),
+        (t - 1, 2),
+    ] {
         let ca = ctx.encrypt_dual(a, &keys.public_key, &mut rng);
         let cb = ctx.encrypt_dual(b, &keys.public_key, &mut rng);
         let cs = ctx.add_dual(&ca, &cb);
@@ -211,7 +216,15 @@ fn main() {
     }
     let mut mul_trials = 0u32;
     let mut mul_failures = 0u32;
-    for (a, b) in [(0u64, 0u64), (1, 1), (2, 3), (5, 7), (7, 11), (100, 200), (t - 1, 2)] {
+    for (a, b) in [
+        (0u64, 0u64),
+        (1, 1),
+        (2, 3),
+        (5, 7),
+        (7, 11),
+        (100, 200),
+        (t - 1, 2),
+    ] {
         let ca = ctx.encrypt_dual(a, &keys.public_key, &mut rng);
         let cb = ctx.encrypt_dual(b, &keys.public_key, &mut rng);
         let cp = ctx.mul_dual_symmetric(&ca, &cb, &keys.secret_key);
@@ -241,9 +254,17 @@ fn main() {
     println!("  \"log_q_bits\": {},", log_q_bits);
     println!("  \"secret_distribution\": \"ternary\",");
     println!("  \"screening_gate\": {{");
-    println!("    \"name\": \"nine65-in-tree LatticeSecurityEstimator (integer-only screening gate)\",");
-    println!("    \"core_svp_effective_bits\": {},", est.core_svp.effective_bits);
-    println!("    \"matzov_effective_bits\": {},", est.matzov.effective_bits);
+    println!(
+        "    \"name\": \"nine65-in-tree LatticeSecurityEstimator (integer-only screening gate)\","
+    );
+    println!(
+        "    \"core_svp_effective_bits\": {},",
+        est.core_svp.effective_bits
+    );
+    println!(
+        "    \"matzov_effective_bits\": {},",
+        est.matzov.effective_bits
+    );
     println!("    \"binding_bits\": {},", est.binding_bits);
     println!("    \"meets_both\": {}", est.meets_both);
     println!("  }},");

@@ -285,12 +285,8 @@ impl AnchorFamily {
     /// honest one.
     pub fn capacity(&self) -> i128 {
         match self.arrangement {
-            Arrangement::Telescoping => {
-                self.anchors.last().map(|a| a.capacity()).unwrap_or(0)
-            }
-            Arrangement::Disjoint => {
-                self.anchors.iter().map(|a| a.capacity()).min().unwrap_or(0)
-            }
+            Arrangement::Telescoping => self.anchors.last().map(|a| a.capacity()).unwrap_or(0),
+            Arrangement::Disjoint => self.anchors.iter().map(|a| a.capacity()).min().unwrap_or(0),
         }
     }
 
@@ -371,10 +367,12 @@ impl AnchorFamily {
             let term = anchor
                 .p()
                 .checked_mul(k)
-                .ok_or(AnchorError::CapacityOverflow { modulus: anchor.p() })?;
-            x = x
-                .checked_add(term)
-                .ok_or(AnchorError::CapacityOverflow { modulus: anchor.p() })?;
+                .ok_or(AnchorError::CapacityOverflow {
+                    modulus: anchor.p(),
+                })?;
+            x = x.checked_add(term).ok_or(AnchorError::CapacityOverflow {
+                modulus: anchor.p(),
+            })?;
         }
         Ok(x)
     }
@@ -481,8 +479,7 @@ mod tests {
         for p in [6i128, 36, 210] {
             let anchor = Anchor::adjacent(p).unwrap();
             for x in 0..anchor.capacity() {
-                let (fast, general) =
-                    k_elimination_cross_check(&anchor, x).expect("x in range");
+                let (fast, general) = k_elimination_cross_check(&anchor, x).expect("x in range");
                 assert_eq!(fast, general, "p={p} x={x}");
                 if fast != 0 {
                     nonzero += 1;
@@ -714,11 +711,18 @@ mod tests {
         let dirty_k = family.windings(&corrupted).unwrap();
         let dirty_v = family.group_values(&corrupted, &dirty_k).unwrap();
 
-        let moved_k = (0..clean_k.len()).filter(|&i| clean_k[i] != dirty_k[i]).count();
+        let moved_k = (0..clean_k.len())
+            .filter(|&i| clean_k[i] != dirty_k[i])
+            .count();
         assert_eq!(moved_k, 1, "exactly one winding moves");
-        assert_ne!(clean_k[faulty], dirty_k[faulty], "and it is the faulty lane's");
+        assert_ne!(
+            clean_k[faulty], dirty_k[faulty],
+            "and it is the faulty lane's"
+        );
 
-        let moved_v = (0..clean_v.len()).filter(|&i| clean_v[i] != dirty_v[i]).count();
+        let moved_v = (0..clean_v.len())
+            .filter(|&i| clean_v[i] != dirty_v[i])
+            .count();
         assert_eq!(moved_v, 1, "exactly one group value moves");
         for j in 0..clean_v.len() {
             if j != faulty {
@@ -852,8 +856,14 @@ mod tests {
             AnchorFamily::telescoping(36, 0),
             Err(AnchorError::EmptyFamily)
         );
-        assert_eq!(Anchor::adjacent(1), Err(AnchorError::ModulusTooSmall { p: 1 }));
-        assert_eq!(Anchor::adjacent(0), Err(AnchorError::ModulusTooSmall { p: 0 }));
+        assert_eq!(
+            Anchor::adjacent(1),
+            Err(AnchorError::ModulusTooSmall { p: 1 })
+        );
+        assert_eq!(
+            Anchor::adjacent(0),
+            Err(AnchorError::ModulusTooSmall { p: 0 })
+        );
     }
 
     /// The winding of an `ExactState` is what decides range. A state inside the

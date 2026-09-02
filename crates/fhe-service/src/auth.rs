@@ -78,14 +78,20 @@ pub fn authorize_and_normalize(request: &mut HttpRequest) -> Result<(), HttpResp
     let expected = token_for_tenant(&mapping, tenant_id)
         .ok_or_else(|| error_response(401, "UNAUTHORIZED", "authentication required"))?;
     if !token_matches(expected, provided) {
-        return Err(error_response(401, "UNAUTHORIZED", "authentication required"));
+        return Err(error_response(
+            401,
+            "UNAUTHORIZED",
+            "authentication required",
+        ));
     }
 
     let internal = std::env::var("FHE_API_TOKEN")
         .ok()
         .filter(|token| !token.is_empty())
         .ok_or_else(|| error_response(503, "AUTH_NOT_CONFIGURED", "service unavailable"))?;
-    request.headers.insert(API_TOKEN_HEADER.to_string(), internal);
+    request
+        .headers
+        .insert(API_TOKEN_HEADER.to_string(), internal);
     Ok(())
 }
 

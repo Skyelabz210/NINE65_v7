@@ -157,10 +157,9 @@ mod tests {
         let left = 12_345_u64;
         let right = 67_890_u64;
         let expected = (left as u128 * right as u128 % TEST_PRIME as u128) as u64;
-        let actual = context.from_montgomery(context.montgomery_mul(
-            context.to_montgomery(left),
-            context.to_montgomery(right),
-        ));
+        let actual = context.from_montgomery(
+            context.montgomery_mul(context.to_montgomery(left), context.to_montgomery(right)),
+        );
         assert_eq!(actual, expected);
     }
 
@@ -171,12 +170,10 @@ mod tests {
         for exponent in [0, 1, 2, 3, 100, 255] {
             let mut expected = 1_u64;
             for _ in 0..exponent {
-                expected =
-                    (expected as u128 * base as u128 % TEST_PRIME as u128) as u64;
+                expected = (expected as u128 * base as u128 % TEST_PRIME as u128) as u64;
             }
-            let actual = context.from_montgomery(
-                context.montgomery_pow(context.to_montgomery(base), exponent),
-            );
+            let actual = context
+                .from_montgomery(context.montgomery_pow(context.to_montgomery(base), exponent));
             assert_eq!(actual, expected);
         }
     }
@@ -187,7 +184,10 @@ mod tests {
         let samples = [0, 1, 2, TEST_PRIME / 2, TEST_PRIME - 2, TEST_PRIME - 1];
         for &left in &samples {
             for &right in &samples {
-                assert_eq!(context.montgomery_add(left, right), (left + right) % TEST_PRIME);
+                assert_eq!(
+                    context.montgomery_add(left, right),
+                    (left + right) % TEST_PRIME
+                );
                 assert_eq!(
                     context.montgomery_sub(left, right),
                     (left + TEST_PRIME - right) % TEST_PRIME
@@ -204,10 +204,10 @@ mod tests {
         let context = MontgomeryContext::new(modulus);
         for left in 0..modulus {
             for right in 0..modulus {
-                let actual = context.from_montgomery(context.montgomery_mul(
-                    context.to_montgomery(left),
-                    context.to_montgomery(right),
-                ));
+                let actual = context.from_montgomery(
+                    context
+                        .montgomery_mul(context.to_montgomery(left), context.to_montgomery(right)),
+                );
                 assert_eq!(actual, left * right % modulus);
             }
         }

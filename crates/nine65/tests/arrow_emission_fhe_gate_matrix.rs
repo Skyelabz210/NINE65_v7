@@ -232,7 +232,9 @@ fn crt_garner(residues: &[u64], primes: &[u64]) -> Big {
 
 /// `prod(primes) mod a`, without materialising the product.
 fn product_mod(primes: &[u64], a: u64) -> u64 {
-    primes.iter().fold(1u64 % a, |acc, &p| mulmod(acc, p % a, a))
+    primes
+        .iter()
+        .fold(1u64 % a, |acc, &p| mulmod(acc, p % a, a))
 }
 
 // ===========================================================================
@@ -304,8 +306,7 @@ fn derive_winding(
 fn anchor_lane_agrees(w: &Winding, main_primes: &[u64], a: u64, y: u64) -> bool {
     let m_mod_a = product_mod(main_primes, a);
     let k_mod = w.k.rem_euclid(a as i128) as u64;
-    let lhs =
-        ((w.v_main.mod_u64(a) as u128 + k_mod as u128 * m_mod_a as u128) % a as u128) as u64;
+    let lhs = ((w.v_main.mod_u64(a) as u128 + k_mod as u128 * m_mod_a as u128) % a as u128) as u64;
     lhs == y % a
 }
 
@@ -556,7 +557,8 @@ fn g1_winding_is_derivable_from_residues_and_is_never_carried_as_state() {
                         );
                         let k_lib = h.ctx.dual_rns.extract_k_rns(v_main_u128, &a_res);
                         assert_eq!(
-                            k_lib, w.k_unsigned,
+                            k_lib,
+                            w.k_unsigned,
                             "{} {} [{label} coeff {c}]: the winding the library \
                              derives ({k_lib}) differs from the winding derived \
                              independently from the same residue pair ({}) -- k \
@@ -625,7 +627,8 @@ fn g1_product_ciphertexts_carry_zero_winding_in_both_modes() {
                         anchor_primes,
                     );
                     assert_eq!(
-                        w.k, 0,
+                        w.k,
+                        0,
                         "{} {} [{label} coeff {c}]: product ciphertext must be \
                          canonical (winding 0), got k={}",
                         h.name,
@@ -954,13 +957,9 @@ fn g4_every_operation_emits_only_canonical_residues_in_both_modes() {
             // it lands in a SHORTER main frame -- validate it against the
             // surviving prime list.
             let drop_idx = a.level - 1;
-            let dropped = exact_drop_ct(
-                &a,
-                &h.main_primes()[..a.level],
-                h.anchor_primes(),
-                drop_idx,
-            )
-            .expect("exact drop of the top main lane must succeed on a prime basis");
+            let dropped =
+                exact_drop_ct(&a, &h.main_primes()[..a.level], h.anchor_primes(), drop_idx)
+                    .expect("exact drop of the top main lane must succeed on a prime basis");
             states.push(("exact_drop", dropped));
 
             for (label, ct) in &states {
@@ -1034,7 +1033,12 @@ fn g5_exact_drop_lands_on_floor_division_exactly_on_every_surviving_lane() {
                 // Shape: exactly one main lane gone, every anchor lane kept,
                 // degree untouched, level decremented. A frame change, not a
                 // reshaping.
-                assert_eq!(out.level, level - 1, "{}: level must decrement by 1", h.name);
+                assert_eq!(
+                    out.level,
+                    level - 1,
+                    "{}: level must decrement by 1",
+                    h.name
+                );
                 assert_eq!(out.c0.main.len(), level - 1);
                 assert_eq!(out.c0.anchor.len(), anchor_primes.len());
                 assert_eq!(out.c0.n, ct.c0.n);
@@ -1073,7 +1077,8 @@ fn g5_exact_drop_lands_on_floor_division_exactly_on_every_surviving_lane() {
                             anchor_primes,
                         );
                         assert_eq!(
-                            w_pre.k, w_post.k,
+                            w_pre.k,
+                            w_post.k,
                             "{} {} [{state} {label} coeff {c}]: the winding changed \
                              across the frame transition ({} -> {}) -- the lift is \
                              not preserved",
@@ -1123,9 +1128,7 @@ fn g5_every_droppable_lane_preserves_value_and_lift() {
             assert_eq!(out.c0.anchor.len(), anchor_primes.len());
 
             for c in probe_coeffs(h.n()) {
-                for (label, (pre, post)) in
-                    [("c0", (&ct.c0, &out.c0)), ("c1", (&ct.c1, &out.c1))]
-                {
+                for (label, (pre, post)) in [("c0", (&ct.c0, &out.c0)), ("c1", (&ct.c1, &out.c1))] {
                     let v_main = crt_garner(&coeff_main(pre, c), main_primes);
                     let expected = v_main.div_small(q_k);
                     for (lane, &q_i) in surviving.iter().enumerate() {
@@ -1382,7 +1385,11 @@ fn g6_non_canonical_residues_are_refused_by_the_config_aware_validator() {
         let level = ct.level;
 
         // Intact ciphertext passes both checks.
-        assert!(ct.validate().is_ok(), "{}: intact shape must validate", h.name);
+        assert!(
+            ct.validate().is_ok(),
+            "{}: intact shape must validate",
+            h.name
+        );
         assert!(
             h.ctx.validate_dual_ciphertext(&ct).is_ok(),
             "{}: intact residues must validate",
@@ -1689,12 +1696,7 @@ fn matrix_covers_all_four_production_tiers_and_both_modes() {
     let names: Vec<&str> = hs.iter().map(|h| h.name).collect();
     assert_eq!(
         names,
-        vec![
-            "secure_128",
-            "secure_128_deep",
-            "secure_192",
-            "secure_256"
-        ],
+        vec!["secure_128", "secure_128_deep", "secure_192", "secure_256"],
         "the gate matrix must span every production tier from 128 through 256"
     );
     assert_eq!(MODES.len(), 2, "both FHE modes must be in the matrix");

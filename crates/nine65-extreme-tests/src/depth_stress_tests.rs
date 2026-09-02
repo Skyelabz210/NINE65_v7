@@ -5,12 +5,12 @@
 
 #[cfg(test)]
 mod tests {
-    use nine65::ops::rns_fhe::RNSFHEContext;
-    use nine65::ops::bootstrap::ClockworkBootstrap;
-    use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
-    use nine65::params::secure_configs::SecureConfig;
-    use nine65::noise::budget::NoiseBudget;
     use nine65::entropy::shadow::ShadowHarvester;
+    use nine65::noise::budget::NoiseBudget;
+    use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+    use nine65::ops::bootstrap::ClockworkBootstrap;
+    use nine65::ops::rns_fhe::RNSFHEContext;
+    use nine65::params::secure_configs::SecureConfig;
 
     /// Q3: Measure exact depth limit for secure_128 without bootstrap.
     /// Theoretical floor: (initial_budget - encrypt_cost) / mul_cycle_cost
@@ -22,7 +22,10 @@ mod tests {
         let mul_cost = NoiseBudget::multiplication_cycle_cost(&config);
 
         if mul_cost <= 0 {
-            println!("[depth] secure_128: mul_cost={}mb — cannot compute depth from budget", mul_cost);
+            println!(
+                "[depth] secure_128: mul_cost={}mb — cannot compute depth from budget",
+                mul_cost
+            );
             return;
         }
 
@@ -36,8 +39,10 @@ mod tests {
         );
 
         // The theoretical depth must be non-zero.
-        assert!(theoretical_depth >= 1,
-            "secure_128 theoretical depth is 0 — budget too tight for any multiplication");
+        assert!(
+            theoretical_depth >= 1,
+            "secure_128 theoretical depth is 0 — budget too tight for any multiplication"
+        );
     }
 
     /// Empirical depth test: multiply until noise exhaustion.
@@ -70,8 +75,11 @@ mod tests {
                             break;
                         }
                     } else {
-                        println!("[depth] secure_128: noise exhausted at depth {} \
-                                  (got {} expected {})", depth, recovered, expected);
+                        println!(
+                            "[depth] secure_128: noise exhausted at depth {} \
+                                  (got {} expected {})",
+                            depth, recovered, expected
+                        );
                         break;
                     }
                 }
@@ -82,9 +90,15 @@ mod tests {
             }
         }
 
-        println!("[depth] secure_128: achieved {} multiplications without bootstrap", depth);
+        println!(
+            "[depth] secure_128: achieved {} multiplications without bootstrap",
+            depth
+        );
         // Must achieve at least 1 multiplication.
-        assert!(depth >= 1, "secure_128 failed to achieve even one multiplication");
+        assert!(
+            depth >= 1,
+            "secure_128 failed to achieve even one multiplication"
+        );
     }
 
     /// Budget-based depth estimate for secure_192.
@@ -102,7 +116,10 @@ mod tests {
 
         if mul_cost > 0 {
             let theoretical_depth = (initial_mb - encrypt_cost) / mul_cost;
-            println!("[depth] secure_192: theoretical_depth={}", theoretical_depth);
+            println!(
+                "[depth] secure_192: theoretical_depth={}",
+                theoretical_depth
+            );
         }
     }
 
@@ -121,7 +138,10 @@ mod tests {
 
         if mul_cost > 0 {
             let theoretical_depth = (initial_mb - encrypt_cost) / mul_cost;
-            println!("[depth] secure_256: theoretical_depth={}", theoretical_depth);
+            println!(
+                "[depth] secure_256: theoretical_depth={}",
+                theoretical_depth
+            );
         }
     }
 
@@ -139,8 +159,10 @@ mod tests {
         // The mul_cost must not have grown beyond the budget in a way that prevents depth >= 2.
         if mul_cost > 0 {
             let max_depth_without_bootstrap = (initial_mb) / mul_cost;
-            println!("[depth_regression] secure_128: max depth without bootstrap = {}",
-                max_depth_without_bootstrap);
+            println!(
+                "[depth_regression] secure_128: max depth without bootstrap = {}",
+                max_depth_without_bootstrap
+            );
 
             // This is a regression guard: if someone changes the noise model to inflate
             // mul_cost past budget, this test will catch it.
@@ -192,16 +214,23 @@ mod tests {
                 Ok(v) => v,
                 Err(_) => {
                     wall_depth = Some(depth);
-                    println!("{:5} │ NoiseErr  │ {:>8} │ ✗ NOISE_EXHAUSTED", depth, expected);
+                    println!(
+                        "{:5} │ NoiseErr  │ {:>8} │ ✗ NOISE_EXHAUSTED",
+                        depth, expected
+                    );
                     break;
                 }
             };
 
             let ok = decrypted == expected;
             if depth <= 10 || depth % 50 == 0 || !ok {
-                println!("{:5} │ {:>9} │ {:>8} │ {}",
-                    depth, decrypted, expected,
-                    if ok { "✓" } else { "✗ MISMATCH" });
+                println!(
+                    "{:5} │ {:>9} │ {:>8} │ {}",
+                    depth,
+                    decrypted,
+                    expected,
+                    if ok { "✓" } else { "✗ MISMATCH" }
+                );
             }
 
             if !ok {
@@ -217,12 +246,20 @@ mod tests {
             }
         }
 
-        println!("\n[ceiling] RESULT: secure_128 symmetric ceiling = {:?}", wall_depth);
-        println!("[ceiling] Max correct depth without bootstrap: {}", max_correct);
+        println!(
+            "\n[ceiling] RESULT: secure_128 symmetric ceiling = {:?}",
+            wall_depth
+        );
+        println!(
+            "[ceiling] Max correct depth without bootstrap: {}",
+            max_correct
+        );
 
         // Must achieve at least 1 correct multiplication.
-        assert!(max_correct >= 1,
-            "secure_128 failed even depth 1 — encryption or mul is broken");
+        assert!(
+            max_correct >= 1,
+            "secure_128 failed even depth 1 — encryption or mul is broken"
+        );
     }
 
     /// A-2: Uncapped symmetric depth run for secure_192 (max 200 depth — slow).
@@ -257,16 +294,23 @@ mod tests {
                 Ok(v) => v,
                 Err(_) => {
                     wall_depth = Some(depth);
-                    println!("{:5} │ NoiseErr  │ {:>8} │ ✗ NOISE_EXHAUSTED", depth, expected);
+                    println!(
+                        "{:5} │ NoiseErr  │ {:>8} │ ✗ NOISE_EXHAUSTED",
+                        depth, expected
+                    );
                     break;
                 }
             };
 
             let ok = decrypted == expected;
             if depth <= 5 || depth % 20 == 0 || !ok {
-                println!("{:5} │ {:>9} │ {:>8} │ {}",
-                    depth, decrypted, expected,
-                    if ok { "✓" } else { "✗ MISMATCH" });
+                println!(
+                    "{:5} │ {:>9} │ {:>8} │ {}",
+                    depth,
+                    decrypted,
+                    expected,
+                    if ok { "✓" } else { "✗ MISMATCH" }
+                );
             }
 
             if !ok {
@@ -282,7 +326,10 @@ mod tests {
             println!("[ceiling] secure_192: no failure at depth 200 — ceiling > 200");
         }
 
-        println!("\n[ceiling] RESULT: secure_192 symmetric ceiling = {:?}", wall_depth);
+        println!(
+            "\n[ceiling] RESULT: secure_192 symmetric ceiling = {:?}",
+            wall_depth
+        );
         println!("[ceiling] Max correct depth: {}", max_correct);
 
         assert!(max_correct >= 1, "secure_192 failed even depth 1");
@@ -309,7 +356,8 @@ mod tests {
         let mut rng = ShadowHarvester::with_seed(77_001);
         let work_keys = ctx.generate_keys_dual_full(&mut rng);
         let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
-        let boot_keys = boot.generate_keys(&work_keys.secret_key, &mut rng)
+        let boot_keys = boot
+            .generate_keys(&work_keys.secret_key, &mut rng)
             .expect("bootstrap keys");
 
         let plaintext: u64 = 2;
@@ -338,8 +386,10 @@ mod tests {
             let next = match evaluator.mul_auto(&current, &ct_sq) {
                 Ok(ct) => ct,
                 Err(e) => {
-                    println!("{:5} │ {:>8} │ MulErr    │ {:>10} │ ✗ ERROR: {}",
-                        depth, expected, evaluator.bootstrap_count, e);
+                    println!(
+                        "{:5} │ {:>8} │ MulErr    │ {:>10} │ ✗ ERROR: {}",
+                        depth, expected, evaluator.bootstrap_count, e
+                    );
                     break;
                 }
             };
@@ -349,9 +399,14 @@ mod tests {
             if checkpoints.contains(&depth) {
                 let decrypted = ctx.decrypt_dual(&current, &work_keys.secret_key);
                 let ok = decrypted == expected;
-                println!("{:5} │ {:>8} │ {:>9} │ {:>10} │ {}",
-                    depth, expected, decrypted, evaluator.bootstrap_count,
-                    if ok { "✓" } else { "✗ DRIFT" });
+                println!(
+                    "{:5} │ {:>8} │ {:>9} │ {:>10} │ {}",
+                    depth,
+                    expected,
+                    decrypted,
+                    evaluator.bootstrap_count,
+                    if ok { "✓" } else { "✗ DRIFT" }
+                );
                 if !ok {
                     failures.push((depth, decrypted, expected));
                 }
@@ -359,23 +414,35 @@ mod tests {
         }
 
         println!("\n[unlimited] 100 depths complete.");
-        println!("[unlimited] Total bootstraps triggered: {}", evaluator.bootstrap_count);
-        println!("[unlimited] Total multiplications: {}", evaluator.total_muls);
+        println!(
+            "[unlimited] Total bootstraps triggered: {}",
+            evaluator.bootstrap_count
+        );
+        println!(
+            "[unlimited] Total multiplications: {}",
+            evaluator.total_muls
+        );
 
         if failures.is_empty() {
-            println!("[unlimited] CONFIRMED: public key auto-bootstrap is depth-unlimited \
-                     (all checkpoints passed).");
+            println!(
+                "[unlimited] CONFIRMED: public key auto-bootstrap is depth-unlimited \
+                     (all checkpoints passed)."
+            );
         } else {
             for (depth, got, exp) in &failures {
-                println!("[unlimited] FINDING: depth {}: got {} expected {} — drift detected",
-                    depth, got, exp);
+                println!(
+                    "[unlimited] FINDING: depth {}: got {} expected {} — drift detected",
+                    depth, got, exp
+                );
             }
         }
 
         // At least one bootstrap must have fired over 100 multiplications.
-        assert!(evaluator.bootstrap_count > 0,
+        assert!(
+            evaluator.bootstrap_count > 0,
             "No bootstrap was triggered over 100 multiplications. \
-             Either the noise budget is underestimated or trigger_permille is too low.");
+             Either the noise budget is underestimated or trigger_permille is too low."
+        );
 
         // Test records findings but doesn't assert correctness — Q17 is already documented
         // in bootstrap_adversarial.rs. This extends to confirm behavior at higher depth.
@@ -408,7 +475,8 @@ mod tests {
         let mut rng = ShadowHarvester::with_seed(88_001);
         let work_keys = ctx.generate_keys_dual(&mut rng);
         let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
-        let boot_keys = boot.generate_keys(&work_keys.secret_key, &mut rng)
+        let boot_keys = boot
+            .generate_keys(&work_keys.secret_key, &mut rng)
             .expect("bootstrap keys");
 
         let plaintext: u64 = 42;
@@ -420,8 +488,10 @@ mod tests {
 
         // Verify pre-bootstrap plaintext.
         let pre_boot = ctx.decrypt_dual(&ct_after_mul, &work_keys.secret_key);
-        assert_eq!(pre_boot, expected_after_mul,
-            "Sanity: mul produced wrong plaintext before any bootstrap");
+        assert_eq!(
+            pre_boot, expected_after_mul,
+            "Sanity: mul produced wrong plaintext before any bootstrap"
+        );
 
         println!("\n[bias] Bootstrap accumulation bias test — 50 sequential bootstraps");
         println!("Round │ Decrypted │ Expected │ Status");
@@ -435,7 +505,10 @@ mod tests {
             let bootstrapped = match boot.bootstrap(&current_ct, &boot_keys.bsk, &boot_keys.ksk) {
                 Ok(ct) => ct,
                 Err(e) => {
-                    println!("{:5} │ BootErr   │ {:>8} │ ✗ ERROR: {}", round, expected_after_mul, e);
+                    println!(
+                        "{:5} │ BootErr   │ {:>8} │ ✗ ERROR: {}",
+                        round, expected_after_mul, e
+                    );
                     break;
                 }
             };
@@ -444,9 +517,13 @@ mod tests {
             let ok = decrypted == expected_after_mul;
 
             if !ok || round <= 5 || round % 10 == 0 {
-                println!("{:5} │ {:>9} │ {:>8} │ {}",
-                    round, decrypted, expected_after_mul,
-                    if ok { "✓" } else { "✗ BIAS_DETECTED" });
+                println!(
+                    "{:5} │ {:>9} │ {:>8} │ {}",
+                    round,
+                    decrypted,
+                    expected_after_mul,
+                    if ok { "✓" } else { "✗ BIAS_DETECTED" }
+                );
             }
 
             if !ok && !bias_observed {
@@ -458,13 +535,18 @@ mod tests {
         }
 
         if bias_observed {
-            println!("\n[bias] HYPOTHESIS CONFIRMED: noise mean bias detected at round {:?}.",
-                first_bias_round);
+            println!(
+                "\n[bias] HYPOTHESIS CONFIRMED: noise mean bias detected at round {:?}.",
+                first_bias_round
+            );
             println!("[bias] This means sequential bootstraps accumulate directional noise.");
             println!("[bias] The GSO swarm fix (multi-path averaging) is the correct mitigation.");
         } else {
             println!("\n[bias] HYPOTHESIS REJECTED: 50 sequential bootstraps produced no bias.");
-            println!("[bias] plaintext={} remained stable across all rounds.", expected_after_mul);
+            println!(
+                "[bias] plaintext={} remained stable across all rounds.",
+                expected_after_mul
+            );
         }
 
         // Test always passes — it documents whether bias exists, not whether it's absent.
@@ -485,7 +567,8 @@ mod tests {
         let mut rng = ShadowHarvester::with_seed(88_002);
         let work_keys = ctx.generate_keys_dual(&mut rng);
         let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
-        let boot_keys = boot.generate_keys(&work_keys.secret_key, &mut rng)
+        let boot_keys = boot
+            .generate_keys(&work_keys.secret_key, &mut rng)
             .expect("bootstrap keys");
 
         let plaintext: u64 = 3;
@@ -517,9 +600,13 @@ mod tests {
             let ok = decrypted == expected;
 
             if !ok || round <= 5 || round % 10 == 0 {
-                println!("{:5} │ {:>8} │ {:>9} │ {}",
-                    round, expected, decrypted,
-                    if ok { "✓" } else { "✗ DRIFT" });
+                println!(
+                    "{:5} │ {:>8} │ {:>9} │ {}",
+                    round,
+                    expected,
+                    decrypted,
+                    if ok { "✓" } else { "✗ DRIFT" }
+                );
             }
 
             if !ok && bias_at.is_none() {
@@ -530,7 +617,10 @@ mod tests {
         }
 
         if let Some(round) = bias_at {
-            println!("\n[bias_interleaved] DRIFT DETECTED starting at round {}.", round);
+            println!(
+                "\n[bias_interleaved] DRIFT DETECTED starting at round {}.",
+                round
+            );
             println!("[bias_interleaved] Each bootstrap cycle introduces cumulative error.");
         } else {
             println!("\n[bias_interleaved] No drift over 50 mul→bootstrap cycles.");

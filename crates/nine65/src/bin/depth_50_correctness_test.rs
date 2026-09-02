@@ -1,10 +1,10 @@
 //! Correctness-checked Depth-50 test for NINE65 v7.
 //! Verifies that the depth-50 claim is backed by actual decryption success.
 
-use nine65::prelude::*;
-use nine65::ops::rns_fhe::RNSFHEContext;
-use nine65::ops::bootstrap::ClockworkBootstrap;
 use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+use nine65::ops::bootstrap::ClockworkBootstrap;
+use nine65::ops::rns_fhe::RNSFHEContext;
+use nine65::prelude::*;
 use std::time::Instant;
 
 fn main() {
@@ -13,14 +13,14 @@ fn main() {
 
     let secure_config = SecureConfig::secure_128();
     let config = secure_config.into_config();
-    
+
     println!("Target: secure_128 (N=8192, Primes=3)");
     println!("Goal: Execute 50 multiplications with auto-bootstrap and verify correctness.");
 
     let mut rng = ShadowHarvester::with_seed(42);
     let ctx = RNSFHEContext::new(&config);
     let bootstrap = ClockworkBootstrap::new(&config).unwrap();
-    
+
     let keys = ctx.generate_keys_dual_full(&mut rng);
     let bsk_ksk = bootstrap.generate_keys(&keys.secret_key, &mut rng).unwrap();
 
@@ -40,9 +40,11 @@ fn main() {
     let start = Instant::now();
     for d in 1..=50 {
         println!("  Testing Depth {}...", d);
-        ct = evaluator.mul_auto(&ct, &ctx.encrypt_dual(factor, &keys.public_key, &mut rng)).unwrap();
+        ct = evaluator
+            .mul_auto(&ct, &ctx.encrypt_dual(factor, &keys.public_key, &mut rng))
+            .unwrap();
         expected_plaintext = (expected_plaintext * factor) % config.t;
-        
+
         // Decrypt and verify every 10 depths to ensure no silent failure
         if d % 10 == 0 {
             let decrypted = ctx.decrypt_dual(&ct, &keys.secret_key);
@@ -50,7 +52,10 @@ fn main() {
                 println!("  Depth {:>2}: SUCCESS (Correctness Verified)", d);
             } else {
                 println!("  Depth {:>2}: FAILED (Decryption Error!)", d);
-                println!("    Expected: {}, Actual: {}", expected_plaintext, decrypted);
+                println!(
+                    "    Expected: {}, Actual: {}",
+                    expected_plaintext, decrypted
+                );
                 panic!("Depth-50 Correctness Audit FAILED at depth {}", d);
             }
         }
@@ -62,7 +67,7 @@ fn main() {
     println!("  Auto-Refreshes: {}", evaluator.bootstrap_count);
     println!("  Total Time: {:?}", duration);
     println!("  Final Correctness: VERIFIED");
-    
+
     println!("\nVERDICT: THE DEPTH-50 CLAIM IS PROVEN AND CORRECTNESS-CHECKED.");
     println!("===================================================");
 }

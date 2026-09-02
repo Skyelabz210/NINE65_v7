@@ -282,7 +282,11 @@ pub const TRITRAY: &[Chimera] = &[
         name: "post_boundary_band",
         factors: &[13, 17, 19],
         product: 4199,
-        roles: &[LaneRole::Boundary, LaneRole::Saturation, LaneRole::Signature],
+        roles: &[
+            LaneRole::Boundary,
+            LaneRole::Saturation,
+            LaneRole::Signature,
+        ],
         description: "post-boundary spectral band",
     },
     Chimera {

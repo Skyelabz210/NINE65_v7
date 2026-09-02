@@ -33,11 +33,7 @@ pub enum CramOpError {
         gcd: u64,
     },
     /// D-007: Inverse of non-invertible element.
-    InvNonInvertible {
-        a: u64,
-        modulus: u64,
-        gcd: u64,
-    },
+    InvNonInvertible { a: u64, modulus: u64, gcd: u64 },
     /// D-002: Schema degree exceeds resonance order.
     DegreeViolation {
         max_degree: u32,
@@ -45,11 +41,7 @@ pub enum CramOpError {
         schema: String,
     },
     /// D-004: Non-coprime moduli in basis.
-    NonCoprimeBasis {
-        m1: u64,
-        m2: u64,
-        gcd: u64,
-    },
+    NonCoprimeBasis { m1: u64, m2: u64, gcd: u64 },
 }
 
 impl fmt::Display for CramOpError {
@@ -302,11 +294,7 @@ impl Schema {
     }
 
     /// Reconstruct the result of `apply()` to an integer via Garner.
-    pub fn apply_and_reconstruct(
-        &self,
-        a: &[u64],
-        b: &[u64],
-    ) -> Result<i128, CramOpError> {
+    pub fn apply_and_reconstruct(&self, a: &[u64], b: &[u64]) -> Result<i128, CramOpError> {
         let residues = self.apply(a, b)?;
         let pairs: Vec<(i128, i128)> = residues
             .iter()
@@ -544,7 +532,11 @@ mod tests {
         let err = Schema::new(&[CramOp::Mul, CramOp::Add], &[2, 3]);
         assert!(err.is_err());
         match err.unwrap_err() {
-            CramOpError::DegreeViolation { max_degree: 2, rho: 2, .. } => {}
+            CramOpError::DegreeViolation {
+                max_degree: 2,
+                rho: 2,
+                ..
+            } => {}
             e => panic!("Expected DegreeViolation, got {e:?}"),
         }
     }
@@ -660,11 +652,7 @@ mod tests {
 
     #[test]
     fn schema_display() {
-        let schema = Schema::new(
-            &[CramOp::Mul, CramOp::Sqr, CramOp::Id],
-            &[3, 7, 11],
-        )
-        .unwrap();
+        let schema = Schema::new(&[CramOp::Mul, CramOp::Sqr, CramOp::Id], &[3, 7, 11]).unwrap();
         let s = schema.to_string();
         assert!(s.contains("MQ_"));
         assert!(s.contains("deg=2"));

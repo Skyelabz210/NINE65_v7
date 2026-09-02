@@ -225,12 +225,11 @@ fn incremental_crt_lift(moduli: &[u64], residues: &[u64]) -> Nine65Result<(u128,
         let residue = residues[i] as u128;
 
         let product_mod_m = product % modulus;
-        let inverse = mod_inverse_u128(product_mod_m, modulus).ok_or(
-            Nine65Error::NoModularInverse {
+        let inverse =
+            mod_inverse_u128(product_mod_m, modulus).ok_or(Nine65Error::NoModularInverse {
                 value: product_mod_m as u64,
                 modulus: moduli[i],
-            },
-        )?;
+            })?;
         let value_mod_m = value % modulus;
         let diff = sub_mod_u128(residue, value_mod_m, modulus);
         let t = mul_mod_u128(diff, inverse, modulus);
@@ -400,9 +399,11 @@ impl BoundedResidueDivider for KElimResidueDivider {
         let diff = sub_mod_u128(x_mod_anchor, x_mod_main % anchor_product, anchor_product);
         let winding = mul_mod_u128(diff, main_inv_anchor, anchor_product);
 
-        let winding_term = winding.checked_mul(main_product).ok_or(Nine65Error::Overflow {
-            operation: "residue division winding multiplication",
-        })?;
+        let winding_term = winding
+            .checked_mul(main_product)
+            .ok_or(Nine65Error::Overflow {
+                operation: "residue division winding multiplication",
+            })?;
         let numerator = x_mod_main
             .checked_add(winding_term)
             .ok_or(Nine65Error::Overflow {

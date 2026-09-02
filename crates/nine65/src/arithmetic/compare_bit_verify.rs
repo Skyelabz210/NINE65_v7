@@ -22,7 +22,7 @@
 
 #[cfg(test)]
 mod tests {
-    use super::super::compare_bit::{ComparePath, CompareBit};
+    use super::super::compare_bit::{CompareBit, ComparePath};
     use super::super::compare_bit_vectors::ORACLE_VECTORS;
 
     /// The load-bearing test: kernel vs external arbitrary-precision oracle on
@@ -44,7 +44,10 @@ mod tests {
                 fallbacks += (*path_is_fallback(&path)) as u64;
             }
         }
-        assert_eq!(checked, 1680, "vector set shrank — regenerate or investigate");
+        assert_eq!(
+            checked, 1680,
+            "vector set shrank — regenerate or investigate"
+        );
         // Never-vacuous: the boundary vectors MUST drive the exact fallback.
         // If this fires as 0 the fast path is silently deciding cases the
         // theorem says it must refuse, which is the dangerous failure mode.

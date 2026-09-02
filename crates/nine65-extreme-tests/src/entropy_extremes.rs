@@ -36,8 +36,10 @@ mod tests {
         let sequence1: Vec<u64> = (0..1000).map(|_| rng1.next_u64()).collect();
         let sequence2: Vec<u64> = (0..1000).map(|_| rng2.next_u64()).collect();
 
-        assert_eq!(sequence1, sequence2,
-            "ShadowHarvester is not deterministic with same seed");
+        assert_eq!(
+            sequence1, sequence2,
+            "ShadowHarvester is not deterministic with same seed"
+        );
     }
 
     /// Different seeds must produce different sequences.

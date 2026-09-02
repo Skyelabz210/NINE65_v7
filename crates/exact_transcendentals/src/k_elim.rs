@@ -299,11 +299,7 @@ pub fn crt_weights(basis: &[i128]) -> Option<(Vec<i128>, i128)> {
 /// genuinely required.
 ///
 /// Precondition: gcd(b, M) = 1 and b | a.
-pub fn k_elim_divide(
-    residues: &[i128],
-    basis: &[i128],
-    b: i128,
-) -> Option<Vec<i128>> {
+pub fn k_elim_divide(residues: &[i128], basis: &[i128], b: i128) -> Option<Vec<i128>> {
     let m: i128 = basis.iter().product();
     if gcd(b, m) != 1 {
         return None;
@@ -353,7 +349,11 @@ pub fn k_elim_divide_named(
     let q_res = k_elim_divide(residues, basis, b)?;
     // shell-internal read of q mod M from its lane residues
     let q_shell = garner_reconstruct(
-        &q_res.iter().copied().zip(basis.iter().copied()).collect::<Vec<_>>(),
+        &q_res
+            .iter()
+            .copied()
+            .zip(basis.iter().copied())
+            .collect::<Vec<_>>(),
     )? % m;
     let q_anchor = modd(a_anchor_residue * mod_inv(b, anchor)?, anchor);
     let k = modd((q_anchor - q_shell) * mod_inv(m, anchor)?, anchor);
@@ -587,8 +587,7 @@ mod tests {
         // For M₈-1, use full Garner reconstruction across S8.
         let x2 = 9_699_689i128;
         let basis: Vec<i128> = vec![2, 3, 5, 7, 11, 13, 17, 19];
-        let residues: Vec<(i128, i128)> =
-            basis.iter().map(|&p| (x2 % p, p)).collect();
+        let residues: Vec<(i128, i128)> = basis.iter().map(|&p| (x2 % p, p)).collect();
         assert_eq!(garner_reconstruct(&residues).unwrap(), x2);
     }
 
@@ -612,8 +611,7 @@ mod tests {
         let basis: Vec<i128> = vec![2, 3, 5, 7, 11, 13, 17, 19];
         let m: i128 = basis.iter().product(); // 9_699_690
         for &x in &[0, 1, 42, 1000, m / 2, m - 1] {
-            let residues: Vec<(i128, i128)> =
-                basis.iter().map(|&p| (x % p, p)).collect();
+            let residues: Vec<(i128, i128)> = basis.iter().map(|&p| (x % p, p)).collect();
             let recovered = garner_reconstruct(&residues).unwrap();
             assert_eq!(recovered, x, "roundtrip failed for x={x}");
         }
@@ -797,7 +795,10 @@ mod tests {
         let mus: Vec<i128> = vec![17]; // unused by the top level, present for signature parity
         let mut kd = vec![5i128];
         add_carry(&mut kd, &mus, 20);
-        assert_eq!(kd[0], 25, "single-digit tower's top level absorbs the full carry");
+        assert_eq!(
+            kd[0], 25,
+            "single-digit tower's top level absorbs the full carry"
+        );
     }
 
     #[test]
