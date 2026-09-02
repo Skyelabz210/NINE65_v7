@@ -1794,7 +1794,7 @@ impl RNSFHEContext {
 
         let d2 = self.rns_poly_mul(&ct1.c1, &ct2.c1);
 
-        // Scale by t/q to reduce noise (using K-Elimination for exactness)
+        // Certified single-RNS BFV scale/round for the Bajard route.
         let e0 = self.exact_rescale(&d0);
         let e1 = self.exact_rescale(&d1);
         let e2 = self.exact_rescale(&d2);
