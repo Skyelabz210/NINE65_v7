@@ -26,6 +26,13 @@ use crate::params::{mod_inverse, FHEConfig};
 use crate::params::secure_configs::SecureConfig;
 use zeroize::{Zeroize, Zeroizing, ZeroizeOnDrop};
 
+/// Track 1 (PR #103) T1.1 locks. Child module so the tests can reach the
+/// private `RNSFHEContext::exact_rescale` without widening production
+/// visibility. Test-only; compiled out of every non-test build.
+#[cfg(test)]
+#[path = "track1_exact_multiply_lock.rs"]
+mod track1_exact_multiply_lock;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]
