@@ -3,6 +3,7 @@ target/
 *.cache
 float_scan_results.txt
 .worktrees/
+.claude/worktrees/
 __pycache__/
 *.pyc
 
