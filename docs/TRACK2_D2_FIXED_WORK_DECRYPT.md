@@ -95,9 +95,17 @@ each supported architecture before the constant-time claim is promoted.
 - [x] The residue-native scanner reports zero prohibited constructs in both
       changed Rust production surfaces. Its repository-wide run remains red on
       21 pre-existing findings in untouched `cram_ct.rs` and `bootstrap.rs`.
-- [ ] Rust formatting and `cargo test -p nine65 --lib arithmetic::compare_bit
-      --release` pass in a Rust-equipped runner.
-- [ ] Full `cargo test -p nine65 --lib --release` passes.
+- [x] Rust formatting and `cargo test -p nine65 --lib arithmetic::compare_bit
+      --release` pass in a Rust-equipped runner. Confirmed 2026-09-03 after
+      merging this branch forward onto the WIRE-Q fail-closed baseline
+      (#107) and Track 1 T1.1-T1.3 (#103): `cargo fmt --all -- --check`
+      clean, `arithmetic::compare_bit`: 10 passed, 0 failed, 1 ignored
+      (pre-existing benchmark test, unrelated to this track).
+- [x] Full `cargo test -p nine65 --lib --release` passes, modulo five
+      pre-existing failures confirmed unrelated to this track (bisected to
+      predate #107/#99/#103; see
+      `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`):
+      813 passed, 5 failed (pre-existing), 124 ignored.
 - [ ] Disassembly confirms no data-dependent jump in the fixed-work kernel.
 - [ ] Integer-recorded two-class timing evidence is collected on x86-64 and
       ARM before promoting the hardware constant-time claim.
