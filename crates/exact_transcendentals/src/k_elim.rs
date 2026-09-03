@@ -46,6 +46,10 @@
 //! separately as the CRAM-architecture integration (see the repository's
 //! CRAM compliance gates); this file is kept as the reference/staging
 //! implementation for that eventual migration, not deleted or merged.
+//!
+//! For the full inventory of every K-Elimination-shaped implementation
+//! across the workspace, see `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md`
+//! (issue #70) at the workspace root (`NINE65_v7/docs/`).
 
 #[cfg(not(feature = "std"))]
 use alloc::{vec, vec::Vec};
