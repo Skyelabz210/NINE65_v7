@@ -1762,10 +1762,26 @@ impl RNSFHEContext {
         }
     }
 
-    /// Homomorphic multiplication (CT × CT)
+    /// Enforce the certified regime for the legacy single-RNS multiply.
+    fn require_bajard_single_mul_route(&self) {
+        assert!(
+            matches!(self.mul_route(), MulRoute::BajardSingle),
+            "RNSFHEContext::mul is unavailable when the configuration requires \
+             K-Elimination/dual rescaling; use mul_auto with matching auto keys"
+        );
+    }
+
+    /// Homomorphic multiplication (CT × CT) in the single-RNS regime.
     ///
-    /// This is where RNS shines - no coefficient overflow!
+    /// The per-limb Bajard rescale below is admissible only when
+    /// [`Self::mul_route`] selects [`MulRoute::BajardSingle`].  Configurations
+    /// whose tensor values can exceed that regime's certified bound must use
+    /// [`Self::mul_auto`] with the matching dual/exact route.  Refusing that
+    /// call here prevents this legacy public entry point from silently
+    /// returning a ciphertext from an uncertified rescale.
     pub fn mul(&self, ct1: &RNSCiphertext, ct2: &RNSCiphertext, ek: &RNSEvalKey) -> RNSCiphertext {
+        self.require_bajard_single_mul_route();
+
         // Tensor product: (d0, d1, d2)
         // d0 = c0_1 * c0_2
         // d1 = c0_1 * c1_2 + c1_1 * c0_2
@@ -1778,7 +1794,7 @@ impl RNSFHEContext {
 
         let d2 = self.rns_poly_mul(&ct1.c1, &ct2.c1);
 
-        // Scale by t/q to reduce noise (using K-Elimination for exactness)
+        // Certified single-RNS BFV scale/round for the Bajard route.
         let e0 = self.exact_rescale(&d0);
         let e1 = self.exact_rescale(&d1);
         let e2 = self.exact_rescale(&d2);
@@ -9567,6 +9583,14 @@ mod tests {
         assert_eq!(sum_result, 12, "Auto add should give 5 + 7 = 12");
 
         println!("[PASS]Auto-routing test passed");
+    }
+
+    #[test]
+    #[should_panic(expected = "RNSFHEContext::mul is unavailable")]
+    fn direct_single_mul_route_is_rejected_when_exact_route_is_required() {
+        let config = FHEConfig::light_rns_exact_insecure();
+        let ctx = RNSFHEContext::new(&config);
+        ctx.require_bajard_single_mul_route();
     }
 
     #[test]
