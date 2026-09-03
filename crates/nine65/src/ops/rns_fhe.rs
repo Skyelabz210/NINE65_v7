@@ -14,11 +14,11 @@ use std::mem;
 
 use crate::arithmetic::NTTEngine;
 
+use crate::arithmetic::compare_bit::CompareBit;
 use crate::arithmetic::{
     compute_delta_rns_overflow_safe, BarrettContext, DualRNSContext, KElimination, RNSContext,
     RNSPolynomial, U256,
 };
-use crate::arithmetic::compare_bit::CompareBit;
 use crate::entropy::{FheRng, SecureRng, ShadowHarvester};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::params::{mod_inverse, FHEConfig};

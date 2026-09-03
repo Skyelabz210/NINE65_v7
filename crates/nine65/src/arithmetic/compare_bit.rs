@@ -471,21 +471,14 @@ mod tests {
 
     #[test]
     fn fixed_work_decision_is_exact_for_every_small_basis_value() {
-        let bases: [&[u64]; 3] = [
-            &[3, 5],
-            &[3, 5, 7],
-            &[3, 5, 7, 11, 13],
-        ];
+        let bases: [&[u64]; 3] = [&[3, 5], &[3, 5, 7], &[3, 5, 7, 11, 13]];
 
         let mut checked = 0u64;
         for primes in bases {
             let kernel = CompareBit::new(primes);
             let modulus: u128 = primes.iter().map(|&p| p as u128).product();
             for x in 0..modulus {
-                let residues: Vec<u64> = primes
-                    .iter()
-                    .map(|&p| (x % p as u128) as u64)
-                    .collect();
+                let residues: Vec<u64> = primes.iter().map(|&p| (x % p as u128) as u64).collect();
                 assert_eq!(
                     kernel.decide_ct(&residues),
                     2 * x >= modulus,

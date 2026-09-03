@@ -168,7 +168,9 @@ fn canonical_adjacent_products_include_composite_anchors() {
 fn universal_projection_accepts_composite_and_shared_factor_targets() {
     let m = product(&S6_BASIS);
     let a = m + 1;
-    let targets = [1i128, 4, 6, 8, 9, 10, 12, 18, 25, 35, 36, 37, 49, 77, 121, 143, 256];
+    let targets = [
+        1i128, 4, 6, 8, 9, 10, 12, 18, 25, 35, 36, 37, 49, 77, 121, 143, 256,
+    ];
     let xs = [
         0i128,
         1,

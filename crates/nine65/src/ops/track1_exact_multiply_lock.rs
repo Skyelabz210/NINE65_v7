@@ -193,8 +193,10 @@ fn bajard_rescale_disagrees_with_exact_oracle_when_delta_squared_exceeds_q() {
 /// the auto-routed pipeline. Nothing here changes production behavior; T1.1 is
 /// a test-only stage by contract.
 #[test]
-#[should_panic(expected = "RNSFHEContext::mul is unavailable when the configuration requires \
-    K-Elimination/dual rescaling")]
+#[should_panic(
+    expected = "RNSFHEContext::mul is unavailable when the configuration requires \
+    K-Elimination/dual rescaling"
+)]
 fn public_mul_fails_closed_instead_of_returning_wrong_plaintext_off_contract() {
     let ctx = lock_context();
     assert_eq!(

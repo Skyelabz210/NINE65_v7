@@ -2672,13 +2672,31 @@ mod tests {
         let values = [
             U256::zero(),
             U256::one(),
-            U256 { lo: (1u128 << 127) - 1, hi: 0 },
-            U256 { lo: 1u128 << 127, hi: 0 },
-            U256 { lo: (1u128 << 127) + 1, hi: 0 },
-            U256 { lo: u128::MAX, hi: 0 },
+            U256 {
+                lo: (1u128 << 127) - 1,
+                hi: 0,
+            },
+            U256 {
+                lo: 1u128 << 127,
+                hi: 0,
+            },
+            U256 {
+                lo: (1u128 << 127) + 1,
+                hi: 0,
+            },
+            U256 {
+                lo: u128::MAX,
+                hi: 0,
+            },
             U256 { lo: 0, hi: 1 },
-            U256 { lo: u128::MAX, hi: 1u128 << 127 },
-            U256 { lo: u128::MAX, hi: u128::MAX },
+            U256 {
+                lo: u128::MAX,
+                hi: 1u128 << 127,
+            },
+            U256 {
+                lo: u128::MAX,
+                hi: u128::MAX,
+            },
         ];
 
         for &left in &values {
@@ -2688,11 +2706,7 @@ mod tests {
                     left.ge(right),
                     "fixed-work U256 ordering mismatch: left={left:?}, right={right:?}"
                 );
-                let selected = U256::select_mask_ct(
-                    right,
-                    left,
-                    left.ge_mask_ct(right),
-                );
+                let selected = U256::select_mask_ct(right, left, left.ge_mask_ct(right));
                 assert_eq!(selected, if left.ge(right) { left } else { right });
             }
         }
@@ -2704,7 +2718,10 @@ mod tests {
             U256::zero(),
             U256::one(),
             U256::from_u128((1u128 << 120) + 17),
-            U256 { lo: u128::MAX, hi: (1u128 << 60) - 1 },
+            U256 {
+                lo: u128::MAX,
+                hi: (1u128 << 60) - 1,
+            },
         ];
         for value in values {
             for multiplier in [0u64, 1, 3, 17, u32::MAX as u64] {
