@@ -31,6 +31,9 @@ PRODUCTION_TARGETS = (
     ROOT / "crates" / "nine65" / "src" / "ring",
     ROOT / "crates" / "exact_transcendentals" / "src" / "cram_ct.rs",
     ROOT / "crates" / "nine65" / "src" / "cram_ct_wrap.rs",
+    # Track 2 promotes CompareBit from an unwired kernel to a D2 decrypt
+    # primitive. Keep the production scanner aligned with that call graph.
+    ROOT / "crates" / "nine65" / "src" / "arithmetic" / "compare_bit.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
     # rns_mul.rs removed (G19): legacy duplicate of rns_fhe.rs's RNS multiply
     # stack, superseded and deleted rather than gated -- see ops/mod.rs.
@@ -56,7 +59,9 @@ PROHIBITED = {
     "mixed_radix_call": re.compile(
         r"\bmixed[_ -]?" + "radix" + r"\s*(?:::|\()", re.IGNORECASE
     ),
-    "crt_reconstruct": re.compile(r"\bcrt_" + "reconstruct(?:_[A-Za-z0-9]+)?\s*\(", re.IGNORECASE),
+    "crt_reconstruct": re.compile(
+        r"\bcrt_" + r"reconstruct(?:_[A-Za-z0-9]+)?\s*\(", re.IGNORECASE
+    ),
     "hidden_big_integer": re.compile(r"\b(Big" + r"Int|BigUint)\b"),
     "floating_type": re.compile(r"\bf(?:32|64)\b|\bas\s+f(?:32|64)\b"),
 }

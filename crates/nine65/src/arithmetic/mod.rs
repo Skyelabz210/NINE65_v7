@@ -20,7 +20,7 @@
 pub mod barrett;
 pub mod base_ext; // SHENOY-KUMARESAN BASE EXTENSION (kernel only, not wired in — see module docs)
 pub mod boundary; // CAPACITY PROXIMITY CHECKS (80%/90%/post-switch margins)
-pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (kernel only, not wired in — see module docs)
+pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (fixed-work D2 decrypt integration)
 pub mod main_only_base_ext; // MAIN-ONLY CANONICAL-RANK BASE EXTENSION (Track 1, D3 derived-transient)
 #[cfg(test)]
 mod compare_bit_vectors; // external (Python) oracle vectors for compare_bit
