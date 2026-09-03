@@ -107,6 +107,15 @@ cargo test -p nine65 --test op_timings --release --features allow_insecure \
   -- --ignored --nocapture
 ```
 
+**Automated regression check.** The command above now also writes an
+integer-nanosecond JSON capture (`bench-results/op_timings.json` by default).
+`scripts/check_benchmark_regression.py` compares it against the committed
+baseline (`docs/benchmarks/op_timings_baseline.json`) and fails if any
+operation's median regressed by more than 25% — see
+`docs/BENCHMARK_REGRESSION_2026-09-03.md` for the design, threshold rationale,
+and a real captured run. Not yet wired into CI: GitHub Actions has not
+executed on this repo since 2026-02-27 (issue #79).
+
 **Method.** Medians over 5 rounds (3 at N=16384), default features — which
 means MANA and UNHAL are active, see below. Every round decrypts both the sum
 and the product and asserts exactness, so a timing figure cannot come from a

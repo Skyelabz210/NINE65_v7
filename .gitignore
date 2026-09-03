@@ -15,3 +15,8 @@ __pycache__/
 
 # Lean build artifacts
 .lake/
+
+# op_timings.rs JSON captures (crates/nine65/tests/op_timings.rs, issue #19).
+# Per-run, per-machine measurement output -- not committed. The checked-in
+# regression baseline lives at docs/benchmarks/op_timings_baseline.json.
+/bench-results/
