@@ -7413,6 +7413,18 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "WIRE-Q fail-closed (PR #107): light_rns_insecure's mul_route() is \
+        KElimDual (Delta^2 > Q), so the direct .mul() call below now correctly \
+        panics via require_bajard_single_mul_route instead of silently returning \
+        a wrong plaintext. There is currently no certified public/eval-key \
+        multiply route for a KElimDual config -- mul_auto's KElimDual arm calls \
+        mul_dual_symmetric, a secret-holder operation requiring >=5 anchor primes \
+        that light_rns_insecure does not configure, so it is not a drop-in \
+        replacement. Swapping to a config whose mul_route() is BajardSingle would \
+        need its own noise-budget/depth verification rather than an unverified \
+        parameter substitution here. Re-point once the Track 1 T1.4 \
+        derived-transient evaluator integration (PR #108 WR-1) lands a certified \
+        public route for this regime."]
     fn test_rns_native_multiplication() {
         let config = FHEConfig::light_rns_insecure();
         let ctx = RNSFHEContext::new(&config);
@@ -7569,6 +7581,10 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "WIRE-Q fail-closed (PR #107): light_rns_insecure's mul_route() is \
+        KElimDual (Delta^2 > Q); see test_rns_native_multiplication for the full \
+        reason. Re-point once PR #108 WR-1 lands a certified public multiply \
+        route for this regime."]
     fn test_rns_multiplication_chain() {
         let config = FHEConfig::light_rns_insecure();
         let ctx = RNSFHEContext::new(&config);

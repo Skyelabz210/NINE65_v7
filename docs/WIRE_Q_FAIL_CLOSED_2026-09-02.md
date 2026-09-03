@@ -33,3 +33,15 @@ producing a ciphertext from an uncertified rescale.
 `python3 scripts/verify_wire_q_fail_closed.py` is the source-contract gate for
 this stop condition.  Rust compilation and integration tests remain required
 before the branch is promoted.
+
+## Known consequence, confirmed 2026-09-03
+
+The Rust compilation/integration tests called for above were not run before
+this branch merged (no Rust toolchain in that environment). Run against a
+real toolchain, they show the `fhe-service` HTTP API's `/encrypt` endpoint
+(and everything downstream of it) is fully non-functional, not merely closed
+to anchor-bearing traffic, because `handle_encrypt` has no non-dual wire path
+to serialize its own output through. See
+`docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md` for the root cause, evidence,
+and what "required replacement" item above still needs to land before this
+is fixed.

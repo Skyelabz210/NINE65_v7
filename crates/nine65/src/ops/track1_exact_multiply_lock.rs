@@ -178,21 +178,24 @@ fn bajard_rescale_disagrees_with_exact_oracle_when_delta_squared_exceeds_q() {
     );
 }
 
-/// **T1.1 end-to-end lock.** `RNSFHEContext::mul` is a public API with no
-/// route guard, so on a `Delta^2 > Q` chain it silently returns a ciphertext
-/// that decrypts to the wrong plaintext.
-///
-/// The guard exists one level up: `mul_route()` returns `KElimDual` here, and
-/// `mul_auto` honours it. `mul` itself does not consult the router — it calls
-/// the limb-local `exact_rescale` unconditionally. This test pins that gap so
-/// the derived-transient route (or a fail-closed guard) has something to
-/// flip.
+/// **T1.1 end-to-end lock, re-pointed for the WIRE-Q fail-closed gate
+/// (PR #107).** `RNSFHEContext::mul` used to be a public API with no route
+/// guard, so on a `Delta^2 > Q` chain it silently returned a ciphertext that
+/// decrypted to the wrong plaintext. `mul` now calls
+/// `require_bajard_single_mul_route` before it touches the limb-local
+/// `exact_rescale`, so the hazard this test originally pinned (wrong
+/// plaintext, no error) can no longer happen: the same off-contract call now
+/// panics instead. Per this module's own instruction ("re-point this test
+/// rather than deleting it" once `mul()` fails closed), this locks the new
+/// contract: the call must panic, not compute.
 ///
 /// Scope note: this is a *hazard on a public entry point*, not a defect in
 /// the auto-routed pipeline. Nothing here changes production behavior; T1.1 is
 /// a test-only stage by contract.
 #[test]
-fn public_mul_silently_returns_wrong_plaintext_off_contract() {
+#[should_panic(expected = "RNSFHEContext::mul is unavailable when the configuration requires \
+    K-Elimination/dual rescaling")]
+fn public_mul_fails_closed_instead_of_returning_wrong_plaintext_off_contract() {
     let ctx = lock_context();
     assert_eq!(
         ctx.mul_route(),
@@ -202,42 +205,11 @@ fn public_mul_silently_returns_wrong_plaintext_off_contract() {
 
     let mut rng = ShadowHarvester::with_seed(0x7115_0002);
     let keys = ctx.generate_keys(&mut rng);
+    let ct_a = ctx.encrypt(1, &keys.public_key, &mut rng);
+    let ct_b = ctx.encrypt(1, &keys.public_key, &mut rng);
 
-    // Small operands whose exact product is far below t, so any disagreement
-    // is the route's fault and not plaintext-modulus wraparound.
-    let cases: [(u64, u64); 4] = [(1, 1), (2, 3), (5, 7), (11, 13)];
-    let mut wrong = 0usize;
-    let mut witness = None;
-
-    for (a, b) in cases {
-        let ct_a = ctx.encrypt(a, &keys.public_key, &mut rng);
-        let ct_b = ctx.encrypt(b, &keys.public_key, &mut rng);
-        let product = ctx.mul(&ct_a, &ct_b, &keys.eval_key);
-        let got = ctx.decrypt(&product, &keys.secret_key);
-        let want = (a as u128 * b as u128 % ctx.t as u128) as u64;
-        assert!(
-            want < ctx.t,
-            "test operands must not wrap the plaintext modulus"
-        );
-        if got != want {
-            wrong += 1;
-            if witness.is_none() {
-                witness = Some((a, b, got, want));
-            }
-        }
-    }
-
-    let (a, b, got, want) = witness.expect(
-        "T1.1 lock: public mul() unexpectedly produced correct plaintexts on a \
-         Delta^2 > Q chain. If the exact route has landed, or mul() now fails \
-         closed, re-point this test rather than deleting it.",
-    );
-    assert_eq!(
-        wrong,
-        cases.len(),
-        "expected every off-contract multiply to be wrong, not some: \
-         first witness {a}*{b} gave {got}, want {want}"
-    );
+    // Must panic before it ever computes a (wrong) plaintext.
+    let _ = ctx.mul(&ct_a, &ct_b, &keys.eval_key);
 }
 
 /// **T1.1 target semantics.** The exact oracle is the BFV decode rule.
