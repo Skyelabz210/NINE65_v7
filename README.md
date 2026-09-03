@@ -477,6 +477,8 @@ Disagreement is resolved in favor of the lower reproducible result.
 
 Every public claim is indexed through `docs/CLAIM_REGISTRY.csv` and governed by `docs/BENCHMARK_PROFILE_POLICY.md`. Detailed status is recorded in `docs/CLAIM_EVIDENCE_LEDGER.md`.
 
+`cargo bench` output (`target/criterion/`, used for internal micro-benchmarks such as `barrett_ct`/`ntt_ct`/`k_elimination_ct`, separate from the `op_timings.rs` harness behind the table above) is overwritten by each new run. `scripts/archive_criterion_run.sh` snapshots it to a timestamped, commit-pinned `bench-archive/` directory (gitignored) so a run's raw evidence survives past the next benchmark invocation; see `docs/BENCHMARK_PROFILE_POLICY.md` "Raw Criterion Archival".
+
 ## Build and Verification
 
 ```bash
