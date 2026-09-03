@@ -111,6 +111,15 @@ NINE65 was originally a bootstrap-free FHE library built on the BFV scheme with 
 
 Provides exact RNS division with O(k) complexity vs O(k^2) for MRC.
 
+`arithmetic/k_elimination.rs` is the validated, CT-tested, two-modulus
+*reference* implementation — not the live production entry point, which is
+`DualRNSContext::extract_k_rns_level` in `arithmetic/rns.rs` (called from
+`ops/rns_fhe.rs`'s encrypt/mul/rescale path). Several other crates in this
+workspace carry their own K-Elimination-shaped code for dependency-graph or
+formal-verification reasons; see
+`docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` for the full inventory and
+why each one exists rather than being merged into one file.
+
 ```
 Given V in dual-codex (α, β):
   V = vα (mod αcap)

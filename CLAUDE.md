@@ -15,6 +15,15 @@ list of settled questions that LOOK open and must not be re-derived. Two
 retractions in the 2026-08-22..26 session came from re-reasoning instead of
 re-reading; section D exists to stop a third.
 
+`docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` indexes every
+K-Elimination-shaped implementation in the workspace (there are seven, plus
+one adjacent security-analysis tool) — which one is the production path
+(`DualRNSContext::extract_k_rns_level`), which are validated reference
+implementations, which are formal-verification-target reimplementations that
+structurally cannot depend on `nine65`, and which is a genuinely avoidable
+duplication with no live caller. Read it before assuming any two
+K-Elimination-shaped files are redundant.
+
 ## Cloud Run Deployment
 - **Platform:** Google Cloud Run
 - **Service name:** nine65-v7
