@@ -36,7 +36,13 @@
 use super::security_estimator::{
     CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution,
 };
-use super::{gcd, is_ntt_compatible, is_prime, FHEConfig};
+use super::FHEConfig;
+// `gcd`/`is_ntt_compatible` are now exercised only by
+// `every_production_prime_is_ntt_compatible` below (their production caller,
+// `validate_class_f_chain`, was dead code and has been removed) -- gate the
+// import so a release build doesn't warn them as unused.
+#[cfg(test)]
+use super::{gcd, is_ntt_compatible};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::noise::budget::NoiseBudget;
 
@@ -370,27 +376,6 @@ pub fn ensure_public_refresh_supported(config: &FHEConfig) -> Nine65Result<()> {
             required,
         ),
     })
-}
-
-fn validate_class_f_chain(n: usize, primes: &[u64]) {
-    for (index, &prime) in primes.iter().enumerate() {
-        assert!(
-            is_prime(prime),
-            "CLASS-F RNS lane {index} must be prime, got {prime}"
-        );
-        assert!(
-            is_ntt_compatible(prime, n),
-            "CLASS-F RNS lane {prime} is not NTT-compatible for N={n}"
-        );
-        for &prior in &primes[..index] {
-            assert_ne!(prior, prime, "duplicate CLASS-F RNS prime {prime}");
-            assert_eq!(
-                gcd(prior, prime),
-                1,
-                "CLASS-F RNS lanes {prior} and {prime} are not coprime"
-            );
-        }
-    }
 }
 
 /// Dual-cost-model screening result for a named configuration.

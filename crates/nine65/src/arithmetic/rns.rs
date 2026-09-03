@@ -162,7 +162,7 @@ impl U512 {
         let d128 = d as u128;
         let mut rem: u128 = 0;
 
-        let mut limbs = [
+        let limbs = [
             (self.d3 >> 64) as u64,
             (self.d3 & 0xFFFFFFFFFFFFFFFF) as u64,
             (self.d2 >> 64) as u64,
@@ -447,6 +447,11 @@ impl U256 {
     }
 
     /// Constant-time value mod m where m fits in u64.
+    ///
+    /// Test-only reference implementation (see `test_u256_mod_u64_ct`); no
+    /// production path calls this. `#[cfg(test)]` keeps it from warning as
+    /// dead code in a release build while it still exists whenever tests do.
+    #[cfg(test)]
     pub(crate) fn mod_u64_ct(self, m: u64) -> u64 {
         if m == 0 {
             return 0;
@@ -1797,6 +1802,13 @@ impl DualRNSContext {
     /// into a panic at their boundary — see `k_elim_rescale_dual` in
     /// `ops/rns_fhe.rs` — but the check itself is now independently
     /// testable and the failure is explicit rather than an unwind.
+    ///
+    /// Test-only: production call sites use the cached
+    /// `extract_k_rns_level_cached` directly instead (this wrapper just
+    /// builds fresh inverses on every call). `#[cfg(test)]` keeps this
+    /// exercised-only-by-tests reference path from warning as dead code in
+    /// a release build.
+    #[cfg(test)]
     pub(crate) fn extract_k_rns_level(
         &self,
         v_main: U256,
