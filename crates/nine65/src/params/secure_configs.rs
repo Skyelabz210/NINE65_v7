@@ -16,10 +16,16 @@
 //!
 //! | Config | N | RNS chain | log2(q) | Claim | Core-SVP | MATZOV | Public refresh |
 //! |--------|---|-----------|---------|-------|----------|--------|----------------|
-//! | `secure_128` | 8192 | 3 NTT primes | 90 | 128 bits | 259 | 233 | refused |
+//! | `secure_128` | 8192 | 4 NTT primes | 119 | 128 bits | 196 | 176 | yes |
 //! | `secure_128_deep` | 8192 | 4 NTT primes | 119 | 128 bits | 196 | 176 | yes |
 //! | `secure_192` | 16384 | 5 NTT primes | 146 | 192 bits | 320 | 288 | yes |
 //! | `secure_256` | 16384 | 6 NTT primes | 175 | 256 bits | 267 | **240** | yes |
+//!
+//! `secure_128` was re-cut 2026-08-26 (`docs/OPEN_WORK_2026-08-26.md` A3) from
+//! three main primes to four; it is now numerically identical to
+//! `secure_128_deep` (same tuple, same screen, same admission below). The row
+//! above is kept distinct only because the two remain separate named entry
+//! points — see the constructors' own doc comments.
 //!
 //! `secure_256` is the one name that its own screen does not fully support:
 //! it clears 256 under Core-SVP (the model the constructor gates on) and falls

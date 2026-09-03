@@ -199,20 +199,31 @@ impl SecretData for SecretPoly {}
 > The `light()`/`he_standard_128()`/`standard_128()` rows below are historical
 > (2026-01-24) and not re-verified in this pass — they are test-only/insecure
 > configs gated behind `allow_insecure` regardless. The three `SecureConfig::`
-> rows have been corrected to match the parameters actually in
-> `crates/nine65/src/params/secure_configs.rs` and the bit-security figures
-> in CLAUDE.md / `docs/LATTICE_ESTIMATOR_BASELINE_2026-02-25.md` (Core-SVP
-> model; see that document's own staleness caveat for why it should be
-> re-run, not treated as a permanent certificate).
+> rows are corrected to CLAUDE.md's "Security Configs" table, screened
+> 2026-08-22 by `params::secure_configs::tests::screened_levels_for_named_configs`
+> against the tuples actually in `secure_configs.rs` (Core-SVP model; these are
+> an in-tree deterministic screen, not an independent lattice-security
+> certificate — see CLAUDE.md for the caveat). The previous revision of this
+> table (secure_128 129-bit / 116-bit MATZOV, secure_192 318-bit,
+> secure_256 264-bit) cited `docs/LATTICE_ESTIMATOR_BASELINE_2026-02-25.md`,
+> which CLAUDE.md flags as stale for exactly this table: that baseline's
+> `secure_128` row was computed at `n=4096`, not the shipped `n=8192`, and its
+> 192/256 rows use a floor-sum `log2(q)` approximation rather than the exact
+> bit length the constructor gates on. `secure_128`'s figure below further
+> reflects the 2026-08-26 re-cut (`docs/OPEN_WORK_2026-08-26.md` §A3): the
+> constructor now builds the same four-prime chain as `secure_128_deep`,
+> not the three-prime chain CLAUDE.md's own screening pass measured 259/233
+> for. See `README.md`'s "Verified Capability" section for the currently
+> synchronized numbers.
 
-| Config | N | Claimed | Core-SVP (2026-02-25 baseline) | Status |
+| Config | N | Claimed | Core-SVP (2026-08-22 screen) | Status |
 |--------|---|---------|--------|--------|
 | `light()` | 1024 | 80-bit | 36-bit (2026-01-24, not re-verified) | TEST ONLY (gated) |
 | `he_standard_128()` | 2048 | 128-bit | 56-bit (2026-01-24, not re-verified) | TEST ONLY (gated) |
 | `standard_128()` | 4096 | 128-bit | 96-bit (2026-01-24, not re-verified) | MARGINAL |
-| `SecureConfig::secure_128()` | 8192 | 128-bit | 129-bit | MEETS (Core-SVP); 116-bit under MATZOV — see estimator baseline |
-| `SecureConfig::secure_192()` | 16384 | 192-bit | 318-bit | EXCEEDS |
-| `SecureConfig::secure_256()` | 16384 | 256-bit | 264-bit | MEETS (Core-SVP); 237-bit under MATZOV — see estimator baseline |
+| `SecureConfig::secure_128()` | 8192 | 128-bit | 196-bit | MEETS (Core-SVP); 176-bit under MATZOV |
+| `SecureConfig::secure_192()` | 16384 | 192-bit | 320-bit | EXCEEDS |
+| `SecureConfig::secure_256()` | 16384 | 256-bit | 267-bit | MEETS (Core-SVP); 240-bit under MATZOV, 16 bits short of the 256-bit name |
 
 ---
 
