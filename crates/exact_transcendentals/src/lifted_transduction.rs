@@ -126,13 +126,8 @@ pub fn transduct_with_lift(
 
     let mut out = Vec::with_capacity(basis_b.len());
     for (j, &b) in basis_b.iter().enumerate() {
-        let y = project_with_lift(
-            canonical_targets[j],
-            k_mod_targets[j],
-            modd(m_a, b),
-            b,
-        )
-        .expect("target moduli validated positive above");
+        let y = project_with_lift(canonical_targets[j], k_mod_targets[j], modd(m_a, b), b)
+            .expect("target moduli validated positive above");
         out.push(y);
     }
     Ok(out)
@@ -170,7 +165,7 @@ mod tests {
         let k_mod_targets: Vec<i128> = S8_BASIS.iter().map(|&b| 1 % b).collect();
         let out = transduct_with_lift(&S6_BASIS, &S8_BASIS, &source, &k_mod_targets).unwrap();
 
-        assert_eq!(out[6], 8);  // 30030 mod 17
+        assert_eq!(out[6], 8); // 30030 mod 17
         assert_eq!(out[7], 10); // 30030 mod 19
         assert_eq!(out, residues(x, &S8_BASIS));
     }
@@ -188,10 +183,16 @@ mod tests {
     #[test]
     fn bad_lengths_fail_closed() {
         let err = transduct_with_lift(&S6_BASIS, &S8_BASIS, &[0], &[0; 8]).unwrap_err();
-        assert!(matches!(err, LiftedTransductionError::SourceLengthMismatch { .. }));
+        assert!(matches!(
+            err,
+            LiftedTransductionError::SourceLengthMismatch { .. }
+        ));
 
         let source = vec![0i128; S6_BASIS.len()];
         let err = transduct_with_lift(&S6_BASIS, &S8_BASIS, &source, &[0]).unwrap_err();
-        assert!(matches!(err, LiftedTransductionError::LiftLengthMismatch { .. }));
+        assert!(matches!(
+            err,
+            LiftedTransductionError::LiftLengthMismatch { .. }
+        ));
     }
 }
