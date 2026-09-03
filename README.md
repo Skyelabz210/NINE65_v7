@@ -24,47 +24,72 @@ this table is outside the claim surface.
 
 | Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth † | public refresh |
 |---|---|---|---|---|---|---|---|
-| `secure_128` | 8192 | 3 | 90 | 292.40 ms | 82.07 ms | 2 | **refused in code** |
-| `secure_128_deep` | 8192 | 4 | 119 | 408.66 ms | 93.14 ms | 2 | pass |
-| `secure_192` | 16384 | 5 | 146 | 1114.12 ms | 247.21 ms | 3 | pass |
-| `secure_256` | 16384 | 6 | 175 | 1017.91 ms | 262.96 ms | 4 ‡ | pass ‡ |
+| `secure_128` | 8192 | 4 | 119 | 408.66 ms §§ | 93.14 ms §§ | 2 | admitted §§§ |
+| `secure_128_deep` | 8192 | 4 | 119 | 408.66 ms | 93.14 ms | 2 | admitted §§§ |
+| `secure_192` | 16384 | 5 | 146 | 1114.12 ms | 247.21 ms | 3 | admitted §§§ |
+| `secure_256` | 16384 | 6 | 175 | 1017.91 ms | 262.96 ms | 4 ‡ | admitted §§§ |
+
+**`secure_128` was re-cut 2026-08-26** (`docs/OPEN_WORK_2026-08-26.md` §A3;
+constructor comment on `SecureConfig::secure_128` in
+`crates/nine65/src/params/secure_configs.rs`) from three main primes to four.
+It is now the exact same tuple as `secure_128_deep` — same `N`, same ordered
+prime list, same `t`, same `eta` — kept as a separate named entry point rather
+than merged or deprecated (that disposition is still an open call; see
+`docs/OPEN_WORK_2026-08-26.md`). The retired three-lane tuple (`N=8192`,
+3 main primes, `log2(q)=90`, refused for public refresh) is historical only;
+its numbers live in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`, dated
+before the recut, and must not be quoted as the current `secure_128`.
 
 † Direct squaring **without** refresh — the last depth that still decrypts
 correctly. These depths are seed-sensitive at the boundary, so where a config
 has been surveyed the column states the depth that holds on *every* seed, not
 the modal one. Only `secure_128_deep` has been surveyed so far (12 seeds,
 2026-08-24): 11 reach depth 3 and one fails it by exactly one, so the column
-states 2. The other three rows are single-seed measurements and their depths
-should be read as provisional in the same way. See §4 of the claim-surface doc.
+states 2. `secure_128` inherits this figure because it is the identical tuple
+as of the 2026-08-26 recut. `secure_192` and `secure_256` are single-seed
+measurements and their depths should be read as provisional in the same way.
+See §4 of the claim-surface doc.
 ‡ `secure_256`'s depth is from the correctness-gated benchmark run;
 its refresh is covered by the auto-refresh acceptance suite rather than
 exercised standalone. Per-number provenance is in
 `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
+§§ The figures reused here are `secure_128_deep`'s 2026-08-23 measurements
+(`tests/op_timings.rs`), carried over rather than independently sourced under
+quiet conditions, because the two constructors build the identical tuple as
+of 2026-08-26. A same-machine confirmation run backs the reuse; see the § note
+under "Measured performance" below for the numbers and its own caveat.
+§§§ **"Admitted" is the admissibility-gate predicate result
+(`params::secure_configs::ensure_public_refresh_supported` /
+`supports_public_refresh`), not an unqualified correctness claim.** A fresh
+2026-09-03 decryption-oracle re-run
+(`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`) found that on
+current `main`, the refresh output itself — not just a subsequent multiply —
+decrypts incorrectly for every config the gate admits, `secure_128_deep` and
+`secure_192` included (`secure_256` untested in that pass). That finding is a
+pre-existing, open regression tracked separately (issue #95 / WR-5A / WR-5B)
+and is **not** resolved by this documentation pass. Do not read "admitted"
+above as "public refresh verified working."
 
 **Timings re-measured 2026-08-23** by `tests/op_timings.rs` — see
 [Measured performance](#measured-performance) for the machine, the method, and
 why the figures that used to sit in this column were replaced.
 
-`secure_128`'s three-lane chain leaves too little `Delta` headroom for a public
-refresh: 42 bits remain after the refresh's worst-case noise deposit against the
-47 bits one subsequent multiply needs. Measured by
-`ops::bootstrap::tests::diag_measure_noise_growth` — which runs the refresh
-phases with the gate bypassed, so the gate is not its own evidence — the refresh
-output itself still decrypts to `7`, but squaring it returns a
-wrong-but-plausible `34037` instead of `49`, with no error raised anywhere in
-the pipeline.
-`ClockworkBootstrap::bootstrap` and `bootstrap_with_ksk` therefore refuse that
-config with a typed `Nine65Error`. The predicate is arithmetic on the chain, not
-a name match — see `params::secure_configs::ensure_public_refresh_supported`.
-Use `secure_128_deep`, which carries the same 128-bit claim on four lanes, when
-the workload needs evaluator-side refresh.
+Before the 2026-08-26 recut, `secure_128`'s three-lane chain left too little
+`Delta` headroom for a public refresh: 42 bits remained after the refresh's
+worst-case noise deposit against the 47 bits one subsequent multiply needs, so
+`ClockworkBootstrap::bootstrap` / `bootstrap_with_ksk` refused that config with
+a typed `Nine65Error`
+(`params::secure_configs::ensure_public_refresh_supported`). The recut chain
+carries the same 71-bit headroom `secure_128_deep` always has, so the
+admissibility gate now admits `secure_128` on the same arithmetic basis — see
+the §§§ caveat above for what "admitted" does and does not currently mean.
 
 Screened security levels for the shipped tuples, measured by
 `params::secure_configs::tests::screened_levels_for_named_configs`:
 
 | config | claimed | Core-SVP | MATZOV | binding |
 |---|---|---|---|---|
-| `secure_128` | 128 | 259 | 233 | 233 |
+| `secure_128` | 128 | 196 | 176 | 176 |
 | `secure_128_deep` | 128 | 196 | 176 | 176 |
 | `secure_192` | 192 | 320 | 288 | 288 |
 | `secure_256` | 256 | 267 | **240** | **240** |
@@ -95,10 +120,25 @@ inherited.
 
 | Config | N | main lanes | Encrypt | Add | Public mul | Symmetric mul | Decrypt |
 |---|---|---|---|---|---|---|---|
-| `secure_128` | 8192 | 3 | 5.38 ms | 1.405 ms | 292.40 ms | 82.07 ms | 1.83 ms |
+| `secure_128` | 8192 | 4 | 6.60 ms § | 1.528 ms § | 408.66 ms § | 93.14 ms § | 2.51 ms § |
 | `secure_128_deep` | 8192 | 4 | 6.60 ms | 1.528 ms | 408.66 ms | 93.14 ms | 2.51 ms |
 | `secure_192` | 16384 | 5 | 23.09 ms | 5.488 ms | 1114.12 ms | 247.21 ms | 7.51 ms |
 | `secure_256` | 16384 | 6 | 22.41 ms | 5.943 ms | 1017.91 ms | 262.96 ms | 7.78 ms |
+
+§ `secure_128` was recut to the four-prime chain 2026-08-26, three days after
+this table was measured. Its row above reuses `secure_128_deep`'s figures
+rather than an independent run, because the two constructors now build the
+identical tuple (`N`, ordered primes, `t`, `eta` all equal) — see "Verified
+Capability" above. Not an inherited number in the sense this table warns
+against elsewhere: it is the *current* tuple's own measurement, just filed
+under its other name. Confirmed by an independent same-machine run of
+`tests/op_timings.rs` under heavy concurrent load (not a clean baseline, so
+not substituted into this table): `secure_128` and `secure_128_deep` measured
+within the run's own noise band of each other on every column (e.g. public
+mul 723.51 ms vs 663.70 ms), consistent with them building the same tuple and
+inconsistent with any residual difference between the two names. Re-run
+`tests/op_timings.rs` under quiet conditions for a fresh, independently
+sourced `secure_128`-labeled artifact.
 
 Reproduce:
 
@@ -145,10 +185,17 @@ all.
 
 `secure_128` was **redefined** between February and August:
 
-| | `364bd6a` (2026-02-24) | current |
+| | `364bd6a` (2026-02-24) | as measured 2026-08-23 |
 |---|---|---|
 | ring degree | **N = 4096** | **N = 8192** |
 | lanes | 3 main | 3 main + 5 anchor = 8 |
+
+(The "as measured" column is itself now historical: `secure_128` was recut
+again on 2026-08-26, three main primes to four, so the current shape is 4 main
++ 5 anchor = 9 lanes at the same `N = 8192`. See "Verified Capability" above.
+That second change does not affect the ratios derived in this section, which
+compare `364bd6a` against the 2026-08-23 measurement run, not against the
+present.)
 
 The constructor's own comment records why — "Increased from 4096 to maintain
 security with larger Q". `add`, `encrypt` and `decrypt` are all O(N × lanes), so
@@ -191,8 +238,12 @@ pull rayon in behind the acceleration flag.
 Declared-by-default is not the same as active, so the dispatch path was traced
 end to end: `RNSFHEContext::run_limb_lanes` → `unhal::accelerator::Accelerator::auto()`
 → `mana::executor::run_lanes`. On this machine `available_parallelism` reports
-4, `lane_parallel_threshold` is 2, and `secure_128` dispatches 8 lanes (3 main
-+ 5 anchor), so the parallel path is taken rather than the sequential fallback.
+4, `lane_parallel_threshold` is 2, and `secure_128` (as it stood 2026-08-23,
+three main primes) dispatched 8 lanes (3 main + 5 anchor), so the parallel path
+was taken rather than the sequential fallback. After the 2026-08-26 recut,
+`secure_128` dispatches 9 lanes (4 main + 5 anchor) — still above the
+threshold of 2, so the parallel path is still taken; this was not re-traced,
+only recomputed from the lane count.
 `accelerated_dual_poly_mul_is_bit_identical_to_sequential_reference` pins that
 the accelerated result equals the sequential one bit for bit, so the
 accelerator is a wall-clock choice and never a numerical one.
@@ -315,9 +366,12 @@ The browser or device can own key generation and decryption. Secret-key byte exp
 
 ## Production-Oriented Example
 
-`secure_128_deep` is the shortest chain that carries a public refresh; the
-three-lane `secure_128` is refused on that path (see "Verified Capability").
-Check admissibility explicitly rather than assuming a profile supports refresh.
+`secure_128_deep` is the shortest chain that carries a public refresh.
+`secure_128` is now the identical chain and is equally admitted (see "Verified
+Capability" for what "admitted" does and does not currently mean); before the
+2026-08-26 recut, the three-lane `secure_128` was refused on this path
+instead. Check admissibility explicitly rather than assuming a profile
+supports refresh.
 
 ```rust
 use nine65::entropy::SecureRng;
