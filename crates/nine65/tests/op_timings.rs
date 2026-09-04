@@ -95,3 +95,47 @@ fn measure_core_op_timings() {
     time_config("secure_256", SecureConfig::secure_256(), 3);
     println!();
 }
+
+/// WR-7 (issues #87/#88) performance evidence: the factorization-aware
+/// structural screen (`dual_estimate_with_factorization`) now runs inside
+/// every named `SecureConfig` constructor, in addition to the pre-existing
+/// width-only estimate. This is one-time, construction-time cost -- it never
+/// touches a ciphertext coefficient -- but issues #87/#88 both explicitly ask
+/// for measured before/after evidence rather than an assertion that it is
+/// cheap. Integer nanoseconds only, per the project's zero-float rule for
+/// anything past the display line.
+///
+/// Run:
+///   cargo test -p nine65 --test op_timings --release --features allow_insecure \
+///     -- --ignored --nocapture measure_secure_config_construction_timing
+#[test]
+#[ignore = "timing measurement — run explicitly with --ignored --nocapture"]
+fn measure_secure_config_construction_timing() {
+    fn median_nanos(mut v: Vec<u128>) -> u128 {
+        v.sort_unstable();
+        v[v.len() / 2]
+    }
+
+    fn time_construction(name: &str, rounds: usize, build: impl Fn() -> SecureConfig) {
+        let mut samples = Vec::with_capacity(rounds);
+        for _ in 0..rounds {
+            let t0 = Instant::now();
+            let config = build();
+            samples.push(t0.elapsed().as_nanos());
+            std::hint::black_box(&config);
+        }
+        println!(
+            "| `{name}` | {} ns (median of {rounds}) |",
+            median_nanos(samples)
+        );
+    }
+
+    println!("\n=== NINE65 SecureConfig construction timing (WR-7, this build, this machine) ===");
+    println!("| Config | construction time |");
+    println!("|---|---|");
+    time_construction("secure_128", 50, SecureConfig::secure_128);
+    time_construction("secure_128_deep", 50, SecureConfig::secure_128_deep);
+    time_construction("secure_192", 50, SecureConfig::secure_192);
+    time_construction("secure_256", 50, SecureConfig::secure_256);
+    println!();
+}

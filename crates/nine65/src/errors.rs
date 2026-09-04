@@ -120,6 +120,17 @@ pub enum Nine65Error {
     #[error("security level not met: {bits} bits < required {required} bits")]
     SecurityLevelNotMet { bits: u32, required: u32 },
 
+    /// The factorization-aware structural security screen refused to emit a
+    /// number for this modulus shape (narrow lane, prime power, power of
+    /// two, non-coprime lanes, or a malformed factorization).
+    ///
+    /// Distinct from `SecurityLevelNotMet`: that variant means a number WAS
+    /// produced and it was too low. This variant means no number was
+    /// produced at all, so there is nothing to compare against a required
+    /// bound -- the caller must not fall back to a width-only estimate.
+    #[error("security screen refused: {reason}")]
+    SecurityScreenRefused { reason: String },
+
     // ═══════════════════════════════════════════════════
     // ENCODING/ENCRYPTION ERRORS
     // ═══════════════════════════════════════════════════
@@ -272,7 +283,8 @@ impl Nine65Error {
 
             Nine65Error::DecryptionFailed
             | Nine65Error::KeyGenFailed { .. }
-            | Nine65Error::SecurityLevelNotMet { .. } => "Cryptographic",
+            | Nine65Error::SecurityLevelNotMet { .. }
+            | Nine65Error::SecurityScreenRefused { .. } => "Cryptographic",
 
             Nine65Error::MessageOutOfBounds { .. }
             | Nine65Error::InvalidPolynomialDegree { .. }
