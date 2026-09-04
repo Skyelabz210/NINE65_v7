@@ -1,6 +1,7 @@
 //! Key Generation Benchmark for NINE65 v7.
 //! Measures latency and estimates key sizes across all security tiers.
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
 use std::time::Instant;
@@ -40,15 +41,14 @@ fn main() {
         // eval_key: relin_key (vector of ciphertexts) + rotation_keys (map of ciphertexts)
         // For this benchmark, we'll estimate based on the relin_key size.
         let relin_key_size = dual_keys.eval_key.rlk.len() * ct_size;
-        let total_eval_size_mb = relin_key_size as f64 / (1024.0 * 1024.0);
+        let total_eval_size_mb = format_ratio(relin_key_size as u128, 1024 * 1024, 2);
 
         println!(
-            "{:<10} | {:<12} | {:<6} | {:<14?} | {:.2} MB",
+            "{:<10} | {:<12} | {:<6} | {:<14?} | {total_eval_size_mb} MB",
             name,
             config.n,
             config.primes.len(),
             latency,
-            total_eval_size_mb
         );
     }
     println!("==================================");
