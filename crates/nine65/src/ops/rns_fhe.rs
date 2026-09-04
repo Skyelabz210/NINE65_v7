@@ -12615,7 +12615,7 @@ mod tests {
     #[test]
     fn test_mul_dual_symmetric_large_values_secure_128() {
         // TDD: Verify mul_dual_symmetric handles large plaintext values near t-1
-        // at production N=4096 (secure_128). Previous tests only used small values
+        // at production N=8192 (secure_128). Previous tests only used small values
         // (2*3, 5*7). Large values stress the K-Elimination arithmetic near
         // modular boundaries where intermediate products are maximized.
         use crate::params::secure_configs::SecureConfig;
@@ -12651,7 +12651,7 @@ mod tests {
 
     #[test]
     fn test_mul_dual_symmetric_depth2_secure_128_deep() {
-        // TDD: Test depth-2 chaining in symmetric mode at N=4096.
+        // TDD: Test depth-2 chaining in symmetric mode at N=8192.
         // secure_128_deep has 4 primes (~120-bit Q), giving headroom for 2 muls.
         // Note: symmetric mode has NO auto mod-switch (unlike public mode),
         // so this tests whether the K-Elimination rescale alone maintains

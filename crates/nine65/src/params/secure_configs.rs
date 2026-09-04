@@ -25,17 +25,20 @@
 //! at 3 NTT primes / log2(q)=90 / Core-SVP 259 / MATZOV 233 / refused. That
 //! described the tuple BEFORE the 2026-08-26 re-cut
 //! (`docs/OPEN_WORK_2026-08-26.md` A3), which gave `secure_128` the same
-//! four-prime chain `secure_128_deep` already carried. The per-constructor
-//! doc comments on `secure_128`/`secure_128_deep` below, and the pinned
-//! numbers in `tests::screened_levels_for_named_configs`, already reflected
-//! the four-prime chain; only this header table had drifted. Some other
-//! project documentation (e.g. `CLAUDE.md`'s Security Configs table and
-//! Bootstrap Paths section) may still describe the retired three-prime
-//! `secure_128` -- that is a separate, already-flagged inconsistency (see
-//! `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`) and is not
-//! corrected here; this header is corrected because it is a doc comment
-//! inside the file WR-7 touches, and it disagreed with the code's own pinned
-//! test in the same file.
+//! four-prime chain `secure_128_deep` already carried -- it is now
+//! numerically identical to `secure_128_deep` (same tuple, same screen, same
+//! admission below); the two remain separate named entry points only for
+//! call sites that spell out "deep" explicitly, see the constructors' own
+//! doc comments. The per-constructor doc comments on `secure_128`/
+//! `secure_128_deep` below, and the pinned numbers in
+//! `tests::screened_levels_for_named_configs`, already reflected the
+//! four-prime chain; only this header table had drifted. `CLAUDE.md`'s
+//! Security Configs table and Bootstrap Paths section carried the same stale
+//! three-prime description and have since been corrected separately (see
+//! `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md` for the
+//! finding that prompted it); this header is corrected here because it is a
+//! doc comment inside the file WR-7 touches, and it disagreed with the
+//! code's own pinned test in the same file.
 //!
 //! `secure_256` is the one name that its own screen does not fully support:
 //! it clears 256 under Core-SVP (the model the constructor gates on) and falls

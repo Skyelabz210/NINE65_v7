@@ -1766,6 +1766,11 @@ impl DualRNSContext {
     /// modulus M_level is smaller than the full M. We must compute M_level⁻¹
     /// dynamically based on which main primes are still active.
     ///
+    /// This is the **canonical production K-Elimination** for the live
+    /// DualRNS BFV engine — see `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md`
+    /// for the full inventory of every K-Elimination-shaped implementation in
+    /// this workspace (issue #70) and why each one is not this function.
+    ///
     /// # Arguments
     /// * `v_main` - Value mod M_level (reconstructed from level main primes)
     /// * `v_anchor_rns` - Anchor residues [v mod a_0, v mod a_1, ...]

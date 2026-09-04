@@ -26,7 +26,12 @@ Commands:
 
 ## Benchmarks
 - `cargo bench --workspace`
-- Archive `target/criterion` reports for the release artifact.
+- Archive the raw `target/criterion` tree per run before it gets overwritten
+  by the next `cargo bench` invocation: `scripts/archive_criterion_run.sh`
+  (writes a timestamped, commit-pinned copy to `bench-archive/`, gitignored —
+  see `docs/BENCHMARK_PROFILE_POLICY.md` "Raw Criterion Archival"). Do this
+  for the release artifact and for any performance-sensitive change under
+  review.
 
 ## Baseline Artifacts (Reproducible)
 - `scripts/generate_security_baseline.sh` -> `docs/LATTICE_ESTIMATOR_BASELINE_YYYY-MM-DD.md`
