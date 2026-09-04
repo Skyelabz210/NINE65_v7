@@ -225,8 +225,6 @@ pub mod prelude {
     pub use crate::entropy::DeterministicRng;
     pub use crate::entropy::SecureRng; // OS CSPRNG for production use
     pub use crate::entropy::ShadowHarvester;
-    #[cfg(feature = "shadow-entropy")]
-    pub use crate::entropy::WassanNoiseField;
     pub use crate::entropy::{secure_bytes, secure_ternary, secure_u64};
 
     // Parameters

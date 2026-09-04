@@ -3648,8 +3648,9 @@ impl RNSFHEContext {
         // the hardcoded constant vec![123u64; n] through fixed twiddles, giving
         // the same shadow vector on every call, keyed only by a monotonic
         // counter — publicly recomputable, therefore masking nothing.
-        // See crates/nine65/src/ops/sbni.rs (retired) and
-        // docs/RETIRED_MECHANISMS.md.
+        // `src/ops/sbni.rs` (the retired implementation) was removed entirely
+        // per issue #68; see docs/LADDER_REMOVAL.md §1 and
+        // docs/RETIRED_MECHANISMS.md for the historical record.
 
         // Step 3: PUBLIC relinearization of the rescaled, canonical d2.
         let (relin_c0, relin_c1) = self.relinearize_dual(&d2_s, evk)?;
