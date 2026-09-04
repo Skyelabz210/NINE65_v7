@@ -33,7 +33,21 @@ name: CI
 #   T1 — Fast gate:  fmt + clippy + deny + static analysis (~3 min, every push)
 #   T2 — Full suite: all tests + clockwork (every PR, main pushes, [full-ci])
 #   T3 — AI review:  Gemini Flash diff review posted to every PR
-#   T4 — Deep:       benchmarks + coverage + Qwen claim audit (Sunday or [deep-ci])
+#   T4 — Deep:       benchmarks + coverage + Qwen claim audit + slow test tier
+#                     (Sunday or [deep-ci])
+#
+# Test categorization (issue #78): the workspace test suite is split into a
+# fast/medium/slow tiering documented in full at docs/TEST_TIERS.md, backed by
+# scripts/run_tests_{fast,medium,slow}.sh and scripts/check_test_tier_drift.py.
+#   - MEDIUM is exactly what `full-test` below already ran before this
+#     comment was added — scripts/run_tests_medium.sh is a byte-for-byte
+#     wrapper of the same `cargo test --workspace --verbose ...` command, so
+#     wiring it in below is a zero-behavior-change substitution.
+#   - SLOW is wired into T4 as a new, purely additive job below, gated on the
+#     same `if:` this file already uses for the other T4 jobs.
+#   - FAST (scripts/run_tests_fast.sh) is NOT wired into T1 here. See the
+#     comment on the `fast-gate` job for why, and docs/TEST_TIERS.md
+#     "CI wiring" for the full reasoning.
 # =============================================================================
 
 on:
@@ -62,6 +76,20 @@ jobs:
   # T1a — Fast Gate: fmt + clippy + deny
   # Every push/PR, independent of the commit or PR author.
   # ---------------------------------------------------------------------------
+  # NOT adding scripts/run_tests_fast.sh (the new FAST test tier, issue #78)
+  # to this job. This gate is documented above as "~3 min, every push", and
+  # this repo's release profile (Cargo.toml [profile.release]: lto = "fat",
+  # codegen-units = 1) makes a from-scratch `cargo test --lib --release`
+  # compile take on the order of 10 minutes on shared 4-vCPU hardware
+  # (measured while authoring docs/TEST_TIERS.md — see its "Measured
+  # numbers" section) before a single test runs. CI has not executed
+  # successfully since 2026-02-27 (#79), so there is no warm-cache steady
+  # state to measure here, and guessing that GitHub Actions' cache (keyed on
+  # Cargo.lock, see the `Cache cargo registry`/`Cache target directory` steps
+  # elsewhere in this file) will keep that under budget is exactly the kind
+  # of unvalidated CI change this PR was asked not to make blindly. Wiring
+  # `bash scripts/run_tests_fast.sh` in here is the natural next step once
+  # #79 clears and a real run's timing is on record.
   fast-gate:
     name: "T1 · Fast Gate (fmt + clippy + deny)"
     runs-on: ubuntu-latest
@@ -235,8 +263,16 @@ jobs:
 
       # See the clippy step: the three --exclude flags were no-ops, the packages
       # are excluded from the workspace itself.
-      - name: Run all workspace tests
-        run: cargo test --workspace --verbose
+      #
+      # This is the MEDIUM test tier (issue #78, docs/TEST_TIERS.md).
+      # scripts/run_tests_medium.sh wraps the exact command this step ran
+      # before this line was added (`cargo test --workspace --verbose
+      # --exclude nine65-python --exclude nine65-wasm`) — same flags, same
+      # profile (no --release, matching this step's prior behavior exactly)
+      # — so this substitution is a zero-behavior-change refactor, not a new
+      # invocation.
+      - name: Run all workspace tests (MEDIUM test tier)
+        run: bash scripts/run_tests_medium.sh
 
       - name: Run error variant coverage tests
         run: cargo test -p nine65 --test error_variant_coverage
@@ -502,3 +538,47 @@ jobs:
           except Exception as e:
               print('Parse error: ' + str(e))
           " || echo "Qwen audit response unavailable"
+
+  # ---------------------------------------------------------------------------
+  # T4 — SLOW test tier (issue #78, docs/TEST_TIERS.md)
+  # Purely additive: this job did not exist before, runs under the same
+  # schedule/[deep-ci]/manual-dispatch condition every other T4 job already
+  # uses, and does not change fast-gate, static-analysis or full-test.
+  # Covers exactly the three deliberately opt-in surfaces that already
+  # existed in this codebase (nine65's `slow_tests` feature, the
+  # `op_timings` performance suite, nine65-extreme-tests' `extreme-tests`
+  # feature) — see scripts/run_tests_slow.sh's header for why the various
+  # `#[ignore]`d RETIRED-MECHANISM tests elsewhere are deliberately NOT
+  # included here.
+  # ---------------------------------------------------------------------------
+  slow-test-tier:
+    name: "T4 · Slow Test Tier"
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      contains(github.event.head_commit.message, '[deep-ci]') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tier == 'deep')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-slow-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-slow-
+
+      - name: Cache target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-target-slow-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run slow/deep test tier
+        run: bash scripts/run_tests_slow.sh
