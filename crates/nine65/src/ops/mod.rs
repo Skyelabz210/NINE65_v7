@@ -22,9 +22,10 @@ pub mod auto_bootstrap;
 pub mod batch;
 pub mod bootstrap;
 // RETIRED: `pub mod sbni;` — shadow-butterfly noise injection, dropped per
-// author decision. The file remains on disk at `src/ops/sbni.rs` for the
-// record but is no longer part of the module tree and does not compile into
-// the crate. See its header and docs/RETIRED_MECHANISMS.md.
+// author decision. `src/ops/sbni.rs` was removed entirely (issue #68
+// completed the retirement); it was never part of the module tree and never
+// compiled into the crate. The historical record lives in
+// docs/LADDER_REMOVAL.md §1 and docs/RETIRED_MECHANISMS.md.
 pub mod cram_public;
 pub mod encrypt;
 pub mod galois;
