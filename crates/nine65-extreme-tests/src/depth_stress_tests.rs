@@ -7,7 +7,7 @@
 mod tests {
     use nine65::entropy::shadow::ShadowHarvester;
     use nine65::noise::budget::NoiseBudget;
-    use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+    use nine65::ops::auto_bootstrap::{AutoBootstrapEvaluator, TrackedCiphertext};
     use nine65::ops::bootstrap::ClockworkBootstrap;
     use nine65::ops::rns_fhe::RNSFHEContext;
     use nine65::params::secure_configs::SecureConfig;
@@ -361,7 +361,10 @@ mod tests {
             .expect("bootstrap keys");
 
         let plaintext: u64 = 2;
-        let ct = ctx.encrypt_dual(plaintext, &work_keys.public_key, &mut rng);
+        let ct = TrackedCiphertext::fresh(
+            ctx.encrypt_dual(plaintext, &work_keys.public_key, &mut rng),
+            &config,
+        );
         let mut current = ct;
         let mut expected: u64 = plaintext;
 
@@ -397,7 +400,7 @@ mod tests {
             current = next;
 
             if checkpoints.contains(&depth) {
-                let decrypted = ctx.decrypt_dual(&current, &work_keys.secret_key);
+                let decrypted = ctx.decrypt_dual(&current.ct, &work_keys.secret_key);
                 let ok = decrypted == expected;
                 println!(
                     "{:5} │ {:>8} │ {:>9} │ {:>10} │ {}",

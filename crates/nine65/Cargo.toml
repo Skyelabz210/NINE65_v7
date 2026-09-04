@@ -296,5 +296,12 @@ required-features = ["allow_insecure"]
 name = "time_crystal_verification"
 required-features = ["allow_insecure"]
 
+# Before/after performance evidence for issue #93 (per-ciphertext noise
+# tracking). Drives keygen/encrypt with a seeded ShadowHarvester, so it needs
+# the same feature as every other target in this block.
+[[test]]
+name = "noise_tracking_perf_issue93"
+required-features = ["allow_insecure"]
+
 [[example]]
 name = "test_mod_switch"
