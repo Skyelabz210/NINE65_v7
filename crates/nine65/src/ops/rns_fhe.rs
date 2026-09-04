@@ -4796,7 +4796,22 @@ impl RNSFHEContext {
             let v_centered = SignedU256::center(v_m, m_level, m_half);
 
             // Round(v_centered / q_last)
-            let (mut q_mag, rem) = v_centered.mag.div_mod_u64(q_last);
+            //
+            // F-2 (`docs/CT_VERIFICATION_PLAN.md` §4.2, `docs/F2_SCOPE_2026-08-25.md`):
+            // `div_mod_u64` is hardware limb division whose cost was measured
+            // to scale with `v_centered.mag`'s magnitude -- a 2.96x gap
+            // between all-zero and uniform-random coefficients, the largest
+            // timing dependence measured anywhere in this codebase.
+            // `div_mod_u64_ct` performs the identical division with a fixed
+            // 256 iterations regardless of the dividend, closing the leak at
+            // its measured cause without changing the rounding semantics
+            // below (still `round-half-up-on-magnitude` on the exact same
+            // `(quotient, remainder)` pair). The `if rem >= q_last_half`
+            // branch that follows is unchanged: `docs/CT_VERIFICATION_PLAN.md`
+            // §4.1 measured it constant-time on its own (magnitude-matched
+            // positive-vs-negative contrast), and the `mag` magnitude was the
+            // established leak, not this branch.
+            let (mut q_mag, rem) = v_centered.mag.div_mod_u64_ct(q_last);
             if rem >= q_last_half {
                 q_mag = q_mag.add(U256::one());
             }

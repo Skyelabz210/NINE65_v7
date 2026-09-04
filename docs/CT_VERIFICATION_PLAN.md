@@ -5,6 +5,13 @@
 **Harness:** `crates/nine65/src/security/ct_verification.rs`
 **Workflow:** `.github/workflows/ct_verification.yml`
 
+**Update 2026-09-04:** F-2 is closed (§4.9). Six paths are now gated as blocking
+CI; F-3 is the sole remaining open finding besides the unstable-verdict F-5.
+The "Five open findings" line above is left as originally written rather than
+edited in place — §4.8 already closed F-1 the same day this file's header was
+written, so the header was already one finding stale at the moment of
+writing; see §4.2's own note on this.
+
 ---
 
 ## 1. What changed, and why this document was rewritten
@@ -187,6 +194,10 @@ F-1 has since been closed (§4.8), and the diagnosis recorded below for it —
 `__umodti3` — turned out to be the wrong cause. The section is kept as written
 so the correction is visible rather than overwritten.
 
+F-2 has since been closed too (§4.9), and there the recorded diagnosis —
+`U256::div_mod_u64` — was right the first time; the fix is the CT counterpart
+of that exact function.
+
 All four have clean control arms (max 2.54), so the machine is not the
 explanation.
 
@@ -221,7 +232,7 @@ is not.
 production caller by design (see `docs/MODULUS_SWITCHING.md`). It must not be
 wired into a production path until this is addressed.
 
-#### F-2 · `RNSFHEContext::mod_switch_down_dual` — magnitude leak, 3.2×
+#### F-2 · `RNSFHEContext::mod_switch_down_dual` — magnitude leak, 3.2× · **CLOSED, see §4.9**
 
 `crates/nine65/src/ops/rns_fhe.rs:3902`
 
@@ -592,6 +603,132 @@ Unmeasured sites stay listed as unmeasured. `kelim_residue_divider.rs` and
 `clockwork-core/garner.rs` have no dudect coverage; neither is on a production
 ciphertext path today, and both need this contrast before either is put on one.
 
+### 4.9 F-2 closed — the recorded diagnosis was right, the fix is its CT counterpart
+
+Date: 2026-09-04. Same shared 4 vCPU container class as the rest of this
+document (a fresh instance, not the literal 2026-08-22 one), so absolute
+medians are not compared across sessions — only the within-run contrast
+(t_signal vs t_control) is, exactly as this file's own §2 says to.
+
+Unlike F-1, the recorded cause was correct on the first attempt: `§4.2`
+diagnosed `U256::div_mod_u64` as hardware limb division whose work scales
+with the dividend's magnitude, and that diagnosis needed no revision. The fix
+is therefore the direct one — a constant-time replacement for the exact
+function measured, not an architectural change:
+
+```rust
+/// Constant-time division/remainder by a divisor that fits in u64.
+///
+/// Same fixed-256-iteration binary long division as `mod_u64_ct`, extended
+/// to also accumulate the quotient.
+pub(crate) fn div_mod_u64_ct(self, d: u64) -> (Self, u64) { ... }
+```
+
+256 iterations of shift-in-a-bit, masked-borrow comparison, masked subtract,
+quotient-bit insertion — one fixed sequence of operations regardless of the
+dividend or the divisor. The masked comparison uses the same
+`black_box`-barriered borrow idiom `ge_mask_ct` (above, in `U256`) and
+`barrett::borrow_mask_u64` already established as load-bearing (§4.8): the
+textbook `((cond) as T).wrapping_neg()` form is not by itself a guarantee,
+and the barrier is what keeps LLVM from recompiling it back into a branch.
+
+`mod_switch_down_dual`'s call site changes from `div_mod_u64` to
+`div_mod_u64_ct` and nothing else — the `if rem >= q_last_half` rounding
+branch and the two `is_neg` sign-encoding branches that follow are
+unchanged, because §4.1 already measured them constant-time on their own
+(magnitude-matched positive-vs-negative contrast, t_signal up to 2.29). This
+was never a "the branches must all become masks" fix; it was "the one
+non-branch, magnitude-dependent operation must become fixed-work."
+
+**Correctness first.** `div_mod_u64_ct` is differential-tested against
+`div_mod_u64` (both quotient and remainder) over the same magnitude classes
+used to measure F-2 — all-zero, small, mixed-bit-pattern, and
+`U256::MAX` — plus 2000 further randomized `(dividend, divisor)` pairs, and
+separately exactness-checked (`q*d + r == dividend`, `r < d`) independent of
+the vartime implementation
+(`tests::test_u256_div_mod_u64_ct_matches_vartime_across_magnitude_classes`,
+`tests::test_u256_div_mod_u64_ct_matches_vartime_random` in
+`crates/nine65/src/arithmetic/rns.rs`). The existing exhaustive differential
+test between `mod_switch_down_dual` and the lanewise primitive
+(`ops::rns_fhe::tests::f2_step1_lanewise_rounding_vs_mod_switch_down_dual_exhaustive`,
+§F2_SCOPE step 1) continues to pass unchanged, since the (quotient,
+remainder) pair the function computes did not change — only how it is
+computed.
+
+**Operation-count regression guardrail**, the source-level proxy this
+environment can actually check (§2: cache-timing and address-trace evidence
+are not obtainable on a shared, virtualized host). `U256::mod_u64_ct` and
+`div_mod_u64_ct` both increment a `#[cfg(test)]` thread-local counter once
+per loop iteration; `tests::test_div_mod_u64_ct_iteration_count_is_input_independent`
+asserts the count is exactly 256 for every one of the magnitude classes
+above, with no early exit and no extra work for any of them. This is not a
+substitute for a timing measurement — it is inspectable by construction (the
+loop has no `break`/`continue`/early `return`) and the test exists so that
+property stays true under future edits, not to establish it for the first
+time.
+
+**Then timing**, using the same statistical harness this document uses
+throughout, `test_ct_dudect_mod_switch_rescale_fixed_vs_random`
+(`crates/nine65/src/security/ct_verification.rs`):
+
+| contrast | control t | signal t | medians | verdict |
+|---|---|---|---|---|
+| all-zero vs uniform coefficients (post-fix) | 0.54 | **2.14** | 76.87 ms vs 78.22 ms | **constant-time** |
+| (recorded, pre-fix, for comparison) | 0.07 – 2.10 | 160.5 – 701.0 | 25.4 ms vs 80.5 ms (3.17×) | leaks |
+
+t_signal dropped from a 6-run range of 160.5–701.0 to 2.14, well inside the
+documented `t < 5` threshold, with a clean control. The companion sign-class
+test (§4.1) still passes after the change (t_signal 0.78, was 0.08–2.29),
+confirming the sign branches remain unaffected. Both tests were run once each
+on this container; §5's posture caveats about a single shared-host run apply
+here exactly as everywhere else in this document.
+
+**What it costs.** `mod_switch_down_dual` is, as established in
+`docs/F2_SCOPE_2026-08-25.md` §2, unreached in normal operation today (0 hits
+across the full test suite and the four-config encrypt/add/mul/decrypt
+workload) — nothing moves the basis on the live path. The absolute median
+rose on both classes (all-zero: 25.4 ms → 76.9 ms; uniform: 80.5 ms → 78.2
+ms) because the fixed 256-iteration form always pays the worst case a fast
+limb division only paid for large operands. Since the function is not on any
+currently-reachable path, this costs nothing operationally; it would matter
+if a future change revives the level ladder mentioned in `docs/F2_SCOPE_2026-08-25.md`
+§5, at which point the lanewise replacement discussed there (56× faster
+*and* constant-time, gated on the still-open anchor-lane centering
+question) remains the better long-term answer for that hot path. This
+CT fix is a narrower, unconditionally safe change that closes the measured
+leak on the function as it exists today without waiting on that larger
+redesign.
+
+**A second, related defect found while closing this one.** `crt_reconstruct_u256`
+(`crates/nine65/src/arithmetic/rns.rs`) — called from the production
+K-Elimination hot path `DualRNSContext::extract_k_rns_level_cached`, once per
+coefficient — contained `if ri == 0 { continue; }`, skipping a
+`mod_inverse` call and two multiplies whenever a secret residue was exactly
+zero. This is a stricter defect shape than F-2's magnitude-dependent
+division: an outright conditional skip of real work, gated on one bit of
+secret data, rather than a cost that merely correlates with magnitude. The
+branch was a pure micro-optimisation (the skipped `term` is provably zero
+either way, and `mi`/`mi_mod_pi`/`inv` depend only on the public prime
+basis), so removing it is behavior-preserving by construction, not merely by
+measurement — `tests::test_crt_reconstruct_u256_handles_zero_residues`
+regression-tests the all-zero and partial-zero cases the branch used to
+special-case. `extract_k_rns_level_cached`'s own two `v_main`/`magnitude`
+reductions were also switched from `mod_u64` to `mod_u64_ct` for the same
+reason `mod_switch_down_dual`'s division was: `docs/OPEN_WORK_2026-08-26.md`
+section B already named this exact function as one of the 31 sites flagged
+as a "Rule 2 violation" and named closing F-2 "the template for the rest" —
+this is that template applied to the K-Elimination hot path itself, not only
+to `mod_switch_down_dual`. Not measured with dudect in this pass (no test
+targets `extract_k_rns_level_cached` directly in `ct_verification.rs`); the
+existing correctness suite covers it (`arithmetic::rns::tests` and
+`ops::rns_fhe::tests`, including the depth-2 4-anchor-capacity and
+secure_192/256 witness-verification paths), and a `(diff * inv) % a_i`
+reduction one line below the fixed call sites remains flagged in-source as a
+known, unaddressed instance of the same `__umodti3` defect class — a
+per-anchor-prime CT reduction context would close it, and building one was
+judged out of scope for this pass. See the doc comments in `rns.rs` at each
+site for the specifics.
+
 ## 5. CI posture
 
 > **NOTHING BELOW IS CURRENTLY RUNNING. Read this before reading the table.**
@@ -637,6 +774,15 @@ ciphertext path today, and both need this contrast before either is put on one.
 | `dudect-blocking` | push / PR | **yes** | the 5 operations of §4.1 | **t < 5, undiluted** |
 | `open-findings` | weekly cron + dispatch | yes, inverted | the 4 findings of §4.2 | verdict must still be TIMING DEPENDENCE MEASURED |
 | `diagnostics` | weekly cron + dispatch | gated on producing measurements **and on their assertions passing** | the 8 robust-CV tests | the `::warning::` downgrade of a nonzero cargo exit is gone; `exact_divide` divisor classes moved out to `open-findings` |
+
+The "5" and "4" in the table above were already stale when this section was
+written -- they describe §4.1/§4.2 as first recorded, not the job contents,
+which had already grown to 9 blocking tests / 4 open findings by the time of
+writing and are 10 blocking / 1 open (plus the harness-gated F-5) after F-1's
+and F-2's closures (§4.8, §4.9). Left as originally written for the same
+reason the rest of this document leaves superseded numbers in place rather
+than silently edited; `.github/workflows/ct_verification.yml`'s `for t in`
+lists are the source of truth for job contents.
 
 Three points about this arrangement:
 
