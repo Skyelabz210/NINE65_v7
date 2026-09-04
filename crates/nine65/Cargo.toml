@@ -296,5 +296,17 @@ required-features = ["allow_insecure"]
 name = "time_crystal_verification"
 required-features = ["allow_insecure"]
 
+# Issue #74: this example calls FHEConfig::deep_circuit_insecure() and three
+# other `*_insecure` constructors that are themselves compiled only under
+# `cfg(any(test, debug_assertions, feature = "allow_insecure"))` (see
+# params/mod.rs) -- so, like every `[[test]]` target above, it needs
+# `allow_insecure` active just to COMPILE, not only to run its seeded
+# ShadowHarvester correctly. This stanza previously existed with no
+# `required-features`, which meant `cargo test --release --workspace` tried
+# (and, once nothing else in the graph unified `allow_insecure` in any more,
+# failed: E0599, `deep_circuit_insecure` not found) to compile it
+# unconditionally, instead of skipping it the way every sibling target here
+# does.
 [[example]]
 name = "test_mod_switch"
+required-features = ["allow_insecure"]

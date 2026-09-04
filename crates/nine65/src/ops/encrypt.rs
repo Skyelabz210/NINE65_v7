@@ -270,10 +270,24 @@ impl Ciphertext {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (ct, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Nine65Error::ConfigError {
-                message: e.to_string(),
+        let (ct, consumed): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::ConfigError {
+                    message: e.to_string(),
+                }
             })?;
+        // `decode_from_slice` does not itself reject trailing bytes after a
+        // well-formed value; a validated decoder must, or extra bytes on an
+        // otherwise-valid payload pass through unexamined.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte ciphertext",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         ct.validate(expected_n, expected_q)?;
         Ok(ct)
     }

@@ -626,11 +626,20 @@ impl DualRNSCiphertext {
             });
         }
 
-        // Level should be consistent with number of main limbs
-        if self.level > self.c0.main.len() {
+        // `level` is not merely an upper bound on the main limb count: every
+        // ciphertext this library constructs sets `level = c0.main.len()`
+        // exactly at construction (fresh encrypt, rescale, relin, add/sub,
+        // negate and plain-op all either recompute it from the post-op limb
+        // count or propagate an already-equal value unchanged — see the
+        // `level:` call sites throughout this file). A ciphertext with
+        // `level < main.len()` is not a valid lower-level representation
+        // under this representation; it is a malformed one no code path
+        // here produces, so this checks equality, not just an upper bound.
+        if self.level != self.c0.main.len() {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
-                    "DualRNSCiphertext: level {} > main limb count {}",
+                    "DualRNSCiphertext: level {} != main limb count {} \
+                     (this representation requires exact equality, not an upper bound)",
                     self.level,
                     self.c0.main.len()
                 ),
@@ -764,10 +773,29 @@ impl DualRNSCiphertext {
                 ),
             });
         }
-        let (ct, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Nine65Error::DeserializationError {
-                message: format!("Bincode parse error: {}", e),
+        let (ct, consumed): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::DeserializationError {
+                    message: format!("Bincode parse error: {}", e),
+                }
             })?;
+        // `bincode::decode_from_slice` stops at the first well-formed value
+        // and reports how many bytes it consumed; it does not itself reject
+        // extra bytes after that value. Without this check, a payload of
+        // "valid ciphertext" + arbitrary trailing bytes decodes silently,
+        // which both hides truncation/concatenation bugs on the wire and
+        // gives an attacker a place to smuggle bytes past validation that
+        // this decoder — the one callers rely on to fully vet untrusted
+        // input — never inspects.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::DeserializationError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte ciphertext",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         ct.validate()?;
         Ok(ct)
     }
@@ -816,12 +844,23 @@ impl DualRNSKeySet {
                 ),
             });
         }
-        let (keys, _): (Self, usize) =
+        let (keys, consumed): (Self, usize) =
             bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
                 Nine65Error::DeserializationError {
                     message: format!("Bincode parse error: {}", e),
                 }
             })?;
+        // See the matching comment in `DualRNSCiphertext::from_bytes_validated`:
+        // bincode does not reject trailing bytes on its own.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::DeserializationError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte keyset",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         keys.validate()?;
         Ok(keys)
     }
@@ -1005,9 +1044,18 @@ impl RNSFHEContext {
     /// - Config has fewer than 2 primes (use `light_rns` or higher)
     /// - Q = product of primes does not fit in u128
     /// - Plaintext modulus is zero
+    /// - In release builds, the config fails the production security screen
+    ///   (see [`crate::params::secure_configs::verify_production_safe_fhe_config`])
     #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(config: &FHEConfig) -> Nine65Result<Self> {
-        crate::params::secure_configs::assert_production_safe_fhe_config(config);
+        // Caller-supplied configuration is untrusted input, so the
+        // production-safety screen must return a typed error rather than
+        // panic through this fallible constructor (issue #85). The
+        // panicking `assert_production_safe_fhe_config` remains available
+        // for infallible call sites that explicitly want an abort contract,
+        // but `try_new`'s contract is `Result`, so it uses the fallible
+        // primitive directly.
+        crate::params::secure_configs::verify_production_safe_fhe_config(config)?;
         if config.primes.len() < 2 {
             return Err(Nine65Error::ConfigError {
                 message: format!(
@@ -2964,7 +3012,62 @@ impl RNSFHEContext {
     pub fn validate_dual_ciphertext(&self, ct: &DualRNSCiphertext) -> Nine65Result<()> {
         ct.validate()?;
         let level = ct.c0.main.len();
+        // `ct.validate()` establishes `level == main.len()` and bounds
+        // `main.len()` by `MAX_LEVEL`, but neither knows about THIS
+        // context's actual prime count. Without this check, a
+        // deserialized-then-validated ciphertext claiming more main limbs
+        // than `self.config.primes` holds would panic the slice index below
+        // (and every other `self.config.primes[..ct.level]` site throughout
+        // this file that a caller could reach with it) instead of failing
+        // the validation it was just run through.
+        if level > self.config.primes.len() {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "DualRNSCiphertext: main limb count {} exceeds this context's {} configured main primes",
+                    level,
+                    self.config.primes.len()
+                ),
+            });
+        }
+        if ct.c0.anchor.len() != self.dual_rns.anchor.primes.len() {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "DualRNSCiphertext: anchor limb count {} does not match this context's {} anchor primes",
+                    ct.c0.anchor.len(),
+                    self.dual_rns.anchor.primes.len()
+                ),
+            });
+        }
         ct.validate_residues(&self.config.primes[..level], &self.dual_rns.anchor.primes)
+    }
+
+    /// Context-bound validated bincode decode.
+    ///
+    /// Combines [`DualRNSCiphertext::from_bytes_validated`] (structural
+    /// validation only — shape, degree, trailing bytes) with
+    /// [`Self::validate_dual_ciphertext`] (this context's own lane-count
+    /// bound and residue-canonicality checks), so a ciphertext returned from
+    /// here is safe to pass directly into this context's arithmetic: it
+    /// cannot carry more main limbs than `self.config.primes`, a mismatched
+    /// anchor basis, or a non-canonical residue in any represented lane.
+    /// This is the entry point an untrusted-input boundary (e.g. an HTTP
+    /// service) should call once it has a live context to validate against,
+    /// rather than the context-free `from_bytes_validated` alone.
+    #[cfg(feature = "serde")]
+    pub fn decode_dual_ciphertext_bytes(&self, bytes: &[u8]) -> Nine65Result<DualRNSCiphertext> {
+        let ct = DualRNSCiphertext::from_bytes_validated(bytes)?;
+        self.validate_dual_ciphertext(&ct)?;
+        Ok(ct)
+    }
+
+    /// Context-bound validated JSON decode. See
+    /// [`Self::decode_dual_ciphertext_bytes`] for the guarantees; this is
+    /// the same wiring over [`DualRNSCiphertext::from_json_validated`].
+    #[cfg(feature = "serde")]
+    pub fn decode_dual_ciphertext_json(&self, s: &str) -> Nine65Result<DualRNSCiphertext> {
+        let ct = DualRNSCiphertext::from_json_validated(s)?;
+        self.validate_dual_ciphertext(&ct)?;
+        Ok(ct)
     }
 
     /// Decrypt dual-track ciphertext
@@ -3126,7 +3229,11 @@ impl RNSFHEContext {
             } else {
                 self.t - (scaled % self.t)
             };
-            let ideal_point = q_level.sub(delta.mul_u64(decoded));
+            // See `negative_branch_magnitude`: the ideal point is
+            // `Q - k*Delta` from the negative MAGNITUDE `k`, not
+            // `Q - decoded*Delta` from the wrapped decode `decoded = t - k`.
+            let k = negative_branch_magnitude(decoded, self.t);
+            let ideal_point = q_level.sub(delta.mul_u64(k));
             (decoded, ideal_point)
         } else {
             let scaled = round_div_u256_small(full_value.mul_u64(self.t), q_level, self.t);
@@ -3217,9 +3324,12 @@ impl RNSFHEContext {
                 self.t - (scaled_neg % self.t as u128) as u64
             };
 
-            // Error = distance from ideal encoding point
-            // For decoded value m, ideal point would be (Q_level - m*Δ) for negative
-            let ideal_point = q_level.saturating_sub(decoded as u128 * delta);
+            // Error = distance from ideal encoding point. `decoded` is the
+            // WRAPPED representative (`t - k`), not the magnitude `k` the
+            // ideal point `Q_level - k*Delta` is defined against — see
+            // `negative_branch_magnitude` (issue #84).
+            let k = negative_branch_magnitude(decoded, self.t);
+            let ideal_point = q_level.saturating_sub(k as u128 * delta);
             let error = if full_value > ideal_point {
                 (full_value - ideal_point) as i128
             } else {
@@ -3299,7 +3409,11 @@ impl RNSFHEContext {
                 self.t - (scaled_neg % self.t as u128) as u64
             };
 
-            let ideal_point = q_level.saturating_sub(decoded as u128 * delta);
+            // `decoded` is the WRAPPED representative (`t - k`); the ideal
+            // point is defined from the magnitude `k` — see
+            // `negative_branch_magnitude` (issue #84).
+            let k = negative_branch_magnitude(decoded, self.t);
+            let ideal_point = q_level.saturating_sub(k as u128 * delta);
             let error = if full_value > ideal_point {
                 (full_value - ideal_point) as i128
             } else {
@@ -5909,6 +6023,34 @@ fn round_div_u256_small(x: U256, delta: U256, upper: u64) -> u64 {
         q.saturating_add(1)
     } else {
         q
+    }
+}
+
+/// Recover the negative-branch plaintext MAGNITUDE `k` from a wrapped BFV
+/// decode.
+///
+/// For a negative plaintext of magnitude `k` (`1 <= k <= t/2`, say), BFV
+/// decoding returns the wrapped representative `decoded = t - k`, not `k`
+/// itself — `decoded` lives in `[0, t)` like every other decode. Building
+/// the negative-branch ideal point (`Q - k*Delta`, the encoded position a
+/// magnitude-`k` negative plaintext would land on before noise) therefore
+/// requires unwrapping `decoded` back to `k` first; using `decoded` in place
+/// of `k` computes `Q - (t-k)*Delta` instead, which is off by very close to
+/// `Q` for a small, perfectly ordinary negative magnitude (issue #84).
+///
+/// `decoded == 0` is its own fixed point (`k = 0`, no wrap happened), which
+/// both call sites already special-case before this function ever sees it;
+/// this still holds for it (`t - 0` would be wrong) for definiteness.
+///
+/// Centralized so the U256 path (used by both the test/debug and release
+/// `decrypt_dual_with_diagnostics`) and the two duplicated u128 variants
+/// compute the same magnitude the same way and cannot drift apart.
+#[inline]
+fn negative_branch_magnitude(decoded: u64, t: u64) -> u64 {
+    if decoded == 0 {
+        0
+    } else {
+        t - decoded
     }
 }
 
@@ -12291,6 +12433,205 @@ mod tests {
     }
 
     // ========================================================================
+    // Issue #86: validated decode hardening
+    // ========================================================================
+
+    /// `level` must equal `main.len()` exactly, not merely be `<=` it — see
+    /// the comment on `DualRNSCiphertext::validate`. Every ciphertext this
+    /// library constructs sets them equal; a deserialized one claiming a
+    /// lower `level` than its actual limb count is malformed, not a valid
+    /// lower-level representation.
+    #[test]
+    fn validate_rejects_level_strictly_below_main_limb_count() {
+        use super::*;
+
+        let poly = DualRNSPoly {
+            main: vec![vec![0u64; 8]; 3],
+            anchor: vec![vec![0u64; 8]; 2],
+            n: 8,
+        };
+        let ct = DualRNSCiphertext {
+            c0: poly.clone(),
+            c1: poly,
+            level: 2, // main.len() == 3, level == 2: was previously accepted
+        };
+        let err = ct
+            .validate()
+            .expect_err("level < main.len() must be rejected");
+        let message = err.to_string();
+        assert!(
+            message.contains('3') && message.contains('2'),
+            "error should name both the level and the actual limb count: {message}"
+        );
+    }
+
+    /// `from_bytes_validated` must reject a valid payload with anything
+    /// appended after it — `bincode::decode_from_slice`'s `consumed` count
+    /// exists precisely so a validated decoder can check this and previously
+    /// went unused.
+    #[test]
+    #[cfg(feature = "serde")]
+    fn from_bytes_validated_rejects_trailing_bytes_on_ciphertext() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(13579);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        let mut bytes = ct.to_bytes().expect("serialize");
+        // A valid ciphertext must still round-trip before we tamper with it.
+        assert!(DualRNSCiphertext::from_bytes_validated(&bytes).is_ok());
+
+        bytes.push(0xFF);
+        let result = DualRNSCiphertext::from_bytes_validated(&bytes);
+        assert!(
+            result.is_err(),
+            "a single trailing byte after a valid ciphertext must be rejected"
+        );
+        assert!(matches!(
+            result,
+            Err(Nine65Error::DeserializationError { .. })
+        ));
+
+        // Also try a large trailing suffix, in case a length-dependent
+        // codepath only checks small overshoots.
+        let mut bytes_with_suffix = ct.to_bytes().expect("serialize");
+        bytes_with_suffix.extend_from_slice(&[0xAB; 4096]);
+        assert!(DualRNSCiphertext::from_bytes_validated(&bytes_with_suffix).is_err());
+    }
+
+    /// Same trailing-byte check for `DualRNSKeySet::from_bytes_validated`.
+    #[test]
+    #[cfg(feature = "serde")]
+    fn from_bytes_validated_rejects_trailing_bytes_on_keyset() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(24681);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let keyset = DualRNSKeySet {
+            secret_key: keys.secret_key,
+            public_key: keys.public_key,
+        };
+
+        let mut bytes = keyset.to_bytes().expect("serialize");
+        assert!(DualRNSKeySet::from_bytes_validated(&bytes).is_ok());
+
+        bytes.push(0x00);
+        assert!(
+            DualRNSKeySet::from_bytes_validated(&bytes).is_err(),
+            "trailing byte after a valid keyset must be rejected"
+        );
+    }
+
+    /// `RNSFHEContext::validate_dual_ciphertext` must reject a ciphertext
+    /// whose main limb count exceeds this context's own configured prime
+    /// count with a typed error -- not panic on the slice index it used to
+    /// take unconditionally. This is the one that matters most for the HTTP
+    /// service boundary: `ct.validate()` alone (context-free) has no way to
+    /// know the ciphertext came from a DIFFERENT, larger context, so a
+    /// hostile ciphertext with excess main limbs must be caught here, not
+    /// three call sites later in arithmetic that assume it already was.
+    #[test]
+    fn validate_dual_ciphertext_rejects_oversized_level_without_panicking() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(97531);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let mut ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        // Fabricate more main limbs than this context has primes for, at
+        // every level count `level == main.len()` still requires.
+        let extra_limb = ct.c0.main[0].clone();
+        for _ in 0..(ctx.config.primes.len() + 4) {
+            ct.c0.main.push(extra_limb.clone());
+            ct.c1.main.push(extra_limb.clone());
+        }
+        ct.level = ct.c0.main.len();
+
+        // Must not panic (the whole point of this test) and must return a
+        // typed error, not Ok.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            ctx.validate_dual_ciphertext(&ct)
+        }));
+        let result = result.expect("validate_dual_ciphertext must not panic on an oversized level");
+        assert!(
+            result.is_err(),
+            "a ciphertext with more main limbs than the context has primes must be rejected"
+        );
+    }
+
+    /// `RNSFHEContext::validate_dual_ciphertext` must also reject a mismatched
+    /// anchor basis.
+    #[test]
+    fn validate_dual_ciphertext_rejects_mismatched_anchor_count() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(11223);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let mut ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        // Fresh ciphertext validates cleanly first.
+        assert!(ctx.validate_dual_ciphertext(&ct).is_ok());
+
+        // Drop one anchor limb from both c0 and c1: shape stays internally
+        // consistent (validate() alone would accept it) but it no longer
+        // matches this context's anchor basis.
+        ct.c0.anchor.pop();
+        ct.c1.anchor.pop();
+        assert!(
+            ctx.validate_dual_ciphertext(&ct).is_err(),
+            "a ciphertext with fewer anchor limbs than the context's anchor basis must be rejected"
+        );
+    }
+
+    /// Context-bound decode entry points (`decode_dual_ciphertext_bytes`/
+    /// `_json`) must accept a genuine ciphertext produced by this context
+    /// and reject one carrying a non-canonical residue, wiring
+    /// `validate_dual_ciphertext`'s residue-canonicality check into the
+    /// decode path rather than leaving it to a separate call the caller
+    /// might forget.
+    #[test]
+    #[cfg(feature = "serde")]
+    fn context_bound_decode_wires_residue_canonicality_check() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(55443);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        let bytes = ct.to_bytes().expect("serialize");
+        let decoded = ctx
+            .decode_dual_ciphertext_bytes(&bytes)
+            .expect("a genuine ciphertext from this context must decode");
+        assert_eq!(ctx.decrypt_dual(&decoded, &keys.secret_key), 7);
+
+        let json = ct.to_json().expect("serialize");
+        assert!(ctx.decode_dual_ciphertext_json(&json).is_ok());
+
+        // Corrupt a main-lane residue to be non-canonical (== its prime)
+        // and confirm the context-bound path — unlike the bare
+        // `from_bytes_validated`, which has no prime-list context — catches it.
+        let mut corrupted = ct.clone();
+        let p0 = ctx.config.primes[0];
+        corrupted.c0.main[0][0] = p0;
+        let corrupted_bytes = corrupted.to_bytes().expect("serialize");
+        assert!(
+            ctx.decode_dual_ciphertext_bytes(&corrupted_bytes).is_err(),
+            "a non-canonical residue must be rejected by the context-bound decode path"
+        );
+    }
+
+    // ========================================================================
     // HIGH-003: Noise Budget Tracked Operations Tests
     // ========================================================================
 
@@ -13357,6 +13698,188 @@ mod tests {
             ctx.try_decrypt_dual(&ct, &keys.secret_key).is_ok(),
             "fresh secure_256 ciphertext must be accepted"
         );
+    }
+
+    /// Independent oracle for the negative-branch ideal point / margin
+    /// (issue #84), computed from first principles rather than by calling
+    /// `negative_branch_magnitude` or any other production helper: for a
+    /// wrapped decode `decoded = t - k` (`k` the plaintext magnitude, `k =
+    /// 0` iff `decoded = 0`), the negative-branch ideal point is `Q -
+    /// k*Delta`, and the margin is `Delta/2 - |full_value - ideal_point|`.
+    fn oracle_negative_margin(
+        full_value: u128,
+        q_level: u128,
+        delta: u128,
+        t: u64,
+        decoded: u64,
+    ) -> i128 {
+        let k: u64 = if decoded == 0 { 0 } else { t - decoded };
+        let ideal_point = q_level - (k as u128) * delta;
+        let error = if full_value > ideal_point {
+            (full_value - ideal_point) as i128
+        } else {
+            -((ideal_point - full_value) as i128)
+        };
+        (delta / 2) as i128 - error.abs()
+    }
+
+    /// The WRONG formula issue #84 reports (`Q - decoded*Delta`, treating
+    /// the wrapped decode as if it were the magnitude), reproduced here only
+    /// so the regression test can show the fix actually diverges from it —
+    /// not merely that some margin value is returned.
+    fn oracle_wrong_negative_margin(
+        full_value: u128,
+        q_level: u128,
+        delta: u128,
+        decoded: u64,
+    ) -> i128 {
+        let ideal_point = q_level.saturating_sub((decoded as u128) * delta);
+        let error = if full_value > ideal_point {
+            (full_value - ideal_point) as i128
+        } else {
+            -((ideal_point - full_value) as i128)
+        };
+        (delta / 2) as i128 - error.abs()
+    }
+
+    /// Issue #84: the negative-branch ideal point must be built from the
+    /// plaintext MAGNITUDE `k = t - decoded`, not from the wrapped decode
+    /// `decoded` itself. Exercises `m = 0, 1, t/2-1, t/2, t-1` (the exact
+    /// sweep the issue specifies) on a config whose Q fits u128, comparing
+    /// the library's `decrypt_dual_with_diagnostics` margin against the
+    /// independent oracle above computed from a `full_value`/`q_level`/
+    /// `delta` this test reconstructs itself (same technique as
+    /// `test_decrypt_dual_u256_margin_matches_u128_path`), not from any
+    /// internal helper.
+    #[test]
+    fn negative_branch_margin_matches_independent_oracle_u128() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(848_484);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let t = ctx.t;
+
+        for &val in &[0u64, 1, t / 2 - 1, t / 2, t - 1] {
+            let ct = ctx.encrypt_dual(val, &keys.public_key, &mut rng);
+            let ct_level = ct.c0.main.len();
+
+            // Reconstruct full_value exactly as decrypt_dual_with_diagnostics does.
+            let sk_level = keys.secret_key.s.main.len();
+            let sk_projected = if ct_level < sk_level {
+                ctx.project_poly_to_level(&keys.secret_key.s, ct_level)
+            } else {
+                keys.secret_key.s.clone()
+            };
+            let c1_s = ctx.dual_poly_mul_level(&ct.c1, &sk_projected);
+            let inner = ctx.dual_poly_add_level(&ct.c0, &c1_s);
+            let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
+            let is_negative = ctx.is_upper_half_main(&rns_coeff, ct_level);
+            let full_value = ctx.rns.to_int_level(&rns_coeff, ct_level);
+            let q_level: u128 = ctx.config.primes[..ct_level]
+                .iter()
+                .fold(1u128, |acc, &p| acc * p as u128);
+            let delta = q_level / t as u128;
+
+            let (decoded, margin) = ctx.decrypt_dual_with_diagnostics(&ct, &keys.secret_key);
+            assert_eq!(
+                decoded, val,
+                "plaintext semantics must be unchanged for m={val}"
+            );
+
+            if is_negative {
+                let expected = oracle_negative_margin(full_value, q_level, delta, t, decoded);
+                assert_eq!(
+                    margin, expected,
+                    "m={val}: margin must match the independent negative-branch oracle exactly"
+                );
+
+                // Pin the actual bug: the old formula (built from `decoded`
+                // instead of `k`) must diverge hugely for any k that isn't
+                // trivially small relative to Delta -- reproducing the
+                // issue's own description ("error on the order of Q").
+                let wrong = oracle_wrong_negative_margin(full_value, q_level, delta, decoded);
+                let k = if decoded == 0 { 0 } else { t - decoded };
+                if k > 1 {
+                    assert_ne!(
+                        margin, wrong,
+                        "m={val}: fixed margin must not equal the old, wrong formula's value"
+                    );
+                }
+            } else {
+                // Positive branch is untouched by this fix; sanity-check it
+                // still agrees with its own (always-correct) ideal point.
+                let ideal_point = (decoded as u128) * delta;
+                let error = if full_value > ideal_point {
+                    (full_value - ideal_point) as i128
+                } else {
+                    -((ideal_point - full_value) as i128)
+                };
+                let expected = (delta / 2) as i128 - error.abs();
+                assert_eq!(
+                    margin, expected,
+                    "m={val}: positive-branch margin unaffected"
+                );
+            }
+        }
+    }
+
+    /// Same sweep, forced through the U256 decode path directly (secure_256,
+    /// whose log2(q)=175 exceeds u128), against the same independent oracle.
+    /// Covers the issue's "both u128 and U256 decode routes" requirement.
+    #[test]
+    fn negative_branch_margin_matches_independent_oracle_u256() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_256();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(929_292);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let t = ctx.t;
+
+        for &val in &[0u64, 1, t / 2 - 1, t / 2, t - 1] {
+            let ct = ctx.encrypt_dual(val, &keys.public_key, &mut rng);
+            let ct_level = ct.c0.main.len();
+            let sk_level = keys.secret_key.s.main.len();
+            let sk_projected = if ct_level < sk_level {
+                ctx.project_poly_to_level(&keys.secret_key.s, ct_level)
+            } else {
+                keys.secret_key.s.clone()
+            };
+            let c1_s = ctx.dual_poly_mul_level(&ct.c1, &sk_projected);
+            let inner = ctx.dual_poly_add_level(&ct.c0, &c1_s);
+
+            let (decoded, margin) = ctx.decrypt_dual_u256(&inner, ct_level);
+            assert_eq!(
+                decoded, val,
+                "plaintext semantics must be unchanged for m={val}"
+            );
+
+            let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
+            let is_negative = ctx.is_upper_half_main(&rns_coeff, ct_level);
+            if is_negative {
+                // Upper-half plaintext: independently recompute q_level/delta
+                // in U256 and derive the same magnitude-based oracle, using
+                // U256 arithmetic so this genuinely exercises the wide path
+                // rather than silently narrowing back to u128.
+                let full_value_u256 = ctx.rns.to_u256_level(&rns_coeff, ct_level);
+                let q_level_u256 = U256::product_u64s(&ctx.config.primes[..ct_level]);
+                let (delta_u256, _) = q_level_u256.div_mod_u256(U256::from_u64(t));
+                let k: u64 = if decoded == 0 { 0 } else { t - decoded };
+                let ideal_point = q_level_u256.sub(delta_u256.mul_u64(k));
+                let error_abs = if full_value_u256.ge(ideal_point) {
+                    full_value_u256.sub(ideal_point)
+                } else {
+                    ideal_point.sub(full_value_u256)
+                };
+                let expected = u256_diff_to_i128(delta_u256.shr1(), error_abs);
+                assert_eq!(
+                    margin, expected,
+                    "m={val}: U256 margin must match the independent negative-branch oracle exactly"
+                );
+            }
+        }
     }
 
     /// Verify try_decrypt_dual returns Ok for valid decryptions.

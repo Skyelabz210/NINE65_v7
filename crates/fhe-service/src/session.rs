@@ -1,7 +1,5 @@
 //! Session management — FHE key material and state per tenant session.
 
-#[cfg(test)]
-use nine65::entropy::ShadowHarvester;
 use nine65::noise::budget::NoiseBudget;
 use nine65::ops::rns_fhe::{DualRNSCiphertext, DualRNSFullKeySet, RNSFHEContext};
 use nine65::params::secure_configs::SecureConfig;
@@ -79,9 +77,35 @@ impl Session {
         })
     }
 
+    /// Test-only session constructor (fixed "test" tenant).
+    ///
+    /// Issue #74: this used to seed a deterministic `ShadowHarvester` (a
+    /// non-secure RNG, by design — that is what made it reproducible) and
+    /// generate keys from it, which is exactly what `nine65`'s own
+    /// `require_secure_rng` production gate exists to refuse outside
+    /// `cfg(test)`/`debug_assertions`/`allow_insecure`. Because a
+    /// dependency crate is compiled with neither `cfg(test)` nor (in
+    /// `--release`) `debug_assertions` set for the *depending* crate's test
+    /// build, that made a real `nine65/allow_insecure` dev-dependency load-
+    /// bearing here just to keep `cargo test --release -p fhe-service`
+    /// from panicking — which in turn was the reason `nine65`'s own
+    /// `allow_insecure`-must-not-ship-in-release compile-time gate
+    /// (`crates/nine65/src/lib.rs`) had to stay commented out: enabling it
+    /// made this crate's dev-dependency graph fail to compile for a build
+    /// that was never the production misuse it exists to catch.
+    ///
+    /// None of that is actually needed: this constructor's callers never
+    /// depended on seed-driven reproducibility (three tests, none of which
+    /// assert anything about specific key material), only on getting *a*
+    /// throwaway session. Using `generate_keys_dual_full_secure()` — the
+    /// same call `new_for_tenant` makes — passes a genuinely secure RNG
+    /// through `require_secure_rng`, which is accepted unconditionally, in
+    /// every build mode, with no feature flag involved. That removes this
+    /// crate's only real reason to depend on `nine65/allow_insecure` at
+    /// all, which is what let that gate be safely restored.
     #[cfg(test)]
     #[allow(dead_code)]
-    pub fn new_test(config_name: &str, seed: u64) -> Result<Self, &'static str> {
+    pub fn new_test(config_name: &str) -> Result<Self, &'static str> {
         let secure_config = match config_name {
             "secure_128" => SecureConfig::secure_128(),
             "secure_192" => SecureConfig::secure_192(),
@@ -92,8 +116,7 @@ impl Session {
         let config = secure_config.into_config();
         let noise_budget = NoiseBudget::from_config(&config);
         let rns_ctx = RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
-        let mut harvester = ShadowHarvester::with_seed(seed);
-        let dual_keys = rns_ctx.generate_keys_dual_full(&mut harvester);
+        let dual_keys = rns_ctx.generate_keys_dual_full_secure();
         let now = crate::unix_now_seconds();
 
         Ok(Self {
@@ -301,7 +324,7 @@ mod tests {
     #[test]
     fn tenant_mismatch_is_indistinguishable_from_missing_session() {
         let store = SessionStore::new(2);
-        let session = Session::new_test("secure_128", 7).expect("test session");
+        let session = Session::new_test("secure_128").expect("test session");
         let id = session.session_id.clone();
         store.insert(session).expect("insert");
         assert!(store
@@ -315,7 +338,7 @@ mod tests {
     #[test]
     fn tenant_bound_delete_rejects_cross_tenant_request() {
         let store = SessionStore::new(2);
-        let session = Session::new_test("secure_128", 9).expect("test session");
+        let session = Session::new_test("secure_128").expect("test session");
         let id = session.session_id.clone();
         store.insert(session).expect("insert");
         assert!(!store.remove_for_tenant(&id, "other"));
@@ -324,7 +347,7 @@ mod tests {
 
     #[test]
     fn dual_rns_wire_boundary_is_fail_closed() {
-        let session = Session::new_test("secure_128", 11).expect("test session");
+        let session = Session::new_test("secure_128").expect("test session");
         let err = session
             .dual_ct_from_b64("AA==")
             .expect_err("dual-RNS wire input must be rejected");
