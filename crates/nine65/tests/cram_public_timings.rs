@@ -16,6 +16,7 @@
 //!   cargo test -p nine65 --test cram_public_timings --release \
 //!     --features allow_insecure -- --ignored --nocapture
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::cram_public::CramPublicEvaluator;
 use nine65::ops::rns_fhe::DualRNSCiphertext;
@@ -23,9 +24,18 @@ use nine65::params::secure_configs::SecureConfig;
 use nine65::params::FHEConfig;
 use std::time::Instant;
 
-fn median(mut v: Vec<u128>) -> f64 {
+/// Median duration, in nanoseconds — kept as an exact integer so no float
+/// division happens until a caller formats it for display.
+fn median_ns(mut v: Vec<u128>) -> u128 {
     v.sort_unstable();
-    v[v.len() / 2] as f64 / 1_000_000.0
+    v[v.len() / 2]
+}
+
+/// Median duration in milliseconds, formatted to `decimals` fractional
+/// digits — the integer-only replacement for `median(..) as f64 / 1e6`
+/// followed by `{:.N}`.
+fn median_ms(v: Vec<u128>, decimals: u32) -> String {
+    format_ratio(median_ns(v), 1_000_000, decimals)
 }
 
 /// Sum every limb of every lane, main and anchor, of both ciphertext
@@ -189,17 +199,17 @@ fn time_cram_public_manufactured(name: &str, cfg: &FHEConfig, rounds: usize) {
     }
 
     println!(
-        "| `{name}` | {} | {} | {:.3} | {:.3} | {:.3} | {:.3} | {:.2} | {:.2} | {:.2} | {:.3} |",
+        "| `{name}` | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |",
         cfg.n,
         cfg.primes.len(),
-        median(enc),
-        median(add),
-        median(mulp),
-        median(divide),
-        median(mul_general),
-        median(mul_m2b),
-        median(mul_m3),
-        median(dec),
+        median_ms(enc, 3),
+        median_ms(add, 3),
+        median_ms(mulp, 3),
+        median_ms(divide, 3),
+        median_ms(mul_general, 2),
+        median_ms(mul_m2b, 2),
+        median_ms(mul_m3, 2),
+        median_ms(dec, 3),
     );
 }
 
@@ -272,15 +282,15 @@ fn time_cram_public_general(name: &str, cfg: &FHEConfig, rounds: usize) {
     }
 
     println!(
-        "| `{name}` | {} | {} | {:.3} | {:.3} | {:.3} | {:.3} | {:.2} | n/a | n/a | {:.3} |",
+        "| `{name}` | {} | {} | {} | {} | {} | {} | {} | n/a | n/a | {} |",
         cfg.n,
         cfg.primes.len(),
-        median(enc),
-        median(add),
-        median(mulp),
-        median(divide),
-        median(mul_general),
-        median(dec),
+        median_ms(enc, 3),
+        median_ms(add, 3),
+        median_ms(mulp, 3),
+        median_ms(divide, 3),
+        median_ms(mul_general, 2),
+        median_ms(dec, 3),
     );
 }
 

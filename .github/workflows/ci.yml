@@ -125,6 +125,12 @@ jobs:
       - name: Scan for float usage in runtime paths
         run: bash scripts/check_no_floats_runtime.sh
 
+      - name: Scan for float usage in benches/tests/audit binaries
+        run: python3 scripts/check_no_floats_benches_and_tests.py
+
+      - name: Test the benches/tests/audit-binaries no-floats scanner
+        run: python3 -m unittest scripts.test_check_no_floats_benches_and_tests
+
       # NOTE: this is a *presence/inventory* gate only. It proves the proof trees
       # have not silently shrunk; it does NOT machine-check anything. The real
       # verification gate is lean_proofs.yml (lake build + axiom audit). The

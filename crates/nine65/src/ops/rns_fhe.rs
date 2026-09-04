@@ -15150,13 +15150,13 @@ mod gate {
         for &(x, y) in &v {
             s = s.wrapping_add(((x as u128 * y as u128) % p as u128) as u64);
         }
-        let hw = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let hw_total_ns = t.elapsed().as_nanos();
         let t = Instant::now();
         let mut s2 = 0u64;
         for &(x, y) in &v {
             s2 = s2.wrapping_add(pm.mul(x, y));
         }
-        let mont = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let mont_total_ns = t.elapsed().as_nanos();
         let t = Instant::now();
         let mut s3 = 0u128;
         for &(x, y) in v.iter().take(4000) {
@@ -15164,15 +15164,22 @@ mod gate {
                 x as u128, y as u128, p as u128,
             ));
         }
-        let ct = t.elapsed().as_nanos() as f64 / 4000.0;
+        let ct_total_ns = t.elapsed().as_nanos();
+        let hw = crate::arithmetic::integer_math::format_ratio(hw_total_ns, v.len() as u128, 2);
+        let mont = crate::arithmetic::integer_math::format_ratio(mont_total_ns, v.len() as u128, 2);
+        let ct = crate::arithmetic::integer_math::format_ratio(ct_total_ns, 4000, 2);
         println!("GATE {}", "-".repeat(50));
-        println!("GATE modmul.hardware              {hw:>12.2}");
-        println!("GATE modmul.montgomery            {mont:>12.2}");
-        println!("GATE modmul.ct_loop               {ct:>12.2}");
+        println!("GATE modmul.hardware              {hw:>12}");
+        println!("GATE modmul.montgomery            {mont:>12}");
+        println!("GATE modmul.ct_loop               {ct:>12}");
         println!("GATE FLOAT_REFERENCE f64 modmul measured 1.10-1.28x vs hardware,");
         println!(
-            "GATE   vectorized only. montgomery/hardware = {:.2}x -- must stay > 1.28",
-            hw / mont.max(0.001)
+            "GATE   vectorized only. montgomery/hardware = {}x -- must stay > 1.28",
+            // hw and mont both divide by v.len(), so it cancels exactly out
+            // of (hw_total_ns/len) / (mont_total_ns/len) == hw_total_ns /
+            // mont_total_ns -- computed directly from the totals to avoid
+            // compounding two roundings into one.
+            crate::arithmetic::integer_math::format_ratio(hw_total_ns, mont_total_ns.max(1), 2)
         );
         assert!(s | s2 as u64 | s3 as u64 != 12345678);
     }

@@ -1,6 +1,7 @@
 //! Perturbation & Self-Stabilization Stress Test for NINE65 v7.
 //! Verifies the "Time Crystal" hypothesis: S8 Safe Basis periodicity and A2 localization.
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::arithmetic::rns::{U256, U512};
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
@@ -88,7 +89,9 @@ fn main() {
 struct RecoveryMetrics {
     corrupted_lanes: usize,
     k_delta: String,
-    localization_pct: f64,
+    /// Pre-formatted percentage (e.g. "16.67") — computed once via
+    /// `format_ratio` rather than carried as a float.
+    localization_pct: String,
     status: String,
 }
 
@@ -121,7 +124,7 @@ fn crt_reconstruct_parallel_with_metrics(
         RecoveryMetrics {
             corrupted_lanes,
             k_delta: format!("{:?}", k_val),
-            localization_pct: (1.0 / primes.len() as f64) * 100.0,
+            localization_pct: format_ratio(100, primes.len() as u128, 2),
             status: "Localized".to_string(),
         },
     )
@@ -223,7 +226,7 @@ fn crt_reconstruct_sequential_with_metrics(
         RecoveryMetrics {
             corrupted_lanes,
             k_delta: "CORRUPTED".to_string(),
-            localization_pct: 100.0,
+            localization_pct: "100.00".to_string(),
             status: "Collapsed".to_string(),
         },
     )
