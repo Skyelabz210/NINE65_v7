@@ -70,7 +70,17 @@ Build all crates (release):
   cargo build --release --workspace --exclude nine65-python --exclude nine65-wasm
 
 Run all tests:
-  cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm
+  cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast
+
+(`--no-fail-fast` matters whenever nine65's `--lib` has any failing test, which
+it currently does — see "Bootstrap Paths" below. Without it, plain `cargo test
+--workspace` stops at the first failing package and silently never builds or
+runs anything after it: none of nine65's ~28 `tests/*.rs` integration
+binaries, nine65-extreme-tests, private-feedback-core, private-feedback-nine65
+or unhal. Confirmed by direct measurement 2026-09-04, issue #64: reproduces
+identically in `--release` and in CI's plain `cargo test --workspace`
+[debug] — it is a `cargo test --workspace` default-fail-fast behavior, not
+tied to build profile.)
 
 Core FHE tests only:
   cargo test -p nine65 --lib --release
