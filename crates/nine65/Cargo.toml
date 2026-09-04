@@ -245,6 +245,14 @@ name = "depth2_isolation"
 required-features = ["allow_insecure"]
 
 [[test]]
+name = "depth2_full_matrix_issue81"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth2_python_oracle_vectors_issue81"
+required-features = ["allow_insecure"]
+
+[[test]]
 name = "depth_and_noise"
 required-features = ["allow_insecure"]
 
