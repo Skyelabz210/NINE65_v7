@@ -21,20 +21,51 @@
 //! | `secure_192` | 16384 | 5 NTT primes | 146 | 192 bits | 320 | 288 | yes |
 //! | `secure_256` | 16384 | 6 NTT primes | 175 | 256 bits | 267 | **240** | yes |
 //!
-//! `secure_128` was re-cut 2026-08-26 (`docs/OPEN_WORK_2026-08-26.md` A3) from
-//! three main primes to four; it is now numerically identical to
-//! `secure_128_deep` (same tuple, same screen, same admission below). The row
-//! above is kept distinct only because the two remain separate named entry
-//! points — see the constructors' own doc comments.
+//! CORRECTION (WR-7, 2026-09-03): this table previously listed `secure_128`
+//! at 3 NTT primes / log2(q)=90 / Core-SVP 259 / MATZOV 233 / refused. That
+//! described the tuple BEFORE the 2026-08-26 re-cut
+//! (`docs/OPEN_WORK_2026-08-26.md` A3), which gave `secure_128` the same
+//! four-prime chain `secure_128_deep` already carried -- it is now
+//! numerically identical to `secure_128_deep` (same tuple, same screen, same
+//! admission below); the two remain separate named entry points only for
+//! call sites that spell out "deep" explicitly, see the constructors' own
+//! doc comments. The per-constructor doc comments on `secure_128`/
+//! `secure_128_deep` below, and the pinned numbers in
+//! `tests::screened_levels_for_named_configs`, already reflected the
+//! four-prime chain; only this header table had drifted. `CLAUDE.md`'s
+//! Security Configs table and Bootstrap Paths section carried the same stale
+//! three-prime description and have since been corrected separately (see
+//! `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md` for the
+//! finding that prompted it); this header is corrected here because it is a
+//! doc comment inside the file WR-7 touches, and it disagreed with the
+//! code's own pinned test in the same file.
 //!
 //! `secure_256` is the one name that its own screen does not fully support:
 //! it clears 256 under Core-SVP (the model the constructor gates on) and falls
 //! 16 bits short under MATZOV. The constructor is left in place rather than
-//! renamed; the gap is documented on `secure_256` itself and readable at
-//! runtime via `SecureConfig::screened_security_dual`.
+//! renamed (issue #76 is resolved as a typed admission distinction, not a
+//! rename -- see [`SecurityAdmissionState`] and
+//! [`SecureConfig::is_production_safe_under_all_models`]); the gap is
+//! documented on `secure_256` itself and readable at runtime via
+//! `SecureConfig::screened_security_dual`.
+//!
+//! # Factorization-aware admission (WR-7)
+//!
+//! Every named constructor below also runs its exact ordered prime list
+//! through [`security_estimator::LatticeSecurityEstimator::dual_estimate_with_factorization`]
+//! -- the structural screen that can see modulus SHAPE (narrow lanes, prime
+//! powers, powers of two, malformed factorizations), not just bit width --
+//! under both Core-SVP and MATZOV, and fails closed (never falls back to the
+//! width-only number) if either model's structural screen REFUSES the
+//! shape. For every tuple shipped today this reproduces the width-only
+//! numbers exactly (`security_estimator::tests::factored_screen_leaves_every_secure_config_unchanged`),
+//! because every shipped lane is a distinct prime well above the modelled
+//! floor; the screen only bites on shapes the width-only model cannot see.
+//! [`SecureConfig::custom_screened`] runs the identical policy, fallibly,
+//! for caller-supplied tuples.
 
 use super::security_estimator::{
-    CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution,
+    CostModel, FactoredDualEstimate, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution,
 };
 use super::{gcd, is_ntt_compatible, is_prime, FHEConfig};
 use crate::errors::{Nine65Error, Nine65Result};
@@ -409,6 +440,159 @@ pub struct ScreenedSecurity {
     pub meets_claim_under_both: bool,
 }
 
+/// The programmatically distinguishable state a [`SecureConfig`]'s security
+/// number is actually in. Issues #87/#88 both require this: a caller must be
+/// able to TELL, at the type level, whether a config's number is a bare
+/// claim, a fully agreed-upon screen, a screen with a known model gap, or a
+/// test-only tier -- never infer it from prose or from `claimed_security`
+/// alone.
+///
+/// Every non-insecure-tier [`SecureConfig`] is guaranteed, by construction,
+/// to be in one of the `Screened*` states: [`SecureConfig::try_new_verified`]
+/// (via [`SecureConfig::new_verified`]/[`SecureConfig::custom_screened`])
+/// fails closed -- returns `Err`/panics -- rather than construct a
+/// `SecureConfig` whose factorization-aware structural screen was refused or
+/// whose binding number misses its own claim. `StructurallyRefused` and
+/// `BelowClaim` exist as typed states for completeness and for the insecure
+/// test tier (which is permitted to construct despite either), not because a
+/// production `SecureConfig` can reach them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SecurityAdmissionState {
+    /// Screened under both Core-SVP and MATZOV, structural and width-only
+    /// agree, and the claim is met under BOTH models. The strongest state
+    /// this module can certify without an external attestation.
+    ScreenedFullModelAgreement,
+    /// Screened; meets the claim under Core-SVP (the model construction
+    /// gates on) but NOT under the more aggressive MATZOV model.
+    /// `secure_256` is the one shipped config in this state -- see issue
+    /// #76. `matzov_bits` is the MATZOV binding result and `shortfall_bits`
+    /// is `claimed_security - matzov_bits`.
+    ScreenedModelGap {
+        matzov_bits: u32,
+        shortfall_bits: u32,
+    },
+    /// The factorization-aware structural screen declined outright (narrow
+    /// lane, prime power, power of two, non-coprime lanes, or a malformed
+    /// factorization) under at least one cost model. Unreachable for a
+    /// non-insecure-tier `SecureConfig`; kept as a typed state rather than
+    /// collapsed into a panic path, so a future fallible caller
+    /// (`custom_screened`) has somewhere honest to land if this invariant is
+    /// ever relaxed.
+    StructurallyRefused,
+    /// Screened by both models, structural screen did not refuse, but the
+    /// binding result still falls below the claim. Reachable only by the
+    /// `_insecure` test/benchmark tier, which is explicitly exempted from
+    /// the fail-closed claim check.
+    BelowClaim { core_svp_bits: u32 },
+    /// Explicit non-production test/benchmark tier (`..._insecure` naming
+    /// convention). Never eligible for production regardless of what it
+    /// screens at -- see [`SecureConfig::is_production_safe`].
+    InsecureTier,
+}
+
+/// Exact fingerprint of a parameter tuple `(N, ordered main-lane primes, t,
+/// eta)`.
+///
+/// Frozen so an external lattice-estimator attestation ([`ExternalAttestation`])
+/// can be bound to the PRECISE tuple it was run against, rather than to a
+/// config *name* whose tuple can be redefined underneath it -- exactly what
+/// happened to `secure_128` on 2026-08-26
+/// (`docs/OPEN_WORK_2026-08-26.md` A3): the name kept its 128-bit claim
+/// across a change from three main primes to four, which would have silently
+/// invalidated a name-keyed attestation.
+///
+/// Integer-only 64-bit FNV-1a over the exact scalar fields and the ordered
+/// prime list -- no floats, no truncation, no saturation/sentinel value
+/// standing in for "no fingerprint" (there is no such state; every tuple
+/// fingerprints). This is NOT a cryptographic hash and makes no
+/// collision-resistance claim: it exists to catch accidental tuple drift
+/// between a constructor and an archived attestation, never to defeat an
+/// adversary.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct ParameterFingerprint(pub u64);
+
+impl ParameterFingerprint {
+    const FNV_OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
+    const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
+
+    fn fold_u64(hash: u64, value: u64) -> u64 {
+        let mut hash = hash;
+        for byte in value.to_le_bytes() {
+            hash ^= byte as u64;
+            hash = hash.wrapping_mul(Self::FNV_PRIME);
+        }
+        hash
+    }
+
+    /// Fingerprint the exact tuple an [`FHEConfig`] carries: `n`, the lane
+    /// count, every main lane in order, `t`, and `eta`. Deliberately
+    /// excludes `security_bits` and `name` -- those are labels, not the
+    /// modulus, and relabeling the same arithmetic tuple must not change its
+    /// fingerprint.
+    pub fn of(config: &FHEConfig) -> Self {
+        let mut hash = Self::FNV_OFFSET_BASIS;
+        hash = Self::fold_u64(hash, config.n as u64);
+        hash = Self::fold_u64(hash, config.primes.len() as u64);
+        for &prime in &config.primes {
+            hash = Self::fold_u64(hash, prime);
+        }
+        hash = Self::fold_u64(hash, config.t);
+        hash = Self::fold_u64(hash, config.eta as u64);
+        Self(hash)
+    }
+}
+
+/// A record of an EXTERNAL lattice-estimator run (e.g. the Albrecht et al.
+/// `lattice-estimator`, SageMath) against one exact tuple.
+///
+/// This type only ACCEPTS and archives such a result; nothing in this crate
+/// runs an external estimator (issue #75 /
+/// `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`). No shipped config has one
+/// of these recorded today -- constructing an `ExternalAttestation` with
+/// fabricated data to make a config LOOK independently attested would be
+/// exactly the overclaim WR-7 exists to prevent, so every field here must be
+/// supplied from a real external run.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ExternalAttestation {
+    /// Fingerprint of the exact tuple the external run covered.
+    pub fingerprint: ParameterFingerprint,
+    /// Free-text name/version of the external tool, e.g.
+    /// `"lattice-estimator @ <commit-or-release>"`. Free-form because this
+    /// crate never invokes the tool and cannot normalize a versioning scheme
+    /// it has never run.
+    pub estimator_name: String,
+    /// The run's own reported bit-security number, when it reports one
+    /// scalar per model. `None` when only the raw output is meaningful.
+    pub reported_bits: Option<u32>,
+    /// Verbatim raw output, or a stable reference to where it is archived
+    /// (e.g. a doc path). Never truncated or reformatted by this type.
+    pub raw_output_reference: String,
+    /// Free-text date/provenance of the run; this crate does not parse it.
+    pub run_date: String,
+}
+
+impl ExternalAttestation {
+    /// Bind this attestation to a live [`SecureConfig`]: `Ok(())` only when
+    /// the fingerprints agree exactly. A mismatch means the attestation was
+    /// run against a DIFFERENT tuple than the one asking to use it -- never
+    /// treated as advisory, because "close enough" is exactly how a
+    /// redefinition like the 2026-08-26 `secure_128` re-cut would silently
+    /// keep a stale attestation attached to a new tuple.
+    pub fn verify_binds_to(&self, config: &SecureConfig) -> Result<(), String> {
+        let live = config.fingerprint();
+        if self.fingerprint != live {
+            return Err(format!(
+                "external attestation fingerprint {:?} does not match config '{}''s live \
+                 fingerprint {:?} -- the tuple changed since this attestation was recorded, or \
+                 the attestation was recorded against a different tuple entirely. Re-run the \
+                 external estimator against the current tuple before trusting this result.",
+                self.fingerprint, config.config.name, live,
+            ));
+        }
+        Ok(())
+    }
+}
+
 /// Secure FHE configuration with an explicit claim and internal screening data.
 #[derive(Clone, Debug)]
 pub struct SecureConfig {
@@ -424,24 +608,88 @@ pub struct SecureConfig {
     pub quantum_security: u32,
     /// Whether the tuple is within the HE Standard modulus bound.
     pub he_standard_compliant: bool,
+    /// The typed admission state this tuple actually landed in -- see
+    /// [`SecurityAdmissionState`]. WR-7 / issue #88: callers must be able to
+    /// tell programmatically which state a config is in, not just read prose.
+    pub admission_state: SecurityAdmissionState,
 }
 
 impl SecureConfig {
-    fn new_verified(
+    /// Fallible core of every constructor in this module. Named production
+    /// constructors (`secure_128`, ...) call this through
+    /// [`Self::new_verified`], which unwraps with a panic -- appropriate for
+    /// a fixed compile-time literal, where a failure is a programmer error
+    /// caught the moment the binary starts. Caller-supplied tuples must
+    /// never panic on bad input, so [`Self::custom_screened`] returns this
+    /// method's `Result` directly.
+    ///
+    /// Runs, in order: basic shape validation (power-of-two N, distinct
+    /// prime NTT-compatible lanes, valid plaintext modulus) with typed
+    /// errors; the width-only estimator (`LatticeSecurityEstimator::estimate`,
+    /// what `is_production_safe`'s Core-SVP contract has always gated on);
+    /// and -- WR-7 / issue #87 -- the factorization-aware structural screen
+    /// under BOTH Core-SVP and MATZOV
+    /// (`dual_estimate_with_factorization`), which fails closed on a
+    /// `Refused` verdict rather than silently falling back to the
+    /// width-only number. Configs explicitly marked insecure (test/
+    /// benchmark tier, name ends `_insecure`) are exempt from every
+    /// fail-closed check below; their shortfall is instead RECORDED in
+    /// [`SecurityAdmissionState::BelowClaim`]/`StructurallyRefused`, and
+    /// `is_production_safe`/`verify_production_safety` reject them at use
+    /// time. No partial-credit relaxation is accepted for a real claim.
+    fn try_new_verified(
         n: usize,
         primes: Vec<u64>,
         t: u64,
         eta: usize,
         claimed_security: u32,
         name: &'static str,
-    ) -> Self {
-        assert!(n.is_power_of_two(), "N must be a power of two");
-        assert!(!primes.is_empty(), "at least one RNS prime is required");
-        assert!(t >= 2, "plaintext modulus must be at least two");
-        assert!(
-            primes.iter().all(|&prime| t < prime),
-            "plaintext modulus must be smaller than every RNS prime"
-        );
+    ) -> Nine65Result<Self> {
+        if !n.is_power_of_two() {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!("N must be a power of two, got {n}"),
+            });
+        }
+        if primes.is_empty() {
+            return Err(Nine65Error::InvalidParameter {
+                message: "at least one RNS prime is required".to_string(),
+            });
+        }
+        if t < 2 {
+            return Err(Nine65Error::InvalidParameter {
+                message: "plaintext modulus must be at least two".to_string(),
+            });
+        }
+        if !primes.iter().all(|&prime| t < prime) {
+            return Err(Nine65Error::InvalidParameter {
+                message: "plaintext modulus must be smaller than every RNS prime".to_string(),
+            });
+        }
+        // Every declared lane must actually BE a distinct, NTT-compatible
+        // prime -- correctness preconditions for the RNS/NTT pipeline, not
+        // security screening (a composite or non-NTT-compatible lane simply
+        // breaks the arithmetic). The structural security screen below only
+        // sees what is passed to it; this is what stops a caller handing it
+        // something that was never a valid CLASS-F chain to begin with.
+        for (index, &prime) in primes.iter().enumerate() {
+            if !is_prime(prime) {
+                return Err(Nine65Error::InvalidParameter {
+                    message: format!("RNS lane {index} ({prime}) is not prime"),
+                });
+            }
+            if !is_ntt_compatible(prime, n) {
+                return Err(Nine65Error::InvalidParameter {
+                    message: format!("RNS lane {prime} is not NTT-compatible for N={n}"),
+                });
+            }
+            for &prior in &primes[..index] {
+                if prior == prime || gcd(prior, prime) != 1 {
+                    return Err(Nine65Error::InvalidParameter {
+                        message: format!("RNS lanes {prior} and {prime} are not coprime"),
+                    });
+                }
+            }
+        }
 
         let q = primes[0];
         let log_q = exact_product_bit_length(&primes);
@@ -449,37 +697,99 @@ impl SecureConfig {
         let estimate = estimator.estimate(n, log_q, SecretDistribution::Ternary, claimed_security);
         let he_standard_compliant = HEStandardBounds::is_compliant(n, log_q, claimed_security);
 
-        // Fail closed. A named claim must pass the complete internal screen;
-        // Fail closed for real claims. Configs explicitly marked insecure
-        // (test/benchmark tier, name ends `_insecure`) are permitted to
-        // construct with their shortfall RECORDED in `he_standard_compliant`
-        // and the screened bits; `is_production_safe` / `verify_production_safety`
-        // reject them at use time. No 90%-of-claim relaxation is accepted.
-        let is_insecure_tier = name.ends_with("_insecure");
-        assert!(
-            is_insecure_tier || estimate.effective_bits >= claimed_security,
-            "SECURITY ERROR: config '{}' claims {} bits but screens at {} bits.\n{}",
-            name,
+        // WR-7 / issue #87: factorization-aware structural screen, both cost
+        // models, bound to the min (`dual_estimate_with_factorization`'s own
+        // `binding_bits`). For every tuple shipped today this reproduces the
+        // width-only numbers exactly -- every shipped lane is a distinct
+        // prime well above the modelled floor -- but it is what actually
+        // catches a narrow/prime-power/power-of-two/malformed shape the
+        // width-only model above cannot see at all.
+        let factors: Vec<(u64, u32)> = primes.iter().map(|&p| (p, 1)).collect();
+        let structural: FactoredDualEstimate = estimator.dual_estimate_with_factorization(
+            n,
+            &factors,
+            SecretDistribution::Ternary,
             claimed_security,
-            estimate.effective_bits,
-            estimate.analysis,
         );
-        assert!(
-            is_insecure_tier || he_standard_compliant,
-            "SECURITY ERROR: config '{}' exceeds the HE Standard bound",
-            name
-        );
+
+        let is_insecure_tier = name.ends_with("_insecure");
+
+        // Fail closed (#87 requirement 3): a REFUSED structural verdict
+        // refuses a real claim outright. It never falls back to the
+        // width-only `estimate` above, even though that number exists and
+        // even though it might individually meet the claim.
+        if !is_insecure_tier && structural.binding_bits.is_none() {
+            return Err(Nine65Error::SecurityScreenRefused {
+                reason: format!(
+                    "config '{name}': the factorization-aware structural screen REFUSED this \
+                     modulus shape under at least one cost model -- no production security \
+                     number may be asserted for it.\nCore-SVP: {}\nMATZOV: {}",
+                    structural.core_svp.analysis, structural.matzov.analysis,
+                ),
+            });
+        }
+        if !is_insecure_tier && estimate.effective_bits < claimed_security {
+            return Err(Nine65Error::SecurityLevelNotMet {
+                bits: estimate.effective_bits,
+                required: claimed_security,
+            });
+        }
+        if !is_insecure_tier && !he_standard_compliant {
+            return Err(Nine65Error::ConfigError {
+                message: format!("config '{name}' exceeds the HE Standard bound"),
+            });
+        }
         // Conservative production floor: any >= 128-bit security claim
         // requires N >= 8192: the lattice estimator blesses smaller N, but the
         // audited N >= 8192 floor governs production claims. Insecure test
         // tiers are exempt.
-        assert!(
-            is_insecure_tier || claimed_security < 128 || n >= 8192,
-            "SECURITY ERROR: config '{}' claims {}-bit security but dimension N={} is below the 8192 floor",
-            name,
-            claimed_security,
-            n
-        );
+        if !is_insecure_tier && claimed_security >= 128 && n < 8192 {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "config '{name}' claims {claimed_security}-bit security but dimension \
+                     N={n} is below the 8192 floor"
+                ),
+            });
+        }
+
+        // WR-7 / issue #88: the typed admission state a caller can inspect
+        // instead of re-deriving from the raw bit counts. Every non-insecure
+        // branch above already returned `Err` on exactly the conditions that
+        // would otherwise land here as `StructurallyRefused`/`BelowClaim`,
+        // so those two states are reachable only via the insecure tier.
+        let admission_state = if is_insecure_tier {
+            SecurityAdmissionState::InsecureTier
+        } else {
+            match structural.binding_bits {
+                None => SecurityAdmissionState::StructurallyRefused,
+                // `binding_bits` is `Some` only when BOTH models' structural
+                // screens are `Screened` (`FactoredDualEstimate`'s own doc:
+                // "a refusal is structural, so both models always refuse
+                // together"), so `effective_bits()` on either model is
+                // guaranteed `Some` here too -- `.expect` documents that as
+                // an invariant rather than papering over it with a `0` that
+                // could be misread as a real bit count.
+                Some(_) => {
+                    const INVARIANT: &str =
+                        "binding_bits is Some, so both models' effective_bits() must be Some";
+                    let meets_core_svp = structural.core_svp.meets_claim();
+                    let meets_matzov = structural.matzov.meets_claim();
+                    if meets_core_svp && meets_matzov {
+                        SecurityAdmissionState::ScreenedFullModelAgreement
+                    } else if meets_core_svp {
+                        let matzov_bits = structural.matzov.effective_bits().expect(INVARIANT);
+                        SecurityAdmissionState::ScreenedModelGap {
+                            matzov_bits,
+                            shortfall_bits: claimed_security.saturating_sub(matzov_bits),
+                        }
+                    } else {
+                        SecurityAdmissionState::BelowClaim {
+                            core_svp_bits: structural.core_svp.effective_bits().expect(INVARIANT),
+                        }
+                    }
+                }
+            }
+        };
 
         let config = FHEConfig {
             n,
@@ -493,22 +803,102 @@ impl SecureConfig {
             name,
         };
 
-        Self {
+        Ok(Self {
             config,
             claimed_security,
             classical_security: estimate.classical_bits,
             hybrid_security: estimate.hybrid_bits,
             quantum_security: estimate.quantum_bits,
             he_standard_compliant,
+            admission_state,
+        })
+    }
+
+    /// Named/fixed-tuple constructors call this. The tuple is a compile-time
+    /// literal, so a screening failure here is a programmer error in this
+    /// module, not caller input -- panicking immediately, at binary startup
+    /// (every named constructor runs in `tests::*` and at every call site),
+    /// is the correct fail-fast behavior. See [`Self::try_new_verified`] for
+    /// the fallible logic and [`Self::custom_screened`] for the
+    /// caller-facing entry point that returns the `Result` instead.
+    fn new_verified(
+        n: usize,
+        primes: Vec<u64>,
+        t: u64,
+        eta: usize,
+        claimed_security: u32,
+        name: &'static str,
+    ) -> Self {
+        match Self::try_new_verified(n, primes, t, eta, claimed_security, name) {
+            Ok(config) => config,
+            Err(error) => panic!("SECURITY ERROR: config '{name}' failed screening: {error}"),
         }
+    }
+
+    /// Production-capable, fallible counterpart to the fixed-tuple named
+    /// constructors above.
+    ///
+    /// Screens an arbitrary caller-supplied `(n, primes, t, eta)` tuple
+    /// through the IDENTICAL exact-product + factorization-aware policy the
+    /// named configs are built on, and returns a typed `Err` instead of
+    /// panicking. This is what
+    /// [`crate::params::FHEConfig::custom_screened`] and
+    /// [`crate::params::FHEConfig::for_depth_screened`] route through --
+    /// issue #88: a raw [`FHEConfig`] from `FHEConfig::custom`/`for_depth`
+    /// alone is, by its TYPE, never mistakeable for a screened tuple (it
+    /// carries no `admission_state`, no `hybrid_security`, no
+    /// `he_standard_compliant`); only this constructor produces a
+    /// `SecureConfig`, and it never does so silently for an unscreened or
+    /// structurally-refused tuple.
+    pub fn custom_screened(
+        n: usize,
+        primes: Vec<u64>,
+        t: u64,
+        eta: usize,
+        claimed_security: u32,
+    ) -> Nine65Result<Self> {
+        Self::try_new_verified(n, primes, t, eta, claimed_security, "custom_screened")
     }
 
     /// Returns true only when the named claim, HE bound, and audited dimension
     /// floor are all satisfied.
+    ///
+    /// This is the contract `CLAUDE.md`'s Security Configs table documents:
+    /// gated on the conservative Core-SVP model alone (`hybrid_security`),
+    /// which is why `secure_256` -- 267 bits under Core-SVP, 240 under
+    /// MATZOV, against a 256-bit claim -- passes this check. No config is
+    /// renamed over that gap; see [`Self::is_production_safe_under_all_models`]
+    /// for the stricter check that DOES refuse it.
     pub fn is_production_safe(&self) -> bool {
         self.hybrid_security >= self.claimed_security
             && self.he_standard_compliant
             && (self.claimed_security < 128 || self.config.n >= 8192)
+    }
+
+    /// Stricter than [`Self::is_production_safe`]: additionally requires the
+    /// claim to be met under BOTH in-tree cost models, i.e.
+    /// `admission_state == ScreenedFullModelAgreement`.
+    ///
+    /// This is WR-7's resolution of issue #76 ("secure_256 naming vs MATZOV
+    /// binding"): rather than renaming `secure_256` (CLAUDE.md already
+    /// settled that "no config is renamed"), a caller who needs assurance
+    /// under the more aggressive MATZOV model as well as Core-SVP gets a
+    /// typed gate that refuses `secure_256` -- 240 bits under MATZOV against
+    /// its 256-bit claim -- while `secure_128`, `secure_128_deep`, and
+    /// `secure_192` all still pass (each clears its own claim under both
+    /// models). `secure_256` remains `is_production_safe()` under the
+    /// existing Core-SVP-gated contract; this method is additive, not a
+    /// replacement.
+    pub fn is_production_safe_under_all_models(&self) -> bool {
+        matches!(
+            self.admission_state,
+            SecurityAdmissionState::ScreenedFullModelAgreement
+        ) && self.is_production_safe()
+    }
+
+    /// Exact fingerprint of this config's tuple. See [`ParameterFingerprint`].
+    pub fn fingerprint(&self) -> ParameterFingerprint {
+        ParameterFingerprint::of(&self.config)
     }
 
     pub fn into_config(self) -> FHEConfig {
@@ -547,22 +937,51 @@ impl SecureConfig {
     /// Screen this tuple under **both** in-tree cost models and return the
     /// binding (minimum) result.
     ///
-    /// `new_verified` gates on Core-SVP alone. MATZOV is the more aggressive
-    /// model and is routinely the smaller of the two, so a config can carry a
-    /// name it meets under Core-SVP and misses under MATZOV. That gap is a
-    /// labelling fact and is documented per-config rather than hidden.
+    /// `new_verified` gates admission on Core-SVP alone. MATZOV is the more
+    /// aggressive model and is routinely the smaller of the two, so a config
+    /// can carry a name it meets under Core-SVP and misses under MATZOV.
+    /// That gap is a labelling fact and is documented per-config rather than
+    /// hidden (see [`SecureConfig::is_production_safe_under_all_models`]).
+    ///
+    /// WR-7 / issue #87 requirement 5: this is sourced from the SAME
+    /// factorization-aware structural screen construction runs
+    /// (`dual_estimate_with_factorization`), not a separately re-run
+    /// width-only call, so a report generated from this method cannot name a
+    /// different model than construction actually used. For every tuple
+    /// shipped today the two are numerically identical
+    /// (`security_estimator::tests::factored_screen_leaves_every_secure_config_unchanged`),
+    /// so this changes no published number -- it only removes the
+    /// possibility of the two silently diverging in the future.
+    ///
+    /// Panics if the structural screen REFUSES this tuple's shape. That is
+    /// deliberate, not a gap: `ScreenedSecurity`'s fields are plain `u32`s
+    /// (a pre-existing public shape this method must not silently repurpose
+    /// into sentinel territory -- WR-7 prohibits exactly that, "no
+    /// `u64::MAX`/`-1` markers, use proper typed Option/Result"), and a
+    /// refused tuple has NO screened bit count to put in them; reporting `0`
+    /// would read as "screens at 0 bits", which is a different and false
+    /// claim. Every `SecureConfig` that can exist already fails closed on a
+    /// structural refusal at construction (`try_new_verified`), so this can
+    /// only fire if that invariant is ever relaxed -- an invariant
+    /// violation, which should panic loudly rather than print a misleading
+    /// number.
     pub fn screened_security_dual(&self) -> ScreenedSecurity {
-        let log_q = self.log_q();
-        let dual = LatticeSecurityEstimator::new(CostModel::CoreSVP).dual_estimate(
-            self.config.n,
-            log_q,
-            SecretDistribution::Ternary,
-            self.claimed_security,
-        );
+        let factors: Vec<(u64, u32)> = self.config.primes.iter().map(|&p| (p, 1)).collect();
+        let dual = LatticeSecurityEstimator::new(CostModel::CoreSVP)
+            .dual_estimate_with_factorization(
+                self.config.n,
+                &factors,
+                SecretDistribution::Ternary,
+                self.claimed_security,
+            );
+        const INVARIANT: &str =
+            "SecureConfig invariant violated: a live config's structural screen was REFUSED, \
+             but try_new_verified is supposed to fail closed on that for every non-insecure-tier \
+             config before a SecureConfig can exist";
         ScreenedSecurity {
-            core_svp_bits: dual.core_svp.effective_bits,
-            matzov_bits: dual.matzov.effective_bits,
-            binding_bits: dual.binding_bits,
+            core_svp_bits: dual.core_svp.effective_bits().expect(INVARIANT),
+            matzov_bits: dual.matzov.effective_bits().expect(INVARIANT),
+            binding_bits: dual.binding_bits.expect(INVARIANT),
             meets_claim_under_both: dual.meets_both,
         }
     }
@@ -729,6 +1148,12 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
         return;
     }
 
+    // `security_bits` on a raw `FHEConfig` is, at best, a caller-declared
+    // claim -- `FHEConfig::custom` no longer derives it from a first-prime
+    // heuristic (issue #88), and `FHEConfig::for_depth` stores the caller's
+    // request verbatim, unverified. Either way this floor is what actually
+    // governs: `security_bits` can only push the requirement UP, never
+    // provide the proof that the tuple meets it.
     let required_security = (config.security_bits as u32).max(128);
     let log_q = exact_product_bit_length(&config.primes);
     let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
@@ -739,10 +1164,30 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
         required_security,
     );
 
+    // WR-7 / issue #87 requirement 6: apply the same factorization-aware
+    // structural policy to raw-config production validation. Fails closed
+    // on a REFUSED verdict rather than falling back to `estimate` above.
+    let factors: Vec<(u64, u32)> = config.primes.iter().map(|&p| (p, 1)).collect();
+    let structural = estimator.dual_estimate_with_factorization(
+        config.n,
+        &factors,
+        SecretDistribution::Ternary,
+        required_security,
+    );
+
     assert!(
         config.n >= 8192,
         "PRODUCTION SECURITY VIOLATION: N={} is below the audited floor N=8192",
         config.n
+    );
+    assert!(
+        structural.binding_bits.is_some(),
+        "PRODUCTION SECURITY VIOLATION: config '{}' modulus factorization was REFUSED by the \
+         structural screen (narrow/prime-power/power-of-two/non-coprime/malformed lane) -- no \
+         production security number may be asserted for it.\nCore-SVP: {}\nMATZOV: {}",
+        config.name,
+        structural.core_svp.analysis,
+        structural.matzov.analysis,
     );
     assert!(
         estimate.effective_bits >= required_security,
@@ -761,6 +1206,30 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
 
 /// Return a detailed error rather than panicking.
 pub fn verify_production_safety(config: &SecureConfig) -> Result<(), String> {
+    // Defense in depth: `SecureConfig::try_new_verified` already fails
+    // closed on these two states for anything but the insecure test tier,
+    // so a `SecureConfig` reaching here in `StructurallyRefused`/
+    // `BelowClaim` state can only be the insecure tier -- reject it by
+    // typed state rather than only by the numeric checks below, so this
+    // function keeps working even if a future numeric threshold changes.
+    match config.admission_state {
+        SecurityAdmissionState::StructurallyRefused => {
+            return Err(
+                "structural screen refused this modulus shape -- no production security \
+                 number was ever assigned to it"
+                    .to_string(),
+            );
+        }
+        SecurityAdmissionState::InsecureTier => {
+            return Err(format!(
+                "config '{}' is an explicit insecure/test tier",
+                config.config.name
+            ));
+        }
+        SecurityAdmissionState::BelowClaim { .. }
+        | SecurityAdmissionState::ScreenedModelGap { .. }
+        | SecurityAdmissionState::ScreenedFullModelAgreement => {}
+    }
     if config.config.n < 8192 && config.claimed_security >= 128 {
         return Err(format!(
             "N={} is below the audited production floor N=8192",
@@ -1453,5 +1922,380 @@ mod tests {
         let test_config = SecureConfig::test_fast_insecure();
         // In test mode, this will not panic
         test_config.require_production_safe();
+    }
+
+    // =====================================================================
+    // WR-7: FACTORIZATION-AWARE PRODUCTION ADMISSION (issues #87, #88, #76)
+    // =====================================================================
+
+    /// The exact boundary #87 exists for: a lane that is genuinely prime,
+    /// NTT-compatible, and coprime with every other lane -- so it sails past
+    /// every shape check `custom_screened` runs -- can still be narrower
+    /// than the structural screen's modelled floor. `65537` is exactly the
+    /// manufactured-`Q = t * D` lane `security_estimator.rs`'s own module
+    /// doc calls out, and the width-only model cannot see it at all (the
+    /// full product is still wide).
+    #[test]
+    fn custom_screened_refuses_a_narrow_prime_lane() {
+        let result =
+            SecureConfig::custom_screened(8192, vec![65537, 998244353, 985661441], 257, 3, 128);
+        let error = result.expect_err(
+            "a narrow (17-bit) prime lane must be refused by the structural screen, not \
+             silently screened by the width-only number",
+        );
+        assert!(
+            matches!(error, Nine65Error::SecurityScreenRefused { .. }),
+            "expected SecurityScreenRefused, got: {error:?}"
+        );
+        assert!(error.to_string().contains("REFUSED"));
+    }
+
+    /// Positive control: the same shape of tuple the named constructors use
+    /// (four wide, distinct, coprime, NTT-compatible primes) must be
+    /// admitted through the public fallible entry point too, and land in
+    /// the SAME admission state `secure_128`/`secure_128_deep` do.
+    #[test]
+    fn custom_screened_admits_a_well_formed_wide_prime_chain() {
+        let config = SecureConfig::custom_screened(
+            8192,
+            vec![998244353, 985661441, 754974721, 469762049],
+            65537,
+            3,
+            128,
+        )
+        .expect("this is exactly secure_128_deep's own tuple; it must screen");
+        assert_eq!(
+            config.admission_state,
+            SecurityAdmissionState::ScreenedFullModelAgreement
+        );
+        assert!(config.is_production_safe());
+        assert!(config.is_production_safe_under_all_models());
+    }
+
+    /// A caller-supplied lane that is not prime at all must be refused as a
+    /// shape error before it ever reaches the security screen -- distinct
+    /// from a structural refusal, which is about lanes that ARE prime but
+    /// have the wrong shape (narrow, power-of-two, ...).
+    #[test]
+    fn custom_screened_rejects_a_non_prime_lane() {
+        let result = SecureConfig::custom_screened(8192, vec![998244352], 3, 2, 40);
+        let error = result.expect_err("998244352 is even -- not prime");
+        assert!(
+            matches!(error, Nine65Error::InvalidParameter { .. }),
+            "expected InvalidParameter for a non-prime lane, got: {error:?}"
+        );
+    }
+
+    /// A tuple genuinely too small for the requested claim must fail on the
+    /// numeric bound (`SecurityLevelNotMet`), which is a DIFFERENT typed
+    /// outcome than a structural refusal (`SecurityScreenRefused`) -- the
+    /// two must stay distinguishable, per #88's separation of "claimed
+    /// but unmet" from "unscreenable at all".
+    #[test]
+    fn custom_screened_rejects_a_tuple_that_screens_below_its_claim() {
+        // A single 30-bit prime at N=1024 is comfortably inside the
+        // structural screen's modelled regime (wide, prime, NTT-compatible)
+        // but nowhere near 256-bit security.
+        let result = SecureConfig::custom_screened(1024, vec![998244353], 257, 2, 256);
+        let error = result.expect_err("a single 30-bit lane at N=1024 cannot claim 256 bits");
+        assert!(
+            matches!(error, Nine65Error::SecurityLevelNotMet { .. }),
+            "expected SecurityLevelNotMet (a number was produced and it was too low), got: {error:?}"
+        );
+    }
+
+    /// `custom_screened` must reject a malformed tuple (N not a power of
+    /// two) with a typed error, never a panic -- it takes caller-controlled
+    /// input, unlike the fixed-literal named constructors.
+    #[test]
+    fn custom_screened_never_panics_on_malformed_input() {
+        let result = SecureConfig::custom_screened(1000, vec![998244353], 257, 2, 40);
+        assert!(result.is_err(), "N=1000 is not a power of two");
+    }
+
+    /// #76's resolution, asserted rather than only documented: `secure_256`
+    /// is the one shipped config with a Core-SVP/MATZOV model gap, and it
+    /// must be typed as such -- distinguishable at the type level from the
+    /// three configs where both models agree -- without renaming anything.
+    #[test]
+    fn secure_256_is_typed_as_a_model_gap_not_full_agreement() {
+        let s256 = SecureConfig::secure_256();
+        match s256.admission_state {
+            SecurityAdmissionState::ScreenedModelGap {
+                matzov_bits,
+                shortfall_bits,
+            } => {
+                assert_eq!(
+                    matzov_bits, 240,
+                    "pinned by screened_levels_for_named_configs"
+                );
+                assert_eq!(shortfall_bits, 16, "256 - 240");
+            }
+            other => panic!("secure_256 must be ScreenedModelGap, got {other:?}"),
+        }
+        // No config is renamed (CLAUDE.md's settled position): it remains
+        // production-safe under the existing Core-SVP-gated contract...
+        assert!(s256.is_production_safe());
+        // ...but the stricter all-models gate -- WR-7's actual answer to
+        // #76 -- refuses it.
+        assert!(!s256.is_production_safe_under_all_models());
+    }
+
+    /// Every OTHER named production config clears both models and must be
+    /// typed `ScreenedFullModelAgreement`, and pass the strict all-models
+    /// gate `secure_256` fails.
+    #[test]
+    fn every_other_named_config_has_full_model_agreement() {
+        for (name, config) in [
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_128_deep", SecureConfig::secure_128_deep()),
+            ("secure_192", SecureConfig::secure_192()),
+        ] {
+            assert_eq!(
+                config.admission_state,
+                SecurityAdmissionState::ScreenedFullModelAgreement,
+                "{name}: expected full model agreement"
+            );
+            assert!(
+                config.is_production_safe_under_all_models(),
+                "{name}: must pass the strict all-models gate"
+            );
+        }
+    }
+
+    /// The insecure test tier must be typed `InsecureTier` regardless of
+    /// whether it happens to meet or miss its own (deliberately low) claim
+    /// -- never conflated with a real screened state.
+    #[test]
+    fn insecure_tier_configs_are_typed_as_such() {
+        assert_eq!(
+            SecureConfig::test_fast_insecure().admission_state,
+            SecurityAdmissionState::InsecureTier
+        );
+        assert_eq!(
+            SecureConfig::test_medium_insecure().admission_state,
+            SecurityAdmissionState::InsecureTier
+        );
+    }
+
+    /// `screened_security_dual` (issue #87 requirement 5) must report
+    /// numbers identical to the pinned structural table -- it is now
+    /// sourced from the same `dual_estimate_with_factorization` call
+    /// construction runs, not a separately re-run width-only estimate.
+    #[test]
+    fn screened_security_dual_matches_the_pinned_structural_table() {
+        let s256 = SecureConfig::secure_256();
+        let dual = s256.screened_security_dual();
+        assert_eq!(dual.core_svp_bits, 267);
+        assert_eq!(dual.matzov_bits, 240);
+        assert_eq!(dual.binding_bits, 240);
+        assert!(!dual.meets_claim_under_both);
+    }
+
+    // ---------------------------------------------------------------------
+    // Fingerprints (issue #75: freeze the tuple before an external
+    // attestation is claimed)
+    // ---------------------------------------------------------------------
+
+    /// Fingerprinting must be a PURE function of `(n, primes, t, eta)`: two
+    /// configs built via completely different construction paths -- one
+    /// through the fully screened, panic-on-failure named constructor
+    /// (`secure_128_deep`, always available), the other through the
+    /// `#[cfg(any(test, debug_assertions, feature = "allow_insecure"))]`
+    /// gated insecure test tier's raw struct-literal style (built here by
+    /// hand, bypassing screening entirely) -- must fingerprint identically
+    /// whenever the underlying tuple is identical. This is the
+    /// "feature-dependent" property #75/WR-7 asks tested: the fingerprint
+    /// must not depend on which cfg-gated path constructed the config.
+    #[test]
+    fn fingerprint_is_independent_of_construction_path_and_feature_gating() {
+        let via_named_constructor = SecureConfig::secure_128_deep();
+
+        // Hand-built raw FHEConfig with the identical tuple, taking neither
+        // the named-constructor path nor any screening at all -- exactly
+        // the shape of the `_insecure` struct literals scattered through
+        // this crate under `cfg(any(test, debug_assertions, feature =
+        // "allow_insecure"))`.
+        let hand_built = FHEConfig {
+            n: 8192,
+            primes: vec![998244353, 985661441, 754974721, 469762049],
+            q: 998244353,
+            t: 65537,
+            eta: 3,
+            security_bits: 0, // deliberately different from the claim below
+            name: "hand_built_for_fingerprint_test",
+        };
+
+        assert_eq!(
+            via_named_constructor.fingerprint(),
+            ParameterFingerprint::of(&hand_built),
+            "fingerprint must depend only on (n, primes, t, eta), not on \
+             security_bits, name, or which construction path built the config"
+        );
+    }
+
+    /// Deterministic across every named + insecure-tier config shipped
+    /// today, and distinct across every DISTINCT tuple -- but not
+    /// necessarily distinct across every NAME. Since the 2026-08-26 re-cut
+    /// (`docs/OPEN_WORK_2026-08-26.md` A3) `secure_128` and
+    /// `secure_128_deep` carry the byte-identical tuple, and a fingerprint
+    /// keyed on the tuple (never the name -- that is the entire point, see
+    /// [`ParameterFingerprint::of`]) is SUPPOSED to collide for those two.
+    /// This groups configs by their expected tuple-equality class rather
+    /// than assuming every name is numerically distinct, so it does not
+    /// quietly start asserting something false about the current tree.
+    ///
+    /// Exercises both the always-available named constructors and the
+    /// `_insecure` tier, which only exists under `cfg(any(test,
+    /// debug_assertions, feature = "allow_insecure"))`, proving
+    /// fingerprinting itself is not gated behind or sensitive to that
+    /// feature.
+    #[test]
+    fn fingerprint_pins_across_all_named_and_insecure_tier_configs() {
+        // Each inner slice is a group of names expected to SHARE a
+        // fingerprint (because they share a tuple); different groups must
+        // fingerprint differently from each other.
+        let groups: Vec<Vec<(&str, SecureConfig)>> = vec![
+            vec![
+                ("secure_128", SecureConfig::secure_128()),
+                ("secure_128_deep", SecureConfig::secure_128_deep()),
+            ],
+            vec![("secure_192", SecureConfig::secure_192())],
+            vec![("secure_256", SecureConfig::secure_256())],
+            vec![("test_fast_insecure", SecureConfig::test_fast_insecure())],
+            vec![("test_medium_insecure", SecureConfig::test_medium_insecure())],
+        ];
+
+        let mut group_fingerprints = Vec::new();
+        for group in &groups {
+            let mut fps_in_group = std::collections::HashSet::new();
+            for (name, config) in group {
+                let fp = config.fingerprint();
+                assert_eq!(
+                    ParameterFingerprint::of(&config.config),
+                    fp,
+                    "{name}: fingerprint must be a pure, repeatable function of the tuple"
+                );
+                fps_in_group.insert(fp);
+            }
+            assert_eq!(
+                fps_in_group.len(),
+                1,
+                "every name in this group is documented to share a tuple, so they must \
+                 share a fingerprint: {group:?}"
+            );
+            group_fingerprints.push(*fps_in_group.iter().next().unwrap());
+        }
+
+        let mut seen_across_groups = std::collections::HashSet::new();
+        for (group, fp) in groups.iter().zip(&group_fingerprints) {
+            let names: Vec<&str> = group.iter().map(|(name, _)| *name).collect();
+            assert!(
+                seen_across_groups.insert(*fp),
+                "{names:?}: this group's fingerprint collided with a DIFFERENT group's -- \
+                 those tuples are not supposed to be equal"
+            );
+        }
+    }
+
+    /// A single-prime change must change the fingerprint -- it is not
+    /// merely a function of lane COUNT or of `n`.
+    #[test]
+    fn fingerprint_changes_when_a_single_lane_changes() {
+        let a = SecureConfig::custom_screened(
+            8192,
+            vec![998244353, 985661441, 754974721, 469762049],
+            65537,
+            3,
+            128,
+        )
+        .expect("secure_128_deep's own tuple");
+        let b = SecureConfig::custom_screened(
+            16384,
+            vec![998244353, 985661441, 754974721, 469762049, 167772161],
+            65537,
+            4,
+            192,
+        )
+        .expect("secure_192's own tuple");
+
+        assert_ne!(a.fingerprint(), b.fingerprint());
+    }
+
+    /// #75: this crate archives an attestation against the exact tuple it
+    /// covers, and REJECTS a mismatched one rather than accepting it as
+    /// advisory -- the whole point of freezing a fingerprint before any
+    /// attestation is claimed. No shipped config has a real external
+    /// attestation recorded (that is #75's still-open, human-owned part);
+    /// this exercises only the typed accept/reject machinery with a
+    /// synthetic record, never asserts a real external result.
+    #[test]
+    fn external_attestation_binds_only_to_its_own_fingerprint() {
+        let s128 = SecureConfig::secure_128();
+        let s192 = SecureConfig::secure_192();
+
+        let matching = ExternalAttestation {
+            fingerprint: s128.fingerprint(),
+            estimator_name: "synthetic-test-double, not a real run".to_string(),
+            reported_bits: Some(196),
+            raw_output_reference: "test-only synthetic record".to_string(),
+            run_date: "n/a".to_string(),
+        };
+        assert!(matching.verify_binds_to(&s128).is_ok());
+
+        let mismatched = ExternalAttestation {
+            fingerprint: s192.fingerprint(),
+            ..matching
+        };
+        let error = mismatched
+            .verify_binds_to(&s128)
+            .expect_err("an attestation for secure_192's tuple must not bind to secure_128");
+        assert!(error.contains("does not match"));
+    }
+
+    /// A tuple redefinition under an UNCHANGED name (exactly what happened
+    /// to `secure_128` on 2026-08-26) must change the fingerprint. An
+    /// attestation keyed only to the config NAME would have silently kept
+    /// applying across that redefinition; one keyed to the fingerprint
+    /// cannot.
+    #[test]
+    fn fingerprint_would_have_caught_the_secure_128_recut() {
+        let old_three_prime_shape = FHEConfig {
+            n: 8192,
+            primes: vec![998244353, 985661441, 754974721],
+            q: 998244353,
+            t: 65537,
+            eta: 3,
+            security_bits: 128,
+            name: "secure_128",
+        };
+        let current = SecureConfig::secure_128();
+        assert_ne!(
+            ParameterFingerprint::of(&old_three_prime_shape),
+            current.fingerprint(),
+            "the retired three-prime secure_128 and the current four-prime secure_128 share a \
+             name but must not share a fingerprint"
+        );
+    }
+
+    // ---------------------------------------------------------------------
+    // `FHEConfig::custom`/`for_depth` are unscreened by construction
+    // ---------------------------------------------------------------------
+
+    /// `custom` no longer derives `security_bits` from the legacy
+    /// first-prime heuristic -- it is always `0`, i.e. never a number a
+    /// caller could mistake for a claim.
+    #[test]
+    fn raw_custom_never_asserts_a_security_number() {
+        let config = FHEConfig::custom(2048, vec![998244353], 1024, 2).expect("valid shape");
+        assert_eq!(config.security_bits, 0);
+
+        // Same first prime as a config that would, under the retired
+        // heuristic, have reported a nonzero number purely from that one
+        // prime's width -- pinning that this constructor no longer does so
+        // for ANY input, not just this one.
+        let wider = FHEConfig::custom(8192, vec![998244353, 985661441, 754974721], 65537, 3)
+            .expect("valid shape");
+        assert_eq!(wider.security_bits, 0);
     }
 }
