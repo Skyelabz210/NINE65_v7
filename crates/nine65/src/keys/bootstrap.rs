@@ -227,6 +227,31 @@ impl BootstrapKey {
         let work_s_coeffs = &work_sk.s.main[0];
         let first_work_prime = work_config.primes[0];
 
+        // Issue #86: every coefficient of the working secret key must be
+        // ternary ({0, 1, first_work_prime - 1}, i.e. {0, 1, -1} mod the
+        // first work prime) before it is lifted into the bootstrap
+        // ciphertext below. This used to be checked implicitly, in the
+        // per-coefficient encode loop, by falling through to a `0` default
+        // for anything that wasn't one of the three ternary values -- silently
+        // treating a malformed (non-ternary) secret-key coefficient as if it
+        // had been a genuine `0`, rather than rejecting the key material.
+        // Validated once, up front, rather than per-coefficient inside that
+        // loop (issue #89: validate once at the boundary, not repeatedly in
+        // a proven inner loop) -- and before the RNG-consuming encrypt below,
+        // so a malformed key is rejected without spending randomness on a
+        // bootstrap key that will never be returned.
+        if let Some(bad_index) = work_s_coeffs
+            .iter()
+            .position(|&coeff| coeff != 0 && coeff != 1 && coeff != first_work_prime - 1)
+        {
+            return Err(Nine65Error::KeyGenFailed {
+                reason: format!(
+                    "BootstrapKey::generate: work secret key coefficient {} at index {} is not ternary (expected 0, 1, or {})",
+                    work_s_coeffs[bad_index], bad_index, first_work_prime - 1
+                ),
+            });
+        }
+
         // We need to encode s as a single scalar per coefficient for encrypt_dual.
         // encrypt_dual takes a single u64 message. We need poly encryption.
         // Instead, we'll build the encoded polynomial and use trivial + noise approach.
@@ -255,7 +280,12 @@ impl BootstrapKey {
             } else if coeff == first_work_prime - 1 {
                 -1
             } else {
-                // Non-ternary coefficient — shouldn't happen with proper key gen
+                // Unreachable: the ternary-coefficient check above already
+                // rejected any `work_s_coeffs` value outside {0, 1,
+                // first_work_prime - 1} before this loop runs (issue #86).
+                // Kept as a defensive, non-panicking fallback rather than
+                // an `unreachable!()` -- the invariant is proven by the
+                // check above, not by this match arm's own reasoning.
                 0
             };
 

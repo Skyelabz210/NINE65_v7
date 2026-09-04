@@ -1,0 +1,11 @@
+# panic_gate_baseline.txt — committed ratchet baseline for check_no_panics.sh
+# Format: <dir>|<pattern>|<count>. Regenerate deliberately with
+# 'bash scripts/check_no_panics.sh generate-baseline' after reviewing
+# that a count change is a real, reviewed fix or addition — never to
+# silence a ratchet failure without looking at what regressed.
+crates/nine65/src|panic!|32
+crates/nine65/src|\.unwrap()|2
+crates/nine65/src|\.expect(|69
+crates/fhe-service/src|panic!|0
+crates/fhe-service/src|\.unwrap()|0
+crates/fhe-service/src|\.expect(|0

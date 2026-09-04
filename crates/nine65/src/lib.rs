@@ -122,28 +122,39 @@
 //! - **Memory Safety**: Key zeroization via `zeroize` crate
 
 // CLAUDE.md states plainly: "Test configs (allow_insecure) are blocked in
-// release builds — never use in production." This gate enforces that, but
-// it is commented out -- re-enabling it as-is breaks the documented
-// `cargo test --release --workspace` command:
-// `crates/fhe-service/Cargo.toml` enables `nine65/allow_insecure` from
-// `[dev-dependencies]` for its own `--release` test suite, and `cfg(test)`/
-// `debug_assertions` do NOT propagate from a dependent crate's test build
-// into this crate when it is compiled as a (dev-)dependency -- there is no
-// cfg-based way here to distinguish "a legitimate --release test run of a
-// crate that dev-depends on this feature" from "a real production release
-// binary that mistakenly enabled it". Verified by direct experiment
-// (2026-08-19, NINE65_v7_DEEP_ANALYSIS_20260817.md G2 follow-up): enabling
-// this exact check makes `cargo test --release --workspace` fail to
-// compile `nine65` via fhe-service's dev-dependency, for a build that is
-// not the production misuse this check is meant to catch.
-// TODO: fix by restructuring fhe-service's test architecture (e.g. its
-// allow_insecure-dependent tests should not require `--release`, or should
-// use a secure config instead) so this can be re-enabled without breaking
-// the standard test command. Do not re-enable this without first confirming
+// release builds — never use in production." This gate enforces that.
+//
+// History (issue #74): this was commented out because
+// `crates/fhe-service/Cargo.toml` used to enable `nine65/allow_insecure`
+// from `[dev-dependencies]` unconditionally, for its own `--release` test
+// suite -- and `cfg(test)`/`debug_assertions` do NOT propagate from a
+// dependent crate's test build into this crate when it is compiled as a
+// (dev-)dependency, so there was no cfg-based way here to distinguish "a
+// legitimate --release test run of a crate that dev-depends on this
+// feature" from "a real production release binary that mistakenly enabled
+// it". Verified by direct experiment (2026-08-19,
+// NINE65_v7_DEEP_ANALYSIS_20260817.md G2 follow-up): enabling this exact
+// check made `cargo test --release --workspace` fail to compile `nine65`
+// via fhe-service's dev-dependency, for a build that was not the production
+// misuse this check exists to catch.
+//
+// Root cause, not just a workaround: `fhe-service`'s only actual need for
+// `allow_insecure` was `Session::new_test` seeding a non-secure
+// `ShadowHarvester` for reproducible test keys, which is exactly what
+// `crate::entropy::require_secure_rng`'s production gate exists to refuse
+// outside test/debug/allow_insecure. `Session::new_test` (see
+// `crates/fhe-service/src/session.rs`) now uses
+// `generate_keys_dual_full_secure()` instead -- the same call production
+// session creation already makes, which passes a genuinely secure RNG
+// through `require_secure_rng` and is therefore accepted unconditionally,
+// in every build mode, with no feature flag involved. `fhe-service`'s
+// `[dev-dependencies]` no longer requests `nine65/allow_insecure` at all,
+// so this gate can be restored without breaking
 // `cargo test --release --workspace --exclude nine65-python --exclude
-// nine65-wasm` still passes.
-// #[cfg(all(feature = "allow_insecure", not(any(test, debug_assertions))))]
-// compile_error!("The `allow_insecure` feature must not be enabled in release builds");
+// nine65-wasm` (verified: see the workspace test run recorded for this
+// change).
+#[cfg(all(feature = "allow_insecure", not(any(test, debug_assertions))))]
+compile_error!("The `allow_insecure` feature must not be enabled in release builds");
 
 pub mod arithmetic;
 pub mod bootstrap; // Three-Lock Bootstrap: protected re-encryption with conjunction security

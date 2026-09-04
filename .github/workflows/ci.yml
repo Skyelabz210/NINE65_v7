@@ -119,8 +119,15 @@ jobs:
       - name: Detect stale claims
         run: bash scripts/check_stale_claims.sh
 
-      - name: Scan for panic patterns
-        run: bash scripts/check_no_panics.sh
+      # Issue #89: ratchet mode fails on any NEW production panic!/unwrap()/
+      # expect() site relative to the committed baseline
+      # (scripts/panic_gate_baseline.txt); it does not fail on the existing,
+      # tracked backlog (hard cutover to zero is a separate, larger, still-open
+      # decision — see the script header). Previously this ran with no
+      # argument (advisory: always exits 0), so the scan never actually gated
+      # CI despite being present in every run.
+      - name: Scan for panic patterns (ratchet)
+        run: bash scripts/check_no_panics.sh ratchet
 
       - name: Scan for float usage in runtime paths
         run: bash scripts/check_no_floats_runtime.sh

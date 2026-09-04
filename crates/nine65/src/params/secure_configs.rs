@@ -722,15 +722,29 @@ pub fn assert_production_safe(config: &SecureConfig) {
     config.require_production_safe();
 }
 
-/// Validate a raw `FHEConfig` against its declared claim, with a 128-bit
-/// minimum on production paths.
-pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
-    if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
-        return;
-    }
-
+/// The raw production-safety predicate, with no `test`/`debug_assertions`/
+/// `allow_insecure` bypass.
+///
+/// This is the fallible primitive: the three checks are the same ones
+/// [`assert_production_safe_fhe_config`] used to run through `assert!`, but
+/// here every violation returns a typed [`Nine65Error`] instead of
+/// panicking. It is unconditional (always evaluates the checks) so it is
+/// independently testable in a normal `cargo test` build, where
+/// [`verify_production_safe_fhe_config`]'s environment bypass would
+/// otherwise make every violation branch unreachable.
+pub fn production_safety_checks(config: &FHEConfig) -> Nine65Result<()> {
     let required_security = (config.security_bits as u32).max(128);
     let log_q = exact_product_bit_length(&config.primes);
+
+    if config.n < 8192 {
+        return Err(Nine65Error::ConfigError {
+            message: format!(
+                "PRODUCTION SECURITY VIOLATION: N={} is below the audited floor N=8192",
+                config.n
+            ),
+        });
+    }
+
     let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
     let estimate = estimator.estimate(
         config.n,
@@ -738,25 +752,64 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
         SecretDistribution::Ternary,
         required_security,
     );
+    if estimate.effective_bits < required_security {
+        return Err(Nine65Error::SecurityLevelNotMet {
+            bits: estimate.effective_bits,
+            required: required_security,
+        });
+    }
 
-    assert!(
-        config.n >= 8192,
-        "PRODUCTION SECURITY VIOLATION: N={} is below the audited floor N=8192",
-        config.n
-    );
-    assert!(
-        estimate.effective_bits >= required_security,
-        "PRODUCTION SECURITY VIOLATION: config '{}' screens at {} bits ({} required).\n{}",
-        config.name,
-        estimate.effective_bits,
-        required_security,
-        estimate.analysis,
-    );
-    assert!(
-        HEStandardBounds::is_compliant(config.n, log_q, required_security),
-        "PRODUCTION SECURITY VIOLATION: config '{}' exceeds the HE Standard modulus bound",
-        config.name
-    );
+    if !HEStandardBounds::is_compliant(config.n, log_q, required_security) {
+        return Err(Nine65Error::ConfigError {
+            message: format!(
+                "PRODUCTION SECURITY VIOLATION: config '{}' exceeds the HE Standard modulus bound",
+                config.name
+            ),
+        });
+    }
+
+    Ok(())
+}
+
+/// Validate a raw `FHEConfig` against its declared claim, with a 128-bit
+/// minimum on production paths, returning a typed error instead of
+/// panicking.
+///
+/// This is what every `try_*` constructor that accepts caller-supplied
+/// configuration must call: an invalid/unverified production config is
+/// caller input, not an internal invariant, so it must produce a `Result`,
+/// never abort the process (see issue #85 — with `panic = "abort"` in the
+/// release profile, a reachable `assert!` here is process termination, not a
+/// typed configuration failure).
+///
+/// Outside production builds (`test`, `debug_assertions`, or the
+/// `allow_insecure` feature) this always returns `Ok(())`, matching the
+/// panicking version's behavior of being a no-op there. Use
+/// [`production_safety_checks`] directly to exercise the underlying
+/// predicate without that bypass (e.g. from tests).
+pub fn verify_production_safe_fhe_config(config: &FHEConfig) -> Nine65Result<()> {
+    if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
+        return Ok(());
+    }
+    production_safety_checks(config)
+}
+
+/// Validate a raw `FHEConfig` against its declared claim, with a 128-bit
+/// minimum on production paths.
+///
+/// # Panics
+///
+/// Panics (via `assert!`) on any of the three production-safety violations
+/// [`verify_production_safe_fhe_config`] detects. The `assert_` prefix makes
+/// that panic contract explicit in the name: this wrapper exists only for
+/// call sites that have deliberately chosen an infallible, abort-on-invalid
+/// API. Fallible call sites — every `try_*` constructor included — must call
+/// [`verify_production_safe_fhe_config`] directly and propagate the error
+/// with `?` instead.
+pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
+    if let Err(error) = verify_production_safe_fhe_config(config) {
+        panic!("{error}");
+    }
 }
 
 /// Return a detailed error rather than panicking.
@@ -1453,5 +1506,127 @@ mod tests {
         let test_config = SecureConfig::test_fast_insecure();
         // In test mode, this will not panic
         test_config.require_production_safe();
+    }
+
+    // =====================================================================
+    // ISSUE #85 — `try_new` MUST RETURN, NOT PANIC, ON INVALID CONFIG
+    // =====================================================================
+    //
+    // `production_safety_checks` is the raw predicate with no
+    // test/debug_assertions/allow_insecure bypass, so — unlike
+    // `verify_production_safe_fhe_config`, which is deliberately a no-op
+    // under `cfg(test)` — these violation branches are reachable and
+    // assertable from a normal `cargo test` run. This is what
+    // `RNSFHEContext::try_new` calls (via `verify_production_safe_fhe_config`
+    // outside test/debug builds), so pinning the exact `Nine65Error` here
+    // pins `try_new`'s release-mode contract without needing a
+    // release-without-test-cfg build to observe it directly.
+
+    #[test]
+    fn production_safety_checks_rejects_dimension_below_the_audited_floor() {
+        let mut config = SecureConfig::secure_128().into_config();
+        config.n = 4096; // below the audited N=8192 floor
+
+        let error = production_safety_checks(&config)
+            .expect_err("N=4096 must be rejected, not silently accepted");
+        match error {
+            Nine65Error::ConfigError { message } => {
+                assert!(message.contains("N=4096"), "message was: {message}");
+                assert!(message.contains("8192"), "message was: {message}");
+            }
+            other => panic!("expected ConfigError for dimension floor, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn production_safety_checks_rejects_a_config_that_screens_below_its_claim() {
+        // N clears the 8192 floor, but claiming 256-bit security on a
+        // 3-prime, ~90-bit-modulus chain (the actual secure_128 tuple) is
+        // nowhere near sufficient: the CoreSVP screen must reject it.
+        let mut config = SecureConfig::secure_128().into_config();
+        config.security_bits = 256;
+
+        let error = production_safety_checks(&config)
+            .expect_err("an unmet security claim must be rejected, not silently accepted");
+        match error {
+            Nine65Error::SecurityLevelNotMet { bits, required } => {
+                assert_eq!(required, 256);
+                assert!(
+                    bits < required,
+                    "screened bits ({bits}) should be below the claim ({required})"
+                );
+            }
+            other => panic!("expected SecurityLevelNotMet, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn production_safety_checks_rejects_a_modulus_over_the_he_standard_bound() {
+        // n=8192 with a 128-bit claim allows log2(q) <= 218
+        // (`HEStandardBounds::max_log_q(8192, 128)`). Stack enough NTT-valid
+        // 30-bit primes to blow well past that bound while keeping the
+        // CoreSVP screen from being the branch that fires first: a bigger Q
+        // at fixed N raises the CoreSVP estimate's assumed attack advantage
+        // less steeply than the linear standard-table bound does, so a
+        // moderate overshoot trips the table before it trips CoreSVP.
+        let base = SecureConfig::secure_256().into_config(); // 6 NTT-valid primes, log2(q)=175
+        let mut primes = base.primes.clone();
+        primes.extend(base.primes.iter().copied()); // duplicate: log2(q) ~= 350
+        let config = FHEConfig {
+            n: 8192,
+            primes,
+            q: base.q,
+            t: base.t,
+            eta: base.eta,
+            security_bits: 128,
+            name: "test_he_standard_bound_violation",
+        };
+
+        let error = production_safety_checks(&config)
+            .expect_err("a modulus far past the HE Standard bound must be rejected");
+        // Whichever screen catches it first (CoreSVP or the HE Standard
+        // table), it must be a typed error, never a panic — that is the
+        // property this test exists to pin. Both branches are legitimate
+        // rejections of the same oversized-Q config.
+        assert!(matches!(
+            error,
+            Nine65Error::SecurityLevelNotMet { .. } | Nine65Error::ConfigError { .. }
+        ));
+    }
+
+    #[test]
+    fn production_safety_checks_accepts_every_named_secure_config() {
+        for config in [
+            SecureConfig::secure_128().into_config(),
+            SecureConfig::secure_128_deep().into_config(),
+            SecureConfig::secure_192().into_config(),
+            SecureConfig::secure_256().into_config(),
+        ] {
+            assert!(
+                production_safety_checks(&config).is_ok(),
+                "named config '{}' must pass its own production-safety screen",
+                config.name
+            );
+        }
+    }
+
+    #[test]
+    fn verify_production_safe_fhe_config_never_panics_on_hostile_input() {
+        // The behavioral contract `try_new` depends on: no matter how
+        // invalid the config, the fallible path returns `Err`, and the
+        // process stays alive to receive it (no `assert!`/`panic!`
+        // reachable). Under `cfg(test)` this is a deliberate no-op — see
+        // the doc comment on `verify_production_safe_fhe_config` — but that
+        // no-op is itself part of the contract under test: this call must
+        // not panic either way.
+        let mut hostile = SecureConfig::secure_128().into_config();
+        hostile.n = 1;
+        hostile.primes = vec![0];
+        hostile.security_bits = usize::MAX;
+        assert!(verify_production_safe_fhe_config(&hostile).is_ok());
+
+        // And the constructor built on top of it must likewise return
+        // `Err`, never abort, when given the same hostile config directly.
+        assert!(crate::ops::rns_fhe::RNSFHEContext::try_new(&hostile).is_err());
     }
 }
