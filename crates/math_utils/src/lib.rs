@@ -20,6 +20,10 @@
 //! canonical validated, CT-tested two-modulus reference implementation is
 //! `nine65::arithmetic::k_elimination::KElimination`.
 //!
+//! For the full inventory of every K-Elimination-shaped implementation
+//! across the workspace, see `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md`
+//! (issue #70) at the workspace root (`NINE65_v7/docs/`).
+//!
 //! ## Zero-Float Guarantee
 //!
 //! All operations use exact integer arithmetic. No floating-point operations.

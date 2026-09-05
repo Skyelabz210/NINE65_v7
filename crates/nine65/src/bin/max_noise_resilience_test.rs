@@ -1,6 +1,7 @@
 //! Maximum Noise Injection Simulation Harness for NINE65 v7.
 //! Tests S8 Time Crystal resilience under extreme noise and concurrent fault conditions.
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
@@ -83,8 +84,8 @@ fn main() {
     println!("\n[Phase 4] Final Stability Verdict");
     println!("  Systemic Decoherence: None (Restricted to faulty lanes)");
     println!(
-        "  Time Crystal Rigidity: {:.2}%",
-        (restoration_success as f64 / residues.len() as f64) * 100.0
+        "  Time Crystal Rigidity: {}%",
+        format_ratio(restoration_success as u128 * 100, residues.len() as u128, 2)
     );
     println!("  Fault Localization Accuracy: 100%");
     println!("  Audit Latency: {:?}", audit_time);

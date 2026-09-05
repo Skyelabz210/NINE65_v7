@@ -29,6 +29,7 @@
 //! compile-time `CARGO_MANIFEST_DIR`, so it does not depend on the test
 //! process's current directory or on `$CARGO_TARGET_DIR`).
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::secure_configs::SecureConfig;
@@ -38,22 +39,22 @@ use std::time::Instant;
 
 /// Integer-only median: sorts a copy of `values` and returns the middle
 /// element (odd sample counts only in this file — no interpolation, so no
-/// division by two is ever needed to produce the result itself).
+/// division by two is ever needed to produce the result itself). Takes a
+/// slice rather than consuming the samples: `time_config` needs the raw
+/// per-round nanosecond vectors again afterward to build the JSON capture's
+/// per-operation medians.
 fn median_ns(values: &[u128]) -> u128 {
     let mut v = values.to_vec();
     v.sort_unstable();
     v[v.len() / 2]
 }
 
-/// Formats a nanosecond count as "<ms>.<micros, 3 digits>" without ever
-/// constructing an f32/f64 — integer division and modulo only. Truncates at
-/// microsecond resolution (matches the 3-decimal-place precision the
-/// existing markdown tables already report).
-fn ns_to_ms_string(ns: u128) -> String {
-    let micros = ns / 1_000;
-    let ms_whole = micros / 1_000;
-    let ms_frac = micros % 1_000;
-    format!("{ms_whole}.{ms_frac:03}")
+/// Median duration in milliseconds, formatted to `decimals` fractional
+/// digits via the shared integer-only [`format_ratio`] helper — the
+/// integer-only replacement for `median(..) as f64 / 1e6` followed by
+/// `{:.N}`.
+fn median_ms(v: &[u128], decimals: u32) -> String {
+    format_ratio(median_ns(v), 1_000_000, decimals)
 }
 
 /// One operation's raw samples plus its integer median, ready to serialize.
@@ -128,11 +129,11 @@ fn time_config(name: &'static str, secure: SecureConfig, rounds: usize) -> Confi
         "| `{name}` | {} | {} | {} | {} | {} | {} | {} |",
         config.n,
         config.primes.len(),
-        ns_to_ms_string(median_ns(&enc)),
-        ns_to_ms_string(median_ns(&add)),
-        ns_to_ms_string(median_ns(&mul)),
-        ns_to_ms_string(median_ns(&smul)),
-        ns_to_ms_string(median_ns(&dec)),
+        median_ms(&enc, 2),
+        median_ms(&add, 3),
+        median_ms(&mul, 2),
+        median_ms(&smul, 2),
+        median_ms(&dec, 2),
     );
 
     let ops = [
