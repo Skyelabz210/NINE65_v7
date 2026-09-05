@@ -25,7 +25,6 @@
 //! The auxiliary-basis certificates are checked at production `N` in both.
 
 use super::*;
-use crate::arithmetic::RNSContext;
 use crate::entropy::ShadowHarvester;
 use crate::params::secure_configs::SecureConfig;
 use crate::params::FHEConfig;
