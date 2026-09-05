@@ -190,7 +190,7 @@ impl U512 {
         let d128 = d as u128;
         let mut rem: u128 = 0;
 
-        let mut limbs = [
+        let limbs = [
             (self.d3 >> 64) as u64,
             (self.d3 & 0xFFFFFFFFFFFFFFFF) as u64,
             (self.d2 >> 64) as u64,
@@ -488,6 +488,15 @@ impl U256 {
     /// `barrett::borrow_mask_u64`. `black_box` is a hint with no
     /// language-level guarantee; it is used here because the result is
     /// measured (`security::ct_verification`), not in place of measuring.
+    ///
+    /// Production caller: `DualRNSContext::extract_k_rns_level_cached`'s
+    /// per-anchor-prime reduction of the secret-correlated `v_main` /
+    /// `magnitude` values (`arithmetic/rns.rs`, hot rescale path reached from
+    /// `k_elim_rescale_dual` / `extract_digit_dual` in `ops/rns_fhe.rs`) --
+    /// added by 3e1e078 ("Close F-2 (mod_switch_down_dual timing leak);
+    /// harden K-Elimination hot path") after this function was written as
+    /// test-only, so it must stay available unconditionally rather than
+    /// `#[cfg(test)]`-gated.
     #[inline(always)]
     pub(crate) fn mod_u64_ct(self, m: u64) -> u64 {
         if m == 0 {
@@ -1891,6 +1900,13 @@ impl DualRNSContext {
     /// into a panic at their boundary — see `k_elim_rescale_dual` in
     /// `ops/rns_fhe.rs` — but the check itself is now independently
     /// testable and the failure is explicit rather than an unwind.
+    ///
+    /// Test-only: production call sites use the cached
+    /// `extract_k_rns_level_cached` directly instead (this wrapper just
+    /// builds fresh inverses on every call). `#[cfg(test)]` keeps this
+    /// exercised-only-by-tests reference path from warning as dead code in
+    /// a release build.
+    #[cfg(test)]
     pub(crate) fn extract_k_rns_level(
         &self,
         v_main: U256,

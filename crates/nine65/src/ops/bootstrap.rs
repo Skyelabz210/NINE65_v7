@@ -903,7 +903,13 @@ impl ClockworkBootstrap {
             .iter()
             .try_fold(1u128, |acc, &p| acc.checked_mul(p));
 
-        let ke_capacity = ke.capacity();
+        // `try_capacity()` in place of the deprecated, panicking `capacity()`.
+        // `None` means alpha_cap * beta_cap overflows u128, i.e. the true
+        // capacity exceeds every value ever compared against it below (those
+        // are all u128 already), so every `x >= ke_capacity` guard below is
+        // vacuously satisfied either way -- `u128::MAX` reproduces that
+        // exactly without panicking.
+        let ke_capacity = ke.try_capacity().unwrap_or(u128::MAX);
 
         if let Some(q_level) = q_level_u128 {
             // Fast u128 path for CRT reconstruction. As in `modswitch_to_t`,
