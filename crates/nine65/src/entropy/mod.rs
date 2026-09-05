@@ -54,8 +54,12 @@ pub mod deterministic;
 
 #[cfg(feature = "shadow-entropy")]
 pub mod crt_shadow;
-#[cfg(feature = "shadow-entropy")]
-pub mod wassan_noise;
+// RETIRED (issue #68): `wassan_noise` (WASSAN Holographic Noise Field) had
+// zero production callers — it was never part of the entropy guidance table
+// above and the `wassan` Cargo feature alias that used to gate it was already
+// removed as a no-op in 2026-03-01. Only its own tests exercised it. Removed
+// entirely; see docs/ENTROPY_MODEL.md and docs/LADDER_REMOVAL.md for the
+// SBNI retirement this completes alongside.
 
 // NEW: Shadow Entropy Monitor for adaptive resource management
 pub mod shadow_entropy_monitor;
@@ -70,9 +74,6 @@ pub use deterministic::DeterministicRng;
 pub use crt_shadow::{
     CRTShadowContext, IntegratedShadowRNS, QuotientSignature, ShadowAccumulator, ShadowStats,
 };
-#[cfg(feature = "shadow-entropy")]
-pub use wassan_noise::WassanNoiseField;
-
 // Export the shadow entropy monitor
 pub use shadow_entropy_monitor::{AdaptiveFHEContext, ShadowEntropyMonitor};
 

@@ -306,6 +306,36 @@ under which the bootstrap roundtrip comes out correct. Three of them
 phase evaluations — but they exist solely to localise the Phase 2 scaling error,
 so they go with the file.
 
+### 8.3 Note (2026-09-03, WR-5B / issue #83): `src/keys/bootstrap.rs`'s count changed
+
+The `src/keys/bootstrap.rs | 9 | validate_bootstrap_primes (8) and
+BootstrapKey::generate (1)` row above, and the `keys/bootstrap.rs 19` total
+`#[test]` count in the forensic reconciliation below, describe this file
+**as it stood during the quarantine phase this section records** and are left
+as-is rather than restated for a different point in time.
+
+WR-5B (issue #83, "make bootstrap security validation exact and
+non-tautological") subsequently found `validate_bootstrap_primes`'s own
+"security" step was a tautology — it built its `target_security` from the
+same primes it then checked against that target — and split it into a
+structural-only `validate_bootstrap_primes` plus a new, real
+`screen_bootstrap_security`. Two of the eight quarantined
+`validate_bootstrap_primes` tests
+(`test_validate_bootstrap_primes_insufficient_security`,
+`test_validate_bootstrap_primes_first_two_only`) asserted exactly that
+tautological step-3 behavior against the old 3-argument signature; that
+behavior no longer exists on the function they called, so they were deleted
+rather than left to reference removed functionality, and replaced with
+non-`#[ignore]`d coverage of `screen_bootstrap_security` and
+`bootstrap_tuple_fingerprint` in the same file. This is a substantive fix to
+a P1 bug in code the quarantine explicitly left live (`validate_bootstrap_primes`'s
+NTT/coprimality checks were already noted above as "generic and live"), not a
+continuation of the quarantine itself, so it does not fall under this
+section's "no test was deleted" invariant for the quarantine's own scope.
+`src/keys/bootstrap.rs` now carries 6 quarantined `validate_bootstrap_primes`
+tests plus the 1 `BootstrapKey::generate` test (7, not 9), and several new
+non-quarantined tests alongside them.
+
 ---
 
 ## 9. What was deliberately **left live**, and why

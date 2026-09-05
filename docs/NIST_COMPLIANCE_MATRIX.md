@@ -83,7 +83,7 @@ Standardization) requirements for production FHE deployments.
 
 | Requirement | Reference | NINE65 Status | Evidence |
 |-------------|-----------|---------------|----------|
-| No silent failures | OWASP Crypto | Compliant | All errors return `Nine65Error` (29 variants) |
+| No silent failures | OWASP Crypto | Compliant | All errors return `Nine65Error` (30 variants) |
 | Noise overflow detection | IBM 2025 BFV attack | Mitigated | `checked_sub()` in `NoiseBudget::consume()` |
 | Precondition validation | Formal verification | Implemented | `validate_preconditions()` on K-Elimination |
 | No panic in production | Defensive coding | Enforced | `scripts/check_no_panics.sh` CI gate |
