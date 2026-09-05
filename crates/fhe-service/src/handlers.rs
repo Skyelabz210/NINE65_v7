@@ -67,17 +67,28 @@ impl AppMetrics {
                 minute,
                 requests: 0,
             });
-            if window.minute != minute {
-                window.minute = minute;
-                window.requests = 0;
-            }
-            if window.requests >= limit {
-                return false;
-            }
-            window.requests += 1;
-            true
+            rate_limit_allows(window, minute, limit)
         }
     }
+}
+
+/// Pure per-tenant rate-limit decision for one request arriving in `minute`,
+/// given the tenant's current window; advances/resets `window` in place.
+///
+/// Extracted out of `allow_request` so it is directly unit-testable:
+/// `allow_request` itself is unconditionally `true` under `#[cfg(test)]` (so
+/// tests are never flaky from rate limiting), which would otherwise make
+/// `RateWindow` and this logic look unused to a `cargo test` build.
+fn rate_limit_allows(window: &mut RateWindow, minute: u64, limit: u64) -> bool {
+    if window.minute != minute {
+        window.minute = minute;
+        window.requests = 0;
+    }
+    if window.requests >= limit {
+        return false;
+    }
+    window.requests += 1;
+    true
 }
 
 fn token_matches(expected: Option<&str>, provided: Option<&str>) -> bool {
@@ -702,5 +713,65 @@ mod policy_tests {
             Some("operator-secret"),
             Some("operator-secret")
         ));
+    }
+
+    #[test]
+    fn rate_limit_allows_up_to_the_limit_then_blocks_until_the_next_minute() {
+        let mut window = RateWindow {
+            minute: 100,
+            requests: 0,
+        };
+        assert!(rate_limit_allows(&mut window, 100, 2));
+        assert!(rate_limit_allows(&mut window, 100, 2));
+        assert!(!rate_limit_allows(&mut window, 100, 2));
+        // A new minute resets the window rather than carrying the block over.
+        assert!(rate_limit_allows(&mut window, 101, 2));
+    }
+
+    #[test]
+    fn rate_limiter_state_starts_empty_at_the_documented_default() {
+        assert!(DEFAULT_RATE_LIMIT_PER_MINUTE > 0);
+        let metrics = AppMetrics::new();
+        assert!(metrics
+            .rate_windows
+            .lock()
+            .expect("rate_windows lock")
+            .is_empty());
+    }
+
+    #[test]
+    fn audit_action_labels_every_route() {
+        let request = |method: &str, path: &str| HttpRequest {
+            method: method.to_string(),
+            path: path.to_string(),
+            headers: HashMap::new(),
+            body: Vec::new(),
+        };
+        assert_eq!(
+            audit_action(&request("POST", "/v1/sessions")),
+            "session_create"
+        );
+        assert_eq!(audit_action(&request("GET", "/v1/metrics")), "metrics_read");
+        assert_eq!(
+            audit_action(&request("DELETE", "/v1/sessions/abc")),
+            "session_delete"
+        );
+        assert_eq!(
+            audit_action(&request("GET", "/v1/sessions/abc")),
+            "session_read"
+        );
+        assert_eq!(
+            audit_action(&request("POST", "/v1/sessions/abc/encrypt")),
+            "encrypt"
+        );
+        assert_eq!(
+            audit_action(&request("POST", "/v1/sessions/abc/decrypt")),
+            "decrypt"
+        );
+        assert_eq!(
+            audit_action(&request("POST", "/v1/sessions/abc/evaluate")),
+            "evaluate"
+        );
+        assert_eq!(audit_action(&request("PATCH", "/unknown")), "unknown");
     }
 }

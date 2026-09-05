@@ -102,6 +102,12 @@ Security tests:
 Depth benchmarks:
   cargo test -p nine65 --lib --release ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 -- --nocapture
 
+Test tiers (fast/medium/slow, issue #78) — see docs/TEST_TIERS.md for the
+full scheme, rationale and measured counts/timings:
+  bash scripts/run_tests_fast.sh    # cargo test --lib, release — every crate's unit tests
+  bash scripts/run_tests_medium.sh  # the full required suite (== ci.yml T2, unchanged)
+  bash scripts/run_tests_slow.sh    # slow_tests feature + op_timings + nine65-extreme-tests
+
 ---
 
 ## Bootstrap Paths

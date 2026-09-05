@@ -1560,6 +1560,12 @@ impl RNSFHEContext {
     }
 
     /// Reconstruct a CRT value from Montgomery residues.
+    ///
+    /// Test-only: called from `#[cfg(test)] mod tests` and from the
+    /// `track1_exact_multiply_lock` test child module, never from a
+    /// production path. `#[cfg(test)]` keeps it from warning as dead code
+    /// in a release build.
+    #[cfg(test)]
     fn to_int_montgomery(&self, residues: &[u64]) -> u128 {
         let standard: Vec<u64> = residues
             .iter()
@@ -5280,6 +5286,13 @@ impl RNSFHEContext {
     // in NTT form and doing point-wise rescaling.
 
     /// Convert dual polynomial to NTT form
+    ///
+    /// Test-only: no production path calls this quartet directly (production
+    /// multiply goes through `mul_dual_public`/`mul_dual_symmetric`, not a
+    /// manual to_ntt_form/ntt_pointwise_mul/to_coefficient_form pipeline).
+    /// `#[cfg(test)]` keeps them from warning as dead code in a release
+    /// build while the tests that exercise this pipeline keep using them.
+    #[cfg(test)]
     fn to_ntt_form(&self, poly: &DualRNSPoly) -> DualRNSPoly {
         // Transform main limbs to NTT form
         let main_ntt: Vec<Vec<u64>> = poly
@@ -5307,6 +5320,9 @@ impl RNSFHEContext {
     /// Convert a dual-RNS polynomial from NTT form back to coefficient form.
     ///
     /// This performs the inverse NTT on both main and anchor limbs.
+    ///
+    /// Test-only; see `to_ntt_form`.
+    #[cfg(test)]
     fn to_coefficient_form(&self, poly_ntt: &DualRNSPoly) -> DualRNSPoly {
         let main: Vec<Vec<u64>> = poly_ntt
             .main
@@ -5330,6 +5346,9 @@ impl RNSFHEContext {
     }
 
     /// Point-wise multiplication in NTT domain (both inputs must be in NTT form)
+    ///
+    /// Test-only; see `to_ntt_form`.
+    #[cfg(test)]
     fn ntt_pointwise_mul(&self, a_ntt: &DualRNSPoly, b_ntt: &DualRNSPoly) -> DualRNSPoly {
         // Main: point-wise multiply
         let main: Vec<Vec<u64>> = a_ntt
@@ -5366,11 +5385,6 @@ impl RNSFHEContext {
             anchor,
             n: a_ntt.n,
         }
-    }
-
-    /// Point-wise addition in NTT domain
-    fn ntt_pointwise_add(&self, a_ntt: &DualRNSPoly, b_ntt: &DualRNSPoly) -> DualRNSPoly {
-        self.dual_poly_add(a_ntt, b_ntt) // Same as coefficient-domain add
     }
 
     // NOTE: k_elim_rescale_ntt_domain was removed during audit hardening.
