@@ -1,0 +1,23 @@
+# Compiled extension module, built in place by `maturin develop` into
+# python/nine65_python/ alongside the pure-Python sources -- never commit
+# the platform-specific build output itself.
+python/nine65_python/*.so
+python/nine65_python/*.pyd
+python/nine65_python/*.dylib
+
+# Python bytecode / test caches (also covered by the repo-root .gitignore,
+# repeated here since this crate is its own standalone Cargo workspace).
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# maturin/pip build output when run without CARGO_TARGET_DIR pointed
+# elsewhere (see README.md "Building" -- CI/dev should set it, but don't
+# let a local default-location build get committed by accident).
+target/
+dist/
+*.egg-info/
+
+# Local virtualenvs some contributors may create per README.md "Requirements".
+.venv/
+venv/

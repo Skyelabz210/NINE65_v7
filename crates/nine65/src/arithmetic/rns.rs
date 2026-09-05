@@ -47,6 +47,34 @@ pub(crate) mod to_u256_level_calls {
     }
 }
 
+/// Operation-count regression guardrail for [`U256::mod_u64_ct`] and
+/// [`U256::div_mod_u64_ct`]: every pass through either function's loop body
+/// increments this, so a test can assert the iteration count is identical
+/// across secret-shaped input classes (all-zero, uniform, near-modulus,
+/// near-`U256::MAX`) — the source-level proxy for "this function's work does
+/// not depend on its operand's magnitude" that is actually checkable in this
+/// environment, as distinct from a hardware timing measurement. See
+/// `tests::mod_u64_ct_iteration_count_is_input_independent` and
+/// `tests::div_mod_u64_ct_iteration_count_is_input_independent`. THREAD-LOCAL
+/// for the same reason as [`to_u256_level_calls`] above: a process-global
+/// counter would be incremented by concurrently-running tests too.
+#[cfg(test)]
+pub(crate) mod ct_division_probe {
+    use core::cell::Cell;
+    thread_local! {
+        static COUNT: Cell<usize> = const { Cell::new(0) };
+    }
+    pub(crate) fn increment() {
+        COUNT.with(|c| c.set(c.get() + 1));
+    }
+    pub(crate) fn get() -> usize {
+        COUNT.with(|c| c.get())
+    }
+    pub(crate) fn reset() {
+        COUNT.with(|c| c.set(0));
+    }
+}
+
 /// Minimal 512-bit unsigned integer for intermediate reconstruction.
 ///
 /// Representation: 4 x u128 (little-endian).
@@ -447,20 +475,69 @@ impl U256 {
     }
 
     /// Constant-time value mod m where m fits in u64.
+    ///
+    /// Fixed 256 iterations of shift-in-a-bit / conditional-subtract, one per
+    /// bit of `self`, regardless of the magnitude of `self` or `m`. The
+    /// conditional subtract is a mask-select rather than a comparison
+    /// operator: `docs/CT_VERIFICATION_PLAN.md` §4.8 measured that the
+    /// textbook `((cond) as T).wrapping_neg()` idiom is not reliably
+    /// branchless on its own (LLVM recognised it as `a < b` and recompiled it
+    /// back to a conditional branch whose cost tracked the secret operand),
+    /// so the derived borrow bit is passed through [`core::hint::black_box`]
+    /// before the mask is built, mirroring `ge_mask_ct` above and
+    /// `barrett::borrow_mask_u64`. `black_box` is a hint with no
+    /// language-level guarantee; it is used here because the result is
+    /// measured (`security::ct_verification`), not in place of measuring.
+    #[inline(always)]
     pub(crate) fn mod_u64_ct(self, m: u64) -> u64 {
         if m == 0 {
             return 0;
         }
-        // Use a bit-by-bit approach for constant time
         let mut rem = 0u128;
         let m128 = m as u128;
         for i in (0..256).rev() {
             let bit = self.get_bit(i as u32) as u128;
             rem = (rem << 1) | bit;
-            let mask = ((m128.wrapping_sub(rem.wrapping_add(1)) >> 127) & 1).wrapping_neg();
+            let borrow = core::hint::black_box((m128.wrapping_sub(rem.wrapping_add(1)) >> 127) & 1);
+            let mask = borrow.wrapping_neg();
             rem = rem.wrapping_sub(m128 & mask);
+            #[cfg(test)]
+            ct_division_probe::increment();
         }
         rem as u64
+    }
+
+    /// Constant-time division/remainder by a divisor that fits in u64.
+    ///
+    /// Same fixed-256-iteration binary long division as [`Self::mod_u64_ct`],
+    /// extended to also accumulate the quotient — this is the CT counterpart
+    /// to [`Self::div_mod_u64`], which does the identical division with
+    /// hardware `/`/`%` on runtime-width limb accumulators and whose cost was
+    /// measured to scale with the dividend's magnitude (F-2,
+    /// `docs/CT_VERIFICATION_PLAN.md` §4.2/§4.7,
+    /// `docs/F2_SCOPE_2026-08-25.md` §1: 2.96x, all-zero vs uniform
+    /// coefficients). Every iteration performs exactly one shift, one
+    /// masked-borrow comparison behind a `black_box` barrier, one masked
+    /// subtract, and one quotient-bit insertion, independent of the operand
+    /// values — see `tests::div_mod_u64_ct_iteration_count_is_input_independent`.
+    #[inline(always)]
+    pub(crate) fn div_mod_u64_ct(self, d: u64) -> (Self, u64) {
+        assert!(d != 0, "division by zero");
+        let d128 = d as u128;
+        let mut rem = 0u128;
+        let mut q = Self::zero();
+        for i in (0..256).rev() {
+            let bit = self.get_bit(i as u32) as u128;
+            rem = (rem << 1) | bit;
+            let borrow = core::hint::black_box((d128.wrapping_sub(rem.wrapping_add(1)) >> 127) & 1);
+            let mask = borrow.wrapping_neg(); // all-ones iff rem >= d128
+            rem = rem.wrapping_sub(d128 & mask);
+            q = q.shl1();
+            q.lo |= mask & 1;
+            #[cfg(test)]
+            ct_division_probe::increment();
+        }
+        (q, rem as u64)
     }
 
     #[inline]
@@ -1154,15 +1231,32 @@ pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
 
     // A2 "No-Garner" Invariant: Use Parallel Summation CRT
     // x = (sum r_i * Mi * [Mi^-1 mod p_i]) mod M
+    //
+    // This is called from the K-Elimination production hot path
+    // (`extract_k_rns_level_cached`, once per coefficient) with `residues`
+    // that are secret-correlated winding-number residues. The loop used to
+    // read `if ri == 0 { continue; }` -- skipping the `mod_inverse` call (an
+    // extended-Euclid computation, "tens of iterations" per
+    // `precompute_m_level_inverses`'s own doc comment) and both multiplies
+    // whenever a secret residue happened to be exactly zero. That is a
+    // textbook secret-dependent branch controlling a variable amount of
+    // work, a strictly larger defect shape than a magnitude-dependent
+    // division (F-2/F-3): the skip is unconditional and its trigger is a
+    // single bit of the secret, not an average-case cost drift.
+    //
+    // The branch was a pure micro-optimisation, not a correctness
+    // requirement: `mi`/`mi_mod_pi`/`inv` depend only on `primes` (public),
+    // and when `ri == 0` the omitted `term` is exactly zero regardless, so
+    // adding it back is a no-op. Removing the branch makes every iteration
+    // do the identical fixed sequence of operations -- one `div_u64`, one
+    // `mod_u64`, one `mod_inverse`, two `mul_u128`, one `add` -- regardless
+    // of any residue's value.
     let mut sum = U512::zero();
     let m = U512::product_u64s(primes);
 
     for i in 0..primes.len() {
         let pi = primes[i];
         let ri = residues[i] % pi;
-        if ri == 0 {
-            continue;
-        }
 
         let mi = m.div_u64(pi);
         let mi_mod_pi = mi.mod_u64(pi);
@@ -1766,6 +1860,11 @@ impl DualRNSContext {
     /// modulus M_level is smaller than the full M. We must compute M_level⁻¹
     /// dynamically based on which main primes are still active.
     ///
+    /// This is the **canonical production K-Elimination** for the live
+    /// DualRNS BFV engine — see `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md`
+    /// for the full inventory of every K-Elimination-shaped implementation in
+    /// this workspace (issue #70) and why each one is not this function.
+    ///
     /// # Arguments
     /// * `v_main` - Value mod M_level (reconstructed from level main primes)
     /// * `v_anchor_rns` - Anchor residues [v mod a_0, v mod a_1, ...]
@@ -1899,11 +1998,46 @@ impl DualRNSContext {
         );
 
         // Compute k residues in each anchor modulus: k_i = (v_a - v_m) * (M_level^{-1} mod a_i) mod a_i
+        //
+        // `v_main` is a per-coefficient CRT reconstruction correlated with
+        // secret ciphertext/plaintext material, called from the hot rescale
+        // path (`k_elim_rescale_dual`, `extract_digit_dual`) once per
+        // coefficient. Reducing it with the plain `%`-based `mod_u64` --
+        // hardware division whose latency scales with the dividend's
+        // magnitude -- is the exact defect class measured as F-2
+        // (`mod_switch_down_dual`, `docs/CT_VERIFICATION_PLAN.md` §4.2) and
+        // F-3 (the reference `KElimination::extract_k`, §4.2/§4.6) on other
+        // K-Elimination-shaped code, just not previously measured on THIS,
+        // the production `extract_k_rns_level` path. `mod_u64_ct` below is
+        // the fixed-256-iteration constant-time replacement.
         let mut k_rns = vec![0u64; self.anchor.primes.len()];
         for (i, &a_i) in self.anchor.primes.iter().enumerate() {
             let inv = inverses.inv[i];
-            let v_m_mod_ai = v_main.mod_u64(a_i);
-            let diff = (v_anchor_rns[i] + a_i - v_m_mod_ai) % a_i;
+            let v_m_mod_ai = v_main.mod_u64_ct(a_i);
+            // diff = (v_anchor_rns[i] + a_i - v_m_mod_ai) mod a_i, as a single
+            // masked conditional subtract rather than `%`: both operands are
+            // already reduced mod a_i, so the raw sum lies in [1, 2*a_i - 1]
+            // and one conditional subtract suffices -- no need to fall back
+            // to the fixed-256-iteration form for an already-bounded value.
+            // Same mask idiom as `barrett::geq_mask_u64` / `ge_mask_ct`
+            // above, including the `black_box` barrier those measured as
+            // load-bearing (§4.8: the idiom alone is not reliably
+            // branchless).
+            let raw = v_anchor_rns[i] + a_i - v_m_mod_ai;
+            let borrow =
+                core::hint::black_box(((raw as u128).wrapping_sub(a_i as u128) >> 127) as u64);
+            let geq_mask = !borrow.wrapping_neg(); // all-ones iff raw >= a_i
+            let diff = raw.wrapping_sub(a_i & geq_mask);
+            // NOTE: the reduction below, `(diff * inv) % a_i`, is a u128
+            // product mod a runtime (non-secret, per-lane) divisor and
+            // remains variable-time -- the same `__umodti3` defect class,
+            // unaddressed in this pass. `diff` and `inv` are each already
+            // reduced mod `a_i`, so a per-anchor-prime CT reduction context
+            // (Barrett- or Montgomery-style, as `RNSContext::mont_contexts`
+            // already precomputes for the main primes) is the fix; building
+            // and threading one through `DualRNSContext` is out of scope
+            // here. Left as a documented, flagged gap rather than a silent
+            // one.
             k_rns[i] = ((diff as u128) * (inv as u128) % (a_i as u128)) as u64;
         }
 
@@ -1943,7 +2077,15 @@ impl DualRNSContext {
             let is_neg = k_u.gt(a_recon_half);
             let magnitude = if is_neg { a_recon.sub(k_u) } else { k_u };
             for (i, &a_w) in self.anchor.primes.iter().enumerate().skip(k_primes) {
-                let mag_mod = magnitude.mod_u64(a_w);
+                // `magnitude` is derived from the secret winding number `k_u`;
+                // see the `mod_u64_ct` swap above for why the plain `%`-based
+                // `mod_u64` this replaces is the F-2/F-3 defect class. This
+                // loop is live only when the anchor basis exceeds the U256
+                // reconstruction ceiling (`k_primes < anchor.primes.len()`),
+                // which is the n=16384 configs (secure_192, secure_256; 10
+                // anchor primes, ceiling 8) -- i.e. it is not the cold path
+                // `mod_switch_down_dual` is.
+                let mag_mod = magnitude.mod_u64_ct(a_w);
                 let expected = if is_neg && mag_mod != 0 {
                     a_w - mag_mod
                 } else {
@@ -3915,6 +4057,159 @@ mod tests {
         assert_eq!(got as u128, expected);
     }
 
+    /// F-2/F-3-shaped magnitude classes: the same contrast shapes
+    /// `docs/CT_VERIFICATION_PLAN.md` used to measure the timing dependence
+    /// this change closes (all-zero, uniform/mixed bit patterns, and
+    /// near-`U256::MAX`), reused here for correctness and iteration-count
+    /// regression coverage.
+    fn ct_division_magnitude_classes() -> Vec<U256> {
+        vec![
+            U256::zero(),
+            U256::from_u64(1),
+            U256 {
+                lo: 0x1234567890ABCDEF1234567890ABCDEF,
+                hi: 0,
+            },
+            U256 {
+                lo: 0x1234567890ABCDEF1234567890ABCDEF,
+                hi: 0xFEDCBA0987654321FEDCBA0987654321,
+            },
+            U256 {
+                lo: u128::MAX,
+                hi: u128::MAX,
+            }, // U256::MAX
+            U256 { lo: 0, hi: 1 }, // smallest value needing the high limb
+            U256 {
+                lo: u128::MAX,
+                hi: 0,
+            },
+        ]
+    }
+
+    /// `mod_u64_ct` must agree with the variable-time `mod_u64` on every
+    /// value in every magnitude class, over a spread of divisors including
+    /// real anchor-prime-shaped values and the smallest possible divisor.
+    #[test]
+    fn test_u256_mod_u64_ct_matches_vartime_across_magnitude_classes() {
+        let divisors: &[u64] = &[1, 2, 41, 998244353, 4611686018427387847, u64::MAX];
+        for &m in divisors {
+            for &a in &ct_division_magnitude_classes() {
+                assert_eq!(
+                    a.mod_u64_ct(m),
+                    a.mod_u64(m),
+                    "mod_u64_ct disagreed with mod_u64 for a={a:?}, m={m}"
+                );
+            }
+        }
+    }
+
+    /// `div_mod_u64_ct` must agree with the variable-time `div_mod_u64` --
+    /// both quotient and remainder -- on every value in every magnitude
+    /// class. This is the direct differential test for the F-2 fix: same
+    /// division, constant-time implementation.
+    #[test]
+    fn test_u256_div_mod_u64_ct_matches_vartime_across_magnitude_classes() {
+        let divisors: &[u64] = &[1, 2, 41, 998244353, 4611686018427387847, u64::MAX];
+        for &d in divisors {
+            for &a in &ct_division_magnitude_classes() {
+                let (q_ct, r_ct) = a.div_mod_u64_ct(d);
+                let (q_vt, r_vt) = a.div_mod_u64(d);
+                assert_eq!(r_ct, r_vt, "remainder disagreed for a={a:?}, d={d}");
+                assert_eq!(
+                    (q_ct.lo, q_ct.hi),
+                    (q_vt.lo, q_vt.hi),
+                    "quotient disagreed for a={a:?}, d={d}"
+                );
+                // Exactness check independent of the vartime implementation:
+                // q*d + r must reconstruct a exactly, with r < d.
+                assert!(r_ct < d, "remainder {r_ct} not reduced mod {d}");
+                let reconstructed = q_ct.mul_u64(d).add(U256::from_u64(r_ct));
+                assert_eq!(
+                    (reconstructed.lo, reconstructed.hi),
+                    (a.lo, a.hi),
+                    "q*d + r != a for a={a:?}, d={d}"
+                );
+            }
+        }
+    }
+
+    /// Randomized differential coverage on top of the fixed magnitude
+    /// classes above, using this crate's own deterministic test RNG so the
+    /// run is reproducible.
+    #[test]
+    fn test_u256_div_mod_u64_ct_matches_vartime_random() {
+        let mut state: u64 = 0x9E3779B97F4A7C15;
+        let mut next_u128 = || {
+            // xorshift64*, run twice to fill a u128 -- deterministic, no
+            // external RNG dependency, matching the house style of other
+            // deterministic tests in this file.
+            let mut splitmix = || {
+                state = state.wrapping_add(0x9E3779B97F4A7C15);
+                let mut z = state;
+                z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);
+                z = (z ^ (z >> 27)).wrapping_mul(0x94D049BB133111EB);
+                z ^ (z >> 31)
+            };
+            ((splitmix() as u128) << 64) | (splitmix() as u128)
+        };
+
+        for _ in 0..2000 {
+            let a = U256 {
+                lo: next_u128(),
+                hi: next_u128(),
+            };
+            let d = (next_u128() as u64) | 1; // never zero
+            let (q_ct, r_ct) = a.div_mod_u64_ct(d);
+            let (q_vt, r_vt) = a.div_mod_u64(d);
+            assert_eq!(r_ct, r_vt, "remainder disagreed for a={a:?}, d={d}");
+            assert_eq!(
+                (q_ct.lo, q_ct.hi),
+                (q_vt.lo, q_vt.hi),
+                "quotient disagreed for a={a:?}, d={d}"
+            );
+        }
+    }
+
+    /// Operation-count regression guardrail (the source-level proxy for
+    /// "constant-time" that is actually checkable on this shared,
+    /// virtualized host -- see the module doc on `ct_division_probe` and the
+    /// caveats in `docs/CT_VERIFICATION_PLAN.md` §2 about hardware timing not
+    /// being trustworthy here). `mod_u64_ct` must execute exactly 256 loop
+    /// iterations -- one per bit of the dividend -- for every magnitude
+    /// class, with no early exit and no extra work for any class.
+    #[test]
+    fn test_mod_u64_ct_iteration_count_is_input_independent() {
+        let divisors: &[u64] = &[1, 41, 998244353, u64::MAX];
+        for &m in divisors {
+            for &a in &ct_division_magnitude_classes() {
+                ct_division_probe::reset();
+                let _ = core::hint::black_box(a.mod_u64_ct(m));
+                assert_eq!(
+                    ct_division_probe::get(),
+                    256,
+                    "mod_u64_ct executed a non-fixed iteration count for a={a:?}, m={m}"
+                );
+            }
+        }
+    }
+
+    /// Same guardrail as above, for `div_mod_u64_ct` -- the F-2 fix.
+    #[test]
+    fn test_div_mod_u64_ct_iteration_count_is_input_independent() {
+        let divisors: &[u64] = &[1, 41, 998244353, u64::MAX];
+        for &d in divisors {
+            for &a in &ct_division_magnitude_classes() {
+                ct_division_probe::reset();
+                let _ = core::hint::black_box(a.div_mod_u64_ct(d));
+                assert_eq!(
+                    ct_division_probe::get(),
+                    256,
+                    "div_mod_u64_ct executed a non-fixed iteration count for a={a:?}, d={d}"
+                );
+            }
+        }
+    }
+
     #[test]
     fn test_u256_div_mod_u256_self() {
         // Q / Q = 1 remainder 0
@@ -3960,5 +4255,29 @@ mod tests {
         let result_u256 = crt_reconstruct_u256(&residues, primes);
         assert_eq!(result_u256.lo, test_val as u128);
         assert_eq!(result_u256.hi, 0);
+    }
+
+    /// Regression test for removing `crt_reconstruct_u256`'s secret-dependent
+    /// `if ri == 0 { continue; }` branch (see the function's own doc comment):
+    /// reconstruction must still be exact when one, several, or all residues
+    /// are exactly zero -- the case that branch used to shortcut.
+    #[test]
+    fn test_crt_reconstruct_u256_handles_zero_residues() {
+        let primes: &[u64] = &[998244353, 985661441, 754974721, 469762049, 167772161];
+
+        // x = 0: every lane's residue is zero.
+        let all_zero: Vec<u64> = vec![0; primes.len()];
+        let result = crt_reconstruct_u256(&all_zero, primes);
+        assert_eq!((result.lo, result.hi), (0, 0), "x=0 must reconstruct to 0");
+
+        // x = primes[0] * primes[2]: residues[0] and residues[2] are zero,
+        // the others are not -- the removed branch used to skip exactly
+        // those two lanes' work while still executing the rest.
+        let x: u128 = primes[0] as u128 * primes[2] as u128;
+        let residues: Vec<u64> = primes.iter().map(|&p| (x % p as u128) as u64).collect();
+        assert_eq!(residues[0], 0);
+        assert_eq!(residues[2], 0);
+        let result = crt_reconstruct_u256(&residues, primes);
+        assert_eq!((result.lo, result.hi), (x, 0));
     }
 }

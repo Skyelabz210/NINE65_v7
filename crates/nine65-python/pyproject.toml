@@ -1,0 +1,41 @@
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "nine65-python"
+version = "0.1.0"
+description = "Python bindings (PyO3) for the NINE65 exact-integer BFV/DualRNS FHE library"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "LicenseRef-Proprietary-AllRightsReserved" }
+authors = [{ name = "Acidlabz210", email = "acid@hackfate.us" }]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Security :: Cryptography",
+]
+# NOTE: this crate is proprietary (see LICENSE at the repository root); the
+# PyPI-style classifiers/license field above describe packaging metadata
+# only and do not grant any usage rights beyond the repository LICENSE.
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[tool.maturin]
+# Mixed layout: python/nine65_python/__init__.py wraps the compiled
+# extension (built into that same directory as `nine65_python.<ext>`) with
+# pure-Python convenience helpers -- see that file for the key-generation
+# helpers and friendlier constructors added on top of the raw PyO3 API.
+python-source = "python"
+module-name = "nine65_python._nine65_python"
+# The PyO3 extension-module build requires the `python` feature (it gates
+# `dep:pyo3` and `nine65/serde`; the cdylib target itself declares
+# `required-features = ["python"]` so it will not even build without this).
+features = ["pyo3/extension-module", "python"]
+manifest-path = "Cargo.toml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

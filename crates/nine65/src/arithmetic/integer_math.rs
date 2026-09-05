@@ -67,6 +67,82 @@ pub fn format_as_bits(val: u128) -> String {
     }
 }
 
+/// Integer square root (floor) for u128. Same Babylonian method as
+/// [`integer_sqrt`], widened for the larger ratio-scaling sums benchmark and
+/// audit code accumulates (e.g. squared correlation numerators).
+pub fn integer_sqrt_u128(n: u128) -> u128 {
+    if n < 2 {
+        return n;
+    }
+    let shift = (127 - n.leading_zeros()) / 2;
+    let mut x = 1u128 << (shift + 1);
+    loop {
+        let y = (x + n / x) / 2;
+        if y >= x {
+            break;
+        }
+        x = y;
+    }
+    x
+}
+
+/// Exact `numerator/denominator`, scaled by `scale` and rounded half-up, using
+/// only checked `u128` arithmetic.
+///
+/// Built for benchmark/report code that needs a ratio (a percentage, a
+/// speedup multiplier, a per-op timing) without ever holding a float: the
+/// caller picks `scale` (e.g. `10u128.pow(decimals)` for a fixed-point
+/// decimal, or `1000` for permille), and every step here is `checked_*`, so a
+/// would-be overflow in the widening multiply returns `None` instead of
+/// panicking or silently wrapping. A zero `denominator` also returns `None`
+/// rather than dividing by zero.
+///
+/// Round-half-up (ties away from zero) matches the `{:.N}` float formatting
+/// this replaces closely enough for reporting purposes; both `numerator` and
+/// `denominator` are non-negative by construction at every call site (they
+/// come from durations, counts, or byte sizes).
+pub fn checked_scaled_ratio(numerator: u128, denominator: u128, scale: u128) -> Option<u128> {
+    if denominator == 0 {
+        return None;
+    }
+    let scaled_num = numerator.checked_mul(scale)?;
+    let half_denom = denominator / 2;
+    let rounded_num = scaled_num.checked_add(half_denom)?;
+    Some(rounded_num / denominator)
+}
+
+/// Format `numerator/denominator` as a fixed-point decimal string with
+/// `decimals` digits after the point (round-half-up), built on
+/// [`checked_scaled_ratio`]. Falls back to `"n/a"` on a zero denominator or an
+/// overflowing intermediate product rather than panicking — this is report
+/// formatting, so a degraded string beats a crashed benchmark.
+///
+/// This is the integer-only replacement for `format!("{:.N}", a as f64 / b as
+/// f64)` throughout the benches/tests/audit binaries in this crate: pass the
+/// raw integer numerator and denominator (nanoseconds, byte counts, trial
+/// counts, ...) and the number of fractional digits wanted.
+pub fn format_ratio(numerator: u128, denominator: u128, decimals: u32) -> String {
+    let scale = match 10u128.checked_pow(decimals) {
+        Some(s) => s,
+        None => return "n/a".to_string(),
+    };
+    match checked_scaled_ratio(numerator, denominator, scale) {
+        Some(scaled) => {
+            if decimals == 0 {
+                format!("{}", scaled / scale)
+            } else {
+                format!(
+                    "{}.{:0width$}",
+                    scaled / scale,
+                    scaled % scale,
+                    width = decimals as usize
+                )
+            }
+        }
+        None => "n/a".to_string(),
+    }
+}
+
 /// Precomputed cos/sin table for golden-angle basin placement.
 /// 256 entries, Q15 fixed-point (multiply, then >> 15).
 /// Entry i = (cos(i * 2π/256) * 32768, sin(i * 2π/256) * 32768)
@@ -473,6 +549,108 @@ mod tests {
         // Wraps around
         assert_eq!(fixed_cos_sin(256), (32768, 0));
         assert_eq!(fixed_cos_sin(320), (0, 32768));
+    }
+
+    #[test]
+    fn test_integer_sqrt_u128() {
+        assert_eq!(integer_sqrt_u128(0), 0);
+        assert_eq!(integer_sqrt_u128(1), 1);
+        assert_eq!(integer_sqrt_u128(4), 2);
+        assert_eq!(integer_sqrt_u128(99), 9); // floor
+        assert_eq!(integer_sqrt_u128(101), 10); // floor
+        assert_eq!(integer_sqrt_u128(u128::MAX), 18446744073709551615); // floor(sqrt(2^128-1)) == 2^64-1
+                                                                        // s^2 <= n < (s+1)^2 for a spread of magnitudes, including values
+                                                                        // that only fit in u128 (beyond u64::MAX).
+        for n in [
+            2u128,
+            3,
+            10_000,
+            (u64::MAX as u128) + 1,
+            u128::MAX / 2,
+            u128::MAX,
+        ] {
+            let s = integer_sqrt_u128(n);
+            assert!(s.checked_mul(s).map(|sq| sq <= n).unwrap_or(false));
+            assert!((s + 1).checked_mul(s + 1).map(|sq| sq > n).unwrap_or(true));
+        }
+    }
+
+    #[test]
+    fn test_checked_scaled_ratio_basic() {
+        // 1/4 scaled by 100 = 25 (exact, no rounding).
+        assert_eq!(checked_scaled_ratio(1, 4, 100), Some(25));
+        // 1/3 scaled by 1000, rounded half-up: 333.33... -> 333.
+        assert_eq!(checked_scaled_ratio(1, 3, 1000), Some(333));
+        // 2/3 scaled by 1000: 666.66... -> 667.
+        assert_eq!(checked_scaled_ratio(2, 3, 1000), Some(667));
+        // Exact half rounds away from zero: 1/2 scaled by 1 -> 0.5 -> 1.
+        assert_eq!(checked_scaled_ratio(1, 2, 1), Some(1));
+        // 0 numerator is always 0, regardless of denominator/scale.
+        assert_eq!(checked_scaled_ratio(0, 7, 1000), Some(0));
+    }
+
+    #[test]
+    fn test_checked_scaled_ratio_zero_denominator() {
+        assert_eq!(checked_scaled_ratio(1, 0, 100), None);
+        assert_eq!(checked_scaled_ratio(0, 0, 100), None);
+    }
+
+    #[test]
+    fn test_checked_scaled_ratio_overflow_returns_none_not_panic() {
+        // numerator * scale overflows u128 — must fail closed (None), never
+        // panic or silently wrap to a plausible-looking wrong ratio.
+        assert_eq!(checked_scaled_ratio(u128::MAX, 1, 2), None);
+        assert_eq!(checked_scaled_ratio(u128::MAX / 2 + 1, 1, 4), None);
+        // scaled_num + half_denom overflows even though numerator*scale alone
+        // did not (scale=1 never overflows the multiply) — this exercises the
+        // checked_add boundary specifically, not just checked_mul.
+        assert_eq!(checked_scaled_ratio(u128::MAX, 3, 1), None);
+    }
+
+    #[test]
+    fn test_checked_scaled_ratio_rounding_boundary() {
+        // Exercise every remainder class scaled by 10 against a fixed
+        // denominator, checking round-half-up lands where long division says
+        // it should: floor if remainder*2 < denom, else ceil.
+        let denom = 7u128;
+        for numer in 0..3 * denom {
+            let scaled = checked_scaled_ratio(numer, denom, 10).unwrap();
+            let expected = {
+                let q = (numer * 10) / denom;
+                let r = (numer * 10) % denom;
+                if r * 2 >= denom {
+                    q + 1
+                } else {
+                    q
+                }
+            };
+            assert_eq!(scaled, expected, "numerator={numer} denominator={denom}");
+        }
+    }
+
+    #[test]
+    fn test_format_ratio() {
+        assert_eq!(format_ratio(1, 4, 2), "0.25");
+        assert_eq!(format_ratio(1, 3, 1), "0.3");
+        assert_eq!(format_ratio(2, 3, 1), "0.7");
+        assert_eq!(format_ratio(1000, 1000, 2), "1.00");
+        assert_eq!(format_ratio(0, 5, 3), "0.000");
+        assert_eq!(format_ratio(1234, 1, 0), "1234");
+        // Zero denominator fails closed to a fallback string, never a panic.
+        assert_eq!(format_ratio(1, 0, 2), "n/a");
+        // A degenerate scale (huge decimals count) also fails closed.
+        assert_eq!(format_ratio(1, 1, 100), "n/a");
+    }
+
+    #[test]
+    fn test_format_ratio_matches_previous_float_formatting() {
+        // These mirror real before/after call sites converted off `{:.N}`
+        // float formatting elsewhere in this crate's benches/tests: nanosecond
+        // durations divided by an op count, scaled to milliseconds.
+        // 292_400_000 ns / 1 op, displayed in ms to 2 decimals: 292.40ms.
+        assert_eq!(format_ratio(292_400_000, 1_000_000, 2), "292.40");
+        // A median of 1_405_000 ns displayed in ms to 3 decimals: 1.405ms.
+        assert_eq!(format_ratio(1_405_000, 1_000_000, 3), "1.405");
     }
 
     #[test]

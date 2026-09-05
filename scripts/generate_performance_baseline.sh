@@ -152,7 +152,9 @@ depth_total_192=$(extract_depth_total_seconds "${depth192_log}")
   echo "## Criterion Artifacts"
   echo
   echo "- Machine-readable summary: \`${criterion_json}\`"
-  echo "- Raw Criterion tree: \`target/criterion/\`"
+  echo "- Raw Criterion tree: \`target/criterion/\` (overwritten by the next \`cargo bench\`"
+  echo "  run -- archive it now with \`scripts/archive_criterion_run.sh\` if this run's raw"
+  echo "  HTML/JSON output needs to survive that, e.g. before/after a release)."
   echo
   echo "The criterion summary above is now the source for K-Elimination micro-op timings"
   echo "to avoid timer-resolution artifacts (e.g., historical 0 ns rows)."

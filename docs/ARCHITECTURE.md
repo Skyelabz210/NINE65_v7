@@ -148,8 +148,8 @@ the snapshot commit above (`ls`, not memory).
 These two directories are where the multiply/rescale architecture actually
 lives, and where the old (2026-01-24) table was most out of date — it listed
 `k_elimination.rs`, `order_finding.rs`, `ntt.rs`, `montgomery.rs`, `rns.rs`
-only; the directory now holds 29 files. Selected files, grouped by role
-(exhaustive file list is `ls crates/nine65/src/arithmetic/`):
+only; the directory now holds 31 files (32 counting `mod.rs`). Selected files,
+grouped by role (exhaustive file list is `ls crates/nine65/src/arithmetic/`):
 
 | File | Role |
 |---|---|
@@ -169,7 +169,22 @@ only; the directory now holds 29 files. Selected files, grouped by role
 | `rational_bridge.rs` | Bridge to `nexgen_rational`'s exact `i128` fractions |
 | `valuation.rs`, `mobius_int.rs`, `integer_math.rs`, `exact_coeff.rs`, `exact_divider.rs`, `ct_mul_exact.rs`, `cyclotomic_phase.rs`, `boundary.rs` | Supporting exact-integer utilities (valuation/divisibility, signed-magnitude representation, dual-track coefficients, capacity proximity checks) |
 
-`ops/` (16 files, versus the old table's 8):
+`arithmetic/k_elimination.rs` (`KElimination`/`AdjacencyKElim`) is the
+validated, CT-tested, two-modulus *reference* implementation — not the live
+production entry point, which is `DualRNSContext::extract_k_rns_level` in
+`arithmetic/rns.rs` (called from `ops/rns_fhe.rs`'s encrypt/mul/rescale path).
+`arithmetic::kelim_residue_divider` is a related but distinct
+`BoundedResidueDivider` generalization, explicitly not wired into any call
+site. There are seven K-Elimination-shaped implementations across the
+workspace in total (plus one adjacent security-analysis tool that only
+re-derives the formula to attack it), each existing for a dependency-graph or
+formal-verification reason — see
+`docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` (issue #70) for the full
+inventory and why each one exists rather than being merged into one file; do
+not assume any two K-Elimination-shaped files here are redundant without
+reading it first.
+
+`ops/` (15 files, versus the old table's 8):
 
 | File | Role |
 |---|---|
@@ -179,14 +194,25 @@ only; the directory now holds 29 files. Selected files, grouped by role
 | `cram_public.rs` | CRAM-Public Mode: "the single working CRAM variant of the FHE evaluator," a deliberately narrowed public-only path with a per-operation emission ledger |
 | `track1_exact_multiply_lock.rs` | Track 1 T1.1 — a `#[cfg(test)]` child of `ops::rns_fhe` that pins the current limb-local rescale's *failure* against an exact oracle on chains where `Delta² > Q`, and pins the target semantics for the not-yet-integrated replacement route |
 | `bootstrap.rs` | **`ops::bootstrap::ClockworkBootstrap`** — public (evaluator-side) ciphertext refresh: circular, KSK-separated, auto-triggered (§4) |
-| `auto_bootstrap.rs` | `AutoBootstrapEvaluator` — opt-in wrapper triggering refresh on a noise threshold |
+| `auto_bootstrap.rs` | `AutoBootstrapEvaluator` — opt-in wrapper triggering refresh on a noise threshold; since issue #93, noise/refresh state is tracked per `TrackedCiphertext` (each with its own `NoiseBudget`) rather than one ledger shared across every ciphertext the evaluator touches, so a refresh on one branch of an operation DAG can no longer trigger or suppress a refresh on an unrelated ciphertext |
 | `symmetric_bootstrap.rs` | `SymmetricBootstrap` — secret-key-holder-side protected re-encryption, a separate path not covered by the public admissibility gate |
-| `sbni.rs` | Shadow Butterfly Noise Injection — **retired mechanism**, kept for record (§8) |
 | `galois.rs` | Rotation operations (Galois automorphisms) for SIMD-slot rotation |
 | `batch.rs` | SIMD-style value packing/batching encoder |
 | `neural.rs` | `FHENeuralEvaluator` — neural-network-layer evaluation on ciphertexts |
 | `parallel.rs` | Parallel encrypt/decrypt for throughput |
 | `arrow_emission_gate.rs` | Public forwarding layer for the exact align-and-drop primitive |
+
+`ops/sbni.rs` (Shadow Butterfly Noise Injection) and
+`entropy/wassan_noise.rs` (`WassanNoiseField`) — both already retired and
+excluded from their module trees — were **deleted outright** (issue #68),
+along with the now-dead `shadow: &mut Option<Vec<u64>>` capture parameter on
+`NTTEngine`/`NTTEngineFFT`'s NTT entry points that only SBNI ever fed. This is
+a stronger disposition than the still-quarantined-but-present Three-Lock
+Bootstrap (§3.3): nothing of SBNI/Wassan remains on disk to consult "for the
+record." `exact_transcendentals::dyn_crt::WassanRing` (an unrelated, actively
+used residue-ring type that only shares the "WASSAN" name) and
+`entropy::crt_shadow`'s `*_with_shadows` family (consumed by `gso_fhe.rs`)
+were not touched by this deletion.
 
 ### 3.3 Naming collision to be aware of: two `ClockworkBootstrap` types
 
@@ -241,11 +267,20 @@ cannot carry a public refresh, via
 
 | constructor | lanes | admits public refresh? |
 |---|---|---|
-| `secure_128()` | 3 | refused — 42 bits of post-refresh `Delta` headroom against the 47 one multiply needs |
-| `hardware_opt()` | 3 | refused, same reason |
+| `secure_128()` | 4 | admitted |
 | `secure_128_deep()` | 4 | admitted |
 | `secure_192()` | 5 | admitted |
 | `secure_256()` | 6 | admitted |
+
+`secure_128()` was **re-cut 2026-08-26** (`docs/OPEN_WORK_2026-08-26.md` §A3)
+from three main primes to four; it now builds the exact same tuple as
+`secure_128_deep()` and is therefore admitted, not refused. The retired
+three-lane tuple — 42 bits of post-refresh `Delta` headroom against the 47
+one multiply needs, refused — is historical only
+(`docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`, flagged there as superseded on
+this point). `hardware_opt()` no longer has a constructor in
+`secure_configs.rs` as of this writing; its continued presence in older docs
+is a separate, unresolved discrepancy.
 
 **Public bootstrap is currently fail-closed regardless of admission.** Per
 `docs/NINE65_LIVE_STATE_ADDENDUM_2026-09-03.md` and
@@ -258,22 +293,31 @@ state"). Issue #95 — the replacement Phase-1 correction/encoding — was
 **reopened on 2026-09-03** because its actual acceptance criteria are not
 met. The planned replacement is tracked as WR-5 (WR-5A sampler / WR-5B
 security validation / WR-5C the actual correction / WR-5D metadata cleanup) in
-`docs/NINE65_CURRENT_STATE_AND_WORK_REQUESTS_2026-09-03.md`.
+`docs/NINE65_CURRENT_STATE_AND_WORK_REQUESTS_2026-09-03.md`. **WR-5B has since
+landed** (`docs/work_requests/WR5B_BOOTSTRAP_SECURITY_VALIDATION.md`,
+fixing issue #83: `BootstrapKey::generate`'s security check was previously
+satisfied by construction, deriving its target security from the same primes
+it then validated against). WR-5B is scoped to security-screening validity
+only and, per its own acceptance criteria, makes "no change to public
+bootstrap availability" — it does not touch, and does not resolve, the
+Phase-1 issue #95 defect below. Public refresh remains fail-closed on every
+config.
 
 **Open question about the admissibility gate itself.** A 2026-09-03 finding
 (`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`) measured
 `ops::bootstrap::tests::diag_measure_noise_growth` — which bypasses only the
 soundness gate to measure what the refresh phases actually produce — and
 found `refresh(7)` itself (not just the following multiply) wrong for
-`secure_128_deep` (`65536`) and `secure_192` (`40`), i.e. two of the three
-configs the table above calls "admitted." This directly contradicts the
-implication of the admissibility table (that admitted configs don't have this
-problem) and trips the test's own built-in tripwire assertion ("the gate is
-admitting a corrupting path — fix the predicate, do not relax this
-assertion"). This is confirmed and unfixed as of the snapshot date; it is left
-deliberately red rather than `#[ignore]`d, pending an owner decision. Do not
-read "admitted" in the table above as "safe" without also reading that
-finding.
+`secure_128` and `secure_128_deep` (both `65536`, identical since the recut
+made them the same tuple) and `secure_192` (`40`) — three of the four configs
+the table above calls "admitted" (`secure_256` was not part of that
+measurement). This directly contradicts the implication of the admissibility
+table (that admitted configs don't have this problem) and trips the test's
+own built-in tripwire assertion ("the gate is admitting a corrupting path —
+fix the predicate, do not relax this assertion"). This is confirmed and
+unfixed as of the snapshot date; it is left deliberately red rather than
+`#[ignore]`d, pending an owner decision. Do not read "admitted" in the table
+above as "safe" without also reading that finding.
 
 The symmetric secret-key refresh (`SymmetricBootstrap::bootstrap`,
 `ops/symmetric_bootstrap.rs`) is architecturally separate and is **not**
@@ -291,11 +335,14 @@ the architecture map):
 
 | constructor | n | lanes | log2(q) | claimed | Core-SVP | MATZOV | binding | public refresh |
 |---|---|---|---|---|---|---|---|---|
-| `secure_128()` | 8192 | 3 | 90 | 128 | 259 | 233 | 233 | refused |
+| `secure_128()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | yes (§4 caveat) |
 | `secure_128_deep()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | yes (§4 caveat) |
 | `secure_192()` | 16384 | 5 | 146 | 192 | 320 | 288 | 288 | yes (§4 caveat) |
 | `secure_256()` | 16384 | 6 | 175 | 256 | 267 | **240** | **240** | yes |
-| `hardware_opt()` | 8192 | 3 | 90 | 128 | 259 | 233 | 233 | refused |
+
+(`hardware_opt()` has no constructor in current `secure_configs.rs`; the
+retired three-lane `secure_128` figures this table replaces — 259/233/233,
+refused — are archived in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.)
 
 Every name clears its own number under Core-SVP, the model the estimator
 gates on. `secure_256` falls 16 bits short of its claim under MATZOV — that
@@ -375,6 +422,14 @@ evaluator's real multiply path remains the pre-existing limb-local
 `exact_rescale` in `rns_fhe.rs`, valid only while `Delta² <= Q`, with the
 `BajardSingle`/`mul_auto` route split from §6.2 as the only currently-enforced
 guard against its known failure mode.
+
+A draft integration PR (#111, WR-1) implementing Track 1 T1.4/T1.5 exists on
+its own branch as of this writing, but is **not yet merged to `main`** — see
+that PR's own WR-1 work-request packet,
+`docs/work_requests/WR1_EXACT_EVALUATOR_INTEGRATION.md`, for its scope. Until
+it merges, the "not implemented"/"not yet wired into the evaluator" statuses
+above remain accurate for `main`; this document will be updated once that PR
+lands rather than anticipating its result.
 
 ---
 
@@ -477,6 +532,22 @@ timing/address-trace evidence on x86-64 and ARM) has not been collected.
 `CompareBit::decide_ct` is a D2 primitive only; it is not license to
 reconstruct evaluator D3 (derived-transient) values.
 
+**Separately, two named timing findings from `docs/CT_VERIFICATION_PLAN.md`
+have moved.** F-2 (issue #72, `RNSFHEContext::mod_switch_down_dual`'s
+magnitude-dependent `U256::div_mod_u64`, a measured 2.96x timing dependence)
+is now **closed**: `U256::div_mod_u64_ct` (a fixed-256-iteration
+mask-select-and-`black_box` division) replaced the call site, promoted from
+tripwire to a blocking dudect gate in `ct_verification.yml`. The same pass
+also hardened the production K-Elimination hot path
+(`DualRNSContext::extract_k_rns_level_cached`) against the same defect class
+(secret-correlated `mod_u64` calls, a conditional-skip branch in
+`crt_reconstruct_u256`), leaving one documented, unaddressed
+`(diff * inv) % a_i` reduction in that function out of scope. **F-3**
+(issue #18, the legacy/reference `KElimination::extract_k`) is **explicitly
+NOT closed** by this work — its fix trades away capacity and remains an
+owner decision per `docs/OPEN_WORK_2026-08-26.md` §A2 — so do not read "F-2
+closed" as "the constant-time findings are resolved."
+
 ---
 
 ## 10. Formal verification
@@ -511,8 +582,8 @@ the authoritative, maintained command list. Summary:
 # build everything except the Python/WASM binding crates
 cargo build --release --workspace --exclude nine65-python --exclude nine65-wasm
 
-# full test suite
-cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm
+# full test suite (see the --no-fail-fast note below)
+cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast
 
 # core FHE tests only
 cargo test -p nine65 --lib --release
@@ -523,6 +594,26 @@ Standalone `-p nine65` runs of integration-test/bench targets need
 `cfg(test)`, and the release-mode secure-RNG gate would otherwise reject their
 seeded `ShadowHarvester`. The workspace-wide command above needs nothing
 extra.
+
+**`--no-fail-fast` matters, and is not optional.** Per issue #64, nine65's
+`--lib` currently has failing tests (the issue #95 public-refresh corruption
+in §4), and plain `cargo test --workspace` stops at the first package with a
+failing test — silently never building or running nine65's ~28
+`tests/*.rs` integration binaries, `nine65-extreme-tests`,
+`private-feedback-core`, `private-feedback-nine65`, or `unhal`. Measured
+directly (2026-09-04): this reproduces identically in `--release` and in
+CI's plain `cargo test --workspace` (debug), so it is a `cargo test
+--workspace` default-fail-fast behavior, not a build-profile artifact.
+`--no-fail-fast` is now in both `ci.yml`'s full-test step and `CLAUDE.md`'s
+documented command; a clean `cargo build --release --workspace` measured 80s
+on a 4-vCPU host, and the full `--no-fail-fast` suite completed in 26m53s
+under typical shared-host contention.
+
+**CI toolchain pinning.** `rust-toolchain.toml` at the repository root now
+pins the toolchain to `1.89.0` (with `clippy`/`rustfmt`), and every GitHub
+Actions workflow under `.github/workflows/` was updated to use it, so CI and
+local builds resolve the same compiler version rather than each workflow
+independently picking up whatever `stable` resolves to at run time.
 
 Feature flags actually declared in `crates/nine65/Cargo.toml` (`default =
 ["exact_transcendentals_backend", "accelerated"]`):
@@ -592,17 +683,26 @@ session's handoff (owner decisions, measured-but-unfixed findings, and a list
 of settled questions not to re-derive). Load-bearing open items, condensed:
 
 - **WR-1 / Track 1 T1.4** — exact evaluator multiply/rescale integration; not
-  implemented (§6.3).
+  implemented on `main` (§6.3). A draft integration PR (#111) implementing
+  T1.4/T1.5 is open on its own branch but not yet merged; see §6.3.
 - **WR-2** — WIRE-Q differential/serialization closure, including the
   `fhe-service` single-RNS wire type; not implemented (§7).
 - **WR-3** — PR #104 Track 2 CompareBit completion, rebase, and hardware
-  constant-time evidence; stale/non-mergeable (§9).
-- **WR-4** — promote `lifted_transduction.rs` (staged behind the integration
-  test shim, PR #99) into a typed, exported provider.
+  constant-time evidence; stale/non-mergeable (§9). Separately, and outside
+  this PR, F-2 (issue #72) has since been closed and F-3 (issue #18) remains
+  open — see §9.
+- **WR-4 — done.** `lifted_transduction.rs` is promoted to a typed, exported
+  provider (`pub mod lifted_transduction`, `LiftEvidenceProvider`/
+  `LiftEvidence`, `transduct_with_lift_provider`); see
+  `docs/work_requests/WR4_LIFTED_TRANSDUCTION_PROVIDER.md`.
 - **WR-5 (A–D)** — rebuild public bootstrap (#95) around a valid encrypted
   Phase-1 correction; public refresh remains fail-closed until this lands
-  (§4).
-- **WR-6** — per-ciphertext auto-refresh/noise state (#93); depends on WR-5C.
+  (§4). **WR-5B has landed** (`docs/work_requests/WR5B_BOOTSTRAP_SECURITY_VALIDATION.md`,
+  issue #83) but is scoped to security-screening validity only and does not
+  touch the Phase-1 defect; WR-5A/5C/5D remain open.
+- **WR-6 — done**, and shipped independently of WR-5C rather than waiting on
+  it: per-ciphertext auto-refresh/noise state (#93), `TrackedCiphertext` in
+  `ops/auto_bootstrap.rs` — see §3.2.
 - **WR-7** — factorization-aware production security admission, `secure_256`
   naming disposition, external lattice-estimator attestation (#75/#76/#87/#88).
 - **WR-8** — service/API/input hardening: HTTP framing fail-closed work,
@@ -610,12 +710,25 @@ of settled questions not to re-derive). Load-bearing open items, condensed:
   ratchet enforcement.
 - **WR-9** — CI/benchmark evidence plumbing; final README performance and
   depth/capability claims are explicitly **deferred until the architecture
-  freezes**, per that document's own text.
+  freezes**, per that document's own text. Issue #64's `--no-fail-fast` fix
+  and the Rust toolchain pin (§11) are steps in this direction but do not by
+  themselves close WR-9.
 - **WR-0** — restore executed CI evidence for current `main`. Per
   `docs/NINE65_LIVE_STATE_ADDENDUM_2026-09-03.md`: "workflow definitions
   exist, but no executed workflow/check evidence was found for this September
   head... no current-main build, test, formatting, security, or benchmark
   result is asserted."
+
+Other items landed since this ledger was drafted, tracked by issue number
+rather than a WR letter: SBNI/Wassan retirement completed by outright
+deletion, not just quarantine (#68, §3.2); zero-floating-point enforcement
+extended to benches/tests/audit binaries via
+`scripts/check_no_floats_benches_and_tests.py` (#90); a full depth-2 ct×ct
+correctness matrix across all four named configs, confirming
+`secure_128`/`secure_128_deep` numerical identity generalizes
+(`tests/depth2_full_matrix_issue81.rs`, #81); and a working, tested
+`nine65-python` build via maturin with a real pytest suite (#17/#63) — it
+remains excluded from the default workspace build (§2.3).
 
 The safe summary sentence, quoted directly from that document because it is
 already precisely scoped:
@@ -640,6 +753,13 @@ already precisely scoped:
   outage this document summarizes in §7.
 - `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md` — the
   admissibility-gate finding this document summarizes in §4.
+- `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` — the full index of
+  every K-Elimination-shaped implementation in the workspace and why each
+  exists, summarized in §3.2.
+- `docs/work_requests/WR4_LIFTED_TRANSDUCTION_PROVIDER.md` — the WR-4
+  assignment packet for the lifted-transduction provider promotion (§13).
+- `docs/work_requests/WR5B_BOOTSTRAP_SECURITY_VALIDATION.md` — the WR-5B
+  assignment packet for the bootstrap security-validation fix (§4, §13).
 - `docs/RETIRED_MECHANISMS.md` — modulus switching, the noise budget/ladder,
   and the Three-Lock Bootstrap; authoritative on what NINE65 no longer
   implements and why.
