@@ -1067,6 +1067,80 @@ fn malformed_gadget_key_shapes_are_refused() {
     ));
 }
 
+/// F1: `relinearize_tensor` is a public entry point and can be called with a
+/// hand-built `ExactTensor3` that never passed through
+/// `try_mul_no_relin_exact`. Malformed shape or a non-canonical residue must
+/// be a typed refusal, exactly like the ciphertext-input checks in
+/// `malformed_ciphertext_shapes_are_refused`, never an index-out-of-bounds
+/// panic or a silently truncated high digit.
+#[test]
+fn malformed_tensor_shapes_are_refused() {
+    let ring_n = 16;
+    let primes = vec![998244353u64, 985661441, 754974721, 469762049];
+    let cfg = small_ring_config(primes.clone(), ring_n);
+    let ctx = RNSFHEContext::new(&cfg);
+    let ev = ctx.try_exact_evaluator().expect("evaluator");
+    let mut rng = ShadowHarvester::with_seed(0x717E_0004);
+    let keys = ctx.generate_keys(&mut rng);
+    let key = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+
+    let good_tensor = ExactTensor3 {
+        e0: RNSPolynomial::zero(&ctx.rns),
+        e1: RNSPolynomial::zero(&ctx.rns),
+        e2: RNSPolynomial::zero(&ctx.rns),
+        num_primes: primes.len(),
+    };
+    ev.relinearize_tensor(&good_tensor, &key)
+        .expect("well-formed tensor");
+
+    // Counterexample 1: `e2` one lane short of the plan. Before the fix this
+    // indexed `e2.limbs[3]` out of bounds inside `hybrid_relinearize`'s lane
+    // loop and panicked instead of returning `Err`.
+    let mut short_e2 = good_tensor.clone();
+    short_e2.e2.limbs.pop();
+    assert!(matches!(
+        ev.relinearize_tensor(&short_e2, &key),
+        Err(ExactMulError::CiphertextShape {
+            what: "e2 limb count",
+            got: 3,
+            expected: 4,
+        })
+    ));
+
+    // Counterexample 2: a non-canonical residue (`>= q_0`) in `e2`. Before
+    // the fix this was silently decomposed into only its low
+    // `digits_per_lane[0] * base_bits` bits by the shift/mask digit
+    // extraction, contributing a wrong value to the folded `s^2` term
+    // instead of being refused.
+    let mut non_canonical_e2 = good_tensor.clone();
+    non_canonical_e2.e2.limbs[0][0] = primes[0];
+    assert!(matches!(
+        ev.relinearize_tensor(&non_canonical_e2, &key),
+        Err(ExactMulError::NonCanonicalMainResidue { lane: 0, .. })
+    ));
+
+    // A mismatched `num_primes` and a short `e0` are refused the same way.
+    let mut bad_num_primes = good_tensor.clone();
+    bad_num_primes.num_primes = primes.len() - 1;
+    assert!(matches!(
+        ev.relinearize_tensor(&bad_num_primes, &key),
+        Err(ExactMulError::CiphertextShape {
+            what: "tensor num_primes",
+            ..
+        })
+    ));
+
+    let mut short_e0 = good_tensor.clone();
+    short_e0.e0.limbs.pop();
+    assert!(matches!(
+        ev.relinearize_tensor(&short_e0, &key),
+        Err(ExactMulError::CiphertextShape {
+            what: "e0 limb count",
+            ..
+        })
+    ));
+}
+
 // ===========================================================================
 // G5 — end-to-end public multiply on the named production configurations
 // ===========================================================================
@@ -1585,5 +1659,204 @@ fn single_rns_uniform_sampler_covers_the_whole_main_modulus() {
         "only {wide}/{} coefficients exceeded 2^64; the sampler is not \
          uniform over [0, Q)",
         cfg.n
+    );
+}
+
+// ===========================================================================
+// Adversarial boundary — the N/4-vs-N/2 operand-bound deviation, under a
+// coefficient that actually needs the extra bit.
+// ===========================================================================
+
+/// The operand bound is `N/2`, not `N/4` (`exact_mul.rs` module header):
+/// `d1 = a0*b1 + a1*b0` sums TWO negacyclic products, each individually
+/// bounded by `N*Q^2/4`, so their sum can reach `N*Q^2/2` -- one bit beyond
+/// what `N/4` (WR-1 §B1's written bound) declares. This test builds the
+/// under-declared `N/4` plan directly via [`ExactMulPlan::with_operand_bound`]
+/// and drives a real coefficient of `d1` past `N*Q^2/4`, to observe what the
+/// route actually does on the input the owner's accepted `N/2` fix exists to
+/// cover -- rather than trusting the module header's arithmetic on paper.
+#[test]
+fn n_over_4_operand_bound_is_load_bearing_for_d1() {
+    let ring_n = 8usize;
+    let primes = vec![998244353u64, 985661441, 754974721, 469762049];
+    let t = 65537u64;
+    let cfg = small_ring_config(primes.clone(), ring_n);
+    let ctx = RNSFHEContext::new(&cfg);
+    let oracle = BigOracle::new(&primes, ring_n, t);
+
+    let plan_quarter = ExactMulPlan::with_operand_bound(&primes, ring_n, t, ring_n as u64 / 4)
+        .expect(
+            "N/4 is a SMALLER declared bound than N/2, so it is cheaper to satisfy \
+                     and must still construct",
+        );
+    let plan_half = ExactMulPlan::new(&primes, ring_n, t).expect("N/2 plan");
+    let ev_quarter = ExactMulEvaluator::with_plan(&ctx, plan_quarter);
+    let ev_half = ExactMulEvaluator::with_plan(&ctx, plan_half);
+
+    // Coherent extreme operands, sign pattern chosen deliberately: every
+    // coefficient of a0, a1, b0 AND b1 is the SAME extreme value +(Q-1)/2.
+    // With a0 == a1 and b0 == b1, the negacyclic products a0*b1 and a1*b0 are
+    // literally the same polynomial, so d1 = 2*(a0*b1): the two terms add
+    // constructively instead of partially cancelling, which is what drives
+    // |d1| up toward its N*Q^2/2 ceiling rather than staying under N*Q^2/4.
+    let half = oracle.q.div_small_mag_exact(2); // (Q-1)/2, Q is odd
+    let a0: Vec<Big> = vec![half.clone(); ring_n];
+    let a1: Vec<Big> = vec![half.clone(); ring_n];
+    let b0: Vec<Big> = vec![half.clone(); ring_n];
+    let b1: Vec<Big> = vec![half.clone(); ring_n];
+
+    let d0 = oracle.negacyclic(&a0, &b0);
+    let d1: Vec<Big> = oracle
+        .negacyclic(&a0, &b1)
+        .iter()
+        .zip(oracle.negacyclic(&a1, &b0).iter())
+        .map(|(x, y)| x.add(y))
+        .collect();
+    let d2 = oracle.negacyclic(&a1, &b1);
+
+    // The oracle proves the bound violation FIRST, independent of anything
+    // the evaluators compute.
+    let declared_quarter = Big::from_u64(ring_n as u64 / 4)
+        .mul(&oracle.q)
+        .mul(&oracle.q);
+    let declared_half = Big::from_u64(ring_n as u64 / 2)
+        .mul(&oracle.q)
+        .mul(&oracle.q);
+    let mut max_abs = Big::zero();
+    for x in &d1 {
+        let mag = Big {
+            neg: false,
+            mag: x.mag.clone(),
+        };
+        if Big::cmp_mag(&mag.mag, &max_abs.mag) == std::cmp::Ordering::Greater {
+            max_abs = mag;
+        }
+    }
+    assert!(
+        Big::cmp_mag(&max_abs.mag, &declared_quarter.mag) == std::cmp::Ordering::Greater,
+        "test construction failed: max |d1| ({} bits) does not exceed the N/4 bound \
+         N*Q^2/4 ({} bits)",
+        max_abs.bit_length(),
+        declared_quarter.bit_length()
+    );
+    assert!(
+        Big::cmp_mag(&max_abs.mag, &declared_half.mag) != std::cmp::Ordering::Greater,
+        "max |d1| ({} bits) must still respect the owner-accepted N/2 bound \
+         N*Q^2/2 ({} bits), or this test is not isolating the N/4-vs-N/2 gap",
+        max_abs.bit_length(),
+        declared_half.bit_length()
+    );
+    println!(
+        "n_over_4_operand_bound_is_load_bearing_for_d1: max|d1|={} bits, N*Q^2/4={} bits, \
+         N*Q^2/2={} bits",
+        max_abs.bit_length(),
+        declared_quarter.bit_length(),
+        declared_half.bit_length()
+    );
+
+    let ct_a = ciphertext_from_centered(&ctx, &a0, &a1, &oracle);
+    let ct_b = ciphertext_from_centered(&ctx, &b0, &b1, &oracle);
+
+    let tensor_half = ev_half
+        .try_mul_no_relin_exact(&ct_a, &ct_b)
+        .expect("N/2 plan must accept these operands: they are within its declared bound");
+    let tensor_quarter_result = ev_quarter.try_mul_no_relin_exact(&ct_a, &ct_b);
+
+    let want_e0: Vec<Vec<u64>> = d0
+        .iter()
+        .map(|x| oracle.residues(&oracle.scale_round(x)))
+        .collect();
+    let want_e1: Vec<Vec<u64>> = d1
+        .iter()
+        .map(|x| oracle.residues(&oracle.scale_round(x)))
+        .collect();
+    let want_e2: Vec<Vec<u64>> = d2
+        .iter()
+        .map(|x| oracle.residues(&oracle.scale_round(x)))
+        .collect();
+
+    // The N/2 plan (what the route actually ships) is bit-identical to the
+    // oracle on every component, every lane, every coefficient.
+    for (component, (want, got)) in [
+        (&want_e0, &tensor_half.e0),
+        (&want_e1, &tensor_half.e1),
+        (&want_e2, &tensor_half.e2),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        for k in 0..ring_n {
+            let have: Vec<u64> = got.limbs.iter().map(|l| l[k]).collect();
+            assert_eq!(
+                have, want[k],
+                "N/2 plan: component {component} coefficient {k} diverges from the oracle"
+            );
+        }
+    }
+
+    // The N/4 plan's e1: what actually happens when the declared bound is one
+    // bit short of what this d1 needs. NOT a typed refusal: `ExactScaleRound::
+    // scale_round` never re-checks the caller's declared bound against the
+    // coefficient it is handed -- there is no assertion tying `x_main`/
+    // `x_aux` back to `x_bound_over_q_sq`
+    // (`arithmetic/exact_scale_round.rs::scale_round`). Construction of
+    // `plan_quarter` above already proved that; this is the runtime half.
+    //
+    // The module doc's non-negativity argument
+    // (`arithmetic/exact_scale_round.rs` lines 39-51) is: "`S` is ... at
+    // least `|Y|`, so `Y+ = Y+S` lies in `[0, 2S]` -- non-negative without
+    // any comparison". That argument's premise is exactly the declared bound
+    // (`|Y| <= S = s_mult*Q`), and the whole point of this test is a `Y` for
+    // which the N/4 plan's premise is FALSE: at k=0, `Y` is negative with
+    // `|Y|` (136 bits) already exceeding `S_quarter` (136 bits) in this
+    // chain's arithmetic, so `Y + S_quarter` is itself negative. The shift
+    // is realized per aux lane as plain modular arithmetic
+    // (`yplus_aux[j] = (y + shift_mod_aux[j]) % a`), so `yplus_aux` is always
+    // the exact residues of `(Y+S) mod A` regardless of sign; the base
+    // extension back into the main lanes then reconstructs THAT canonical-
+    // mod-`A` integer, which for a negative `Y+S` is `Y+S+A` -- a value with
+    // no relationship to the true `Y` -- not `Y+S` itself. That is coefficient
+    // 0's failure, confirmed below: a silently wrong value, not a refusal.
+    //
+    // Every OTHER coefficient of this same d1 -- including k=7, the one with
+    // the single largest `|Xc|` and the one this test used to prove the
+    // `N*Q^2/4` violation above -- decodes correctly on the N/4 plan anyway.
+    // Those `Y`s also exceed `S_quarter` in magnitude, but being positive,
+    // exceeding `S_quarter` only pushes `Y+S_quarter` up, not below zero, and
+    // the N/4 plan's aux basis has real headroom on that side: its own
+    // certificate needs `A > 2*s_mult_quarter*Q` (~137 bits for this chain at
+    // N=8), and the deterministic aux-prime pool
+    // (`DualRNSContext::canonical_anchor_primes_for_n`) only grows in ~31-bit
+    // steps, so the shortest prefix clearing 137 bits is 5 primes at ~157
+    // bits -- the SAME 5-prime prefix the N/2 plan needs for its own ~138-bit
+    // requirement (both plans select identical `aux_lanes`/`aux_bits` here,
+    // exactly as `aux_lane_counts_match_the_integer_oracle` pins for the named
+    // production configs). That ~19-20 bit gap between what N/4 certifies and
+    // what the pool actually supplies is what absorbs k=7's positive-side
+    // excess -- a coincidence of this N and this prime pool's granularity,
+    // not a property WR-1 designed for correctness, and it has NOTHING to
+    // offer the negative side: no amount of positive headroom in `A` moves
+    // `Y+S_quarter` back above zero once `S_quarter` itself was too small.
+    // A chain whose required capacity sits just under a pool-prefix boundary
+    // would lose that margin on the positive side too and corrupt more than
+    // one coefficient, exactly as `ops::rns_fhe::track1_exact_multiply_lock`
+    // measured for the analogous limb-local kernel. So this result is
+    // reported as observed -- one silently wrong coefficient, from the
+    // negative-`Y` side the design's own shift argument requires the
+    // declared bound to cover -- not generalized past what was measured.
+    let tensor_quarter = tensor_quarter_result
+        .expect("plan construction succeeded; scale_round has no runtime bound check to refuse on");
+    let mut mismatched: Vec<usize> = Vec::new();
+    for k in 0..ring_n {
+        let have: Vec<u64> = tensor_quarter.e1.limbs.iter().map(|l| l[k]).collect();
+        if have != want_e1[k] {
+            mismatched.push(k);
+        }
+    }
+    assert_eq!(
+        mismatched,
+        vec![0],
+        "expected the N/4 plan's e1 to diverge from the oracle at EXACTLY coefficient 0 \
+         (the negative-Y output-shift underflow derived above); got mismatches at {mismatched:?}"
     );
 }

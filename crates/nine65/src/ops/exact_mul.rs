@@ -66,6 +66,27 @@
 //! `aux_lane_counts_match_the_integer_oracle` pins, **zero** additional
 //! auxiliary lanes for every named production configuration.
 //!
+//! ## `with_operand_bound` is not part of the public API (WR-1 F2)
+//!
+//! [`ExactMulPlan::with_operand_bound`] performs no lower-bound check tying
+//! its `x_bound_over_q_sq` argument back to `n`; a caller who under-declares
+//! it (e.g. `N/4` instead of the required `N/2`, see above) gets back
+//! `Ok(plan)`, and that plan later emits a silently wrong coefficient. It is
+//! `pub(crate)`, not reachable outside `nine65` — only [`ExactMulPlan::new`],
+//! which pins `N/2` unconditionally, is public:
+//!
+//! ```compile_fail
+//! // `ExactMulPlan::with_operand_bound` is `pub(crate)`: a caller outside
+//! // the `nine65` crate cannot name it. Only `ExactMulPlan::new`, which
+//! // pins N/2, is public.
+//! let _ = nine65::ops::ExactMulPlan::with_operand_bound(
+//!     &[998244353u64, 985661441, 754974721, 469762049],
+//!     8,
+//!     65537,
+//!     2, // N/4 for N=8 -- the exact under-declared bound WR-1 F2 found
+//! );
+//! ```
+//!
 //! # No canonical reconstruction (WR-1 §F)
 //!
 //! Nothing on this route calls `RNSContext::to_int`, `to_u256_level`,
@@ -139,10 +160,16 @@ pub enum ExactMulError {
         got: usize,
         expected: usize,
     },
-    /// Decryption recovered a small value that its main lanes do not agree on.
-    /// The scaled plaintext must be a single integer in `[0, t]`; disagreement
-    /// means the ciphertext is outside the noise budget (or malformed), and the
-    /// route refuses rather than returning whichever lane happened to be read.
+    /// A belt-and-suspenders cross-lane consistency check on the
+    /// scale-and-round kernel's own output, not a noise-budget gate. For any
+    /// ciphertext with canonical main residues — the only kind
+    /// [`ExactMulEvaluator::try_decrypt_exact`]'s `check_ciphertext` admits —
+    /// `Y = round(t * inner / Q)` is mathematically in `[0, t]` in every
+    /// lane, so this refusal is not reachable from such an input. In
+    /// particular it is **not** how a noise-budget-exhausted (or malformed)
+    /// ciphertext is caught: that case still produces a canonical `Y` and
+    /// `try_decrypt_exact` returns `Ok` with the wrong plaintext, not this
+    /// error.
     ScaledPlaintextNotSmall {
         lane: usize,
         residue: u64,
@@ -278,9 +305,24 @@ impl ExactMulPlan {
         Self::with_operand_bound(main, n, t, x_bound_over_q_sq)
     }
 
-    /// As [`Self::new`], with an explicitly declared operand bound. Exposed so
-    /// the differential tests can pin the `N/4`-vs-`N/2` boundary directly.
-    pub fn with_operand_bound(
+    /// As [`Self::new`], with an explicitly declared operand bound.
+    ///
+    /// `pub(crate)`, not `pub` (WR-1 F2): this constructor performs no
+    /// lower-bound check relating `x_bound_over_q_sq` to `n`. A bound below
+    /// `N/2` still satisfies every capacity certificate below (`A >
+    /// 2*s_mult*Q` holds trivially for the resulting smaller `s_mult`), so a
+    /// caller who under-declares it gets back `Ok(plan)` and that plan later
+    /// emits a silently wrong `e1` coefficient whenever a real `d1` exceeds
+    /// the under-declared bound (see the module-level "Operand bound"
+    /// section above, and `n_over_4_operand_bound_is_load_bearing_for_d1` in
+    /// `exact_mul_tests.rs`). [`Self::new`] is the only sound public
+    /// constructor — it pins `x_bound_over_q_sq = N/2` unconditionally, the
+    /// bound every reachable production caller
+    /// (`RNSFHEContext::try_exact_evaluator` -> `ExactMulEvaluator::new`)
+    /// gets — so this stays crate-visible only for the differential test
+    /// above, which deliberately misconstructs the historical `N/4` plan to
+    /// prove it wrong on purpose.
+    pub(crate) fn with_operand_bound(
         main: &[u64],
         n: usize,
         t: u64,
@@ -476,7 +518,10 @@ impl std::fmt::Debug for RNSHybridGadgetKey {
 /// masks, which is only the intended decomposition of `[P]_{q_i}` in the
 /// standard domain. [`ExactMulEvaluator::relinearize_tensor`] converts `e0`/`e1`
 /// to Montgomery on its way out; a hand-built `ExactTensor3` must follow the
-/// same convention.
+/// same convention. `relinearize_tensor` checks this contract (shape and
+/// per-lane canonical residues) before doing so, so a non-conforming
+/// `ExactTensor3` is refused with a typed `ExactMulError` rather than
+/// panicking or silently discarding high bits.
 #[derive(Clone, Debug)]
 pub struct ExactTensor3 {
     pub e0: RNSPolynomial,
@@ -509,6 +554,33 @@ impl RankPathTally {
 ///
 /// Borrows the FHE context and owns one [`ExactMulPlan`]. All auxiliary
 /// storage is allocated and zeroized inside individual calls.
+///
+/// # `with_plan` is crate-private (WR-1 F3)
+///
+/// The plan-and-context pairing done by [`Self::with_plan`] is never checked
+/// for consistency: [`Self::check_ciphertext`] validates canonical residues
+/// against `plan.main`, while the tensor arithmetic itself
+/// (`RNSFHEContext::rns_poly_mul`, `convert_from_montgomery_form`) runs under
+/// `ctx.config.primes`. A plan built from a different, same-length, same-`n`,
+/// otherwise-valid prime tuple than `ctx`'s passes every shape and canonical
+/// check and then silently multiplies under the wrong moduli. `with_plan` is
+/// therefore `pub(crate)`, not reachable outside `nine65` — this does not
+/// compile:
+///
+/// ```compile_fail
+/// use nine65::ops::{ExactMulEvaluator, ExactMulPlan, RNSFHEContext};
+///
+/// fn f<'a>(ctx: &'a RNSFHEContext, plan: ExactMulPlan) -> ExactMulEvaluator<'a> {
+///     ExactMulEvaluator::with_plan(ctx, plan)
+/// }
+/// ```
+///
+/// The only sound in-crate caller pairs a plan built from `ctx.config.primes`
+/// itself and varies only the operand bound (see
+/// `exact_mul_tests::n_over_4_operand_bound_is_load_bearing_for_d1`); the
+/// production entry point (`RNSFHEContext::try_exact_evaluator` ->
+/// `ExactMulEvaluator::new`) always builds its plan from `ctx.config.primes`
+/// directly, so no mismatch is constructible there.
 pub struct ExactMulEvaluator<'a> {
     ctx: &'a RNSFHEContext,
     plan: ExactMulPlan,
@@ -524,7 +596,13 @@ impl<'a> ExactMulEvaluator<'a> {
     }
 
     /// Build an evaluator around an already-proved plan.
-    pub fn with_plan(ctx: &'a RNSFHEContext, plan: ExactMulPlan) -> Self {
+    ///
+    /// `pub(crate)`, not public API (WR-1 F3, see the struct-level doc for
+    /// why): this does not check `plan.main == ctx.config.primes`, and
+    /// getting that wrong is silent. Same-crate callers must build `plan`
+    /// from `ctx.config.primes` unless deliberately probing a boundary the
+    /// plan itself does not enforce (as the operand-bound test does).
+    pub(crate) fn with_plan(ctx: &'a RNSFHEContext, plan: ExactMulPlan) -> Self {
         Self { ctx, plan }
     }
 
@@ -914,6 +992,82 @@ impl<'a> ExactMulEvaluator<'a> {
         Ok(())
     }
 
+    /// Shape and canonical-residue validation for a caller-supplied
+    /// [`ExactTensor3`] (WR-1 invariant 8), mirroring [`Self::check_ciphertext`]
+    /// / [`Self::check_canonical`] on the tensor side.
+    ///
+    /// `try_mul_no_relin_exact_observed` builds every component of its own
+    /// tensor from an already-validated `RNSCiphertext` pair via
+    /// `scale_round_poly`, so on that route `tensor.{e0,e1,e2}` are always
+    /// `lanes`-by-`n` with residues canonical for each main lane and this
+    /// check never rejects. It exists for a caller that builds an
+    /// `ExactTensor3` by hand and calls the public [`Self::relinearize_tensor`]
+    /// directly: without it, a short `e2.limbs` indexes out of bounds inside
+    /// `hybrid_relinearize`'s lane loop instead of returning a typed error,
+    /// and a non-canonical residue (`>= q_i`) silently loses its high bits in
+    /// the base-`2^b` digit extraction instead of being refused.
+    fn check_tensor(&self, tensor: &ExactTensor3) -> Result<(), ExactMulError> {
+        let lanes = self.plan.main.len();
+        if tensor.num_primes != lanes {
+            return Err(ExactMulError::CiphertextShape {
+                what: "tensor num_primes",
+                got: tensor.num_primes,
+                expected: lanes,
+            });
+        }
+        for (limb_count, ring_degree, limb_length, poly) in [
+            (
+                "e0 limb count",
+                "e0 ring degree",
+                "e0 limb length",
+                &tensor.e0,
+            ),
+            (
+                "e1 limb count",
+                "e1 ring degree",
+                "e1 limb length",
+                &tensor.e1,
+            ),
+            (
+                "e2 limb count",
+                "e2 ring degree",
+                "e2 limb length",
+                &tensor.e2,
+            ),
+        ] {
+            if poly.limbs.len() != lanes {
+                return Err(ExactMulError::CiphertextShape {
+                    what: limb_count,
+                    got: poly.limbs.len(),
+                    expected: lanes,
+                });
+            }
+            if poly.n != self.plan.n {
+                return Err(ExactMulError::CiphertextShape {
+                    what: ring_degree,
+                    got: poly.n,
+                    expected: self.plan.n,
+                });
+            }
+            for limb in &poly.limbs {
+                if limb.len() != self.plan.n {
+                    return Err(ExactMulError::CiphertextShape {
+                        what: limb_length,
+                        got: limb.len(),
+                        expected: self.plan.n,
+                    });
+                }
+            }
+            // Same range check `check_canonical` runs on ciphertext limbs:
+            // every residue below its lane's modulus. It is domain-agnostic
+            // (Montgomery and standard-domain elements of `Z_{q_i}` are both
+            // canonical iff `< q_i`), so it is exactly the right check for
+            // `e0`/`e1`/`e2`'s standard-domain residues too.
+            self.check_canonical(poly)?;
+        }
+        Ok(())
+    }
+
     /// Hybrid relinearization of a degree-2 component (WR-1 §D3/§D4).
     ///
     /// `e2` carries standard-domain canonical main residues. Digits are
@@ -973,12 +1127,19 @@ impl<'a> ExactMulEvaluator<'a> {
     }
 
     /// Fold an already-computed exact tensor into a degree-1 ciphertext.
+    ///
+    /// Validates `tensor`'s shape and canonical residues
+    /// ([`Self::check_tensor`]) before any digit extraction, exactly as
+    /// [`Self::try_mul_exact`]'s ciphertext inputs are validated — a
+    /// hand-built `ExactTensor3` is refused with a typed [`ExactMulError`]
+    /// rather than panicking or silently truncating a residue.
     pub fn relinearize_tensor(
         &self,
         tensor: &ExactTensor3,
         key: &RNSHybridGadgetKey,
     ) -> Result<RNSCiphertext, ExactMulError> {
         self.check_gadget_key(key)?;
+        self.check_tensor(tensor)?;
         let ctx = self.ctx;
         let (r0, r1) = self.hybrid_relinearize(&tensor.e2, key)?;
         let c0 = ctx.to_montgomery_form(&tensor.e0).add(&r0, &ctx.rns);
@@ -1007,8 +1168,16 @@ impl<'a> ExactMulEvaluator<'a> {
     ///   legitimate because `inner_canonical = inner_centered + b*Q` gives
     ///   `Y_canonical = Y_centered + b*t`, which vanishes mod `t`;
     /// * `Y` lies in `[0, t]`, far below every main lane, so it is read
-    ///   directly out of lane 0 and **cross-checked against every other lane**.
-    ///   Disagreement is a typed refusal, not a best-effort answer.
+    ///   directly out of lane 0 and cross-checked against every other lane as
+    ///   a belt-and-suspenders assertion on the scale-round kernel itself —
+    ///   **not** a noise-budget gate. For any ciphertext with canonical main
+    ///   residues (the only kind `check_ciphertext` admits), `Y` is
+    ///   mathematically in `[0, t]` in every lane, so the cross-check cannot
+    ///   actually disagree: [`ExactMulError::ScaledPlaintextNotSmall`] is not
+    ///   reachable from any such input. A ciphertext whose noise has
+    ///   exhausted the certified operand bound is *not* caught here either —
+    ///   it still decrypts to a canonical `Y` and this function returns `Ok`
+    ///   with the wrong plaintext, not an error.
     ///
     /// Constant-time note: the rank fallback inside [`MainOnlyBaseExt`] is
     /// fixed-work, but *whether* it is taken is data-dependent, so this
@@ -1016,8 +1185,10 @@ impl<'a> ExactMulEvaluator<'a> {
     /// coefficient. **Owner decision 2026-09-05 (WR-1 design doc §E): this
     /// stays as-is.** It is a verification-side entry point, reachable only
     /// through [`RNSFHEContext::try_exact_evaluator`], never from `mul_auto`,
-    /// `AutoBootstrapEvaluator` or the service layer, and it refuses with a
-    /// typed error on lane disagreement. Constant-time hardening belongs to
+    /// `AutoBootstrapEvaluator` or the service layer. It carries the
+    /// cross-lane assertion described above — never a proof-obligation
+    /// refusal reachable from any canonical-`Q` input — not a typed
+    /// noise-budget refusal. Constant-time hardening belongs to
     /// the production decrypt paths and the existing CT roadmap, not here; do
     /// not harden or otherwise modify this function under WR-1.
     pub fn try_decrypt_exact(
@@ -1039,8 +1210,14 @@ impl<'a> ExactMulEvaluator<'a> {
         x_aux.zeroize();
 
         // `Y` is in [0, t] and every main lane is far larger, so the canonical
-        // residue IS the value. Cross-check all lanes: an inconsistency means
-        // the ciphertext is outside the budget, and the route refuses.
+        // residue IS the value. The cross-lane check below is a
+        // belt-and-suspenders assertion on the scale-round kernel's own
+        // output, not a noise-budget gate: for any ciphertext with canonical
+        // main residues (the only kind `check_ciphertext` above admits), `Y`
+        // is mathematically in [0, t] in every lane, so it can never actually
+        // disagree here. A noise-budget-exhausted ciphertext still decrypts
+        // to a canonical `Y` and this function returns `Ok` with the wrong
+        // plaintext, not this error — see the function doc above.
         let candidate = out[0];
         for (i, (&r, &q)) in out.iter().zip(self.plan.main.iter()).enumerate() {
             let expected = candidate % q;
