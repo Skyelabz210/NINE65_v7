@@ -111,11 +111,13 @@ operation index. It masked nothing.
 | `ops/rns_fhe.rs` Step 3.5 | Whole block deleted: `shadows` allocation, the dummy-NTT harvest (both `cfg` arms), the `tau` `fetch_add`, and the `inject_dual_in_place` call. `c0_pre` is no longer `mut`. Replaced by a retirement comment. |
 | `ops/rns_fhe.rs` `RNSFHEContext` | `pub sbni_counter: AtomicU64` field removed, and its initializer in `try_new`. |
 | `ops/mod.rs` | `pub mod sbni;` replaced by a retirement comment. |
-| `ops/sbni.rs` | **Kept on disk**, out of the module tree, header replaced by a `RETIRED MECHANISM` block recording the three arguments above and naming the five tests that went with it. Body untouched. |
+| `ops/sbni.rs` | **Kept on disk**, out of the module tree, header replaced by a `RETIRED MECHANISM` block recording the three arguments above and naming the five tests that went with it. Body untouched. **[Addendum 2026-09-03, issue #68]: subsequently deleted outright.** The retirement record above and in §3.2/§6.5 stands as the historical account of what the file contained and why it was dropped; the bytes themselves no longer exist. |
 
-`crates/nine65/Cargo.toml:98` still declares `blake3 = "1"`, which is now an
-unused dependency — `sbni.rs` was its only consumer. That file is owned by a
-concurrent workflow and was deliberately not edited. **Open item, §6.6.**
+`crates/nine65/Cargo.toml:98` declared `blake3 = "1"`, which became an unused
+dependency the moment `sbni.rs` — its only consumer — left the module tree.
+That file was owned by a concurrent workflow and was deliberately not edited
+at the time. **Open item, §6.6 — resolved 2026-09-03 (issue #68):** removed
+from `Cargo.toml` when `sbni.rs` was deleted.
 
 ---
 
@@ -535,14 +537,20 @@ permanently equal to `config.primes.len()`.
 4. **Orphaned NTT shadow plumbing.** `ntt_inplace_with_shadow` and
    `ntt_with_shadow` still carry a `shadow: &mut Option<Vec<u64>>` parameter that
    existed solely for SBNI; every remaining caller passes `&mut None`, so the
-   capture branches are permanently unreachable. **Left alone deliberately.**
-   `entropy/crt_shadow.rs` has a *separate* `*_with_shadows` family used by
-   `gso_fhe.rs` for a genuinely different purpose; confusing the two would break
-   GSO. Handle in a separately-scoped follow-up. Note also that
-   `ntt.rs`'s shadow capture pushes one entry per `(k,j)` pair — `n²` entries,
-   ~512 MB at `N = 8192` — against a `Vec::with_capacity` sized for `n·log2(n)`.
-   That latent OOM under `--features reference_ntt` is now **unreachable**,
-   because its only feeder is gone.
+   capture branches are permanently unreachable. **Left alone deliberately** at
+   the time. `entropy/crt_shadow.rs` has a *separate* `*_with_shadows` family
+   used by `gso_fhe.rs` for a genuinely different purpose; confusing the two
+   would break GSO — untouched. Handle in a separately-scoped follow-up. Note
+   also that `ntt.rs`'s shadow capture pushes one entry per `(k,j)` pair —
+   `n²` entries, ~512 MB at `N = 8192` — against a `Vec::with_capacity` sized
+   for `n·log2(n)`. That latent OOM under `--features reference_ntt` is now
+   **unreachable**, because its only feeder is gone.
+   **Resolved 2026-09-03 (issue #68), the deferred follow-up:** both
+   functions had their dead `shadow` parameter and unreachable capture branch
+   removed, merged back into `ntt_inplace` / `ntt`. Output is bit-identical —
+   only the `None` path ever executed. `entropy/crt_shadow.rs`'s
+   `*_with_shadows` family is the unrelated one `gso_fhe.rs` actually
+   consumes and was not touched.
 
 ### 6.4 The three unrelated broken fixtures — untouched, still failing
 
@@ -586,7 +594,8 @@ Until these are retired, the documented security posture is provably overstated.
   dependency.** `sbni.rs` was its only consumer in `crates/nine65/src`. Left in
   place because that file belongs to a concurrent workflow. A `cargo udeps` /
   `deny.toml` / `unused_crate_dependencies` lint may start flagging it. Hand to
-  whoever owns `Cargo.toml`.
+  whoever owns `Cargo.toml`. **Resolved 2026-09-03 (issue #68):** removed from
+  `Cargo.toml` when `sbni.rs` was deleted.
 - **`rns_fhe.rs` `test_add_dual_aligns_mixed_levels` still PASSES**, because it
   manufactures its own level mismatch by calling `mod_switch_ct_down` directly
   and that function was not neutered. It is at risk only if someone later
@@ -599,7 +608,8 @@ Until these are retired, the documented security posture is provably overstated.
   the premise has evaporated. Already `#[ignore]`d by the concurrent workflow.
 - **`crates/exact_transcendentals/src/chimera_division.rs:9`** carries a
   doc-comment reference to "SBNI's lane-count contract". Prose only, no code
-  dependency; should be reworded.
+  dependency; should be reworded. **Resolved 2026-09-03 (issue #68):**
+  reworded to drop the SBNI reference.
 
 ### 6.7 Pre-existing compile breakage in three integration targets — not from this work
 

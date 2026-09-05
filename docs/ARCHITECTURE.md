@@ -44,7 +44,7 @@ NINE65 was originally a bootstrap-free FHE library built on the BFV scheme with 
 │  Number-theoretic transforms, modular arithmetic, RNS ops       │
 ├─────────────────────────────────────────────────────────────────┤
 │                    ENTROPY LAYER                                 │
-│  ShadowHarvester, SecureRng, WassanNoiseField                   │
+│  ShadowHarvester, SecureRng                                     │
 │  Deterministic testing RNG, OS CSPRNG, noise generation         │
 ├─────────────────────────────────────────────────────────────────┤
 │                    SECURITY LAYER                                │

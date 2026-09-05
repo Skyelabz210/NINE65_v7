@@ -25,6 +25,13 @@
 #   this categorization effort does not silently resolve it by picking one
 #   side inside a script CI would then run unreviewed.
 #
+#   Carries `--no-fail-fast` (issue #64) to match ci.yml's full-test step:
+#   without it, plain `cargo test --workspace` stops at the first package
+#   with a failing test and silently never builds or runs anything after
+#   it. This script wraps the exact command the ci.yml step runs, so it
+#   must carry the same flag for the "zero-behavior-change substitution"
+#   claim above to hold.
+#
 # WHEN TO USE
 #   Every PR, every push to main, `[full-ci]` commits, manual dispatch — the
 #   existing T2 gate. Required. Unchanged in scope from what runs today.
@@ -40,4 +47,5 @@ cd "$PROJECT_ROOT"
 echo "=== Test Tier: MEDIUM (cargo test --workspace, full default-feature suite) ==="
 cargo test --workspace --verbose \
   --exclude nine65-python --exclude nine65-wasm \
+  --no-fail-fast \
   "$@"

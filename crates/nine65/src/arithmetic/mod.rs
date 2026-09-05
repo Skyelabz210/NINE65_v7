@@ -72,8 +72,9 @@ pub use cyclotomic_phase::{
 pub use exact_coeff::{AnchorTrack, ExactCoeff, ExactContext, ExactPoly, RnsInner};
 pub use exact_divider::ExactDivider;
 pub use integer_math::{
-    fixed_cos_sin, format_as_bits, format_millibits, format_ops, integer_log2, integer_log2_u128,
-    integer_sqrt, COS_SIN_TABLE, GOLDEN_ANGLE_Q30,
+    checked_scaled_ratio, fixed_cos_sin, format_as_bits, format_millibits, format_ops,
+    format_ratio, integer_log2, integer_log2_u128, integer_sqrt, integer_sqrt_u128, COS_SIN_TABLE,
+    GOLDEN_ANGLE_Q30,
 };
 pub use integer_softmax::{IntegerSoftmax, SOFTMAX_SCALE};
 pub use k_elimination::KElimination;

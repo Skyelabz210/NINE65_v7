@@ -102,7 +102,6 @@ zeroize = { workspace = true }
 getrandom = { workspace = true }
 subtle = { workspace = true }
 sha2 = { workspace = true }
-blake3 = "1"
 thiserror = { workspace = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
@@ -245,6 +244,14 @@ name = "depth2_isolation"
 required-features = ["allow_insecure"]
 
 [[test]]
+name = "depth2_full_matrix_issue81"
+required-features = ["allow_insecure"]
+
+[[test]]
+name = "depth2_python_oracle_vectors_issue81"
+required-features = ["allow_insecure"]
+
+[[test]]
 name = "depth_and_noise"
 required-features = ["allow_insecure"]
 
@@ -294,6 +301,13 @@ required-features = ["allow_insecure"]
 
 [[test]]
 name = "time_crystal_verification"
+required-features = ["allow_insecure"]
+
+# Before/after performance evidence for issue #93 (per-ciphertext noise
+# tracking). Drives keygen/encrypt with a seeded ShadowHarvester, so it needs
+# the same feature as every other target in this block.
+[[test]]
+name = "noise_tracking_perf_issue93"
 required-features = ["allow_insecure"]
 
 [[example]]

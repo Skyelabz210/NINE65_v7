@@ -11,14 +11,24 @@
 //!   cargo test -p nine65 --test op_timings --release --features allow_insecure \
 //!     -- --ignored --nocapture
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::secure_configs::SecureConfig;
 use std::time::Instant;
 
-fn median(mut v: Vec<u128>) -> f64 {
+/// Median duration, in nanoseconds — kept as an exact integer so no float
+/// division happens until a caller formats it for display.
+fn median_ns(mut v: Vec<u128>) -> u128 {
     v.sort_unstable();
-    v[v.len() / 2] as f64 / 1_000_000.0
+    v[v.len() / 2]
+}
+
+/// Median duration in milliseconds, formatted to `decimals` fractional
+/// digits — the integer-only replacement for `median(..) as f64 / 1e6`
+/// followed by `{:.N}`.
+fn median_ms(v: Vec<u128>, decimals: u32) -> String {
+    format_ratio(median_ns(v), 1_000_000, decimals)
 }
 
 fn time_config(name: &str, secure: SecureConfig, rounds: usize) {
@@ -72,14 +82,14 @@ fn time_config(name: &str, secure: SecureConfig, rounds: usize) {
     }
 
     println!(
-        "| `{name}` | {} | {} | {:.2} | {:.3} | {:.2} | {:.2} | {:.2} |",
+        "| `{name}` | {} | {} | {} | {} | {} | {} | {} |",
         config.n,
         config.primes.len(),
-        median(enc),
-        median(add),
-        median(mul),
-        median(smul),
-        median(dec),
+        median_ms(enc, 2),
+        median_ms(add, 3),
+        median_ms(mul, 2),
+        median_ms(smul, 2),
+        median_ms(dec, 2),
     );
 }
 
