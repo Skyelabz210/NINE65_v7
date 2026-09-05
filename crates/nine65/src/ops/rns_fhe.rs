@@ -34,6 +34,17 @@ use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 #[path = "track1_exact_multiply_lock.rs"]
 mod track1_exact_multiply_lock;
 
+/// WR-1 (T1.4/T1.5) derived-transient exact evaluator multiply.
+///
+/// Declared as a CHILD of `ops::rns_fhe` rather than a sibling under `ops` so
+/// it can reach this module's private polynomial helpers
+/// (`to_montgomery_form`, `convert_from_montgomery_form`, `rns_poly_mul`,
+/// `sample_cbd_signed_rng`, `signed_to_mod`) without widening any production
+/// visibility — the same technique `track1_exact_multiply_lock` uses. It is
+/// re-exported from `ops` for callers.
+#[path = "exact_mul.rs"]
+pub mod exact_mul;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]
@@ -844,6 +855,18 @@ pub enum MulRoute {
     /// Dual-RNS with K-Elimination rescaling (exact)
     /// Required when Δ² > Q or exact mode requested
     KElimDual,
+    /// WR-1 derived-transient exact route (`ops::exact_mul`): main-`Q` only on
+    /// the wire, auxiliary residues derived inside one call and zeroized
+    /// before return, exact BFV scale-and-round via `ExactScaleRound`.
+    ///
+    /// **Explicitly routed, never auto-routed.** [`RNSFHEContext::mul_route`]
+    /// does not return this variant and `mul_auto` cannot select it; a caller
+    /// reaches it only through
+    /// [`RNSFHEContext::try_exact_evaluator`](RNSFHEContext::try_exact_evaluator).
+    /// That is WR-1 invariant 9: the legacy fail-closed guards stay exactly as
+    /// they are until the exact route passes its own differential and WIRE-Q
+    /// closure.
+    DerivedTransientExact,
 }
 
 /// Auto-routed key set (either Single or Dual regime)
@@ -1228,6 +1251,72 @@ impl RNSFHEContext {
         }
     }
 
+    /// Single-RNS counterpart of [`Self::sample_uniform_dual_poly`]: a
+    /// polynomial whose every coefficient is drawn **uniformly over `[0, Q)`**
+    /// and then reduced into each main lane independently.
+    ///
+    /// Returns standard-domain (non-Montgomery) residues.
+    ///
+    /// # Why this exists
+    ///
+    /// The single-RNS key generator used to build `a` as
+    /// `RNSPolynomial::from_poly(&(0..n).map(|_| rng.next_u64()), ...)` —
+    /// one 64-bit draw reduced into every lane. That confines `a` to `2^64` of
+    /// the `2^log2(Q)` values the RLWE assumption requires it to range over
+    /// (`2^119` for `secure_128`, `2^175` for `secure_256`), which is a real
+    /// deviation from "`a` uniform over the ring", not a rounding detail. It is
+    /// the defect named in
+    /// `docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md` "Security
+    /// prerequisites" and in WR-1's own prerequisite list.
+    ///
+    /// Rejection sampling gives exact uniformity with no modulo bias; every
+    /// lane is an independent reduction of ONE sampled value, so the lanes
+    /// describe a single integer by construction. Lane-independent
+    /// (`output[i] = f_i(input)`), and not a mixed-radix cascade: no lane reads
+    /// another.
+    pub(crate) fn sample_uniform_main_poly<R: FheRng>(&self, rng: &mut R) -> RNSPolynomial {
+        let primes = &self.config.primes;
+        // `U256::product_u64s` wraps silently past 256 bits, and a wrapped
+        // modulus would make the rejection bound meaningless. The sum of the
+        // lanes' bit lengths is an exact upper bound on `bitlen(Q)` computed in
+        // plain integers, so this check cannot itself overflow. Every shipped
+        // chain is at most 175 bits; this is a once-per-keygen guard against a
+        // future chain silently outgrowing the accumulator.
+        let sum_bits: u32 = primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        assert!(
+            sum_bits <= 256,
+            "sample_uniform_main_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
+        );
+        let modulus = U256::product_u64s(primes);
+        let bits = modulus.bitlen();
+
+        let mut limbs: Vec<Vec<u64>> = primes.iter().map(|_| Vec::with_capacity(self.n)).collect();
+        for _ in 0..self.n {
+            let value = loop {
+                let mut lo = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                let mut hi: u128 = 0;
+                if bits > 128 {
+                    hi = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                    let high_bits = bits - 128;
+                    if high_bits < 128 {
+                        hi &= (1u128 << high_bits) - 1;
+                    }
+                } else if bits < 128 {
+                    lo &= (1u128 << bits) - 1;
+                }
+                let candidate = U256 { lo, hi };
+                if candidate.lt(modulus) {
+                    break candidate;
+                }
+            };
+            for (lane, &prime) in limbs.iter_mut().zip(primes.iter()) {
+                lane.push(value.mod_u64(prime));
+            }
+        }
+
+        RNSPolynomial { limbs, n: self.n }
+    }
+
     // ========================================================================
     // AUTO-ROUTING: Regime Selection
     // ========================================================================
@@ -1284,6 +1373,14 @@ impl RNSFHEContext {
         match route {
             MulRoute::BajardSingle => AutoKeys::Single(self.generate_keys(rng)),
             MulRoute::KElimDual => AutoKeys::Dual(self.generate_keys_dual(rng)),
+            // `mul_route()` never selects the WR-1 exact route: it is
+            // explicitly constructed via `try_exact_evaluator`, never
+            // auto-routed (WR-1 invariant 9).
+            MulRoute::DerivedTransientExact => unreachable!(
+                "mul_route() cannot select MulRoute::DerivedTransientExact; the \
+                 WR-1 exact route is reached only through \
+                 RNSFHEContext::try_exact_evaluator"
+            ),
         }
     }
 
@@ -1533,18 +1630,44 @@ impl RNSFHEContext {
         });
         let secret_key = RNSSecretKey { s: s_rns };
 
-        // Generate public key: pk = (pk0, pk1) where pk0 = -(a*s + e), pk1 = a
-        // Generate random a - coefficients uniform in [0, q_min) to be safe
-        let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-        let a_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&a_coeffs, &self.rns));
+        // Generate public key: pk = (pk0, pk1) where pk0 = -(a*s + e), pk1 = a.
+        //
+        // `a` is drawn uniformly over the WHOLE ring Z_Q[X]/(X^N+1), by
+        // rejection sampling on [0, Q) and reducing that one value into every
+        // lane. This used to be `rng.next_u64()` fed through
+        // `RNSPolynomial::from_poly`, i.e. ONE 64-bit draw reduced into every
+        // lane, which confines `a` to 2^64 of the 2^log2(Q) values RLWE
+        // requires (2^119 for secure_128, 2^175 for secure_256). That is the
+        // defect named in docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md
+        // "Security prerequisites"; `sample_uniform_dual_poly` already fixed
+        // the dual-RNS side, and this is its single-RNS counterpart.
+        let a_rns = self.to_montgomery_form(&self.sample_uniform_main_poly(rng));
 
-        // Generate small error e (secret material: zeroized on drop)
-        let e_coeffs: Zeroizing<Vec<u64>> = Zeroizing::new(
+        // Generate small error e (secret material: zeroized on drop).
+        //
+        // Encoded per lane from the SIGNED sample. The previous form sampled
+        // `q_min + sum` once and let `RNSPolynomial::from_poly` reduce that one
+        // representative into every lane; because `q_min + sum < q_j` for every
+        // other lane, the RNS object then represented the integer `q_min + sum`
+        // (about 2^29) rather than the intended `sum` in {-eta..eta}. That is
+        // a consistent RNS value, so it decrypted -- it just spent ~29 bits of
+        // noise budget per coefficient for nothing. `signed_to_mod` per lane is
+        // the encoding the dual-RNS path already uses.
+        let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
             (0..self.n)
-                .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
+                .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
                 .collect(),
         );
-        let e_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e_coeffs, &self.rns));
+        let e_limbs: Vec<Vec<u64>> = self
+            .config
+            .primes
+            .iter()
+            .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+            .collect();
+        let e_rns = self.to_montgomery_form(&RNSPolynomial {
+            limbs: e_limbs,
+            n: self.n,
+        });
 
         // Compute a*s in RNS (NTT multiply in each limb)
         let as_rns = self.rns_poly_mul(&a_rns, &secret_key.s);
@@ -1568,7 +1691,6 @@ impl RNSFHEContext {
     /// Generate evaluation key for relinearization with a caller-provided RNG.
     fn generate_eval_key_with_rng<R: FheRng>(&self, sk: &RNSSecretKey, rng: &mut R) -> RNSEvalKey {
         crate::entropy::require_secure_rng(rng, "generate_eval_key_with_rng");
-        let q_min = self.smallest_prime();
         let decomp_base = 1u64 << 16; // 2^16 decomposition base
                                       // Number of digits based on Q size (use stored q_bits, not leading_zeros)
         let q_bits = self.q_bits;
@@ -1596,17 +1718,28 @@ impl RNSFHEContext {
                 })
                 .collect();
 
-            // Generate random a_i
-            let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-            let a_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&a_coeffs, &self.rns));
+            // Generate random a_i, uniform over [0, Q) -- see the note in
+            // `generate_keys_with_rng` on why the previous single-u64 draw was
+            // a security defect and not a rounding detail.
+            let a_rns = self.to_montgomery_form(&self.sample_uniform_main_poly(rng));
 
-            // Generate error e_i (secret material: zeroized on drop)
-            let e_coeffs: Zeroizing<Vec<u64>> = Zeroizing::new(
+            // Generate error e_i, encoded per lane from the SIGNED sample
+            // (secret material: zeroized on drop).
+            let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
                 (0..self.n)
-                    .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
+                    .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
                     .collect(),
             );
-            let e_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e_coeffs, &self.rns));
+            let e_limbs: Vec<Vec<u64>> = self
+                .config
+                .primes
+                .iter()
+                .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            let e_rns = self.to_montgomery_form(&RNSPolynomial {
+                limbs: e_limbs,
+                n: self.n,
+            });
 
             // rlk0_i = -(a_i * s + e_i) + power * s^2
             let as_rns = self.rns_poly_mul(&a_rns, &sk.s);
@@ -1650,7 +1783,6 @@ impl RNSFHEContext {
     ) -> RNSCiphertext {
         crate::entropy::require_secure_rng(rng, "encrypt_with_rng");
         assert!(m < self.t, "Plaintext must be < t");
-        let q_min = self.smallest_prime();
 
         // Encode message: m * Δ in RNS form
         // For each limb i: (m * delta_rns[i]) mod prime[i]
@@ -1699,16 +1831,26 @@ impl RNSFHEContext {
             n: self.n,
         });
 
-        // Generate errors e1, e2
-        let e1_coeffs: Vec<u64> = (0..self.n)
-            .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
-            .collect();
-        let e1_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e1_coeffs, &self.rns));
-
-        let e2_coeffs: Vec<u64> = (0..self.n)
-            .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
-            .collect();
-        let e2_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e2_coeffs, &self.rns));
+        // Generate errors e1, e2, encoded per lane from the SIGNED sample. See
+        // the note in `generate_keys_with_rng`: sampling `q_min + sum` once and
+        // reducing it into every lane made the RNS object represent ~2^29
+        // instead of a value in {-eta..eta}, spending noise budget for nothing.
+        let signed_error = |rng: &mut R| -> RNSPolynomial {
+            let signed: Zeroizing<Vec<i64>> = Zeroizing::new(
+                (0..self.n)
+                    .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
+                    .collect(),
+            );
+            let limbs: Vec<Vec<u64>> = self
+                .config
+                .primes
+                .iter()
+                .map(|&p| signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            self.to_montgomery_form(&RNSPolynomial { limbs, n: self.n })
+        };
+        let e1_rns = signed_error(rng);
+        let e2_rns = signed_error(rng);
 
         // c0 = pk0 * u + e1 + m
         let pk0_u = self.rns_poly_mul(&pk.pk0, &u_rns);
@@ -6276,16 +6418,21 @@ fn sample_cbd_signed_rng<R: FheRng>(rng: &mut R, eta: usize) -> i64 {
     sum // Returns value in {-eta, ..., +eta}
 }
 
-/// Sample from centered binomial distribution with generic RNG
-fn sample_cbd_rng<R: FheRng>(rng: &mut R, eta: usize, q: u64) -> u64 {
-    let sum = sample_cbd_signed_rng(rng, eta);
-
-    if sum >= 0 {
-        sum as u64
-    } else {
-        (q as i64 + sum) as u64
-    }
-}
+// REMOVED (WR-1 security prerequisite): `sample_cbd_rng(rng, eta, q)` returned
+// `q + sum` for a negative sample, i.e. a representative valid modulo ONE
+// prime. Every remaining caller then handed that single value to
+// `RNSPolynomial::from_poly`, which reduces it into every lane — and since the
+// callers passed `q_min`, and `q_min + sum < q_j` for every other lane, the
+// resulting RNS object represented the integer `q_min + sum` (about 2^29)
+// rather than a value in `{-eta..eta}`. Consistent across lanes, so it
+// decrypted; it just burned ~29 bits of noise budget per coefficient.
+//
+// The dual-RNS path had already been repaired for exactly this reason (see the
+// "BUG FIX: sample_cbd uses q_min for signed representation" comment in
+// `encrypt_dual_with_rng`); the single-RNS path had not. Both now sample a
+// signed value with `sample_cbd_signed_rng` and encode it per lane with
+// `signed_to_mod`, so the function has no callers left and is deleted rather
+// than left available to be reached for again.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THREAD SAFETY STATIC ASSERTIONS
