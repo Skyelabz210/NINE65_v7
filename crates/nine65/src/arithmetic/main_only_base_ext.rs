@@ -22,17 +22,41 @@
 //! canonical residues `x_i = X mod m_i`:
 //!
 //! ```text
-//! c_i  = x_i * (M_i^{-1} mod m_i) mod m_i        (Garner coefficient, [0, m_i))
-//! rho  = floor( sum_i c_i / m_i )                (rank; 0 <= rho < lane_count)
+//! c_i  = x_i * (M_i^{-1} mod m_i) mod m_i    (CRT idempotent coefficient)
+//! rho  = floor( sum_i c_i / m_i )            (rank; 0 <= rho < lane_count)
 //! X mod a_j = ( sum_i c_i * (M_i mod a_j) - rho * (M mod a_j) ) mod a_j
 //! ```
+//!
+//! **Terminology (WR-1 invariant 4 / finding F4).** `c_i` is the coefficient of
+//! the CRT *idempotent* `M_i * (M_i^{-1} mod m_i)`, and the synthesis above is a
+//! single parallel sum: no lane reads another lane's partial result, and there
+//! is no sequential mixed-radix cascade. It was previously labelled a "Garner
+//! coefficient", which is wrong twice over — Garner's algorithm is the
+//! sequential mixed-radix walk this deliberately avoids, and that label would
+//! trip the WR-1 §F source scanner on a false positive. The formula has not
+//! changed; only the name has.
 //!
 //! `rho` is computed by a certified fixed-point common path with an exact
 //! `U256` fallback at integer boundaries. No canonical `X` is ever
 //! materialized in the common path; the fallback compares `sum_i c_i * M_i`
 //! (a bounded `U256`) against multiples of `M` and is fixed-work.
+//!
+//! ## Centered projection (WR-1 §A)
+//!
+//! [`MainOnlyBaseExt::project_centered`] emits the residues of the *centered*
+//! lift `Xc` (`Xc = X` in the lower half, `Xc = X - M` in the upper half)
+//! rather than of the canonical `X`. WR-1 invariant 5 requires this before a
+//! tensor product: the auxiliary base must carry the residues of the same
+//! signed integer the main base is a wrapped image of, and the half decision
+//! is made against the rank numerator
+//!
+//! ```text
+//! N = sum_i c_i * M_i,   upper half  <=>  N >= rho*M + ceil(M/2)
+//! ```
+//!
+//! without ever forming `X = N - rho*M` as a canonical object.
 
-use super::rns::U256;
+use super::rns::{U256, U512};
 
 /// Guard-bit precision for the fixed-point rank common path.
 const RANK_FRAC_BITS: u32 = 64;
@@ -65,6 +89,17 @@ pub enum MainOnlyBaseExtError {
     TooManyLanes { lanes: usize, max: usize },
     /// A main modulus was < 2 (not a ring lane).
     DegenerateModulus { modulus: u64 },
+    /// WR-1 finding F5. The exact rank fallback accumulates
+    /// `N = sum_i c_i * M_i` and walks up to `(k+1) * M` while resolving
+    /// `rho`, all in a fixed-width `U256`. `MAX_LANES` is a shape bound, not a
+    /// numeric capacity certificate, so the bound is proved here in `U512`
+    /// (which cannot itself overflow at these widths) and refused when it does
+    /// not hold.
+    FallbackAccumulatorOverCapacity {
+        lanes: usize,
+        /// Bit length of `(k + 1) * M`, which must stay below 256.
+        required_bits: u32,
+    },
 }
 
 const MAX_LANES: usize = 16;
@@ -113,6 +148,20 @@ fn mul_u256_u64(x: U256, m: u64) -> U256 {
     }
 }
 
+/// Bit length of a `U512`, most significant limb first.
+fn u512_bits(x: U512) -> u32 {
+    if x.d3 != 0 {
+        return 384 + (128 - x.d3.leading_zeros());
+    }
+    if x.d2 != 0 {
+        return 256 + (128 - x.d2.leading_zeros());
+    }
+    if x.d1 != 0 {
+        return 128 + (128 - x.d1.leading_zeros());
+    }
+    128 - x.d0.leading_zeros()
+}
+
 /// Precomputed constants for one (main basis, auxiliary basis) pair.
 /// Build once per config; [`Self::project`] is the per-coefficient hot path.
 pub struct MainOnlyBaseExt {
@@ -128,6 +177,10 @@ pub struct MainOnlyBaseExt {
     mi_u256: Vec<U256>,
     /// `M` as a full-width integer, for the exact fallback.
     m_u256: U256,
+    /// `ceil(M/2) = (M+1)/2` (`M` is odd whenever every lane is odd; for an
+    /// even `M` this is still the correct upper-half threshold), for the exact
+    /// half decision in [`Self::project_centered`].
+    half_up_u256: U256,
 }
 
 impl MainOnlyBaseExt {
@@ -160,6 +213,37 @@ impl MainOnlyBaseExt {
                     });
                 }
             }
+        }
+
+        // WR-1 F5: prove the exact-fallback accumulator cannot overflow before
+        // any caller can reach it — and before this constructor itself forms
+        // any `U256` product. `rank`'s fallback forms `N = sum_i c_i*M_i`
+        // (< k*M) and walks `r*M` for `r = 1 ..= k+1`, so the widest `U256`
+        // value the fallback ever holds is `(k+1)*M`. `MAX_LANES = 16` is a
+        // *shape* bound (16 x 64-bit lanes is 1024 bits) and is not a numeric
+        // capacity certificate, which is exactly F5's point.
+        //
+        // The proof runs in `U512`, so it must first be shown that `U512`
+        // itself cannot wrap. `sum_bits` (the sum of the lanes' bit lengths) is
+        // an exact upper bound on `bitlen(M)` computed in plain integers, and
+        // `M >= 2^(sum_bits - k)` because each lane is at least `2^(bits-1)`.
+        // So `sum_bits > 272` already forces `M > 2^256` (k <= 16) and is
+        // refused directly; otherwise `(k+1)*M < 2^277` and the `U512`
+        // arithmetic below is exact.
+        let sum_bits: u32 = main.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        if sum_bits > 272 {
+            return Err(MainOnlyBaseExtError::FallbackAccumulatorOverCapacity {
+                lanes: k,
+                required_bits: sum_bits,
+            });
+        }
+        let fallback_peak = U512::product_u64s(main).mul_u128(k as u128 + 1);
+        let required_bits = u512_bits(fallback_peak);
+        if required_bits > 256 {
+            return Err(MainOnlyBaseExtError::FallbackAccumulatorOverCapacity {
+                lanes: k,
+                required_bits,
+            });
         }
 
         // (M/m_i) mod m_i = product of other lanes mod m_i; invert.
@@ -195,6 +279,9 @@ impl MainOnlyBaseExt {
             .collect();
 
         let m_u256 = U256::product_u64s(main);
+        // `ceil(M/2)` = `(M+1) >> 1` for both parities. `M + 1` cannot wrap
+        // because the F5 gate above proved `(k+1)*M < 2^256` with `k >= 1`.
+        let half_up_u256 = m_u256.add(U256::one()).shr1();
         let mi_u256: Vec<U256> = (0..k)
             .map(|i| {
                 let others: Vec<u64> = main
@@ -215,6 +302,7 @@ impl MainOnlyBaseExt {
             m_mod,
             mi_u256,
             m_u256,
+            half_up_u256,
         })
     }
 
@@ -225,7 +313,10 @@ impl MainOnlyBaseExt {
         self.aux.len()
     }
 
-    /// Garner coefficients `c_i = x_i * (M_i^{-1} mod m_i) mod m_i`.
+    /// CRT idempotent coefficients `c_i = x_i * (M_i^{-1} mod m_i) mod m_i`.
+    ///
+    /// Parallel: `c_i` depends only on `x_i`, never on another lane's result.
+    /// (Named "Garner coefficients" before WR-1 F4; see the module header.)
     #[inline]
     fn coefficients(&self, r: &[u64]) -> [u64; MAX_LANES] {
         let mut c = [0u64; MAX_LANES];
@@ -239,9 +330,39 @@ impl MainOnlyBaseExt {
     /// Certified fixed-point common path; exact `U256` fallback at boundaries.
     #[inline]
     fn rank(&self, c: &[u64; MAX_LANES]) -> (u64, RankPath) {
+        let (rho, _, path) = self.rank_and_half(c, false);
+        (rho, path)
+    }
+
+    /// Exact rank, and — when `need_half` — the upper-half decision for the
+    /// canonical value `X = N - rho*M` in one pass (WR-1 §A).
+    ///
+    /// Write `S = sum_i c_i / m_i`. Then `S = rho + X/M` exactly, so `rho` is
+    /// `floor(S)` and `X` lies in the upper half iff `frac(S) > 1/2`.
+    ///
+    /// The common path (§A1) uses the same certified fixed-point interval as
+    /// [`Self::rank`]: `acc = sum_i floor(c_i * 2^F / m_i)` satisfies
+    /// `S * 2^F ∈ [acc, acc + k)`, since each floor loses strictly less than 1.
+    /// Writing `acc = rho_lo * 2^F + residual`, the interval decides
+    ///
+    /// * `rho` when `residual + k <= 2^F` (the window stays in one integer step);
+    /// * "upper" when `residual >= 2^(F-1)`, because then
+    ///   `frac(S) * 2^F >= residual >= 2^(F-1)` and equality is impossible
+    ///   (`frac(S) * 2^F = 2^(F-1)` would mean `2X = M`, which an odd `M`
+    ///   forbids and which the exact path below handles for even `M` anyway);
+    /// * "lower" when `residual + k <= 2^(F-1)`, because then
+    ///   `frac(S) * 2^F < residual + k <= 2^(F-1)`.
+    ///
+    /// Both decisions must hold to take the common path. Otherwise §A2's exact
+    /// fallback forms the bounded parallel idempotent sum `N = sum_i c_i * M_i`
+    /// in `U256` (F5-certified at construction) and compares it against
+    /// `rho*M` and `rho*M + ceil(M/2)`. `X = N - rho*M` is never materialized
+    /// as a canonical coefficient object; only the two comparisons are made.
+    #[inline]
+    fn rank_and_half(&self, c: &[u64; MAX_LANES], need_half: bool) -> (u64, bool, RankPath) {
         let k = self.main.len();
         // acc = sum_i floor(c_i * 2^F / m_i);  true = sum_i c_i*2^F/m_i.
-        // Each floor loses < 1, so true in (acc, acc + k].
+        // Each floor loses < 1, so true in [acc, acc + k).
         let mut acc: u128 = 0;
         for i in 0..k {
             acc += ((c[i] as u128) << RANK_FRAC_BITS) / self.main[i] as u128;
@@ -249,11 +370,21 @@ impl MainOnlyBaseExt {
         let rho_lo = (acc >> RANK_FRAC_BITS) as u64;
         let residual = acc & ((1u128 << RANK_FRAC_BITS) - 1);
         let top = 1u128 << RANK_FRAC_BITS;
+        let half = 1u128 << (RANK_FRAC_BITS - 1);
         // Decisive when the whole uncertainty window [acc, acc+k) stays inside
         // one integer step of 2^F: residual + k <= 2^F. This also catches the
         // under-count case (residual wraps near 2^F when frac is tiny).
-        if residual + (k as u128) <= top {
-            return (rho_lo, RankPath::CertifiedFixedPoint);
+        let rank_decided = residual + (k as u128) <= top;
+        if rank_decided {
+            if !need_half {
+                return (rho_lo, false, RankPath::CertifiedFixedPoint);
+            }
+            if residual >= half {
+                return (rho_lo, true, RankPath::CertifiedFixedPoint);
+            }
+            if residual + (k as u128) <= half {
+                return (rho_lo, false, RankPath::CertifiedFixedPoint);
+            }
         }
         // Exact fallback: N = sum_i c_i * M_i; rho = floor(N / M), N < k*M.
         let mut n = U256::zero();
@@ -261,21 +392,58 @@ impl MainOnlyBaseExt {
             n = n.add(mul_u256_u64(self.mi_u256[i], c[i]));
         }
         let mut rho: u64 = 0;
+        let mut rho_mul = U256::zero(); // rho * M, tracked alongside rho
         let mut r_mul = self.m_u256; // 1 * M
         let mut r: u64 = 1;
         while (r as usize) <= k {
             if n.ge(r_mul) {
                 rho = r;
+                rho_mul = r_mul;
             }
             r_mul = r_mul.add(self.m_u256);
             r += 1;
         }
-        (rho, RankPath::ExactFallback)
+        // Upper half iff N >= rho*M + ceil(M/2). `rho*M + ceil(M/2) <= k*M`,
+        // which the F5 construction gate proved fits `U256`.
+        let upper = need_half && n.ge(rho_mul.add(self.half_up_u256));
+        (rho, upper, RankPath::ExactFallback)
     }
 
     /// `r[i] = X mod main[i]` (canonical). Writes `out[j] = X mod aux[j]`.
     /// Returns the rank path taken (for test observability).
     pub fn project(&self, r: &[u64], out: &mut [u64]) -> Result<RankPath, MainOnlyBaseExtError> {
+        self.project_inner(r, out, false).map(|(path, _)| path)
+    }
+
+    /// Centered projection (WR-1 §A). `r[i] = X mod main[i]` (canonical);
+    /// writes `out[j] = Xc mod aux[j]` where `Xc` is the *centered* lift
+    ///
+    /// ```text
+    /// Xc = X          if X <  ceil(M/2)   (lower half)
+    /// Xc = X - M      if X >= ceil(M/2)   (upper half)
+    /// ```
+    ///
+    /// Returns the rank path taken and the half decision, both for test
+    /// observability (the contract requires each path to execute under test).
+    ///
+    /// This is the operation WR-1 invariant 5 requires *before* a tensor
+    /// product. Base-extending the wrapped mod-`Q` tensor instead would give
+    /// the residues of `Xc mod Q`, not of `Xc`, and the pre-reduction integer
+    /// tensor coefficient is not recoverable from that.
+    pub fn project_centered(
+        &self,
+        r: &[u64],
+        out: &mut [u64],
+    ) -> Result<(RankPath, bool), MainOnlyBaseExtError> {
+        self.project_inner(r, out, true)
+    }
+
+    fn project_inner(
+        &self,
+        r: &[u64],
+        out: &mut [u64],
+        centered: bool,
+    ) -> Result<(RankPath, bool), MainOnlyBaseExtError> {
         let k = self.main.len();
         assert_eq!(r.len(), k, "residue vector length must match lane count");
         assert_eq!(
@@ -293,17 +461,22 @@ impl MainOnlyBaseExt {
             }
         }
         let c = self.coefficients(r);
-        let (rho, path) = self.rank(&c);
+        let (rho, upper, path) = self.rank_and_half(&c, centered);
+        // In the upper half the centered lift subtracts exactly one `M`, so it
+        // is folded into the same `rho * (M mod a_j)` correction the canonical
+        // projection already performs: the whole centering costs one increment
+        // of the rank correction, per auxiliary lane, and touches nothing else.
+        let correction = rho + u64::from(centered && upper);
         for (j, &a) in self.aux.iter().enumerate() {
             let mut s: u128 = 0;
             for i in 0..k {
                 s += (c[i] as u128 * self.coef[j][i] as u128) % a as u128;
             }
             let s = (s % a as u128) as u64;
-            let sub = ((rho as u128 * self.m_mod[j] as u128) % a as u128) as u64;
-            out[j] = ((s + a - sub) % a) as u64;
+            let sub = ((correction as u128 * self.m_mod[j] as u128) % a as u128) as u64;
+            out[j] = (s + a - sub) % a;
         }
-        Ok(path)
+        Ok((path, upper))
     }
 }
 
@@ -515,5 +688,202 @@ mod tests {
             ext.project(&[3, 0, 0], &mut out), // 3 not canonical mod 3
             Err(MainOnlyBaseExtError::NonCanonicalResidue { .. })
         ));
+        assert!(matches!(
+            ext.project_centered(&[3, 0, 0], &mut out),
+            Err(MainOnlyBaseExtError::NonCanonicalResidue { .. })
+        ));
+    }
+
+    // ===================================================================
+    // WR-1 §A / G2 — centered projection
+    // ===================================================================
+
+    /// WR-1 F5. `MAX_LANES = 16` is a shape bound; the numeric capacity of the
+    /// exact-fallback `U256` accumulator has to be proved separately, and a
+    /// basis that busts it must be refused at construction rather than wrap
+    /// silently inside `rank`.
+    ///
+    /// Non-vacuous by construction: the *accepted* case immediately below it
+    /// differs only in lane count, so the refusal cannot be an artifact of some
+    /// other validation firing first.
+    #[test]
+    fn fallback_accumulator_over_capacity_is_refused() {
+        // Nine pairwise-coprime ~31/32-bit lanes: M ≈ 2^283, so (k+1)*M is far
+        // past 2^256 and `rank`'s fallback could not hold it.
+        let too_wide: Vec<u64> = vec![
+            2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081, 3222306817,
+            3222372353, 3222568961,
+        ];
+        match MainOnlyBaseExt::new(&too_wide, &[998244353]) {
+            Err(MainOnlyBaseExtError::FallbackAccumulatorOverCapacity {
+                lanes,
+                required_bits,
+            }) => {
+                assert_eq!(lanes, 9);
+                assert!(
+                    required_bits > 256,
+                    "refusal must report a genuine shortfall, got {required_bits}"
+                );
+            }
+            Err(other) => panic!("expected FallbackAccumulatorOverCapacity, got {other:?}"),
+            Ok(_) => panic!("expected FallbackAccumulatorOverCapacity, got Ok"),
+        }
+        // Eight of the same lanes (M ≈ 2^251, (k+1)*M ≈ 2^255) are accepted, so
+        // the refusal above is the capacity gate and not a lane-count taboo.
+        MainOnlyBaseExt::new(&too_wide[..8], &[998244353]).expect("8 lanes must fit U256");
+    }
+
+    /// Exhaustive over three small bases: every canonical `X` in `[0, M)` must
+    /// project to the residues of its centered lift, and the reported half
+    /// decision must match `X >= ceil(M/2)`.
+    #[test]
+    fn centered_projection_exhaustive_small_bases() {
+        for (main, aux) in [
+            (vec![3u64, 5, 7], vec![2013265921u64, 11]),
+            (vec![5u64, 7, 11, 13], vec![2281701377u64, 8]),
+            (vec![3u64, 5, 7, 11], vec![2013265921u64, 2281701377]),
+        ] {
+            let ext = MainOnlyBaseExt::new(&main, &aux).expect("valid basis");
+            let m: i128 = main.iter().map(|&p| p as i128).product();
+            let half_up = m.div_euclid(2) + (m % 2);
+            let mut out = vec![0u64; aux.len()];
+            for x in 0..m {
+                let r: Vec<u64> = main.iter().map(|&p| (x % p as i128) as u64).collect();
+                let (_, upper) = ext.project_centered(&r, &mut out).expect("canonical");
+                let want_upper = x >= half_up;
+                assert_eq!(want_upper, upper, "half decision at x={x} M={m}");
+                let xc = if want_upper { x - m } else { x };
+                for (j, &a) in aux.iter().enumerate() {
+                    assert_eq!(
+                        out[j] as i128,
+                        xc.rem_euclid(a as i128),
+                        "centered projection x={x} xc={xc} a={a}"
+                    );
+                }
+            }
+        }
+    }
+
+    /// Production-basis centered projection against a `U512` ground truth,
+    /// including the half boundary `(M-1)/2` / `(M+1)/2` and both endpoints,
+    /// with both rank paths required to execute.
+    #[test]
+    fn centered_projection_production_prefixes_u512_oracle() {
+        for main in [&MAIN_4[..], &MAIN_5[..], &MAIN_6[..]] {
+            let aux = &AUX7[..];
+            let ext = MainOnlyBaseExt::new(main, aux).expect("valid basis");
+            let m = U512::product_u64s(main);
+            let half_up = m.add(U512::from_u64(1)).div_u64(2); // ceil(M/2)
+            let mut out = vec![0u64; aux.len()];
+            let (mut saw_fixed, mut saw_fallback) = (false, false);
+
+            // `x` given as U512; check against the centered ground truth.
+            let mut check = |x: U512, note: &str| {
+                let r: Vec<u64> = main.iter().map(|&p| x.mod_u64(p)).collect();
+                let (path, upper) = ext.project_centered(&r, &mut out).expect("canonical");
+                // Independent half decision: x >= ceil(M/2).
+                let want_upper = !u512_lt(x, half_up);
+                assert_eq!(want_upper, upper, "half decision ({note})");
+                for (j, &a) in aux.iter().enumerate() {
+                    // Xc mod a = (X mod a - [upper] * (M mod a)) mod a.
+                    let xa = x.mod_u64(a);
+                    let want = if want_upper {
+                        ((xa as u128 + a as u128 - m.mod_u64(a) as u128) % a as u128) as u64
+                    } else {
+                        xa
+                    };
+                    assert_eq!(out[j], want, "centered residue a={a} ({note})");
+                }
+                path
+            };
+
+            // Structural corners: 0, 1, the two half neighbours, M-2, M-1.
+            let one = U512::from_u64(1);
+            let corners = [
+                (U512::zero(), "0"),
+                (one, "1"),
+                (half_up.sub(one), "ceil(M/2)-1"),
+                (half_up, "ceil(M/2)"),
+                (m.sub(U512::from_u64(2)), "M-2"),
+                (m.sub(one), "M-1"),
+            ];
+            for (x, note) in corners {
+                match check(x, note) {
+                    RankPath::CertifiedFixedPoint => saw_fixed = true,
+                    RankPath::ExactFallback => saw_fallback = true,
+                }
+            }
+
+            // Small X forces the exact fallback (frac(S) ~ 2^-bitlen(M)).
+            for small in 0u64..64 {
+                if check(U512::from_u64(small), "small") == RankPath::ExactFallback {
+                    saw_fallback = true;
+                }
+            }
+
+            // Deterministic mid-range draws exercise the certified path on both
+            // sides of the half boundary.
+            let mut state: u64 = 0xA5A5_1234_DEAD_BEEF;
+            for _ in 0..3000 {
+                let mut acc = U512::zero();
+                for &p in main.iter().rev() {
+                    state = state
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(1442695040888963407);
+                    acc = acc.mul_u128(p as u128).add(U512::from_u64(state % p));
+                }
+                if check(acc, "random") == RankPath::CertifiedFixedPoint {
+                    saw_fixed = true;
+                }
+            }
+
+            assert!(saw_fixed, "certified path never exercised for {main:?}");
+            assert!(saw_fallback, "exact fallback never exercised for {main:?}");
+        }
+    }
+
+    /// The load-bearing witness the integer oracle
+    /// (`scripts/verify_wr1_transient_exact.py::verify_centering_is_load_bearing`)
+    /// pins: canonical `M-1` must become centered `-1` in every auxiliary lane,
+    /// and the canonical and centered projections must differ there. If they
+    /// agreed, centering would be decorative and invariant 5 would be empty.
+    #[test]
+    fn centered_projection_turns_canonical_m_minus_one_into_minus_one() {
+        let main = &MAIN_4[..];
+        let aux = &AUX7[..4];
+        let ext = MainOnlyBaseExt::new(main, aux).expect("valid basis");
+        let m = U512::product_u64s(main);
+        let x = m.sub(U512::from_u64(1));
+        let r: Vec<u64> = main.iter().map(|&p| x.mod_u64(p)).collect();
+
+        let mut canonical = vec![0u64; aux.len()];
+        ext.project(&r, &mut canonical).expect("canonical");
+        let mut centered = vec![0u64; aux.len()];
+        let (_, upper) = ext.project_centered(&r, &mut centered).expect("canonical");
+
+        assert!(upper, "M-1 must land in the upper half");
+        for (j, &a) in aux.iter().enumerate() {
+            assert_eq!(centered[j], a - 1, "centered lane {a} must encode -1");
+            assert_eq!(canonical[j], x.mod_u64(a), "canonical lane {a}");
+            assert_ne!(
+                canonical[j], centered[j],
+                "canonical and centered lifts must differ on this witness"
+            );
+        }
+    }
+
+    /// Strict less-than on `U512`, most significant limb first (test-local; the
+    /// production kernel never compares wide values in this direction).
+    fn u512_lt(a: U512, b: U512) -> bool {
+        if a.d3 != b.d3 {
+            return a.d3 < b.d3;
+        }
+        if a.d2 != b.d2 {
+            return a.d2 < b.d2;
+        }
+        if a.d1 != b.d1 {
+            return a.d1 < b.d1;
+        }
+        a.d0 < b.d0
     }
 }
