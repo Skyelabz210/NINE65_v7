@@ -484,3 +484,222 @@ Issue #67 remains under its standing deferral until the production FHE architect
 Keep PR #111 in draft until all G1-G8 gates that can execute in the current environment are green, all Rust-required gates have attached evidence from a Rust-capable environment, and the branch is rebased onto current `main` without weakening any fail-closed boundary.
 
 The two Python scripts establish the arithmetic design and catch regressions. They authorize implementation work; they do not by themselves authorize merge.
+
+---
+
+## H — Evidence (T1.4/T1.5 implementation pass)
+
+**BASE:** `f841642` (`origin/main` at the time of the rebase — the PR's original
+base `d6b85a2`/`4b3c9f6` was 24 commits stale and was rebased away, cleanly:
+the four pre-existing WR-1 commits only add documents and scripts).
+
+**Route entry points.** `RNSFHEContext::try_exact_evaluator()` ->
+`ExactMulEvaluator::{try_mul_no_relin_exact, try_mul_exact, try_decrypt_exact,
+generate_hybrid_gadget_key_with_rng}`, all in
+`crates/nine65/src/ops/exact_mul.rs`. `MulRoute::DerivedTransientExact` is
+added but never returned by `mul_route()`.
+
+### Configuration tuples and capacity certificates
+
+Printed by `aux_lane_counts_match_the_integer_oracle`, recomputed from the live
+config at plan construction (never read from a table):
+
+| config | N | Q lanes | log2(Q) | A lanes | log2(A) | required = log2(2*s_mult*Q) | s_mult | B | digits/lane |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `secure_128` | 8192 | 4 | 119 | 5 | 157 | 148 | 268439553 | 2^10 | [3,3,3,3] |
+| `secure_128_deep` | 8192 | 4 | 119 | 5 | 157 | 148 | 268439553 | 2^10 | [3,3,3,3] |
+| `secure_192` | 16384 | 5 | 146 | 6 | 188 | 176 | 536879105 | 2^10 | [3,3,3,3,3] |
+| `secure_256` | 16384 | 6 | 175 | 7 | 220 | 205 | 536879105 | 2^10 | [3,3,3,3,3,3] |
+
+The A-lane counts equal the integer oracle's certified minimums for the tuples
+actually shipped. (The oracle's own `secure_128` row uses the retired 3-prime
+chain; the shipped `secure_128` is the 4-prime tuple, i.e. the oracle's
+`secure_128_deep` row.)
+
+### Recorded deviation from §B1: operand bound is `N/2`, not `N/4`
+
+`N/4` is the correct bound for a **single** negacyclic product — each output
+coefficient sums exactly `N` terms of magnitude at most `((Q-1)/2)^2`. But
+`d1 = a.c0*b.c1 + a.c1*b.c0` is the **sum of two** such products, so
+`|d1 coeff| < N*Q^2/2` and `N/4` under-declares it by exactly one bit.
+`scripts/verify_wr1_transient_exact.py` does not catch this because it verifies
+one product and never the `d1` sum.
+
+Rounding the two halves of `d1` separately would not fix it
+(`round(x)+round(y) != round(x+y)` breaks the exact BFV rule), so the declared
+bound is raised. Cost: one required bit (147->148, 175->176, 204->205) and
+**zero** additional auxiliary lanes on every named configuration — pinned by
+`aux_lane_counts_match_the_integer_oracle`, which builds both plans and asserts
+the lane counts are equal and the requirements differ by exactly 1 bit.
+
+### G1 — integer oracles (unchanged by this pass, re-run post-rebase)
+
+```
+$ python3 scripts/verify_wr1_transient_exact.py
+secure_128: PASS; aux_lanes=4; aux_bits=125; required_bits=118; checks=20064
+secure_128_deep: PASS; aux_lanes=5; aux_bits=157; required_bits=147; checks=20080
+secure_192: PASS; aux_lanes=6; aux_bits=188; required_bits=175; checks=20096
+secure_256: PASS; aux_lanes=7; aux_bits=220; required_bits=204; checks=20112
+WR-1 gate: PASS; exact_checks=80353
+
+$ python3 scripts/verify_wr1_hybrid_relin.py
+WR-1 hybrid relin gate: PASS; exact_checks=9216
+```
+
+### G2 — `MainOnlyBaseExt::project_centered`
+
+`cargo test -p nine65 --lib --release -- main_only_base_ext exact_scale_round`
+-> **17 passed, 0 failed** (13 before this pass). New: exhaustive small-basis
+centering with the half decision checked against `X >= ceil(M/2)`; production
+4/5/6-lane prefixes against a `U512` ground truth including both half
+neighbours and both endpoints, with both rank paths required to execute; the
+oracle's load-bearing witness (canonical `M-1` -> centered `-1`); typed
+rejection of a non-canonical residue through the centered entry point; and the
+F5 fallback-capacity refusal (9 lanes refused, 8 accepted).
+
+### G3-G7 — the route
+
+`cargo test -p nine65 --lib --release -- exact_mul::tests`
+-> **23 passed, 0 failed, 0 ignored** in 7.6s.
+
+- **G3** 8640 coefficient/lane checks bit-identical to an independent
+  arbitrary-precision oracle (own limb type, own schoolbook multiply/divide,
+  own `O(N^2)` convolution; touches no crate arithmetic type), across the
+  4/5/6-lane production chains, structural corners, negative centered
+  coefficients, the negacyclic fold, and 24 seeded random ciphertext pairs per
+  chain. Both rank paths execute *inside the evaluator*: certified 22605,
+  fallback 6195.
+- **G3 (ties)** 78 exact rounding-tie and neighbour points, reached through the
+  real evaluator by placing `x` on `Q*(2j+1)/(2t)`.
+- **G3 (invariant 5 non-vacuity)** `oracle_rejects_the_wrapped_tensor_shortcut`
+  shows the F2 shortcut disagrees with the exact rescale on most coefficients.
+- **G4** gadget-key messages match the CRT-idempotent image lanewise (checked
+  against an independent reconstruction, to within the CBD error); relin output
+  is within the gadget error bound against the oracle; malformed lane/digit/base
+  shapes are typed refusals.
+- **G5** `keygen -> encrypt -> try_mul_exact -> decrypt` exact mod `t` on all
+  four named configs at their real `N`, plus centered (`m > t/2`) and seeded
+  random plaintext pairs. No bootstrap or refresh anywhere (invariant 10).
+- **G6** measured exact repeated-square depth with no refresh:
+  `secure_128` = 3, `secure_192` = 4, `secure_256` = 5. Each run terminates on a
+  *wrong plaintext at the noise limit*, not on a round cap or a typed refusal.
+- **G7** the emitted ciphertext is structurally identical to a fresh `encrypt`
+  output (same `num_primes`, limb count, ring degree, limb lengths, canonical
+  residues, passes `RNSCiphertext::validate`); the gadget key carries only
+  main-`Q` `RNSPolynomial`s. Neither `RNSCiphertext` nor `RNSHybridGadgetKey`
+  has a `serde` derive, so there is no auxiliary field that *could* be
+  serialized.
+
+### §F — source-call-graph denylist
+
+```
+$ python3 scripts/check_wr1_exact_route_denylist.py --self-test
+WR-1 §F denylist self-test: PASS; 16 injected constructs all detected
+$ python3 scripts/check_wr1_exact_route_denylist.py
+WR-1 §F denylist: PASS; 3 route sources, 1964 production lines, 19 patterns, 0 violations
+```
+
+The self-test injects each forbidden construct into a scratch copy and requires
+the scanner to report it, so no pattern can pass vacuously.
+
+`DualRNSContext::canonical_anchor_primes_for_n` is the one permitted mention:
+§B1 authorises the catalog as a numeric candidate pool, and the scanner denies
+every other `DualRNSContext::` associated function plus every `DualRNS*` type.
+
+### Depth and timing against the existing route
+
+Diagnostic, `--ignored`, same seed and round cap, asserting nothing about the
+dual route:
+
+```
+DEPTH secure_128: WR-1 exact (main-Q only) = 3; existing mul_dual_public = 3
+DEPTH secure_192: WR-1 exact (main-Q only) = 4; existing mul_dual_public = 3
+DEPTH secure_256: WR-1 exact (main-Q only) = 5; existing mul_dual_public = 3
+```
+
+At least as deep everywhere, and deeper at 192/256 — while carrying no
+serialized anchor lane.
+
+Stage timings, medians of five rounds, **raw integer nanoseconds** (§H forbids
+percentages computed through floating point, so nothing here divides). Every
+timed round also decrypts and asserts the correct plaintext, so no number comes
+from a wrong answer. `mul_dual_public` is timed in the same process, back to
+back, for scale only:
+
+| config | tensor+scale_round | relin | full mul | decrypt | reference `mul_dual_public` |
+|---|---:|---:|---:|---:|---:|
+| `secure_128` | 41843247 | 52332363 | 93584269 | 2316632 | 760871942 |
+| `secure_192` | 112183516 | 189351583 | 297196030 | 6605101 | 2402361733 |
+| `secure_256` | 129493010 | 269598190 | 401779827 | 7908847 | 2734146773 |
+
+Caveat on the absolute scale: this container measures `mul_dual_public` for
+`secure_128` at ~761 ms against the ~292 ms recorded in `CLAUDE.md`, so the
+machine is loaded relative to that baseline. The two columns were measured in
+the same process on the same run, so the comparison between them is meaningful
+even though neither absolute figure should be quoted against `CLAUDE.md`'s
+performance table.
+
+### Security prerequisites addressed (single-RNS path only)
+
+Both defects were confined to the single-RNS key/encrypt path that the exact
+route consumes. The dual-RNS production keygen
+(`generate_keys_dual*`) was **already correct** on both counts before this
+work — it uses `sample_uniform_dual_poly` and per-lane `signed_to_mod`.
+
+1. **Narrow public/eval-key sampler.** `a` in `generate_keys_with_rng` and
+   `generate_eval_key_with_rng` was one `rng.next_u64()` per coefficient fed
+   through `RNSPolynomial::from_poly`, confining `a` to `2^64` of the `2^119`
+   (`secure_128`) or `2^175` (`secure_256`) values RLWE requires it to range
+   over. Replaced with `sample_uniform_main_poly`: rejection sampling uniform on
+   `[0, Q)`, one value reduced independently into each lane — the single-RNS
+   counterpart of `sample_uniform_dual_poly`. Pinned by
+   `single_rns_uniform_sampler_covers_the_whole_main_modulus`, which
+   reconstructs each sampled coefficient and requires >99% of them to exceed
+   `2^64` (a `u64` draw gives exactly zero).
+2. **Cross-lane CBD encoding.** The error used `sample_cbd_rng(rng, eta, q_min)`,
+   which returns `q_min + sum` for a negative sample — a representative valid
+   modulo *one* prime. `from_poly` then reduced that single value into every
+   lane, and because `q_min + sum < q_j` for every other lane the RNS object
+   represented the integer `q_min + sum` (about `2^29`) rather than a value in
+   `{-eta..eta}`. Consistent across lanes, so it decrypted; it simply spent ~29
+   bits of noise budget per coefficient. Now signed-sampled and encoded per lane
+   with `signed_to_mod`. `sample_cbd_rng` has no callers left and is deleted.
+
+Still owed, and NOT claimed here: WIRE-Q inspection of every published artifact
+beyond this route (WR-2), and an external lattice-estimator run for the exact
+shipped tuples.
+
+### Full suites (BASE vs HEAD, same machine, same command)
+
+| suite | BASE `f841642` | this branch | delta |
+|---|---|---|---|
+| `cargo test -p nine65 --lib --release` | 843 passed / 5 failed / 122 ignored | 870 passed / 5 failed / 124 ignored | +27 passed, +0 failed, +2 ignored |
+| `--test residue_space_ciphertext --features allow_insecure` | 8 passed / 1 failed | 8 passed / 1 failed | unchanged |
+| `--test full_system_exercise --features allow_insecure` | 30 passed / 1 failed | 30 passed / 1 failed | unchanged |
+
+`cargo build --release --workspace --exclude nine65-python --exclude nine65-wasm`
+succeeds; `cargo fmt --all -- --check` is clean.
+
+The +27 is 4 new `MainOnlyBaseExt` tests and 23 new `exact_mul` gates. The +2
+ignored are the two opt-in diagnostics
+(`exact_vs_dual_public_repeated_square_depth`,
+`exact_route_stage_timings_integer_nanoseconds`), which assert nothing about
+the dual route.
+
+The 5 lib failures are the known issue #117 / #95 public-refresh regressions
+(`auto_bootstrap` x4, `bootstrap::diag_measure_noise_growth`) and are identical
+at BASE. The two integration failures
+(`ct_multiply_is_order_equivariant_bit_exact`,
+`test_rns_multi_modulus_mul_bajard`) are also identical at BASE, with
+byte-identical failure output.
+
+### Not done / explicitly out of scope
+
+- `try_decrypt_exact` is **not constant-time**: the `MainOnlyBaseExt` rank
+  fallback is fixed-work, but *whether* it is taken depends on the decrypted
+  coefficient. Documented on the function. Hardening it is not part of WR-1.
+- No CI evidence: GitHub Actions is blocked by issue #79. All numbers above are
+  local.
+- WR-2's broader differential/WIRE-Q closure is untouched.
+- Issue #95 needs the secret-dependent bootstrap correction term; this route
+  does not supply it and does not close #95.

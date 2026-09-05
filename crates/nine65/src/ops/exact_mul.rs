@@ -357,10 +357,17 @@ impl ExactMulPlan {
             })
             .collect();
         for (i, (&q, &d)) in main.iter().zip(digits_per_lane.iter()).enumerate() {
-            // B^d must cover [0, q_i); d*base_bits >= bitlen(q_i) gives that.
-            debug_assert!(
+            // `B^d` must span `[0, q_i)`, otherwise the runtime shift/mask
+            // decomposition would silently drop a lane's high bits and the
+            // relinearization identity would be wrong rather than noisy.
+            // `d = ceil(bitlen(q_i)/base_bits)` makes this true by
+            // construction, but the check runs in release too: this is a
+            // once-per-configuration cost, and a silent truncation here is
+            // exactly the failure mode the contract forbids.
+            assert!(
                 (d as u32) * base_bits >= 64 - q.leading_zeros(),
-                "lane {i}: {d} base-2^{base_bits} digits cannot span q={q}"
+                "WR-1 gadget shape: lane {i} needs more than {d} base-2^{base_bits} \
+                 digits to span q={q}"
             );
         }
 
@@ -462,6 +469,14 @@ impl std::fmt::Debug for RNSHybridGadgetKey {
 ///
 /// Main-`Q` only, at the plaintext scale — the exact scale-and-round has
 /// already been applied to all three components.
+///
+/// **Representation:** the limbs are **standard-domain canonical residues**,
+/// not Montgomery. That is deliberate and load-bearing: §D3's relinearization
+/// reads base-`2^b` digits straight off the `u64` lane residue with shifts and
+/// masks, which is only the intended decomposition of `[P]_{q_i}` in the
+/// standard domain. [`ExactMulEvaluator::relinearize_tensor`] converts `e0`/`e1`
+/// to Montgomery on its way out; a hand-built `ExactTensor3` must follow the
+/// same convention.
 #[derive(Clone, Debug)]
 pub struct ExactTensor3 {
     pub e0: RNSPolynomial,

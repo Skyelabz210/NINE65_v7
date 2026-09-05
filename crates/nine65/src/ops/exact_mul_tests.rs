@@ -1241,6 +1241,89 @@ fn repeated_squaring_depth_is_measured_not_assumed() {
     }
 }
 
+/// Raw integer stage timings for the WR-1 §H evidence section.
+///
+/// Medians of five rounds, reported in **nanoseconds as integers** — §H forbids
+/// percentages derived through floating-point math, so nothing here divides.
+/// `mul_dual_public` is timed alongside for scale only; no assertion is made
+/// about it.
+///
+/// ```text
+/// cargo test -p nine65 --lib --release -- \
+///     exact_route_stage_timings_integer_nanoseconds --ignored --nocapture
+/// ```
+#[test]
+#[ignore = "DIAGNOSTIC: prints raw integer stage timings for the WR-1 evidence section"]
+fn exact_route_stage_timings_integer_nanoseconds() {
+    use std::time::Instant;
+
+    fn median(mut v: Vec<u128>) -> u128 {
+        v.sort_unstable();
+        v[v.len() / 2]
+    }
+
+    const ROUNDS: usize = 5;
+    for (name, cfg) in named_configs() {
+        if name == "secure_128_deep" {
+            continue;
+        }
+        let ctx = RNSFHEContext::new(&cfg);
+        let ev = ctx.try_exact_evaluator().expect("evaluator");
+        let mut rng = ShadowHarvester::with_seed(0x0071_4111);
+        let keys = ctx.generate_keys(&mut rng);
+        let gkey = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+        let a = ctx.encrypt(7, &keys.public_key, &mut rng);
+        let b = ctx.encrypt(6, &keys.public_key, &mut rng);
+
+        let mut tensor_ns = Vec::new();
+        let mut relin_ns = Vec::new();
+        let mut full_ns = Vec::new();
+        let mut decrypt_ns = Vec::new();
+        for _ in 0..ROUNDS {
+            let t0 = Instant::now();
+            let tensor = ev.try_mul_no_relin_exact(&a, &b).expect("tensor");
+            tensor_ns.push(t0.elapsed().as_nanos());
+
+            let t1 = Instant::now();
+            let folded = ev.relinearize_tensor(&tensor, &gkey).expect("relin");
+            relin_ns.push(t1.elapsed().as_nanos());
+
+            let t2 = Instant::now();
+            let prod = ev.try_mul_exact(&a, &b, &gkey).expect("mul");
+            full_ns.push(t2.elapsed().as_nanos());
+
+            let t3 = Instant::now();
+            let m = ev.try_decrypt_exact(&prod, &keys.secret_key).expect("dec");
+            decrypt_ns.push(t3.elapsed().as_nanos());
+            assert_eq!(m, 42, "timing round must also be correct");
+            let _ = folded;
+        }
+
+        // Same-shape dual-RNS reference, for scale only.
+        let mut rng = ShadowHarvester::with_seed(0x0071_4111);
+        let dual_keys = ctx.generate_keys_dual_full(&mut rng);
+        let da = ctx.encrypt_dual(7, &dual_keys.public_key, &mut rng);
+        let db = ctx.encrypt_dual(6, &dual_keys.public_key, &mut rng);
+        let mut dual_ns = Vec::new();
+        for _ in 0..ROUNDS {
+            let t = Instant::now();
+            let _ = ctx.mul_dual_public(&da, &db, &dual_keys.eval_key);
+            dual_ns.push(t.elapsed().as_nanos());
+        }
+
+        println!(
+            "TIMING {name} (median of {ROUNDS}, integer ns): \
+             tensor+scale_round={} relin={} full_mul={} decrypt={} \
+             | reference mul_dual_public={}",
+            median(tensor_ns),
+            median(relin_ns),
+            median(full_ns),
+            median(decrypt_ns),
+            median(dual_ns)
+        );
+    }
+}
+
 /// Depth comparison between the WR-1 exact route and the existing production
 /// `mul_dual_public`, on the same configurations and the same starting value.
 ///

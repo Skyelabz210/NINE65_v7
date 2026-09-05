@@ -1276,12 +1276,19 @@ impl RNSFHEContext {
     /// another.
     pub(crate) fn sample_uniform_main_poly<R: FheRng>(&self, rng: &mut R) -> RNSPolynomial {
         let primes = &self.config.primes;
+        // `U256::product_u64s` wraps silently past 256 bits, and a wrapped
+        // modulus would make the rejection bound meaningless. The sum of the
+        // lanes' bit lengths is an exact upper bound on `bitlen(Q)` computed in
+        // plain integers, so this check cannot itself overflow. Every shipped
+        // chain is at most 175 bits; this is a once-per-keygen guard against a
+        // future chain silently outgrowing the accumulator.
+        let sum_bits: u32 = primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        assert!(
+            sum_bits <= 256,
+            "sample_uniform_main_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
+        );
         let modulus = U256::product_u64s(primes);
         let bits = modulus.bitlen();
-        debug_assert!(
-            bits <= 256,
-            "sample_uniform_main_poly: Q must fit U256 (got {bits} bits)"
-        );
 
         let mut limbs: Vec<Vec<u64>> = primes.iter().map(|_| Vec::with_capacity(self.n)).collect();
         for _ in 0..self.n {
