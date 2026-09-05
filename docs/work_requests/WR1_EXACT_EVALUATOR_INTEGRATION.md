@@ -164,8 +164,19 @@ Select the shortest prefix satisfying all of:
 for every q_i in Q and a_j in A: gcd(q_i, a_j) = 1
 for every a_j: (a_j - 1) mod (2N) = 0
 A = product(a_j)
-A > 2 * (N/4 * t + 1) * Q
+A > 2 * (N/2 * t + 1) * Q
 ```
+
+**Owner decision 2026-09-05 — the operand bound is `N/2`, not the `N/4` originally
+written here.** `N/4` bounds a single negacyclic product of centered inputs
+(`|coeff| < N*Q^2/4`); `d1 = a0*b1 + a1*b0` is the sum of two such products, so
+`|d1| < N*Q^2/2`, and `N/4` under-declares it by exactly one bit. The bound
+stays at `N/2` (`x_bound_over_q_sq = N/2`, `s_mult = N/2 * t + 1`). Do not round
+the two halves of `d1` separately to fit `N/4`: `round(x) + round(y) !=
+round(x + y)`, and that would break the exact BFV rule this track exists to
+preserve. The one extra required bit costs zero additional auxiliary lanes on
+every shipped configuration (see "Configuration tuples and capacity
+certificates" in §H below).
 
 The exact integer oracle currently certifies these minimum prefix sizes for `t = 65537`:
 
@@ -175,6 +186,13 @@ The exact integer oracle currently certifies these minimum prefix sizes for `t =
 | `secure_128_deep` | 8192 | 4 | 5 | 157 | 147 |
 | `secure_192` | 16384 | 5 | 6 | 188 | 175 |
 | `secure_256` | 16384 | 6 | 7 | 220 | 204 |
+
+The `required bits` column above is the oracle's `N/4` figure. Under the accepted
+`N/2` bound the requirement is one bit higher — 148 for the shipped 4-prime
+`secure_128`/`secure_128_deep` tuple, 176 for `secure_192`, 205 for `secure_256` —
+and the minimum lane counts are unchanged. The `secure_128` row describes the
+retired 3-prime chain; the shipped `secure_128` is the 4-prime tuple, i.e. the
+`secure_128_deep` row.
 
 Recompute these from the live config and candidate pool at construction. Do not hard-code the table as the proof.
 
@@ -317,6 +335,16 @@ try_mul_exact(...)          -> Result<RNSCiphertext, ExactMulError>
 Keep the current legacy `RNSFHEContext::mul` fail-closed route guard untouched until the exact route passes WR-1 and WR-2 differential/WIRE-Q closure. After WR-2, dispatch can be consolidated without losing a typed failure boundary.
 
 A selected `DerivedTransientExact` route must have zero legacy limb-local rescale calls.
+
+**Owner decision 2026-09-05 — `try_decrypt_exact` stays as implemented.** It is
+verification-side only: reachable only through `try_exact_evaluator()`, never
+from `mul_auto`, `AutoBootstrapEvaluator` or the service layer; it refuses with a
+typed error when the main lanes disagree on the scaled plaintext. It is not
+constant-time — the `MainOnlyBaseExt` rank fallback is fixed-work, but whether
+it is taken depends on the decrypted coefficient — and it does not need to be:
+constant-time hardening belongs to the production decrypt paths and the existing
+CT roadmap, not to WR-1. Document the restriction; do not harden or otherwise
+modify it under this work request.
 
 ---
 
@@ -484,6 +512,12 @@ Issue #67 remains under its standing deferral until the production FHE architect
 Keep PR #111 in draft until all G1-G8 gates that can execute in the current environment are green, all Rust-required gates have attached evidence from a Rust-capable environment, and the branch is rebased onto current `main` without weakening any fail-closed boundary.
 
 The two Python scripts establish the arithmetic design and catch regressions. They authorize implementation work; they do not by themselves authorize merge.
+
+**Owner decision 2026-09-05.** The `N/2` operand bound (§B1) and the
+non-constant-time `try_decrypt_exact` (§E) are accepted as recorded. PR #111 may
+leave draft once a second independent review of (1) the centered-lift-before-
+tensor order and (2) the hybrid gadget relinearization algebra has been
+completed and recorded on the PR.
 
 ---
 
@@ -697,7 +731,9 @@ byte-identical failure output.
 
 - `try_decrypt_exact` is **not constant-time**: the `MainOnlyBaseExt` rank
   fallback is fixed-work, but *whether* it is taken depends on the decrypted
-  coefficient. Documented on the function. Hardening it is not part of WR-1.
+  coefficient. Documented on the function. Owner decision 2026-09-05: it stays
+  as-is (§E); hardening belongs to the production paths and the CT roadmap, not
+  to WR-1.
 - No CI evidence: GitHub Actions is blocked by issue #79. All numbers above are
   local.
 - WR-2's broader differential/WIRE-Q closure is untouched.

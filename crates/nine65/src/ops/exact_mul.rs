@@ -1013,9 +1013,13 @@ impl<'a> ExactMulEvaluator<'a> {
     /// Constant-time note: the rank fallback inside [`MainOnlyBaseExt`] is
     /// fixed-work, but *whether* it is taken is data-dependent, so this
     /// function is not constant-time with respect to the decrypted
-    /// coefficient. It is a WR-1 verification and evaluation-side entry point;
-    /// hardening it is out of this work request's scope and is recorded as
-    /// such in the PR.
+    /// coefficient. **Owner decision 2026-09-05 (WR-1 design doc §E): this
+    /// stays as-is.** It is a verification-side entry point, reachable only
+    /// through [`RNSFHEContext::try_exact_evaluator`], never from `mul_auto`,
+    /// `AutoBootstrapEvaluator` or the service layer, and it refuses with a
+    /// typed error on lane disagreement. Constant-time hardening belongs to
+    /// the production decrypt paths and the existing CT roadmap, not here; do
+    /// not harden or otherwise modify this function under WR-1.
     pub fn try_decrypt_exact(
         &self,
         ct: &RNSCiphertext,
