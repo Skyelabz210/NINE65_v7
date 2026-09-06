@@ -80,6 +80,7 @@ use std::time::{Duration, Instant};
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::rns_fhe::{DualRNSCiphertext, DualRNSFullKeySet, DualRNSSecretKey, RNSFHEContext};
 use nine65::params::secure_configs::SecureConfig;
@@ -243,8 +244,8 @@ where
     println!(
         "  max correct depth = {max_correct_depth}  [{verdict}]{bound}\n  \
          lane shape (main,anchor,level) = {lanes0:?}, CONSTANT across chain\n  \
-         wall = {:.1}s over {max_correct_depth} links",
-        elapsed.as_secs_f64()
+         wall = {}s over {max_correct_depth} links",
+        format_ratio(elapsed.as_nanos(), 1_000_000_000, 1)
     );
 
     ChainResult {
@@ -349,8 +350,12 @@ fn depth_survey(ctx: &RNSFHEContext, keys: &DualRNSFullKeySet) {
         };
         let per_link = if r.max_correct_depth > 0 {
             format!(
-                "{:.1} ms/link",
-                r.elapsed.as_secs_f64() * 1000.0 / r.max_correct_depth as f64
+                "{} ms/link",
+                format_ratio(
+                    r.elapsed.as_nanos(),
+                    r.max_correct_depth as u128 * 1_000_000,
+                    1
+                )
             )
         } else {
             "n/a".to_string()

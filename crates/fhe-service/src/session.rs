@@ -41,11 +41,6 @@ pub struct Session {
 }
 
 impl Session {
-    /// Compatibility constructor for internal/test callers.
-    pub fn new(config_name: &str) -> Result<Self, &'static str> {
-        Self::new_for_tenant(config_name, "internal")
-    }
-
     /// Create a tenant-bound production session using OS CSPRNG key generation.
     pub fn new_for_tenant(config_name: &str, tenant_id: &str) -> Result<Self, &'static str> {
         if tenant_id.is_empty() {
@@ -223,24 +218,6 @@ impl SessionStore {
         Some(operation(&mut session))
     }
 
-    #[cfg(test)]
-    pub fn with_session<F, R>(&self, id: &str, operation: F) -> Option<R>
-    where
-        F: Fn(&Session) -> R,
-    {
-        self.with_session_for_tenant(id, "test", &operation)
-            .or_else(|| self.with_session_for_tenant(id, "internal", &operation))
-    }
-
-    #[cfg(test)]
-    pub fn with_session_mut<F, R>(&self, id: &str, operation: F) -> Option<R>
-    where
-        F: Fn(&mut Session) -> R,
-    {
-        self.with_session_mut_for_tenant(id, "test", &operation)
-            .or_else(|| self.with_session_mut_for_tenant(id, "internal", &operation))
-    }
-
     pub fn remove_for_tenant(&self, id: &str, tenant_id: &str) -> bool {
         let Ok(mut map) = self.sessions.write() else {
             return false;
@@ -256,11 +233,6 @@ impl SessionStore {
         }
         drop(session);
         map.remove(id).is_some()
-    }
-
-    #[cfg(test)]
-    pub fn remove(&self, id: &str) -> bool {
-        self.remove_for_tenant(id, "test") || self.remove_for_tenant(id, "internal")
     }
 
     pub fn reap_expired_sessions(&self) -> usize {

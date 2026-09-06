@@ -1,8 +1,17 @@
+[workspace]
+# This crate is intentionally excluded from the top-level workspace (see
+# ../../Cargo.toml `[workspace] exclude`) because it's a cdylib built by
+# maturin, not `cargo build --workspace`. An empty `[workspace]` table here
+# makes it its own workspace root instead of inheriting (and colliding with)
+# the parent's `.workspace = true` field resolution, and stops maturin from
+# accidentally pulling in the parent workspace when invoked from this
+# directory.
+
 [package]
 name = "nine65-python"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
+version = "0.1.0"
+edition = "2021"
+authors = ["Acidlabz210 <acid@hackfate.us>"]
 publish = false
 license = "LicenseRef-Proprietary-AllRightsReserved"
 

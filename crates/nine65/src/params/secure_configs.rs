@@ -16,10 +16,16 @@
 //!
 //! | Config | N | RNS chain | log2(q) | Claim | Core-SVP | MATZOV | Public refresh |
 //! |--------|---|-----------|---------|-------|----------|--------|----------------|
-//! | `secure_128` | 8192 | 3 NTT primes | 90 | 128 bits | 259 | 233 | refused |
+//! | `secure_128` | 8192 | 4 NTT primes | 119 | 128 bits | 196 | 176 | yes |
 //! | `secure_128_deep` | 8192 | 4 NTT primes | 119 | 128 bits | 196 | 176 | yes |
 //! | `secure_192` | 16384 | 5 NTT primes | 146 | 192 bits | 320 | 288 | yes |
 //! | `secure_256` | 16384 | 6 NTT primes | 175 | 256 bits | 267 | **240** | yes |
+//!
+//! `secure_128` was re-cut 2026-08-26 (`docs/OPEN_WORK_2026-08-26.md` A3) from
+//! three main primes to four; it is now numerically identical to
+//! `secure_128_deep` (same tuple, same screen, same admission below). The row
+//! above is kept distinct only because the two remain separate named entry
+//! points — see the constructors' own doc comments.
 //!
 //! `secure_256` is the one name that its own screen does not fully support:
 //! it clears 256 under Core-SVP (the model the constructor gates on) and falls
@@ -30,7 +36,13 @@
 use super::security_estimator::{
     CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution,
 };
-use super::{gcd, is_ntt_compatible, is_prime, FHEConfig};
+use super::FHEConfig;
+// `gcd`/`is_ntt_compatible` are now exercised only by
+// `every_production_prime_is_ntt_compatible` below (their production caller,
+// `validate_class_f_chain`, was dead code and has been removed) -- gate the
+// import so a release build doesn't warn them as unused.
+#[cfg(test)]
+use super::{gcd, is_ntt_compatible};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::noise::budget::NoiseBudget;
 
@@ -364,27 +376,6 @@ pub fn ensure_public_refresh_supported(config: &FHEConfig) -> Nine65Result<()> {
             required,
         ),
     })
-}
-
-fn validate_class_f_chain(n: usize, primes: &[u64]) {
-    for (index, &prime) in primes.iter().enumerate() {
-        assert!(
-            is_prime(prime),
-            "CLASS-F RNS lane {index} must be prime, got {prime}"
-        );
-        assert!(
-            is_ntt_compatible(prime, n),
-            "CLASS-F RNS lane {prime} is not NTT-compatible for N={n}"
-        );
-        for &prior in &primes[..index] {
-            assert_ne!(prior, prime, "duplicate CLASS-F RNS prime {prime}");
-            assert_eq!(
-                gcd(prior, prime),
-                1,
-                "CLASS-F RNS lanes {prior} and {prime} are not coprime"
-            );
-        }
-    }
 }
 
 /// Dual-cost-model screening result for a named configuration.

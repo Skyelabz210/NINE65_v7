@@ -904,7 +904,13 @@ impl ClockworkBootstrap {
             .iter()
             .try_fold(1u128, |acc, &p| acc.checked_mul(p));
 
-        let ke_capacity = ke.capacity();
+        // `try_capacity()` in place of the deprecated, panicking `capacity()`.
+        // `None` means alpha_cap * beta_cap overflows u128, i.e. the true
+        // capacity exceeds every value ever compared against it below (those
+        // are all u128 already), so every `x >= ke_capacity` guard below is
+        // vacuously satisfied either way -- `u128::MAX` reproduces that
+        // exactly without panicking.
+        let ke_capacity = ke.try_capacity().unwrap_or(u128::MAX);
 
         if let Some(q_level) = q_level_u128 {
             // Fast u128 path for CRT reconstruction. As in `modswitch_to_t`,
@@ -3156,7 +3162,7 @@ mod tests {
     #[ignore = "VESTIGIAL: drives AutoBootstrapEvaluator::mul_auto over ten chained multiplies at a 500-permille trigger and asserts evaluator.bootstrap_count > 0 — it demands that a refresh actually fire, which is the budget-bounded-depth premise stated as an assertion. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn test_auto_bootstrap_chained_muls() {
-        use crate::ops::auto_bootstrap::AutoBootstrapEvaluator;
+        use crate::ops::auto_bootstrap::{AutoBootstrapEvaluator, TrackedCiphertext};
         use crate::params::SecureConfig;
 
         let config = SecureConfig::secure_128().into_config();
@@ -3169,7 +3175,8 @@ mod tests {
             .expect("KeyGen");
 
         let t = config.t;
-        let ct_two = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
+        let ct_two =
+            TrackedCiphertext::fresh(ctx.encrypt_dual(2, &keys.public_key, &mut rng), &config);
 
         let mut evaluator = AutoBootstrapEvaluator::new(
             &ctx,
@@ -3184,7 +3191,8 @@ mod tests {
         evaluator.set_trigger_threshold(500);
 
         // Chain: 2 * 2 * 2 * ... (10 multiplications) = 2^11 = 2048 mod t
-        let mut ct = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
+        let mut ct =
+            TrackedCiphertext::fresh(ctx.encrypt_dual(2, &keys.public_key, &mut rng), &config);
         let mut expected = 2u64;
         for i in 0..10 {
             ct = evaluator
@@ -3193,7 +3201,7 @@ mod tests {
             expected = (expected as u128 * 2 % t as u128) as u64;
         }
 
-        let dec = ctx.decrypt_dual(&ct, &keys.secret_key);
+        let dec = ctx.decrypt_dual(&ct.ct, &keys.secret_key);
         assert_eq!(
             dec, expected,
             "AutoBootstrap chained muls: expected {}, got {} (bootstraps: {}, muls: {})",

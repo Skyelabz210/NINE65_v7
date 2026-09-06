@@ -277,6 +277,7 @@ mod tests {
     #[test]
     #[ignore] // run explicitly: -- --ignored --nocapture
     fn kernel_speed_vs_shipped_path() {
+        use crate::arithmetic::integer_math::format_ratio;
         use crate::arithmetic::rns::crt_reconstruct_u256;
         use std::time::Instant;
 
@@ -321,7 +322,7 @@ mod tests {
                 out[j] = v.mod_u64(a);
             }
         }
-        let shipped_ns = t0.elapsed().as_nanos() as f64 / n as f64;
+        let shipped_total_ns = t0.elapsed().as_nanos();
         std::hint::black_box(&out);
 
         let mut out2 = vec![0u64; anchors.len()];
@@ -329,14 +330,23 @@ mod tests {
         for (r, r_red) in &cases {
             be.project(r, *r_red, &mut out2);
         }
-        let base_ext_ns = t1.elapsed().as_nanos() as f64 / n as f64;
+        let base_ext_total_ns = t1.elapsed().as_nanos();
         std::hint::black_box(&out2);
 
+        let n_ops = n as u128;
+        let shipped_ns = format_ratio(shipped_total_ns, n_ops, 1);
+        let base_ext_ns = format_ratio(base_ext_total_ns, n_ops, 1);
+        // Speedup from the TOTAL nanoseconds directly: `n_ops` cancels out of
+        // (shipped_total_ns/n_ops) / (base_ext_total_ns/n_ops) exactly, so
+        // computing it this way (vs. dividing two already-rounded per-op
+        // figures) avoids compounding two roundings into one. `.max(1)`
+        // mirrors the original `.max(0.001)` floor against a zero-time run.
+        let speedup = format_ratio(shipped_total_ns, base_ext_total_ns.max(1), 1);
+
         println!(
-            "shipped (crt_reconstruct_u256 + mod_u64 x{}): {shipped_ns:.1} ns/coeff   \
-             base_ext: {base_ext_ns:.1} ns/coeff   speedup: {:.1}x",
-            anchors.len(),
-            shipped_ns / base_ext_ns.max(0.001)
+            "shipped (crt_reconstruct_u256 + mod_u64 x{}): {shipped_ns} ns/coeff   \
+             base_ext: {base_ext_ns} ns/coeff   speedup: {speedup}x",
+            anchors.len()
         );
     }
 

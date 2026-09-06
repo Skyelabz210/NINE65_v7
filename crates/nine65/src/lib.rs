@@ -94,8 +94,8 @@
 //!
 //! | Config | N | Security | Use Case |
 //! |--------|---|----------|----------|
-//! | `SecureConfig::secure_128()` | 4096 | 128-bit | **Production recommended** |
-//! | `SecureConfig::secure_192()` | 8192 | 192-bit | High security |
+//! | `SecureConfig::secure_128()` | 8192 | 128-bit | **Production recommended** |
+//! | `SecureConfig::secure_192()` | 16384 | 192-bit | High security |
 //! | `standard_128()` | 4096 | 128-bit | Production (FHEConfig) |
 //! | `high_192()` | 8192 | 192-bit | High security (FHEConfig) |
 //! | `light()` | 1024 | ~36-bit | Testing only (`allow_insecure`) |
@@ -225,8 +225,6 @@ pub mod prelude {
     pub use crate::entropy::DeterministicRng;
     pub use crate::entropy::SecureRng; // OS CSPRNG for production use
     pub use crate::entropy::ShadowHarvester;
-    #[cfg(feature = "shadow-entropy")]
-    pub use crate::entropy::WassanNoiseField;
     pub use crate::entropy::{secure_bytes, secure_ternary, secure_u64};
 
     // Parameters
