@@ -1197,7 +1197,11 @@ impl RNSFHEContext {
     ///
     /// `sampled_mask_anchor_lanes_agree_with_the_main_lanes` asserts the
     /// two tracks agree; it is what caught the transduction attempt above.
-    fn sample_uniform_dual_poly<R: FheRng>(&self, rng: &mut R, main_primes: &[u64]) -> DualRNSPoly {
+    pub(crate) fn sample_uniform_dual_poly<R: FheRng>(
+        &self,
+        rng: &mut R,
+        main_primes: &[u64],
+    ) -> DualRNSPoly {
         let modulus = U256::product_u64s(main_primes);
         let bits = modulus.bitlen();
         let anchor_primes = &self.dual_rns.anchor.primes;
