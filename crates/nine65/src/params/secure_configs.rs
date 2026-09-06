@@ -68,12 +68,11 @@ use super::security_estimator::{
     CostModel, FactoredDualEstimate, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution,
 };
 use super::FHEConfig;
-// `gcd`/`is_ntt_compatible` are now exercised only by
-// `every_production_prime_is_ntt_compatible` below (their production caller,
-// `validate_class_f_chain`, was dead code and has been removed) -- gate the
-// import so a release build doesn't warn them as unused.
-#[cfg(test)]
-use super::{gcd, is_ntt_compatible};
+// `gcd`, `is_ntt_compatible` and `is_prime` are production imports again:
+// WR-7's `try_new_verified` chain validation (below) calls all three on
+// every caller-supplied tuple. (PR #126 had gated the first two as
+// test-only when their last production caller was deleted.)
+use super::{gcd, is_ntt_compatible, is_prime};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::noise::budget::NoiseBudget;
 
