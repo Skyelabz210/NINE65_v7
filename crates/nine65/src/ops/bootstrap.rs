@@ -43,7 +43,8 @@ use crate::entropy::ShadowHarvester;
 use crate::entropy::{require_secure_rng, FheRng, SecureRng};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::bootstrap::{
-    mod_inverse_u128, BootstrapKey, BootstrapKeySet, KeySwitchKey, BOOTSTRAP_PRIMES,
+    ensure_q_boot_representable, mod_inverse_u128, BootstrapKey, BootstrapKeySet, KeySwitchKey,
+    BOOTSTRAP_PRIMES,
 };
 use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSEvalKey, DualRNSFullKeySet, DualRNSPoly, DualRNSPublicKey,
@@ -312,37 +313,37 @@ impl ClockworkBootstrap {
         &self,
         boot_sk: &DualRNSSecretKey,
         rng: &mut R,
-    ) -> DualRNSPublicKey {
+    ) -> Nine65Result<DualRNSPublicKey> {
         let n = self.n;
         let eta = self.boot_config.eta;
         let num_main = self.boot_config.primes.len();
         let num_anchor = self.boot_ctx.dual_rns.anchor.primes.len();
 
-        // Find minimum prime for safe uniform sampling
-        let min_prime = *self
-            .boot_config
-            .primes
-            .iter()
-            .chain(self.boot_ctx.dual_rns.anchor.primes.iter())
-            .min()
-            .unwrap_or(&u64::MAX);
-
-        // Sample random a (uniform mod min_prime ensures valid in all moduli)
-        let a_coeffs: Vec<u64> = (0..n).map(|_| rng.next_u64() % min_prime).collect();
-        let a_main: Vec<Vec<u64>> = self
-            .boot_config
-            .primes
-            .iter()
-            .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-            .collect();
-        let a_anchor: Vec<Vec<u64>> = self
+        // `a` must be uniform over the WHOLE ring R_Q_boot -- it is the only
+        // thing hiding `a*s` in `pk0 = -(a*s + e)`. This used to draw ONE u64
+        // mod the smallest boot/anchor prime and reduce that same narrow
+        // value into every lane (issue #82): each lane's residue covered its
+        // full modulus, but the integer the lanes jointly encoded was
+        // confined to `[0, min_prime)` -- and biased within that range by the
+        // `%` -- instead of `[0, Q_boot)`. Since this mask hides `a*s_boot`
+        // and `s_boot` here IS the working secret key (circular security:
+        // `boot_sk = lift(work_sk)`), that narrow joint support is exactly
+        // the kind of structural leak flagged as security-sensitive by
+        // WR-5A / issue #82.
+        //
+        // Fix: exact full-width rejection sampling uniform on [0, Q_boot),
+        // then reduce that ONE accepted integer independently into every
+        // main and anchor lane, reusing the same canonical sampler the main
+        // FHE public-key path already uses
+        // (`RNSFHEContext::sample_uniform_dual_poly`) rather than
+        // maintaining a second implementation. Typed-refuse first if this
+        // boot chain's Q_boot exceeds what the sampler can represent.
+        ensure_q_boot_representable(&self.boot_config.primes)?;
+        let a_dual = self
             .boot_ctx
-            .dual_rns
-            .anchor
-            .primes
-            .iter()
-            .map(|&p| a_coeffs.iter().map(|&c| c % p).collect())
-            .collect();
+            .sample_uniform_dual_poly(rng, &self.boot_config.primes);
+        let a_main = a_dual.main;
+        let a_anchor = a_dual.anchor;
 
         // Sample error e (CBD with given eta). Zeroized on drop -- it is
         // combined into a*s below and never itself needs to survive past
@@ -417,7 +418,7 @@ impl ClockworkBootstrap {
             }
         }
 
-        DualRNSPublicKey {
+        Ok(DualRNSPublicKey {
             pk0: DualRNSPoly {
                 main: pk0_main,
                 anchor: pk0_anchor,
@@ -428,7 +429,7 @@ impl ClockworkBootstrap {
                 anchor: a_anchor,
                 n,
             },
-        }
+        })
     }
 
     /// Generate all bootstrap key material (circular security) using the OS
@@ -466,7 +467,7 @@ impl ClockworkBootstrap {
         let boot_sk = self.lift_sk_to_boot(work_sk);
 
         // Generate circular PK: encrypts under the SAME key
-        let boot_pk = self.generate_circular_pk(&boot_sk, rng);
+        let boot_pk = self.generate_circular_pk(&boot_sk, rng)?;
 
         // Construct a DualRNSFullKeySet for BootstrapKey::generate
         // eval_key is unused (no ct×ct in Phase 2) — provide dummy
@@ -533,7 +534,7 @@ impl ClockworkBootstrap {
         let boot_sk = self.generate_independent_boot_sk(rng);
 
         // Generate boot public key under boot_sk
-        let boot_pk = self.generate_circular_pk(&boot_sk, rng);
+        let boot_pk = self.generate_circular_pk(&boot_sk, rng)?;
 
         let boot_keyset = DualRNSFullKeySet {
             secret_key: boot_sk.clone(),
@@ -2741,6 +2742,320 @@ mod tests {
         // Generate circular bootstrap keys
         let bsk_set = boot.generate_keys(&keys.secret_key, &mut rng);
         assert!(bsk_set.is_ok(), "Circular key generation should succeed");
+    }
+
+    // =====================================================================
+    // CATEGORY 9B: WR-5A -- Full-Q_boot uniform bootstrap mask sampler
+    // (issue #82). Runs unconditionally: it exercises key generation only,
+    // never `bootstrap()`/`bootstrap_with_ksk()`, so it does not touch
+    // `public_phase1_soundness_gate` and is not VESTIGIAL like the roundtrip
+    // suite below.
+    // =====================================================================
+
+    /// Reproduces the OLD narrow-support draw issue #82 found and this fix
+    /// replaces: ONE u64 reduced mod the smallest boot/anchor prime, meant to
+    /// be reduced into every lane. Kept here ONLY as a regression fixture --
+    /// nothing in production calls this anymore -- to pin down exactly what
+    /// the defect looked like: a joint value that can never climb above
+    /// `min_prime`, let alone reach `Q_boot`.
+    fn old_narrow_mask_draw<R: FheRng>(rng: &mut R, min_prime: u64) -> u64 {
+        rng.next_u64() % min_prime
+    }
+
+    #[test]
+    fn old_narrow_sampler_pattern_never_exceeds_min_prime_regression() {
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
+        let min_prime = *boot
+            .boot_config
+            .primes
+            .iter()
+            .chain(boot.boot_ctx.dual_rns.anchor.primes.iter())
+            .min()
+            .expect("boot config has primes");
+
+        let mut rng = ShadowHarvester::with_seed(0x0102_0304);
+        for _ in 0..4096 {
+            let v = old_narrow_mask_draw(&mut rng, min_prime);
+            assert!(
+                v < min_prime,
+                "the old draw pattern is confined to [0, min_prime) by construction"
+            );
+        }
+
+        // Q_boot is many orders of magnitude larger than min_prime for every
+        // shipped config, which is exactly why confinement to [0, min_prime)
+        // was a structural leak and not a merely theoretical one.
+        let q_boot_bits = crate::keys::bootstrap::q_boot_bit_upper_bound(&boot.boot_config.primes);
+        let min_prime_bits = 64 - min_prime.leading_zeros();
+        assert!(
+            q_boot_bits > min_prime_bits + 32,
+            "Q_boot ({q_boot_bits} bits) must dwarf min_prime ({min_prime_bits} bits) for this \
+             regression to demonstrate a real gap"
+        );
+    }
+
+    /// Support + identity: the circular bootstrap PK mask (`pk1 = a`) must be
+    /// (1) in range in every lane, (2) reconstructible to ONE integer that
+    /// (3) every anchor residue agrees with, and (4) actually reaches above
+    /// `min_prime` -- the one thing the old sampler could never do.
+    #[test]
+    fn bootstrap_pk_mask_is_uniform_over_full_q_boot() {
+        use crate::params::SecureConfig;
+
+        let configs = [
+            ("secure_128", SecureConfig::secure_128().into_config()),
+            (
+                "secure_128_deep",
+                SecureConfig::secure_128_deep().into_config(),
+            ),
+            ("secure_192", SecureConfig::secure_192().into_config()),
+            ("secure_256", SecureConfig::secure_256().into_config()),
+        ];
+
+        for (name, config) in &configs {
+            let boot = ClockworkBootstrap::new(config).expect("bootstrap context");
+            let ctx = RNSFHEContext::try_new(config).expect("work context");
+            let mut rng = ShadowHarvester::with_seed(0xB007_5A17);
+            let keys = ctx.generate_keys_dual_full(&mut rng);
+            let boot_keys = boot
+                .generate_keys(&keys.secret_key, &mut rng)
+                .unwrap_or_else(|e| panic!("{name}: circular keygen failed: {e:?}"));
+
+            let pk1 = &boot_keys.bsk.public_key.pk1; // pk1 = a, the mask
+            let level = boot.boot_config.primes.len();
+            let q_boot = U256::product_u64s(&boot.boot_config.primes);
+            let min_prime = *boot
+                .boot_config
+                .primes
+                .iter()
+                .chain(boot.boot_ctx.dual_rns.anchor.primes.iter())
+                .min()
+                .expect("boot config has primes");
+
+            let coeffs_to_check = pk1.n.min(512);
+            let mut saw_value_above_min_prime = false;
+
+            for coeff in 0..coeffs_to_check {
+                let main_residues: Vec<u64> = pk1.main.iter().map(|lane| lane[coeff]).collect();
+
+                // Support: every main residue is in range for its own lane.
+                for (residue, &prime) in main_residues.iter().zip(boot.boot_config.primes.iter()) {
+                    assert!(
+                        *residue < prime,
+                        "{name}: main residue {residue} out of range for prime {prime}"
+                    );
+                }
+
+                // Reconstruct the ONE integer the main lanes jointly encode.
+                let value = boot.boot_ctx.rns.to_u256_level(&main_residues, level);
+                assert!(
+                    value.lt(q_boot),
+                    "{name}: reconstructed mask value must land inside [0, Q_boot)"
+                );
+
+                // Identity: every anchor residue must equal that SAME integer
+                // reduced into its own modulus -- main and anchor track one
+                // accepted value, not two independent draws.
+                for (j, &anchor_prime) in boot.boot_ctx.dual_rns.anchor.primes.iter().enumerate() {
+                    assert_eq!(
+                        value.mod_u64(anchor_prime),
+                        pk1.anchor[j][coeff],
+                        "{name}: anchor lane {anchor_prime} disagrees with the main-lane \
+                         reconstruction at coefficient {coeff}"
+                    );
+                }
+
+                if value.ge(U256::from_u64(min_prime)) {
+                    saw_value_above_min_prime = true;
+                }
+            }
+
+            assert!(
+                saw_value_above_min_prime,
+                "{name}: no sampled coefficient among {coeffs_to_check} exceeded min_prime -- \
+                 the fixed sampler should reach far beyond it almost immediately"
+            );
+        }
+    }
+
+    /// Same support + identity property for the KSK gadget mask `a_l`
+    /// (`KeySwitchKey::generate`), the second narrow-sampler site issue #82's
+    /// audit item 7 flagged in this file.
+    #[test]
+    fn ksk_gadget_mask_is_uniform_over_full_q_boot() {
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128_deep().into_config();
+        let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
+        let ctx = RNSFHEContext::try_new(&config).expect("work context");
+        let mut rng = ShadowHarvester::with_seed(0xACE1_5A17);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let boot_keys = boot
+            .generate_keys_with_ksk(&keys.secret_key, &mut rng)
+            .expect("KSK keygen");
+
+        assert!(
+            !boot_keys.ksk.ksk.is_empty(),
+            "KSK must have at least one gadget digit to check"
+        );
+
+        let level = boot.boot_config.primes.len();
+        let q_boot = U256::product_u64s(&boot.boot_config.primes);
+        let min_prime = *boot
+            .boot_config
+            .primes
+            .iter()
+            .chain(boot.boot_ctx.dual_rns.anchor.primes.iter())
+            .min()
+            .expect("boot config has primes");
+
+        let mut saw_value_above_min_prime = false;
+        for (_b_l, a_l) in &boot_keys.ksk.ksk {
+            let coeffs_to_check = a_l.n.min(256);
+            for coeff in 0..coeffs_to_check {
+                let main_residues: Vec<u64> = a_l.main.iter().map(|lane| lane[coeff]).collect();
+                for (residue, &prime) in main_residues.iter().zip(boot.boot_config.primes.iter()) {
+                    assert!(*residue < prime, "KSK a_l: main residue out of range");
+                }
+
+                let value = boot.boot_ctx.rns.to_u256_level(&main_residues, level);
+                assert!(
+                    value.lt(q_boot),
+                    "KSK a_l: value must land inside [0, Q_boot)"
+                );
+
+                for (j, &anchor_prime) in boot.boot_ctx.dual_rns.anchor.primes.iter().enumerate() {
+                    assert_eq!(
+                        value.mod_u64(anchor_prime),
+                        a_l.anchor[j][coeff],
+                        "KSK a_l: anchor lane {anchor_prime} disagrees with main-lane \
+                         reconstruction at coefficient {coeff}"
+                    );
+                }
+
+                if value.ge(U256::from_u64(min_prime)) {
+                    saw_value_above_min_prime = true;
+                }
+            }
+        }
+
+        assert!(
+            saw_value_above_min_prime,
+            "no KSK gadget mask coefficient exceeded min_prime across all digits"
+        );
+    }
+
+    /// Keygen (both circular and KSK modes) must succeed across every named
+    /// config and several seeds, and -- because WR-5A is a sampler fix, not
+    /// a Phase-1 fix -- `bootstrap()`/`bootstrap_with_ksk()` must still
+    /// refuse with the SAME typed `BootstrapFailed` from
+    /// `public_phase1_soundness_gate` afterward. This is the scope-boundary
+    /// assertion: the sampler fix must not accidentally weaken or bypass
+    /// Gate 1.
+    #[test]
+    fn bootstrap_keygen_succeeds_and_gate_one_still_refuses_across_configs_and_seeds() {
+        use crate::params::SecureConfig;
+
+        let configs = [
+            SecureConfig::secure_128().into_config(),
+            SecureConfig::secure_128_deep().into_config(),
+            SecureConfig::secure_192().into_config(),
+            SecureConfig::secure_256().into_config(),
+        ];
+        let seeds = [1u64, 2, 20_260_903];
+
+        for config in &configs {
+            let boot = ClockworkBootstrap::new(config).expect("bootstrap context");
+            let ctx = RNSFHEContext::try_new(config).expect("work context");
+
+            for &seed in &seeds {
+                let mut rng = ShadowHarvester::with_seed(seed);
+                let keys = ctx.generate_keys_dual_full(&mut rng);
+
+                let circular = boot.generate_keys(&keys.secret_key, &mut rng);
+                assert!(
+                    circular.is_ok(),
+                    "{}: circular keygen failed at seed {seed}: {:?}",
+                    config.name,
+                    circular.err()
+                );
+                let circular = circular.unwrap();
+
+                let with_ksk = boot.generate_keys_with_ksk(&keys.secret_key, &mut rng);
+                assert!(
+                    with_ksk.is_ok(),
+                    "{}: KSK keygen failed at seed {seed}: {:?}",
+                    config.name,
+                    with_ksk.err()
+                );
+                let with_ksk = with_ksk.unwrap();
+
+                let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+                // Whichever gate fires first -- Gate 0
+                // (`ensure_public_refresh_supported`, `BootstrapConfigMismatch`
+                // for chains like secure_128 whose Delta headroom cannot carry
+                // a refresh at all) or Gate 1 (`public_phase1_soundness_gate`,
+                // `BootstrapFailed` for chains that pass Gate 0) -- both are
+                // typed refusals this sampler fix must not weaken or bypass:
+                // no config may reach a decrypted plaintext here, and no path
+                // may panic.
+                let refused = boot
+                    .bootstrap(&ct, &circular.bsk, &circular.ksk)
+                    .expect_err("public refresh must still be refused after the sampler fix");
+                match refused {
+                    Nine65Error::BootstrapFailed { .. }
+                    | Nine65Error::BootstrapConfigMismatch { .. } => {}
+                    other => panic!(
+                        "{}: expected a typed gate refusal, got {other:?}",
+                        config.name
+                    ),
+                }
+
+                let refused_ksk = boot
+                    .bootstrap_with_ksk(&ct, &with_ksk.bsk, &with_ksk.ksk)
+                    .expect_err("KSK public refresh must still be refused after the sampler fix");
+                match refused_ksk {
+                    Nine65Error::BootstrapFailed { .. }
+                    | Nine65Error::BootstrapConfigMismatch { .. } => {}
+                    other => panic!(
+                        "{}: expected a typed gate refusal from bootstrap_with_ksk, got {other:?}",
+                        config.name
+                    ),
+                }
+            }
+        }
+    }
+
+    /// A boot prime set whose product this sampler cannot represent must be
+    /// refused with a typed error, never a panic.
+    #[test]
+    fn q_boot_representability_typed_refusal() {
+        use crate::keys::bootstrap::ensure_q_boot_representable;
+        use crate::params::SecureConfig;
+
+        // A real boot chain: representable.
+        let real = SecureConfig::secure_256().into_config();
+        let boot = ClockworkBootstrap::new(&real).expect("bootstrap context");
+        assert!(ensure_q_boot_representable(&boot.boot_config.primes).is_ok());
+
+        // 9 primes just under 2^31 sum to >= 279 bits, comfortably over the
+        // 256-bit sampler capacity.
+        let oversized: Vec<u64> = vec![(1u64 << 31) - 1; 9];
+        let result = ensure_q_boot_representable(&oversized);
+        match result {
+            Err(Nine65Error::BootstrapOverflow { operation }) => {
+                assert!(operation.contains("256"));
+            }
+            other => panic!("expected typed BootstrapOverflow, got {other:?}"),
+        }
+
+        // Boundary: comfortably under 256 bits must be accepted.
+        let small = vec![998_244_353u64, 985_661_441];
+        assert!(ensure_q_boot_representable(&small).is_ok());
     }
 
     // =====================================================================
