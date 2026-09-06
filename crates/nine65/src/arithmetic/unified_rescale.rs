@@ -161,9 +161,15 @@ pub(crate) mod mod_inverse_calls {
     pub(crate) fn increment() {
         COUNT.with(|c| c.set(c.get() + 1));
     }
+    // `get`/`reset` are read only by `gate_harness` in `ops/rns_fhe.rs`,
+    // which is itself gated `#[cfg(all(test, feature = "allow_insecure",
+    // feature = "benchmarks"))]`. Match that gate here so a plain `cargo
+    // test` build (no extra features) doesn't compile these as dead code.
+    #[cfg(all(feature = "allow_insecure", feature = "benchmarks"))]
     pub(crate) fn get() -> usize {
         COUNT.with(|c| c.get())
     }
+    #[cfg(all(feature = "allow_insecure", feature = "benchmarks"))]
     pub(crate) fn reset() {
         COUNT.with(|c| c.set(0));
     }

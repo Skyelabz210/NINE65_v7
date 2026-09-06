@@ -70,7 +70,17 @@ Build all crates (release):
   cargo build --release --workspace --exclude nine65-python --exclude nine65-wasm
 
 Run all tests:
-  cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm
+  cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast
+
+(`--no-fail-fast` matters whenever nine65's `--lib` has any failing test, which
+it currently does — see "Bootstrap Paths" below. Without it, plain `cargo test
+--workspace` stops at the first failing package and silently never builds or
+runs anything after it: none of nine65's ~28 `tests/*.rs` integration
+binaries, nine65-extreme-tests, private-feedback-core, private-feedback-nine65
+or unhal. Confirmed by direct measurement 2026-09-04, issue #64: reproduces
+identically in `--release` and in CI's plain `cargo test --workspace`
+[debug] — it is a `cargo test --workspace` default-fail-fast behavior, not
+tied to build profile.)
 
 Core FHE tests only:
   cargo test -p nine65 --lib --release
@@ -91,6 +101,12 @@ Security tests:
 
 Depth benchmarks:
   cargo test -p nine65 --lib --release ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 -- --nocapture
+
+Test tiers (fast/medium/slow, issue #78) — see docs/TEST_TIERS.md for the
+full scheme, rationale and measured counts/timings:
+  bash scripts/run_tests_fast.sh    # cargo test --lib, release — every crate's unit tests
+  bash scripts/run_tests_medium.sh  # the full required suite (== ci.yml T2, unchanged)
+  bash scripts/run_tests_slow.sh    # slow_tests feature + op_timings + nine65-extreme-tests
 
 ---
 

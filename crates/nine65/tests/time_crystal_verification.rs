@@ -12,6 +12,7 @@
 //! claim is verified as detect-and-refuse, never silent repair.
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::secure_configs::SecureConfig;
@@ -320,8 +321,8 @@ fn footprint_measured_honestly() {
     };
     let ct_bytes = poly_bytes(&ct.c0) + poly_bytes(&ct.c1);
     println!(
-        "secure_256 ciphertext: {:.2} MiB ({} main + {} anchor lanes, n={})",
-        ct_bytes as f64 / (1024.0 * 1024.0),
+        "secure_256 ciphertext: {} MiB ({} main + {} anchor lanes, n={})",
+        format_ratio(ct_bytes as u128, 1024 * 1024, 2),
         ct.c0.main.len(),
         ct.c0.anchor.len(),
         config.n

@@ -50,6 +50,7 @@ pub mod cram_pde;
 pub mod crt_torus;
 pub mod k_elim;
 pub mod lane_projector;
+pub mod lifted_transduction;
 pub mod safe_basis_io;
 pub mod sqrt;
 pub mod substrate;

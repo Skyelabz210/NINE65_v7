@@ -201,6 +201,17 @@ pub enum Nine65Error {
     #[error("bootstrap arithmetic overflow in: {operation}")]
     BootstrapOverflow { operation: String },
 
+    /// Bootstrap security screen could not produce a number for this chain.
+    ///
+    /// A typed refusal, never a guessed value: the factorization-aware
+    /// screen declined because the chain is outside the regime the in-tree
+    /// cost models are calibrated on (a non-prime lane, a lane narrower
+    /// than the calibration floor, a repeated/non-coprime lane, or an
+    /// unreadable factorization). See
+    /// `keys::bootstrap::screen_bootstrap_security`.
+    #[error("bootstrap security screen refused: {reason}")]
+    BootstrapSecurityUnscreenable { reason: String },
+
     // ═══════════════════════════════════════════════════
     // ENTROPY ERRORS
     // ═══════════════════════════════════════════════════
@@ -300,7 +311,8 @@ impl Nine65Error {
 
             Nine65Error::BootstrapFailed { .. }
             | Nine65Error::BootstrapConfigMismatch { .. }
-            | Nine65Error::BootstrapOverflow { .. } => "Bootstrap",
+            | Nine65Error::BootstrapOverflow { .. }
+            | Nine65Error::BootstrapSecurityUnscreenable { .. } => "Bootstrap",
 
             Nine65Error::EntropyFailure { .. } => "Entropy",
 
