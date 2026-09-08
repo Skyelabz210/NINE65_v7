@@ -65,6 +65,7 @@
 
 use crate::entropy::ShadowHarvester;
 use crate::errors::Nine65Result;
+use crate::keys::bootstrap::ensure_q_boot_representable;
 use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSPoly, DualRNSPublicKey, DualRNSSecretKey, RNSFHEContext,
 };
@@ -219,8 +220,11 @@ impl SymmetricBootstrap {
         // Symmetric encrypt: c0 = -(a·s + e) + Δ·m, c1 = a
         let fresh = self.symmetric_encrypt(m, sk, rng);
 
-        // Zeroize the plaintext explicitly (see `bootstrap` above).
+        // Zeroize the plaintext explicitly (see `bootstrap` above) -- before
+        // the `?` below, so a typed refusal from `symmetric_encrypt` cannot
+        // leave `m` un-scrubbed on the early-return path.
         m.zeroize();
+        let fresh = fresh?;
 
         self.bootstrap_count += 1;
         Ok(fresh)
@@ -229,35 +233,50 @@ impl SymmetricBootstrap {
     /// Pure symmetric encryption (no public key needed).
     ///
     /// ct = (Δ·m - a·s + e, a) where:
-    /// - a is uniform random
+    /// - a is uniform over the WHOLE ring R_Q: one integer on `[0, Q)` per
+    ///   coefficient, reduced into every main and anchor lane
     /// - e is CBD(η) error
     /// - Δ = floor(q_i / t) for each prime q_i
+    ///
+    /// # Errors
+    ///
+    /// Returns `Nine65Error::BootstrapOverflow` if the main prime chain's
+    /// product cannot be represented by the 256-bit exact rejection sampler
+    /// (see `ensure_q_boot_representable`). Every shipped chain is at most
+    /// 175 bits, so this only fires for a chain that does not exist yet.
     fn symmetric_encrypt(
         &self,
         m: u64,
         sk: &DualRNSSecretKey,
         rng: &mut ShadowHarvester,
-    ) -> DualRNSCiphertext {
+    ) -> Nine65Result<DualRNSCiphertext> {
         let n = self.n;
         let num_main = self.config.primes.len();
         let num_anchor = self.ctx.dual_rns.anchor.primes.len();
 
-        // Sample random polynomial a (uniform mod each prime)
-        let a_main: Vec<Vec<u64>> = self
-            .config
-            .primes
-            .iter()
-            .map(|&p| (0..n).map(|_| rng.next_u64() % p).collect())
-            .collect();
-
-        let a_anchor: Vec<Vec<u64>> = self
-            .ctx
-            .dual_rns
-            .anchor
-            .primes
-            .iter()
-            .map(|&p| (0..n).map(|_| rng.next_u64() % p).collect())
-            .collect();
+        // `a` is the only thing hiding `a*s` in `c0 = Delta*m - a*s + e`, so
+        // it must be uniform over the whole ring R_Q. This used to draw every
+        // main lane and every anchor lane INDEPENDENTLY (`rng.next_u64() % p`
+        // per lane), so the lanes did not even encode one integer: main and
+        // anchor described two unrelated values, each `%`-biased within its
+        // own prime. That is the narrow-support defect class issue #82 named
+        // and WR-5A (PR #116) fixed in `ClockworkBootstrap::generate_circular_pk`
+        // and `KeySwitchKey::generate`; this was the third site (issue #141).
+        //
+        // Fix: exact full-width rejection sampling uniform on [0, Q), then
+        // reduce that ONE accepted integer independently into every main and
+        // anchor lane, via the crate's single canonical sampler
+        // (`RNSFHEContext::sample_uniform_dual_poly`) rather than a second
+        // implementation. Typed-refuse first if this chain's Q exceeds what
+        // the sampler can represent: `ensure_q_boot_representable` is a bound
+        // on any prime slice (the "boot" in its name is where it was first
+        // needed), and `RNSFHEContext::try_new` does not itself cap the main
+        // chain, so without this an oversized `FHEConfig` would reach the
+        // `U256::product_u64s` panic instead of a typed error.
+        ensure_q_boot_representable(&self.config.primes)?;
+        let a = self.ctx.sample_uniform_dual_poly(rng, &self.config.primes);
+        let a_main = a.main;
+        let a_anchor = a.anchor;
 
         // Sample error e ~ CBD(η)
         let e_signed: Vec<i64> = (0..n)
@@ -316,7 +335,7 @@ impl SymmetricBootstrap {
             }
         }
 
-        DualRNSCiphertext {
+        Ok(DualRNSCiphertext {
             c0: DualRNSPoly {
                 main: c0_main,
                 anchor: c0_anchor,
@@ -328,7 +347,7 @@ impl SymmetricBootstrap {
                 n,
             },
             level: num_main,
-        }
+        })
     }
 }
 
@@ -864,6 +883,175 @@ mod tests {
             let dec = ctx.decrypt_dual(&fresh, &keys.secret_key);
             assert_eq!(dec, m, "Sym reencrypt fail: m={} got={}", m, dec);
         }
+    }
+
+    // =====================================================================
+    // ISSUE #141: symmetric_encrypt mask support + identity (WR-5A class)
+    //
+    // These run unconditionally. They exercise only the mask sampler wired
+    // into `symmetric_encrypt` (through the `pub fn reencrypt_symmetric`
+    // entry point) and never depend on the #[ignore]d VESTIGIAL roundtrips
+    // above: they read `c1 = a` straight off the output ciphertext and never
+    // assert what it decrypts to.
+    // =====================================================================
+
+    /// Support + identity: the `symmetric_encrypt` mask (`c1 = a`) must be
+    /// (1) in range in every lane, (2) reconstructible from the main lanes to
+    /// ONE integer inside `[0, Q)` that (3) every anchor residue agrees with,
+    /// and (4) actually reach above the smallest prime in the chain. The old
+    /// per-lane `rng.next_u64() % p` draw satisfied (1) in every lane while
+    /// the lanes jointly encoded no single integer at all, so (1) alone is
+    /// exactly the check that could never have caught it. Mirrors
+    /// `ops::bootstrap::tests::bootstrap_pk_mask_is_uniform_over_full_q_boot`
+    /// (WR-5A, PR #116) for the third site issue #141 found.
+    #[test]
+    fn symmetric_encrypt_mask_is_uniform_over_full_q() {
+        use crate::arithmetic::rns::U256;
+
+        let configs = [
+            ("secure_128", SecureConfig::secure_128().into_config()),
+            (
+                "secure_128_deep",
+                SecureConfig::secure_128_deep().into_config(),
+            ),
+            ("secure_192", SecureConfig::secure_192().into_config()),
+            ("secure_256", SecureConfig::secure_256().into_config()),
+        ];
+
+        for (name, config) in &configs {
+            let ctx = RNSFHEContext::try_new(config).expect("work context");
+            let mut sym_boot = SymmetricBootstrap::new(config).expect("sym boot");
+            let mut rng = ShadowHarvester::with_seed(0x5E14_0141);
+            let keys = ctx.generate_keys_dual(&mut rng);
+
+            // Drive the public entry point so the wiring is what is tested,
+            // not a hand-called private helper.
+            let ct = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
+            let fresh = sym_boot
+                .reencrypt_symmetric(&ct, &keys.secret_key, &mut rng)
+                .unwrap_or_else(|e| panic!("{name}: reencrypt_symmetric refused: {e:?}"));
+
+            let mask = &fresh.c1; // c1 = a, the mask
+            let level = config.primes.len();
+            assert_eq!(fresh.level, level, "{name}: output level");
+            assert_eq!(mask.main.len(), level, "{name}: main lane count");
+            let anchor_primes = &sym_boot.ctx.dual_rns.anchor.primes;
+            assert_eq!(
+                mask.anchor.len(),
+                anchor_primes.len(),
+                "{name}: anchor lane count"
+            );
+
+            let q = U256::product_u64s(&config.primes);
+            let min_prime = *config
+                .primes
+                .iter()
+                .chain(anchor_primes.iter())
+                .min()
+                .expect("config has primes");
+
+            let coeffs_to_check = mask.n.min(512);
+            let mut saw_value_above_min_prime = false;
+
+            for coeff in 0..coeffs_to_check {
+                let main_residues: Vec<u64> = mask.main.iter().map(|lane| lane[coeff]).collect();
+
+                // Support: every main residue is in range for its own lane.
+                for (residue, &prime) in main_residues.iter().zip(config.primes.iter()) {
+                    assert!(
+                        *residue < prime,
+                        "{name}: main residue {residue} out of range for prime {prime}"
+                    );
+                }
+
+                // Reconstruct the ONE integer the main lanes jointly encode.
+                let value = sym_boot.ctx.rns.to_u256_level(&main_residues, level);
+                assert!(
+                    value.lt(q),
+                    "{name}: reconstructed mask value must land inside [0, Q)"
+                );
+
+                // Identity: every anchor residue must equal that SAME integer
+                // reduced into its own modulus -- main and anchor track one
+                // accepted value, not independent draws.
+                for (j, &anchor_prime) in anchor_primes.iter().enumerate() {
+                    assert!(
+                        mask.anchor[j][coeff] < anchor_prime,
+                        "{name}: anchor residue out of range for prime {anchor_prime}"
+                    );
+                    assert_eq!(
+                        value.mod_u64(anchor_prime),
+                        mask.anchor[j][coeff],
+                        "{name}: anchor lane {anchor_prime} disagrees with the main-lane \
+                         reconstruction at coefficient {coeff}"
+                    );
+                }
+
+                if value.ge(U256::from_u64(min_prime)) {
+                    saw_value_above_min_prime = true;
+                }
+            }
+
+            assert!(
+                saw_value_above_min_prime,
+                "{name}: no sampled coefficient among {coeffs_to_check} exceeded min_prime -- \
+                 the fixed sampler should reach far beyond it almost immediately"
+            );
+        }
+    }
+
+    /// Regression fixture pinning the pre-fix draw pattern: each main and
+    /// anchor lane sampled INDEPENDENTLY as `rng.next_u64() % p`. Every lane
+    /// is in range -- which is all the old code could ever have checked --
+    /// yet the anchor residues disagree with the main-lane reconstruction at
+    /// essentially every coefficient, because no single integer was ever
+    /// sampled. This is what the identity assertion above discriminates on.
+    #[test]
+    fn independent_per_lane_draws_do_not_encode_one_integer() {
+        let config = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::try_new(&config).expect("ctx");
+        let mut rng = ShadowHarvester::with_seed(0x0141_0082);
+
+        const COEFFS: usize = 64;
+        let level = config.primes.len();
+        let anchor_primes = &ctx.dual_rns.anchor.primes;
+
+        // The old pattern, verbatim in shape.
+        let old_main: Vec<Vec<u64>> = config
+            .primes
+            .iter()
+            .map(|&p| (0..COEFFS).map(|_| rng.next_u64() % p).collect())
+            .collect();
+        let old_anchor: Vec<Vec<u64>> = anchor_primes
+            .iter()
+            .map(|&p| (0..COEFFS).map(|_| rng.next_u64() % p).collect())
+            .collect();
+
+        let mut checks = 0usize;
+        let mut disagreements = 0usize;
+        for coeff in 0..COEFFS {
+            let main_residues: Vec<u64> = old_main.iter().map(|lane| lane[coeff]).collect();
+            for (residue, &prime) in main_residues.iter().zip(config.primes.iter()) {
+                assert!(*residue < prime, "per-lane support was never the problem");
+            }
+            let value = ctx.rns.to_u256_level(&main_residues, level);
+            for (j, &anchor_prime) in anchor_primes.iter().enumerate() {
+                checks += 1;
+                if value.mod_u64(anchor_prime) != old_anchor[j][coeff] {
+                    disagreements += 1;
+                }
+            }
+        }
+
+        // An independent anchor draw agrees with CRT(main) mod p only by a
+        // 1-in-p accident (p >= 2^30 here). Seeded, so this is deterministic;
+        // the bound is loose on purpose so it documents the mechanism rather
+        // than one seed's exact tally.
+        assert!(
+            disagreements * 4 >= checks * 3,
+            "old per-lane pattern: expected the anchors to disagree with the main lanes \
+             almost everywhere, got {disagreements}/{checks}"
+        );
     }
 
     /// Compare symmetric vs public bootstrap: sym should be faster
