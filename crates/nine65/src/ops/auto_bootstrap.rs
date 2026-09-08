@@ -4,6 +4,45 @@
 //! integer noise budget, and invokes Clockwork bootstrap when the budget is
 //! exhausted or crosses a configured threshold. No reconstructed integer,
 //! mixed-radix value, or floating-point quantity is used on this path.
+//!
+//! # Per-ciphertext noise tracking (issue #93)
+//!
+//! Noise/refresh state is tracked **per ciphertext**, not per evaluator
+//! session. [`TrackedCiphertext`] pairs a [`DualRNSCiphertext`] with its own
+//! [`NoiseBudget`]; [`AutoBootstrapEvaluator`] is a stateless-with-respect-
+//! to-noise dispatcher over `TrackedCiphertext` values -- it still owns the
+//! keys and activity counters, but it owns no shared ledger any operand's
+//! history can leak into or be overwritten by.
+//!
+//! This replaces an earlier design in which the evaluator held one mutable
+//! `NoiseBudget` consulted and mutated by every ciphertext it touched. That
+//! was only a sound model for one strictly linear operation chain, where
+//! each new operation consumes the immediately previous result. The public
+//! API always accepted arbitrary ciphertext operands, so a caller could
+//! branch a DAG -- encrypt two ciphertexts, operate on one, refresh, then
+//! reuse the other -- and the session ledger would no longer describe the
+//! operand actually entering the refresh decision: an unrelated branch's
+//! activity could trigger (or suppress) a refresh on a ciphertext it never
+//! touched. The mechanism now is:
+//!
+//! 1. Encryption creates an independent, fresh ledger per ciphertext
+//!    ([`TrackedCiphertext::fresh`]).
+//! 2. Binary operations ([`AutoBootstrapEvaluator::mul_auto`],
+//!    [`AutoBootstrapEvaluator::try_add_auto`]) inspect **both operands'**
+//!    own ledgers.
+//! 3. Only the operand(s) whose own ledger requires it are refreshed
+//!    ([`AutoBootstrapEvaluator::preflight_refresh`]) -- an operation on one
+//!    ciphertext can never refresh, exhaust, or silently reset another's
+//!    state, because there is no shared ledger for it to act through.
+//! 4. The output ledger is derived from the actual operand states entering
+//!    the operation (the worse of the two, matching the two-operand tensor
+//!    bound `v1, v2 <= v` this module's noise algebra assumes), not from a
+//!    global operation counter.
+//! 5. Cloning a `TrackedCiphertext` clones its ledger exactly; the clone and
+//!    the original then evolve completely independently.
+//! 6. A ciphertext squared against itself (`mul_auto(&ct, &ct)`) still
+//!    refreshes at most once and produces one output ledger -- see
+//!    [`same_ciphertext`].
 
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::keys::bootstrap::{BootstrapKey, KeySwitchKey};
@@ -12,15 +51,73 @@ use crate::ops::bootstrap::ClockworkBootstrap;
 use crate::ops::rns_fhe::{DualRNSCiphertext, DualRNSEvalKey, RNSFHEContext};
 use crate::params::FHEConfig;
 
-/// Evaluator that automatically bootstraps when the tracked budget reaches its
-/// configured lower boundary.
+/// A ciphertext paired with the exact per-ciphertext noise ledger that
+/// governs its own refresh eligibility.
+///
+/// This is the unit of state issue #93 asks for: everything
+/// [`AutoBootstrapEvaluator`] needs to decide whether *this* ciphertext
+/// needs a refresh travels with the ciphertext itself, not with the
+/// evaluator. Two `TrackedCiphertext` values are otherwise unrelated even if
+/// they encrypt the same plaintext or originated from the same evaluator --
+/// an operation performed on one can never observe or mutate the other's
+/// ledger.
+#[derive(Clone, Debug)]
+pub struct TrackedCiphertext {
+    /// The underlying ciphertext.
+    pub ct: DualRNSCiphertext,
+    /// This ciphertext's own noise ledger. Private so the only way to
+    /// advance it is through the evaluator methods that also advance `ct`,
+    /// keeping the two fields from drifting out of sync with each other.
+    budget: NoiseBudget,
+}
+
+impl TrackedCiphertext {
+    /// Wrap a ciphertext with a fresh ledger, seated at the noise level of a
+    /// fresh encryption (see [`NoiseBudget::from_config`]).
+    ///
+    /// Every call produces an INDEPENDENT ledger. Encrypting two values does
+    /// not halve either one's budget, and encrypting the same plaintext
+    /// twice does not make the two results share state.
+    pub fn fresh(ct: DualRNSCiphertext, config: &FHEConfig) -> Self {
+        Self {
+            ct,
+            budget: NoiseBudget::from_config(config),
+        }
+    }
+
+    /// Millibits remaining in this ciphertext's own ledger.
+    pub fn remaining_budget_mb(&self) -> i64 {
+        self.budget.remaining_millibits()
+    }
+
+    /// Exact-integer summary of this ciphertext's own ledger.
+    pub fn budget_summary(&self) -> String {
+        self.budget.summary()
+    }
+
+    /// Read-only access to the tracked ledger -- e.g. for a caller or test
+    /// that wants to record the before/after state of a specific operand
+    /// rather than only the evaluator-wide activity counters.
+    pub fn budget(&self) -> &NoiseBudget {
+        &self.budget
+    }
+}
+
+/// Evaluator that automatically bootstraps a ciphertext operand when its OWN
+/// tracked budget reaches its configured lower boundary.
+///
+/// Holds the keys and public evaluator activity counters
+/// (`bootstrap_count`, `total_muls`, `total_adds`). It holds no noise ledger
+/// of its own: every ledger decision is made against the
+/// [`TrackedCiphertext`] operand(s) passed to the call, so evaluator
+/// activity on one ciphertext cannot affect the tracked state of another.
 pub struct AutoBootstrapEvaluator<'a> {
     work_ctx: &'a RNSFHEContext,
     bootstrap: &'a ClockworkBootstrap,
     bsk: &'a BootstrapKey,
     ksk: &'a KeySwitchKey,
     evk: &'a DualRNSEvalKey,
-    budget: NoiseBudget,
+    config: &'a FHEConfig,
     /// Trigger threshold in permille (`250` means 25 percent remaining).
     trigger_permille: u32,
     /// Number of successful bootstraps performed.
@@ -38,7 +135,7 @@ impl<'a> AutoBootstrapEvaluator<'a> {
         bsk: &'a BootstrapKey,
         ksk: &'a KeySwitchKey,
         evk: &'a DualRNSEvalKey,
-        config: &FHEConfig,
+        config: &'a FHEConfig,
     ) -> Self {
         Self {
             work_ctx,
@@ -46,7 +143,7 @@ impl<'a> AutoBootstrapEvaluator<'a> {
             bsk,
             ksk,
             evk,
-            budget: NoiseBudget::from_config(config),
+            config,
             trigger_permille: 250,
             bootstrap_count: 0,
             total_muls: 0,
@@ -64,13 +161,47 @@ impl<'a> AutoBootstrapEvaluator<'a> {
         self.trigger_permille = permille;
     }
 
-    /// Refresh both operands via bootstrap when the pending operation would
-    /// exceed the tracked budget or cross the configured trigger threshold,
-    /// so an over-budget operand is bootstrapped *before* it is combined
-    /// with anything else -- never after.
+    /// Wrap a ciphertext produced outside the evaluator (e.g. a fresh
+    /// encryption) as a [`TrackedCiphertext`] against this evaluator's
+    /// config. A convenience for `TrackedCiphertext::fresh(ct, self.config)`.
+    pub fn track(&self, ct: DualRNSCiphertext) -> TrackedCiphertext {
+        TrackedCiphertext::fresh(ct, self.config)
+    }
+
+    /// Whether `budget` requires a refresh before it enters an operation
+    /// costing `operation_cost` -- the same predicate the old session ledger
+    /// applied, now evaluated against one specific operand's own state.
     ///
-    /// This is the fix for the Q17 finding in the deep-analysis audit: the
-    /// previous implementation performed the multiply (or add) *first* and
+    /// Reserve-aware ([`NoiseBudget::can_perform_with_reserve`], not
+    /// `can_perform`): the decryption boundary is not the binding constraint
+    /// on a ciphertext about to be refreshed. See the derivation on
+    /// `can_perform_with_reserve` and `bootstrap_input_reserve_mb`.
+    fn needs_refresh(&self, budget: &NoiseBudget, operation_cost: i64) -> bool {
+        !budget.can_perform_with_reserve(operation_cost, self.config)
+            || budget.should_bootstrap(self.trigger_permille)
+    }
+
+    /// Refresh one operand via bootstrap, producing a new `TrackedCiphertext`
+    /// whose ledger is reset to the post-refresh level. The operand's OWN
+    /// pre-refresh ledger is cloned and reset, not any other ciphertext's --
+    /// bootstrap reset applies only to the ciphertext state being refreshed.
+    fn refresh_operand(&mut self, operand: &TrackedCiphertext) -> Nine65Result<TrackedCiphertext> {
+        let refreshed_ct = self.bootstrap.bootstrap(&operand.ct, self.bsk, self.ksk)?;
+        self.bootstrap_count += 1;
+        let mut budget = operand.budget.clone();
+        budget.reset_after_bootstrap(self.config);
+        Ok(TrackedCiphertext {
+            ct: refreshed_ct,
+            budget,
+        })
+    }
+
+    /// Refresh whichever operand(s) need it -- and only those -- before a
+    /// pending operation, so an over-budget operand is bootstrapped *before*
+    /// it is combined with anything else -- never after.
+    ///
+    /// This is the fix for the Q17 finding in the deep-analysis audit: an
+    /// earlier implementation performed the multiply (or add) *first* and
     /// only checked the budget afterward, refreshing the *result*. A
     /// budget-crossing operation had therefore already computed on an
     /// operand whose tracked noise had crossed the safe threshold, and the
@@ -79,69 +210,67 @@ impl<'a> AutoBootstrapEvaluator<'a> {
     /// and refreshing before the operation, on the operands, is the only
     /// ordering under which "refresh" actually means what it says.
     ///
-    /// Two further properties of this predicate are load-bearing.
-    ///
-    /// **The trigger is reserve-aware.** It consults
-    /// [`NoiseBudget::can_perform_with_reserve`], not `can_perform`. The
-    /// decryption boundary is *not* the binding constraint on a ciphertext
-    /// that is about to be refreshed: Phase 1 of the refresh
-    /// (`ClockworkBootstrap::modswitch_to_t`) carries a ciphertext exactly only
-    /// while its noise sits a further `log2(n) + 1` bits below `Delta/2`. A
-    /// ciphertext that has merely stayed decryptable can already be past that
-    /// point, and refreshing it then re-encrypts a value the refresh itself
-    /// has perturbed. Withholding the reserve makes the trigger fire strictly
-    /// before that window closes rather than after it.
+    /// This is also the fix for issue #93: the check is against EACH
+    /// operand's own ledger, not a ledger shared across every ciphertext the
+    /// evaluator has ever touched. A clean operand paired with a noisy one
+    /// is refreshed alone; a noisy operand paired with a clean one never
+    /// borrows the clean one's headroom.
     ///
     /// **A squaring refreshes once, not twice.** For `ct * ct` the same
-    /// ciphertext arrives as both operands. Bootstrapping it twice costs two
-    /// refreshes, produces two independent encryptions of the same value for no
-    /// benefit, and made `bootstrap_count` report double the work actually
-    /// done. [`same_ciphertext`] detects the case and one refresh result is
-    /// used for both operands.
+    /// ciphertext arrives as both operands. [`same_ciphertext`] detects the
+    /// case and reuses operand 1's refresh outcome for operand 2 rather than
+    /// deciding independently -- bit-identical ciphertexts only arise here
+    /// from identity or a clone, and a clone shares its ledger with its
+    /// origin at the moment of cloning, so the decision is provably the same
+    /// either way. Deciding independently would risk two refreshes of one
+    /// ciphertext: two bootstraps, two independent encryptions of the same
+    /// value, and a `bootstrap_count` that reports double the work done.
     fn preflight_refresh(
         &mut self,
-        ct1: &DualRNSCiphertext,
-        ct2: &DualRNSCiphertext,
+        ct1: &TrackedCiphertext,
+        ct2: &TrackedCiphertext,
         operation_cost: i64,
-    ) -> Nine65Result<(DualRNSCiphertext, DualRNSCiphertext)> {
-        let config = &self.work_ctx.config;
-        if !self.budget.can_perform_with_reserve(operation_cost, config)
-            || self.budget.should_bootstrap(self.trigger_permille)
-        {
-            let (fresh1, fresh2) = if same_ciphertext(ct1, ct2) {
-                let refreshed = self.bootstrap.bootstrap(ct1, self.bsk, self.ksk)?;
-                self.bootstrap_count += 1;
-                (refreshed.clone(), refreshed)
-            } else {
-                let fresh1 = self.bootstrap.bootstrap(ct1, self.bsk, self.ksk)?;
-                let fresh2 = self.bootstrap.bootstrap(ct2, self.bsk, self.ksk)?;
-                self.bootstrap_count += 2;
-                (fresh1, fresh2)
-            };
-            self.budget.reset_after_bootstrap(&self.work_ctx.config);
-            Ok((fresh1, fresh2))
+    ) -> Nine65Result<(TrackedCiphertext, TrackedCiphertext)> {
+        let same = same_ciphertext(&ct1.ct, &ct2.ct);
+
+        let op1 = if self.needs_refresh(&ct1.budget, operation_cost) {
+            self.refresh_operand(ct1)?
         } else {
-            Ok((ct1.clone(), ct2.clone()))
-        }
+            ct1.clone()
+        };
+
+        let op2 = if same {
+            op1.clone()
+        } else if self.needs_refresh(&ct2.budget, operation_cost) {
+            self.refresh_operand(ct2)?
+        } else {
+            ct2.clone()
+        };
+
+        Ok((op1, op2))
     }
 
     /// Multiply with automatic bootstrap.
     ///
-    /// Refreshes the operands *before* multiplying whenever the multiply
-    /// would exhaust or cross the tracked noise budget (see
+    /// Refreshes whichever operand(s) need it *before* multiplying (see
     /// [`Self::preflight_refresh`]); the multiply itself then always runs on
-    /// operands the budget can account for.
+    /// operands their own ledgers can account for. The output's ledger is
+    /// derived from whichever operand ledger is worse (less remaining
+    /// budget) after preflight, matching the two-operand tensor bound
+    /// `v1, v2 <= v` this module's noise algebra assumes -- not from a
+    /// global operation counter.
     pub fn mul_auto(
         &mut self,
-        ct1: &DualRNSCiphertext,
-        ct2: &DualRNSCiphertext,
-    ) -> Nine65Result<DualRNSCiphertext> {
-        let operation_cost = NoiseBudget::mul_ct_cost(&self.work_ctx.config)
-            + NoiseBudget::relin_cost(&self.work_ctx.config);
+        ct1: &TrackedCiphertext,
+        ct2: &TrackedCiphertext,
+    ) -> Nine65Result<TrackedCiphertext> {
+        let operation_cost =
+            NoiseBudget::mul_ct_cost(self.config) + NoiseBudget::relin_cost(self.config);
 
         let (op1, op2) = self.preflight_refresh(ct1, ct2, operation_cost)?;
 
-        self.budget
+        let mut out_budget = combine_for_binary_op(&op1.budget, &op2.budget);
+        out_budget
             .consume(NoiseOpType::MulCt, operation_cost)
             .map_err(|e| Nine65Error::BootstrapFailed {
                 reason: format!(
@@ -151,27 +280,31 @@ impl<'a> AutoBootstrapEvaluator<'a> {
                 ),
             })?;
 
-        let result = self.work_ctx.mul_dual_public(&op1, &op2, self.evk)?;
+        let result = self.work_ctx.mul_dual_public(&op1.ct, &op2.ct, self.evk)?;
         self.total_muls += 1;
-        Ok(result)
+        Ok(TrackedCiphertext {
+            ct: result,
+            budget: out_budget,
+        })
     }
 
     /// Add with automatic bootstrap and explicit error propagation.
     ///
     /// Additions are inexpensive, but a sufficiently long addition-only chain
-    /// can still consume the tracked budget. Refreshes the operands *before*
-    /// adding whenever the add would exhaust or cross the tracked noise
-    /// budget (see [`Self::preflight_refresh`]).
+    /// can still consume a ciphertext's own tracked budget. Refreshes
+    /// whichever operand(s) need it *before* adding (see
+    /// [`Self::preflight_refresh`]).
     pub fn try_add_auto(
         &mut self,
-        ct1: &DualRNSCiphertext,
-        ct2: &DualRNSCiphertext,
-    ) -> Nine65Result<DualRNSCiphertext> {
+        ct1: &TrackedCiphertext,
+        ct2: &TrackedCiphertext,
+    ) -> Nine65Result<TrackedCiphertext> {
         let operation_cost = NoiseBudget::add_cost();
 
         let (op1, op2) = self.preflight_refresh(ct1, ct2, operation_cost)?;
 
-        self.budget
+        let mut out_budget = combine_for_binary_op(&op1.budget, &op2.budget);
+        out_budget
             .consume(NoiseOpType::Add, operation_cost)
             .map_err(|e| Nine65Error::BootstrapFailed {
                 reason: format!(
@@ -181,39 +314,48 @@ impl<'a> AutoBootstrapEvaluator<'a> {
                 ),
             })?;
 
-        let result = self.work_ctx.add_dual(&op1, &op2);
+        let result = self.work_ctx.add_dual(&op1.ct, &op2.ct);
         self.total_adds += 1;
-        Ok(result)
+        Ok(TrackedCiphertext {
+            ct: result,
+            budget: out_budget,
+        })
     }
 
     /// Compatibility wrapper for existing callers.
     ///
-    /// New code should call [`Self::try_add_auto`] so a bootstrap failure can be
-    /// handled by the caller. This wrapper no longer ignores an exhausted noise
-    /// budget; it fails loudly if refresh itself fails.
+    /// New code should call [`Self::try_add_auto`] so a bootstrap failure can
+    /// be handled by the caller. This wrapper no longer ignores an exhausted
+    /// noise budget; it fails loudly if refresh itself fails.
     pub fn add_auto(
         &mut self,
-        ct1: &DualRNSCiphertext,
-        ct2: &DualRNSCiphertext,
-    ) -> DualRNSCiphertext {
+        ct1: &TrackedCiphertext,
+        ct2: &TrackedCiphertext,
+    ) -> TrackedCiphertext {
         self.try_add_auto(ct1, ct2)
             .expect("auto-bootstrap addition refresh failed")
     }
+}
 
-    /// Current noise budget remaining in millibits.
-    pub fn remaining_budget_mb(&self) -> i64 {
-        self.budget.remaining_millibits()
-    }
-
-    /// Exact-integer summary of evaluator activity.
-    pub fn budget_summary(&self) -> String {
-        format!(
-            "{} | bootstrap calls: {}, muls: {}, adds: {}",
-            self.budget.summary(),
-            self.bootstrap_count,
-            self.total_muls,
-            self.total_adds,
-        )
+/// Derive the ledger a binary operation's OUTPUT should carry, from the
+/// actual tracked state of its two operands.
+///
+/// The Fan-Vercauteren tensor bound this module's noise algebra is built on
+/// assumes a single input level `v` with `v1, v2 <= v` -- i.e. the bound is
+/// only valid once both operands are treated as being as noisy as the worse
+/// of the two. `NoiseBudget::remaining_millibits` is a decreasing function of
+/// noise (more noise, less remaining budget), so "worse" is "smaller
+/// remaining budget": the output inherits that operand's ledger (its
+/// `cycle_initial_mb` and operation history included) before the operation's
+/// own cost is charged against it.
+///
+/// This -- not a global operation counter -- is what issue #93 calls for:
+/// "Derive the output state from the actual noise bound for the operation."
+fn combine_for_binary_op(op1: &NoiseBudget, op2: &NoiseBudget) -> NoiseBudget {
+    if op1.remaining_millibits() <= op2.remaining_millibits() {
+        op1.clone()
+    } else {
+        op2.clone()
     }
 }
 
@@ -231,7 +373,7 @@ impl<'a> AutoBootstrapEvaluator<'a> {
 /// costs one redundant refresh, while a false *positive* would substitute one
 /// operand for another. Only exact limb equality is accepted, so a false
 /// positive means the two ciphertexts are bit-identical and interchangeable.
-fn same_ciphertext(ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> bool {
+pub fn same_ciphertext(ct1: &DualRNSCiphertext, ct2: &DualRNSCiphertext) -> bool {
     if std::ptr::eq(ct1, ct2) {
         return true;
     }
@@ -293,6 +435,26 @@ mod tests {
         }
     }
 
+    fn new_evaluator<'a>(h: &'a Harness) -> AutoBootstrapEvaluator<'a> {
+        AutoBootstrapEvaluator::new(
+            &h.ctx,
+            &h.boot,
+            &h.boot_keys.bsk,
+            &h.boot_keys.ksk,
+            &h.keys.eval_key,
+            &h.config,
+        )
+    }
+
+    fn fresh_tracked(h: &Harness, m: u64, rng: &mut ShadowHarvester) -> TrackedCiphertext {
+        let ct = h.ctx.encrypt_dual(m, &h.keys.public_key, rng);
+        TrackedCiphertext::fresh(ct, &h.config)
+    }
+
+    fn decrypt(h: &Harness, tc: &TrackedCiphertext) -> u64 {
+        h.ctx.decrypt_dual(&tc.ct, &h.keys.secret_key)
+    }
+
     /// Repeated squaring under `mul_auto`, checking the plaintext after *every*
     /// operation and reporting where a refresh fired.
     ///
@@ -302,18 +464,11 @@ mod tests {
     /// non-trivial for every `k < 16`.
     fn squaring_run(h: &Harness, depth: usize) -> (Vec<bool>, Vec<usize>, usize) {
         let mut rng = ShadowHarvester::with_seed(4242);
-        let mut evaluator = AutoBootstrapEvaluator::new(
-            &h.ctx,
-            &h.boot,
-            &h.boot_keys.bsk,
-            &h.boot_keys.ksk,
-            &h.keys.eval_key,
-            &h.config,
-        );
+        let mut evaluator = new_evaluator(h);
 
-        let mut ct = h.ctx.encrypt_dual(3, &h.keys.public_key, &mut rng);
+        let mut ct = fresh_tracked(h, 3, &mut rng);
         assert_eq!(
-            h.ctx.decrypt_dual(&ct, &h.keys.secret_key),
+            decrypt(h, &ct),
             3,
             "fresh encryption must round-trip before the circuit starts"
         );
@@ -328,7 +483,7 @@ mod tests {
                 .mul_auto(&ct, &ct)
                 .unwrap_or_else(|e| panic!("mul_auto failed at depth {}: {}", level, e));
             expected = expected * expected % h.config.t as u128;
-            let decrypted = h.ctx.decrypt_dual(&ct, &h.keys.secret_key);
+            let decrypted = decrypt(h, &ct);
             let ok = decrypted as u128 == expected;
             if !ok {
                 println!(
@@ -408,12 +563,23 @@ mod tests {
     /// multiply per refresh cycle (`remaining_multiplications_before_refresh`),
     /// and the refresh re-funds it, so depth is bounded only by how long the
     /// test is willing to run. Eight levels is four full refresh cycles.
+    ///
+    /// KNOWN PRE-EXISTING FAILURE (issue #117, not this issue's problem): the
+    /// real (non-bypassed) `ClockworkBootstrap::bootstrap` unconditionally
+    /// fails `public_phase1_soundness_gate` for every config, so the first
+    /// triggered refresh in this circuit panics via the `unwrap_or_else`
+    /// above. This refactor deliberately preserves that -- it changes WHERE
+    /// noise state lives, not what `bootstrap()` does when actually called.
+    /// See `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`.
     #[test]
     fn repeated_squaring_is_exact_under_auto_refresh_secure_128_deep() {
         assert_squaring_circuit_is_exact(SecureConfig::secure_128_deep(), 11, 8);
     }
 
     /// ACCEPTANCE (secure_192): same circuit, larger chain.
+    ///
+    /// KNOWN PRE-EXISTING FAILURE -- see the doc comment on the
+    /// `secure_128_deep` variant above.
     #[test]
     fn repeated_squaring_is_exact_under_auto_refresh_secure_192() {
         assert_squaring_circuit_is_exact(SecureConfig::secure_192(), 11, 8);
@@ -425,6 +591,9 @@ mod tests {
     /// refresh input carries two levels of noise rather than one. That is the
     /// case the ledger is least corroborated on, which is exactly why it is
     /// tested rather than assumed.
+    ///
+    /// KNOWN PRE-EXISTING FAILURE -- see the doc comment on the
+    /// `secure_128_deep` variant above.
     #[test]
     fn repeated_squaring_is_exact_under_auto_refresh_secure_256() {
         assert_squaring_circuit_is_exact(SecureConfig::secure_256(), 11, 8);
@@ -436,6 +605,9 @@ mod tests {
     /// Before the `same_ciphertext` fix, `ct * ct` bootstrapped the one operand
     /// twice and added two to the counter: twice the work, no benefit, and a
     /// counter that reported double the refreshes actually performed.
+    ///
+    /// KNOWN PRE-EXISTING FAILURE -- see the doc comment on
+    /// `repeated_squaring_is_exact_under_auto_refresh_secure_128_deep` above.
     #[test]
     fn squaring_refresh_costs_exactly_one_bootstrap() {
         let h = harness(SecureConfig::secure_128_deep(), 11);
@@ -753,6 +925,402 @@ mod tests {
                  before updating this table.",
                 config.name, funded, expected_funded,
             );
+        }
+    }
+
+    // =========================================================================
+    // ADVERSARIAL DAG TESTS (issue #93)
+    //
+    // Every scenario below decrypts and compares to an exact plaintext oracle
+    // at every node. None of them require a real bootstrap to succeed --
+    // `ClockworkBootstrap::bootstrap` unconditionally fails
+    // `public_phase1_soundness_gate` on this commit (issue #117, a separately
+    // tracked, pre-existing defect this issue does not touch), so a scenario
+    // that stays inside the operands' own fresh budgets is the only kind that
+    // can observe end-to-end correctness right now. The one scenario that
+    // deliberately crosses the refresh boundary
+    // (`refresh_targets_only_the_operand_that_needs_it`) asserts on the
+    // DECISION (which operand was targeted) rather than on bootstrap success,
+    // and pins the failure to the already-known #117 reason so a regression
+    // there is not silently absorbed by this refactor.
+    // =========================================================================
+
+    /// Scenario 1-3 from the issue: square one fresh ciphertext, run several
+    /// operations on an unrelated one, then reuse the first. Under the old
+    /// shared-session ledger, operating on `b` would consume/mutate the ONE
+    /// evaluator-wide budget, so by the time `a` was reused the ledger no
+    /// longer described `a` at all. Under per-ciphertext tracking, `a`'s own
+    /// ledger must be bit-for-bit what a freshly squared ciphertext's ledger
+    /// would be, regardless of everything that happened to `b` in between.
+    #[test]
+    fn branch_and_reuse_after_unrelated_branch_changes_evaluator_activity() {
+        let h = harness(SecureConfig::secure_128_deep(), 501);
+        let mut rng = ShadowHarvester::with_seed(1);
+        let mut evaluator = new_evaluator(&h);
+
+        // 1. a = square(fresh_a)
+        let fresh_a = fresh_tracked(&h, 6, &mut rng);
+        let a = evaluator.mul_auto(&fresh_a, &fresh_a).expect("square a");
+        assert_eq!(decrypt(&h, &a), 36, "a must decrypt to 6*6");
+
+        // Reference: what a fresh-then-squared ledger looks like in
+        // isolation, computed via an INDEPENDENT evaluator instance so
+        // nothing from step 2 below can reach it.
+        let h_ref = harness(SecureConfig::secure_128_deep(), 501);
+        let mut rng_ref = ShadowHarvester::with_seed(1);
+        let mut ref_evaluator = new_evaluator(&h_ref);
+        let ref_fresh = fresh_tracked(&h_ref, 6, &mut rng_ref);
+        let a_reference = ref_evaluator
+            .mul_auto(&ref_fresh, &ref_fresh)
+            .expect("square reference");
+        let a_budget_after_square = a.remaining_budget_mb();
+        assert_eq!(
+            a_budget_after_square,
+            a_reference.remaining_budget_mb(),
+            "a's ledger right after its own squaring must match an isolated \
+             squaring exactly -- this is the baseline the next step must not move"
+        );
+
+        // 2. b = several operations on a completely unrelated fresh ciphertext,
+        // run through the SAME evaluator that produced `a`. One multiply (the
+        // most a fresh secure_128_deep ciphertext funds before its OWN ledger
+        // would need a refresh -- see `trigger_fires_before_the_refresh_
+        // window_closes_not_after`'s measured table) followed by several
+        // cheap adds, so the chain is nontrivial without depending on the
+        // separately-broken bootstrap path succeeding.
+        let mut b = fresh_tracked(&h, 2, &mut rng);
+        let mut expected_b: u64 = 2;
+        let b_sq = evaluator.mul_auto(&b, &b).expect("square b");
+        expected_b = (expected_b * expected_b) % h.config.t;
+        assert_eq!(decrypt(&h, &b_sq), expected_b);
+        b = b_sq;
+        for step in 0..5 {
+            let one = fresh_tracked(&h, 1, &mut rng);
+            b = evaluator
+                .try_add_auto(&b, &one)
+                .unwrap_or_else(|e| panic!("try_add_auto on b failed at step {}: {}", step, e));
+            expected_b = (expected_b + 1) % h.config.t;
+            assert_eq!(
+                decrypt(&h, &b),
+                expected_b,
+                "b must decrypt correctly at every step of its own chain"
+            );
+        }
+        assert!(
+            b.remaining_budget_mb() < a_budget_after_square,
+            "b's chain must actually have consumed b's own budget, or this test \
+             proves nothing about cross-contamination"
+        );
+
+        // 3. reuse `a` -- the SAME evaluator ran one multiply and five adds on
+        // `b` in between, so under the old shared-ledger design `a`'s
+        // "budget" would now reflect b's history, not a's. It must not have
+        // moved at all.
+        assert_eq!(
+            a.remaining_budget_mb(),
+            a_budget_after_square,
+            "a's own ledger must be untouched by four unrelated operations on b \
+             performed through the same evaluator -- evaluator activity on one \
+             ciphertext must not silently overwrite another's tracked state"
+        );
+        assert_eq!(
+            decrypt(&h, &a),
+            36,
+            "a's plaintext must also be untouched by b's chain"
+        );
+
+        // And `a` must still be usable exactly as if `b` never happened: add
+        // it to a third fresh ciphertext and check the result.
+        let c = fresh_tracked(&h, 1, &mut rng);
+        let combined = evaluator.try_add_auto(&a, &c).expect("a + c");
+        assert_eq!(decrypt(&h, &combined), 37, "a(36) + c(1) = 37");
+    }
+
+    /// Explicit form of the issue's "unrelated fresh operations cannot
+    /// consume another ciphertext's remaining budget" requirement: encrypt
+    /// two ciphertexts, drive one through several operations, and check the
+    /// OTHER's ledger at every single step, not only at the end.
+    #[test]
+    fn unrelated_fresh_operations_cannot_consume_anothers_remaining_budget() {
+        let h = harness(SecureConfig::secure_128_deep(), 502);
+        let mut rng = ShadowHarvester::with_seed(2);
+        let mut evaluator = new_evaluator(&h);
+
+        let untouched = fresh_tracked(&h, 9, &mut rng);
+        let untouched_budget = untouched.remaining_budget_mb();
+        assert_eq!(
+            untouched_budget,
+            NoiseBudget::from_config(&h.config).remaining_millibits(),
+            "a fresh TrackedCiphertext's budget must equal NoiseBudget::from_config \
+             exactly -- it is what `TrackedCiphertext::fresh` is defined to produce"
+        );
+
+        // One multiply -- the most a fresh secure_128_deep ciphertext funds
+        // before its OWN ledger needs a refresh -- followed by several cheap
+        // adds, so `driven` accumulates a nontrivial history without
+        // depending on the separately-broken bootstrap path.
+        let mut driven = fresh_tracked(&h, 3, &mut rng);
+        let mut expected: u64 = 3;
+        driven = evaluator.mul_auto(&driven, &driven).expect("square driven");
+        expected = (expected * expected) % h.config.t;
+        assert_eq!(decrypt(&h, &driven), expected);
+        assert_eq!(
+            untouched.remaining_budget_mb(),
+            untouched_budget,
+            "untouched ciphertext's budget moved after squaring a completely \
+             unrelated ciphertext, run through the same evaluator"
+        );
+        for step in 0..5 {
+            let one = fresh_tracked(&h, 1, &mut rng);
+            driven = evaluator.try_add_auto(&driven, &one).unwrap_or_else(|e| {
+                panic!("try_add_auto on driven failed at step {}: {}", step, e)
+            });
+            expected = (expected + 1) % h.config.t;
+            assert_eq!(decrypt(&h, &driven), expected);
+            assert_eq!(
+                untouched.remaining_budget_mb(),
+                untouched_budget,
+                "untouched ciphertext's budget moved after step {} on a completely \
+                 unrelated ciphertext, run through the same evaluator",
+                step,
+            );
+        }
+
+        // Finally: operate on the untouched ciphertext together with a fresh
+        // one and confirm the cost charged is exactly what a fresh+fresh
+        // multiply costs -- unaffected by `driven`'s three-multiply history.
+        let other_fresh = fresh_tracked(&h, 4, &mut rng);
+        let result = evaluator
+            .mul_auto(&untouched, &other_fresh)
+            .expect("untouched * other_fresh");
+        assert_eq!(decrypt(&h, &result), 36, "9 * 4 = 36");
+        let mul_cost = NoiseBudget::mul_ct_cost(&h.config) + NoiseBudget::relin_cost(&h.config);
+        assert_eq!(
+            result.remaining_budget_mb(),
+            untouched_budget - mul_cost,
+            "cost charged must be exactly fresh_budget - mul_cost, with no residue \
+             from driven's unrelated history leaking in"
+        );
+    }
+
+    /// Scenario 5 from the issue: clone one branch, evolve only one clone,
+    /// then check both. The un-evolved clone must be byte-for-byte as if it
+    /// had never been cloned at all -- both its ciphertext and its ledger.
+    #[test]
+    fn clone_then_diverge_produces_independent_ledgers() {
+        let h = harness(SecureConfig::secure_128_deep(), 503);
+        let mut rng = ShadowHarvester::with_seed(3);
+        let mut evaluator = new_evaluator(&h);
+
+        let original = fresh_tracked(&h, 7, &mut rng);
+        let clone_a = original.clone();
+        let clone_b = original.clone();
+
+        assert_eq!(clone_a.remaining_budget_mb(), clone_b.remaining_budget_mb());
+
+        // Evolve only clone_b: one multiply -- the most a fresh
+        // secure_128_deep ciphertext funds before its OWN ledger needs a
+        // refresh -- followed by several cheap adds.
+        let mut evolved_b = clone_b;
+        let mut expected_b: u64 = 7;
+        evolved_b = evaluator
+            .mul_auto(&evolved_b, &evolved_b)
+            .expect("evolve clone_b: square");
+        expected_b = (expected_b * expected_b) % h.config.t;
+        for _ in 0..5 {
+            let one = fresh_tracked(&h, 1, &mut rng);
+            evolved_b = evaluator
+                .try_add_auto(&evolved_b, &one)
+                .expect("evolve clone_b: add");
+            expected_b = (expected_b + 1) % h.config.t;
+        }
+
+        // clone_a must be completely unaffected: same plaintext, same ledger.
+        assert_eq!(
+            decrypt(&h, &clone_a),
+            7,
+            "un-evolved clone must still decrypt to the original plaintext"
+        );
+        assert_eq!(
+            clone_a.remaining_budget_mb(),
+            original.remaining_budget_mb(),
+            "un-evolved clone's ledger must be untouched by the other clone's evolution"
+        );
+        assert_eq!(decrypt(&h, &evolved_b), expected_b);
+        assert!(
+            evolved_b.remaining_budget_mb() < clone_a.remaining_budget_mb(),
+            "the evolved clone's own ledger must actually have moved, or this test \
+             proves nothing"
+        );
+    }
+
+    /// Scenario 4 from the issue: combine two branches with genuinely
+    /// different noise histories (different depth, different operation mix)
+    /// and check that the combined result's ledger is derived from the
+    /// operands actually entering the operation -- specifically, the WORSE
+    /// (lower-remaining-budget) of the two -- not from some other counter.
+    #[test]
+    fn combining_branches_of_different_noise_histories_derives_output_from_the_worse_operand() {
+        let h = harness(SecureConfig::secure_128_deep(), 504);
+        let mut rng = ShadowHarvester::with_seed(4);
+        let mut evaluator = new_evaluator(&h);
+
+        // Shallow branch: one multiply.
+        let shallow_base = fresh_tracked(&h, 2, &mut rng);
+        let shallow = evaluator
+            .mul_auto(&shallow_base, &shallow_base)
+            .expect("shallow branch");
+        assert_eq!(decrypt(&h, &shallow), 4);
+
+        // Deep branch: one multiply (the most a fresh secure_128_deep
+        // ciphertext funds before its OWN ledger needs a refresh) plus three
+        // adds -- a different operation MIX and a strictly worse ledger than
+        // `shallow`, not just "more of the same op".
+        let deep_base = fresh_tracked(&h, 2, &mut rng);
+        let mut deep = evaluator
+            .mul_auto(&deep_base, &deep_base)
+            .expect("deep step 1: square");
+        let mut expected_deep = (2u64 * 2) % h.config.t;
+        for step in 0..3 {
+            let one = fresh_tracked(&h, 1, &mut rng);
+            deep = evaluator
+                .try_add_auto(&deep, &one)
+                .unwrap_or_else(|e| panic!("deep step 2.{} (add) failed: {}", step, e));
+            expected_deep = (expected_deep + 1) % h.config.t;
+        }
+        assert_eq!(decrypt(&h, &deep), expected_deep);
+
+        assert!(
+            deep.remaining_budget_mb() < shallow.remaining_budget_mb(),
+            "the deeper/mixed branch must carry a strictly worse ledger than the \
+             shallow one, or this test does not exercise the asymmetric case"
+        );
+
+        let add_cost = NoiseBudget::add_cost();
+        let combined = evaluator
+            .try_add_auto(&shallow, &deep)
+            .expect("combine shallow + deep");
+        let expected_combined = (4 + expected_deep) % h.config.t;
+        assert_eq!(decrypt(&h, &combined), expected_combined);
+
+        // THE ASSERTION: output ledger = worse operand's ledger - op cost.
+        // `deep` is worse (checked above), so it -- not `shallow`, and not
+        // some fresh/global counter -- must be what the combined ledger is
+        // derived from.
+        assert_eq!(
+            combined.remaining_budget_mb(),
+            deep.remaining_budget_mb() - add_cost,
+            "combined ledger must be derived from the worse (deep) operand's \
+             actual tracked state, exactly, not from the shallow operand or a \
+             global operation counter"
+        );
+    }
+
+    /// The refresh decision itself is per-operand: pairing a clean ciphertext
+    /// with a noise-exhausted one must target ONLY the exhausted one.
+    ///
+    /// This cannot observe a successful end-to-end refresh -- see the module
+    /// note above -- so it asserts on the decision (via the same private
+    /// predicate `preflight_refresh` itself consults) and, when it drives the
+    /// evaluator far enough to actually attempt a refresh, pins the failure
+    /// to the ALREADY-KNOWN #117 reason (`public_phase1_soundness_gate`), so
+    /// a different failure here would mean this refactor broke something new
+    /// rather than merely inheriting the tracked, pre-existing defect.
+    #[test]
+    fn refresh_targets_only_the_operand_that_needs_it() {
+        let h = harness(SecureConfig::secure_128_deep(), 505);
+        let mut rng = ShadowHarvester::with_seed(5);
+        let mut evaluator = new_evaluator(&h);
+
+        let mul_cost = NoiseBudget::mul_ct_cost(&h.config) + NoiseBudget::relin_cost(&h.config);
+
+        // Drive `dirty` right up to (but not past) the point where the next
+        // multiply would require a refresh.
+        let mut dirty = fresh_tracked(&h, 3, &mut rng);
+        let mut expected_dirty: u64 = 3;
+        let mut steps = 0;
+        loop {
+            if evaluator.needs_refresh(dirty.budget(), mul_cost) {
+                break;
+            }
+            dirty = evaluator
+                .mul_auto(&dirty, &dirty)
+                .unwrap_or_else(|e| panic!("driving dirty failed at step {}: {}", steps, e));
+            expected_dirty = (expected_dirty * expected_dirty) % h.config.t;
+            assert_eq!(decrypt(&h, &dirty), expected_dirty);
+            steps += 1;
+            assert!(steps < 32, "dirty never reached the refresh boundary");
+        }
+
+        let clean = fresh_tracked(&h, 5, &mut rng);
+
+        // Precondition the whole test rests on: at this exact moment, `dirty`
+        // needs a refresh and `clean` does not.
+        assert!(
+            evaluator.needs_refresh(dirty.budget(), mul_cost),
+            "setup failed to reach the refresh boundary on dirty"
+        );
+        assert!(
+            !evaluator.needs_refresh(clean.budget(), mul_cost),
+            "clean must not need a refresh -- it is fresh"
+        );
+
+        let dirty_budget_before = dirty.remaining_budget_mb();
+        let clean_budget_before = clean.remaining_budget_mb();
+        let bootstrap_count_before = evaluator.bootstrap_count;
+
+        let result = evaluator.mul_auto(&clean, &dirty);
+
+        println!(
+            "refresh_targets_only_the_operand_that_needs_it: dirty before={} mb, \
+             clean before={} mb, bootstrap_count before={}, result={:?}",
+            dirty_budget_before,
+            clean_budget_before,
+            bootstrap_count_before,
+            result.as_ref().map(|tc| tc.remaining_budget_mb())
+        );
+
+        match result {
+            Ok(tc) => {
+                // If the underlying #117 defect is ever fixed independently
+                // of this issue, this branch becomes reachable: the refresh
+                // succeeded, and the combined result must still be exact.
+                assert_eq!(
+                    decrypt(&h, &tc),
+                    (expected_dirty * 5) % h.config.t,
+                    "if refresh succeeds, the combined plaintext must still be exact"
+                );
+                assert_eq!(
+                    evaluator.bootstrap_count,
+                    bootstrap_count_before + 1,
+                    "exactly one operand (dirty) needed a refresh -- clean must not \
+                     have been refreshed too"
+                );
+            }
+            Err(Nine65Error::BootstrapFailed { reason }) => {
+                // The expected outcome on this commit: the evaluator correctly
+                // decided `dirty` needed a refresh and attempted it, and that
+                // attempt failed for the ALREADY-KNOWN #117 reason -- not
+                // because `clean` was mistakenly targeted (clean needed no
+                // refresh, so if it had been the one attempted, `dirty`'s
+                // untouched, still-exhausted ledger would be the only
+                // evidence, which the assertions above already established).
+                assert!(
+                    reason.contains("Phase 1 does not yet propagate"),
+                    "refresh failed for an unexpected reason (not the known #117 \
+                     Phase-1 gate): {}",
+                    reason
+                );
+                assert_eq!(
+                    evaluator.bootstrap_count, bootstrap_count_before,
+                    "a failed refresh attempt must not have incremented bootstrap_count"
+                );
+            }
+            Err(other) => panic!(
+                "mul_auto(clean, dirty) failed with an unexpected error variant \
+                 (expected BootstrapFailed with the known #117 reason): {:?}",
+                other
+            ),
         }
     }
 

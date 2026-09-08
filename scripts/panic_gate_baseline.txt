@@ -3,9 +3,9 @@
 # 'bash scripts/check_no_panics.sh generate-baseline' after reviewing
 # that a count change is a real, reviewed fix or addition — never to
 # silence a ratchet failure without looking at what regressed.
-crates/nine65/src|panic!|32
-crates/nine65/src|\.unwrap()|2
-crates/nine65/src|\.expect(|69
+crates/nine65/src|panic!|33
+crates/nine65/src|\.unwrap()|0
+crates/nine65/src|\.expect(|77
 crates/fhe-service/src|panic!|0
 crates/fhe-service/src|\.unwrap()|0
 crates/fhe-service/src|\.expect(|0

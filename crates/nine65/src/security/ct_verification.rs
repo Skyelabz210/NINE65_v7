@@ -1306,10 +1306,15 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
     //     result_main[j][i] = if v_centered.is_neg && q_mod_p != 0 { p - q_mod_p }
     //                         else { q_mod_p };
     //
-    // plus `U256::div_mod_u64`, a long division whose work depends on the
-    // magnitude of the dividend. The tests below target the sign branch (with
-    // magnitude held constant between classes, so a difference can only come
-    // from the sign) and the classic fixed-vs-random contrast.
+    // plus (previously) `U256::div_mod_u64`, a long division whose work
+    // depended on the magnitude of the dividend -- this was finding F-2,
+    // closed by switching to `U256::div_mod_u64_ct` (see the ignore reason on
+    // `test_ct_dudect_mod_switch_rescale_fixed_vs_random` and
+    // docs/CT_VERIFICATION_PLAN.md section 4.9). The tests below target the
+    // sign branch (with magnitude held constant between classes, so a
+    // difference can only come from the sign) and the classic
+    // fixed-vs-random contrast that used to catch the division leak and now
+    // regression-gates its absence.
     //
     // THREAT-MODEL NOTE, stated plainly: this path consumes ciphertext
     // residues. Against a server-side adversary who already holds the
@@ -1407,13 +1412,16 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
     }
 
     #[test]
-    #[ignore = "OPEN FINDING, not a flake, and the largest one in this file: \
-RNSFHEContext::mod_switch_down_dual is NOT constant-time in coefficient magnitude. Measured over \
-5 runs: t_signal = 701.0 / 228.9 / 202.4 / 206.6 / 210.0 against control t = 0.56-2.10, medians \
-25.4ms (all-zero coefficients) vs 80.1ms (uniform coefficients) - a 3.2x, not a percentage. Cause: \
-U256::div_mod_u64 is a long division over the reconstructed coefficient. Note the companion test \
-test_ct_dudect_mod_switch_rescale_sign_classes PASSES, so the sign branches are not the leak - the \
-dividend magnitude is. See docs/CT_VERIFICATION_PLAN.md."]
+    #[ignore = "Statistical timing test - run in a controlled environment only. WAS finding F-2, \
+now CLOSED and kept as its regression gate: medians 76.87ms vs 78.22ms, t_signal 2.14 against \
+control 0.54. It previously measured 25.4ms (all-zero) vs 80.1ms (uniform) at t = 202-701 over 5 \
+runs - a 3.2x, not a percentage. Cause: U256::div_mod_u64 is hardware limb division whose cost \
+scales with the dividend's magnitude. Fix: RNSFHEContext::mod_switch_down_dual now calls the new \
+U256::div_mod_u64_ct, a fixed-256-iteration constant-time division (same mask-select + black_box \
+barrier idiom as BarrettContext::sub_ct's F-1 fix, see section 4.8) computing the identical \
+(quotient, remainder) pair. The companion test test_ct_dudect_mod_switch_rescale_sign_classes \
+still passes (t_signal 0.78), confirming the sign branches were never the leak. See \
+docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
     fn test_ct_dudect_mod_switch_rescale_fixed_vs_random() {
         print_environment_info();
         warmup();

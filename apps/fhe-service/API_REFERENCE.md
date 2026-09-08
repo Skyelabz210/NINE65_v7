@@ -95,9 +95,16 @@ Supported configs:
 
 | Config | n | log2(Q) | t | Security |
 |--------|---|---------|---|----------|
-| `secure_128` | 8192 | ~90 | 65537 | 128-bit |
+| `secure_128` | 8192 | ~119 | 65537 | 128-bit |
 | `secure_192` | 16384 | ~147 | 65537 | 192-bit |
 | `secure_256` | 16384 | ~177 | 65537 | 256-bit |
+
+`secure_128`'s `log2(Q)` reflects the current `SecureConfig::secure_128()`
+(`crates/nine65/src/params/secure_configs.rs`), re-cut 2026-08-26 to the same
+four-prime chain as `secure_128_deep` — see `CLAUDE.md`'s "Security Configs"
+section and `docs/OPEN_WORK_2026-08-26.md` §A3. `~90` describes the retired
+three-prime chain (2026-02 through 2026-08-25) and must not be quoted as
+current.
 
 **Response** `201`:
 ```json
@@ -106,7 +113,7 @@ Supported configs:
   "config": "secure_128",
   "params": {
     "n": 8192,
-    "log_q": 90,
+    "log_q": 119,
     "t": 65537,
     "security_bits": 128
   },
@@ -257,9 +264,18 @@ The budget functions as a **Kiosk Architecture** safety mechanism: sessions are 
 
 | Config | Initial budget | Approximate capacity |
 |--------|---------------|---------------------|
-| `secure_128` | ~62000 mb | ~7 encryptions, or ~60 additions, or ~3 mul_plain |
+| `secure_128` | ~62000 mb † | ~7 encryptions, or ~60 additions, or ~3 mul_plain |
 | `secure_192` | ~100000 mb | ~10 encryptions, or ~100 additions |
 | `secure_256` | ~120000 mb | ~12 encryptions, or ~120 additions |
+
+† **Not re-derived for the current tuple.** This figure predates the
+2026-08-26 `secure_128` re-cut (see the note under "Supported configs"
+above). The new four-prime chain has a materially larger `Delta` — 103 bits
+of exact `Delta` headroom against the old chain's 74
+(`docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md` §3) — so the true initial
+budget for the current `secure_128` is almost certainly higher than 62000 mb.
+Flagged rather than guessed; needs a fresh measurement against
+`FHEConfig::initial_noise_budget_millibits` on the current tuple.
 
 Budget is tracked per-session. Create a new session for fresh budget.
 

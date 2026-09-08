@@ -10,6 +10,15 @@
 //! 4. Re-encode into dual-track representation
 //!
 //! No floating-point. No lossy rounding. Just exact integer arithmetic.
+//!
+//! # Relationship to the production K-Elimination record (issue #70 index)
+//!
+//! Built on `exact_coeff::ExactContext` (in turn on `exact_divider::
+//! ExactDivider`) — see those modules' own notes. Not the production
+//! ciphertext-multiplication path: `rns_fhe.rs` references this module only
+//! in comments pointing at its tests, never at runtime. See
+//! `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` for the full
+//! inventory.
 
 // Allow explicit indexing in polynomial convolution - loop indices are used
 // in computing coefficient positions (i+j), not just array access.

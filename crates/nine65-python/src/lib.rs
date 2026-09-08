@@ -134,8 +134,20 @@ pub struct PyFHEConfig {
     inner: FHEConfig,
 }
 
+// `standard_128_insecure` / `high_192_insecure` / `large_single_insecure` /
+// `light_insecure` on the `nine65` side are all gated
+// `#[cfg(any(test, debug_assertions, feature = "allow_insecure"))]` (and
+// `light_insecure` is additionally `#[deprecated]`) -- they're
+// test/legacy-only configs, not audited for production. The pymethods below
+// must carry the *same* cfg gate as whichever underlying function they call,
+// or a plain `--release` build (no `allow_insecure`, no `debug_assertions`)
+// fails to compile with "function not found" rather than simply omitting
+// the method from the exposed `FHEConfig` class the way it should. Prefer
+// `SecureConfig.secure_128()` / `.secure_192()` / `.secure_256()` (never
+// gated -- always available) for anything that isn't a reproducible test.
 #[pymethods]
 impl PyFHEConfig {
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     #[staticmethod]
     fn standard_128() -> Self {
         Self {
@@ -143,6 +155,7 @@ impl PyFHEConfig {
         }
     }
 
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     #[staticmethod]
     fn high_192() -> Self {
         Self {
@@ -150,6 +163,7 @@ impl PyFHEConfig {
         }
     }
 
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     #[staticmethod]
     fn large_single() -> Self {
         Self {
@@ -157,7 +171,8 @@ impl PyFHEConfig {
         }
     }
 
-    #[cfg(any(test, feature = "allow_insecure"))]
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
+    #[allow(deprecated)]
     #[staticmethod]
     fn light() -> Self {
         Self {
@@ -219,7 +234,9 @@ impl PySecureConfig {
         }
     }
 
-    #[cfg(any(test, debug_assertions))]
+    // Matches `SecureConfig::test_fast_insecure`'s own gate exactly (see the
+    // note on `impl PyFHEConfig` above for why this must track the callee).
+    #[cfg(any(test, debug_assertions, feature = "allow_insecure"))]
     #[staticmethod]
     fn test_fast() -> Self {
         Self {
@@ -511,11 +528,94 @@ impl PyFHEContext {
         }
     }
 
+    /// Report the exact-correctness envelope of `mul()` for this context.
+    ///
+    /// Returns `(supported, max_product)`. `mul()` performs an
+    /// entirely-in-Rust single-modulus ciphertext x ciphertext tensor
+    /// product, relinearize, and rescale (`Δ² → Δ`) -- `nine65`'s own docs
+    /// mark this path `#[deprecated]` and note it "only works when
+    /// `Δ² ≤ Q`" (see `BFVEvaluator::mul` in `crates/nine65/src/ops/homomorphic.rs`).
+    /// `max_product` is the largest plaintext product `a * b` that path can
+    /// recover exactly; beyond it, `mul()` still returns *a* ciphertext (no
+    /// panic, no error) that decrypts to a wrong-but-plausible value rather
+    /// than the true product.
+    ///
+    /// This binding cannot check `a * b` against `max_product` for you --
+    /// `mul()` only ever sees ciphertexts, and decrypting to check would
+    /// defeat the point of encrypting. Check it yourself against known
+    /// plaintext ranges before relying on a `mul()` result, or use
+    /// `mul_plain()` (linear scalar multiply, not subject to this bound)
+    /// where the multiplier is a known plaintext rather than a ciphertext.
+    ///
+    /// For every `SecureConfig` this crate exposes (`secure_128` /
+    /// `secure_192` / `secure_256`), `max_product` is small (single digits)
+    /// because this single-modulus path only ever uses the *first* RNS
+    /// prime -- the additional anchor lanes that give those configs their
+    /// named security level don't participate in it. `nine65` recommends
+    /// `RNSFHEContext::mul_dual_symmetric()` (the DualRNS multi-lane path)
+    /// for real ct×ct depth; that path is not yet bound to Python (see
+    /// README.md "What's exposed").
+    ///
+    /// **This bound is necessary but was found NOT sufficient**: see the
+    /// `mul()` doc below for a second, more severe issue that this number
+    /// does not capture.
+    fn mul_capacity(&self) -> (bool, u64) {
+        self.config.supports_single_mod_mul()
+    }
+
     /// Homomorphic multiplication with boundary-safe panic isolation.
     ///
-    /// Before multiplying, checks that intermediate values won't approach the
-    /// anchor capacity boundary (80%/90% thresholds). If the configuration is
-    /// borderline, a Python warning is printed to stderr.
+    /// # This path is currently broken -- verified during the FFI/bindings
+    /// # work that wired this method up (2026-09), not merely "unproven"
+    ///
+    /// Calling `nine65::ops::BFVEvaluator::mul()` directly in Rust -- no
+    /// PyO3, no Python -- and decrypting the result with the matching
+    /// secret key gives a **wrong plaintext for every case tried**,
+    /// including the most trivial one (`1 * 1`), across every config
+    /// checked: `SecureConfig::secure_128()` (n=8192) and, at n=1024,
+    /// `light_mul_insecure`, `light_insecure`, and
+    /// `SecureConfig::test_fast_insecure()`. This is a distinct failure
+    /// from -- and strictly worse than -- the documented `Δ² ≤ Q` capacity
+    /// note on `BFVEvaluator::mul` (`crates/nine65/src/ops/homomorphic.rs`):
+    /// that note implies correctness *within* `mul_capacity()`'s bound, but
+    /// `1 * 1` is within every one of those configs' bounds and still comes
+    /// back wrong.
+    ///
+    /// This appears to be why: none of `nine65`'s own passing `#[test]`s
+    /// actually exercise this exact function with a real decrypted-value
+    /// assertion. `test_homomorphic_mul_with_relin` and
+    /// `test_ct_mul_multiple_values` -- names that read as if they cover
+    /// this -- both construct a `BFVEvaluator` with an eval key but then
+    /// call `mul_no_relin()` + `decrypt_degree2()` instead of `mul()`,
+    /// bypassing relinearize/rescale entirely. `test_homomorphic_mul_diagnostic`
+    /// *does* call `mul()`, but asserts nothing about the result (it only
+    /// prints a `[FAIL]`/`[OK]` diagnosis line for a human to read) --
+    /// which is exactly the "wrong-but-plausible, no error raised" pattern
+    /// this repository's own `CLAUDE.md` already documents for a different
+    /// subsystem (the public-refresh `refresh(7) -> 34037` case). This one
+    /// was previously undocumented as far as this change found.
+    ///
+    /// This binding still exposes `mul()` faithfully (it *is* what
+    /// `nine65` provides, and gating it here would be a binding-layer
+    /// policy call outside this change's mandate to expose, not redesign,
+    /// the underlying crate) rather than hiding or silently disabling it.
+    /// But do not build anything on this method's output right now --
+    /// `mul_plain()` (verified exact; see `tests/`) is the safe alternative
+    /// wherever the multiplier is a known plaintext rather than a
+    /// ciphertext. See README.md "Known limitations" and
+    /// `tests/test_known_limitations.py`, which reproduces this from
+    /// Python and is intentionally marked `xfail(strict=True)`: it fails
+    /// today, and if it ever unexpectedly *passes*, that's the signal this
+    /// note (and the linked nine65 core issue) are stale and should be
+    /// revisited, not that the test is wrong.
+    ///
+    /// Before multiplying, this also checks that intermediate values won't
+    /// approach the anchor-capacity boundary tracked by
+    /// `arithmetic::boundary` (80%/90% thresholds, a *separate* concern
+    /// from either issue above -- it guards against an internal u128
+    /// overflow, not against wrong-but-plausible output). If the
+    /// configuration is borderline there, a Python warning is printed to
+    /// stderr.
     ///
     /// Any internal Rust panic (e.g., from an unexpected capacity overflow) is
     /// caught and converted to a Python ValueError, preventing Python process crash.
@@ -622,8 +722,16 @@ impl PyFHEContext {
     }
 }
 
+// Named `_nine65_python` (leading underscore) rather than `nine65_python`
+// because this is the compiled extension backing the pure-Python package of
+// the same name (see `python/nine65_python/__init__.py`, which does
+// `from ._nine65_python import *` and layers key-generation helpers and
+// friendlier constructors on top). The symbol name here must match the
+// last path component of `[tool.maturin] module-name` in `pyproject.toml`
+// — Python's import machinery resolves the `PyInit_<name>` entry point by
+// that name, not by the crate's `[lib] name`.
 #[pymodule]
-fn nine65_python(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _nine65_python(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyFHEConfig>()?;
     m.add_class::<PySecureConfig>()?;
     m.add_class::<PyFHEContext>()?;

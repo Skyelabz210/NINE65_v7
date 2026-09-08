@@ -1,0 +1,85 @@
+{
+  "schema": "nine65-op-timings-baseline-v1",
+  "generated_at_utc": "2026-09-03T00:00:00Z",
+  "notes": [
+    "Consumed by scripts/check_benchmark_regression.py. Matching against a",
+    "current op_timings.rs JSON capture is by the full config TUPLE",
+    "(n, primes, t) -- never by the 'config' name string alone. See that",
+    "script's module docstring and CLAUDE.md's documented secure_128",
+    "redefinition history for why: the SAME NAME has denoted three different",
+    "tuples across this project's history (N=4096/3 primes ->",
+    "N=8192/3 primes -> N=8192/4 primes).",
+    "",
+    "Four entries below transcribe the 'Performance Baselines' table in",
+    "CLAUDE.md (repo root), measured 2026-08-23 by",
+    "crates/nine65/tests/op_timings.rs, 4 vCPU shared container. Medians",
+    "over 5 rounds for the two N=8192 configs, 3 rounds for the two",
+    "N=16384 configs. Every round in that measurement decrypted and",
+    "asserted exactness, so none of these medians can come from a wrong",
+    "answer. See docs/BENCHMARK_REGRESSION_2026-09-03.md for the",
+    "reproduction run that verified these figures against current main."
+  ],
+  "configs": [
+    {
+      "config": "secure_128",
+      "n": 8192,
+      "primes": [998244353, 985661441, 754974721],
+      "t": 65537,
+      "rounds": 5,
+      "operations": {
+        "encrypt": { "median_ns": 5380000 },
+        "add": { "median_ns": 1405000 },
+        "public_mul": { "median_ns": 292400000 },
+        "symmetric_mul": { "median_ns": 82070000 },
+        "decrypt": { "median_ns": 1830000 }
+      },
+      "source": "CLAUDE.md 'Performance Baselines' table, measured 2026-08-23.",
+      "tuple_status": "STALE as of this baseline's commit. SecureConfig::secure_128() was re-cut from this 3-prime chain to a 4-prime chain on 2026-08-28 (docs/OPEN_WORK_2026-08-26.md section A3; commits bc7b620 and 0b200af removed the 3-prime `hardware_opt` chain outright). Current main's secure_128 no longer produces this tuple -- it is now numerically identical to the secure_128_deep tuple below. Kept here for historical/citation completeness: check_benchmark_regression.py correctly reports NO BASELINE when a current secure_128 capture (now 4 primes) is compared against this entry, rather than silently diffing two different workloads under one name. A current secure_128 run's tuple instead matches the secure_128_deep entry below, and is compared against that entry's numbers."
+    },
+    {
+      "config": "secure_128_deep",
+      "n": 8192,
+      "primes": [998244353, 985661441, 754974721, 469762049],
+      "t": 65537,
+      "rounds": 5,
+      "operations": {
+        "encrypt": { "median_ns": 6600000 },
+        "add": { "median_ns": 1528000 },
+        "public_mul": { "median_ns": 408660000 },
+        "symmetric_mul": { "median_ns": 93140000 },
+        "decrypt": { "median_ns": 2510000 }
+      },
+      "source": "CLAUDE.md 'Performance Baselines' table, measured 2026-08-23. This tuple is unchanged on current main and is also, since the 2026-08-28 secure_128 re-cut, the tuple SecureConfig::secure_128() itself now produces -- a current op_timings capture for EITHER config name matches this entry."
+    },
+    {
+      "config": "secure_192",
+      "n": 16384,
+      "primes": [998244353, 985661441, 754974721, 469762049, 167772161],
+      "t": 65537,
+      "rounds": 3,
+      "operations": {
+        "encrypt": { "median_ns": 23090000 },
+        "add": { "median_ns": 5488000 },
+        "public_mul": { "median_ns": 1114120000 },
+        "symmetric_mul": { "median_ns": 247210000 },
+        "decrypt": { "median_ns": 7510000 }
+      },
+      "source": "CLAUDE.md 'Performance Baselines' table, measured 2026-08-23. Tuple unchanged on current main."
+    },
+    {
+      "config": "secure_256",
+      "n": 16384,
+      "primes": [998244353, 985661441, 754974721, 469762049, 167772161, 595591169],
+      "t": 65537,
+      "rounds": 3,
+      "operations": {
+        "encrypt": { "median_ns": 22410000 },
+        "add": { "median_ns": 5943000 },
+        "public_mul": { "median_ns": 1017910000 },
+        "symmetric_mul": { "median_ns": 262960000 },
+        "decrypt": { "median_ns": 7780000 }
+      },
+      "source": "CLAUDE.md 'Performance Baselines' table, measured 2026-08-23. Tuple unchanged on current main."
+    }
+  ]
+}

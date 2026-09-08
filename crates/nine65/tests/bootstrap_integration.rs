@@ -40,7 +40,7 @@ use nine65::entropy::ShadowHarvester;
 use nine65::errors::{Nine65Error, Nine65Result};
 use nine65::keys::bootstrap::{mod_inverse_u128, BOOTSTRAP_PRIMES};
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
-use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+use nine65::ops::auto_bootstrap::{AutoBootstrapEvaluator, TrackedCiphertext};
 use nine65::ops::bootstrap::{crt_reconstruct_2, ClockworkBootstrap};
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::secure_configs::SecureConfig;
@@ -434,10 +434,11 @@ fn setup_evaluator() -> (
     (work_ctx, bootstrap, work_keys, boot_keys, config)
 }
 
-#[ignore = "VESTIGIAL: asserts AutoBootstrapEvaluator::new starts with zero muls, zero bootstraps and a full budget. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+#[ignore = "VESTIGIAL: asserts AutoBootstrapEvaluator::new starts with zero muls and zero bootstraps, and that a freshly-tracked ciphertext starts with a full budget. Noise/refresh state is now tracked per TrackedCiphertext (issue #93), not on the evaluator, so this exercises TrackedCiphertext::remaining_budget_mb instead of a since-removed evaluator-level accessor. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn test_evaluator_creation_defaults() {
-    let (work_ctx, bootstrap, _, boot_keys, config) = setup_evaluator();
+    let (work_ctx, bootstrap, work_keys, boot_keys, config) = setup_evaluator();
+    let mut rng = ShadowHarvester::with_seed(42);
     let dummy_evk = &boot_keys.bsk.eval_key;
     let evaluator = AutoBootstrapEvaluator::new(
         &work_ctx,
@@ -450,7 +451,11 @@ fn test_evaluator_creation_defaults() {
     assert_eq!(evaluator.bootstrap_count, 0);
     assert_eq!(evaluator.total_muls, 0);
     assert_eq!(evaluator.total_adds, 0);
-    assert!(evaluator.remaining_budget_mb() > 0);
+    let ct = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng),
+        &config,
+    );
+    assert!(ct.remaining_budget_mb() > 0);
 }
 
 #[ignore = "VESTIGIAL: asserts AutoBootstrapEvaluator::mul_auto increments total_muls. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
@@ -458,7 +463,10 @@ fn test_evaluator_creation_defaults() {
 fn test_evaluator_mul_increments_counter() {
     let (work_ctx, bootstrap, work_keys, boot_keys, config) = setup_evaluator();
     let mut rng = ShadowHarvester::with_seed(42);
-    let ct = work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng);
+    let ct = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng),
+        &config,
+    );
 
     let mut evaluator = AutoBootstrapEvaluator::new(
         &work_ctx,
@@ -484,7 +492,10 @@ fn test_evaluator_mul_increments_counter() {
 fn test_evaluator_add_increments_counter() {
     let (work_ctx, bootstrap, work_keys, boot_keys, config) = setup_evaluator();
     let mut rng = ShadowHarvester::with_seed(42);
-    let ct = work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng);
+    let ct = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng),
+        &config,
+    );
 
     let mut evaluator = AutoBootstrapEvaluator::new(
         &work_ctx,
@@ -502,12 +513,15 @@ fn test_evaluator_add_increments_counter() {
     assert_eq!(evaluator.total_adds, 10, "Should count 10 additions");
 }
 
-#[ignore = "VESTIGIAL: asserts the evaluator's noise budget falls after a multiply — the per-multiply depletion this substrate does not have. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+#[ignore = "VESTIGIAL: asserts a ciphertext's own noise budget falls after a multiply — the per-multiply depletion this substrate does not have. Noise state now lives on TrackedCiphertext, not the evaluator (issue #93). Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn test_evaluator_budget_decreases_after_mul() {
     let (work_ctx, bootstrap, work_keys, boot_keys, config) = setup_evaluator();
     let mut rng = ShadowHarvester::with_seed(42);
-    let ct = work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng);
+    let ct = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng),
+        &config,
+    );
 
     let mut evaluator = AutoBootstrapEvaluator::new(
         &work_ctx,
@@ -518,17 +532,19 @@ fn test_evaluator_budget_decreases_after_mul() {
         &config,
     );
 
-    let initial = evaluator.remaining_budget_mb();
-    let _ = evaluator.mul_auto(&ct, &ct);
+    let initial = ct.remaining_budget_mb();
+    let result = evaluator.mul_auto(&ct, &ct);
     // Budget should either decrease (normal) or reset (if bootstrap triggered)
-    let after = evaluator.remaining_budget_mb();
     if evaluator.bootstrap_count == 0 {
-        assert!(
-            after < initial,
-            "Budget should decrease after mul: {} < {}",
-            after,
-            initial
-        );
+        if let Ok(after_ct) = result {
+            let after = after_ct.remaining_budget_mb();
+            assert!(
+                after < initial,
+                "Budget should decrease after mul: {} < {}",
+                after,
+                initial
+            );
+        }
     }
 }
 
@@ -537,7 +553,10 @@ fn test_evaluator_budget_decreases_after_mul() {
 fn test_evaluator_triggers_bootstrap() {
     let (work_ctx, bootstrap, work_keys, boot_keys, config) = setup_evaluator();
     let mut rng = ShadowHarvester::with_seed(42);
-    let ct = work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng);
+    let ct = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng),
+        &config,
+    );
 
     let mut evaluator = AutoBootstrapEvaluator::new(
         &work_ctx,
@@ -565,26 +584,22 @@ fn test_evaluator_triggers_bootstrap() {
     );
 }
 
-#[ignore = "VESTIGIAL: asserts the evaluator's budget summary string renders in the expected shape. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+#[ignore = "VESTIGIAL: asserts a tracked ciphertext's budget summary string renders in the expected shape. The summary now lives on TrackedCiphertext, not the evaluator (issue #93). Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn test_evaluator_budget_summary_format() {
-    let (work_ctx, bootstrap, _, boot_keys, config) = setup_evaluator();
-    let evaluator = AutoBootstrapEvaluator::new(
-        &work_ctx,
-        &bootstrap,
-        &boot_keys.bsk,
-        &boot_keys.ksk,
-        &boot_keys.bsk.eval_key,
+    let (work_ctx, _bootstrap, work_keys, _boot_keys, config) = setup_evaluator();
+    let mut rng = ShadowHarvester::with_seed(42);
+    let ct = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng),
         &config,
     );
 
-    let summary = evaluator.budget_summary();
+    let summary = ct.budget_summary();
     assert!(
-        summary.contains("bootstraps:"),
-        "Summary missing 'bootstraps:'"
+        summary.contains("bits remaining"),
+        "Summary missing 'bits remaining': {}",
+        summary
     );
-    assert!(summary.contains("muls:"), "Summary missing 'muls:'");
-    assert!(summary.contains("adds:"), "Summary missing 'adds:'");
 }
 
 // =========================================================================
@@ -1003,7 +1018,10 @@ fn test_stress_50_sequential_muls() {
         .generate_keys(&work_keys.secret_key, &mut rng)
         .expect("KeyGen");
 
-    let ct_x = work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng);
+    let ct_x = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(2, &work_keys.public_key, &mut rng),
+        &config,
+    );
     let mut evaluator = AutoBootstrapEvaluator::new(
         &work_ctx,
         &bootstrap,
@@ -1049,8 +1067,14 @@ fn test_stress_100_alternating_ops() {
         .generate_keys(&work_keys.secret_key, &mut rng)
         .expect("KeyGen");
 
-    let ct_a = work_ctx.encrypt_dual(3, &work_keys.public_key, &mut rng);
-    let ct_b = work_ctx.encrypt_dual(5, &work_keys.public_key, &mut rng);
+    let ct_a = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(3, &work_keys.public_key, &mut rng),
+        &config,
+    );
+    let ct_b = TrackedCiphertext::fresh(
+        work_ctx.encrypt_dual(5, &work_keys.public_key, &mut rng),
+        &config,
+    );
 
     let mut evaluator = AutoBootstrapEvaluator::new(
         &work_ctx,

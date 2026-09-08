@@ -9,6 +9,13 @@
 #   - bin/ directory (benchmark/demo binaries, not library code)
 #   - Comments and doc strings
 #
+# The test-code and bin/ exemptions here are intentional — they are the OTHER
+# gate's job: scripts/check_no_floats_benches_and_tests.py covers benches/,
+# tests/, examples/, src/bin/ across every crate, plus the #[cfg(test)]
+# regions this script skips in a curated list of files (issue #90). Together
+# the two gates cover "no floating point in owned Rust source", split along
+# the production/benchmark-and-test-harness line rather than overlapping.
+#
 # Exit 0 if clean, exit 1 if violations found.
 
 set -euo pipefail

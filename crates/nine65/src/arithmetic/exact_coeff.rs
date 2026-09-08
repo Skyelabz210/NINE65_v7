@@ -12,6 +12,14 @@
 //! # Theorem Reference
 //! - Proof File: `ExactCoefficient.v`
 //! - Status: VERIFIED
+//!
+//! # Relationship to the production K-Elimination record (issue #70 index)
+//!
+//! Built on [`super::exact_divider::ExactDivider`] — see that module's own
+//! note. This dual-track coefficient representation has no live production
+//! caller; it is exercised only by its own tests and by
+//! `arithmetic::ct_mul_exact`. See
+//! `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` for the full inventory.
 
 use super::exact_divider::ExactDivider;
 

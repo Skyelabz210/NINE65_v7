@@ -44,11 +44,19 @@ The phrase “shadow entropy” does not authorize replacing a CSPRNG. Code and 
 ## 3. Shadow Butterfly Noise Injection — retired
 
 SBNI is retired (2026-08-09) and is not part of the current entropy model.
-`crates/nine65/src/ops/sbni.rs` is kept on disk as the record of the removal
-but is not compiled into the crate (`pub mod sbni;` was removed from
-`ops/mod.rs`). See `docs/LADDER_REMOVAL.md` §1 for the full record and
+`pub mod sbni;` was removed from `ops/mod.rs` at that date, and
+`crates/nine65/src/ops/sbni.rs` itself was subsequently deleted outright
+(issue #68, 2026-09-03) rather than kept as an unreachable file. See
+`docs/LADDER_REMOVAL.md` §1 for the full retirement record and
 `docs/RETIRED_MECHANISMS.md` for the companion retirement of modulus
 switching and the noise-exhaustion ladder.
+
+The same pass deleted `crates/nine65/src/entropy/wassan_noise.rs`
+(`WassanNoiseField`, "WASSAN Holographic Noise Field"). It was never
+authorized by this document's entropy sources above, had zero production
+callers, and sat behind the non-default `shadow-entropy` feature; only its
+own tests ever constructed one. It is not, and never was, part of the
+current entropy model either.
 
 The mechanism never delivered the properties this section used to claim for
 it: its "butterfly entropy" was an NTT over a hardcoded constant through

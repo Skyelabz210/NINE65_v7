@@ -34,6 +34,17 @@ use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 #[path = "track1_exact_multiply_lock.rs"]
 mod track1_exact_multiply_lock;
 
+/// WR-1 (T1.4/T1.5) derived-transient exact evaluator multiply.
+///
+/// Declared as a CHILD of `ops::rns_fhe` rather than a sibling under `ops` so
+/// it can reach this module's private polynomial helpers
+/// (`to_montgomery_form`, `convert_from_montgomery_form`, `rns_poly_mul`,
+/// `sample_cbd_signed_rng`, `signed_to_mod`) without widening any production
+/// visibility — the same technique `track1_exact_multiply_lock` uses. It is
+/// re-exported from `ops` for callers.
+#[path = "exact_mul.rs"]
+pub mod exact_mul;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]
@@ -883,6 +894,18 @@ pub enum MulRoute {
     /// Dual-RNS with K-Elimination rescaling (exact)
     /// Required when Δ² > Q or exact mode requested
     KElimDual,
+    /// WR-1 derived-transient exact route (`ops::exact_mul`): main-`Q` only on
+    /// the wire, auxiliary residues derived inside one call and zeroized
+    /// before return, exact BFV scale-and-round via `ExactScaleRound`.
+    ///
+    /// **Explicitly routed, never auto-routed.** [`RNSFHEContext::mul_route`]
+    /// does not return this variant and `mul_auto` cannot select it; a caller
+    /// reaches it only through
+    /// [`RNSFHEContext::try_exact_evaluator`](RNSFHEContext::try_exact_evaluator).
+    /// That is WR-1 invariant 9: the legacy fail-closed guards stay exactly as
+    /// they are until the exact route passes its own differential and WIRE-Q
+    /// closure.
+    DerivedTransientExact,
 }
 
 /// Auto-routed key set (either Single or Dual regime)
@@ -1222,7 +1245,11 @@ impl RNSFHEContext {
     ///
     /// `sampled_mask_anchor_lanes_agree_with_the_main_lanes` asserts the
     /// two tracks agree; it is what caught the transduction attempt above.
-    fn sample_uniform_dual_poly<R: FheRng>(&self, rng: &mut R, main_primes: &[u64]) -> DualRNSPoly {
+    pub(crate) fn sample_uniform_dual_poly<R: FheRng>(
+        &self,
+        rng: &mut R,
+        main_primes: &[u64],
+    ) -> DualRNSPoly {
         let modulus = U256::product_u64s(main_primes);
         let bits = modulus.bitlen();
         let anchor_primes = &self.dual_rns.anchor.primes;
@@ -1274,6 +1301,72 @@ impl RNSFHEContext {
             anchor,
             n: self.n,
         }
+    }
+
+    /// Single-RNS counterpart of [`Self::sample_uniform_dual_poly`]: a
+    /// polynomial whose every coefficient is drawn **uniformly over `[0, Q)`**
+    /// and then reduced into each main lane independently.
+    ///
+    /// Returns standard-domain (non-Montgomery) residues.
+    ///
+    /// # Why this exists
+    ///
+    /// The single-RNS key generator used to build `a` as
+    /// `RNSPolynomial::from_poly(&(0..n).map(|_| rng.next_u64()), ...)` —
+    /// one 64-bit draw reduced into every lane. That confines `a` to `2^64` of
+    /// the `2^log2(Q)` values the RLWE assumption requires it to range over
+    /// (`2^119` for `secure_128`, `2^175` for `secure_256`), which is a real
+    /// deviation from "`a` uniform over the ring", not a rounding detail. It is
+    /// the defect named in
+    /// `docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md` "Security
+    /// prerequisites" and in WR-1's own prerequisite list.
+    ///
+    /// Rejection sampling gives exact uniformity with no modulo bias; every
+    /// lane is an independent reduction of ONE sampled value, so the lanes
+    /// describe a single integer by construction. Lane-independent
+    /// (`output[i] = f_i(input)`), and not a mixed-radix cascade: no lane reads
+    /// another.
+    pub(crate) fn sample_uniform_main_poly<R: FheRng>(&self, rng: &mut R) -> RNSPolynomial {
+        let primes = &self.config.primes;
+        // `U256::product_u64s` wraps silently past 256 bits, and a wrapped
+        // modulus would make the rejection bound meaningless. The sum of the
+        // lanes' bit lengths is an exact upper bound on `bitlen(Q)` computed in
+        // plain integers, so this check cannot itself overflow. Every shipped
+        // chain is at most 175 bits; this is a once-per-keygen guard against a
+        // future chain silently outgrowing the accumulator.
+        let sum_bits: u32 = primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        assert!(
+            sum_bits <= 256,
+            "sample_uniform_main_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
+        );
+        let modulus = U256::product_u64s(primes);
+        let bits = modulus.bitlen();
+
+        let mut limbs: Vec<Vec<u64>> = primes.iter().map(|_| Vec::with_capacity(self.n)).collect();
+        for _ in 0..self.n {
+            let value = loop {
+                let mut lo = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                let mut hi: u128 = 0;
+                if bits > 128 {
+                    hi = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                    let high_bits = bits - 128;
+                    if high_bits < 128 {
+                        hi &= (1u128 << high_bits) - 1;
+                    }
+                } else if bits < 128 {
+                    lo &= (1u128 << bits) - 1;
+                }
+                let candidate = U256 { lo, hi };
+                if candidate.lt(modulus) {
+                    break candidate;
+                }
+            };
+            for (lane, &prime) in limbs.iter_mut().zip(primes.iter()) {
+                lane.push(value.mod_u64(prime));
+            }
+        }
+
+        RNSPolynomial { limbs, n: self.n }
     }
 
     // ========================================================================
@@ -1332,6 +1425,14 @@ impl RNSFHEContext {
         match route {
             MulRoute::BajardSingle => AutoKeys::Single(self.generate_keys(rng)),
             MulRoute::KElimDual => AutoKeys::Dual(self.generate_keys_dual(rng)),
+            // `mul_route()` never selects the WR-1 exact route: it is
+            // explicitly constructed via `try_exact_evaluator`, never
+            // auto-routed (WR-1 invariant 9).
+            MulRoute::DerivedTransientExact => unreachable!(
+                "mul_route() cannot select MulRoute::DerivedTransientExact; the \
+                 WR-1 exact route is reached only through \
+                 RNSFHEContext::try_exact_evaluator"
+            ),
         }
     }
 
@@ -1511,6 +1612,12 @@ impl RNSFHEContext {
     }
 
     /// Reconstruct a CRT value from Montgomery residues.
+    ///
+    /// Test-only: called from `#[cfg(test)] mod tests` and from the
+    /// `track1_exact_multiply_lock` test child module, never from a
+    /// production path. `#[cfg(test)]` keeps it from warning as dead code
+    /// in a release build.
+    #[cfg(test)]
     fn to_int_montgomery(&self, residues: &[u64]) -> u128 {
         let standard: Vec<u64> = residues
             .iter()
@@ -1581,18 +1688,44 @@ impl RNSFHEContext {
         });
         let secret_key = RNSSecretKey { s: s_rns };
 
-        // Generate public key: pk = (pk0, pk1) where pk0 = -(a*s + e), pk1 = a
-        // Generate random a - coefficients uniform in [0, q_min) to be safe
-        let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-        let a_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&a_coeffs, &self.rns));
+        // Generate public key: pk = (pk0, pk1) where pk0 = -(a*s + e), pk1 = a.
+        //
+        // `a` is drawn uniformly over the WHOLE ring Z_Q[X]/(X^N+1), by
+        // rejection sampling on [0, Q) and reducing that one value into every
+        // lane. This used to be `rng.next_u64()` fed through
+        // `RNSPolynomial::from_poly`, i.e. ONE 64-bit draw reduced into every
+        // lane, which confines `a` to 2^64 of the 2^log2(Q) values RLWE
+        // requires (2^119 for secure_128, 2^175 for secure_256). That is the
+        // defect named in docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md
+        // "Security prerequisites"; `sample_uniform_dual_poly` already fixed
+        // the dual-RNS side, and this is its single-RNS counterpart.
+        let a_rns = self.to_montgomery_form(&self.sample_uniform_main_poly(rng));
 
-        // Generate small error e (secret material: zeroized on drop)
-        let e_coeffs: Zeroizing<Vec<u64>> = Zeroizing::new(
+        // Generate small error e (secret material: zeroized on drop).
+        //
+        // Encoded per lane from the SIGNED sample. The previous form sampled
+        // `q_min + sum` once and let `RNSPolynomial::from_poly` reduce that one
+        // representative into every lane; because `q_min + sum < q_j` for every
+        // other lane, the RNS object then represented the integer `q_min + sum`
+        // (about 2^29) rather than the intended `sum` in {-eta..eta}. That is
+        // a consistent RNS value, so it decrypted -- it just spent ~29 bits of
+        // noise budget per coefficient for nothing. `signed_to_mod` per lane is
+        // the encoding the dual-RNS path already uses.
+        let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
             (0..self.n)
-                .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
+                .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
                 .collect(),
         );
-        let e_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e_coeffs, &self.rns));
+        let e_limbs: Vec<Vec<u64>> = self
+            .config
+            .primes
+            .iter()
+            .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+            .collect();
+        let e_rns = self.to_montgomery_form(&RNSPolynomial {
+            limbs: e_limbs,
+            n: self.n,
+        });
 
         // Compute a*s in RNS (NTT multiply in each limb)
         let as_rns = self.rns_poly_mul(&a_rns, &secret_key.s);
@@ -1616,7 +1749,6 @@ impl RNSFHEContext {
     /// Generate evaluation key for relinearization with a caller-provided RNG.
     fn generate_eval_key_with_rng<R: FheRng>(&self, sk: &RNSSecretKey, rng: &mut R) -> RNSEvalKey {
         crate::entropy::require_secure_rng(rng, "generate_eval_key_with_rng");
-        let q_min = self.smallest_prime();
         let decomp_base = 1u64 << 16; // 2^16 decomposition base
                                       // Number of digits based on Q size (use stored q_bits, not leading_zeros)
         let q_bits = self.q_bits;
@@ -1644,17 +1776,28 @@ impl RNSFHEContext {
                 })
                 .collect();
 
-            // Generate random a_i
-            let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-            let a_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&a_coeffs, &self.rns));
+            // Generate random a_i, uniform over [0, Q) -- see the note in
+            // `generate_keys_with_rng` on why the previous single-u64 draw was
+            // a security defect and not a rounding detail.
+            let a_rns = self.to_montgomery_form(&self.sample_uniform_main_poly(rng));
 
-            // Generate error e_i (secret material: zeroized on drop)
-            let e_coeffs: Zeroizing<Vec<u64>> = Zeroizing::new(
+            // Generate error e_i, encoded per lane from the SIGNED sample
+            // (secret material: zeroized on drop).
+            let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
                 (0..self.n)
-                    .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
+                    .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
                     .collect(),
             );
-            let e_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e_coeffs, &self.rns));
+            let e_limbs: Vec<Vec<u64>> = self
+                .config
+                .primes
+                .iter()
+                .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            let e_rns = self.to_montgomery_form(&RNSPolynomial {
+                limbs: e_limbs,
+                n: self.n,
+            });
 
             // rlk0_i = -(a_i * s + e_i) + power * s^2
             let as_rns = self.rns_poly_mul(&a_rns, &sk.s);
@@ -1698,7 +1841,6 @@ impl RNSFHEContext {
     ) -> RNSCiphertext {
         crate::entropy::require_secure_rng(rng, "encrypt_with_rng");
         assert!(m < self.t, "Plaintext must be < t");
-        let q_min = self.smallest_prime();
 
         // Encode message: m * Δ in RNS form
         // For each limb i: (m * delta_rns[i]) mod prime[i]
@@ -1747,16 +1889,26 @@ impl RNSFHEContext {
             n: self.n,
         });
 
-        // Generate errors e1, e2
-        let e1_coeffs: Vec<u64> = (0..self.n)
-            .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
-            .collect();
-        let e1_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e1_coeffs, &self.rns));
-
-        let e2_coeffs: Vec<u64> = (0..self.n)
-            .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
-            .collect();
-        let e2_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e2_coeffs, &self.rns));
+        // Generate errors e1, e2, encoded per lane from the SIGNED sample. See
+        // the note in `generate_keys_with_rng`: sampling `q_min + sum` once and
+        // reducing it into every lane made the RNS object represent ~2^29
+        // instead of a value in {-eta..eta}, spending noise budget for nothing.
+        let signed_error = |rng: &mut R| -> RNSPolynomial {
+            let signed: Zeroizing<Vec<i64>> = Zeroizing::new(
+                (0..self.n)
+                    .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
+                    .collect(),
+            );
+            let limbs: Vec<Vec<u64>> = self
+                .config
+                .primes
+                .iter()
+                .map(|&p| signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            self.to_montgomery_form(&RNSPolynomial { limbs, n: self.n })
+        };
+        let e1_rns = signed_error(rng);
+        let e2_rns = signed_error(rng);
 
         // c0 = pk0 * u + e1 + m
         let pk0_u = self.rns_poly_mul(&pk.pk0, &u_rns);
@@ -3762,8 +3914,9 @@ impl RNSFHEContext {
         // the hardcoded constant vec![123u64; n] through fixed twiddles, giving
         // the same shadow vector on every call, keyed only by a monotonic
         // counter — publicly recomputable, therefore masking nothing.
-        // See crates/nine65/src/ops/sbni.rs (retired) and
-        // docs/RETIRED_MECHANISMS.md.
+        // `src/ops/sbni.rs` (the retired implementation) was removed entirely
+        // per issue #68; see docs/LADDER_REMOVAL.md §1 and
+        // docs/RETIRED_MECHANISMS.md for the historical record.
 
         // Step 3: PUBLIC relinearization of the rescaled, canonical d2.
         let (relin_c0, relin_c1) = self.relinearize_dual(&d2_s, evk)?;
@@ -4910,7 +5063,22 @@ impl RNSFHEContext {
             let v_centered = SignedU256::center(v_m, m_level, m_half);
 
             // Round(v_centered / q_last)
-            let (mut q_mag, rem) = v_centered.mag.div_mod_u64(q_last);
+            //
+            // F-2 (`docs/CT_VERIFICATION_PLAN.md` §4.2, `docs/F2_SCOPE_2026-08-25.md`):
+            // `div_mod_u64` is hardware limb division whose cost was measured
+            // to scale with `v_centered.mag`'s magnitude -- a 2.96x gap
+            // between all-zero and uniform-random coefficients, the largest
+            // timing dependence measured anywhere in this codebase.
+            // `div_mod_u64_ct` performs the identical division with a fixed
+            // 256 iterations regardless of the dividend, closing the leak at
+            // its measured cause without changing the rounding semantics
+            // below (still `round-half-up-on-magnitude` on the exact same
+            // `(quotient, remainder)` pair). The `if rem >= q_last_half`
+            // branch that follows is unchanged: `docs/CT_VERIFICATION_PLAN.md`
+            // §4.1 measured it constant-time on its own (magnitude-matched
+            // positive-vs-negative contrast), and the `mag` magnitude was the
+            // established leak, not this branch.
+            let (mut q_mag, rem) = v_centered.mag.div_mod_u64_ct(q_last);
             if rem >= q_last_half {
                 q_mag = q_mag.add(U256::one());
             }
@@ -5236,6 +5404,13 @@ impl RNSFHEContext {
     // in NTT form and doing point-wise rescaling.
 
     /// Convert dual polynomial to NTT form
+    ///
+    /// Test-only: no production path calls this quartet directly (production
+    /// multiply goes through `mul_dual_public`/`mul_dual_symmetric`, not a
+    /// manual to_ntt_form/ntt_pointwise_mul/to_coefficient_form pipeline).
+    /// `#[cfg(test)]` keeps them from warning as dead code in a release
+    /// build while the tests that exercise this pipeline keep using them.
+    #[cfg(test)]
     fn to_ntt_form(&self, poly: &DualRNSPoly) -> DualRNSPoly {
         // Transform main limbs to NTT form
         let main_ntt: Vec<Vec<u64>> = poly
@@ -5263,6 +5438,9 @@ impl RNSFHEContext {
     /// Convert a dual-RNS polynomial from NTT form back to coefficient form.
     ///
     /// This performs the inverse NTT on both main and anchor limbs.
+    ///
+    /// Test-only; see `to_ntt_form`.
+    #[cfg(test)]
     fn to_coefficient_form(&self, poly_ntt: &DualRNSPoly) -> DualRNSPoly {
         let main: Vec<Vec<u64>> = poly_ntt
             .main
@@ -5286,6 +5464,9 @@ impl RNSFHEContext {
     }
 
     /// Point-wise multiplication in NTT domain (both inputs must be in NTT form)
+    ///
+    /// Test-only; see `to_ntt_form`.
+    #[cfg(test)]
     fn ntt_pointwise_mul(&self, a_ntt: &DualRNSPoly, b_ntt: &DualRNSPoly) -> DualRNSPoly {
         // Main: point-wise multiply
         let main: Vec<Vec<u64>> = a_ntt
@@ -5322,11 +5503,6 @@ impl RNSFHEContext {
             anchor,
             n: a_ntt.n,
         }
-    }
-
-    /// Point-wise addition in NTT domain
-    fn ntt_pointwise_add(&self, a_ntt: &DualRNSPoly, b_ntt: &DualRNSPoly) -> DualRNSPoly {
-        self.dual_poly_add(a_ntt, b_ntt) // Same as coefficient-domain add
     }
 
     // NOTE: k_elim_rescale_ntt_domain was removed during audit hardening.
@@ -6402,16 +6578,21 @@ fn sample_cbd_signed_rng<R: FheRng>(rng: &mut R, eta: usize) -> i64 {
     sum // Returns value in {-eta, ..., +eta}
 }
 
-/// Sample from centered binomial distribution with generic RNG
-fn sample_cbd_rng<R: FheRng>(rng: &mut R, eta: usize, q: u64) -> u64 {
-    let sum = sample_cbd_signed_rng(rng, eta);
-
-    if sum >= 0 {
-        sum as u64
-    } else {
-        (q as i64 + sum) as u64
-    }
-}
+// REMOVED (WR-1 security prerequisite): `sample_cbd_rng(rng, eta, q)` returned
+// `q + sum` for a negative sample, i.e. a representative valid modulo ONE
+// prime. Every remaining caller then handed that single value to
+// `RNSPolynomial::from_poly`, which reduces it into every lane — and since the
+// callers passed `q_min`, and `q_min + sum < q_j` for every other lane, the
+// resulting RNS object represented the integer `q_min + sum` (about 2^29)
+// rather than a value in `{-eta..eta}`. Consistent across lanes, so it
+// decrypted; it just burned ~29 bits of noise budget per coefficient.
+//
+// The dual-RNS path had already been repaired for exactly this reason (see the
+// "BUG FIX: sample_cbd uses q_min for signed representation" comment in
+// `encrypt_dual_with_rng`); the single-RNS path had not. Both now sample a
+// signed value with `sample_cbd_signed_rng` and encode it per lane with
+// `signed_to_mod`, so the function has no callers left and is deleted rather
+// than left available to be reached for again.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THREAD SAFETY STATIC ASSERTIONS
@@ -12956,7 +13137,7 @@ mod tests {
     #[test]
     fn test_mul_dual_symmetric_large_values_secure_128() {
         // TDD: Verify mul_dual_symmetric handles large plaintext values near t-1
-        // at production N=4096 (secure_128). Previous tests only used small values
+        // at production N=8192 (secure_128). Previous tests only used small values
         // (2*3, 5*7). Large values stress the K-Elimination arithmetic near
         // modular boundaries where intermediate products are maximized.
         use crate::params::secure_configs::SecureConfig;
@@ -12992,7 +13173,7 @@ mod tests {
 
     #[test]
     fn test_mul_dual_symmetric_depth2_secure_128_deep() {
-        // TDD: Test depth-2 chaining in symmetric mode at N=4096.
+        // TDD: Test depth-2 chaining in symmetric mode at N=8192.
         // secure_128_deep has 4 primes (~120-bit Q), giving headroom for 2 muls.
         // Note: symmetric mode has NO auto mod-switch (unlike public mode),
         // so this tests whether the K-Elimination rescale alone maintains
@@ -13160,6 +13341,194 @@ mod tests {
         let ct_d2 = ctx.mul_dual_symmetric(&ct_d1, &ct_d1, &keys.secret_key);
         let dec_d2 = ctx.decrypt_dual(&ct_d2, &keys.secret_key);
         println!("[diag] depth-2 decrypt = {} (want 81)", dec_d2);
+    }
+
+    /// Generalizes `diag_depth2_k_capacity_probe_secure_128_deep` to all four
+    /// named configs (issue #81 acceptance criterion: "Validate secure_128,
+    /// secure_128_deep, secure_192, and secure_256 separately" /
+    /// "Measure the required exact range for the tensor product against the
+    /// operative anchor capacity. Do not infer sufficiency from anchor count
+    /// alone.").
+    ///
+    /// Unlike the integration-test matrix in
+    /// `tests/depth2_full_matrix_issue81.rs` (which can only see the FINAL
+    /// post-rescale ciphertext, always canonically bounded to `[0, Q)` and
+    /// hence always `k=0` by construction), this measures the RAW
+    /// tensor-product terms `d0`/`d1`/`d2` -- the actual site where the
+    /// historical bug lived (`extract_k_rns_level`'s anchor-prime selection,
+    /// called from `k_elim_rescale_dual` on these exact terms, before
+    /// rescale divides them back down). This is the same technique
+    /// `diag_depth2_k_capacity_probe_secure_128_deep` and `probe_stage`
+    /// established, generalized over configs, and fixing one bug that
+    /// technique's original hardcoding masked: `probe_stage` computed its
+    /// "production capacity" from `ctx.dual_rns.anchor.primes.len()`
+    /// (ALL anchors), which happens to equal
+    /// `k_reconstruction_anchor_count()` for `secure_128`/`secure_128_deep`
+    /// (7 total anchors, min(7,8)=7) but would be WRONG for `secure_192`/
+    /// `secure_256` (10 total anchors, min(10,8)=8 -- production only
+    /// reconstructs from 8, treating the other 2 as witnesses). This probe
+    /// uses `k_reconstruction_anchor_count()` directly instead.
+    #[test]
+    fn diag_depth2_k_capacity_probe_all_configs() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let configs: [(&str, SecureConfig); 4] = [
+            ("secure_128", SecureConfig::secure_128()),
+            ("secure_128_deep", SecureConfig::secure_128_deep()),
+            ("secure_192", SecureConfig::secure_192()),
+            ("secure_256", SecureConfig::secure_256()),
+        ];
+
+        for (name, secure_config) in configs {
+            let ctx = RNSFHEContext::new(&secure_config.config);
+            let mut rng = ShadowHarvester::with_seed(12345);
+            let keys = ctx.generate_keys_dual(&mut rng);
+
+            let k_primes = ctx.dual_rns.k_reconstruction_anchor_count();
+            let a_used_bits: u32 = ctx.dual_rns.anchor.primes[..k_primes]
+                .iter()
+                .map(|&p| 64 - p.leading_zeros())
+                .sum();
+            let m_bits: u32 = ctx
+                .config
+                .primes
+                .iter()
+                .map(|&p| 64 - p.leading_zeros())
+                .sum();
+            println!(
+                "\n=== {name}: n={} main_primes={} (M={} bits) total_anchors={} \
+                 k_reconstruction_anchor_count={} (A_used~{} bits, half~{} bits) ===",
+                ctx.n,
+                ctx.config.primes.len(),
+                m_bits,
+                ctx.dual_rns.anchor.primes.len(),
+                k_primes,
+                a_used_bits,
+                a_used_bits.saturating_sub(1)
+            );
+
+            let base = 3u64;
+            let ct_base = ctx.encrypt_dual(base, &keys.public_key, &mut rng);
+            let ct_d1 = ctx.mul_dual_symmetric(&ct_base, &ct_base, &keys.secret_key);
+            assert_eq!(
+                ctx.decrypt_dual(&ct_d1, &keys.secret_key),
+                9,
+                "{name}: depth-1 squaring sanity check failed, probe would be measuring garbage"
+            );
+
+            probe_stage_generic(
+                &ctx,
+                name,
+                "DEPTH-1 (fresh x fresh)",
+                &ct_base,
+                &ct_base,
+                k_primes,
+                a_used_bits,
+            );
+            probe_stage_generic(
+                &ctx,
+                name,
+                "DEPTH-2 (d1out x d1out)",
+                &ct_d1,
+                &ct_d1,
+                k_primes,
+                a_used_bits,
+            );
+
+            let ct_d2 = ctx.mul_dual_symmetric(&ct_d1, &ct_d1, &keys.secret_key);
+            let dec_d2 = ctx.decrypt_dual(&ct_d2, &keys.secret_key);
+            assert_eq!(
+                dec_d2, 81,
+                "{name}: depth-2 squaring decrypt mismatch (got {dec_d2})"
+            );
+            println!("[diag] {name} depth-2 decrypt = {dec_d2} (want 81) CONFIRMED");
+        }
+    }
+
+    /// Helper for `diag_depth2_k_capacity_probe_all_configs`. Computes the
+    /// raw tensor-product terms d0/d1/d2 exactly as `mul_dual_symmetric`
+    /// does, then for every coefficient calls the PRODUCTION
+    /// `extract_k_rns_level` (the exact function/anchor-subset
+    /// `k_elim_rescale_dual` uses) and reports the true signed `k`
+    /// magnitude's bit length against the config's actual reconstruction
+    /// capacity -- asserting zero coefficients ever reach or exceed
+    /// half-capacity (the wraparound/aliasing boundary).
+    fn probe_stage_generic(
+        ctx: &RNSFHEContext,
+        cfg_name: &str,
+        label: &str,
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+        k_primes: usize,
+        a_used_bits: u32,
+    ) {
+        let ct_level = ct1.level;
+        assert_eq!(ct_level, ct2.level, "levels must match for this probe");
+        let level_primes = &ctx.config.primes[..ct_level];
+        let a_used = U256::product_u64s(&ctx.dual_rns.anchor.primes[..k_primes]);
+        let a_used_half = a_used.shr1();
+
+        let d0 = ctx.dual_poly_mul(&ct1.c0, &ct2.c0);
+        let c0_1_c1_2 = ctx.dual_poly_mul(&ct1.c0, &ct2.c1);
+        let c1_1_c0_2 = ctx.dual_poly_mul(&ct1.c1, &ct2.c0);
+        let d1 = ctx.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
+        let d2 = ctx.dual_poly_mul(&ct1.c1, &ct2.c1);
+
+        for (name, d) in [
+            ("d0=c0*c0", &d0),
+            ("d1=c0*c1+c1*c0", &d1),
+            ("d2=c1*c1", &d2),
+        ] {
+            let mut max_bits = 0u32;
+            let mut over_half_capacity = 0usize;
+            let mut main_res = vec![0u64; d.main.len()];
+            let mut anchor_res = vec![0u64; d.anchor.len()];
+
+            for i in 0..ctx.n {
+                for (j, limb) in d.main.iter().enumerate() {
+                    main_res[j] = limb[i];
+                }
+                for (j, limb) in d.anchor.iter().enumerate() {
+                    anchor_res[j] = limb[i];
+                }
+                let v_m = ctx.rns.to_u256_level(&main_res, ct_level);
+                let k = ctx
+                    .dual_rns
+                    .extract_k_rns_level(v_m, &anchor_res, level_primes)
+                    .unwrap_or_else(|e| {
+                        panic!(
+                            "{cfg_name} {label} {name} coeff {i}: extract_k_rns_level errored \
+                             (capacity exceeded): {e:?}"
+                        )
+                    });
+                let mag = if k.gt(a_used_half) { a_used.sub(k) } else { k };
+                let bits = mag.bitlen();
+                max_bits = max_bits.max(bits);
+                if mag.ge(a_used_half) {
+                    over_half_capacity += 1;
+                }
+            }
+
+            let margin_bits = a_used_bits.saturating_sub(1) as i64 - max_bits as i64;
+            println!(
+                "  {cfg_name:<16} {label:<26} {name:<16} max|true signed k| = {max_bits:>3} bits \
+                 (half-capacity = {:>3} bits, margin = {margin_bits:>4} bits) | \
+                 over-half-capacity coeffs = {over_half_capacity}/{}",
+                a_used_bits.saturating_sub(1),
+                ctx.n
+            );
+            assert_eq!(
+                over_half_capacity, 0,
+                "{cfg_name} {label} {name}: {over_half_capacity} coefficient(s) reached/exceeded \
+                 half-capacity -- anchor basis is insufficient for this tensor term"
+            );
+            assert!(
+                margin_bits > 0,
+                "{cfg_name} {label} {name}: max|k|={max_bits} bits leaves NO margin under the \
+                 {}-bit half-capacity",
+                a_used_bits.saturating_sub(1)
+            );
+        }
     }
 
     /// Reports how many coefficients of `poly` have a nonzero true k relative
@@ -15673,13 +16042,13 @@ mod gate {
         for &(x, y) in &v {
             s = s.wrapping_add(((x as u128 * y as u128) % p as u128) as u64);
         }
-        let hw = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let hw_total_ns = t.elapsed().as_nanos();
         let t = Instant::now();
         let mut s2 = 0u64;
         for &(x, y) in &v {
             s2 = s2.wrapping_add(pm.mul(x, y));
         }
-        let mont = t.elapsed().as_nanos() as f64 / v.len() as f64;
+        let mont_total_ns = t.elapsed().as_nanos();
         let t = Instant::now();
         let mut s3 = 0u128;
         for &(x, y) in v.iter().take(4000) {
@@ -15687,15 +16056,22 @@ mod gate {
                 x as u128, y as u128, p as u128,
             ));
         }
-        let ct = t.elapsed().as_nanos() as f64 / 4000.0;
+        let ct_total_ns = t.elapsed().as_nanos();
+        let hw = crate::arithmetic::integer_math::format_ratio(hw_total_ns, v.len() as u128, 2);
+        let mont = crate::arithmetic::integer_math::format_ratio(mont_total_ns, v.len() as u128, 2);
+        let ct = crate::arithmetic::integer_math::format_ratio(ct_total_ns, 4000, 2);
         println!("GATE {}", "-".repeat(50));
-        println!("GATE modmul.hardware              {hw:>12.2}");
-        println!("GATE modmul.montgomery            {mont:>12.2}");
-        println!("GATE modmul.ct_loop               {ct:>12.2}");
+        println!("GATE modmul.hardware              {hw:>12}");
+        println!("GATE modmul.montgomery            {mont:>12}");
+        println!("GATE modmul.ct_loop               {ct:>12}");
         println!("GATE FLOAT_REFERENCE f64 modmul measured 1.10-1.28x vs hardware,");
         println!(
-            "GATE   vectorized only. montgomery/hardware = {:.2}x -- must stay > 1.28",
-            hw / mont.max(0.001)
+            "GATE   vectorized only. montgomery/hardware = {}x -- must stay > 1.28",
+            // hw and mont both divide by v.len(), so it cancels exactly out
+            // of (hw_total_ns/len) / (mont_total_ns/len) == hw_total_ns /
+            // mont_total_ns -- computed directly from the totals to avoid
+            // compounding two roundings into one.
+            crate::arithmetic::integer_math::format_ratio(hw_total_ns, mont_total_ns.max(1), 2)
         );
         assert!(s | s2 as u64 | s3 as u64 != 12345678);
     }

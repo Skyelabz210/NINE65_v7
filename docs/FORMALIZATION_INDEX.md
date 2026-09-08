@@ -98,4 +98,4 @@ modules. See `lean4/KElimination/KElimination.lean` and the
 - Module documentation carries "Theorem Reference" blocks pointing to the
   relevant proof files.
 - v6 additions are gated behind the `clockwork` feature flag.
-- Error variant coverage tests in `tests/error_variant_coverage.rs` verify all 29 variants.
+- Error variant coverage tests in `tests/error_variant_coverage.rs` verify all 30 variants.

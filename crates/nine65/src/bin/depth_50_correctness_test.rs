@@ -1,7 +1,7 @@
 //! Correctness-checked Depth-50 test for NINE65 v7.
 //! Verifies that the depth-50 claim is backed by actual decryption success.
 
-use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+use nine65::ops::auto_bootstrap::{AutoBootstrapEvaluator, TrackedCiphertext};
 use nine65::ops::bootstrap::ClockworkBootstrap;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
@@ -35,19 +35,24 @@ fn main() {
 
     let factor: u64 = 2;
     let mut expected_plaintext: u64 = 1;
-    let mut ct = ctx.encrypt_dual(expected_plaintext, &keys.public_key, &mut rng);
+    let mut ct = TrackedCiphertext::fresh(
+        ctx.encrypt_dual(expected_plaintext, &keys.public_key, &mut rng),
+        &config,
+    );
 
     let start = Instant::now();
     for d in 1..=50 {
         println!("  Testing Depth {}...", d);
-        ct = evaluator
-            .mul_auto(&ct, &ctx.encrypt_dual(factor, &keys.public_key, &mut rng))
-            .unwrap();
+        let factor_ct = TrackedCiphertext::fresh(
+            ctx.encrypt_dual(factor, &keys.public_key, &mut rng),
+            &config,
+        );
+        ct = evaluator.mul_auto(&ct, &factor_ct).unwrap();
         expected_plaintext = (expected_plaintext * factor) % config.t;
 
         // Decrypt and verify every 10 depths to ensure no silent failure
         if d % 10 == 0 {
-            let decrypted = ctx.decrypt_dual(&ct, &keys.secret_key);
+            let decrypted = ctx.decrypt_dual(&ct.ct, &keys.secret_key);
             if decrypted == expected_plaintext {
                 println!("  Depth {:>2}: SUCCESS (Correctness Verified)", d);
             } else {

@@ -45,7 +45,7 @@ jobs:
         with:
           submodules: false
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.89.0
 
       - name: Compile exact benchmark
         run: cargo check -p nine65 --bin nine65_bench --features serde

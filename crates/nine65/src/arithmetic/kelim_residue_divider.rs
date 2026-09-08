@@ -95,6 +95,10 @@
 //!   certificate-verified before being trusted" (what this module actually
 //!   does). Do not wire this projector into a live division call site under
 //!   the `BoundedResidueDivider` banner without resolving this first.
+//!
+//! For the full inventory of every K-Elimination-shaped implementation in
+//! this workspace and why each one is not merged into another, see
+//! `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md`.
 
 use core::sync::atomic::{AtomicU64, Ordering};
 

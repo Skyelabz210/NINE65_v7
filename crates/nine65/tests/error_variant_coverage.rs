@@ -295,6 +295,18 @@ fn test_error_bootstrap_overflow() {
     assert!(err.to_string().contains("bootstrap arithmetic overflow"));
 }
 
+#[test]
+fn test_error_bootstrap_security_unscreenable() {
+    let err = Nine65Error::BootstrapSecurityUnscreenable {
+        reason: "narrow lane".to_string(),
+    };
+    assert_eq!(err.category(), "Bootstrap");
+    assert!(!err.is_recoverable());
+    assert!(err
+        .to_string()
+        .contains("bootstrap security screen refused"));
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ENTROPY ERRORS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -421,6 +433,9 @@ fn test_all_variants_have_display() {
         Nine65Error::BootstrapOverflow {
             operation: "test".into(),
         },
+        Nine65Error::BootstrapSecurityUnscreenable {
+            reason: "test".into(),
+        },
         Nine65Error::EntropyFailure {
             reason: "test".into(),
         },
@@ -447,7 +462,7 @@ fn test_all_variants_have_display() {
     // be caught by code review or a future exhaustive match check.
     assert_eq!(
         variants.len(),
-        29,
+        30,
         "Update this test when adding new Nine65Error variants"
     );
 }

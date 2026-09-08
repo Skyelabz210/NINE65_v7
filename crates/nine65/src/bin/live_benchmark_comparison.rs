@@ -1,6 +1,7 @@
 //! Live Performance Benchmark Comparison: NINE65 v7 vs TFHE-rs
 //! Evaluates latency, memory footprint, and power efficiency across 128-bit and 256-bit tiers.
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::ops::bootstrap::ClockworkBootstrap;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
@@ -71,21 +72,24 @@ fn run_benchmark(name: &str, secure_config: SecureConfig, ops_count: usize) {
 
     println!("  Executed {} operations in {} ms", ops_count, total_ops_ms);
     println!(
-        "  Average Op Latency: {} us ({:.2} ms)",
+        "  Average Op Latency: {} us ({} ms)",
         avg_op_us,
-        avg_op_us as f64 / 1000.0
+        format_ratio(avg_op_us as u128, 1000, 2)
     );
 
-    // TFHE-rs comparative projection (based on official Zama 96-core EPYC benchmarks normalized to single core / sandbox)
-    let tfhe_proj_ms = match name {
-        "secure_128" => 75.0, // ~75ms per 64-bit integer product on equivalent core
-        _ => 240.0,           // ~240ms for larger parameters
+    // TFHE-rs comparative projection (based on official Zama 96-core EPYC
+    // benchmarks normalized to single core / sandbox), kept in exact
+    // microseconds: 75ms and 240ms are both whole milliseconds, so
+    // representing them as integer microseconds loses no precision.
+    let tfhe_proj_us: u64 = match name {
+        "secure_128" => 75_000, // ~75ms per 64-bit integer product on equivalent core
+        _ => 240_000,           // ~240ms for larger parameters
     };
     println!(
-        "  [Comparison] NINE65 v7 Op: {:.2} ms | TFHE-rs Proj: {:.2} ms | Speedup: {:.1}x",
-        avg_op_us as f64 / 1000.0,
-        tfhe_proj_ms,
-        tfhe_proj_ms / (avg_op_us as f64 / 1000.0)
+        "  [Comparison] NINE65 v7 Op: {} ms | TFHE-rs Proj: {} ms | Speedup: {}x",
+        format_ratio(avg_op_us as u128, 1000, 2),
+        format_ratio(tfhe_proj_us as u128, 1000, 2),
+        format_ratio(tfhe_proj_us as u128, avg_op_us.max(1) as u128, 1)
     );
 }
 

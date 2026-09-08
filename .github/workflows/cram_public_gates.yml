@@ -39,7 +39,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.89.0
 
       - name: Build (allow_insecure, release)
         run: cargo build -p nine65 --release --features allow_insecure
@@ -75,7 +75,7 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.89.0
       - name: CRAM-public op timings (informational)
         run: >-
           cargo test -p nine65 --test cram_public_timings --release

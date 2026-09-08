@@ -2,15 +2,17 @@
 //!
 //! Tests for NINE65 V2 components:
 //! - NTT FFT (O(N log N))
-//! - WASSAN Holographic Noise Field (requires shadow-entropy feature)
 //!
-//! Run with: cargo test --features v2,shadow-entropy v2_integration
+//! (WASSAN Holographic Noise Field tests were retired alongside issue #68 —
+//! `WassanNoiseField` had zero production callers and was removed entirely.
+//! See docs/ENTROPY_MODEL.md and docs/LADDER_REMOVAL.md.)
+//!
+//! Run with: cargo test --features shadow-entropy v2_integration
 
 #[cfg(all(test, feature = "shadow-entropy"))]
 mod v2_integration_tests {
     use crate::arithmetic::ntt::NTTEngine;
     use crate::arithmetic::ntt_fft::NTTEngineFFT;
-    use crate::entropy::wassan_noise::WassanNoiseField;
 
     const TEST_Q: u64 = 998244353;
 
@@ -105,79 +107,6 @@ mod v2_integration_tests {
     }
 
     // =========================================================================
-    // WASSAN NOISE TESTS
-    // =========================================================================
-
-    #[test]
-    fn test_wassan_deterministic() {
-        let mut w1 = WassanNoiseField::from_shadow_seed(42);
-        let mut w2 = WassanNoiseField::from_shadow_seed(42);
-
-        for _ in 0..1000 {
-            assert_eq!(w1.sample(), w2.sample(), "WASSAN not deterministic");
-        }
-    }
-
-    #[test]
-    fn test_wassan_ternary_distribution() {
-        let mut wassan = WassanNoiseField::from_shadow_seed(42);
-        let mut counts = [0u64; 3];
-
-        for _ in 0..30000 {
-            let t = wassan.ternary();
-            counts[(t + 1) as usize] += 1;
-        }
-
-        // Should be roughly uniform
-        for c in counts.iter() {
-            assert!(*c > 8000 && *c < 12000, "Ternary not uniform: {:?}", counts);
-        }
-    }
-
-    #[test]
-    fn test_wassan_polynomial() {
-        let mut wassan = WassanNoiseField::from_shadow_seed(42);
-        let poly = wassan.fhe_noise_polynomial(1024, TEST_Q, 8);
-
-        assert_eq!(poly.len(), 1024);
-        for &coeff in &poly {
-            assert!(coeff < TEST_Q);
-        }
-    }
-
-    #[test]
-    fn test_wassan_benchmark() {
-        if !perf_tests_enabled() {
-            eprintln!("skipping perf test; set NINE65_PERF_TESTS=1 to enable");
-            return;
-        }
-        let mut wassan = WassanNoiseField::from_shadow_seed(42);
-
-        let start = std::time::Instant::now();
-        let mut sum = 0u64;
-        for _ in 0..1_000_000 {
-            sum = sum.wrapping_add(wassan.sample());
-        }
-        let elapsed = start.elapsed();
-
-        println!(
-            "WASSAN 1M samples: {:?} ({:?}/sample)",
-            elapsed,
-            elapsed / 1_000_000
-        );
-        println!("Sum (anti-optimize): {}", sum);
-
-        // Target: < 80ms for 1M samples (~80ns/sample with parallel test overhead)
-        // Note: Parallel initialization adds thread spawn cost
-        let max_ms = perf_limit_ms(80, "NINE65_WASSAN_V2_MAX_MS");
-        assert!(
-            elapsed.as_millis() < max_ms,
-            "WASSAN too slow: {:?}",
-            elapsed
-        );
-    }
-
-    // =========================================================================
     // SPEEDUP COMPARISON
     // =========================================================================
 
@@ -214,19 +143,6 @@ mod v2_integration_tests {
             speedup_tenths / 10,
             speedup_tenths % 10
         );
-
-        // Entropy comparison
-        let mut wassan = WassanNoiseField::from_shadow_seed(42);
-
-        let start = std::time::Instant::now();
-        for _ in 0..10000 {
-            let _ = wassan.sample();
-        }
-        let wassan_time = start.elapsed();
-
-        println!("\nNoise Generation (x10000):");
-        println!("  WASSAN:   {:?}", wassan_time);
-        println!("  Per sample: {:?}", wassan_time / 10000);
 
         println!("\n=========================================\n");
     }

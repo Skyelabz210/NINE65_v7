@@ -1,6 +1,7 @@
 //! Resilience & Power Efficiency Audit for NINE65 v7.
 //! Audits Fault Injection detection (Safe Basis), DPA profile, and Power Utility.
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
 use std::time::Instant;
@@ -55,24 +56,32 @@ fn audit_dpa_profile() {
 fn audit_power_utility_profile() {
     println!("\n--- Phase 3: Hardware Power & Utility Profile (secure_256) ---");
 
-    // secure_256 Metrics (from previous audit)
-    let latency_ms = 9.2; // ms
-    let memory_mb = 4.0; // MB
-    let cores = 1.0; // Single-threaded normalization
+    // secure_256 Metrics (from previous audit), as exact integers scaled by
+    // 10 (one decimal digit) rather than floats.
+    const LATENCY_MS_X10: u128 = 92; // 9.2 ms
+    const MEMORY_MB: u128 = 4;
+    const CORES: u128 = 1; // Single-threaded normalization
 
-    // Power Projection (Normalized to 10W TDP Xeon)
-    let energy_per_op = (10.0 * (latency_ms / 1000.0)) / cores; // Joules
-    let ops_per_joule = 1.0 / energy_per_op;
+    // Power Projection (Normalized to 10W TDP Xeon), Joules:
+    //   energy_per_op = 10 * (latency_ms / 1000) / cores
+    //                 = LATENCY_MS_X10 / (1000 * CORES)        (exact fraction)
+    //   ops_per_joule = 1 / energy_per_op
+    //                 = (1000 * CORES) / LATENCY_MS_X10
+    let ops_per_joule_num = 1000u128 * CORES;
+    let ops_per_joule_den = LATENCY_MS_X10;
 
     // TFHE-rs Projection (Normalized)
     // TFHE on 96-core EPYC (280W) for 1.5ms = 0.42 Joules per op (but using 96 cores!)
     // Per-core efficiency: NINE65 is ~380x higher.
 
     println!("  Config: secure_256 (Residue Core)");
-    println!("  Energy Efficiency: {:.2} Ops/Joule", ops_per_joule);
     println!(
-        "  Memory Efficiency: {:.2} MB (Static Footprint)",
-        memory_mb
+        "  Energy Efficiency: {} Ops/Joule",
+        format_ratio(ops_per_joule_num, ops_per_joule_den, 2)
+    );
+    println!(
+        "  Memory Efficiency: {} MB (Static Footprint)",
+        format_ratio(MEMORY_MB, 1, 2)
     );
     println!("  Hardware Utility: 98.4% (Zero-Wait State Residue Ops)");
     println!("  Thermal Stability: EXCELLENT (No large-key cache thrashing)");

@@ -208,6 +208,28 @@ only.
     `EliminationFirst` is a claim about WHAT COMPUTATION RAN, not a
     depth/noise guarantee.
 
+  **Re-verified 2026-09-04 against issue #65.** Issue #65 ("[M5] Complete
+  CRAM M2b/M3 — move mul to EliminationFirst class", filed 2026-08-30, four
+  days after this M4 landing) cites `EmissionClass` showing `mul` in
+  `Materialization` as evidence M2b/M3 are incomplete, with acceptance
+  "emission ledger shows zero materialization on hot path." Re-checked
+  against `crates/nine65/src/ops/cram_public.rs` on current `main`: M2b, M3
+  and M4 are already landed exactly as this section describes, and the
+  ledger already reads zero materialization / nonzero `EliminationFirst`
+  for the manufactured-gadget path (`manufactured_gadget_multiply_ledger_
+  shows_elimination_first`, passing). The `mul` the issue's evidence
+  points at is `eval.mul()` / `mul_dual_public` — the GENERAL path in the
+  table above — which this milestone's own scope table deliberately,
+  permanently leaves as `Materialization` (see the "Critical scope
+  distinction" in `docs/roadmap/T4_M4_REPIN_VERDICTS.md`: inverting it
+  "would be a false claim"). So issue #65, read literally against the
+  general `mul`, describes a state the project has already decided is
+  correct and will not change without a much larger redesign (every named
+  production config would need the manufactured-chain constraint `t | Q`,
+  `t` a main lane, and the gadget relin is only measured reliable to depth
+  2 — see the M3 finding). No code change follows from this re-check; see
+  the comment thread on issue #65 for the full writeup.
+
 ## Proof sketches (per the standing submission policy)
 
 **PS-CP-1 — Lane-locality of the kept primitives.** *Statement:* `add`,

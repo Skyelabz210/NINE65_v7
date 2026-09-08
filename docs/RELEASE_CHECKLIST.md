@@ -7,7 +7,13 @@
 
 ## Functional Verification
 - `cargo test --workspace`
-- `cargo test -p nine65 --features v2,parallel,accelerated,wassan`
+- `cargo test -p nine65 --features shadow-entropy,parallel,accelerated`
+
+(The `v2` and `wassan` Cargo feature aliases were removed 2026-03-01 as
+no-ops; `wassan_noise` itself — `WassanNoiseField` — was deleted entirely in
+issue #68, having had zero production callers. `shadow-entropy` is what
+gates the surviving `v2_integration_tests` module, which now covers FFT NTT
+only.)
 
 ## Performance Gates (opt-in)
 Set `NINE65_PERF_TESTS=1` to enable perf tests.
@@ -15,18 +21,19 @@ Perf gates are machine-dependent (CPU scaling, contention, test profile). Tune
 thresholds for your target hardware and record the environment used.
 
 Optional thresholds:
-- `NINE65_WASSAN_1M_MAX_MS` (default: 120)
-- `NINE65_WASSAN_POLY_MAX_MS` (default: 400)
 - `NINE65_FFT_1024_MAX_MS` (default: 200)
-- `NINE65_WASSAN_V2_MAX_MS` (default: 80)
 
 Commands:
-- `NINE65_PERF_TESTS=1 cargo test -p nine65 --lib entropy::wassan_noise::tests::test_benchmark_vs_shadow`
 - `NINE65_PERF_TESTS=1 cargo test -p nine65 --lib v2_integration_tests::v2_integration_tests::test_fft_1024_benchmark`
 
 ## Benchmarks
 - `cargo bench --workspace`
-- Archive `target/criterion` reports for the release artifact.
+- Archive the raw `target/criterion` tree per run before it gets overwritten
+  by the next `cargo bench` invocation: `scripts/archive_criterion_run.sh`
+  (writes a timestamped, commit-pinned copy to `bench-archive/`, gitignored —
+  see `docs/BENCHMARK_PROFILE_POLICY.md` "Raw Criterion Archival"). Do this
+  for the release artifact and for any performance-sensitive change under
+  review.
 
 ## Baseline Artifacts (Reproducible)
 - `scripts/generate_security_baseline.sh` -> `docs/LATTICE_ESTIMATOR_BASELINE_YYYY-MM-DD.md`

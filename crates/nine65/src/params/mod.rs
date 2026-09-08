@@ -19,8 +19,13 @@ pub mod exact_params;
 #[cfg(feature = "exact_rational")]
 pub use exact_params::ExactDelta;
 
+use crate::errors::{Nine65Error, Nine65Result};
+
 pub use primes::*;
-pub use secure_configs::{assert_production_safe, ProductionSafe, SecureConfig};
+pub use secure_configs::{
+    assert_production_safe, ExternalAttestation, ParameterFingerprint, ProductionSafe,
+    ScreenedSecurity, SecureConfig, SecurityAdmissionState,
+};
 pub use security_estimator::{
     CostModel, HEStandardBounds, LatticeSecurityEstimator, SecretDistribution, SecurityEstimate,
 };
@@ -395,7 +400,27 @@ impl FHEConfig {
         }
     }
 
-    /// Custom configuration with fail-closed validation.
+    /// Raw, shape-validated, **unscreened** configuration.
+    ///
+    /// Checks the tuple is well-formed (power-of-two N, distinct NTT-
+    /// compatible primes, valid plaintext modulus) but runs no security
+    /// screening at all. `security_bits` is always `0` -- WR-7 / issue #88:
+    /// this used to be `estimate_security(n, primes[0])`, a legacy heuristic
+    /// that looked only at the FIRST prime rather than the full RNS
+    /// product/factorization, so a multi-prime config with an unchanged
+    /// first prime could silently report an unchanged "security" number
+    /// even when the full-`Q` width changed materially. Rather than replace
+    /// one unchecked heuristic with another, this constructor now asserts
+    /// nothing about security at all: `0` is not a claim, and this is a
+    /// plain `FHEConfig`, not a `SecureConfig` -- the two types are the
+    /// programmatic distinction between "unscreened" and "screened" WR-7
+    /// asks for, not a number that could be mistaken for either.
+    ///
+    /// For a tuple you intend to use as a production security claim, call
+    /// [`Self::custom_screened`] instead: same shape validation, plus the
+    /// exact-product + factorization-aware screening policy
+    /// [`secure_configs::SecureConfig`]'s named constructors are built on,
+    /// returned as a typed `SecureConfig` rather than a bare `FHEConfig`.
     pub fn custom(n: usize, primes: Vec<u64>, t: u64, eta: usize) -> Result<Self, &'static str> {
         if !n.is_power_of_two() {
             return Err("N must be a power of 2");
@@ -423,16 +448,49 @@ impl FHEConfig {
             return Err("Plaintext modulus must be smaller than every RNS prime");
         }
 
-        let security_bits = estimate_security(n, primes[0]);
         Ok(Self {
             n,
             q: primes[0],
             primes,
             t,
             eta,
-            security_bits,
+            // Unscreened. See the doc comment above -- never read this as a
+            // verified or even claimed security level.
+            security_bits: 0,
             name: "custom",
         })
+    }
+
+    /// Production-capable counterpart to [`Self::custom`].
+    ///
+    /// Runs the identical shape validation `custom` does (via `custom`
+    /// itself), then routes the validated tuple through
+    /// [`secure_configs::SecureConfig::custom_screened`] -- the exact-
+    /// product + factorization-aware screening policy the named
+    /// `secure_128`/`secure_192`/`secure_256` constructors are built on.
+    /// Returns a typed `SecureConfig`, never a bare `FHEConfig`: WR-7 /
+    /// issue #88 requires a raw constructor to either refuse or return a
+    /// value typed as unscreened, never something a caller could mistake
+    /// for a screened one -- `custom` (a `FHEConfig`) and this method (a
+    /// `SecureConfig`) are that distinction at the type level.
+    pub fn custom_screened(
+        n: usize,
+        primes: Vec<u64>,
+        t: u64,
+        eta: usize,
+        claimed_security: u32,
+    ) -> Nine65Result<secure_configs::SecureConfig> {
+        let shape_checked =
+            Self::custom(n, primes, t, eta).map_err(|message| Nine65Error::ConfigError {
+                message: message.to_string(),
+            })?;
+        secure_configs::SecureConfig::custom_screened(
+            shape_checked.n,
+            shape_checked.primes,
+            shape_checked.t,
+            shape_checked.eta,
+            claimed_security,
+        )
     }
 
     /// Get the scaling factor delta = floor(q/t).
@@ -462,8 +520,27 @@ impl FHEConfig {
         }
     }
 
-    /// Create a configuration for a target multiplicative depth.
-    pub fn for_depth(depth: usize, n: usize, security_bits: usize) -> Self {
+    /// Raw, **unscreened** configuration sized for a target multiplicative
+    /// depth.
+    ///
+    /// `requested_security_bits` is stored on the returned config's
+    /// `security_bits` field verbatim -- WR-7 / issue #88: this is the
+    /// caller's REQUEST, never a verified claim. Nothing here checks that
+    /// the resulting tuple actually attains it (that is exactly the bug
+    /// #88 flagged: this constructor used to accept and store a
+    /// caller-supplied number with no proof behind it). Use
+    /// [`Self::for_depth_screened`] to route the same depth/N pair through
+    /// the exact-product + factorization-aware screening policy and get
+    /// back a typed [`secure_configs::SecureConfig`] that DOES back its
+    /// number.
+    ///
+    /// Fails closed with `Nine65Error::ConfigError` when `depth` needs more
+    /// distinct NTT-compatible primes at this `N` than the built-in prime
+    /// tables plus the deterministic hunt (`find_ntt_primes`) can supply,
+    /// rather than silently returning a shorter chain than requested (the
+    /// other half of #88's requirement 6: a caller asking for depth `D` must
+    /// never receive a config that can only support less than `D`).
+    pub fn for_depth(depth: usize, n: usize, requested_security_bits: usize) -> Nine65Result<Self> {
         assert!(
             n.is_power_of_two() && n >= 1024,
             "N must be power of 2 >= 1024"
@@ -494,16 +571,52 @@ impl FHEConfig {
             primes
         };
 
+        if primes.len() < primes_needed {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "for_depth(depth={depth}, n={n}) needs {primes_needed} distinct \
+                     NTT-compatible primes but only {} were available from the built-in \
+                     prime tables plus the deterministic hunt; returning a shorter chain than \
+                     requested would silently under-provision the requested depth",
+                    primes.len()
+                ),
+            });
+        }
+
         let eta = if n <= 2048 { 2 } else { 3 };
-        Self {
+        Ok(Self {
             n,
             q: primes[0],
             primes,
             t: 65537,
             eta,
-            security_bits,
+            security_bits: requested_security_bits,
             name: "depth_aware",
-        }
+        })
+    }
+
+    /// Production-capable counterpart to [`Self::for_depth`].
+    ///
+    /// Builds the depth-sized tuple exactly as `for_depth` does (fails
+    /// closed the same way on insufficient primes), then routes it through
+    /// [`secure_configs::SecureConfig::custom_screened`] against
+    /// `claimed_security` instead of storing that number unverified.
+    /// Returns a typed `SecureConfig`, never a bare `FHEConfig` -- see
+    /// [`Self::custom_screened`]'s doc comment for why that type distinction
+    /// is the point.
+    pub fn for_depth_screened(
+        depth: usize,
+        n: usize,
+        claimed_security: u32,
+    ) -> Nine65Result<secure_configs::SecureConfig> {
+        let raw = Self::for_depth(depth, n, claimed_security as usize)?;
+        secure_configs::SecureConfig::custom_screened(
+            raw.n,
+            raw.primes,
+            raw.t,
+            raw.eta,
+            claimed_security,
+        )
     }
 
     /// Four-prime configuration for depth-two tests.
@@ -558,21 +671,14 @@ impl FHEConfig {
     }
 }
 
-/// Estimate security level based on N/log2(q).
-fn estimate_security(n: usize, q: u64) -> usize {
-    let log_q = 64 - q.leading_zeros();
-    let ratio_permille = ((n as u64) * 1000) / log_q as u64;
-
-    if ratio_permille > 50_000 {
-        192
-    } else if ratio_permille > 30_000 {
-        128
-    } else if ratio_permille > 20_000 {
-        80
-    } else {
-        0
-    }
-}
+// The legacy `estimate_security(n, q: u64)` first-prime-width heuristic that
+// used to live here was removed under WR-7 / issue #88 requirement 5: it
+// looked only at a single prime rather than the full RNS product or
+// factorization, and its last caller (`FHEConfig::custom`) no longer uses
+// it -- see that constructor's doc comment. Production security numbers now
+// come exclusively from `secure_configs::SecureConfig`'s factorization-aware
+// screening policy (`SecureConfig::custom_screened`,
+// `FHEConfig::custom_screened`, `FHEConfig::for_depth_screened`).
 
 #[cfg(test)]
 mod tests {
@@ -680,6 +786,88 @@ mod tests {
         assert!(FHEConfig::custom(2048, vec![998244353], 1, 2).is_err());
         assert!(FHEConfig::custom(2048, vec![998244353], 998244353, 2).is_err());
         assert!(FHEConfig::custom(2048, vec![998244353], 998244354, 2).is_err());
+    }
+
+    // =====================================================================
+    // WR-7: raw constructors are unscreened; screened counterparts exist
+    // (issue #88)
+    // =====================================================================
+
+    /// `custom` never populates `security_bits` with anything that could be
+    /// mistaken for a claim -- it is always `0`, regardless of how wide the
+    /// primes are.
+    #[test]
+    fn custom_security_bits_is_always_zero() {
+        let narrow = FHEConfig::custom(2048, vec![998244353], 1024, 2).expect("valid shape");
+        assert_eq!(narrow.security_bits, 0);
+
+        let wide = FHEConfig::custom(8192, vec![998244353, 985661441, 754974721], 65537, 3)
+            .expect("valid shape");
+        assert_eq!(wide.security_bits, 0);
+    }
+
+    /// `custom_screened` (the top-level `FHEConfig` wrapper) returns a typed
+    /// `SecureConfig`, and rejects a bad shape the same way `custom` does --
+    /// it does not silently fall through to screening malformed input.
+    #[test]
+    fn custom_screened_wrapper_validates_shape_then_screens() {
+        let ok = FHEConfig::custom_screened(
+            8192,
+            vec![998244353, 985661441, 754974721, 469762049],
+            65537,
+            3,
+            128,
+        )
+        .expect("secure_128_deep's own tuple must screen through the top-level wrapper too");
+        assert!(ok.is_production_safe());
+
+        let bad_shape = FHEConfig::custom_screened(1000, vec![998244353], 257, 2, 40);
+        assert!(
+            bad_shape.is_err(),
+            "N=1000 is not a power of two; must be refused, not panic"
+        );
+    }
+
+    /// #88 requirement 6, the silent-shortfall half: a depth that needs more
+    /// distinct NTT-compatible primes than the built-in tables plus the
+    /// bounded deterministic hunt can supply must fail closed rather than
+    /// hand back a shorter chain than requested. N=16384 gives
+    /// `find_ntt_primes` its SMALLEST search window (widest `2N`), so this
+    /// is also the cheapest N to exhaust deterministically.
+    #[test]
+    fn for_depth_fails_closed_when_not_enough_ntt_primes_exist() {
+        let result = FHEConfig::for_depth(50_000, 16384, 128);
+        let error = result.expect_err(
+            "no built-in table plus the bounded deterministic hunt can supply 50002 distinct \
+             NTT-compatible primes at N=16384",
+        );
+        assert!(matches!(error, Nine65Error::ConfigError { .. }));
+    }
+
+    /// Positive control: a modest depth must still succeed and return
+    /// exactly `depth + 2` primes.
+    #[test]
+    fn for_depth_succeeds_for_a_modest_depth() {
+        let config = FHEConfig::for_depth(2, 8192, 128).expect("depth=2 needs only 4 primes");
+        assert_eq!(config.primes.len(), 4);
+        assert_eq!(
+            config.security_bits, 128,
+            "stores the REQUEST verbatim, unverified"
+        );
+    }
+
+    /// `for_depth_screened` must route through the identical screening
+    /// policy `SecureConfig::custom_screened` uses, and -- because
+    /// `PRIMES_8192[..4]` is byte-identical to `secure_128_deep`'s own
+    /// chain -- must reproduce that config's admission state exactly.
+    #[test]
+    fn for_depth_screened_reproduces_secure_128_deep() {
+        let screened =
+            FHEConfig::for_depth_screened(2, 8192, 128).expect("this is secure_128_deep's tuple");
+        let named = SecureConfig::secure_128_deep();
+        assert_eq!(screened.config.primes, named.config.primes);
+        assert_eq!(screened.admission_state, named.admission_state);
+        assert!(screened.is_production_safe());
     }
 
     #[test]

@@ -57,7 +57,7 @@ jobs:
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.89.0
       - name: Parse harness sources
         run: |
           python3 -m py_compile \
@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.89.0
       - name: Build comparative probe
         run: |
           cargo build --release -p nine65 \

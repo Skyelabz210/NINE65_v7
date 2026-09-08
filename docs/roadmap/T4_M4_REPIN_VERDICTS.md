@@ -14,6 +14,19 @@ LEFT UNCHANGED, per the scope distinction below — see
 (rescale+relin core only; `canonicalize_dual_anchor` still materializes
 separately; depth ≤ 2 per the M3 finding).
 
+**Re-checked 2026-09-04 against issue #65.** Issue #65 cites `mul` still
+showing `Materialization` in `EmissionClass` as an unmet M2b/M3
+criterion. It is describing `mul_dual_public` / `eval.mul()` — the GENERAL
+path in the scope table directly below, which this task deliberately left
+unchanged and which the "Do not invert" rule right below names by
+function. That path's classification is accurate to what the code does
+today (still `k_elim_rescale_dual → to_u256_level` and
+`extract_digit_dual`) and, per this document's own scope rule, must stay
+`Materialization`. The manufactured-gadget path issue #65's title actually
+refers to (M2b/M3) is complete and already ledgered `EliminationFirst`, as
+this file says above. No inversion of the general path was made or is
+planned here; see the comment thread on issue #65.
+
 ## Goal
 
 After M3 (T3) lands, the manufactured-chain multiply path

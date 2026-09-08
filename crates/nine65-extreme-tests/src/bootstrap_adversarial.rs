@@ -8,7 +8,7 @@
 #[cfg(test)]
 mod tests {
     use nine65::entropy::shadow::ShadowHarvester;
-    use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
+    use nine65::ops::auto_bootstrap::{AutoBootstrapEvaluator, TrackedCiphertext};
     use nine65::ops::bootstrap::ClockworkBootstrap;
     use nine65::ops::rns_fhe::RNSFHEContext;
     use nine65::params::secure_configs::SecureConfig;
@@ -214,7 +214,10 @@ mod tests {
             .expect("bootstrap keys");
 
         let m: u64 = 2;
-        let ct = ctx.encrypt_dual(m, &work_keys.public_key, &mut rng);
+        let ct = TrackedCiphertext::fresh(
+            ctx.encrypt_dual(m, &work_keys.public_key, &mut rng),
+            &config,
+        );
         let mut evaluator = AutoBootstrapEvaluator::new(
             &ctx,
             &boot,
@@ -244,7 +247,7 @@ mod tests {
             current_ct = next_ct;
 
             if i % 10 == 9 {
-                let recovered = ctx.decrypt_dual(&current_ct, &work_keys.secret_key);
+                let recovered = ctx.decrypt_dual(&current_ct.ct, &work_keys.secret_key);
                 if recovered != expected {
                     if first_failure.is_none() {
                         first_failure = Some((i + 1, recovered, expected));

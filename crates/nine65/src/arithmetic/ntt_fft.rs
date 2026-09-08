@@ -154,18 +154,17 @@ impl NTTEngineFFT {
 
     /// Forward NTT using Cooley-Tukey butterfly (in-place, Montgomery form)
     ///
-    /// Complexity: O(N log N) vs O(N²) for DFT
-    pub fn ntt_inplace(&self, a: &mut [u64]) {
-        self.ntt_inplace_with_shadow(a, &mut None);
-    }
-
-    /// Forward NTT with shadow capture of Montgomery quotients.
+    /// Control flow, addresses, and twiddle indices are public.
     ///
-    /// Control flow, addresses, and twiddle indices are public. When `shadow`
-    /// is `Some`, the discarded Montgomery quotient of each twiddle multiply is
-    /// captured (q_hat = floor((a*b*N') / R)), matching the inverse transform's
-    /// shadow protocol.
-    pub fn ntt_inplace_with_shadow(&self, values: &mut [u64], shadow: &mut Option<Vec<u64>>) {
+    /// Complexity: O(N log N) vs O(N²) for DFT
+    ///
+    /// (This used to take an extra `shadow: &mut Option<Vec<u64>>` parameter
+    /// so a caller could capture each twiddle multiply's discarded Montgomery
+    /// quotient. Its only feeder was SBNI's entropy harvest; SBNI's removal
+    /// left every remaining call passing `&mut None`, so the capture branch
+    /// was permanently unreachable. Removed per issue #68 — see
+    /// docs/LADDER_REMOVAL.md §6.3 item 4.)
+    pub fn ntt_inplace(&self, values: &mut [u64]) {
         debug_assert_eq!(values.len(), self.n);
         self.bit_reverse_permute(values);
 
@@ -184,13 +183,6 @@ impl NTTEngineFFT {
                     let product =
                         self.twiddles_fwd[twiddle_index] as u128 * values[lower_index] as u128;
                     let lower = self.mont.montgomery_reduce(product);
-
-                    if let Some(captured) = shadow.as_mut() {
-                        let correction = (product as u64).wrapping_mul(self.mont.q_inv_neg);
-                        let quotient =
-                            product.wrapping_add(correction as u128 * self.q as u128) >> 64;
-                        captured.push(quotient as u64);
-                    }
 
                     values[upper_index] = self.mont.montgomery_add(upper, lower);
                     values[lower_index] = self.mont.montgomery_sub(upper, lower);

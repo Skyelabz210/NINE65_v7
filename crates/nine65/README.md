@@ -27,9 +27,6 @@ logged for action — do not improvise the procedure against them.
   `src/lib.rs:42-43` declares the exemption as offline/static analysis, but the
   winding now gives an exact magnitude read, so the exemption is a choice.
   → `a1-defloat`
-- `[2]` `src/ops/sbni.rs:259-290` — `f64` chi-square / mean / stddev. SBNI is
-  retired; the resolution is deleting the module, not defloating it.
-  → `a1-defloat`
 - `[3]` `src/security/ct_verification.rs:34-48` — `f64` median / MAD / t-test.
   **The constant-time layer is off-limits.** Logged so the site is known and
   not "fixed"; timing statistics are genuinely real-valued. → `a1-defloat`
@@ -84,10 +81,20 @@ logged for action — do not improvise the procedure against them.
 - `[30]` `src/arithmetic/ntt.rs:417-454` — rayon parallel NTT; probabilistic
   scheduling on top of a staged cascade. → `deterministic-lane-parallelism`
 
+### RESOLVED
+
+- `[2]` `src/ops/sbni.rs` was deleted entirely (issue #68), taking its `f64`
+  chi-square/mean/stddev test helpers with it — there is no module left to
+  defloat. See `CRAM_OPPORTUNITY_REPORT.md` `[45]`.
+
 ## Standing constraints
 
 - **Modulus switching is retired.** Never reintroduce it into a multiply path.
   The `mod_switch_*` definitions stay alive only as the negative control in
   `tests/basis_invariance.rs`.
-- **SBNI is retired.** Do not reintroduce it.
+- **SBNI is retired and its source file is deleted.** Do not reintroduce it.
+- **`WassanNoiseField` (WASSAN Holographic Noise Field) is retired and its
+  source file is deleted.** It had zero production callers; do not
+  reintroduce it as an entropy source without a documented security review
+  (see `docs/ENTROPY_MODEL.md`).
 - **The `_ct` constant-time layer is off-limits to optimization.**

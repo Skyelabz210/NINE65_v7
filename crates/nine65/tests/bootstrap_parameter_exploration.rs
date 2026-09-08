@@ -42,12 +42,20 @@
 //! K-Elimination exact rescaling. The Clockwork Bootstrap is the safety net
 //! for budget exhaustion. Correctness here means the safety net actually works.
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::entropy::ShadowHarvester;
 use nine65::errors::Nine65Result;
 use nine65::keys::bootstrap::mod_inverse_u128;
 use nine65::ops::bootstrap::{crt_reconstruct_2, ClockworkBootstrap};
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::FHEConfig;
+
+/// Percentage of `ok` out of `total`, rounded to the nearest whole percent —
+/// the integer-only replacement for `(ok as f64 / total as f64) * 100.0`
+/// formatted with `{:.0}`.
+fn pct0(ok: usize, total: usize) -> String {
+    format_ratio(ok as u128 * 100, total as u128, 0)
+}
 
 // =========================================================================
 // TEST INFRASTRUCTURE
@@ -77,9 +85,9 @@ struct ConfigResult {
     log_q_boot: u32,
     delta_boot_bits: u32,
     trials: Vec<BootstrapTrial>,
-    fresh_success_rate: f64, // for reporting only — not used in computation
-    bootstrap_success_rate: f64, // for reporting only
-    mean_error: f64,         // for reporting only
+    fresh_ok: usize,     // for reporting only — rate = fresh_ok / trials.len()
+    bootstrap_ok: usize, // for reporting only — rate = bootstrap_ok / trials.len()
+    error_sum: u64,      // for reporting only — mean = error_sum / trials.len()
     max_error: u64,
 }
 
@@ -135,10 +143,9 @@ fn run_trials(config: &FHEConfig, seed: u64) -> Nine65Result<ConfigResult> {
         });
     }
 
-    let total = trials.len() as f64;
-    let fresh_ok = trials.iter().filter(|t| t.fresh_correct).count() as f64;
-    let boot_ok = trials.iter().filter(|t| t.bootstrap_correct).count() as f64;
-    let mean_err = trials.iter().map(|t| t.error_magnitude as f64).sum::<f64>() / total;
+    let fresh_ok = trials.iter().filter(|t| t.fresh_correct).count();
+    let boot_ok = trials.iter().filter(|t| t.bootstrap_correct).count();
+    let error_sum: u64 = trials.iter().map(|t| t.error_magnitude).sum();
     let max_err = trials.iter().map(|t| t.error_magnitude).max().unwrap_or(0);
 
     let log_q_work: u32 = config.primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
@@ -167,9 +174,9 @@ fn run_trials(config: &FHEConfig, seed: u64) -> Nine65Result<ConfigResult> {
         log_q_boot,
         delta_boot_bits,
         trials,
-        fresh_success_rate: fresh_ok / total,
-        bootstrap_success_rate: boot_ok / total,
-        mean_error: mean_err,
+        fresh_ok,
+        bootstrap_ok: boot_ok,
+        error_sum,
         max_error: max_err,
     })
 }
@@ -187,13 +194,13 @@ fn print_result(r: &ConfigResult) {
     );
     println!("Δ_boot ≈ 2^{} bits", r.delta_boot_bits);
     println!(
-        "Fresh decrypt: {:.0}% correct",
-        r.fresh_success_rate * 100.0
+        "Fresh decrypt: {}% correct",
+        pct0(r.fresh_ok, r.trials.len())
     );
     println!(
-        "Bootstrap decrypt: {:.0}% correct | mean_error={:.1} | max_error={}",
-        r.bootstrap_success_rate * 100.0,
-        r.mean_error,
+        "Bootstrap decrypt: {}% correct | mean_error={} | max_error={}",
+        pct0(r.bootstrap_ok, r.trials.len()),
+        format_ratio(r.error_sum as u128, r.trials.len() as u128, 1),
         r.max_error
     );
     println!("{:-<70}", "");
@@ -244,9 +251,9 @@ fn explore_h1_boot_prime_count() {
         Ok(r) => {
             print_result(&r);
             println!(
-                "\nH1 FINDING: With {} boot primes, bootstrap correctness = {:.0}%",
+                "\nH1 FINDING: With {} boot primes, bootstrap correctness = {}%",
                 r.num_boot_primes,
-                r.bootstrap_success_rate * 100.0
+                pct0(r.bootstrap_ok, r.trials.len())
             );
         }
         Err(e) => println!("H1 base config failed: {:?}", e),
@@ -314,11 +321,11 @@ fn explore_h2_polynomial_degree() {
     );
     for r in &results {
         println!(
-            "{:<15} {:>6} {:>7.0}% {:>12.1} {:>10}",
+            "{:<15} {:>6} {:>7}% {:>12} {:>10}",
             r.config_name,
             r.n,
-            r.bootstrap_success_rate * 100.0,
-            r.mean_error,
+            pct0(r.bootstrap_ok, r.trials.len()),
+            format_ratio(r.error_sum as u128, r.trials.len() as u128, 1),
             r.max_error
         );
     }
@@ -373,11 +380,11 @@ fn explore_h3_plaintext_modulus() {
     );
     for r in &results {
         println!(
-            "{:>8} {:>10} {:>7.0}% {:>12.1} {:>10}",
+            "{:>8} {:>10} {:>7}% {:>12} {:>10}",
             r.t,
             format!("2^{}", r.delta_boot_bits),
-            r.bootstrap_success_rate * 100.0,
-            r.mean_error,
+            pct0(r.bootstrap_ok, r.trials.len()),
+            format_ratio(r.error_sum as u128, r.trials.len() as u128, 1),
             r.max_error
         );
     }
@@ -423,10 +430,10 @@ fn explore_h4_noise_parameter() {
     );
     for r in &results {
         println!(
-            "{:>5} {:>7.0}% {:>12.1} {:>10}",
+            "{:>5} {:>7}% {:>12} {:>10}",
             r.eta,
-            r.bootstrap_success_rate * 100.0,
-            r.mean_error,
+            pct0(r.bootstrap_ok, r.trials.len()),
+            format_ratio(r.error_sum as u128, r.trials.len() as u128, 1),
             r.max_error
         );
     }
@@ -480,10 +487,10 @@ fn explore_h5_modswitch_distribution_error() {
 
     let sk_weight: usize = sk_signed.iter().filter(|&&v| v != 0).count();
     println!(
-        "Secret key Hamming weight: {} / {} ({:.1}%)",
+        "Secret key Hamming weight: {} / {} ({}%)",
         sk_weight,
         n,
-        sk_weight as f64 / n as f64 * 100.0
+        format_ratio(sk_weight as u128 * 100, n as u128, 1)
     );
 
     for m in [0u64, 1, 42, 100, 65536] {
@@ -624,21 +631,25 @@ fn explore_combined_sweep() {
 
                 match run_trials(&config, 42) {
                     Ok(r) => {
-                        let marker = if r.bootstrap_success_rate >= 0.9 {
+                        let total = r.trials.len() as u128;
+                        // Exact rational comparison against 90% — cross-multiplied
+                        // so no rounding enters the CORRECT/PARTIAL threshold
+                        // decision (bootstrap_ok/total >= 9/10 without division).
+                        let marker = if (r.bootstrap_ok as u128) * 10 >= total * 9 {
                             " <<< CORRECT"
-                        } else if r.bootstrap_success_rate > 0.0 {
+                        } else if r.bootstrap_ok > 0 {
                             " << PARTIAL"
                         } else {
                             ""
                         };
                         println!(
-                            "N={:<5} t={:<7} η={:<3} {:>10} {:>7.0}% {:>10.1} {:>10}{}",
+                            "N={:<5} t={:<7} η={:<3} {:>10} {:>7}% {:>10} {:>10}{}",
                             n,
                             t,
                             eta,
                             format!("2^{}", r.delta_boot_bits),
-                            r.bootstrap_success_rate * 100.0,
-                            r.mean_error,
+                            pct0(r.bootstrap_ok, r.trials.len()),
+                            format_ratio(r.error_sum as u128, r.trials.len() as u128, 1),
                             r.max_error,
                             marker,
                         );
@@ -875,12 +886,12 @@ fn explore_seed_sensitivity() {
                     .map(|t| t.bootstrap_correct)
                     .unwrap_or(false);
                 println!(
-                    "  seed={:>8}: {}/{} correct, m=0 correct={}, boot_rate={:.0}%",
+                    "  seed={:>8}: {}/{} correct, m=0 correct={}, boot_rate={}%",
                     seed,
                     correct,
                     total,
                     m0_ok,
-                    r.bootstrap_success_rate * 100.0
+                    pct0(r.bootstrap_ok, r.trials.len())
                 );
                 correct_per_seed.push((seed, correct, total));
             }

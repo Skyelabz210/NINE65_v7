@@ -90,6 +90,11 @@
 //! `mana` side, since `mana` cannot depend on `nine65` — the dependency
 //! runs the other way — so true single-sourcing isn't possible without a
 //! new cross-crate dependency edge, out of scope for this pass).
+//!
+//! For the full inventory of every K-Elimination-shaped implementation in
+//! this workspace (seven, plus one adjacent security-analysis tool) and why
+//! each one is not merged into another, see
+//! `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md`.
 
 use crate::errors::{Nine65Error, Nine65Result};
 

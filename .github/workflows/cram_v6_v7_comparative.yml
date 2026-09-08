@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.89.0
       - name: Validate harness files
         run: |
           python3 -m json.tool benchmarks/comparative/nine65_v6_v7_contract.json > /dev/null
@@ -161,7 +161,7 @@ jobs:
           ref: bd5c5c29f5c367bf34831cf5c1b97b3b938ac829
           token: ${{ secrets.NINE65_CROSS_REPO_TOKEN }}
           path: v6-repo
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.89.0
         if: steps.credential.outputs.available == 'true'
       - name: Run pinned same-machine comparison
         id: comparison

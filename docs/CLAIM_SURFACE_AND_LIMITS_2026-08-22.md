@@ -9,6 +9,26 @@ in the README itself.
 Governed by `docs/LINEAGE.md` (deprecation rules for claim language),
 `docs/BENCHMARK_PROFILE_POLICY.md`, and `docs/CLAIM_EVIDENCE_LEDGER.md`.
 
+> **SUPERSEDED ON ONE POINT (2026-08-26): `secure_128` was re-cut.** Every
+> `secure_128` row below — §1, §2, §3 — describes the three-main-prime tuple
+> (`N=8192`, `log2(q)=90`) that this document dated 2026-08-22. That tuple was
+> retired 2026-08-26 (`docs/OPEN_WORK_2026-08-26.md` §A3): `secure_128` now
+> builds the same four-prime chain as `secure_128_deep` (`N=8192`,
+> `log2(q)=119`), and the public-refresh admissibility gate now **admits** it
+> instead of refusing it. The measurements below are kept as the historical
+> record of the retired tuple and must not be quoted as the current
+> `secure_128` — read `secure_128_deep`'s row instead, which describes the
+> tuple `secure_128` now also builds. See `README.md`'s "Verified Capability"
+> section for the current, corrected table.
+>
+> This does **not** mean public refresh is verified working on the recut
+> tuple. A later, separate finding —
+> `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md` — found that on
+> current `main` the refresh output itself decrypts incorrectly for every
+> config the gate admits, `secure_128_deep` and `secure_192` included. That is
+> an open, unresolved regression tracked separately (issue #95 / WR-5A /
+> WR-5B), not addressed by this note.
+
 Indexed in `docs/CLAIM_REGISTRY.csv` as three rows, all pointing here:
 
 | claim_id | visibility | why |
@@ -106,6 +126,19 @@ Readings:
    about `secure_128`'s lattice security. `secure_configs.rs`'s stated policy —
    an archived external lattice-estimator run for the exact shipped tuple — is
    still unmet for `n = 8192 / 16384`. That debt is unchanged by this pass.
+6. **The `secure_128` row above (259 / 233 / 233) is retired, like the rest of
+   this document's `secure_128` figures (see the notice at the top).** The
+   2026-08-26 re-cut makes `secure_128` build the same tuple as
+   `secure_128_deep`, so its current screen is 196 / 176 / 176 — read the
+   `secure_128_deep` row instead. Anyone reproducing 259/233 for `secure_128`
+   post-recut has run against a checkout older than 2026-08-26, not this one.
+7. **`hardware_opt` no longer has a constructor.** This table lists it because
+   this document has not been re-derived since 2026-08-22; as of the current
+   `crates/nine65/src/params/secure_configs.rs`, no `SecureConfig::hardware_opt`
+   function exists, and `params::secure_configs::tests::screened_levels_for_named_configs`
+   (the source of this table) does not screen it. Whether that removal was
+   deliberate is not established here — flagged, not resolved, by this
+   documentation pass.
 
 ---
 
@@ -297,8 +330,14 @@ without a dated artifact:
   here establishes general nonlinear circuits under the public evaluator.
 - **Any unbounded-depth claim.** "Unlimited depth", "depth 50", and
   "bootstrap-free" are on `docs/LINEAGE.md`'s deprecation list. The measured
-  public direct-square depths — *without* refresh — are 2–4, and the public
-  refresh that would extend them is refused on `secure_128`.
+  public direct-square depths — *without* refresh — are 2–4. At the time this
+  document was written, the public refresh that would extend them was refused
+  on `secure_128`; since the 2026-08-26 re-cut it is admitted by the same gate
+  that admits `secure_128_deep` (see the notice at the top of this document) —
+  though a later, still-open finding
+  (`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`) says the
+  admitted refresh currently corrupts plaintext anyway, so no depth extension
+  should be assumed to work from admission alone.
 
   How far an auto-refreshed chain extends past those depths is a separate
   question. An acceptance suite for it landed in `ops::auto_bootstrap` while

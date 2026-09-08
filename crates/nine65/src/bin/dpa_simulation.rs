@@ -1,33 +1,36 @@
 //! Expanded Differential Power Analysis (DPA) Simulation for NINE65 v7.
 //! Verifies side-channel resistance of the Parallel Summation CRT implementation.
 
+use nine65::arithmetic::integer_math::{format_ratio, integer_sqrt_u128};
 use nine65::arithmetic::rns::U512;
 use nine65::prelude::*;
 use std::time::Instant;
 
+/// Integer dither in `{0, 1}`: `floor((nanos % 1000) * NOISE_LEVEL / 1000)`.
+/// Integer stand-in for the original `[0, NOISE_LEVEL)` float jitter added to
+/// each simulated trace sample — same qualitative role (perturb the
+/// simulated leakage a little so it isn't a bare Hamming weight), no float.
+const NOISE_LEVEL: u128 = 2;
+
 /// Simulate a power trace for a Parallel Summation CRT operation.
-/// Power is modeled as Hamming Weight of intermediate sums + Gaussian noise.
-fn simulate_power_trace(
-    residues: &[u64],
-    basis: &[u64],
-    weights: &[U512],
-    noise_level: f64,
-) -> Vec<f64> {
+/// Power is modeled as Hamming Weight of intermediate sums plus a small
+/// integer dither (see [`NOISE_LEVEL`]).
+fn simulate_power_trace(residues: &[u64], weights: &[U512]) -> Vec<i64> {
     let mut trace = Vec::new();
     let mut current_sum = U512::zero();
 
-    for i in 0..residues.len() {
+    for (residue, weight) in residues.iter().zip(weights.iter()) {
         // Step 1: Multiply residue by precomputed weight (Mi * [Mi^-1 mod pi])
-        let term = weights[i].mul_u128(residues[i] as u128);
+        let term = weight.mul_u128(*residue as u128);
 
         // Model power leakage of the multiplication
-        trace.push(hamming_weight_u512(&term) as f64 + rand_noise(noise_level));
+        trace.push(hamming_weight_u512(&term) as i64 + dither() as i64);
 
         // Step 2: Parallel Summation (Accumulation)
         current_sum = current_sum.add(term);
 
         // Model power leakage of the addition
-        trace.push(hamming_weight_u512(&current_sum) as f64 + rand_noise(noise_level));
+        trace.push(hamming_weight_u512(&current_sum) as i64 + dither() as i64);
     }
     trace
 }
@@ -36,9 +39,10 @@ fn hamming_weight_u512(val: &U512) -> u32 {
     val.d0.count_ones() + val.d1.count_ones() + val.d2.count_ones() + val.d3.count_ones()
 }
 
-fn rand_noise(level: f64) -> f64 {
-    // Simple pseudo-random noise for simulation
-    (Instant::now().elapsed().as_nanos() % 1000) as f64 / 1000.0 * level
+/// Small pseudo-random dither in `{0, 1}` from the low bits of the wall
+/// clock — integer analogue of the original continuous-noise simulation.
+fn dither() -> u128 {
+    (Instant::now().elapsed().as_nanos() % 1000) * NOISE_LEVEL / 1000
 }
 
 fn main() {
@@ -65,7 +69,7 @@ fn main() {
     }
 
     println!("Target: Parallel Summation CRT with {} primes", n_primes);
-    println!("Noise Level: 2.0 (High Variance)");
+    println!("Noise Level: {NOISE_LEVEL} (integer dither, High Variance)");
 
     // Attack Simulation: Correlation Power Analysis (CPA)
     // We try to recover residue[0] by correlating simulated traces with hypotheses.
@@ -80,32 +84,77 @@ fn main() {
     let n_traces = 500;
     let mut traces = Vec::new();
     for _ in 0..n_traces {
-        traces.push(simulate_power_trace(&residues, basis, &weights, 2.0));
+        traces.push(simulate_power_trace(&residues, &weights));
     }
 
     println!("Simulated {} power traces under heavy load.", n_traces);
 
     // Perform Correlation Check
-    // If the system is resistant, the correlation for the correct residue should be negligible.
-    let mut max_corr = 0.0f64;
+    // If the system is resistant, the correlation for the correct residue
+    // should be negligible. Pearson correlation r = numerator / sqrt(denom_sq);
+    // both `numerator` and `denom_sq` are exact integers (see
+    // `correlation_components`), so the running "is this guess the new best"
+    // comparison below is done as an exact cross-multiplied comparison of
+    // r^2 — `a/sqrt(b) > c/sqrt(d)` (a, c >= 0; b, d > 0) iff
+    // `a^2 * d > c^2 * b` — never taking a square root until the final
+    // display value. `(0, 0)` is the "no correlation yet" sentinel: any
+    // strictly positive numerator beats it, matching the original `corr >
+    // 0.0` starting condition.
+    let mut max_corr_num: i128 = 0;
+    let mut max_corr_denom_sq: u128 = 0;
     let mut best_guess = 0u64;
 
     // We only check a few hypotheses for demo purposes
-    for guess in 0..1000 {
-        let corr = calculate_correlation(&traces, guess, &weights[0]);
-        if corr > max_corr {
-            max_corr = corr;
+    for guess in 0..1000u32 {
+        let (num, denom_sq) = correlation_components(&traces, guess, &weights[0]);
+        let is_new_best = match (denom_sq, max_corr_denom_sq) {
+            (0, _) => false,    // this guess's correlation is undefined (0/0) -> treated as 0
+            (_, 0) => num != 0, // first real correlation beats the zero sentinel
+            (cand_denom, best_denom) => {
+                let cand_num_sq = num.unsigned_abs().saturating_mul(num.unsigned_abs());
+                let best_num_sq = max_corr_num
+                    .unsigned_abs()
+                    .saturating_mul(max_corr_num.unsigned_abs());
+                cand_num_sq.saturating_mul(best_denom) > best_num_sq.saturating_mul(cand_denom)
+            }
+        };
+        if is_new_best {
+            max_corr_num = num;
+            max_corr_denom_sq = denom_sq;
             best_guess = guess as u64;
         }
     }
+
+    // Correlation magnitude scaled by 10^4 (4 fractional digits), computed as
+    // isqrt(numerator^2 * 10^8 / denom_sq) — the one sqrt in this file, taken
+    // only once at the end for display, on values already known to be exact
+    // non-negative integers.
+    let max_corr_scaled_1e4 = if max_corr_denom_sq == 0 {
+        0u128
+    } else {
+        let num_sq = max_corr_num
+            .unsigned_abs()
+            .saturating_mul(max_corr_num.unsigned_abs());
+        let scaled_sq = num_sq
+            .saturating_mul(100_000_000u128)
+            .checked_div(max_corr_denom_sq)
+            .unwrap_or(0);
+        integer_sqrt_u128(scaled_sq)
+    };
 
     println!("------------------------------------------");
     println!("DPA/CPA Analysis Results:");
     println!("  Target Residue: {}", target_residue);
     println!("  Best Guess:     {}", best_guess);
-    println!("  Max Correlation: {:.4}", max_corr);
+    println!(
+        "  Max Correlation: {}",
+        format_ratio(max_corr_scaled_1e4, 10_000, 4)
+    );
 
-    if max_corr < 0.1 {
+    // Original threshold was `max_corr < 0.1`; 0.1 * 10_000 = 1000 exactly in
+    // the scaled-by-10^4 domain, so this is an exact integer comparison, not
+    // an approximation of the float one.
+    if max_corr_scaled_1e4 < 1000 {
         println!("  Status: RESISTANT (Zero Shadow Entropy verified)");
     } else {
         println!("  Status: VULNERABLE (Leakage detected)");
@@ -136,18 +185,28 @@ fn mod_inv(a: u64, m: u64) -> u64 {
     x as u64
 }
 
-fn calculate_correlation(traces: &[Vec<f64>], guess: u32, weight: &U512) -> f64 {
-    // Simplified Pearson Correlation between Trace[0] and HW(guess * weight)
-    let hypothesis_hw = hamming_weight_u512(&weight.mul_u128(guess as u128)) as f64;
-    let mut sum_x = 0.0;
-    let mut sum_y = 0.0;
-    let mut sum_xy = 0.0;
-    let mut sum_x2 = 0.0;
-    let mut sum_y2 = 0.0;
-    let n = traces.len() as f64;
+/// Pearson-correlation numerator and squared-denominator between
+/// `traces[..][0]` (leakage of the first multiplication) and the constant
+/// hypothesis `HW(guess * weight)`, as exact integers:
+///
+///   numerator = n * sum_xy - sum_x * sum_y
+///   denom_sq  = (n * sum_x2 - sum_x^2) * (n * sum_y2 - sum_y^2)
+///
+/// so that `correlation = numerator / sqrt(denom_sq)` — never computed here;
+/// callers compare `numerator^2 / denom_sq` across guesses instead (see
+/// `main`), or take the one sqrt needed for the final display value.
+fn correlation_components(traces: &[Vec<i64>], guess: u32, weight: &U512) -> (i128, u128) {
+    let hypothesis_hw = hamming_weight_u512(&weight.mul_u128(guess as u128)) as i128;
+    let n = traces.len() as i128;
+
+    let mut sum_x: i128 = 0;
+    let mut sum_y: i128 = 0;
+    let mut sum_xy: i128 = 0;
+    let mut sum_x2: i128 = 0;
+    let mut sum_y2: i128 = 0;
 
     for trace in traces {
-        let x = trace[0]; // Leakage of the first multiplication
+        let x = trace[0] as i128; // Leakage of the first multiplication
         let y = hypothesis_hw;
         sum_x += x;
         sum_y += y;
@@ -157,10 +216,8 @@ fn calculate_correlation(traces: &[Vec<f64>], guess: u32, weight: &U512) -> f64 
     }
 
     let numerator = n * sum_xy - sum_x * sum_y;
-    let denominator = ((n * sum_x2 - sum_x * sum_x) * (n * sum_y2 - sum_y * sum_y)).sqrt();
-    if denominator == 0.0 {
-        0.0
-    } else {
-        (numerator / denominator).abs()
-    }
+    let var_x = n * sum_x2 - sum_x * sum_x; // >= 0 by Cauchy-Schwarz
+    let var_y = n * sum_y2 - sum_y * sum_y; // >= 0 by Cauchy-Schwarz
+    let denom_sq = (var_x.max(0) as u128).saturating_mul(var_y.max(0) as u128);
+    (numerator, denom_sq)
 }

@@ -79,6 +79,7 @@ mod tests {
     #[test]
     #[ignore]
     fn compare_bit_speed_vs_the_shipped_reconstruction() {
+        use crate::arithmetic::integer_math::format_ratio;
         use crate::arithmetic::rns::crt_reconstruct_u256;
         use crate::arithmetic::U256;
         use std::time::Instant;
@@ -99,7 +100,7 @@ mod tests {
                     sink ^= v.gt(half) as u64;
                 }
             }
-            let shipped = t0.elapsed().as_nanos() as f64 / (reps * cases.len()) as f64;
+            let shipped_total_ns = t0.elapsed().as_nanos();
 
             // FAIR baseline: the same reconstruction with basis-derived
             // constants hoisted. `crt_reconstruct_u256` recomputes
@@ -132,7 +133,7 @@ mod tests {
                     sink3 ^= s.gt(half) as u64;
                 }
             }
-            let hoisted = t2.elapsed().as_nanos() as f64 / (reps * cases.len()) as f64;
+            let hoisted_total_ns = t2.elapsed().as_nanos();
 
             // Kernel.
             let t1 = Instant::now();
@@ -142,14 +143,27 @@ mod tests {
                     sink2 ^= kb.decide(r) as u64;
                 }
             }
-            let kernel = t1.elapsed().as_nanos() as f64 / (reps * cases.len()) as f64;
+            let kernel_total_ns = t1.elapsed().as_nanos();
             std::hint::black_box((sink, sink2, sink3));
 
+            let total_ops = (reps * cases.len()) as u128;
+            // Per-op nanoseconds for display. The two "vs" ratios below are
+            // computed directly from the TOTAL nanoseconds, not from these
+            // already-divided per-op figures: `total_ops` cancels exactly out
+            // of `(shipped_total_ns/total_ops) / (kernel_total_ns/total_ops)`,
+            // so cross-cancelling first avoids two rounding steps for one.
+            let shipped_ns = format_ratio(shipped_total_ns, total_ops, 1);
+            let hoisted_ns = format_ratio(hoisted_total_ns, total_ops, 1);
+            let kernel_ns = format_ratio(kernel_total_ns, total_ops, 1);
+            // `.max(1)` mirrors the original `.max(0.001)` floor on the
+            // per-op kernel time: guard against a division by an
+            // (implausible) zero-nanosecond kernel total.
+            let vs_shipped = format_ratio(shipped_total_ns, kernel_total_ns.max(1), 1);
+            let vs_hoisted = format_ratio(hoisted_total_ns, kernel_total_ns.max(1), 2);
+
             println!(
-                "{name:<11} shipped {shipped:>8.1} ns | hoisted-recon {hoisted:>7.1} ns | \
-                 compare_bit {kernel:>6.1} ns || vs shipped {:>6.1}x | vs hoisted {:>5.2}x",
-                shipped / kernel.max(0.001),
-                hoisted / kernel.max(0.001)
+                "{name:<11} shipped {shipped_ns:>8} ns | hoisted-recon {hoisted_ns:>7} ns | \
+                 compare_bit {kernel_ns:>6} ns || vs shipped {vs_shipped:>6}x | vs hoisted {vs_hoisted:>5}x"
             );
         }
     }

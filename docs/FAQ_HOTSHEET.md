@@ -105,6 +105,15 @@ QMNF integer-only architecture.
 
 ## Security Parameters
 
+> **Historical (2026-01-28), not the shipped tuples.** Every row below predates
+> the N=4096→8192 resize and the `secure_256` chain replacement recorded in
+> CLAUDE.md; `secure_128`'s `n=4096` and `secure_192`'s `n=8192` do not match
+> any current constructor (`secure_128`/`secure_128_deep` are `n=8192`,
+> `secure_192`/`secure_256` are `n=16384`). For the current tuples and
+> screened bits, see CLAUDE.md's "Security Configs" table — noting that even
+> that table's `secure_128` row is itself pending a 2026-08-26 re-cut sync;
+> `README.md`'s "Verified Capability" section has the corrected numbers.
+
 | Config | n | log2(q) | Security (log2 rop) |
 |--------|---|---------|---------------------|
 | `secure_128` | 4096 | 89.26 | 123.6 bits |
@@ -116,6 +125,11 @@ QMNF integer-only architecture.
 ## Performance Benchmarks
 
 ### FHE Operations (secure_128)
+
+> Historical (2026-01-28), measured on the `n=4096` tuple above — not
+> comparable to the current `secure_128`. See CLAUDE.md's "Performance
+> Baselines" for current timings.
+
 | Operation | Time |
 |-----------|------|
 | Encrypt | 23.93 ms |

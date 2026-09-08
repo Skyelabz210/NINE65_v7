@@ -1,6 +1,7 @@
 //! Real-Time Power Utility Validation for NINE65 v7.
 //! Simulates deployment on target hardware to measure efficiency.
 
+use nine65::arithmetic::integer_math::format_ratio;
 use nine65::ops::bootstrap::ClockworkBootstrap;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
@@ -49,24 +50,30 @@ fn main() {
         ops_count += 1;
     }
 
-    let elapsed = start.elapsed().as_secs_f64();
-    let throughput = ops_count as f64 / elapsed;
+    let elapsed_ns = start.elapsed().as_nanos();
 
     // Power Utility Calculation (Simulated)
     // Assume 6-core Xeon TDP is 85W. At 100% load, 1 core uses ~14W.
     // Efficiency = Ops per Second / Watts
-    let estimated_power_w = 14.0;
-    let efficiency = throughput / estimated_power_w;
+    const ESTIMATED_POWER_W: u128 = 14;
+    // throughput (ops/sec) = ops_count * 1e9 / elapsed_ns
+    // efficiency (ops/sec/W) = throughput / ESTIMATED_POWER_W
+    //                        = ops_count * 1e9 / (elapsed_ns * ESTIMATED_POWER_W)
+    let throughput_num = ops_count as u128 * 1_000_000_000;
+    let efficiency_den = elapsed_ns.saturating_mul(ESTIMATED_POWER_W);
 
     println!("------------------------------------------");
     println!("Deployment Metrics:");
     println!("  Total Operations: {}", ops_count);
-    println!("  Throughput:       {:.2} ops/sec", throughput);
     println!(
-        "  Estimated Power:  {:.1} W (Single Core)",
-        estimated_power_w
+        "  Throughput:       {} ops/sec",
+        format_ratio(throughput_num, elapsed_ns, 2)
     );
-    println!("  Power Utility:    {:.4} ops/W", efficiency);
+    println!("  Estimated Power:  {ESTIMATED_POWER_W}.0 W (Single Core)");
+    println!(
+        "  Power Utility:    {} ops/W",
+        format_ratio(throughput_num, efficiency_den, 4)
+    );
     println!("  Memory Footprint: 4.2 MB (Static Residue Core)");
     println!("------------------------------------------");
     println!("Status: VALIDATED (High-Efficiency Residue Core)");

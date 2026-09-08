@@ -9,6 +9,26 @@
 //! # Theorem Reference
 //! - Proof File: `ExactCoefficient.v`
 //! - Status: VERIFIED
+//!
+//! # Relationship to the production K-Elimination record (issue #70 index)
+//!
+//! This is a **second, independent** fixed two-modulus `(main, anchor)`
+//! K-Elimination implementation, alongside
+//! [`crate::arithmetic::k_elimination::KElimination`]. It predates that
+//! module's CT hardening and safe-basis validation and has neither:
+//! construction here is a bare `assert!` rather than a fallible `try_new`,
+//! and `gcd`/`mod_inverse` below are plain variable-time Euclidean algorithm,
+//! not `KElimination`'s `_ct` primitives. It is **not** the production
+//! K-Elimination (`nine65::arithmetic::rns::extract_k_rns_level`, used by the
+//! live DualRNS encrypt/mul/rescale path) and has no live production caller
+//! today: its only non-test consumer is `ops::gso_fhe`'s own
+//! `#[cfg(test)]` benchmark comparison, plus `exact_coeff.rs` /
+//! `ct_mul_exact.rs`, which are themselves exercised only by their own
+//! tests. See `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` for the
+//! full inventory of every K-Elimination-shaped implementation in this
+//! workspace and why each one exists; this chain is flagged there as the one
+//! candidate for future *removal* (not merging into `KElimination` — the two
+//! have diverging validation behavior).
 
 /// Exact divider using dual-modulus K-Elimination
 #[derive(Clone, Debug)]

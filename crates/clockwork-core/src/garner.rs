@@ -29,6 +29,12 @@
 //! way). `mod_inverse` calls inside `garner_decompose_ct` operate only on
 //! the (public, fixed-per-basis) *moduli*, never on secret residues, so its
 //! variable-time Euclidean algorithm is not a secret-dependent side channel.
+//!
+//! This is `clockwork-core`'s formal-spec reference implementation of
+//! K-Elimination, distinct from `nine65`'s production and reference
+//! implementations. For the full inventory of every K-Elimination-shaped
+//! implementation across the workspace and why each one exists, see
+//! `docs/K_ELIMINATION_IMPLEMENTATIONS_2026-09-03.md` (issue #70).
 
 use crate::basis::mod_inverse;
 

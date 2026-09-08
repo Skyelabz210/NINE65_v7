@@ -6,10 +6,9 @@
 //! themselves (the four lanes D0/D1/D2/D3 and their resolvers) live in later
 //! phases that depend on a concrete CRT substrate.
 //!
-//! The scaffold lets callers (notably SBNI's lane-count contract and any
-//! upcoming CRAM-CT division routes) declare intent, attach certificates,
-//! and refuse "naked" quotients without requiring the full implementation
-//! to be in place.
+//! The scaffold lets callers (notably upcoming CRAM-CT division routes)
+//! declare intent, attach certificates, and refuse "naked" quotients without
+//! requiring the full implementation to be in place.
 
 use crate::Vec;
 
