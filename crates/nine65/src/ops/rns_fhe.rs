@@ -33,6 +33,13 @@ use zeroize::{Zeroize, Zeroizing, ZeroizeOnDrop};
 #[path = "track1_exact_multiply_lock.rs"]
 mod track1_exact_multiply_lock;
 
+/// Track 1 (PR #103) T1.4: derived-transient exact BFV ciphertext multiply.
+/// A real (non-test) child module -- experimental and not wired into any
+/// existing call path (`mul()`, `mul_auto()`, etc. are unchanged). See its
+/// own module doc for the full scope note.
+#[path = "derived_transient_mul.rs"]
+pub mod derived_transient_mul;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]

@@ -16,6 +16,18 @@
 //! forbids). `MainOnlyBaseExt` computes the rank `rho` from the main residues
 //! themselves.
 //!
+//! ## Sibling at a different scale
+//!
+//! `exact_transcendentals::transduction::TransductionMap` implements the same
+//! rank/base-extension identity for CRAM's "Safe Basis" substrate (a handful
+//! of small primes, `i128` arithmetic, `M_A` under a few dozen bits). This
+//! module is that identity's FHE-ciphertext-scale counterpart: `u64` lanes,
+//! `U256`/`U512` internals, main bases up to a few hundred bits. They are not
+//! interchangeable — `TransductionMap::try_new` refuses a basis this large,
+//! and this module is not sized for `TransductionMap`'s Safe Basis constants
+//! (though it would compute the same answer there, just with more overhead
+//! than the smaller crate needs).
+//!
 //! ## Math (exact, no floating point)
 //!
 //! For pairwise-coprime main moduli `m_i`, product `M`, `M_i = M / m_i`, and
