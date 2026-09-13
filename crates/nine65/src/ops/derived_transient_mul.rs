@@ -142,7 +142,7 @@ fn negacyclic_mul_mod(a: &[u64], b: &[u64], p: u64) -> Vec<u64> {
             acc += a[i] as i128 * b[k - i] as i128;
         }
         for i in (k + 1)..n {
-            acc -= a[i] as i128 * b[k - i + n] as i128;
+            acc -= a[i] as i128 * b[k + n - i] as i128;
         }
         let reduced = ((acc % p_i) + p_i) % p_i;
         out[k] = reduced as u64;
