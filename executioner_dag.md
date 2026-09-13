@@ -443,3 +443,54 @@ Parallel fronts available immediately: {R01–R04}, {R05}, {E01–E02}, {G01}, {
 | M07 | PASS (branch codex/track-2…) | compare_bit.rs, PR #104 comment |
 ### Next step
 Run ultracode against this file starting with the independent fronts listed under "Dependency order". First node to build: NODE-R01.
+
+---
+## STATUS DELTA — 2026-09-13 — merge of 625b33c (T1.1/T1.3/T1.4 from parallel session) + gate run
+
+Gates run on the merged modules (`cargo test -p nine65 --lib --features allow_insecure -- exact_scale_round derived_transient_mul track1_exact_multiply_lock`):
+- **G2 float scan:** CLEAN (no `f32`/`f64`) in all three files.
+- **G6 source scan (non-test lines):** CLEAN — no `garner`, `mixed_radix`, `to_u256_level`, `reconstruct`, `BaseExt::project`, `.anchor` reads.
+- **G3/G4 first run:** FAILED 18/21 — three tests panicked `attempt to subtract with overflow` at `derived_transient_mul.rs:145` (`negacyclic_mul_mod`, on the `mul_experimental` route). Root cause: `b[k - i + n]` evaluates `(k - i)` in `usize` with `i > k`. **Fix applied once (per executioner rule):** `b[k + n - i]`. Committed.
+- **G3/G4 after fix:** **21 passed, 0 failed.**
+
+### Node status changes (append-only; original blocks above stand as spec)
+| Node | New status | Where | Notes |
+|---|---|---|---|
+| R01 capacity certificate | **SKIP-EXISTS / PASS** | `arithmetic/exact_scale_round.rs` — `ExactScaleRoundError::InsufficientAuxCapacity`, tests `insufficient_aux_capacity_is_refused`, `under_capacity_bases_are_unreachable` | Typed refusal before arithmetic ✓ |
+| R02 centered lift + shift | **SKIP-EXISTS / PASS** | same — `shift_multiplier()`, `S = s_mult·Q`, `s_mult = x_bound_over_q_sq·t + 1`; test `output_shift_is_a_multiple_of_q` | Matches §0.4 exactly (no sign test needed) |
+| R03 two-extension exact rounded rescale (coeff) | **SKIP-EXISTS / PASS** | same — `ExactScaleRound::scale_round`; two `MainOnlyBaseExt` instances (main→aux, aux→main) | Identity `Y=(Z−w)·Q⁻¹` in aux, §0.3 verbatim |
+| R04 poly driver | **SKIP-EXISTS / PASS** | same + `derived_transient_mul::scale_round_pipeline_matches_reference_on_direct_coefficients` | |
+| R05 unified_rescale on manufactured chain | PENDING | — | still the second path; R06 needs it |
+| R06 rescale decision gate | PENDING | — | blocked on R05 |
+| E01 transient extension | **SKIP-EXISTS / PASS** | `ops/derived_transient_mul.rs` — `DerivedTransientMulContext { to_aux: MainOnlyBaseExt, q_mod_aux }`; **canonical→centered correction on the aux projection** (module doc: a canonical residue > Q/2 projects to a different `a_j` residue than its centered lift; the code corrects by `q_mod_aux`) | This correction was not in the DAG's E01 pseudocode — **spec amendment:** E01 must apply the centered correction before extension. Now recorded. |
+| E02 tensor in MAIN∪AUX | **SKIP-EXISTS / PASS** | same — `negacyclic_mul_mod` (schoolbook, i128 accumulate, single reduction) + `rns_poly_mul` on main; tests `negacyclic_mul_mod_matches_brute_force_reference`, `_corner_inputs`, `d1_cross_term_needs_double_the_single_product_bound`, `context_construction_requires_doubled_capacity…` | **Spec amendment:** the `d1` cross term is a sum of two products ⇒ capacity bound must be **2×** the single-product bound; R01's `t·N·Q+1 < A` is insufficient for `d1` — use `2·t·N·Q+1 < A` (code enforces this). |
+| E03 Order A (rescale-then-relin, mod-Q evk) | **SKIP-EXISTS / PASS** | same — `mul_experimental` → `scale_round` on `e0,e1,e2` → `ctx.relinearize(...)` (mod-Q gadget); test `derived_transient_route_is_exact_where_public_mul_is_wrong` (on `light_rns_insecure`, the chain where `mul()` is proven wrong) | Experimental, additive, **not wired** into `mul()`/`mul_auto()` |
+| E04 Order B (relin-in-AUX) | PENDING | — | still required so the math can compare orders (§0.5) |
+| E05 `mul_no_relin_exact` | PENDING | — | |
+| E06 route selection + public `mul_exact` API | PENDING | — | `mul_experimental` is reachable only directly; `MulRoute::ExactDerivedTransient` not added |
+| **E07 (new) re-point the T1.1 lock** | PENDING | `ops/track1_exact_multiply_lock.rs::bajard_rescale_disagrees_with_exact_oracle_when_delta_squared_exceeds_q` | Contract + the module's own note: now that the route exists, this test must be **re-pointed at the derived-transient route and flipped to assert agreement** (do not delete/weaken). Gate: the test asserts `mul_experimental` == oracle on the same 72 sample points where `exact_rescale` was wrong. |
+| T1.1 locks (contract) | **PASS** | `track1_exact_multiply_lock.rs` — `bajard_rescale_disagrees…` (71/72 wrong pinned), `public_mul_silently_returns_wrong_plaintext_off_contract`, `exact_oracle_recovers_message…`, `main_only_reproduces_base_ext_without_the_redundant_residue`, `wire_q_lock_dual_ciphertext_publishes_anchor_lanes_coprime_to_q`, `oracle_intermediates_fit_u128` | The wire_q lock is the **red half of G05** (proves the current dual wire violates WIRE-Q). |
+| G01/G02 oracle at production configs | **PARTIAL** | `exact_scale_round::production_primes_full_range_against_u512_oracle` (U512, real primes) covers the rescale kernel; the **full multiply** differential is only on `light_rns_insecure` (u128) | G02 remains: run `mul_experimental` vs U512 oracle on secure_128_deep/192/256 with seeded pairs + edge plaintexts |
+| G05 WIRE-Q gate | **PARTIAL (red half only)** | see T1.1 lock | green half pending E06/W02 |
+| G07 capacity gate executable | **PASS** | R01 tests + `context_construction_requires_doubled_capacity…` | |
+| M05 sampler | PASS | (unchanged) | |
+
+### Fronts now open (all independent)
+R05 · E04 · E05 · E06 · **E07** · G01/G02 (production-config full-multiply oracle) · G03 · G04 · G05-green · G06 · W01–W03 · S01–S03 · C01–C02 · X01 · F01
+
+---
+## CHECKPOINT — 2026-09-13 — after merge + fix, NODE-E03 reached
+### Completed This Session
+| NODE-ID | Status | Output |
+|---|---|---|
+| M02 | PASS | crates/nine65/src/arithmetic/main_only_base_ext.rs |
+| R01–R04 | PASS (merged, gated) | crates/nine65/src/arithmetic/exact_scale_round.rs |
+| E01–E03 | PASS (merged, bug fixed, gated) | crates/nine65/src/ops/derived_transient_mul.rs |
+| T1.1 | PASS (merged, gated) | crates/nine65/src/ops/track1_exact_multiply_lock.rs |
+### In Progress
+None — all remaining nodes are PENDING with open fronts listed above.
+### Next step
+Run ultracode on the open fronts. Recommended first nodes (highest value, independent): **E07** (re-point the lock — contract obligation now actionable), **G02** (full-multiply U512 oracle on the named production configs), **E04** (Order B, so §0.5 can be decided by measurement), **G05-green + W02** (make WIRE-Q pass, not just prove it fails).
+### Files to Deliver
+crates/nine65/src/ops/derived_transient_mul.rs (fix), executioner_dag.md (this record)
+---
