@@ -440,10 +440,25 @@ impl PublicKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (pk, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Nine65Error::DeserializationError {
-                message: format!("Bincode parse error: {}", e),
+        let (pk, consumed): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::DeserializationError {
+                    message: format!("Bincode parse error: {}", e),
+                }
             })?;
+        // `decode_from_slice` reports how many bytes it consumed but does
+        // not itself reject extra trailing bytes; a validated decoder must,
+        // or an attacker can smuggle bytes past validation onto the end of
+        // an otherwise-valid payload.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::DeserializationError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte public key",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         pk.validate(expected_n, expected_q)?;
         Ok(pk)
     }
@@ -477,10 +492,22 @@ impl EvaluationKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (ek, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Nine65Error::DeserializationError {
-                message: format!("Bincode parse error: {}", e),
+        let (ek, consumed): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::DeserializationError {
+                    message: format!("Bincode parse error: {}", e),
+                }
             })?;
+        // See the matching comment in `PublicKey::from_bytes_validated`.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::DeserializationError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte evaluation key",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         ek.validate(expected_n, expected_q)?;
         Ok(ek)
     }

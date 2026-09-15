@@ -13,5 +13,18 @@ path = "src/lib.rs"
 nine65 = { path = "../nine65" }
 private-feedback-core = { path = "../private-feedback-core" }
 
-[dev-dependencies]
-nine65 = { path = "../nine65", features = ["allow_insecure"] }
+# Issue #74: this used to also declare `[dev-dependencies] nine65 = {features
+# = ["allow_insecure"]}` so its one test could call `SecureConfig::
+# test_medium_insecure()` (itself only compiled under
+# `cfg(any(test, debug_assertions, feature = "allow_insecure"))`) and seed a
+# `ShadowHarvester`. That unconditional dev-dependency feature request fed
+# `allow_insecure` into the single shared `nine65` build for the whole
+# workspace via resolver-2 dev-dependency unification on every
+# `cargo test --release --workspace`, which is exactly the unification
+# `nine65`'s own allow_insecure-must-not-ship-in-release compile-time gate
+# exists to catch -- the same class of problem `fhe-service`'s Cargo.toml
+# used to have (see the comment there). The test below now builds its
+# context from `SecureConfig::secure_128()` (a real, always-available named
+# config, not a test-only one) via `generate_keys_dual_full_secure()` (the
+# same unconditionally-accepted secure-RNG path production code uses), so
+# this crate no longer needs `allow_insecure` in any build mode.

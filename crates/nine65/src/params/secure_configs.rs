@@ -1125,13 +1125,35 @@ pub fn assert_production_safe(config: &SecureConfig) {
     config.require_production_safe();
 }
 
-/// Validate a raw `FHEConfig` against its declared claim, with a 128-bit
-/// minimum on production paths.
-pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
-    if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
-        return;
-    }
-
+/// The raw production-safety predicate, with no `test`/`debug_assertions`/
+/// `allow_insecure` bypass.
+///
+/// This is the fallible primitive: the checks are exactly the ones
+/// [`assert_production_safe_fhe_config`] used to run through `assert!`
+/// (WR-7's factorization-aware structural screen included), but here every
+/// violation returns a typed [`Nine65Error`] instead of panicking. It is
+/// unconditional (always evaluates the checks) so it is independently
+/// testable in a normal `cargo test` build, where
+/// [`verify_production_safe_fhe_config`]'s environment bypass would
+/// otherwise make every violation branch unreachable.
+///
+/// Checks, in the order a violating config is reported (the first failing
+/// check is the error; later ones are not evaluated):
+///
+/// 1. The audited dimension floor `N >= 8192` -- `ConfigError`.
+/// 2. WR-7 / issue #87 requirement 6: the factorization-aware structural
+///    screen (`LatticeSecurityEstimator::dual_estimate_with_factorization`,
+///    Core-SVP and MATZOV) must not REFUSE the modulus shape -- narrow lane,
+///    prime power, power of two, non-coprime lanes, or a malformed
+///    factorization -- `SecurityScreenRefused`. This is the same screen
+///    `SecureConfig::try_new_verified` runs on every named and
+///    `custom_screened` tuple, applied here to a raw `FHEConfig` so a
+///    caller-built config gets no weaker policy than a named one. A refusal
+///    fails closed: it never falls back to the width-only number in step 3,
+///    even though that number exists and might individually meet the claim.
+/// 3. The width-only Core-SVP screen meets the claim -- `SecurityLevelNotMet`.
+/// 4. The HE Standard modulus bound -- `ConfigError`.
+pub fn production_safety_checks(config: &FHEConfig) -> Nine65Result<()> {
     // `security_bits` on a raw `FHEConfig` is, at best, a caller-declared
     // claim -- `FHEConfig::custom` no longer derives it from a first-prime
     // heuristic (issue #88), and `FHEConfig::for_depth` stores the caller's
@@ -1139,18 +1161,22 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
     // governs: `security_bits` can only push the requirement UP, never
     // provide the proof that the tuple meets it.
     let required_security = (config.security_bits as u32).max(128);
-    let log_q = exact_product_bit_length(&config.primes);
+
+    if config.n < 8192 {
+        return Err(Nine65Error::ConfigError {
+            message: format!(
+                "PRODUCTION SECURITY VIOLATION: N={} is below the audited floor N=8192",
+                config.n
+            ),
+        });
+    }
+
     let estimator = LatticeSecurityEstimator::new(CostModel::CoreSVP);
-    let estimate = estimator.estimate(
-        config.n,
-        log_q,
-        SecretDistribution::Ternary,
-        required_security,
-    );
 
     // WR-7 / issue #87 requirement 6: apply the same factorization-aware
     // structural policy to raw-config production validation. Fails closed
-    // on a REFUSED verdict rather than falling back to `estimate` above.
+    // on a REFUSED verdict rather than falling back to the width-only
+    // `estimate` below.
     let factors: Vec<(u64, u32)> = config.primes.iter().map(|&p| (p, 1)).collect();
     let structural = estimator.dual_estimate_with_factorization(
         config.n,
@@ -1158,34 +1184,87 @@ pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
         SecretDistribution::Ternary,
         required_security,
     );
+    if structural.binding_bits.is_none() {
+        return Err(Nine65Error::SecurityScreenRefused {
+            reason: format!(
+                "PRODUCTION SECURITY VIOLATION: config '{}' modulus factorization was REFUSED by \
+                 the structural screen (narrow/prime-power/power-of-two/non-coprime/malformed \
+                 lane) -- no production security number may be asserted for it.\nCore-SVP: {}\n\
+                 MATZOV: {}",
+                config.name, structural.core_svp.analysis, structural.matzov.analysis,
+            ),
+        });
+    }
 
-    assert!(
-        config.n >= 8192,
-        "PRODUCTION SECURITY VIOLATION: N={} is below the audited floor N=8192",
-        config.n
-    );
-    assert!(
-        structural.binding_bits.is_some(),
-        "PRODUCTION SECURITY VIOLATION: config '{}' modulus factorization was REFUSED by the \
-         structural screen (narrow/prime-power/power-of-two/non-coprime/malformed lane) -- no \
-         production security number may be asserted for it.\nCore-SVP: {}\nMATZOV: {}",
-        config.name,
-        structural.core_svp.analysis,
-        structural.matzov.analysis,
-    );
-    assert!(
-        estimate.effective_bits >= required_security,
-        "PRODUCTION SECURITY VIOLATION: config '{}' screens at {} bits ({} required).\n{}",
-        config.name,
-        estimate.effective_bits,
+    let log_q = exact_product_bit_length(&config.primes);
+    let estimate = estimator.estimate(
+        config.n,
+        log_q,
+        SecretDistribution::Ternary,
         required_security,
-        estimate.analysis,
     );
-    assert!(
-        HEStandardBounds::is_compliant(config.n, log_q, required_security),
-        "PRODUCTION SECURITY VIOLATION: config '{}' exceeds the HE Standard modulus bound",
-        config.name
-    );
+    if estimate.effective_bits < required_security {
+        return Err(Nine65Error::SecurityLevelNotMet {
+            bits: estimate.effective_bits,
+            required: required_security,
+        });
+    }
+
+    if !HEStandardBounds::is_compliant(config.n, log_q, required_security) {
+        return Err(Nine65Error::ConfigError {
+            message: format!(
+                "PRODUCTION SECURITY VIOLATION: config '{}' exceeds the HE Standard modulus bound",
+                config.name
+            ),
+        });
+    }
+
+    Ok(())
+}
+
+/// Validate a raw `FHEConfig` against its declared claim, with a 128-bit
+/// minimum on production paths, returning a typed error instead of
+/// panicking.
+///
+/// This is what every `try_*` constructor that accepts caller-supplied
+/// configuration must call: an invalid/unverified production config is
+/// caller input, not an internal invariant, so it must produce a `Result`,
+/// never abort the process (see issue #85 — with `panic = "abort"` in the
+/// release profile, a reachable `assert!` here is process termination, not a
+/// typed configuration failure).
+///
+/// Outside production builds (`test`, `debug_assertions`, or the
+/// `allow_insecure` feature) this always returns `Ok(())`, matching the
+/// panicking version's behavior of being a no-op there. Use
+/// [`production_safety_checks`] directly to exercise the underlying
+/// predicate without that bypass (e.g. from tests).
+pub fn verify_production_safe_fhe_config(config: &FHEConfig) -> Nine65Result<()> {
+    if cfg!(any(test, debug_assertions, feature = "allow_insecure")) {
+        return Ok(());
+    }
+    production_safety_checks(config)
+}
+
+/// Validate a raw `FHEConfig` against its declared claim, with a 128-bit
+/// minimum on production paths.
+///
+/// # Panics
+///
+/// Panics on any production-safety violation
+/// [`verify_production_safe_fhe_config`] detects; the panic message is the
+/// typed error's `Display` form, so the four branches of
+/// [`production_safety_checks`] (dimension floor, WR-7 structural refusal,
+/// width-only screen, HE Standard bound) stay distinguishable in the abort
+/// message. The `assert_` prefix makes that panic contract explicit in the
+/// name: this wrapper exists only for call sites that have deliberately
+/// chosen an infallible, abort-on-invalid API. Fallible call sites — every
+/// `try_*` constructor included — must call
+/// [`verify_production_safe_fhe_config`] directly and propagate the error
+/// with `?` instead.
+pub fn assert_production_safe_fhe_config(config: &FHEConfig) {
+    if let Err(error) = verify_production_safe_fhe_config(config) {
+        panic!("{error}");
+    }
 }
 
 /// Return a detailed error rather than panicking.
@@ -1906,6 +1985,178 @@ mod tests {
         let test_config = SecureConfig::test_fast_insecure();
         // In test mode, this will not panic
         test_config.require_production_safe();
+    }
+
+    // =====================================================================
+    // ISSUE #85 — `try_new` MUST RETURN, NOT PANIC, ON INVALID CONFIG
+    // =====================================================================
+    //
+    // `production_safety_checks` is the raw predicate with no
+    // test/debug_assertions/allow_insecure bypass, so — unlike
+    // `verify_production_safe_fhe_config`, which is deliberately a no-op
+    // under `cfg(test)` — these violation branches are reachable and
+    // assertable from a normal `cargo test` run. This is what
+    // `RNSFHEContext::try_new` calls (via `verify_production_safe_fhe_config`
+    // outside test/debug builds), so pinning the exact `Nine65Error` here
+    // pins `try_new`'s release-mode contract without needing a
+    // release-without-test-cfg build to observe it directly.
+    //
+    // Merged with WR-7 (PR #112): the predicate also runs the
+    // factorization-aware structural screen, so a fifth branch
+    // (`SecurityScreenRefused`) is pinned below alongside the original three.
+
+    #[test]
+    fn production_safety_checks_rejects_dimension_below_the_audited_floor() {
+        let mut config = SecureConfig::secure_128().into_config();
+        config.n = 4096; // below the audited N=8192 floor
+
+        let error = production_safety_checks(&config)
+            .expect_err("N=4096 must be rejected, not silently accepted");
+        match error {
+            Nine65Error::ConfigError { message } => {
+                assert!(message.contains("N=4096"), "message was: {message}");
+                assert!(message.contains("8192"), "message was: {message}");
+            }
+            other => panic!("expected ConfigError for dimension floor, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn production_safety_checks_rejects_a_config_that_screens_below_its_claim() {
+        // N clears the 8192 floor and the tuple is structurally well-formed
+        // (it is secure_128's own four-prime, 119-bit chain, which screens at
+        // 196 Core-SVP bits), but claiming 256-bit security on it is nowhere
+        // near sufficient: the width-only CoreSVP screen must reject it -- as
+        // `SecurityLevelNotMet`, distinct from a structural refusal.
+        let mut config = SecureConfig::secure_128().into_config();
+        config.security_bits = 256;
+
+        let error = production_safety_checks(&config)
+            .expect_err("an unmet security claim must be rejected, not silently accepted");
+        match error {
+            Nine65Error::SecurityLevelNotMet { bits, required } => {
+                assert_eq!(required, 256);
+                assert!(
+                    bits < required,
+                    "screened bits ({bits}) should be below the claim ({required})"
+                );
+            }
+            other => panic!("expected SecurityLevelNotMet, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn production_safety_checks_rejects_a_modulus_over_the_he_standard_bound() {
+        // n=8192 with a 128-bit claim allows log2(q) <= 218
+        // (`HEStandardBounds::max_log_q(8192, 128)`). Stack eight DISTINCT
+        // NTT-valid 28..30-bit primes (a 234-bit product) to blow past that
+        // bound. They must be distinct: the predicate runs WR-7's
+        // factorization-aware structural screen BEFORE the width-only and
+        // HE Standard checks, and a repeated lane merges to a prime power
+        // there and is REFUSED outright (`SecurityScreenRefused`) -- which
+        // would never reach the branch this test exists to pin. Every lane
+        // here is a distinct prime well above the modelled floor, so the
+        // structural screen is `Screened` and the oversized product is what
+        // gets rejected.
+        let base = SecureConfig::secure_128().into_config();
+        let config = FHEConfig {
+            n: 8192,
+            primes: vec![
+                998244353, 985661441, 754974721, 469762049, 167772161, 595591169, 645922817,
+                897581057,
+            ],
+            q: 998244353,
+            t: base.t,
+            eta: base.eta,
+            security_bits: 128,
+            name: "test_he_standard_bound_violation",
+        };
+
+        let error = production_safety_checks(&config)
+            .expect_err("a modulus far past the HE Standard bound must be rejected");
+        // Whichever screen catches it first (width-only CoreSVP or the HE
+        // Standard table), it must be a typed error, never a panic -- that
+        // is the property this test exists to pin. Both branches are
+        // legitimate rejections of the same oversized-Q config; a structural
+        // refusal is NOT, because this tuple's shape is well-formed.
+        assert!(
+            matches!(
+                error,
+                Nine65Error::SecurityLevelNotMet { .. } | Nine65Error::ConfigError { .. }
+            ),
+            "expected SecurityLevelNotMet or ConfigError, got {error:?}"
+        );
+    }
+
+    #[test]
+    fn production_safety_checks_refuses_a_structurally_refused_shape_with_a_typed_error() {
+        // WR-7 / issue #87 requirement 6, through WR-8's fallible path: the
+        // raw-config production predicate runs the SAME factorization-aware
+        // structural screen `SecureConfig::try_new_verified` does, and a
+        // REFUSED shape surfaces as a typed `SecurityScreenRefused` -- never
+        // a panic, and never a fall-back to the width-only number (which for
+        // this tuple would have been a comfortable pass: its ~107-bit product
+        // at N=8192 is NARROWER than secure_128's own 119-bit chain, so the
+        // width-only model would score it higher). `65537` is the narrow
+        // (17-bit) prime lane `custom_screened_refuses_a_narrow_prime_lane`
+        // pins for the `SecureConfig` path; this is the raw `FHEConfig` path.
+        let base = SecureConfig::secure_128().into_config();
+        let config = FHEConfig {
+            n: 8192,
+            primes: vec![65537, 998244353, 985661441, 754974721],
+            q: 65537,
+            t: 257,
+            eta: base.eta,
+            security_bits: 128,
+            name: "test_structural_refusal_narrow_lane",
+        };
+
+        let error = production_safety_checks(&config)
+            .expect_err("a narrow prime lane must be refused by the structural screen");
+        assert!(
+            matches!(error, Nine65Error::SecurityScreenRefused { .. }),
+            "expected SecurityScreenRefused, got {error:?}"
+        );
+        assert!(
+            error.to_string().contains("REFUSED"),
+            "message was: {error}"
+        );
+    }
+
+    #[test]
+    fn production_safety_checks_accepts_every_named_secure_config() {
+        for config in [
+            SecureConfig::secure_128().into_config(),
+            SecureConfig::secure_128_deep().into_config(),
+            SecureConfig::secure_192().into_config(),
+            SecureConfig::secure_256().into_config(),
+        ] {
+            assert!(
+                production_safety_checks(&config).is_ok(),
+                "named config '{}' must pass its own production-safety screen",
+                config.name
+            );
+        }
+    }
+
+    #[test]
+    fn verify_production_safe_fhe_config_never_panics_on_hostile_input() {
+        // The behavioral contract `try_new` depends on: no matter how
+        // invalid the config, the fallible path returns `Err`, and the
+        // process stays alive to receive it (no `assert!`/`panic!`
+        // reachable). Under `cfg(test)` this is a deliberate no-op — see
+        // the doc comment on `verify_production_safe_fhe_config` — but that
+        // no-op is itself part of the contract under test: this call must
+        // not panic either way.
+        let mut hostile = SecureConfig::secure_128().into_config();
+        hostile.n = 1;
+        hostile.primes = vec![0];
+        hostile.security_bits = usize::MAX;
+        assert!(verify_production_safe_fhe_config(&hostile).is_ok());
+
+        // And the constructor built on top of it must likewise return
+        // `Err`, never abort, when given the same hostile config directly.
+        assert!(crate::ops::rns_fhe::RNSFHEContext::try_new(&hostile).is_err());
     }
 
     // =====================================================================

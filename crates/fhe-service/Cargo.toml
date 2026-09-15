@@ -21,5 +21,13 @@ getrandom = { workspace = true }
 sha2 = { workspace = true }
 subtle = { workspace = true }
 
+# Issue #74: this used to also enable `nine65/allow_insecure` here, which
+# made it load-bearing for `cargo test --release -p fhe-service` (see the
+# doc comment on `Session::new_test` in src/session.rs for the full chain)
+# and was the reason `nine65`'s own allow_insecure-must-not-ship-in-release
+# compile-time gate had to stay commented out. `Session::new_test` no longer
+# needs it — it uses `generate_keys_dual_full_secure()`, the same
+# unconditionally-accepted secure-RNG path production session creation
+# uses — so this crate no longer depends on `allow_insecure` at all.
 [dev-dependencies]
-nine65 = { path = "../nine65", features = ["serde", "allow_insecure"] }
+nine65 = { path = "../nine65", features = ["serde"] }

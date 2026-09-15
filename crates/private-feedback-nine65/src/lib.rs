@@ -69,7 +69,6 @@ impl EncryptedFeedback {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nine65::entropy::ShadowHarvester;
     use nine65::params::secure_configs::SecureConfig;
     use private_feedback_core::{FrictionClass, QuestionClass, SentimentClass};
 
@@ -89,10 +88,14 @@ mod tests {
 
     #[test]
     fn public_adapter_encrypts_and_aggregates_live_dual_rns_slots() {
-        let config = SecureConfig::test_medium_insecure().into_config();
+        // Issue #74: a real named config (not the test-only,
+        // allow_insecure-gated `test_medium_insecure()`) via the
+        // unconditionally-accepted secure-RNG keygen path -- see the
+        // Cargo.toml comment on this crate's now-removed dev-dependency on
+        // `nine65/allow_insecure` for why.
+        let config = SecureConfig::secure_128().into_config();
         let context = RNSFHEContext::try_new(&config).expect("test context");
-        let mut rng = ShadowHarvester::with_seed(0x4e49_4e45_3635);
-        let keys = context.generate_keys_dual_full(&mut rng);
+        let keys = context.generate_keys_dual_full_secure();
 
         let left_signal = signal(42, 5, 700);
         let right_signal = signal(99, 2, 250);
