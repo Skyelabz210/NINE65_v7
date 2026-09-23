@@ -1,0 +1,50 @@
+{
+  "core": {
+    "soundness": true,
+    "test_count": 10000,
+    "failures": 0,
+    "capacity_bits": 109.99931748633203
+  },
+  "quantum": {
+    "phase_estimation_valid": true,
+    "decode_capacity": 215441,
+    "test_count": 100
+  },
+  "neural": {
+    "sequence_generation_valid": true,
+    "stationary_distribution": [
+      0.5,
+      0.5
+    ],
+    "test_count": 100
+  },
+  "crypto": {
+    "signatures_verified": 5,
+    "tampering_detected": 5,
+    "total_tests": 5,
+    "num_primes": 15
+  },
+  "fluid": {
+    "hypothesis_h_satisfied": true,
+    "delta": -2.0,
+    "activation_level": 1
+  },
+  "number_theory": {
+    "mertens_estimate": 0.26529071123286485,
+    "validity_product": 0.17102402241721126
+  },
+  "hardware": {
+    "speedup": 273.0,
+    "measured_speedup": 1.1346153846153846
+  },
+  "topology": {
+    "dimension": 0.631,
+    "components": 8,
+    "states": 512
+  },
+  "information_theory": {
+    "screening_verified": true,
+    "capacity": 3.32,
+    "compression": 0.9975
+  }
+}
