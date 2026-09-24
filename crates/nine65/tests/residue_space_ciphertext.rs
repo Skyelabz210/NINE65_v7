@@ -923,13 +923,16 @@ fn ct_multiply_is_order_equivariant_bit_exact() {
         (
             "secure_128/reverse",
             SecureConfig::secure_128().config,
-            vec![2usize, 1, 0],
+            // Four-prime recut 2026-08-26 (issue #132). Length must match
+            // primes.len(); the previous [2,1,0] / [1,2,0] were the retired
+            // three-lane tuple. Identical to secure_128_deep.
+            vec![3usize, 2, 1, 0],
             true,
         ),
         (
             "secure_128/rotate",
             SecureConfig::secure_128().config,
-            vec![1usize, 2, 0],
+            vec![1usize, 2, 3, 0],
             true,
         ),
         (
