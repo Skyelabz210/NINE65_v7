@@ -9,8 +9,13 @@ It provides finite leveled computation plus low-depth refresh paths. **It is not
 
 ## Open Work — read this first
 
-`docs/OPEN_WORK_2026-08-26.md` is the current handoff: what is decided, what is
-blocked on an owner decision, what is measured-but-unfixed, and — section D — a
+`docs/REPOSITION_EXECUTION_2026-09-24.md` reconciles the September branch
+inventory and completion plan with the current main tree. Read its verified
+state changes, transduction-capacity finding, dependency gates, and benchmark
+contract before starting new work. Issue #92 remains the release tracker.
+
+`docs/OPEN_WORK_2026-08-26.md` is the August handoff: what was decided, what was
+blocked on an owner decision, what was measured-but-unfixed, and — section D — a
 list of settled questions that LOOK open and must not be re-derived. Two
 retractions in the 2026-08-22..26 session came from re-reasoning instead of
 re-reading; section D exists to stop a third.
