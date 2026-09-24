@@ -409,16 +409,13 @@ fn p1_no_cram_module_contains_a_float() {
     assert!(!code_only("// f64 in a comment\n").contains("f64"));
 }
 
-/// **P2 (source half)** — the anchored read uses no Garner.
+/// **P2** — the anchored read uses no Garner.
 ///
-/// The runtime half — `garner_calls == 0` across an arithmetic run — needs the
-/// instrumented counter that lands with step 8, when `safe_basis_io` stops
-/// detecting its carry through `garner_reconstruct`. Until then this asserts
-/// what is true now: the anchor module reaches its winding without it, and
-/// `safe_basis_io` still does not, which is recorded here so the retirement is
-/// visible as an outstanding debt rather than an assumed property.
+/// `ExactState::to_u128` and the Safe Basis add/mul carry both go through
+/// `canonical_from`: one add and one remainder on the anchor lane. A Garner
+/// walk in either file is a regression.
 #[test]
-fn p2_anchored_read_is_garner_free_and_the_remaining_debt_is_named() {
+fn p2_anchored_read_is_garner_free() {
     let anchor = production_code(include_str!("../src/cram_anchor.rs"));
     assert!(
         !anchor.contains("garner_reconstruct"),
@@ -429,13 +426,20 @@ fn p2_anchored_read_is_garner_free_and_the_remaining_debt_is_named() {
         "…and it must still reach the winding by the adjacency formula"
     );
 
-    // The outstanding debt, asserted so it cannot be quietly forgotten: this
-    // flips when step 8 lands, and the flip must be a deliberate edit here.
     let pde = production_code(include_str!("../src/cram_pde.rs"));
     assert!(
-        pde.contains("garner_reconstruct"),
-        "ExactState::to_u128 still goes through Garner; when that changes, \
-         update this gate to assert the absence instead"
+        !pde.contains("garner_reconstruct"),
+        "ExactState readout must be the anchor-lane formula, not Garner"
+    );
+    assert!(
+        pde.contains("canonical_from"),
+        "the corridor representative has to come from the anchor lane"
+    );
+
+    let io = production_code(include_str!("../src/safe_basis_io.rs"));
+    assert!(
+        !io.contains("garner_reconstruct"),
+        "Safe Basis add/mul must not detect the carry through Garner"
     );
 }
 
