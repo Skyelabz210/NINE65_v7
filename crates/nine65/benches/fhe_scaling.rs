@@ -9,43 +9,6 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use nine65::params::SecureConfig;
 use nine65::prelude::*;
 
-fn bench_homo_mul_scaling(c: &mut Criterion) {
-    let mut group = c.benchmark_group("homo_mul_scaling");
-    group.sample_size(10); // Fewer samples for large N
-
-    // Test configurations at different N values - ALL use secure 128-bit+ configs
-    let configs = [
-        ("N=2048/128-bit", SecureConfig::secure_128().into_config()),
-        (
-            "N=4096/128-bit-deep",
-            SecureConfig::secure_128_deep().into_config(),
-        ),
-        ("N=4096/192-bit", SecureConfig::secure_192().into_config()),
-        ("N=8192/256-bit", SecureConfig::secure_256().into_config()),
-    ];
-
-    for (name, config) in configs.iter() {
-        let ntt = NTTEngine::new(config.q, config.n);
-        let mut rng = ShadowHarvester::with_seed(0xDEADBEEF);
-        let keys = KeySet::generate(config, &ntt, &mut rng);
-        let encoder = BFVEncoder::new(config);
-
-        let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
-        #[allow(deprecated)]
-        let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
-
-        let ct1 = encryptor.encrypt(42, &mut rng);
-        let ct2 = encryptor.encrypt(17, &mut rng);
-
-        group.bench_with_input(BenchmarkId::new("parallel", name), &name, |b, _| {
-            #[allow(deprecated)]
-            b.iter(|| black_box(evaluator.mul(&ct1, &ct2)))
-        });
-    }
-
-    group.finish();
-}
-
 fn bench_ntt_scaling(c: &mut Criterion) {
     let mut group = c.benchmark_group("ntt_scaling");
     group.sample_size(20);
@@ -112,10 +75,5 @@ fn bench_encrypt_decrypt_scaling(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(
-    benches,
-    bench_homo_mul_scaling,
-    bench_ntt_scaling,
-    bench_encrypt_decrypt_scaling
-);
+criterion_group!(benches, bench_ntt_scaling, bench_encrypt_decrypt_scaling);
 criterion_main!(benches);

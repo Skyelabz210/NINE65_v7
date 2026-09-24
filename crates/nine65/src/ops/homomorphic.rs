@@ -164,26 +164,10 @@ impl<'a> BFVEvaluator<'a> {
         }
     }
 
-    /// Scale polynomial by t/q with rounding using K-Elimination
-    ///
-    /// This is the critical operation that must be EXACT.
-    /// Standard truncation division causes error accumulation.
-    fn scale_by_t_over_q(&self, poly: &RingPolynomial) -> RingPolynomial {
-        // round(t * c / q) for each coefficient
-        // Using K-Elimination for exact computation
-        let coeffs: Vec<u64> = poly
-            .coeffs
-            .iter()
-            .map(|&c| self.ke.scale_and_round(c, self.t, self.q))
-            .collect();
-
-        RingPolynomial::from_coeffs_unchecked(coeffs, self.q)
-    }
-
-    /// Relinearize 3-component ciphertext to 2-component
+    /// Relinearize a 3-component ciphertext to 2 components.
     ///
     /// # Panics
-    /// Panics if no evaluation key was provided. Use `try_relinearize()` for fallible variant.
+    /// Panics if no evaluation key was provided. Use `try_relinearize()` for the fallible variant.
     pub fn relinearize(
         &self,
         c0: &RingPolynomial,
@@ -245,32 +229,20 @@ impl<'a> BFVEvaluator<'a> {
         digits
     }
 
-    /// Full homomorphic multiplication with relinearization
+    /// Retired single-modulus ct×ct multiply.
     ///
-    /// **DEPRECATED**: For ct×ct multiplication, use `RNSFHEContext::mul_dual_symmetric()`
-    /// which provides exact K-Elimination rescaling and works correctly for all parameter sets.
-    /// This single-modulus implementation only works when Δ² ≤ Q.
-    ///
-    /// BFV ct×ct strategy for single-modulus:
-    /// 1. Compute tensor product (d0, d1, d2) - scale is Δ²
-    /// 2. Relinearize to (c0', c1') - scale still Δ²
-    /// 3. Scale by t/q to convert Δ² → Δ
-    ///
-    /// Scaling AFTER relin works better than before because
-    /// relin doesn't involve ring multiplication that compounds errors.
+    /// The rescale on this path returns a wrong plaintext, including `1×1`
+    /// (#135). This function does not build that ciphertext. The named exact
+    /// route is [`crate::ops::rns_fhe::RNSFHEContext::try_exact_evaluator`].
     #[deprecated(
         since = "0.2.0",
-        note = "Use RNSFHEContext::mul_dual_symmetric() for K-Elimination exact rescaling"
+        note = "Retired (#135). Returns an error and no ciphertext. Use RNSFHEContext::try_exact_evaluator."
     )]
-    pub fn mul(&self, ct1: &Ciphertext, ct2: &Ciphertext) -> Ciphertext {
-        let (c0, c1, c2) = self.mul_no_relin(ct1, ct2);
-        let ct_relin = self.relinearize(&c0, &c1, &c2);
-
-        // Scale by t/q to convert from Δ² scale to Δ scale
-        Ciphertext {
-            c0: self.scale_by_t_over_q(&ct_relin.c0),
-            c1: self.scale_by_t_over_q(&ct_relin.c1),
-        }
+    pub fn mul(&self, ct1: &Ciphertext, ct2: &Ciphertext) -> Nine65Result<Ciphertext> {
+        let _ = (ct1, ct2);
+        Err(Nine65Error::InvalidParameter {
+            message: "BFVEvaluator::mul is retired (#135): the single-modulus rescale returns a wrong plaintext, including 1x1. No ciphertext is produced. Use RNSFHEContext::try_exact_evaluator.".into(),
+        })
     }
 }
 
@@ -446,21 +418,11 @@ impl<'a> TrackedEvaluator<'a> {
         Ok(self.evaluator.relinearize(c0, c1, c2))
     }
 
-    /// Full ciphertext multiplication with relinearization
+    /// Retired. Does not debit the noise ledger and does not return a ciphertext.
+    /// See [`BFVEvaluator::mul`].
     #[allow(deprecated)]
-    pub fn try_mul(
-        &mut self,
-        ct1: &Ciphertext,
-        ct2: &Ciphertext,
-    ) -> Result<Ciphertext, NoiseExhausted> {
-        // Consume both multiplication and relinearization costs
-        let mul_cost = NoiseBudget::mul_ct_cost(self.config);
-        let relin_cost = NoiseBudget::relin_cost(self.config);
-
-        self.budget.consume(NoiseOpType::MulCt, mul_cost)?;
-        self.budget.consume(NoiseOpType::Relin, relin_cost)?;
-
-        Ok(self.evaluator.mul(ct1, ct2))
+    pub fn try_mul(&mut self, ct1: &Ciphertext, ct2: &Ciphertext) -> Nine65Result<Ciphertext> {
+        self.evaluator.mul(ct1, ct2)
     }
 }
 
@@ -1227,14 +1189,10 @@ mod tests {
         println!("  After t/q scaling → {}", sum_final[0]);
         println!("  Expected: {} × {} = {}", a, b, (a * b) % config.t);
 
-        // Step 4: Full multiplication with relinearization
         let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
-        let ct_prod = evaluator.mul(&ct_a, &ct_b);
-        let result = decryptor.decrypt(&ct_prod);
-
-        println!("\nStep 4 - After relinearization:");
-        println!("  Decrypted result: {}", result);
-        println!("  Expected: {}", (a * b) % config.t);
+        #[allow(deprecated)]
+        let refused = evaluator.mul(&ct_a, &ct_b);
+        println!("\nStep 4 - single-modulus mul refused (#135): {refused:?}");
 
         // Determine where the issue is
         if d0_raw.coeffs[0] < delta {
@@ -1283,12 +1241,12 @@ mod tests {
         let ct = encryptor.encrypt(2, &mut harvester);
 
         let start = std::time::Instant::now();
-        for _ in 0..100 {
-            let _ = evaluator.mul(&ct, &ct);
-        }
+        #[allow(deprecated)]
+        let refused = evaluator.mul(&ct, &ct);
         let elapsed = start.elapsed();
 
-        println!("Homo mul x100: {:?}", elapsed);
+        assert!(refused.is_err(), "retired mul must not return a ciphertext");
+        println!("Homo mul refused in {:?}", elapsed);
     }
 
     // =========================================================================

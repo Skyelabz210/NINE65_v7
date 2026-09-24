@@ -158,21 +158,14 @@ class Nine65:
         return self.context.mul_plain(ciphertext, value)
 
     def mul(self, ct1: Ciphertext, ct2: Ciphertext) -> Ciphertext:
-        """Ciphertext x ciphertext multiplication.
+        """Retired (#135).
 
-        **Currently broken for every config this was checked against --
-        see README.md "Known limitations" before using this.** It is not
-        merely bounded by ``mul_capacity()``: even the simplest possible
-        case, ``1 * 1``, decrypts to the wrong value. This was verified in
-        plain Rust with no PyO3/Python involved, so it is a `nine65`
-        core-arithmetic issue, not something this facade or the FFI
-        boundary introduces. Prefer ``mul_plain()`` (ciphertext x a known
-        plaintext scalar), which is verified exact.
+        Raises ``ValueError`` and returns no ciphertext. The single-modulus
+        rescale this used to call was wrong, including for ``1 * 1``.
+        Prefer ``mul_plain()`` when the multiplier is a known plaintext.
         """
         return self.context.mul(ct1, ct2, self.keys.evaluation_key)
 
     def mul_capacity(self) -> tuple:
-        """See ``FHEContext.mul_capacity()``: a necessary-but-not-sufficient
-        bound on ``mul()`` correctness -- see ``mul()``'s own docstring for
-        the more severe issue this number does not capture."""
+        """Historical single-modulus envelope. Not a license to call ``mul()``."""
         return self.context.mul_capacity()
