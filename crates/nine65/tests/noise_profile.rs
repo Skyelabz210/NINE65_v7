@@ -35,11 +35,11 @@
 //!    decode has landed on a different lattice point and `|error|` is measured
 //!    against the wrong reference. No depth is reported as reached unless
 //!    `decrypt_dual` returned the expected plaintext there.
-//! 2. It needs `Q·t < 2^128`; above that `decrypt_dual_with_diagnostics` takes
-//!    its `decrypt_dual_u256` fallback and returns `margin = 0`, which is not a
-//!    measurement. `secure_128` (`Q·t ≈ 2^105`) satisfies this;
-//!    `secure_128_deep` and up do not. `measure()` asserts the condition rather
-//!    than silently reporting zeros.
+//! 2. `decrypt_dual_with_diagnostics` uses u128 while `Q·t < 2^128`, and the
+//!    U256 path otherwise. That U256 path returns a real margin (it used to
+//!    return `0`). `measure()` still needs `Q` itself in u128 so `Δ/2` is an
+//!    exact ceiling. Four-lane `secure_128` is in that window: `Q` fits,
+//!    `Q·t` does not. Wider chains are not a measurement this file can quote.
 //!
 //! ## Running it
 //!
@@ -167,12 +167,15 @@ fn measure(
 ) -> Sample {
     let lanes = ct.c0.main.len();
 
-    // Guard limit (2): above this the diagnostic returns margin = 0 from the
-    // U256 fallback and there is no measurement to report.
+    // Q must fit so Δ/2 is an exact u128 ceiling. Q·t may overflow u128;
+    // decrypt_dual_with_diagnostics then uses its U256 decode and still
+    // returns a margin. Do not refuse that case.
     assert!(
-        q_at(ctx, lanes).checked_mul(ctx.t as u128).is_some(),
-        "Q*t >= 2^128 at {lanes} lanes: decrypt_dual_with_diagnostics would take \
-         its U256 fallback and return margin = 0. That is not a measurement."
+        ctx.config.primes[..lanes]
+            .iter()
+            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
+            .is_some(),
+        "Q does not fit in u128 at {lanes} lanes, so Δ/2 is not a u128 ceiling"
     );
 
     let dh = delta_half(ctx, lanes);
@@ -523,9 +526,9 @@ fn assert_lanes_constant(samples: &[Sample], what: &str) {
 // SETUP
 // ===========================================================================
 
-/// `secure_128`: N=8192, three ~30-bit main lanes, five anchor lanes, t=65537.
-/// The deepest shipped parameter set for which the existing measure is
-/// actually available (`Q·t ≈ 2^105.3 < 2^128`).
+/// `secure_128`: N=8192, four ~30-bit main primes, t=65537.
+/// `Q` fits in u128 (`log2(Q) = 119`). `Q·t` does not. The diagnostic
+/// uses the U256 decode for that product and still returns a margin.
 fn ctx_and_keys() -> (RNSFHEContext, DualRNSFullKeySet) {
     let cfg = SecureConfig::secure_128();
     let ctx = RNSFHEContext::new(&cfg.config);
