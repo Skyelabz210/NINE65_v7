@@ -25,6 +25,22 @@
 //! Transduction is the key operation enabling CRAM (Configurable Residue
 //! Arithmetic Machine) to switch between heterogeneous modular bases
 //! without leaving the residue domain.
+//!
+//! ## Two scales, same identity, deliberately separate implementations
+//!
+//! `nine65`'s `arithmetic::main_only_base_ext::MainOnlyBaseExt` and
+//! `arithmetic::exact_scale_round::ExactScaleRound` implement the *same*
+//! rank/base-extension identity this module does (`raw = sum_i x_i * e_i`,
+//! rank `t = raw / M_A`, target residue `= (raw - t*M_A) mod b_j`) — but at
+//! FHE-ciphertext scale: `u64` lanes, `U256`/`U512` internals, and main
+//! bases up to a few hundred bits (e.g. `secure_128`'s four ~30-bit NTT
+//! primes, `M_A ~ 2^119`). This module's `i128` arithmetic is sized for
+//! "Safe Basis" scale (a handful of small primes, `M_A` under a few dozen
+//! bits) and — as of [`TransductionMap::try_new`] — refuses, rather than
+//! silently wraps on, any basis pair too large for that. Reach for
+//! `MainOnlyBaseExt`/`ExactScaleRound` at FHE-ciphertext scale; reach for
+//! `TransductionMap` at CRAM-substrate scale. Neither is a drop-in
+//! replacement for the other's numeric range.
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
@@ -50,6 +66,56 @@ pub const TRANSPORT_CORE: [i128; 4] = [3, 7, 11, 13];
 // TransductionMap
 // ---------------------------------------------------------------------------
 
+/// Approximate bit length of a positive `i128`, for diagnostics only.
+///
+/// `i128` has no `leading_zeros`-based `BITS` helper for "how big is this
+/// value", so this computes it directly: `128 - leading_zeros(x)` is the
+/// position of the highest set bit, i.e. `floor(log2(x)) + 1`. Non-positive
+/// inputs (including overflow sentinels that never got a real value) report
+/// `0` rather than a garbage bit count.
+fn approx_bits(x: i128) -> u32 {
+    if x <= 0 {
+        0
+    } else {
+        128 - x.leading_zeros()
+    }
+}
+
+/// Typed refusal for a basis pair whose CRT machinery cannot be carried in
+/// `i128` without silent wraparound.
+///
+/// [`TransductionMap::apply`]'s accumulator (`raw = sum_i modd(x_a[i], a_i) *
+/// idempotents[i]`) and its wrap-term correction are both proportional to
+/// `M_A = prod(basis_a)`, not just to the values being transduced. For
+/// "Safe Basis" scale bases (a handful of small primes) this is tiny; for
+/// FHE-ciphertext-scale bases (e.g. the four secure_128 main primes,
+/// `M_A ~ 2^119`) it overflows `i128` — in debug builds via a checked-arith
+/// panic at the accumulation site, in release builds via silent wraparound
+/// that returns wrong residues with no error raised anywhere. This type lets
+/// [`TransductionMap::try_new`] refuse such a basis pair at construction, so
+/// the wrong regime is structurally unreachable rather than merely
+/// detectable after the fact.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransductionCapacityError {
+    /// `prod(basis_a)` itself does not fit in `i128` (checked at every
+    /// partial product, not just the final value).
+    BasisAProductOverflow,
+    /// `prod(basis_b)` itself does not fit in `i128`.
+    BasisBProductOverflow,
+    /// A load-bearing bound used inside `apply()` — the raw accumulator
+    /// bound `M_A * sum(basis_a)`, or the wrap-term bound
+    /// `sum(basis_a) * max(basis_b)` — either overflowed `i128` outright or
+    /// landed inside the safety margin kept clear of the `i128` edge.
+    InsufficientI128Capacity {
+        /// Which bound was violated, for diagnosability.
+        bound_kind: &'static str,
+        /// Approximate bit length of the offending bound (or, when the
+        /// bound itself overflowed before it could be formed, of the
+        /// largest input that fed it).
+        approx_bits: u32,
+    },
+}
+
 /// Precomputed CRT coefficient matrix for converting residues from basis A
 /// to basis B.
 ///
@@ -71,19 +137,123 @@ pub struct TransductionMap {
 }
 
 impl TransductionMap {
-    /// Construct a transduction map from `basis_a` to `basis_b`.
+    /// Construct a transduction map from `basis_a` to `basis_b`, refusing
+    /// (rather than silently wrapping) any basis pair whose CRT bookkeeping
+    /// cannot be carried in `i128`.
     ///
     /// Precomputes `alpha_ij = (M_A / a_i) * (M_A / a_i)^{-1}_{a_i} mod b_j`
     /// where `M_A = prod(a_i)`.
     ///
+    /// # Capacity certificate
+    ///
+    /// [`Self::apply`] forms `raw = sum_i modd(x_a[i], a_i) * e_i` where each
+    /// term is `< a_i * M_A` (since `modd(x, a_i) <= a_i - 1 < a_i`, and
+    /// `e_i = mulmod(m_over_ai, inv, m_a)` below is always reduced into
+    /// `[0, M_A)`), so `raw < M_A * sum(basis_a)`. It also forms the wrap
+    /// term `t * modd(m_a, b_j)` where `t = raw / m_a < sum(basis_a)` and
+    /// `modd(m_a, b_j) < max(basis_b)`, so that term is
+    /// `< sum(basis_a) * max(basis_b)`.
+    ///
+    /// This computes both bounds with checked arithmetic and requires each
+    /// to land under `i128::MAX / 2` — a factor-of-2 safety margin so the
+    /// incremental `raw +=` accumulation in `apply()` (which walks up to the
+    /// bound one term at a time, never all at once) never comes within a
+    /// factor of 2 of the `i128` edge partway through. The much smaller
+    /// per-lane intermediate `acc + r_i * coefficients[i][j]` inside
+    /// `apply()` is bounded by `b_j * (1 + max(basis_a))`, far under the raw
+    /// bound in every basis pair checked here, so it needs no separate gate.
+    ///
+    /// Returns [`TransductionCapacityError`] if either bound overflows
+    /// `i128` outright or falls inside that margin.
+    pub fn try_new(basis_a: &[i128], basis_b: &[i128]) -> Result<Self, TransductionCapacityError> {
+        // Guard the product itself at every step: an intermediate partial
+        // product can overflow i128 even when the caller never reaches a
+        // basis large enough for the *final* product to overflow.
+        let mut m_a: i128 = 1;
+        for &a in basis_a {
+            m_a = m_a
+                .checked_mul(a)
+                .ok_or(TransductionCapacityError::BasisAProductOverflow)?;
+        }
+        let mut m_b: i128 = 1;
+        for &b in basis_b {
+            m_b = m_b
+                .checked_mul(b)
+                .ok_or(TransductionCapacityError::BasisBProductOverflow)?;
+        }
+
+        let margin = i128::MAX / 2;
+
+        // Raw accumulator bound: M_A * sum(basis_a). `sum_a` itself is
+        // guarded with checked_add (not a plain `.sum()`) so this function
+        // has no unchecked arithmetic anywhere on the path to a capacity
+        // decision -- even though overflowing this specific sum would need
+        // a basis_a with individually gigantic moduli, which the m_a
+        // checked-product loop above would already have caught on far
+        // fewer elements in every realistic case.
+        let mut sum_a: i128 = 0;
+        for &a in basis_a {
+            sum_a = sum_a.checked_add(a).ok_or(
+                TransductionCapacityError::InsufficientI128Capacity {
+                    bound_kind: "raw accumulator (sum(basis_a) itself overflowed)",
+                    approx_bits: approx_bits(sum_a).max(approx_bits(a)),
+                },
+            )?;
+        }
+        let raw_bound =
+            m_a.checked_mul(sum_a)
+                .ok_or(TransductionCapacityError::InsufficientI128Capacity {
+                    bound_kind: "raw accumulator (overflowed forming the bound)",
+                    approx_bits: approx_bits(m_a).max(approx_bits(sum_a)),
+                })?;
+        if raw_bound >= margin {
+            return Err(TransductionCapacityError::InsufficientI128Capacity {
+                bound_kind: "raw accumulator",
+                approx_bits: approx_bits(raw_bound),
+            });
+        }
+
+        // Wrap-term bound: sum(basis_a) * max(basis_b).
+        let max_b = basis_b.iter().copied().max().unwrap_or(1);
+        let wrap_bound = sum_a.checked_mul(max_b).ok_or(
+            TransductionCapacityError::InsufficientI128Capacity {
+                bound_kind: "wrap term (overflowed forming the bound)",
+                approx_bits: approx_bits(sum_a).max(approx_bits(max_b)),
+            },
+        )?;
+        if wrap_bound >= margin {
+            return Err(TransductionCapacityError::InsufficientI128Capacity {
+                bound_kind: "wrap term",
+                approx_bits: approx_bits(wrap_bound),
+            });
+        }
+
+        Ok(Self::construct_checked(basis_a, basis_b, m_a, m_b))
+    }
+
+    /// Construct a transduction map from `basis_a` to `basis_b`.
+    ///
     /// # Panics
     ///
     /// Panics if any modulus in `basis_a` is not pairwise coprime with the
-    /// others (i.e., if a CRT inverse does not exist).
+    /// others (i.e., if a CRT inverse does not exist), or if the basis pair
+    /// fails the `i128` capacity certificate documented on
+    /// [`Self::try_new`] (see [`TransductionCapacityError`]).
     pub fn new(basis_a: &[i128], basis_b: &[i128]) -> Self {
-        let m_a = basis_a.iter().copied().fold(1i128, |acc, x| acc * x);
-        let m_b = basis_b.iter().copied().fold(1i128, |acc, x| acc * x);
+        Self::try_new(basis_a, basis_b)
+            .expect("TransductionMap: basis capacity or coprimality violated")
+    }
 
+    /// Shared construction body for a basis pair that has already cleared
+    /// the capacity certificate (`m_a`/`m_b` passed in to avoid recomputing
+    /// products already formed under `checked_mul` by the caller).
+    ///
+    /// # Panics
+    ///
+    /// Panics if any modulus in `basis_a` is not pairwise coprime with the
+    /// others — a distinct failure mode from capacity, left as a panic per
+    /// the existing contract.
+    fn construct_checked(basis_a: &[i128], basis_b: &[i128], m_a: i128, m_b: i128) -> Self {
         let n = basis_a.len();
         let m = basis_b.len();
 
@@ -563,6 +733,111 @@ mod tests {
                 "custom basis verify failed for value {}",
                 value
             );
+        }
+    }
+
+    // Test 11: try_new agrees with new on Safe-Basis-scale bases — the
+    // capacity certificate must be a no-op for the bases this crate actually
+    // ships (S6, S8, TRANSPORT_CORE). This is the regression proving the
+    // fix stays backward compatible: identical construction, identical
+    // apply() output.
+    #[test]
+    fn try_new_matches_new_on_safe_basis_scale() {
+        let via_new = TransductionMap::new(&S6_BASIS, &S8_BASIS);
+        let via_try_new =
+            TransductionMap::try_new(&S6_BASIS, &S8_BASIS).expect("Safe Basis must be accepted");
+
+        for &value in &[0i128, 1, 42, 12345, 29999, 30029] {
+            let x_a = decompose(value, &S6_BASIS);
+            assert_eq!(
+                via_new.apply(&x_a),
+                via_try_new.apply(&x_a),
+                "new() and try_new() diverged for value {value}"
+            );
+            // And both must actually be correct against a direct mod check —
+            // reproducing this module's own S6->S8 first-wrap coverage.
+            for (j, &b_j) in S8_BASIS.iter().enumerate() {
+                assert_eq!(
+                    via_try_new.apply(&x_a)[j],
+                    k_elim::modd(value, b_j),
+                    "S6->S8 mismatch via try_new for value {value} mod {b_j}"
+                );
+            }
+        }
+    }
+
+    // Test 12: try_new REFUSES the FHE-ciphertext-scale basis that silently
+    // corrupts data under the old unchecked `new`. These are secure_128's
+    // four main primes (see CLAUDE.md's security config table); M_A ~ 2^119,
+    // and the raw-accumulator bound M_A * sum(basis_a) ~ 2^151 overflows
+    // i128 outright — this must come back as a typed error, never `Ok`.
+    #[test]
+    fn try_new_refuses_fhe_scale_main_basis() {
+        let basis_a: [i128; 4] = [998244353, 985661441, 754974721, 469762049];
+        let basis_b: [i128; 3] = [1004535809, 1224736769, 167772161];
+
+        let err = match TransductionMap::try_new(&basis_a, &basis_b) {
+            Err(e) => e,
+            Ok(_) => panic!("FHE-scale basis_a must be refused, not silently accepted"),
+        };
+        match err {
+            // The raw-accumulator bound M_A * sum(basis_a) (~2^119 * ~2^32 =
+            // ~2^151) overflows i128 outright before it can even be formed,
+            // so the reported bits describe the largest input that fed it
+            // (M_A itself, ~119 bits here) rather than the (unrepresentable)
+            // bound — that is exactly the diagnosable overflow case, not a
+            // false positive.
+            TransductionCapacityError::InsufficientI128Capacity {
+                bound_kind,
+                approx_bits,
+            } => {
+                assert!(
+                    bound_kind.contains("raw accumulator"),
+                    "expected the raw accumulator bound to be the one that overflows, got {bound_kind:?}"
+                );
+                assert!(approx_bits > 0, "expected a diagnosable bit length, got 0");
+            }
+            other => panic!("expected InsufficientI128Capacity, got {other:?}"),
+        }
+
+        // Confirm this is not a coprimality artifact: the same basis_a is
+        // pairwise coprime (four distinct NTT-friendly primes), so a naive
+        // `new()` would not panic on that path — it would run straight into
+        // the overflow this test exists to catch.
+        for i in 0..basis_a.len() {
+            for j in (i + 1)..basis_a.len() {
+                assert_eq!(k_elim::gcd(basis_a[i], basis_a[j]), 1);
+            }
+        }
+    }
+
+    // Test 13: the boundary is genuine, not a blanket refusal — a basis pair
+    // that DOES fit the certified bound must be accepted by try_new AND
+    // must transduce correctly, cross-checked against a plain `modd`
+    // reference computed independently of TransductionMap.
+    #[test]
+    fn try_new_accepts_basis_within_bound_and_apply_is_correct() {
+        // Product ~1e18 (~2^60); raw bound M_A * sum(basis_a) ~ 2^82, well
+        // under the i128::MAX/2 margin (~2^126).
+        let basis_a: [i128; 3] = [1_000_003, 1_000_033, 1_000_037];
+        let basis_b: [i128; 2] = [1_000_039, 1_000_049];
+
+        let map = TransductionMap::try_new(&basis_a, &basis_b)
+            .expect("this basis pair fits comfortably inside the certified bound");
+
+        let m_a: i128 = basis_a.iter().product();
+        for &value in &[0i128, 1, 12345, 999_999_999, m_a - 1] {
+            let x_a = decompose(value, &basis_a);
+            let x_b = map.apply(&x_a);
+            for (j, &b_j) in basis_b.iter().enumerate() {
+                // Independent reference: plain modd of the original value,
+                // not routed through TransductionMap at all.
+                assert_eq!(
+                    x_b[j],
+                    k_elim::modd(value, b_j),
+                    "within-bound basis mismatch for value {value} mod {b_j}"
+                );
+            }
         }
     }
 }
