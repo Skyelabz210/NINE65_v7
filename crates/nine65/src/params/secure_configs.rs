@@ -317,14 +317,19 @@ pub fn public_refresh_ksk_headroom_bits(config: &FHEConfig) -> i64 {
     exact_delta_bit_length(config) as i64 - public_refresh_ksk_noise_bits(config) as i64
 }
 
-/// Whether this config's chain can carry a **non-circular (KSK)** public
-/// refresh (`ClockworkBootstrap::bootstrap_with_ksk`) and still decrypt.
+/// Headroom screen for the **non-circular (KSK)** public refresh.
 ///
-/// Strictly stronger than [`supports_public_refresh`]: the KSK bound is at
-/// least one bit larger than the circular bound by construction, so anything
-/// this admits the circular predicate admits too.
-pub fn supports_public_refresh_with_ksk(config: &FHEConfig) -> bool {
+/// Same contract as [`public_refresh_headroom_clears`]: a clear screen is
+/// not a decrypt-oracle result, and Gate 1 stays closed either way.
+/// Strictly stronger than the circular screen — the KSK bound is at least
+/// one bit larger — so anything this clears, the circular screen clears too.
+pub fn public_refresh_ksk_headroom_clears(config: &FHEConfig) -> bool {
     public_refresh_ksk_headroom_bits(config) >= post_refresh_required_bits(config)
+}
+
+/// Historical name for [`public_refresh_ksk_headroom_clears`].
+pub fn supports_public_refresh_with_ksk(config: &FHEConfig) -> bool {
+    public_refresh_ksk_headroom_clears(config)
 }
 
 /// Typed refusal for configs whose chain cannot carry a non-circular (KSK)
@@ -365,10 +370,26 @@ pub fn post_refresh_required_bits(config: &FHEConfig) -> i64 {
     (NoiseBudget::mul_ct_cost(config) + NoiseBudget::relin_cost(config)) / 1000
 }
 
-/// Whether this config's chain can carry a **public** refresh
-/// (`ClockworkBootstrap::bootstrap` / `bootstrap_with_ksk`) and still decrypt.
-pub fn supports_public_refresh(config: &FHEConfig) -> bool {
+/// Whether the published noise bound still fits inside `Delta` after one
+/// public refresh, with enough bits left for one ct×ct multiply and
+/// relinearization.
+///
+/// This is a **headroom screen**, not a correctness admission. A `true`
+/// result does not mean `ClockworkBootstrap::bootstrap` recovers the
+/// plaintext. Issue #117 measured a wrong plaintext on chains this screen
+/// clears, and Gate 1 (`public_phase1_soundness_gate`) stays fail-closed
+/// on every chain, including the ones that clear here. Do not open Gate 1
+/// because this function returns `true`.
+pub fn public_refresh_headroom_clears(config: &FHEConfig) -> bool {
     public_refresh_headroom_bits(config) >= post_refresh_required_bits(config)
+}
+
+/// Historical name for [`public_refresh_headroom_clears`].
+///
+/// "Supports" means the headroom screen clears. It does not mean a public
+/// refresh is correct, and it does not lift Gate 1.
+pub fn supports_public_refresh(config: &FHEConfig) -> bool {
+    public_refresh_headroom_clears(config)
 }
 
 /// Typed refusal for configs whose chain cannot carry a public refresh.
@@ -894,10 +915,15 @@ impl SecureConfig {
         exact_product_bit_length(&self.config.primes)
     }
 
-    /// Whether this config's chain can carry a **public** (evaluator-side,
-    /// secret-key-free) refresh. See [`supports_public_refresh`].
+    /// Headroom screen for a public refresh. See
+    /// [`public_refresh_headroom_clears`]. Not a correctness admission.
+    pub fn public_refresh_headroom_clears(&self) -> bool {
+        public_refresh_headroom_clears(&self.config)
+    }
+
+    /// Historical name for [`Self::public_refresh_headroom_clears`].
     pub fn supports_public_refresh(&self) -> bool {
-        supports_public_refresh(&self.config)
+        self.public_refresh_headroom_clears()
     }
 
     /// The level this tuple actually **screens** at under the conservative
@@ -1390,10 +1416,11 @@ mod tests {
             );
 
             assert_eq!(
-                supports_public_refresh(&case.config),
+                public_refresh_headroom_clears(&case.config),
                 case.expect_supported,
-                "{}: predicate disagrees with the measured decryption oracle \
-                 (headroom {} bits, required {} bits)",
+                "{}: headroom screen disagrees with the bound \
+                 (headroom {} bits, required {} bits). A clear screen is not \
+                 a decryption oracle.",
                 case.config.name,
                 headroom,
                 required,
@@ -1404,7 +1431,7 @@ mod tests {
                 outcome.is_ok(),
                 case.expect_supported,
                 "{}: ensure_public_refresh_supported disagrees with \
-                 supports_public_refresh",
+                 public_refresh_headroom_clears",
                 case.config.name
             );
 
@@ -1528,31 +1555,51 @@ mod tests {
             "short chain bootstrap_with_ksk() returned the wrong error: {non_circular}"
         );
 
-        // secure_128_deep (4 lanes): the gate must NOT fire. The empty
-        // ciphertext still fails later, in Phase 1's own limb check — a
-        // different error, which is exactly what "the gate did not fire" looks
-        // like here.
-        let admitted = SecureConfig::secure_128_deep().into_config();
-        let boot_deep = ClockworkBootstrap::new(&admitted).expect("bootstrap context");
-        let deep_ct = empty_ct(admitted.n);
-        let deep_bsk = empty_bsk(admitted.n);
+        // Headroom clears on the 4-lane chain, so Gate 0 must not fire.
+        // Gate 1 still must. An empty ciphertext is not allowed to proceed
+        // into Phase 1's limb checks just because the noise screen is green:
+        // the displaced-quotient refusal is the error this arm pins.
+        let headroom_clears = SecureConfig::secure_128_deep().into_config();
+        assert!(
+            public_refresh_headroom_clears(&headroom_clears),
+            "secure_128_deep is the chain whose headroom screen clears"
+        );
+        let boot_deep = ClockworkBootstrap::new(&headroom_clears).expect("bootstrap context");
+        let deep_ct = empty_ct(headroom_clears.n);
+        let deep_bsk = empty_bsk(headroom_clears.n);
+
+        const PHASE1: &str = "displaced quotient/carry";
 
         let deep_outcome = boot_deep.bootstrap(&deep_ct, &deep_bsk, &empty_ksk());
         match deep_outcome {
-            Ok(_) => panic!("an empty ciphertext cannot bootstrap successfully"),
-            Err(error) => assert!(
-                !error.to_string().contains(REFUSAL),
-                "secure_128_deep must not be refused by the public-refresh gate, got: {error}"
-            ),
+            Ok(_) => panic!("headroom clearance must not return a ciphertext"),
+            Err(error) => {
+                let message = error.to_string();
+                assert!(
+                    !message.contains(REFUSAL),
+                    "secure_128_deep must not be refused by the headroom gate, got: {error}"
+                );
+                assert!(
+                    message.contains(PHASE1),
+                    "a clear headroom screen must still fail closed at Gate 1, got: {error}"
+                );
+            }
         }
 
         let deep_ksk_outcome = boot_deep.bootstrap_with_ksk(&deep_ct, &deep_bsk, &empty_ksk());
         match deep_ksk_outcome {
-            Ok(_) => panic!("an empty ciphertext cannot bootstrap successfully"),
-            Err(error) => assert!(
-                !error.to_string().contains(KSK_REFUSAL),
-                "secure_128_deep must not be refused by the KSK gate, got: {error}"
-            ),
+            Ok(_) => panic!("headroom clearance must not return a ciphertext"),
+            Err(error) => {
+                let message = error.to_string();
+                assert!(
+                    !message.contains(KSK_REFUSAL),
+                    "secure_128_deep must not be refused by the KSK headroom gate, got: {error}"
+                );
+                assert!(
+                    message.contains(PHASE1),
+                    "a clear KSK headroom screen must still fail closed at Gate 1, got: {error}"
+                );
+            }
         }
     }
 

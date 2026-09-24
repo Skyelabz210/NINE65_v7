@@ -1620,6 +1620,39 @@ fn exact_route_is_never_auto_selected() {
     assert_ne!(ctx.mul_route(), MulRoute::DerivedTransientExact);
 }
 
+/// Named exact-multiply door on a reduced ring.
+///
+/// `mul_route` stays off this path. The witness is
+/// `try_exact_evaluator`: main-lane output, exact `1×1` and `7×7`, no
+/// refresh. The production-`N` cases are `production_configs_end_to_end_*`.
+#[test]
+fn named_exact_mul_door_small_ring() {
+    let primes = vec![998244353u64, 985661441, 754974721, 469762049];
+    let n_primes = primes.len();
+    let cfg = small_ring_config(primes, 16);
+    let ctx = RNSFHEContext::new(&cfg);
+    assert_ne!(ctx.mul_route(), MulRoute::DerivedTransientExact);
+
+    let ev = ctx.try_exact_evaluator().expect("exact evaluator");
+    assert_eq!(ev.route(), MulRoute::DerivedTransientExact);
+
+    let mut rng = ShadowHarvester::with_seed(0x0E0A_0001);
+    let keys = ctx.generate_keys(&mut rng);
+    let gadget = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+
+    for (a, b) in [(1u64, 1u64), (7, 7), (3, 5)] {
+        let ct_a = ctx.encrypt(a, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt(b, &keys.public_key, &mut rng);
+        let prod = ev.try_mul_exact(&ct_a, &ct_b, &gadget).expect("exact mul");
+        assert_eq!(prod.num_primes, n_primes, "output stays on the main lanes");
+        let got = ev
+            .try_decrypt_exact(&prod, &keys.secret_key)
+            .expect("decrypt");
+        let want = (a as u128 * b as u128 % cfg.t as u128) as u64;
+        assert_eq!(got, want, "{a} * {b}");
+    }
+}
+
 // ===========================================================================
 // Security prerequisite — full-width uniform key sampling
 // ===========================================================================
