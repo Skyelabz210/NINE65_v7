@@ -123,8 +123,7 @@ mod wasm_impl {
         /// Format: `safe|pct|bits/capacity`, `warn80|...`, `warn90|...`, or `critical|...`.
         pub fn boundary_report(&self) -> String {
             let intermediate = intermediate_bits(&self.config);
-            let report =
-                capacity_proximity_bits(intermediate, WIDE_INTERMEDIATE_CAPACITY_BITS);
+            let report = capacity_proximity_bits(intermediate, WIDE_INTERMEDIATE_CAPACITY_BITS);
             let region = match report.region {
                 CapacityRegion::Safe => "safe",
                 CapacityRegion::Warn80 => "warn80",
@@ -173,11 +172,7 @@ mod wasm_impl {
         }
 
         /// Encrypt with browser OS cryptographic randomness.
-        pub fn encrypt(
-            &self,
-            value: u64,
-            public_key: &WasmPublicKey,
-        ) -> Result<Vec<u8>, JsValue> {
+        pub fn encrypt(&self, value: u64, public_key: &WasmPublicKey) -> Result<Vec<u8>, JsValue> {
             public_key
                 .inner
                 .validate(self.config.n, self.config.q)
@@ -201,15 +196,9 @@ mod wasm_impl {
                     .inner
                     .validate(self.config.n, self.config.q)
                     .map_err(map_err)?;
-                let encryptor = BFVEncryptor::new(
-                    &public_key.inner,
-                    &self.encoder,
-                    &self.ntt,
-                    self.config.eta,
-                );
-                let ciphertext = encryptor
-                    .try_encrypt_seeded(value, seed)
-                    .map_err(map_err)?;
+                let encryptor =
+                    BFVEncryptor::new(&public_key.inner, &self.encoder, &self.ntt, self.config.eta);
+                let ciphertext = encryptor.try_encrypt_seeded(value, seed).map_err(map_err)?;
                 serialize(&ciphertext)
             }
             #[cfg(not(debug_assertions))]
@@ -228,10 +217,7 @@ mod wasm_impl {
             Ok(WasmPublicKey { inner: key })
         }
 
-        pub fn evaluation_key_from_bytes(
-            &self,
-            data: &[u8],
-        ) -> Result<WasmEvaluationKey, JsValue> {
+        pub fn evaluation_key_from_bytes(&self, data: &[u8]) -> Result<WasmEvaluationKey, JsValue> {
             let key: EvaluationKey = deserialize(data)?;
             key.validate(self.config.n, self.config.q)
                 .map_err(map_err)?;
@@ -295,7 +281,10 @@ mod wasm_impl {
             let right = self.decode_ciphertext(right)?;
             let evaluator =
                 BFVEvaluator::new(&self.ntt, &self.encoder, Some(&evaluation_key.inner));
-            serialize(&evaluator.mul(&left, &right))
+            let product = evaluator
+                .mul(&left, &right)
+                .map_err(|err| JsValue::from_str(&err.to_string()))?;
+            serialize(&product)
         }
     }
 

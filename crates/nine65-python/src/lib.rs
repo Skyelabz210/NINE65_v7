@@ -528,24 +528,10 @@ impl PyFHEContext {
         }
     }
 
-    /// Report the exact-correctness envelope of `mul()` for this context.
+    /// Historical single-modulus envelope `(supported, max_product)`.
     ///
-    /// Returns `(supported, max_product)`. `mul()` performs an
-    /// entirely-in-Rust single-modulus ciphertext x ciphertext tensor
-    /// product, relinearize, and rescale (`Δ² → Δ`) -- `nine65`'s own docs
-    /// mark this path `#[deprecated]` and note it "only works when
-    /// `Δ² ≤ Q`" (see `BFVEvaluator::mul` in `crates/nine65/src/ops/homomorphic.rs`).
-    /// `max_product` is the largest plaintext product `a * b` that path can
-    /// recover exactly; beyond it, `mul()` still returns *a* ciphertext (no
-    /// panic, no error) that decrypts to a wrong-but-plausible value rather
-    /// than the true product.
-    ///
-    /// This binding cannot check `a * b` against `max_product` for you --
-    /// `mul()` only ever sees ciphertexts, and decrypting to check would
-    /// defeat the point of encrypting. Check it yourself against known
-    /// plaintext ranges before relying on a `mul()` result, or use
-    /// `mul_plain()` (linear scalar multiply, not subject to this bound)
-    /// where the multiplier is a known plaintext rather than a ciphertext.
+    /// `mul()` is retired (#135) and returns `ValueError` with no ciphertext.
+    /// `max_product` is not a license to call it. `mul_plain()` is unchanged.
     ///
     /// For every `SecureConfig` this crate exposes (`secure_128` /
     /// `secure_192` / `secure_256`), `max_product` is small (single digits)
@@ -556,69 +542,14 @@ impl PyFHEContext {
     /// for real ct×ct depth; that path is not yet bound to Python (see
     /// README.md "What's exposed").
     ///
-    /// **This bound is necessary but was found NOT sufficient**: see the
-    /// `mul()` doc below for a second, more severe issue that this number
-    /// does not capture.
     fn mul_capacity(&self) -> (bool, u64) {
         self.config.supports_single_mod_mul()
     }
 
-    /// Homomorphic multiplication with boundary-safe panic isolation.
+    /// Retired single-modulus ct×ct multiply (#135).
     ///
-    /// # This path is currently broken -- verified during the FFI/bindings
-    /// # work that wired this method up (2026-09), not merely "unproven"
-    ///
-    /// Calling `nine65::ops::BFVEvaluator::mul()` directly in Rust -- no
-    /// PyO3, no Python -- and decrypting the result with the matching
-    /// secret key gives a **wrong plaintext for every case tried**,
-    /// including the most trivial one (`1 * 1`), across every config
-    /// checked: `SecureConfig::secure_128()` (n=8192) and, at n=1024,
-    /// `light_mul_insecure`, `light_insecure`, and
-    /// `SecureConfig::test_fast_insecure()`. This is a distinct failure
-    /// from -- and strictly worse than -- the documented `Δ² ≤ Q` capacity
-    /// note on `BFVEvaluator::mul` (`crates/nine65/src/ops/homomorphic.rs`):
-    /// that note implies correctness *within* `mul_capacity()`'s bound, but
-    /// `1 * 1` is within every one of those configs' bounds and still comes
-    /// back wrong.
-    ///
-    /// This appears to be why: none of `nine65`'s own passing `#[test]`s
-    /// actually exercise this exact function with a real decrypted-value
-    /// assertion. `test_homomorphic_mul_with_relin` and
-    /// `test_ct_mul_multiple_values` -- names that read as if they cover
-    /// this -- both construct a `BFVEvaluator` with an eval key but then
-    /// call `mul_no_relin()` + `decrypt_degree2()` instead of `mul()`,
-    /// bypassing relinearize/rescale entirely. `test_homomorphic_mul_diagnostic`
-    /// *does* call `mul()`, but asserts nothing about the result (it only
-    /// prints a `[FAIL]`/`[OK]` diagnosis line for a human to read) --
-    /// which is exactly the "wrong-but-plausible, no error raised" pattern
-    /// this repository's own `CLAUDE.md` already documents for a different
-    /// subsystem (the public-refresh `refresh(7) -> 34037` case). This one
-    /// was previously undocumented as far as this change found.
-    ///
-    /// This binding still exposes `mul()` faithfully (it *is* what
-    /// `nine65` provides, and gating it here would be a binding-layer
-    /// policy call outside this change's mandate to expose, not redesign,
-    /// the underlying crate) rather than hiding or silently disabling it.
-    /// But do not build anything on this method's output right now --
-    /// `mul_plain()` (verified exact; see `tests/`) is the safe alternative
-    /// wherever the multiplier is a known plaintext rather than a
-    /// ciphertext. See README.md "Known limitations" and
-    /// `tests/test_known_limitations.py`, which reproduces this from
-    /// Python and is intentionally marked `xfail(strict=True)`: it fails
-    /// today, and if it ever unexpectedly *passes*, that's the signal this
-    /// note (and the linked nine65 core issue) are stale and should be
-    /// revisited, not that the test is wrong.
-    ///
-    /// Before multiplying, this also checks that intermediate values won't
-    /// approach the anchor-capacity boundary tracked by
-    /// `arithmetic::boundary` (80%/90% thresholds, a *separate* concern
-    /// from either issue above -- it guards against an internal u128
-    /// overflow, not against wrong-but-plausible output). If the
-    /// configuration is borderline there, a Python warning is printed to
-    /// stderr.
-    ///
-    /// Any internal Rust panic (e.g., from an unexpected capacity overflow) is
-    /// caught and converted to a Python ValueError, preventing Python process crash.
+    /// Returns `ValueError` and no ciphertext. The Rust path used to return
+    /// a plausible ciphertext of the wrong plaintext, including `1×1`.
     #[allow(deprecated)]
     fn mul(
         &self,
@@ -626,39 +557,10 @@ impl PyFHEContext {
         ct2: &PyCiphertext,
         eval_key: &PyEvaluationKey,
     ) -> PyResult<PyCiphertext> {
-        // Pre-operation boundary check
-        let intermediate = intermediate_bits_for_config(&self.config);
-        let report = capacity_proximity_bits(intermediate, 159u32);
-        if report.region >= CapacityRegion::Warn80 {
-            let msg = format!(
-                "PyO3 mul() boundary: intermediate values ({} bits) are at {}% of \
-                 anchor capacity (158 bits). Proceeding, but overflow risk is elevated.",
-                intermediate, report.utilization_pct
-            );
-            eprintln!("{}", msg);
-            if report.region >= CapacityRegion::Warn90 {
-                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(msg));
-            }
-        }
-
-        let evaluator = BFVEvaluator::new(&self.ntt, &self.encoder, Some(&eval_key.inner));
-        let ct1_inner = ct1.inner.clone();
-        let ct2_inner = ct2.inner.clone();
-
-        // Panic-isolate the multiply: any internal overflow becomes a Python ValueError
-        // instead of crashing the Python interpreter.
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            evaluator.mul(&ct1_inner, &ct2_inner)
-        }))
-        .map_err(|_| {
-            PyErr::new::<pyo3::exceptions::PyValueError, _>(
-                "FHE multiplication panicked internally — possible anchor capacity overflow. \
-                 This config may require U256 arithmetic. Check anchor prime sizing \
-                 or use a smaller N/Q configuration.",
-            )
-        })?;
-
-        Ok(PyCiphertext { inner: result })
+        let _ = (ct1, ct2, eval_key);
+        Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+            "FHEContext.mul is retired (#135): the single-modulus rescale returns a wrong plaintext, including 1x1. No ciphertext is produced.",
+        ))
     }
 
     /// Return a human-readable boundary proximity report for this config.

@@ -499,18 +499,19 @@ mod integration_tests {
         let _ = evaluator.add(&ct, &ct2);
         let add_time = start.elapsed();
 
-        // Homo mul benchmark (using BFVEvaluator::mul for timing - mul_dual_symmetric
-        // now supports two-stage rescale for large-Q configs)
-        let start = std::time::Instant::now();
+        // The single-modulus mul is retired (#135). Do not time it as a multiply.
         #[allow(deprecated)]
-        let _ = evaluator.mul(&ct, &ct2);
-        let mul_time = start.elapsed();
+        let mul_refused = evaluator.mul(&ct, &ct2);
+        assert!(
+            mul_refused.is_err(),
+            "retired mul must not return a ciphertext"
+        );
 
         println!("\n=== QMNF FHE Benchmarks (N={}) ===", config.n);
         println!("KeyGen:     {:?}", keygen_time);
         println!("Encrypt:    {:?}", encrypt_time);
         println!("Decrypt:    {:?}", decrypt_time);
         println!("Homo Add:   {:?}", add_time);
-        println!("Homo Mul:   {:?}", mul_time);
+        println!("Homo Mul:   retired (#135)");
     }
 }

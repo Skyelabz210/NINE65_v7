@@ -188,12 +188,9 @@ fn main() {
     let mul_plain_us = start.elapsed().as_micros() as u64 / iterations;
 
     #[allow(deprecated)]
-    let mul_us = {
-        let start = Instant::now();
-        for _ in 0..iterations {
-            let _ = evaluator.mul(&ct_a, &ct_b);
-        }
-        start.elapsed().as_micros() as u64 / iterations
+    let legacy_mul_status = match evaluator.mul(&ct_a, &ct_b) {
+        Ok(_) => "unexpected ciphertext",
+        Err(_) => "refused",
     };
 
     let ctx = RNSFHEContext::new(&config);
@@ -485,7 +482,7 @@ fn main() {
             "negate_us": negate_us,
             "add_plain_us": add_plain_us,
             "mul_plain_us": mul_plain_us,
-            "legacy_single_modulus_mul_us": mul_us,
+            "legacy_single_modulus_mul": legacy_mul_status,
         },
         "operation_chain": {
             "requested_operations": requested_operations,

@@ -9,6 +9,7 @@
 
 use crate::arithmetic::persistent_montgomery::PersistentPolynomial;
 use crate::entropy::shadow::ShadowHarvester;
+use crate::errors::Nine65Result;
 use crate::keys::KeySet;
 use crate::ops::encrypt::{BFVDecryptor, BFVEncoder, BFVEncryptor, Ciphertext};
 use crate::ops::homomorphic::BFVEvaluator;
@@ -618,13 +619,16 @@ impl AdaptiveFHEContext {
         }
     }
 
-    /// Adaptive homomorphic multiplication
+    /// Adaptive homomorphic multiplication.
+    ///
+    /// Refuses. The single-modulus evaluator this calls is retired (#135)
+    /// and does not return a ciphertext.
     #[allow(deprecated)]
     pub fn adaptive_mul(
         &self,
         ct1_list: &[Ciphertext],
         ct2_list: &[Ciphertext],
-    ) -> Vec<Ciphertext> {
+    ) -> Nine65Result<Vec<Ciphertext>> {
         assert_eq!(ct1_list.len(), ct2_list.len());
         let batch_size = ct1_list.len();
 
@@ -648,10 +652,10 @@ impl AdaptiveFHEContext {
                     }
                     evaluator.mul(ct1, ct2)
                 })
-                .collect();
+                .collect::<Nine65Result<Vec<_>>>()?;
             self.entropy_monitor
                 .record_performance(batch_size, start_time.elapsed());
-            result
+            Ok(result)
         }
 
         #[cfg(all(not(feature = "sequential"), feature = "parallel"))]
@@ -689,11 +693,11 @@ impl AdaptiveFHEContext {
                             evaluator.mul(ct1, ct2)
                         },
                     )
-                    .collect()
-            });
+                    .collect::<Nine65Result<Vec<_>>>()
+            })?;
             self.entropy_monitor
                 .record_performance(batch_size, start_time.elapsed());
-            result
+            Ok(result)
         }
     }
 }
@@ -991,7 +995,7 @@ mod tests {
 
     #[test]
     #[allow(deprecated)]
-    fn test_adaptive_mul_produces_valid_output() {
+    fn single_modulus_adaptive_mul_refuses() {
         let context = setup_context();
 
         let a_msgs: Vec<u64> = vec![3, 5, 7];
@@ -1000,25 +1004,13 @@ mod tests {
         let ct_a = context.adaptive_encrypt(&a_msgs, 500);
         let ct_b = context.adaptive_encrypt(&b_msgs, 600);
 
-        // The deprecated BFV mul path introduces rounding noise on light() config,
-        // so we verify the adaptive path runs without panics and returns valid ciphertexts.
-        // For exact multiplication, use RNSFHEContext::mul_dual_symmetric().
-        let ct_prod = context.adaptive_mul(&ct_a, &ct_b);
-        assert_eq!(ct_prod.len(), 3, "Should produce one output per input pair");
-
-        let decrypted = context.adaptive_decrypt(&ct_prod);
-        assert_eq!(decrypted.len(), 3, "Should decrypt all products");
-
-        // Each decrypted value must be in valid plaintext range
-        for (i, &dec) in decrypted.iter().enumerate() {
-            assert!(
-                dec < context.config.t,
-                "Decrypted value {} at index {} must be < t={}",
-                dec,
-                i,
-                context.config.t
-            );
-        }
+        let refused = context
+            .adaptive_mul(&ct_a, &ct_b)
+            .expect_err("retired mul must not return ciphertexts");
+        assert!(
+            refused.to_string().contains("#135"),
+            "refusal must name the retired route, got {refused}"
+        );
     }
 
     #[test]
