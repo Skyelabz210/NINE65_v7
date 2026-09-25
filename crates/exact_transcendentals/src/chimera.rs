@@ -368,12 +368,115 @@ pub fn project_triad_onto_chimera(t: &TriadTranscendental, c: &Chimera) -> u64 {
     c.project(t.exact)
 }
 
+// ─── Shadow anchor family ─────────────────────────────────────────────────
+
+/// The shadow lane lifted to its Hensel power, `11^6`.
+///
+/// The bare prime 11 disambiguates over only ~3.46 bits. The lift is what
+/// gives the shadow lane enough range to recover a winding rather than a
+/// parity-sized hint.
+pub const SHADOW_LIFT_11_6: u64 = 1_771_561;
+
+/// The shadow anchor set, `{11^6, 13, 17, 19}`.
+///
+/// S8 tail — Shadow, Boundary, Saturation, Signature — with the shadow lane
+/// Hensel-lifted. Shallow residues carry `r = x mod M`; this family carries
+/// `r_s = x mod A`; [`shadow_winding`] closes between them in O(1).
+pub const SHADOW_ANCHOR_SET: [u64; 4] = [SHADOW_LIFT_11_6, 13, 17, 19];
+
+/// Product of [`SHADOW_ANCHOR_SET`]. Winding resolution is exact while `K < A`.
+pub const SHADOW_ANCHOR_PRODUCT: u64 = 7_438_784_639;
+
+/// Recover the winding `K` of `x = r + K * M` from its shadow-anchor residue.
+///
+/// ```text
+/// K * M  ==  r_s - r   (mod A)
+/// K      == (r_s - r) * M^-1  (mod A)
+/// ```
+///
+/// Returns `None` when `M` shares a factor with the family, so a missing
+/// inverse is reported rather than a wrong winding. Exact only for `K < A`;
+/// the caller owns that bound because `K` is what this function computes.
+pub fn shadow_winding(r: u64, r_s: u64, m_mod_a: u64) -> Option<u64> {
+    let a = SHADOW_ANCHOR_PRODUCT as u128;
+    let m_a = (m_mod_a as u128) % a;
+    if m_a == 0 || gcd_u64(m_a as u64, SHADOW_ANCHOR_PRODUCT) != 1 {
+        return None;
+    }
+    let inv = crate::composite_division::modinv_u128(m_a, a);
+    let diff = (r_s as u128 + a - (r as u128 % a)) % a;
+    Some((diff * inv % a) as u64)
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::triad::{pi_table, EngineTag, TriadTranscendental, S8};
+
+    /// The family is {11^6, 13, 17, 19}, product 7,438,784,639.
+    #[test]
+    fn shadow_anchor_family_matches_the_specification() {
+        assert_eq!(SHADOW_LIFT_11_6, 11u64.pow(6));
+        assert_eq!(SHADOW_ANCHOR_SET, [11u64.pow(6), 13, 17, 19]);
+
+        let product: u64 = SHADOW_ANCHOR_SET.iter().product();
+        assert_eq!(product, SHADOW_ANCHOR_PRODUCT);
+        assert_eq!(product, 7_438_784_639);
+        assert_eq!(64 - product.leading_zeros(), 33);
+        assert_eq!(SHADOW_ANCHOR_PRODUCT / SHADOW_LIFT_11_6, 13 * 17 * 19);
+
+        for i in 0..SHADOW_ANCHOR_SET.len() {
+            for j in (i + 1)..SHADOW_ANCHOR_SET.len() {
+                let (mut a, mut b) = (SHADOW_ANCHOR_SET[i], SHADOW_ANCHOR_SET[j]);
+                while b != 0 {
+                    let t = a % b;
+                    a = b;
+                    b = t;
+                }
+                assert_eq!(a, 1, "shadow anchor lanes must be pairwise coprime");
+            }
+        }
+        assert_eq!(family_for(11).map(|f| f.role), Some(LaneRole::Shadow));
+        assert_eq!(family_for(13).map(|f| f.role), Some(LaneRole::Boundary));
+        assert_eq!(family_for(17).map(|f| f.role), Some(LaneRole::Saturation));
+        assert_eq!(family_for(19).map(|f| f.role), Some(LaneRole::Signature));
+    }
+
+    /// Given the shallow residue and the shadow-anchor residue of the same
+    /// integer, the winding comes back exactly while K < A.
+    #[test]
+    fn shadow_anchor_recovers_the_winding_exactly() {
+        let a = SHADOW_ANCHOR_PRODUCT as u128;
+        let m: u128 = 2u128.pow(20) * 3u128.pow(8) * 5u128.pow(5) * 7u128.pow(4);
+        let m_mod_a = (m % a) as u64;
+
+        let mut x: u128 = 0x9E3779B97F4A7C15;
+        for _ in 0..20_000 {
+            x = x
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let k = x % (SHADOW_ANCHOR_PRODUCT as u128);
+            let r = x % m;
+            let value = r + k * m;
+
+            let recovered = shadow_winding((value % m) as u64, (value % a) as u64, m_mod_a)
+                .expect("M is coprime to the shadow anchor family");
+            assert_eq!(
+                recovered as u128, k,
+                "winding must be exact for K < A (K={k})"
+            );
+        }
+    }
+
+    /// A modulus sharing a factor with the family has no inverse.
+    #[test]
+    fn shadow_winding_refuses_a_modulus_sharing_a_factor() {
+        assert!(shadow_winding(0, 0, 11).is_none());
+        assert!(shadow_winding(0, 0, 13 * 4).is_none());
+        assert!(shadow_winding(1, 2, 2u64.pow(10) * 3).is_some());
+    }
 
     // ---- Prime-family analysis (thorough) ------------------------------
 
