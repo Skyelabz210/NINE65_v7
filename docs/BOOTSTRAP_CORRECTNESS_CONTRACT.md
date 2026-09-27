@@ -40,6 +40,23 @@ multiplied, relinearized, and boundary-noise ciphertexts across every admitted
 configuration. A declared lossy transition may discard state only when its
 public contract explicitly permits loss; BFV refresh does not.
 
+### Interrupted CRT-lift attempt (2026-09-26)
+
+Canonical CRT extension is not a replacement for the encrypted carry
+transducer. Phase 2 multiplies plaintext inputs by `Delta_boot`; feeding it
+raw lifted ciphertext components encodes the raw decryption phase modulo
+`t`, not the BFV rounded plaintext. The regression
+`phase1_raw_crt_lift_is_not_bfv_refresh` demonstrates this even with zero
+bootstrap-key noise. Keeping only the first boot-prime residue loses further
+information. Scaling by `Q_boot / Q_level` also does not compute the missing
+secret-dependent rounding operation.
+
+The interrupted implementation was removed and both public guards restored.
+`test_phase1_fix` now exits with status 1 on a refused refresh or wrong
+plaintext, so a successful process exit cannot mask either outcome.
+The remaining implementation requirement is still the encrypted carry
+transducer described above; these repairs do not implement public refresh.
+
 This document extracts the structural invariants enforced by the Clockwork
 Bootstrap implementation into a reviewable contract. Each invariant is
 annotated with (a) where it is enforced in code, (b) which test covers it,

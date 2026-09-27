@@ -150,6 +150,11 @@ name = "cram_comparative_probe"
 path = "src/bin/cram_comparative_probe.rs"
 required-features = ["serde"]
 
+[[bin]]
+name = "test_phase1_fix"
+path = "src/bin/test_phase1_fix.rs"
+required-features = ["allow_insecure"]
+
 # Why `allow_insecure` appears in every bench (and many [[test]]) stanzas below:
 # integration-test and bench targets link the nine65 *library* compiled WITHOUT
 # `cfg(test)` (Cargo only sets that for the lib's own unit-test build). In a

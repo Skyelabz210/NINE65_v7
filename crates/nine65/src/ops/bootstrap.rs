@@ -1558,6 +1558,25 @@ mod tests {
         assert!(displaced.iter().all(|k| k.abs() <= bound));
     }
 
+    /// A canonical CRT extension preserves components, not the BFV decode.
+    /// Phase 2 encodes its plaintext input with Delta_boot; passing lifted
+    /// components therefore returns the raw phase modulo t after dropping
+    /// the extra prime, rather than round(t * phase / Q).
+    #[test]
+    fn phase1_raw_crt_lift_is_not_bfv_refresh() {
+        let (q, t, extra) = (17i128, 5i128, 13i128);
+        let q_boot = q * extra;
+        let delta_boot = q_boot / t;
+        for (c0, c1, secret) in [(1, 1, 1), (16, 1, 1), (0, 1, -1)] {
+            let phase: i128 = c0 + c1 * secret;
+            let expected = round_ratio_nearest(t * phase.rem_euclid(q), q).rem_euclid(t);
+            let encoded = (delta_boot * phase).rem_euclid(q_boot);
+            let dropped = round_ratio_nearest(encoded, extra);
+            let actual = round_ratio_nearest(t * dropped, q).rem_euclid(t);
+            assert_ne!(actual, expected, "raw lift must not be accepted as refresh");
+        }
+    }
+
     #[test]
     fn public_phase1_is_typed_fail_closed() {
         let error = public_phase1_soundness_gate().expect_err("public Phase 1 must be disabled");
