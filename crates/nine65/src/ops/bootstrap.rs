@@ -1497,6 +1497,32 @@ mod tests {
         assert!(c0.abs() <= q / 2 && c1.abs() <= q / 2);
     }
 
+    /// The current Phase 2 decrypts to an affine function A0 + A1*s in Z_t.
+    /// No choice of public A0,A1 can implement BFV's rounded phase for even
+    /// this one-coefficient ternary-secret case.
+    #[test]
+    fn phase2_affine_inner_product_cannot_supply_missing_carry() {
+        let (q, t, c0, c1) = (17i128, 5i128, 1i128, 1i128);
+        let targets: Vec<_> = [-1i128, 0, 1]
+            .iter()
+            .map(|&secret| round_ratio_nearest(t * (c0 + c1 * secret), q).rem_euclid(t))
+            .collect();
+        assert_eq!(targets, vec![0, 0, 1]);
+
+        for a0 in 0..t {
+            for a1 in 0..t {
+                let agrees_for_every_secret = [-1i128, 0, 1]
+                    .iter()
+                    .zip(&targets)
+                    .all(|(&secret, &target)| (a0 + a1 * secret).rem_euclid(t) == target);
+                assert!(
+                    !agrees_for_every_secret,
+                    "an affine Phase 2 cannot realize this BFV decoding map"
+                );
+            }
+        }
+    }
+
     #[test]
     fn displaced_state_is_negacyclic_and_exactly_representable() {
         let (q, t) = (17i128, 5i128);

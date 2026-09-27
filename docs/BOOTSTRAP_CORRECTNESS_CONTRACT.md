@@ -31,7 +31,12 @@ The present `homomorphic_inner_product` can only produce an encryption of
 no operation that computes the rounding of `R0 + R1*s`. A working public
 Phase 1 therefore needs a ciphertext operation and key material that evaluate
 that carry; changing the CRT representation or the modulus switch alone cannot
-make the existing inner product exact.
+make the existing inner product exact. This is stronger than the failure of
+the current component rounding: with `Q=17`, `t=5`, and `c0=c1=1`, BFV
+decodes ternary secrets `s=-1,0,1` to `0,0,1`. Any affine `A0+A1*s` matching
+`s=0` and `s=1` must use `A0=0`, `A1=1`, then gives `4` for `s=-1`.
+`phase2_affine_inner_product_cannot_supply_missing_carry` pins down this
+limit of the existing Phase 2 circuit.
 
 **Enforcement:** `public_phase1_soundness_gate()` is called before
 `modswitch_to_t()` by both `ClockworkBootstrap::bootstrap()` and
