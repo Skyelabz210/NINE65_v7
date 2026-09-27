@@ -1,6 +1,6 @@
 # Clockwork Bootstrap Correctness Contract
 
-Revision: 2026-08-31 (public BFV refresh fail-closed)
+Revision: 2026-09-27 (public BFV refresh fail-closed; expanded preprocessing implemented)
 
 ## 0. Public BFV Phase-1 Soundness Gate
 
@@ -57,8 +57,10 @@ multiplied, relinearized, and boundary-noise ciphertexts across every admitted
 configuration. A declared lossy transition may discard state only when its
 public contract explicitly permits loss; BFV refresh does not.
 
-An exact candidate construction, its test-only expanded-phase reference, and
-the required encrypted digit-removal step are recorded in
+The residue-native `ExpandedPhase1Plan` now implements the candidate's public
+component scaling, with independent integer-reference checks. This public
+preprocessing neither computes the encrypted carry nor admits a refresh. The
+construction and required encrypted digit-removal step are recorded in
 [Public BFV Phase 1: an exact route to refresh](PUBLIC_BFV_PHASE1_SOLUTION.md).
 
 ### Interrupted CRT-lift attempt (2026-09-26)

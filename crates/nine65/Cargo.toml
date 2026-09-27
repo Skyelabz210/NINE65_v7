@@ -170,6 +170,10 @@ required-features = ["allow_insecure"]
 name = "op_timings"
 required-features = ["allow_insecure"]
 
+[[test]]
+name = "expanded_phase1"
+required-features = ["allow_insecure"]
+
 [[bench]]
 name = "fhe_scaling"
 harness = false

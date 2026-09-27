@@ -1,7 +1,8 @@
 # Public BFV Phase 1: an exact route to refresh
 
-Status: arithmetic reference validated; encrypted digit removal and production
-refresh are **not implemented**. Public entry points remain fail-closed.
+Status: residue-native public component preprocessing implemented and checked
+against integer references. Encrypted digit removal and production refresh are
+**not implemented**. Public refresh entry points remain fail-closed.
 
 ## The construction to implement
 
@@ -42,6 +43,58 @@ ciphertext at messages `0`, `1`, `7`, and `p-1`. Both tests use the work secret
 only as an oracle; they neither implement encrypted digit removal nor establish
 noise refresh.
 
+## Implemented public component preprocessing
+
+[`CanonicalScaleRound`](../crates/nine65/src/arithmetic/canonical_scale_round.rs)
+calculates the component switch without reconstructing a ciphertext
+coefficient. For canonical `X in [0,Q)`, odd coprime `P` and `Q`, define
+
+```text
+Z = P*X + floor(Q/2),
+r = Z mod Q,
+Y = floor(Z/Q).
+```
+
+The main residues of `r` are obtained lane by lane as
+`P*x_i + (q_i-1)/2 mod q_i`. The existing `MainOnlyBaseExt` projects this
+canonical remainder into a transient modulus `P`, using its certified rank
+and bounded exact fallback. No incoming anchor or canonical `X` is required.
+Since `P*X = 0 mod P`, the quotient follows from
+
+```text
+Y mod P = (floor(Q/2) mod P - r mod P) * Q^(-1) mod P.
+```
+
+`Y` lies in `[0,P]`; the possible endpoint `P` maps to zero exactly as required
+by the component switch. This also avoids forming the potentially overflowing
+numerator `P*X` in production.
+
+[`ExpandedPhase1Plan`](../crates/nine65/src/ops/expanded_phase1.rs) precomputes
+this scaler for the first `level` work primes and a checked `P=t^e`. Its
+`prepare` method validates both component shapes and canonical residues,
+then returns the public polynomials `a_0,a_1`, `P`, and `P/t`. It does not
+return a ciphertext or admit a refresh. Main residues alone determine its
+output; serialized anchors are neither read nor changed. The next ciphertext
+stage must establish its own coherent main/anchor representation.
+
+The arithmetic backend currently requires odd `P < 2^63`, `gcd(P,Q)=1`, and
+an exact rank accumulator that fits 256 bits. Invalid shapes, overflowing
+plaintext powers, non-coprime bases, and insufficient capacity are typed
+refusals. A chain containing `t` as a main prime is outside this kernel's
+domain and is refused.
+
+The focused [`expanded_phase1` integration
+target](../crates/nine65/tests/expanded_phase1.rs) checks every production
+prime-chain prefix, rounding boundaries and deterministic random inputs against
+an independent 512-bit integer quotient reference. It also compares every
+coefficient of both components for the four full-size reference messages,
+before evaluating the secret-dependent phase and digit removal only as a test
+oracle. Run it with:
+
+```sh
+cargo test -p nine65 --features allow_insecure --test expanded_phase1
+```
+
 ## Bounds and starting parameters
 
 For nearest rounding, each public component contributes at most `1/2` to
@@ -64,9 +117,9 @@ security analysis.
 
 ## Implementation boundaries
 
-1. Replace the test-only scalar reconstruction in the `a_i` calculation with
-   an exact, level-aware residue procedure and an independently checked
-   reference oracle. Keep main and anchor lanes coherent. The existing
+1. **Implemented:** an exact, level-aware public residue procedure for `a_i`
+   and independent integer-reference checks. Keep subsequent ciphertext main
+   and anchor lanes coherent. The existing
    [residue-native bootstrap contract](CRAM_RESIDUE_NATIVE_BOOTSTRAP_SPEC.md)
    forbids materializing a ciphertext coefficient as one integer in production.
 2. Add bootstrap key material for plaintext modulus `P`, including all

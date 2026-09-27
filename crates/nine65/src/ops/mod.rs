@@ -28,6 +28,7 @@ pub mod bootstrap;
 // docs/LADDER_REMOVAL.md §1 and docs/RETIRED_MECHANISMS.md.
 pub mod cram_public;
 pub mod encrypt;
+pub mod expanded_phase1;
 pub mod galois;
 pub mod gso_fhe;
 pub mod homomorphic;
