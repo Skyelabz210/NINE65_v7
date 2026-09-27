@@ -1523,6 +1523,77 @@ mod tests {
         }
     }
 
+    /// Reference for the BFV scale-to-p^e step (Geelen--Vercauteren,
+    /// Equation 9). The final digit removal is computed with the secret key
+    /// here only to establish the arithmetic target for a future encrypted
+    /// circuit. This is not an evaluator-side bootstrap implementation.
+    #[test]
+    fn expanded_plaintext_phase_recovers_scalar_carry() {
+        let (q, t, e) = (17i128, 5i128, 3u32);
+        let expanded = t.pow(e);
+        let divisor = expanded / t;
+        let scale = |c: i128| round_ratio_nearest(expanded * c, q).rem_euclid(expanded);
+
+        for secret in [-1i128, 0, 1] {
+            let c0 = 1;
+            let c1 = 1;
+            let expected = round_ratio_nearest(t * (c0 + c1 * secret), q).rem_euclid(t);
+            let phase = (scale(c0) + scale(c1) * secret).rem_euclid(expanded);
+            let extracted = round_ratio_nearest(phase, divisor).rem_euclid(t);
+            assert_eq!(extracted, expected, "secret={secret}");
+        }
+    }
+
+    /// A full-size ciphertext reference: expanding the public components to
+    /// t^3 keeps the displaced carry inside the encrypted phase. Removing the
+    /// low two base-t digits after the secret-dependent product returns the
+    /// message. Only a test oracle performs that product in the clear.
+    #[test]
+    fn expanded_plaintext_phase_recovers_real_ciphertext() {
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::try_new(&config).expect("work context");
+        let mut rng = ShadowHarvester::with_seed(0x4558_5041_4e44);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let level = config.primes.len();
+        let q = U256::product_u64s(&config.primes[..level]);
+        let q_half = q.shr1();
+        let expanded = config.t.checked_pow(3).expect("t^3 fits u64");
+        let divisor = expanded / config.t;
+        let scale_component = |main: &[Vec<u64>], coefficient: usize| -> i128 {
+            let residues: Vec<u64> = main.iter().map(|limb| limb[coefficient]).collect();
+            let canonical = ctx.rns.to_u256_level(&residues, level);
+            let numerator = canonical.mul_u64(expanded).add(q_half);
+            let (rounded, _) = numerator.div_mod_u256(q);
+            rounded.mod_u64(expanded) as i128
+        };
+
+        let first_prime = config.primes[0];
+        let signed_secret: Vec<i128> = keys.secret_key.s.main[0]
+            .iter()
+            .map(|&x| match x {
+                0 => 0,
+                1 => 1,
+                x if x == first_prime - 1 => -1,
+                _ => panic!("secret key is not ternary"),
+            })
+            .collect();
+        for message in [0, 1, 7, config.t - 1] {
+            let ct = ctx.encrypt_dual(message, &keys.public_key, &mut rng);
+            assert_eq!(ctx.decrypt_dual(&ct, &keys.secret_key), message);
+            let mut phase = scale_component(&ct.c0.main, 0)
+                + scale_component(&ct.c1.main, 0) * signed_secret[0];
+            for j in 1..config.n {
+                phase -= scale_component(&ct.c1.main, j) * signed_secret[config.n - j];
+            }
+            let expanded_phase = phase.rem_euclid(expanded as i128);
+            let extracted = round_ratio_nearest(expanded_phase, divisor as i128)
+                .rem_euclid(config.t as i128) as u64;
+            assert_eq!(extracted, message);
+        }
+    }
+
     #[test]
     fn displaced_state_is_negacyclic_and_exactly_representable() {
         let (q, t) = (17i128, 5i128);

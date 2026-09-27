@@ -51,10 +51,15 @@ checks that component rounding misses a nonzero bounded carry. That secret-key
 oracle is confined to the test; it is not a public Phase-1 implementation.
 
 **Re-enable condition:** Replace the diagnostic component switch with an exact
-encrypted CRAM transducer that preserves `K`, then validate fresh, added,
+encrypted transducer that preserves `K` (through CRAM lift state or equivalent
+homomorphic digit removal), then validate fresh, added,
 multiplied, relinearized, and boundary-noise ciphertexts across every admitted
 configuration. A declared lossy transition may discard state only when its
 public contract explicitly permits loss; BFV refresh does not.
+
+An exact candidate construction, its test-only expanded-phase reference, and
+the required encrypted digit-removal step are recorded in
+[Public BFV Phase 1: an exact route to refresh](PUBLIC_BFV_PHASE1_SOLUTION.md).
 
 ### Interrupted CRT-lift attempt (2026-09-26)
 
