@@ -1558,6 +1558,65 @@ mod tests {
         assert!(displaced.iter().all(|k| k.abs() <= bound));
     }
 
+    /// Test-only oracle: compare component rounding with rounding after the
+    /// secret-dependent negacyclic product on a real ciphertext. The latter
+    /// must stay out of the evaluator-side production path.
+    #[test]
+    fn encrypted_ciphertext_exhibits_missing_phase1_carry() {
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::try_new(&config).expect("work context");
+        let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
+        let mut rng = ShadowHarvester::with_seed(0x5048_4153_4531);
+        let keys = ctx.generate_keys_dual_full(&mut rng);
+        let message = 7;
+        let ct = ctx.encrypt_dual(message, &keys.public_key, &mut rng);
+        assert_eq!(ctx.decrypt_dual(&ct, &keys.secret_key), message);
+
+        let (c0_small, c1_small) = boot.modswitch_to_t(&ct).expect("component switch");
+        let first_prime = config.primes[0];
+        let signed_secret: Vec<i128> = keys.secret_key.s.main[0]
+            .iter()
+            .map(|&x| match x {
+                0 => 0,
+                1 => 1,
+                x if x == first_prime - 1 => -1,
+                _ => panic!("secret key is not ternary"),
+            })
+            .collect();
+        let mut component_phase = c0_small[0] as i128 + c1_small[0] as i128 * signed_secret[0];
+        for j in 1..config.n {
+            component_phase -= c1_small[j] as i128 * signed_secret[config.n - j];
+        }
+        let component_decoded = component_phase.rem_euclid(config.t as i128) as u64;
+
+        // Construct the full phase only inside the test, then use the same
+        // coefficient switch as the legacy Phase 1 diagnostic.
+        let mut phase_ct = ct.clone();
+        for (i, &p) in config.primes.iter().enumerate() {
+            let product = ctx.ntt_engines[i].multiply(&ct.c1.main[i], &keys.secret_key.s.main[i]);
+            for (j, &term) in product.iter().enumerate() {
+                phase_ct.c0.main[i][j] =
+                    ((ct.c0.main[i][j] as u128 + term as u128) % p as u128) as u64;
+            }
+        }
+        let (combined_small, _) = boot.modswitch_to_t(&phase_ct).expect("combined switch");
+        assert_eq!(combined_small[0], message);
+        let carry_mod_t =
+            (combined_small[0] as i128 - component_decoded as i128).rem_euclid(config.t as i128);
+        let signed_carry = if carry_mod_t > config.t as i128 / 2 {
+            carry_mod_t - config.t as i128
+        } else {
+            carry_mod_t
+        };
+        assert_ne!(signed_carry, 0, "this ciphertext needs the missing carry");
+        assert!(
+            signed_carry.abs() <= config.n as i128 + 1,
+            "the carry must fit the declared bounded lift state"
+        );
+    }
+
     /// A canonical CRT extension preserves components, not the BFV decode.
     /// Phase 2 encodes its plaintext input with Delta_boot; passing lifted
     /// components therefore returns the raw phase modulo t after dropping

@@ -26,13 +26,24 @@ The exact regression tests establish two separate facts:
    the encrypted Safe-Root/Lift transduction of the secret-dependent
    convolution and quotient.
 
+The present `homomorphic_inner_product` can only produce an encryption of
+`A0 + A1*s` from its two plaintext inputs. It has no input carrying `K` and
+no operation that computes the rounding of `R0 + R1*s`. A working public
+Phase 1 therefore needs a ciphertext operation and key material that evaluate
+that carry; changing the CRT representation or the modulus switch alone cannot
+make the existing inner product exact.
+
 **Enforcement:** `public_phase1_soundness_gate()` is called before
 `modswitch_to_t()` by both `ClockworkBootstrap::bootstrap()` and
 `ClockworkBootstrap::bootstrap_with_ksk()`.
 
 **Tests:** `displaced_state_scalar_counterexample_is_the_missing_carry`,
 `displaced_state_is_negacyclic_and_exactly_representable`, and
-`public_phase1_is_typed_fail_closed`.
+`public_phase1_is_typed_fail_closed`. The test-only
+`encrypted_ciphertext_exhibits_missing_phase1_carry` constructs a fresh
+encrypted ciphertext, computes the combined phase with its secret key, and
+checks that component rounding misses a nonzero bounded carry. That secret-key
+oracle is confined to the test; it is not a public Phase-1 implementation.
 
 **Re-enable condition:** Replace the diagnostic component switch with an exact
 encrypted CRAM transducer that preserves `K`, then validate fresh, added,
