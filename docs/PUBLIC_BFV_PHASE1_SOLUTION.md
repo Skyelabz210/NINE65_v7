@@ -4,8 +4,10 @@ Status: residue-native public component preprocessing and the encrypted
 expanded-phase inner product are implemented and checked against independent
 references. Authentic paired encrypted `t/t^2` views and the conditional
 subtraction kernel are also implemented. The current four-prime chain admits
-these phase views at `P=t^2`. A certified public canonical low-digit lift and
-complete production digit removal remain missing. Public refresh entry points
+these phase views at `P=t^2`. A public canonical low-digit lift baseline is
+implemented with complete noise admission and passes encrypted small-ring
+checks; its polynomial multiplication bound refuses the current parameters.
+Complete production digit removal remains unadmitted. Public refresh entry points
 remain fail-closed. The narrower same-prime obligation is described in
 [Same-prime bootstrap phase and contraction](PRIME_POWER_BOOTSTRAP_CONTRACTION.md).
 
@@ -185,12 +187,24 @@ four. The evaluator never obtains a clear low digit or a secret key.
 The ordinary low view is not yet a canonical encryption of `r` in the high
 encoding. `PrimePowerDigitRemoval` requires that stronger evidence and then
 subtracts, emitting an ordinary plaintext-`t` main ciphertext with a certified
-sum of errors. The positive contraction check supplies the evidence only
-through a test-only secret-key oracle. A modular-scalar shortcut using the
+sum of errors. The original boundary contraction check supplies the evidence
+through a test-only secret-key oracle. The separate public producer uses
+native Galois projection and a canonical-section polynomial, and its small-ring
+encrypted tests produce the digit without that oracle. A modular-scalar shortcut using the
 ordinary low view fails even on one-unit noise; the focused regression pins
 down that failure. The
 [same-prime contract](PRIME_POWER_BOOTSTRAP_CONTRACTION.md) records the precise
 remaining primitive, numerical bounds, and test scope.
+
+The phase evaluator directly produces an additional `Enc_{t^2}(N^-1*x)`
+view from preconditioned public components. A Galois trace then recovers
+each constant coefficient without post-scaling ciphertext noise: the current
+projection bound falls from 92 bits to 73, below its 86-bit half-scale.
+The canonical polynomial `F(X)=X+product_{a=0}^{t-1}(X-a) mod t^2` is exact,
+but its first multiply needs a 131-bit bound on the four-prime tuple.
+The public factory refuses the route before generating keys. The
+[canonical-lift baseline](PRIME_POWER_CANONICAL_LIFT_BASELINE.md) gives the
+proof, noise terms, resource counts, and encrypted verification boundaries.
 
 ## Bounds and starting parameters
 
@@ -273,12 +287,15 @@ records the existing repacking and authentic-lift obligations.
    forbids materializing a ciphertext coefficient as one integer in production.
 2. **Implemented for the inner product:** non-circular bootstrap key material
    for plaintext modulus `P`, centered secret encoding, the encrypted expanded
-   phase, and its worst-case error certificate. Evaluation and automorphism
-   keys for coefficient/slot transforms and digit removal remain to be added.
-3. Implement and certify the canonical same-prime low-digit lift, or an
-   equivalent homomorphic digit-removal primitive, in the expanded plaintext
-   ring. Authentic paired `t/t^2` views and the conditional subtraction kernel
-   are implemented; the public producer of the stronger lift is missing.
+   phase, and its worst-case error certificate. Typed native Galois keys now
+   support coefficient projection for the public canonical-lift baseline.
+   They do not establish admission of a complete transform or refresh circuit.
+3. Admit an efficient canonical same-prime low-digit lift, or an equivalent
+   homomorphic digit-removal primitive, in the expanded plaintext ring.
+   Authentic paired `t/t^2` views, a directly preconditioned projection view,
+   and the conditional subtraction kernel are implemented. The public
+   polynomial producer passes complete encrypted toy checks, but its
+   multiplication certificate refuses the current four-prime tuple.
    A public residue quotient over **unencrypted** lanes does not perform
    the encrypted nonlinear operation. Merely reinterpreting `Enc_P(w)` as a
    `p`-plaintext ciphertext leaves `rho` as noise, so it does not refresh a

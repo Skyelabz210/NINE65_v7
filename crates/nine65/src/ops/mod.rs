@@ -37,6 +37,7 @@ pub mod neural;
 pub mod parallel;
 pub mod prime_power_phase;
 pub mod rns_fhe;
+pub mod rns_galois;
 // REMOVED (G19, legacy duplicate stack): `pub mod rns_mul;` used to define a
 // second, independent RNSEvaluator/DualRNS* stack (duplicate DualRNSPoly,
 // DualRNSCiphertext, DualRNSSecretKey, DualRNSPublicKey types distinct from

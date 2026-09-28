@@ -879,9 +879,23 @@ impl<'a> ExactMulEvaluator<'a> {
         rng: &mut R,
     ) -> RNSHybridGadgetKey {
         crate::entropy::require_secure_rng(rng, "generate_hybrid_gadget_key_with_rng");
+        let s2 = self.ctx.rns_poly_mul(&sk.s, &sk.s);
+        self.generate_hybrid_target_key(sk, &s2, rng)
+    }
+
+    /// Internal target-key primitive, also used by the typed RNS Galois
+    /// wrapper. Its caller validates the target and secret before sampling.
+    /// Keeping this private to the crate prevents confusing a sigma(s) key
+    /// with the public relinearization key whose target is s^2.
+    pub(crate) fn generate_hybrid_target_key<R: FheRng>(
+        &self,
+        sk: &RNSSecretKey,
+        target: &RNSPolynomial,
+        rng: &mut R,
+    ) -> RNSHybridGadgetKey {
+        crate::entropy::require_secure_rng(rng, "generate_hybrid_target_key");
         let ctx = self.ctx;
         let base = 1u64 << self.plan.base_bits;
-        let s2 = ctx.rns_poly_mul(&sk.s, &sk.s);
 
         let mut rlk: Vec<Vec<(RNSPolynomial, RNSPolynomial)>> =
             Vec::with_capacity(self.plan.main.len());
@@ -893,9 +907,10 @@ impl<'a> ExactMulEvaluator<'a> {
                 let mut msg_limbs: Vec<Vec<u64>> =
                     vec![vec![0u64; self.plan.n]; self.plan.main.len()];
                 for (k, slot) in msg_limbs[i].iter_mut().enumerate() {
-                    // `s2` is in Montgomery form; scaling by a plain residue
+                    // `target` is in Montgomery form; scaling by a plain residue
                     // stays in Montgomery form.
-                    *slot = ((s2.limbs[i][k] as u128 * power_mod_qi as u128) % q_i as u128) as u64;
+                    *slot =
+                        ((target.limbs[i][k] as u128 * power_mod_qi as u128) % q_i as u128) as u64;
                 }
                 let msg = RNSPolynomial {
                     limbs: msg_limbs,

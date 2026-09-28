@@ -218,8 +218,22 @@ fn paired_views_are_authentic_at_every_admitted_level_and_noise_boundary() {
             pair.low_view(),
             &bootstrap.boot_keys.secret_key,
         );
+        let trace_input = decode_all(
+            &boot,
+            pair.coefficient_projection_view(),
+            &bootstrap.boot_keys.secret_key,
+        );
+        let inverse = pair.coefficient_projection_inverse();
+        assert_eq!(inverse, -524304);
+        let inverse_residue = (inverse as i128).rem_euclid(p as i128) as u128;
+        assert_eq!(inverse_residue * work.n as u128 % p as u128, 1);
         assert_eq!(high, expected, "{label}: authentic high phase");
         for (j, (&x, &r)) in high.iter().zip(&low).enumerate() {
+            assert_eq!(
+                trace_input[j],
+                (x as u128 * inverse_residue % p as u128) as u64,
+                "{label}, coefficient {j}: directly preconditioned trace input"
+            );
             assert_eq!(
                 r,
                 x % work.t,
@@ -253,6 +267,10 @@ fn paired_views_are_authentic_at_every_admitted_level_and_noise_boundary() {
     assert_eq!(pair.lineage(), same.lineage());
     assert_eq!(pair.high_lift().c0.limbs, same.high_lift().c0.limbs);
     assert_eq!(pair.low_view().c0.limbs, same.low_view().c0.limbs);
+    assert_eq!(
+        pair.coefficient_projection_view().c0.limbs,
+        same.coefficient_projection_view().c0.limbs
+    );
     assert_ne!(
         pair.lineage(),
         evaluator

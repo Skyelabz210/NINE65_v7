@@ -1,6 +1,6 @@
 # Clockwork Bootstrap Correctness Contract
 
-Revision: 2026-09-27 (public BFV refresh fail-closed; authentic t/t^2 phase views implemented)
+Revision: 2026-09-27 (public refresh fail-closed; paired views and gated polynomial lift implemented)
 
 ## 0. Public BFV Phase-1 Soundness Gate
 
@@ -69,13 +69,19 @@ still a clear oracle.
 
 The four-prime `t^2` stage passes both its worst-case phase-error certificate
 and exact-multiply arithmetic capacity. The complete encrypted digit-removal
-circuit, its noise/depth bound, and input operation-history certificates
-remain missing. The authentic same-prime evaluator now pairs `Enc_{t^2}(x)`
+circuit remains unadmitted; input operation-history certificates are still
+required. The authentic same-prime evaluator now pairs `Enc_{t^2}(x)`
 with `Enc_t(x mod t)` under one independent boot secret. Expanded winding
 by `t^2` cancels after contraction modulo `t`; it need not be recovered.
 The implemented subtraction kernel instead requires a certified **canonical**
 `Enc_{t^2}(x mod t)`. An ordinary low-encoding view does not meet that contract,
-and no public producer of the stronger evidence exists yet. See
+and cannot be substituted for it. A public polynomial producer now has a
+complete noise/depth plan and passes encrypted small-ring contraction tests
+without a digit oracle. The directly evaluated `N^-1*x` view reduces the
+current coefficient-projection bound to 73 bits, below the 86-bit half-scale.
+Its first polynomial multiply requires a 131-bit bound, so the production
+factory refuses the current tuple before generating lift keys. See the
+[canonical-lift baseline](PRIME_POWER_CANONICAL_LIFT_BASELINE.md) and
 [Same-prime bootstrap phase and contraction](PRIME_POWER_BOOTSTRAP_CONTRACTION.md).
 Safe Basis covers the bounded signed winding window but does not provide
 this homomorphic plaintext lift. The legacy superset/single-drop

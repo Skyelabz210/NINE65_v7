@@ -5,9 +5,10 @@
 //! quotient modulo t. An ordinary Enc_t(r), however, is not a certified
 //! canonical lift Enc_{t^2}(r): converting the encoding is still nonlinear.
 //!
-//! The contraction kernel requires that stronger evidence. No production
-//! constructor for it exists yet. Neither this module nor its arithmetic
-//! helper reconstructs a ciphertext coefficient, low digit, or winding.
+//! The contraction kernel requires that stronger evidence. A public polynomial
+//! producer exists, with arithmetic and noise admission; the current four-prime
+//! tuple is refused. Neither evaluator reconstructs a ciphertext coefficient,
+//! low digit, or winding.
 
 use crate::arithmetic::rns::U512;
 use crate::arithmetic::RNSPolynomial;
@@ -20,6 +21,12 @@ use crate::ops::rns_fhe::{DualRNSCiphertext, DualRNSKeySet, RNSCiphertext, RNSFH
 use crate::params::{is_prime, FHEConfig};
 use sha2::{Digest, Sha256};
 use zeroize::Zeroizing;
+
+#[path = "prime_power_digit_lift.rs"]
+mod digit_lift;
+pub use digit_lift::{
+    CanonicalLowDigitLiftCertificate, CanonicalLowDigitLiftEvaluator, CanonicalLowDigitLiftKey,
+};
 
 fn words(v: U512) -> (u128, u128, u128, u128) {
     (v.d3, v.d2, v.d1, v.d0)
@@ -42,6 +49,8 @@ pub struct PrimePowerPhaseNoiseCertificate {
     pub high_error_bound: U512,
     /// Error relative to the exact Q/t encoding grid, per coefficient.
     pub low_error_bound: U512,
+    /// Exact Q/P grid error of the directly evaluated N^{-1}*x view.
+    pub projection_input_error_bound: U512,
     /// Parameter-derived allowance; not evidence of actual work-input noise.
     pub max_centered_work_error: U512,
     pub source_level: usize,
@@ -50,10 +59,13 @@ pub struct PrimePowerPhaseNoiseCertificate {
 
 /// An immutable pair Enc_{t^2}(x), Enc_t(x mod t), where x=(w+h) mod t^2.
 /// Both encryptions have the same boot secret and main basis. Neither is a
-/// serialized coprime anchor. The evaluator accepts no secret key.
+/// serialized coprime anchor. A directly preconditioned N^{-1}*x view supports
+/// coefficient projection. All views share lineage; evaluation has no secret.
 pub struct PrimePowerLiftedPhase {
     high: RNSCiphertext,
     low: RNSCiphertext,
+    trace_input: RNSCiphertext,
+    trace_inverse: i64,
     lineage: PhaseLineage,
     family: [u64; 2],
     primes: Vec<u64>,
@@ -68,6 +80,14 @@ impl PrimePowerLiftedPhase {
     }
     pub fn low_view(&self) -> &RNSCiphertext {
         &self.low
+    }
+    /// Enc_P(N^{-1}*x mod P), evaluated directly from public components.
+    /// A Galois trace projects x_j without post-scaling ciphertext noise.
+    pub fn coefficient_projection_view(&self) -> &RNSCiphertext {
+        &self.trace_input
+    }
+    pub fn coefficient_projection_inverse(&self) -> i64 {
+        self.trace_inverse
     }
     pub fn lineage(&self) -> &PhaseLineage {
         &self.lineage
@@ -226,7 +246,7 @@ impl<'a> PrimePowerPhaseEvaluator<'a> {
         })
     }
 
-    /// Create both views in one call. No API accepts independently supplied
+    /// Create the phase views in one call. No API accepts independently supplied
     /// ciphertexts as a same-integer pair, and no incoming anchor is read.
     pub fn evaluate(
         &self,
@@ -277,9 +297,31 @@ impl<'a> PrimePowerPhaseEvaluator<'a> {
         let low0: Vec<u64> = shifted.c0.iter().map(|&v| v % t).collect();
         let low1: Vec<u64> = shifted.c1.iter().map(|&v| v % t).collect();
         let low = evaluate_centered_components(&self.low, &low0, &low1, &key.low);
+        let trace_inverse = digit_lift::centered_inverse(self.work.n, p)?;
+        let inverse_residue = (trace_inverse as i128).rem_euclid(p as i128) as u128;
+        let trace_components = ExpandedPhase1Components {
+            c0: shifted
+                .c0
+                .iter()
+                .map(|&v| (v as u128 * inverse_residue % p as u128) as u64)
+                .collect(),
+            c1: shifted
+                .c1
+                .iter()
+                .map(|&v| (v as u128 * inverse_residue % p as u128) as u64)
+                .collect(),
+            plaintext_modulus: p,
+            digit_divisor: t,
+            source_level: ct.level,
+        };
+        // Reduce the PUBLIC coefficients before encrypted evaluation. Multiplying the
+        // ordinary high ciphertext by this inverse would amplify its noise.
+        let trace_input = self.high.inner_product(&trace_components, &key.high)?;
         Ok(PrimePowerLiftedPhase {
             high,
             low,
+            trace_input,
+            trace_inverse,
             lineage,
             family: key.family,
             primes: self.low.config.primes.clone(),
@@ -288,6 +330,7 @@ impl<'a> PrimePowerPhaseEvaluator<'a> {
             noise: PrimePowerPhaseNoiseCertificate {
                 high_error_bound: self.high.certificate().phase_error_bound,
                 low_error_bound: self.low_error_bound,
+                projection_input_error_bound: self.high.certificate().phase_error_bound,
                 max_centered_work_error: budget.max_centered_error,
                 source_level: ct.level,
                 rounding_shift: h,
@@ -298,8 +341,9 @@ impl<'a> PrimePowerPhaseEvaluator<'a> {
 
 /// Stronger than the ordinary low view: this ciphertext's plaintext modulo
 /// t^2 is the canonical integer r in [0,t), for the bound phase lineage.
-/// Fields and construction are private. No certified production low-digit
-/// lift producer exists yet; test-only oracle construction is below.
+/// Fields are private. The public polynomial producer is admitted only after
+/// its complete noise plan passes; the current four-prime tuple does not.
+/// The separate test-only oracle construction below verifies the kernel.
 pub struct CanonicalLowDigitLift {
     encrypted: RNSCiphertext,
     lineage: PhaseLineage,

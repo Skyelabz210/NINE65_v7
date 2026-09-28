@@ -1,9 +1,10 @@
 # Same-prime bootstrap phase and contraction
 
 Revision: 2026-09-27. The authentic encrypted `t/t^2` phase pair is
-implemented. The subtraction kernel is implemented and requires a certified
-canonical low-digit lift in the high encoding. A public producer for that
-stronger lift is still missing; public refresh remains disabled.
+implemented. The subtraction kernel requires a certified canonical low-digit
+lift in the high encoding. A public polynomial producer now exists with
+complete noise admission, but the current four-prime tuple fails its
+multiplication bound; public refresh remains disabled.
 
 ## Which winding can disappear
 
@@ -55,11 +56,16 @@ call. A SHA-256 lineage tag binds the prepared public components, source
 level, ring and basis to a random boot-key family identifier. The tag is a
 provenance check, not a proof about a caller's actual input noise.
 
+The same call also directly evaluates `Enc_{t^2}(N^-1*x mod t^2)` from
+preconditioned public components. Its Galois trace projects `x_j` to a
+constant plaintext without scaling an existing ciphertext's error by
+`N^-1`. This view shares the paired phase's lineage and boot key.
+
 The high and low certificates bound their respective errors relative to the
 exact `Q/t^2` and `Q/t` grids, including floor-scale and phase-winding error.
 On the current four-prime tuple, the high bound is 60 bits against an 86-bit
 half-scale, and the low bound is 44 bits against a 102-bit half-scale. These
-certify the views, not the missing cross-encoding lift's error or depth.
+certify the views, not admission of a complete low-digit lift circuit.
 The work-input allowance is parameter derived; admission of a complete
 refresh still needs an authenticated operation-history bound. Level one has
 no uniform digit margin and is refused for the current tuple.
@@ -109,8 +115,9 @@ bound by `t` cannot justify these modular scalar operations.
 `CanonicalLowDigitLift` is a separate type whose fields and construction
 are private. Its contract requires an encryption of canonical `r` in the
 high encoding, tied to the phase's lineage, key family, ring, basis and
-certified error bound. There is no production constructor yet. The ordinary
-low view cannot be passed to `PrimePowerDigitRemoval::contract` in its place.
+certified error bound. `CanonicalLowDigitLiftEvaluator` constructs it only
+after its complete polynomial noise plan passes. The ordinary low view
+cannot be passed to `PrimePowerDigitRemoval::contract` in its place.
 
 Given this stronger evidence, subtraction suffices:
 
@@ -136,6 +143,18 @@ to exercise this conditional kernel. That oracle is compiled only under
 `1`, `7`, and `t-1`, malformed lineage/family/residues/bounds, and an input
 at its maximum admitted error followed by a public square/relinearization.
 
+The separate public producer evaluates
+`F(X)=X+product_{a=0}^{t-1}(X-a) mod t^2` on each projected coefficient.
+Wilson's theorem gives `F(r+t*k)=r` for canonical `r`. Encrypted `N=8`
+checks exhaust every input at bases 3, 5, and 17, then contract and perform
+a public multiplication without a digit oracle. Full-size Galois and
+preconditioned trace operations are also checked. For `t=65537`, the
+projection bound is 73 bits, but the first polynomial multiply requires
+131 bits against an 86-bit half-scale. The production tuple is refused
+before generating lift keys. The
+[canonical-lift baseline](PRIME_POWER_CANONICAL_LIFT_BASELINE.md) records
+the proof, error terms, depth, resource counts, and limits of these tests.
+
 ## Safe Basis and remaining work
 
 Safe Basis still represents and projects the expanded phase's bounded
@@ -145,11 +164,10 @@ to derive `K_P` before this particular `t^2 -> t` contraction. The existing
 clear `LiftEvidenceProvider` does not supply a homomorphic canonical
 low-digit lift.
 
-The next production primitive must convert the authentic low view into
-`CanonicalLowDigitLift`, or directly implement an equivalent certified
-digit removal. It needs its own noise/depth bound and a concrete evaluation
-key relationship. A claim of authentic `t/t^2` provenance alone cannot
-replace that primitive. The
+The remaining production work is to admit an efficient canonical lift or
+equivalent digit removal. The polynomial baseline has an explicit key
+relationship and noise/depth bound, but fails the present parameters.
+Authentic `t/t^2` provenance alone cannot replace that admission. The
 [CRAM integration contract](CRAM_INTEGRATION_CONTRACT.md) requires rejection
 of shared-factor FHE division until its FPD path is implemented and gated.
 
@@ -163,4 +181,5 @@ Run the focused checks with:
 ```sh
 cargo test -p nine65 --features allow_insecure --test prime_power_phase
 cargo test -p nine65 --features allow_insecure --lib contraction_with_oracle_lift
+cargo test -p nine65 --features allow_insecure --lib public_prime_power_lift
 ```
