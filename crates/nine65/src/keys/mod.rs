@@ -20,6 +20,7 @@
 //! ```
 
 pub mod bootstrap;
+pub mod expanded_bootstrap;
 
 pub use bootstrap::{BootstrapKey, BootstrapKeySet, KeySwitchKey, BOOTSTRAP_PRIMES};
 

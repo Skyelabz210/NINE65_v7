@@ -1,8 +1,10 @@
 # Public BFV Phase 1: an exact route to refresh
 
-Status: residue-native public component preprocessing implemented and checked
-against integer references. Encrypted digit removal and production refresh are
-**not implemented**. Public refresh entry points remain fail-closed.
+Status: residue-native public component preprocessing and the encrypted
+expanded-phase inner product are implemented and checked against independent
+references. The current four-prime chain admits this inner product at `P=t^2`.
+Encrypted digit removal and production refresh are **not implemented**. Public
+refresh entry points remain fail-closed.
 
 ## The construction to implement
 
@@ -74,8 +76,8 @@ this scaler for the first `level` work primes and a checked `P=t^e`. Its
 `prepare` method validates both component shapes and canonical residues,
 then returns the public polynomials `a_0,a_1`, `P`, and `P/t`. It does not
 return a ciphertext or admit a refresh. Main residues alone determine its
-output; serialized anchors are neither read nor changed. The next ciphertext
-stage must establish its own coherent main/anchor representation.
+output; serialized anchors are neither read nor changed. The encrypted
+expanded stage emits a main-only ciphertext under its boot modulus.
 
 The arithmetic backend currently requires odd `P < 2^63`, `gcd(P,Q)=1`, and
 an exact rank accumulator that fits 256 bits. Invalid shapes, overflowing
@@ -95,6 +97,74 @@ oracle. Run it with:
 cargo test -p nine65 --features allow_insecure --test expanded_phase1
 ```
 
+## Implemented encrypted expanded phase
+
+[`ExpandedBootstrapKey`](../crates/nine65/src/keys/expanded_bootstrap.rs)
+generates an independent boot key pair and encrypts the ternary work secret.
+It validates all work-secret main lanes before drawing key-generation
+randomness. A secret coefficient `-1` is encoded as `-Delta_P`, rather than
+`(P-1)*Delta_P`; the latter would introduce an avoidable encoding-remainder
+error. Production key generation uses the OS CSPRNG. Deterministic sampling is
+confined to the existing explicit insecure-test feature.
+
+[`ExpandedPhaseEvaluator`](../crates/nine65/src/ops/expanded_bootstrap.rs)
+centers the public component polynomials and evaluates
+`TrivialEnc_P(a0) + a1*Enc_P(s_work)` using per-prime negacyclic NTT products.
+The evaluator accepts no secret key and reconstructs no ciphertext
+coefficient. Its input key and output `RNSCiphertext` contain only main lanes
+in the persistent Montgomery representation. The separate key-holder result
+retains the boot secret for verification and future key switching.
+
+This stage admits a parameter set only after checking its basis capacity,
+encoding scale, worst-case decoding headroom, and both in-tree lattice-cost
+screens. These screens are not an external security attestation.
+
+For ternary boot secrets and encryption masks and CBD errors bounded by
+`eta`, the coefficient error of `Enc_P(0)` is bounded by
+
+```text
+beta = eta*(2N+1).
+```
+
+Let `r = Q_boot mod P` and `Delta_P = floor(Q_boot/P)`. Centered `a1` has
+L1 norm at most `N*(P-1)/2`. Centering `a0+a1*s_work mod P` introduces a
+winding bounded conservatively by `N+1`; since `Delta_P*P = Q_boot-r`, this
+contributes encoding error. The evaluator requires
+
+```text
+beta*N*(P-1)/2 + (N+1)*r + ceil(r/2) < floor(Delta_P/2).
+```
+
+At `N=8192`, `eta=3`, `t=65537`, the actual tested certificates are:
+
+| Expanded plaintext | Boot main primes | Phase error bound, bits | Half-Delta, bits | Inner product |
+| --- | ---: | ---: | ---: | --- |
+| `t^2` | 4 | 60 | 86 | admitted |
+| `t^3` | 4 | 76 | 70 | refused |
+| `t^3` | 5 | 76 | 97 | admitted |
+
+The four-prime `t^2` plan also passes `ExactMulPlan` construction: its exact
+tensor multiply requires 164 bits of auxiliary capacity and selects six
+transient lanes supplying 188 bits. The five-prime `t^3` plan requires 207
+bits and selects seven lanes supplying 220 bits. These are arithmetic
+capacity certificates; they do not certify a complete digit-removal circuit's
+noise or depth. Main and auxiliary bases have separate bounded rank
+operations; adding their bit lengths is not the backend's capacity test.
+
+The [`expanded_bootstrap` integration
+target](../crates/nine65/tests/expanded_bootstrap.rs) decrypts and independently
+checks every coefficient of the encrypted work secret and expanded phase for
+`0`, `1`, `7`, and `t-1`, including active levels two, three, and four, plus
+public addition and multiplication/relinearization cases. Secret keys and
+integer reconstruction appear only in the test oracles. The last digit
+removal in those tests is still performed in the clear. The test also checks
+malformed keys, public components, incompatible regimes, and the entire
+Safe-Basis carry window. Run both focused stages with:
+
+```sh
+cargo test -p nine65 --features allow_insecure --test expanded_phase1 --test expanded_bootstrap
+```
+
 ## Bounds and starting parameters
 
 For nearest rounding, each public component contributes at most `1/2` to
@@ -102,38 +172,88 @@ For nearest rounding, each public component contributes at most `1/2` to
 has absolute value at most `(h+1)/2` per coefficient. Scaled input noise and
 the mismatch between `floor(Q_ell/p)` and `Q_ell/p` must also fit below the
 digit-removal margin `p^(e-1)/2`. This condition needs a checked certificate
-at every admitted ciphertext level; `e=3` is a reference starting point, not
-an admitted production setting.
+at every admitted ciphertext level. The plan's `input_noise_budget()` now
+calculates the parameter-derived allowance without inspecting the input.
+Let `E` bound error from the **centered** work encoding `Delta_t*m`,
+`r_t = Q_ell mod t`, and use the conservative secret-weight bound `h=N`.
+The required digit margin is
 
-For the current `secure_128` tuple, `Q_work` has 90 bits, `P=p^3` has 49 bits,
-and the four-prime `Q_boot` has 119 bits. The current bootstrap constructor
-budgets **two** multiplicative levels. The digit extraction procedures in
-Geelen and Vercauteren have substantially greater depth; their Table 3 gives
-`(e-1)*ceil(log2 p) = 34` nonscalar levels for Halevi/Shoup when `e=3` and
-`p=65537`, before the coefficient/slot transforms. This is a capacity
-comparison, not a proposed secure parameter set. The existing four-prime
-chain and `U256`-bounded sampler cannot be reused without a new parameter and
-security analysis.
+```text
+P/Q_ell * (E + r_t*(t-1)/(2t)) + (N+1)/2 < P/(2t).
+```
+
+The largest admissible integer `E` is therefore
+
+```text
+floor((P*Q_ell - t*Q_ell*(N+1) - P*r_t*(t-1) - 1)/(2*t*P)).
+```
+
+All arithmetic for this allowance uses bounded public metadata. It is not
+evidence of an arbitrary input's actual noise; admission still needs a
+justified operation-history bound. The current tuple has a positive uniform
+allowance at levels two through four and refuses level one. Centering an
+ordinarily encrypted message above `t/2` adds the `Q_ell mod t` contribution
+to its error bound. A small-ring test checks all ternary secrets and centered
+messages at both allowed error extremes and component rounding boundaries.
+
+The current `secure_128` work tuple has **four** primes and a 119-bit product;
+the retired three-prime prefix has 90 bits. The legacy `ClockworkBootstrap`
+constructor adds one boot prime and budgets **two** multiplicative levels.
+The expanded evaluator is a separate stage; it does not call that
+constructor or its modulus-drop routine. Its admitted four-prime `t^2`
+context can use the current work modulus with a fresh boot secret.
+
+For the digit-extraction algorithms in Geelen and Vercauteren, Table 3 gives
+`(e-1)*ceil(log2 p)` nonscalar levels for Halevi/Shoup: 17 at `e=2`, or 34
+at `e=3`, for `p=65537`, before coefficient/slot transforms. Neither the
+four-prime `t^2` inner-product certificate nor the five-prime `t^3` certificate
+admits that complete circuit. `e=3` remains a reference precision choice,
+not an admitted production refresh setting.
+
+## Four-prime chain and Safe Basis
+
+The bounded winding of the centered expanded phase satisfies
+`K in [-(N+1), N+1]`. At `N=8192` this has 16,387 possible values. Shift by
+`N+1` to obtain a canonical nonnegative value. The canonical S6 product
+`2*3*5*7*11*13 = 30,030` covers this window, and its disjoint composite
+repacking `{6,35,143}` preserves exactly the same capacity. The tests project
+every carry in this window to S8 and check both source representations.
+
+This establishes representability after carry derivation. It does not derive
+an encrypted carry from `Enc_P(w)`. The existing Safe-Basis lifted-transduction
+API consumes authentic `K mod b` evidence; it does not supply that evidence
+for the secret-dependent BFV inner product. Its small/composite CLASS-R
+carriers also do not replace the CLASS-F primes needed by the NTT.
+
+Safe Basis remains a candidate substrate for the encrypted carry transducer.
+Any such implementation must preserve the
+[WIRE-Q boundary](NINE65_CURRENT_STATE_AND_WORK_REQUESTS_2026-09-03.md):
+no clear secret-dependent carry or additional coprime secret-dependent lane
+may be published. Evaluation-local residue scratch or encrypted carry
+material must have a concrete derivation and range contract. The
+[Safe-Basis execution packet](CRAM_SAFE_BASIS_LIFTED_TRANSDUCTION_EXECUTION.md)
+records the existing repacking and authentic-lift obligations.
 
 ## Implementation boundaries
 
-1. **Implemented:** an exact, level-aware public residue procedure for `a_i`
-   and independent integer-reference checks. Keep subsequent ciphertext main
-   and anchor lanes coherent. The existing
+1. **Implemented:** an exact, level-aware public residue procedure for `a_i`,
+   a parameter-derived input-error allowance, and independent reference
+   checks. The existing
    [residue-native bootstrap contract](CRAM_RESIDUE_NATIVE_BOOTSTRAP_SPEC.md)
    forbids materializing a ciphertext coefficient as one integer in production.
-2. Add bootstrap key material for plaintext modulus `P`, including all
-   evaluation and automorphism keys needed by coefficient/slot transforms and
-   digit removal. Encrypt `-1` using a centered representative and account for
-   BFV's nonzero `Q_boot mod P` encoding remainder in the noise proof.
+2. **Implemented for the inner product:** non-circular bootstrap key material
+   for plaintext modulus `P`, centered secret encoding, the encrypted expanded
+   phase, and its worst-case error certificate. Evaluation and automorphism
+   keys for coefficient/slot transforms and digit removal remain to be added.
 3. Implement and test homomorphic digit removal in the expanded plaintext
    ring. A public residue quotient over **unencrypted** lanes does not perform
    the encrypted nonlinear operation. Merely reinterpreting `Enc_P(w)` as a
    `p`-plaintext ciphertext leaves `rho` as noise, so it does not refresh a
    near-boundary input.
-4. Choose a new boot chain and ring dimension from an explicit depth, noise,
-   key-size, and lattice-security analysis. Extend arithmetic beyond the
-   current eight-prime/256-bit limit if that analysis requires it.
+4. Admit a complete boot chain and ring dimension from an explicit depth,
+   noise, key-size, and lattice-security analysis. Start with the current
+   four-prime `t^2` candidate, but extend beyond the current eight-prime/256-bit
+   limit if the complete circuit's analysis requires it.
 5. Admit public calls only after fresh, added, multiplied, relinearized, and
    boundary-noise ciphertexts decrypt exactly for `0`, `1`, `p-1`, and interior
    messages at every supported level. Check that a refreshed ciphertext has

@@ -1,6 +1,6 @@
 # Clockwork Bootstrap Correctness Contract
 
-Revision: 2026-09-27 (public BFV refresh fail-closed; expanded preprocessing implemented)
+Revision: 2026-09-27 (public BFV refresh fail-closed; encrypted expanded phase implemented)
 
 ## 0. Public BFV Phase-1 Soundness Gate
 
@@ -57,10 +57,23 @@ multiplied, relinearized, and boundary-noise ciphertexts across every admitted
 configuration. A declared lossy transition may discard state only when its
 public contract explicitly permits loss; BFV refresh does not.
 
-The residue-native `ExpandedPhase1Plan` now implements the candidate's public
-component scaling, with independent integer-reference checks. This public
-preprocessing neither computes the encrypted carry nor admits a refresh. The
-construction and required encrypted digit-removal step are recorded in
+The residue-native `ExpandedPhase1Plan` implements the candidate's public
+component scaling and calculates an input-error allowance from parameters.
+`ExpandedBootstrapKey` and `ExpandedPhaseEvaluator` now encrypt the work
+secret under an independent boot secret and evaluate the expanded phase
+`a0+a1*s_work mod P`. They emit main-only Montgomery ciphertexts. Full-size
+integration tests check every output coefficient at `P=t^2` on four primes
+and `P=t^3` on five primes, including levels two through four and evaluated
+inputs. These are encrypted inner products; digit removal in the tests is
+still a clear oracle.
+
+The four-prime `t^2` stage passes both its worst-case phase-error certificate
+and exact-multiply arithmetic capacity. The complete encrypted digit-removal
+circuit, its noise/depth bound, and input operation-history certificates
+remain missing. Safe Basis covers the bounded signed carry window but does
+not itself derive encrypted carry evidence. The legacy superset/single-drop
+invariants below apply to `ClockworkBootstrap`, not admission of this separate
+expanded phase. The construction and remaining encrypted step are recorded in
 [Public BFV Phase 1: an exact route to refresh](PUBLIC_BFV_PHASE1_SOLUTION.md).
 
 ### Interrupted CRT-lift attempt (2026-09-26)

@@ -10,11 +10,13 @@
 //! (`exact_product_bit_length`), and the two screen columns are what the
 //! in-tree estimator returns for the tuple — measured 2026-08-22 by
 //! `params::secure_configs::tests::screened_levels_for_named_configs`, not
-//! quoted from an older parameter set. "Public refresh" is whether the chain
-//! can carry `ClockworkBootstrap::bootstrap`; see the
-//! PUBLIC-REFRESH ADMISSIBILITY section below.
+//! quoted from an older parameter set. "Legacy refresh headroom" reports the
+//! parameter-only screen below. Public `ClockworkBootstrap` refresh remains
+//! fail-closed pending encrypted digit removal; a passing headroom screen is
+//! not correctness admission. The separate expanded-phase bounds are recorded
+//! in `docs/PUBLIC_BFV_PHASE1_SOLUTION.md`.
 //!
-//! | Config | N | RNS chain | log2(q) | Claim | Core-SVP | MATZOV | Public refresh |
+//! | Config | N | RNS chain | log2(q) | Claim | Core-SVP | MATZOV | Legacy refresh headroom |
 //! |--------|---|-----------|---------|-------|----------|--------|----------------|
 //! | `secure_128` | 8192 | 4 NTT primes | 119 | 128 bits | 196 | 176 | yes |
 //! | `secure_128_deep` | 8192 | 4 NTT primes | 119 | 128 bits | 196 | 176 | yes |
@@ -27,7 +29,7 @@
 //! (`docs/OPEN_WORK_2026-08-26.md` A3), which gave `secure_128` the same
 //! four-prime chain `secure_128_deep` already carried -- it is now
 //! numerically identical to `secure_128_deep` (same tuple, same screen, same
-//! admission below); the two remain separate named entry points only for
+//! headroom result below); the two remain separate named entry points only for
 //! call sites that spell out "deep" explicitly, see the constructors' own
 //! doc comments. The per-constructor doc comments on `secure_128`/
 //! `secure_128_deep` below, and the pinned numbers in
@@ -1014,9 +1016,10 @@ impl SecureConfig {
     /// Screened 2026-08-22 (pre-recut, three primes): Core-SVP 259 bits,
     /// MATZOV 233 bits. Screened for the four-prime chain: Core-SVP 196 bits,
     /// MATZOV 176 bits — both still clear the 128-bit name, at less margin
-    /// than the retired three-prime tuple in exchange for carrying a public
-    /// refresh (71 bits of post-refresh `Delta` headroom against a 47-bit
-    /// requirement).
+    /// than the retired three-prime tuple. The parameter screen reports
+    /// 71 bits of post-refresh `Delta` headroom against a 47-bit requirement;
+    /// this is not correctness admission. Public refresh remains fail-closed
+    /// pending encrypted digit removal (docs/PUBLIC_BFV_PHASE1_SOLUTION.md).
     pub fn secure_128() -> Self {
         Self::new_verified(
             8192,
@@ -1037,9 +1040,9 @@ impl SecureConfig {
     /// code.
     ///
     /// Screened 2026-08-22: Core-SVP 196 bits, MATZOV 176 bits — both clear the
-    /// 128-bit name. This is the shortest chain that carries a **public**
-    /// refresh (71 bits of post-refresh `Delta` headroom against a 47-bit
-    /// requirement), verified against the decryption oracle.
+    /// 128-bit name. The headroom screen reports 71 bits against a 47-bit
+    /// requirement. The separate expanded `t^2` inner product admits this
+    /// chain; complete public refresh still requires encrypted digit removal.
     pub fn secure_128_deep() -> Self {
         Self::new_verified(
             8192,
@@ -1054,8 +1057,9 @@ impl SecureConfig {
     /// 192-bit production candidate.
     ///
     /// Screened 2026-08-22: Core-SVP 320 bits, MATZOV 288 bits — the widest
-    /// margin over its name of any config here. Carries a public refresh
-    /// (96 bits of post-refresh `Delta` headroom against a 49-bit requirement).
+    /// margin over its name of any config here. The legacy headroom screen
+    /// reports 96 bits against a 49-bit requirement; public refresh remains
+    /// fail-closed pending encrypted digit removal.
     pub fn secure_192() -> Self {
         Self::new_verified(
             16384,

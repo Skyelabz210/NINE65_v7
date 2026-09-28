@@ -208,6 +208,90 @@ fn small_ciphertext() -> DualRNSCiphertext {
 }
 
 #[test]
+fn input_margin_recovers_messages_at_both_error_extremes() {
+    let config = small_config();
+    let plan = ExpandedPhase1Plan::new(&config, 2, 2).unwrap();
+    let budget = plan.input_noise_budget().unwrap();
+    assert_eq!(words(budget.max_centered_error), (0, 0, 0, 8));
+    let q = config.primes.iter().product::<u64>() as i128;
+    let t = config.t as i128;
+    let delta = q / t;
+    let candidates = [0, 1, q / 2, q / 2 + 1, q - 1];
+    let errors = [[0, 0], [-8, -8], [-8, 8], [8, -8], [8, 8]];
+    let product =
+        |a: [i128; 2], b: [i128; 2]| [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+    for s0 in -1..=1 {
+        for s1 in -1..=1 {
+            for m0 in -2..=2 {
+                for m1 in -2..=2 {
+                    for &x0 in &candidates {
+                        for &x1 in &candidates {
+                            let c1 = [x0, x1];
+                            let inner = product(c1, [s0, s1]);
+                            for error in errors {
+                                let c0 = [
+                                    (delta * m0 + error[0] - inner[0]).rem_euclid(q),
+                                    (delta * m1 + error[1] - inner[1]).rem_euclid(q),
+                                ];
+                                let poly = |values: [i128; 2]| DualRNSPoly {
+                                    main: config
+                                        .primes
+                                        .iter()
+                                        .map(|&prime| {
+                                            values
+                                                .iter()
+                                                .map(|&v| v.rem_euclid(prime as i128) as u64)
+                                                .collect()
+                                        })
+                                        .collect(),
+                                    anchor: vec![],
+                                    n: 2,
+                                };
+                                let ct = DualRNSCiphertext {
+                                    c0: poly(c0),
+                                    c1: poly(c1),
+                                    level: 2,
+                                };
+                                let prepared = plan.prepare(&ct).unwrap();
+                                let p = prepared.plaintext_modulus as i128;
+                                let centered = |v: u64| {
+                                    if v <= p as u64 / 2 {
+                                        v as i128
+                                    } else {
+                                        v as i128 - p
+                                    }
+                                };
+                                let a1 = [centered(prepared.c1[0]), centered(prepared.c1[1])];
+                                let phase_product = product(a1, [s0, s1]);
+                                for (coefficient, message) in [m0, m1].into_iter().enumerate() {
+                                    let phase = (centered(prepared.c0[coefficient])
+                                        + phase_product[coefficient])
+                                        .rem_euclid(p);
+                                    let divisor = prepared.digit_divisor as i128;
+                                    assert_eq!(
+                                        ((phase + divisor / 2) / divisor).rem_euclid(t),
+                                        message.rem_euclid(t),
+                                        "s=[{s0},{s1}], m=[{m0},{m1}], c1={c1:?}, error={error:?}"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut no_margin = config.clone();
+    no_margin.n = config.t as usize;
+    assert!(matches!(
+        ExpandedPhase1Plan::new(&no_margin, 2, 2)
+            .unwrap()
+            .input_noise_budget(),
+        Err(ExpandedPhase1Error::NoDigitRemovalMargin)
+    ));
+}
+
+#[test]
 fn plan_uses_actual_level_and_ignores_untrusted_anchors() {
     let config = small_config();
     let mut ct = small_ciphertext();
