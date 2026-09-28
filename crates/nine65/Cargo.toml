@@ -178,6 +178,10 @@ required-features = ["allow_insecure"]
 name = "expanded_bootstrap"
 required-features = ["allow_insecure", "exact_transcendentals_backend"]
 
+[[test]]
+name = "prime_power_phase"
+required-features = ["allow_insecure"]
+
 [[bench]]
 name = "fhe_scaling"
 harness = false

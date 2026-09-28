@@ -14,6 +14,8 @@ use crate::ops::rns_fhe::{DualRNSKeySet, DualRNSSecretKey, RNSCiphertext};
 use crate::params::FHEConfig;
 use zeroize::Zeroizing;
 
+pub use crate::ops::prime_power_phase::{PrimePowerBootstrapKey, PrimePowerBootstrapKeySet};
+
 pub struct ExpandedBootstrapKey {
     pub(crate) enc_s: RNSCiphertext,
     pub(crate) primes: Vec<u64>,

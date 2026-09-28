@@ -16,6 +16,62 @@ use crate::keys::expanded_bootstrap::ExpandedBootstrapKey;
 use crate::ops::expanded_phase1::ExpandedPhase1Components;
 use crate::ops::rns_fhe::{RNSCiphertext, RNSFHEContext};
 
+/// Shared main-only arithmetic for the high and authentic same-prime views.
+/// Callers validate the context, key, dimensions and canonical inputs first.
+pub(crate) fn evaluate_centered_components(
+    ctx: &RNSFHEContext,
+    c0: &[u64],
+    c1: &[u64],
+    enc_s: &RNSCiphertext,
+) -> RNSCiphertext {
+    let p = ctx.t;
+    let mut result0 = Vec::with_capacity(ctx.config.primes.len());
+    let mut result1 = Vec::with_capacity(ctx.config.primes.len());
+    for (lane, &q_i) in ctx.config.primes.iter().enumerate() {
+        let centered_residue = |value: u64| -> u64 {
+            if value <= p / 2 {
+                value % q_i
+            } else {
+                let magnitude = (p - value) % q_i;
+                if magnitude == 0 {
+                    0
+                } else {
+                    q_i - magnitude
+                }
+            }
+        };
+        let a1: Vec<u64> = c1.iter().map(|&v| centered_residue(v)).collect();
+        let mont = &ctx.rns.mont_contexts[lane];
+        let key0: Vec<u64> = enc_s.c0.limbs[lane]
+            .iter()
+            .map(|&v| mont.from_montgomery(v))
+            .collect();
+        let key1: Vec<u64> = enc_s.c1.limbs[lane]
+            .iter()
+            .map(|&v| mont.from_montgomery(v))
+            .collect();
+        let mut product0 = ctx.ntt_engines[lane].multiply(&a1, &key0);
+        let product1 = ctx.ntt_engines[lane].multiply(&a1, &key1);
+        for (value, &a0) in product0.iter_mut().zip(c0) {
+            let message = centered_residue(a0) as u128 * ctx.delta_rns[lane] as u128 % q_i as u128;
+            *value = mont.to_montgomery(((*value as u128 + message) % q_i as u128) as u64);
+        }
+        result0.push(product0);
+        result1.push(product1.iter().map(|&v| mont.to_montgomery(v)).collect());
+    }
+    RNSCiphertext {
+        c0: RNSPolynomial {
+            limbs: result0,
+            n: ctx.n,
+        },
+        c1: RNSPolynomial {
+            limbs: result1,
+            n: ctx.n,
+        },
+        num_primes: ctx.config.primes.len(),
+    }
+}
+
 fn bits(x: U512) -> u32 {
     for (offset, limb) in [(384, x.d3), (256, x.d2), (128, x.d1), (0, x.d0)] {
         if limb != 0 {
@@ -184,51 +240,11 @@ impl<'a> ExpandedPhaseEvaluator<'a> {
                 });
             }
         }
-        let mut c0 = Vec::with_capacity(ctx.config.primes.len());
-        let mut c1 = Vec::with_capacity(ctx.config.primes.len());
-        for (lane, &q_i) in ctx.config.primes.iter().enumerate() {
-            let centered_residue = |value: u64| -> u64 {
-                if value <= p / 2 {
-                    value % q_i
-                } else {
-                    let magnitude = (p - value) % q_i;
-                    if magnitude == 0 {
-                        0
-                    } else {
-                        q_i - magnitude
-                    }
-                }
-            };
-            let a1: Vec<u64> = components.c1.iter().map(|&v| centered_residue(v)).collect();
-            let mont = &ctx.rns.mont_contexts[lane];
-            let key0: Vec<u64> = key.enc_s.c0.limbs[lane]
-                .iter()
-                .map(|&v| mont.from_montgomery(v))
-                .collect();
-            let key1: Vec<u64> = key.enc_s.c1.limbs[lane]
-                .iter()
-                .map(|&v| mont.from_montgomery(v))
-                .collect();
-            let mut product0 = ctx.ntt_engines[lane].multiply(&a1, &key0);
-            let product1 = ctx.ntt_engines[lane].multiply(&a1, &key1);
-            for (value, &a0) in product0.iter_mut().zip(&components.c0) {
-                let message =
-                    (centered_residue(a0) as u128 * ctx.delta_rns[lane] as u128) % q_i as u128;
-                *value = mont.to_montgomery(((*value as u128 + message) % q_i as u128) as u64);
-            }
-            c0.push(product0);
-            c1.push(product1.iter().map(|&v| mont.to_montgomery(v)).collect());
-        }
-        Ok(RNSCiphertext {
-            c0: RNSPolynomial {
-                limbs: c0,
-                n: ctx.n,
-            },
-            c1: RNSPolynomial {
-                limbs: c1,
-                n: ctx.n,
-            },
-            num_primes: ctx.config.primes.len(),
-        })
+        Ok(evaluate_centered_components(
+            ctx,
+            &components.c0,
+            &components.c1,
+            &key.enc_s,
+        ))
     }
 }

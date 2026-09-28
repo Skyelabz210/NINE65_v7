@@ -2,9 +2,12 @@
 
 Status: residue-native public component preprocessing and the encrypted
 expanded-phase inner product are implemented and checked against independent
-references. The current four-prime chain admits this inner product at `P=t^2`.
-Encrypted digit removal and production refresh are **not implemented**. Public
-refresh entry points remain fail-closed.
+references. Authentic paired encrypted `t/t^2` views and the conditional
+subtraction kernel are also implemented. The current four-prime chain admits
+these phase views at `P=t^2`. A certified public canonical low-digit lift and
+complete production digit removal remain missing. Public refresh entry points
+remain fail-closed. The narrower same-prime obligation is described in
+[Same-prime bootstrap phase and contraction](PRIME_POWER_BOOTSTRAP_CONTRACTION.md).
 
 ## The construction to implement
 
@@ -165,6 +168,30 @@ Safe-Basis carry window. Run both focused stages with:
 cargo test -p nine65 --features allow_insecure --test expanded_phase1 --test expanded_bootstrap
 ```
 
+## Same-prime contraction at t squared
+
+For `P=t^2`, expanded winding `Z=w+K_P*t^2` contributes `K_P*t` after division,
+which vanishes modulo `t`. General encrypted `K_P` derivation is therefore
+unnecessary for this digit-removal target. Shifting by `h=(t-1)/2` gives
+`x=(w+h) mod t^2`, `r=x mod t`, and `D(w)=(x-r)/t mod t`.
+
+`PrimePowerPhaseEvaluator` now evaluates authentic encryptions of `x` modulo
+`t^2` and `r` modulo `t`, using two encrypted views of the work secret under
+one independent boot secret. Its private paired type binds both views to the
+same public phase and key family. Full-ring checks cover fresh/evaluated
+inputs and the maximum admitted input-error extremes at levels two through
+four. The evaluator never obtains a clear low digit or a secret key.
+
+The ordinary low view is not yet a canonical encryption of `r` in the high
+encoding. `PrimePowerDigitRemoval` requires that stronger evidence and then
+subtracts, emitting an ordinary plaintext-`t` main ciphertext with a certified
+sum of errors. The positive contraction check supplies the evidence only
+through a test-only secret-key oracle. A modular-scalar shortcut using the
+ordinary low view fails even on one-unit noise; the focused regression pins
+down that failure. The
+[same-prime contract](PRIME_POWER_BOOTSTRAP_CONTRACTION.md) records the precise
+remaining primitive, numerical bounds, and test scope.
+
 ## Bounds and starting parameters
 
 For nearest rounding, each public component contributes at most `1/2` to
@@ -225,8 +252,11 @@ API consumes authentic `K mod b` evidence; it does not supply that evidence
 for the secret-dependent BFV inner product. Its small/composite CLASS-R
 carriers also do not replace the CLASS-F primes needed by the NTT.
 
-Safe Basis remains a candidate substrate for the encrypted carry transducer.
-Any such implementation must preserve the
+For `t^2 -> t`, the expanded winding cancels modulo `t`, so its derivation need
+not lie on the contraction's critical path. Safe Basis remains available for
+validation, general lifted transduction, and consumers whose quotient depends
+on winding. It does not provide a canonical high-encoding low digit. Any
+encrypted implementation must preserve the
 [WIRE-Q boundary](NINE65_CURRENT_STATE_AND_WORK_REQUESTS_2026-09-03.md):
 no clear secret-dependent carry or additional coprime secret-dependent lane
 may be published. Evaluation-local residue scratch or encrypted carry
@@ -245,8 +275,11 @@ records the existing repacking and authentic-lift obligations.
    for plaintext modulus `P`, centered secret encoding, the encrypted expanded
    phase, and its worst-case error certificate. Evaluation and automorphism
    keys for coefficient/slot transforms and digit removal remain to be added.
-3. Implement and test homomorphic digit removal in the expanded plaintext
-   ring. A public residue quotient over **unencrypted** lanes does not perform
+3. Implement and certify the canonical same-prime low-digit lift, or an
+   equivalent homomorphic digit-removal primitive, in the expanded plaintext
+   ring. Authentic paired `t/t^2` views and the conditional subtraction kernel
+   are implemented; the public producer of the stronger lift is missing.
+   A public residue quotient over **unencrypted** lanes does not perform
    the encrypted nonlinear operation. Merely reinterpreting `Enc_P(w)` as a
    `p`-plaintext ciphertext leaves `rho` as noise, so it does not refresh a
    near-boundary input.
