@@ -172,6 +172,7 @@ impl Accelerator {
     }
 
     /// Should use parallel for this size?
+    #[cfg(feature = "parallel")]
     #[inline]
     fn should_parallelize(&self, num_lanes: usize) -> bool {
         num_lanes >= self.config.parallel_threshold
@@ -417,6 +418,9 @@ mod tests {
 
         #[cfg(all(not(feature = "simd"), feature = "parallel"))]
         assert_eq!(mode, ExecutionMode::Parallel);
+
+        #[cfg(all(not(feature = "simd"), not(feature = "parallel")))]
+        assert_eq!(mode, ExecutionMode::Sequential);
     }
 
     #[test]
