@@ -174,6 +174,47 @@ impl Anchor {
     }
 }
 
+/// On-demand lift evidence from an adjacent-anchor pair.
+///
+/// The provider stores the pair `(r, a)`, not a scalar winding. Each call
+/// derives `k = (r − a) mod A` and reduces it into the asked target lane,
+/// then drops that `k`. Nothing here caches `K`, serializes it, or
+/// reconstructs a canonical integer to answer the query.
+pub struct AdjacentWindingEvidence {
+    anchor: Anchor,
+    r: i128,
+    a_res: i128,
+}
+
+impl AdjacentWindingEvidence {
+    /// Evidence for one already-decomposed adjacent pair.
+    ///
+    /// Does not check the pair. A residue outside its modulus fails later,
+    /// as `EvidenceUnavailable`, when a lane is asked for — the same typed
+    /// refusal a missing lane uses.
+    pub fn new(anchor: Anchor, r: i128, a_res: i128) -> Self {
+        AdjacentWindingEvidence { anchor, r, a_res }
+    }
+}
+
+impl crate::lifted_transduction::LiftEvidenceProvider for AdjacentWindingEvidence {
+    fn lift_evidence(
+        &self,
+        lane: usize,
+        target_modulus: i128,
+    ) -> Result<
+        crate::lifted_transduction::LiftEvidence,
+        crate::lifted_transduction::LiftedTransductionError,
+    > {
+        use crate::lifted_transduction::LiftedTransductionError;
+        let k = self
+            .anchor
+            .winding(self.r, self.a_res)
+            .map_err(|_| LiftedTransductionError::EvidenceUnavailable { lane })?;
+        crate::lifted_transduction::LiftEvidence::new(lane, target_modulus, k)
+    }
+}
+
 /// Cross-check of the adjacency shortcut against the general K-Elimination
 /// step, which reaches the same `k` through an extended-Euclid inverse.
 ///
@@ -449,6 +490,46 @@ impl AnchorFamily {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::k_elim::modd;
+    use crate::lifted_transduction::{transduct_with_lift_provider, LiftEvidenceProvider};
+    use crate::transduction::S6_BASIS;
+
+    /// The adjacent pair is the provider. `k` is derived per target lane and
+    /// is not a field of the provider. A bad residue is a typed refusal.
+    #[test]
+    fn adjacent_winding_provides_lift_evidence_without_storing_k() {
+        let m = S6_BASIS.iter().product::<i128>();
+        assert_eq!(m, 30_030);
+        let anchor = Anchor::adjacent(m).expect("safe-basis product is a modulus");
+        let g = 29i128;
+        let k = 17i128;
+        let x = g + k * m;
+        let (r, a_res) = anchor.decompose(x).expect("x is inside P·A");
+        let provider = AdjacentWindingEvidence::new(anchor, r, a_res);
+
+        let evidence = provider.lift_evidence(0, 19).expect("lane evidence");
+        assert_eq!(evidence.lane(), 0);
+        assert_eq!(evidence.k_mod_target(), modd(k, 19));
+        assert_eq!(anchor.winding(r, a_res).unwrap(), k);
+
+        let source: Vec<i128> = S6_BASIS.iter().map(|&b| modd(g, b)).collect();
+        let targets = [17i128, 19, 23];
+        let out = transduct_with_lift_provider(&S6_BASIS, &targets, &source, &provider)
+            .expect("on-demand transduction");
+        let want: Vec<i128> = targets.iter().map(|&b| modd(x, b)).collect();
+        assert_eq!(out, want);
+
+        let bad = AdjacentWindingEvidence::new(anchor, -1, a_res);
+        assert!(matches!(
+            bad.lift_evidence(2, 19),
+            Err(
+                crate::lifted_transduction::LiftedTransductionError::EvidenceUnavailable {
+                    lane: 2
+                }
+            )
+        ));
+        assert!(provider.lift_evidence(0, 0).is_err());
+    }
 
     /// Adjacency is the mechanism, so assert the two facts it rests on across a
     /// spread of moduli: coprimality, and `P ≡ −1 (mod A)`.

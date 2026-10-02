@@ -8,18 +8,20 @@
 //!
 //! # Why the winding is the point
 //!
-//! [`ExactState`] carries `lanes` (X mod each of {2,3,5,7,11,13}) *and*
-//! `winding` (how many times X has wound past M = 30,030):
+//! [`ExactState`] carries `lanes` (X mod each of {2,3,5,7,11,13}), the adjacent
+//! anchor residue, and `winding` (how many times X has wound past M = 30,030):
 //!
 //! ```text
-//! X = garner(lanes) + winding * M_SAFE
+//! g = (anchor + winding) mod (M + 1)
+//! X = g + winding * M_SAFE
 //! ```
 //!
-//! An S8-style signature carries only the first term. That is why a signature
-//! cannot see magnitude growth: growth lives entirely in the second. Every
-//! operation here propagates the winding exactly, so
-//! [`magnitude_bits`] reports the true size of the value at any point —
-//! no estimate, no proxy, no counter maintained alongside the data.
+//! An S8-style signature carries only the lanes. That is why a signature
+//! cannot see magnitude growth: growth lives entirely in the winding. Every
+//! operation here propagates the winding exactly, and the readout never
+//! walks the lanes, so [`magnitude_bits`] reports the true size of the value
+//! at any point — no estimate, no proxy, no counter maintained alongside
+//! the data.
 //!
 //! # Failure posture
 //!
@@ -32,10 +34,9 @@ use crate::cram_pde::{ExactState, M_SAFE, SAFE_BASIS};
 
 // ─── Arithmetic ───────────────────────────────────────────────────────────
 
-/// Canonical representative in `[0, M_SAFE)` — the first term of the
-/// winding decomposition.
+/// Canonical representative in `[0, M_SAFE)`, read from the anchor lane.
 fn canonical(s: &ExactState) -> i128 {
-    s.to_u128() as i128
+    s.canonical()
 }
 
 /// Exact lane-wise addition with winding propagation.
@@ -51,9 +52,11 @@ pub fn add(a: &ExactState, b: &ExactState) -> Option<ExactState> {
         lanes[i] = (a.lanes[i] + b.lanes[i]) % p;
     }
     let (ga, gb) = (canonical(a), canonical(b));
-    let carry = if ga + gb >= M_SAFE { 1i128 } else { 0 };
+    let sum = ga + gb;
+    let carry = if sum >= M_SAFE { 1i128 } else { 0 };
+    let g = sum - carry * M_SAFE;
     let winding = a.winding.checked_add(b.winding)?.checked_add(carry)?;
-    Some(ExactState { lanes, winding })
+    Some(ExactState::from_parts(lanes, winding, g))
 }
 
 /// Exact lane-wise multiplication with winding propagation.
@@ -74,11 +77,12 @@ pub fn mul(a: &ExactState, b: &ExactState) -> Option<ExactState> {
     }
     let (ga, gb) = (canonical(a), canonical(b));
     let prod = ga.checked_mul(gb)?;
+    let g = prod.rem_euclid(M_SAFE);
     let winding = (prod / M_SAFE)
         .checked_add(ga.checked_mul(b.winding)?)?
         .checked_add(gb.checked_mul(a.winding)?)?
         .checked_add(a.winding.checked_mul(b.winding)?.checked_mul(M_SAFE)?)?;
-    Some(ExactState { lanes, winding })
+    Some(ExactState::from_parts(lanes, winding, g))
 }
 
 // ─── Reading the actual magnitude ─────────────────────────────────────────

@@ -87,6 +87,10 @@ pub const SAFE_BASIS: [u64; 6] = [2, 3, 5, 7, 11, 13];
 /// M = product of Safe Basis = 2 * 3 * 5 * 7 * 11 * 13 = 30030.
 pub const M_SAFE: i128 = 30030;
 
+/// Adjacent anchor modulus `A = M + 1`. `M ≡ -1 (mod A)`, so the corridor
+/// representative is `(anchor + winding) mod A` and does not walk the lanes.
+pub const M_ANCHOR: i128 = M_SAFE + 1;
+
 /// Transport Core primes: the exact-div lanes carrying lineage fingerprint.
 /// rho(Transport Core) = 3 (the minimum prime in this set).
 pub const TRANSPORT_CORE: [u64; 4] = [3, 7, 11, 13];
@@ -95,51 +99,65 @@ pub const TRANSPORT_CORE: [u64; 4] = [3, 7, 11, 13];
 // EXACT STATE
 // ============================================================================
 
-/// CRT residue state over the Safe Basis with winding field for exact recovery.
+/// CRT residue state over the Safe Basis with the adjacent anchor lane.
 ///
 /// Every `ExactState` encodes an exact integer X:
-///   X = garner_reconstruct(lanes) + winding * M
+///   X = g + winding * M
+/// where `g ∈ [0, M)` is `(anchor + winding) mod (M + 1)`, not a Garner walk.
 ///
 /// The lanes store X mod p for each Safe Basis prime p. The winding K records
-/// how many times M has been "wound past" -- the sheet number on the CRT torus.
+/// how many times M has been wound past. `anchor` is the single adjacent
+/// residue that makes `g` readable in O(1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ExactState {
     /// Residues mod each Safe Basis prime. lanes[i] = X mod SAFE_BASIS[i].
     pub lanes: [u64; 6],
-    /// Winding counter K: X = garner(lanes) + K * M_SAFE.
+    /// Winding counter K: X = g + K * M_SAFE.
     pub winding: i128,
+    /// Adjacent residue `a = (g − K) mod (M + 1)`.
+    pub anchor: i128,
 }
 
 impl ExactState {
     /// Lift any i128 into the exact CRT representation.
     pub fn from_i128(x: i128) -> Self {
-        let r = x.rem_euclid(M_SAFE); // canonical residue in [0, M)
-        let k = (x - r) / M_SAFE;
+        let g = x.rem_euclid(M_SAFE);
+        let k = (x - g) / M_SAFE;
         let mut lanes = [0u64; 6];
         for (i, &p) in SAFE_BASIS.iter().enumerate() {
             lanes[i] = (x.rem_euclid(p as i128)) as u64;
         }
-        ExactState { lanes, winding: k }
+        Self::from_parts(lanes, k, g)
     }
 
-    /// Reconstruct the canonical non-negative representative in [0, M).
-    /// Uses Garner's algorithm via k_elim.
-    pub fn to_u128(&self) -> u128 {
-        let residues: Vec<(i128, i128)> = self
-            .lanes
-            .iter()
-            .zip(SAFE_BASIS.iter())
-            .map(|(&r, &p)| (r as i128, p as i128))
-            .collect();
-        match crate::k_elim::garner_reconstruct(&residues) {
-            Some(v) => v as u128,
-            None => 0, // should not happen for coprime basis
+    /// Build a state whose readout is `g`, with no lane walk.
+    ///
+    /// `g` must already be the corridor representative in `[0, M)`. The anchor
+    /// lane is the one residue `canonical_from` inverts.
+    pub(crate) fn from_parts(lanes: [u64; 6], winding: i128, g: i128) -> Self {
+        debug_assert!((0..M_SAFE).contains(&g));
+        Self {
+            lanes,
+            winding,
+            anchor: (g - winding).rem_euclid(M_ANCHOR),
         }
     }
 
-    /// Reconstruct the EXACT integer X = garner(lanes) + winding * M.
+    /// Corridor representative `g ∈ [0, M)`, from the anchor lane and the winding.
+    pub fn canonical(&self) -> i128 {
+        crate::cram_machine::canonical_from(self.anchor, self.winding, M_SAFE)
+            .expect("ExactState anchor lane does not match its winding")
+    }
+
+    /// Reconstruct the canonical non-negative representative in [0, M).
+    /// One add and one remainder. Does not walk the lanes.
+    pub fn to_u128(&self) -> u128 {
+        self.canonical() as u128
+    }
+
+    /// Reconstruct the exact integer X = g + winding * M.
     pub fn to_i128_exact(&self) -> i128 {
-        self.to_u128() as i128 + self.winding * M_SAFE
+        self.canonical() + self.winding * M_SAFE
     }
 
     /// Alias for to_i128_exact.
@@ -199,75 +217,70 @@ pub trait PolynomialMap {
 /// Evolve a vector of `ExactState`s by one step using map `f`, lane-parallel.
 ///
 /// Residues are updated lane-by-lane. Winding is NOT propagated (set to 0).
-/// Use `step_lane_parallel_winding` for full exact K tracking.
+/// The corridor representative is `F(g) mod M`, read back from the anchor
+/// lane. Use `step_lane_parallel_winding` for full exact K tracking.
 pub fn step_lane_parallel(states: &[ExactState], f: &dyn PolynomialMap) -> Vec<ExactState> {
     let n = states.len();
-    let mut out = vec![
-        ExactState {
-            lanes: [0u64; 6],
-            winding: 0
-        };
-        n
-    ];
-
+    let old_g: Vec<i128> = states.iter().map(|s| s.canonical()).collect();
+    let new_g = f.evaluate_i128(&old_g);
+    let mut lanes = vec![[0u64; 6]; n];
     for (li, &p) in SAFE_BASIS.iter().enumerate() {
         let lane: Vec<u64> = states.iter().map(|s| s.lanes[li]).collect();
         let new_lane = f.evaluate_lane(&lane, p);
         for j in 0..n {
-            out[j].lanes[li] = new_lane[j];
+            lanes[j][li] = new_lane[j];
         }
     }
-    out
+    lanes
+        .into_iter()
+        .zip(new_g)
+        .map(|(lane, g)| ExactState::from_parts(lane, 0, g))
+        .collect()
 }
 
 /// Evolve one step with exact winding propagation.
 ///
-/// Two paths:
-/// - LINEAR (propagate_winding returns Some): garner carry + analytic propagation.
-/// - NONLINEAR (propagate_winding returns None): lift to true integers, evaluate.
+/// The new corridor representative is the integer map reduced mod `M`.
+/// Linear maps add the stencil of the old winding. Nonlinear maps evaluate
+/// the full integer. Neither path reconstructs the lanes.
 pub fn step_lane_parallel_winding(states: &[ExactState], f: &dyn PolynomialMap) -> Vec<ExactState> {
     let n = states.len();
+    let old_g: Vec<i128> = states.iter().map(|s| s.canonical()).collect();
+    let old_winding: Vec<i128> = states.iter().map(|s| s.winding).collect();
 
-    // Step 1: lane-parallel residue update.
-    let mut out = vec![
-        ExactState {
-            lanes: [0u64; 6],
-            winding: 0
-        };
-        n
-    ];
+    let mut lanes = vec![[0u64; 6]; n];
     for (li, &p) in SAFE_BASIS.iter().enumerate() {
         let lane: Vec<u64> = states.iter().map(|s| s.lanes[li]).collect();
         let new_lane = f.evaluate_lane(&lane, p);
         for j in 0..n {
-            out[j].lanes[li] = new_lane[j];
+            lanes[j][li] = new_lane[j];
         }
     }
-
-    // new_garner[i] = garner_reconstruct(new_lanes[i])
-    let new_garner: Vec<i128> = out.iter().map(|s| s.to_u128() as i128).collect();
-
-    // Step 2: compute winding.
-    let old_winding: Vec<i128> = states.iter().map(|s| s.winding).collect();
 
     if let Some(k_linear) = f.propagate_winding(&old_winding) {
-        // LINEAR path: carry from garner + linear propagation of old K.
-        let old_garner: Vec<i128> = states.iter().map(|s| s.to_u128() as i128).collect();
-        let f_of_garner = f.evaluate_i128_unbounded(&old_garner);
-        for i in 0..n {
-            let carry = (f_of_garner[i] - new_garner[i]).div_euclid(M_SAFE);
-            out[i].winding = carry + k_linear[i];
-        }
+        let f_of_g = f.evaluate_i128_unbounded(&old_g);
+        lanes
+            .into_iter()
+            .enumerate()
+            .map(|(i, lane)| {
+                let new_g = f_of_g[i].rem_euclid(M_SAFE);
+                let carry = (f_of_g[i] - new_g).div_euclid(M_SAFE);
+                ExactState::from_parts(lane, carry + k_linear[i], new_g)
+            })
+            .collect()
     } else {
-        // NONLINEAR path: reconstruct true integers, evaluate F directly.
         let true_old: Vec<i128> = states.iter().map(|s| s.to_i128_exact()).collect();
         let f_of_true = f.evaluate_i128_unbounded(&true_old);
-        for i in 0..n {
-            out[i].winding = (f_of_true[i] - new_garner[i]).div_euclid(M_SAFE);
-        }
+        lanes
+            .into_iter()
+            .enumerate()
+            .map(|(i, lane)| {
+                let new_g = f_of_true[i].rem_euclid(M_SAFE);
+                let winding = (f_of_true[i] - new_g).div_euclid(M_SAFE);
+                ExactState::from_parts(lane, winding, new_g)
+            })
+            .collect()
     }
-
-    out
 }
 
 // ============================================================================

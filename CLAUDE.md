@@ -9,8 +9,13 @@ It provides finite leveled computation plus low-depth refresh paths. **It is not
 
 ## Open Work — read this first
 
-`docs/OPEN_WORK_2026-08-26.md` is the current handoff: what is decided, what is
-blocked on an owner decision, what is measured-but-unfixed, and — section D — a
+`docs/REPOSITION_EXECUTION_2026-09-24.md` reconciles the September branch
+inventory and completion plan with the current main tree. Read its verified
+state changes, transduction-capacity finding, dependency gates, and benchmark
+contract before starting new work. Issue #92 remains the release tracker.
+
+`docs/OPEN_WORK_2026-08-26.md` is the August handoff: what was decided, what was
+blocked on an owner decision, what was measured-but-unfixed, and — section D — a
 list of settled questions that LOOK open and must not be re-derived. Two
 retractions in the 2026-08-22..26 session came from re-reasoning instead of
 re-reading; section D exists to stop a third.
@@ -101,6 +106,12 @@ Security tests:
 
 Depth benchmarks:
   cargo test -p nine65 --lib --release ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 -- --nocapture
+
+Test tiers (fast/medium/slow, issue #78) — see docs/TEST_TIERS.md for the
+full scheme, rationale and measured counts/timings:
+  bash scripts/run_tests_fast.sh    # cargo test --lib, release — every crate's unit tests
+  bash scripts/run_tests_medium.sh  # the full required suite (== ci.yml T2, unchanged)
+  bash scripts/run_tests_slow.sh    # slow_tests feature + op_timings + nine65-extreme-tests
 
 ---
 

@@ -34,6 +34,17 @@ use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 #[path = "track1_exact_multiply_lock.rs"]
 mod track1_exact_multiply_lock;
 
+/// WR-1 (T1.4/T1.5) derived-transient exact evaluator multiply.
+///
+/// Declared as a CHILD of `ops::rns_fhe` rather than a sibling under `ops` so
+/// it can reach this module's private polynomial helpers
+/// (`to_montgomery_form`, `convert_from_montgomery_form`, `rns_poly_mul`,
+/// `sample_cbd_signed_rng`, `signed_to_mod`) without widening any production
+/// visibility — the same technique `track1_exact_multiply_lock` uses. It is
+/// re-exported from `ops` for callers.
+#[path = "exact_mul.rs"]
+pub mod exact_mul;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]
@@ -626,11 +637,20 @@ impl DualRNSCiphertext {
             });
         }
 
-        // Level should be consistent with number of main limbs
-        if self.level > self.c0.main.len() {
+        // `level` is not merely an upper bound on the main limb count: every
+        // ciphertext this library constructs sets `level = c0.main.len()`
+        // exactly at construction (fresh encrypt, rescale, relin, add/sub,
+        // negate and plain-op all either recompute it from the post-op limb
+        // count or propagate an already-equal value unchanged — see the
+        // `level:` call sites throughout this file). A ciphertext with
+        // `level < main.len()` is not a valid lower-level representation
+        // under this representation; it is a malformed one no code path
+        // here produces, so this checks equality, not just an upper bound.
+        if self.level != self.c0.main.len() {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
-                    "DualRNSCiphertext: level {} > main limb count {}",
+                    "DualRNSCiphertext: level {} != main limb count {} \
+                     (this representation requires exact equality, not an upper bound)",
                     self.level,
                     self.c0.main.len()
                 ),
@@ -764,10 +784,29 @@ impl DualRNSCiphertext {
                 ),
             });
         }
-        let (ct, _): (Self, usize) = bincode::decode_from_slice(bytes, bincode::config::standard())
-            .map_err(|e| Nine65Error::DeserializationError {
-                message: format!("Bincode parse error: {}", e),
+        let (ct, consumed): (Self, usize) =
+            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
+                Nine65Error::DeserializationError {
+                    message: format!("Bincode parse error: {}", e),
+                }
             })?;
+        // `bincode::decode_from_slice` stops at the first well-formed value
+        // and reports how many bytes it consumed; it does not itself reject
+        // extra bytes after that value. Without this check, a payload of
+        // "valid ciphertext" + arbitrary trailing bytes decodes silently,
+        // which both hides truncation/concatenation bugs on the wire and
+        // gives an attacker a place to smuggle bytes past validation that
+        // this decoder — the one callers rely on to fully vet untrusted
+        // input — never inspects.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::DeserializationError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte ciphertext",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         ct.validate()?;
         Ok(ct)
     }
@@ -816,12 +855,23 @@ impl DualRNSKeySet {
                 ),
             });
         }
-        let (keys, _): (Self, usize) =
+        let (keys, consumed): (Self, usize) =
             bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
                 Nine65Error::DeserializationError {
                     message: format!("Bincode parse error: {}", e),
                 }
             })?;
+        // See the matching comment in `DualRNSCiphertext::from_bytes_validated`:
+        // bincode does not reject trailing bytes on its own.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::DeserializationError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte keyset",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         keys.validate()?;
         Ok(keys)
     }
@@ -844,6 +894,18 @@ pub enum MulRoute {
     /// Dual-RNS with K-Elimination rescaling (exact)
     /// Required when Δ² > Q or exact mode requested
     KElimDual,
+    /// WR-1 derived-transient exact route (`ops::exact_mul`): main-`Q` only on
+    /// the wire, auxiliary residues derived inside one call and zeroized
+    /// before return, exact BFV scale-and-round via `ExactScaleRound`.
+    ///
+    /// **Explicitly routed, never auto-routed.** [`RNSFHEContext::mul_route`]
+    /// does not return this variant and `mul_auto` cannot select it; a caller
+    /// reaches it only through
+    /// [`RNSFHEContext::try_exact_evaluator`](RNSFHEContext::try_exact_evaluator).
+    /// That is WR-1 invariant 9: the legacy fail-closed guards stay exactly as
+    /// they are until the exact route passes its own differential and WIRE-Q
+    /// closure.
+    DerivedTransientExact,
 }
 
 /// Auto-routed key set (either Single or Dual regime)
@@ -1005,9 +1067,18 @@ impl RNSFHEContext {
     /// - Config has fewer than 2 primes (use `light_rns` or higher)
     /// - Q = product of primes does not fit in u128
     /// - Plaintext modulus is zero
+    /// - In release builds, the config fails the production security screen
+    ///   (see [`crate::params::secure_configs::verify_production_safe_fhe_config`])
     #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(config: &FHEConfig) -> Nine65Result<Self> {
-        crate::params::secure_configs::assert_production_safe_fhe_config(config);
+        // Caller-supplied configuration is untrusted input, so the
+        // production-safety screen must return a typed error rather than
+        // panic through this fallible constructor (issue #85). The
+        // panicking `assert_production_safe_fhe_config` remains available
+        // for infallible call sites that explicitly want an abort contract,
+        // but `try_new`'s contract is `Result`, so it uses the fallible
+        // primitive directly.
+        crate::params::secure_configs::verify_production_safe_fhe_config(config)?;
         if config.primes.len() < 2 {
             return Err(Nine65Error::ConfigError {
                 message: format!(
@@ -1174,7 +1245,11 @@ impl RNSFHEContext {
     ///
     /// `sampled_mask_anchor_lanes_agree_with_the_main_lanes` asserts the
     /// two tracks agree; it is what caught the transduction attempt above.
-    fn sample_uniform_dual_poly<R: FheRng>(&self, rng: &mut R, main_primes: &[u64]) -> DualRNSPoly {
+    pub(crate) fn sample_uniform_dual_poly<R: FheRng>(
+        &self,
+        rng: &mut R,
+        main_primes: &[u64],
+    ) -> DualRNSPoly {
         let modulus = U256::product_u64s(main_primes);
         let bits = modulus.bitlen();
         let anchor_primes = &self.dual_rns.anchor.primes;
@@ -1226,6 +1301,72 @@ impl RNSFHEContext {
             anchor,
             n: self.n,
         }
+    }
+
+    /// Single-RNS counterpart of [`Self::sample_uniform_dual_poly`]: a
+    /// polynomial whose every coefficient is drawn **uniformly over `[0, Q)`**
+    /// and then reduced into each main lane independently.
+    ///
+    /// Returns standard-domain (non-Montgomery) residues.
+    ///
+    /// # Why this exists
+    ///
+    /// The single-RNS key generator used to build `a` as
+    /// `RNSPolynomial::from_poly(&(0..n).map(|_| rng.next_u64()), ...)` —
+    /// one 64-bit draw reduced into every lane. That confines `a` to `2^64` of
+    /// the `2^log2(Q)` values the RLWE assumption requires it to range over
+    /// (`2^119` for `secure_128`, `2^175` for `secure_256`), which is a real
+    /// deviation from "`a` uniform over the ring", not a rounding detail. It is
+    /// the defect named in
+    /// `docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md` "Security
+    /// prerequisites" and in WR-1's own prerequisite list.
+    ///
+    /// Rejection sampling gives exact uniformity with no modulo bias; every
+    /// lane is an independent reduction of ONE sampled value, so the lanes
+    /// describe a single integer by construction. Lane-independent
+    /// (`output[i] = f_i(input)`), and not a mixed-radix cascade: no lane reads
+    /// another.
+    pub(crate) fn sample_uniform_main_poly<R: FheRng>(&self, rng: &mut R) -> RNSPolynomial {
+        let primes = &self.config.primes;
+        // `U256::product_u64s` wraps silently past 256 bits, and a wrapped
+        // modulus would make the rejection bound meaningless. The sum of the
+        // lanes' bit lengths is an exact upper bound on `bitlen(Q)` computed in
+        // plain integers, so this check cannot itself overflow. Every shipped
+        // chain is at most 175 bits; this is a once-per-keygen guard against a
+        // future chain silently outgrowing the accumulator.
+        let sum_bits: u32 = primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        assert!(
+            sum_bits <= 256,
+            "sample_uniform_main_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
+        );
+        let modulus = U256::product_u64s(primes);
+        let bits = modulus.bitlen();
+
+        let mut limbs: Vec<Vec<u64>> = primes.iter().map(|_| Vec::with_capacity(self.n)).collect();
+        for _ in 0..self.n {
+            let value = loop {
+                let mut lo = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                let mut hi: u128 = 0;
+                if bits > 128 {
+                    hi = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
+                    let high_bits = bits - 128;
+                    if high_bits < 128 {
+                        hi &= (1u128 << high_bits) - 1;
+                    }
+                } else if bits < 128 {
+                    lo &= (1u128 << bits) - 1;
+                }
+                let candidate = U256 { lo, hi };
+                if candidate.lt(modulus) {
+                    break candidate;
+                }
+            };
+            for (lane, &prime) in limbs.iter_mut().zip(primes.iter()) {
+                lane.push(value.mod_u64(prime));
+            }
+        }
+
+        RNSPolynomial { limbs, n: self.n }
     }
 
     // ========================================================================
@@ -1284,6 +1425,14 @@ impl RNSFHEContext {
         match route {
             MulRoute::BajardSingle => AutoKeys::Single(self.generate_keys(rng)),
             MulRoute::KElimDual => AutoKeys::Dual(self.generate_keys_dual(rng)),
+            // `mul_route()` never selects the WR-1 exact route: it is
+            // explicitly constructed via `try_exact_evaluator`, never
+            // auto-routed (WR-1 invariant 9).
+            MulRoute::DerivedTransientExact => unreachable!(
+                "mul_route() cannot select MulRoute::DerivedTransientExact; the \
+                 WR-1 exact route is reached only through \
+                 RNSFHEContext::try_exact_evaluator"
+            ),
         }
     }
 
@@ -1463,6 +1612,12 @@ impl RNSFHEContext {
     }
 
     /// Reconstruct a CRT value from Montgomery residues.
+    ///
+    /// Test-only: called from `#[cfg(test)] mod tests` and from the
+    /// `track1_exact_multiply_lock` test child module, never from a
+    /// production path. `#[cfg(test)]` keeps it from warning as dead code
+    /// in a release build.
+    #[cfg(test)]
     fn to_int_montgomery(&self, residues: &[u64]) -> u128 {
         let standard: Vec<u64> = residues
             .iter()
@@ -1533,18 +1688,44 @@ impl RNSFHEContext {
         });
         let secret_key = RNSSecretKey { s: s_rns };
 
-        // Generate public key: pk = (pk0, pk1) where pk0 = -(a*s + e), pk1 = a
-        // Generate random a - coefficients uniform in [0, q_min) to be safe
-        let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-        let a_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&a_coeffs, &self.rns));
+        // Generate public key: pk = (pk0, pk1) where pk0 = -(a*s + e), pk1 = a.
+        //
+        // `a` is drawn uniformly over the WHOLE ring Z_Q[X]/(X^N+1), by
+        // rejection sampling on [0, Q) and reducing that one value into every
+        // lane. This used to be `rng.next_u64()` fed through
+        // `RNSPolynomial::from_poly`, i.e. ONE 64-bit draw reduced into every
+        // lane, which confines `a` to 2^64 of the 2^log2(Q) values RLWE
+        // requires (2^119 for secure_128, 2^175 for secure_256). That is the
+        // defect named in docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md
+        // "Security prerequisites"; `sample_uniform_dual_poly` already fixed
+        // the dual-RNS side, and this is its single-RNS counterpart.
+        let a_rns = self.to_montgomery_form(&self.sample_uniform_main_poly(rng));
 
-        // Generate small error e (secret material: zeroized on drop)
-        let e_coeffs: Zeroizing<Vec<u64>> = Zeroizing::new(
+        // Generate small error e (secret material: zeroized on drop).
+        //
+        // Encoded per lane from the SIGNED sample. The previous form sampled
+        // `q_min + sum` once and let `RNSPolynomial::from_poly` reduce that one
+        // representative into every lane; because `q_min + sum < q_j` for every
+        // other lane, the RNS object then represented the integer `q_min + sum`
+        // (about 2^29) rather than the intended `sum` in {-eta..eta}. That is
+        // a consistent RNS value, so it decrypted -- it just spent ~29 bits of
+        // noise budget per coefficient for nothing. `signed_to_mod` per lane is
+        // the encoding the dual-RNS path already uses.
+        let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
             (0..self.n)
-                .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
+                .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
                 .collect(),
         );
-        let e_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e_coeffs, &self.rns));
+        let e_limbs: Vec<Vec<u64>> = self
+            .config
+            .primes
+            .iter()
+            .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+            .collect();
+        let e_rns = self.to_montgomery_form(&RNSPolynomial {
+            limbs: e_limbs,
+            n: self.n,
+        });
 
         // Compute a*s in RNS (NTT multiply in each limb)
         let as_rns = self.rns_poly_mul(&a_rns, &secret_key.s);
@@ -1568,7 +1749,6 @@ impl RNSFHEContext {
     /// Generate evaluation key for relinearization with a caller-provided RNG.
     fn generate_eval_key_with_rng<R: FheRng>(&self, sk: &RNSSecretKey, rng: &mut R) -> RNSEvalKey {
         crate::entropy::require_secure_rng(rng, "generate_eval_key_with_rng");
-        let q_min = self.smallest_prime();
         let decomp_base = 1u64 << 16; // 2^16 decomposition base
                                       // Number of digits based on Q size (use stored q_bits, not leading_zeros)
         let q_bits = self.q_bits;
@@ -1596,17 +1776,28 @@ impl RNSFHEContext {
                 })
                 .collect();
 
-            // Generate random a_i
-            let a_coeffs: Vec<u64> = (0..self.n).map(|_| rng.next_u64()).collect();
-            let a_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&a_coeffs, &self.rns));
+            // Generate random a_i, uniform over [0, Q) -- see the note in
+            // `generate_keys_with_rng` on why the previous single-u64 draw was
+            // a security defect and not a rounding detail.
+            let a_rns = self.to_montgomery_form(&self.sample_uniform_main_poly(rng));
 
-            // Generate error e_i (secret material: zeroized on drop)
-            let e_coeffs: Zeroizing<Vec<u64>> = Zeroizing::new(
+            // Generate error e_i, encoded per lane from the SIGNED sample
+            // (secret material: zeroized on drop).
+            let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
                 (0..self.n)
-                    .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
+                    .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
                     .collect(),
             );
-            let e_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e_coeffs, &self.rns));
+            let e_limbs: Vec<Vec<u64>> = self
+                .config
+                .primes
+                .iter()
+                .map(|&p| e_signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            let e_rns = self.to_montgomery_form(&RNSPolynomial {
+                limbs: e_limbs,
+                n: self.n,
+            });
 
             // rlk0_i = -(a_i * s + e_i) + power * s^2
             let as_rns = self.rns_poly_mul(&a_rns, &sk.s);
@@ -1650,7 +1841,6 @@ impl RNSFHEContext {
     ) -> RNSCiphertext {
         crate::entropy::require_secure_rng(rng, "encrypt_with_rng");
         assert!(m < self.t, "Plaintext must be < t");
-        let q_min = self.smallest_prime();
 
         // Encode message: m * Δ in RNS form
         // For each limb i: (m * delta_rns[i]) mod prime[i]
@@ -1699,16 +1889,26 @@ impl RNSFHEContext {
             n: self.n,
         });
 
-        // Generate errors e1, e2
-        let e1_coeffs: Vec<u64> = (0..self.n)
-            .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
-            .collect();
-        let e1_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e1_coeffs, &self.rns));
-
-        let e2_coeffs: Vec<u64> = (0..self.n)
-            .map(|_| sample_cbd_rng(rng, self.config.eta, q_min))
-            .collect();
-        let e2_rns = self.to_montgomery_form(&RNSPolynomial::from_poly(&e2_coeffs, &self.rns));
+        // Generate errors e1, e2, encoded per lane from the SIGNED sample. See
+        // the note in `generate_keys_with_rng`: sampling `q_min + sum` once and
+        // reducing it into every lane made the RNS object represent ~2^29
+        // instead of a value in {-eta..eta}, spending noise budget for nothing.
+        let signed_error = |rng: &mut R| -> RNSPolynomial {
+            let signed: Zeroizing<Vec<i64>> = Zeroizing::new(
+                (0..self.n)
+                    .map(|_| sample_cbd_signed_rng(rng, self.config.eta))
+                    .collect(),
+            );
+            let limbs: Vec<Vec<u64>> = self
+                .config
+                .primes
+                .iter()
+                .map(|&p| signed.iter().map(|&e| signed_to_mod(e, p)).collect())
+                .collect();
+            self.to_montgomery_form(&RNSPolynomial { limbs, n: self.n })
+        };
+        let e1_rns = signed_error(rng);
+        let e2_rns = signed_error(rng);
 
         // c0 = pk0 * u + e1 + m
         let pk0_u = self.rns_poly_mul(&pk.pk0, &u_rns);
@@ -2964,7 +3164,62 @@ impl RNSFHEContext {
     pub fn validate_dual_ciphertext(&self, ct: &DualRNSCiphertext) -> Nine65Result<()> {
         ct.validate()?;
         let level = ct.c0.main.len();
+        // `ct.validate()` establishes `level == main.len()` and bounds
+        // `main.len()` by `MAX_LEVEL`, but neither knows about THIS
+        // context's actual prime count. Without this check, a
+        // deserialized-then-validated ciphertext claiming more main limbs
+        // than `self.config.primes` holds would panic the slice index below
+        // (and every other `self.config.primes[..ct.level]` site throughout
+        // this file that a caller could reach with it) instead of failing
+        // the validation it was just run through.
+        if level > self.config.primes.len() {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "DualRNSCiphertext: main limb count {} exceeds this context's {} configured main primes",
+                    level,
+                    self.config.primes.len()
+                ),
+            });
+        }
+        if ct.c0.anchor.len() != self.dual_rns.anchor.primes.len() {
+            return Err(Nine65Error::InvalidParameter {
+                message: format!(
+                    "DualRNSCiphertext: anchor limb count {} does not match this context's {} anchor primes",
+                    ct.c0.anchor.len(),
+                    self.dual_rns.anchor.primes.len()
+                ),
+            });
+        }
         ct.validate_residues(&self.config.primes[..level], &self.dual_rns.anchor.primes)
+    }
+
+    /// Context-bound validated bincode decode.
+    ///
+    /// Combines [`DualRNSCiphertext::from_bytes_validated`] (structural
+    /// validation only — shape, degree, trailing bytes) with
+    /// [`Self::validate_dual_ciphertext`] (this context's own lane-count
+    /// bound and residue-canonicality checks), so a ciphertext returned from
+    /// here is safe to pass directly into this context's arithmetic: it
+    /// cannot carry more main limbs than `self.config.primes`, a mismatched
+    /// anchor basis, or a non-canonical residue in any represented lane.
+    /// This is the entry point an untrusted-input boundary (e.g. an HTTP
+    /// service) should call once it has a live context to validate against,
+    /// rather than the context-free `from_bytes_validated` alone.
+    #[cfg(feature = "serde")]
+    pub fn decode_dual_ciphertext_bytes(&self, bytes: &[u8]) -> Nine65Result<DualRNSCiphertext> {
+        let ct = DualRNSCiphertext::from_bytes_validated(bytes)?;
+        self.validate_dual_ciphertext(&ct)?;
+        Ok(ct)
+    }
+
+    /// Context-bound validated JSON decode. See
+    /// [`Self::decode_dual_ciphertext_bytes`] for the guarantees; this is
+    /// the same wiring over [`DualRNSCiphertext::from_json_validated`].
+    #[cfg(feature = "serde")]
+    pub fn decode_dual_ciphertext_json(&self, s: &str) -> Nine65Result<DualRNSCiphertext> {
+        let ct = DualRNSCiphertext::from_json_validated(s)?;
+        self.validate_dual_ciphertext(&ct)?;
+        Ok(ct)
     }
 
     /// Decrypt dual-track ciphertext
@@ -3126,7 +3381,11 @@ impl RNSFHEContext {
             } else {
                 self.t - (scaled % self.t)
             };
-            let ideal_point = q_level.sub(delta.mul_u64(decoded));
+            // See `negative_branch_magnitude`: the ideal point is
+            // `Q - k*Delta` from the negative MAGNITUDE `k`, not
+            // `Q - decoded*Delta` from the wrapped decode `decoded = t - k`.
+            let k = negative_branch_magnitude(decoded, self.t);
+            let ideal_point = q_level.sub(delta.mul_u64(k));
             (decoded, ideal_point)
         } else {
             let scaled = round_div_u256_small(full_value.mul_u64(self.t), q_level, self.t);
@@ -3217,9 +3476,12 @@ impl RNSFHEContext {
                 self.t - (scaled_neg % self.t as u128) as u64
             };
 
-            // Error = distance from ideal encoding point
-            // For decoded value m, ideal point would be (Q_level - m*Δ) for negative
-            let ideal_point = q_level.saturating_sub(decoded as u128 * delta);
+            // Error = distance from ideal encoding point. `decoded` is the
+            // WRAPPED representative (`t - k`), not the magnitude `k` the
+            // ideal point `Q_level - k*Delta` is defined against — see
+            // `negative_branch_magnitude` (issue #84).
+            let k = negative_branch_magnitude(decoded, self.t);
+            let ideal_point = q_level.saturating_sub(k as u128 * delta);
             let error = if full_value > ideal_point {
                 (full_value - ideal_point) as i128
             } else {
@@ -3299,7 +3561,11 @@ impl RNSFHEContext {
                 self.t - (scaled_neg % self.t as u128) as u64
             };
 
-            let ideal_point = q_level.saturating_sub(decoded as u128 * delta);
+            // `decoded` is the WRAPPED representative (`t - k`); the ideal
+            // point is defined from the magnitude `k` — see
+            // `negative_branch_magnitude` (issue #84).
+            let k = negative_branch_magnitude(decoded, self.t);
+            let ideal_point = q_level.saturating_sub(k as u128 * delta);
             let error = if full_value > ideal_point {
                 (full_value - ideal_point) as i128
             } else {
@@ -5138,6 +5404,13 @@ impl RNSFHEContext {
     // in NTT form and doing point-wise rescaling.
 
     /// Convert dual polynomial to NTT form
+    ///
+    /// Test-only: no production path calls this quartet directly (production
+    /// multiply goes through `mul_dual_public`/`mul_dual_symmetric`, not a
+    /// manual to_ntt_form/ntt_pointwise_mul/to_coefficient_form pipeline).
+    /// `#[cfg(test)]` keeps them from warning as dead code in a release
+    /// build while the tests that exercise this pipeline keep using them.
+    #[cfg(test)]
     fn to_ntt_form(&self, poly: &DualRNSPoly) -> DualRNSPoly {
         // Transform main limbs to NTT form
         let main_ntt: Vec<Vec<u64>> = poly
@@ -5165,6 +5438,9 @@ impl RNSFHEContext {
     /// Convert a dual-RNS polynomial from NTT form back to coefficient form.
     ///
     /// This performs the inverse NTT on both main and anchor limbs.
+    ///
+    /// Test-only; see `to_ntt_form`.
+    #[cfg(test)]
     fn to_coefficient_form(&self, poly_ntt: &DualRNSPoly) -> DualRNSPoly {
         let main: Vec<Vec<u64>> = poly_ntt
             .main
@@ -5188,6 +5464,9 @@ impl RNSFHEContext {
     }
 
     /// Point-wise multiplication in NTT domain (both inputs must be in NTT form)
+    ///
+    /// Test-only; see `to_ntt_form`.
+    #[cfg(test)]
     fn ntt_pointwise_mul(&self, a_ntt: &DualRNSPoly, b_ntt: &DualRNSPoly) -> DualRNSPoly {
         // Main: point-wise multiply
         let main: Vec<Vec<u64>> = a_ntt
@@ -5224,11 +5503,6 @@ impl RNSFHEContext {
             anchor,
             n: a_ntt.n,
         }
-    }
-
-    /// Point-wise addition in NTT domain
-    fn ntt_pointwise_add(&self, a_ntt: &DualRNSPoly, b_ntt: &DualRNSPoly) -> DualRNSPoly {
-        self.dual_poly_add(a_ntt, b_ntt) // Same as coefficient-domain add
     }
 
     // NOTE: k_elim_rescale_ntt_domain was removed during audit hardening.
@@ -5928,6 +6202,34 @@ fn round_div_u256_small(x: U256, delta: U256, upper: u64) -> u64 {
     }
 }
 
+/// Recover the negative-branch plaintext MAGNITUDE `k` from a wrapped BFV
+/// decode.
+///
+/// For a negative plaintext of magnitude `k` (`1 <= k <= t/2`, say), BFV
+/// decoding returns the wrapped representative `decoded = t - k`, not `k`
+/// itself — `decoded` lives in `[0, t)` like every other decode. Building
+/// the negative-branch ideal point (`Q - k*Delta`, the encoded position a
+/// magnitude-`k` negative plaintext would land on before noise) therefore
+/// requires unwrapping `decoded` back to `k` first; using `decoded` in place
+/// of `k` computes `Q - (t-k)*Delta` instead, which is off by very close to
+/// `Q` for a small, perfectly ordinary negative magnitude (issue #84).
+///
+/// `decoded == 0` is its own fixed point (`k = 0`, no wrap happened), which
+/// both call sites already special-case before this function ever sees it;
+/// this still holds for it (`t - 0` would be wrong) for definiteness.
+///
+/// Centralized so the U256 path (used by both the test/debug and release
+/// `decrypt_dual_with_diagnostics`) and the two duplicated u128 variants
+/// compute the same magnitude the same way and cannot drift apart.
+#[inline]
+fn negative_branch_magnitude(decoded: u64, t: u64) -> u64 {
+    if decoded == 0 {
+        0
+    } else {
+        t - decoded
+    }
+}
+
 /// Compute round((v +/- rem)/delta) mod m, where v is in centered signed form.
 fn round_div_signed_mod_u256(
     v: SignedU256,
@@ -6276,16 +6578,21 @@ fn sample_cbd_signed_rng<R: FheRng>(rng: &mut R, eta: usize) -> i64 {
     sum // Returns value in {-eta, ..., +eta}
 }
 
-/// Sample from centered binomial distribution with generic RNG
-fn sample_cbd_rng<R: FheRng>(rng: &mut R, eta: usize, q: u64) -> u64 {
-    let sum = sample_cbd_signed_rng(rng, eta);
-
-    if sum >= 0 {
-        sum as u64
-    } else {
-        (q as i64 + sum) as u64
-    }
-}
+// REMOVED (WR-1 security prerequisite): `sample_cbd_rng(rng, eta, q)` returned
+// `q + sum` for a negative sample, i.e. a representative valid modulo ONE
+// prime. Every remaining caller then handed that single value to
+// `RNSPolynomial::from_poly`, which reduces it into every lane — and since the
+// callers passed `q_min`, and `q_min + sum < q_j` for every other lane, the
+// resulting RNS object represented the integer `q_min + sum` (about 2^29)
+// rather than a value in `{-eta..eta}`. Consistent across lanes, so it
+// decrypted; it just burned ~29 bits of noise budget per coefficient.
+//
+// The dual-RNS path had already been repaired for exactly this reason (see the
+// "BUG FIX: sample_cbd uses q_min for signed representation" comment in
+// `encrypt_dual_with_rng`); the single-RNS path had not. Both now sample a
+// signed value with `sample_cbd_signed_rng` and encode it per lane with
+// `signed_to_mod`, so the function has no callers left and is deleted rather
+// than left available to be reached for again.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THREAD SAFETY STATIC ASSERTIONS
@@ -12307,6 +12614,205 @@ mod tests {
     }
 
     // ========================================================================
+    // Issue #86: validated decode hardening
+    // ========================================================================
+
+    /// `level` must equal `main.len()` exactly, not merely be `<=` it — see
+    /// the comment on `DualRNSCiphertext::validate`. Every ciphertext this
+    /// library constructs sets them equal; a deserialized one claiming a
+    /// lower `level` than its actual limb count is malformed, not a valid
+    /// lower-level representation.
+    #[test]
+    fn validate_rejects_level_strictly_below_main_limb_count() {
+        use super::*;
+
+        let poly = DualRNSPoly {
+            main: vec![vec![0u64; 8]; 3],
+            anchor: vec![vec![0u64; 8]; 2],
+            n: 8,
+        };
+        let ct = DualRNSCiphertext {
+            c0: poly.clone(),
+            c1: poly,
+            level: 2, // main.len() == 3, level == 2: was previously accepted
+        };
+        let err = ct
+            .validate()
+            .expect_err("level < main.len() must be rejected");
+        let message = err.to_string();
+        assert!(
+            message.contains('3') && message.contains('2'),
+            "error should name both the level and the actual limb count: {message}"
+        );
+    }
+
+    /// `from_bytes_validated` must reject a valid payload with anything
+    /// appended after it — `bincode::decode_from_slice`'s `consumed` count
+    /// exists precisely so a validated decoder can check this and previously
+    /// went unused.
+    #[test]
+    #[cfg(feature = "serde")]
+    fn from_bytes_validated_rejects_trailing_bytes_on_ciphertext() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(13579);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        let mut bytes = ct.to_bytes().expect("serialize");
+        // A valid ciphertext must still round-trip before we tamper with it.
+        assert!(DualRNSCiphertext::from_bytes_validated(&bytes).is_ok());
+
+        bytes.push(0xFF);
+        let result = DualRNSCiphertext::from_bytes_validated(&bytes);
+        assert!(
+            result.is_err(),
+            "a single trailing byte after a valid ciphertext must be rejected"
+        );
+        assert!(matches!(
+            result,
+            Err(Nine65Error::DeserializationError { .. })
+        ));
+
+        // Also try a large trailing suffix, in case a length-dependent
+        // codepath only checks small overshoots.
+        let mut bytes_with_suffix = ct.to_bytes().expect("serialize");
+        bytes_with_suffix.extend_from_slice(&[0xAB; 4096]);
+        assert!(DualRNSCiphertext::from_bytes_validated(&bytes_with_suffix).is_err());
+    }
+
+    /// Same trailing-byte check for `DualRNSKeySet::from_bytes_validated`.
+    #[test]
+    #[cfg(feature = "serde")]
+    fn from_bytes_validated_rejects_trailing_bytes_on_keyset() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(24681);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let keyset = DualRNSKeySet {
+            secret_key: keys.secret_key,
+            public_key: keys.public_key,
+        };
+
+        let mut bytes = keyset.to_bytes().expect("serialize");
+        assert!(DualRNSKeySet::from_bytes_validated(&bytes).is_ok());
+
+        bytes.push(0x00);
+        assert!(
+            DualRNSKeySet::from_bytes_validated(&bytes).is_err(),
+            "trailing byte after a valid keyset must be rejected"
+        );
+    }
+
+    /// `RNSFHEContext::validate_dual_ciphertext` must reject a ciphertext
+    /// whose main limb count exceeds this context's own configured prime
+    /// count with a typed error -- not panic on the slice index it used to
+    /// take unconditionally. This is the one that matters most for the HTTP
+    /// service boundary: `ct.validate()` alone (context-free) has no way to
+    /// know the ciphertext came from a DIFFERENT, larger context, so a
+    /// hostile ciphertext with excess main limbs must be caught here, not
+    /// three call sites later in arithmetic that assume it already was.
+    #[test]
+    fn validate_dual_ciphertext_rejects_oversized_level_without_panicking() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(97531);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let mut ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        // Fabricate more main limbs than this context has primes for, at
+        // every level count `level == main.len()` still requires.
+        let extra_limb = ct.c0.main[0].clone();
+        for _ in 0..(ctx.config.primes.len() + 4) {
+            ct.c0.main.push(extra_limb.clone());
+            ct.c1.main.push(extra_limb.clone());
+        }
+        ct.level = ct.c0.main.len();
+
+        // Must not panic (the whole point of this test) and must return a
+        // typed error, not Ok.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            ctx.validate_dual_ciphertext(&ct)
+        }));
+        let result = result.expect("validate_dual_ciphertext must not panic on an oversized level");
+        assert!(
+            result.is_err(),
+            "a ciphertext with more main limbs than the context has primes must be rejected"
+        );
+    }
+
+    /// `RNSFHEContext::validate_dual_ciphertext` must also reject a mismatched
+    /// anchor basis.
+    #[test]
+    fn validate_dual_ciphertext_rejects_mismatched_anchor_count() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(11223);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let mut ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        // Fresh ciphertext validates cleanly first.
+        assert!(ctx.validate_dual_ciphertext(&ct).is_ok());
+
+        // Drop one anchor limb from both c0 and c1: shape stays internally
+        // consistent (validate() alone would accept it) but it no longer
+        // matches this context's anchor basis.
+        ct.c0.anchor.pop();
+        ct.c1.anchor.pop();
+        assert!(
+            ctx.validate_dual_ciphertext(&ct).is_err(),
+            "a ciphertext with fewer anchor limbs than the context's anchor basis must be rejected"
+        );
+    }
+
+    /// Context-bound decode entry points (`decode_dual_ciphertext_bytes`/
+    /// `_json`) must accept a genuine ciphertext produced by this context
+    /// and reject one carrying a non-canonical residue, wiring
+    /// `validate_dual_ciphertext`'s residue-canonicality check into the
+    /// decode path rather than leaving it to a separate call the caller
+    /// might forget.
+    #[test]
+    #[cfg(feature = "serde")]
+    fn context_bound_decode_wires_residue_canonicality_check() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(55443);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
+
+        let bytes = ct.to_bytes().expect("serialize");
+        let decoded = ctx
+            .decode_dual_ciphertext_bytes(&bytes)
+            .expect("a genuine ciphertext from this context must decode");
+        assert_eq!(ctx.decrypt_dual(&decoded, &keys.secret_key), 7);
+
+        let json = ct.to_json().expect("serialize");
+        assert!(ctx.decode_dual_ciphertext_json(&json).is_ok());
+
+        // Corrupt a main-lane residue to be non-canonical (== its prime)
+        // and confirm the context-bound path — unlike the bare
+        // `from_bytes_validated`, which has no prime-list context — catches it.
+        let mut corrupted = ct.clone();
+        let p0 = ctx.config.primes[0];
+        corrupted.c0.main[0][0] = p0;
+        let corrupted_bytes = corrupted.to_bytes().expect("serialize");
+        assert!(
+            ctx.decode_dual_ciphertext_bytes(&corrupted_bytes).is_err(),
+            "a non-canonical residue must be rejected by the context-bound decode path"
+        );
+    }
+
+    // ========================================================================
     // HIGH-003: Noise Budget Tracked Operations Tests
     // ========================================================================
 
@@ -13561,6 +14067,188 @@ mod tests {
             ctx.try_decrypt_dual(&ct, &keys.secret_key).is_ok(),
             "fresh secure_256 ciphertext must be accepted"
         );
+    }
+
+    /// Independent oracle for the negative-branch ideal point / margin
+    /// (issue #84), computed from first principles rather than by calling
+    /// `negative_branch_magnitude` or any other production helper: for a
+    /// wrapped decode `decoded = t - k` (`k` the plaintext magnitude, `k =
+    /// 0` iff `decoded = 0`), the negative-branch ideal point is `Q -
+    /// k*Delta`, and the margin is `Delta/2 - |full_value - ideal_point|`.
+    fn oracle_negative_margin(
+        full_value: u128,
+        q_level: u128,
+        delta: u128,
+        t: u64,
+        decoded: u64,
+    ) -> i128 {
+        let k: u64 = if decoded == 0 { 0 } else { t - decoded };
+        let ideal_point = q_level - (k as u128) * delta;
+        let error = if full_value > ideal_point {
+            (full_value - ideal_point) as i128
+        } else {
+            -((ideal_point - full_value) as i128)
+        };
+        (delta / 2) as i128 - error.abs()
+    }
+
+    /// The WRONG formula issue #84 reports (`Q - decoded*Delta`, treating
+    /// the wrapped decode as if it were the magnitude), reproduced here only
+    /// so the regression test can show the fix actually diverges from it —
+    /// not merely that some margin value is returned.
+    fn oracle_wrong_negative_margin(
+        full_value: u128,
+        q_level: u128,
+        delta: u128,
+        decoded: u64,
+    ) -> i128 {
+        let ideal_point = q_level.saturating_sub((decoded as u128) * delta);
+        let error = if full_value > ideal_point {
+            (full_value - ideal_point) as i128
+        } else {
+            -((ideal_point - full_value) as i128)
+        };
+        (delta / 2) as i128 - error.abs()
+    }
+
+    /// Issue #84: the negative-branch ideal point must be built from the
+    /// plaintext MAGNITUDE `k = t - decoded`, not from the wrapped decode
+    /// `decoded` itself. Exercises `m = 0, 1, t/2-1, t/2, t-1` (the exact
+    /// sweep the issue specifies) on a config whose Q fits u128, comparing
+    /// the library's `decrypt_dual_with_diagnostics` margin against the
+    /// independent oracle above computed from a `full_value`/`q_level`/
+    /// `delta` this test reconstructs itself (same technique as
+    /// `test_decrypt_dual_u256_margin_matches_u128_path`), not from any
+    /// internal helper.
+    #[test]
+    fn negative_branch_margin_matches_independent_oracle_u128() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_128();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(848_484);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let t = ctx.t;
+
+        for &val in &[0u64, 1, t / 2 - 1, t / 2, t - 1] {
+            let ct = ctx.encrypt_dual(val, &keys.public_key, &mut rng);
+            let ct_level = ct.c0.main.len();
+
+            // Reconstruct full_value exactly as decrypt_dual_with_diagnostics does.
+            let sk_level = keys.secret_key.s.main.len();
+            let sk_projected = if ct_level < sk_level {
+                ctx.project_poly_to_level(&keys.secret_key.s, ct_level)
+            } else {
+                keys.secret_key.s.clone()
+            };
+            let c1_s = ctx.dual_poly_mul_level(&ct.c1, &sk_projected);
+            let inner = ctx.dual_poly_add_level(&ct.c0, &c1_s);
+            let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
+            let is_negative = ctx.is_upper_half_main(&rns_coeff, ct_level);
+            let full_value = ctx.rns.to_int_level(&rns_coeff, ct_level);
+            let q_level: u128 = ctx.config.primes[..ct_level]
+                .iter()
+                .fold(1u128, |acc, &p| acc * p as u128);
+            let delta = q_level / t as u128;
+
+            let (decoded, margin) = ctx.decrypt_dual_with_diagnostics(&ct, &keys.secret_key);
+            assert_eq!(
+                decoded, val,
+                "plaintext semantics must be unchanged for m={val}"
+            );
+
+            if is_negative {
+                let expected = oracle_negative_margin(full_value, q_level, delta, t, decoded);
+                assert_eq!(
+                    margin, expected,
+                    "m={val}: margin must match the independent negative-branch oracle exactly"
+                );
+
+                // Pin the actual bug: the old formula (built from `decoded`
+                // instead of `k`) must diverge hugely for any k that isn't
+                // trivially small relative to Delta -- reproducing the
+                // issue's own description ("error on the order of Q").
+                let wrong = oracle_wrong_negative_margin(full_value, q_level, delta, decoded);
+                let k = if decoded == 0 { 0 } else { t - decoded };
+                if k > 1 {
+                    assert_ne!(
+                        margin, wrong,
+                        "m={val}: fixed margin must not equal the old, wrong formula's value"
+                    );
+                }
+            } else {
+                // Positive branch is untouched by this fix; sanity-check it
+                // still agrees with its own (always-correct) ideal point.
+                let ideal_point = (decoded as u128) * delta;
+                let error = if full_value > ideal_point {
+                    (full_value - ideal_point) as i128
+                } else {
+                    -((ideal_point - full_value) as i128)
+                };
+                let expected = (delta / 2) as i128 - error.abs();
+                assert_eq!(
+                    margin, expected,
+                    "m={val}: positive-branch margin unaffected"
+                );
+            }
+        }
+    }
+
+    /// Same sweep, forced through the U256 decode path directly (secure_256,
+    /// whose log2(q)=175 exceeds u128), against the same independent oracle.
+    /// Covers the issue's "both u128 and U256 decode routes" requirement.
+    #[test]
+    fn negative_branch_margin_matches_independent_oracle_u256() {
+        use crate::params::secure_configs::SecureConfig;
+
+        let secure_config = SecureConfig::secure_256();
+        let ctx = RNSFHEContext::new(&secure_config.config);
+        let mut rng = ShadowHarvester::with_seed(929_292);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let t = ctx.t;
+
+        for &val in &[0u64, 1, t / 2 - 1, t / 2, t - 1] {
+            let ct = ctx.encrypt_dual(val, &keys.public_key, &mut rng);
+            let ct_level = ct.c0.main.len();
+            let sk_level = keys.secret_key.s.main.len();
+            let sk_projected = if ct_level < sk_level {
+                ctx.project_poly_to_level(&keys.secret_key.s, ct_level)
+            } else {
+                keys.secret_key.s.clone()
+            };
+            let c1_s = ctx.dual_poly_mul_level(&ct.c1, &sk_projected);
+            let inner = ctx.dual_poly_add_level(&ct.c0, &c1_s);
+
+            let (decoded, margin) = ctx.decrypt_dual_u256(&inner, ct_level);
+            assert_eq!(
+                decoded, val,
+                "plaintext semantics must be unchanged for m={val}"
+            );
+
+            let rns_coeff: Vec<u64> = inner.main.iter().map(|limb| limb[0]).collect();
+            let is_negative = ctx.is_upper_half_main(&rns_coeff, ct_level);
+            if is_negative {
+                // Upper-half plaintext: independently recompute q_level/delta
+                // in U256 and derive the same magnitude-based oracle, using
+                // U256 arithmetic so this genuinely exercises the wide path
+                // rather than silently narrowing back to u128.
+                let full_value_u256 = ctx.rns.to_u256_level(&rns_coeff, ct_level);
+                let q_level_u256 = U256::product_u64s(&ctx.config.primes[..ct_level]);
+                let (delta_u256, _) = q_level_u256.div_mod_u256(U256::from_u64(t));
+                let k: u64 = if decoded == 0 { 0 } else { t - decoded };
+                let ideal_point = q_level_u256.sub(delta_u256.mul_u64(k));
+                let error_abs = if full_value_u256.ge(ideal_point) {
+                    full_value_u256.sub(ideal_point)
+                } else {
+                    ideal_point.sub(full_value_u256)
+                };
+                let expected = u256_diff_to_i128(delta_u256.shr1(), error_abs);
+                assert_eq!(
+                    margin, expected,
+                    "m={val}: U256 margin must match the independent negative-branch oracle exactly"
+                );
+            }
+        }
     }
 
     /// Verify try_decrypt_dual returns Ok for valid decryptions.

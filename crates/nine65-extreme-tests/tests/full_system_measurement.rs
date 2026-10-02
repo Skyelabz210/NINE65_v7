@@ -14,7 +14,23 @@
 //! imposes are justified by measurement.
 //!
 //! Run with:
-//!   cargo test -p nine65-extreme-tests --release --test full_system_measurement -- --nocapture
+//!   cargo test -p nine65-extreme-tests --release --features extreme-tests --test full_system_measurement -- --nocapture
+//!
+//! Issue #74: this target now requires `--features extreme-tests` (gated via
+//! `required-features` in Cargo.toml). It always needed `nine65/allow_insecure`
+//! for its seeded `ShadowHarvester` runs -- release-mode `require_secure_rng`
+//! rejects a seeded RNG outside `test`/`debug_assertions`/`allow_insecure`, and
+//! this file is a `tests/` integration target, so it links `nine65` without
+//! `cfg(test)` -- but that used to come from this crate's own `nine65`
+//! dev-dependency requesting `allow_insecure` unconditionally, which fed the
+//! feature into the single shared `nine65` build for the whole workspace on
+//! every plain `cargo test --release --workspace` and was exactly what kept
+//! `nine65`'s own allow_insecure-must-not-ship-in-release compile-time gate
+//! from being re-enabled. `nine65` is now an optional dependency activated
+//! only by `extreme-tests` (see Cargo.toml), so this target needs that
+//! feature explicitly to see `nine65` at all -- it does not run silently as
+//! part of the default workspace test command any more than the rest of this
+//! crate's extreme-tests-gated modules do.
 
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::rns_fhe::RNSFHEContext;

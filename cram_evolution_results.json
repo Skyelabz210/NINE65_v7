@@ -1,0 +1,62 @@
+{
+  "core": {
+    "status": "PASS",
+    "details": "All reconstruction and division tests passed"
+  },
+  "quantum": {
+    "status": "PASS",
+    "phase": 4.917275457792719,
+    "capacity": 215441
+  },
+  "neural": {
+    "status": "PASS",
+    "sequence": [
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0
+    ],
+    "stationary_distribution": [
+      0.5,
+      0.5
+    ]
+  },
+  "crypto": {
+    "status": "PASS",
+    "num_primes": 15,
+    "verified": true
+  },
+  "fluid": {
+    "status": "PASS",
+    "delta": -2.0,
+    "activation_level": 1
+  },
+  "number_theory": {
+    "status": "PASS",
+    "mertens": 0.26529071123286485,
+    "validity_product": 0.17102402241721126
+  },
+  "hardware": {
+    "status": "PASS",
+    "speedup": 273.0,
+    "measured_speedup": 0.6382978723404256
+  },
+  "topology": {
+    "status": "PASS",
+    "dimension": 0.631,
+    "components": 8,
+    "states": 512
+  },
+  "information_theory": {
+    "status": "PASS",
+    "screening_verified": true,
+    "capacity": 3.32,
+    "compression": 0.9975
+  }
+}

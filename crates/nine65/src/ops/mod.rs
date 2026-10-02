@@ -28,12 +28,16 @@ pub mod bootstrap;
 // docs/LADDER_REMOVAL.md §1 and docs/RETIRED_MECHANISMS.md.
 pub mod cram_public;
 pub mod encrypt;
+pub mod expanded_bootstrap;
+pub mod expanded_phase1;
 pub mod galois;
 pub mod gso_fhe;
 pub mod homomorphic;
 pub mod neural;
 pub mod parallel;
+pub mod prime_power_phase;
 pub mod rns_fhe;
+pub mod rns_galois;
 // REMOVED (G19, legacy duplicate stack): `pub mod rns_mul;` used to define a
 // second, independent RNSEvaluator/DualRNS* stack (duplicate DualRNSPoly,
 // DualRNSCiphertext, DualRNSSecretKey, DualRNSPublicKey types distinct from
@@ -57,4 +61,13 @@ pub use neural::{ActivationType, DenseLayer, FHENeuralEvaluator, NeuralNetwork};
 pub use parallel::{ParallelDecryptor, ParallelEncryptor};
 pub use rns_fhe::{
     RNSCiphertext, RNSEvalKey, RNSFHEContext, RNSKeySet, RNSPublicKey, RNSSecretKey,
+};
+
+// WR-1 derived-transient exact evaluator multiply. Lives under `rns_fhe` so it
+// can use that module's private polynomial helpers; surfaced here so callers
+// see it as `ops::exact_mul`.
+pub use rns_fhe::exact_mul;
+pub use rns_fhe::exact_mul::{
+    ExactMulCertificate, ExactMulError, ExactMulEvaluator, ExactMulPlan, ExactTensor3,
+    RNSHybridGadgetKey,
 };

@@ -1,6 +1,6 @@
 # Clockwork Bootstrap Correctness Contract
 
-Revision: 2026-08-31 (public BFV refresh fail-closed)
+Revision: 2026-09-27 (public refresh fail-closed; paired views and gated polynomial lift implemented)
 
 ## 0. Public BFV Phase-1 Soundness Gate
 
@@ -26,19 +26,85 @@ The exact regression tests establish two separate facts:
    the encrypted Safe-Root/Lift transduction of the secret-dependent
    convolution and quotient.
 
+The present `homomorphic_inner_product` can only produce an encryption of
+`A0 + A1*s` from its two plaintext inputs. It has no input carrying `K` and
+no operation that computes the rounding of `R0 + R1*s`. A working public
+Phase 1 therefore needs a ciphertext operation and key material that evaluate
+that carry; changing the CRT representation or the modulus switch alone cannot
+make the existing inner product exact. This is stronger than the failure of
+the current component rounding: with `Q=17`, `t=5`, and `c0=c1=1`, BFV
+decodes ternary secrets `s=-1,0,1` to `0,0,1`. Any affine `A0+A1*s` matching
+`s=0` and `s=1` must use `A0=0`, `A1=1`, then gives `4` for `s=-1`.
+`phase2_affine_inner_product_cannot_supply_missing_carry` pins down this
+limit of the existing Phase 2 circuit.
+
 **Enforcement:** `public_phase1_soundness_gate()` is called before
 `modswitch_to_t()` by both `ClockworkBootstrap::bootstrap()` and
 `ClockworkBootstrap::bootstrap_with_ksk()`.
 
 **Tests:** `displaced_state_scalar_counterexample_is_the_missing_carry`,
 `displaced_state_is_negacyclic_and_exactly_representable`, and
-`public_phase1_is_typed_fail_closed`.
+`public_phase1_is_typed_fail_closed`. The test-only
+`encrypted_ciphertext_exhibits_missing_phase1_carry` constructs a fresh
+encrypted ciphertext, computes the combined phase with its secret key, and
+checks that component rounding misses a nonzero bounded carry. That secret-key
+oracle is confined to the test; it is not a public Phase-1 implementation.
 
 **Re-enable condition:** Replace the diagnostic component switch with an exact
-encrypted CRAM transducer that preserves `K`, then validate fresh, added,
+encrypted transducer that preserves `K` (through CRAM lift state or equivalent
+homomorphic digit removal), then validate fresh, added,
 multiplied, relinearized, and boundary-noise ciphertexts across every admitted
 configuration. A declared lossy transition may discard state only when its
 public contract explicitly permits loss; BFV refresh does not.
+
+The residue-native `ExpandedPhase1Plan` implements the candidate's public
+component scaling and calculates an input-error allowance from parameters.
+`ExpandedBootstrapKey` and `ExpandedPhaseEvaluator` now encrypt the work
+secret under an independent boot secret and evaluate the expanded phase
+`a0+a1*s_work mod P`. They emit main-only Montgomery ciphertexts. Full-size
+integration tests check every output coefficient at `P=t^2` on four primes
+and `P=t^3` on five primes, including levels two through four and evaluated
+inputs. These are encrypted inner products; digit removal in the tests is
+still a clear oracle.
+
+The four-prime `t^2` stage passes both its worst-case phase-error certificate
+and exact-multiply arithmetic capacity. The complete encrypted digit-removal
+circuit remains unadmitted; input operation-history certificates are still
+required. The authentic same-prime evaluator now pairs `Enc_{t^2}(x)`
+with `Enc_t(x mod t)` under one independent boot secret. Expanded winding
+by `t^2` cancels after contraction modulo `t`; it need not be recovered.
+The implemented subtraction kernel instead requires a certified **canonical**
+`Enc_{t^2}(x mod t)`. An ordinary low-encoding view does not meet that contract,
+and cannot be substituted for it. A public polynomial producer now has a
+complete noise/depth plan and passes encrypted small-ring contraction tests
+without a digit oracle. The directly evaluated `N^-1*x` view reduces the
+current coefficient-projection bound to 73 bits, below the 86-bit half-scale.
+Its first polynomial multiply requires a 131-bit bound, so the production
+factory refuses the current tuple before generating lift keys. See the
+[canonical-lift baseline](PRIME_POWER_CANONICAL_LIFT_BASELINE.md) and
+[Same-prime bootstrap phase and contraction](PRIME_POWER_BOOTSTRAP_CONTRACTION.md).
+Safe Basis covers the bounded signed winding window but does not provide
+this homomorphic plaintext lift. The legacy superset/single-drop
+invariants below apply to `ClockworkBootstrap`, not admission of this separate
+expanded phase. The construction and remaining encrypted step are recorded in
+[Public BFV Phase 1: an exact route to refresh](PUBLIC_BFV_PHASE1_SOLUTION.md).
+
+### Interrupted CRT-lift attempt (2026-09-26)
+
+Canonical CRT extension is not a replacement for the encrypted carry
+transducer. Phase 2 multiplies plaintext inputs by `Delta_boot`; feeding it
+raw lifted ciphertext components encodes the raw decryption phase modulo
+`t`, not the BFV rounded plaintext. The regression
+`phase1_raw_crt_lift_is_not_bfv_refresh` demonstrates this even with zero
+bootstrap-key noise. Keeping only the first boot-prime residue loses further
+information. Scaling by `Q_boot / Q_level` also does not compute the missing
+secret-dependent rounding operation.
+
+The interrupted implementation was removed and both public guards restored.
+`test_phase1_fix` now exits with status 1 on a refused refresh or wrong
+plaintext, so a successful process exit cannot mask either outcome.
+The remaining implementation requirement is still the encrypted carry
+transducer described above; these repairs do not implement public refresh.
 
 This document extracts the structural invariants enforced by the Clockwork
 Bootstrap implementation into a reviewable contract. Each invariant is

@@ -1,20 +1,8 @@
-"""Known, tracked correctness limitations -- found while verifying this
-crate's FFI boundary, reproduced here from Python, and marked
-`xfail(strict=True)` so they show up in CI as an acknowledged, understood
-gap rather than either a mysterious red failure or a silent false claim of
-correctness.
+"""Known limitations of this binding.
 
-`strict=True` means: if either of these ever unexpectedly starts
-*passing*, pytest reports that as a failure too. That is deliberate -- an
-unexpected pass here means the underlying `nine65` bug was fixed, and this
-file (plus README.md "Known limitations" and the doc comments in
-src/lib.rs) needs updating, not that the test was wrong to have existed.
-
-Both issues below were verified to originate in `nine65` core, not in this
-crate's PyO3 bindings: reproduced directly against `nine65::ops::*` in plain
-Rust, with no PyO3 or Python involved at all (see the doc comment on
-`FHEContext.mul()` in src/lib.rs and the `conftest.py` header for the
-reproduction each is based on).
+`FHEContext.mul()` is retired (#135): it raises `ValueError` and returns
+no ciphertext. The decode bias for plaintexts near `t` is still open and
+stays `xfail(strict=True)`.
 """
 
 from __future__ import annotations
@@ -24,27 +12,12 @@ import pytest
 import nine65_python as n65
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "BFVEvaluator::mul() (the deprecated single-modulus ct x ct path "
-        "this binding's FHEContext.mul() wraps) returns a wrong plaintext "
-        "for every case checked, including the most trivial one (1 * 1), "
-        "for every SecureConfig this crate exposes. This is NOT the "
-        "documented 'Delta^2 <= Q' capacity limit (1*1 is trivially within "
-        "it) -- it reproduces in plain Rust with no PyO3/Python involved. "
-        "See src/lib.rs FHEContext.mul() doc and README.md 'Known "
-        "limitations'."
-    ),
-)
-def test_ciphertext_times_ciphertext_multiplication_is_currently_broken() -> None:
+def test_ciphertext_times_ciphertext_multiplication_is_refused() -> None:
     fhe = n65.Nine65.build("secure_128", seed=1)
     ct_a = fhe.encrypt(1)
     ct_b = fhe.encrypt(1)
-    product = fhe.mul(ct_a, ct_b)
-    # This is the simplest possible ct x ct case: 1 * 1 = 1, well within
-    # mul_capacity()'s max_product bound. It still comes back wrong.
-    assert fhe.decrypt(product) == 1
+    with pytest.raises(ValueError, match="#135"):
+        fhe.mul(ct_a, ct_b)
 
 
 @pytest.mark.xfail(

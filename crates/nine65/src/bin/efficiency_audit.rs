@@ -1,4 +1,3 @@
-use nine65::arithmetic::integer_math::format_ratio;
 use nine65::prelude::*;
 use std::time::Instant;
 
@@ -39,24 +38,22 @@ fn main() {
 
     let encoder = BFVEncoder::new(&config);
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
-    let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
     let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
 
     let ct_a = encryptor.encrypt(42, &mut rng);
     let ct_b = encryptor.encrypt(7, &mut rng);
 
-    let t0 = Instant::now();
-    let iterations = 50;
-    for _ in 0..iterations {
-        let _ = evaluator.mul(&ct_a, &ct_b);
-    }
-    let total_mul_ns = t0.elapsed().as_nanos();
+    #[allow(deprecated)]
+    let mul_status = match evaluator.mul(&ct_a, &ct_b) {
+        Ok(_) => "unexpected ciphertext",
+        Err(err) => {
+            println!("ct*ct mul refused: {err}");
+            "refused"
+        }
+    };
     let mem_ops = get_memory_usage();
 
-    println!(
-        "Avg Mul (ct*ct) Time: {} ms",
-        format_ratio(total_mul_ns, iterations as u128 * 1_000_000, 2)
-    );
+    println!("Avg Mul (ct*ct): {mul_status} (#135)");
     println!(
         "Memory during Ops: {} KB (Delta from Keys: {} KB)",
         mem_ops,
@@ -65,8 +62,5 @@ fn main() {
 
     println!("\nEfficiency Metrics:");
     println!("- Memory footprint is extremely lean (< 100MB).");
-    println!(
-        "- Core-ms per Mul: {} (on 6 cores)",
-        format_ratio(total_mul_ns * 6, iterations as u128 * 1_000_000, 2)
-    );
+    println!("- Core-ms per Mul: not measured. Single-modulus ct*ct is refused (#135).");
 }

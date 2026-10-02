@@ -226,12 +226,7 @@ fn main() {
         black_box(evaluator.mul_plain(&legacy_a, b));
     });
     #[allow(deprecated)]
-    let legacy_mul_ns = average_ns(args.mul_iterations, || {
-        black_box(evaluator.mul(&legacy_a, &legacy_b));
-    });
-    #[allow(deprecated)]
-    let legacy_mul_correct =
-        decryptor.decrypt(&evaluator.mul(&legacy_a, &legacy_b)) == (a * b) % config.t;
+    let legacy_mul_refused = evaluator.mul(&legacy_a, &legacy_b).is_err();
 
     let legacy_correctness = json!({
         "encrypt": decryptor.decrypt(&legacy_a) == a,
@@ -241,7 +236,8 @@ fn main() {
         "negate_ct": decryptor.decrypt(&evaluator.negate(&legacy_a)) == (config.t - a) % config.t,
         "add_plain": decryptor.decrypt(&evaluator.add_plain(&legacy_a, b)) == (a + b) % config.t,
         "mul_plain": decryptor.decrypt(&evaluator.mul_plain(&legacy_a, b)) == (a * b) % config.t,
-        "mul_ct": legacy_mul_correct,
+        "mul_ct": false,
+        "mul_ct_status": if legacy_mul_refused { "refused-#135" } else { "unexpected-ciphertext" },
     });
 
     let dual = RNSFHEContext::new(&config);
@@ -379,7 +375,7 @@ fn main() {
                 "negate_ct": legacy_negate_ns,
                 "add_plain": legacy_add_plain_ns,
                 "mul_plain": legacy_mul_plain_ns,
-                "mul_ct": legacy_mul_ns,
+                "mul_ct": "refused-#135",
             },
             "dual_rns": {
                 "encrypt": dual_encrypt_ns,

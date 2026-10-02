@@ -355,6 +355,49 @@ fn gcd_u64(a: u64, b: u64) -> u64 {
     }
 }
 
+/// Upper bound on the bit length of the product of `primes`, computed as an
+/// integer sum of individual bit lengths (`sum(64 - p.leading_zeros())`).
+///
+/// This never underestimates: `bitlen(a*b) <= bitlen(a) + bitlen(b)`, so the
+/// sum is a safe (if occasionally loose, by up to `primes.len() - 1` bits)
+/// upper bound on `bitlen(product)`, computed with plain `u32` arithmetic
+/// that cannot itself overflow or panic. Used to typed-refuse full-width
+/// sampling contexts *before* ever constructing the exact `U256` product,
+/// so an oversized `Q_boot` returns a typed error instead of risking a panic
+/// deep inside `U256` multiplication/shift code that assumes the product
+/// fits in 256 bits.
+pub(crate) fn q_boot_bit_upper_bound(primes: &[u64]) -> u32 {
+    primes
+        .iter()
+        .map(|&p| if p == 0 { 0 } else { 64 - p.leading_zeros() })
+        .sum()
+}
+
+/// `U256::product_u64s` / `U256::mul_u64` assume (and `assert!`/panic if not)
+/// that the true product fits in 256 bits, and the exact rejection sampler's
+/// two-limb draw additionally needs a strict `< 256`-bit modulus for its
+/// high-limb mask shift to stay in `u128`'s valid `0..128` shift range (see
+/// `RNSFHEContext::sample_uniform_dual_poly`). Refuse, with a typed error,
+/// any boot prime set whose product this sampler cannot represent, rather
+/// than reaching either of those panics. Every shipped `BOOTSTRAP_PRIMES`
+/// prefix (up to all 8 primes, each <= 31 bits) sums to well under 256 bits,
+/// so this only fires for a boot chain configuration that does not exist
+/// yet.
+pub(crate) fn ensure_q_boot_representable(primes: &[u64]) -> Nine65Result<()> {
+    let bits = q_boot_bit_upper_bound(primes);
+    if bits >= 256 {
+        return Err(Nine65Error::BootstrapOverflow {
+            operation: format!(
+                "Q_boot bit-length upper bound {} >= 256-bit full-width sampler capacity \
+                 (primes={:?}); this boot prime set cannot be sampled exactly by \
+                 the current uniform rejection sampler",
+                bits, primes
+            ),
+        });
+    }
+    Ok(())
+}
+
 /// Bootstrap key: working secret key encrypted under bootstrap parameters.
 ///
 /// Since s has ternary coefficients {-1, 0, 1}, encrypting it introduces
@@ -463,6 +506,31 @@ impl BootstrapKey {
         let work_s_coeffs = &work_sk.s.main[0];
         let first_work_prime = work_config.primes[0];
 
+        // Issue #86: every coefficient of the working secret key must be
+        // ternary ({0, 1, first_work_prime - 1}, i.e. {0, 1, -1} mod the
+        // first work prime) before it is lifted into the bootstrap
+        // ciphertext below. This used to be checked implicitly, in the
+        // per-coefficient encode loop, by falling through to a `0` default
+        // for anything that wasn't one of the three ternary values -- silently
+        // treating a malformed (non-ternary) secret-key coefficient as if it
+        // had been a genuine `0`, rather than rejecting the key material.
+        // Validated once, up front, rather than per-coefficient inside that
+        // loop (issue #89: validate once at the boundary, not repeatedly in
+        // a proven inner loop) -- and before the RNG-consuming encrypt below,
+        // so a malformed key is rejected without spending randomness on a
+        // bootstrap key that will never be returned.
+        if let Some(bad_index) = work_s_coeffs
+            .iter()
+            .position(|&coeff| coeff != 0 && coeff != 1 && coeff != first_work_prime - 1)
+        {
+            return Err(Nine65Error::KeyGenFailed {
+                reason: format!(
+                    "BootstrapKey::generate: work secret key coefficient {} at index {} is not ternary (expected 0, 1, or {})",
+                    work_s_coeffs[bad_index], bad_index, first_work_prime - 1
+                ),
+            });
+        }
+
         // We need to encode s as a single scalar per coefficient for encrypt_dual.
         // encrypt_dual takes a single u64 message. We need poly encryption.
         // Instead, we'll build the encoded polynomial and use trivial + noise approach.
@@ -491,7 +559,12 @@ impl BootstrapKey {
             } else if coeff == first_work_prime - 1 {
                 -1
             } else {
-                // Non-ternary coefficient — shouldn't happen with proper key gen
+                // Unreachable: the ternary-coefficient check above already
+                // rejected any `work_s_coeffs` value outside {0, 1,
+                // first_work_prime - 1} before this loop runs (issue #86).
+                // Kept as a defensive, non-panicking fallback rather than
+                // an `unreachable!()` -- the invariant is proven by the
+                // check above, not by this match arm's own reasoning.
                 0
             };
 
@@ -567,23 +640,11 @@ impl KeySwitchKey {
         let num_main = boot_ctx.config.primes.len();
         let num_anchor = boot_ctx.dual_rns.anchor.primes.len();
 
-        // Find minimum prime for safe sampling
-        let min_main = boot_ctx
-            .config
-            .primes
-            .iter()
-            .min()
-            .copied()
-            .unwrap_or(u64::MAX);
-        let min_anchor = boot_ctx
-            .dual_rns
-            .anchor
-            .primes
-            .iter()
-            .min()
-            .copied()
-            .unwrap_or(u64::MAX);
-        let _min_prime = min_main.min(min_anchor);
+        // The gadget mask `a_l` must be exact full-width uniform on
+        // [0, Q_boot), not a per-lane independent draw -- typed-refuse
+        // before sampling if this boot chain's Q_boot exceeds what the
+        // rejection sampler can represent (see `ensure_q_boot_representable`).
+        ensure_q_boot_representable(&boot_ctx.config.primes)?;
 
         // Get the ternary representation from work_sk.
         // work_sk.s.main[0] has coefficients mod work_primes[0].
@@ -648,26 +709,15 @@ impl KeySwitchKey {
             .collect();
 
         for _l in 0..num_digits {
-            // a_l = random polynomial under boot primes
-            let a_main: Vec<Vec<u64>> = (0..num_main)
-                .map(|i| {
-                    (0..n)
-                        .map(|_| rng.next_u64() % boot_ctx.config.primes[i])
-                        .collect()
-                })
-                .collect();
-            let a_anchor: Vec<Vec<u64>> = (0..num_anchor)
-                .map(|i| {
-                    (0..n)
-                        .map(|_| rng.next_u64() % boot_ctx.dual_rns.anchor.primes[i])
-                        .collect()
-                })
-                .collect();
-            let a_l = DualRNSPoly {
-                main: a_main,
-                anchor: a_anchor,
-                n,
-            };
+            // a_l: exact full-width rejection sampling uniform on
+            // [0, Q_boot), reduced independently into every main/anchor
+            // lane so both tracks describe the same integer. Previously
+            // each lane was sampled independently mod its own prime, so
+            // main and anchor did not even encode the same value, let
+            // alone one uniform over the full boot modulus -- the same
+            // narrow-support class of bug issue #82 found in the circular
+            // bootstrap PK mask (`ClockworkBootstrap::generate_circular_pk`).
+            let a_l = boot_ctx.sample_uniform_dual_poly(rng, &boot_ctx.config.primes);
 
             // e_l = small error (CBD eta=3)
             let e_signed: Vec<i64> = (0..n)

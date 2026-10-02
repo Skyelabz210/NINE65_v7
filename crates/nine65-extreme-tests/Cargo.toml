@@ -7,10 +7,39 @@ license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [features]
 # Off by default — opt-in for CI scheduled runs and pre-release validation.
-extreme-tests = []
+#
+# Issue #74: `nine65` used to be an unconditional `[dev-dependencies]` entry
+# requesting `nine65/allow_insecure`, even though every `src/` module that
+# actually uses it is itself gated behind
+# `#[cfg(all(test, feature = "extreme-tests"))]` (see src/lib.rs) and the one
+# `tests/` integration target that uses it (full_system_measurement.rs) is
+# now gated by `required-features` below, so nothing in this crate needs
+# `nine65` at all unless this feature is on. Cargo resolves dependency
+# features from the manifest before any `#[cfg]` in the source is looked at,
+# so that unconditional line requested
+# `nine65/allow_insecure` -- and, via resolver-2 dev-dependency unification,
+# fed it into the single shared `nine65` build for the WHOLE workspace --
+# every time this crate's dev-dependencies were compiled at all, i.e. on
+# every plain `cargo test --release --workspace`, regardless of whether
+# `--features extreme-tests` was ever passed. That is what made `nine65`'s
+# own allow_insecure-must-not-ship-in-release compile-time gate
+# (`crates/nine65/src/lib.rs`) fail to re-enable: even after removing the
+# same problem from `fhe-service`, this crate reintroduced it (confirmed by
+# `cargo test --release --workspace --exclude nine65-python --exclude
+# nine65-wasm --no-run` failing with that compile_error before this fix).
+#
+# Moving `nine65` to an optional *normal* dependency activated only by this
+# feature (`dep:nine65` below) removes it from the resolved graph entirely
+# for the default (extreme-tests off) build, so it has nothing left to
+# unify in. Explicitly running with `--features extreme-tests` still pulls
+# in the real `nine65/allow_insecure` feature, exactly as before, for the
+# deliberate insecure-test harness this crate is.
+extreme-tests = ["dep:nine65", "nine65/allow_insecure"]
+
+[dependencies]
+nine65 = { path = "../nine65", optional = true, features = ["exact_rational", "clockwork", "serde"] }
 
 [dev-dependencies]
-nine65 = { path = "../nine65", features = ["allow_insecure", "exact_rational", "clockwork", "serde"] }
 rand_chacha = { workspace = true }
 rand_core = { workspace = true }
 proptest = { workspace = true }
@@ -19,3 +48,14 @@ rayon = { workspace = true }
 [lib]
 name = "nine65_extreme_tests"
 path = "src/lib.rs"
+
+# Issue #74: this integration target uses `nine65` unconditionally at the top
+# of the file (it is not one of the `#[cfg(feature = "extreme-tests")]`
+# modules `src/lib.rs` declares), so with `nine65` now an optional dependency
+# it needs its own `required-features` gate to keep resolving `nine65` --
+# and to keep needing the seeded `ShadowHarvester` runs it does, which is
+# exactly what `nine65/allow_insecure` (pulled in transitively by this same
+# feature, see [features] above) is for.
+[[test]]
+name = "full_system_measurement"
+required-features = ["extreme-tests"]

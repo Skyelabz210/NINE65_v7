@@ -179,12 +179,23 @@ impl GaloisKey {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (key, _): (Self, usize) =
+        let (key, consumed): (Self, usize) =
             bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
                 Nine65Error::ConfigError {
                     message: e.to_string(),
                 }
             })?;
+        // `decode_from_slice` does not itself reject trailing bytes after a
+        // well-formed value.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte Galois key",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         key.validate(expected_n, expected_q)?;
         Ok(key)
     }
@@ -224,12 +235,22 @@ impl GaloisKeySet {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (keys, _): (Self, usize) =
+        let (keys, consumed): (Self, usize) =
             bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
                 Nine65Error::ConfigError {
                     message: e.to_string(),
                 }
             })?;
+        // See the matching comment in `GaloisKey::from_bytes_validated`.
+        if consumed != bytes.len() {
+            return Err(Nine65Error::ConfigError {
+                message: format!(
+                    "Bincode payload has {} trailing byte(s) after a valid {}-byte Galois keyset",
+                    bytes.len() - consumed,
+                    consumed
+                ),
+            });
+        }
         keys.validate(expected_n, expected_q)?;
         Ok(keys)
     }

@@ -20,6 +20,7 @@
 pub mod barrett;
 pub mod base_ext; // SHENOY-KUMARESAN BASE EXTENSION (kernel only, not wired in — see module docs)
 pub mod boundary; // CAPACITY PROXIMITY CHECKS (80%/90%/post-switch margins)
+pub mod canonical_scale_round; // CANONICAL RNS -> ODD TARGET SCALE-AND-ROUND
 pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (fixed-work D2 decrypt integration)
 #[cfg(test)]
 mod compare_bit_vectors; // external (Python) oracle vectors for compare_bit
