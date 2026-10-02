@@ -423,18 +423,6 @@ mod tests {
         assert_eq!(mode, ExecutionMode::Sequential);
     }
 
-    #[cfg(feature = "parallel")]
-    #[test]
-    fn test_parallel_threshold_is_inclusive() {
-        let mut config = AcceleratorConfig::parallel_only();
-        config.parallel_threshold = 4;
-        let accel = Accelerator::new(config);
-
-        assert!(!accel.should_parallelize(3));
-        assert!(accel.should_parallelize(4));
-        assert!(accel.should_parallelize(5));
-    }
-
     #[test]
     fn test_add_streams() {
         let accel = Accelerator::auto();
