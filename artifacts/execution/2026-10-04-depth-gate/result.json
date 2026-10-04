@@ -1,6 +1,6 @@
 {
   "schema": "nine65-depth-truth-gate-v1",
-  "status": "confirmed_correctness_blocker",
+  "status": "confirmed_correctness_blocker_with_zero_fresh_error_control",
   "base_commit": "781846bf3d02dc7defa73675acc2f84bdf7321b3",
   "route": "GSOFHEContext::mul_symmetric / RNSFHEContext::mul_dual_symmetric",
   "workload": "one encryption of 2 followed by repeated ciphertext self-squaring, with decryption after every multiplication",
@@ -27,9 +27,49 @@
       "log_sha256": "c149540f3f16afdc0637b61043f3d3840c6921849801057d1e9e88bd62d076ec"
     }
   ],
+  "additional_controls": [
+    {
+      "config": "secure_128",
+      "input": "c1=0, c0=2*Delta, no fresh encryption error",
+      "steps_1_to_4": [4, 16, 256, 65536],
+      "status": "passed_to_depth_4"
+    },
+    {
+      "config": "secure_128",
+      "input": "c1=1, c0=2*Delta-s, no fresh encryption error",
+      "initial_decrypt": 2,
+      "first_bad_depth": 4,
+      "expected": 65536,
+      "observed": 39957,
+      "max_observed_k_bits_at_failure": 145,
+      "anchor_product_bits": 220,
+      "status": "failed_at_depth_4"
+    }
+  ],
+  "diagnostic_logs": [
+    {
+      "name": "checked_k_secure_128",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/checked-k-128.log",
+      "log_sha256": "2c6785184c75f2f1e9126ba42de6bb8d61679f3c3615a8e71c750360d5b73307"
+    },
+    {
+      "name": "checked_k_secure_192",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/checked-k-192.log",
+      "log_sha256": "7791972b3db39cd3a3c89c729bf8cd5bb50260c559ae7b20de4ecc450e2cfc5a"
+    },
+    {
+      "name": "zero_fresh_error_controls_secure_128",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/zero-noise-128.log",
+      "log_sha256": "f76c869698cbfb958068a3a7984d87136c77e03799f252a59cd267c39dea2ae9"
+    }
+  ],
   "source_sha256": {
-    "crates/nine65/src/ops/gso_fhe.rs": "342102d5ba174782076124c69edba34e0f8cb2707bc1f6f14e948e90d10dbdcb"
+    "crates/nine65/src/ops/gso_fhe.rs": "51129f42ae89d60c12b5d8c0521cc50ff5565cdf1196dd004910acc8601f1335",
+    "docs/DEPTH_CORRECTNESS_MATRIX.md": "c37ef017800b97f30c7b620522470f4b7cf63e4aa114c67c7aa2e89b314d65d5"
   },
-  "interpretation": "The old 50-step benchmark counted operations and collapses, but its secure variants did not decrypt inside the loop. These failures are for repeated squaring on this route. A separate mul-by-1 depth test has a different input history and does not settle this result.",
-  "next_gate": "Classify whether the first mismatch comes from arithmetic, rescale, key handling or BFV error; then either repair it with a reviewed bound or refuse unsupported repeated-square depth before producing wrong plaintext. Retain per-step assertions and do not publish depth 50 from collapse counters."
+  "interpretation": "The old 50-step benchmark counted operations and collapses, but did not decrypt per step. The repeated-square route fails at depth 4 in both secure tuples. A zero-fresh-error ciphertext with a nontrivial c1 term also fails at depth 4, while the c1=0 control passes. Observed K widths are below the anchor reconstruction widths. These observations narrow the defect but do not by themselves identify the first erroneous scale-round coefficient or prove a complete noise bound. The separate mul-by-1 depth test has a different input history.",
+  "next_gate": "Use an independent exact-integer oracle on the folded d2*s^2 and both per-component BFV scale-round outputs at every step, then repair the admitted FPD/inexact rescale and refresh relation or refuse unsupported repeated-square depth. Retain per-step assertions and do not publish depth 50 from collapse counters."
 }
