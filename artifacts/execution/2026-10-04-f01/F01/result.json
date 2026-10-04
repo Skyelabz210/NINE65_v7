@@ -6,7 +6,7 @@
     "The source-derived exporter reports secure_128 and secure_128_deep as the same ordered four-prime tuple, with exact Q width 119 and the same context fingerprint.",
     "The priming-root factors, BFV plaintext payload, main-Q ciphertext modulus and derived transient auxiliary view are separate registry roles.",
     "WR-1 arithmetic oracle consumes the current registry and explicitly labels its three-prime fixture historical; it passed 81105 exact checks across four current named entries.",
-    "Nine targeted regression tests pass, including wrong plaintext with unchanged counters, missing/truncated/zero depth evidence, stale three-prime labeling and the N/2 d1 bound."
+    "Ten targeted regression tests pass, including wrong plaintext with unchanged counters, missing/truncated/zero depth evidence, stale three-prime labeling, a corrupted auxiliary view and the N/2 d1 bound."
   ],
   "checks": [
     {
@@ -19,10 +19,10 @@
     {
       "command": "python3 -m unittest discover -s scripts -p test_parameter_evidence.py -v",
       "exit_code": 0,
-      "passed": 9,
+      "passed": 10,
       "failed": 0,
       "log": "artifacts/execution/2026-10-04-f01/F01/logs/parameter-tests.log",
-      "log_sha256": "1f45788d9504fb6f72cd182b35ae33b9812d0cf9af50744c4ef5d409a5d87ba7"
+      "log_sha256": "0cf938c91a97d79e3d6fbf1f1725c1dbf8d06bfa7449da9776541a454c124e19"
     },
     {
       "command": "python3 scripts/verify_wr1_transient_exact.py",
@@ -34,9 +34,9 @@
   ],
   "source_sha256": {
     "crates/nine65/examples/export_parameter_registry.rs": "f30e0ab36065a36bb42a84c18ac08ce00fab7821c5e90f08c49b08fc6da24a9b",
-    "scripts/verify_wr1_transient_exact.py": "d820ecd3205da900423492964dea73a9d9521645454c31b1eae9355af18e2bb4",
+    "scripts/verify_wr1_transient_exact.py": "da1c1eb424c8c76f73969ec2d8378e65d0203f108ff750cd4e5ad11cd245282e",
     "scripts/generate_depth_correctness_matrix.py": "a9f024427e3003c859205608d8f0d88637a381b51c3f68db7b0041ad29baf50d",
-    "scripts/test_parameter_evidence.py": "64bb44b9f9df1a8a2fccb5d2e37ca5d6bf0b2851435fb4043b9f47ea0a393e2a",
+    "scripts/test_parameter_evidence.py": "102878c6c4582626cbae693777f9fadfc26f05e5ee2ec99930fc31d0e67468c8",
     "artifacts/execution/parameter_registry.json": "5ddb248612358a7f02cfc98118e0b7242e33c60f1766d3148efde96aadfe6138"
   },
   "unresolved": [

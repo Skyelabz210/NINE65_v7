@@ -172,6 +172,10 @@ class ParameterRegistryTests(unittest.TestCase):
             )
             self.assertTrue(dependent[name]["auxiliary_moduli"])
             self.assertEqual(
+                dependent[name]["auxiliary_product_bits"],
+                prod(dependent[name]["auxiliary_moduli"]).bit_length(),
+            )
+            self.assertEqual(
                 entry["route"]["exact_evaluator_route"],
                 "DerivedTransientExact",
             )
@@ -196,6 +200,14 @@ class ParameterRegistryTests(unittest.TestCase):
             wr1.HISTORICAL_MAIN_3
         ).bit_length()
         with self.assertRaisesRegex(AssertionError, "historical three-prime"):
+            wr1.validate_registry_document(injected)
+
+    def test_corrupted_dependent_view_is_rejected(self) -> None:
+        injected = copy.deepcopy(self.document)
+        injected["modulus_roles"]["dependent_view_moduli"][0][
+            "auxiliary_product_bits"
+        ] += 1
+        with self.assertRaisesRegex(AssertionError, "dependent view exact product width"):
             wr1.validate_registry_document(injected)
 
     def test_wr1_d1_uses_n_over_2_bound(self) -> None:

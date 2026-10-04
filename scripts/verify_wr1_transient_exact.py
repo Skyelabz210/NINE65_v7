@@ -35,6 +35,9 @@ class RegistryConfig(NamedTuple):
     main: tuple[int, ...]
     plaintext_modulus: int
     eta: int
+    auxiliary_moduli: tuple[int, ...]
+    auxiliary_product_bits: int
+    required_capacity_bits: int
 
 
 def _same_tuple(left: dict, right: dict) -> bool:
@@ -125,6 +128,22 @@ def validate_registry_document(document: dict) -> tuple[RegistryConfig, ...]:
         ):
             raise AssertionError(f"{entry['name']}: alias relation disagrees with tuple equality")
 
+    roles = document.get("modulus_roles", {})
+    views = roles.get("dependent_view_moduli", [])
+    if not isinstance(views, list) or len(views) != len(entries):
+        raise AssertionError("current registry lacks one dependent view per tuple")
+    by_owner = {view.get("owner_config"): view for view in views}
+    if set(by_owner) != set(by_name):
+        raise AssertionError("dependent view owners disagree with current tuples")
+    for name, view in by_owner.items():
+        aux = view.get("auxiliary_moduli")
+        if not isinstance(aux, list) or not aux or any(
+            type(lane) is not int or lane <= 1 for lane in aux
+        ):
+            raise AssertionError(f"{name}: malformed dependent auxiliary moduli")
+        if view.get("auxiliary_product_bits") != prod(aux).bit_length():
+            raise AssertionError(f"{name}: dependent view exact product width mismatch")
+
     return tuple(
         RegistryConfig(
             label=entry["name"],
@@ -132,6 +151,9 @@ def validate_registry_document(document: dict) -> tuple[RegistryConfig, ...]:
             main=tuple(entry["main_primes"]),
             plaintext_modulus=entry["plaintext_modulus"],
             eta=entry["eta"],
+            auxiliary_moduli=tuple(by_owner[entry["name"]]["auxiliary_moduli"]),
+            auxiliary_product_bits=by_owner[entry["name"]]["auxiliary_product_bits"],
+            required_capacity_bits=by_owner[entry["name"]]["required_capacity_bits"],
         )
         for entry in entries
     )
@@ -362,6 +384,7 @@ def capacity_certificate(
     ring_n: int,
     main: tuple[int, ...],
     plaintext_modulus: int,
+    aux: tuple[int, ...],
 ) -> tuple[tuple[int, ...], int, int]:
     modulus = prod(main)
     required = (
@@ -370,14 +393,8 @@ def capacity_certificate(
         * modulus
     )
 
-    aux = ()
-    for lane_count in range(1, len(AUX_10) + 1):
-        candidate = AUX_10[:lane_count]
-        if prod(candidate) > required:
-            aux = candidate
-            break
-    if not aux:
-        raise AssertionError(f"{label}: auxiliary pool cannot satisfy N/2 capacity")
+    if not aux or prod(aux) <= required:
+        raise AssertionError(f"{label}: live auxiliary view cannot satisfy N/2 capacity")
 
     for main_lane in main:
         for aux_lane in aux:
@@ -534,7 +551,13 @@ def main() -> None:
             config.ring_n,
             config.main,
             config.plaintext_modulus,
+            config.auxiliary_moduli,
         )
+        if (aux_bits, required_bits) != (
+            config.auxiliary_product_bits,
+            config.required_capacity_bits,
+        ):
+            raise AssertionError(f"{config.label}: live exact-evaluator capacity metadata drift")
         checks = verify_projection_and_tensor(config, aux)
         total_checks += checks
         print(
