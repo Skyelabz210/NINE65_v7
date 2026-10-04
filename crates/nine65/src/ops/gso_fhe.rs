@@ -789,11 +789,78 @@ mod depth_benchmarks {
     use crate::entropy::ShadowHarvester;
     use crate::params::secure_configs::SecureConfig;
     use crate::params::FHEConfig;
-    use std::time::Instant;
+    use std::time::{Duration, Instant};
 
     fn bench_ctx(config: FHEConfig) -> GSOFHEContext {
         let inner = RNSFHEContext::new(&config);
         GSOFHEContext::new(inner)
+    }
+
+    /// Diagnostic controls: exact encoding with either c1=0 or c1=1 and
+    /// c0=seed*Delta-c1*s. Seed 4 reaches plaintext -1 one multiplication
+    /// earlier than seed 2, testing whether the failure follows that boundary.
+    #[test]
+    fn diagnostic_zero_noise_constant_self_square_secure_128() {
+        use crate::ops::rns_fhe::DualRNSPoly;
+
+        let mut ctx = bench_ctx(SecureConfig::secure_128().into_config());
+        let mut rng = ShadowHarvester::new();
+        let keys = ctx.generate_keys(&mut rng);
+        let q = ctx.inner.q_product_checked.expect("secure_128 Q fits u128");
+        let delta = q / ctx.inner.t as u128;
+        let n = ctx.inner.n;
+        let main = ctx.inner.config.primes.clone();
+        let anchor = ctx.inner.dual_rns.anchor.primes.clone();
+        let mut mismatches = Vec::new();
+        for (seed, with_c1) in [(4_u64, true), (2, false), (2, true)] {
+            let mut c0 = DualRNSPoly {
+                main: main.iter().map(|_| vec![0; n]).collect(),
+                anchor: anchor.iter().map(|_| vec![0; n]).collect(),
+                n,
+            };
+            let mut c1 = DualRNSPoly {
+                main: main.iter().map(|_| vec![0; n]).collect(),
+                anchor: anchor.iter().map(|_| vec![0; n]).collect(),
+                n,
+            };
+            for (j, &p) in main.iter().enumerate() {
+                let encoded = ((seed as u128 * delta) % p as u128) as u64;
+                for k in 0..n {
+                    let target = if k == 0 { encoded } else { 0 };
+                    let secret_term = if with_c1 { keys.secret_key.s.main[j][k] } else { 0 };
+                    c0.main[j][k] = (target + p - secret_term) % p;
+                }
+                if with_c1 { c1.main[j][0] = 1; }
+            }
+            for (j, &p) in anchor.iter().enumerate() {
+                let encoded = ((seed as u128 * delta) % p as u128) as u64;
+                for k in 0..n {
+                    let target = if k == 0 { encoded } else { 0 };
+                    let secret_term = if with_c1 { keys.secret_key.s.anchor[j][k] } else { 0 };
+                    c0.anchor[j][k] = (target + p - secret_term) % p;
+                }
+                if with_c1 { c1.anchor[j][0] = 1; }
+            }
+            let mut ct = GSOCiphertext::wrap(
+                DualRNSCiphertext { c0, c1, level: main.len() }, 0
+            );
+            assert_eq!(ctx.decrypt(&ct, &keys.secret_key), seed, "control input encoding");
+            let mut expected = seed;
+            for depth in 1..=4 {
+                crate::arithmetic::rns::k_probe::start();
+                ct = ctx.mul_symmetric(&ct, &ct.clone(), &keys.secret_key);
+                let k_samples = crate::arithmetic::rns::k_probe::stop();
+                let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
+                expected = ((expected as u128 * expected as u128) % ctx.inner.t as u128) as u64;
+                let (actual, margin) = ctx.inner.decrypt_dual_with_diagnostics(&ct.inner, &keys.secret_key);
+                println!("ZERO_NOISE seed={seed} with_c1={with_c1} step={depth} got={actual} expected={expected} margin={margin} max_observed_k_bits={max_k_bits} k_samples={}", k_samples.len());
+                if actual != expected {
+                    mismatches.push((seed, with_c1, depth, actual, expected));
+                    break;
+                }
+            }
+        }
+        assert!(mismatches.is_empty(), "zero-noise controls failed: {mismatches:?}");
     }
 
     /// Benchmark symmetric mode to maximum depth
@@ -860,7 +927,9 @@ mod depth_benchmarks {
 
     #[test]
     fn benchmark_symmetric_max_depth_secure_128() {
-        let mut ctx = bench_ctx(SecureConfig::secure_128().into_config());
+        let config = SecureConfig::secure_128().into_config();
+        let plaintext_modulus = config.t;
+        let mut ctx = bench_ctx(config);
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
 
@@ -868,17 +937,36 @@ mod depth_benchmarks {
         let mut depth = 0u32;
         let mut collapses = 0u32;
         let max_test_depth = 50;
+        let mut expected = 2_u64;
 
-        let start = Instant::now();
+        let mut multiplication_time = Duration::ZERO;
         for d in 1..=max_test_depth {
             let ct_clone = ct.clone();
+            let op_start = Instant::now();
+            crate::arithmetic::rns::k_probe::start();
             ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
+            let k_samples = crate::arithmetic::rns::k_probe::stop();
+            let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
+            multiplication_time += op_start.elapsed();
             depth = d;
             let stats = ctx.noise_stats(&ct);
             collapses = stats.collapses;
+            expected = ((expected as u128 * expected as u128) % plaintext_modulus as u128) as u64;
+            let (got, decoded_margin) = ctx
+                .inner
+                .decrypt_dual_with_diagnostics(&ct.inner, &keys.secret_key);
+            let checked_accepts = ctx
+                .inner
+                .try_decrypt_dual(&ct.inner, &keys.secret_key)
+                .is_ok();
+            println!(
+                "STEP step={d} got={got} expected={expected} plaintext_equal={} decoded_margin={decoded_margin} checked_accepts={checked_accepts} max_observed_k_bits={max_k_bits} k_samples={}",
+                got == expected, k_samples.len()
+            );
+            assert_eq!(got, expected, "secure_128 plaintext mismatch at depth {d}");
         }
 
-        let total_time = start.elapsed();
+        let total_time = multiplication_time;
         let avg_us = total_time.as_micros() / depth as u128;
         println!("SECURE_128 MAX DEPTH: {} multiplicative levels", depth);
         println!("Total collapses: {}", collapses);
@@ -888,7 +976,9 @@ mod depth_benchmarks {
 
     #[test]
     fn benchmark_symmetric_max_depth_secure_192() {
-        let mut ctx = bench_ctx(SecureConfig::secure_192().into_config());
+        let config = SecureConfig::secure_192().into_config();
+        let plaintext_modulus = config.t;
+        let mut ctx = bench_ctx(config);
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
 
@@ -896,17 +986,36 @@ mod depth_benchmarks {
         let mut depth = 0u32;
         let mut collapses = 0u32;
         let max_test_depth = 50;
+        let mut expected = 2_u64;
 
-        let start = Instant::now();
+        let mut multiplication_time = Duration::ZERO;
         for d in 1..=max_test_depth {
             let ct_clone = ct.clone();
+            let op_start = Instant::now();
+            crate::arithmetic::rns::k_probe::start();
             ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
+            let k_samples = crate::arithmetic::rns::k_probe::stop();
+            let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
+            multiplication_time += op_start.elapsed();
             depth = d;
             let stats = ctx.noise_stats(&ct);
             collapses = stats.collapses;
+            expected = ((expected as u128 * expected as u128) % plaintext_modulus as u128) as u64;
+            let (got, decoded_margin) = ctx
+                .inner
+                .decrypt_dual_with_diagnostics(&ct.inner, &keys.secret_key);
+            let checked_accepts = ctx
+                .inner
+                .try_decrypt_dual(&ct.inner, &keys.secret_key)
+                .is_ok();
+            println!(
+                "STEP step={d} got={got} expected={expected} plaintext_equal={} decoded_margin={decoded_margin} checked_accepts={checked_accepts} max_observed_k_bits={max_k_bits} k_samples={}",
+                got == expected, k_samples.len()
+            );
+            assert_eq!(got, expected, "secure_192 plaintext mismatch at depth {d}");
         }
 
-        let total_time = start.elapsed();
+        let total_time = multiplication_time;
         let avg_us = total_time.as_micros() / depth as u128;
         println!("SECURE_192 MAX DEPTH: {} multiplicative levels", depth);
         println!("Total collapses: {}", collapses);

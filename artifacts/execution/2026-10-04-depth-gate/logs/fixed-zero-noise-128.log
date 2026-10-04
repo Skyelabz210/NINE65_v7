@@ -1,0 +1,28 @@
+
+running 1 test
+ZERO_NOISE seed=4 with_c1=true step=1 got=16 expected=16 margin=2662308721414706769365296433832 max_observed_k_bits=91 k_samples=16384
+ZERO_NOISE seed=4 with_c1=true step=2 got=256 expected=256 margin=2662308721414706767537761012408 max_observed_k_bits=129 k_samples=16384
+ZERO_NOISE seed=4 with_c1=true step=3 got=65536 expected=65536 margin=2662308720941352498913409485080 max_observed_k_bits=130 k_samples=16384
+test ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128 has been running for over 60 seconds
+ZERO_NOISE seed=4 with_c1=true step=4 got=2 expected=1 margin=2453037017100076806549621973266 max_observed_k_bits=142 k_samples=16384
+ZERO_NOISE seed=2 with_c1=false step=1 got=4 expected=4 margin=2662308721414706769365296433832 max_observed_k_bits=89 k_samples=16384
+ZERO_NOISE seed=2 with_c1=false step=2 got=16 expected=16 margin=2662308721414706769365296433832 max_observed_k_bits=91 k_samples=16384
+ZERO_NOISE seed=2 with_c1=false step=3 got=256 expected=256 margin=2662308721414706769365296433832 max_observed_k_bits=95 k_samples=16384
+ZERO_NOISE seed=2 with_c1=false step=4 got=65536 expected=65536 margin=2662308721414706769365296406520 max_observed_k_bits=103 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=1 got=4 expected=4 margin=2662308721414706769365296433832 max_observed_k_bits=89 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=2 got=16 expected=16 margin=2662308721414706767537761012408 max_observed_k_bits=129 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=3 got=256 expected=256 margin=2662308720941353376130411795912 max_observed_k_bits=130 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=4 got=0 expected=65536 margin=2452965713914877528943312829208 max_observed_k_bits=142 k_samples=16384
+
+thread 'ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128' panicked at crates/nine65/src/ops/gso_fhe.rs:863:9:
+zero-noise controls failed: [(4, true, 4, 2, 1), (2, true, 4, 0, 65536)]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128 ... FAILED
+
+failures:
+
+failures:
+    ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1051 filtered out; finished in 198.73s
+

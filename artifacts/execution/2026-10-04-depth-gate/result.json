@@ -1,0 +1,104 @@
+{
+  "schema": "nine65-depth-truth-gate-v1",
+  "status": "confirmed_depth_four_blocker_persists_after_canonical_phase_fix",
+  "base_commit": "781846bf3d02dc7defa73675acc2f84bdf7321b3",
+  "route": "GSOFHEContext::mul_symmetric / RNSFHEContext::mul_dual_symmetric",
+  "workload": "one encryption of 2 followed by repeated ciphertext self-squaring, with decryption after every multiplication",
+  "plaintext_modulus": 65537,
+  "first_mismatches": [
+    {
+      "config": "secure_128",
+      "first_bad_depth": 4,
+      "expected": 65536,
+      "observed": 55380,
+      "test_exit_code": 101,
+      "test_result": "FAILED; 0 passed, 1 failed, 1049 filtered out",
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/secure-128.log",
+      "log_sha256": "f4feb0c71cf05743f3c269bae7163837bccc94ec34d574f6558f6429e7702298"
+    },
+    {
+      "config": "secure_192",
+      "first_bad_depth": 4,
+      "expected": 65536,
+      "observed": 65532,
+      "test_exit_code": 101,
+      "test_result": "FAILED; 0 passed, 1 failed, 1049 filtered out",
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/secure-192.log",
+      "log_sha256": "c149540f3f16afdc0637b61043f3d3840c6921849801057d1e9e88bd62d076ec"
+    }
+  ],
+  "additional_controls": [
+    {
+      "config": "secure_128",
+      "input": "c1=0, c0=2*Delta, no fresh encryption error",
+      "steps_1_to_4": [4, 16, 256, 65536],
+      "status": "passed_to_depth_4"
+    },
+    {
+      "config": "secure_128",
+      "input": "c1=1, c0=2*Delta-s, no fresh encryption error",
+      "initial_decrypt": 2,
+      "first_bad_depth": 4,
+      "expected": 65536,
+      "observed": 39957,
+      "max_observed_k_bits_at_failure": 145,
+      "anchor_product_bits": 220,
+      "status": "failed_at_depth_4"
+    }
+  ],
+  "diagnostic_logs": [
+    {
+      "name": "checked_k_secure_128",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/checked-k-128.log",
+      "log_sha256": "2c6785184c75f2f1e9126ba42de6bb8d61679f3c3615a8e71c750360d5b73307"
+    },
+    {
+      "name": "checked_k_secure_192",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/checked-k-192.log",
+      "log_sha256": "7791972b3db39cd3a3c89c729bf8cd5bb50260c559ae7b20de4ecc450e2cfc5a"
+    },
+    {
+      "name": "zero_fresh_error_controls_secure_128",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/zero-noise-128.log",
+      "log_sha256": "d0fa30b0a1936d5013c036c3ce92c6f763e1e4954cae058298d5387975a56299"
+    }
+  ],
+  "post_phase_fix": {
+    "merged_fix": "https://github.com/Skyelabz210/NINE65_v7/pull/160",
+    "comparison_base_commit": "56bfa8c9cde71d5664f8d5c02cfd45aaf8f5979a",
+    "direct_phase_regression": "Q-1 and -1 now preserve distinct anchor phases during dual-RNS rescale",
+    "depth_four": [
+      {"config": "secure_128", "observed": 56106, "expected": 65536, "log": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-128.log", "log_sha256": "643bd6251426c091ce77dec555ca36ca18d0d78f78239a5b4e2eee2ead12d70e"},
+      {"config": "secure_192", "observed": 0, "expected": 65536, "log": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-192.log", "log_sha256": "373cc4111f6f6559b139e57a234984761d92436c259fd09937cf816f83fae218"}
+    ],
+    "zero_fresh_error_controls_secure_128": [
+      {"seed": 2, "c1": 0, "status": "passes_depth_four"},
+      {"seed": 2, "c1": 1, "first_bad_depth": 4, "observed": 0, "expected": 65536},
+      {"seed": 4, "c1": 1, "first_bad_depth": 4, "observed": 2, "expected": 1}
+    ],
+    "control_log": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-zero-noise-128.log",
+    "control_log_sha256": "305a03a6f20344d627f07f6cf2f6277cbfede13cd13f4c7c8aa724dd46d239f4",
+    "large_winding_oracle": {
+      "signed_k": "+/-(2^145+12345)",
+      "test": "cargo test --locked --offline -p nine65 --lib k_elim_rescale_large_winding_oracle_and_output_phase -- --nocapture",
+      "exit_code": 0,
+      "result": "Both signs match independent round(X/Delta) mod Q in main lanes; output anchor phase is canonical and differs from true signed quotient phase",
+      "generator": "scripts/rescale_large_phase_oracle.py",
+      "generator_sha256": "a88d8283712e6512ea96fbb37cc3289b01c096a30b892fa4926e89204cbcaf20",
+      "fixture": "artifacts/execution/2026-10-04-depth-gate/large-phase-oracle.json",
+      "fixture_sha256": "37fc51d38a84fffd979834d84ddbbcaf4b2f6ca03692fb4531a148a3275928b0",
+      "limit": "This scalar witness does not prove that output canonicalization causes the depth-4 ciphertext failure; the public manufactured route has a regression guardrail against naive anchor centering."
+    },
+    "note": "The post-fix logs were captured from the semantic phase patch before whitespace-only rustfmt and merge; they are diagnostic evidence, not a byte-for-byte build attestation of the merge commit."
+  },
+  "source_sha256": {
+    "crates/nine65/src/ops/gso_fhe.rs": "7339a8de9f3810260df65ce9ff85f37122e7cc6e8cc52767389561b4a2e1f5e0",
+    "crates/nine65/src/ops/rns_fhe.rs": "441ca26d9ae1ebb144f214d2b089cee821cd4169bf132ae829c7a4f9d9edbb07",
+    "docs/DEPTH_CORRECTNESS_MATRIX.md": "2a47320c0c6df1c6d97ccacc75266a0804895bf0bf59b31935d936c7a6e82057"
+  },
+  "interpretation": "The old 50-step benchmark counted operations and collapses, but did not decrypt per step. The repeated-square route still fails at depth 4 in both secure tuples after fixing canonical K phase. Zero-fresh-error controls with a nontrivial c1 term still fail, while the c1=0 control passes. The two nontrivial controls exhibit a +1 mod t discrepancy at depth 4, but that observation does not justify adding a constant correction. Observed K widths are below the anchor reconstruction widths. These observations narrow the defect but do not identify the first erroneous coefficient or prove a complete BFV noise bound. The separate mul-by-1 depth test has a different input history.",
+  "next_gate": "Use an independent exact-integer oracle on the folded d2*s^2 and both per-component BFV scale-round outputs at every step, then repair the admitted FPD/inexact rescale and refresh relation or refuse unsupported repeated-square depth. Retain per-step assertions and do not publish depth 50 from collapse counters."
+}

@@ -1,0 +1,22 @@
+
+running 1 test
+STEP step=1 got=4 expected=4 plaintext_equal=true decoded_margin=2662308721414706769365296433478 checked_accepts=true max_observed_k_bits=158 k_samples=16384
+STEP step=2 got=16 expected=16 plaintext_equal=true decoded_margin=2662308721414703311919880495196 checked_accepts=true max_observed_k_bits=143 k_samples=16384
+test ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 has been running for over 60 seconds
+STEP step=3 got=256 expected=256 plaintext_equal=true decoded_margin=2660821759855356151012596273802 checked_accepts=true max_observed_k_bits=143 k_samples=16384
+STEP step=4 got=56106 expected=65536 plaintext_equal=false decoded_margin=317745151293663686347212852997 checked_accepts=true max_observed_k_bits=143 k_samples=16384
+
+thread 'ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128' panicked at crates/nine65/src/ops/gso_fhe.rs:966:13:
+assertion `left == right` failed: secure_128 plaintext mismatch at depth 4
+  left: 56106
+ right: 65536
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 ... FAILED
+
+failures:
+
+failures:
+    ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1051 filtered out; finished in 87.44s
+
