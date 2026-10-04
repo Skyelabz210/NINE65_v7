@@ -1,6 +1,6 @@
 {
   "schema": "nine65-depth-truth-gate-v1",
-  "status": "confirmed_correctness_blocker_with_zero_fresh_error_control",
+  "status": "confirmed_depth_four_blocker_persists_after_canonical_phase_fix",
   "base_commit": "781846bf3d02dc7defa73675acc2f84bdf7321b3",
   "route": "GSOFHEContext::mul_symmetric / RNSFHEContext::mul_dual_symmetric",
   "workload": "one encryption of 2 followed by repeated ciphertext self-squaring, with decryption after every multiplication",
@@ -63,13 +63,31 @@
       "name": "zero_fresh_error_controls_secure_128",
       "exit_code": 101,
       "log": "artifacts/execution/2026-10-04-depth-gate/logs/zero-noise-128.log",
-      "log_sha256": "f76c869698cbfb958068a3a7984d87136c77e03799f252a59cd267c39dea2ae9"
+      "log_sha256": "d0fa30b0a1936d5013c036c3ce92c6f763e1e4954cae058298d5387975a56299"
     }
   ],
-  "source_sha256": {
-    "crates/nine65/src/ops/gso_fhe.rs": "51129f42ae89d60c12b5d8c0521cc50ff5565cdf1196dd004910acc8601f1335",
-    "docs/DEPTH_CORRECTNESS_MATRIX.md": "c37ef017800b97f30c7b620522470f4b7cf63e4aa114c67c7aa2e89b314d65d5"
+  "post_phase_fix": {
+    "merged_fix": "https://github.com/Skyelabz210/NINE65_v7/pull/160",
+    "comparison_base_commit": "56bfa8c9cde71d5664f8d5c02cfd45aaf8f5979a",
+    "direct_phase_regression": "Q-1 and -1 now preserve distinct anchor phases during dual-RNS rescale",
+    "depth_four": [
+      {"config": "secure_128", "observed": 56106, "expected": 65536, "log": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-128.log", "log_sha256": "643bd6251426c091ce77dec555ca36ca18d0d78f78239a5b4e2eee2ead12d70e"},
+      {"config": "secure_192", "observed": 0, "expected": 65536, "log": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-192.log", "log_sha256": "373cc4111f6f6559b139e57a234984761d92436c259fd09937cf816f83fae218"}
+    ],
+    "zero_fresh_error_controls_secure_128": [
+      {"seed": 2, "c1": 0, "status": "passes_depth_four"},
+      {"seed": 2, "c1": 1, "first_bad_depth": 4, "observed": 0, "expected": 65536},
+      {"seed": 4, "c1": 1, "first_bad_depth": 4, "observed": 2, "expected": 1}
+    ],
+    "control_log": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-zero-noise-128.log",
+    "control_log_sha256": "305a03a6f20344d627f07f6cf2f6277cbfede13cd13f4c7c8aa724dd46d239f4",
+    "note": "The post-fix logs were captured from the semantic phase patch before whitespace-only rustfmt and merge; they are diagnostic evidence, not a byte-for-byte build attestation of the merge commit."
   },
-  "interpretation": "The old 50-step benchmark counted operations and collapses, but did not decrypt per step. The repeated-square route fails at depth 4 in both secure tuples. A zero-fresh-error ciphertext with a nontrivial c1 term also fails at depth 4, while the c1=0 control passes. Observed K widths are below the anchor reconstruction widths. These observations narrow the defect but do not by themselves identify the first erroneous scale-round coefficient or prove a complete noise bound. The separate mul-by-1 depth test has a different input history.",
+  "source_sha256": {
+    "crates/nine65/src/ops/gso_fhe.rs": "7339a8de9f3810260df65ce9ff85f37122e7cc6e8cc52767389561b4a2e1f5e0",
+    "crates/nine65/src/ops/rns_fhe.rs": "90961f4ddef090d7fcbdfd530749e8140082c4f0c3e19c5d3c2af461204b9828",
+    "docs/DEPTH_CORRECTNESS_MATRIX.md": "be709f4561763b96b42184e8d9b837b2f3e34afc381442b5d227d020bddf05c7"
+  },
+  "interpretation": "The old 50-step benchmark counted operations and collapses, but did not decrypt per step. The repeated-square route still fails at depth 4 in both secure tuples after fixing canonical K phase. Zero-fresh-error controls with a nontrivial c1 term still fail, while the c1=0 control passes. The two nontrivial controls exhibit a +1 mod t discrepancy at depth 4, but that observation does not justify adding a constant correction. Observed K widths are below the anchor reconstruction widths. These observations narrow the defect but do not identify the first erroneous coefficient or prove a complete BFV noise bound. The separate mul-by-1 depth test has a different input history.",
   "next_gate": "Use an independent exact-integer oracle on the folded d2*s^2 and both per-component BFV scale-round outputs at every step, then repair the admitted FPD/inexact rescale and refresh relation or refuse unsupported repeated-square depth. Retain per-step assertions and do not publish depth 50 from collapse counters."
 }

@@ -25,6 +25,21 @@ Generated on 2026-02-14 09:51:41 UTC
 > The standalone Recumbent carrier has a separate exactness defect (#159) and
 > is not wired into this route.
 
+> **After the canonical-phase correction (PR #160):** the two directly
+> distinguished phases `Q-1` and `-1` now pass the rescale regression, but the
+> repeated-square depth-4 gate remains red: `secure_128` gives `56106` versus
+> `65536`, and `secure_192` gives `0` versus `65536`. In the zero-fresh-error
+> controls, `c1=0` still passes through depth 4. With `c1=1`, seed `2` gives
+> `0` versus `65536`, and seed `4` gives `2` versus `1` at depth 4. Seed `4`
+> reaches the `-1 mod t` plaintext at depth 3 and passes there, so simply
+> crossing that plaintext boundary does not explain the depth-4 error. Both
+> nontrivial controls show a `+1 mod t` discrepancy, which is an observation,
+> not a justified correction rule. Their observed K widths remain below the
+> admitted anchor width. The phase fix is necessary but does not certify the
+> BFV scale-round or relinearization chain. Logs are in the same artifact
+> directory under `fixed-*`; the direct phase regression is in
+> [`artifacts/execution/2026-10-04-rescale-phase`](../artifacts/execution/2026-10-04-rescale-phase/).
+
 > **2026-08-19 note:** this matrix's data comes from
 > `benchmark_symmetric_max_depth_secure_128`/`_192`
 > (`crates/nine65/src/ops/gso_fhe.rs`), which run 50 symmetric multiplications
