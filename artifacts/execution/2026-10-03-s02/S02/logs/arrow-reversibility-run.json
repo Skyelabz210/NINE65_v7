@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "/tmp/nine65-arrow-reversibility --test-threads=1",
+  "exit_code": 0,
+  "elapsed_seconds": 0.042,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-reversibility-run.log",
+  "log_sha256": "ec6fa81503cbca0e074b5e3c2a19e9c40aabe70660b6306322fd435fce367e86"
+}

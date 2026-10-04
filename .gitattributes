@@ -1,0 +1,2 @@
+# Preserve raw execution logs byte-for-byte; their JSON records pin SHA-256.
+artifacts/execution/**/logs/*.log -diff

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "exact_transcendentals",
+    "-j1"
+  ],
+  "cwd": "/home/acid/Projects/NINE65_v7",
+  "elapsed_seconds": 71.458,
+  "exit_code": 0,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-full-debug.log",
+  "log_sha256": "42480cb6cd9be995687aa8cc08e0dc04875ea57cf4f7b1eb78d7e6b578621143"
+}

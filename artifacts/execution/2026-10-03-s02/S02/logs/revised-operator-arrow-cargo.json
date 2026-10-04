@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "cargo test --locked --offline -p exact_transcendentals --test composite_operator_domains --test arrow_emission_reversibility --test arrow_emission_joint_property -j1",
+  "exit_code": 0,
+  "elapsed_seconds": 20.067,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/revised-operator-arrow-cargo.log",
+  "log_sha256": "8c731a1c2b333cccf6f4877d0c4056e2a8c6be248a4547266c026f4de6a9f108"
+}

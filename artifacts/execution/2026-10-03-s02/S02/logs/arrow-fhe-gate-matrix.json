@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "cargo test --config profile.dev.debug=0 --config profile.dev.incremental=false --config profile.test.debug=0 --config profile.test.incremental=false --locked --offline -p nine65 --test arrow_emission_fhe_gate_matrix -j1 -- --test-threads=1",
+  "exit_code": 101,
+  "elapsed_seconds": 0.743,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix.log",
+  "log_sha256": "af41567e565b8b23ed3cfe990ee37d1e92cdc8a2de2c4300a0f40699119fc9e9"
+}

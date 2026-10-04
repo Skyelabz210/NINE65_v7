@@ -1,0 +1,46 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:493:11
+    |
+493 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `exact_transcendentals` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.23s
+     Running unittests src/lib.rs (target/debug/deps/exact_transcendentals-a154c5618b26356f)
+
+running 26 tests
+test cram_ops::tests::code_roundtrip ... ok
+test cram_ops::tests::degrees_correct ... ok
+test cram_ops::tests::div_by_zero_returns_error ... ok
+test cram_ops::tests::div_non_invertible ... ok
+test cram_ops::tests::dkam_subcriticality ... ok
+test cram_ops::tests::inv_zero_returns_error ... ok
+test cram_ops::tests::involution_property ... ok
+test cram_ops::tests::op_add ... ok
+test cram_ops::tests::op_div_exact ... ok
+test cram_ops::tests::op_id ... ok
+test cram_ops::tests::op_inv_exact ... ok
+test cram_ops::tests::op_mul ... ok
+test cram_ops::tests::op_neg ... ok
+test cram_ops::tests::op_sqr ... ok
+test cram_ops::tests::parse_schema_basic ... ok
+test cram_ops::tests::s8_topology_space_size ... ok
+test cram_ops::tests::op_sub ... ok
+test cram_ops::tests::schema_apply_heterogeneous ... ok
+test cram_ops::tests::schema_apply_and_reconstruct ... ok
+test cram_ops::tests::schema_d002_violation ... ok
+test cram_ops::tests::schema_apply_homogeneous_add ... ok
+test cram_ops::tests::schema_d004_non_coprime ... ok
+test cram_ops::tests::schema_display ... ok
+test cram_ops::tests::sqr_carry_basic ... ok
+test cram_ops::tests::schema_valid_transport_core ... ok
+test cram_ops::tests::validity_champion_s6 ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 527 filtered out; finished in 0.02s
+

@@ -1,0 +1,6 @@
+
+running 23 tests
+test g1_product_ciphertexts_carry_zero_winding_in_both_modes ... ok
+test g1_winding_is_derivable_from_residues_and_is_never_carried_as_state ... ok
+test g2_add_transition_defect_is_zero_for_every_config_and_mode ... ok
+test g2_depth1_mul_transition_defect_is_zero_for_every_config_and_mode ... 

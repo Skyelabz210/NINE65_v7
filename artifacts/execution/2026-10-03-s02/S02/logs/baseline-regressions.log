@@ -1,0 +1,63 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.90s
+     Running tests/composite_operator_domains.rs (target/debug/deps/composite_operator_domains-00d49ff247212448)
+
+running 5 tests
+test division_matches_product_search_on_small_rings ... FAILED
+test inverse_units_and_nonunits_match_product_search ... FAILED
+test owner_t5_schema_inverse_mod15015_is7508 ... FAILED
+test schema_inverse_mod15_is8 ... FAILED
+test schema_inverse_mod9_is5 ... FAILED
+
+failures:
+
+---- division_matches_product_search_on_small_rings stdout ----
+
+thread 'division_matches_product_search_on_small_rings' panicked at crates/exact_transcendentals/tests/composite_operator_domains.rs:61:25:
+assertion `left == right` failed: Div(1,3) mod 4
+  left: [1]
+ right: [3]
+
+---- inverse_units_and_nonunits_match_product_search stdout ----
+
+thread 'inverse_units_and_nonunits_match_product_search' panicked at crates/exact_transcendentals/tests/composite_operator_domains.rs:40:21:
+assertion `left == right` failed: Inv(3) mod 4
+  left: [1]
+ right: [3]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- owner_t5_schema_inverse_mod15015_is7508 stdout ----
+
+thread 'owner_t5_schema_inverse_mod15015_is7508' panicked at crates/exact_transcendentals/tests/composite_operator_domains.rs:14:5:
+assertion `left == right` failed
+  left: 8192
+ right: 7508
+
+---- schema_inverse_mod15_is8 stdout ----
+
+thread 'schema_inverse_mod15_is8' panicked at crates/exact_transcendentals/tests/composite_operator_domains.rs:14:5:
+assertion `left == right` failed
+  left: 2
+ right: 8
+
+---- schema_inverse_mod9_is5 stdout ----
+
+thread 'schema_inverse_mod9_is5' panicked at crates/exact_transcendentals/tests/composite_operator_domains.rs:14:5:
+assertion `left == right` failed
+  left: 2
+ right: 5
+
+
+failures:
+    division_matches_product_search_on_small_rings
+    inverse_units_and_nonunits_match_product_search
+    owner_t5_schema_inverse_mod15015_is7508
+    schema_inverse_mod15_is8
+    schema_inverse_mod9_is5
+
+test result: FAILED. 0 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p exact_transcendentals --test composite_operator_domains`

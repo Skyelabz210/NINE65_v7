@@ -1,0 +1,13 @@
+
+running 8 tests
+test a_minus_two_b_zero_operator_is_one_way_on_every_lane ... ok
+test inverse_is_a_true_inverse_at_every_new_operator_dim_point ... ok
+test one_prime_one_operator_two_dims_opposite_reversibility ... ok
+test reversible_sub_basis_unfolds_exactly_at_every_new_operator_dim_point ... ok
+test singular_set_depends_on_dim_with_the_operator_held_fixed ... ok
+test singular_set_depends_on_operator_with_dim_held_fixed ... ok
+test structurally_one_way_operator_refuses_over_every_basis ... ok
+test unfold_refuses_loudly_at_every_new_operator_dim_point ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+

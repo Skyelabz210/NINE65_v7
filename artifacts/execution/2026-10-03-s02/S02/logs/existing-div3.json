@@ -1,0 +1,7 @@
+{
+  "command": "cargo test --locked --offline -p exact_transcendentals --lib mul_via_div -j1",
+  "exit_code": 0,
+  "elapsed_seconds": 1.553,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/existing-div3.log",
+  "log_sha256": "b93c0fabde581af1a6c2fdb8d5024fc980f389404bbc8a6cd65f371be08545b3"
+}

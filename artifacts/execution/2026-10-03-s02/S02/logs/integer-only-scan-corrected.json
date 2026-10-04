@@ -1,0 +1,8 @@
+{
+  "cwd": "crates/exact_transcendentals",
+  "command": "python3 scripts/check_no_floats.py",
+  "exit_code": 0,
+  "elapsed_seconds": 0.181,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/integer-only-scan-corrected.log",
+  "log_sha256": "299f0d39d8e295ee9de0542e234d77f9be01912705b28155051491026e380734"
+}

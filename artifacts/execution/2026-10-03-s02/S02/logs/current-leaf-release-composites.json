@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--release",
+    "-p",
+    "exact_transcendentals",
+    "--test",
+    "composite_operator_domains",
+    "-j1"
+  ],
+  "cwd": "/home/acid/Projects/NINE65_v7",
+  "elapsed_seconds": 129.662,
+  "exit_code": 0,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-release-composites.log",
+  "log_sha256": "27bf6dbd727726b7c9458d5bc54b37edf436a951971570862552d8e38738f991"
+}

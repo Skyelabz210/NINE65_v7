@@ -1,0 +1,286 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+error: cannot find macro `vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:342:19
+    |
+342 |             regs: vec![zero; n_regs],
+    |                   ^^^
+    |
+help: consider importing this macro
+    |
+34  + use alloc::vec;
+    |
+
+error: cannot find macro `vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:318:16
+    |
+318 |             r: vec![0u64; basis.len()],
+    |                ^^^
+    |
+help: consider importing this macro
+    |
+34  + use alloc::vec;
+    |
+
+error: cannot find macro `vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:164:17
+    |
+164 |     let mut a = vec![vec![0i128; n + 1]; n + 1];
+    |                 ^^^
+    |
+help: consider importing this macro
+    |
+28  + use alloc::vec;
+    |
+
+error: cannot find macro `vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:150:27
+    |
+150 |             let mut row = vec![Frac::zero(); n];
+    |                           ^^^
+    |
+help: consider importing this macro
+    |
+28  + use alloc::vec;
+    |
+
+error: cannot find macro `vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:130:22
+    |
+130 |         let mut nd = vec![0i128; d.len() + (b as usize) - 1];
+    |                      ^^^
+    |
+help: consider importing this macro
+    |
+28  + use alloc::vec;
+    |
+
+error: cannot find macro `vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:128:17
+    |
+128 |     let mut d = vec![1i128];
+    |                 ^^^
+    |
+help: consider importing this macro
+    |
+28  + use alloc::vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:127:37
+    |
+127 | fn sum_counts(n: usize, b: i128) -> Vec<i128> {
+    |                                     ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+28  + use crate::Vec;
+    |
+28  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:145:43
+    |
+145 | pub fn carry_matrix(n: usize, b: i128) -> Vec<Vec<Frac>> {
+    |                                           ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+28  + use crate::Vec;
+    |
+28  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:145:47
+    |
+145 | pub fn carry_matrix(n: usize, b: i128) -> Vec<Vec<Frac>> {
+    |                                               ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+28  + use crate::Vec;
+    |
+28  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:163:30
+    |
+163 | pub fn eulerian(n: usize) -> Vec<i128> {
+    |                              ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+28  + use crate::Vec;
+    |
+28  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_carry.rs:179:41
+    |
+179 | pub fn eulerian_stationary(n: usize) -> Vec<Frac> {
+    |                                         ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+28  + use crate::Vec;
+    |
+28  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `String` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:116:31
+    |
+116 |     Heterogeneous { notation: String },
+    |                               ^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+34  + use alloc::string::String;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:226:12
+    |
+226 |     pub r: Vec<u64>,
+    |            ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+34  + use crate::Vec;
+    |
+34  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `String` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:271:17
+    |
+271 |         schema: String,
+    |                 ^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+34  + use alloc::string::String;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:277:12
+    |
+277 |     basis: Vec<u64>,
+    |            ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+34  + use crate::Vec;
+    |
+34  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:278:12
+    |
+278 |     roles: Vec<LaneRole>,
+    |            ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+34  + use crate::Vec;
+    |
+34  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:287:11
+    |
+287 |     regs: Vec<Adelic>,
+    |           ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+34  + use crate::Vec;
+    |
+34  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:484:16
+    |
+484 |         let r: Vec<u64> = self
+    |                ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+34  + use crate::Vec;
+    |
+34  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/cram_machine.rs:539:31
+    |
+539 |                 let residues: Vec<(i128, i128)> =
+    |                               ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+34  + use crate::Vec;
+    |
+34  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/safe_basis_io.rs:120:32
+    |
+120 | pub fn encode_text(s: &str) -> Vec<ExactState> {
+    |                                ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+33  + use crate::Vec;
+    |
+33  + use alloc::vec::Vec;
+    |
+
+error[E0412]: cannot find type `String` in this scope
+   --> crates/exact_transcendentals/src/safe_basis_io.rs:130:53
+    |
+130 | pub fn decode_text(states: &[ExactState]) -> Option<String> {
+    |                                                     ^^^^^^ not found in this scope
+    |
+help: consider importing this struct
+    |
+33  + use alloc::string::String;
+    |
+
+error[E0412]: cannot find type `Vec` in this scope
+   --> crates/exact_transcendentals/src/safe_basis_io.rs:131:23
+    |
+131 |     let bytes: Option<Vec<u8>> = states
+    |                       ^^^ not found in this scope
+    |
+help: consider importing one of these structs
+    |
+33  + use crate::Vec;
+    |
+33  + use alloc::vec::Vec;
+    |
+
+error[E0433]: failed to resolve: use of undeclared type `String`
+   --> crates/exact_transcendentals/src/safe_basis_io.rs:142:5
+    |
+142 |     String::from_utf8(bytes?).ok()
+    |     ^^^^^^ use of undeclared type `String`
+    |
+help: consider importing this struct
+    |
+33  + use alloc::string::String;
+    |
+
+Some errors have detailed explanations: E0412, E0433.
+For more information about an error, try `rustc --explain E0412`.
+error: could not compile `exact_transcendentals` (lib) due to 23 previous errors

@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "/tmp/nine65-arrow-joint --test-threads=1",
+  "exit_code": 0,
+  "elapsed_seconds": 0.118,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-joint-run.log",
+  "log_sha256": "d8e3ed14eda703c08e2ced4df0527fa6a83ea6fc7e491d683c4870d4c20bac72"
+}

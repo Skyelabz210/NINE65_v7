@@ -1,0 +1,19 @@
+{
+  "command": [
+    "rustc",
+    "--edition=2021",
+    "--test",
+    "artifacts/execution/2026-10-03-s02/S02/exact_scale_round_harness.rs",
+    "-L",
+    "dependency=target/debug/deps",
+    "--extern",
+    "nine65=target/debug/deps/libnine65-58301b7bb37cda1c.rlib",
+    "-o",
+    "/tmp/nine65-fpd-scaler-tests"
+  ],
+  "cwd": "/home/acid/Projects/NINE65_v7",
+  "elapsed_seconds": 13.255,
+  "exit_code": 0,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-harness-compile.log",
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

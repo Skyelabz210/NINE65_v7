@@ -1,0 +1,4 @@
+Composite inverse regression passed: Inv(2) mod15 = 8
+DIV3 composite unit case passed; nonunit refused
+Production lifted projection passed 42 oracle comparisons, including shared-factor targets and modulus1
+Full S8 product has no inverse mod11; a different source/anchor split is required for that formula

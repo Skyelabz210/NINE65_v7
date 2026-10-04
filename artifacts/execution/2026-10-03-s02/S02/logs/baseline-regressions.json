@@ -1,0 +1,7 @@
+{
+  "command": "cargo test --locked --offline -p exact_transcendentals --test composite_operator_domains -j1",
+  "exit_code": 101,
+  "elapsed_seconds": 5.461,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/baseline-regressions.log",
+  "log_sha256": "ba7ae5701ed201a607a712823451a44c99f05aece6e71bb6b7ff0fcf3c5cb1ba"
+}

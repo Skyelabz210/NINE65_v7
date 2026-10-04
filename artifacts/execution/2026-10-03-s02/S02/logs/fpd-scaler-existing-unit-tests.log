@@ -1,0 +1,13 @@
+
+running 8 tests
+test exact_scale_round::tests::corners_and_rounding_ties_are_exact ... ok
+test exact_scale_round::tests::insufficient_aux_capacity_is_refused ... ok
+test exact_scale_round::tests::output_shift_is_a_multiple_of_q ... ok
+test exact_scale_round::tests::production_main_primes_match_reference ... ok
+test exact_scale_round::tests::production_primes_full_range_against_u512_oracle ... ok
+test exact_scale_round::tests::small_basis_matches_reference_over_full_operand_range ... ok
+test exact_scale_round::tests::typed_rejections ... ok
+test exact_scale_round::tests::under_capacity_bases_are_unreachable ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.14s
+

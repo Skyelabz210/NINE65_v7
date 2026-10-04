@@ -1,0 +1,27 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.02s
+     Running tests/composite_operator_domains.rs (target/debug/deps/composite_operator_domains-00d49ff247212448)
+
+running 16 tests
+test division_matches_product_search_on_small_rings ... ok
+test explicit_observation_is_exact_and_refuses_width_overflow ... ok
+test full_width_u64_units_and_products_do_not_overflow ... ok
+test independent_source_schema_guards_remain_enforced ... ok
+test inverse_units_and_nonunits_match_product_search ... ok
+test modulus1_is_only_a_constant_view ... ok
+test noncanonical_inputs_have_canonical_ring_outputs ... ok
+test owner_t5_schema_inverse_mod15015_is7508 ... ok
+test schema_inverse_mod15_is8 ... ok
+test schema_inverse_mod9_is5 ... ok
+test schema_shapes_and_unknown_codes_return_errors ... ok
+test schema_validity_uses_units_only_for_inverse_operands ... ok
+test unit_counts_match_exhaustive_small_ring_search ... ok
+test validity_failures_are_explicit_and_do_not_restrict_lane_execution ... ok
+test zero_nonunits_and_invalid_moduli_return_typed_errors ... ok
+test div3_matches_multiplication_on_composite_units_and_refuses_nonunits ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+

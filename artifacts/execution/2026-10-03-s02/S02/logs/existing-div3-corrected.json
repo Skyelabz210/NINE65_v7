@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "cargo test --locked --offline -p exact_transcendentals --lib div_cubed_multiply_matches_lanewise_product -j1",
+  "exit_code": 0,
+  "elapsed_seconds": 1.053,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/existing-div3-corrected.log",
+  "log_sha256": "a33d842b741a3dbd1e2fe9620657e87e2f8d7118defb8fce2bd975e9b96c5879"
+}

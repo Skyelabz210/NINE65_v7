@@ -1,0 +1,14 @@
+{
+  "command": [
+    "target/debug/deps/arrow_emission_fhe_gate_matrix-996bc019c8e05261",
+    "--test-threads=1"
+  ],
+  "completed_passed": 3,
+  "cwd": "/home/acid/Projects/NINE65_v7",
+  "exit_code": 130,
+  "in_progress": "g2_depth1_mul_transition_defect_is_zero_for_every_config_and_mode",
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix-complete.log",
+  "log_sha256": "7afcfbf6b47a60bfac88980ea57ee4f2f7e829da04823bedefd8180ad024af27",
+  "note": "The full 23-case matrix was stopped after three passed cases because its debug keygen and depth-1 FHE fixtures were long-running; this is not a passed suite.",
+  "status": "interrupted"
+}

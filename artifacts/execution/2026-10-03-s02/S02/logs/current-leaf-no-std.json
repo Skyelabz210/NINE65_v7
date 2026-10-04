@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "-p",
+    "exact_transcendentals",
+    "--no-default-features",
+    "-j1"
+  ],
+  "cwd": "/home/acid/Projects/NINE65_v7",
+  "elapsed_seconds": 10.107,
+  "exit_code": 0,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-no-std.log",
+  "log_sha256": "1551617fc3f1c71416ee8eaa417c1d76a15fd382504f32a8631b7a143256991a"
+}

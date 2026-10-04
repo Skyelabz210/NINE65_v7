@@ -1,0 +1,5 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+error: target `arrow_emission_fhe_gate_matrix` in package `nine65` requires the features: `allow_insecure`
+Consider enabling them by passing, e.g., `--features="allow_insecure"`

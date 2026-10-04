@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "python3 /tmp/nine65-reference-profile-check.py",
+  "exit_code": 0,
+  "elapsed_seconds": 0.178,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/reference-profile-equations.log",
+  "log_sha256": "517e12594f0c9e1fa680eca4071f3114f83f0dd9d638573f718855365b39d026"
+}

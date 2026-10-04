@@ -1,0 +1,11 @@
+{
+  "task_id": "NOSTD",
+  "concern": "Restore missing allocation imports in three existing CRAM modules",
+  "before_sha256": {
+    "crates/exact_transcendentals/src/cram_carry.rs": "68929573ca7152c3b54960459c4ebb6df517c7ae19ebc9f396f5e75a9a98d6a4",
+    "crates/exact_transcendentals/src/cram_machine.rs": "0311bcb8a061214cf9cf0a92bd5611700b01ff5020401b14ba95786cde99218d",
+    "crates/exact_transcendentals/src/safe_basis_io.rs": "8c46e9775e51cc7cf547eda81c8d5d8808ee18cca1567d57d281277c306d65b4"
+  },
+  "baseline_evidence": "../S02/logs/no-std-build.log",
+  "source_commit": "048f79ac771697801e26ebf77e4ee6df33b48281"
+}

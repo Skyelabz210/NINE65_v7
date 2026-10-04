@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/tmp/nine65-fpd-scaler-tests",
+    "--test-threads=1"
+  ],
+  "cwd": "/home/acid/Projects/NINE65_v7",
+  "elapsed_seconds": 4.32,
+  "exit_code": 0,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-existing-unit-tests.log",
+  "log_sha256": "671e26888c2c87738f3f40b40d964bcec4e8732a2760adda84220bb9fd55610a"
+}

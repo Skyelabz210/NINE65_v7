@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "/tmp/nine65-safe-basis-probe-after-s02",
+  "exit_code": 0,
+  "elapsed_seconds": 0.006,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/source-probe-run.log",
+  "log_sha256": "bb2a006558a75ed012de6f1120d5110ff7903dba2a4404dff8cd3f04e4c7dfb7"
+}

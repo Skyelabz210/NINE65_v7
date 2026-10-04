@@ -1,0 +1,7 @@
+{
+  "command": "cargo build --locked --offline -p exact_transcendentals --no-default-features -j1",
+  "exit_code": 101,
+  "elapsed_seconds": 6.072,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/no-std-build.log",
+  "log_sha256": "a4a17a6e92a91e209ebf2ebaa8cd0ff12a5db8837d08af03678d5fd8e13ce445"
+}

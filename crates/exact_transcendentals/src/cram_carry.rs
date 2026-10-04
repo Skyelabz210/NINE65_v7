@@ -25,6 +25,9 @@
 //!
 //! A1: exact rational arithmetic throughout. No floating point.
 
+#[cfg(not(feature = "std"))]
+use alloc::{vec, vec::Vec};
+
 /// Shell modulus. `36 = 2²·3²`, the geometric object cast out descending the
 /// star number line: `S₄ − S₃ = 73 − 37 = 36`.
 pub const SHELL: i128 = 36;

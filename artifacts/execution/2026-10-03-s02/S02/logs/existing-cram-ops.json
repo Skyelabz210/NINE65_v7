@@ -1,0 +1,7 @@
+{
+  "command": "cargo test --locked --offline -p exact_transcendentals --lib cram_ops -j1",
+  "exit_code": 0,
+  "elapsed_seconds": 35.714,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/existing-cram-ops.log",
+  "log_sha256": "995c16a9c838b0ccfa4089e39ca3ab1f0711f593cd3199de6f4724d932550b4b"
+}

@@ -33,7 +33,11 @@ pub enum CramOpError {
         gcd: u64,
     },
     /// D-007: Inverse of non-invertible element.
-    InvNonInvertible { a: u64, modulus: u64, gcd: u64 },
+    InvNonInvertible {
+        a: u64,
+        modulus: u64,
+        gcd: u64,
+    },
     /// D-002: Schema degree exceeds resonance order.
     DegreeViolation {
         max_degree: u32,
@@ -41,7 +45,31 @@ pub enum CramOpError {
         schema: String,
     },
     /// D-004: Non-coprime moduli in basis.
-    NonCoprimeBasis { m1: u64, m2: u64, gcd: u64 },
+    NonCoprimeBasis {
+        m1: u64,
+        m2: u64,
+        gcd: u64,
+    },
+    InvalidModulus {
+        modulus: u64,
+    },
+    EmptySchema,
+    LengthMismatch {
+        argument: &'static str,
+        expected: usize,
+        actual: usize,
+    },
+    UnknownOperator {
+        code: char,
+    },
+    ArithmeticOverflow {
+        operation: &'static str,
+    },
+    /// A diagnostic count needs further factorization of a public modulus.
+    ValidityFactorizationRequired {
+        modulus: u64,
+        remaining: u64,
+    },
 }
 
 impl fmt::Display for CramOpError {
@@ -65,6 +93,23 @@ impl fmt::Display for CramOpError {
             Self::NonCoprimeBasis { m1, m2, gcd } => {
                 write!(f, "D-004: Moduli {m1} and {m2} share factor {gcd}")
             }
+            Self::InvalidModulus { modulus } => write!(f, "Invalid operator modulus {modulus}"),
+            Self::EmptySchema => write!(f, "A schema needs at least one independent lane"),
+            Self::LengthMismatch {
+                argument,
+                expected,
+                actual,
+            } => {
+                write!(f, "{argument} has {actual} lanes; expected {expected}")
+            }
+            Self::UnknownOperator { code } => write!(f, "Unknown operator code: {code}"),
+            Self::ArithmeticOverflow { operation } => {
+                write!(f, "{operation} exceeds its integer width")
+            }
+            Self::ValidityFactorizationRequired { modulus, remaining } => write!(
+                f,
+                "Counting units modulo {modulus} needs factorization of cofactor {remaining}"
+            ),
         }
     }
 }
@@ -88,7 +133,8 @@ pub enum CramOp {
 
 impl CramOp {
     /// Algebraic degree of the operator (DKAM-effective).
-    /// Inv has Fermat degree p-2 but effective DKAM degree is capped at 2.
+    /// This schema classification is independent of the inversion algorithm;
+    /// it does not assert that inversion is quadratic as a ring polynomial.
     pub fn degree(self) -> u32 {
         match self {
             Self::Add | Self::Sub | Self::Neg | Self::Id => 1,
@@ -135,55 +181,41 @@ impl CramOp {
         }
     }
 
-    /// Apply operator to inputs (a, b) mod p.
-    /// Returns `Ok(result)` or `Err(CramOpError)` for non-invertible cases.
+    /// Apply to canonical reductions of (a, b) modulo a positive modulus.
+    /// Modulus 1 is a constant view for total operators, not an inverse domain.
+    /// Division is modular division on units, not general integer division.
     /// NEVER silently passes through (D-006, D-007).
+    /// Euclidean inversion is variable-time; this is not a constant-time API.
     pub fn apply(self, a: u64, b: u64, p: u64) -> Result<u64, CramOpError> {
+        if p == 0 || (p == 1 && matches!(self, Self::Div | Self::Inv)) {
+            return Err(CramOpError::InvalidModulus { modulus: p });
+        }
+        let a = a % p;
+        let b = b % p;
         match self {
             Self::Add => Ok(((a as u128 + b as u128) % p as u128) as u64),
             Self::Sub => Ok(((a as u128 + p as u128 - b as u128) % p as u128) as u64),
             Self::Mul => Ok(((a as u128 * b as u128) % p as u128) as u64),
             Self::Div => {
-                if b == 0 {
-                    return Err(CramOpError::DivByNonInvertible {
+                let b_inv = k_elim::mod_inv(b as i128, p as i128).ok_or_else(|| {
+                    CramOpError::DivByNonInvertible {
                         a,
                         b,
                         modulus: p,
-                        gcd: p,
-                    });
-                }
-                let g = gcd_u64(b, p);
-                if g != 1 {
-                    return Err(CramOpError::DivByNonInvertible {
-                        a,
-                        b,
-                        modulus: p,
-                        gcd: g,
-                    });
-                }
-                let b_inv = mod_pow_u64(b, p - 2, p);
+                        gcd: gcd_u64(b, p),
+                    }
+                })? as u64;
                 Ok(((a as u128 * b_inv as u128) % p as u128) as u64)
             }
             Self::Sqr => Ok(((a as u128 * a as u128) % p as u128) as u64),
             Self::Neg => Ok((p - a) % p),
-            Self::Inv => {
-                if a == 0 {
-                    return Err(CramOpError::InvNonInvertible {
-                        a,
-                        modulus: p,
-                        gcd: p,
-                    });
-                }
-                let g = gcd_u64(a, p);
-                if g != 1 {
-                    return Err(CramOpError::InvNonInvertible {
-                        a,
-                        modulus: p,
-                        gcd: g,
-                    });
-                }
-                Ok(mod_pow_u64(a, p - 2, p))
-            }
+            Self::Inv => k_elim::mod_inv(a as i128, p as i128)
+                .map(|inverse| inverse as u64)
+                .ok_or_else(|| CramOpError::InvNonInvertible {
+                    a,
+                    modulus: p,
+                    gcd: gcd_u64(a, p),
+                }),
             Self::Id => Ok(a),
         }
     }
@@ -213,7 +245,22 @@ impl Schema {
     /// Construct a schema with degree validation (D-002).
     /// Returns `Err` if `max(deg(op_i)) >= ρ(basis)` or moduli are not coprime.
     pub fn new(ops: &[CramOp], moduli: &[u64]) -> Result<Self, CramOpError> {
-        assert_eq!(ops.len(), moduli.len(), "One operator per lane");
+        if ops.len() != moduli.len() {
+            return Err(CramOpError::LengthMismatch {
+                argument: "operators",
+                expected: moduli.len(),
+                actual: ops.len(),
+            });
+        }
+        if moduli.is_empty() {
+            return Err(CramOpError::EmptySchema);
+        }
+        for &modulus in moduli {
+            // Constant views are attached separately, not independent source lanes.
+            if modulus < 2 {
+                return Err(CramOpError::InvalidModulus { modulus });
+            }
+        }
 
         // D-004: Check pairwise coprimality.
         for i in 0..moduli.len() {
@@ -253,8 +300,15 @@ impl Schema {
     /// Apply schema to inputs (a, b) across all lanes.
     /// Returns the residue vector or the FIRST error encountered.
     pub fn apply(&self, a: &[u64], b: &[u64]) -> Result<Vec<u64>, CramOpError> {
-        assert_eq!(a.len(), self.ops.len());
-        assert_eq!(b.len(), self.ops.len());
+        for (argument, actual) in [("a", a.len()), ("b", b.len())] {
+            if actual != self.ops.len() {
+                return Err(CramOpError::LengthMismatch {
+                    argument,
+                    expected: self.ops.len(),
+                    actual,
+                });
+            }
+        }
 
         let mut result = Vec::with_capacity(self.ops.len());
         for i in 0..self.ops.len() {
@@ -292,17 +346,6 @@ impl Schema {
     pub fn moduli(&self) -> &[u64] {
         &self.moduli
     }
-
-    /// Reconstruct the result of `apply()` to an integer via Garner.
-    pub fn apply_and_reconstruct(&self, a: &[u64], b: &[u64]) -> Result<i128, CramOpError> {
-        let residues = self.apply(a, b)?;
-        let pairs: Vec<(i128, i128)> = residues
-            .iter()
-            .zip(self.moduli.iter())
-            .map(|(&r, &m)| (r as i128, m as i128))
-            .collect();
-        Ok(k_elim::garner_reconstruct(&pairs).unwrap_or(0))
-    }
 }
 
 impl fmt::Display for Schema {
@@ -321,8 +364,8 @@ impl fmt::Display for Schema {
 pub fn parse_schema(notation: &str, moduli: &[u64]) -> Result<Schema, CramOpError> {
     let ops: Vec<CramOp> = notation
         .chars()
-        .map(|c| CramOp::from_code(c).unwrap_or_else(|| panic!("Unknown operator code: {c}")))
-        .collect();
+        .map(|code| CramOp::from_code(code).ok_or(CramOpError::UnknownOperator { code }))
+        .collect::<Result<_, _>>()?;
     Schema::new(&ops, moduli)
 }
 
@@ -343,24 +386,57 @@ pub fn sqr_carry_signature(value: u64) -> (u8, u8, u8) {
     )
 }
 
-/// Lane validity: for a Div/Inv lane mod p, the fraction of defined inputs
-/// is `(p-1)/p`. Returns `(numerator, denominator)`.
-pub fn lane_validity(p: u64) -> (u64, u64) {
-    (p - 1, p)
+/// Exact unit-domain cardinality `(phi(m), m)` for a Div/Inv operand.
+/// This is a public diagnostic query, never called by lane execution.
+/// Factoring work is bounded; unresolved cofactors produce an explicit error.
+/// The fraction is a probability only for a uniformly sampled operand.
+pub fn lane_validity(modulus: u64) -> Result<(u64, u64), CramOpError> {
+    if modulus < 2 {
+        return Err(CramOpError::InvalidModulus { modulus });
+    }
+    let (mut remaining, mut units) = (modulus, modulus);
+    if remaining % 2 == 0 {
+        units -= units / 2;
+        while remaining % 2 == 0 {
+            remaining /= 2;
+        }
+    }
+    let mut divisor = 3u64;
+    while divisor <= remaining / divisor {
+        if divisor > 65_535 {
+            return Err(CramOpError::ValidityFactorizationRequired { modulus, remaining });
+        }
+        if remaining % divisor == 0 {
+            units -= units / divisor;
+            while remaining % divisor == 0 {
+                remaining /= divisor;
+            }
+        }
+        divisor += 2;
+    }
+    if remaining > 1 {
+        units -= units / remaining;
+    }
+    Ok((units, modulus))
 }
 
-/// Global validity product for a schema: ∏_{div/inv lanes} (p_i - 1)/p_i.
-/// Returns `(numerator, denominator)` in unreduced form.
-pub fn schema_validity(schema: &Schema) -> (u64, u64) {
+/// Product of exact unit-domain fractions for Div/Inv lanes, unreduced.
+/// Interpreting this as a probability requires independent uniform lane inputs;
+/// phase-locked or otherwise correlated inputs need their own distribution.
+pub fn schema_validity(schema: &Schema) -> Result<(u64, u64), CramOpError> {
     let mut num = 1u64;
     let mut den = 1u64;
     for (op, &p) in schema.ops().iter().zip(schema.moduli().iter()) {
         if matches!(op, CramOp::Div | CramOp::Inv) {
-            num *= p - 1;
-            den *= p;
+            let (units, modulus) = lane_validity(p)?;
+            let overflow = || CramOpError::ArithmeticOverflow {
+                operation: "schema validity",
+            };
+            num = num.checked_mul(units).ok_or_else(overflow)?;
+            den = den.checked_mul(modulus).ok_or_else(overflow)?;
         }
     }
-    (num, den)
+    Ok((num, den))
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -375,26 +451,6 @@ fn gcd_u64(a: u64, b: u64) -> u64 {
         a = t;
     }
     a
-}
-
-fn mod_pow_u64(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
-    if modulus == 1 {
-        return 0;
-    }
-    let mut result: u128 = 1;
-    let m = modulus as u128;
-    base %= modulus;
-    let mut b = base as u128;
-    while exp > 0 {
-        if exp % 2 == 1 {
-            result = result * b % m;
-        }
-        exp >>= 1;
-        if exp > 0 {
-            b = b * b % m;
-        }
-    }
-    result as u64
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -579,15 +635,16 @@ mod tests {
     }
 
     #[test]
-    fn schema_apply_and_reconstruct() {
+    fn schema_apply_retains_residue_outputs() {
         let ops = [CramOp::Add; 5];
         let schema = Schema::new(&ops, &SAFE_BASIS_5).unwrap();
         let x = 42u64;
         let y = 58u64;
         let a: Vec<u64> = SAFE_BASIS_5.iter().map(|&p| x % p).collect();
         let b: Vec<u64> = SAFE_BASIS_5.iter().map(|&p| y % p).collect();
-        let result = schema.apply_and_reconstruct(&a, &b).unwrap();
-        assert_eq!(result, 100); // 42 + 58 = 100
+        let result = schema.apply(&a, &b).unwrap();
+        let expected: Vec<u64> = SAFE_BASIS_5.iter().map(|&p| 100 % p).collect();
+        assert_eq!(result, expected); // 42 + 58, retained as independent residues
     }
 
     // --- parse_schema ---
@@ -638,7 +695,7 @@ mod tests {
         ];
         let moduli = [3u64, 5, 7, 11, 17, 13];
         let schema = Schema::new(&ops, &moduli).unwrap();
-        let (num, den) = schema_validity(&schema);
+        let (num, den) = schema_validity(&schema).unwrap();
         assert_eq!((num, den), (12, 13));
     }
 

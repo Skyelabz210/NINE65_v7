@@ -1,0 +1,9 @@
+
+running 4 tests
+test gate_pins_the_measured_singular_set ... ok
+test inverse_sanity_on_reversible_lanes ... ok
+test reversible_lanes_unfold_exactly_through_a_million_steps ... ok
+test unfold_refuses_partial_reversal_loudly ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+

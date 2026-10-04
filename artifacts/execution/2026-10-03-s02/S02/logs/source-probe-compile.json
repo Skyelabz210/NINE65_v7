@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "rustc --edition=2021 --cfg 'feature=\"std\"' --cap-lints allow docs/execution/2026-10-03/probes/safe_basis_probe.rs -o /tmp/nine65-safe-basis-probe-after-s02",
+  "exit_code": 0,
+  "elapsed_seconds": 5.198,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/source-probe-compile.log",
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

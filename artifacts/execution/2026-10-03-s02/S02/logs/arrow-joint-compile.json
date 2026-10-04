@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "rustc --edition=2021 --test crates/exact_transcendentals/tests/arrow_emission_joint_property.rs --extern exact_transcendentals=/tmp/libnine65_arrow_suite.rlib -o /tmp/nine65-arrow-joint",
+  "exit_code": 0,
+  "elapsed_seconds": 3.09,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-joint-compile.log",
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

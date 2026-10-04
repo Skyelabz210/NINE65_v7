@@ -1,0 +1,77 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling proc-macro2 v1.0.103
+   Compiling quote v1.0.42
+   Compiling unicode-ident v1.0.22
+   Compiling syn v2.0.111
+   Compiling crossbeam-utils v0.8.21
+   Compiling serde_core v1.0.228
+   Compiling zerocopy v0.8.31
+   Compiling zerocopy-derive v0.8.31
+   Compiling autocfg v1.5.0
+   Compiling serde v1.0.228
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-epoch v0.9.18
+   Compiling serde_derive v1.0.228
+   Compiling libc v0.2.178
+   Compiling serde_json v1.0.147
+   Compiling either v1.15.0
+   Compiling rayon-core v1.13.0
+   Compiling cfg-if v1.0.4
+   Compiling half v2.7.1
+   Compiling crossbeam-deque v0.8.6
+   Compiling zmij v0.1.7
+   Compiling itoa v1.0.16
+   Compiling clap_lex v0.7.6
+   Compiling plotters-backend v0.3.7
+   Compiling ciborium-io v0.2.2
+   Compiling regex-syntax v0.8.8
+   Compiling memchr v2.7.6
+   Compiling anstyle v1.0.13
+   Compiling clap_builder v4.5.53
+   Compiling regex-automata v0.4.13
+   Compiling ciborium-ll v0.2.2
+   Compiling plotters-svg v0.3.7
+   Compiling itertools v0.10.5
+   Compiling cast v0.3.0
+   Compiling same-file v1.0.6
+   Compiling walkdir v2.5.0
+   Compiling criterion-plot v0.5.0
+   Compiling is-terminal v0.4.17
+   Compiling rayon v1.11.0
+   Compiling plotters v0.3.7
+   Compiling ciborium v0.2.2
+   Compiling regex v1.12.2
+   Compiling tinytemplate v1.2.1
+   Compiling clap v4.5.53
+   Compiling anes v0.1.6
+   Compiling oorandom v11.1.5
+   Compiling once_cell v1.21.3
+   Compiling criterion v0.5.1
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+    Finished `release` profile [optimized] target(s) in 5m 15s
+     Running tests/composite_operator_domains.rs (target/release/deps/composite_operator_domains-a2e6cbd700f3d962)
+
+running 18 tests
+test division_matches_product_search_on_small_rings ... ok
+test explicit_observation_is_exact_and_refuses_width_overflow ... ok
+test full_width_fibonacci_pair_exercises_a_long_euclidean_chain ... ok
+test full_width_u64_units_and_products_do_not_overflow ... ok
+test independent_source_schema_guards_remain_enforced ... ok
+test inverse_units_and_nonunits_match_product_search ... ok
+test live_machine_propagates_diagnostic_factorization_failure ... ok
+test modulus1_is_only_a_constant_view ... ok
+test noncanonical_inputs_have_canonical_ring_outputs ... ok
+test owner_t5_schema_inverse_mod15015_is7508 ... ok
+test schema_inverse_mod15_is8 ... ok
+test schema_inverse_mod9_is5 ... ok
+test schema_shapes_and_unknown_codes_return_errors ... ok
+test schema_validity_uses_units_only_for_inverse_operands ... ok
+test unit_counts_match_exhaustive_small_ring_search ... ok
+test validity_failures_are_explicit_and_do_not_restrict_lane_execution ... ok
+test zero_nonunits_and_invalid_moduli_return_typed_errors ... ok
+test div3_matches_multiplication_on_composite_units_and_refuses_nonunits ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+

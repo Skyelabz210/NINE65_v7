@@ -1,0 +1,54 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.68s
+     Running tests/arrow_emission_joint_property.rs (target/debug/deps/arrow_emission_joint_property-4b09ac2ff0e94b60)
+
+running 8 tests
+test inverse_is_a_true_inverse_at_every_new_operator_dim_point ... ok
+test one_prime_one_operator_two_dims_opposite_reversibility ... ok
+test a_minus_two_b_zero_operator_is_one_way_on_every_lane ... ok
+test singular_set_depends_on_dim_with_the_operator_held_fixed ... ok
+test singular_set_depends_on_operator_with_dim_held_fixed ... ok
+test structurally_one_way_operator_refuses_over_every_basis ... ok
+test unfold_refuses_loudly_at_every_new_operator_dim_point ... ok
+test reversible_sub_basis_unfolds_exactly_at_every_new_operator_dim_point ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/arrow_emission_reversibility.rs (target/debug/deps/arrow_emission_reversibility-685c2604d7b52d2b)
+
+running 4 tests
+test inverse_sanity_on_reversible_lanes ... ok
+test gate_pins_the_measured_singular_set ... ok
+test unfold_refuses_partial_reversal_loudly ... ok
+test reversible_lanes_unfold_exactly_through_a_million_steps ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/composite_operator_domains.rs (target/debug/deps/composite_operator_domains-00d49ff247212448)
+
+running 19 tests
+test division_matches_product_search_on_small_rings ... ok
+test full_width_fibonacci_pair_exercises_a_long_euclidean_chain ... ok
+test full_width_u64_units_and_products_do_not_overflow ... ok
+test heterogeneous_inverse_operator_lanes_roundtrip_as_residues ... ok
+test heterogeneous_schema_is_lane_local_and_order_equivariant ... ok
+test independent_source_schema_guards_remain_enforced ... ok
+test inverse_units_and_nonunits_match_product_search ... ok
+test live_machine_propagates_diagnostic_factorization_failure ... ok
+test modulus1_is_only_a_constant_view ... ok
+test noncanonical_inputs_have_canonical_ring_outputs ... ok
+test owner_t5_schema_inverse_mod15015_is7508 ... ok
+test schema_inverse_mod15_is8 ... ok
+test schema_inverse_mod9_is5 ... ok
+test schema_shapes_and_unknown_codes_return_errors ... ok
+test schema_validity_uses_units_only_for_inverse_operands ... ok
+test unit_counts_match_exhaustive_small_ring_search ... ok
+test validity_failures_are_explicit_and_do_not_restrict_lane_execution ... ok
+test zero_nonunits_and_invalid_moduli_return_typed_errors ... ok
+test div3_matches_multiplication_on_composite_units_and_refuses_nonunits ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+

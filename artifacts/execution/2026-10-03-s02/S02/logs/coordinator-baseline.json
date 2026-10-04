@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "python3 /tmp/nine65-freeze-baseline.py",
+  "exit_code": 0,
+  "elapsed_seconds": 2.826,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/coordinator-baseline.log",
+  "log_sha256": "8b097c6183ec7a5361c7f45b38c30e761e733f46307c8b2b6cef3295479cc701"
+}

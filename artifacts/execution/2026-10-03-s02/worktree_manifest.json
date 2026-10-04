@@ -1,0 +1,14 @@
+{
+  "source_commit": "048f79ac771697801e26ebf77e4ee6df33b48281",
+  "source_files": {
+    "crates/exact_transcendentals/src/cram_ops.rs": "e80c1b5e31ffc087eb47be061edc2badeecfb60573b817df82e49bc17dfb7ed7",
+    "crates/exact_transcendentals/src/cram_machine.rs": "a3f07fe6fecf679a7a072d4019bf4f20943cdadf356ab69832282308dce67a81",
+    "crates/exact_transcendentals/src/k_elim.rs": "8e34696f94330070e09a50728b77ec8d44ba970c4fd929d5c5f12ffc70a4b755",
+    "docs/execution/2026-10-03/probes/safe_basis_probe.rs": "81c9556eb1616fb17198ccaa133240ec134fdc201f2e6d0e0b706e35d73b4f3c",
+    "docs/execution/2026-10-03/tasks.json": "332f07c295a9cdd172e1dbbef41a5f2598308f1729945c16c74d1f150ec6f8c0"
+  },
+  "working_tree_status": " M README.md\n M crates/nine65/Cargo.toml\n M crates/nine65/src/cram_ct_wrap.rs\n M docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md\n M docs/PRIME_POWER_CANONICAL_LIFT_BASELINE.md\n?? artifacts/bootstrap/\n?? crates/nine65/examples/canonical_lift_feasibility.rs\n?? crates/nine65/examples/cram_public_showcase.rs\n?? docs/CRAM_SHOWCASE.md\n?? docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md\n?? docs/PUBLIC_FHE_SOLUTION_2026-09-28.md\n?? docs/execution/\n?? research/\n?? scripts/bounded_digit_polynomial.py\n?? scripts/canonical_lift_feasibility.py\n?? scripts/nine65_execution_plan.py\n?? test_bootstrap_simple.rs\n?? test_phase1_fix.rs\n",
+  "tracked_diff_sha256": "65ad69a556767620de09945bb02a06501a97417f9692422a810bd807cbd570ce",
+  "task": "S02 independent composite-domain subpatch; S00 is not accepted",
+  "scope_extension": "cram_machine.rs is the only live validity caller; propagate typed diagnostic failure rather than hiding it."
+}

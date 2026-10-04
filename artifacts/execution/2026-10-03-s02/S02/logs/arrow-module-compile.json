@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "rustc --edition=2021 --crate-type lib --crate-name exact_transcendentals --cfg 'feature=\"std\"' /tmp/nine65-arrow-suite-lib.rs -o /tmp/libnine65_arrow_suite.rlib",
+  "exit_code": 0,
+  "elapsed_seconds": 2.199,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-module-compile.log",
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

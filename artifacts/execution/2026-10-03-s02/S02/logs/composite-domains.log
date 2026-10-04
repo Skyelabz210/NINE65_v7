@@ -1,0 +1,22 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+error[E0061]: this function takes 2 arguments but 1 argument was supplied
+   --> crates/exact_transcendentals/tests/composite_operator_domains.rs:283:16
+    |
+283 |     assert_eq!(Cram::new(1).validity(), Ok(None));
+    |                ^^^^^^^^^ - argument #1 of type `&[u64]` is missing
+    |
+note: associated function defined here
+   --> /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/src/cram_machine.rs:303:12
+    |
+303 |     pub fn new(basis: &[u64], n_regs: usize) -> Self {
+    |            ^^^
+help: provide the argument
+    |
+283 |     assert_eq!(Cram::new(/* &[u64] */, 1).validity(), Ok(None));
+    |                          +++++++++++++
+
+For more information about this error, try `rustc --explain E0061`.
+error: could not compile `exact_transcendentals` (test "composite_operator_domains") due to 1 previous error

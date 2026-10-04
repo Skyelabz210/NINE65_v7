@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "cargo test --locked --offline -p exact_transcendentals --release --test composite_operator_domains -j1",
+  "exit_code": 0,
+  "elapsed_seconds": 316.669,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/release-composite-domains.log",
+  "log_sha256": "62aea393cc4e5a53d1857e3a5a6ceeeb9f2761bbaf7ffccaa9cd72653f07a32c"
+}

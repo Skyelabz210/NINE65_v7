@@ -30,6 +30,9 @@
 //! wrapping — an operation that cannot be represented exactly is refused, not
 //! approximated.
 
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec::Vec};
+
 use crate::cram_pde::{ExactState, M_SAFE, SAFE_BASIS};
 
 // ─── Arithmetic ───────────────────────────────────────────────────────────

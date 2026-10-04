@@ -1,0 +1,39 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:493:11
+    |
+493 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `exact_transcendentals` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.42s
+     Running unittests src/lib.rs (target/debug/deps/exact_transcendentals-a154c5618b26356f)
+
+running 20 tests
+test cram_machine::tests::a_heterogeneous_schema_drops_the_winding_and_names_why ... ok
+test cram_machine::tests::carry_signature_is_read_natively_on_the_discriminating_lanes ... ok
+test cram_machine::tests::channel_classification_matches_the_aspect_table ... ok
+test cram_machine::tests::configured_machine_applies_its_own_per_lane_operators ... ok
+test cram_machine::tests::destructive_reads_are_counted_apart_from_anchored_ones ... ok
+test cram_machine::tests::dkam_gate_rejects_a_basis_whose_resonance_order_is_too_low ... ok
+test cram_machine::tests::each_signature_field_reads_exactly_one_source ... ok
+test cram_machine::tests::execution_never_leaves_residue_space ... ok
+test cram_machine::tests::heterogeneous_schema_applies_a_different_operator_to_each_lane ... ok
+test cram_machine::tests::homogeneous_schemas_agree_with_integer_arithmetic ... ok
+test cram_machine::tests::lanes_carry_roles_not_just_moduli ... ok
+test cram_machine::tests::modular_only_operators_lose_the_winding_even_when_homogeneous ... ok
+test cram_machine::tests::round_trips_exactly_within_the_corridor ... ok
+test cram_machine::tests::schema_direction_is_not_symmetric ... ok
+test cram_machine::tests::the_anchor_lane_stays_consistent_with_the_winding_it_never_reads ... ok
+test cram_machine::tests::the_anchored_read_is_exact_over_its_domain_and_refuses_the_impossible ... ok
+test cram_machine::tests::the_corridor_topology_pins_the_winding_and_wraps ... ok
+test cram_machine::tests::the_winding_tracks_real_magnitude_through_a_squaring_chain ... ok
+test cram_machine::tests::unconfigured_machine_refuses_to_step ... ok
+test cram_machine::tests::validity_accounts_for_partial_division_lanes ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 533 filtered out; finished in 0.01s
+

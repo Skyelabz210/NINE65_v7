@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "python3 scripts/nine65_execution_plan.py validate --self-test",
+  "exit_code": 0,
+  "elapsed_seconds": 0.987,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/plan-validation.log",
+  "log_sha256": "e0d4a75bf0e86d3cf76dcf6bb22e089bd01a8d06cfa37c3ccbc6c26f6cdfc643"
+}

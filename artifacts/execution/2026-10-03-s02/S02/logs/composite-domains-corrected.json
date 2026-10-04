@@ -1,0 +1,7 @@
+{
+  "command": "cargo test --locked --offline -p exact_transcendentals --test composite_operator_domains -j1",
+  "exit_code": 0,
+  "elapsed_seconds": 7.219,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/composite-domains-corrected.log",
+  "log_sha256": "60d3651f5d7e9c2c8e3c44a70b20ddb9be465f0c7fee1c1e71ddc574265c080d"
+}

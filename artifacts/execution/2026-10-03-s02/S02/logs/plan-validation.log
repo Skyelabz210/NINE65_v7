@@ -1,0 +1,3 @@
+Baseline unchanged: 64 source hashes checked
+Self-test: 12 dependency/schema/scope/input cases passed
+Plan valid: 43 cards, acyclic dependencies, upstream inputs and issue coverage checked

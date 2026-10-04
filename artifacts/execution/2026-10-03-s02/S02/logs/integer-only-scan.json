@@ -1,0 +1,7 @@
+{
+  "command": "python3 crates/exact_transcendentals/scripts/check_no_floats.py",
+  "exit_code": 2,
+  "elapsed_seconds": 0.148,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/integer-only-scan.log",
+  "log_sha256": "72cbddf8af756e75a4c8e6cd9e4301714031ca6a0422dea1d51e3a3c3f3b514f"
+}

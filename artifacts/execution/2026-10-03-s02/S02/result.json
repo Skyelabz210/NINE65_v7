@@ -1,0 +1,138 @@
+{
+  "acceptance_evidence": [
+    "Actual Schema Inv(2): mod9=5, mod15=8, mod15015=7508; 19 current-source regressions pass.",
+    "Full exact_transcendentals current-source debug suite: 619 passed, 0 failed, 0 ignored.",
+    "Arrow/emission focused gate: 12 passed, 0 failed.",
+    "Selected existing ExactScaleRound source unit tests: 8 passed; this does not establish public BFV integration.",
+    "Schema::apply_and_reconstruct retired; outputs remain residues."
+  ],
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -p exact_transcendentals --test composite_operator_domains --test arrow_emission_reversibility --test arrow_emission_joint_property -j1",
+      "exit_code": 0,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-03-s02/S02/logs/revised-operator-arrow-cargo.log",
+      "log_sha256": "8c731a1c2b333cccf6f4877d0c4056e2a8c6be248a4547266c026f4de6a9f108",
+      "passed": 31
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "exact_transcendentals",
+        "-j1"
+      ],
+      "exit_code": 0,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-full-debug.log",
+      "log_sha256": "42480cb6cd9be995687aa8cc08e0dc04875ea57cf4f7b1eb78d7e6b578621143",
+      "passed": 619
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "-p",
+        "exact_transcendentals",
+        "--no-default-features",
+        "-j1"
+      ],
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-no-std.log",
+      "log_sha256": "1551617fc3f1c71416ee8eaa417c1d76a15fd382504f32a8631b7a143256991a"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "-p",
+        "exact_transcendentals",
+        "--test",
+        "composite_operator_domains",
+        "-j1"
+      ],
+      "exit_code": 0,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-release-composites.log",
+      "log_sha256": "27bf6dbd727726b7c9458d5bc54b37edf436a951971570862552d8e38738f991",
+      "passed": 19
+    },
+    {
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "--test",
+        "artifacts/execution/2026-10-03-s02/S02/exact_scale_round_harness.rs",
+        "-L",
+        "dependency=target/debug/deps",
+        "--extern",
+        "nine65=target/debug/deps/libnine65-58301b7bb37cda1c.rlib",
+        "-o",
+        "/tmp/nine65-fpd-scaler-tests"
+      ],
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-harness-compile.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "/tmp/nine65-fpd-scaler-tests",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-existing-unit-tests.log",
+      "log_sha256": "671e26888c2c87738f3f40b40d964bcec4e8732a2760adda84220bb9fd55610a",
+      "passed": 8
+    },
+    {
+      "command": [
+        "target/debug/deps/arrow_emission_fhe_gate_matrix-996bc019c8e05261",
+        "--test-threads=1"
+      ],
+      "completed_passed": 3,
+      "exit_code": 130,
+      "log": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix-complete.log",
+      "log_sha256": "7afcfbf6b47a60bfac88980ea57ee4f2f7e829da04823bedefd8180ad024af27",
+      "status": "interrupted"
+    }
+  ],
+  "claims_changed": [
+    "Local generic composite operator domains corrected; no release security or public-refresh claim changed."
+  ],
+  "files_changed": [
+    "crates/exact_transcendentals/src/cram_ops.rs",
+    "crates/exact_transcendentals/src/cram_machine.rs",
+    "crates/exact_transcendentals/src/cram_carry.rs",
+    "crates/exact_transcendentals/src/safe_basis_io.rs",
+    "crates/exact_transcendentals/tests/composite_operator_domains.rs"
+  ],
+  "source_commit": "b7f64d68bee0621be9282cc49b0968736096a850",
+  "source_sha256": {
+    "crates/exact_transcendentals/src/cram_carry.rs": "b1c6f020b1f3409f48a14131a74b4866c60a8e6b8a307bf07be3949d782bbc2c",
+    "crates/exact_transcendentals/src/cram_machine.rs": "dc2ce7e08ac9f8e3c3da206f283d3a6e97ec4e27afba872cd3dcb9690b984697",
+    "crates/exact_transcendentals/src/cram_ops.rs": "8cdb8d0d8bdeb066ebed5187aa175d1ebd8625acd8d11f88af3b396012ddd66d",
+    "crates/exact_transcendentals/src/safe_basis_io.rs": "e8aee92ac641e7af63795256e2e3db198b5e7ead35b84d9116fe2b540abbbd83",
+    "crates/exact_transcendentals/tests/composite_operator_domains.rs": "f943b4cd7f350a2f4429f5f406bd6f72c4c38106977dd27863de9c7e4767caa3"
+  },
+  "status": "ready_for_review",
+  "task_id": "S02",
+  "unresolved": [
+    "S00 owner-live 2/11 phase contract and S03 sister-tray instruction placement remain unaccepted.",
+    "Secret-bearing variable-time inverse needs V01 side-channel disposition.",
+    "The 23-case FHE arrow matrix was interrupted after three completed cases; it is not a passed suite. The 12 focused arrow/emission tests passed."
+  ],
+  "worktree_manifest_sha256": "4b6cd0f4e5c31ce1ffddf772f798d64bd02db16eb90bec1d49f5ecb52d922189"
+}

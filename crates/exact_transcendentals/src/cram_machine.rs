@@ -31,6 +31,9 @@
 //! before execution rather than assumed — a basis containing 2 fails it, which
 //! is why the discriminating basis is {3,5,7,11,13}.
 
+#[cfg(not(feature = "std"))]
+use alloc::{string::String, vec, vec::Vec};
+
 use crate::cram_ops::{parse_schema, CramOp, CramOpError, Schema};
 
 /// Architectural role of a lane. Roles are not interchangeable: replacing a
@@ -839,11 +842,11 @@ impl Cram {
         Ok(Channel::of(self.carry_signature(reg)?))
     }
 
-    /// Fraction of inputs for which the configured schema is defined, as
-    /// `(numerator, denominator)`. Div/Inv lanes are partial: a lane mod `p`
-    /// is defined on `(p-1)/p` of its inputs.
-    pub fn validity(&self) -> Option<(u64, u64)> {
-        self.config.as_ref().map(crate::cram_ops::schema_validity)
+    /// Exact unit-domain fraction under independent uniform lane inputs.
+    /// Returns `Ok(None)` when unconfigured; counting/width failures are errors.
+    /// This diagnostic does not certify probabilities for phase-locked inputs.
+    pub fn validity(&self) -> Result<Option<(u64, u64)>, CramOpError> {
+        self.config.as_ref().map(crate::cram_ops::schema_validity).transpose()
     }
 }
 
@@ -1103,12 +1106,12 @@ mod tests {
     #[test]
     fn validity_accounts_for_partial_division_lanes() {
         let total = Cram::configured("AAMMM", 1).unwrap();
-        assert_eq!(total.validity(), Some((1, 1)), "no Div/Inv lane is total");
+        assert_eq!(total.validity().unwrap(), Some((1, 1)), "no Div/Inv lane is total");
 
         // Div on bridge (7), Inv on shadow (11).
         let partial = Cram::configured("AADIM", 1).unwrap();
         assert_eq!(
-            partial.validity(),
+            partial.validity().unwrap(),
             Some((6 * 10, 7 * 11)),
             "one Div lane mod 7 and one Inv lane mod 11"
         );

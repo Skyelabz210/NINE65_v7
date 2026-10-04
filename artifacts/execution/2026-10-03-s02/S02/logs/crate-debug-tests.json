@@ -1,0 +1,8 @@
+{
+  "cwd": ".",
+  "command": "cargo test --locked --offline -p exact_transcendentals -j1",
+  "exit_code": 0,
+  "elapsed_seconds": 59.953,
+  "log": "artifacts/execution/2026-10-03-s02/S02/logs/crate-debug-tests.log",
+  "log_sha256": "f25df86fa5521cb80096fc4ab761809a3e9e3086b727a9d38986275d5e0f93e6"
+}
