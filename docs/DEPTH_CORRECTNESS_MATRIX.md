@@ -57,6 +57,24 @@ Generated on 2026-02-14 09:51:41 UTC
 > [`large-phase-oracle.json`](../artifacts/execution/2026-10-04-depth-gate/large-phase-oracle.json)
 > and its [`generator`](../scripts/rescale_large_phase_oracle.py).
 
+> **Full coefficient audit, deterministic zero-fresh-error seed 2:** at depth
+> 4, an independent signed CRT oracle checked all `8192` coefficients of both
+> folded components. The live `k_elim_rescale_dual` output matched exact
+> `round(X/Δ)` on **all 16,384** coefficients. Replacing only that fourth
+> rescale with exact `round(tX/Q)` changed 8,192 coefficients in component 0
+> and 7,620 in component 1, but both versions still decrypted to `65532`
+> instead of `65536`. The decoded phase error against the expected message
+> point is about `3.7Δ`; 8,000 nonconstant phase coefficients exceed `Δ/8`
+> at depth 4, versus none through depth 3. This establishes a phase/noise
+> overrun and rules out a scalar division mistake at the first failing step;
+> it does **not** yet distinguish insufficient refresh from an earlier
+> ciphertext phase/fold defect. The source-bound
+> [`coefficient audit`](../artifacts/execution/2026-10-04-depth-gate/coefficient-audit-128.json),
+> [phase log](../artifacts/execution/2026-10-04-depth-gate/logs/phase-profile-128.log),
+> and [independent analyzer](../scripts/analyze_depth4_residue_pairs.py)
+> reproduce the finding. The raw synthetic-key residue dump is generated in
+> `/tmp` by the ignored diagnostic test and is not a production artifact.
+
 > **2026-08-19 note:** this matrix's data comes from
 > `benchmark_symmetric_max_depth_secure_128`/`_192`
 > (`crates/nine65/src/ops/gso_fhe.rs`), which run 50 symmetric multiplications
