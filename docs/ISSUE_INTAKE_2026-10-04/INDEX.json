@@ -1,0 +1,230 @@
+[
+  {
+    "number": 16,
+    "title": "Bootstrap path stress testing - edge cases and error recovery",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/16"
+  },
+  {
+    "number": 17,
+    "title": "Enable Python bindings via PyO3 (nine65-python crate)",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/17"
+  },
+  {
+    "number": 18,
+    "title": "Security audit - constant-time verification and side-channel hardening",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/18"
+  },
+  {
+    "number": 29,
+    "title": "Restore recumbent CRAM bootstrap and exact RNS context metadata after PR #26",
+    "labels": [
+      "bug"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/29"
+  },
+  {
+    "number": 63,
+    "title": "[M4] Stabilize one binding to published package (recommend Python)",
+    "labels": [
+      "medium-priority",
+      "gap-remediation",
+      "bindings"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/63"
+  },
+  {
+    "number": 64,
+    "title": "[G2] Make full test suite reproducible in constrained environments",
+    "labels": [
+      "gap-remediation",
+      "testing",
+      "critical"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/64"
+  },
+  {
+    "number": 67,
+    "title": "[M1] Remove or clearly mark deprecated Coq proofs as historical",
+    "labels": [
+      "documentation",
+      "medium-priority",
+      "gap-remediation",
+      "verification"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/67"
+  },
+  {
+    "number": 69,
+    "title": "[L1] Fix 4 compiler warnings (unused variables, dead code)",
+    "labels": [
+      "gap-remediation",
+      "hygiene",
+      "low-priority"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/69"
+  },
+  {
+    "number": 71,
+    "title": "[G4] Engage external security audit (Trail of Bits / NCC Group / Kudelski)",
+    "labels": [
+      "gap-remediation",
+      "critical",
+      "security"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/71"
+  },
+  {
+    "number": 72,
+    "title": "[G3] Close open constant-time findings F-2 and F-3",
+    "labels": [
+      "gap-remediation",
+      "critical",
+      "security"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/72"
+  },
+  {
+    "number": 73,
+    "title": "[H1] Increase public-mode depth beyond 2-4",
+    "labels": [
+      "enhancement",
+      "gap-remediation"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/73"
+  },
+  {
+    "number": 74,
+    "title": "[H5] Restore allow_insecure gate without breaking workspace tests",
+    "labels": [
+      "bug",
+      "gap-remediation",
+      "security"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/74"
+  },
+  {
+    "number": 75,
+    "title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets",
+    "labels": [
+      "gap-remediation",
+      "critical",
+      "security"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/75"
+  },
+  {
+    "number": 76,
+    "title": "[H2] Resolve secure_256 naming vs MATZOV binding (240 vs 256)",
+    "labels": [
+      "documentation",
+      "gap-remediation",
+      "security"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/76"
+  },
+  {
+    "number": 79,
+    "title": "[P0] Restore active GitHub Actions execution and required release checks",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/79"
+  },
+  {
+    "number": 82,
+    "title": "[P0] Fix bootstrap circular public-key mask sampling to be uniform over full Q_boot",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/82"
+  },
+  {
+    "number": 83,
+    "title": "[P1] Make bootstrap security validation exact and non-tautological",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/83"
+  },
+  {
+    "number": 84,
+    "title": "[P1] Fix negative-branch DualRNS noise diagnostic ideal-point calculation",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/84"
+  },
+  {
+    "number": 85,
+    "title": "[P1] Make fallible constructors truly fallible: remove production-security panics from try_* APIs",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/85"
+  },
+  {
+    "number": 86,
+    "title": "[P1] Harden validated deserialization: reject trailing bytes and context-invalid DualRNS state",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/86"
+  },
+  {
+    "number": 88,
+    "title": "[P1] Remove unchecked security labeling from FHEConfig::custom and for_depth",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/88"
+  },
+  {
+    "number": 89,
+    "title": "[P1] Enforce or ratchet the production panic/unwrap/expect quality gate",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/89"
+  },
+  {
+    "number": 92,
+    "title": "[META] NINE65 v7 completion-to-100% tracker: correctness, security, CI, performance, claims",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/92"
+  },
+  {
+    "number": 94,
+    "title": "[P1] Harden fhe-service HTTP framing: reject ambiguous lengths and preserve/disable keep-alive pipelining",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/94"
+  },
+  {
+    "number": 95,
+    "title": "[P0] Replace invalid component-wise BFV bootstrap Phase 1 with a mathematically valid public decryption/encoding transition",
+    "labels": [],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/95"
+  },
+  {
+    "number": 117,
+    "title": "[P0] Public refresh corrupts plaintext on configs admitted by supports_public_refresh (secure_128_deep, secure_192)",
+    "labels": [
+      "bug",
+      "critical",
+      "security"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/117"
+  },
+  {
+    "number": 130,
+    "title": "cargo test --workspace's fail-fast silently skips ~28 nine65 integration test files whenever nine65 --lib has any failure",
+    "labels": [
+      "bug",
+      "testing"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/130"
+  },
+  {
+    "number": 135,
+    "title": "Deprecated BFVEvaluator::mul() silently returns wrong plaintexts (untested for years; found via Python bindings work)",
+    "labels": [
+      "bug"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/135"
+  },
+  {
+    "number": 137,
+    "title": "Triage the 15 test failures --no-fail-fast newly surfaced (beyond the known 5 in #117)",
+    "labels": [
+      "bug",
+      "testing"
+    ],
+    "url": "https://github.com/Skyelabz210/NINE65_v7/issues/137"
+  }
+]
