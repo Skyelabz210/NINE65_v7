@@ -1,0 +1,53 @@
+{
+  "schema": "nine65-rescale-phase-preservation-v1",
+  "status": "local_phase_regression_passed_depth_still_blocked",
+  "base_commit": "fe1b398814a6da18d98212055095424c50fcb26f",
+  "route": "RNSFHEContext::k_elim_rescale_dual",
+  "config": "secure_128",
+  "main_modulus_bits": 119,
+  "anchor_product_bits": 220,
+  "plaintext_modulus": 65537,
+  "witnesses": [
+    {
+      "signed_value": "Q-1",
+      "main_residue": "Q-1",
+      "winding": 0,
+      "expected_rescale": 65537,
+      "before": 0,
+      "after": 65537
+    },
+    {
+      "signed_value": "-1",
+      "main_residue": "Q-1",
+      "winding": -1,
+      "expected_rescale": 0,
+      "before": "Q-65537",
+      "after": 0
+    }
+  ],
+  "source_sha256": {
+    "before_production_rns_fhe_rs_without_regression": "8f9022f1b2a41781be4e380809745f6017c69abe8f463da71c6a75005ab568f4",
+    "after_rns_fhe_rs_with_regression": "90961f4ddef090d7fcbdfd530749e8140082c4f0c3e19c5d3c2af461204b9828"
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -p nine65 --lib k_elim_rescale_preserves_upper_half_phase -- --nocapture",
+      "source": "after_rns_fhe_rs_with_regression",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-04-rescale-phase/logs/after.log",
+      "log_sha256": "bcdf26d7231c1b3ad096fa47972fc15da9ee8c2e8dd57870169d9c3adb462e62"
+    },
+    {
+      "command": "same regression against the pre-fix production function",
+      "source": "before_production_rns_fhe_rs_without_regression; test was inserted for this probe",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-04-rescale-phase/logs/before.log",
+      "log_sha256": "c2a28c5e14c2d1cd82b9d0e8b5eeef033f198bf84ea3093d7b0f223f6e1aa4fc"
+    },
+    {
+      "command": "rustfmt --check crates/nine65/src/ops/rns_fhe.rs",
+      "exit_code": 0
+    }
+  ],
+  "remaining_blocker": "The GSO repeated-square depth-4 tests remain red after this correction; see draft PR #156 and issue #157. This patch does not implement FPD, ciphertext refresh, or the requested runtime transduction architecture."
+}

@@ -1,0 +1,134 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-f01-aider/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-f01-aider/Cargo.toml
+   Compiling nine65 v0.1.0 (/tmp/nine65-f01-aider/crates/nine65)
+warning: unused import: `super::*`
+    --> crates/nine65/src/arithmetic/k_elimination.rs:1467:9
+     |
+1467 |     use super::*;
+     |         ^^^^^^^^
+     |
+     = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `crate::noise::budget::NoiseBudget`
+   --> crates/nine65/src/ops/symmetric_bootstrap.rs:495:9
+    |
+495 |     use crate::noise::budget::NoiseBudget;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crt_reconstruct_n`
+   --> crates/nine65/src/ops/symmetric_bootstrap.rs:496:33
+    |
+496 |     use crate::ops::bootstrap::{crt_reconstruct_n, ClockworkBootstrap};
+    |                                 ^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated method `arithmetic::k_elimination::KElimination::capacity`: Use try_capacity(), capacity_limbs(), or capacity_bit_length()
+    --> crates/nine65/src/arithmetic/k_elimination.rs:1355:31
+     |
+1355 |             let capacity = ke.capacity();
+     |                               ^^^^^^^^
+     |
+     = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated method `arithmetic::k_elimination::KElimination::extract_k_vartime`: Use extract_k(); variable-time extraction is for public reference data only
+   --> crates/nine65/src/security/ct_verification.rs:689:20
+    |
+689 |                 ke.extract_k_vartime(std::hint::black_box(v_alpha), std::hint::black_box(v_beta));
+    |                    ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `FheRng`
+    --> crates/nine65/src/params/secure_configs.rs:1622:30
+     |
+1622 |         use crate::entropy::{FheRng, ShadowHarvester};
+     |                              ^^^^^^
+
+warning: variable does not need to be mutable
+   --> crates/nine65/src/ops/exact_mul_tests.rs:667:13
+    |
+667 |         let mut draw = |rng: &mut Lcg| -> Vec<Big> {
+    |             ----^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` on by default
+
+warning: unused variable: `primes`
+     --> crates/nine65/src/ops/rns_fhe.rs:13578:13
+      |
+13578 |         let primes = &ctx.config.primes[..poly.main.len()];
+      |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_primes`
+      |
+      = note: `#[warn(unused_variables)]` on by default
+
+warning: variable does not need to be mutable
+     --> crates/nine65/src/ops/rns_fhe.rs:15494:13
+      |
+15494 |         let mut make_poly = |x_w: u128, x_c: u128| -> DualRNSPoly {
+      |             ----^^^^^^^^^
+      |             |
+      |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> crates/nine65/src/security/ct_verification.rs:1806:13
+     |
+1806 |         let mut sorted_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
+     |             ----^^^^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> crates/nine65/src/security/ct_verification.rs:1822:13
+     |
+1822 |         let mut shuffled_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
+     |             ----^^^^^^^^^^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> crates/nine65/src/security/ct_verification.rs:1912:17
+     |
+1912 |             let mut run_general = || {
+     |                 ----^^^^^^^^^^^
+     |                 |
+     |                 help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> crates/nine65/src/security/ct_verification.rs:1921:17
+     |
+1921 |             let mut run_adjacent = || {
+     |                 ----^^^^^^^^^^^^
+     |                 |
+     |                 help: remove this `mut`
+
+warning: method `rank` is never used
+   --> crates/nine65/src/arithmetic/main_only_base_ext.rs:332:8
+    |
+186 | impl MainOnlyBaseExt {
+    | -------------------- method in this implementation
+...
+332 |     fn rank(&self, c: &[u64; MAX_LANES]) -> (u64, RankPath) {
+    |        ^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `nine65` (lib test) generated 14 warnings (run `cargo fix --lib -p nine65 --tests` to apply 9 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 22s
+     Running unittests src/lib.rs (/home/acid/Projects/NINE65_v7/target/debug/deps/nine65-89e52362cbae116b)
+
+running 1 test
+RESCALE_PHASE negative=false expected=65537 got=U256 { lo: 0, hi: 0 }
+RESCALE_PHASE negative=true expected=0 got=U256 { lo: 348959453350711275087786864768122880, hi: 0 }
+
+thread 'ops::rns_fhe::tests::k_elim_rescale_preserves_upper_half_phase' panicked at crates/nine65/src/ops/rns_fhe.rs:9867:9:
+rescale changed the chosen signed phase: [(false, 65537, U256 { lo: 0, hi: 0 }), (true, 0, U256 { lo: 348959453350711275087786864768122880, hi: 0 })]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test ops::rns_fhe::tests::k_elim_rescale_preserves_upper_half_phase ... FAILED
+
+failures:
+
+failures:
+    ops::rns_fhe::tests::k_elim_rescale_preserves_upper_half_phase
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1051 filtered out; finished in 7.43s
+
+error: test failed, to rerun pass `-p nine65 --lib`
