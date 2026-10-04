@@ -1,0 +1,46 @@
+{
+  "task_id": "F01",
+  "status": "ready_for_review",
+  "base_commit": "f72ed898fda85352050e237e9b08ab33c06605c2",
+  "acceptance_evidence": [
+    "The source-derived exporter reports secure_128 and secure_128_deep as the same ordered four-prime tuple, with exact Q width 119 and the same context fingerprint.",
+    "The priming-root factors, BFV plaintext payload, main-Q ciphertext modulus and derived transient auxiliary view are separate registry roles.",
+    "WR-1 arithmetic oracle consumes the current registry and explicitly labels its three-prime fixture historical; it passed 81105 exact checks across four current named entries.",
+    "Ten targeted regression tests pass, including wrong plaintext with unchanged counters, missing/truncated/zero depth evidence, stale three-prime labeling, a corrupted auxiliary view and the N/2 d1 bound."
+  ],
+  "checks": [
+    {
+      "command": "cargo run --locked --offline -p nine65 --example export_parameter_registry",
+      "exit_code": 0,
+      "emitted_named_entries": 4,
+      "log": "artifacts/execution/2026-10-04-f01/F01/logs/exporter.log",
+      "log_sha256": "0809b58c9f86577970fd9cfe0cc4219d22f13ee11869a113fb1d9797549913f9"
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p test_parameter_evidence.py -v",
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "log": "artifacts/execution/2026-10-04-f01/F01/logs/parameter-tests.log",
+      "log_sha256": "0cf938c91a97d79e3d6fbf1f1725c1dbf8d06bfa7449da9776541a454c124e19"
+    },
+    {
+      "command": "python3 scripts/verify_wr1_transient_exact.py",
+      "exit_code": 0,
+      "exact_checks": 81105,
+      "log": "artifacts/execution/2026-10-04-f01/F01/logs/wr1-oracle.log",
+      "log_sha256": "fdeba29335268ea4d921e212a9e0483d0f0b6de5aea7b39c39d4bf23a1b46cd7"
+    }
+  ],
+  "source_sha256": {
+    "crates/nine65/examples/export_parameter_registry.rs": "f30e0ab36065a36bb42a84c18ac08ce00fab7821c5e90f08c49b08fc6da24a9b",
+    "scripts/verify_wr1_transient_exact.py": "da1c1eb424c8c76f73969ec2d8378e65d0203f108ff750cd4e5ad11cd245282e",
+    "scripts/generate_depth_correctness_matrix.py": "a9f024427e3003c859205608d8f0d88637a381b51c3f68db7b0041ad29baf50d",
+    "scripts/test_parameter_evidence.py": "102878c6c4582626cbae693777f9fadfc26f05e5ee2ec99930fc31d0e67468c8",
+    "artifacts/execution/parameter_registry.json": "5ddb248612358a7f02cfc98118e0b7242e33c60f1766d3148efde96aadfe6138"
+  },
+  "unresolved": [
+    "The current gso_fhe depth benchmarks emit depth and collapse counters, but no per-step decrypted plaintext comparisons. The report now refuses this output; no depth correctness result is claimed until a producer emits actual and expected values for every step.",
+    "F00 baseline and independent F01 code review remain separate acceptance gates. This artifact does not attest security or complete public refresh."
+  ]
+}

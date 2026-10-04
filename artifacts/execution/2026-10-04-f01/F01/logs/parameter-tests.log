@@ -1,0 +1,15 @@
+test_depth_parser_fails_closed_on_missing_truncated_or_zero_output (test_parameter_evidence.DepthEvidenceTests.test_depth_parser_fails_closed_on_missing_truncated_or_zero_output) ... ok
+test_depth_parser_fails_on_wrong_plaintext_with_unchanged_counters (test_parameter_evidence.DepthEvidenceTests.test_depth_parser_fails_on_wrong_plaintext_with_unchanged_counters) ... ok
+test_depth_parser_records_plaintext_equality (test_parameter_evidence.DepthEvidenceTests.test_depth_parser_records_plaintext_equality) ... ok
+test_alias_relations_match_tuple_equality (test_parameter_evidence.ParameterRegistryTests.test_alias_relations_match_tuple_equality) ... ok
+test_corrupted_dependent_view_is_rejected (test_parameter_evidence.ParameterRegistryTests.test_corrupted_dependent_view_is_rejected) ... ok
+test_historical_three_prime_fixture_is_rejected_as_current (test_parameter_evidence.ParameterRegistryTests.test_historical_three_prime_fixture_is_rejected_as_current) ... ok
+test_registry_pins_current_source_tuples (test_parameter_evidence.ParameterRegistryTests.test_registry_pins_current_source_tuples) ... ok
+test_registry_uses_exact_product_width_and_fingerprint (test_parameter_evidence.ParameterRegistryTests.test_registry_uses_exact_product_width_and_fingerprint) ... ok
+test_routes_and_modulus_roles_remain_separate (test_parameter_evidence.ParameterRegistryTests.test_routes_and_modulus_roles_remain_separate) ... ok
+test_wr1_d1_uses_n_over_2_bound (test_parameter_evidence.ParameterRegistryTests.test_wr1_d1_uses_n_over_2_bound) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.007s
+
+OK
