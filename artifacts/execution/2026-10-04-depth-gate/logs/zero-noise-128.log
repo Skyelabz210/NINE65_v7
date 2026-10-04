@@ -112,23 +112,26 @@ warning: method `rank` is never used
     = note: `#[warn(dead_code)]` on by default
 
 warning: `nine65` (lib test) generated 14 warnings (run `cargo fix --lib -p nine65 --tests` to apply 9 suggestions)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 04s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 16s
      Running unittests src/lib.rs (/home/acid/Projects/NINE65_v7/target/debug/deps/nine65-89e52362cbae116b)
 
 running 1 test
-ZERO_NOISE with_c1=false step=1 got=4 expected=4 margin=2662308721414706769365296433832 max_observed_k_bits=89 k_samples=16384
-ZERO_NOISE with_c1=false step=2 got=16 expected=16 margin=2662308721414706769365296433832 max_observed_k_bits=91 k_samples=16384
-ZERO_NOISE with_c1=false step=3 got=256 expected=256 margin=2662308721414706769365296433832 max_observed_k_bits=95 k_samples=16384
-ZERO_NOISE with_c1=false step=4 got=65536 expected=65536 margin=2662308721414706769365296340983 max_observed_k_bits=103 k_samples=16384
-ZERO_NOISE with_c1=true step=1 got=4 expected=4 margin=2662308721414706769365287193115 max_observed_k_bits=89 k_samples=16384
-ZERO_NOISE with_c1=true step=2 got=16 expected=16 margin=2662308721414697748731336152038 max_observed_k_bits=142 k_samples=16384
-ZERO_NOISE with_c1=true step=3 got=256 expected=256 margin=2661443558881597118102792345565 max_observed_k_bits=144 k_samples=16384
-ZERO_NOISE with_c1=true step=4 got=39957 expected=65536 margin=127433738373839518065968720239 max_observed_k_bits=145 k_samples=16384
+ZERO_NOISE seed=4 with_c1=true step=1 got=16 expected=16 margin=2662308721414706769365287193115 max_observed_k_bits=91 k_samples=16384
+ZERO_NOISE seed=4 with_c1=true step=2 got=256 expected=256 margin=2662308721414697748731114374830 max_observed_k_bits=142 k_samples=16384
+ZERO_NOISE seed=4 with_c1=true step=3 got=65536 expected=65536 margin=2661443558882682893623670615270 max_observed_k_bits=144 k_samples=16384
+ZERO_NOISE seed=4 with_c1=true step=4 got=39938 expected=1 margin=898267958201683971538402446037 max_observed_k_bits=145 k_samples=16384
+ZERO_NOISE seed=2 with_c1=false step=1 got=4 expected=4 margin=2662308721414706769365296433832 max_observed_k_bits=89 k_samples=16384
+ZERO_NOISE seed=2 with_c1=false step=2 got=16 expected=16 margin=2662308721414706769365296433832 max_observed_k_bits=91 k_samples=16384
+ZERO_NOISE seed=2 with_c1=false step=3 got=256 expected=256 margin=2662308721414706769365296433832 max_observed_k_bits=95 k_samples=16384
+test ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128 has been running for over 60 seconds
+ZERO_NOISE seed=2 with_c1=false step=4 got=65536 expected=65536 margin=2662308721414706769365296340983 max_observed_k_bits=103 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=1 got=4 expected=4 margin=2662308721414706769365287193115 max_observed_k_bits=89 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=2 got=16 expected=16 margin=2662308721414697748731336152038 max_observed_k_bits=142 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=3 got=256 expected=256 margin=2661443558881597118102792345565 max_observed_k_bits=144 k_samples=16384
+ZERO_NOISE seed=2 with_c1=true step=4 got=39957 expected=65536 margin=127433738373839518065968720239 max_observed_k_bits=145 k_samples=16384
 
-thread 'ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128' panicked at crates/nine65/src/ops/gso_fhe.rs:856:17:
-assertion `left == right` failed: zero-noise with_c1=true depth 4
-  left: 39957
- right: 65536
+thread 'ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128' panicked at crates/nine65/src/ops/gso_fhe.rs:863:9:
+zero-noise controls failed: [(4, true, 4, 39938, 1), (2, true, 4, 39957, 65536)]
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 test ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128 ... FAILED
 
@@ -137,6 +140,6 @@ failures:
 failures:
     ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128
 
-test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1050 filtered out; finished in 53.84s
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1050 filtered out; finished in 100.50s
 
 error: test failed, to rerun pass `-p nine65 --lib`

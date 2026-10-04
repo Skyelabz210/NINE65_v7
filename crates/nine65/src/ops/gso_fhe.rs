@@ -797,8 +797,8 @@ mod depth_benchmarks {
     }
 
     /// Diagnostic controls: exact encoding with either c1=0 or c1=1 and
-    /// c0=2*Delta-c1*s. The latter exercises secret-key relinearization
-    /// without fresh encryption noise.
+    /// c0=seed*Delta-c1*s. Seed 4 reaches plaintext -1 one multiplication
+    /// earlier than seed 2, testing whether the failure follows that boundary.
     #[test]
     fn diagnostic_zero_noise_constant_self_square_secure_128() {
         use crate::ops::rns_fhe::DualRNSPoly;
@@ -811,7 +811,8 @@ mod depth_benchmarks {
         let n = ctx.inner.n;
         let main = ctx.inner.config.primes.clone();
         let anchor = ctx.inner.dual_rns.anchor.primes.clone();
-        for with_c1 in [false, true] {
+        let mut mismatches = Vec::new();
+        for (seed, with_c1) in [(4_u64, true), (2, false), (2, true)] {
             let mut c0 = DualRNSPoly {
                 main: main.iter().map(|_| vec![0; n]).collect(),
                 anchor: anchor.iter().map(|_| vec![0; n]).collect(),
@@ -823,7 +824,7 @@ mod depth_benchmarks {
                 n,
             };
             for (j, &p) in main.iter().enumerate() {
-                let encoded = ((2 * delta) % p as u128) as u64;
+                let encoded = ((seed as u128 * delta) % p as u128) as u64;
                 for k in 0..n {
                     let target = if k == 0 { encoded } else { 0 };
                     let secret_term = if with_c1 { keys.secret_key.s.main[j][k] } else { 0 };
@@ -832,7 +833,7 @@ mod depth_benchmarks {
                 if with_c1 { c1.main[j][0] = 1; }
             }
             for (j, &p) in anchor.iter().enumerate() {
-                let encoded = ((2 * delta) % p as u128) as u64;
+                let encoded = ((seed as u128 * delta) % p as u128) as u64;
                 for k in 0..n {
                     let target = if k == 0 { encoded } else { 0 };
                     let secret_term = if with_c1 { keys.secret_key.s.anchor[j][k] } else { 0 };
@@ -843,8 +844,8 @@ mod depth_benchmarks {
             let mut ct = GSOCiphertext::wrap(
                 DualRNSCiphertext { c0, c1, level: main.len() }, 0
             );
-            assert_eq!(ctx.decrypt(&ct, &keys.secret_key), 2, "control input encoding");
-            let mut expected = 2_u64;
+            assert_eq!(ctx.decrypt(&ct, &keys.secret_key), seed, "control input encoding");
+            let mut expected = seed;
             for depth in 1..=4 {
                 crate::arithmetic::rns::k_probe::start();
                 ct = ctx.mul_symmetric(&ct, &ct.clone(), &keys.secret_key);
@@ -852,10 +853,14 @@ mod depth_benchmarks {
                 let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
                 expected = ((expected as u128 * expected as u128) % ctx.inner.t as u128) as u64;
                 let (actual, margin) = ctx.inner.decrypt_dual_with_diagnostics(&ct.inner, &keys.secret_key);
-                println!("ZERO_NOISE with_c1={with_c1} step={depth} got={actual} expected={expected} margin={margin} max_observed_k_bits={max_k_bits} k_samples={}", k_samples.len());
-                assert_eq!(actual, expected, "zero-noise with_c1={with_c1} depth {depth}");
+                println!("ZERO_NOISE seed={seed} with_c1={with_c1} step={depth} got={actual} expected={expected} margin={margin} max_observed_k_bits={max_k_bits} k_samples={}", k_samples.len());
+                if actual != expected {
+                    mismatches.push((seed, with_c1, depth, actual, expected));
+                    break;
+                }
             }
         }
+        assert!(mismatches.is_empty(), "zero-noise controls failed: {mismatches:?}");
     }
 
     /// Benchmark symmetric mode to maximum depth
