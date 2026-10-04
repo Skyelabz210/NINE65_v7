@@ -110,7 +110,9 @@ impl Anchor {
         if p < 2 {
             return Err(AnchorError::ModulusTooSmall { p });
         }
-        let a = p + 1;
+        let a = p
+            .checked_add(1)
+            .ok_or(AnchorError::CapacityOverflow { modulus: p })?;
         let capacity = p
             .checked_mul(a)
             .ok_or(AnchorError::CapacityOverflow { modulus: p })?;
@@ -574,6 +576,63 @@ mod tests {
             "the sweep must cover every value of every capacity"
         );
         assert!(nonzero > 0, "agreement on k = 0 alone would prove nothing");
+    }
+
+    /// Primality is not an adjacency requirement. Include pairs with composite
+    /// payload and composite anchor, and check every state in their corridor.
+    #[test]
+    fn composite_adjacent_pairs_recover_exact_winding_in_corridor() {
+        for p in [8_i128, 14, 15, 35, 36, 99] {
+            let anchor = Anchor::adjacent(p).unwrap();
+            for x in 0..anchor.capacity() {
+                let (r, a) = anchor.decompose(x).unwrap();
+                assert_eq!(anchor.winding(r, a).unwrap(), x / p, "p={p} x={x}");
+            }
+        }
+    }
+
+    /// A deck step leaves the payload fixed and moves the adjacent anchor by
+    /// minus one. The pair still aliases exactly at P*A, so admission must
+    /// check the range before computing the observer.
+    #[test]
+    fn s8_deck_precession_and_capacity_alias_boundary() {
+        let p = 2_i128 * 3 * 5 * 7 * 11 * 13 * 17 * 19;
+        assert_eq!(p, 9_699_690);
+        let anchor = Anchor::adjacent(p).unwrap();
+        for x in [0, 1, p - 1, p, p + 1, anchor.capacity() - p - 1] {
+            let (r, a) = anchor.decompose(x).unwrap();
+            let (next_r, next_a) = anchor.decompose(x + p).unwrap();
+            assert_eq!(next_r, r, "x={x}");
+            assert_eq!(next_a, (a - 1).rem_euclid(anchor.a()), "x={x}");
+            assert_eq!(anchor.winding(next_r, next_a).unwrap(), x / p + 1);
+        }
+        let (r0, a0) = anchor.decompose(0).unwrap();
+        assert_eq!(
+            (r0, a0),
+            (anchor.capacity() % p, anchor.capacity() % anchor.a())
+        );
+        assert!(matches!(
+            anchor.decompose(anchor.capacity()),
+            Err(AnchorError::OutOfRange { .. })
+        ));
+        assert_eq!(
+            Anchor::adjacent(i128::MAX),
+            Err(AnchorError::CapacityOverflow { modulus: i128::MAX })
+        );
+    }
+
+    /// The 6585 -> 6586 step crosses a multiple of 37, not of 36. These are
+    /// two independent quotient observers, not a propagated carry between them.
+    #[test]
+    fn dresden_step_changes_quotient_by_37_only() {
+        let lower = Anchor::adjacent(36).unwrap();
+        for (x, k36, k37) in [(6585_i128, 182_i128, 177_i128), (6586, 182, 178)] {
+            let r36 = x % 36;
+            let r37 = x % 37;
+            let r73 = x % 73;
+            assert_eq!(lower.winding(r36, r37).unwrap(), k36 % 37);
+            assert_eq!(((r73 - r37) * 2).rem_euclid(73), k37 % 73);
+        }
     }
 
     /// C6 — exhaustive round trip on the canonical shell/anchor pair 36/37.

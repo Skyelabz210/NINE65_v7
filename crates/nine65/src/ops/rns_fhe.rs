@@ -4332,8 +4332,10 @@ impl RNSFHEContext {
     /// The rescale computes: round(v_exact / Δ) mod M
     /// Using Paper 2 Lemma: round((v_m + k*M) / Δ) ≡ round((v_m + (k mod Δ)*M) / Δ) (mod M)
     ///
-    /// IMPORTANT: We CENTER v_m around Q/2 before processing to handle values
-    /// that represent negative noise (values > Q/2 are interpreted as negative).
+    /// K is extracted against the canonical `v_m = X mod Q` in `[0,Q)`.
+    /// Keep that same representative during division. Centering `v_m` without
+    /// incrementing K would change X by -Q and its rounded quotient by about
+    /// -t, silently losing the exact phase carried by the anchors.
 
     /// Reset a dual poly's ANCHOR lanes to the residues of the canonical
     /// `[0, M_level)` value its own MAIN lanes already encode.
@@ -4858,7 +4860,6 @@ impl RNSFHEContext {
         // M_level and delta = floor(M_level / t), r = M_level % t
         let m_level = U256::product_u64s(level_primes);
         let (delta, r_u64) = m_level.div_mod_u64(self.t);
-        let q_half = m_level.shr1();
 
         // Anchor product used for k sign interpretation -- MUST match the
         // anchor subset `extract_k_rns_level` actually reconstructed `k_u`
@@ -4911,7 +4912,14 @@ impl RNSFHEContext {
                 )?;
 
                 let k_signed = SignedK256::from_unsigned(k_u, a_n_product);
-                let v_centered = SignedU256::center(v_m, m_level, q_half);
+                // `X = v_m + K*Q`; the derived K refers to canonical v_m.
+                // In particular, v_m=Q-1,K=0 represents positive Q-1,
+                // whereas v_m=Q-1,K=-1 represents negative 1. They share
+                // main residues and must not be collapsed by centering.
+                let v_canonical = SignedU256 {
+                    mag: v_m,
+                    is_neg: false,
+                };
 
                 // k_mod_delta = k (mod delta) (magnitude; sign handled separately)
                 let k_mod_delta = k_signed.magnitude.rem_u256(delta);
@@ -4922,10 +4930,10 @@ impl RNSFHEContext {
                 // r = M_level % t is < t, so k_rem fits comfortably in 256 bits
                 let k_rem = k_mod_delta.mul_u64(r_u64);
 
-                // rem_term = round((v_centered +/- k_rem)/delta) mod M_level
+                // rem_term = round((v_m +/- k_rem)/delta) mod M_level
                 let add_rem = !k_signed.is_neg;
                 let rem_term =
-                    round_div_signed_mod_u256(v_centered, k_rem, add_rem, delta, m_level, q_upper);
+                    round_div_signed_mod_u256(v_canonical, k_rem, add_rem, delta, m_level, q_upper);
 
                 // scaled = (k_base +/- rem_term) mod M_level
                 let scaled = if !k_signed.is_neg {
@@ -9830,6 +9838,48 @@ mod tests {
         assert_eq!(result, 35, "Multiplication gave wrong result");
 
         println!("\n[PASS]All k_elim_rescale_dual tests passed");
+    }
+
+    /// The declared scale rule is round(X/Delta) mod Q for the signed integer
+    /// identified by both bases. These two inputs have identical main lanes
+    /// but different anchor phases and must therefore differ by t after
+    /// rescale: Q-1 maps to t, while -1 maps to 0.
+    #[test]
+    fn k_elim_rescale_preserves_upper_half_phase() {
+        let config = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::new(&config);
+        let q = ctx.q_product_checked.expect("secure_128 Q fits u128");
+        let delta = q / ctx.t as u128;
+        let expected_positive = ((q - 1 + delta / 2) / delta) as u64;
+        assert_eq!(expected_positive, ctx.t);
+
+        let mut failures = Vec::new();
+        for (negative, expected) in [(false, expected_positive), (true, 0_u64)] {
+            let mut poly = ctx.dual_poly_zero();
+            for (i, &p) in ctx.config.primes.iter().enumerate() {
+                poly.main[i][0] = ((q - 1) % p as u128) as u64;
+            }
+            for (i, &a) in ctx.dual_rns.anchor.primes.iter().enumerate() {
+                poly.anchor[i][0] = if negative {
+                    a - 1
+                } else {
+                    ((q - 1) % a as u128) as u64
+                };
+            }
+            let out = ctx.k_elim_rescale_dual(&poly).expect("admitted phase");
+            let got = ctx.rns.to_u256_level(
+                &out.main.iter().map(|limb| limb[0]).collect::<Vec<_>>(),
+                out.main.len(),
+            );
+            println!("RESCALE_PHASE negative={negative} expected={expected} got={got:?}");
+            if got != U256::from_u64(expected) {
+                failures.push((negative, expected, got));
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "rescale changed the chosen signed phase: {failures:?}"
+        );
     }
 
     #[test]
