@@ -1,0 +1,58 @@
+{
+  "ciphertext_primes": [
+    36028797018652673,
+    36028797017571329,
+    36028797017456641,
+    36028797017276417,
+    36028797017014273,
+    36028797016719361,
+    36028797016588289,
+    36028797016522753,
+    36028797016195073,
+    36028797016178689,
+    36028797015212033,
+    36028797014704129,
+    36028797014573057,
+    36028797014376449,
+    36028797014081537,
+    36028797014065153,
+    36028797013639169,
+    36028797013442561
+  ],
+  "digit_bound": 32,
+  "evaluator_debug_secret": false,
+  "gadget_digits": 5,
+  "galois_keys": 52,
+  "initial_budget_bits": 968,
+  "n": 8192,
+  "native_nine65_refresh_enabled": false,
+  "plaintext_modulus": 65537,
+  "pre_refresh_additions": 1,
+  "pre_squares": 2,
+  "reference_version": "fheanor 0.11.9",
+  "requested_q_bits": 1000,
+  "rounds": [
+    {
+      "after_multiply_budget_bits": 157,
+      "checked_coefficients": 8192,
+      "input_budget_bits": 715,
+      "output_budget_bits": 186,
+      "refresh_ms": 57617,
+      "round": 0
+    },
+    {
+      "after_multiply_budget_bits": 153,
+      "checked_coefficients": 8192,
+      "input_budget_bits": 157,
+      "output_budget_bits": 184,
+      "refresh_ms": 51456,
+      "round": 1
+    }
+  ],
+  "schema": "nine65-bfv-bootstrap-reference-v1",
+  "secret_distribution": "uniform_ternary",
+  "security_attestation": null,
+  "sparse_encapsulation_weight": 32,
+  "total_ms": 523084,
+  "transform_levels": 4
+}

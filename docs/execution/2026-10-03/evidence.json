@@ -1,0 +1,171 @@
+{
+  "schema": "nine65-plan-evidence-v1",
+  "prepared": "2026-10-03",
+  "v7_commit": "048f79ac771697801e26ebf77e4ee6df33b48281",
+  "initial_worktree": [
+    " M README.md",
+    " M crates/nine65/Cargo.toml",
+    " M crates/nine65/src/cram_ct_wrap.rs",
+    " M docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md",
+    " M docs/PRIME_POWER_CANONICAL_LIFT_BASELINE.md",
+    "?? artifacts/bootstrap/",
+    "?? crates/nine65/examples/canonical_lift_feasibility.rs",
+    "?? crates/nine65/examples/cram_public_showcase.rs",
+    "?? docs/CRAM_SHOWCASE.md",
+    "?? docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md",
+    "?? docs/PUBLIC_FHE_SOLUTION_2026-09-28.md",
+    "?? research/",
+    "?? scripts/bounded_digit_polynomial.py",
+    "?? scripts/canonical_lift_feasibility.py",
+    "?? test_bootstrap_simple.rs",
+    "?? test_phase1_fix.rs"
+  ],
+  "v7_source_sha256": {
+    ".github/workflows/ci.yml": "a8fd41e06c5b1727349c5fd8c0b69341c878f1a9f8e4ad4b92f2177fe8d70bfb",
+    "Cargo.lock": "892c3f6cadf3abcd198847ebc1744c67ef68fb6202053ca1943f170d9736bd54",
+    "README.md": "ce96979181c78b26721b92a7bce444f26bf9480a89f9e0dc3736b05d682fbd2d",
+    "crates/exact_transcendentals/src/lifted_transduction.rs": "f3e4fcd5205efcdecf85fff81ae54aa36ee394b9b8685d2cd02bef62d0331199",
+    "crates/exact_transcendentals/src/transduction.rs": "3aa21ecdb1437b0dbecd97feb2f3051bfbcdfa1c1e7628f674ae8fc88deaf030",
+    "crates/fhe-service/src/handlers.rs": "6c65787cc4ecaa412405bfda145c2ebebbaa2d185ad65d4c1519a9bb07ad8c2c",
+    "crates/fhe-service/src/http.rs": "36d28d4ae75d73eea8a0d94aa4d7a742170fa84ff83589976dfbfc5aecfa3a55",
+    "crates/fhe-service/src/main.rs": "4752f65c79c873d3dbe986c08a219f86ec175b496f49eed24d0168239069ae90",
+    "crates/fhe-service/src/session.rs": "fcd287dd91d8ba1fb768b7f2dc3553d73217f0a6e40341ced9a74979ecd6cc42",
+    "crates/fhe-service/src/wire.rs": "3cdd47d58268359cd89240dd9113b9175243616932cc972b22840b1a633cc008",
+    "crates/mana/src/gso.rs": "3f075e9d488d63b65ae25dd126c8ede06245ba390a53cbe0b5ebf21c855641db",
+    "crates/nine65-python/Cargo.toml": "a46c53cf2cc70750dbd57f9065f5e6958ede1a42130e2baadc272dc08714cb4f",
+    "crates/nine65-python/src/lib.rs": "3ea27b8e085cf6f98be7807e366adbc1a057af06a31b8372396ce516b1a91751",
+    "crates/nine65/Cargo.toml": "f73e93bbb49798aa50bd7174ce55a7e152cea957aac03fb0b0118cff5aad7e69",
+    "crates/nine65/examples/cram_public_showcase.rs": "00340ce08a6579b24fabb4279d8358f25454646d008b95bb81853e65d14678fd",
+    "crates/nine65/src/arithmetic/exact_scale_round.rs": "844fa9d96b59e124668d57ce284eca4aea5c53493aac5bb66871b5883d0ab92f",
+    "crates/nine65/src/arithmetic/k_elimination.rs": "2d4832fa2645ee80b7fd31ffa950dd3db37456e34de05cc87f977000d5cf71d7",
+    "crates/nine65/src/arithmetic/main_only_base_ext.rs": "c3903d49d1c0561ce71dce3f701416d4fcd689cfc94b09aad0b149891922b2f3",
+    "crates/nine65/src/arithmetic/ntt_fft.rs": "77824bd0a84d6b9f222f0acc76961fa4842707e54e083e3aac886f61108a1f9e",
+    "crates/nine65/src/arithmetic/rns.rs": "b139ef80391728e4521a1a19040ad285fca536c75794a7b02b0e3a6006ca5159",
+    "crates/nine65/src/bootstrap/clockwork.rs": "fbbf02f6cb7cb83fc59c7fb724266892cfb9f7e0b3ffb4e374b66a82832f72d5",
+    "crates/nine65/src/bootstrap/mask.rs": "da374d1de07eba7e3977910266bd3db93b64a91c8e89e9f24116f3e383bf38ff",
+    "crates/nine65/src/bootstrap/outer.rs": "63b8fde0ff73047245d9c87407f2fafa92428b4da3f5f93133e0507d72e060d2",
+    "crates/nine65/src/bootstrap/three_lock.rs": "a636bf33122eb0df1fa22cb81d2dd905c5b85e0db999f9fa546eccd7c99233d8",
+    "crates/nine65/src/cram_ct_wrap.rs": "a918ff453163a208da33d8aac4465ab8b6851c64711498d79310d035bf7fd16d",
+    "crates/nine65/src/entropy/crt_shadow.rs": "fa9160b59ad8e50b7ce04b8a08125c9b4c13b88dbe27975bc550667a9f9f81d4",
+    "crates/nine65/src/entropy/secure.rs": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee",
+    "crates/nine65/src/entropy/shadow.rs": "c324826592564fb0edeff9f2a3a1ae060753330a137c9404db04a459249e967a",
+    "crates/nine65/src/keys/bootstrap.rs": "32ab87eb27a698f39729264b7ac8f0e2141915b87b170f816c012d3647fa4272",
+    "crates/nine65/src/keys/expanded_bootstrap.rs": "5520f2b6c63969c65ced02bf4b9e65df252eb0d4c40a221fd5f10025e49e3c07",
+    "crates/nine65/src/noise/budget.rs": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+    "crates/nine65/src/ops/auto_bootstrap.rs": "361ec37431b57763c3f4688fdd757ad250677617040b43788495b82f0648108b",
+    "crates/nine65/src/ops/bootstrap.rs": "f0105dc1bc1637f6e699a8bd1a43ba48f80bce645a7feb31ab558dad61dd3c56",
+    "crates/nine65/src/ops/cram_public.rs": "346a7f3a73d17038a0a063b712cf17332ce0f90646af5aba5e4e3b945137f558",
+    "crates/nine65/src/ops/encrypt.rs": "342d0a160fbfe7aa65017a31c692ff9a6e0825f759f443cd96a54b91b7df4fd0",
+    "crates/nine65/src/ops/exact_mul.rs": "c8c5e6177d5d90376ddc2989bebe09db3de848eef3cb4fe8b1e46c32496da551",
+    "crates/nine65/src/ops/exact_mul_tests.rs": "76cfd81d73401f025ed32be76739dcec7bedf65e3f7c9f13d04dd4f58f870649",
+    "crates/nine65/src/ops/expanded_phase1.rs": "75f2d3f330da54116698ca81a9a50bf6ce6ba46dc780da7863e3fca5202b4fb3",
+    "crates/nine65/src/ops/gso_fhe.rs": "86d42def74f8da7ffc74de2af61c48245829eee215c29c3e4db30c9a2f046f05",
+    "crates/nine65/src/ops/prime_power_digit_lift.rs": "b6ea97b88d20053836e5791dcf6e1b1a0bb7b656435cb903d77628bf6b6b6d84",
+    "crates/nine65/src/ops/prime_power_phase.rs": "a38d57aece01abaea6997a4d69460bdfa8b985263d130d0652385f49cfb940aa",
+    "crates/nine65/src/ops/rns_fhe.rs": "8f9022f1b2a41781be4e380809745f6017c69abe8f463da71c6a75005ab568f4",
+    "crates/nine65/src/params/secure_configs.rs": "78171555b7edc061015291bd7e9e7ffc5fc46cd8072982e2bf101bd2368e3fec",
+    "crates/nine65/tests/op_timings.rs": "7b90006a52c12e9b5aaaf243f12cf2b81d813e2fe9d2f244f8f522b959513b3c",
+    "docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md": "56d45c0484973cb62f3aacae5e8e0d989c49a876cab2764cc0241c5d032642f0",
+    "docs/CLAIM_EVIDENCE_LEDGER.md": "4f2014ba7033f5c8664fb2e4b9a154b9fa5c2d68be3027e3ba32896e1e64b01b",
+    "docs/CLAIM_REGISTRY.csv": "94767dcead29abcb172fa09305c9dd5bccd14519f5d6c975b88aaa5e23fe31fb",
+    "docs/CT_NTT_CACHE_ROADMAP.md": "2cd2a8af2e4e91ed35d8b15a1b3e2875a96bbb12e53710dac960dde424e44268",
+    "docs/ENTROPY_MODEL.md": "cdb5527803d38dd465b344984661828ddee5e16ad1f20e9a9c0342d0593ca9f6",
+    "docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md": "bc61c7ed2a3d02b96a24fa504dfd04485faf288cc90cba4174eab1b25d791c12",
+    "docs/PUBLIC_FHE_SOLUTION_2026-09-28.md": "814e135832d69d5ac4af61fdacda9ae323638d26ceb7d1e5dcf6a62689d35bef",
+    "lean4/KElimination/KElimination/ShadowEntropy.lean": "ebdd8bec2f8e81495082aac074f07aa380181ce860a1c9c99b9328c61af5bd12",
+    "lean4/KElimination/KElimination/ShadowNTTButterfly.lean": "3f82fb10e6cd1f8742b106a9b1f2096237c352f58d60792ad39d2680fa129c0e",
+    "lean4/KElimination/lakefile.lean": "b4baae719edceea2f370df45e69fb5bcac830861bd7020a5a5f7b1e281682c7e",
+    "research/bfv-bootstrap-reference/src/main.rs": "1550945cfd5d34401c3c99fe4f2d81533ac5e9a6fa335bcd4d796d210dfbfaa0",
+    "rust-toolchain.toml": "a93527593d1f1e9a134e588cadec40ac33c2b08194b7342c9d24cf05b128a0d5",
+    "scripts/bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137",
+    "scripts/canonical_lift_feasibility.py": "e3eda5fd837e4db7fe5f47a50a7e2e00765fab5c0d66b553d50b91da149e0bed",
+    "scripts/check_wr1_exact_route_denylist.py": "e932267cd64b61c89d0e96d9c634cb787516ee3fc162a4e2850ff682d2c6a4e1",
+    "scripts/cram_ct_gates.sh": "a3ec0a01f721c56aa738ccdc7af8ab28475439548100aed651bfda2e91925142",
+    "scripts/generate_depth_correctness_matrix.py": "f0085fec057bba60ed6ff3a834d4a7882b62fd087887412038f80d7311227868",
+    "scripts/run_tests_fast.sh": "d8e198988bf8ca73c19bccb967d127c596f441a33166c8e9755264dd6c2fa417",
+    "scripts/run_tests_medium.sh": "22ba4ac0c2c1f631b467bcd67e7e029df6e48cfe94953003e9ccd1efff016554",
+    "scripts/verify_wr1_transient_exact.py": "93371c47401f7229a19bf67c41236b3ddec4f22abf64f8c2fd4e10bbfdaad45c"
+  },
+  "external_sources": [
+    {
+      "repository": "https://github.com/Skyelabz210/NINE65_v6_a_Clockwork_Prime",
+      "commit": "bd5c5c29f5c367bf34831cf5c1b97b3b938ac829",
+      "local_review_copy": "/tmp/nine65-v6-plan-review",
+      "files": {
+        "NINE65/NINE65_v6_a_Clockwork_Prime/crates/nine65/src/bootstrap/three_lock.rs": "89f29ef7429cd7b78f45494e935dd74fd7b1d2f8c60d7dda3637b02d7c893240",
+        "NINE65/NINE65_v6_a_Clockwork_Prime/docs/DEPTH_CORRECTNESS_MATRIX.json": "07e5aac990ce864e5944e2d240b12accc3b57ef9c468736e5be5160e7dccab2b"
+      },
+      "verification_scope": "selected source inspection only; no complete historical build"
+    },
+    {
+      "repository": "https://github.com/Skyelabz210/qmnf-lean-coq-security-proofs",
+      "commit": "d5c7a1f6e3da3068ddafbb2b48424ee13beac5d6",
+      "local_review_copy": "/tmp/nine65-security-proofs-review",
+      "files": {
+        "nist/shadow_nist_tests.py": "87a5f91ca327e3e0295460ac53ae5b6f0fc44e2c7986108141144eb3bbe5b7a3",
+        "lean4/shadow-nist/ShadowUniform.lean": "ce7d2e4f157e84d268fd994fe6b95fafd608b7be9f1153d498c3e31340908b29",
+        "lean4/shadow-nist/ShadowSecurityTheorems.lean": "0ee749ea2ac59cad032df882c114660fff0e73932c0bfe27f5a19d2e7017e702",
+        "lean4/shadow-nist/ShadowNISTCompliance.lean": "c410dde0ef3ddf7446df5868d4304dc87af3239551a6473a21aa9929b1c2a024",
+        "lean4/shadow-nist/ShadowCorrelation.lean": "0eccd608e7bfc13e348de05e2b790a9d01c7f2f5eb93239b925c1fbb64fc3683"
+      },
+      "verification_scope": "selected source inspection only; no complete historical build"
+    }
+  ],
+  "checks_during_planning": [
+    {
+      "command": "python3 scripts/bounded_digit_polynomial.py --self-test",
+      "result": "passed; 9482 small-prime checks, exact p=65537 B=32 identity certificate",
+      "scope": "clear polynomial identities, not encrypted native evaluation"
+    },
+    {
+      "command": "python3 scripts/check_wr1_exact_route_denylist.py",
+      "result": "PASS; 3 source files, 2175 production lines, 19 patterns, 0 violations",
+      "scope": "text-based route check, not full leakage/security proof"
+    },
+    {
+      "command": "python3 scripts/verify_wr1_transient_exact.py",
+      "result": "PASS; 80353 integer arithmetic checks",
+      "scope": "historical hardcoded tuple fixtures; secure_128 label is stale and d1 coverage incomplete"
+    }
+  ],
+  "not_run": [
+    "full v7 Rust acceptance suite",
+    "v6 historical build/depth reproductions",
+    "complete external Lean/Coq proof builds",
+    "native complete public refresh",
+    "physical fault injection or entropy security certification"
+  ],
+  "issue_inventory": "open_issues.json",
+  "sources": {
+    "nist_statistical_tests": "https://csrc.nist.gov/pubs/sp/800/22/r1/upd1/final",
+    "nist_entropy_sources": "https://csrc.nist.gov/pubs/sp/800/90/b/final",
+    "bfv_bgv_bootstrap": "https://eprint.iacr.org/2022/1363",
+    "bounded_bgv_digits": "https://eprint.iacr.org/2024/115"
+  },
+  "worker_reviews": {
+    "aider": {
+      "status": "completed; final answer reviewed against source",
+      "final_answer": "reviews/aider.md",
+      "dispositions": "reviews/REVIEW_DISPOSITIONS.md",
+      "scope": "read-only supplied excerpts; no production edits"
+    },
+    "gemini": {
+      "status": "completed; final answer reviewed against source",
+      "final_answer": "reviews/gemini.md",
+      "dispositions": "reviews/REVIEW_DISPOSITIONS.md",
+      "scope": "read-only supplied excerpts; no production edits"
+    },
+    "mistral": {
+      "status": "completed; final answer reviewed against source",
+      "final_answer": "reviews/mistral.md",
+      "dispositions": "reviews/REVIEW_DISPOSITIONS.md",
+      "scope": "read-only supplied excerpts; tools disabled; no production edits",
+      "model_alias": "mistral-medium-3.5",
+      "task_local_thinking": "max",
+      "installed_backend_reasoning_effort": "high",
+      "failed_attempts": "sandbox attempts produced no review; timeout/interrupted; escalated bounded retry completed"
+    }
+  },
+  "execution_package_validation": "validation.json",
+  "safe_basis_revision": "safe_basis_review.json"
+}

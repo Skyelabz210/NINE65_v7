@@ -1,0 +1,45 @@
+{
+  "scope": "Revised execution package validation; initial validation.json retained as historical evidence",
+  "checks": [
+    {
+      "command": [
+        "python3",
+        "scripts/nine65_execution_plan.py",
+        "validate",
+        "--self-test",
+        "--check-baseline"
+      ],
+      "exit_code": 0,
+      "stdout": "Baseline unchanged: 64 source hashes checked\nSelf-test: 12 dependency/schema/scope/input cases passed\nPlan valid: 43 cards, acyclic dependencies, upstream inputs and issue coverage checked\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/nine65_execution_plan.py",
+        "ready",
+        "--accepted",
+        "F00"
+      ],
+      "exit_code": 0,
+      "stdout": "F01    implementation  Generate tuple truth and repair stale evidence producers\nF02    evidence        Inventory every test target and ratchet existing failures\nF03    evidence        Recover the v6 mechanism and audit proof statements\nS00    protocol        Freeze the intact priming root and exact phase-coordinate contract\nDependency-ready only; acceptance requires evidence and independent review.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "check": "review source hashes, JSON/Python syntax, relative Markdown links, whitespace and credential-pattern check",
+      "files_checked": 60,
+      "additional_v7_hashes": 23,
+      "result": "passed"
+    }
+  ]
+}

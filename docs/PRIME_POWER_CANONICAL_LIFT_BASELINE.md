@@ -6,6 +6,13 @@ Encrypted small-ring tests exercise the producer, contraction, and a subsequent
 public multiplication. The current `N=8192`, `t=65537`, four-prime tuple fails
 the polynomial multiplication bound and remains unadmitted for refresh.
 
+The [complete-circuit feasibility sweep](PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md)
+now checks all named configurations and four-through-eight-prime catalog
+prefixes at both current ring dimensions. A linear-only lower bound on this
+baseline's full certificate exceeds every tested decoding threshold; extending
+the catalog prefix alone does not admit the circuit. The sweep also records
+independent exact-arithmetic and security refusals.
+
 ## Exact section and its scope
 
 For prime `p`, define

@@ -1,0 +1,63 @@
+{
+  "ciphertext_primes": [
+    18014398509404161,
+    18014398509395969,
+    18014398509355009,
+    18014398509309953,
+    18014398509293569,
+    18014398509281281,
+    18014398509211649,
+    18014398509199361,
+    18014398509176833,
+    18014398509150209,
+    18014398509139969,
+    18014398509076481,
+    18014398509053953,
+    18014398508998657,
+    18014398508978177
+  ],
+  "digit_bound": 17,
+  "evaluator_debug_secret": false,
+  "gadget_digits": 5,
+  "galois_keys": 23,
+  "initial_budget_bits": 788,
+  "n": 1024,
+  "native_nine65_refresh_enabled": false,
+  "plaintext_modulus": 65537,
+  "pre_refresh_additions": 1,
+  "pre_squares": 2,
+  "reference_version": "fheanor 0.11.9",
+  "requested_q_bits": 820,
+  "rounds": [
+    {
+      "after_multiply_budget_bits": 99,
+      "checked_coefficients": 1024,
+      "input_budget_bits": 597,
+      "output_budget_bits": 125,
+      "refresh_ms": 9213,
+      "round": 0
+    },
+    {
+      "after_multiply_budget_bits": 100,
+      "checked_coefficients": 1024,
+      "input_budget_bits": 99,
+      "output_budget_bits": 126,
+      "refresh_ms": 3272,
+      "round": 1
+    },
+    {
+      "after_multiply_budget_bits": 100,
+      "checked_coefficients": 1024,
+      "input_budget_bits": 100,
+      "output_budget_bits": 125,
+      "refresh_ms": 4934,
+      "round": 2
+    }
+  ],
+  "schema": "nine65-bfv-bootstrap-reference-v1",
+  "secret_distribution": "uniform_ternary",
+  "security_attestation": null,
+  "sparse_encapsulation_weight": 32,
+  "total_ms": 42108,
+  "transform_levels": 4
+}

@@ -1,0 +1,4 @@
+building bootstrap circuit: N=1024, t=65537, Q near 820 bits, error radius=32
+circuit built in 11522 ms; generating 23 Galois keys
+round 0: refresh and multiplication exact for all 1024 coefficients; refresh 3464 ms; budgets 597 -> 92 -> 67
+Error: "refresh plaintext mismatch in round 1"

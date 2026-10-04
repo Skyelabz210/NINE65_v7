@@ -1,0 +1,74 @@
+{
+  "scope": "execution package validation, not cryptographic implementation acceptance",
+  "checks": [
+    {
+      "command": [
+        "python3",
+        "scripts/nine65_execution_plan.py",
+        "validate",
+        "--self-test",
+        "--check-baseline"
+      ],
+      "exit_code": 0,
+      "stdout": "Baseline unchanged: 64 source hashes checked\nSelf-test: 12 dependency/schema/scope/input cases passed\nPlan valid: 37 cards, acyclic dependencies, upstream inputs and issue coverage checked\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/nine65_execution_plan.py",
+        "ready"
+      ],
+      "exit_code": 0,
+      "stdout": "F00    evidence        Freeze the actual starting tree and existing work\nDependency-ready only; acceptance requires evidence and independent review.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/nine65_execution_plan.py",
+        "ready",
+        "--accepted",
+        "F00"
+      ],
+      "exit_code": 0,
+      "stdout": "F01    implementation  Generate tuple truth and repair stale evidence producers\nF02    evidence        Inventory every test target and ratchet existing failures\nF03    evidence        Recover the v6 mechanism and audit proof statements\nDependency-ready only; acceptance requires evidence and independent review.\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "check": "packet export equals rendered card; existing file overwrite refused",
+      "result": "passed"
+    },
+    {
+      "check": "reject invalid acceptance set",
+      "ids": [
+        "F01"
+      ],
+      "exit_code": 1,
+      "stderr": "ERROR: F01: acceptance set is missing prerequisites ['F00']\n"
+    },
+    {
+      "check": "reject invalid acceptance set",
+      "ids": [
+        "Z99"
+      ],
+      "exit_code": 1,
+      "stderr": "ERROR: unknown accepted IDs: Z99\n"
+    },
+    {
+      "check": "deliverable JSON parse, Python syntax, relative Markdown links, trailing whitespace and credential-pattern check",
+      "files_checked": 47,
+      "result": "passed"
+    }
+  ]
+}

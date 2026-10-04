@@ -1,0 +1,5 @@
+building bootstrap circuit: N=1024, t=65537, Q near 1000 bits, error radius=32
+circuit built in 18850 ms; generating 23 Galois keys
+round 0: refresh and multiplication exact for all 1024 coefficients; refresh 10148 ms; budgets 719 -> 215 -> 190
+round 1: refresh and multiplication exact for all 1024 coefficients; refresh 5781 ms; budgets 190 -> 216 -> 190
+round 2: refresh and multiplication exact for all 1024 coefficients; refresh 4540 ms; budgets 190 -> 216 -> 191

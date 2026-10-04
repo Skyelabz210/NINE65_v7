@@ -1,0 +1,35 @@
+{
+  "schema": "nine65-reference-execution-v1",
+  "command": [
+    "target/release/nine65-bfv-bootstrap-reference",
+    "--log-n",
+    "10",
+    "--rounds",
+    "3"
+  ],
+  "exit_code": 1,
+  "successful_result": false,
+  "result_parse_error": "Expecting value: line 1 column 1 (char 0)",
+  "wall_ns": 21867599474,
+  "max_child_rss_kib_linux": 77584,
+  "compiler": "rustc 1.95.0-nightly (db3e99bba 2026-02-04)\nbinary: rustc\ncommit-hash: db3e99bbab28c6ca778b13222becdea54533d908\ncommit-date: 2026-02-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0-nightly\nLLVM version: 22.1.0",
+  "platform": "Linux-6.6.141-09476-g954adab60416-x86_64-with-glibc2.41",
+  "sha256": {
+    "Cargo.toml": "d12466d48d6a1f58d86e4fa8dc90dc477fff4884c6c0e67eab35c8b789b794b5",
+    "Cargo.lock": "552d7f3c77d5c660f6a39a81a6b746a2aae50ed70afc2cc1c740be77c0f7e858",
+    "rust-toolchain.toml": "665f334692076832889bbceaffc1b9c015031f0f7b5c536ab5a6cf5aa8a240d3",
+    "src/main.rs": "1550945cfd5d34401c3c99fe4f2d81533ac5e9a6fa335bcd4d796d210dfbfaa0",
+    "run_reference.py": "2968f3aca972f97a16ec29827a0feae98c958d4f99c9443a28db30ae0dcf4433",
+    "target/release/nine65-bfv-bootstrap-reference": "5602b91afde4b4fca73e9c8e7b70e5566c06c45fef9e4e349e5f187463840746"
+  },
+  "artifacts": {
+    "result": {
+      "file": "public_bfv_reference_n1024_b32_run1_2026-09-28.json",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "file": "public_bfv_reference_n1024_b32_run1_2026-09-28.stderr.log",
+      "sha256": "d8c8ed056b8357df8168445295caead7719962fd196dcf30d4e72ad4a2b5a513"
+    }
+  }
+}

@@ -17,6 +17,9 @@ The repository has moved beyond the historical “v7 Bootstrap Complete” snaps
 
 > **Evidence state:** named parameter profiles are candidate tuples until independently attested with the exact estimator input and raw output artifact. Per-number provenance, open discrepancies, and the internal engineering assessment are in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 
+For a runnable, correctness-checked demonstration of the current CRAM public
+evaluator, see [the CRAM showcase](docs/CRAM_SHOWCASE.md).
+
 ## Verified Capability
 
 Correctness columns are checked against a decryption oracle. Everything outside

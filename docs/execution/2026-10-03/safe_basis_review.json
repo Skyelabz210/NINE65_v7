@@ -1,0 +1,121 @@
+{
+  "scope": "Safe Basis architecture revision; preserves original evidence.json baseline",
+  "v7_commit": "048f79ac771697801e26ebf77e4ee6df33b48281",
+  "v7_source_sha256": {
+    "crates/exact_transcendentals/src/transduction.rs": "3aa21ecdb1437b0dbecd97feb2f3051bfbcdfa1c1e7628f674ae8fc88deaf030",
+    "crates/exact_transcendentals/src/lifted_transduction.rs": "f3e4fcd5205efcdecf85fff81ae54aa36ee394b9b8685d2cd02bef62d0331199",
+    "crates/exact_transcendentals/src/cram_anchor.rs": "fa084b0d9bcb454d8002e2f78dad146b5493c4fb7750321a428dc5cc465db96a",
+    "crates/exact_transcendentals/src/cram_ct.rs": "2cc224719bd42e4499c3788cfd757404b5f6a1989ea1d61685625fc39a04122f",
+    "crates/exact_transcendentals/src/cram_ops.rs": "e80c1b5e31ffc087eb47be061edc2badeecfb60573b817df82e49bc17dfb7ed7",
+    "crates/exact_transcendentals/src/cram_machine.rs": "a3f07fe6fecf679a7a072d4019bf4f20943cdadf356ab69832282308dce67a81",
+    "crates/exact_transcendentals/src/chimera_page.rs": "f0cd11fdcb6f05eeb8497fee5c5ef3611cfef5a0ac832d73353cb07a5b67f93a",
+    "crates/exact_transcendentals/src/k_elim.rs": "8e34696f94330070e09a50728b77ec8d44ba970c4fd929d5c5f12ffc70a4b755",
+    "crates/exact_transcendentals/src/cram_pde.rs": "e982aa5eda794231af7088a69e80d86b9e445b3eb4132a30b2da1965c42cf9be",
+    "crates/exact_transcendentals/src/dyn_crt.rs": "95f666b0147c3a46355ff14fb9c9797efd82027adba1ac151bb7120f926641d3",
+    "crates/exact_transcendentals/tests/safe_basis_lifted_transduction.rs": "f358dc1964909475c3f6fc6011cacb1eda8cb895ed5ed22581d50b7f276f8a87",
+    "crates/exact_transcendentals/tests/lifted_transduction_module.rs": "038df8460295da8342254fe979bffd805791d909cebef3dd137d9f9c0ee01ae0",
+    "crates/nine65/src/cram_ct_wrap.rs": "a918ff453163a208da33d8aac4465ab8b6851c64711498d79310d035bf7fd16d",
+    "crates/nine65/src/bin/deep_rigorous_audit.rs": "8038aa5c505a67cbd820526006ddb13a34447c300936234df0f477f36963e837",
+    "docs/CRAM_SAFE_BASIS_LIFTED_TRANSDUCTION_EXECUTION.md": "58157fc328309a3c9b1f6ac3a8186720a5c53b3127b2d8d7e5193367262aba9c",
+    "docs/cram-corpus/2026-08-12/division_operator_space.py": "e8aaa1f2ed51865f3d9f968ea10ef199e28b92ecf65010a4fe4ea3bd2cd9d9c0",
+    "docs/cram-corpus/2026-08-12/operator_space_R.py": "bc22119e1ad577829228b340c6461aef3a1ef230a01513cf2c8f02b2b7bedbd4",
+    "docs/cram-corpus/2026-08-12/RECONCILIATION.md": "846ecfb83a6abb82abe3724de52699a23334d9ba5ce4db10bb3dc883628bb4ee",
+    "crates/mana/src/executor.rs": "883f172dd59f991844945d8b48a1f87104398b3236e36bb34e9bfd02f8cc3ccd",
+    "crates/unhal/src/lib.rs": "3bafb89ac0b7ca14b4ecf81a346c9412d440100b14e3d89fd6a799ed3bab5254",
+    "lean4/KElimination/coq/K_Elimination.v": "04f1bd13db31f667f7891512408063304244639ea366cc6091660f424f1833d4",
+    "docs/cram-corpus/2026-08-12/star_lift.py": "151de814305a508f6e115dda1027e0d9163066b97354d5d0cd24d30ebc57e087",
+    "crates/exact_transcendentals/src/arrow_step.rs": "d8d56550952bf46d86d82554bc358a5a6390c40803b482d411ecbc9d90b25e66"
+  },
+  "owner_sources": [
+    "Safe Basis/sister tray clarification",
+    "CRAM monograph followed by explicit withdrawal of its MRS reconstruction account",
+    "December2025 K-Elimination paper",
+    "Round I Formal Proofs T1-T16"
+  ],
+  "external_sources": [
+    {
+      "repository": "https://github.com/Skyelabz210/k-elimination-lean4",
+      "commit": "7cae414c0c33a36774cdf9793a0fa7d279b69634",
+      "local_review_copy": "/tmp/nine65-k-elimination-lean4-review",
+      "files": {
+        "KElimination.lean": "cf665a73a7da16cab4edfed8984596598f72c744ad085be61bd12461390c49b9",
+        "KElimination/Basic.lean": "f9a0bb20051b95a5a981028537fd8fb1553cd425e94e2af73367e110c9066c78",
+        "coq/K_Elimination.v": "04f1bd13db31f667f7891512408063304244639ea366cc6091660f424f1833d4",
+        "lean-toolchain": "d71f508cc546aeb22c1687e8ed95fc7e371795a448134142d5e1a262fab2051e",
+        "lake-manifest.json": "4beccaf721d857691e35e3e33cac79a629b92090201058a4160e4e75e35debbc"
+      },
+      "scope": "selected source inspection, no formal build"
+    },
+    {
+      "repository": "https://github.com/Skyelabz210/NINE65-v5-proofstack",
+      "commit": "6b14d5cfa1efa60d61e24f8383d661c51d2ecbdb",
+      "local_review_copy": "/tmp/nine65-v5-proofstack-review",
+      "files": {
+        "lean4/KElimination/KElimination.lean": "65601b035ff089f4c61c34bd2bff6df39a852a82ef48ec115f09354a07b2936c",
+        "lean4/KElimination/KElimination/ZMod.lean": "93fdf1cafc8076cedf5c41dc0d019c12ae9743fd96d72da899f2b6f5d66372d3",
+        "proofs/coq/KElimination.v": "a17d4f00cee333b4e31f0120da0c7ff584db70aaa486edd0abac06296dd17b60",
+        "crates/nine65/src/arithmetic/k_elimination.rs": "260c0a6d93ed8794f546eead38c519060e6b309ccf14ff14d5ba6f577cef24b4",
+        "crates/nine65/src/arithmetic/exact_divider.rs": "faf862f9cab7255e45c752c8221976d2d829f7f971845228ac763b9d3c284891",
+        "lean4/KElimination/docs/K_Elimination_Technical_Paper.tex": "2dd24e30127a010145ab9eab01a7a20c17ad92fb2e1ab5e906300f9d89346af2"
+      },
+      "scope": "selected source inspection, no formal build"
+    }
+  ],
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -p exact_transcendentals --test safe_basis_lifted_transduction --test lifted_transduction_module -j1",
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0,
+      "ignored": 0,
+      "scope": "current Rust arithmetic/integration tests, not encrypted refresh or new formal builds",
+      "warning": "existing unused LiftEvidenceProvider import; non-root Cargo profiles ignored"
+    },
+    {
+      "command": "rustc --edition=2021 --cfg 'feature=\"std\"' --cap-lints allow docs/execution/2026-10-03/probes/safe_basis_probe.rs -o /tmp/nine65-safe-basis-probe",
+      "exit_code": 0,
+      "scope": "source-bound review probe, compiled with current Rust sources"
+    },
+    {
+      "command": "/tmp/nine65-safe-basis-probe",
+      "exit_code": 0,
+      "stdout": "Reproduced composite inverse defect: Inv(2) mod15 = 2, expected 8\nDIV3 composite unit case passed; nonunit refused\nProduction lifted projection passed 42 oracle comparisons, including shared-factor targets and modulus1\nFull S8 product has no inverse mod11; a different source/anchor split is required for that formula\n",
+      "scope": "42 projection comparisons, composite DIV3 unit/nonunit cases and known inverse defect reproduction; success is not a fix"
+    },
+    {
+      "command": "python3 docs/cram-corpus/2026-08-12/division_operator_space.py",
+      "executed_by": "delegated read-only reviewer div3_operators",
+      "exit_code": 0,
+      "counts": {
+        "DV0": 3000,
+        "U1": 5000,
+        "U2": 2858,
+        "DIV3": 8944
+      },
+      "scope": "19802 Python reference/model checks; clear/oracle inputs, not production encrypted execution"
+    },
+    {
+      "command": "python3 docs/cram-corpus/2026-08-12/star_lift.py",
+      "executed_by": "delegated read-only reviewer div3_operators",
+      "exit_code": 0,
+      "result": "SL1-SL8 reported VERIFIED; includes 20000 random inputs and star-number cases through n=500",
+      "scope": "Python reference model; capacity uses known X and winding residues combined by CRT; not live encrypted/K-free provider acceptance"
+    }
+  ],
+  "not_run": [
+    "complete formal Lean/Coq builds",
+    "full Rust workspace suite",
+    "native public bootstrap",
+    "Round I historical witness programs not located",
+    "physical interruption experiments"
+  ],
+  "known_unfixed_defects": [
+    {
+      "source": "crates/exact_transcendentals/src/cram_ops.rs",
+      "case": "Schema Inv(2) mod15 returns2 instead of8",
+      "task": "S02"
+    }
+  ],
+  "task_count": 43,
+  "package_validation": "validation_safe_basis.json"
+}

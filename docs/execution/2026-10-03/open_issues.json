@@ -1,0 +1,396 @@
+[
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvyQ",
+        "name": "testing",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 137,
+    "title": "Triage the 15 test failures --no-fail-fast newly surfaced (beyond the known 5 in #117)"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 135,
+    "title": "Deprecated BFVEvaluator::mul() silently returns wrong plaintexts (untested for years; found via Python bindings work)"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvyQ",
+        "name": "testing",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 130,
+    "title": "cargo test --workspace's fail-fast silently skips ~28 nine65 integration test files whenever nine65 --lib has any failure"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+        "name": "critical",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+        "name": "security",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 117,
+    "title": "[P0] Public refresh corrupts plaintext on configs admitted by supports_public_refresh (secure_128_deep, secure_192)"
+  },
+  {
+    "labels": [],
+    "number": 95,
+    "title": "[P0] Replace invalid component-wise BFV bootstrap Phase 1 with a mathematically valid public decryption/encoding transition"
+  },
+  {
+    "labels": [],
+    "number": 94,
+    "title": "[P1] Harden fhe-service HTTP framing: reject ambiguous lengths and preserve/disable keep-alive pipelining"
+  },
+  {
+    "labels": [],
+    "number": 92,
+    "title": "[META] NINE65 v7 completion-to-100% tracker: correctness, security, CI, performance, claims"
+  },
+  {
+    "labels": [],
+    "number": 89,
+    "title": "[P1] Enforce or ratchet the production panic/unwrap/expect quality gate"
+  },
+  {
+    "labels": [],
+    "number": 88,
+    "title": "[P1] Remove unchecked security labeling from FHEConfig::custom and for_depth"
+  },
+  {
+    "labels": [],
+    "number": 86,
+    "title": "[P1] Harden validated deserialization: reject trailing bytes and context-invalid DualRNS state"
+  },
+  {
+    "labels": [],
+    "number": 85,
+    "title": "[P1] Make fallible constructors truly fallible: remove production-security panics from try_* APIs"
+  },
+  {
+    "labels": [],
+    "number": 84,
+    "title": "[P1] Fix negative-branch DualRNS noise diagnostic ideal-point calculation"
+  },
+  {
+    "labels": [],
+    "number": 83,
+    "title": "[P1] Make bootstrap security validation exact and non-tautological"
+  },
+  {
+    "labels": [],
+    "number": 82,
+    "title": "[P0] Fix bootstrap circular public-key mask sampling to be uniform over full Q_boot"
+  },
+  {
+    "labels": [],
+    "number": 79,
+    "title": "[P0] Restore active GitHub Actions execution and required release checks"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9qQ",
+        "name": "documentation",
+        "description": "Improvements or additions to documentation",
+        "color": "0075ca"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+        "name": "security",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 76,
+    "title": "[H2] Resolve secure_256 naming vs MATZOV binding (240 vs 256)"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+        "name": "critical",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+        "name": "security",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 75,
+    "title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+        "name": "security",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 74,
+    "title": "[H5] Restore allow_insecure gate without breaking workspace tests"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9uw",
+        "name": "enhancement",
+        "description": "New feature or request",
+        "color": "a2eeef"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 73,
+    "title": "[H1] Increase public-mode depth beyond 2-4"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+        "name": "critical",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+        "name": "security",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 72,
+    "title": "[G3] Close open constant-time findings F-2 and F-3"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+        "name": "critical",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+        "name": "security",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 71,
+    "title": "[G4] Engage external security audit (Trail of Bits / NCC Group / Kudelski)"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvwQ",
+        "name": "hygiene",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dv1A",
+        "name": "low-priority",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 69,
+    "title": "[L1] Fix 4 compiler warnings (unused variables, dead code)"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvyQ",
+        "name": "testing",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+        "name": "critical",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 64,
+    "title": "[G2] Make full test suite reproducible in constrained environments"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9qQ",
+        "name": "documentation",
+        "description": "Improvements or additions to documentation",
+        "color": "0075ca"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvrg",
+        "name": "medium-priority",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvzg",
+        "name": "verification",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 67,
+    "title": "[M1] Remove or clearly mark deprecated Coq proofs as historical"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvrg",
+        "name": "medium-priority",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+        "name": "gap-remediation",
+        "description": "",
+        "color": "ededed"
+      },
+      {
+        "id": "LA_kwDORUtwJs8AAAACy9Dvvw",
+        "name": "bindings",
+        "description": "",
+        "color": "ededed"
+      }
+    ],
+    "number": 63,
+    "title": "[M4] Stabilize one binding to published package (recommend Python)"
+  },
+  {
+    "labels": [
+      {
+        "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+        "name": "bug",
+        "description": "Something isn't working",
+        "color": "d73a4a"
+      }
+    ],
+    "number": 29,
+    "title": "Restore recumbent CRAM bootstrap and exact RNS context metadata after PR #26"
+  },
+  {
+    "labels": [],
+    "number": 18,
+    "title": "Security audit - constant-time verification and side-channel hardening"
+  },
+  {
+    "labels": [],
+    "number": 17,
+    "title": "Enable Python bindings via PyO3 (nine65-python crate)"
+  },
+  {
+    "labels": [],
+    "number": 16,
+    "title": "Bootstrap path stress testing - edge cases and error recovery"
+  }
+]

@@ -1,0 +1,818 @@
+{
+  "schema": "nine65-canonical-lift-feasibility-v1",
+  "base_commit": "048f79ac771697801e26ebf77e4ee6df33b48281",
+  "probe_source_sha256": {
+    "Cargo.lock": "892c3f6cadf3abcd198847ebc1744c67ef68fb6202053ca1943f170d9736bd54",
+    "crates/nine65/Cargo.toml": "f73e93bbb49798aa50bd7174ce55a7e152cea957aac03fb0b0118cff5aad7e69",
+    "crates/nine65/examples/canonical_lift_feasibility.rs": "5870a4b8c8eaa98ab50ee80df6129b77c62536ff34ed53ea3a8805d8dc88d5bf",
+    "crates/nine65/src/keys/bootstrap.rs": "32ab87eb27a698f39729264b7ac8f0e2141915b87b170f816c012d3647fa4272",
+    "crates/nine65/src/ops/exact_mul.rs": "c8c5e6177d5d90376ddc2989bebe09db3de848eef3cb4fe8b1e46c32496da551",
+    "crates/nine65/src/ops/expanded_bootstrap.rs": "6265fb4c5bf3fbb8721e0d4ffc16a68e75c40afb72ff3203d90a8feb964866a8",
+    "crates/nine65/src/ops/prime_power_digit_lift.rs": "b6ea97b88d20053836e5791dcf6e1b1a0bb7b656435cb903d77628bf6b6b6d84",
+    "crates/nine65/src/ops/prime_power_phase.rs": "a38d57aece01abaea6997a4d69460bdfa8b985263d130d0652385f49cfb940aa",
+    "crates/nine65/src/params/secure_configs.rs": "78171555b7edc061015291bd7e9e7ffc5fc46cd8072982e2bf101bd2368e3fec"
+  },
+  "oracle_sha256": "e3eda5fd837e4db7fe5f47a50a7e2e00765fab5c0d66b553d50b91da149e0bed",
+  "scope": "Lower bounds on the existing polynomial noise certificate, not necessary actual noise or a general bootstrap impossibility theorem.",
+  "checks": {
+    "records": 14,
+    "production_noise_results_cross_checked": 8,
+    "exact_quadratic_nodes_checked": 23,
+    "all_certificate_lower_bounds_refuse": true
+  },
+  "records": [
+    {
+      "name": "secure_128",
+      "n": 8192,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits": 119,
+      "phase_error_bits": 60,
+      "projection_error_bits": 73,
+      "half_delta_bits": 86,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 106496,
+      "ciphertext_multiplication_count": 536870912,
+      "key_main_bytes_if_plan_admitted": 88080384,
+      "optimistic_certificate_error_bits": 1056,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 2,
+        "depth": 1,
+        "error_bits": 131,
+        "half_delta_bits": 86,
+        "error_bound": "2042504373666576908135222507628071866369"
+      },
+      "exact_quadratic_nodes_checked": 1,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 131 error bits; high encoding has 86 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 188,
+        "aux_lanes": 6,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 119,
+        "required_aux_bits": 164
+      },
+      "security_screen": {
+        "binding_bits": 176,
+        "core_svp_bits": 196,
+        "matzov_bits": 176,
+        "meets_claim_under_both": true,
+        "q_bits": 119
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "secure_128_deep",
+      "n": 8192,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits": 119,
+      "phase_error_bits": 60,
+      "projection_error_bits": 73,
+      "half_delta_bits": 86,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 106496,
+      "ciphertext_multiplication_count": 536870912,
+      "key_main_bytes_if_plan_admitted": 88080384,
+      "optimistic_certificate_error_bits": 1056,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 2,
+        "depth": 1,
+        "error_bits": 131,
+        "half_delta_bits": 86,
+        "error_bound": "2042504373666576908135222507628071866369"
+      },
+      "exact_quadratic_nodes_checked": 1,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 131 error bits; high encoding has 86 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 188,
+        "aux_lanes": 6,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 119,
+        "required_aux_bits": 164
+      },
+      "security_screen": {
+        "binding_bits": 176,
+        "core_svp_bits": 196,
+        "matzov_bits": 176,
+        "meets_claim_under_both": true,
+        "q_bits": 119
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "secure_192",
+      "n": 16384,
+      "base": 65537,
+      "eta": 4,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "q_bits": 146,
+      "phase_error_bits": 63,
+      "projection_error_bits": 77,
+      "half_delta_bits": 113,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 229376,
+      "ciphertext_multiplication_count": 1073741824,
+      "key_main_bytes_if_plan_admitted": 294912000,
+      "optimistic_certificate_error_bits": 1095,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 2,
+        "depth": 1,
+        "error_bits": 137,
+        "half_delta_bits": 113,
+        "error_bound": "87131339717423151118868373054200208269313"
+      },
+      "exact_quadratic_nodes_checked": 1,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 137 error bits; high encoding has 113 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 220,
+        "aux_lanes": 7,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 146,
+        "required_aux_bits": 192
+      },
+      "security_screen": {
+        "binding_bits": 288,
+        "core_svp_bits": 320,
+        "matzov_bits": 288,
+        "meets_claim_under_both": true,
+        "q_bits": 146
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "secure_256",
+      "n": 16384,
+      "base": 65537,
+      "eta": 5,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        595591169
+      ],
+      "q_bits": 175,
+      "phase_error_bits": 63,
+      "projection_error_bits": 77,
+      "half_delta_bits": 142,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 229376,
+      "ciphertext_multiplication_count": 1073741824,
+      "key_main_bytes_if_plan_admitted": 424673280,
+      "optimistic_certificate_error_bits": 1095,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 4,
+        "depth": 2,
+        "error_bits": 197,
+        "half_delta_bits": 142,
+        "error_bound": "125588867374400148593925088478587774594618956174095559696385"
+      },
+      "exact_quadratic_nodes_checked": 2,
+      "production_lift": {
+        "refusal": "SecurityLevelNotMet { bits: 240, required: 256 }",
+        "stage": "expanded_phase"
+      },
+      "production_noise_result_cross_checked": false,
+      "exact_multiply": {
+        "aux_bits": 251,
+        "aux_lanes": 8,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 175,
+        "required_aux_bits": 221
+      },
+      "security_screen": {
+        "binding_bits": 240,
+        "core_svp_bits": 267,
+        "matzov_bits": 240,
+        "meets_claim_under_both": false,
+        "q_bits": 175
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes4",
+      "n": 8192,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits": 119,
+      "phase_error_bits": 60,
+      "projection_error_bits": 73,
+      "half_delta_bits": 86,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 106496,
+      "ciphertext_multiplication_count": 536870912,
+      "key_main_bytes_if_plan_admitted": 88080384,
+      "optimistic_certificate_error_bits": 1056,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 2,
+        "depth": 1,
+        "error_bits": 131,
+        "half_delta_bits": 86,
+        "error_bound": "2042504373666576908135222507628071866369"
+      },
+      "exact_quadratic_nodes_checked": 1,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 131 error bits; high encoding has 86 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 188,
+        "aux_lanes": 6,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 119,
+        "required_aux_bits": 164
+      },
+      "security_screen": {
+        "binding_bits": 176,
+        "core_svp_bits": 196,
+        "matzov_bits": 176,
+        "meets_claim_under_both": true,
+        "q_bits": 119
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes5",
+      "n": 8192,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "q_bits": 146,
+      "phase_error_bits": 60,
+      "projection_error_bits": 73,
+      "half_delta_bits": 113,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 106496,
+      "ciphertext_multiplication_count": 536870912,
+      "key_main_bytes_if_plan_admitted": 137625600,
+      "optimistic_certificate_error_bits": 1056,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 2,
+        "depth": 1,
+        "error_bits": 131,
+        "half_delta_bits": 113,
+        "error_bound": "2042469688645631428039401063486574800897"
+      },
+      "exact_quadratic_nodes_checked": 1,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 131 error bits; high encoding has 113 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 220,
+        "aux_lanes": 7,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 146,
+        "required_aux_bits": 191
+      },
+      "security_screen": {
+        "binding_bits": 144,
+        "core_svp_bits": 160,
+        "matzov_bits": 144,
+        "meets_claim_under_both": true,
+        "q_bits": 146
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes6",
+      "n": 8192,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329
+      ],
+      "q_bits": 177,
+      "phase_error_bits": 60,
+      "projection_error_bits": 73,
+      "half_delta_bits": 144,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 106496,
+      "ciphertext_multiplication_count": 536870912,
+      "key_main_bytes_if_plan_admitted": 209190912,
+      "optimistic_certificate_error_bits": 1056,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 4,
+        "depth": 2,
+        "error_bits": 189,
+        "half_delta_bits": 144,
+        "error_bound": "588863460533969909927862463339127448208818330047230980097"
+      },
+      "exact_quadratic_nodes_checked": 2,
+      "production_lift": {
+        "refusal": "SecurityLevelNotMet { bits: 118, required: 128 }",
+        "stage": "expanded_phase"
+      },
+      "production_noise_result_cross_checked": false,
+      "exact_multiply": {
+        "refusal": "AuxiliaryBasisUnavailable { required_bits: 222, pool_bits: 220, pool_lanes: 7 }"
+      },
+      "security_screen": {
+        "binding_bits": 118,
+        "core_svp_bits": 132,
+        "matzov_bits": 118,
+        "meets_claim_under_both": false,
+        "q_bits": 177
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes7",
+      "n": 8192,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169
+      ],
+      "q_bits": 206,
+      "phase_error_bits": 60,
+      "projection_error_bits": 73,
+      "half_delta_bits": 173,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 106496,
+      "ciphertext_multiplication_count": 536870912,
+      "key_main_bytes_if_plan_admitted": 282591232,
+      "optimistic_certificate_error_bits": 1056,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 4,
+        "depth": 2,
+        "error_bits": 189,
+        "half_delta_bits": 173,
+        "error_bound": "588866049106299621798633017800108344190122849021235843073"
+      },
+      "exact_quadratic_nodes_checked": 2,
+      "production_lift": {
+        "refusal": "SecurityLevelNotMet { bits: 102, required: 128 }",
+        "stage": "expanded_phase"
+      },
+      "production_noise_result_cross_checked": false,
+      "exact_multiply": {
+        "refusal": "AuxiliaryBasisUnavailable { required_bits: 251, pool_bits: 220, pool_lanes: 7 }"
+      },
+      "security_screen": {
+        "binding_bits": 102,
+        "core_svp_bits": 113,
+        "matzov_bits": 102,
+        "meets_claim_under_both": false,
+        "q_bits": 206
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes8",
+      "n": 8192,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169,
+        645922817
+      ],
+      "q_bits": 235,
+      "phase_error_bits": 60,
+      "projection_error_bits": 73,
+      "half_delta_bits": 202,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 106496,
+      "ciphertext_multiplication_count": 536870912,
+      "key_main_bytes_if_plan_admitted": 367001600,
+      "optimistic_certificate_error_bits": 1056,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 8,
+        "depth": 3,
+        "error_bits": 247,
+        "half_delta_bits": 202,
+        "error_bound": "169774802682054218942814154352901273304127903731793196333347446394705211393"
+      },
+      "exact_quadratic_nodes_checked": 3,
+      "production_lift": {
+        "refusal": "SecurityLevelNotMet { bits: 89, required: 128 }",
+        "stage": "expanded_phase"
+      },
+      "production_noise_result_cross_checked": false,
+      "exact_multiply": {
+        "refusal": "AuxiliaryBasisUnavailable { required_bits: 280, pool_bits: 220, pool_lanes: 7 }"
+      },
+      "security_screen": {
+        "binding_bits": 89,
+        "core_svp_bits": 99,
+        "matzov_bits": 89,
+        "meets_claim_under_both": false,
+        "q_bits": 235
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes4",
+      "n": 16384,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits": 119,
+      "phase_error_bits": 62,
+      "projection_error_bits": 76,
+      "half_delta_bits": 86,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 229376,
+      "ciphertext_multiplication_count": 1073741824,
+      "key_main_bytes_if_plan_admitted": 188743680,
+      "optimistic_certificate_error_bits": 1094,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 2,
+        "depth": 1,
+        "error_bits": 136,
+        "half_delta_bits": 86,
+        "error_bound": "65349170383103786373469561387059532898305"
+      },
+      "exact_quadratic_nodes_checked": 1,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 136 error bits; high encoding has 86 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 188,
+        "aux_lanes": 6,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 119,
+        "required_aux_bits": 165
+      },
+      "security_screen": {
+        "binding_bits": 353,
+        "core_svp_bits": 393,
+        "matzov_bits": 353,
+        "meets_claim_under_both": true,
+        "q_bits": 119
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes5",
+      "n": 16384,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "q_bits": 146,
+      "phase_error_bits": 62,
+      "projection_error_bits": 76,
+      "half_delta_bits": 113,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 229376,
+      "ciphertext_multiplication_count": 1073741824,
+      "key_main_bytes_if_plan_admitted": 294912000,
+      "optimistic_certificate_error_bits": 1094,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 2,
+        "depth": 1,
+        "error_bits": 136,
+        "half_delta_bits": 113,
+        "error_bound": "65348615541295572074857359149291919466497"
+      },
+      "exact_quadratic_nodes_checked": 1,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 136 error bits; high encoding has 113 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 220,
+        "aux_lanes": 7,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        "q_bits": 146,
+        "required_aux_bits": 192
+      },
+      "security_screen": {
+        "binding_bits": 288,
+        "core_svp_bits": 320,
+        "matzov_bits": 288,
+        "meets_claim_under_both": true,
+        "q_bits": 146
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes6",
+      "n": 16384,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329
+      ],
+      "q_bits": 177,
+      "phase_error_bits": 62,
+      "projection_error_bits": 76,
+      "half_delta_bits": 144,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 229376,
+      "ciphertext_multiplication_count": 1073741824,
+      "key_main_bytes_if_plan_admitted": 448266240,
+      "optimistic_certificate_error_bits": 1094,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 4,
+        "depth": 2,
+        "error_bits": 196,
+        "half_delta_bits": 144,
+        "error_bound": "75353317708398993183037241278596592023102682049111439728641"
+      },
+      "exact_quadratic_nodes_checked": 2,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical low-digit lift polynomial multiply needs 196 error bits; high encoding has 144 half-Delta bits\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": true,
+      "exact_multiply": {
+        "aux_bits": 251,
+        "aux_lanes": 8,
+        "base_bits": 10,
+        "digits_per_lane": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          4
+        ],
+        "q_bits": 177,
+        "required_aux_bits": 223
+      },
+      "security_screen": {
+        "binding_bits": 237,
+        "core_svp_bits": 264,
+        "matzov_bits": 237,
+        "meets_claim_under_both": true,
+        "q_bits": 177
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes7",
+      "n": 16384,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169
+      ],
+      "q_bits": 206,
+      "phase_error_bits": 62,
+      "projection_error_bits": 76,
+      "half_delta_bits": 173,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 229376,
+      "ciphertext_multiplication_count": 1073741824,
+      "key_main_bytes_if_plan_admitted": 605552640,
+      "optimistic_certificate_error_bits": 1094,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 4,
+        "depth": 2,
+        "error_bits": 196,
+        "half_delta_bits": 173,
+        "error_bound": "75353483321429843481631689478044786093028202315154302738433"
+      },
+      "exact_quadratic_nodes_checked": 2,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical-lift multiply capacity: ScaleRound(BaseExt(FallbackAccumulatorOverCapacity { lanes: 9, required_bits: 287 }))\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": false,
+      "exact_multiply": {
+        "refusal": "ScaleRound(BaseExt(FallbackAccumulatorOverCapacity { lanes: 9, required_bits: 287 }))"
+      },
+      "security_screen": {
+        "binding_bits": 204,
+        "core_svp_bits": 227,
+        "matzov_bits": 204,
+        "meets_claim_under_both": true,
+        "q_bits": 206
+      },
+      "complete_refresh_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes8",
+      "n": 16384,
+      "base": 65537,
+      "eta": 3,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169,
+        645922817
+      ],
+      "q_bits": 235,
+      "phase_error_bits": 62,
+      "projection_error_bits": 76,
+      "half_delta_bits": 202,
+      "polynomial_degree": 65537,
+      "multiplicative_depth": 17,
+      "automorphism_count": 229376,
+      "ciphertext_multiplication_count": 1073741824,
+      "key_main_bytes_if_plan_admitted": 786432000,
+      "optimistic_certificate_error_bits": 1094,
+      "certificate_lower_bound_already_exceeds_half_delta": true,
+      "first_noise_refusal": {
+        "stage": "polynomial multiply",
+        "product_factors": 8,
+        "depth": 3,
+        "error_bits": 256,
+        "half_delta_bits": 202,
+        "error_bound": "86889677689306158457492433354202512731226999280498950270060464447358910849025"
+      },
+      "exact_quadratic_nodes_checked": 3,
+      "production_lift": {
+        "refusal": "BootstrapFailed { reason: \"canonical-lift multiply capacity: ScaleRound(BaseExt(FallbackAccumulatorOverCapacity { lanes: 9, required_bits: 287 }))\" }",
+        "stage": "canonical_lift"
+      },
+      "production_noise_result_cross_checked": false,
+      "exact_multiply": {
+        "refusal": "ScaleRound(BaseExt(FallbackAccumulatorOverCapacity { lanes: 9, required_bits: 287 }))"
+      },
+      "security_screen": {
+        "binding_bits": 179,
+        "core_svp_bits": 199,
+        "matzov_bits": 179,
+        "meets_claim_under_both": true,
+        "q_bits": 235
+      },
+      "complete_refresh_admitted": false
+    }
+  ],
+  "probe_sha256": "6d3af14bc10be8dffbbd34d97a8eee4a64059e7aa1d49b203530973383963981"
+}

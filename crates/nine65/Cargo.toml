@@ -341,3 +341,7 @@ required-features = ["allow_insecure"]
 [[example]]
 name = "test_mod_switch"
 required-features = ["allow_insecure"]
+
+[[example]]
+name = "canonical_lift_feasibility"
+required-features = ["serde"]

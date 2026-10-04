@@ -1,0 +1,786 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-10-03T17:58:00.483818+00:00",
+  "source_commit": "048f79ac771697801e26ebf77e4ee6df33b48281",
+  "snapshots": {
+    "planning": {
+      "evidence": "docs/execution/2026-10-03/evidence.json",
+      "evidence_sha256": "d0eb779a2db53c99f3a15fa79203c12d18e7e9e38d7f42cc67ecf695a4abb875",
+      "initial_worktree": [
+        " M README.md",
+        " M crates/nine65/Cargo.toml",
+        " M crates/nine65/src/cram_ct_wrap.rs",
+        " M docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md",
+        " M docs/PRIME_POWER_CANONICAL_LIFT_BASELINE.md",
+        "?? artifacts/bootstrap/",
+        "?? crates/nine65/examples/canonical_lift_feasibility.rs",
+        "?? crates/nine65/examples/cram_public_showcase.rs",
+        "?? docs/CRAM_SHOWCASE.md",
+        "?? docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md",
+        "?? docs/PUBLIC_FHE_SOLUTION_2026-09-28.md",
+        "?? research/",
+        "?? scripts/bounded_digit_polynomial.py",
+        "?? scripts/canonical_lift_feasibility.py",
+        "?? test_bootstrap_simple.rs",
+        "?? test_phase1_fix.rs"
+      ],
+      "source_sha256": {
+        ".github/workflows/ci.yml": "a8fd41e06c5b1727349c5fd8c0b69341c878f1a9f8e4ad4b92f2177fe8d70bfb",
+        "Cargo.lock": "892c3f6cadf3abcd198847ebc1744c67ef68fb6202053ca1943f170d9736bd54",
+        "README.md": "ce96979181c78b26721b92a7bce444f26bf9480a89f9e0dc3736b05d682fbd2d",
+        "crates/exact_transcendentals/src/lifted_transduction.rs": "f3e4fcd5205efcdecf85fff81ae54aa36ee394b9b8685d2cd02bef62d0331199",
+        "crates/exact_transcendentals/src/transduction.rs": "3aa21ecdb1437b0dbecd97feb2f3051bfbcdfa1c1e7628f674ae8fc88deaf030",
+        "crates/fhe-service/src/handlers.rs": "6c65787cc4ecaa412405bfda145c2ebebbaa2d185ad65d4c1519a9bb07ad8c2c",
+        "crates/fhe-service/src/http.rs": "36d28d4ae75d73eea8a0d94aa4d7a742170fa84ff83589976dfbfc5aecfa3a55",
+        "crates/fhe-service/src/main.rs": "4752f65c79c873d3dbe986c08a219f86ec175b496f49eed24d0168239069ae90",
+        "crates/fhe-service/src/session.rs": "fcd287dd91d8ba1fb768b7f2dc3553d73217f0a6e40341ced9a74979ecd6cc42",
+        "crates/fhe-service/src/wire.rs": "3cdd47d58268359cd89240dd9113b9175243616932cc972b22840b1a633cc008",
+        "crates/mana/src/gso.rs": "3f075e9d488d63b65ae25dd126c8ede06245ba390a53cbe0b5ebf21c855641db",
+        "crates/nine65-python/Cargo.toml": "a46c53cf2cc70750dbd57f9065f5e6958ede1a42130e2baadc272dc08714cb4f",
+        "crates/nine65-python/src/lib.rs": "3ea27b8e085cf6f98be7807e366adbc1a057af06a31b8372396ce516b1a91751",
+        "crates/nine65/Cargo.toml": "f73e93bbb49798aa50bd7174ce55a7e152cea957aac03fb0b0118cff5aad7e69",
+        "crates/nine65/examples/cram_public_showcase.rs": "00340ce08a6579b24fabb4279d8358f25454646d008b95bb81853e65d14678fd",
+        "crates/nine65/src/arithmetic/exact_scale_round.rs": "844fa9d96b59e124668d57ce284eca4aea5c53493aac5bb66871b5883d0ab92f",
+        "crates/nine65/src/arithmetic/k_elimination.rs": "2d4832fa2645ee80b7fd31ffa950dd3db37456e34de05cc87f977000d5cf71d7",
+        "crates/nine65/src/arithmetic/main_only_base_ext.rs": "c3903d49d1c0561ce71dce3f701416d4fcd689cfc94b09aad0b149891922b2f3",
+        "crates/nine65/src/arithmetic/ntt_fft.rs": "77824bd0a84d6b9f222f0acc76961fa4842707e54e083e3aac886f61108a1f9e",
+        "crates/nine65/src/arithmetic/rns.rs": "b139ef80391728e4521a1a19040ad285fca536c75794a7b02b0e3a6006ca5159",
+        "crates/nine65/src/bootstrap/clockwork.rs": "fbbf02f6cb7cb83fc59c7fb724266892cfb9f7e0b3ffb4e374b66a82832f72d5",
+        "crates/nine65/src/bootstrap/mask.rs": "da374d1de07eba7e3977910266bd3db93b64a91c8e89e9f24116f3e383bf38ff",
+        "crates/nine65/src/bootstrap/outer.rs": "63b8fde0ff73047245d9c87407f2fafa92428b4da3f5f93133e0507d72e060d2",
+        "crates/nine65/src/bootstrap/three_lock.rs": "a636bf33122eb0df1fa22cb81d2dd905c5b85e0db999f9fa546eccd7c99233d8",
+        "crates/nine65/src/cram_ct_wrap.rs": "a918ff453163a208da33d8aac4465ab8b6851c64711498d79310d035bf7fd16d",
+        "crates/nine65/src/entropy/crt_shadow.rs": "fa9160b59ad8e50b7ce04b8a08125c9b4c13b88dbe27975bc550667a9f9f81d4",
+        "crates/nine65/src/entropy/secure.rs": "9d8594da22e2df906eef969772cc1919879f2a1058a30d6219e145a6634eeaee",
+        "crates/nine65/src/entropy/shadow.rs": "c324826592564fb0edeff9f2a3a1ae060753330a137c9404db04a459249e967a",
+        "crates/nine65/src/keys/bootstrap.rs": "32ab87eb27a698f39729264b7ac8f0e2141915b87b170f816c012d3647fa4272",
+        "crates/nine65/src/keys/expanded_bootstrap.rs": "5520f2b6c63969c65ced02bf4b9e65df252eb0d4c40a221fd5f10025e49e3c07",
+        "crates/nine65/src/noise/budget.rs": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+        "crates/nine65/src/ops/auto_bootstrap.rs": "361ec37431b57763c3f4688fdd757ad250677617040b43788495b82f0648108b",
+        "crates/nine65/src/ops/bootstrap.rs": "f0105dc1bc1637f6e699a8bd1a43ba48f80bce645a7feb31ab558dad61dd3c56",
+        "crates/nine65/src/ops/cram_public.rs": "346a7f3a73d17038a0a063b712cf17332ce0f90646af5aba5e4e3b945137f558",
+        "crates/nine65/src/ops/encrypt.rs": "342d0a160fbfe7aa65017a31c692ff9a6e0825f759f443cd96a54b91b7df4fd0",
+        "crates/nine65/src/ops/exact_mul.rs": "c8c5e6177d5d90376ddc2989bebe09db3de848eef3cb4fe8b1e46c32496da551",
+        "crates/nine65/src/ops/exact_mul_tests.rs": "76cfd81d73401f025ed32be76739dcec7bedf65e3f7c9f13d04dd4f58f870649",
+        "crates/nine65/src/ops/expanded_phase1.rs": "75f2d3f330da54116698ca81a9a50bf6ce6ba46dc780da7863e3fca5202b4fb3",
+        "crates/nine65/src/ops/gso_fhe.rs": "86d42def74f8da7ffc74de2af61c48245829eee215c29c3e4db30c9a2f046f05",
+        "crates/nine65/src/ops/prime_power_digit_lift.rs": "b6ea97b88d20053836e5791dcf6e1b1a0bb7b656435cb903d77628bf6b6b6d84",
+        "crates/nine65/src/ops/prime_power_phase.rs": "a38d57aece01abaea6997a4d69460bdfa8b985263d130d0652385f49cfb940aa",
+        "crates/nine65/src/ops/rns_fhe.rs": "8f9022f1b2a41781be4e380809745f6017c69abe8f463da71c6a75005ab568f4",
+        "crates/nine65/src/params/secure_configs.rs": "78171555b7edc061015291bd7e9e7ffc5fc46cd8072982e2bf101bd2368e3fec",
+        "crates/nine65/tests/op_timings.rs": "7b90006a52c12e9b5aaaf243f12cf2b81d813e2fe9d2f244f8f522b959513b3c",
+        "docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md": "56d45c0484973cb62f3aacae5e8e0d989c49a876cab2764cc0241c5d032642f0",
+        "docs/CLAIM_EVIDENCE_LEDGER.md": "4f2014ba7033f5c8664fb2e4b9a154b9fa5c2d68be3027e3ba32896e1e64b01b",
+        "docs/CLAIM_REGISTRY.csv": "94767dcead29abcb172fa09305c9dd5bccd14519f5d6c975b88aaa5e23fe31fb",
+        "docs/CT_NTT_CACHE_ROADMAP.md": "2cd2a8af2e4e91ed35d8b15a1b3e2875a96bbb12e53710dac960dde424e44268",
+        "docs/ENTROPY_MODEL.md": "cdb5527803d38dd465b344984661828ddee5e16ad1f20e9a9c0342d0593ca9f6",
+        "docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md": "bc61c7ed2a3d02b96a24fa504dfd04485faf288cc90cba4174eab1b25d791c12",
+        "docs/PUBLIC_FHE_SOLUTION_2026-09-28.md": "814e135832d69d5ac4af61fdacda9ae323638d26ceb7d1e5dcf6a62689d35bef",
+        "lean4/KElimination/KElimination/ShadowEntropy.lean": "ebdd8bec2f8e81495082aac074f07aa380181ce860a1c9c99b9328c61af5bd12",
+        "lean4/KElimination/KElimination/ShadowNTTButterfly.lean": "3f82fb10e6cd1f8742b106a9b1f2096237c352f58d60792ad39d2680fa129c0e",
+        "lean4/KElimination/lakefile.lean": "b4baae719edceea2f370df45e69fb5bcac830861bd7020a5a5f7b1e281682c7e",
+        "research/bfv-bootstrap-reference/src/main.rs": "1550945cfd5d34401c3c99fe4f2d81533ac5e9a6fa335bcd4d796d210dfbfaa0",
+        "rust-toolchain.toml": "a93527593d1f1e9a134e588cadec40ac33c2b08194b7342c9d24cf05b128a0d5",
+        "scripts/bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137",
+        "scripts/canonical_lift_feasibility.py": "e3eda5fd837e4db7fe5f47a50a7e2e00765fab5c0d66b553d50b91da149e0bed",
+        "scripts/check_wr1_exact_route_denylist.py": "e932267cd64b61c89d0e96d9c634cb787516ee3fc162a4e2850ff682d2c6a4e1",
+        "scripts/cram_ct_gates.sh": "a3ec0a01f721c56aa738ccdc7af8ab28475439548100aed651bfda2e91925142",
+        "scripts/generate_depth_correctness_matrix.py": "f0085fec057bba60ed6ff3a834d4a7882b62fd087887412038f80d7311227868",
+        "scripts/run_tests_fast.sh": "d8e198988bf8ca73c19bccb967d127c596f441a33166c8e9755264dd6c2fa417",
+        "scripts/run_tests_medium.sh": "22ba4ac0c2c1f631b467bcd67e7e029df6e48cfe94953003e9ccd1efff016554",
+        "scripts/verify_wr1_transient_exact.py": "93371c47401f7229a19bf67c41236b3ddec4f22abf64f8c2fd4e10bbfdaad45c"
+      }
+    },
+    "before_s02_edit": {
+      "source_commit": "048f79ac771697801e26ebf77e4ee6df33b48281",
+      "source_files": {
+        "crates/exact_transcendentals/src/cram_ops.rs": "e80c1b5e31ffc087eb47be061edc2badeecfb60573b817df82e49bc17dfb7ed7",
+        "crates/exact_transcendentals/src/cram_machine.rs": "a3f07fe6fecf679a7a072d4019bf4f20943cdadf356ab69832282308dce67a81",
+        "crates/exact_transcendentals/src/k_elim.rs": "8e34696f94330070e09a50728b77ec8d44ba970c4fd929d5c5f12ffc70a4b755",
+        "docs/execution/2026-10-03/probes/safe_basis_probe.rs": "81c9556eb1616fb17198ccaa133240ec134fdc201f2e6d0e0b706e35d73b4f3c",
+        "docs/execution/2026-10-03/tasks.json": "332f07c295a9cdd172e1dbbef41a5f2598308f1729945c16c74d1f150ec6f8c0"
+      },
+      "working_tree_status": " M README.md\n M crates/nine65/Cargo.toml\n M crates/nine65/src/cram_ct_wrap.rs\n M docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md\n M docs/PRIME_POWER_CANONICAL_LIFT_BASELINE.md\n?? artifacts/bootstrap/\n?? crates/nine65/examples/canonical_lift_feasibility.rs\n?? crates/nine65/examples/cram_public_showcase.rs\n?? docs/CRAM_SHOWCASE.md\n?? docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md\n?? docs/PUBLIC_FHE_SOLUTION_2026-09-28.md\n?? docs/execution/\n?? research/\n?? scripts/bounded_digit_polynomial.py\n?? scripts/canonical_lift_feasibility.py\n?? scripts/nine65_execution_plan.py\n?? test_bootstrap_simple.rs\n?? test_phase1_fix.rs\n",
+      "tracked_diff_sha256": "65ad69a556767620de09945bb02a06501a97417f9692422a810bd807cbd570ce",
+      "task": "S02 independent composite-domain subpatch; S00 is not accepted",
+      "scope_extension": "cram_machine.rs is the only live validity caller; propagate typed diagnostic failure rather than hiding it."
+    },
+    "current_coordinator_tree": {
+      "working_tree_status": "M README.md\n M crates/exact_transcendentals/src/cram_carry.rs\n M crates/exact_transcendentals/src/cram_machine.rs\n M crates/exact_transcendentals/src/cram_ops.rs\n M crates/exact_transcendentals/src/safe_basis_io.rs\n M crates/nine65/Cargo.toml\n M crates/nine65/src/cram_ct_wrap.rs\n M docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md\n M docs/PRIME_POWER_CANONICAL_LIFT_BASELINE.md\n?? artifacts/bootstrap/\n?? artifacts/execution/\n?? crates/exact_transcendentals/tests/composite_operator_domains.rs\n?? crates/nine65/examples/canonical_lift_feasibility.rs\n?? crates/nine65/examples/cram_public_showcase.rs\n?? docs/CRAM_SHOWCASE.md\n?? docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md\n?? docs/PUBLIC_FHE_SOLUTION_2026-09-28.md\n?? docs/execution/\n?? research/\n?? scripts/bounded_digit_polynomial.py\n?? scripts/canonical_lift_feasibility.py\n?? scripts/nine65_execution_plan.py\n?? test_bootstrap_simple.rs\n?? test_phase1_fix.rs",
+      "relevant_modified_untracked_sha256": {
+        "README.md": "ce96979181c78b26721b92a7bce444f26bf9480a89f9e0dc3736b05d682fbd2d",
+        "artifacts/bootstrap/bounded_digit_polynomial_2026-09-28.json": "3e8553aff12aae41f1eda2cf534b7e8e3eaac683a2227426b1638ffc1ea8bbeb",
+        "artifacts/bootstrap/bounded_digit_polynomial_b17_2026-09-28.json": "151c44897cb3c260213c728ec4ab90a96aca05853a59317671aa4581a8905ab0",
+        "artifacts/bootstrap/canonical_lift_feasibility_2026-09-28.json": "e6ad0dbc6b171cef2aa4ee197b821e069e5f7421df96dd3a6b889291e18f2e45",
+        "artifacts/bootstrap/canonical_lift_probe_2026-09-28.json": "6d3af14bc10be8dffbbd34d97a8eee4a64059e7aa1d49b203530973383963981",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.json": "fd0325356b099eb740c0242a8bf21ef7a0f5e6d73a30e573c8ec5f1ce2a3a3bf",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.run.json": "d99759f46d1d72c0bf742efbba6ab7f41804a33b36958d39af7ca6ab8276d149",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.stderr.log": "10591bd40c818fd60a160e23757e6581308b4281ffa541eab028aea43a8c1347",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.json": "c4b400be9025017a1e8e62c1846a347470466e9688be7440f57aed47350ad794",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.run.json": "0587933e18829db090580dbd5d0203ed5f6acab6e8508b4138c19c33dfabb20c",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.stderr.log": "0a1a5fa89fd60f8db17a83fa9200305687908e783724f3649329bd0c77a458fd",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.run.json": "9fc2091ea0030b9f5eea0a22281facd11c64eec87f5b1810adc41c8c91147813",
+        "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.stderr.log": "d8c8ed056b8357df8168445295caead7719962fd196dcf30d4e72ad4a2b5a513",
+        "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.json": "eda73a227eac6ad0aa29e69310f8ebcdeab0511edcf225e138d6a11e405e3994",
+        "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.run.json": "93df978446ea392def45daf962ed6ed8b86d208d5a27d12137c48ddac739660a",
+        "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.stderr.log": "a3a0ad77f19d6c8076d75136acba10901c4272f7f01b046e185b27737bc53251",
+        "crates/exact_transcendentals/src/cram_carry.rs": "b1c6f020b1f3409f48a14131a74b4866c60a8e6b8a307bf07be3949d782bbc2c",
+        "crates/exact_transcendentals/src/cram_machine.rs": "dc2ce7e08ac9f8e3c3da206f283d3a6e97ec4e27afba872cd3dcb9690b984697",
+        "crates/exact_transcendentals/src/cram_ops.rs": "6a5fd14d386ba4c4ac44eab9b33bd8cf085cb822aa5ec5227b627948ee6a7a1e",
+        "crates/exact_transcendentals/src/safe_basis_io.rs": "e8aee92ac641e7af63795256e2e3db198b5e7ead35b84d9116fe2b540abbbd83",
+        "crates/exact_transcendentals/tests/composite_operator_domains.rs": "80701f5de0f1a2259bec3884e9888da111d685be24324365024c2e7d0d446c68",
+        "crates/nine65/Cargo.toml": "f73e93bbb49798aa50bd7174ce55a7e152cea957aac03fb0b0118cff5aad7e69",
+        "crates/nine65/examples/canonical_lift_feasibility.rs": "5870a4b8c8eaa98ab50ee80df6129b77c62536ff34ed53ea3a8805d8dc88d5bf",
+        "crates/nine65/examples/cram_public_showcase.rs": "00340ce08a6579b24fabb4279d8358f25454646d008b95bb81853e65d14678fd",
+        "crates/nine65/src/cram_ct_wrap.rs": "a918ff453163a208da33d8aac4465ab8b6851c64711498d79310d035bf7fd16d",
+        "docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md": "56d45c0484973cb62f3aacae5e8e0d989c49a876cab2764cc0241c5d032642f0",
+        "docs/CRAM_SHOWCASE.md": "c6622a41c7c876c2d4c19717910e6ee6ebb7d9c281914932335b111719aacb3b",
+        "docs/PRIME_POWER_CANONICAL_LIFT_BASELINE.md": "f624b40208d92b710196bb0b0eb5ba8b60ef65939044d82009d1f639dfc2a72b",
+        "docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md": "bc61c7ed2a3d02b96a24fa504dfd04485faf288cc90cba4174eab1b25d791c12",
+        "docs/PUBLIC_FHE_SOLUTION_2026-09-28.md": "814e135832d69d5ac4af61fdacda9ae323638d26ceb7d1e5dcf6a62689d35bef",
+        "docs/execution/2026-10-03/K_ELIMINATION_PROOF_BRIDGE.md": "1d1be1e486bb14aefe69d42840461980d34aca4662a274431d16c4b35131a0f3",
+        "docs/execution/2026-10-03/OWNER_MODEL_RECONCILIATION.md": "166ad70c63bff995351c55b649a75192febe8995ee125b865809406ad6bb6254",
+        "docs/execution/2026-10-03/PLAN.md": "6b47b064016a267082d257ec5b3d02e87c134c2d5966c5dedfadd35d16749651",
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md": "fbea8088320a0841d16535c9ad9cd02d71014222afa64da961be15863f4976ab",
+        "docs/execution/2026-10-03/ROUND_I_TRACEABILITY.md": "61cebcc5081640462856dc968c60f87fcbb2f8b2b68453d09895fbc14e48abf1",
+        "docs/execution/2026-10-03/SAFE_BASIS_REVISION.md": "1d594a8ad6e0e672e55aee42a2584b11dff9b81138e1358a01762187b4c82421",
+        "docs/execution/2026-10-03/WORKER_GUIDE.md": "58ddcabfddfbfbbea70afd4166a0d0214b848ad9877184d6e79f8c98b95103d6",
+        "docs/execution/2026-10-03/evidence.json": "d0eb779a2db53c99f3a15fa79203c12d18e7e9e38d7f42cc67ecf695a4abb875",
+        "docs/execution/2026-10-03/open_issues.json": "b192b9e6602d911fe051afcf3e0a5fc32e74fda16be082e78a88fa69b6dabde3",
+        "docs/execution/2026-10-03/probes/safe_basis_probe.rs": "81c9556eb1616fb17198ccaa133240ec134fdc201f2e6d0e0b706e35d73b4f3c",
+        "docs/execution/2026-10-03/reviews/REVIEW_DISPOSITIONS.md": "811acd9c5d23ad4ebe8acccc7548da92666d40659be82e27ceda5c3636be8d33",
+        "docs/execution/2026-10-03/reviews/aider.md": "ce358692d4ae551b35f0e2331f893162f2943b405986d4e6dcc9923ecf72b15a",
+        "docs/execution/2026-10-03/reviews/gemini.md": "018f7c18b2af67a07a27f32b0285cdb661b08e9378402ef554d8dfe7dfeb5027",
+        "docs/execution/2026-10-03/reviews/mistral.md": "99dde7cb75df59627465f69460ef57d26a4df68b40ce11c143236894baa65f8b",
+        "docs/execution/2026-10-03/safe_basis_review.json": "5208558a49f1d8d8a52c77e6e4474a4a230ed1393b11240ffbcd37bd03cb5b95",
+        "docs/execution/2026-10-03/tasks.json": "7f985c3dd58ee7f0cf61303112d9250260331b800b8d1ed583823bcac94139d8",
+        "docs/execution/2026-10-03/tasks/B00.md": "d39b037f6ebd7e7b17bfd8ccd267173d266a37223a7150945ede9006aab1a776",
+        "docs/execution/2026-10-03/tasks/B01.md": "b0afe9b664e3a43b8c88e03f379bb27a6f3f599bde4abfc0ec7f1d9dce209586",
+        "docs/execution/2026-10-03/tasks/B02.md": "5204e0150223885b5a80cd9694ff9f7445a5622e43bd8401b0cc63dd1f1e5251",
+        "docs/execution/2026-10-03/tasks/B03.md": "bee178d052354c91f419aaac2ed6991e00ded976b88815b9d64d780470ce39c3",
+        "docs/execution/2026-10-03/tasks/B04.md": "a53a4c2b526f1d955f5ca81ed26f8c0745590955054204fd24c861e4aa19d8bc",
+        "docs/execution/2026-10-03/tasks/B05.md": "c37c5ab14bad085b1c87c4cba6ce4211b72e2ec05576dd1953948dd74b2cb0e9",
+        "docs/execution/2026-10-03/tasks/B06.md": "c39c31f8b5fb8df68eab806c4cd58797c5549ca45c5ad9e43dd20b86b8ff0536",
+        "docs/execution/2026-10-03/tasks/B07.md": "73e77e6f715a5857cbbca196681d56e55be9d2b0bff1020df523c5cf4240fbdf",
+        "docs/execution/2026-10-03/tasks/B08.md": "db0618b4045342bfb4cd5b2506e07a38401699a9835b67efd0f4131440e15963",
+        "docs/execution/2026-10-03/tasks/B09.md": "57960f550be1b9eea2aaccc6d969813f169ca7b942bdab2de44e7b7af8410701",
+        "docs/execution/2026-10-03/tasks/C00.md": "e6c46cc0815bd7c78e9befa7d0cbfc38c4cc6c39382b270bc05024e6d617ae6f",
+        "docs/execution/2026-10-03/tasks/C01.md": "57578e2eec7e7ea9ac9f8a60be983852133485da3814a1881987349ed1cc75a4",
+        "docs/execution/2026-10-03/tasks/C02.md": "250f775551247128a219406bbf1f6ec33e2928018061d74121d8f975d58749c9",
+        "docs/execution/2026-10-03/tasks/C03.md": "d633b343e9f0ccd9cc4fffd0b7b42454d73efa94efe18e7cfb7752d9841623b5",
+        "docs/execution/2026-10-03/tasks/C04.md": "6be7a15a2293dda03ab6da6344ef14cbb240c4096dbe5dee096952a3ca468f6b",
+        "docs/execution/2026-10-03/tasks/C05.md": "27f5c1e9e62d019e7195456275a321ff8411e382f5f9a32d69d2faee1aee54d2",
+        "docs/execution/2026-10-03/tasks/C06.md": "e4dcd80c8cb6c812ffefafa45c1da64d4aa5ff0bfc845ab827750b265230415c",
+        "docs/execution/2026-10-03/tasks/F00.md": "e9d3a00f0123e8d38e1c829765a21ed80ea21c5d529ce5eed7b304e7445e7de8",
+        "docs/execution/2026-10-03/tasks/F01.md": "fd6e551bae4ea1ee00d5b6253367e4bee5cbcf0280365c2de73ef02ef70404c2",
+        "docs/execution/2026-10-03/tasks/F02.md": "3f59269520c29cdeea4f034f18f3b5db18d25e870c27e8cd9c0f918631806def",
+        "docs/execution/2026-10-03/tasks/F03.md": "fc489855c50133f9dcbc72c020979925ba258984afc9ee36f7ddc2c1e3395d10",
+        "docs/execution/2026-10-03/tasks/G00.md": "081f41c5238067a4d2dd2e8e300a23b0924c046a382edcec8d13836562e917a3",
+        "docs/execution/2026-10-03/tasks/H00.md": "c4b630a2a6b85dcfe75b5248301a4f33d974e74d7e2ce9caff4e2afc9ddedf29",
+        "docs/execution/2026-10-03/tasks/H01.md": "6c973bcad6e07f39a11c8e139ae23a8932134f0f14decbe597e644f5c356c091",
+        "docs/execution/2026-10-03/tasks/H02.md": "868ba0c793f65f3f38fb76b02a818d4febbf4cde29c509cb1e81bfc5237a2cb2",
+        "docs/execution/2026-10-03/tasks/H03.md": "3d4cd5dd3e78e4f14d7bc89b69259744b79bd8c3167ab81ccd6ce377cb008ec9",
+        "docs/execution/2026-10-03/tasks/H04.md": "78e737ada3a0be31176ca8a28dc0762fc4adc9de6413797770cf995296922996",
+        "docs/execution/2026-10-03/tasks/R00.md": "61d4d43779deaf0cf1cbdc3473b50a893f5b5999c466fc51625f0ec2226ef0e7",
+        "docs/execution/2026-10-03/tasks/R01.md": "b3bbfef554eae3227bed75e2b7b67a2f7b76541e9beb28209bcbdc2ce99b1209",
+        "docs/execution/2026-10-03/tasks/R02.md": "46ac587e51ce01a53236dc049e0d362fa79753e58332575f2493df630e60655e",
+        "docs/execution/2026-10-03/tasks/R03.md": "8943e851ede6ceb3a6591d2f5575b26b30b8a36109254d706879679b49f6aa51",
+        "docs/execution/2026-10-03/tasks/S00.md": "3e811740ab5439440a8ebc7930bc036538eaeeffacf93ae25946f1e5d8069a39",
+        "docs/execution/2026-10-03/tasks/S01.md": "520c246e0954b4cdc872093a932ba04e85bbc473e411b4a786613a4eac5185e8",
+        "docs/execution/2026-10-03/tasks/S02.md": "6e06a06772d73990a2b77bb4b7ba3928270ddc72121cd8c22e25f36a640c98dd",
+        "docs/execution/2026-10-03/tasks/S03.md": "c48048d0a628d7f6021ef2e81941d574ab7820098a614384591b2ae0f2f4a667",
+        "docs/execution/2026-10-03/tasks/S04.md": "ff64628a84af1677ffb43eb23a710bba59fdb74a42d78fd49593143229806c58",
+        "docs/execution/2026-10-03/tasks/S05.md": "07458f47ea47337f8f9cdc130a001a7d352c45b918ed77b3ff95efcba685c8f2",
+        "docs/execution/2026-10-03/tasks/V00.md": "c3318cf66c8adce8d723fc07921c0b1223966461ed7d420c24d38496890adbfa",
+        "docs/execution/2026-10-03/tasks/V01.md": "eae052d40a084bb22f908f69e4680f040ac3ca6001d2fc37ae8ca734051eb163",
+        "docs/execution/2026-10-03/tasks/V02.md": "17a37379ee82593c2e18c8696c935df7926d38267a62a5d9ebc37136b0a15658",
+        "docs/execution/2026-10-03/tasks/V03.md": "96fd78cfb1f46b7a8359386ba7a92fa74d8e57f0f57bba18d1439fc66fb76e50",
+        "docs/execution/2026-10-03/tasks/V04.md": "c697e153e722286e6fdbdfab6e3d65fe8d138dada5de9136a326a2b8b08dada8",
+        "docs/execution/2026-10-03/tasks/V05.md": "6213aa534213dc142f2d2e49f0b7c5632227ab3cba8bc0c547adc18c6f8243fa",
+        "docs/execution/2026-10-03/validation.json": "1d20f38d0da10029e2f20c40d495ff87c3dacf8d52eeeb4d94c527d691e281e0",
+        "docs/execution/2026-10-03/validation_safe_basis.json": "3170b208a53ceb0fca742d390b6f39dbf2ad350c5dd92e6c122601e1dbbe542d",
+        "research/bfv-bootstrap-reference/.gitignore": "54917f0455c3cf8c7c9cd98b9006b14f5a76229122abd0d3e3fd1de600d401d5",
+        "research/bfv-bootstrap-reference/Cargo.lock": "552d7f3c77d5c660f6a39a81a6b746a2aae50ed70afc2cc1c740be77c0f7e858",
+        "research/bfv-bootstrap-reference/Cargo.toml": "d12466d48d6a1f58d86e4fa8dc90dc477fff4884c6c0e67eab35c8b789b794b5",
+        "research/bfv-bootstrap-reference/README.md": "29a5e0c378f56105ed603976ee825e186a7fb8cca8f4fe6413a9310c104174d0",
+        "research/bfv-bootstrap-reference/run_reference.py": "2968f3aca972f97a16ec29827a0feae98c958d4f99c9443a28db30ae0dcf4433",
+        "research/bfv-bootstrap-reference/rust-toolchain.toml": "665f334692076832889bbceaffc1b9c015031f0f7b5c536ab5a6cf5aa8a240d3",
+        "research/bfv-bootstrap-reference/src/main.rs": "1550945cfd5d34401c3c99fe4f2d81533ac5e9a6fa335bcd4d796d210dfbfaa0",
+        "scripts/bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137",
+        "scripts/canonical_lift_feasibility.py": "e3eda5fd837e4db7fe5f47a50a7e2e00765fab5c0d66b553d50b91da149e0bed",
+        "scripts/nine65_execution_plan.py": "829534829904507c3d43388666b8c48d4eee708ed658892921d0cea6606e6cd4",
+        "test_bootstrap_simple.rs": "1b2a5b2670d12bee1ae45c3f5298be06602468331e3e0085bfd8ef1f577d01b9",
+        "test_phase1_fix.rs": "16ea664ca2480b0aef25fdc80d1b7c389f729dae017af8524f5233a68043d753"
+      }
+    }
+  },
+  "toolchain": {
+    "rustc": "rustc 1.89.0 (29483883e 2025-08-04)",
+    "cargo": "cargo 1.89.0 (c24e10642 2025-06-23)",
+    "config_sha256": {
+      "Cargo.toml": "37bd46f5ac77fe53e191fef462508ad65b85c0f1af551f2b1273af3959eae892",
+      "Cargo.lock": "892c3f6cadf3abcd198847ebc1744c67ef68fb6202053ca1943f170d9736bd54",
+      "rust-toolchain.toml": "a93527593d1f1e9a134e588cadec40ac33c2b08194b7342c9d24cf05b128a0d5"
+    }
+  },
+  "feature_graph": {
+    "clockwork-core": {},
+    "cram-core": {},
+    "exact_transcendentals": {
+      "arbitrary-precision": [],
+      "default": [
+        "std"
+      ],
+      "std": []
+    },
+    "fhe-service": {
+      "allow_insecure": [
+        "nine65/allow_insecure"
+      ],
+      "default": [],
+      "exact_rational": [
+        "nine65/exact_rational"
+      ]
+    },
+    "nine65": {
+      "accelerated": [
+        "mana",
+        "unhal"
+      ],
+      "adaptive-threading": [
+        "shadow-entropy"
+      ],
+      "allow_insecure": [],
+      "benchmarks": [],
+      "clockwork": [
+        "clockwork-core",
+        "crc32fast"
+      ],
+      "clockwork-core": [
+        "dep:clockwork-core"
+      ],
+      "crc32fast": [
+        "dep:crc32fast"
+      ],
+      "debug_dual_mul": [],
+      "default": [
+        "exact_transcendentals_backend",
+        "accelerated"
+      ],
+      "deterministic_rng": [
+        "dep:rand_chacha",
+        "dep:rand_core"
+      ],
+      "exact_rational": [
+        "nexgen_rational"
+      ],
+      "exact_transcendentals_backend": [
+        "dep:exact_transcendentals"
+      ],
+      "generic-rayon": [
+        "rayon"
+      ],
+      "logging": [
+        "dep:log"
+      ],
+      "mana": [
+        "dep:mana"
+      ],
+      "nexgen_rational": [
+        "dep:nexgen_rational"
+      ],
+      "ntt_fft": [],
+      "parallel": [
+        "rayon"
+      ],
+      "rayon": [
+        "dep:rayon"
+      ],
+      "reference_ntt": [],
+      "secure_seed": [],
+      "sequential": [],
+      "serde": [
+        "dep:serde",
+        "dep:serde_json",
+        "dep:bincode"
+      ],
+      "shadow-entropy": [],
+      "slow_tests": [],
+      "unhal": [
+        "dep:unhal"
+      ]
+    },
+    "mana": {
+      "default": [],
+      "parallel": [
+        "rayon"
+      ],
+      "rayon": [
+        "dep:rayon"
+      ],
+      "wide": [
+        "dep:wide"
+      ]
+    },
+    "nexgen_rational": {},
+    "unhal": {
+      "default": [],
+      "parallel": [
+        "rayon",
+        "mana/parallel"
+      ],
+      "rayon": [
+        "dep:rayon"
+      ],
+      "simd": []
+    },
+    "math_utils": {},
+    "nine65-extreme-tests": {
+      "extreme-tests": [
+        "dep:nine65",
+        "nine65/allow_insecure"
+      ]
+    },
+    "private-feedback-core": {},
+    "private-feedback-nine65": {}
+  },
+  "resources": {
+    "machine": "x86_64",
+    "logical_cpu_count": 2,
+    "memory": {
+      "MemTotal": "2813804 kB",
+      "MemAvailable": "456892 kB"
+    },
+    "cgroup_memory_max": "not visible in this sandbox",
+    "cgroup_cpu_max": "not visible in this sandbox",
+    "disk_total_bytes": 11274289152,
+    "disk_free_bytes": 830644224
+  },
+  "external_sources": [
+    {
+      "repository": "https://github.com/Skyelabz210/NINE65_v6_a_Clockwork_Prime",
+      "commit": "bd5c5c29f5c367bf34831cf5c1b97b3b938ac829",
+      "local_review_copy": "/tmp/nine65-v6-plan-review",
+      "files": {
+        "NINE65/NINE65_v6_a_Clockwork_Prime/crates/nine65/src/bootstrap/three_lock.rs": "89f29ef7429cd7b78f45494e935dd74fd7b1d2f8c60d7dda3637b02d7c893240",
+        "NINE65/NINE65_v6_a_Clockwork_Prime/docs/DEPTH_CORRECTNESS_MATRIX.json": "07e5aac990ce864e5944e2d240b12accc3b57ef9c468736e5be5160e7dccab2b"
+      },
+      "verification_scope": "selected source inspection only; no complete historical build"
+    },
+    {
+      "repository": "https://github.com/Skyelabz210/qmnf-lean-coq-security-proofs",
+      "commit": "d5c7a1f6e3da3068ddafbb2b48424ee13beac5d6",
+      "local_review_copy": "/tmp/nine65-security-proofs-review",
+      "files": {
+        "nist/shadow_nist_tests.py": "87a5f91ca327e3e0295460ac53ae5b6f0fc44e2c7986108141144eb3bbe5b7a3",
+        "lean4/shadow-nist/ShadowUniform.lean": "ce7d2e4f157e84d268fd994fe6b95fafd608b7be9f1153d498c3e31340908b29",
+        "lean4/shadow-nist/ShadowSecurityTheorems.lean": "0ee749ea2ac59cad032df882c114660fff0e73932c0bfe27f5a19d2e7017e702",
+        "lean4/shadow-nist/ShadowNISTCompliance.lean": "c410dde0ef3ddf7446df5868d4304dc87af3239551a6473a21aa9929b1c2a024",
+        "lean4/shadow-nist/ShadowCorrelation.lean": "0eccd608e7bfc13e348de05e2b790a9d01c7f2f5eb93239b925c1fbb64fc3683"
+      },
+      "verification_scope": "selected source inspection only; no complete historical build"
+    }
+  ],
+  "additional_proof_sources_evidence": "docs/execution/2026-10-03/safe_basis_review.json",
+  "issues": [
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvyQ",
+          "name": "testing",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 137,
+      "title": "Triage the 15 test failures --no-fail-fast newly surfaced (beyond the known 5 in #117)"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 135,
+      "title": "Deprecated BFVEvaluator::mul() silently returns wrong plaintexts (untested for years; found via Python bindings work)"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvyQ",
+          "name": "testing",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 130,
+      "title": "cargo test --workspace's fail-fast silently skips ~28 nine65 integration test files whenever nine65 --lib has any failure"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+          "name": "critical",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+          "name": "security",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 117,
+      "title": "[P0] Public refresh corrupts plaintext on configs admitted by supports_public_refresh (secure_128_deep, secure_192)"
+    },
+    {
+      "labels": [],
+      "number": 95,
+      "title": "[P0] Replace invalid component-wise BFV bootstrap Phase 1 with a mathematically valid public decryption/encoding transition"
+    },
+    {
+      "labels": [],
+      "number": 94,
+      "title": "[P1] Harden fhe-service HTTP framing: reject ambiguous lengths and preserve/disable keep-alive pipelining"
+    },
+    {
+      "labels": [],
+      "number": 92,
+      "title": "[META] NINE65 v7 completion-to-100% tracker: correctness, security, CI, performance, claims"
+    },
+    {
+      "labels": [],
+      "number": 89,
+      "title": "[P1] Enforce or ratchet the production panic/unwrap/expect quality gate"
+    },
+    {
+      "labels": [],
+      "number": 88,
+      "title": "[P1] Remove unchecked security labeling from FHEConfig::custom and for_depth"
+    },
+    {
+      "labels": [],
+      "number": 86,
+      "title": "[P1] Harden validated deserialization: reject trailing bytes and context-invalid DualRNS state"
+    },
+    {
+      "labels": [],
+      "number": 85,
+      "title": "[P1] Make fallible constructors truly fallible: remove production-security panics from try_* APIs"
+    },
+    {
+      "labels": [],
+      "number": 84,
+      "title": "[P1] Fix negative-branch DualRNS noise diagnostic ideal-point calculation"
+    },
+    {
+      "labels": [],
+      "number": 83,
+      "title": "[P1] Make bootstrap security validation exact and non-tautological"
+    },
+    {
+      "labels": [],
+      "number": 82,
+      "title": "[P0] Fix bootstrap circular public-key mask sampling to be uniform over full Q_boot"
+    },
+    {
+      "labels": [],
+      "number": 79,
+      "title": "[P0] Restore active GitHub Actions execution and required release checks"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9qQ",
+          "name": "documentation",
+          "description": "Improvements or additions to documentation",
+          "color": "0075ca"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+          "name": "security",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 76,
+      "title": "[H2] Resolve secure_256 naming vs MATZOV binding (240 vs 256)"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+          "name": "critical",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+          "name": "security",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 75,
+      "title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+          "name": "security",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 74,
+      "title": "[H5] Restore allow_insecure gate without breaking workspace tests"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9uw",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 73,
+      "title": "[H1] Increase public-mode depth beyond 2-4"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+          "name": "critical",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+          "name": "security",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 72,
+      "title": "[G3] Close open constant-time findings F-2 and F-3"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+          "name": "critical",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dv2w",
+          "name": "security",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 71,
+      "title": "[G4] Engage external security audit (Trail of Bits / NCC Group / Kudelski)"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvwQ",
+          "name": "hygiene",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dv1A",
+          "name": "low-priority",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 69,
+      "title": "[L1] Fix 4 compiler warnings (unused variables, dead code)"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvyQ",
+          "name": "testing",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvzw",
+          "name": "critical",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 64,
+      "title": "[G2] Make full test suite reproducible in constrained environments"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9qQ",
+          "name": "documentation",
+          "description": "Improvements or additions to documentation",
+          "color": "0075ca"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvrg",
+          "name": "medium-priority",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvzg",
+          "name": "verification",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 67,
+      "title": "[M1] Remove or clearly mark deprecated Coq proofs as historical"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvrg",
+          "name": "medium-priority",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9DvsQ",
+          "name": "gap-remediation",
+          "description": "",
+          "color": "ededed"
+        },
+        {
+          "id": "LA_kwDORUtwJs8AAAACy9Dvvw",
+          "name": "bindings",
+          "description": "",
+          "color": "ededed"
+        }
+      ],
+      "number": 63,
+      "title": "[M4] Stabilize one binding to published package (recommend Python)"
+    },
+    {
+      "labels": [
+        {
+          "id": "LA_kwDORUtwJs8AAAACYwh9oA",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        }
+      ],
+      "number": 29,
+      "title": "Restore recumbent CRAM bootstrap and exact RNS context metadata after PR #26"
+    },
+    {
+      "labels": [],
+      "number": 18,
+      "title": "Security audit - constant-time verification and side-channel hardening"
+    },
+    {
+      "labels": [],
+      "number": 17,
+      "title": "Enable Python bindings via PyO3 (nine65-python crate)"
+    },
+    {
+      "labels": [],
+      "number": 16,
+      "title": "Bootstrap path stress testing - edge cases and error recovery"
+    }
+  ],
+  "provenance": {
+    "preexisting_changes": "Preserved. Do not attribute initial changes to this S02 patch. The current snapshot includes the execution documents and new fix; before_s02_edit records the original touched source hashes.",
+    "writer_policy": "Coordinator alone writes production. Helpers review read-only or own separate new contract files. No branch switch, reset, stash or commit was needed."
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "document": "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+  "status": "reference_contract_draft",
+  "s00_accepted": false,
+  "dependent_integration_authorized": false,
+  "independent_work": "The independently reproduced S02-A composite-inverse correction does not require selection of the unresolved live phase profile.",
+  "owner_clarifications": {
+    "inverse_placement": "Inv is an instruction assigned to lanes in phase-locked dependent sister CRT operator trays; the authoritative S8 root remains intact.",
+    "requested_operation_model": "heterogeneous polyunitary operation",
+    "retired_runtime_paths": ["R9 Garner emission", "sequential mixed-radix conversion", "synthetic mixed-radix emission"],
+    "observation_helper_exception": false,
+    "new_inverse_algorithm_inferred": false
+  },
+  "root": {
+    "logical_moduli": [2, 3, 5, 7, 11, 13, 17, 19],
+    "topology_product": 9699690,
+    "roles": {
+      "2": "parity_binary_boundary",
+      "3": "triadic",
+      "5": "surface_ramanujan_family",
+      "7": "bridge_ramanujan_family",
+      "11": "shadow_disambiguation",
+      "13": "boundary",
+      "17": "structural_lift_saturation",
+      "19": "spectral_saturation"
+    },
+    "all_logical_roles_required": true,
+    "payload_product_equals_topology_product_by_default": false
+  },
+  "runtime_invariants": {
+    "persistent_scalar_K": false,
+    "persistent_winding_tower": false,
+    "hot_path_full_X_materialization": false,
+    "hot_path_garner": false,
+    "hot_path_mixed_radix_conversion": false,
+    "runtime_garner_including_observation": false,
+    "runtime_sequential_mixed_radix_including_emission": false,
+    "runtime_R9_emission": false,
+    "oracle_only_reconstruction": "Permitted only in independently isolated test/diagnostic oracle paths outside the production runtime graph, with explicit boundaries and separate instrumentation; never a live fallback.",
+    "bounded_transient_quotient_query_permitted": true,
+    "provider_binding": ["context_profile_version", "source_identity", "value_epoch", "semantic_domain", "observer_class", "public_interval", "coordinate_lineage", "implementation_width_certificate"],
+    "separate_layout_version": true,
+    "target_condition": "b > 0; primality and target coprimality not required for projection",
+    "nonnegative_bound": "0 <= X <= U < M*A; equivalently A > floor(U/M)",
+    "lift_equation": "K = ((a - (g mod A))*inverse(M,A)) mod A, where g=X mod M and a=X mod A",
+    "projection_equation": "X mod b = (g mod b + (K mod b)*(M mod b)) mod b",
+    "same_integer_view_compatibility": "u_i == u_j modulo gcd(b_i,b_j); uniqueness and operation relation are additional obligations",
+    "signed_adapter": "Public L <= X <= U, U-L < M*A; apply profile to Y=X-L and add L modulo each target"
+  },
+  "sister_inverse_instruction": {
+    "instruction": "Inv",
+    "placement": "lane of a phase-locked dependent sister operator tray",
+    "authoritative_root_mutated_by_instruction": false,
+    "required_binding": ["root_source_identity", "value_epoch", "frame_identity", "lane_identity", "lane_modulus", "instruction_identity", "input_view", "admitted_phase_relation"],
+    "unit_domain": "m > 1 and gcd(a,m) = 1",
+    "output_equation": "0 <= z < m and (a*z) mod m = 1",
+    "output_semantics": "operator/topology frame unless an admitted shared-integer operation relation and lift rule establish otherwise",
+    "refusals": ["zero_or_nonunit_operand", "missing_or_invalid_phase_source_binding", "modulus_not_in_admitted_inverse_domain"],
+    "modulus1_projection_implies_inverse_admission": false,
+    "shared_factor_division_is_inverse": false,
+    "arithmetic_reference": "EEA/unit inversion and schema regressions establish local arithmetic correctness only; no new runtime inverse algorithm is inferred.",
+    "full_sister_realization_wired": false,
+    "public_profile_inverse_constants": "Mathematical inverse values may be separately precomputed under an explicit public-constant role and verified equation; they do not replace the requested operator-tray placement."
+  },
+  "profiles": [
+    {
+      "id": "R-S8-ADJACENT-1",
+      "status": "specified_reference",
+      "owner_live_profile": false,
+      "M": 9699690,
+      "A": 9699691,
+      "capacity_exclusive": 94083995795790,
+      "equation": "K = (g-a) mod (M+1)",
+      "source_coverage": "cram_anchor::Anchor::winding and AdjacentWindingEvidence implement the bounded arithmetic; full root/source/epoch binding and transitions remain proposed."
+    },
+    {
+      "id": "R-S8-SHADOW11-SPLIT-1",
+      "status": "specified_reference",
+      "owner_live_profile": false,
+      "M": 881790,
+      "A": 11,
+      "capacity_exclusive": 9699690,
+      "equation": "a=root11; K=((a-(g mod11))*7) mod11",
+      "source_coverage": "Mathematical split only; current cram_ct Shadow snapshot is not this provider."
+    },
+    {
+      "id": "R-S8-JOINT2-11-SPLIT-1",
+      "status": "specified_reference",
+      "owner_live_profile": false,
+      "M": 440895,
+      "A": 22,
+      "capacity_exclusive": 9699690,
+      "equation": "a=r11+11*((r2-r11) mod2); K=((a-(g mod22))*3) mod22",
+      "source_coverage": "Mathematical split only; not inferred as the live 2/11 construction."
+    },
+    {
+      "id": "R-S8-POWERS2-11-1",
+      "status": "specified_reference_family",
+      "owner_live_profile": false,
+      "M": 440895,
+      "parameters": "Public alpha>=1, beta>=1; u=2^alpha, v=11^beta, A=u*v; all products/intermediates must meet selected finite width certificates.",
+      "coordinates": "r_u=X mod u; r_v=X mod v; r_u mod2=root2; r_v mod11=root11",
+      "equation": "a=r_v+v*(((r_u-r_v)*inverse(v,u)) mod u); K=((a-(g modA))*inverse(M,A)) modA",
+      "interval": "0 <= X < M*A",
+      "source_coverage": "Mathematical family only; actual higher-power coordinates and reviewed transition/provider implementation required."
+    },
+    {
+      "id": "OWNER-LIVE2-11",
+      "status": "unresolved",
+      "owner_live_profile": true,
+      "M": null,
+      "A": null,
+      "equation": null,
+      "range": null,
+      "substitute_reference_profile": false,
+      "missing_contracts": [
+        "Exact payload factors/powers and role of2 in each invocation",
+        "coordinate2=f2(quantity,state) and coordinate11=f11(quantity,state)",
+        "Cross-tray phase relation and lift-provider equation with all inputs",
+        "Uniqueness interval, extension rule and alias-refusal condition",
+        "Per-operator update and higher-power add/drop/rebind equations",
+        "Signed/order/division semantics and any direct-value subtraction encoding",
+        "Observer classification and same-source/epoch binding"
+      ]
+    }
+  ],
+  "target_moduli": [1, 2, 6, 10, 11, 15, 17, 22, 36, 121, 143, 323, 1000, 9699691],
+  "finite_reference_fixtures": [
+    {
+      "profile_id": "R-S8-ADJACENT-1",
+      "payload_moduli": [2, 3, 5, 7, 11, 13, 17, 19],
+      "M": 9699690,
+      "A": 9699691,
+      "inverse_M_mod_A": 9699690,
+      "capacity_exclusive": 94083995795790,
+      "anchor_kind": "adjacent",
+      "oracle_values": [0, 9699689, 9699690, 9699691, 94083995795789],
+      "signed_oracle_intervals": [{"lower": -100, "upper": 100, "values": [-100, -1, 0, 1, 100]}]
+    },
+    {
+      "profile_id": "R-S8-SHADOW11-SPLIT-1",
+      "payload_moduli": [2, 3, 5, 7, 13, 17, 19],
+      "M": 881790,
+      "A": 11,
+      "inverse_M_mod_A": 7,
+      "capacity_exclusive": 9699690,
+      "anchor_kind": "shadow11",
+      "oracle_values": [0, 881789, 881790, 881791, 9699689],
+      "signed_oracle_intervals": [{"lower": -100, "upper": 100, "values": [-100, -1, 0, 1, 100]}]
+    },
+    {
+      "profile_id": "R-S8-JOINT2-11-SPLIT-1",
+      "payload_moduli": [3, 5, 7, 13, 17, 19],
+      "M": 440895,
+      "A": 22,
+      "inverse_M_mod_A": 3,
+      "capacity_exclusive": 9699690,
+      "anchor_kind": "joint_2_11",
+      "oracle_values": [0, 440894, 440895, 440896, 9699689],
+      "signed_oracle_intervals": [{"lower": -100, "upper": 100, "values": [-100, -1, 0, 1, 100]}]
+    },
+    {
+      "profile_id": "R-S8-POWERS2-11-1",
+      "payload_moduli": [3, 5, 7, 13, 17, 19],
+      "M": 440895,
+      "A": 484,
+      "alpha": 2,
+      "beta": 2,
+      "inverse_M_mod_A": 267,
+      "capacity_exclusive": 213393180,
+      "anchor_kind": "powers_2_11",
+      "oracle_values": [0, 440894, 440895, 440896, 213393179],
+      "signed_oracle_intervals": [{"lower": -100, "upper": 100, "values": [-100, -1, 0, 1, 100]}]
+    }
+  ],
+  "validation_claim": "Fixtures and a reproduction command are supplied. This file does not claim execution results, theorem compilation, production-provider admission, or S00 acceptance."
+}

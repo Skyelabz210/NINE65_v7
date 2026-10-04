@@ -133,7 +133,12 @@ fn c0_centered_i128(
         });
     }
     let level = ct.c0.main.len();
-    let q = ctx.q_product;
+    // A reduced-level ciphertext is represented modulo Q_level, not the
+    // full configuration product. Center against exactly its live lanes so
+    // the auxiliary residues describe the same signed coefficient.
+    let q = ctx.config.primes[..level]
+        .iter()
+        .fold(1u128, |product, &prime| product * prime as u128);
     let half = q >> 1;
     let mut residues = vec![0u64; level];
     let mut out = Vec::with_capacity(ct.c0.n);
@@ -343,6 +348,24 @@ mod tests {
             checked, ct.c0.n,
             "must sweep every coefficient, not a sample"
         );
+    }
+
+    #[test]
+    fn centered_projection_uses_the_active_ciphertext_level() {
+        let (ctx, keys) = fresh_ctx_and_full_keys();
+        let mut rng = ShadowHarvester::with_seed(17);
+        let mut ct = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
+        ct.c0.main.truncate(2);
+        ct.c1.main.truncate(2);
+        ct.level = 2;
+        for (lane, &prime) in ctx.config.primes[..2].iter().enumerate() {
+            ct.c0.main[lane][0] = prime - 1;
+        }
+
+        let centered = c0_centered_i128(&ctx, &ct).expect("active level fits i128");
+        assert_eq!(centered[0], -1, "Q_level - 1 must center to -1");
+        let wrapped = wrap_dual_rns_fpd(&ctx, ct, &[23]).expect("FPD witness must fit");
+        assert_eq!(wrapped.witness.c0_aux.unwrap().residues[0][0], 22);
     }
 
     /// The seam that matters: `wrap_dual_rns_fpd` populates `c0_aux`, and

@@ -57,6 +57,12 @@ multiplied, relinearized, and boundary-noise ciphertexts across every admitted
 configuration. A declared lossy transition may discard state only when its
 public contract explicitly permits loss; BFV refresh does not.
 
+A separate, non-production BFV reference experiment now demonstrates repeated
+public refresh at `t=65537` using coefficient/slot transforms and bounded-error
+digit removal. It does not implement NINE65's integer-only evaluator or satisfy
+the re-enable condition above. See the [public FHE solution investigation](PUBLIC_FHE_SOLUTION_2026-09-28.md),
+including exact plaintext checks and the remaining native/security work.
+
 The residue-native `ExpandedPhase1Plan` implements the candidate's public
 component scaling and calculates an input-error allowance from parameters.
 `ExpandedBootstrapKey` and `ExpandedPhaseEvaluator` now encrypt the work

@@ -1,0 +1,1986 @@
+{
+  "schema": "nine65-execution-plan-v1",
+  "date": "2026-10-03",
+  "base_commit": "048f79ac771697801e26ebf77e4ee6df33b48281",
+  "goal": "Native exact CRAM with an intact Safe Basis priming root, on-demand lift and configurable sister frames; public BFV auto-refresh and separately evidenced Three Locks",
+  "tasks": [
+    {
+      "id": "F00",
+      "title": "Freeze the actual starting tree and existing work",
+      "depends_on": [],
+      "kind": "evidence",
+      "state": "planned",
+      "inputs": [
+        "Cargo.lock",
+        "rust-toolchain.toml",
+        "docs/execution/2026-10-03/evidence.json"
+      ],
+      "write_scope": [
+        "artifacts/execution/baseline.json",
+        "docs/execution/2026-10-03/STATUS.md"
+      ],
+      "steps": [
+        "Record HEAD, rustc/cargo versions, Cargo.lock SHA256, feature graph, CPU/RAM/free disk, and hashes of all relevant dirty/untracked sources.",
+        "Group existing local changes by owner/provenance. Create an isolated task branch only after preserving them; do not reset or stash another person\u2019s work.",
+        "Record exact selected upstream revisions and all 29 issue numbers in the plan evidence; refresh issue state before proposing any closure."
+      ],
+      "acceptance": [
+        "The baseline identifies both committed and uncommitted inputs; another worker can tell precisely which tree was tested.",
+        "No credential files, raw environment values, private keys or chat histories enter the manifest."
+      ],
+      "checks": [
+        "git status --short",
+        "git rev-parse HEAD",
+        "rustc --version",
+        "cargo --version",
+        "df -h ."
+      ],
+      "stop": "Stop on an unknown local change that would be overwritten. A dirty tree is not permission to discard work.",
+      "issues": [
+        92,
+        64
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "F01",
+      "title": "Generate tuple truth and repair stale evidence producers",
+      "depends_on": [
+        "F00"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/params/secure_configs.rs",
+        "scripts/verify_wr1_transient_exact.py",
+        "scripts/generate_depth_correctness_matrix.py",
+        "crates/nine65/src/ops/exact_mul_tests.rs",
+        "artifacts/execution/baseline.json"
+      ],
+      "write_scope": [
+        "crates/nine65/examples/export_parameter_registry.rs",
+        "scripts/verify_wr1_transient_exact.py",
+        "scripts/generate_depth_correctness_matrix.py",
+        "scripts/test_parameter_evidence.py",
+        "artifacts/execution/parameter_registry.json"
+      ],
+      "steps": [
+        "Add an integer-only registry exporter with canonical ordered primes, actual product bit length, n,t,eta, route, alias relation and context fingerprint.",
+        "Make the WR-1 oracle consume that registry. Keep the historical three-prime fixture under an explicitly historical name; include d1 as the sum of two products with the N/2 bound.",
+        "Replace depth/collapse inference in the depth report with explicit per-step plaintext-equality records. Missing checks, truncated output or zero executed cases must fail.",
+        "Export priming-root roles, payload/ciphertext moduli and dependent view moduli as distinct named objects; never substitute the S8 product for total dynamic range or an RLWE parameter."
+      ],
+      "acceptance": [
+        "secure_128 and secure_128_deep resolve to identical current tuples.",
+        "An injected wrong plaintext with unchanged depth/collapse counters makes the report fail; a three-prime fixture cannot be labeled current secure_128.",
+        "Exact product width is used, not summed lane bit widths."
+      ],
+      "checks": [
+        "cargo run --locked --offline -p nine65 --example export_parameter_registry",
+        "python3 -m unittest discover -s scripts -p test_parameter_evidence.py"
+      ],
+      "stop": "Do not change crypto parameters to reconcile names; report the real tuple. Never count a zero-test invocation as verification.",
+      "issues": [
+        84,
+        88,
+        73
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "F02",
+      "title": "Inventory every test target and ratchet existing failures",
+      "depends_on": [
+        "F00"
+      ],
+      "kind": "evidence",
+      "state": "planned",
+      "inputs": [
+        "scripts/run_tests_fast.sh",
+        "scripts/run_tests_medium.sh",
+        "scripts/cram_ct_gates.sh",
+        ".github/workflows/ci.yml",
+        "crates/nine65/Cargo.toml"
+      ],
+      "write_scope": [
+        "scripts/run_tests_fast.sh",
+        "scripts/cram_ct_gates.sh",
+        "scripts/collect_test_inventory.py",
+        "artifacts/execution/test_inventory.json",
+        "docs/execution/2026-10-03/TEST_TRIAGE.md"
+      ],
+      "steps": [
+        "Enumerate workspace lib/bin/integration/doc tests, required features, ignored reasons and resource class using Cargo metadata and test listing.",
+        "Fix test-runner omissions: use --no-fail-fast for acceptance sweeps; invoke separate supported filters instead of several positional Rust test filters.",
+        "After checking available storage, run the release acceptance sweep serially and reproduce each failing test individually. Map failures to issue criteria; preserve existing failures in a ratcheted baseline."
+      ],
+      "acceptance": [
+        "Inventory and execution totals reconcile; unavailable/ignored/zero-matched tests are not green.",
+        "Full acceptance includes the integration targets after a library failure.",
+        "No failing test is weakened, ignored or renamed to obtain a green status."
+      ],
+      "checks": [
+        "cargo metadata --locked --offline --no-deps --format-version 1",
+        "cargo test --locked --offline --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast -j1"
+      ],
+      "stop": "The full command is resource-gated: stop and report disk/RAM exhaustion before deleting outputs or changing profiles. Do not reuse historical failure counts.",
+      "issues": [
+        137,
+        130,
+        64,
+        69
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "F03",
+      "title": "Recover the v6 mechanism and audit proof statements",
+      "depends_on": [
+        "F00"
+      ],
+      "kind": "evidence",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/evidence.json",
+        "docs/ENTROPY_MODEL.md",
+        "lean4/KElimination/KElimination/ShadowEntropy.lean",
+        "lean4/KElimination/KElimination/ShadowNTTButterfly.lean",
+        "docs/execution/2026-10-03/K_ELIMINATION_PROOF_BRIDGE.md",
+        "docs/execution/2026-10-03/safe_basis_review.json",
+        "docs/execution/2026-10-03/ROUND_I_TRACEABILITY.md"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/HISTORICAL_BRIDGE.md",
+        "artifacts/execution/proof_statement_inventory.json"
+      ],
+      "steps": [
+        "Read the pinned v6 nested project and proof repository identified in evidence.json. Trace shadow source\u2192conditioner\u2192sampler\u2192outer key/noise\u2192Three Locks call sites and record missing links.",
+        "For each claimed theorem record its exact proposition, imports, assumptions and axioms; classify algebraic identity, conditional distribution theorem, placeholder True, unbuilt statement and implementation refinement separately.",
+        "Locate the actual public-50 and symmetric-200 programs, tuples and raw equality checks. Preserve the found symmetric-50 report with its limited scope; absence from reviewed files is unresolved provenance.",
+        "If the temporary review copies are gone, fetch the repository URLs in evidence.json and pin the exact recorded commits; do not silently substitute the current default branches.",
+        "Include pinned NINE65-v5-proofstack and k-elimination-lean4 sources in safe_basis_review.json. Preserve the substantive inverse-formula proof; inventory signed/division extensions separately, including v5 admitted statements and exact artifact/build provenance.",
+        "Recover the named Round I witness programs and NS_FIFTH_OPERATOR_PACKET_v2 provenance if available. Match theorem tags T1-T16 to actual implementations/logs; do not treat historical counts as fresh runs."
+      ],
+      "acceptance": [
+        "A file-and-symbol correspondence table distinguishes the owner\u2019s intended architecture from current and historical implementations.",
+        "NIST input generation via secrets.randbelow is explicitly distinguished from actual NTT traces.",
+        "Neither missing history nor a passing placeholder is treated as a security verdict."
+      ],
+      "checks": [
+        "git -C /tmp/nine65-v6-plan-review rev-parse HEAD",
+        "git -C /tmp/nine65-security-proofs-review rev-parse HEAD"
+      ],
+      "stop": "Do not rewrite historical artifacts. Do not claim the entire proof tree builds from scanning it. Missing source becomes a precise evidence request.",
+      "issues": [
+        67,
+        92
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "S00",
+      "title": "Freeze the intact priming root and exact phase-coordinate contract",
+      "depends_on": [
+        "F00"
+      ],
+      "kind": "protocol",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/SAFE_BASIS_REVISION.md",
+        "docs/execution/2026-10-03/OWNER_MODEL_RECONCILIATION.md",
+        "docs/CRAM_INTEGRATION_CONTRACT.md",
+        "docs/CRAM_SAFE_BASIS_LIFTED_TRANSDUCTION_EXECUTION.md",
+        "crates/exact_transcendentals/src/cram_anchor.rs",
+        "crates/exact_transcendentals/src/cram_ct.rs",
+        "crates/exact_transcendentals/src/chimera_page.rs",
+        "docs/execution/2026-10-03/K_ELIMINATION_PROOF_BRIDGE.md",
+        "docs/execution/2026-10-03/ROUND_I_TRACEABILITY.md"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "artifacts/execution/priming_root_profiles.json"
+      ],
+      "steps": [
+        "Specify an admitted root with all eight S8 roles; separate its factor/role topology from the per-operation payload product M, anchor A and sister-view moduli. Preserve legacy S6 experiments under explicit restricted profiles.",
+        "Resolve the exact 2/11/higher-power phase construction against the owner clarification and available source. Shadow11 may be outside the payload M while inside the priming topology. Name the represented quantity, range, inverse conditions and each allowed root/view transition.",
+        "Specify immutable source identity/epoch, named-integer versus topology-product semantics, and which coordinates describe public ciphertext components versus protected plaintext phases. A public witness of one is not evidence for the other.",
+        "Retire the monograph MRS-emission paragraph as a current design instruction. Specify observation separately: adjacent subtraction returns K for the existing pair; any representation where it directly returns the requested value needs its own equation.",
+        "Specify general division output semantics and which actual operator domains are reversible. Record remaining unknowns rather than declaring every arithmetic operation bijective.",
+        "Map magnitude, sign, division and disambiguation to the actual proof coordinates. Use A > floor(X_max/M) for an inclusive maximum; never infer magnitude or hidden phase from a bare shadow residue."
+      ],
+      "acceptance": [
+        "The contract gives concrete equations and range/role obligations for every selected root/anchor profile.",
+        "A worker can distinguish priming root, independent carrier, dependent sister view, public projection and encrypted phase without inferring meaning from a variable named prime.",
+        "No hidden scalar K, loss of lane2/11, MRS hot-path fallback or assumed infinite capacity is permitted."
+      ],
+      "checks": [
+        "python3 scripts/nine65_execution_plan.py packet S00"
+      ],
+      "stop": "If the live 2/11 profile or required transition is not specified by available evidence, record the exact missing equation and stop its dependent implementation. Do not replace it with an unrelated historical carrier.",
+      "issues": [
+        29,
+        95,
+        117
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "S01",
+      "title": "Bind on-demand lift evidence to the live root and represented range",
+      "depends_on": [
+        "S00",
+        "C06"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "crates/exact_transcendentals/src/cram_anchor.rs",
+        "crates/exact_transcendentals/src/lifted_transduction.rs",
+        "crates/exact_transcendentals/src/transduction.rs",
+        "crates/exact_transcendentals/tests/lifted_transduction_module.rs",
+        "docs/execution/2026-10-03/K_ELIMINATION_PROOF_BRIDGE.md"
+      ],
+      "write_scope": [
+        "crates/exact_transcendentals/src/cram_anchor.rs",
+        "crates/exact_transcendentals/src/lifted_transduction.rs",
+        "crates/exact_transcendentals/tests/lifted_transduction_module.rs"
+      ],
+      "steps": [
+        "Implement only the selected S00 provider over current residue coordinates; bind source/context/epoch and the exact uniqueness interval. Derive K mod target on demand, without a cached scalar K or mixed-radix winding tower.",
+        "Reuse AdjacentWindingEvidence where its exact contract is selected; use a separate checked provider for a different approved 2/11 profile. Do not assume one shadow residue determines an unbounded winding.",
+        "Propagate existing checked-constructor capacity failures as typed errors. Reject source/provider mismatch, stale epoch, impossible range and missing coordinates before producing an admitted view.",
+        "Account for coordinate acquisition, scratch and fixed-width operations separately from the subtraction itself; do not advertise constant bit-complexity or zero total storage."
+      ],
+      "acceptance": [
+        "Exact differential tests cover source wraps and the maximum admitted lift. Exhibit aliasing outside the range and reject uncertified growth before information is lost; do not claim wrapped residues alone can detect that overflow. Signed conventions have explicit midpoint tests.",
+        "Stale/mismatched evidence cannot be used to transduce a different value; operations do not read a persistent scalar winding.",
+        "For the adjacent profile M=36, X=100: residues28/26 yield K=2 and optional observation100; tests do not confuse these outputs."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p exact_transcendentals --test lifted_transduction_module -j1",
+        "cargo test --locked --offline -p exact_transcendentals --lib cram_anchor -j1"
+      ],
+      "stop": "A typed caller-provided integer is not a proof of its derivation. Do not grant production lift admission to an arbitrary closure or test oracle.",
+      "issues": [
+        95,
+        135
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "S02",
+      "title": "Make admitted composite operator lanes mathematically correct",
+      "depends_on": [
+        "S00"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "crates/exact_transcendentals/src/cram_ops.rs",
+        "crates/exact_transcendentals/src/k_elim.rs",
+        "docs/execution/2026-10-03/probes/safe_basis_probe.rs",
+        "crates/exact_transcendentals/src/cram_machine.rs"
+      ],
+      "write_scope": [
+        "crates/exact_transcendentals/src/cram_ops.rs",
+        "crates/exact_transcendentals/src/cram_machine.rs",
+        "crates/exact_transcendentals/tests/composite_operator_domains.rs"
+      ],
+      "steps": [
+        "Add a failing regression for the admitted Schema Inv(2) mod15 result2 versus inverse8. Replace prime-only pow(a,m-2,m) on generic admitted composites with checked modular unit inversion; audit Div through the same API.",
+        "Validate modulus, input normalization, lengths and overflow before arithmetic; give typed zero/nonunit errors. Declare modulus1 as a constant view outside inverse/field semantics.",
+        "Correct lane-validity counting for composite moduli using exact unit counts, with bounded public factoring and typed refusal for unresolved cofactors. Keep diagnostics outside lane execution; propagate counting/width errors through the live machine API. Preserve the documented unreduced fraction and distinguish independent-uniform-input assumptions from phase-locked input distributions.",
+        "Keep current independent-basis schema constraints intact. Shared-factor sister layouts belong to S03 and must not be enabled by deleting gcd/degree guards.",
+        "Keep Schema outputs in residue coordinates. Retire apply_and_reconstruct; do not add any runtime Garner/MRS observation helper. Verify heterogeneous inverse-lane roundtrip and lane-local/permutation behavior, plus arrow/emission gates."
+      ],
+      "acceptance": [
+        "Exhaustive small composite and prime tests check inverse products and Div against a brute-force independent oracle; nonunits/zero refuse.",
+        "Mod9 inverse2=5, mod15 inverse2=8 and the owner T5 vector mod15015 inverse2=7508 pass through the actual schema API; named prime-profile regressions still pass.",
+        "The separate k_elim DIV3 implementation remains correct for composite unit inputs and refuses unsupported nonunit inputs."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p exact_transcendentals --test composite_operator_domains -j1",
+        "cargo test --locked --offline -p exact_transcendentals --lib cram_ops -j1",
+        "cargo test --locked --offline -p exact_transcendentals --lib div_cubed_multiply_matches_lanewise_product -j1",
+        "cargo test --locked --offline -p exact_transcendentals --lib cram_machine -j1",
+        "cargo test --locked --offline -p exact_transcendentals --test arrow_emission_reversibility --test arrow_emission_joint_property -j1"
+      ],
+      "stop": "Do not invent a modular inverse for a nonunit or call field-only algorithms valid on every composite. Secret-bearing variable-time inversion needs the V01 disposition before release.",
+      "issues": [
+        29,
+        117
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "S03",
+      "title": "Implement sister-frame views while preserving the priming root",
+      "depends_on": [
+        "S01",
+        "S02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "crates/exact_transcendentals/src/lifted_transduction.rs",
+        "crates/exact_transcendentals/src/chimera_page.rs",
+        "crates/exact_transcendentals/src/cram_machine.rs",
+        "crates/exact_transcendentals/tests/safe_basis_lifted_transduction.rs",
+        "docs/execution/2026-10-03/FPD_BFV_RESCALE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "crates/exact_transcendentals/src/cram_frame.rs",
+        "crates/exact_transcendentals/src/lib.rs",
+        "crates/exact_transcendentals/src/chimera_page.rs",
+        "crates/exact_transcendentals/tests/cram_frame.rs"
+      ],
+      "steps": [
+        "Introduce a checked priming-root type and sister-view registry using S00 roles and S01 evidence. Keep fewer-than-eight legacy pages explicitly outside the admitted root profile.",
+        "Project to arbitrary positive target moduli, including overlapping composites and duplicate lanes. Count information/capacity by the actual constrained image and LCM; modulus1 is a zero-information view.",
+        "Implement add/drop/replace/re-add view transitions with source identity and epoch checks. Preserve root roles even when the operator tray omits lane2 to satisfy its own degree bound.",
+        "Distinguish immutable shared-integer views from independently transformed topology states. Rebinding/write-back requires compatibility or an explicit semantic transition, not merely matching two residues.",
+        "Validate forward projection without incorrectly requiring every dependent target tray to support reverse independent CRT.",
+        "Assign Inv and other instructions to phase-locked sister operator lanes; preserve root coordinates. Enforce unit-domain checks on each Inv/Div instruction; EEA/reference correctness does not by itself implement the intended sister fabric."
+      ],
+      "acceptance": [
+        "Root lanes/roles remain intact across sister reconfiguration; custom roots below eight lanes refuse admission.",
+        "Views [6,10,15,21] repeat at210 and are not credited product18900; source preservation prevents that view alias from erasing root information.",
+        "Exhaustive small-state and boundary tests cover [1,6,10,15,22,121,323], failed reconfiguration rollback and stale evidence.",
+        "Heterogeneous per-lane operators preserve their declared topology semantics; any claimed shared-integer interpretation has an enforced compatibility test."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p exact_transcendentals --test cram_frame -j1",
+        "cargo test --locked --offline -p exact_transcendentals --test safe_basis_lifted_transduction -j1"
+      ],
+      "stop": "Do not implement shared-factor views as a falsely independent CRT basis, or treat the ordinary wrapper fingerprint as a preserved computational root.",
+      "issues": [
+        29,
+        95,
+        117
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "S04",
+      "title": "Certify operator domains, DIV3 scope and the catalog claims",
+      "depends_on": [
+        "S03",
+        "C01"
+      ],
+      "kind": "research",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "crates/exact_transcendentals/src/cram_frame.rs",
+        "crates/exact_transcendentals/src/k_elim.rs",
+        "crates/exact_transcendentals/src/cram_ops.rs",
+        "docs/cram-corpus/2026-08-12/division_operator_space.py",
+        "docs/cram-corpus/2026-08-12/operator_space_R.py",
+        "crates/nine65/src/bin/deep_rigorous_audit.rs",
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md",
+        "docs/execution/2026-10-03/ROUND_I_TRACEABILITY.md",
+        "crates/exact_transcendentals/src/arrow_step.rs",
+        "docs/execution/2026-10-03/FPD_BFV_RESCALE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/OPERATOR_DOMAIN_CONTRACT.md",
+        "scripts/cram_operator_contracts.py",
+        "artifacts/execution/cram_operator_domains.json"
+      ],
+      "steps": [
+        "Record each selected operator expression, admitted unit/nonunit domain, exact output meaning, inverse/loss rule and dependency depth. Exhaust DIV3 over small prime/composite unit domains and cover rejected zeros/nonunits.",
+        "Recover the referenced 14M catalog if available. Report raw assignments, admitted schemas and equivalence classes separately; state the tested equivalence relation and domain before asserting distinctness.",
+        "For each proposed encrypted operator, write its ciphertext-to-ciphertext equation, key material and BFV error invariant. Distinguish an exact arithmetic identity from a proved reduction of phase error; record missing encrypted implementations explicitly.",
+        "Supply R00 with valid improved bound candidates or an explicit unchanged bound. Positive zero-noise/encrypted claims require the corresponding proof and oracle, not an audit binary printout.",
+        "Record lane/tray parallel work and dependent stages separately; no instant-computation or all-operators-bijective claim follows from a configuration count.",
+        "Reuse Round I T3/T4/T6/T7/T12/T16 as scoped contracts. For affine folding with nonunit a-1, verify power/sum pair doubling to retain logarithmic stage count without modular division.",
+        "Record FPD inexact rescale as remainder-adjusted exact auxiliary division with an explicit rounding intent; do not relax exact-division guards or replace the main-only scaler with the legacy c0-witness/scalar FPD helper."
+      ],
+      "acceptance": [
+        "Artifacts identify the precise status of each selected operator: clear verified domain, implemented encrypted route, or unresolved encrypted construction.",
+        "The fixed unit-domain DIV3 statement is checked independently; no claimed full-domain product silently drops nonunits.",
+        "No catalog count is promoted to novelty, semantic uniqueness or FHE correctness without its own evidence."
+      ],
+      "checks": [
+        "python3 scripts/cram_operator_contracts.py --self-test",
+        "python3 docs/cram-corpus/2026-08-12/division_operator_space.py"
+      ],
+      "stop": "If the encrypted DIV3 construction is absent, record that exact gap and retain the proved arithmetic result. Do not remove the BFV error terms or reset a ledger to manufacture noise-free multiplication.",
+      "issues": [
+        73,
+        95,
+        117
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "S05",
+      "title": "Connect the preserved Safe Basis substrate to public CRAM execution",
+      "depends_on": [
+        "S03",
+        "S04",
+        "C02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "docs/execution/2026-10-03/OPERATOR_DOMAIN_CONTRACT.md",
+        "crates/exact_transcendentals/src/cram_frame.rs",
+        "crates/nine65/src/ops/cram_main.rs",
+        "crates/nine65/src/cram_ct_wrap.rs",
+        "crates/nine65/src/arithmetic/main_only_base_ext.rs",
+        "crates/mana/src/executor.rs",
+        "crates/unhal/src/accelerator.rs",
+        "docs/execution/2026-10-03/FPD_BFV_RESCALE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/cram_main.rs",
+        "crates/nine65/src/ops/cram_frames.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/cram_frame_integration.rs",
+        "artifacts/execution/cram_frame_matrix.json"
+      ],
+      "steps": [
+        "Integrate the admitted root and sister state into certified operations with atomic epoch/bound updates. Show actual frame computations consumed by operations; regeneration of an unused S8 fingerprint is insufficient.",
+        "Derive public-component views using admitted residue machinery without coefficient reconstruction. Keep secret-dependent plaintext-phase observations encrypted or within their authorized client boundary.",
+        "Preserve the internal root across ordinary operations and sister add/drop/transduction. Treat actual Q/level/key/encoding changes as separate certified transitions and rebind contexts explicitly.",
+        "Connect independent lane/tray batches to the existing UNHAL/MANA deterministic executor. Avoid shared-file work races and preserve declared operation dependencies; measure bit-identical serial and multiworker outputs.",
+        "Expose public schema/role metadata and reconstructible views according to C03 policy while excluding unreviewed secret-dependent residues. No persistent scalar winding or hot-path MRS/Garner fallback."
+      ],
+      "acceptance": [
+        "End-to-end client-oracle tests cover real add/mul/frame transitions, all coefficients, source wraps, corrupted phase relation and dropped/re-added sister lanes.",
+        "Tests prove the root invariant is used and preserved, not merely attached as a label; failure leaves original ciphertext/frame/bounds intact.",
+        "The new frame path records zero forbidden reconstruction; varying lane-worker count preserves outputs and admitted state.",
+        "No clear plaintext phase, secret or non-derived residue becomes a public wire field; same representation/error contract is checked before and after actual modulus transitions."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test cram_frame_integration --features allow_insecure -j1",
+        "python3 scripts/check_wr1_exact_route_denylist.py"
+      ],
+      "stop": "If a needed frame observation cannot be derived from public ciphertext state without learning a secret-dependent phase, stop with the missing encrypted operation. Do not expose a secret witness or bypass the preserved root to make the demo pass.",
+      "issues": [
+        29,
+        86,
+        95,
+        117
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "C00",
+      "title": "Expose the existing main-only CRAM evaluator as a distinct public API",
+      "depends_on": [
+        "F01",
+        "S00"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/ops/exact_mul.rs",
+        "crates/nine65/src/ops/cram_public.rs",
+        "crates/nine65/src/ops/rns_fhe.rs",
+        "scripts/check_wr1_exact_route_denylist.py",
+        "artifacts/execution/parameter_registry.json",
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "docs/execution/2026-10-03/FPD_BFV_RESCALE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/cram_main.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/cram_main.rs",
+        "crates/nine65/Cargo.toml"
+      ],
+      "steps": [
+        "Add a small main-only evaluator wrapper around ExactMulEvaluator and existing main-RNS add/plain operations; bind a context and key family.",
+        "Create separate client and public evaluation bundles; main-only public/gadget keys only. The evaluator API has no secret-key or s\u00b2 argument.",
+        "Keep the old CramPublicEvaluator explicitly legacy until callers migrate. Preserve an honest route/emission ledger; do not relabel materialization as lane-local.",
+        "Do not expose exact_divide as arbitrary integer division: document modular-unit semantics and require an appropriate bound/encoding contract before any stronger claim.",
+        "Honor S00 root and frame interfaces in the wrapper shape; C00 alone is the arithmetic backend milestone, not completed Safe Basis integration. S05 must establish the actual preserved substrate.",
+        "Use the existing ExactMulEvaluator tensor path and ExactScaleRound remainder-adjusted FPD for inexact BFV rescale on all components. Derive coherent auxiliary inputs before tensor multiplication; preserve the current signed rounding rule and N/2 bound for d1."
+      ],
+      "acceptance": [
+        "Independent test decrypts add, multiply and signed boundary messages; malformed shape/context/key and nonunit division refuse.",
+        "No public key/ciphertext object contains coprime anchor state, and no runtime path enters Garner or full coefficient reconstruction."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test cram_main --features allow_insecure -j1",
+        "python3 scripts/check_wr1_exact_route_denylist.py"
+      ],
+      "stop": "Do not strip anchors then invoke a dual kernel that requires them. A source scan alone does not prove the route safe.",
+      "issues": [
+        29,
+        86
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "C01",
+      "title": "Specify a sound exact noise-bound algebra",
+      "depends_on": [
+        "F01",
+        "S00"
+      ],
+      "kind": "research",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/noise/budget.rs",
+        "crates/nine65/src/ops/exact_mul.rs",
+        "crates/nine65/src/ops/expanded_phase1.rs",
+        "crates/nine65/src/ops/prime_power_digit_lift.rs",
+        "artifacts/execution/parameter_registry.json",
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md",
+        "docs/execution/2026-10-03/FPD_BFV_RESCALE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md",
+        "scripts/certified_noise_oracle.py",
+        "scripts/test_certified_noise_oracle.py"
+      ],
+      "steps": [
+        "Define the coefficient-norm phase invariant, centered plaintext convention, floor(Q/t) correction, bounded error/secret support, key-switch terms, rounding ties and admitted level.",
+        "Derive separate add/plain/multiply/relinearization/transform/modswitch/refresh recurrences using actual a,b bounds; record the complete operation dependencies.",
+        "Build an independent Python integer oracle and exhaustive small-ring checks using real sampled/worst-case supports. Specify how a public certificate is obtained without observing hidden actual error.",
+        "Freeze the units and serialization of CertifiedNoiseBound. Declare deterministic support or a quantified lifetime failure budget; never silently exchange them.",
+        "Derive the selected FPD rescale bound using Z=tX+floor(Q/2), r=Z modQ, Y=(Z-r)/Q; specify coherent remainder provenance, auxiliary capacity A>2*s_mult*Q and mathematical rounding error. Exact division remains separately typed."
+      ],
+      "acceptance": [
+        "Every emitted bound dominates the actual decrypt-phase error on the exhaustive toy domains and adversarial sign/tie vectors.",
+        "Proof review finds all assumptions enforceable by the proposed constructors and key samplers.",
+        "A deliberately omitted cross term or floor-scale term is caught by a negative fixture."
+      ],
+      "checks": [
+        "python3 -m unittest discover -s scripts -p test_certified_noise_oracle.py"
+      ],
+      "stop": "This is a mathematics gate. A successful sample or integer millibit counter is not a bound; do not invent cancellation/correlation assumptions to fit capacity.",
+      "issues": [
+        73,
+        83,
+        95
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "C02",
+      "title": "Implement immutable certified ciphertext history",
+      "depends_on": [
+        "C00",
+        "C01"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md",
+        "crates/nine65/src/ops/auto_bootstrap.rs",
+        "crates/nine65/src/ops/cram_main.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/noise/certified.rs",
+        "crates/nine65/src/noise/mod.rs",
+        "crates/nine65/src/ops/cram_main.rs",
+        "crates/nine65/tests/certified_state.rs"
+      ],
+      "steps": [
+        "Implement private CertifiedCiphertext/CertifiedNoiseBound fields with context, key-domain and provenance binding.",
+        "Only checked encryption and certified operations issue trusted bounds. Raw imports are Uncertified until an explicit trusted-client or authenticated-history policy supplies a valid bound.",
+        "Remove any route that mutates a ciphertext under an unchanged certificate or wraps arbitrary bytes as fresh. Maintain independent state for DAG forks and joins.",
+        "Require exact scalar/division support semantics; clone copies the state but cannot reset it."
+      ],
+      "acceptance": [
+        "External code cannot construct or mutate certified fields; compile-fail tests exercise this boundary.",
+        "Swapped bytes, key domain, level or context invalidate admission; resetting a display ledger has no effect.",
+        "Two branches evolving independently have correct bounds on join."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test certified_state --features allow_insecure -j1"
+      ],
+      "stop": "A SHA tag or caller signature binds a claim but does not prove its noise semantics. Record which producer is trusted.",
+      "issues": [
+        86,
+        73
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "C03",
+      "title": "Implement a strict versioned main-Q wire codec",
+      "depends_on": [
+        "C02",
+        "S05"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/fhe-service/src/session.rs",
+        "crates/fhe-service/src/wire.rs",
+        "crates/nine65/src/ops/cram_main.rs",
+        "crates/nine65/src/noise/certified.rs",
+        "crates/nine65/src/ops/cram_frames.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/wire_q.rs",
+        "crates/nine65/src/lib.rs",
+        "crates/nine65/tests/wire_q_v1.rs",
+        "docs/WIRE_Q_V1.md"
+      ],
+      "steps": [
+        "Specify little-endian byte layout, version, context/key identifiers, coefficient-domain/Montgomery tags, level, ordered lane counts and exact lengths.",
+        "Validate header and checked size arithmetic before allocation; reject noncanonical residues, unknown version/domain/level, wrong context and trailing data.",
+        "Encode main-only ciphertext/public/evaluation-key objects as applicable. Keep certified history trust policy distinct from parsing validity.",
+        "Reconstitute and validate the internal root/frame contract after import using S05; the main-Q wire boundary is not permission to discard the priming substrate."
+      ],
+      "acceptance": [
+        "Roundtrip preserves every main-Q lane exactly. Public schema/role metadata may describe the intact internal root; no unreviewed secret-dependent auxiliary residue is serialized. Derived public views must rebind to the admitted source after import.",
+        "Truncated, oversized, duplicate/wrong lanes, trailing bytes, wrong key/context and altered domain fixtures all refuse without panic.",
+        "An old anchor-bearing DualRNS serialization is rejected."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test wire_q_v1 --features serde,allow_insecure -j1"
+      ],
+      "stop": "Do not restore serialization by removing the existing refusal before the new codec and main-only route pass.",
+      "issues": [
+        86,
+        85
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "C04",
+      "title": "Restore service operations through the certified main-only route",
+      "depends_on": [
+        "C03",
+        "F02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/fhe-service/src/session.rs",
+        "crates/fhe-service/src/handlers.rs",
+        "crates/fhe-service/src/http.rs",
+        "crates/fhe-service/src/main.rs",
+        "crates/nine65/src/wire_q.rs",
+        "docs/WIRE_Q_V1.md",
+        "crates/nine65/src/ops/cram_main.rs",
+        "docs/execution/2026-10-03/TEST_TRIAGE.md"
+      ],
+      "write_scope": [
+        "crates/fhe-service/src/session.rs",
+        "crates/fhe-service/src/handlers.rs",
+        "crates/fhe-service/src/wire.rs",
+        "crates/fhe-service/src/main.rs"
+      ],
+      "steps": [
+        "Migrate sessions to main-only client/evaluation bundles and WireQ codec. Service-owned encryption may issue certificates; external ciphertexts obey C02 provenance policy.",
+        "Wire encrypt/decrypt/add/sub/plain/multiply to the explicit exact route, and expose actual tuple fingerprint and supported capabilities.",
+        "Re-enable each previously WIRE-Q-ignored test only after the corresponding route works. Preserve strict HTTP framing, tenant key isolation and aggregate allocation limits."
+      ],
+      "acceptance": [
+        "HTTP encrypt\u2192evaluate\u2192decrypt produces checked results, including boundary plaintexts and typed unsupported-refresh errors.",
+        "Cross-tenant ciphertexts and ambiguous Content-Length/Transfer-Encoding/trailing/pipelined bodies refuse.",
+        "Production build has no allow_insecure feature and secure RNG failure cannot create a session/key."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p fhe-service --no-fail-fast -j1",
+        "cargo build --locked --offline --release -p fhe-service -j1"
+      ],
+      "stop": "Do not claim server-held decryption keys are a client-secret public-evaluator deployment. Document both API roles.",
+      "issues": [
+        94,
+        86,
+        85,
+        74
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "C05",
+      "title": "Stabilize Python on the same exact route",
+      "depends_on": [
+        "C04"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65-python/Cargo.toml",
+        "crates/nine65-python/src/lib.rs",
+        "crates/nine65/src/ops/cram_main.rs",
+        "docs/WIRE_Q_V1.md",
+        "crates/nine65/src/noise/certified.rs"
+      ],
+      "write_scope": [
+        "crates/nine65-python/src/lib.rs",
+        "crates/nine65-python/tests",
+        "docs/PYTHON_MAIN_Q.md"
+      ],
+      "steps": [
+        "Expose one supported parameter/context/key/ciphertext API backed by C00/C03, with explicit exceptions for typed Rust refusals.",
+        "Ensure ciphertext multiplication cannot call deprecated BFVEvaluator::mul; establish wire compatibility and key ownership.",
+        "Build a local wheel and run a fresh-process Python encrypt/add/multiply/decrypt and malformed-input smoke test."
+      ],
+      "acceptance": [
+        "Wheel imports without the source checkout, all results match Rust oracle vectors, and malformed inputs do not abort the interpreter.",
+        "Capabilities and parameter labels match the service. No package publication is performed by this task."
+      ],
+      "checks": [
+        "cargo test --locked --offline --release -p nine65-python --features python --no-fail-fast -j1"
+      ],
+      "stop": "Stop on missing Python build tooling with exact prerequisites. Do not substitute a mock extension or silently change supported operations.",
+      "issues": [
+        17,
+        63,
+        135
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "C06",
+      "title": "Verify remaining exactness and fallible-constructor boundaries",
+      "depends_on": [
+        "F01",
+        "F02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/exact_transcendentals/src/transduction.rs",
+        "crates/exact_transcendentals/src/lifted_transduction.rs",
+        "crates/nine65/src/cram_ct_wrap.rs",
+        "crates/nine65/src/ops/encrypt.rs",
+        "docs/execution/2026-10-03/FPD_BFV_RESCALE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "crates/exact_transcendentals/src/transduction.rs",
+        "crates/exact_transcendentals/src/lifted_transduction.rs",
+        "crates/nine65/src/cram_ct_wrap.rs",
+        "crates/nine65/src/ops/encrypt.rs",
+        "scripts/check_no_panics.sh"
+      ],
+      "steps": [
+        "Verify existing checked transduction constructors at largest accepted intermediate capacity and one step beyond; propagate typed errors at caller-controlled boundaries.",
+        "Retain and run active-level centered-sign regression in cram_ct_wrap; cover Q_level-1 and both sides of the centered boundary.",
+        "Reproduce the near-t legacy decoder issue independently and fix only a demonstrated remaining defect. Split constructor/decoder fixes into separate patches.",
+        "Ratchet fallible try_* APIs against unwrap/expect/panic using release subprocess checks.",
+        "Audit ExactScaleRound raw-array shape assertions, supported inverse domains and same-X/bound producer contract. Do not accept caller-writable validity booleans as coherent tensor evidence."
+      ],
+      "acceptance": [
+        "No capacity overflow, reduced-level sign ambiguity or near-t off-by-one remains inside advertised domains.",
+        "Correct existing checked code is not replaced just to match stale notes; every changed defect has a before/after vector."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p exact_transcendentals transduction --lib -j1",
+        "cargo test --locked --offline -p nine65 --lib cram_ct_wrap -j1",
+        "bash scripts/check_no_panics.sh"
+      ],
+      "stop": "Do not change decoder semantics without tracing its actual input scaling and supported near-t contract.",
+      "issues": [
+        85,
+        89,
+        135,
+        69
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "R00",
+      "title": "Measure the tighter-CRAM-parameter hypothesis term by term",
+      "depends_on": [
+        "C01",
+        "C06",
+        "S04"
+      ],
+      "kind": "research",
+      "state": "planned",
+      "inputs": [
+        "scripts/canonical_lift_feasibility.py",
+        "crates/nine65/src/ops/prime_power_digit_lift.rs",
+        "crates/nine65/src/arithmetic/main_only_base_ext.rs",
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md",
+        "artifacts/execution/parameter_registry.json",
+        "docs/execution/2026-10-03/OPERATOR_DOMAIN_CONTRACT.md",
+        "docs/execution/2026-10-03/FPD_BFV_RESCALE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "scripts/cram_bound_ablation.py",
+        "artifacts/execution/cram_bound_ablation.json",
+        "docs/execution/2026-10-03/TIGHT_BOUND_RESULT.md"
+      ],
+      "steps": [
+        "Separate exact arithmetic errors (must be zero), inherent BFV rounding, encrypted noise, key-switch error and pessimism in each certificate term.",
+        "Compare current recurrence with sharper valid norm/operand-specific bounds on identical ciphertext workloads and tuples. Include correlated same-input squares; independence cannot be assumed.",
+        "Run current four-prime and wider candidate schedules, preserving both admitted and refused records with exact first failing inequality.",
+        "Ablate the selected ExactScaleRound FPD route using signed nondivisible and rounding-boundary inputs; retain inherent BFV rounding and the summed d1 bound. Measure any improvement on identical admitted parameters and components."
+      ],
+      "acceptance": [
+        "The report identifies which term prevents admission and how many bits a proved improvement actually saves.",
+        "Any claimed tighter bound has enforceable hypotheses and independent worst-case/toy validation; measured noise is labeled diagnostic.",
+        "An exact implementation alone never zeroes encryption error."
+      ],
+      "checks": [
+        "python3 scripts/cram_bound_ablation.py --self-test"
+      ],
+      "stop": "If no tighter sound certificate admits the small tuple, retain that negative result and continue the wider construction. No unsupported security relaxation.",
+      "issues": [
+        73,
+        95,
+        117
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "R01",
+      "title": "Derive the actual bounded-digit input radius",
+      "depends_on": [
+        "R00"
+      ],
+      "kind": "research",
+      "state": "planned",
+      "inputs": [
+        "docs/PUBLIC_FHE_SOLUTION_2026-09-28.md",
+        "crates/nine65/src/ops/expanded_phase1.rs",
+        "crates/nine65/src/ops/prime_power_phase.rs",
+        "research/bfv-bootstrap-reference/src/main.rs",
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md",
+        "docs/execution/2026-10-03/TIGHT_BOUND_RESULT.md"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md",
+        "scripts/digit_radius_oracle.py",
+        "scripts/test_digit_radius_oracle.py"
+      ],
+      "steps": [
+        "Derive rho for the full proposed transform/encapsulation/expanded-phase sequence, including previous work error, scaling rounding, secret norm, floor encodings and each key-switch contribution.",
+        "Compare a uniform-ternary route with a temporary sparse-key route. Record deterministic B or quantified tail probability and key-distribution assumptions separately.",
+        "Specify an input admission predicate that implies |rho|<=B<=h and survives actual operation history. Bind it to the precise key/parameter family."
+      ],
+      "acceptance": [
+        "A machine-checkable integer oracle reproduces every term and detects a boundary violation.",
+        "The selected B follows from a reviewed derivation, not the successful reference B=17/32 runs.",
+        "Zero/negative/maximum rho and the first inadmissible input are explicit vectors."
+      ],
+      "checks": [
+        "python3 -m unittest discover -s scripts -p test_digit_radius_oracle.py"
+      ],
+      "stop": "If the bound is too wide for a useful circuit, return BLOCKED_DESIGN with its largest contributing term. Do not sample until a favorable B appears.",
+      "issues": [
+        95,
+        83
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "R02",
+      "title": "Compile the bounded polynomial to a certified operation schedule",
+      "depends_on": [
+        "R01"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "scripts/bounded_digit_polynomial.py",
+        "docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md",
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md"
+      ],
+      "write_scope": [
+        "scripts/bounded_digit_schedule.py",
+        "scripts/test_bounded_digit_schedule.py",
+        "artifacts/execution/bounded_digit_schedule.json"
+      ],
+      "steps": [
+        "Use existing polynomial identities; exploit its odd structure only after coefficient verification. Compare balanced, addition-chain and baby-step/giant-step schedules.",
+        "Emit an explicit DAG of constants/adds/plain multiplies/ct multiplies/relinearizations with plaintext modulus, scale, input/output bounds and operation count.",
+        "Symbolically evaluate the emitted DAG modulo p\u00b2 against the compiler polynomial, including p=65537 and exhaustive small-prime domains."
+      ],
+      "acceptance": [
+        "Each schedule node has a bound from C01 and uses declared key material.",
+        "Corrupting a constant or reordering a dependent node fails identity checking.",
+        "Out-of-support inputs are not counted as covered; no clear hidden-digit oracle is part of the DAG."
+      ],
+      "checks": [
+        "python3 -m unittest discover -s scripts -p test_bounded_digit_schedule.py",
+        "python3 scripts/bounded_digit_polynomial.py --self-test"
+      ],
+      "stop": "Do not choose a schedule on multiplication count alone; the full error/resource schedule must pass R03.",
+      "issues": [
+        95,
+        73
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "R03",
+      "title": "Choose an admitted complete bootstrap tuple before expensive keygen",
+      "depends_on": [
+        "R02",
+        "V00"
+      ],
+      "kind": "research",
+      "state": "planned",
+      "inputs": [
+        "docs/PRIME_POWER_LIFT_FEASIBILITY_2026-09-28.md",
+        "artifacts/execution/bounded_digit_schedule.json",
+        "crates/nine65/src/params/secure_configs.rs",
+        "docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md",
+        "docs/execution/2026-10-03/SECURITY_DISPOSITIONS.md"
+      ],
+      "write_scope": [
+        "scripts/bootstrap_candidate_search.py",
+        "artifacts/execution/bootstrap_candidates.json",
+        "docs/execution/2026-10-03/BOOTSTRAP_TUPLE_DECISION.md"
+      ],
+      "steps": [
+        "Evaluate small-CRAM and wider-reference candidates for every stage: arithmetic limb widths, auxiliary NTT capacity, phase support, circuit error, contraction, return key and next operation.",
+        "Use exact prime products, NTT primality/root checks and explicit 2N|(p-1) slot geometry. Record target security input for all key domains.",
+        "Before admitting a candidate, obtain V00 security analysis for its exact key distributions and relationships. Estimate RAM, key payloads and runtime operation counts.",
+        "Emit a rejected-candidate ledger plus a frozen chosen tuple/circuit fingerprint or BLOCKED_DESIGN."
+      ],
+      "acceptance": [
+        "At least one candidate satisfies all correctness/capacity obligations and has a reviewed security disposition before production key generation.",
+        "Every smaller rejected tuple explains its first failing inequality; none disappears from the report.",
+        "A functional-only insecure tuple is labeled and isolated, never the production winner."
+      ],
+      "checks": [
+        "python3 scripts/bootstrap_candidate_search.py --self-test"
+      ],
+      "stop": "There may be no admitted candidate. In that case M2 remains blocked; a free model must not lower the target, omit sparse-key samples, or change t silently.",
+      "issues": [
+        75,
+        76,
+        83,
+        95,
+        117
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B00",
+      "title": "Extend fixed-work rank and capacity arithmetic as required by R03",
+      "depends_on": [
+        "R03"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/arithmetic/rns.rs",
+        "crates/nine65/src/arithmetic/main_only_base_ext.rs",
+        "docs/execution/2026-10-03/BOOTSTRAP_TUPLE_DECISION.md"
+      ],
+      "write_scope": [
+        "crates/nine65/src/arithmetic/bounded_wide.rs",
+        "crates/nine65/src/arithmetic/mod.rs",
+        "crates/nine65/src/arithmetic/main_only_base_ext.rs"
+      ],
+      "steps": [
+        "Implement the public-parameter-sized limb operations required by the chosen tuple: add/sub/mul/compare and exact quotient-ceiling metadata.",
+        "Replace only insufficient 256/512-bit rank/capacity intermediates; keep coefficient data in residue form.",
+        "Use fixed loop counts for secret-sensitive values and checked public allocation; maintain small-width fast paths only when their admission is proven."
+      ],
+      "acceptance": [
+        "Independent arbitrary-precision tests cover zero, max limbs, carries, borrow chains and exact capacity edge/overflow refusal.",
+        "Widening does not reconstruct coefficients or alter rounding/centering semantics.",
+        "R03 inputs recompute identically using the new widths."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --lib bounded_wide -j1",
+        "cargo test --locked --offline -p nine65 --lib main_only_base_ext -j1"
+      ],
+      "stop": "If the selected tuple fits current widths, record no change. Do not add a generic bigint runtime dependency to bypass a proof obligation.",
+      "issues": [
+        29,
+        95
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B01",
+      "title": "Extend exact scale-round, transient NTT capacity and relinearization",
+      "depends_on": [
+        "B00"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/arithmetic/exact_scale_round.rs",
+        "crates/nine65/src/ops/exact_mul.rs",
+        "crates/nine65/src/ops/exact_mul_tests.rs",
+        "docs/execution/2026-10-03/BOOTSTRAP_TUPLE_DECISION.md",
+        "crates/nine65/src/ops/rns_fhe.rs",
+        "crates/nine65/src/arithmetic/main_only_base_ext.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/arithmetic/exact_scale_round.rs",
+        "crates/nine65/src/ops/exact_mul.rs",
+        "crates/nine65/src/ops/exact_mul_tests.rs",
+        "scripts/check_wr1_exact_route_denylist.py",
+        "crates/nine65/src/ops/rns_fhe.rs"
+      ],
+      "steps": [
+        "Audit context/encoding and public-key generation for the selected width. The current sample_uniform_main_poly asserts a 256-bit lane-sum bound; replace the selected main-only path with a reviewed full-Q sampler for the chosen tuple, or refuse before key generation. Do not remove the guard and retain wrapping U256 products. Keep legacy dual sampling out of the selected public route.",
+        "Supply enough independently checked NTT-compatible auxiliary primes for the selected tensor bound, including d1\u2019s two products.",
+        "Extend plan/certificate and hybrid gadget decomposition consistently with B00 widths; preserve centered input lift before tensor wrapping.",
+        "Add wide-tuple oracle vectors and main-only key/output/scratch lifetime checks; update denylist reachability for newly factored modules."
+      ],
+      "acceptance": [
+        "Exact tensor, scale-round and relinearization agree with an independent bigint oracle for complete polynomials.",
+        "The original named-config tests still pass; undersized auxiliary bases refuse before any output.",
+        "No auxiliary lane escapes into serialized keys/ciphertexts.",
+        "The selected full-Q key and evaluation-key samplers cover every lane without bias or a 256-bit truncation; context setup and exact client decryption support the selected width. Small-width regressions still pass."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --lib exact_mul --no-fail-fast -j1",
+        "python3 scripts/check_wr1_exact_route_denylist.py",
+        "cargo test --locked --offline -p nine65 --lib single_rns_uniform_sampler_covers_the_whole_main_modulus -j1"
+      ],
+      "stop": "A prime pool expansion does not admit a previously failed noise or security bound. Keep those gates independent.",
+      "issues": [
+        29,
+        86
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B02",
+      "title": "Implement clear coefficient/slot transform specifications",
+      "depends_on": [
+        "R03"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "research/bfv-bootstrap-reference/src/main.rs",
+        "docs/execution/2026-10-03/BOOTSTRAP_TUPLE_DECISION.md",
+        "crates/nine65/src/arithmetic/ntt_fft.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/arithmetic/bootstrap_transform.rs",
+        "crates/nine65/src/arithmetic/mod.rs",
+        "scripts/bootstrap_transform_oracle.py"
+      ],
+      "steps": [
+        "Define forward/inverse layouts over p and p\u00b2, roots, normalization and automorphism ordering for the exact chosen ring.",
+        "Implement clear integer transforms and an independent schoolbook oracle; export test vectors for later encrypted transforms.",
+        "Give every transform coefficient and Galois rotation a deterministic identifier and norm bound."
+      ],
+      "acceptance": [
+        "Inverse(forward(x))=x for every basis vector and random/edge polynomials, with all coefficients checked.",
+        "p and p\u00b2 transforms match their own algebra; no field assumption is used for a nonunit modulo p\u00b2.",
+        "Wrong roots or normalization are rejected."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --lib bootstrap_transform -j1",
+        "python3 scripts/bootstrap_transform_oracle.py --self-test"
+      ],
+      "stop": "Do not extend the degree-one slot construction to unsupported N. A different ring requires a new reviewed design.",
+      "issues": [
+        95
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B03",
+      "title": "Implement public Galois keys and encrypted transforms",
+      "depends_on": [
+        "B01",
+        "B02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/ops/prime_power_digit_lift.rs",
+        "crates/nine65/src/arithmetic/bootstrap_transform.rs",
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/bootstrap_transform.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/bootstrap_transform.rs"
+      ],
+      "steps": [
+        "Reuse existing public automorphism/gadget primitives when their domains match. Implement the reviewed transform schedule with main-only public Galois keys.",
+        "Carry a bound and key/domain identifier through every rotate/add/plain multiply. Validate key shapes before expensive work.",
+        "Compare encrypted outputs against B02 vectors using a client-only decryption oracle."
+      ],
+      "acceptance": [
+        "Forward and inverse encrypted transforms preserve all coefficients within the certified error bounds.",
+        "Evaluator signatures contain no secret key; malformed/missing/wrong-family Galois keys refuse.",
+        "Nonzero noise and nonconstant polynomial inputs pass."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test bootstrap_transform --features allow_insecure -j1"
+      ],
+      "stop": "An encrypted transform passing scalar coefficient-zero tests is insufficient. No decrypt/re-encrypt shortcut.",
+      "issues": [
+        95,
+        16
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B04",
+      "title": "Implement the reviewed error-control and key-domain transition",
+      "depends_on": [
+        "B01",
+        "R01",
+        "R03"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md",
+        "docs/execution/2026-10-03/BOOTSTRAP_TUPLE_DECISION.md",
+        "crates/nine65/src/keys/expanded_bootstrap.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/bootstrap_encapsulation.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/bootstrap_encapsulation.rs"
+      ],
+      "steps": [
+        "Implement only the selected uniform-ternary or sparse temporary-key construction from R03, with exact bounded integer sampling and main-only key material.",
+        "Bind every switch key to source/destination key IDs, modulus, encoding, ring and support assumptions.",
+        "Produce the certified expanded-phase input required by R01; capture actual errors only inside tests."
+      ],
+      "acceptance": [
+        "The phase-support bound holds for adversarial toy keys/errors and realistic diagnostic samples; all coefficients checked.",
+        "Wrong support/domain/key family and an input beyond the allowed radius refuse before digit evaluation.",
+        "Security review corresponds to the actual sampler/distribution implemented."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test bootstrap_encapsulation --features allow_insecure -j1"
+      ],
+      "stop": "Do not reinterpret the reference\u2019s Gaussian distribution as bounded CBD without rederiving correctness and security.",
+      "issues": [
+        82,
+        83,
+        95
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B05",
+      "title": "Evaluate the bounded canonical digit under encryption",
+      "depends_on": [
+        "B03",
+        "B04",
+        "R02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/ops/prime_power_digit_lift.rs",
+        "crates/nine65/src/ops/prime_power_phase.rs",
+        "artifacts/execution/bounded_digit_schedule.json",
+        "crates/nine65/src/ops/bootstrap_transform.rs",
+        "crates/nine65/src/ops/bootstrap_encapsulation.rs",
+        "docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/bounded_digit_lift.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/bounded_digit_lift.rs",
+        "crates/nine65/src/ops/prime_power_phase.rs"
+      ],
+      "steps": [
+        "Load/construct only the validated R02 schedule bound to the selected parameter/circuit fingerprint.",
+        "Evaluate h+F(x-h) in the high encoding; issue CanonicalLowDigitLift through a private constructor only after public admission and lineage checks.",
+        "Run the same operations and bounds declared in the schedule, using B03 slot transforms where specified.",
+        "Keep evidence fields private. Use a child producer module of prime_power_phase, as the existing digit_lift module does, or an equally restricted producer interface; do not expose an arbitrary public certificate constructor. Re-export only the checked evaluator API."
+      ],
+      "acceptance": [
+        "For all admitted toy x, decrypted output is the canonical r in [0,p), not merely a value equal modulo p.",
+        "Noise bound holds at each node; corrupted schedule, family or source bound refuses.",
+        "Native p=65537 vectors pass with nonzero noise and no secret/digit oracle in evaluator code."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test bounded_digit_lift --features allow_insecure -j1"
+      ],
+      "stop": "Do not manufacture CanonicalLowDigitLift from the low-view ciphertext, a clear residue or a test-only oracle.",
+      "issues": [
+        95,
+        117
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B06",
+      "title": "Contract and return to the work-key domain",
+      "depends_on": [
+        "B05"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/ops/prime_power_phase.rs",
+        "crates/nine65/src/keys/bootstrap.rs",
+        "docs/execution/2026-10-03/BOOTSTRAP_TUPLE_DECISION.md",
+        "crates/nine65/src/ops/bounded_digit_lift.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/prime_power_phase.rs",
+        "crates/nine65/src/ops/bootstrap_return.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/bootstrap_return.rs"
+      ],
+      "steps": [
+        "Reuse conditional contraction with the real B05 lift and include its scale/error terms.",
+        "Implement the reviewed boot\u2192work switch and any final transform/basis transition in the exact order frozen by R03.",
+        "Return a main-only work-key ciphertext with a valid C02 output bound and restored next-operation capacity."
+      ],
+      "acceptance": [
+        "Correct full-polynomial plaintext and work-key identity survive contraction/return.",
+        "A subsequent exact multiply decrypts correctly and its predicted bound remains within the next refresh input allowance.",
+        "Wrong low-digit encoding or destination key refuses."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test bootstrap_return --features allow_insecure -j1"
+      ],
+      "stop": "Key switching alone does not change the plaintext encoding. Do not reset the output bound to fresh-encryption cost without a derivation.",
+      "issues": [
+        95,
+        117,
+        83
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B07",
+      "title": "Assemble an admitted native public refresh backend",
+      "depends_on": [
+        "B06",
+        "C02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/ops/bootstrap.rs",
+        "crates/nine65/src/ops/expanded_phase1.rs",
+        "crates/nine65/src/ops/prime_power_phase.rs",
+        "crates/nine65/src/ops/bootstrap_return.rs",
+        "crates/nine65/src/ops/cram_main.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/public_refresh.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/public_refresh.rs",
+        "docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md"
+      ],
+      "steps": [
+        "Add PublicRefreshPlan/PublicRefreshKeys/PublicRefreshEvaluator interfaces using the complete reviewed pipeline.",
+        "Validate complete plan and resource certificates before key generation; validate actual input certificate before evaluation.",
+        "Keep legacy public_phase1_soundness_gate for the invalid old implementation. Route only explicitly admitted new plans to the new backend."
+      ],
+      "acceptance": [
+        "Public evaluator compiles and runs without client secret objects or plaintext helpers.",
+        "Fresh, added, multiplied and relinearized full-polynomial cases refresh correctly at every admitted input level.",
+        "Unsupported tuple/level/certificate/resource inputs return typed errors."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test public_refresh --features allow_insecure -j1",
+        "cargo test --locked --offline -p nine65 --lib public_phase1_is_typed_fail_closed -j1"
+      ],
+      "stop": "Do not delete the old gate to make tests reach code. A new backend is admitted only by its own complete certificates.",
+      "issues": [
+        95,
+        117,
+        29
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B08",
+      "title": "Make refresh automatic using predicted input and operation bounds",
+      "depends_on": [
+        "B07",
+        "C02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/ops/auto_bootstrap.rs",
+        "crates/nine65/src/ops/cram_main.rs",
+        "crates/nine65/src/ops/public_refresh.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/ops/auto_refresh_main.rs",
+        "crates/nine65/src/ops/mod.rs",
+        "crates/nine65/tests/auto_refresh_main.rs"
+      ],
+      "steps": [
+        "Preflight both operands against the planned operation and the refresh backend\u2019s input margin; refresh early enough that the input is still admissible.",
+        "For a shared operand squared, refresh at most once. Preserve branch history and avoid recursive refresh loops.",
+        "Use ExactMulEvaluator after preflight. Update counters only after success; return typed failure if refresh cannot provide the next-operation capacity."
+      ],
+      "acceptance": [
+        "Deterministic tests exercise no-refresh, left-only, right-only, both and shared-operand cases.",
+        "Refresh failure leaves caller operands unchanged; counters never report a failed refresh as successful.",
+        "A long chain needs no manual refresh request and records actual refresh calls."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test auto_refresh_main --features allow_insecure -j1"
+      ],
+      "stop": "Do not lower thresholds until a failing chain happens to pass or infer capacity from operation count alone.",
+      "issues": [
+        73,
+        117,
+        16
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "B09",
+      "title": "Prove repeated public refresh acceptance and failure boundaries",
+      "depends_on": [
+        "B08"
+      ],
+      "kind": "verification",
+      "state": "planned",
+      "inputs": [
+        "docs/BOOTSTRAP_CORRECTNESS_CONTRACT.md",
+        "crates/nine65/tests/public_refresh.rs",
+        "crates/nine65/tests/auto_refresh_main.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/tests/public_refresh_acceptance.rs",
+        "scripts/public_refresh_matrix.py",
+        "artifacts/execution/public_refresh_matrix.json"
+      ],
+      "steps": [
+        "Run an independent all-coefficient oracle through encrypt/add/two squares, then at least three refresh\u2192multiply cycles on each admitted production tuple/level; extend soak runs separately.",
+        "Cover 0,1,t-1, centered boundaries, dense/sparse/nonconstant plaintexts, random keys and supported worst-case error fixtures. Fork and rejoin computation DAGs.",
+        "Assert typed refusal outside the certified domain and test corrupted lineage/lift/key/circuit metadata. Record RNG, feature, tuple, route, toolchain and source identifiers."
+      ],
+      "acceptance": [
+        "Every step checks actual plaintext; no test can pass by printing a mismatch or counting depth.",
+        "The runtime path has no secret access and the final ciphertext supports another admitted operation.",
+        "Functional trials supplement, not replace, the noise/parameter proof gates."
+      ],
+      "checks": [
+        "cargo test --locked --offline --release -p nine65 --test public_refresh_acceptance --features allow_insecure --no-fail-fast -j1"
+      ],
+      "stop": "A single wrong accepted plaintext blocks M2. Do not relabel the case unsupported unless the original public admission predicate already excluded it.",
+      "issues": [
+        16,
+        73,
+        95,
+        117
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "H00",
+      "title": "Capture real Shadow-source traces and their provenance",
+      "depends_on": [
+        "F03"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/entropy/crt_shadow.rs",
+        "crates/nine65/src/entropy/shadow.rs",
+        "crates/nine65/src/arithmetic/ntt_fft.rs",
+        "docs/execution/2026-10-03/HISTORICAL_BRIDGE.md"
+      ],
+      "write_scope": [
+        "crates/nine65/examples/shadow_source_probe.rs",
+        "scripts/shadow_source_report.py",
+        "artifacts/execution/shadow_source_manifest.json"
+      ],
+      "steps": [
+        "Instrument an isolated off-path research probe for the actual shadow operations; record operation/lane/twiddle/source classification, seed provenance and sampling protocol.",
+        "Test fixed public inputs, attacker-chosen inputs, actual ciphertext workloads and independently randomized private inputs as distinct populations.",
+        "Export synthetic/non-secret trace datasets for the historical NIST harness and an independent statistical implementation; do not export production keys, secret-dependent raw shadows or user plaintexts."
+      ],
+      "acceptance": [
+        "The NIST input is demonstrably the recorded Rust trace rather than secrets.randbelow output substituted upstream.",
+        "Twiddle-one, zero-input, repeat-input and cross-lane correlations are explicitly measured.",
+        "Turning capture on/off produces bit-identical primary arithmetic outputs."
+      ],
+      "checks": [
+        "cargo run --locked --offline -p nine65 --example shadow_source_probe --features shadow-entropy",
+        "python3 scripts/shadow_source_report.py --self-test"
+      ],
+      "stop": "Do not wire research trace buffers into production logging or seed a key directly from an unreviewed trace.",
+      "issues": [
+        92
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "H01",
+      "title": "Establish the source-to-adversary entropy bridge",
+      "depends_on": [
+        "H00",
+        "F03"
+      ],
+      "kind": "research",
+      "state": "planned",
+      "inputs": [
+        "artifacts/execution/shadow_source_manifest.json",
+        "lean4/KElimination/KElimination/ShadowEntropy.lean",
+        "docs/execution/2026-10-03/HISTORICAL_BRIDGE.md",
+        "docs/execution/2026-10-03/ROUND_I_TRACEABILITY.md"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/SHADOW_SOURCE_CONTRACT.md",
+        "lean4/KElimination/KElimination/ShadowSource.lean",
+        "scripts/shadow_conditional_oracle.py"
+      ],
+      "steps": [
+        "Specify exactly which source variables remain unknown under each physical/profile view, including public operands, key leakage, accumulator state and prior outputs.",
+        "Prove/check the actual quotient/carry transform and its conditional distribution. Uniform full-product V is not assumed for an NTT product without justification.",
+        "Replace only the needed placeholder theorems with substantive statements and an implementation correspondence; account for dependence, chosen inputs and state compromise.",
+        "Assign zero additional secret-entropy credit to deterministic functions of fully public inputs. Any positive credit must have explicit entropy assumptions and extraction loss.",
+        "Use Round I T14 to quantify information loss conditional on the observed projection. Establish when a harvested complementary coordinate retains entropy conditioned on the entire attacker view; do not substitute H(input|output) for that actual source model."
+      ],
+      "acceptance": [
+        "Exact propositions, axiom report and small-domain distribution oracle agree.",
+        "State compromise/repeated input/public-input cases cannot be mislabeled independent entropy.",
+        "The contract either supports a precisely scoped source claim or records its unresolved hypothesis."
+      ],
+      "checks": [
+        "python3 scripts/shadow_conditional_oracle.py --self-test",
+        "cd lean4/KElimination && lake build"
+      ],
+      "stop": "Statistical tests cannot certify unpredictability or independence. A theorem concluding True cannot discharge this task.",
+      "issues": [
+        67,
+        71
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "H02",
+      "title": "Freeze the Three Locks protocol and interruption threat model",
+      "depends_on": [
+        "H01"
+      ],
+      "kind": "protocol",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/bootstrap/clockwork.rs",
+        "crates/nine65/src/bootstrap/three_lock.rs",
+        "crates/nine65/src/bootstrap/outer.rs",
+        "docs/execution/2026-10-03/SHADOW_SOURCE_CONTRACT.md"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/THREE_LOCKS_PROTOCOL.md",
+        "artifacts/execution/three_locks_state_table.json"
+      ],
+      "steps": [
+        "Specify every state transition, actual key/mask storage region, recoverable attacker view, restart behavior and exact security claim for P1/P2/P3.",
+        "Specify an independently seeded baseline and a reviewed conditioner/domain separation for shadow supplemental input. Model related layers and compromise; do not add nominal bit strengths.",
+        "Choose a reviewed lossless outer encoding or explicitly bound outer RLWE noise before full-polynomial inner decoding. Specify integrity/fault response rather than assuming malleable encryption authenticates.",
+        "Draw the key-access boundary: local secret-holder refresh does not become public homomorphic refresh by wrapping it. A full snapshot containing all secrets/shares fails the profile."
+      ],
+      "acceptance": [
+        "A specialist reviews a concrete protocol before implementation; every claimed inaccessible asset has an enforceable deployment mechanism.",
+        "No claim assumes destructors on power loss or source variables always occupying registers.",
+        "The chosen protocol supports all coefficients or explicitly declares its restricted message domain."
+      ],
+      "checks": [
+        "python3 scripts/nine65_execution_plan.py packet H02"
+      ],
+      "stop": "Do not implement an improvised outer cipher/combiner or promise EMP resistance from software-only evidence. If the desired profile cannot be met, return a concrete isolation requirement.",
+      "issues": [
+        71,
+        18
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "H03",
+      "title": "Implement the reviewed Shadow Lock and key/mask lifecycle",
+      "depends_on": [
+        "H02",
+        "C03"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/THREE_LOCKS_PROTOCOL.md",
+        "crates/nine65/src/bootstrap/mask.rs",
+        "crates/nine65/src/bootstrap/outer.rs",
+        "crates/nine65/src/entropy/secure.rs",
+        "crates/nine65/src/wire_q.rs"
+      ],
+      "write_scope": [
+        "crates/nine65/src/bootstrap/shadow_lock.rs",
+        "crates/nine65/src/bootstrap/mod.rs",
+        "crates/nine65/src/bootstrap/three_lock.rs",
+        "crates/nine65/tests/shadow_lock.rs"
+      ],
+      "steps": [
+        "Implement the exact H02 state machine and key-provider interfaces with independent keys and domain-separated epoch/counter context.",
+        "Condition shadow input as specified; preserve the secure baseline if shadow capture is absent/repeated or its source contract fails.",
+        "Remove unsupported secret-key clones/debug/serialization, control buffers and copies, and enforce zeroization for normal and error paths without claiming power-loss cleanup.",
+        "Keep Three Locks deployment code separate from the public refresh evaluator and record real outer-noise costs."
+      ],
+      "acceptance": [
+        "Correct data recovers with the right keys; wrong/replayed/corrupted envelope, key and epoch cases follow H02 refusal policy.",
+        "Primary ciphertext computation is unaffected by harvesting; every buffer ownership/lifetime edge matches the protocol.",
+        "No plaintext/key/mask material enters diagnostics or wire metadata."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --test shadow_lock --features allow_insecure,shadow-entropy -j1"
+      ],
+      "stop": "If source contracts or isolation assumptions are unavailable, keep this an experimental profile and do not advertise physical protection.",
+      "issues": [
+        71,
+        18
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "H04",
+      "title": "Test interruption at each sensitive transition",
+      "depends_on": [
+        "H03"
+      ],
+      "kind": "verification",
+      "state": "planned",
+      "inputs": [
+        "docs/execution/2026-10-03/THREE_LOCKS_PROTOCOL.md",
+        "artifacts/execution/three_locks_state_table.json",
+        "crates/nine65/src/bootstrap/shadow_lock.rs"
+      ],
+      "write_scope": [
+        "research/three-locks-interruption",
+        "docs/execution/2026-10-03/THREE_LOCKS_RESULTS.md",
+        "artifacts/execution/three_locks_results.json"
+      ],
+      "steps": [
+        "Use synthetic secrets in a test harness with hooks before/after each state transition; attempt recovery from exactly the memory/bus view allowed by the profile.",
+        "Include abrupt process termination, panic/abort, restart, duplicate RNG state, retained mask/key copies and compiler-generated spills. Capture optimized assembly and memory maps.",
+        "Arrange separate hardware-lab tests for a P3 power/EM claim; record hardware, access, trigger and recovery procedure. Software simulation does not substitute."
+      ],
+      "acceptance": [
+        "Every recovery attempt has a reproducible success/failure result and defined attacker view.",
+        "A snapshot containing a key or all shares must demonstrate the expected failure and cannot be omitted.",
+        "Any advertised protection is scoped to a passed profile and deployment build."
+      ],
+      "checks": [
+        "python3 research/three-locks-interruption/run.py --synthetic-only --self-test"
+      ],
+      "stop": "Do not emit real secrets in artifacts or perform physical fault injection against live hardware/user data. Hardware claims remain unverified until the lab evidence exists.",
+      "issues": [
+        71,
+        18
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "G00",
+      "title": "Use GSO to optimize certified plans rather than reset noise counters",
+      "depends_on": [
+        "R02",
+        "C02"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/ops/gso_fhe.rs",
+        "crates/mana/src/gso.rs",
+        "artifacts/execution/bounded_digit_schedule.json"
+      ],
+      "write_scope": [
+        "research/gso-plan-search",
+        "scripts/gso_plan_report.py",
+        "docs/execution/2026-10-03/GSO_PLAN_CONTRACT.md"
+      ],
+      "steps": [
+        "Implement an offline/public-metadata candidate search over approved tuples, transform layouts, gadget sizes, schedules and refresh placement.",
+        "Validate every candidate with the same independent capacity/error/security-input validators used by exhaustive search; objective values use actual public operation costs.",
+        "Retain the old collapse mechanism as historical unless a real ciphertext transformation is separately proved. Compare against a deterministic exhaustive baseline."
+      ],
+      "acceptance": [
+        "Optimizer output changes an executable plan or schedule, never merely a remaining-noise counter.",
+        "An invalid candidate selected by the swarm is rejected independently.",
+        "Report candidate counts, exact winners and replay seed; no secret-dependent optimization telemetry."
+      ],
+      "checks": [
+        "python3 research/gso-plan-search/search.py --self-test"
+      ],
+      "stop": "Do not treat a swarm convergence counter as a BFV noise-reduction proof or use observed hidden errors in public scheduling.",
+      "issues": [
+        73
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "V00",
+      "title": "Produce exact parameter and evaluation-key security inputs",
+      "depends_on": [
+        "F01",
+        "F03",
+        "S00"
+      ],
+      "kind": "external",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/src/params/secure_configs.rs",
+        "crates/nine65/src/keys/bootstrap.rs",
+        "docs/PUBLIC_FHE_SOLUTION_2026-09-28.md",
+        "artifacts/execution/parameter_registry.json",
+        "docs/execution/2026-10-03/HISTORICAL_BRIDGE.md",
+        "docs/execution/2026-10-03/PRIMING_ROOT_CONTRACT.md"
+      ],
+      "write_scope": [
+        "scripts/export_security_instances.py",
+        "artifacts/security/instances.json",
+        "artifacts/security/estimator",
+        "docs/execution/2026-10-03/SECURITY_DISPOSITIONS.md"
+      ],
+      "steps": [
+        "Define a reusable exact-instance exporter for N,Q,t, secret/error distributions, samples, sparse keys, gadget/evaluation-key relations and targeted classical/quantum attack models.",
+        "Pin an external estimator revision and archive raw input/output for current tuples and R03 candidate requests. Explain unsupported estimators/assumptions rather than synthesizing a label.",
+        "Resolve secure_256\u2019s 240-bit in-tree binding versus its name, custom/for_depth unchecked labels, and legacy full-Q bootstrap sampling with real source tests.",
+        "Require specialist review for key cycles, sparse temporary secrets and compositions outside estimator coverage."
+      ],
+      "acceptance": [
+        "Every advertised security label maps to exact sampler/runtime parameters and archived estimator evidence.",
+        "Uniform full-Q samplers cover all declared RNS lanes; no u64/u128 mask stands in for a larger product.",
+        "Estimator success alone is not described as a complete cryptographic proof."
+      ],
+      "checks": [
+        "cargo test --locked --offline -p nine65 --lib screened_levels_for_named_configs -j1",
+        "cargo test --locked --offline -p nine65 --lib single_rns_uniform_sampler_covers_the_whole_main_modulus -j1"
+      ],
+      "stop": "Do not reduce declared security, omit sparse-key samples or treat two encryption layers as additive security bits without an explicit reviewed decision.",
+      "issues": [
+        75,
+        76,
+        82,
+        83,
+        88,
+        71
+      ],
+      "review": "specialist",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "V01",
+      "title": "Close constant-time boundaries for the selected runtime",
+      "depends_on": [
+        "C00",
+        "C06",
+        "B07",
+        "H03",
+        "S05"
+      ],
+      "kind": "verification",
+      "state": "planned",
+      "inputs": [
+        "docs/CT_NTT_CACHE_ROADMAP.md",
+        "crates/nine65/src/arithmetic/main_only_base_ext.rs",
+        "crates/nine65/src/arithmetic/k_elimination.rs",
+        "crates/nine65/src/ops/public_refresh.rs",
+        "crates/nine65/src/bootstrap/shadow_lock.rs"
+      ],
+      "write_scope": [
+        "docs/execution/2026-10-03/CT_ROUTE_MAP.md",
+        "artifacts/security/ct",
+        "scripts/ct_route_matrix.py"
+      ],
+      "steps": [
+        "Map secret-bearing vs public-ciphertext paths and all data-dependent branches, integer division, table indices, allocations and cache behavior on the selected route.",
+        "Review F-2/F-3 reachability after migration; a bypass must be structural and tested, not a renamed finding. Any capacity-changing replacement re-enters parameter tests.",
+        "Run disassembly review and reproducible timing/cache tests on named CPU/compiler builds; include new wide arithmetic and H03 if claimed.",
+        "Accept this task only on the integrated refresh and Shadow Lock source hashes. Early CRAM-only measurements are a baseline, not approval for subsequently added paths."
+      ],
+      "acceptance": [
+        "Each sensitive path has an explicit result and evidence, with known variable-time verification-only paths labeled.",
+        "No all-observable/no-side-channel claim is inferred from source-level branchlessness or a single t-test."
+      ],
+      "checks": [
+        "python3 scripts/ct_route_matrix.py --self-test",
+        "bash scripts/check_no_floats_runtime.sh"
+      ],
+      "stop": "A timing result is architecture-specific. Do not call a branch constant-time solely because the compiler might lower it to cmov.",
+      "issues": [
+        18,
+        72
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "V02",
+      "title": "Connect formal statements to implemented kernels and bounds",
+      "depends_on": [
+        "C01",
+        "B06",
+        "H01",
+        "S04"
+      ],
+      "kind": "verification",
+      "state": "planned",
+      "inputs": [
+        "lean4/KElimination/lakefile.lean",
+        "lean4/KElimination/KElimination",
+        "docs/execution/2026-10-03/BOUND_CONTRACT.md",
+        "docs/execution/2026-10-03/SHADOW_SOURCE_CONTRACT.md",
+        "crates/nine65/src/ops/bootstrap_return.rs",
+        "docs/execution/2026-10-03/OPERATOR_DOMAIN_CONTRACT.md",
+        "lean4/KElimination/coq/K_Elimination.v",
+        "docs/execution/2026-10-03/K_ELIMINATION_PROOF_BRIDGE.md",
+        "docs/execution/2026-10-03/ROUND_I_TRACEABILITY.md"
+      ],
+      "write_scope": [
+        "lean4/KElimination/KElimination/BootstrapBound.lean",
+        "docs/execution/2026-10-03/PROOF_CORRESPONDENCE.md",
+        "artifacts/execution/lean_axioms.txt"
+      ],
+      "steps": [
+        "Prove the exact arithmetic identities and bound recurrences actually used by the selected kernels; map Rust preconditions to theorem hypotheses.",
+        "Ensure the root build imports every claimed module and produce #print axioms output for release theorems.",
+        "Keep cryptographic hardness assumptions explicit; mark stale Coq/prototype statements by exact proposition instead of accepting README counts.",
+        "Map the monograph instruction-set claim to actual Lean/Coq propositions, including K-free adjacent recovery, arbitrary-target projection and admitted operator domains. Record builds and axiom dependencies; do not equate a K-elimination lemma with verification of the entire ISA."
+      ],
+      "acceptance": [
+        "Pinned Lean build succeeds for every claimed module; no True/sorry/axiom shortcut supplies an implementation correctness result.",
+        "The theorem\u2019s rounding/sign/basis conventions match Rust and independent oracle fixtures."
+      ],
+      "checks": [
+        "cd lean4/KElimination && lake build"
+      ],
+      "stop": "Do not fix a difficult proof by weakening its statement or adding an axiom; report the unresolved obligation.",
+      "issues": [
+        67,
+        83
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "V03",
+      "title": "Make CI enforce target coverage and production features",
+      "depends_on": [
+        "F02",
+        "C04"
+      ],
+      "kind": "implementation",
+      "state": "planned",
+      "inputs": [
+        ".github/workflows/ci.yml",
+        "scripts/run_tests_fast.sh",
+        "scripts/run_tests_medium.sh",
+        "scripts/cram_ct_gates.sh",
+        "artifacts/execution/test_inventory.json",
+        "docs/execution/2026-10-03/TEST_TRIAGE.md"
+      ],
+      "write_scope": [
+        ".github/workflows/ci.yml",
+        "scripts/run_tests_fast.sh",
+        "scripts/run_tests_medium.sh",
+        "scripts/cram_ct_gates.sh",
+        "scripts/check_release_manifest.py"
+      ],
+      "steps": [
+        "Wire resource-classed jobs for exact arithmetic, integration/wire/service, refresh when admitted, bindings, no-float and formal checks; retain full --no-fail-fast coverage.",
+        "Build production artifacts in a separate feature graph so a test dev-dependency cannot unify allow_insecure into a release artifact.",
+        "Reject missing artifacts, zero-test jobs and stale source hashes. Prepare owner-only hosted Actions/billing/ruleset requirements as a concrete checklist."
+      ],
+      "acceptance": [
+        "Local commands and hosted jobs run the same declared targets and archive their counts/exits.",
+        "A deliberately removed acceptance target or added allow_insecure dependency makes the manifest gate fail.",
+        "Hosted required-check activation is evidenced before release, not assumed from a YAML file."
+      ],
+      "checks": [
+        "python3 scripts/check_release_manifest.py --self-test",
+        "cargo tree --locked --offline -e features -p fhe-service"
+      ],
+      "stop": "Do not change account settings, branch rules or billing from this task. Request owner action only with the finished concrete configuration.",
+      "issues": [
+        79,
+        130,
+        64,
+        74,
+        137
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "V04",
+      "title": "Measure complete CRAM and refresh costs on fixed workloads",
+      "depends_on": [
+        "C04",
+        "B09"
+      ],
+      "kind": "verification",
+      "state": "planned",
+      "inputs": [
+        "crates/nine65/tests/op_timings.rs",
+        "crates/nine65/examples/cram_public_showcase.rs",
+        "crates/nine65/src/ops/exact_mul_tests.rs",
+        "artifacts/execution/public_refresh_matrix.json",
+        "artifacts/execution/cram_frame_matrix.json"
+      ],
+      "write_scope": [
+        "crates/nine65/examples/cram_release_showcase.rs",
+        "scripts/cram_release_benchmark.py",
+        "artifacts/execution/release_benchmarks.json",
+        "docs/CRAM_SHOWCASE.md"
+      ],
+      "steps": [
+        "Demonstrate separate evaluator/client roles, exact sign/capacity behavior, lane operations, main-only multiply, auto-refresh cycles and typed refusal with real route ledger output.",
+        "Run at least three same-machine release measurements with fresh keys, recording median/p95, keygen, per-stage refresh cost, memory/key bytes and amortized cost per supported operation.",
+        "Compare old/new routes only under identical tuples/compiler/workloads and verify every timed output. Include scalar and packed full-polynomial workloads.",
+        "Show refresh frequency and latency explicitly; automatic operation removes manual intervention but does not imply zero computational cost.",
+        "Benchmark preserved-root frame reconfiguration and heterogeneous/homogeneous tray execution, including transient memory, actual synchronization stages, observation cost and serial/parallel scaling. Hardware single-cycle claims require named hardware evidence."
+      ],
+      "acceptance": [
+        "Every plotted/table number has a raw artifact and source/tuple/route hash.",
+        "Refused operations and correctness failures cannot become benchmark successes.",
+        "The showcase clearly distinguishes M1/M2/M3 capability status."
+      ],
+      "checks": [
+        "cargo run --locked --offline --release -p nine65 --example cram_release_showcase -j1",
+        "python3 scripts/cram_release_benchmark.py --validate-only"
+      ],
+      "stop": "Do not quote the historical depth-50/200 or speed figures unless F03/V04 actually reproduce their exact workload.",
+      "issues": [
+        73,
+        92
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    },
+    {
+      "id": "V05",
+      "title": "Assemble release evidence and reconcile every open issue",
+      "depends_on": [
+        "V00",
+        "V01",
+        "V02",
+        "V03",
+        "V04",
+        "C05",
+        "H04"
+      ],
+      "kind": "verification",
+      "state": "planned",
+      "inputs": [
+        "README.md",
+        "docs/CLAIM_REGISTRY.csv",
+        "docs/CLAIM_EVIDENCE_LEDGER.md",
+        "docs/execution/2026-10-03/tasks.json",
+        "artifacts/execution/release_benchmarks.json",
+        "docs/execution/2026-10-03/PROOF_CORRESPONDENCE.md",
+        "docs/execution/2026-10-03/THREE_LOCKS_RESULTS.md",
+        "docs/execution/2026-10-03/CT_ROUTE_MAP.md",
+        "docs/execution/2026-10-03/SECURITY_DISPOSITIONS.md"
+      ],
+      "write_scope": [
+        "artifacts/execution/release_manifest.json",
+        "docs/RELEASE_CHECKLIST.md",
+        "docs/CLAIM_REGISTRY.csv",
+        "docs/CLAIM_EVIDENCE_LEDGER.md",
+        "README.md",
+        "CLAUDE.md"
+      ],
+      "steps": [
+        "Generate a manifest joining source hashes, tuples, capability flags, tests, proof/estimator artifacts, physical profiles, performance and issue acceptance criteria.",
+        "Mark each issue reproduced/fixed/verified/partially satisfied/external/unsupported with evidence; issue closure is a later owner-authorized action.",
+        "Rewrite current-facing claims around the final implemented behavior, keeping history intact and eliminating admitted-vs-working ambiguity.",
+        "Prepare reviewable release/package/deployment instructions and remaining owner actions; do not publish automatically."
+      ],
+      "acceptance": [
+        "M2 remains incomplete unless every public-refresh gate passed; M3 claims require the named passed physical profile.",
+        "A clean independent reproduction can rebuild artifacts and verify claims from the pinned manifest.",
+        "No model self-assessment, stale README number or missing check is accepted as release evidence."
+      ],
+      "checks": [
+        "python3 scripts/check_release_manifest.py artifacts/execution/release_manifest.json",
+        "git diff --check"
+      ],
+      "stop": "A blocked research/physical gate cannot be reported as complete. A narrower intermediate release requires an explicit scope statement.",
+      "issues": [
+        92,
+        71,
+        79,
+        16,
+        17,
+        18,
+        29,
+        63,
+        64,
+        67,
+        69,
+        72,
+        73,
+        74,
+        75,
+        76,
+        82,
+        83,
+        84,
+        85,
+        86,
+        88,
+        89,
+        94,
+        95,
+        117,
+        130,
+        135,
+        137
+      ],
+      "review": "independent-code-review",
+      "patch_policy": "One concern per patch; split before exceeding 400 changed production lines. Preserve this task acceptance contract across subpatches."
+    }
+  ],
+  "revisions": [
+    {
+      "description": "Owner Safe Basis clarification, supplied monograph and correction retiring the MRS reconstruction account",
+      "tasks_added": [
+        "S00",
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "S05"
+      ],
+      "notes": "docs/execution/2026-10-03/SAFE_BASIS_REVISION.md"
+    }
+  ]
+}
