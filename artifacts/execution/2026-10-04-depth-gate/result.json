@@ -1,0 +1,35 @@
+{
+  "schema": "nine65-depth-truth-gate-v1",
+  "status": "confirmed_correctness_blocker",
+  "base_commit": "781846bf3d02dc7defa73675acc2f84bdf7321b3",
+  "route": "GSOFHEContext::mul_symmetric / RNSFHEContext::mul_dual_symmetric",
+  "workload": "one encryption of 2 followed by repeated ciphertext self-squaring, with decryption after every multiplication",
+  "plaintext_modulus": 65537,
+  "first_mismatches": [
+    {
+      "config": "secure_128",
+      "first_bad_depth": 4,
+      "expected": 65536,
+      "observed": 55380,
+      "test_exit_code": 101,
+      "test_result": "FAILED; 0 passed, 1 failed, 1049 filtered out",
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/secure-128.log",
+      "log_sha256": "f4feb0c71cf05743f3c269bae7163837bccc94ec34d574f6558f6429e7702298"
+    },
+    {
+      "config": "secure_192",
+      "first_bad_depth": 4,
+      "expected": 65536,
+      "observed": 65532,
+      "test_exit_code": 101,
+      "test_result": "FAILED; 0 passed, 1 failed, 1049 filtered out",
+      "log": "artifacts/execution/2026-10-04-depth-gate/logs/secure-192.log",
+      "log_sha256": "c149540f3f16afdc0637b61043f3d3840c6921849801057d1e9e88bd62d076ec"
+    }
+  ],
+  "source_sha256": {
+    "crates/nine65/src/ops/gso_fhe.rs": "342102d5ba174782076124c69edba34e0f8cb2707bc1f6f14e948e90d10dbdcb"
+  },
+  "interpretation": "The old 50-step benchmark counted operations and collapses, but its secure variants did not decrypt inside the loop. These failures are for repeated squaring on this route. A separate mul-by-1 depth test has a different input history and does not settle this result.",
+  "next_gate": "Classify whether the first mismatch comes from arithmetic, rescale, key handling or BFV error; then either repair it with a reviewed bound or refuse unsupported repeated-square depth before producing wrong plaintext. Retain per-step assertions and do not publish depth 50 from collapse counters."
+}

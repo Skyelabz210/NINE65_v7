@@ -2,6 +2,16 @@
 
 Generated on 2026-02-14 09:51:41 UTC
 
+> **2026-10-04 current-source recheck:** per-step decryption was added to the
+> same repeated-squaring benchmarks. In one debug run each, `secure_128`
+> matched depths 1–3 and failed at depth 4 (`got=55380`, `expected=65536`);
+> `secure_192` also matched depths 1–3 and failed at depth 4 (`got=65532`,
+> `expected=65536`). The archived 50-step rows below are historical counter
+> and timing records, not correctness results. The separate 128-step
+> `mul-by-1` test uses a different workload and does not certify repeated
+> squaring. See the source-bound test logs in
+> [`artifacts/execution/2026-10-04-depth-gate`](../artifacts/execution/2026-10-04-depth-gate/).
+
 > **2026-08-19 note:** this matrix's data comes from
 > `benchmark_symmetric_max_depth_secure_128`/`_192`
 > (`crates/nine65/src/ops/gso_fhe.rs`), which run 50 symmetric multiplications
@@ -34,6 +44,7 @@ This matrix shows the maximum depth achieved and correctness verification for ea
 
 ## Notes
 
-- Collapses indicate when noise budget is exceeded and rescaling occurs
-- For symmetric mode, 0 collapses indicates that the computation maintained full precision
-- All tested configurations achieved the target depth of 50 levels without collapses
+- Collapse counts are diagnostic metadata; zero collapses do not imply correct
+  plaintext or adequate BFV decryption headroom.
+- Both current-source repeated-squaring tests stopped on a plaintext mismatch
+  at depth 4. No 50-level correctness claim follows from this matrix.

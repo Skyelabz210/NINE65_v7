@@ -789,7 +789,7 @@ mod depth_benchmarks {
     use crate::entropy::ShadowHarvester;
     use crate::params::secure_configs::SecureConfig;
     use crate::params::FHEConfig;
-    use std::time::Instant;
+    use std::time::{Duration, Instant};
 
     fn bench_ctx(config: FHEConfig) -> GSOFHEContext {
         let inner = RNSFHEContext::new(&config);
@@ -860,7 +860,9 @@ mod depth_benchmarks {
 
     #[test]
     fn benchmark_symmetric_max_depth_secure_128() {
-        let mut ctx = bench_ctx(SecureConfig::secure_128().into_config());
+        let config = SecureConfig::secure_128().into_config();
+        let plaintext_modulus = config.t;
+        let mut ctx = bench_ctx(config);
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
 
@@ -868,17 +870,27 @@ mod depth_benchmarks {
         let mut depth = 0u32;
         let mut collapses = 0u32;
         let max_test_depth = 50;
+        let mut expected = 2_u64;
 
-        let start = Instant::now();
+        let mut multiplication_time = Duration::ZERO;
         for d in 1..=max_test_depth {
             let ct_clone = ct.clone();
+            let op_start = Instant::now();
             ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
+            multiplication_time += op_start.elapsed();
             depth = d;
             let stats = ctx.noise_stats(&ct);
             collapses = stats.collapses;
+            expected = ((expected as u128 * expected as u128) % plaintext_modulus as u128) as u64;
+            let got = ctx.decrypt(&ct, &keys.secret_key);
+            println!(
+                "STEP step={d} got={got} expected={expected} plaintext_equal={}",
+                got == expected
+            );
+            assert_eq!(got, expected, "secure_128 plaintext mismatch at depth {d}");
         }
 
-        let total_time = start.elapsed();
+        let total_time = multiplication_time;
         let avg_us = total_time.as_micros() / depth as u128;
         println!("SECURE_128 MAX DEPTH: {} multiplicative levels", depth);
         println!("Total collapses: {}", collapses);
@@ -888,7 +900,9 @@ mod depth_benchmarks {
 
     #[test]
     fn benchmark_symmetric_max_depth_secure_192() {
-        let mut ctx = bench_ctx(SecureConfig::secure_192().into_config());
+        let config = SecureConfig::secure_192().into_config();
+        let plaintext_modulus = config.t;
+        let mut ctx = bench_ctx(config);
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
 
@@ -896,17 +910,27 @@ mod depth_benchmarks {
         let mut depth = 0u32;
         let mut collapses = 0u32;
         let max_test_depth = 50;
+        let mut expected = 2_u64;
 
-        let start = Instant::now();
+        let mut multiplication_time = Duration::ZERO;
         for d in 1..=max_test_depth {
             let ct_clone = ct.clone();
+            let op_start = Instant::now();
             ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
+            multiplication_time += op_start.elapsed();
             depth = d;
             let stats = ctx.noise_stats(&ct);
             collapses = stats.collapses;
+            expected = ((expected as u128 * expected as u128) % plaintext_modulus as u128) as u64;
+            let got = ctx.decrypt(&ct, &keys.secret_key);
+            println!(
+                "STEP step={d} got={got} expected={expected} plaintext_equal={}",
+                got == expected
+            );
+            assert_eq!(got, expected, "secure_192 plaintext mismatch at depth {d}");
         }
 
-        let total_time = start.elapsed();
+        let total_time = multiplication_time;
         let avg_us = total_time.as_micros() / depth as u128;
         println!("SECURE_192 MAX DEPTH: {} multiplicative levels", depth);
         println!("Total collapses: {}", collapses);

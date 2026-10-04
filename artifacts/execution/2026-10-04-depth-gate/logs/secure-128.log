@@ -1,0 +1,21 @@
+
+running 1 test
+STEP step=1 got=4 expected=4 plaintext_equal=true
+STEP step=2 got=16 expected=16 plaintext_equal=true
+STEP step=3 got=256 expected=256 plaintext_equal=true
+STEP step=4 got=55380 expected=65536 plaintext_equal=false
+
+thread 'ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128' panicked at crates/nine65/src/ops/gso_fhe.rs:890:13:
+assertion `left == right` failed: secure_128 plaintext mismatch at depth 4
+  left: 55380
+ right: 65536
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 ... FAILED
+
+failures:
+
+failures:
+    ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1049 filtered out; finished in 33.93s
+
