@@ -1,0 +1,8 @@
+WR-1 derived-transient exact arithmetic gate
+all arithmetic: integer-only
+historical fixture: HISTORICAL_MAIN_3 (retired three-prime secure_128 shape; not current)
+secure_128: PASS; operand_bound=(N/2)*Q^2; aux_lanes=5; aux_bits=157; required_bits=148; checks=20240
+secure_128_deep: PASS; operand_bound=(N/2)*Q^2; aux_lanes=5; aux_bits=157; required_bits=148; checks=20240
+secure_192: PASS; operand_bound=(N/2)*Q^2; aux_lanes=6; aux_bits=188; required_bits=176; checks=20288
+secure_256: PASS; operand_bound=(N/2)*Q^2; aux_lanes=7; aux_bits=220; required_bits=205; checks=20336
+WR-1 gate: PASS; exact_checks=81105

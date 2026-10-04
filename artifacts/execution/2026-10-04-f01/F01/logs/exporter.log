@@ -1,0 +1,32 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-f01-aider/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-f01-aider/Cargo.toml
+   Compiling nine65 v0.1.0 (/tmp/nine65-f01-aider/crates/nine65)
+warning: method `rank` is never used
+   --> crates/nine65/src/arithmetic/main_only_base_ext.rs:332:8
+    |
+186 | impl MainOnlyBaseExt {
+    | -------------------- method in this implementation
+...
+332 |     fn rank(&self, c: &[u64; MAX_LANES]) -> (u64, RankPath) {
+    |        ^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: associated function `with_plan` is never used
+   --> crates/nine65/src/ops/exact_mul.rs:605:19
+    |
+589 | impl<'a> ExactMulEvaluator<'a> {
+    | ------------------------------ associated function in this implementation
+...
+605 |     pub(crate) fn with_plan(ctx: &'a RNSFHEContext, plan: ExactMulPlan) -> Self {
+    |                   ^^^^^^^^^
+
+warning: `nine65` (lib) generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 30.37s
+     Running `/home/acid/Projects/NINE65_v7/target/debug/examples/export_parameter_registry`
+wrote artifacts/execution/parameter_registry.json
+secure_128: n=8192, lanes=4, exact_Q_bits=119, fingerprint=0xf5d08287c13d81b6
+secure_128_deep: n=8192, lanes=4, exact_Q_bits=119, fingerprint=0xf5d08287c13d81b6
+secure_192: n=16384, lanes=5, exact_Q_bits=146, fingerprint=0x62972596f3cc51ab
+secure_256: n=16384, lanes=6, exact_Q_bits=175, fingerprint=0x5cc15c3e3aae2fd5
