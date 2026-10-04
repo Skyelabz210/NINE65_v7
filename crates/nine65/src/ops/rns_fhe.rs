@@ -9882,6 +9882,94 @@ mod tests {
         );
     }
 
+    /// Independent arbitrary-integer fixtures for |K| > 2^145. The expected
+    /// residues were calculated from X = v + KQ and the signed integer rule
+    /// round(X/Delta), not from this routine's K-Elimination decomposition.
+    /// Both vectors fit the 220-bit signed anchor corridor for K. This checks
+    /// the main result and records that the output anchor is deliberately
+    /// reset to the canonical residue, not the true signed quotient phase.
+    #[test]
+    fn k_elim_rescale_large_winding_oracle_and_output_phase() {
+        let ctx = RNSFHEContext::new(&SecureConfig::secure_128().into_config());
+        assert_eq!(
+            ctx.q_product_checked,
+            Some(348959453350711275087786864768188417)
+        );
+        assert_eq!(
+            ctx.dual_rns.anchor.primes,
+            [2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081, 3222306817,]
+        );
+
+        struct Case {
+            name: &'static str,
+            main_in: [u64; 4],
+            anchor_in: [u64; 7],
+            main_out: [u64; 4],
+            canonical_anchor_out: [u64; 7],
+            true_quotient_anchor: [u64; 7],
+        }
+        let cases = [
+            Case {
+                name: "K=+(2^145+12345), v=0",
+                main_in: [0, 0, 0, 0],
+                anchor_in: [
+                    558953417, 1266410555, 1115190751, 2864757197, 1698690564, 3021458871,
+                    2647575061,
+                ],
+                main_out: [747140481, 559494833, 183306782, 15097793],
+                canonical_anchor_out: [
+                    1997588990, 1867480977, 174457654, 1106592023, 2244835863, 2118107217,
+                    253717320,
+                ],
+                true_quotient_anchor: [
+                    1353084120, 2191178178, 1772922321, 1476555418, 301815006, 2615724282,
+                    2985675578,
+                ],
+            },
+            Case {
+                name: "K=-(2^145+12345), v=Q-1",
+                main_in: [998244352, 985661440, 754974720, 469762048],
+                anchor_in: [
+                    982367742, 2214846062, 1273036506, 2243048544, 1229434062, 2839779700,
+                    484426894,
+                ],
+                main_out: [251169409, 426232145, 571733476, 454729793],
+                canonical_anchor_out: [
+                    1557063628, 1613841178, 2213835141, 1115598103, 683354301, 521774811,
+                    2878350173,
+                ],
+                true_quotient_anchor: [
+                    660247338, 90588736, 710171185, 1409191272, 2919476004, 605763336, 236696776,
+                ],
+            },
+        ];
+        for case in cases {
+            let mut input = ctx.dual_poly_zero();
+            for (limb, &r) in input.main.iter_mut().zip(case.main_in.iter()) {
+                limb[0] = r;
+            }
+            for (limb, &r) in input.anchor.iter_mut().zip(case.anchor_in.iter()) {
+                limb[0] = r;
+            }
+            let out = ctx
+                .k_elim_rescale_dual(&input)
+                .expect("K fits anchor corridor");
+            let got_main: Vec<u64> = out.main.iter().map(|limb| limb[0]).collect();
+            let got_anchor: Vec<u64> = out.anchor.iter().map(|limb| limb[0]).collect();
+            assert_eq!(got_main, case.main_out, "{} main", case.name);
+            assert_eq!(
+                got_anchor, case.canonical_anchor_out,
+                "{} canonical phase",
+                case.name
+            );
+            assert_ne!(
+                got_anchor, case.true_quotient_anchor,
+                "{} phase reset witness",
+                case.name
+            );
+        }
+    }
+
     #[test]
     fn test_centered_representative_invariant() {
         // MICRO-TEST: Verify the K-Elimination invariant directly.

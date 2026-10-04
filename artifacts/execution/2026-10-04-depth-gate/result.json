@@ -81,12 +81,23 @@
     ],
     "control_log": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-zero-noise-128.log",
     "control_log_sha256": "305a03a6f20344d627f07f6cf2f6277cbfede13cd13f4c7c8aa724dd46d239f4",
+    "large_winding_oracle": {
+      "signed_k": "+/-(2^145+12345)",
+      "test": "cargo test --locked --offline -p nine65 --lib k_elim_rescale_large_winding_oracle_and_output_phase -- --nocapture",
+      "exit_code": 0,
+      "result": "Both signs match independent round(X/Delta) mod Q in main lanes; output anchor phase is canonical and differs from true signed quotient phase",
+      "generator": "scripts/rescale_large_phase_oracle.py",
+      "generator_sha256": "a88d8283712e6512ea96fbb37cc3289b01c096a30b892fa4926e89204cbcaf20",
+      "fixture": "artifacts/execution/2026-10-04-depth-gate/large-phase-oracle.json",
+      "fixture_sha256": "37fc51d38a84fffd979834d84ddbbcaf4b2f6ca03692fb4531a148a3275928b0",
+      "limit": "This scalar witness does not prove that output canonicalization causes the depth-4 ciphertext failure; the public manufactured route has a regression guardrail against naive anchor centering."
+    },
     "note": "The post-fix logs were captured from the semantic phase patch before whitespace-only rustfmt and merge; they are diagnostic evidence, not a byte-for-byte build attestation of the merge commit."
   },
   "source_sha256": {
     "crates/nine65/src/ops/gso_fhe.rs": "7339a8de9f3810260df65ce9ff85f37122e7cc6e8cc52767389561b4a2e1f5e0",
-    "crates/nine65/src/ops/rns_fhe.rs": "90961f4ddef090d7fcbdfd530749e8140082c4f0c3e19c5d3c2af461204b9828",
-    "docs/DEPTH_CORRECTNESS_MATRIX.md": "be709f4561763b96b42184e8d9b837b2f3e34afc381442b5d227d020bddf05c7"
+    "crates/nine65/src/ops/rns_fhe.rs": "441ca26d9ae1ebb144f214d2b089cee821cd4169bf132ae829c7a4f9d9edbb07",
+    "docs/DEPTH_CORRECTNESS_MATRIX.md": "2a47320c0c6df1c6d97ccacc75266a0804895bf0bf59b31935d936c7a6e82057"
   },
   "interpretation": "The old 50-step benchmark counted operations and collapses, but did not decrypt per step. The repeated-square route still fails at depth 4 in both secure tuples after fixing canonical K phase. Zero-fresh-error controls with a nontrivial c1 term still fail, while the c1=0 control passes. The two nontrivial controls exhibit a +1 mod t discrepancy at depth 4, but that observation does not justify adding a constant correction. Observed K widths are below the anchor reconstruction widths. These observations narrow the defect but do not identify the first erroneous coefficient or prove a complete BFV noise bound. The separate mul-by-1 depth test has a different input history.",
   "next_gate": "Use an independent exact-integer oracle on the folded d2*s^2 and both per-component BFV scale-round outputs at every step, then repair the admitted FPD/inexact rescale and refresh relation or refuse unsupported repeated-square depth. Retain per-step assertions and do not publish depth 50 from collapse counters."

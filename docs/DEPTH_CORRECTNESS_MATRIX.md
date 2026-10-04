@@ -40,6 +40,23 @@ Generated on 2026-02-14 09:51:41 UTC
 > directory under `fixed-*`; the direct phase regression is in
 > [`artifacts/execution/2026-10-04-rescale-phase`](../artifacts/execution/2026-10-04-rescale-phase/).
 
+> **Large-winding scalar oracle:** an independent arbitrary-integer fixture at
+> `K=±(2^145+12345)` confirms `k_elim_rescale_dual` returns the correct
+> `round(X/Δ) mod Q` main residues for both signs. Its output anchor residues
+> instead describe the canonical mod-`Q` representative, not the unreduced
+> signed quotient. That phase reset is measured, but is not yet proven to be
+> the depth-4 defect. The existing public manufactured-rescale guardrail
+> explicitly shows that replacing canonical anchors with centered anchors
+> can break the next multiplication. The StarLift corpus uses 36/37 plus a
+> star-prime ladder for winding; its 36/37 observer alone reports `K mod 37`.
+> The current CRAM Property Signature Σ reads **sign from known winding K**
+> and **parity from the mod-2 lane**. It does not contain a separate RNSB
+> sign-proxy or quarantine transition. A future sign operator must establish
+> its own bound-certified, phase-locked, nonpublished input; parity alone
+> cannot distinguish `+1` from `-1`. See the generated
+> [`large-phase-oracle.json`](../artifacts/execution/2026-10-04-depth-gate/large-phase-oracle.json)
+> and its [`generator`](../scripts/rescale_large_phase_oracle.py).
+
 > **2026-08-19 note:** this matrix's data comes from
 > `benchmark_symmetric_max_depth_secure_128`/`_192`
 > (`crates/nine65/src/ops/gso_fhe.rs`), which run 50 symmetric multiplications
