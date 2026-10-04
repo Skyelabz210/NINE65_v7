@@ -1,0 +1,507 @@
+{
+  "schema": "nine65-bootstrap-candidate-ledger-v1",
+  "decision": "BLOCKED_DESIGN",
+  "chosen_production_tuple": null,
+  "dependency_files_missing": [
+    "R02_operation_schedule",
+    "R01_input_radius",
+    "V00_security_disposition"
+  ],
+  "source_sha256": {
+    "artifacts/bootstrap/canonical_lift_feasibility_2026-09-28.json": "e6ad0dbc6b171cef2aa4ee197b821e069e5f7421df96dd3a6b889291e18f2e45",
+    "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.json": "fd0325356b099eb740c0242a8bf21ef7a0f5e6d73a30e573c8ec5f1ce2a3a3bf",
+    "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.json": "c4b400be9025017a1e8e62c1846a347470466e9688be7440f57aed47350ad794",
+    "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.json": "eda73a227eac6ad0aa29e69310f8ebcdeab0511edcf225e138d6a11e405e3994",
+    "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.run.json": "d99759f46d1d72c0bf742efbba6ab7f41804a33b36958d39af7ca6ab8276d149",
+    "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.run.json": "0587933e18829db090580dbd5d0203ed5f6acab6e8508b4138c19c33dfabb20c",
+    "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.run.json": "93df978446ea392def45daf962ed6ed8b86d208d5a27d12137c48ddac739660a",
+    "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.run.json": "9fc2091ea0030b9f5eea0a22281facd11c64eec87f5b1810adc41c8c91147813",
+    "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.stderr.log": "d8c8ed056b8357df8168445295caead7719962fd196dcf30d4e72ad4a2b5a513"
+  },
+  "native_canonical_candidates": [
+    {
+      "name": "secure_128",
+      "route": "native_current_canonical_circuit",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits_exact": 119,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 4,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 536870912,
+      "theoretical_automorphisms_for_rejected_circuit": 106496,
+      "theoretical_main_key_bytes_if_plan_admitted": 88080384,
+      "first_failing_inequality": "canonical certificate at depth 1: 131 > 86 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "secure_128_deep",
+      "route": "native_current_canonical_circuit",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits_exact": 119,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 4,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 536870912,
+      "theoretical_automorphisms_for_rejected_circuit": 106496,
+      "theoretical_main_key_bytes_if_plan_admitted": 88080384,
+      "first_failing_inequality": "canonical certificate at depth 1: 131 > 86 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "secure_192",
+      "route": "native_current_canonical_circuit",
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "q_bits_exact": 146,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 5,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 1073741824,
+      "theoretical_automorphisms_for_rejected_circuit": 229376,
+      "theoretical_main_key_bytes_if_plan_admitted": 294912000,
+      "first_failing_inequality": "canonical certificate at depth 1: 137 > 113 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "secure_256",
+      "route": "native_current_canonical_circuit",
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        595591169
+      ],
+      "q_bits_exact": 175,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 6,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 1073741824,
+      "theoretical_automorphisms_for_rejected_circuit": 229376,
+      "theoretical_main_key_bytes_if_plan_admitted": 424673280,
+      "first_failing_inequality": "in-tree binding screen: 240 < 256 target bits",
+      "other_known_failures": [
+        "canonical certificate at depth 2: 197 > 142 half-scale bits"
+      ],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes4",
+      "route": "native_current_canonical_circuit",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits_exact": 119,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 4,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 536870912,
+      "theoretical_automorphisms_for_rejected_circuit": 106496,
+      "theoretical_main_key_bytes_if_plan_admitted": 88080384,
+      "first_failing_inequality": "canonical certificate at depth 1: 131 > 86 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes5",
+      "route": "native_current_canonical_circuit",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "q_bits_exact": 146,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 5,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 536870912,
+      "theoretical_automorphisms_for_rejected_circuit": 106496,
+      "theoretical_main_key_bytes_if_plan_admitted": 137625600,
+      "first_failing_inequality": "canonical certificate at depth 1: 131 > 113 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes6",
+      "route": "native_current_canonical_circuit",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329
+      ],
+      "q_bits_exact": 177,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 6,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 536870912,
+      "theoretical_automorphisms_for_rejected_circuit": 106496,
+      "theoretical_main_key_bytes_if_plan_admitted": 209190912,
+      "first_failing_inequality": "exact auxiliary capacity: 222 > 220 bits",
+      "other_known_failures": [
+        "in-tree binding screen: 118 < 128 target bits",
+        "canonical certificate at depth 2: 189 > 144 half-scale bits"
+      ],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes7",
+      "route": "native_current_canonical_circuit",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169
+      ],
+      "q_bits_exact": 206,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 7,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 536870912,
+      "theoretical_automorphisms_for_rejected_circuit": 106496,
+      "theoretical_main_key_bytes_if_plan_admitted": 282591232,
+      "first_failing_inequality": "exact auxiliary capacity: 251 > 220 bits",
+      "other_known_failures": [
+        "in-tree binding screen: 102 < 128 target bits",
+        "canonical certificate at depth 2: 189 > 173 half-scale bits"
+      ],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n8192_lanes8",
+      "route": "native_current_canonical_circuit",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169,
+        645922817
+      ],
+      "q_bits_exact": 235,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 8,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 536870912,
+      "theoretical_automorphisms_for_rejected_circuit": 106496,
+      "theoretical_main_key_bytes_if_plan_admitted": 367001600,
+      "first_failing_inequality": "exact auxiliary capacity: 280 > 220 bits",
+      "other_known_failures": [
+        "in-tree binding screen: 89 < 128 target bits",
+        "canonical certificate at depth 3: 247 > 202 half-scale bits"
+      ],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes4",
+      "route": "native_current_canonical_circuit",
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits_exact": 119,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 4,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 1073741824,
+      "theoretical_automorphisms_for_rejected_circuit": 229376,
+      "theoretical_main_key_bytes_if_plan_admitted": 188743680,
+      "first_failing_inequality": "canonical certificate at depth 1: 136 > 86 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes5",
+      "route": "native_current_canonical_circuit",
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "q_bits_exact": 146,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 5,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 1073741824,
+      "theoretical_automorphisms_for_rejected_circuit": 229376,
+      "theoretical_main_key_bytes_if_plan_admitted": 294912000,
+      "first_failing_inequality": "canonical certificate at depth 1: 136 > 113 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes6",
+      "route": "native_current_canonical_circuit",
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329
+      ],
+      "q_bits_exact": 177,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 6,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 1073741824,
+      "theoretical_automorphisms_for_rejected_circuit": 229376,
+      "theoretical_main_key_bytes_if_plan_admitted": 448266240,
+      "first_failing_inequality": "canonical certificate at depth 2: 196 > 144 half-scale bits",
+      "other_known_failures": [],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes7",
+      "route": "native_current_canonical_circuit",
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169
+      ],
+      "q_bits_exact": 206,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 7,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 1073741824,
+      "theoretical_automorphisms_for_rejected_circuit": 229376,
+      "theoretical_main_key_bytes_if_plan_admitted": 605552640,
+      "first_failing_inequality": "fallback accumulator: 287 > 256 bits",
+      "other_known_failures": [
+        "canonical certificate at depth 2: 196 > 173 half-scale bits"
+      ],
+      "production_admitted": false
+    },
+    {
+      "name": "candidate_n16384_lanes8",
+      "route": "native_current_canonical_circuit",
+      "n": 16384,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        1811939329,
+        595591169,
+        645922817
+      ],
+      "q_bits_exact": 235,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 8,
+      "theoretical_ciphertext_multiplications_for_rejected_circuit": 1073741824,
+      "theoretical_automorphisms_for_rejected_circuit": 229376,
+      "theoretical_main_key_bytes_if_plan_admitted": 786432000,
+      "first_failing_inequality": "fallback accumulator: 287 > 256 bits",
+      "other_known_failures": [
+        "canonical certificate at depth 3: 256 > 202 half-scale bits"
+      ],
+      "production_admitted": false
+    }
+  ],
+  "external_reference_trials": [
+    {
+      "name": "public_bfv_reference_n1024_b17_q820_run1_2026-09-28",
+      "route": "external_functional_reference_only",
+      "n": 1024,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        18014398509404161,
+        18014398509395969,
+        18014398509355009,
+        18014398509309953,
+        18014398509293569,
+        18014398509281281,
+        18014398509211649,
+        18014398509199361,
+        18014398509176833,
+        18014398509150209,
+        18014398509139969,
+        18014398509076481,
+        18014398509053953,
+        18014398508998657,
+        18014398508978177
+      ],
+      "q_bits_exact": 810,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 15,
+      "digit_radius_trial": 17,
+      "digit_polynomial_degree": 69,
+      "observed_refresh_rounds": 3,
+      "observed_all_coefficient_checks": 3072,
+      "observed_total_ms": 42108,
+      "observed_peak_rss_kib": 76376,
+      "galois_key_count": 23,
+      "key_payload_bytes": null,
+      "circuit_multiplication_count": null,
+      "first_failing_inequality": null,
+      "missing_admission_evidence": [
+        "live input radius bound",
+        "certified operation DAG and per-node error",
+        "native arithmetic and return-key cycle",
+        "external joint security disposition"
+      ],
+      "security_attestation": null,
+      "production_admitted": false
+    },
+    {
+      "name": "public_bfv_reference_n1024_b32_q1000_run1_2026-09-28",
+      "route": "external_functional_reference_only",
+      "n": 1024,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        36028797018820609,
+        36028797018802177,
+        36028797018789889,
+        36028797018746881,
+        36028797018667009,
+        36028797018652673,
+        36028797018646529,
+        36028797018615809,
+        36028797018597377,
+        36028797018585089,
+        36028797018529793,
+        36028797018359809,
+        36028797018298369,
+        36028797018290177,
+        36028797018286081,
+        36028797018279937,
+        36028797018267649,
+        36028797018228737
+      ],
+      "q_bits_exact": 990,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 18,
+      "digit_radius_trial": 32,
+      "digit_polynomial_degree": 129,
+      "observed_refresh_rounds": 3,
+      "observed_all_coefficient_checks": 3072,
+      "observed_total_ms": 49445,
+      "observed_peak_rss_kib": 89984,
+      "galois_key_count": 23,
+      "key_payload_bytes": null,
+      "circuit_multiplication_count": null,
+      "first_failing_inequality": null,
+      "missing_admission_evidence": [
+        "live input radius bound",
+        "certified operation DAG and per-node error",
+        "native arithmetic and return-key cycle",
+        "external joint security disposition"
+      ],
+      "security_attestation": null,
+      "production_admitted": false
+    },
+    {
+      "name": "public_bfv_reference_n8192_b32_q1000_run1_2026-09-28",
+      "route": "external_functional_reference_only",
+      "n": 8192,
+      "plaintext_modulus": 65537,
+      "ordered_ciphertext_primes": [
+        36028797018652673,
+        36028797017571329,
+        36028797017456641,
+        36028797017276417,
+        36028797017014273,
+        36028797016719361,
+        36028797016588289,
+        36028797016522753,
+        36028797016195073,
+        36028797016178689,
+        36028797015212033,
+        36028797014704129,
+        36028797014573057,
+        36028797014376449,
+        36028797014081537,
+        36028797014065153,
+        36028797013639169,
+        36028797013442561
+      ],
+      "q_bits_exact": 990,
+      "plaintext_slots_degree_one": true,
+      "ntt_primes_checked": 18,
+      "digit_radius_trial": 32,
+      "digit_polynomial_degree": 129,
+      "observed_refresh_rounds": 2,
+      "observed_all_coefficient_checks": 16384,
+      "observed_total_ms": 523084,
+      "observed_peak_rss_kib": 1249992,
+      "galois_key_count": 52,
+      "key_payload_bytes": null,
+      "circuit_multiplication_count": null,
+      "first_failing_inequality": null,
+      "missing_admission_evidence": [
+        "live input radius bound",
+        "certified operation DAG and per-node error",
+        "native arithmetic and return-key cycle",
+        "external joint security disposition"
+      ],
+      "security_attestation": null,
+      "production_admitted": false
+    }
+  ],
+  "rejected_reference_trials": [
+    {
+      "name": "public_bfv_reference_n1024_b32_run1_2026-09-28",
+      "route": "external_failed_reference_trial",
+      "nominal_requested_q_bits": 820,
+      "exact_tuple_available": false,
+      "first_observed_failure": "round 1 refresh plaintext mismatch after a passed first refresh and square",
+      "first_failing_inequality": null,
+      "production_admitted": false
+    }
+  ],
+  "admission_note": "Every native row rejects the archived full-domain canonical circuit. Reference trials are functional observations, not native candidates or security attestations. No bounded-digit candidate can be admitted before its live radius, complete DAG/noise, key-cycle and security evidence."
+}
