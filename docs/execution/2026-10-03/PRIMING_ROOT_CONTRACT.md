@@ -152,6 +152,33 @@ generally `X`. `cram_anchor::Anchor::winding` implements that equation;
 `AdjacentWindingEvidence` derives a per-query winding without caching it.
 Current construction does not establish the full source/epoch binding above.
 
+Adjacency supplies coprimality for any `M`, including composite `M` and
+composite `A`; primality is a separate condition for field-only operations.
+For a deck step `X -> X+M`, `g` is unchanged, `a -> a-1 (mod A)`, and the
+bounded winding increases by one. At `X=M*A`, both residues alias those of
+zero. This observer therefore requires a **pre-operation** certificate that
+the entire output interval stays inside `[0,M*A)`; a post hoc residue check
+cannot detect crossing. The adjacent observer returns `K mod A` without that
+certificate, not an unbounded signed winding. A wider FHE winding may require
+more independent anchor information or an admitted signed interval adapter.
+
+`30030=2*3*5*7*11*13` is the six-lane S6 example, not the intact eight-lane
+S8 product `9699690`. In the Dresden `36/37/73` example, the two formulas
+observe distinct quotients: `floor(X/36) mod 37` and `floor(X/37) mod 73`.
+From `6585` to `6586`, the former stays `34` and the latter changes `31 ->
+32` because the step crosses a multiple of 37. It is not evidence of a
+hierarchical carry from the first quotient into the second. Both sample values
+also exceed the individual pair capacities `36*37=1332` and `37*73=2701`;
+the displayed numbers are quotient **residues**, not the full windings `182`
+and `177/178`. A joint tower can resolve a wider interval only after its
+independent coordinates and combined capacity are specified and checked.
+
+The subtraction removes the inverse/multiply **from the observer stage**.
+Acquiring the authoritative `g` and `a` coordinates, modular reduction at a
+particular width, whole-path latency, DSP count, and constant-time behavior
+still need implementation and hardware evidence; the algebra alone does not
+certify a single-cycle or side-channel-resistant machine.
+
 ### R-S8-SHADOW11-SPLIT-1
 
 ```text
