@@ -1,0 +1,52 @@
+{
+  "schema": "nine65-depth4-coefficient-audit-v1",
+  "source": "/tmp/nine65-depth4-zero-error-residue-pairs.tsv",
+  "source_sha256": "b3a4c8311d6cdd3a8350ec6d353bd90f04704cf6059962e35218be8ccaa95c85",
+  "rust_decoded": 65532,
+  "n": 8192,
+  "q_bits": 119,
+  "combined_bits": 338,
+  "signed_bound_bits": 276,
+  "components": [
+    {
+      "component": 0,
+      "actual_vs_delta_mismatch_count": 0,
+      "first_actual_vs_delta_mismatch": null,
+      "actual_vs_bfv_mismatch_count": 8192,
+      "first_actual_vs_bfv_mismatch": 0,
+      "delta_vs_bfv_count": 8192,
+      "first_delta_vs_bfv": 0,
+      "max_input_bits": 261
+    },
+    {
+      "component": 1,
+      "actual_vs_delta_mismatch_count": 0,
+      "first_actual_vs_delta_mismatch": null,
+      "actual_vs_bfv_mismatch_count": 7620,
+      "first_actual_vs_bfv_mismatch": 0,
+      "delta_vs_bfv_count": 7620,
+      "first_delta_vs_bfv": 0,
+      "max_input_bits": 248
+    }
+  ],
+  "actual": {
+    "plaintext": 65532,
+    "phase": "348934422541741497715812250254022733"
+  },
+  "delta_oracle": {
+    "plaintext": 65532,
+    "phase": "348934422541741497715812250254022733"
+  },
+  "bfv_oracle": {
+    "plaintext": 65532,
+    "phase": "348934422541741497717062679948565711"
+  },
+  "bfv_c0_only": {
+    "plaintext": 65532,
+    "phase": "348934422541741497718155836213787342"
+  },
+  "bfv_c1_only": {
+    "plaintext": 65532,
+    "phase": "348934422541741497714719093988801102"
+  }
+}

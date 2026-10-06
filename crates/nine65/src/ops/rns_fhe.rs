@@ -9970,6 +9970,137 @@ mod tests {
         }
     }
 
+    /// Export test-only residue pairs immediately around the first failing
+    /// zero-fresh-error multiplication. An independent Python integer oracle
+    /// can inspect every coefficient; this has no production call path.
+    #[test]
+    #[ignore = "diagnostic: writes deterministic test-key residues to /tmp"]
+    fn diagnostic_export_depth4_zero_error_residue_pairs() {
+        use std::io::Write;
+
+        let ctx = RNSFHEContext::new(&SecureConfig::secure_128().into_config());
+        let mut rng = ShadowHarvester::with_seed(42);
+        let keys = ctx.generate_keys_dual(&mut rng);
+        let q = ctx.q_product_checked.unwrap();
+        let delta = q / ctx.t as u128;
+        let mut c0 = ctx.dual_poly_zero();
+        let mut c1 = ctx.dual_poly_zero();
+        for (j, &p) in ctx.config.primes.iter().enumerate() {
+            let encoded = ((2 * delta) % p as u128) as u64;
+            for i in 0..ctx.n {
+                let target = if i == 0 { encoded } else { 0 };
+                c0.main[j][i] = (target + p - keys.secret_key.s.main[j][i]) % p;
+            }
+            c1.main[j][0] = 1;
+        }
+        for (j, &a) in ctx.dual_rns.anchor.primes.iter().enumerate() {
+            let encoded = ((2 * delta) % a as u128) as u64;
+            for i in 0..ctx.n {
+                let target = if i == 0 { encoded } else { 0 };
+                c0.anchor[j][i] = (target + a - keys.secret_key.s.anchor[j][i]) % a;
+            }
+            c1.anchor[j][0] = 1;
+        }
+        let mut ct = DualRNSCiphertext {
+            c0,
+            c1,
+            level: ctx.config.primes.len(),
+        };
+        let profile_phase = |ct: &DualRNSCiphertext, expected: u128, depth: u32| {
+            // Test-only canonical CRT read of the *whole* decrypted phase
+            // polynomial. Decryption's scalar margin reports only coeff 0.
+            let phase = ctx.dual_poly_add(&ct.c0, &ctx.dual_poly_mul(&ct.c1, &keys.secret_key.s));
+            let target = expected * delta;
+            let mut constant_error = 0_u128;
+            let mut constant_error_negative = false;
+            let mut max_nonconstant = 0_u128;
+            let mut nonconstant_above_delta_eighth = 0_usize;
+            for i in 0..ctx.n {
+                let residues: Vec<u64> = phase.main.iter().map(|limb| limb[i]).collect();
+                let v = ctx.rns.to_int(&residues);
+                if i == 0 {
+                    let diff = (v + q - target) % q;
+                    constant_error_negative = diff > q / 2;
+                    constant_error = if constant_error_negative {
+                        q - diff
+                    } else {
+                        diff
+                    };
+                } else {
+                    let magnitude = v.min(q - v);
+                    max_nonconstant = max_nonconstant.max(magnitude);
+                    if magnitude > delta / 8 {
+                        nonconstant_above_delta_eighth += 1;
+                    }
+                }
+            }
+            println!(
+                "PHASE_PROFILE depth={depth} expected={expected} constant_error_negative={constant_error_negative} constant_error={constant_error} max_nonconstant={max_nonconstant} nonconstant_above_delta_eighth={nonconstant_above_delta_eighth} delta={delta}"
+            );
+        };
+        assert_eq!(ctx.decrypt_dual(&ct, &keys.secret_key), 2);
+        profile_phase(&ct, 2, 0);
+        for (depth, expected) in [(1, 4), (2, 16), (3, 256)] {
+            ct = ctx.mul_dual_symmetric(&ct, &ct.clone(), &keys.secret_key);
+            assert_eq!(ctx.decrypt_dual(&ct, &keys.secret_key), expected);
+            profile_phase(&ct, expected as u128, depth);
+        }
+
+        let d0 = ctx.dual_poly_mul(&ct.c0, &ct.c0);
+        let d1 = ctx.dual_poly_add(
+            &ctx.dual_poly_mul(&ct.c0, &ct.c1),
+            &ctx.dual_poly_mul(&ct.c1, &ct.c0),
+        );
+        let d2 = ctx.dual_poly_mul(&ct.c1, &ct.c1);
+        let s2 = ctx.dual_poly_mul(&keys.secret_key.s, &keys.secret_key.s);
+        let p0 = ctx.dual_poly_add(&d0, &ctx.dual_poly_mul(&d2, &s2));
+        let p1 = d1;
+        let y0 = ctx.k_elim_rescale_dual(&p0).unwrap();
+        let y1 = ctx.k_elim_rescale_dual(&p1).unwrap();
+        let out = DualRNSCiphertext {
+            c0: y0.clone(),
+            c1: y1.clone(),
+            level: ct.level,
+        };
+        let decoded = ctx.decrypt_dual(&out, &keys.secret_key);
+        profile_phase(&out, 65536, 4);
+
+        let path = "/tmp/nine65-depth4-zero-error-residue-pairs.tsv";
+        let mut file = std::fs::File::create(path).unwrap();
+        writeln!(
+            file,
+            "# n={} q={} t={} delta={} decoded={} expected=65536",
+            ctx.n, q, ctx.t, delta, decoded
+        )
+        .unwrap();
+        let fmt = |limbs: &[Vec<u64>], i: usize| {
+            limbs
+                .iter()
+                .map(|limb| limb[i].to_string())
+                .collect::<Vec<_>>()
+                .join(",")
+        };
+        for i in 0..ctx.n {
+            writeln!(
+                file,
+                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                i,
+                fmt(&p0.main, i),
+                fmt(&p0.anchor, i),
+                fmt(&p1.main, i),
+                fmt(&p1.anchor, i),
+                fmt(&y0.main, i),
+                fmt(&y0.anchor, i),
+                fmt(&y1.main, i),
+                fmt(&y1.anchor, i),
+                fmt(&keys.secret_key.s.main, i),
+                fmt(&keys.secret_key.s.anchor, i),
+            )
+            .unwrap();
+        }
+        println!("DEPTH4_RESIDUE_EXPORT path={path} decoded={decoded} expected=65536");
+    }
+
     #[test]
     fn test_centered_representative_invariant() {
         // MICRO-TEST: Verify the K-Elimination invariant directly.

@@ -1,5 +1,11 @@
 # Execution status — updated 2026-10-04
 
+The [2026-10-05 session runbook](../2026-10-05/SESSION_RUNBOOK.md) supersedes
+this snapshot for current remote merge state, depth-four coefficient evidence,
+and execution order. PR #156 has since merged its fail-closed depth assertions;
+the tested repeated-square route is still red. The runbook does not mark any
+packet accepted.
+
 The work queue has 43 task packets in [tasks.json](tasks.json). All remain
 **unaccepted** at this handoff. A task is accepted only after its own code,
 checks, dependency closure and required review are recorded. The planning
