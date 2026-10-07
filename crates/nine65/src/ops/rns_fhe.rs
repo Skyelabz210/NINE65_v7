@@ -5081,33 +5081,34 @@ impl RNSFHEContext {
             // 256 iterations regardless of the dividend, closing the leak at
             // its measured cause without changing the rounding semantics
             // below (still `round-half-up-on-magnitude` on the exact same
-            // `(quotient, remainder)` pair). The `if rem >= q_last_half`
-            // branch that follows is unchanged: `docs/CT_VERIFICATION_PLAN.md`
-            // §4.1 measured it constant-time on its own (magnitude-matched
-            // positive-vs-negative contrast), and the `mag` magnitude was the
-            // established leak, not this branch.
+            // `(quotient, remainder)` pair). Keep the rounding, centering,
+            // and sign-encoding decisions in fixed-work arithmetic as their
+            // inputs are coefficient-derived.
             let (mut q_mag, rem) = v_centered.mag.div_mod_u64_ct(q_last);
-            if rem >= q_last_half {
-                q_mag = q_mag.add(U256::one());
-            }
+            let round_up_bit = core::hint::black_box((rem >= q_last_half) as u64);
+            let round_up_mask = 0u128.wrapping_sub(round_up_bit as u128);
+            let rounded_up = q_mag.add_ct(U256::one());
+            q_mag = U256::select_mask_ct(q_mag, rounded_up, round_up_mask);
+
+            // Reduce and sign-encode each output lane without secret-derived
+            // division or control flow. `mod_u64_ct` is a fixed 256-step
+            // reducer; the zero test below is expressed as an arithmetic bit.
+            let encode_signed = |p: u64| {
+                let q_mod_p = q_mag.mod_u64_ct(p);
+                let nonzero_bit = (q_mod_p | q_mod_p.wrapping_neg()) >> 63;
+                let negate_mask =
+                    0u64.wrapping_sub((v_centered.negative_mask as u64) & nonzero_bit);
+                let negative_residue = p.wrapping_sub(q_mod_p);
+                (q_mod_p & !negate_mask) | (negative_residue & negate_mask)
+            };
 
             // Encode the signed quotient into RNS
             for (j, &p) in self.config.primes[..num_poly_primes - 1].iter().enumerate() {
-                let q_mod_p = q_mag.mod_u64(p);
-                result_main[j][i] = if v_centered.is_neg && q_mod_p != 0 {
-                    p - q_mod_p
-                } else {
-                    q_mod_p
-                };
+                result_main[j][i] = encode_signed(p);
             }
 
             for (j, &p) in self.dual_rns.anchor.primes.iter().enumerate() {
-                let q_mod_p = q_mag.mod_u64(p);
-                result_anchor[j][i] = if v_centered.is_neg && q_mod_p != 0 {
-                    p - q_mod_p
-                } else {
-                    q_mod_p
-                };
+                result_anchor[j][i] = encode_signed(p);
             }
         }
 
@@ -6103,23 +6104,20 @@ impl RNSFHEContext {
 #[derive(Clone, Copy, Debug)]
 struct SignedU256 {
     mag: U256,
-    is_neg: bool,
+    negative_mask: u128,
 }
 
 impl SignedU256 {
     #[inline]
     fn center(v: U256, m: U256, half: U256) -> Self {
-        if v.gt(half) {
-            // v - m in centered form
-            Self {
-                mag: m.sub(v),
-                is_neg: true,
-            }
-        } else {
-            Self {
-                mag: v,
-                is_neg: false,
-            }
+        // CRT values are in [0, m). Select the centered magnitude with a
+        // fixed borrow comparison instead of branching on whether v > m/2.
+        let nonnegative_mask = half.ge_mask_ct(v);
+        let negative_mask = !nonnegative_mask;
+        let negative_magnitude = m.sub_ct(v);
+        Self {
+            mag: U256::select_mask_ct(v, negative_magnitude, negative_mask),
+            negative_mask,
         }
     }
 }

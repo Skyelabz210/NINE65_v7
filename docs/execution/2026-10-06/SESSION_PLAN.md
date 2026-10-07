@@ -312,8 +312,10 @@ through dependency-ready cards with their own evidence and review.
    37676097379 as complete with 856 passed, 94 failed, 125 ignored. The new
    arithmetic differential test fails at dividend 2, modulus 2, confirming
    the partial-mask bug in the tested prototype. Merge-ref T2 run
-   37676889216 is still running job 112983125650; collect its final result.
-   Verify the one-bit widening fix on the follow-up head before accepting any
+   37676889216 is complete: 856 passed, 94 failed, and 125 ignored. Its
+   arithmetic differential test fails at dividend 2/modulus 2, and the
+   separate `class_f_alpha_lanes_must_be_prime_and_distinct` regression also
+   fails. Verify the one-bit widening fix on PR #169 before accepting any
    dependent arithmetic result.
 2. Let the already-running 27-target `allow_insecure` debug matrix finish in
    `/home/acid/Projects/NINE65_v7`; save the complete log and exit status.
@@ -328,10 +330,14 @@ through dependency-ready cards with their own evidence and review.
    incorrect selector mask and do not validate the fix. Two CRAM-public
    multiply tests that passed on merged `0f85873` fail on the changed head.
    Source review found that the code widened a 64-bit all-ones selector and
-   then negated it in `u128`, producing a partial mask. The current branch
-   expands the one-bit condition directly at 128-bit width; keep this fix
-   unaccepted until the arithmetic differential test, T2, CT rerun, and CRAM
-   tests pass. Do not merge further changes through these failures.
+   then negated it in `u128`, producing a partial mask. Draft PR
+   [#169](https://github.com/Skyelabz210/NINE65_v7/pull/169), head
+   `84ce6da2a18faa2c63a55fa7d662aff670fbe472`, expands the one-bit condition
+   directly at 128-bit width. Its T1 Fast Gate is running; static analysis
+   and T3 pass, while T2, CT, CRAM, architecture and fuzz checks are pending.
+   Keep this fix unaccepted until the arithmetic differential test, T2, CT
+   rerun, and CRAM tests pass. Do not merge further changes through these
+   failures.
 4. Triage the current fuzz failures independently: a five-byte deserialize
    allocation, the encrypt/decrypt result 65,292 → 65,289, and homomorphic
    scalar multiplication 512 × 65,404 → 61,587 (expected 62,978). Preserve
@@ -400,7 +406,11 @@ corpora for this head are retained under
 [`pr168-904448a`](../../../artifacts/execution/2026-10-07-session/CI/pr168-904448a/).
 
 The merge-ref CI run 37676889216 has T1 Fast Gate and static analysis passing;
-T2 job 112983125650 is still running. Merge-ref CT run 37676889107 passed its timing tests, but
+T2 completes with 856 passed, 94 failed, and 125 ignored. Its arithmetic
+differential test fails at dividend 2/modulus 2, and the separate
+`class_f_alpha_lanes_must_be_prime_and_distinct` regression fails. The complete
+failed-job log is retained under `pr168-merge-c93a/ci/`. Merge-ref CT run
+37676889107 passed its timing tests, but
 those scores use the incorrect arithmetic prototype and are not accepted.
 Fuzz Smoke run 37676889257 fails on a five-byte deserialization allocation,
 encrypt/decrypt 15,110 → 15,109, and addition 0 + 35,073 → 35,071. CRAM-public
@@ -413,11 +423,50 @@ Audit remediation run 37676889186 and exploratory run 37676889127 also fail.
 These results are saved under `pr168-merge-c93a/`.
 
 The partial-mask cause is now concrete: `select_mask_ct` subtracted a widened
-`u64::MAX` from zero in `u128`, which is not a 128-bit all-ones mask. The
-current branch passes a 0/1 condition and expands it after conversion to
-`u128`. Keep the branch draft and require the differential test, T2, CRAM,
-comparative, scale, fuzz, and CT checks on this repair before treating any
-measurement as acceptance evidence.
+`u64::MAX` from zero in `u128`, which is not a 128-bit all-ones mask. PR #169
+head `84ce6da2a18faa2c63a55fa7d662aff670fbe472` expands the one-bit selector
+after conversion to `u128`. Its T1, application-platform, CT source/functional,
+and CRAM-public correctness/timing checks pass. The arithmetic differential
+and rest of T2 are still running. The full-path CT timing contrast fails at
+`t_signal=18.2519` with control `0.9809`, although the isolated reducer
+contrast passes once at `2.9168`; this head does not close the end-to-end CT
+finding.
+
+### Draft PR #169 validation checkpoint
+
+Draft [PR #169](https://github.com/Skyelabz210/NINE65_v7/pull/169) is based on
+merge commit `c93a058` and remote head
+`84ce6da2a18faa2c63a55fa7d662aff670fbe472`. T1 Fast Gate, static analysis,
+T3, application platform, CT source/functional, and CRAM-public correctness
+and timings pass. CRAM-public correctness reports 5/5 M1, 7/7 M2b/M3, 4/4
+API guardrails, 2/2 in-module guards, 3/3 M3 correctness, 3/3 Arrow witnesses,
+and 24/24 unified-rescale tests passing. T2 run 37678425778, job
+112988404676, is still running.
+
+The CT statistical run 37678425725 fails the full all-zero-vs-uniform
+`mod_switch_down_dual` contrast (`t_control=0.9809`, `t_signal=18.2519`,
+medians 134.46 ms and 134.64 ms). The isolated reducer contrast passes once
+(`t_signal=2.9168`); the magnitude-matched sign contrast passes once
+(`t_signal=0.5676`). Fuzz run 37678425578 still fails deserialize, encrypt/decrypt,
+and homomorphic targets; NTT and K-Elimination pass. Exact CRAM run 37678425652
+and exact Dual-RNS run 37678425775 fail their existing source-bound checks.
+Scale quick run 37679066010 passes both configurations through depth 2/2.
+Comparative smoke run 37679073764 passes v7 correctness through depth 2/2;
+the v6 same-machine portion is skipped because the required repository secret
+is absent, so no v6/v7 performance result exists. Logs, manifests, and fuzz
+reproducers are retained under `pr169-84ce6da/`.
+
+Source review of the full-path signal found additional coefficient-derived
+branches and variable-latency reductions in centering, rounding, signed lane
+encoding, and residue normalization. The current local checkout has a second
+fixed-work correction for these operations; it is formatted but not yet
+published or hosted-tested. Push this correction, then require the arithmetic
+differential test, T2, CRAM-public, scale/comparative, all five fuzz targets,
+and repeated CT measurements on that exact head. Keep the adjacency
+K-Elimination timing finding and all three fuzz defect classes open. Continue
+the active local feature matrix in parallel; run the separate extreme target
+after it exits. The complete 43-card DAG below remains gated by its
+prerequisites.
 
 ## Execute in dependency order
 

@@ -1,0 +1,619 @@
+v7-comparative-smoke	Set up job	﻿2026-10-07T20:02:58.9964706Z Current runner version: '2.337.0'
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9992145Z ##[group]Runner Image Provisioner
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9993068Z Hosted Compute Agent
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9993739Z Version: 20260901.588
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9994914Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9995701Z Build Date: 2026-09-01T19:56:44Z
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9996549Z Worker ID: {210bc2bf-3d2b-4cbf-8fd2-c84dc114e626}
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9997311Z Azure Region: northcentralus
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9997974Z ##[endgroup]
+v7-comparative-smoke	Set up job	2026-10-07T20:02:58.9999815Z ##[group]Operating System
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0000495Z Ubuntu
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0001160Z 24.04.5
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0001677Z LTS
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0002233Z ##[endgroup]
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0002794Z ##[group]Runner Image
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0003399Z Image: ubuntu-24.04
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0004407Z Version: 20260927.320.1
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0005557Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0007539Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0008542Z ##[endgroup]
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0009755Z ##[group]GITHUB_TOKEN Permissions
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0012273Z Contents: read
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0012938Z Metadata: read
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0013491Z ##[endgroup]
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0016686Z Secret source: Actions
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0018253Z Cache mode: write
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0020020Z Prepare workflow directory
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0382502Z Prepare all required actions
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.0435484Z Getting action download info
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.3520176Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.4431088Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+v7-comparative-smoke	Set up job	2026-10-07T20:02:59.5842530Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+v7-comparative-smoke	Set up job	2026-10-07T20:03:00.2309309Z Complete job name: v7-comparative-smoke
+v7-comparative-smoke	Run actions/checkout@v4	﻿2026-10-07T20:03:00.3172065Z ##[group]Run actions/checkout@v4
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3173126Z with:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3173644Z   repository: Skyelabz210/NINE65_v7
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3178638Z   token: ***
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3179149Z   ssh-strict: true
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3179627Z   ssh-user: git
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3180102Z   persist-credentials: true
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3180624Z   clean: true
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3181104Z   sparse-checkout-cone-mode: true
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3181683Z   fetch-depth: 1
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3182149Z   fetch-tags: false
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3182638Z   show-progress: true
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3183124Z   lfs: false
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3183588Z   submodules: false
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3184285Z   set-safe-directory: true
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3184857Z   allow-unsafe-pr-checkout: false
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.3185813Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4203803Z Syncing repository: Skyelabz210/NINE65_v7
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4206585Z ##[group]Getting Git version info
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4208346Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4210195Z [command]/usr/bin/git version
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4301400Z git version 2.55.0
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4332428Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4348233Z Temporarily overriding HOME='/home/runner/work/_temp/f2c4efbd-1c3f-4160-bd6f-34b5d1ed79f6' before making global git config changes
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4350440Z Adding repository directory to the temporary git global config as a safe directory
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4354789Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4411893Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4417721Z ##[group]Initializing the repository
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4422557Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4530523Z hint: Using 'master' as the name for the initial branch. This default branch name
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4533618Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4536581Z hint: to use in all of your new repositories, which will suppress this warning,
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4538769Z hint: call:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4540616Z hint:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4542214Z hint: 	git config --global init.defaultBranch <name>
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4543961Z hint:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4546054Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4548537Z hint: 'development'. The just-created branch can be renamed via this command:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4550455Z hint:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4551593Z hint: 	git branch -m <name>
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4552764Z hint:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4554490Z hint: Disable this message with "git config set advice.defaultBranchName false"
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4556951Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4559571Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4639681Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4640687Z ##[group]Disabling automatic garbage collection
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4645180Z [command]/usr/bin/git config --local gc.auto 0
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4682060Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4682969Z ##[group]Setting up auth
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4691393Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.4727293Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5122377Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5167198Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5412486Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5452675Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5689972Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5733838Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5735113Z ##[group]Fetching the repository
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:00.5745343Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +84ce6da2a18faa2c63a55fa7d662aff670fbe472:refs/remotes/origin/codex/2026-10-07-ct-regression-followup
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7392271Z From https://github.com/Skyelabz210/NINE65_v7
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7396028Z  * [new ref]         84ce6da2a18faa2c63a55fa7d662aff670fbe472 -> origin/codex/2026-10-07-ct-regression-followup
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7402423Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7404371Z ##[group]Determining the checkout info
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7406632Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7408291Z [command]/usr/bin/git sparse-checkout disable
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7471034Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7508321Z ##[group]Checking out the ref
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.7513018Z [command]/usr/bin/git checkout --progress --force -B codex/2026-10-07-ct-regression-followup refs/remotes/origin/codex/2026-10-07-ct-regression-followup
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.8689200Z Switched to a new branch 'codex/2026-10-07-ct-regression-followup'
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.8694352Z branch 'codex/2026-10-07-ct-regression-followup' set up to track 'origin/codex/2026-10-07-ct-regression-followup'.
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.8706011Z ##[endgroup]
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.8762228Z [command]/usr/bin/git log -1 --format=%H
+v7-comparative-smoke	Run actions/checkout@v4	2026-10-07T20:03:01.8794991Z 84ce6da2a18faa2c63a55fa7d662aff670fbe472
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	﻿2026-10-07T20:03:01.9589860Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9591423Z with:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9592317Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9698085Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9783819Z ##[group]Run if [[ -z $toolchain ]]; then
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9785347Z [36;1mif [[ -z $toolchain ]]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9787367Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9789505Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9790748Z [36;1m  exit 1[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9792097Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9793778Z [36;1m  if [[ Linux == macOS ]]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9796380Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9798498Z [36;1m  else[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9800123Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9802087Z [36;1m  fi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9803312Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9805901Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9807783Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9809862Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9811829Z [36;1melse[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9812851Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:01.9814245Z [36;1mfi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0090393Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0091996Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0092945Z   toolchain: 1.89.0
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0094171Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0265254Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=56]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0283619Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0339181Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0341685Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0344378Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0346332Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0416819Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0418138Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0418918Z   targets: 
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0419756Z   components: 
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0420605Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0551546Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=26]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0558861Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0605863Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0607703Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0684662Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0686032Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0815188Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=25]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0822275Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0879240Z ##[group]Run if ! command -v rustup &>/dev/null; then
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0880650Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0883763Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0886824Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0888029Z [36;1mfi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0962741Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0964352Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0965202Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.0966229Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1092124Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=26]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1099543Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1115882Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1131940Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1176556Z ##[group]Run log=$(mktemp)
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1177553Z [36;1mlog=$(mktemp)[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1178491Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1179529Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1181442Z [36;1m  if rustup toolchain install 1.89.0 --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1183373Z [36;1m    break[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1184443Z [36;1m  else[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1185278Z [36;1m    status=$?[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1186143Z [36;1m  fi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1187264Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1189337Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1191115Z [36;1m    exit "$status"[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1192046Z [36;1m  fi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1193416Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1195267Z [36;1m  sleep 30[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1196114Z [36;1mdone[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1270036Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1271307Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1272095Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1273127Z   RUSTUP_PERMIT_COPY_RENAME: 1
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:02.1274344Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:03.5142120Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:03.8822831Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:03.8824682Z info: downloading 3 components
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3341632Z 
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3421496Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3422470Z 
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3503636Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=9236]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3510361Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3529819Z ##[group]Run rustup default 1.89.0 --force-non-host
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3530274Z [36;1mrustup default 1.89.0 --force-non-host[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3593549Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3594205Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3594482Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3594785Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3723320Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3732380Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3732842Z 
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3809107Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3809720Z 
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3810564Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3828709Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=31]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3831464Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3852658Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3853545Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3854604Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3855133Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3917662Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3918035Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3918248Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.3918544Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4287476Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=45]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4290366Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4331502Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4331915Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4332252Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4332548Z [36;1mfi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4395283Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4395672Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4395900Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4396198Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4489405Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=19]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4492038Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4510574Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4510947Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4511287Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4511579Z [36;1mfi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4571680Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4572043Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4572252Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4572527Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4572756Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4660587Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=16]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4663067Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4682640Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4683159Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4683912Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4684945Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4685520Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4686064Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4686559Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4687114Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4687631Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4687977Z [36;1m  fi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4688399Z [36;1mfi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4748244Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4748592Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4748800Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4749060Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4749289Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.4749513Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5093111Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=42]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5096453Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5116615Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5117500Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5118143Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5118623Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5118952Z [36;1mfi[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5180774Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5181126Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5181339Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5181619Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5181855Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5182087Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5402443Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=30]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5407577Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5426288Z ##[group]Run rustc +1.89.0 --version --verbose
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5426657Z [36;1mrustc +1.89.0 --version --verbose[0m
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5488937Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5489330Z env:
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5489554Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5489871Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5490114Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5490359Z ##[endgroup]
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5682498Z rustc 1.89.0 (29483883e 2025-08-04)
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5683327Z binary: rustc
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5683937Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5684988Z commit-date: 2025-08-04
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5685668Z host: x86_64-unknown-linux-gnu
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5686387Z release: 1.89.0
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5687019Z LLVM version: 20.1.7
+v7-comparative-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T20:03:11.5702548Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=29]
+v7-comparative-smoke	Validate harness files	﻿2026-10-07T20:03:11.5762351Z ##[group]Run python3 -m json.tool benchmarks/comparative/nine65_v6_v7_contract.json > /dev/null
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5763085Z [36;1mpython3 -m json.tool benchmarks/comparative/nine65_v6_v7_contract.json > /dev/null[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5763553Z [36;1mpython3 -m py_compile \[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5763845Z [36;1m  scripts/run_nine65_v6_v7_compare.py \[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5764492Z [36;1m  scripts/cram_compare_results.py \[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5764815Z [36;1m  scripts/test_cram_compare_results.py \[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5765150Z [36;1m  scripts/analyze_cram_fhe_hypotheses.py \[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5765498Z [36;1m  scripts/test_analyze_cram_fhe_hypotheses.py[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5765850Z [36;1mpython3 scripts/test_cram_compare_results.py[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5766224Z [36;1mpython3 scripts/test_analyze_cram_fhe_hypotheses.py[0m
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5830090Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5830362Z env:
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5830578Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5830893Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5831120Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Validate harness files	2026-10-07T20:03:11.5831345Z ##[endgroup]
+v7-comparative-smoke	Parse and normalize new Rust probe	﻿2026-10-07T20:03:11.7590320Z ##[group]Run rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.7590950Z [36;1mrustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs[0m
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.7653164Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.7653425Z env:
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.7653632Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.7653898Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.7654411Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.7654650Z ##[endgroup]
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.8320585Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.9172817Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+v7-comparative-smoke	Parse and normalize new Rust probe	2026-10-07T20:03:11.9315635Z info: downloading 2 components
+v7-comparative-smoke	Reject floating point in comparative path	﻿2026-10-07T20:03:12.6077772Z ##[group]Run if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6078292Z [36;1mif grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6078713Z [36;1m  crates/nine65/src/bin/cram_comparative_probe.rs \[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6079091Z [36;1m  scripts/run_nine65_v6_v7_compare.py \[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6079428Z [36;1m  scripts/cram_compare_results.py \[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6079800Z [36;1m  scripts/analyze_cram_fhe_hypotheses.py; then[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6080241Z [36;1m  echo 'floating-point token found in exact comparative path' >&2[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6080648Z [36;1m  exit 1[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6080853Z [36;1mfi[0m
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6143910Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6144481Z env:
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6144727Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6145043Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6145311Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Reject floating point in comparative path	2026-10-07T20:03:12.6145586Z ##[endgroup]
+v7-comparative-smoke	Compile comparative probe	﻿2026-10-07T20:03:12.6279087Z ##[group]Run cargo check -p nine65 \
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6279464Z [36;1mcargo check -p nine65 \[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6279770Z [36;1m  --bin cram_comparative_probe \[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6280089Z [36;1m  --features serde,allow_insecure[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6342042Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6342330Z env:
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6342553Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6342859Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6343106Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6343356Z ##[endgroup]
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6812761Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6814262Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.6814833Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:12.7004724Z [1m[32m    Updating[0m crates.io index
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.0479121Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.0800442Z [1m[32m  Downloaded[0m generic-array v0.14.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.0832404Z [1m[32m  Downloaded[0m cfg-if v1.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.0857547Z [1m[32m  Downloaded[0m bincode_derive v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.0879009Z [1m[32m  Downloaded[0m crypto-common v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.0890947Z [1m[32m  Downloaded[0m cpufeatures v0.2.17
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.0911160Z [1m[32m  Downloaded[0m block-buffer v0.10.4
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1006415Z [1m[32m  Downloaded[0m version_check v0.9.5
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1008892Z [1m[32m  Downloaded[0m unty v0.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1009523Z [1m[32m  Downloaded[0m itoa v1.0.16
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1009894Z [1m[32m  Downloaded[0m thiserror v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1093660Z [1m[32m  Downloaded[0m zeroize_derive v1.4.2
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1111123Z [1m[32m  Downloaded[0m getrandom v0.2.16
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1148472Z [1m[32m  Downloaded[0m virtue v0.0.18
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1177285Z [1m[32m  Downloaded[0m zmij v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1195607Z [1m[32m  Downloaded[0m typenum v1.19.0
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1227066Z [1m[32m  Downloaded[0m serde_core v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1257415Z [1m[32m  Downloaded[0m memchr v2.7.6
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1316654Z [1m[32m  Downloaded[0m serde_derive v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1350474Z [1m[32m  Downloaded[0m proc-macro2 v1.0.103
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1381868Z [1m[32m  Downloaded[0m zeroize v1.8.2
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1397054Z [1m[32m  Downloaded[0m serde_json v1.0.147
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1475035Z [1m[32m  Downloaded[0m unicode-ident v1.0.22
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1503425Z [1m[32m  Downloaded[0m serde v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1539905Z [1m[32m  Downloaded[0m bincode v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1594818Z [1m[32m  Downloaded[0m thiserror-impl v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1609212Z [1m[32m  Downloaded[0m sha2 v0.10.9
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1636351Z [1m[32m  Downloaded[0m quote v1.0.42
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1664721Z [1m[32m  Downloaded[0m syn v2.0.111
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1774946Z [1m[32m  Downloaded[0m digest v0.10.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1794014Z [1m[32m  Downloaded[0m subtle v2.6.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.1870420Z [1m[32m  Downloaded[0m libc v0.2.178
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2367541Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2446932Z [1m[32m  Downloaded[0m criterion v0.5.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2539826Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2649717Z [1m[32m  Downloaded[0m proptest v1.9.0
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2810237Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2875859Z [1m[32m  Downloaded[0m rand_chacha v0.3.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2903441Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.2960605Z [1m[32m  Downloaded[0m rand_core v0.6.4
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.3097333Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.3098148Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.3114753Z [1m[32m   Compiling[0m quote v1.0.42
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.3115718Z [1m[32m   Compiling[0m version_check v0.9.5
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.3748118Z [1m[32m   Compiling[0m typenum v1.19.0
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.5525945Z [1m[32m   Compiling[0m generic-array v0.14.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.5945786Z [1m[32m   Compiling[0m serde_core v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:13.7562213Z [1m[32m   Compiling[0m libc v0.2.178
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:14.3398459Z [1m[32m   Compiling[0m syn v2.0.111
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:14.3871405Z [1m[32m   Compiling[0m thiserror v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:14.6495442Z [1m[32m    Checking[0m cfg-if v1.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:14.6765529Z [1m[32m   Compiling[0m virtue v0.0.18
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:14.7945605Z [1m[32m    Checking[0m block-buffer v0.10.4
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:14.8615488Z [1m[32m    Checking[0m crypto-common v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:14.9185666Z [1m[32m   Compiling[0m serde_json v1.0.147
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:15.0785437Z [1m[32m   Compiling[0m serde v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:15.3325554Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:15.3505609Z [1m[32m    Checking[0m digest v0.10.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:15.8755575Z [1m[32m    Checking[0m cpufeatures v0.2.17
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:15.9021202Z [1m[32m    Checking[0m memchr v2.7.6
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.0395298Z [1m[32m    Checking[0m zmij v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.1175332Z [1m[32m    Checking[0m itoa v1.0.16
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.2075590Z [1m[32m    Checking[0m unty v0.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.2335752Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.4685484Z [1m[32m    Checking[0m bincode v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.5615583Z [1m[32m    Checking[0m getrandom v0.2.16
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.6486236Z [1m[32m    Checking[0m sha2 v0.10.9
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:16.8836635Z [1m[32m    Checking[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:17.0495543Z [1m[32m    Checking[0m subtle v2.6.1
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:18.0630673Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:18.0631728Z [1m[32m   Compiling[0m serde_derive v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:18.0632279Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:18.7202662Z [1m[32m    Checking[0m zeroize v1.8.2
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:18.7963060Z [1m[32m    Checking[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:18.9413144Z [1m[32m    Checking[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+v7-comparative-smoke	Compile comparative probe	2026-10-07T20:03:22.4834630Z [1m[32m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 9.81s
+v7-comparative-smoke	Build comparative probe	﻿2026-10-07T20:03:22.5210230Z ##[group]Run cargo build -p nine65 \
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5210606Z [36;1mcargo build -p nine65 \[0m
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5210903Z [36;1m  --bin cram_comparative_probe \[0m
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5211223Z [36;1m  --features serde,allow_insecure[0m
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5274844Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5275144Z env:
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5275364Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5275660Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5275918Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5276158Z ##[endgroup]
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5748198Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5749410Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.5750270Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.6157538Z [1m[32m   Compiling[0m typenum v1.19.0
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.6158565Z [1m[32m   Compiling[0m serde_core v1.0.228
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.6172814Z [1m[32m   Compiling[0m zeroize v1.8.2
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.6176926Z [1m[32m   Compiling[0m cfg-if v1.0.4
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.6480561Z [1m[32m   Compiling[0m libc v0.2.178
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:22.7392695Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.1456152Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.1845343Z [1m[32m   Compiling[0m unty v0.0.4
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.2445347Z [1m[32m   Compiling[0m itoa v1.0.16
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.2996156Z [1m[32m   Compiling[0m generic-array v0.14.7
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.3815411Z [1m[32m   Compiling[0m zmij v0.1.7
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.4975530Z [1m[32m   Compiling[0m memchr v2.7.6
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.7862630Z [1m[32m   Compiling[0m getrandom v0.2.16
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.8908297Z [1m[32m   Compiling[0m block-buffer v0.10.4
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.9006722Z [1m[32m   Compiling[0m crypto-common v0.1.7
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.9541862Z [1m[32m   Compiling[0m bincode v2.0.1
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:23.9675314Z [1m[32m   Compiling[0m digest v0.10.7
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:24.1055939Z [1m[32m   Compiling[0m sha2 v0.10.9
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:24.2905600Z [1m[32m   Compiling[0m thiserror v1.0.69
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:24.3305994Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:24.5025283Z [1m[32m   Compiling[0m subtle v2.6.1
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:24.6147260Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:24.9007037Z [1m[32m   Compiling[0m serde v1.0.228
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:24.9045970Z [1m[32m   Compiling[0m serde_json v1.0.147
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:25.6082857Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+v7-comparative-smoke	Build comparative probe	2026-10-07T20:03:31.4311333Z [1m[32m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 8.86s
+v7-comparative-smoke	Execute same-process correctness smoke	﻿2026-10-07T20:03:31.4411997Z ##[group]Run mkdir -p artifacts/v6_v7_compare/smoke
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4412722Z [36;1mmkdir -p artifacts/v6_v7_compare/smoke[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4413317Z [36;1mtarget/debug/cram_comparative_probe \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4413903Z [36;1m  --config v6_compat_4096 \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4414663Z [36;1m  --iterations 2 \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4415107Z [36;1m  --mul-iterations 1 \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4415552Z [36;1m  --ct-mul-depth 2 \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4415967Z [36;1m  --seed 42 \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4416353Z [36;1m  --a 8 \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4416703Z [36;1m  --b 8 \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4417194Z [36;1m  --output artifacts/v6_v7_compare/smoke/result.json \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4417865Z [36;1m  > artifacts/v6_v7_compare/smoke/stdout.log \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4418531Z [36;1m  2> artifacts/v6_v7_compare/smoke/stderr.log[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4419396Z [36;1mpython3 - <<'PY'[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4419828Z [36;1mimport json[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4420249Z [36;1mfrom pathlib import Path[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4420739Z [36;1m[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4421234Z [36;1mpath = Path('artifacts/v6_v7_compare/smoke/result.json')[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4422027Z [36;1mpayload = json.loads(path.read_text(encoding='utf-8'))[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4422848Z [36;1massert payload['schema'] == 'nine65-comparative-probe-v1'[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4423575Z [36;1massert payload['status'] == 'PASS'[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4423949Z [36;1mdepth = payload['ct_mul_depth'][0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4424604Z [36;1massert depth['completed'] == depth['requested'][0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4425002Z [36;1massert depth['all_completed_entries_correct'] is True[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4425367Z [36;1massert depth['first_error'] is None[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4425639Z [36;1mPY[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4425909Z [36;1mpython3 scripts/analyze_cram_fhe_hypotheses.py \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4426275Z [36;1m  artifacts/v6_v7_compare/smoke/result.json \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4426690Z [36;1m  --output artifacts/v6_v7_compare/smoke/hypothesis_analysis.json \[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4427175Z [36;1m  > artifacts/v6_v7_compare/smoke/hypothesis_analysis.stdout.log[0m
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4489254Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4489513Z env:
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4489731Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4490008Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4490240Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Execute same-process correctness smoke	2026-10-07T20:03:31.4490470Z ##[endgroup]
+v7-comparative-smoke	Run actions/upload-artifact@v4	﻿2026-10-07T20:03:55.5933806Z ##[group]Run actions/upload-artifact@v4
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5934450Z with:
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5934681Z   name: nine65-v7-comparative-smoke
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5934970Z   path: artifacts/v6_v7_compare/smoke
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5935246Z   if-no-files-found: warn
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5935485Z   compression-level: 6
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5935727Z   overwrite: false
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5935944Z   include-hidden-files: false
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5936179Z env:
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5936375Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5936637Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5936862Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.5937086Z ##[endgroup]
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.7635500Z (node:3884) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.7636501Z (Use `node --trace-deprecation ...` to show where the warning was created)
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.7726088Z With the provided path, there will be 5 files uploaded
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.7733136Z Artifact name is valid!
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:55.7734468Z Root directory input is valid!
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.0353263Z Beginning upload of artifact content to blob storage
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.0739657Z (node:3884) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.1623953Z Uploaded bytes 4628
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.1921780Z Finished uploading artifact content to blob storage!
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.1923075Z SHA256 digest of uploaded artifact zip is 2376d33aeb51b7cec1e212bae7cd140d4ae7b78e2a7e01ea24cf24c2b003b0ba
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.1924543Z Finalizing artifact upload
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.4465515Z Artifact nine65-v7-comparative-smoke.zip successfully finalized. Artifact ID 11507752409
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.4466919Z Artifact nine65-v7-comparative-smoke has been successfully uploaded! Final size is 4628 bytes. Artifact ID is 11507752409
+v7-comparative-smoke	Run actions/upload-artifact@v4	2026-10-07T20:03:56.4472782Z Artifact download URL: https://github.com/Skyelabz210/NINE65_v7/actions/runs/37679073764/artifacts/11507752409
+v7-comparative-smoke	Enforce smoke result after evidence capture	﻿2026-10-07T20:03:56.4590930Z ##[group]Run test 'success' = 'success'
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-07T20:03:56.4591285Z [36;1mtest 'success' = 'success'[0m
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-07T20:03:56.4654928Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-07T20:03:56.4655390Z env:
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-07T20:03:56.4655604Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-07T20:03:56.4655882Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-07T20:03:56.4656116Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-07T20:03:56.4656351Z ##[endgroup]
+v7-comparative-smoke	Post Run actions/checkout@v4	﻿2026-10-07T20:03:56.4848332Z Post job cleanup.
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.5733938Z [command]/usr/bin/git version
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.5778087Z git version 2.55.0
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.5820288Z Temporarily overriding HOME='/home/runner/work/_temp/0432d8c8-2189-4eb5-a039-0ef62a0640bc' before making global git config changes
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.5822049Z Adding repository directory to the temporary git global config as a safe directory
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.5827284Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.5870797Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.5908860Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.6183782Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.6218073Z http.https://github.com/.extraheader
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.6232916Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.6273599Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.6543342Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+v7-comparative-smoke	Post Run actions/checkout@v4	2026-10-07T20:03:56.6589915Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+v7-comparative-smoke	Complete job	﻿2026-10-07T20:03:56.7012521Z Cleaning up orphan processes
+v7-comparative-smoke	Complete job	2026-10-07T20:03:56.7292968Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+same-machine-v6-v7	Set up job	﻿2026-10-07T20:02:59.0806396Z Current runner version: '2.337.0'
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0832818Z ##[group]Runner Image Provisioner
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0833708Z Hosted Compute Agent
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0834333Z Version: 20260901.588
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0834988Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0835723Z Build Date: 2026-09-01T19:56:44Z
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0836659Z Worker ID: {317ff1fe-c8b2-416b-8448-605c2f7eb90d}
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0837377Z Azure Region: northcentralus
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0837974Z ##[endgroup]
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0839258Z ##[group]Operating System
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0839867Z Ubuntu
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0840400Z 24.04.5
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0840901Z LTS
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0841383Z ##[endgroup]
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0842007Z ##[group]Runner Image
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0842627Z Image: ubuntu-24.04
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0843187Z Version: 20260927.320.1
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0844188Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0846603Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0847550Z ##[endgroup]
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0848643Z ##[group]GITHUB_TOKEN Permissions
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0850971Z Contents: read
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0851604Z Metadata: read
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0852145Z ##[endgroup]
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0854149Z Secret source: Actions
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0855102Z Cache mode: write
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.0855969Z Prepare workflow directory
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.1885809Z Prepare all required actions
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.1958763Z Getting action download info
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.4154885Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.6591144Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+same-machine-v6-v7	Set up job	2026-10-07T20:02:59.8160272Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+same-machine-v6-v7	Set up job	2026-10-07T20:03:00.0976374Z Complete job name: same-machine-v6-v7
+same-machine-v6-v7	Check cross-repository credential	﻿2026-10-07T20:03:00.1601488Z ##[group]Run if test -n "$CROSS_REPO_TOKEN"; then
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1602500Z [36;1mif test -n "$CROSS_REPO_TOKEN"; then[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1603214Z [36;1m  echo 'available=true' >> "$GITHUB_OUTPUT"[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1603847Z [36;1melse[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1604465Z [36;1m  echo 'available=false' >> "$GITHUB_OUTPUT"[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1605333Z [36;1m  mkdir -p "$GITHUB_WORKSPACE/v7/artifacts/v6_v7_compare/dispatched"[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1606563Z [36;1m  cat > "$GITHUB_WORKSPACE/v7/artifacts/v6_v7_compare/dispatched/skipped.json" <<'JSON'[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1607457Z [36;1m{[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1607928Z [36;1m  "status": "SKIPPED",[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1608898Z [36;1m  "reason": "Repository secret NINE65_CROSS_REPO_TOKEN is not configured. No comparison was fabricated."[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1609859Z [36;1m}[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1610325Z [36;1mJSON[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1610871Z [36;1mfi[0m
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1834313Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1835700Z env:
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1836572Z   CROSS_REPO_TOKEN: 
+same-machine-v6-v7	Check cross-repository credential	2026-10-07T20:03:00.1837271Z ##[endgroup]
+same-machine-v6-v7	Run actions/upload-artifact@v4	﻿2026-10-07T20:03:00.2237761Z ##[group]Run actions/upload-artifact@v4
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2238539Z with:
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2239029Z   name: nine65-v6-v7-same-machine
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2239762Z   path: v7/artifacts/v6_v7_compare/dispatched
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2240415Z   if-no-files-found: warn
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2240976Z   compression-level: 6
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2241500Z   overwrite: false
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2242015Z   include-hidden-files: false
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.2242668Z ##[endgroup]
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.3895842Z (node:2173) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.3898133Z (Use `node --trace-deprecation ...` to show where the warning was created)
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.3936277Z With the provided path, there will be 1 file uploaded
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.3942048Z Artifact name is valid!
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.3943908Z Root directory input is valid!
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.6600393Z Beginning upload of artifact content to blob storage
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.6771705Z (node:2173) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.7802855Z Uploaded bytes 257
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.8142111Z Finished uploading artifact content to blob storage!
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.8146610Z SHA256 digest of uploaded artifact zip is d4a4ff66c04d1319b472b2f2d9a000fe7d259d9e6b820e0ef36a90e0426c6625
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:00.8150553Z Finalizing artifact upload
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:01.0104656Z Artifact nine65-v6-v7-same-machine.zip successfully finalized. Artifact ID 11507469956
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:01.0110634Z Artifact nine65-v6-v7-same-machine has been successfully uploaded! Final size is 257 bytes. Artifact ID is 11507469956
+same-machine-v6-v7	Run actions/upload-artifact@v4	2026-10-07T20:03:01.0117148Z Artifact download URL: https://github.com/Skyelabz210/NINE65_v7/actions/runs/37679073764/artifacts/11507469956
+same-machine-v6-v7	Complete job	﻿2026-10-07T20:03:01.0328120Z Cleaning up orphan processes
+same-machine-v6-v7	Complete job	2026-10-07T20:03:01.0764266Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,0 +1,178 @@
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_pow_exponent_hamming_weight ... === Environment Information ===
+Timer floor (empty measured region): median 20 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: MontgomeryContext::montgomery_pow — exponent Hamming weight 8 vs 56 (batched) ---
+  samples kept 5401/6000 after 90th-percentile crop
+  median class A = 183116.0ns, median class B = 183125.0ns
+  t_control (A vs A', same class) = 4.1092
+  t_signal  (A vs B,  cross class) = 1.7120
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1054 filtered out; finished in 1.12s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.04s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_reduce_operand_magnitude ... === Environment Information ===
+Timer floor (empty measured region): median 20 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: MontgomeryContext::montgomery_reduce — small cofactor vs top-bit cofactor (batched) ---
+  samples kept 5412/6000 after 90th-percentile crop
+  median class A = 4968.0ns, median class B = 4968.0ns
+  t_control (A vs A', same class) = 5.9177
+  t_signal  (A vs B,  cross class) = 4.4211
+  VERDICT: INCONCLUSIVE — control t=5.9177 >= 5; this machine's noise floor already exceeds the threshold, so t_signal cannot be attributed to the input class.
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1054 filtered out; finished in 0.03s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude ... === Environment Information ===
+Timer floor (empty measured region): median 20 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: MontgomeryContext::montgomery_mul — small operands vs near-modulus operands (batched) ---
+  samples kept 5403/6000 after 90th-percentile crop
+  median class A = 6149.0ns, median class B = 6159.0ns
+  t_control (A vs A', same class) = 1.5002
+  t_signal  (A vs B,  cross class) = 2.6832
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1054 filtered out; finished in 0.04s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_barrett_reduce_operand_magnitude ... === Environment Information ===
+Timer floor (empty measured region): median 20 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: BarrettContext::reduce_ct — 40-bit dividends vs 128-bit dividends (batched) ---
+  samples kept 5449/6000 after 90th-percentile crop
+  median class A = 27852.0ns, median class B = 27641.0ns
+  t_control (A vs A', same class) = 3.9827
+  t_signal  (A vs B,  cross class) = 3.4404
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1054 filtered out; finished in 0.17s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_sign_classes ... === Environment Information ===
+Timer floor (empty measured region): median 20 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: mod_switch_down_dual — positive-centred vs negative-centred coefficients              (magnitude-matched) ---
+  samples kept 406/450 after 90th-percentile crop
+  median class A = 134662821.0ns, median class B = 134648684.0ns
+  t_control (A vs A', same class) = 0.8007
+  t_signal  (A vs B,  cross class) = 0.5676
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1054 filtered out; finished in 70.58s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random ... === Environment Information ===
+Timer floor (empty measured region): median 20 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: U512::mod_u256 — zero vs uniform 128-bit dividends ---
+  samples kept 8307/9000 after 90th-percentile crop
+  median class A = 10296.0ns, median class B = 10296.0ns
+  t_control (A vs A', same class) = 1.0633
+  t_signal  (A vs B,  cross class) = 2.9168
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+--- dudect: mod_switch_down_dual — all-zero coefficients vs uniform coefficients ---
+  samples kept 406/450 after 90th-percentile crop
+  median class A = 134461756.0ns, median class B = 134637161.0ns
+  t_control (A vs A', same class) = 0.9809
+  t_signal  (A vs B,  cross class) = 18.2519
+  VERDICT: TIMING DEPENDENCE MEASURED — control t=0.9809 is below threshold but signal t=18.2519 is not. The difference tracks the input class, not the machine.
+
+thread 'security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random' panicked at crates/nine65/src/security/ct_verification.rs:1144:13:
+mod_switch_down_dual — all-zero coefficients vs uniform coefficients: MEASURED timing dependence on input class — t_signal=18.2519 >= 5 while the same-class control t_control=0.9809 stayed below it. medians: A=134461756.0ns B=134637161.0ns.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1054 filtered out; finished in 70.52s
+
+[1m[31merror[0m[1m:[0m test failed, to rerun pass `-p nine65 --lib`

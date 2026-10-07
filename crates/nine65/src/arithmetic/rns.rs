@@ -1309,6 +1309,25 @@ pub(crate) fn limbs_bit_length_u64(limbs: &[u64]) -> u32 {
     0
 }
 
+/// Fixed-work reduction of a u64 value by a public u64 modulus.
+///
+/// The input may be a ciphertext-derived residue. Avoid hardware `%` in the
+/// CRT hot path because its latency may depend on the dividend.
+#[inline(always)]
+pub(crate) fn mod_u64_word_ct(value: u64, modulus: u64) -> u64 {
+    assert!(modulus != 0, "modulus must be nonzero");
+    let modulus = modulus as u128;
+    let mut remainder = 0u128;
+    for bit_index in (0..64).rev() {
+        remainder = (remainder << 1) | (((value >> bit_index) & 1) as u128);
+        let borrow =
+            core::hint::black_box((modulus.wrapping_sub(remainder.wrapping_add(1)) >> 127) & 1);
+        let mask = borrow.wrapping_neg();
+        remainder = remainder.wrapping_sub(modulus & mask);
+    }
+    remainder as u64
+}
+
 pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     assert!(!primes.is_empty(), "need primes");
     assert!(residues.len() >= primes.len(), "residue length mismatch");
@@ -1333,14 +1352,14 @@ pub(crate) fn crt_reconstruct_u256(residues: &[u64], primes: &[u64]) -> U256 {
     // and when `ri == 0` the omitted `term` is exactly zero regardless, so
     // adding it back is a no-op. Removing the branch makes every iteration
     // do the identical fixed sequence of operations -- one `div_u64`, one
-    // `mod_u64`, one `mod_inverse`, two `mul_u128`, one `add` -- regardless
-    // of any residue's value.
+    // fixed 64-step residue reduction, one `mod_inverse`, two `mul_u128`,
+    // and one `add` -- regardless of any residue's value.
     let mut sum = U512::zero();
     let m = U512::product_u64s(primes);
 
     for i in 0..primes.len() {
         let pi = primes[i];
-        let ri = residues[i] % pi;
+        let ri = mod_u64_word_ct(residues[i], pi);
 
         let mi = m.div_u64(pi);
         let mi_mod_pi = mi.mod_u64(pi);
@@ -4211,6 +4230,31 @@ mod tests {
             % m as u128;
         let got = a.mod_u64_ct(m);
         assert_eq!(got as u128, expected);
+    }
+
+    #[test]
+    fn test_mod_u64_word_ct_matches_native_across_magnitudes() {
+        let values = [
+            0,
+            1,
+            2,
+            40,
+            41,
+            0x1234_5678_90ab_cdef,
+            1 << 63,
+            u64::MAX - 1,
+            u64::MAX,
+        ];
+        let moduli = [1, 2, 41, 998_244_353, 4_611_686_018_427_387_847, u64::MAX];
+        for value in values {
+            for modulus in moduli {
+                assert_eq!(
+                    mod_u64_word_ct(value, modulus),
+                    value % modulus,
+                    "fixed-work reduction disagreed for value={value}, modulus={modulus}"
+                );
+            }
+        }
     }
 
     /// F-2/F-3-shaped magnitude classes: the same contrast shapes

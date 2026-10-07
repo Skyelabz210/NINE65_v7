@@ -790,6 +790,28 @@ described above. The fixed one-bit expansion is on branch
 `codex/2026-10-07-ct-regression-followup`; correctness and timing evidence for
 that repair is still pending.
 
+Hosted PR #169 run 37678425725 on head `84ce6da2a18faa2c63a55fa7d662aff670fbe472`
+corrects the mask width and passes the isolated reducer contrast once
+(`t_control=1.0633`, `t_signal=2.9168`, equal 10,296 ns medians). The full
+`mod_switch_down_dual` all-zero-vs-uniform contrast still fails with a clean
+same-class control: `t_control=0.9809`, `t_signal=18.2519`, medians 134.46 ms
+and 134.64 ms. The magnitude-matched sign contrast passes once
+(`t_signal=0.5676`). Thus the corrected reducer alone does not close the
+end-to-end timing finding. These are Dudect t-statistics, not floating-point
+arithmetic in the Rust crypto path. Raw output is retained under
+`artifacts/execution/2026-10-07-session/CI/pr169-84ce6da/ct/`.
+
+Review of the rest of `mod_switch_down_dual` found additional coefficient-
+derived decisions after CRT reduction: `SignedU256::center` branches on the
+centered sign; quotient rounding branches on `rem >= q_last_half`; signed
+lane encoding branches on the sign and nonzero remainder; and quotient and
+CRT residue normalization use `%` on coefficient-derived values. The current
+working-tree follow-up converts centering, rounding, and sign encoding to
+mask selection and replaces those reductions with fixed-work routines. This
+source change is not validated yet. Require the differential/T2 and CRAM
+correctness checks, then repeat the isolated and full-path measurements with
+clean controls; keep the threshold and contrasts unchanged.
+
 The PR-head CT job remains red: its separate
 `AdjacencyKElim::extract_k` small-vs-near-cap contrast reported
 `t_control=4.0863`, `t_signal=6.3291` (threshold 5), with medians 1,241,019

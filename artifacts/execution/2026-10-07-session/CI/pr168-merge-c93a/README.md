@@ -4,7 +4,7 @@ PR #168 was merged by the repository owner at `c93a058e2106441029647e69e252d3b41
 
 ## CI and correctness
 
-CI run [37676889216](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37676889216): T1 Fast Gate and static analysis pass; T2 is still running.
+CI run [37676889216](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37676889216): T1 Fast Gate and static analysis pass; T2 completes with 856 passed, 94 failed, and 125 ignored. The new `test_u512_mod_u256_matches_reference_for_sparse_and_dense_values` fails at dividend 2/modulus 2, confirming the partial-mask defect. The separate `class_f_alpha_lanes_must_be_prime_and_distinct` regression also fails. The failed-job log is `ci/t2-failed.log`, SHA-256 `a004510d4f52d6bd7f1629f299a2919fd5178c0405eaad4f00d5e45628478871`.
 
 Merge-ref CT run [37676889107](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37676889107) passes all statistical contrasts once. The reducer signal is 1.1272, full-path signal 1.2671, and adjacency K-Elimination signal 3.6537. The tested source has the partial-mask correctness bug confirmed by the PR-head differential test, so these timing scores do not validate the arithmetic or an accepted CT fix. Raw CT output is under `ct/ct-dudect-blocking/`.
 
