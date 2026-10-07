@@ -105,6 +105,34 @@ failures. The 28 feature-gated integration targets remain unexecuted. A
 concise result record is under
 [`artifacts/execution/2026-10-07-session/F02`](../../../artifacts/execution/2026-10-07-session/F02/).
 
+PR #166's hosted run on head `651d6469bfa8c7777c3559e12fd1cce9a500e7d0`
+confirms the local strict-Clippy fix: T1 Static Analysis, T3 review,
+correctness, source inventory, WASM, authenticated service boundary,
+private-feedback stack and policy checks pass. T1 Fast Gate fails while
+parsing the old cargo-deny advisory values; therefore T2 and T4 are skipped.
+The same SHA also fails architecture and exact CRAM/dual-RNS assertions,
+the release build that enables forbidden `allow_insecure`, the four-candidate
+modulus probe (release-mode constructor panic on an invalid composite), three
+fuzz targets (deserialize, encrypt/decrypt and homomorphic), and CT inventory /
+timing gates. Fuzz NTT and K-Elimination pass. The forced-real-refresh check
+reaches the intentional release guard because `nine65_bench` still uses the
+test-only `ShadowHarvester`; that path does not establish a production refresh.
+Full details and links are in the [#92 hosted checkpoint](https://github.com/Skyelabz210/NINE65_v7/issues/92#issuecomment-6044169517).
+
+The follow-up now corrects the CI harness boundaries without relaxing product
+assertions: `deny.toml` uses cargo-deny's current fail-closed advisory schema;
+the modulus probe calls `NTTEngine::try_new` and records rejected candidates;
+the CRAM-public deterministic fixtures run in the debug test profile because
+`allow_insecure` is intentionally unavailable in release; and the CT inventory
+check/documentation now expect the 21 tests present on this tree (9 robust-CV,
+12 dudect). The current Cargo metadata confirms 28 feature-gated integration
+targets: 27 `nine65` targets are running with `allow_insecure` in debug, and
+the `nine65-extreme-tests` target remains to run with `extreme-tests`. These
+workflow/harness fixes do not resolve the release-suite failures, fuzz
+reproducers, or open architecture/security gates. Re-run hosted CI after these
+changes; keep T2, F00 acceptance, and later DAG cards queued behind their own
+passing gates.
+
 ## Execute in dependency order
 
 The following waves cover each of the 43 task cards once. Within a wave, use
