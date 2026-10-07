@@ -28,8 +28,8 @@ dependents. Preserve red correctness assertions and explicit refusals.
   and runs targets. The latest run finds a five-byte bincode input that
   attempts a 4.04 GB allocation, a K-Elimination harness oracle that reaches
   its panic-on-overflow helper, and three stale fuzz targets that lack the
-  `allow_insecure` feature. The next patch scopes that feature to the separate
-  fuzz graph and preserves artifacts; see the
+  release-available configuration. The latest patch uses `for_depth`, checked
+  K-Elimination APIs and preserves artifacts; see the
   [Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md). The
   [CI bootstrap record](CI_BOOTSTRAP.md) retains the exact pass/fail boundary.
   Actions are enabled, but there are still no

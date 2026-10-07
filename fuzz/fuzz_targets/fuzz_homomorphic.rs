@@ -1,7 +1,7 @@
 #![no_main]
 
-use libfuzzer_sys::fuzz_target;
 use arbitrary::Arbitrary;
+use libfuzzer_sys::fuzz_target;
 use nine65::prelude::*;
 
 #[derive(Arbitrary, Debug)]
@@ -18,7 +18,7 @@ struct HomomorphicInput {
 // - sub(E(a), E(b)) decrypts to (a - b) mod t
 // - mul_plain(E(a), c) decrypts to (a * c) mod t
 fuzz_target!(|input: HomomorphicInput| {
-    let config = FHEConfig::standard_128_insecure();
+    let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fuzz configuration");
     let t = config.t;
 
     // Bound inputs to valid range
@@ -43,19 +43,31 @@ fuzz_target!(|input: HomomorphicInput| {
     let ct_sum = evaluator.add(&ct_a, &ct_b);
     let sum = decryptor.decrypt(&ct_sum);
     let expected_sum = (a + b) % t;
-    assert_eq!(sum, expected_sum, "Add failed: {} + {} = {} (expected {})", a, b, sum, expected_sum);
+    assert_eq!(
+        sum, expected_sum,
+        "Add failed: {} + {} = {} (expected {})",
+        a, b, sum, expected_sum
+    );
 
     // Test subtraction
     let ct_diff = evaluator.sub(&ct_a, &ct_b);
     let diff = decryptor.decrypt(&ct_diff);
-    let expected_diff = (a + t - b) % t;  // Handle underflow
-    assert_eq!(diff, expected_diff, "Sub failed: {} - {} = {} (expected {})", a, b, diff, expected_diff);
+    let expected_diff = (a + t - b) % t; // Handle underflow
+    assert_eq!(
+        diff, expected_diff,
+        "Sub failed: {} - {} = {} (expected {})",
+        a, b, diff, expected_diff
+    );
 
     // Test scalar multiplication
     if scalar > 0 {
         let ct_scaled = evaluator.mul_plain(&ct_a, scalar);
         let scaled = decryptor.decrypt(&ct_scaled);
         let expected_scaled = (a * scalar) % t;
-        assert_eq!(scaled, expected_scaled, "Mul plain failed: {} * {} = {} (expected {})", a, scalar, scaled, expected_scaled);
+        assert_eq!(
+            scaled, expected_scaled,
+            "Mul plain failed: {} * {} = {} (expected {})",
+            a, scalar, scaled, expected_scaled
+        );
     }
 });

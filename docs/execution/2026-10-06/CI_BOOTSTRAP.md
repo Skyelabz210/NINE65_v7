@@ -51,15 +51,16 @@ The follow-up uses the action's documented `@master` plus
 The workflow then set `RUSTUP_TOOLCHAIN` for the whole fuzz job and pinned
 `cargo-fuzz` to 0.13.2.
 
-That run reached the targets and exposed three remaining issues: one target
-reported a 4.04 GB allocation from a five-byte bincode input; one K-Elimination
-target hit the panic-on-overflow helper after the fuzz harness computed its
-oracle with unchecked arithmetic; and three targets did not compile because
-their insecure test config is gated behind `allow_insecure`. The latest patch
-enables that feature only in the separate fuzz dependency graph and preserves
-failing artifacts. See the
-[Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md) for inputs, interpretations and
-next actions. Hosted confirmation is pending.
+That run reached the targets and exposed three issues: one target reported a
+4.04 GB allocation from a five-byte bincode input; one K-Elimination target
+hit the panic-on-overflow helper after the fuzz harness computed its oracle
+with unchecked arithmetic; and three targets did not compile because their
+test config is gated behind `allow_insecure`. Enabling that feature hit the
+crate's intentional release compile guard. The current patch switches those
+targets to the release-available `for_depth` constructor, uses checked
+arithmetic and APIs in the K-Elimination harness, and preserves failing
+artifacts. See the [Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md) for inputs,
+interpretations and next actions. Hosted confirmation is pending.
 
 Next CI gate: triage the workspace Clippy errors without blanket lint allows;
 make T1 green so T2 runs on the same indexed head; preserve T2's failing tests;
