@@ -233,17 +233,17 @@ impl U512 {
     }
 
     pub fn mod_u256(self, m: U256) -> U256 {
-        // Simple bit-by-bit mod for correctness (A2-compliant)
+        // Fixed 512-step binary reduction. The dividend can contain
+        // ciphertext-derived CRT residues, so do not branch on its bits or on
+        // the running remainder.
         let mut rem = Self::zero();
         let m_512 = Self::from_u256(m);
         for i in (0..512).rev() {
             rem = rem.shl1();
-            if self.get_bit(i) {
-                rem.d0 |= 1;
-            }
-            if rem.ge(m_512) {
-                rem = rem.sub(m_512);
-            }
+            rem.d0 |= self.get_bit(i) as u128;
+            let (difference, borrow) = rem.sub_borrow_mask_ct(m_512);
+            let subtract_mask = 0u64.wrapping_sub(borrow ^ 1);
+            rem = Self::select_mask_ct(rem, difference, subtract_mask);
         }
         U256 {
             lo: rem.d0,
@@ -272,6 +272,63 @@ impl U512 {
             (self.d2 >> (i - 256)) & 1 == 1
         } else {
             (self.d3 >> (i - 384)) & 1 == 1
+        }
+    }
+
+    /// Subtract with a fixed eight-word borrow chain. Returns the wrapped
+    /// difference and a final borrow bit without branching on either operand.
+    #[inline(always)]
+    fn sub_borrow_mask_ct(self, other: Self) -> (Self, u64) {
+        let left = [
+            self.d0 as u64,
+            (self.d0 >> 64) as u64,
+            self.d1 as u64,
+            (self.d1 >> 64) as u64,
+            self.d2 as u64,
+            (self.d2 >> 64) as u64,
+            self.d3 as u64,
+            (self.d3 >> 64) as u64,
+        ];
+        let right = [
+            other.d0 as u64,
+            (other.d0 >> 64) as u64,
+            other.d1 as u64,
+            (other.d1 >> 64) as u64,
+            other.d2 as u64,
+            (other.d2 >> 64) as u64,
+            other.d3 as u64,
+            (other.d3 >> 64) as u64,
+        ];
+        let mut difference = [0u64; 8];
+        let mut borrow = 0u64;
+        for i in 0..8 {
+            let wide = (left[i] as u128).wrapping_sub(right[i] as u128 + borrow as u128);
+            difference[i] = wide as u64;
+            // Keep borrow propagation in arithmetic form under optimization,
+            // matching the established U256 constant-time comparison idiom.
+            borrow = core::hint::black_box((wide >> 127) as u64);
+        }
+        (
+            Self {
+                d0: difference[0] as u128 | ((difference[1] as u128) << 64),
+                d1: difference[2] as u128 | ((difference[3] as u128) << 64),
+                d2: difference[4] as u128 | ((difference[5] as u128) << 64),
+                d3: difference[6] as u128 | ((difference[7] as u128) << 64),
+            },
+            borrow,
+        )
+    }
+
+    /// Select `if_true` only when `true_mask` is all ones. The selector is
+    /// derived from the final borrow of `sub_borrow_mask_ct`.
+    #[inline(always)]
+    fn select_mask_ct(if_false: Self, if_true: Self, true_mask: u64) -> Self {
+        let mask = 0u128.wrapping_sub(true_mask as u128);
+        Self {
+            d0: (if_false.d0 & !mask) | (if_true.d0 & mask),
+            d1: (if_false.d1 & !mask) | (if_true.d1 & mask),
+            d2: (if_false.d2 & !mask) | (if_true.d2 & mask),
+            d3: (if_false.d3 & !mask) | (if_true.d3 & mask),
         }
     }
 
@@ -4044,6 +4101,71 @@ mod tests {
     // =====================================================================
     // U256 div_mod_u256 tests
     // =====================================================================
+
+    fn u512_mod_u256_reference(value: U512, modulus: U256) -> U256 {
+        let mut remainder = U512::zero();
+        let modulus = U512::from_u256(modulus);
+        for bit in (0..512).rev() {
+            remainder = remainder.shl1();
+            if value.get_bit(bit) {
+                remainder.d0 |= 1;
+            }
+            if remainder.ge(modulus) {
+                remainder = remainder.sub(modulus);
+            }
+        }
+        remainder.to_u256_truncated()
+    }
+
+    /// The masked reducer must preserve the branchy bit-serial arithmetic for
+    /// every bit position and across small and full-width moduli.
+    #[test]
+    fn test_u512_mod_u256_matches_reference_for_sparse_and_dense_values() {
+        let moduli = [
+            U256::from_u64(1),
+            U256::from_u64(2),
+            U256::from_u64(41),
+            U256::product_u64s(&[998_244_353, 985_661_441, 754_974_721]),
+            U256 {
+                lo: 0xFEDC_BA09_8765_4321_FEDC_BA09_8765_4321,
+                hi: 0x1234_5678_90AB_CDEF_1234_5678_90AB_CDEF,
+            },
+            U256 {
+                lo: u128::MAX,
+                hi: u128::MAX,
+            },
+        ];
+
+        let mut values = vec![U512::zero()];
+        for bit in 0..512 {
+            let mut value = U512::zero();
+            match bit / 128 {
+                0 => value.d0 = 1u128 << bit,
+                1 => value.d1 = 1u128 << (bit - 128),
+                2 => value.d2 = 1u128 << (bit - 256),
+                _ => value.d3 = 1u128 << (bit - 384),
+            }
+            values.push(value);
+        }
+        values.push(U512 {
+            d0: u128::MAX,
+            d1: u128::MAX,
+            d2: u128::MAX,
+            d3: u128::MAX,
+        });
+
+        for modulus in moduli {
+            for value in &values {
+                let got = (*value).mod_u256(modulus);
+                assert_eq!(
+                    got,
+                    u512_mod_u256_reference(*value, modulus),
+                    "U512::mod_u256 disagreed for value={value:?}, modulus={modulus:?}"
+                );
+                assert_eq!(got.cmp(modulus), Ordering::Less);
+            }
+        }
+    }
 
     #[test]
     fn test_u256_div_mod_u256_basic() {

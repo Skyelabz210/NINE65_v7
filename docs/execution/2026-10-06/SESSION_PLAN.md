@@ -1,7 +1,7 @@
 # NINE65 v7: current remote plan and session execution order
 
-Updated 2026-10-07 after PR #167 hosted run set 37671711811–37671712033. This is the live-session
-control sheet for the 43 cards in
+Updated 2026-10-07 after PR #167 merged as `25e19ee`. This is the
+live-session control sheet for the 43 cards in
 [`tasks.json`](../2026-10-03/tasks.json). The detailed contracts and acceptance
 criteria remain in the individual task cards and the
 [October 5 runbook](../2026-10-05/SESSION_RUNBOOK.md). A listed card is queued,
@@ -186,7 +186,11 @@ targets after an 11m02s serial compile. Its first target,
 full log and record the exact source SHA, toolchain, target count and exit
 status when the run finishes.
 
-### Live run at PR #167 head `13306310547ef96e8737365a8ffab1f8a74d385d`
+### Historical checkpoint: PR #167 head `13306310547ef96e8737365a8ffab1f8a74d385d`
+
+This run snapshot is superseded by the merged checkpoint below. The fixes it
+describes were subsequently committed, hosted, and merged; its then-current
+follow-up instructions are historical.
 
 Hosted run set 37671711811–37671712033 confirms these passing gates: T1 Static
 Analysis, T3 review, exploratory `probe-smoke` and `source-inventory`, CT
@@ -205,13 +209,14 @@ input; encrypt/decrypt decrypts 65,536 as 65,533; homomorphic addition returns
 65,289 for 65,292 + 0. NTT and K-Elimination fuzz targets pass. The complete
 check list is on [PR #167](https://github.com/Skyelabz210/NINE65_v7/pull/167).
 
-The current follow-up adds only the exact custom license identifier already
+That follow-up added only the exact custom license identifier already
 declared by first-party manifests; moves both scale-sweep builds and its
 runner to debug while recording `build_profile`; and makes the comparative
 smoke accept only the exact `mul_ct=false` plus `mul_ct_status="refused-#135"`
 pair while keeping that refusal visible. Local Python regression, syntax,
 TOML parse, formatting and whitespace checks pass; cargo-deny is unavailable
-on this host. Commit and push this follow-up, then inspect all hosted results.
+on this host. The follow-up was later committed, pushed, and merged; inspect
+the merged and current hosted results in the checkpoints below.
 Require T1 Fast Gate and T2 to execute and pass before treating the CI
 foundation as complete. Keep the dudect and three fuzz regressions open;
 do not change timing thresholds or correctness assertions. Finish the local
@@ -227,7 +232,10 @@ current cargo-deny schema; re-review its two direct consumers before adding
 any consumer and replace the deployed format only through a versioned codec
 migration with compatibility fixtures.
 
-### Follow-up head `57af1de6a08803f8893f23f00f446a1728d8e69b`
+### Historical checkpoint: follow-up head `57af1de6a08803f8893f23f00f446a1728d8e69b`
+
+This code head and its “still running” statuses are preserved as a run record;
+the evidence-only head and merged checkpoint below supersede them.
 
 The hosted rerun set is CI 37672722326, Fuzz Smoke 37672722486, CT
 verification 37672722432, CRAM-public 37672722228, application platform
@@ -252,12 +260,85 @@ outputs, the scale manifest, CT source report, and all three fuzz inputs are
 saved under
 [`pr167-57af1de`](../../../artifacts/execution/2026-10-07-session/CI/pr167-57af1de/).
 
-Next on this exact head: collect T2, CT dudect, and CRAM-public completion;
+At that snapshot, the next actions were to collect T2, CT dudect, and CRAM-public completion;
 read the full fuzz regressions and keep them open; finish the local 27-target
 debug matrix and then run the separate extreme target. Do not merge or accept
 F00/F02 while these gates or the existing release correctness failures remain
 red. Isolate the measured CT path before attributing the previously observed
 signal to a specific operation.
+
+### Merged checkpoint `0f85873` / merge commit `25e19ee`
+
+PR #167 was merged by the repository owner at
+`25e19eeffc82ef3a84d77d76c50e5fc9eb9a026f` at 2026-10-07 19:27 UTC. Its
+configuration fixes are confirmed: cargo-deny/T1, static analysis, T3,
+comparative smoke, both scale quick cases, application platform, exploratory
+checks, and CRAM-public correctness and timings pass. T2 workspace tests are
+still running in CI run 37673287983, job 112970736953.
+
+The remaining hosted failures reproduce on `0f85873`. Dudect reports
+`mod_switch_down_dual` all-zero versus uniform at `t_control=0.8098`,
+`t_signal=49.4668` (threshold 5), with medians 64,466,796 ns and 66,017,183
+ns. Fuzz Smoke again fails deserialize, encrypt/decrypt, and homomorphic
+addition; its eight-byte deserialize input requests 95.72 GiB, encryption
+roundtrip returns 65,289 for plaintext 65,292, and addition returns 65,328
+for 65,331 + 0. NTT and K-Elimination fuzz targets pass. Raw outputs are
+retained under
+[`pr167-0f85873`](../../../artifacts/execution/2026-10-07-session/CI/pr167-0f85873/).
+
+Source review found a plausible CT contributor in `U512::mod_u256`, called by
+CRT reconstruction: it branches on dividend bits and remainder comparisons.
+The new follow-up branch, based on merged `main`, has an unvalidated prototype
+that uses a fixed eight-word borrow chain and mask selection, adds differential
+arithmetic coverage, and measures the reducer directly inside the existing
+blocking dudect test. This is a hypothesis test, not an attribution yet. If
+the isolated reducer passes but the full path remains red, inspect the other
+input-derived operations in CRT reconstruction and modulus switching before
+claiming a fix.
+
+The local feature-gated matrix remains active on
+`arrow_emission_fhe_gate_matrix`; `anchor_drift_diagnostics` passed 3/3 in
+420.61s, and G1 plus early G2 assertions passed in the second target. Finish
+all 27 targets, then run the separate
+`nine65-extreme-tests/full_system_measurement` target. Next collect T2's final
+result, validate the reducer prototype and end-to-end dudect path, triage the
+three current fuzz inputs, preserve each new artifact set, and continue only
+through dependency-ready cards with their own evidence and review.
+
+### Next and following execution order for this session
+
+1. Collect the final T2 result for run 37673287983. Keep the workspace gate
+   open until its job completes and record any failures against the exact
+   merged SHA.
+2. Let the already-running 27-target `allow_insecure` debug matrix finish in
+   `/home/acid/Projects/NINE65_v7`; save the complete log and exit status.
+   Then run `nine65-extreme-tests/full_system_measurement` serially and record
+   it as a separate gate. Do not start a competing local Cargo build while
+   this matrix is consuming the host.
+3. On `codex/2026-10-07-ct-fuzz-followup`, finish the CT reducer hypothesis:
+   run formatting and diff checks, publish a draft PR, and use hosted T1/T2
+   plus the blocking isolated-reducer and full-path dudect measurements to
+   validate it. Keep the timing gate red unless both required contrasts pass
+   with clean controls; if the isolated reducer passes but the full path
+   fails, inspect the remaining CRT and modulus-switch operations.
+4. Triage the three merged-head fuzz reproducers independently: the
+   short-input deserialize allocation, encrypt/decrypt roundtrip mismatch,
+   and homomorphic-addition mismatch. Add a minimal regression for each
+   demonstrated defect, fix only with an exact correctness-preserving change,
+   and retain the original and minimized corpus plus hosted logs. Rerun all
+   five fuzz targets; the two passing targets must remain passing.
+5. Update issue #92 and the session record with final T2, matrix, extreme,
+   CT, and fuzz evidence. Keep the merged PR status and follow-up PR linked;
+   do not treat a green configuration gate as acceptance of F00/F02 or as
+   evidence that the release correctness defects are resolved.
+6. Resume the 43-card DAG in the dependency order below, completing every
+   independent card in the earliest ready wave with its specified evidence
+   and independent review. F00 needs its independent baseline review; F02
+   needs its failing release assertions resolved and its complete matrices
+   executed. Leave each dependent wave queued until its prerequisites pass.
+   Continue through Waves 0–19 only while those per-card gates pass, then
+   reconcile V05 on one final SHA. A session stop or failed gate records the
+   exact next card and blocker; it does not waive the acceptance criteria.
 
 ## Execute in dependency order
 
