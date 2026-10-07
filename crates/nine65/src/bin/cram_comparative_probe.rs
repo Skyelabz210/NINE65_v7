@@ -329,11 +329,25 @@ fn main() {
         }
     }
 
-    let legacy_all_correct = legacy_correctness
-        .as_object()
-        .into_iter()
-        .flat_map(|object| object.values())
-        .all(|value| value.as_bool() == Some(true));
+    let legacy_refusal_is_expected = legacy_mul_refused
+        && legacy_correctness
+            .get("mul_ct")
+            .and_then(serde_json::Value::as_bool)
+            == Some(false)
+        && legacy_correctness
+            .get("mul_ct_status")
+            .and_then(serde_json::Value::as_str)
+            == Some("refused-#135");
+    let legacy_supported_operations_correct =
+        legacy_correctness.as_object().is_some_and(|checks| {
+            checks.iter().all(|(name, value)| match name.as_str() {
+                "mul_ct" => legacy_refusal_is_expected,
+                "mul_ct_status" => {
+                    value.as_str() == Some("refused-#135") && legacy_refusal_is_expected
+                }
+                _ => value.as_bool() == Some(true),
+            })
+        });
     let dual_all_correct = dual_correctness
         .as_object()
         .into_iter()
@@ -345,7 +359,7 @@ fn main() {
 
     let output = json!({
         "schema": "nine65-comparative-probe-v1",
-        "status": if legacy_all_correct && dual_all_correct { "PASS" } else { "FAIL" },
+        "status": if legacy_supported_operations_correct && dual_all_correct { "PASS" } else { "FAIL" },
         "metadata": {
             "timestamp": timestamp(),
             "config": args.config,
@@ -360,6 +374,8 @@ fn main() {
             "iterations": args.iterations,
             "mul_iterations": args.mul_iterations,
             "allow_insecure_feature": cfg!(feature = "allow_insecure"),
+            "build_profile": if cfg!(debug_assertions) { "debug" } else { "release" },
+            "rng_source": "shadow-test",
             "crate_version": env!("CARGO_PKG_VERSION"),
         },
         "keygen_ns": {
@@ -390,6 +406,11 @@ fn main() {
             "legacy": legacy_correctness,
             "dual_rns": dual_correctness,
         },
+        "correctness_gate": {
+            "legacy_supported_operations_correct": legacy_supported_operations_correct,
+            "legacy_mul_ct_refused_as_expected": legacy_refusal_is_expected,
+            "dual_rns_all_correct": dual_all_correct,
+        },
         "ct_mul_depth": {
             "requested": args.ct_mul_depth,
             "completed": depth_entries.len(),
@@ -412,7 +433,7 @@ fn main() {
         std::fs::write(path, rendered.as_bytes()).expect("write probe output");
     }
     println!("{rendered}");
-    if !legacy_all_correct || !dual_all_correct {
+    if !legacy_supported_operations_correct || !dual_all_correct {
         std::process::exit(1);
     }
 }

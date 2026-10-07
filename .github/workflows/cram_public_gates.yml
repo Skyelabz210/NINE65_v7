@@ -4,6 +4,11 @@ name: CRAM-public gates
 # Modeled on cram_residue_native_gates.yml's structure (checkout + stable
 # Rust toolchain + explicit cargo invocations, no path-filter cleverness
 # beyond the files this surface actually touches).
+#
+# These test targets declare `allow_insecure` because their fixtures use seeded
+# ShadowHarvester values. That feature is intentionally forbidden in release
+# builds, so this correctness suite runs in the debug profile. Release-mode
+# checks remain responsible for exercising only the production entropy path.
 
 on:
   workflow_dispatch:
@@ -41,17 +46,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
 
-      - name: Build (allow_insecure, release)
-        run: cargo build -p nine65 --release --features allow_insecure
+      - name: Build debug test harness (allow_insecure)
+        run: cargo build -p nine65 --features allow_insecure
 
       - name: CRAM-public mode surface (M1)
-        run: cargo test -p nine65 --test cram_public_mode --release --features allow_insecure
+        run: cargo test -p nine65 --test cram_public_mode --features allow_insecure
 
       - name: M2b manufactured rescale + M3 gadget relin
-        run: cargo test -p nine65 --test m2b_manufactured_rescale --release --features allow_insecure
+        run: cargo test -p nine65 --test m2b_manufactured_rescale --features allow_insecure
 
       - name: T2 guardrail tripwires (public-API-only)
-        run: cargo test -p nine65 --test cram_public_guardrails --release --features allow_insecure
+        run: cargo test -p nine65 --test cram_public_guardrails --features allow_insecure
 
       - name: T2/T3 in-module guardrails (no-centering, no-Garner, M3 counter)
         run: cargo test -p nine65 --lib --release cram_public_guardrail
@@ -60,7 +65,7 @@ jobs:
         run: cargo test -p nine65 --lib --release m3_
 
       - name: Arrow-harness witnesses (G2 order-invariance, i.i.d. discriminator)
-        run: cargo test -p nine65 --test residue_space_ciphertext --release --features allow_insecure -- ct_multiply
+        run: cargo test -p nine65 --test residue_space_ciphertext --features allow_insecure -- ct_multiply
 
       - name: unified_rescale module tests (M2a de-cascade)
         run: cargo test -p nine65 --lib --release arithmetic::unified_rescale
@@ -76,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
-      - name: CRAM-public op timings (informational)
+      - name: CRAM-public debug-profile timings (informational)
         run: >-
-          cargo test -p nine65 --test cram_public_timings --release
+          cargo test -p nine65 --test cram_public_timings
           --features allow_insecure -- --ignored --nocapture

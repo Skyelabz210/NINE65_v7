@@ -4,13 +4,14 @@ name: Constant-Time Verification
 #
 #   verify              — deterministic source-level and functional CT gates.
 #                         Blocking, every relevant push/PR.
-#   dudect-blocking     — the nine two-class timing tests that MEASURE constant
+#   dudect-blocking     — the ten two-class timing tests that MEASURE constant
 #                         time reliably. Blocking, every relevant push/PR, at
 #                         the tight documented threshold (t < 5). See the job
 #                         header for why these are safe to block on and the
 #                         robust-CV tests are not.
-#   open-findings       — the one two-class test that still measures a REAL
-#                         timing leak (F-3). Scheduled. This is a state
+#   open-findings       — one two-class test that still measures a REAL
+#                         timing leak (F-3), plus one unstable-verdict test
+#                         whose measurements are recorded. Scheduled. This is a state
 #                         tripwire: the job fails if a documented leak stops
 #                         reproducing (which means the docs are now wrong),
 #                         not because the leak exists.
@@ -30,14 +31,17 @@ name: Constant-Time Verification
 # (F-3) is the sole remaining open-findings entry -- unaffected by this
 # change, since it targets the reference `KElimination::extract_k`, not
 # anything touched here.
-#   diagnostics         — the eight robust-CV tests plus the one borderline
-#                         dudect test, run for the record and uploaded.
+#   diagnostics         — the nine robust-CV tests, run for the record and uploaded.
 #                         Scheduled. Gated on producing measurements, not on
 #                         their values — with evidence, in the job header.
 #
 # Measured baselines quoted throughout are from
 # docs/CT_VERIFICATION_PLAN.md (2026-08-22, Intel Xeon 2.80GHz, 4 vCPU,
 # shared container, load average 1-22 during the runs).
+#
+# 2026-10-07 inventory: 21 ignored timing tests (9 robust-CV + 12 dudect).
+# Ten dudect tests block, one stable leak is a scheduled tripwire, and one
+# unstable verdict is recorded by the scheduled findings job.
 
 on:
   push:
@@ -105,9 +109,9 @@ jobs:
             --ignored --list 2>/dev/null | grep ': test$' || true)
           echo "$listing"
           count=$(printf '%s\n' "$listing" | grep -c . || true)
-          if [ "$count" -ne 18 ]; then
-            echo "::error::expected 18 ignored constant_time_statistical tests, found $count"
-            echo "::error::(8 robust-CV + 10 dudect two-class; update deliberately if the"
+          if [ "$count" -ne 21 ]; then
+            echo "::error::expected 21 ignored constant_time_statistical tests, found $count"
+            echo "::error::(9 robust-CV + 12 dudect two-class; update deliberately if the"
             echo "::error:: harness changed, and update docs/CT_VERIFICATION_PLAN.md with it)"
             exit 1
           fi

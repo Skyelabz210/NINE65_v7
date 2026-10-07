@@ -58,6 +58,13 @@ noise floor exceeded the decision threshold, not that the author hedged.
 
 ## 3. Two families of test, and why only one of them can gate a PR
 
+**Current inventory note (2026-10-07):** the counts in the historical analysis
+below were captured earlier. The current harness contains 21 ignored timing
+tests: 9 robust-CV tests and 12 dudect two-class tests. Of the latter, 10 run
+in the blocking job, one known leak is a scheduled state tripwire, and one
+unstable verdict is recorded by the scheduled findings job. The workflow's
+test-name lists and its 21-test inventory check are the current source of truth.
+
 ### (a) Robust-CV tests — 8 tests, diagnostics only
 
 These time one scalar operation per `Instant::now()` pair and report
@@ -770,7 +777,7 @@ site for the specifics.
 
 | Job | Trigger | Blocking | Contents | Threshold |
 |---|---|---|---|---|
-| `verify` | push / PR | yes | source-pattern gates, NTT + Montgomery correctness, harness inventory (18 tests) | n/a |
+| `verify` | push / PR | yes | source-pattern gates, NTT + Montgomery correctness, harness inventory (21 tests) | n/a |
 | `dudect-blocking` | push / PR | **yes** | the 5 operations of §4.1 | **t < 5, undiluted** |
 | `open-findings` | weekly cron + dispatch | yes, inverted | the 4 findings of §4.2 | verdict must still be TIMING DEPENDENCE MEASURED |
 | `diagnostics` | weekly cron + dispatch | gated on producing measurements **and on their assertions passing** | the 8 robust-CV tests | the `::warning::` downgrade of a nonzero cargo exit is gone; `exact_divide` divisor classes moved out to `open-findings` |
@@ -800,7 +807,7 @@ at all, which is what a crash or build break looks like. It accepts INCONCLUSIVE
 as no news. There is no `continue-on-error` and no `|| true` in that job; every
 exit status is inspected.
 
-**The `#[ignore]` attributes stay, and they are not hiding anything.** All 18
+**The `#[ignore]` attributes stay, and they are not hiding anything.** All 21
 tests remain `#[ignore]`d so that `cargo test --workspace` stays fast and
 deterministic; CI opts in explicitly with `--ignored --exact`. The four leaking
 tests carry `#[ignore = "OPEN FINDING, not a flake: …"]` reason strings

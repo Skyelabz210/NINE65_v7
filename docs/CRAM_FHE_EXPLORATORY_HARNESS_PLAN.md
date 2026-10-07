@@ -76,6 +76,10 @@ This layer establishes what the current implementation actually contains. It doe
 - per-step decryption checks.
 
 The probe keeps the repository noise estimator and the candidate winding model separate.
+It uses seeded `ShadowHarvester` test entropy, so the matrix runs in the debug
+profile. The release security guard rejects this RNG by design. Each result and
+manifest records the build profile; debug timings are not release performance
+evidence.
 
 ### Layer C: matrix orchestration
 

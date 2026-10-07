@@ -521,6 +521,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             "candidate_wall": args.candidate_wall,
             "candidate_winding_is_verified": false,
             "noise_budget_is_accounting_model": true,
+            "build_profile": if cfg!(debug_assertions) {
+                "debug"
+            } else {
+                "release"
+            },
+            "rng_source": "shadow-test",
             "refresh_kind": if args.refresh_mode == RefreshMode::None { "none" } else { "real_bootstrap" }
         },
         "key_structure": {

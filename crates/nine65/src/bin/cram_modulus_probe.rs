@@ -180,10 +180,10 @@ fn probe_modulus(n: usize, modulus: u64, seed: u64) -> Value {
     let structurally_compatible = modulus > 2 && two_n > 0 && (modulus - 1) % two_n == 0;
     let prime = is_prime_u64(modulus);
     let power_of_two = modulus.is_power_of_two();
-    let engine_result = std::panic::catch_unwind(|| NTTEngine::new(modulus, n));
+    let engine_result = NTTEngine::try_new(modulus, n);
     let engine = match engine_result {
         Ok(engine) => engine,
-        Err(_) => {
+        Err(error) => {
             return json!({
                 "modulus": modulus,
                 "n": n,
@@ -194,7 +194,8 @@ fn probe_modulus(n: usize, modulus: u64, seed: u64) -> Value {
                 "engine_constructed": false,
                 "roundtrip_correct": false,
                 "convolution_correct": false,
-                "status": "CONSTRUCTION_PANIC"
+                "engine_error": error.to_string(),
+                "status": "REJECTED_CONFIGURATION"
             });
         }
     };

@@ -208,6 +208,14 @@ def verify_v7_metadata(payload: dict[str, Any]) -> list[str]:
     for field, expected in checks.items():
         if metadata.get(field) != expected:
             failures.append(f"v7 {field}={metadata.get(field)!r} expected {expected!r}")
+    if metadata.get("build_profile") != "debug":
+        failures.append(
+            f"v7 build_profile={metadata.get('build_profile')!r} expected 'debug'"
+        )
+    if metadata.get("rng_source") != "shadow-test":
+        failures.append(
+            f"v7 rng_source={metadata.get('rng_source')!r} expected 'shadow-test'"
+        )
     return failures
 
 
@@ -289,7 +297,7 @@ def normalized_records(
                     "refresh_kind": "none",
                     "hardware_fingerprint": hardware_fingerprint,
                     "threads": 1,
-                    "build_profile": "release",
+                    "build_profile": "debug",
                     "sample_policy": "repeated-process integer average",
                 },
                 "provenance": {
@@ -362,7 +370,6 @@ def main() -> int:
                 [
                     "cargo",
                     "build",
-                    "--release",
                     "-p",
                     "nine65",
                     "--bin",
@@ -380,7 +387,6 @@ def main() -> int:
                 [
                     "cargo",
                     "build",
-                    "--release",
                     "-p",
                     "nine65",
                     "--bin",
@@ -398,8 +404,8 @@ def main() -> int:
             )
             return 2
 
-    v6_binary = v6_root / "target" / "release" / "nine65_bench"
-    v7_binary = v7_root / "target" / "release" / "cram_comparative_probe"
+    v6_binary = v6_root / "target" / "debug" / "nine65_bench"
+    v7_binary = v7_root / "target" / "debug" / "cram_comparative_probe"
     if not v6_binary.exists() or not v7_binary.exists():
         raise SystemExit("comparison binary missing after build")
 
@@ -515,6 +521,7 @@ def main() -> int:
         "v6_commit": v6_commit,
         "v7_commit": v7_commit,
         "hardware_fingerprint": fingerprint,
+        "build_profile": "debug",
         "parameter_contract": PARAMETERS,
         "builds": builds,
         "runs": [serialize_run(result) for result in results],
