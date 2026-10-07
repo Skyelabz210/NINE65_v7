@@ -41,6 +41,8 @@ jobs:
     name: "Fuzz · ${{ matrix.target }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      RUSTUP_TOOLCHAIN: nightly-2025-08-04
     strategy:
       fail-fast: false
       matrix:
@@ -69,7 +71,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-fuzz-
 
       - name: Install cargo-fuzz
-        run: cargo install cargo-fuzz --locked
+        run: cargo install cargo-fuzz --version 0.13.2 --locked
 
       - name: Short bounded fuzz run
         shell: bash

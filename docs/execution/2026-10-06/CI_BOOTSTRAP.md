@@ -45,8 +45,14 @@ same dependency errors. None have been suppressed.
 All five Fuzz Smoke jobs on that head fail before any fuzz target runs because
 the action reference `dtolnay/rust-toolchain@nightly-2025-08-04` does not exist.
 The follow-up patch uses the action's documented `@master` reference with
-`toolchain: nightly-2025-08-04` and keeps the same pinned compiler date. A
-fresh hosted run must confirm the action resolves and the targets actually run.
+`toolchain: nightly-2025-08-04` and keeps the same pinned compiler date. The
+next hosted run confirms that the action resolves and installs the pinned
+nightly, but `cargo install` selects the repository's 1.89.0 toolchain file.
+Its `cargo-fuzz 0.13.2` dependency `cargo-platform 0.3.3` requires Rust 1.91,
+so all five jobs stop at install. The workflow now sets `RUSTUP_TOOLCHAIN` for
+the whole fuzz job, which rustup documents as taking precedence over the
+repository toolchain file, and pins `cargo-fuzz` to 0.13.2. Another hosted run
+must prove installation and positive target execution.
 
 Next CI gate: triage the workspace Clippy errors without blanket lint allows;
 make T1 green so T2 runs on the same indexed head; preserve T2's failing tests;

@@ -24,10 +24,13 @@ dependents. Preserve red correctness assertions and explicit refusals.
   cargo-deny action resolves, formatting and static policy checks pass, and
   the WASM boundary builds and passes. T1 and two application jobs reach real
   Clippy failures; local T1 reports 23 `exact_transcendentals` lint errors.
-  T2 is skipped after T1 failure. Five Fuzz Smoke jobs fail during action
-  setup; the action reference is corrected in the follow-up patch and needs a
-  fresh hosted run. The [CI bootstrap record](CI_BOOTSTRAP.md) retains the
-  exact pass/fail boundary. Actions are enabled, but there are still no
+  T2 is skipped after T1 failure. Five Fuzz Smoke jobs first failed during
+  action setup; after that repair, they installed the pinned nightly but
+  `cargo install` selected the repository's 1.89.0 file and failed the
+  `cargo-fuzz` dependency MSRV. The fuzz job now explicitly selects its pinned
+  nightly and needs a fresh hosted run. The
+  [CI bootstrap record](CI_BOOTSTRAP.md) retains the exact pass/fail boundary.
+  Actions are enabled, but there are still no
   repository rulesets. #79 remains open until checks execute and pass.
 * At intake this host had about 745 MiB free on `/home/acid`, 2.7 GiB RAM and
   no swap. The 1.0 GiB rebuildable Cargo `target` cache was cleared. A damaged
