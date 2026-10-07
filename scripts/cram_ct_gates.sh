@@ -40,6 +40,24 @@ register() {
     GATE_ORDER+=("$id")
 }
 
+# Cargo accepts one libtest name filter per invocation. Refuse a filter that
+# selects zero tests; Cargo itself exits successfully in that case.
+run_positive_filter() {
+    local package="$1" filter="$2"
+    local selector=()
+    if [ "$package" = "nine65" ]; then selector=(--lib); fi
+    local listed matches
+    if ! listed=$(cargo test --locked --offline --release -p "$package" "${selector[@]}" "$filter" -- --list); then
+        return 1
+    fi
+    matches=$(printf '%s\n' "$listed" | awk '/: test$/ { n++ } END { print n+0 }')
+    if [ "$matches" -eq 0 ]; then
+        printf 'ERROR: filter %s in %s matched zero tests\n' "$filter" "$package" >&2
+        return 1
+    fi
+    cargo test --locked --offline --release -p "$package" "${selector[@]}" "$filter"
+}
+
 # ─── Tier 0 — Build ───────────────────────────────────────────────────────
 register B0 "debug build" "" 0 \
     "cargo build --workspace --exclude nine65-python --exclude nine65-wasm"
@@ -64,25 +82,25 @@ register T1 "exact_transcendentals arb-prec" "B3" 0 \
 register T2 "nine65 lib" "B1 Q0" 0 \
     "cargo test --release -p nine65 --lib"
 register T3 "cram_ct_wrap" "T2" 0 \
-    "cargo test --release -p nine65 --lib cram_ct_wrap"
+    "run_positive_filter nine65 cram_ct_wrap"
 register T4 "workspace sweep" "B1" 0 \
-    "cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm"
+    "cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast -j1"
 
 # ─── Tier 3 — Spec coverage ───────────────────────────────────────────────
 register C0 "phase 0 topology" "T0" 0 \
-    "cargo test --release -p exact_transcendentals s8_chimera_v1"
+    "run_positive_filter exact_transcendentals s8_chimera_v1"
 register C1 "phase 1 projection" "T0" 0 \
-    "cargo test --release -p exact_transcendentals lane_projector"
+    "run_positive_filter exact_transcendentals lane_projector"
 register C2 "phase 2 phase-locks" "T0" 0 \
-    "cargo test --release -p exact_transcendentals -- lock_witness anchor_k_inverse"
+    "run_positive_filter exact_transcendentals default_phase_locks && run_positive_filter exact_transcendentals lock_detects && run_positive_filter exact_transcendentals anchor_k_inverse"
 register C3 "phase 3 ops" "T0" 0 \
-    "cargo test --release -p exact_transcendentals -- cram_add cram_mul"
+    "run_positive_filter exact_transcendentals cram_add && run_positive_filter exact_transcendentals cram_mul"
 register C4 "phase 4 division lanes" "T0" 0 \
-    "cargo test --release -p exact_transcendentals -- d1_ d2_ fpd_ router_"
+    "run_positive_filter exact_transcendentals d1_ && run_positive_filter exact_transcendentals d2_ && run_positive_filter exact_transcendentals fpd_ && run_positive_filter exact_transcendentals router_"
 register C5 "phase 5 bootstrap" "T0" 0 \
-    "cargo test --release -p exact_transcendentals -- bootstrap_"
+    "run_positive_filter exact_transcendentals bootstrap_"
 register C6 "nine65 wiring" "T3" 0 \
-    "cargo test --release -p nine65 --lib cram_ct_wrap::tests"
+    "run_positive_filter nine65 cram_ct_wrap::tests"
 
 # ─── Tier 4 — Report ──────────────────────────────────────────────────────
 # R0 is special — synthesised at the end.
@@ -106,7 +124,8 @@ run_gate() {
     # Check upstream.
     local blocker=""
     for d in $deps; do
-        if [ "${GATE_STATUS[$d]:-MISSING}" = "FAIL" ]; then
+        if [ "${GATE_STATUS[$d]:-MISSING}" = "FAIL" ] || \
+           [ "${GATE_STATUS[$d]:-MISSING}" = "BLOCKED" ]; then
             blocker="$d"
             break
         fi
@@ -182,7 +201,11 @@ done
 echo ""
 if [ "$fail_count" -eq 0 ]; then
     if [ "$warn_count" -eq 0 ]; then
-        echo "ALL GATES GREEN."
+        if [ "$RUN_FILTER" != "" ]; then
+            echo "SELECTED GATES GREEN; unselected gates were skipped."
+        else
+            echo "ALL GATES GREEN."
+        fi
         exit 0
     else
         echo "GREEN with $warn_count soft warning(s)."

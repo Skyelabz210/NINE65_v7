@@ -1,0 +1,61 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on build directory
+warning: method `rank` is never used
+   --> crates/nine65/src/arithmetic/main_only_base_ext.rs:332:8
+    |
+186 | impl MainOnlyBaseExt {
+    | -------------------- method in this implementation
+...
+332 |     fn rank(&self, c: &[u64; MAX_LANES]) -> (u64, RankPath) {
+    |        ^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: associated function `with_plan` is never used
+   --> crates/nine65/src/ops/exact_mul.rs:605:19
+    |
+589 | impl<'a> ExactMulEvaluator<'a> {
+    | ------------------------------ associated function in this implementation
+...
+605 |     pub(crate) fn with_plan(ctx: &'a RNSFHEContext, plan: ExactMulPlan) -> Self {
+    |                   ^^^^^^^^^
+
+warning: `nine65` (lib) generated 2 warnings
+    Finished `release` profile [optimized] target(s) in 10m 18s
+     Running unittests src/main.rs (target/release/deps/fhe_service-2bd73f5b0434bb88)
+
+running 28 tests
+test http::tests::accepts_header_value_exactly_at_the_limit ... ok
+test http::tests::accepts_headers_exactly_at_the_count_limit ... ok
+test http::tests::accepts_http_1_0_version_token ... ok
+test http::tests::accepts_body_exactly_matching_declared_content_length ... ok
+test http::tests::parse_request_head_strips_query_params ... ok
+test http::tests::rejects_body_over_the_max_size_cap ... ok
+test http::tests::rejects_body_shorter_than_declared_content_length ... ok
+test http::tests::rejects_chunked_transfer_encoding ... ok
+test http::tests::rejects_content_length_and_transfer_encoding_together ... ok
+test http::tests::rejects_duplicate_content_length_headers ... ok
+test http::tests::rejects_duplicate_headers_even_when_identical ... ok
+test http::tests::rejects_header_line_with_no_colon ... ok
+test http::tests::rejects_invalid_content_length_value ... ok
+test http::tests::rejects_malformed_request_line_extra_token ... ok
+test http::tests::rejects_overflowing_content_length_value ... ok
+test http::tests::rejects_oversized_header_value ... ok
+test http::tests::rejects_request_line_with_extra_tokens ... ok
+test http::tests::rejects_request_line_with_missing_version ... ok
+test http::tests::rejects_too_many_headers ... ok
+test http::tests::rejects_unknown_http_version_token ... ok
+test http::tests::should_keep_alive_always_false ... ok
+test http::tests::should_not_keep_alive_when_close_requested ... ok
+test http::tests::strict_content_length_accepts_plain_digits ... ok
+test http::tests::strict_content_length_rejects_non_decimal ... ok
+test http::tests::strict_content_length_rejects_overflow ... ok
+test http::tests::takes_exactly_the_declared_length_when_more_bytes_follow ... ok
+test http::tests::two_pipelined_requests_in_one_write_only_answers_the_first ... ok
+response body 52428801 bytes exceeds MAX_RESPONSE_BYTES 52428800; substituting an error response
+test http::tests::oversized_response_is_replaced_with_an_error_body ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 53 filtered out; finished in 0.25s
+

@@ -1,0 +1,63 @@
+{
+  "task_id": "CI-bootstrap",
+  "status": "failed_validation",
+  "source_commit": "fa4053bbec7806198c63e92fb9b8b7a7e24a8223",
+  "committed_tree_sha1": "9a49472caa1ca49778d8c98c29a83876324c7000",
+  "files_changed": [
+    ".github/workflows/ci.yml",
+    ".github/workflows/app_platform_gates.yml",
+    "scripts/check_claim_registry.sh",
+    "crates/nine65-wasm/Cargo.toml",
+    "crates/nine65-wasm/Cargo.lock",
+    "crates/exact_transcendentals/src/cram_machine.rs",
+    "crates/nine65/src/ops/gso_fhe.rs",
+    "docs/execution/2026-10-06/CI_BOOTSTRAP.md",
+    "docs/execution/2026-10-06/SESSION_PLAN.md",
+    "artifacts/execution/2026-10-06-session/CI/check-assertions.js"
+  ],
+  "checks": [
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/CI/format.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "bash scripts/check_claim_registry.sh",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/CI/claim-registry.log",
+      "log_sha256": "9a7345b95eab80d903a39aeb2ade5b7f7e8744fc26ce62602da3e93cd3fbb507"
+    },
+    {
+      "command": "node artifacts/execution/2026-10-06-session/CI/check-assertions.js",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/CI/static-assertions.log",
+      "log_sha256": "e231176b49bfd17500cccb69b618f03089dc5457072d64b552d4cb02cad557a1"
+    },
+    {
+      "command": "cargo check --release --manifest-path crates/nine65-wasm/Cargo.toml --target wasm32-unknown-unknown --features wasm",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/CI/wasm-check.log",
+      "log_sha256": "8a697de698f02a127a6d227697f4152fa3507b2bd9f42b13266931b48379c5d9"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p fhe-service --bins -- -D warnings",
+      "exit_code": 101,
+      "log": "artifacts/execution/2026-10-06-session/CI/service-clippy.log",
+      "log_sha256": "1c3de39e41b169fbcd25423a391292263b6c60bfc7e452a865fe201017912990"
+    }
+  ],
+  "acceptance_evidence": [
+    "The excluded WASM crate parses as a standalone package and its release target checks on pinned Rust 1.89",
+    "The claim registry and eight application-platform static assertions pass without ripgrep",
+    "The service Clippy target selector is valid and reaches source linting"
+  ],
+  "unresolved": [
+    "Service Clippy reports 23 existing exact_transcendentals lint errors",
+    "Corrected cargo-deny action needs a fresh hosted PR-head run",
+    "The full hosted T2 suite was skipped after the earlier T1 failure",
+    "Current main has no required-check ruleset",
+    "Existing FHE correctness failures still prevent release"
+  ],
+  "claims_changed": []
+}

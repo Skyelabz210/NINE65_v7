@@ -42,4 +42,5 @@ cd "$PROJECT_ROOT"
 echo "=== Test Tier: FAST (cargo test --lib, release) ==="
 cargo test --release --workspace --lib \
   --exclude nine65-python --exclude nine65-wasm \
+  --no-fail-fast \
   "$@"

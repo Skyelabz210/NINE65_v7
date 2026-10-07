@@ -1,0 +1,74 @@
+{
+  "task_id": "F02",
+  "status": "failed_validation",
+  "source_commit": "017f0163be76c0adb102e581c9e7157ea7ae736a",
+  "worktree_manifest_sha256": "3b8b41a7fe64a8c230ddfa153df3a23d6cd1afce274da66587dc965164f64e99",
+  "files_changed": [
+    "scripts/collect_test_inventory.py",
+    "scripts/cram_ct_gates.sh",
+    "scripts/run_tests_fast.sh",
+    "docs/execution/2026-10-03/TEST_TRIAGE.md",
+    "artifacts/execution/2026-10-06-session/F02/test_inventory.json",
+    "artifacts/execution/2026-10-06-session/F02/release-sweep.log",
+    "artifacts/execution/2026-10-06-session/F02/http-unsandboxed.log",
+    "artifacts/execution/2026-10-06-session/F02/cram-filter-gates.log",
+    "artifacts/execution/2026-10-06-session/F02/filter-logs/",
+    "artifacts/execution/2026-10-06-session/F02/cram-t3-gate.log",
+    "artifacts/execution/2026-10-06-session/F02/result.json"
+  ],
+  "checks": [
+    {
+      "command": "cargo test --locked --offline --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast -j1",
+      "exit_code": 101,
+      "passed": 1859,
+      "failed": 21,
+      "ignored": 193,
+      "log": "artifacts/execution/2026-10-06-session/F02/release-sweep.log",
+      "log_sha256": "995b711ed4a90306b5c7ff16b360c80fd2141ee14309293feb131a6be980b97b"
+    },
+    {
+      "command": "cargo test --locked --offline --release -p fhe-service --bin fhe-service http::tests -- --nocapture (unsandboxed)",
+      "exit_code": 0,
+      "passed": 28,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-06-session/F02/http-unsandboxed.log",
+      "log_sha256": "874f06bd94242c7bd039c92ff073e3a24814b10cb55a99e5c039d7ef1f8ac808"
+    },
+    {
+      "command": "bash scripts/cram_ct_gates.sh C0 C1 C2 C3 C4 C5",
+      "exit_code": 0,
+      "passed": 92,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-06-session/F02/cram-filter-gates.log",
+      "log_sha256": "4061fc5ce18e46961e685e78e43f3cb673858a262caec47863deaf4831dc8460"
+    },
+    {
+      "command": "bash scripts/cram_ct_gates.sh T3",
+      "exit_code": 130,
+      "log": "artifacts/execution/2026-10-06-session/F02/cram-t3-gate.log",
+      "log_sha256": "3746c477e068b577f210d1f5d47b2e4e5c447717fac608d657b02c9b73d6fcf8"
+    },
+    {
+      "command": "python3 scripts/collect_test_inventory.py --log artifacts/execution/2026-10-06-session/F02/release-sweep.log --exit-code 101 --sweep-source-commit 017f0163be76c0adb102e581c9e7157ea7ae736a --output artifacts/execution/2026-10-06-session/F02/test_inventory.json",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/F02/test_inventory.json",
+      "log_sha256": "3b8b41a7fe64a8c230ddfa153df3a23d6cd1afce274da66587dc965164f64e99"
+    }
+  ],
+  "acceptance_evidence": [
+    "59 test result blocks reconcile with executed unit, integration and doctest targets",
+    "All 43 declared integration targets are inventoried; 15 ran in the default sweep and 28 require features",
+    "The sweep reached integration and doctests after library failures",
+    "C0-C5 selected gates now require positive test matches and passed 3, 15, 8, 16, 40 and 10 tests respectively"
+  ],
+  "unresolved": [
+    "Eight nine65 library correctness failures",
+    "One K-Elimination CLASS-F versus composite-carrier API contract conflict",
+    "28 feature-gated integration targets are not yet executed",
+    "The isolated T3 wrapper rerun was interrupted during a release rebuild; the full sweep already ran its 10 tests",
+    "Independent F02 review and required hosted CI remain open"
+  ],
+  "claims_changed": []
+}

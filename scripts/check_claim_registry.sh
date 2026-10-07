@@ -59,12 +59,12 @@ while IFS=',' read -r claim_id visibility profile_class artifact_path; do
   fi
 done < "${registry}"
 
-if ! rg -q "docs/BENCHMARK_PROFILE_POLICY.md" README.md; then
+if ! grep -Fq "docs/BENCHMARK_PROFILE_POLICY.md" README.md; then
   echo "ERROR: README.md must reference docs/BENCHMARK_PROFILE_POLICY.md"
   errors=$((errors + 1))
 fi
 
-if ! rg -q "docs/CLAIM_REGISTRY.csv" README.md; then
+if ! grep -Fq "docs/CLAIM_REGISTRY.csv" README.md; then
   echo "ERROR: README.md must reference docs/CLAIM_REGISTRY.csv"
   errors=$((errors + 1))
 fi

@@ -1,0 +1,1736 @@
+{
+  "counts": {
+    "declared_integration_targets": 43,
+    "packages": 12,
+    "targets": 94
+  },
+  "metadata_command": "cargo metadata --locked --offline --no-deps --format-version 1",
+  "packages": [
+    {
+      "features": {},
+      "name": "clockwork-core",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "clockwork_core",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/clockwork-core/src/lib.rs",
+          "test": true
+        }
+      ]
+    },
+    {
+      "features": {},
+      "name": "cram-core",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "cram_core",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/cram-core/src/lib.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "workload_scales",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/cram-core/tests/workload_scales.rs",
+          "test": true
+        }
+      ]
+    },
+    {
+      "features": {
+        "arbitrary-precision": [],
+        "default": [
+          "std"
+        ],
+        "std": []
+      },
+      "name": "exact_transcendentals",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "exact_transcendentals",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/src/lib.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "a2_residue_native",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/tests/a2_residue_native.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "arrow_emission_joint_property",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/tests/arrow_emission_joint_property.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "arrow_emission_reversibility",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/tests/arrow_emission_reversibility.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "composite_operator_domains",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/tests/composite_operator_domains.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "cram_gates",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/tests/cram_gates.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "lifted_transduction_module",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/tests/lifted_transduction_module.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "safe_basis_lifted_transduction",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/tests/safe_basis_lifted_transduction.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "performance",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/exact_transcendentals/benches/performance.rs",
+          "test": false
+        }
+      ]
+    },
+    {
+      "features": {
+        "allow_insecure": [
+          "nine65/allow_insecure"
+        ],
+        "default": [],
+        "exact_rational": [
+          "nine65/exact_rational"
+        ]
+      },
+      "name": "fhe-service",
+      "targets": [
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "fhe-service",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/fhe-service/src/main.rs",
+          "test": true
+        }
+      ]
+    },
+    {
+      "features": {
+        "accelerated": [
+          "mana",
+          "unhal"
+        ],
+        "adaptive-threading": [
+          "shadow-entropy"
+        ],
+        "allow_insecure": [],
+        "benchmarks": [],
+        "clockwork": [
+          "clockwork-core",
+          "crc32fast"
+        ],
+        "clockwork-core": [
+          "dep:clockwork-core"
+        ],
+        "crc32fast": [
+          "dep:crc32fast"
+        ],
+        "debug_dual_mul": [],
+        "default": [
+          "exact_transcendentals_backend",
+          "accelerated"
+        ],
+        "deterministic_rng": [
+          "dep:rand_chacha",
+          "dep:rand_core"
+        ],
+        "exact_rational": [
+          "nexgen_rational"
+        ],
+        "exact_transcendentals_backend": [
+          "dep:exact_transcendentals"
+        ],
+        "generic-rayon": [
+          "rayon"
+        ],
+        "logging": [
+          "dep:log"
+        ],
+        "mana": [
+          "dep:mana"
+        ],
+        "nexgen_rational": [
+          "dep:nexgen_rational"
+        ],
+        "ntt_fft": [],
+        "parallel": [
+          "rayon"
+        ],
+        "rayon": [
+          "dep:rayon"
+        ],
+        "reference_ntt": [],
+        "secure_seed": [],
+        "sequential": [],
+        "serde": [
+          "dep:serde",
+          "dep:serde_json",
+          "dep:bincode"
+        ],
+        "shadow-entropy": [],
+        "slow_tests": [],
+        "unhal": [
+          "dep:unhal"
+        ]
+      },
+      "name": "nine65",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "nine65",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/lib.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "breaking_point_audit",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/breaking_point_audit.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "cram_comparative_probe",
+          "required_features": [
+            "serde"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/cram_comparative_probe.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "cram_exploratory_probe",
+          "required_features": [
+            "serde"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/cram_exploratory_probe.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "cram_modulus_probe",
+          "required_features": [
+            "serde"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/cram_modulus_probe.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "debug_secure_256",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/debug_secure_256.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "deep_audit_all",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/deep_audit_all.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "deep_rigorous_audit",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/deep_rigorous_audit.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "depth_50_correctness_test",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/depth_50_correctness_test.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "dpa_simulation",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/dpa_simulation.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "efficiency_audit",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/efficiency_audit.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "fhe_demo",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/fhe_demo.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "keygen_benchmark",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/keygen_benchmark.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "live_benchmark_comparison",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/live_benchmark_comparison.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "max_noise_resilience_test",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/max_noise_resilience_test.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "nine65_bench",
+          "required_features": [
+            "serde"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/nine65_bench.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "nine65_v7_demo",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/nine65_v7_demo.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "perturbation_stress_test",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/perturbation_stress_test.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "power_utility_audit",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/power_utility_audit.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "resilience_audit",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/resilience_audit.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "security_estimator_baseline",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/security_estimator_baseline.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "test_phase1_fix",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/test_phase1_fix.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "unit_target",
+          "kind": [
+            "bin"
+          ],
+          "name": "transduction_audit",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/src/bin/transduction_audit.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "canonical_lift_feasibility",
+          "required_features": [
+            "serde"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/examples/canonical_lift_feasibility.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "comparison_record_probe",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/examples/comparison_record_probe.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "cram_public_showcase",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/examples/cram_public_showcase.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "export_parameter_registry",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/examples/export_parameter_registry.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "slot_batching_probe",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/examples/slot_batching_probe.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "test_mod_switch",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/examples/test_mod_switch.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "anchor_drift_diagnostics",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/anchor_drift_diagnostics.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "arrow_emission_fhe_gate_matrix",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/arrow_emission_fhe_gate_matrix.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "audit_regressions",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/audit_regressions.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "basis_invariance",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/basis_invariance.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "bootstrap_integration",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/bootstrap_integration.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "bootstrap_parameter_exploration",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/bootstrap_parameter_exploration.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "bootstrap_residue_shape_regression",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/bootstrap_residue_shape_regression.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "clockwork_cross_validation",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/clockwork_cross_validation.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "cram_public_guardrails",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/cram_public_guardrails.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "cram_public_mode",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/cram_public_mode.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "cram_public_timings",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/cram_public_timings.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "depth2_full_matrix_issue81",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/depth2_full_matrix_issue81.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "depth2_isolation",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/depth2_isolation.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "depth2_python_oracle_vectors_issue81",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/depth2_python_oracle_vectors_issue81.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "depth_and_noise",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/depth_and_noise.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "error_variant_coverage",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/error_variant_coverage.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "expanded_bootstrap",
+          "required_features": [
+            "allow_insecure",
+            "exact_transcendentals_backend"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/expanded_bootstrap.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "expanded_phase1",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/expanded_phase1.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "formalization_invariants",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/formalization_invariants.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "full_system_exercise",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/full_system_exercise.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "k_elimination_basis_regression",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/k_elimination_basis_regression.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "m2b_manufactured_rescale",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/m2b_manufactured_rescale.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "noise_profile",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/noise_profile.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "noise_tracking_perf_issue93",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/noise_tracking_perf_issue93.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "ntt_encoder_caching",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/ntt_encoder_caching.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "op_timings",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/op_timings.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "prime_power_phase",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/prime_power_phase.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "random_encrypt",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/random_encrypt.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "rational_bridge_proptest",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/rational_bridge_proptest.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "default_release",
+          "kind": [
+            "test"
+          ],
+          "name": "refresh_preflight_regression",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/refresh_preflight_regression.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "residue_space_ciphertext",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/residue_space_ciphertext.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "security_integration",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/security_integration.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "test_192_256_bootstrap",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/test_192_256_bootstrap.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "time_crystal_verification",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/tests/time_crystal_verification.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "adaptive_rayon",
+          "required_features": [
+            "parallel",
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/benches/adaptive_rayon.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "depth_chain",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/benches/depth_chain.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "fhe_scaling",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/benches/fhe_scaling.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "nine65_vs_seal_comparison",
+          "required_features": [
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/benches/nine65_vs_seal_comparison.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "throughput",
+          "required_features": [
+            "parallel",
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/benches/throughput.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "timing",
+          "required_features": [
+            "benchmarks",
+            "allow_insecure"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/benches/timing.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "custom-build"
+          ],
+          "name": "build-script-build",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65/build.rs",
+          "test": false
+        }
+      ]
+    },
+    {
+      "features": {
+        "default": [],
+        "parallel": [
+          "rayon"
+        ],
+        "rayon": [
+          "dep:rayon"
+        ],
+        "wide": [
+          "dep:wide"
+        ]
+      },
+      "name": "mana",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "mana",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/mana/src/lib.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "benchmark",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/mana/examples/benchmark.rs",
+          "test": false
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "bench"
+          ],
+          "name": "lane_ops",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/mana/benches/lane_ops.rs",
+          "test": false
+        }
+      ]
+    },
+    {
+      "features": {},
+      "name": "nexgen_rational",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "nexgen_rational",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nexgen_rational/src/lib.rs",
+          "test": true
+        }
+      ]
+    },
+    {
+      "features": {
+        "default": [],
+        "parallel": [
+          "rayon",
+          "mana/parallel"
+        ],
+        "rayon": [
+          "dep:rayon"
+        ],
+        "simd": []
+      },
+      "name": "unhal",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "unhal",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/unhal/src/lib.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "outside_default_test_sweep",
+          "kind": [
+            "example"
+          ],
+          "name": "unhal_benchmark",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/unhal/examples/unhal_benchmark.rs",
+          "test": false
+        }
+      ]
+    },
+    {
+      "features": {},
+      "name": "math_utils",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "math_utils",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/math_utils/src/lib.rs",
+          "test": true
+        }
+      ]
+    },
+    {
+      "features": {
+        "extreme-tests": [
+          "dep:nine65",
+          "nine65/allow_insecure"
+        ]
+      },
+      "name": "nine65-extreme-tests",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "nine65_extreme_tests",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65-extreme-tests/src/lib.rs",
+          "test": true
+        },
+        {
+          "doctest": false,
+          "execution_class": "feature_gated",
+          "kind": [
+            "test"
+          ],
+          "name": "full_system_measurement",
+          "required_features": [
+            "extreme-tests"
+          ],
+          "resource_class": "unmeasured",
+          "source": "crates/nine65-extreme-tests/tests/full_system_measurement.rs",
+          "test": true
+        }
+      ]
+    },
+    {
+      "features": {},
+      "name": "private-feedback-core",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "private_feedback_core",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/private-feedback-core/src/lib.rs",
+          "test": true
+        }
+      ]
+    },
+    {
+      "features": {},
+      "name": "private-feedback-nine65",
+      "targets": [
+        {
+          "doctest": true,
+          "execution_class": "unit_target",
+          "kind": [
+            "lib"
+          ],
+          "name": "private_feedback_nine65",
+          "required_features": [],
+          "resource_class": "unmeasured",
+          "source": "crates/private-feedback-nine65/src/lib.rs",
+          "test": true
+        }
+      ]
+    }
+  ],
+  "schema": "nine65-cargo-test-inventory-v1",
+  "source_commit": "bdafa8c97d8b63f3a29ced23851529c4e0701441",
+  "sweep": {
+    "command": "cargo test --locked --offline --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast -j1",
+    "executed_doctest_targets": 11,
+    "executed_integration_targets": 15,
+    "executed_unit_targets": 33,
+    "exit_code": 101,
+    "failed_target_count": 3,
+    "ignored_reasons_from_log": {
+      "DIAGNOSTIC: prints a depth comparison for the WR-1 evidence section; asserts nothing about the dual-RNS route": 1,
+      "DIAGNOSTIC: prints raw integer stage timings for the WR-1 evidence section": 1,
+      "OPEN FINDING with an UNSTABLE VERDICT: KElimination::exact_divide shows a real divisor-dependent timing dependence (divisor 3 consistently slower than divisor 2 by ~1-3us per 4096-call batch, sign stable across every clean run, |t| growing with round count: mean ~3 at 2000 rounds, ~6.6 at 8000, 11.4 at the one clean 32000-round run, against controls of 0.46-1.27). It is therefore NOT promotable into the dudect-blocking job as a passing gate. It is also not placeable in the inverted open-findings tripwire, which needs a stable DEPENDENCE verdict: at 8000 rounds it read DEPENDENCE in only 2 of 3 runs, and at 32000 rounds this machine's own control arm exceeded the threshold (9.2-11.2) so the harness correctly reported INCONCLUSIVE. Neither CI job can gate this deterministically today; it is collected and reported, and settling it needs a quiesced, frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATION_PLAN.md.": 1,
+      "OPEN FINDING, and now measured with enough power to be one: KElimination::extract_k shows a small but reproducible operand-magnitude timing dependence, contradicting its docstring claim of fixed-cost, branch-free execution. Interleaved class allocation, 8000 rounds (DUDECT_EXTRACT_K_ROUNDS): t_signal = 18.5 / 20.5 / 29.3 over three runs, against controls of 0.07-1.17; medians differ by ~13-15us per 4096-call batch, i.e. ~3.5ns on a ~590ns call (0.6%). |t| grows with round count (4.4-13.6 at 2000 rounds, 18.5-29.3 at 8000), the signature of a real effect rather than noise. CORRECTION to the earlier reason string: at 2000 rounds the VERDICT was not stable (one of three runs read 4.35 and reported CONSTANT-TIME), so 'not a flake' was not established until the round count was raised; and the SIGN of the median difference is not stable either - near-cap operands were slower in some runs and faster in others - so only the magnitude of the dependence is established, not its direction. Effect size is small enough that a quiesced, frequency-pinned machine should confirm it before any code change. See docs/CT_VERIFICATION_PLAN.md.": 1,
+      "RETIRED MECHANISM (noise budget): the test chains multiplies over `for depth in 2..=20` and then demands exhaustion actually occur \u2014 assert!(found_error, \"try_decrypt_dual must return Err when noise is exhausted\"). That assertion specifies a depleting budget. This substrate has none: exact division in residue space scales noise by 1/d with no rounding term added and without dropping a lane, so nothing is spent per multiply and the Err this test waits for never arrives at any depth. The audit finding it encodes (Section 2.7 \u2014 decrypt_dual must not silently return garbage) is still live, but must be re-tested against a corrupted/invalid ciphertext rather than against depth. Repairing this test by making depth exhaust something would reintroduce the ladder. See docs/RETIRED_MECHANISMS.md": 1,
+      "RETIRED MECHANISM (weakest of this file's four modswitch classifications \u2014 see docs/RETIRED_MECHANISMS.md): the test's own assertions are plain correctness (assert_eq!(dec, expected)), but its setup is level-supply reasoning \u2014 it sits under the PUBLIC-MODE AUTO MOD-SWITCH banner and sizes depth-3 against depth3_128's 5 primes 'for sufficient headroom', i.e. depth bounded by prime count with a level spent per multiply. That accounting is retired: exact division in residue space divides the value without moving the basis, so prime count does not gate depth. UN-QUARANTINE CANDIDATE: this one may return as a straight depth-3 correctness test once it is re-expressed without the auto-mod-switch premise and passes on unbounded-depth semantics.": 1,
+      "RETIRED MECHANISM: asserts that mul_dual_public auto-drops the last prime ('primes after switch', ct6_deep.c0.main.len()) and that depth-2 decrypts only because that level was spent ('=== MODULUS SWITCHING SUCCESS ==='). This substrate does not implement modulus switching. Exact division in residue space (K-Elimination for gcd(d,M)=1, Fused Piggyback Division otherwise) divides the ciphertext value by d WITHOUT moving the basis: same lanes, same Q, noise scaled by 1/d with no rounding term. No level is consumed, so no prime is ever dropped and 'primes after switch' has no referent. Repairing this test would reintroduce the level ladder. See docs/RETIRED_MECHANISMS.md": 1,
+      "RETIRED MECHANISM: asserts the post-modulus-switch coefficients have landed in the reduced modulus \u2014 assert!(c0_small[j] < t) / assert!(c1_small[j] < t) over the output of modswitch_to_t_verified. 'Coefficients now live mod t' IS the basis-drop semantics: the ciphertext left its RNS basis for a single small modulus. This substrate does not move the basis \u2014 exact division reduces the value in place across the same lanes and the same Q, so no post-switch range predicate exists to check. CAVEAT \u2014 the proximate panic is unrelated to the retirement: the deprecated ke.capacity() overflows u128 under KElimConfig::Extended (138-bit capacity); the Minimal/Standard siblings still pass. See docs/RETIRED_MECHANISMS.md": 1,
+      "RETIRED MECHANISM: exercises mod_switch_down_dual and level-aware decrypt, observing the basis shrink from 4 main primes to 3 ('Fresh ct2 has 4 main primes' -> 'After mul_dual_public: ct6 has 3 main primes') so that a depth-2 multiply becomes reachable. This substrate does not implement modulus switching. Exact division in residue space divides the value by d WITHOUT moving the basis: the main-prime count is invariant, so there is nothing for this test to observe. Repairing it would mean restoring the descending level chain. See docs/RETIRED_MECHANISMS.md": 1,
+      "RETIRED MECHANISM: its stated premise is that depth-2 is reachable only once mul_dual_public 'automatically applies modulus switching when enough levels exist' \u2014 'Without auto mod-switch in mul_dual_public, noise overwhelms at depth-2' \u2014 i.e. depth bought by consuming a level from the 4-prime depth2_128 ladder. This substrate does not implement modulus switching, and the auto_mod_switch marker this test is named for is retired. Exact division in residue space scales noise by 1/d without dropping a prime, so depth-2 costs nothing and 'enough levels exist' is not a precondition anything can fail. Repairing this test would reintroduce the ladder. See docs/RETIRED_MECHANISMS.md": 1,
+      "RETIRED MECHANISM: literally asserts mod-switch validation succeeds \u2014 assert!(result.is_ok(), \"Valid ciphertext should pass K-Elimination validation\") on boot.modswitch_to_t_verified(&ct, &ke). The thing being validated is the rounded divide-and-drop-the-basis step, which this substrate does not perform: exact division in residue space divides the value without moving the basis, so no level is consumed and there is no switch whose residues need validating. K-Elimination itself is NOT retired \u2014 it is the exact-division primitive; only its use as a guard on a modulus switch is. CAVEAT \u2014 the proximate panic is the deprecated ke.capacity() u128 overflow under KElimConfig::Extended, not the retirement. See docs/RETIRED_MECHANISMS.md": 1,
+      "RETIRED MECHANISM: mod-switch validation semantics at the plaintext boundaries \u2014 for m in [0, 1, t-1] it asserts assert!(result.is_ok(), \"Boundary message m={} should pass verification\") on modswitch_to_t_verified and then assert!(c0_small[j] < t). Both halves describe the rounded divide-and-drop-lanes step: that it accepts edge plaintexts, and that its output has landed in the reduced modulus t. This substrate divides exactly in residue space with the basis held fixed, so there is no switch to verify and no reduced modulus to land in; boundary plaintexts are covered by ordinary encrypt/decrypt round-trip tests instead. CAVEAT \u2014 the proximate panic is the deprecated ke.capacity() u128 overflow under KElimConfig::Extended, not the retirement. See docs/RETIRED_MECHANISMS.md": 1,
+      "RETIRED MECHANISM: pins two modulus-switch implementations against each other \u2014 assert_eq!(c0_unverified[j], c0_verified[j]) across modswitch_to_t and modswitch_to_t_verified. modswitch_to_t_verified is textbook rounded modulus switching (((c0_val * t128 + q_level_half) / q_level) % t128), inexact division FUSED with a full basis drop to a bare Vec<u64> mod t. That fusion is exactly what this substrate retires: exact division in residue space divides the value without moving the basis, so there is no rounding term to agree on and no drop to t. CAVEAT \u2014 the proximate panic is unrelated to the retirement: ke.capacity() (deprecated, k_elimination.rs:393) does try_capacity().expect(...) and KElimConfig::Extended is now 138-bit (alpha 3x16 + beta 2x45), overflowing u128; sibling tests on Minimal/Standard still pass. Fixing that overflow would only restore a test of the retired ladder. See docs/RETIRED_MECHANISMS.md": 1,
+      "SURVEY: 12 keygens + 48 public multiplies at n=8192. Answers \u00a74 of docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md; run with --ignored --nocapture": 1,
+      "Statistical timing test - run in a controlled environment only. WAS finding F-1's magnitude contrast, now CLOSED and kept as its regression gate: medians 110,782ns vs 110,798ns (+0.014%), t_signal 0.45 against control 0.11. It previously measured 128.4us vs 138.4us (+7.8%) at t = 48.4. This contrast is the one that exposed the sign flip during the fix - under the original divisions small residues were faster, and once division was removed branch prediction dominated and they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8.": 1,
+      "Statistical timing test - run in a controlled environment only. WAS finding F-1, now CLOSED and kept as its regression gate: medians 110,927ns vs 110,977ns (+0.045%), t_signal 0.96 against control 1.16. It previously measured 128.2us vs 150.1us (+17%) at t = 71.9-129.6. The recorded cause was wrong: removing every division made the function 2x faster and the leak LARGER. The real cause was BarrettContext::sub_ct, whose ((a < b) as u64).wrapping_neg() mask compiled to a conditional branch whose prediction rate depends on the operands. See docs/CT_VERIFICATION_PLAN.md section 4.8 for the probe-by-probe localisation.": 1,
+      "Statistical timing test - run in a controlled environment only. WAS finding F-2, now CLOSED and kept as its regression gate: medians 76.87ms vs 78.22ms, t_signal 2.14 against control 0.54. It previously measured 25.4ms (all-zero) vs 80.1ms (uniform) at t = 202-701 over 5 runs - a 3.2x, not a percentage. Cause: U256::div_mod_u64 is hardware limb division whose cost scales with the dividend's magnitude. Fix: RNSFHEContext::mod_switch_down_dual now calls the new U256::div_mod_u64_ct, a fixed-256-iteration constant-time division (same mask-select + black_box barrier idiom as BarrettContext::sub_ct's F-1 fix, see section 4.8) computing the identical (quotient, remainder) pair. The companion test test_ct_dudect_mod_switch_rescale_sign_classes still passes (t_signal 0.78), confirming the sign branches were never the leak. See docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md.": 1,
+      "TEST-ONLY ASSUMPTION invalidated by G12 (not a production bug): asserts `k_ct2_c0 < 1000` ('Expect k approx 0 for fresh ciphertexts'). That held only because `a` (pk1) used to be sampled from `[0, min_prime)` -- confined, for this 2-prime ~60-bit `light_rns_exact_insecure` config, to a small fraction of its true ~30-32 bit-per-lane range. G12 fixed that (a uniform RLWE public sample must range over each lane's FULL modulus, not a fraction of it), so a fresh ciphertext's winding relative to M is now legitimately large for this tiny-M config -- decode is still exact (K-Elimination is designed to read values regardless of winding magnitude, and this config's anchor capacity is far more than sufficient), just not 'approx 0' anymore. Verified via `test_tracked_multiplication`, `test_coeff_domain_full_ct_mul`, and the full fhe-service test suite, all passing with real decrypt correctness.": 1,
+      "TEST-ONLY BUG (not production): its helper `assert_main_anchor_consistent` centers `pk1` (the RLWE public sample `a`) around M/2 before checking anchor agreement, i.e. it assumes `a` is a small signed value like a secret/error term. `a` is not: it is a uniform ring element with no smallness requirement, and since G12 fixed its sampling to be genuinely uniform per-lane (previously confined to `[0, min_prime)`, which accidentally kept it under M/2 for this 2-prime ~60-bit `light_rns_exact_insecure` config), `a` now legitimately lands above M/2 about half the time, which this test's centering wrongly reads as 'a is negative'. Production paths (`mul_dual_public`, `mul_dual_symmetric`, `mul_coeff_domain`) never make this assumption and are unaffected -- see `test_tracked_multiplication`, `test_coeff_domain_full_ct_mul`, and the full fhe-service test suite, all passing.": 1,
+      "TEST-ONLY BUG (not production): the manual reference computation (`expected_as_0`) extracts `a_coeffs[i] = ctx.rns.to_int(&a_res) as i128` directly, uncentered, then uses it as a SIGNED value in a naive negacyclic convolution -- `s_coeffs` right next to it IS properly centered. `a` (pk1) is a uniform ring element, not a small signed value, so treating its raw unsigned-mod-M residue as already-signed is only correct while `a` stays below M/2. Before G12 fixed `a`-sampling (previously confined to `[0, min_prime)`, which for this 2-prime ~60-bit `light_rns_exact_insecure` config accidentally kept it under M/2), that held by luck; the corrected uniform sampling makes it false about half the time, so this test's own naive convolution now disagrees with the correct production result. Production paths are unaffected -- see `test_tracked_multiplication`, `test_coeff_domain_full_ct_mul`, and the full fhe-service test suite, all passing.": 1,
+      "VESTIGIAL: CONTRACT 1 \u2014 asserts the boot prime set is a strict superset of the work primes for all three secure configs. Strictly-more-primes is spare-basis bookkeeping for a switch that no longer happens. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 2 \u2014 asserts exactly one boot prime is absent from the work primes (the drop prime) across all three secure configs. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 3 \u2014 asserts each bootstrap context's anchor primes match the canonical anchor list for N. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 4 \u2014 asserts that after Phase 3 the anchor limbs equal CRT(main) mod anchor_prime, i.e. anchors were correctly recomputed after the prime drop. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 5 \u2014 asserts boot.bootstrap_with_ksk roundtrips m through full CRT reconstruction in the key-switch. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 6 \u2014 asserts the non-circular bootstrap output has work-prime limb count and work-prime-bounded coefficients, i.e. it came back out of boot space. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 7 (continued) \u2014 asserts a full secure_192 encrypt -> bootstrap -> decrypt roundtrip through the U256 CRT path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 7 \u2014 asserts the secure_192 and secure_256 prime products overflow u128 and that ClockworkBootstrap::new still succeeds via the U256 fallback. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: CONTRACT 8 \u2014 asserts boot_primes >= bootstrap_depth + 2 and boot_primes >= work_primes + 1. This is a depth budget expressed directly as a prime count; it is the exact accounting this substrate retires. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts 3*7=21 -> symmetric bootstrap -> 21*5=105, with the refresh in the middle as the stated reason the second multiply has budget. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts BOOTSTRAP_PRIMES either validate or fail only with NTTConfigError across N in [1024, 2048, 4096, 8192]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts BootstrapKey::generate produces n entries and that secret_key_poly() has dimension n \u2014 structural coverage of bootstrap key material. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts BootstrapKey::generate succeeds against a config built from BOOTSTRAP_PRIMES \u2014 generation of bootstrap key material itself. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts CiphertextMask apply/remove roundtrips the (c0, c1) pair. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts ClockworkBootstrap::can_bootstrap is true just below q/(2t) and false just above \u2014 a noise-threshold predicate gating when a refresh is still possible. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts ClockworkBootstrap::modswitch_to_t_verified returns BootstrapConfigMismatch on a one-limb ciphertext. Four siblings in this same block are already quarantined as RETIRED MECHANISM (modulus switching); this one is quarantined here instead because reaching the error path requires a live bootstrap context. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts ClockworkBootstrap::modswitch_to_t_verified returns RangeOverflow when KElimConfig::Minimal cannot hold the reconstructed value. Same block as the four already-quarantined RETIRED MECHANISM modswitch tests; quarantined here because it needs a live bootstrap context to construct the call. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts MaskLayer apply/remove is the identity. MaskLayer lives under crate::bootstrap and has no consumer outside the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts MaskLayer::track_scalar_mul lets the mask follow a scalar multiply so removal still recovers the scaled original \u2014 mask bookkeeping across the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts NoiseBudget::reset_after_bootstrap raises remaining_millibits above its pre-reset value and appends a NoiseOpType::Bootstrap entry. A reset only means something against a budget that depletes per multiply. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts OuterCiphertextPair encrypt/decrypt roundtrips a (c0, c1) pair through the outer envelope. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts OuterLayer RLWE encrypt/decrypt recovers each coefficient to within the small error e. OuterLayer lives under crate::bootstrap and has no consumer outside the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts OuterLayer::rotate_key makes the old ciphertext decrypt to garbage while new encryptions still work \u2014 the Tier1 key-rotation property of the Three-Lock outer layer. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts SymmetricBootstrap::bootstrap roundtrips m for m in [0, 1, 42, 1000, 65536]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts SymmetricBootstrap::bootstrap_timed roundtrips 42 and reports non-zero total/decrypt/encrypt nanoseconds \u2014 an instrumentation test of the refresh path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts SymmetricBootstrap::reencrypt_symmetric roundtrips m without a public key. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts ThreeLockBootstrap::bootstrap roundtrips eight messages spanning 0..9000. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts ThreeLockBootstrap::bootstrap_fast at Tier3Commodity roundtrips 42. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts ThreeLockBootstrap::bootstrap_timed at Tier2Production roundtrips 42 through the full three-layer refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts Tier1Maximum rotates the outer key on every refresh (stats.key_rotated) and that bootstrap_count reaches 2 \u2014 key lifecycle bookkeeping that exists only because a refresh occurs. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts a Three-Lock refreshed ciphertext carries under 10 percent noise usage, i.e. that the refresh reset a budget. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts a bootstrap_protected output sits below 10 percent of the noise budget, i.e. that the refresh actually reset the budget. Nothing depletes the budget here, so there is nothing to reset. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts a fresh MaskLayer has non-zero coefficients before drop, standing in for the ZeroizeOnDrop guarantee. NOTE: this is the only zeroization coverage for MaskLayer; if the Three-Lock mask is ever reused outside bootstrap it must come back with a real post-drop observation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts analyze_depth_budget reports a positive initial budget and that the symmetric net cost is below the public net cost \u2014 a comparison between two per-multiply depletion rates. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts analyze_depth_budget's conservative_pub_depth falls in [1, 15] \u2014 a prediction of how many multiplies fit before a refresh is required. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts assert_valid_trigger_threshold accepts 0, 250 and 1000 permille \u2014 the legal interval of the auto-bootstrap refresh trigger. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts assert_valid_trigger_threshold(1001) panics \u2014 argument validation for the auto-bootstrap refresh trigger. A refresh trigger threshold only means something if there is a budget to be at 25 percent of. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts boot-prime superset, single drop prime and canonical anchors across the secure_128 / secure_192 / secure_256 bootstrap contexts. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts boot.bootstrap output carries exactly config.primes.len() main limbs, i.e. that Phase 3 key-switch returned the ciphertext to work-prime space after the boot-prime detour. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts boot.generate_keys (circular bootstrap key generation) returns Ok. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts boot.lift_sk_to_boot preserves the ternary secret key across work and boot modular spaces \u2014 the circular-security premise of bootstrap key material. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts boot.modswitch_to_t rejects a ciphertext carrying fewer than two RNS limbs \u2014 a precondition that only bootstrap Phase 1 imposes. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts boot_ctx anchor primes equal DualRNSContext::canonical_anchor_primes_for_n \u2014 an invariant of the bootstrap context's anchor lanes. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts bootstrap Phase 1 (boot.modswitch_to_t) drives every coefficient of a fresh ciphertext below t. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts bootstrap Phase 1's precondition that crt_reconstruct_2 over the first two ciphertext limbs agrees with each limb residue. Reconstruction is separately an A2 concern (it materialises the integer and destroys the winding); here it exists only to feed Phase 1. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts bootstrap Phase 2's Delta_boot * m stays in range for every boot prime. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts cw.bootstrap_protected roundtrips eight messages spanning 0..9000 through the Three-Lock mask. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts data stays masked across the outer Montgomery round-trip and that the mask is then algebraically removable \u2014 the Three-Lock confidentiality property for the momentary plaintext inside a refresh. Note: this mask is the Three-Lock intermediate-plaintext shield, NOT the CRAM winding of D-030 6.1; the winding side-channel story is unaffected by this quarantine. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts encrypt -> boot.bootstrap -> decrypt recovers m across the secure_128 message range including t-1. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts encrypt -> boot.bootstrap -> decrypt recovers m for m in [0, 1, 2, 7, 42, 100, 1000]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts encrypt -> boot.bootstrap_with_ksk -> decrypt recovers m under non-circular (key-switch) bootstrap. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts encrypt(42) -> CiphertextMask -> cw.bootstrap_protected -> decrypt returns 42, the Three-Lock protected re-encryption path end to end. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts every coefficient of boot.bootstrap output is bounded by its work prime after Phase 3 accumulation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts masking a constant polynomial produces diverse coefficients \u2014 a statistical property of the Three-Lock mask, which only shields the momentary plaintext inside a refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts one MaskLayer masks two distinct polynomials to distinct outputs and removes cleanly from both. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts post-bootstrap anchor limbs equal CRT(main) mod each anchor prime, reconstructing through crt_reconstruct_n over the refreshed ciphertext. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts should_bootstrap(1000) is true before the first operation, i.e. that a 100 percent trigger selects a refresh immediately. It is entirely a statement about the refresh trigger. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts should_bootstrap(1001) panics \u2014 argument validation on the auto-refresh trigger threshold. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts should_bootstrap(250) is inclusive at exactly 75000 millibits consumed and false one millibit below \u2014 the auto-refresh trigger boundary. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts that boot.modswitch_to_t (Phase 1) followed by a hand-rolled negacyclic decrypt in Z_t recovers m, i.e. that Phases 2 and 3 of bootstrap can be skipped when sk is on hand. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts that raw_masked minus mask.decrypt_contribution equals the clean decrypted polynomial \u2014 algebraic mask removal inside the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts the OuterLayer RLWE encrypt/decrypt round-trip keeps max noise below q/4 \u2014 the Three-Lock outer envelope that only wraps the refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts the U256 CRT fallback carries a full secure_192 encrypt -> bootstrap -> decrypt roundtrip. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts the U256 CRT fallback carries a full secure_256 encrypt -> bootstrap -> decrypt roundtrip. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts the boot prime set is a superset of the work primes with exactly one extra 'drop prime'. A drop prime is basis-movement bookkeeping and has no referent when the basis does not move. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts the chain 2*3=6 -> bootstrap -> 6*5=30 decrypts correctly. Its premise is that the refresh in the middle is what makes the second multiply reachable; with exact division the second multiply needs nothing refreshed. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts the chain 3*5=15 -> symmetric bootstrap -> 15*15=225 -> symmetric bootstrap -> 225*3=675, with each refresh presented as what buys the next multiply. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts the output of boot.homomorphic_inner_product (bootstrap Phase 2) is bounded by the boot primes. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts two OuterLayer encryptions of the same plaintext differ, i.e. the outer envelope is randomized. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts two bootstrap_protected runs over the same ciphertext with different masks produce different c0 coefficients. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts validate_bootstrap_primes accepts BOOTSTRAP_PRIMES at N=4096. The validator and the constant it validates exist only to gate bootstrap key material. NOTE: the NTT-compatibility and coprimality checks inside it are generic and live; if BOOTSTRAP_PRIMES is retired, re-express those checks against the work basis under a non-bootstrap name rather than restoring this test. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts validate_bootstrap_primes rejects a prime not congruent to 1 mod 2N with NTTConfigError \u2014 bootstrap-basis validation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts validate_bootstrap_primes rejects a zero entry in the bootstrap prime array with NTTConfigError. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts validate_bootstrap_primes rejects an empty bootstrap prime array with InvalidParameter. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: asserts validate_bootstrap_primes rejects gcd(9, 21) = 3 with NotCoprime \u2014 bootstrap-basis validation. Coprimality itself remains architecturally live; only its application to the bootstrap prime set is quarantined. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: constructs ClockworkBootstrap::new(secure_128) and asserts boot.t == 65537, boot.bootstrap_depth == 2 and boot_config.primes.len() >= 4 \u2014 that a bootstrap context with spare prime headroom exists at all. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: drives AutoBootstrapEvaluator::mul_auto over ten chained multiplies at a 500-permille trigger and asserts evaluator.bootstrap_count > 0 \u2014 it demands that a refresh actually fire, which is the budget-bounded-depth premise stated as an assertion. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: loops multiplies while !budget.should_bootstrap(250), then asserts reset_after_bootstrap lands on expected_post_bootstrap_budget. UN-QUARANTINE CANDIDATE: its first half \u2014 initial_millibits() equalling an independent exact-limb Delta oracle \u2014 is substrate-independent and should come back as its own test once split from the refresh tail. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: prints analyze_depth_budget for four configs. The depth-budget model it renders presumes depth is a consumable quantity. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: reimplements bootstrap Phase 3's base-B digit decomposition inline and asserts it roundtrips; it exercises no library code at all, only the Phase 3 key-switch premise. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: surveys how deep secure_128 gets without a refresh, and its loop is driven by the retired ladder: it calls ctx.mod_switch_ct_to_level(&ct_2, ct.level) each iteration and breaks when that returns None, then asserts only max_correct_depth >= 1. Both the level alignment and the 'for unlimited depth use AutoBootstrapEvaluator or SymmetricBootstrap' framing are retired premises. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: sweeps m over [0, 1, 42, 1000, 65536] and asserts every Phase 1 modswitch_to_t coefficient lands below t. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: times five ThreeLockBootstrap::bootstrap iterations and asserts the final refreshed ciphertext still decrypts to 42 \u2014 a benchmark of the vestigial path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "VESTIGIAL: times ten SymmetricBootstrap::bootstrap calls against ten ClockworkBootstrap::bootstrap calls and prints the ratio; it asserts nothing, and both arms are the vestigial path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md": 1,
+      "WIRE-Q fail-closed (PR #107): light_rns_insecure's mul_route() is KElimDual (Delta^2 > Q), so the direct .mul() call below now correctly panics via require_bajard_single_mul_route instead of silently returning a wrong plaintext. There is currently no certified public/eval-key multiply route for a KElimDual config -- mul_auto's KElimDual arm calls mul_dual_symmetric, a secret-holder operation requiring >=5 anchor primes that light_rns_insecure does not configure, so it is not a drop-in replacement. Swapping to a config whose mul_route() is BajardSingle would need its own noise-budget/depth verification rather than an unverified parameter substitution here. Re-point once the Track 1 T1.4 derived-transient evaluator integration (PR #108 WR-1) lands a certified public route for this regime.": 1,
+      "WIRE-Q fail-closed (PR #107): light_rns_insecure's mul_route() is KElimDual (Delta^2 > Q); see test_rns_native_multiplication for the full reason. Re-point once PR #108 WR-1 lands a certified public multiply route for this regime.": 1,
+      "WIRE-Q fail-closed: encrypt is non-functional, see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md": 28,
+      "WIRE-Q fail-closed: handle_encrypt calls dual_ct_to_b64 on its own output, which unconditionally rejects (docs/WIRE_Q_FAIL_CLOSED_2026-09-02.md); /encrypt 400s for every config until the single-RNS mod-Q wire type is integrated -- see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md": 1,
+      "diagnostic: writes deterministic test-key residues to /tmp": 1,
+      "no reason in log": 57
+    },
+    "log": "artifacts/execution/2026-10-06-session/F02/release-sweep.log",
+    "log_sha256": "995b711ed4a90306b5c7ff16b360c80fd2141ee14309293feb131a6be980b97b",
+    "result_blocks": 59,
+    "source_commit": "017f0163be76c0adb102e581c9e7157ea7ae736a",
+    "test_totals": {
+      "failed": 21,
+      "filtered_out": 0,
+      "ignored": 193,
+      "measured": 0,
+      "passed": 1859
+    },
+    "unexecuted_integration_targets": [
+      {
+        "name": "anchor_drift_diagnostics",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "arrow_emission_fhe_gate_matrix",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "basis_invariance",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "bootstrap_integration",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "bootstrap_parameter_exploration",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "bootstrap_residue_shape_regression",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "cram_public_guardrails",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "cram_public_mode",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "cram_public_timings",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "depth2_full_matrix_issue81",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "depth2_isolation",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "depth2_python_oracle_vectors_issue81",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "depth_and_noise",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "expanded_bootstrap",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure",
+          "exact_transcendentals_backend"
+        ]
+      },
+      {
+        "name": "expanded_phase1",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "full_system_exercise",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "m2b_manufactured_rescale",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "noise_profile",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "noise_tracking_perf_issue93",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "ntt_encoder_caching",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "op_timings",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "prime_power_phase",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "random_encrypt",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "residue_space_ciphertext",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "security_integration",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "test_192_256_bootstrap",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "time_crystal_verification",
+        "package": "nine65",
+        "required_features": [
+          "allow_insecure"
+        ]
+      },
+      {
+        "name": "full_system_measurement",
+        "package": "nine65-extreme-tests",
+        "required_features": [
+          "extreme-tests"
+        ]
+      }
+    ]
+  },
+  "toolchain": "cargo 1.89.0 (c24e10642 2025-06-23)"
+}

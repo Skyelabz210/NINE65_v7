@@ -1,8 +1,10 @@
 [package]
 name = "nine65-wasm"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
+# This crate is excluded from the root workspace and is built through its own
+# manifest in CI, so it cannot inherit workspace.package fields.
+version = "0.1.0"
+edition = "2021"
+authors = ["Acidlabz210 <acid@hackfate.us>"]
 publish = false
 license = "LicenseRef-Proprietary-AllRightsReserved"
 
