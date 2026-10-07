@@ -3,12 +3,14 @@
 # fail-closed for unmaintained dependencies instead of silently ignoring them.
 unmaintained = "all"
 yanked = "warn"
+ignore = [{ id = "RUSTSEC-2025-0141", reason = "Legacy validated key/ciphertext formats are deployed. Codec replacement needs a versioned migration and compatibility tests. Permit only existing direct users until that migration is done.", allow = ["fhe-service@0.1.0", "nine65@0.1.0"] }]
 
 [licenses]
 allow = [
     "MIT",
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
     "Unicode-3.0",
     "BSL-1.0",
     "ISC",

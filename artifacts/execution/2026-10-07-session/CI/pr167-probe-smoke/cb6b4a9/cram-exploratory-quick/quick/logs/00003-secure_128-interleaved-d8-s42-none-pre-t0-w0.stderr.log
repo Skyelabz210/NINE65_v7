@@ -1,0 +1,6 @@
+
+thread 'main' panicked at crates/nine65/src/entropy/rng_trait.rs:144:9:
+SECURITY ERROR: Non-secure RNG used for generate_keys_dual_with_rng!
+Use SecureRng for production. Shadow entropy is test-only.
+(If this fired from one of nine65's own integration tests or benches in a --release build: those targets link the library without cfg(test), so they must be run with `--features allow_insecure`; their Cargo target stanzas declare it via required-features.)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

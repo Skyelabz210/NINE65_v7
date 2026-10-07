@@ -1,0 +1,12 @@
+[1/5] NTT and Montgomery source invariants
+{"cache_line_alignment_verified": false, "class_f_prime_guard": true, "class_r_odd_composite_support": true, "compiler_disassembly_verified": false, "empirical_timing_verified": false, "montgomery_branchless_core": true, "ntt_branchless_coefficient_ops": true, "persistent_branchless_core": true, "public_schedule_counts": {"1024": 5120, "16": 32, "8": 12}, "public_schedule_sha256": "39f5651aa4ea44da87192d692ac75db061d6baa0fa03c3d6a71ba13511eb1b59", "schema": 1, "scope": "source_invariants_and_public_schedule_only", "status": "PASS"}
+[2/5] Explicit public-only variable-time boundaries
+[3/5] CLASS-F / CLASS-R separation
+[4/5] Claim boundary and residual-risk language
+[5/5] High-risk source pattern checks
+Residual gates intentionally OPEN:
+  - compiler IR/disassembly review
+  - cache-line/alignment and address-trace evidence
+  - fixed-vs-random target timing diagnostics
+  - speculative execution, scheduler, SMT, power, and EM analysis
+PASS source-level CT invariants; target-specific closure remains open

@@ -178,7 +178,11 @@ def normalize_probe_manifest(
                         "refresh_kind": metadata.get("refresh_kind"),
                         "hardware_fingerprint": hardware_fingerprint,
                         "threads": 1,
-                        "build_profile": "release",
+                        # The legacy runner only executed target/release. New
+                        # manifests record the profile explicitly.
+                        "build_profile": metadata.get(
+                            "build_profile", manifest.get("build_profile", "release")
+                        ),
                         "sample_policy": (
                             f"chain:{metadata.get('workload')}:"
                             f"refresh={metadata.get('refresh_mode')}:"

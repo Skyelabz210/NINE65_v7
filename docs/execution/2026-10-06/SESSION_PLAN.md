@@ -1,6 +1,6 @@
 # NINE65 v7: current remote plan and session execution order
 
-Updated 2026-10-07 after hosted run 37639373719. This is the live-session
+Updated 2026-10-07 after PR #167 hosted run set 37668430997–37668431023. This is the live-session
 control sheet for the 43 cards in
 [`tasks.json`](../2026-10-03/tasks.json). The detailed contracts and acceptance
 criteria remain in the individual task cards and the
@@ -117,7 +117,7 @@ fuzz targets (deserialize, encrypt/decrypt and homomorphic), and CT inventory /
 timing gates. Fuzz NTT and K-Elimination pass. The forced-real-refresh check
 reaches the intentional release guard because `nine65_bench` still uses the
 test-only `ShadowHarvester`; that path does not establish a production refresh.
-Full details and links are in the [#92 hosted checkpoint](https://github.com/Skyelabz210/NINE65_v7/issues/92#issuecomment-6044169517).
+Full details and links are in the [#92 hosted checkpoint](https://github.com/Skyelabz210/NINE65_v7/issues/92#issuecomment-6044369172).
 
 The follow-up now corrects the CI harness boundaries without relaxing product
 assertions: `deny.toml` uses cargo-deny's current fail-closed advisory schema;
@@ -132,6 +132,52 @@ workflow/harness fixes do not resolve the release-suite failures, fuzz
 reproducers, or open architecture/security gates. Re-run hosted CI after these
 changes; keep T2, F00 acceptance, and later DAG cards queued behind their own
 passing gates.
+
+PR #166 subsequently merged at `f3bde560644fd079526719fb2231d7b194f5060d`.
+The post-merge harness changes are on draft PR #167. Its first hosted rerun
+passes the CT source/inventory job and completes the exact NTT candidate probe
+(one compatible candidate passes; three invalid candidates are rejected). The
+quick FHE matrix still has four missing result files because the release probe
+uses seeded `ShadowHarvester` and correctly trips the release security guard.
+The next PR #167 update runs that test-entropy probe in debug mode and records
+its build profile, keeping those measurements distinct from release evidence.
+That rerun also found the removed `licenses.unlicensed` cargo-deny key; commit
+`cb6b4a9` removes it. On `cb6b4a9`, CRAM-public gates and application-platform
+gates pass, while CI, the seeded exploratory matrix, CT verification, and three
+fuzz targets fail. CI now parses `deny.toml` but reports the real dependency
+policy findings: `rand 0.8.5` (`RUSTSEC-2026-0097`),
+`crossbeam-epoch 0.9.18` (`RUSTSEC-2026-0204`), unmaintained `bincode`
+(`RUSTSEC-2025-0141`), and the missing `BSD-3-Clause` allowance for `subtle`.
+The follow-up lockfile updates rand to 0.8.8 and crossbeam-epoch to 0.9.21,
+allows the detected BSD-3-Clause license, and scopes the bincode exception to
+the existing direct users (`fhe-service` and `nine65`) with a versioned codec
+migration and compatibility tests tracked as follow-up work. The ignore must
+remain limited to that advisory and those dependents.
+
+The latest CT dudect run identifies a real timing signal in
+`mod_switch_down_dual` when comparing all-zero with uniform coefficients:
+`t_control=0.5894`, `t_signal=91.7987` against threshold 5, with medians
+85,774,551 ns and 86,839,093 ns. The same-class control is below threshold,
+so the result tracks the input class. Keep this gate red until the
+data-dependent behavior is removed or independently justified; do not lower
+the threshold. The full hosted measurement is in
+[`dudect_blocking_output.txt`](../../../artifacts/execution/2026-10-07-session/CI/pr167-ct-37668430997/ct-dudect-blocking/dudect_blocking_output.txt).
+Source review found a plausible cause along the timed path: `to_u256_level`
+calls `crt_reconstruct_u256`, whose `U512::mod_u256` reduction loop branches on
+`rem.ge(m_512)` for each input-derived remainder. Isolate and test that path
+before claiming it is the measured cause; the full-operation dudect result
+does not by itself attribute the signal to one branch.
+The matrix fix selects a debug-profile seeded FHE probe and writes its build
+profile into case metadata and comparison compatibility. The NTT candidate
+probe remains a separate release build. Debug timings stay informational.
+
+The local `allow_insecure` run has started executing the 27 `nine65`
+integration targets after an 11m02s serial compile. Its first target passed
+3/3 tests in 420.61s; the second target is active. The one
+`nine65-extreme-tests` target remains queued. The lockfile/policy and profile
+changes have passed local Python regression, Python syntax, TOML parse,
+formatting and whitespace checks; hosted confirmation is pending on the next
+PR head.
 
 ## Execute in dependency order
 
@@ -212,6 +258,27 @@ commit before each patch.
 8. Before release, run the complete serial `--no-fail-fast` matrix and hosted
    CI on the final SHA. Keep external lattice estimation, external audit, and
    required-check rulesets on the visible blocker list until evidenced.
+9. Finish the active 27-target debug feature matrix and separately run the
+   `nine65-extreme-tests` target. Save source SHA, exact command, full log,
+   target/test counts and exit status. Treat debug entropy timings as
+   functional evidence only, never as optimized performance evidence.
+10. Replace the deployed bincode 1/2 formats through a versioned codec
+    migration with golden compatibility fixtures before expanding serialized
+    key/ciphertext formats. Keep the narrow `RUSTSEC-2025-0141` exception
+    restricted to the existing direct dependents until that work is complete.
+11. After the current harness/dependency follow-up is pushed, confirm the
+    cargo-deny policy and debug seeded matrix in hosted CI, require T2 to run,
+    then preserve and triage every remaining fuzz, CT, arithmetic and explicit
+    refusal failure on the exact head SHA. Do not merge while required gates
+    are red or skipped.
+12. On the latest Fuzz Smoke run, `fuzz_deserialize` requests a 37.95 GiB
+    allocation from the six-byte input `/N/fMWUA`; `fuzz_encrypt_decrypt`
+    decrypts 65,536 as 65,533 for seed 0; and `fuzz_homomorphic` reports
+    `65,292 + 0 = 65,289`. These are separate malformed-input and exactness
+    gates. Reproduce each saved corpus input and repair the decoder bound or
+    arithmetic path with an independent oracle. Preserve the downloaded raw
+    inputs under
+    [`pr167-fuzz-37668431023`](../../../artifacts/execution/2026-10-07-session/CI/pr167-fuzz-37668431023/).
 
 The session will attempt every dependency-ready wave in order. A failed gate
 halts its dependent branch; it does not authorize weakening tests, guessing a

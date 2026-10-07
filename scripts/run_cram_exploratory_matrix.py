@@ -22,7 +22,6 @@ from itertools import product
 from typing import Iterable
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-PROBE = ROOT / "target" / "release" / "cram_exploratory_probe"
 
 
 @dataclass(frozen=True)
@@ -201,18 +200,24 @@ def run(command: list[str], cwd: pathlib.Path = ROOT) -> subprocess.CompletedPro
     return subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
 
 
-def build_probe() -> dict[str, object]:
-    command = [
-        "cargo",
-        "build",
-        "--release",
-        "-p",
-        "nine65",
-        "--bin",
-        "cram_exploratory_probe",
-        "--features",
-        "serde",
-    ]
+def probe_path(cargo_profile: str) -> pathlib.Path:
+    return ROOT / "target" / cargo_profile / "cram_exploratory_probe"
+
+
+def build_probe(cargo_profile: str) -> dict[str, object]:
+    command = ["cargo", "build"]
+    if cargo_profile == "release":
+        command.append("--release")
+    command.extend(
+        [
+            "-p",
+            "nine65",
+            "--bin",
+            "cram_exploratory_probe",
+            "--features",
+            "serde",
+        ]
+    )
     started = time.perf_counter_ns()
     completed = run(command)
     return {
@@ -224,7 +229,9 @@ def build_probe() -> dict[str, object]:
     }
 
 
-def run_case(case: Case, output_dir: pathlib.Path) -> dict[str, object]:
+def run_case(
+    case: Case, output_dir: pathlib.Path, probe_binary: pathlib.Path
+) -> dict[str, object]:
     result_path = output_dir / "cases" / f"{case.case_id}.json"
     stdout_path = output_dir / "logs" / f"{case.case_id}.stdout.log"
     stderr_path = output_dir / "logs" / f"{case.case_id}.stderr.log"
@@ -232,7 +239,7 @@ def run_case(case: Case, output_dir: pathlib.Path) -> dict[str, object]:
     stdout_path.parent.mkdir(parents=True, exist_ok=True)
 
     command = [
-        str(PROBE),
+        str(probe_binary),
         "--config",
         case.config,
         "--workload",
@@ -304,6 +311,12 @@ def summarize(records: Iterable[dict[str, object]]) -> dict[str, int]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=("quick", "standard", "endurance"), default="quick")
+    parser.add_argument(
+        "--cargo-profile",
+        choices=("debug", "release"),
+        default="debug",
+        help="Rust build profile for the seeded exploratory probe (default: debug)",
+    )
     parser.add_argument("--configs", default="")
     parser.add_argument("--workloads", default="")
     parser.add_argument("--seeds", default="")
@@ -323,18 +336,19 @@ def main() -> int:
 
     build = {"skipped": True}
     if not args.skip_build:
-        build = build_probe()
+        build = build_probe(args.cargo_profile)
         (output_dir / "build.json").write_text(
             json.dumps(build, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
         if build["returncode"] != 0:
             print(json.dumps(build, indent=2, sort_keys=True))
             return 2
-    if not PROBE.exists():
-        raise SystemExit(f"probe binary missing: {PROBE}")
+    probe_binary = probe_path(args.cargo_profile)
+    if not probe_binary.exists():
+        raise SystemExit(f"probe binary missing: {probe_binary}")
 
     cases = make_cases(args)
-    records = [run_case(case, output_dir) for case in cases]
+    records = [run_case(case, output_dir, probe_binary) for case in cases]
     manifest = {
         "schema": "nine65-cram-exploratory-matrix-v1",
         "created_utc": timestamp,
@@ -345,6 +359,7 @@ def main() -> int:
         "rustc": command_output(["rustc", "-Vv"]),
         "cargo": command_output(["cargo", "-V"]),
         "profile": args.profile,
+        "build_profile": args.cargo_profile,
         "hardware": hardware_metadata(),
         "build": build,
         "summary": summarize(records),

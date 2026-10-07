@@ -101,12 +101,13 @@ jobs:
             --bin cram_exploratory_probe \
             --bin cram_modulus_probe \
             --features serde
-      - name: Build exploratory probes
+      - name: Build exact NTT candidate probe (release)
         run: |
           cargo build --release -p nine65 \
-            --bin cram_exploratory_probe \
             --bin cram_modulus_probe \
             --features serde
+      - name: Build seeded FHE exploratory probe (debug)
+        run: cargo build -p nine65 --bin cram_exploratory_probe --features serde
       - name: Run exact NTT candidate probe
         run: |
           mkdir -p artifacts/exploratory/moduli
@@ -121,6 +122,7 @@ jobs:
         run: |
           python3 scripts/run_cram_exploratory_matrix.py \
             --profile quick \
+            --cargo-profile debug \
             --skip-build \
             --output-dir artifacts/exploratory/quick
       - name: Produce strict comparison report
@@ -147,12 +149,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
-      - name: Build exploratory probes
+      - name: Build exact NTT candidate probe (release)
         run: |
           cargo build --release -p nine65 \
-            --bin cram_exploratory_probe \
             --bin cram_modulus_probe \
             --features serde
+      - name: Build seeded FHE exploratory probe (debug)
+        run: cargo build -p nine65 --bin cram_exploratory_probe --features serde
       - name: Run dispatched exploratory matrix
         id: dispatched
         continue-on-error: true
@@ -160,6 +163,7 @@ jobs:
         run: |
           args=(
             --profile '${{ inputs.profile }}'
+            --cargo-profile debug
             --skip-build
             --output-dir artifacts/exploratory/dispatched
             --trigger-permille '${{ inputs.trigger_permille }}'
