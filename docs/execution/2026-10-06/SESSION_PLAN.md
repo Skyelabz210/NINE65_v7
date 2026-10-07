@@ -149,10 +149,14 @@ policy findings: `rand 0.8.5` (`RUSTSEC-2026-0097`),
 `crossbeam-epoch 0.9.18` (`RUSTSEC-2026-0204`), unmaintained `bincode`
 (`RUSTSEC-2025-0141`), and the missing `BSD-3-Clause` allowance for `subtle`.
 The follow-up lockfile updates rand to 0.8.8 and crossbeam-epoch to 0.9.21,
-allows the detected BSD-3-Clause license, and scopes the bincode exception to
-the existing direct users (`fhe-service` and `nine65`) with a versioned codec
-migration and compatibility tests tracked as follow-up work. The ignore must
-remain limited to that advisory and those dependents.
+allows the detected BSD-3-Clause license, and gives a reasoned exception for
+the bincode unmaintained advisory while a versioned codec migration and
+compatibility fixtures are planned. The cargo-deny action's current config
+schema accepts only the advisory ID and reason, so this exception cannot be
+restricted mechanically by dependent crate. The current workspace graph has
+two direct users (`fhe-service` and `nine65`); re-review the graph before
+adding consumers, and keep all other advisories fail-closed. The attempted
+dependent-scope field was rejected by hosted cargo-deny and is removed.
 
 The latest CT dudect run identifies a real timing signal in
 `mod_switch_down_dual` when comparing all-zero with uniform coefficients:
@@ -170,6 +174,9 @@ does not by itself attribute the signal to one branch.
 The matrix fix selects a debug-profile seeded FHE probe and writes its build
 profile into case metadata and comparison compatibility. The NTT candidate
 probe remains a separate release build. Debug timings stay informational.
+The hosted v6/v7 comparative smoke also exposed a release build with
+`allow_insecure`; update that deterministic harness to run both comparison
+sides in debug and record the profile consistently before resuming its smoke.
 
 The local `allow_insecure` run has started executing the 27 `nine65`
 integration targets after an 11m02s serial compile. Its first target passed
@@ -264,8 +271,9 @@ commit before each patch.
    functional evidence only, never as optimized performance evidence.
 10. Replace the deployed bincode 1/2 formats through a versioned codec
     migration with golden compatibility fixtures before expanding serialized
-    key/ciphertext formats. Keep the narrow `RUSTSEC-2025-0141` exception
-    restricted to the existing direct dependents until that work is complete.
+    key/ciphertext formats. Keep the reasoned `RUSTSEC-2025-0141` exception
+    limited to that advisory, and re-review dependency consumers until the
+    current cargo-deny action supports a narrower dependent scope.
 11. After the current harness/dependency follow-up is pushed, confirm the
     cargo-deny policy and debug seeded matrix in hosted CI, require T2 to run,
     then preserve and triage every remaining fuzz, CT, arithmetic and explicit

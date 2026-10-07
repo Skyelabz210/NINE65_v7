@@ -3,7 +3,7 @@
 # fail-closed for unmaintained dependencies instead of silently ignoring them.
 unmaintained = "all"
 yanked = "warn"
-ignore = [{ id = "RUSTSEC-2025-0141", reason = "Legacy validated key/ciphertext formats are deployed. Codec replacement needs a versioned migration and compatibility tests. Permit only existing direct users until that migration is done.", allow = ["fhe-service@0.1.0", "nine65@0.1.0"] }]
+ignore = [{ id = "RUSTSEC-2025-0141", reason = "Existing validated key/ciphertext formats use bincode. Replacing them requires a versioned migration and compatibility fixtures; re-review the dependency graph before adding consumers." }]
 
 [licenses]
 allow = [

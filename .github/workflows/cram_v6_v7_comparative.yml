@@ -77,12 +77,12 @@ jobs:
           fi
       - name: Compile comparative probe
         run: |
-          cargo check --release -p nine65 \
+          cargo check -p nine65 \
             --bin cram_comparative_probe \
             --features serde,allow_insecure
       - name: Build comparative probe
         run: |
-          cargo build --release -p nine65 \
+          cargo build -p nine65 \
             --bin cram_comparative_probe \
             --features serde,allow_insecure
       - name: Execute same-process correctness smoke
@@ -90,7 +90,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p artifacts/v6_v7_compare/smoke
-          target/release/cram_comparative_probe \
+          target/debug/cram_comparative_probe \
             --config v6_compat_4096 \
             --iterations 2 \
             --mul-iterations 1 \

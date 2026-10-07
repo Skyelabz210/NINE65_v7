@@ -360,6 +360,8 @@ fn main() {
             "iterations": args.iterations,
             "mul_iterations": args.mul_iterations,
             "allow_insecure_feature": cfg!(feature = "allow_insecure"),
+            "build_profile": if cfg!(debug_assertions) { "debug" } else { "release" },
+            "rng_source": "shadow-test",
             "crate_version": env!("CARGO_PKG_VERSION"),
         },
         "keygen_ns": {
