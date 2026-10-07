@@ -206,8 +206,14 @@ pub fn transduct_with_lift(
         }
     }
 
+    // Fully fallible construction: capacity refusals (an `i128`-uncarryable
+    // basis pair) come back typed instead of panicking inside
+    // `TransductionMap::new`'s `.expect()` — this module's contract is
+    // "typed failure, never a panic". Source-basis validity was already
+    // checked by `validate_source_basis`, so `try_build` re-runs those
+    // checks and clears them.
+    let map = TransductionMap::try_build(basis_a, basis_b).map_err(map_build_error)?;
     // `apply` returns g mod b_j for the canonical g in [0,M_A).
-    let map = TransductionMap::new(basis_a, basis_b);
     let canonical_targets = map.apply(source_residues);
     let m_a = map.m_a();
 
@@ -393,8 +399,10 @@ where
         }
     }
 
+    // Fully fallible construction — same typed-capacity-refusal contract as
+    // [`transduct_with_lift`]; see the comment there.
+    let map = TransductionMap::try_build(basis_a, basis_b).map_err(map_build_error)?;
     // `apply` returns g mod b_j for the canonical g in [0,M_A).
-    let map = TransductionMap::new(basis_a, basis_b);
     let canonical_targets = map.apply(source_residues);
     let m_a = map.m_a();
 
@@ -624,5 +632,33 @@ mod tests {
         assert_eq!(ev.lane(), 2);
         assert_eq!(ev.target_modulus(), 7);
         assert_eq!(ev.k_mod_target(), 2); // 30 mod 7
+    }
+
+    #[test]
+    fn capacity_overflow_fails_typed_not_panicked() {
+        // Basis-A product alone overflows i128, yet every modulus stays
+        // pairwise coprime so the only reachable refusal is capacity.
+        // Before the `try_build` wiring, this input reached
+        // `TransductionMap::new`'s `.expect()` and panicked; under this
+        // module's contract it must come back as a typed capacity refusal
+        // instead.
+        let huge_a = [i128::MAX, i128::MAX - 1, 5];
+        let source = vec![0i128; 3];
+        let k_mod_targets = vec![0i128; S8_BASIS.len()];
+
+        let err = transduct_with_lift(&huge_a, &S8_BASIS, &source, &k_mod_targets).unwrap_err();
+        assert_eq!(
+            err,
+            LiftedTransductionError::Capacity(TransductionCapacityError::BasisAProductOverflow)
+        );
+
+        // Same guarantee through the provider entry point.
+        let provider = PrecomputedLiftEvidence::new(&k_mod_targets);
+        let err =
+            transduct_with_lift_provider(&huge_a, &S8_BASIS, &source, &provider).unwrap_err();
+        assert_eq!(
+            err,
+            LiftedTransductionError::Capacity(TransductionCapacityError::BasisAProductOverflow)
+        );
     }
 }
