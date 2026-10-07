@@ -12,8 +12,13 @@
 //! run twice in-process on IDENTICAL seeds and the resulting ciphertexts
 //! are asserted byte-identical, not just plaintext-identical.
 //!
+//! This target uses seeded `ShadowHarvester` fixtures. `allow_insecure` is
+//! intentionally rejected in release builds, so run it in the debug profile.
+//! Its timings are correctness-adjacent diagnostics and are not comparable to
+//! the optimized release baselines.
+//!
 //! Run:
-//!   cargo test -p nine65 --test cram_public_timings --release \
+//!   cargo test -p nine65 --test cram_public_timings \
 //!     --features allow_insecure -- --ignored --nocapture
 
 use nine65::arithmetic::integer_math::format_ratio;
