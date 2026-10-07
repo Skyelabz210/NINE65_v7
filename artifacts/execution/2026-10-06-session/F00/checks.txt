@@ -1,0 +1,25 @@
+Source observation before the session branch and edits:
+  git status --short --branch
+  ## main...origin/main
+  git rev-parse HEAD
+  017f0163be76c0adb102e581c9e7157ea7ae736a
+  git rev-parse origin/main
+  017f0163be76c0adb102e581c9e7157ea7ae736a
+
+Pinned toolchain after clearing rebuildable Cargo target output and reinstall:
+  rustc --version
+  rustc 1.89.0 (29483883e 2025-08-04)
+  cargo --version
+  cargo 1.89.0 (c24e10642 2025-06-23)
+  df -h /home/acid
+  /dev/vdb  11G  8.6G  1.5G  86% /home/acid
+
+Planning check:
+  python3 scripts/nine65_execution_plan.py validate --self-test
+  Baseline drift reported for four files; 12 self-tests passed; 43-card plan valid.
+
+Metadata discovery only, using stable Cargo before 1.89 recovery:
+  cargo +stable metadata --locked --offline --no-deps --format-version 1
+  exit 0; 12 packages, 94 targets, 43 integration-test targets, 34 in nine65.
+
+No Rust test had executed when this F00 observation was recorded.

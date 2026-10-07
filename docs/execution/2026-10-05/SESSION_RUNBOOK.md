@@ -1,5 +1,9 @@
 # NINE65 v7: execution runbook after the depth-four audit
 
+The [2026-10-06 session plan](../2026-10-06/SESSION_PLAN.md) records the latest
+remote state, infrastructure blockers and complete dependency order. Use it
+with this runbook's existing correctness gates.
+
 Status: **active plan, not a release certificate**. This runbook orders the
 existing [43 task packets](../2026-10-03/tasks.json) for the current session.
 The packets retain their detailed scopes and acceptance rules; a merge, a model
