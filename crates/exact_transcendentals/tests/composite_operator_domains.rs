@@ -131,7 +131,7 @@ fn noncanonical_inputs_have_canonical_ring_outputs() {
 fn full_width_u64_units_and_products_do_not_overflow() {
     for modulus in [u64::MAX, u64::MAX - 58] {
         let inv = Schema::new(&[CramOp::Inv], &[modulus]).unwrap();
-        let expected = ((modulus as u128 + 1) / 2) as u64;
+        let expected = (modulus as u128).div_ceil(2) as u64;
         assert_eq!(inv.apply(&[2], &[0]).unwrap(), [expected]);
         let division = Schema::new(&[CramOp::Div], &[modulus]).unwrap();
         let a = u64::MAX;

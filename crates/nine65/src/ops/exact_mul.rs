@@ -602,6 +602,7 @@ impl<'a> ExactMulEvaluator<'a> {
     /// getting that wrong is silent. Same-crate callers must build `plan`
     /// from `ctx.config.primes` unless deliberately probing a boundary the
     /// plan itself does not enforce (as the operand-bound test does).
+    #[cfg(test)]
     pub(crate) fn with_plan(ctx: &'a RNSFHEContext, plan: ExactMulPlan) -> Self {
         Self { ctx, plan }
     }

@@ -874,7 +874,7 @@ mod tests {
         .unwrap();
 
         let a = [20 % 3, 20 % 5, 20 % 7, 20 % 11, 20 % 13];
-        let b = [6 % 3, 6 % 5, 6 % 7, 6 % 11, 6 % 13];
+        let b = [0, 1, 6, 6, 6]; // residues of 6 in the five lane moduli
         let want = [
             (a[0] + b[0]) % 3,     // Add on ground
             (a[1] + 5 - b[1]) % 5, // Sub on surface
@@ -1030,7 +1030,7 @@ mod tests {
         m.step(2, 0, 1).unwrap();
 
         let a = [20 % 3, 20 % 5, 20 % 7, 20 % 11, 20 % 13];
-        let b = [6 % 3, 6 % 5, 6 % 7, 6 % 11, 6 % 13];
+        let b = [0, 1, 6, 6, 6]; // residues of 6 in the five lane moduli
         assert_eq!(
             m.read(2).unwrap(),
             &[
@@ -1520,7 +1520,7 @@ mod tests {
         }])
         .unwrap();
         assert_eq!(m.projections(), 0);
-        assert_eq!(m.project(2).unwrap(), (41 * 17) % 15_015);
+        assert_eq!(m.project(2).unwrap(), 697); // 41 * 17, below the CRT product
         assert_eq!(m.projections(), 1, "an exit was taken");
         assert_eq!(m.destructive_reads(), 0, "but not a destructive one");
 

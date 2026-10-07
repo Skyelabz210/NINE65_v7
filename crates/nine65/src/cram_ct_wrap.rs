@@ -16,8 +16,6 @@
 //! that wrap the lane-0 modulus — the local-evolution path used in the
 //! generic `cram_add` would diverge.
 
-#![cfg(feature = "exact_transcendentals_backend")]
-
 use exact_transcendentals::cram_ct::{
     default_phase_locks, CramCiphertext, CramOpError, CramWitnessState, S8_CHIMERA_V1,
 };

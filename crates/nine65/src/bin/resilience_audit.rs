@@ -4,7 +4,6 @@
 use nine65::arithmetic::integer_math::format_ratio;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
-use std::time::Instant;
 
 fn audit_fault_injection_detection() {
     println!("\n--- Phase 1: Fault Injection & Safe Basis (S8) Audit ---");

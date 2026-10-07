@@ -13809,7 +13809,6 @@ mod tests {
     /// M_level" (= M_level - 1) is not "-1 mod anchor_prime" reduced further
     /// -- M_level and the anchor primes are coprime. See the caller's note.
     fn naive_k0_mismatch_report(ctx: &RNSFHEContext, poly: &DualRNSPoly) -> String {
-        let primes = &ctx.config.primes[..poly.main.len()];
         let anchors = &ctx.dual_rns.anchor.primes;
         let mut mismatches = 0usize;
         let mut first: Option<usize> = None;
@@ -15377,13 +15376,12 @@ mod tests {
         println!(
             "\n=== secure_128_deep: public direct-square depth across {} seeds ===\n\
              base 2, mul_dual_public, decryption-oracle gated, ceiling {}\n\
-             {:<14} {:>12}  {:<18} {}",
+             {:<14} {:>12}  {:<18} first wrong depth",
             PUBLIC_SQUARE_SURVEY_SEEDS.len(),
             PUBLIC_SQUARE_SURVEY_MAX_DEPTH,
             "seed",
             "last correct",
-            "stop",
-            "first wrong depth"
+            "stop"
         );
 
         let mut results: Vec<(u64, u32)> = Vec::new();
@@ -15725,7 +15723,7 @@ mod tests {
         let big_ws: [u128; 4] = [0, (2 * n_u * q) / 1000, (2 * n_u * q) / 3, 2 * n_u * q - 1];
 
         let mut checked = 0usize;
-        let mut make_poly = |x_w: u128, x_c: u128| -> DualRNSPoly {
+        let make_poly = |x_w: u128, x_c: u128| -> DualRNSPoly {
             // X = x_w * Q + x_c, residues computed modularly (X itself ~2^238).
             let main = ctx
                 .config

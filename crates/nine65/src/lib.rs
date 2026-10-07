@@ -11,7 +11,6 @@
 #![allow(
     clippy::empty_line_after_doc_comments,
     clippy::needless_range_loop,
-    clippy::manual_is_multiple_of,
     clippy::let_and_return,
     clippy::unnecessary_cast,
     clippy::double_comparisons,

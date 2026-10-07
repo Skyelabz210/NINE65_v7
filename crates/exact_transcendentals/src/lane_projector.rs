@@ -88,8 +88,7 @@ pub fn garner_reconstruct(sig: &S8Signature) -> u32 {
     // Working in u64 to hold partial products up to S8_PRODUCT (~10^7).
     let mut x: u64 = sig.residues[0] as u64;
     let mut radix: u64 = S8[0] as u64;
-    for i in 1..S8.len() {
-        let m_i = S8[i];
+    for (i, &m_i) in S8.iter().enumerate().skip(1) {
         let a_i = sig.residues[i] as i64;
         let x_mod_mi = (x % m_i as u64) as i64;
         let diff = ((a_i - x_mod_mi).rem_euclid(m_i as i64)) as u32;

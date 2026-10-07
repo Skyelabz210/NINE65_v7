@@ -444,11 +444,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         all_correct &= correct;
         let mismatch_delta = (decrypted + config.t - expected) % config.t;
         let remaining_mb = budget.remaining_millibits();
-        let candidate_wall_remaining = if args.candidate_wall > multiplication_count {
-            args.candidate_wall - multiplication_count
-        } else {
-            0
-        };
+        let candidate_wall_remaining = args.candidate_wall.saturating_sub(multiplication_count);
 
         traces.push(json!({
             "step": step,

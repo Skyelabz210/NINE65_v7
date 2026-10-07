@@ -356,15 +356,15 @@ mod tests {
 
     #[test]
     fn s8_is_pairwise_coprime() {
-        for i in 0..S8.len() {
-            for j in (i + 1)..S8.len() {
-                let (mut a, mut b) = (S8[i] as u64, S8[j] as u64);
+        for (i, &left_prime) in S8.iter().enumerate() {
+            for &right_prime in S8.iter().skip(i + 1) {
+                let (mut a, mut b) = (left_prime as u64, right_prime as u64);
                 while b != 0 {
                     let t = b;
                     b = a % b;
                     a = t;
                 }
-                assert_eq!(a, 1, "{} and {} not coprime", S8[i], S8[j]);
+                assert_eq!(a, 1, "{} and {} not coprime", left_prime, right_prime);
             }
         }
     }

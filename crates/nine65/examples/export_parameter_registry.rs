@@ -30,7 +30,7 @@ fn exact_product(primes: &[u64]) -> Result<Vec<u64>, String> {
     if primes.is_empty() {
         return Err("cannot export an empty main modulus".to_string());
     }
-    if primes.iter().any(|&prime| prime == 0) {
+    if primes.contains(&0) {
         return Err("main modulus contains a zero lane".to_string());
     }
 

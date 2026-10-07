@@ -148,9 +148,7 @@ pub struct PostSwitchMargin {
 /// assert!(margin.is_critical);
 /// ```
 pub fn post_switch_margin_bits(value_bits: u32, new_capacity_bits: u32) -> PostSwitchMargin {
-    let (utilization, headroom) = if new_capacity_bits == 0 {
-        (100u32, 0u32)
-    } else if value_bits >= new_capacity_bits {
+    let (utilization, headroom) = if new_capacity_bits == 0 || value_bits >= new_capacity_bits {
         (100u32, 0u32)
     } else {
         let util = (value_bits * 100) / new_capacity_bits;
@@ -161,7 +159,7 @@ pub fn post_switch_margin_bits(value_bits: u32, new_capacity_bits: u32) -> PostS
 
     PostSwitchMargin {
         headroom_pct: headroom.min(255) as u8,
-        is_marginal: headroom >= 5 && headroom <= 15,
+        is_marginal: (5..=15).contains(&headroom),
         is_critical: headroom < 5,
     }
 }

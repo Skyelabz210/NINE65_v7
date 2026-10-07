@@ -2,21 +2,19 @@
 //! Audits DIV3, Shadow Entropy, Residue-Native Execution, and Extreme Depth.
 
 use nine65::prelude::*;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 fn audit_div3_mechanism() {
     println!("\n--- Phase 1: DIV3 Noise-Free Multiply Audit ---");
     // We use the exact_transcendentals logic directly
     // mul(a, b) = 1 / ( (1/a) / b )
 
-    let basis = vec![998244353i128, 985661441i128, 754974721i128];
+    let basis = [998244353i128, 985661441i128, 754974721i128];
     let a_val = 42i128;
     let b_val = 13i128;
 
     let a_res: Vec<i128> = basis.iter().map(|&p| a_val % p).collect();
     let b_res: Vec<i128> = basis.iter().map(|&p| b_val % p).collect();
-
-    let one: Vec<i128> = basis.iter().map(|&p| 1 % p).collect();
 
     // Step 1: 1/a
     let inv_a: Vec<i128> = a_res

@@ -195,7 +195,7 @@ impl WindingCRT {
                 .iter()
                 .zip(other.lanes.iter())
                 .zip(self.primes.iter())
-                .map(|((&a, &b), &m)| ((a as u64 + b as u64) % m) as u64)
+                .map(|((&a, &b), &m)| (a + b) % m)
                 .collect();
 
             // Detect carry: if sum of residues wrapped M, winding increments
@@ -236,7 +236,7 @@ impl WindingCRT {
             .iter()
             .zip(other.lanes.iter())
             .zip(self.primes.iter())
-            .map(|((&a, &b), &m)| ((a as u64 * b as u64) % m) as u64)
+            .map(|((&a, &b), &m)| (a * b) % m)
             .collect();
 
         // For winding: the product's winding tower needs the full value.
@@ -529,7 +529,7 @@ impl WassanRing {
             .coefficients
             .iter()
             .zip(other.coefficients.iter())
-            .map(|(&a, &b)| ((a as u64 + b as u64) % self.modulus) as u64)
+            .map(|(&a, &b)| (a + b) % self.modulus)
             .collect();
         WassanRing {
             coefficients,

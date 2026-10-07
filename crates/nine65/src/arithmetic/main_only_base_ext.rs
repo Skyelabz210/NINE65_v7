@@ -326,22 +326,14 @@ impl MainOnlyBaseExt {
         c
     }
 
-    /// Exact rank `rho = floor(sum_i c_i / m_i)` in `[0, lane_count)`.
-    /// Certified fixed-point common path; exact `U256` fallback at boundaries.
-    #[inline]
-    fn rank(&self, c: &[u64; MAX_LANES]) -> (u64, RankPath) {
-        let (rho, _, path) = self.rank_and_half(c, false);
-        (rho, path)
-    }
-
     /// Exact rank, and — when `need_half` — the upper-half decision for the
     /// canonical value `X = N - rho*M` in one pass (WR-1 §A).
     ///
     /// Write `S = sum_i c_i / m_i`. Then `S = rho + X/M` exactly, so `rho` is
     /// `floor(S)` and `X` lies in the upper half iff `frac(S) > 1/2`.
     ///
-    /// The common path (§A1) uses the same certified fixed-point interval as
-    /// [`Self::rank`]: `acc = sum_i floor(c_i * 2^F / m_i)` satisfies
+    /// The common path (§A1) uses a certified fixed-point interval:
+    /// `acc = sum_i floor(c_i * 2^F / m_i)` satisfies
     /// `S * 2^F ∈ [acc, acc + k)`, since each floor loses strictly less than 1.
     /// Writing `acc = rho_lo * 2^F + residual`, the interval decides
     ///

@@ -4,7 +4,6 @@
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
-use std::time::Instant;
 
 fn main() {
     println!("NINE65 v7 Ultimate Breaking Point Audit");

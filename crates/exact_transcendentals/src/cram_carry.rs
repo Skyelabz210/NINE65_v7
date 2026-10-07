@@ -102,12 +102,24 @@ impl Frac {
     pub fn is_zero(&self) -> bool {
         self.num == 0
     }
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "retain API alongside Add impl"
+    )]
     pub fn add(self, o: Self) -> Self {
         Frac::new(self.num * o.den + o.num * self.den, self.den * o.den)
     }
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "retain API alongside Sub impl"
+    )]
     pub fn sub(self, o: Self) -> Self {
         Frac::new(self.num * o.den - o.num * self.den, self.den * o.den)
     }
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "retain API alongside Mul impl"
+    )]
     pub fn mul(self, o: Self) -> Self {
         Frac::new(self.num * o.num, self.den * o.den)
     }
@@ -120,6 +132,36 @@ impl Frac {
     /// `self > other`, by cross-multiplication (denominators are positive).
     pub fn gt(self, o: Self) -> bool {
         self.num * o.den > o.num * self.den
+    }
+}
+
+impl core::ops::Add for Frac {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Frac::new(
+            self.num * other.den + other.num * self.den,
+            self.den * other.den,
+        )
+    }
+}
+
+impl core::ops::Sub for Frac {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Frac::new(
+            self.num * other.den - other.num * self.den,
+            self.den * other.den,
+        )
+    }
+}
+
+impl core::ops::Mul for Frac {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self::Output {
+        Frac::new(self.num * other.num, self.den * other.den)
     }
 }
 

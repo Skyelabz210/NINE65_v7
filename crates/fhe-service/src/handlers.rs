@@ -16,6 +16,7 @@ use std::sync::Mutex;
 use subtle::ConstantTimeEq;
 
 const DEFAULT_RATE_LIMIT_PER_MINUTE: u64 = 120;
+const _: () = assert!(DEFAULT_RATE_LIMIT_PER_MINUTE > 0);
 
 #[derive(Clone, Debug)]
 struct AccessContext {
@@ -730,7 +731,6 @@ mod policy_tests {
 
     #[test]
     fn rate_limiter_state_starts_empty_at_the_documented_default() {
-        assert!(DEFAULT_RATE_LIMIT_PER_MINUTE > 0);
         let metrics = AppMetrics::new();
         assert!(metrics
             .rate_windows

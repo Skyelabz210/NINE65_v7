@@ -336,6 +336,10 @@ fn gcd_u64(mut left: u64, mut right: u64) -> u64 {
 mod tests {
     use super::*;
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "test builder keeps each typed request field explicit at call sites"
+    )]
     fn valid_request<'a>(
         main: &'a [u64],
         anchor: &'a [u64],

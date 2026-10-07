@@ -131,6 +131,10 @@ impl U512 {
         }
     }
 
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "this operation truncates to the fixed 256-bit limb width"
+    )]
     pub fn add(self, other: Self) -> Self {
         let (d0, c0) = self.d0.overflowing_add(other.d0);
         let (d1, c1) = self.d1.overflowing_add(other.d1);
@@ -142,6 +146,10 @@ impl U512 {
         Self { d0, d1, d2, d3 }
     }
 
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "this operation wraps at the fixed 256-bit limb width"
+    )]
     pub fn sub(self, other: Self) -> Self {
         let (d0, b0) = self.d0.overflowing_sub(other.d0);
         let (d1, b1) = self.d1.overflowing_sub(other.d1);
@@ -409,6 +417,10 @@ impl U256 {
     }
 
     #[inline]
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "this operation truncates to the fixed 256-bit width"
+    )]
     pub fn add(self, other: Self) -> Self {
         self.overflowing_add(other).0
     }
@@ -424,6 +436,10 @@ impl U256 {
     }
 
     #[inline]
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "this operation asserts on underflow rather than using Add/Sub semantics"
+    )]
     pub fn sub(self, other: Self) -> Self {
         debug_assert!(self.ge(other), "U256 underflow");
         let (lo, b0) = self.lo.overflowing_sub(other.lo);

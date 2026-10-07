@@ -54,7 +54,7 @@ fn main() {
     println!("\n[Phase 3] Resilience & Restoration Metrics");
 
     let start = Instant::now();
-    let decrypted = ctx.decrypt_dual(&perturbed_ct, &dual_keys.secret_key);
+    let _decrypted = ctx.decrypt_dual(&perturbed_ct, &dual_keys.secret_key);
     let audit_time = start.elapsed();
 
     let residues: Vec<u64> = perturbed_ct.c0.main.iter().map(|l| l[0]).collect();

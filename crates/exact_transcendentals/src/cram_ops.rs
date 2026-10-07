@@ -462,8 +462,6 @@ mod tests {
     use super::*;
 
     const SAFE_BASIS_5: [u64; 5] = [3, 5, 7, 11, 13];
-    const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
-
     // --- Operator basics ---
 
     #[test]

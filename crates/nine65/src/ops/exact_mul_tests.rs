@@ -306,7 +306,7 @@ impl BigOracle {
 
     /// Read one polynomial's coefficients out of standard-domain canonical main
     /// residues, as centered integers. CRT reconstruction lives ONLY here.
-    fn from_residues_centered(&self, limbs: &[Vec<u64>]) -> Vec<Big> {
+    fn centered_from_residues(&self, limbs: &[Vec<u64>]) -> Vec<Big> {
         (0..self.n)
             .map(|k| {
                 let residues: Vec<u64> = limbs.iter().map(|l| l[k]).collect();
@@ -655,7 +655,8 @@ fn exact_tensor_is_bit_identical_to_the_bigint_oracle() {
         let oracle = BigOracle::new(&primes, ring_n, cfg.t);
 
         let corners = corner_coefficients(&oracle, ring_n);
-        let mut cases: Vec<(Vec<Big>, Vec<Big>, Vec<Big>, Vec<Big>)> = Vec::new();
+        type ProductCase = (Vec<Big>, Vec<Big>, Vec<Big>, Vec<Big>);
+        let mut cases: Vec<ProductCase> = Vec::new();
         // Structural corner pairs.
         for a0 in &corners {
             for b0 in corners.iter().take(4) {
@@ -664,7 +665,7 @@ fn exact_tensor_is_bit_identical_to_the_bigint_oracle() {
         }
         // Seeded random full-range centered draws.
         let mut rng = Lcg(0x5EED_0F00 ^ primes.len() as u64);
-        let mut draw = |rng: &mut Lcg| -> Vec<Big> {
+        let draw = |rng: &mut Lcg| -> Vec<Big> {
             (0..ring_n)
                 .map(|_| {
                     // Uniform in [0, Q) built limb by limb, then centered.
@@ -986,11 +987,11 @@ fn hybrid_relinearization_matches_the_bigint_oracle() {
             .add(&ctx.rns_poly_mul(&folded.c1, &keys.secret_key.s), &ctx.rns),
     );
     let s_std = ctx.convert_from_montgomery_form(&keys.secret_key.s);
-    let s_coeffs = oracle.from_residues_centered(&s_std.limbs);
-    let e2_coeffs = oracle.from_residues_centered(&e2.limbs);
+    let s_coeffs = oracle.centered_from_residues(&s_std.limbs);
+    let e2_coeffs = oracle.centered_from_residues(&e2.limbs);
     let s2 = oracle.negacyclic(&s_coeffs, &s_coeffs);
     let want = oracle.negacyclic(&e2_coeffs, &s2);
-    let got = oracle.from_residues_centered(&inner.limbs);
+    let got = oracle.centered_from_residues(&inner.limbs);
 
     // Gadget error bound: sum over (lane, digit) of N * (B-1) * eta.
     let terms: usize = key.digits_per_lane.iter().sum();

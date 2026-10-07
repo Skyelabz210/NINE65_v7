@@ -502,6 +502,10 @@ mod tests {
         ResidueBasisRef, ResidueDivisorRef, ResidueStateRef,
     };
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "test builder keeps each typed request field explicit at call sites"
+    )]
     fn request<'a>(
         main_moduli: &'a [u64],
         anchor_moduli: &'a [u64],

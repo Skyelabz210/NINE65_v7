@@ -13,7 +13,7 @@ fn main() {
         config.t
     );
 
-    let ntt = NTTEngine::new(config.q, config.n);
+    let _ntt = NTTEngine::new(config.q, config.n);
     let mut rng = ShadowHarvester::with_seed(42);
     let ctx = RNSFHEContext::new(&config);
     let dual_keys = ctx.generate_keys_dual_full(&mut rng);

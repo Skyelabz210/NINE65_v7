@@ -18,12 +18,12 @@ fn audit_config(config_name: &str, secure_config: SecureConfig) {
 
     let ntt = NTTEngine::new(config.q, config.n);
     let mut rng = ShadowHarvester::with_seed(42);
-    let keys = KeySet::generate(&config, &ntt, &mut rng);
+    let _keys = KeySet::generate(&config, &ntt, &mut rng);
     let ctx = RNSFHEContext::new(&config);
     let dual_keys = ctx.generate_keys_dual_full(&mut rng);
 
     // Setup Bootstrap for secure_256
-    let mut bootstrap = ClockworkBootstrap::new(&config).ok();
+    let bootstrap = ClockworkBootstrap::new(&config).ok();
     let bootstrap_keys = bootstrap.as_ref().map(|engine| {
         engine
             .generate_keys(&dual_keys.secret_key, &mut rng)
@@ -78,7 +78,7 @@ fn audit_config(config_name: &str, secure_config: SecureConfig) {
     let mut success = true;
     for i in 0..20 {
         let op_val = (i + 1) as u64;
-        let (op_type, cost) = if i % 2 == 0 {
+        let (_op_type, cost) = if i % 2 == 0 {
             ("ADD", NoiseBudget::add_plain_cost())
         } else {
             ("MUL", NoiseBudget::mul_plain_cost(3, &config))
@@ -86,9 +86,7 @@ fn audit_config(config_name: &str, secure_config: SecureConfig) {
 
         // Bootstrap if budget low
         if budget.remaining_millibits() < cost {
-            if let (Some(ref engine), Some(ref b_keys)) =
-                (bootstrap.as_ref(), bootstrap_keys.as_ref())
-            {
+            if let (Some(engine), Some(b_keys)) = (bootstrap.as_ref(), bootstrap_keys.as_ref()) {
                 curr_ct = engine
                     .bootstrap(&curr_ct, &b_keys.bsk, &b_keys.ksk)
                     .expect("Bootstrap failed");

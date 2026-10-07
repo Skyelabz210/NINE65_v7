@@ -129,8 +129,8 @@ impl PageBlock {
         // Compute winding tower digits via iterated K-Elimination.
         // For most values within the page range, winding is 0.
         let m_product = self.product_u128();
-        let winding = if magnitude as u128 >= m_product && m_product > 0 && m_product < u128::MAX {
-            let k = magnitude as u128 / m_product;
+        let winding = if magnitude >= m_product && m_product > 0 && m_product < u128::MAX {
+            let k = magnitude / m_product;
             vec![k as i64]
         } else {
             vec![]
@@ -316,7 +316,7 @@ mod tests {
 
         // Transport Core {3,7,11,13}: M = 3003
         let lift = page.chimera_lift(&addr, &TRANSPORT_CORE);
-        assert_eq!(lift, Some(1000 % 3003)); // 1000 mod 3003 = 1000
+        assert_eq!(lift, Some(1000)); // 1000 mod 3003 = 1000
     }
 
     #[test]

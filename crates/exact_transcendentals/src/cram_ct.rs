@@ -891,7 +891,7 @@ fn negacyclic_convolve_signatures(
     }
     for (lane_idx, &p) in crate::triad::S8.iter().enumerate() {
         let p_u64 = p as u64;
-        for k in 0..n {
+        for (k, signature) in signatures.iter_mut().enumerate() {
             let mut acc: u64 = 0;
             // Positive terms: i + j = k.
             for i in 0..=k {
@@ -909,7 +909,7 @@ fn negacyclic_convolve_signatures(
                     % p_u64;
                 acc = (acc + p_u64 - prod) % p_u64;
             }
-            signatures[k].residues[lane_idx] = acc as u32;
+            signature.residues[lane_idx] = acc as u32;
         }
     }
     Ok(PolynomialS8Signature { signatures })
@@ -1238,7 +1238,7 @@ fn is_basis_smooth(mut d: u64, basis: SafeBasis) -> bool {
 /// signalling the router to fall back to D1/D2/D3.
 fn s8_lane_inverses(d: i128) -> Option<[u32; 8]> {
     let abs_d = d.unsigned_abs() as u64;
-    let sign = if d < 0 { true } else { false };
+    let sign = d < 0;
     let mut out = [0u32; 8];
     for (i, &p) in crate::triad::S8.iter().enumerate() {
         let r = (abs_d % p as u64) as u32;
@@ -1589,7 +1589,7 @@ impl<C> CramCiphertext<C> {
         self.verify().map_err(CramOpError::InputVerifyFailed)?;
         let plan = select_division_lane(divisor, self.topology.basis);
 
-        let aux_set = self.witness.c0_aux.as_ref().ok_or_else(|| {
+        let aux_set = self.witness.c0_aux.as_ref().ok_or({
             CramOpError::DivisionLaneNotImplemented {
                 primary: plan.primary,
                 gcd_with_basis: plan.gcd_with_basis,
@@ -2072,7 +2072,7 @@ impl<C> CramCiphertext<C> {
             let kappa = k_elim_winding(x_main, m_main, r_anchor, anchor);
 
             // Corridor: |κ| < m_anchor / 2.
-            if (kappa.unsigned_abs() as u32) >= anchor / 2 + 1 {
+            if (kappa.unsigned_abs() as u32) > anchor / 2 {
                 return Err(CramOpError::KElim(KElimError::CorridorViolated {
                     coeff_index: i,
                     kappa,
