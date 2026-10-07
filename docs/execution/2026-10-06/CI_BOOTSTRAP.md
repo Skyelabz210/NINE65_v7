@@ -62,7 +62,25 @@ arithmetic and APIs in the K-Elimination harness, and preserves failing
 artifacts. See the [Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md) for inputs,
 interpretations and next actions. Hosted confirmation is pending.
 
+PR #165's latest hosted run completed at head `f0545a0`. In Fuzz Smoke run
+[37639373719](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37639373719),
+all five targets compiled and completed their bounded run: `fuzz_ntt` passed
+7,591 executions in 61 seconds, `fuzz_k_elimination` passed, and the
+deserializer, encrypt/decrypt and homomorphic targets failed on preserved
+inputs. The latest deserialize witness attempts a 101,866,518,432-byte
+allocation from six bytes; the other two report plaintext round-trip and add
+mismatches. These are unresolved correctness/safety gates, recorded with exact
+repro data and artifact hashes in [Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md).
+
+On the same PR head, WASM client boundary, T1 static analysis, T3 Gemini and
+mode/claim/benchmark policy pass. T1 Fast Gate fails strict Clippy; the
+authenticated service boundary and private-feedback stack also fail at
+Clippy. T2 and all T4 jobs are skipped. The workflow wiring is active, but the
+required checks are not green or enforced.
+
 Next CI gate: triage the workspace Clippy errors without blanket lint allows;
 make T1 green so T2 runs on the same indexed head; preserve T2's failing tests;
-then configure required check names/rulesets. A job skipped because T1 failed
-does not count as execution. #79 and release remain open.
+then configure required check names/rulesets. In parallel, reproduce and
+resolve the three preserved fuzz failures without weakening their assertions.
+A job skipped because T1 failed does not count as execution. #79 and release
+remain open.
