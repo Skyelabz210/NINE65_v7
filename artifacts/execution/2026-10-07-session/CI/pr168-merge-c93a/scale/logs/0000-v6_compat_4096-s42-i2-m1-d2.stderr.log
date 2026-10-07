@@ -1,0 +1,4 @@
+
+thread 'main' panicked at crates/nine65/src/bin/cram_comparative_probe.rs:270:18:
+DualRNS multiplication failed: InvalidParameter { message: "gadget decomposition capacity exceeded at coefficient 0: the polynomial's exact value needs 256 bits but the evaluation key's gadget spans only 96 bits (6 digits of base 2^16). Relinearize a RESCALED (canonical, < M_level) polynomial — an unrescaled tensor term is ~2*log2(Q)+log2(N) bits wide." }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

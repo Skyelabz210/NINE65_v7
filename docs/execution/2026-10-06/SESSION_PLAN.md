@@ -1,6 +1,6 @@
 # NINE65 v7: current remote plan and session execution order
 
-Updated 2026-10-07 after PR #167 merged as `25e19ee`. This is the
+Updated 2026-10-07 after PR #168 merged as `c93a058`. This is the
 live-session control sheet for the 43 cards in
 [`tasks.json`](../2026-10-03/tasks.json). The detailed contracts and acceptance
 criteria remain in the individual task cards and the
@@ -308,27 +308,37 @@ through dependency-ready cards with their own evidence and review.
 
 ### Next and following execution order for this session
 
-1. Collect the final T2 result for run 37673287983. Keep the workspace gate
-   open until its job completes and record any failures against the exact
-   merged SHA.
+1. Record T2 run 37673287983 for merged PR #167 as failed, and PR #168 run
+   37676097379 as complete with 856 passed, 94 failed, 125 ignored. The new
+   arithmetic differential test fails at dividend 2, modulus 2, confirming
+   the partial-mask bug in the tested prototype. Merge-ref T2 run
+   37676889216 is still running job 112983125650; collect its final result.
+   Verify the one-bit widening fix on the follow-up head before accepting any
+   dependent arithmetic result.
 2. Let the already-running 27-target `allow_insecure` debug matrix finish in
    `/home/acid/Projects/NINE65_v7`; save the complete log and exit status.
    Then run `nine65-extreme-tests/full_system_measurement` serially and record
    it as a separate gate. Do not start a competing local Cargo build while
    this matrix is consuming the host.
-3. On `codex/2026-10-07-ct-fuzz-followup`, finish the CT reducer hypothesis.
-   Draft PR #168 is open at `c61edecedda489039868f3082abb70fd779273fb`;
-   source and documentation formatting checks passed before publication.
-   Collect hosted T1/T2 plus the blocking isolated-reducer and full-path
-   dudect measurements. Keep the timing gate red unless both required
-   contrasts pass with clean controls; if the isolated reducer passes but the
-   full path fails, inspect the remaining CRT and modulus-switch operations.
-4. Triage the three merged-head fuzz reproducers independently: the
-   short-input deserialize allocation, encrypt/decrypt roundtrip mismatch,
-   and homomorphic-addition mismatch. Add a minimal regression for each
-   demonstrated defect, fix only with an exact correctness-preserving change,
-   and retain the original and minimized corpus plus hosted logs. Rerun all
-   five fuzz targets; the two passing targets must remain passing.
+3. Continue on `codex/2026-10-07-ct-regression-followup`, based on the new
+   merge commit. PR #168 was merged by the repository owner at
+   `c93a058e2106441029647e69e252d3b410fdeab1` while T2 and correctness gates
+   were unresolved. Its isolated reducer and full `mod_switch_down_dual`
+   timing contrasts were below threshold, but those measurements came from an
+   incorrect selector mask and do not validate the fix. Two CRAM-public
+   multiply tests that passed on merged `0f85873` fail on the changed head.
+   Source review found that the code widened a 64-bit all-ones selector and
+   then negated it in `u128`, producing a partial mask. The current branch
+   expands the one-bit condition directly at 128-bit width; keep this fix
+   unaccepted until the arithmetic differential test, T2, CT rerun, and CRAM
+   tests pass. Do not merge further changes through these failures.
+4. Triage the current fuzz failures independently: a five-byte deserialize
+   allocation, the encrypt/decrypt result 65,292 → 65,289, and homomorphic
+   scalar multiplication 512 × 65,404 → 61,587 (expected 62,978). Preserve
+   the earlier homomorphic-addition witness 65,331 + 0 → 65,328 as a
+   separate case. Add minimal regressions for demonstrated defects; keep
+   assertions intact and retain original/minimized corpora and logs. Rerun all
+   five fuzz targets; NTT and K-Elimination must remain passing.
 5. Update issue #92 and the session record with final T2, matrix, extreme,
    CT, and fuzz evidence. Keep the merged PR status and follow-up PR linked;
    do not treat a green configuration gate as acceptance of F00/F02 or as
@@ -342,7 +352,7 @@ through dependency-ready cards with their own evidence and review.
    reconcile V05 on one final SHA. A session stop or failed gate records the
    exact next card and blocker; it does not waive the acceptance criteria.
 
-### Follow-up PR #168 checkpoint
+### Historical initial PR #168 check snapshot
 
 Draft PR [#168](https://github.com/Skyelabz210/NINE65_v7/pull/168) is based on
 merged main and carries commit `c61edecedda489039868f3082abb70fd779273fb`.
@@ -355,6 +365,59 @@ separate T2 run on merged PR #167, 37673287983, also remains in progress.
 This PR's reducer and arithmetic test are still uncompiled and unmeasured
 locally; hosted results are the validation gate. Its fuzz jobs are evidence
 replays only, and all three regressions remain open.
+
+### PR #168 merged checkpoint `c93a058`
+
+PR #168 was merged by the repository owner at
+`c93a058e2106441029647e69e252d3b410fdeab1` at 2026-10-07 19:45:24 UTC. The
+tested PR head was `904448a73fb17427a7d05bde16e2d74c6b74e4d0`.
+
+On that head, T1 Fast Gate, static analysis, T3, CT source/functional, and
+application platform pass. T2 run 37676097379 completed with 856 passed, 94
+failed, and 125 ignored. The new arithmetic differential test fails for
+dividend 2 and modulus 2, confirming the partial-mask bug in that tested
+prototype; the full failure list is retained in `t2-workspace.log`.
+
+CT run 37676097485 has a below-threshold isolated reducer score
+(`t_control=1.1190`, `t_signal=0.1719`) and full-path score
+(`t_control=0.0504`, `t_signal=1.0673`), but its overall job fails a separate
+`AdjacencyKElim::extract_k` contrast (`t_control=4.0863`, `t_signal=6.3291`).
+Merge-ref CT run 37676889107 passes its statistical tests, including the
+reducer (signal 1.1272), full path (signal 1.2671), and adjacency contrast
+(signal 3.6537). Both sets used the incorrect arithmetic prototype, so neither
+set validates the fix. CRAM-public run 37676097325 fails two multiply tests
+with gadget-capacity errors, despite both passing on merged `0f85873`. The
+mask-width cause is fixed on branch `codex/2026-10-07-ct-regression-followup`;
+the arithmetic differential test, T2, CT rerun, and CRAM tests on that repair
+still need hosted validation.
+
+Fuzz run 37676097295 reproduces the short-input deserialize allocation and
+encryption round-trip mismatch. Its homomorphic case passes addition and
+subtraction but fails scalar multiplication (`512 * 65,404` returns `61,587`,
+expected `62,978`). NTT and K-Elimination pass. Exact CRAM and exact Dual-RNS
+checks fail the recorded source-bound architecture findings. Raw logs and
+corpora for this head are retained under
+[`pr168-904448a`](../../../artifacts/execution/2026-10-07-session/CI/pr168-904448a/).
+
+The merge-ref CI run 37676889216 has T1 Fast Gate and static analysis passing;
+T2 job 112983125650 is still running. Merge-ref CT run 37676889107 passed its timing tests, but
+those scores use the incorrect arithmetic prototype and are not accepted.
+Fuzz Smoke run 37676889257 fails on a five-byte deserialization allocation,
+encrypt/decrypt 15,110 → 15,109, and addition 0 + 35,073 → 35,071. CRAM-public
+run 37676889200 repeats the two gadget-capacity failures. Scale run
+37676889143 and comparative run 37676889066 both stop at DualRNS multiplication
+because exact values need 254–256 bits while the evaluation key spans 96–128
+bits. Residue-native run 37676889104 fails its existing `garner_reconstruct_subset`
+source gate; exact CRAM and exact Dual-RNS retain their source-bound failures.
+Audit remediation run 37676889186 and exploratory run 37676889127 also fail.
+These results are saved under `pr168-merge-c93a/`.
+
+The partial-mask cause is now concrete: `select_mask_ct` subtracted a widened
+`u64::MAX` from zero in `u128`, which is not a 128-bit all-ones mask. The
+current branch passes a 0/1 condition and expands it after conversion to
+`u128`. Keep the branch draft and require the differential test, T2, CRAM,
+comparative, scale, fuzz, and CT checks on this repair before treating any
+measurement as acceptance evidence.
 
 ## Execute in dependency order
 

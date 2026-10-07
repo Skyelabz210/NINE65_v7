@@ -1,0 +1,557 @@
+cram-public-correctness	Set up job	﻿2026-10-07T19:39:12.6571885Z Current runner version: '2.337.0'
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6599718Z ##[group]Runner Image Provisioner
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6600771Z Hosted Compute Agent
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6601412Z Version: 20260901.588
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6602161Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6602955Z Build Date: 2026-09-01T19:56:44Z
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6603669Z Worker ID: {eef3247d-0ca2-4d83-bbd8-fd1a648fd4e6}
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6604683Z Azure Region: westus
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6605290Z ##[endgroup]
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6606641Z ##[group]Operating System
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6607387Z Ubuntu
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6607946Z 24.04.5
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6608591Z LTS
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6609138Z ##[endgroup]
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6609742Z ##[group]Runner Image
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6610439Z Image: ubuntu-24.04
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6611037Z Version: 20260927.320.1
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6612182Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6613972Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6615258Z ##[endgroup]
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6616381Z ##[group]GITHUB_TOKEN Permissions
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6618606Z Contents: read
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6619281Z Metadata: read
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6619933Z ##[endgroup]
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6622002Z Secret source: Actions
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6623071Z Cache mode: write
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6623834Z Prepare workflow directory
+cram-public-correctness	Set up job	2026-10-07T19:39:12.6987387Z Prepare all required actions
+cram-public-correctness	Set up job	2026-10-07T19:39:12.7046678Z Getting action download info
+cram-public-correctness	Set up job	2026-10-07T19:39:13.0725338Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+cram-public-correctness	Set up job	2026-10-07T19:39:13.1772436Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+cram-public-correctness	Set up job	2026-10-07T19:39:13.5320969Z Complete job name: cram-public-correctness
+cram-public-correctness	Run actions/checkout@v4	﻿2026-10-07T19:39:13.6100883Z ##[group]Run actions/checkout@v4
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6101754Z with:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6102211Z   repository: Skyelabz210/NINE65_v7
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6106569Z   token: ***
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6107016Z   ssh-strict: true
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6107463Z   ssh-user: git
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6107920Z   persist-credentials: true
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6108415Z   clean: true
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6108872Z   sparse-checkout-cone-mode: true
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6109398Z   fetch-depth: 1
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6109839Z   fetch-tags: false
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6110285Z   show-progress: true
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6110744Z   lfs: false
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6111160Z   submodules: false
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6111615Z   set-safe-directory: true
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6112135Z   allow-unsafe-pr-checkout: false
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.6112876Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7164569Z Syncing repository: Skyelabz210/NINE65_v7
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7167440Z ##[group]Getting Git version info
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7168546Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7170181Z [command]/usr/bin/git version
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7305068Z git version 2.55.0
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7334367Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7346813Z Temporarily overriding HOME='/home/runner/work/_temp/fae967f6-5935-4288-b2ce-693c4d68c18f' before making global git config changes
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7365137Z Adding repository directory to the temporary git global config as a safe directory
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7367342Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7415870Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7421069Z ##[group]Initializing the repository
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7427229Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7556239Z hint: Using 'master' as the name for the initial branch. This default branch name
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7558443Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7562999Z hint: to use in all of your new repositories, which will suppress this warning,
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7564640Z hint: call:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7565620Z hint:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7566566Z hint: 	git config --global init.defaultBranch <name>
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7567691Z hint:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7568732Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7570495Z hint: 'development'. The just-created branch can be renamed via this command:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7571848Z hint:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7572648Z hint: 	git branch -m <name>
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7573528Z hint:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7575162Z hint: Disable this message with "git config set advice.defaultBranchName false"
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7577076Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7580099Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7661119Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7662631Z ##[group]Disabling automatic garbage collection
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7663959Z [command]/usr/bin/git config --local gc.auto 0
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7726520Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7727828Z ##[group]Setting up auth
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7729081Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.7770001Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8161907Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8199933Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8444817Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8482820Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8725529Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8767206Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8768120Z ##[group]Fetching the repository
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:13.8776378Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6d275b51021cf71fa6a01de6baf097b93eb15338:refs/remotes/pull/168/merge
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8089375Z From https://github.com/Skyelabz210/NINE65_v7
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8091042Z  * [new ref]         6d275b51021cf71fa6a01de6baf097b93eb15338 -> pull/168/merge
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8093942Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8095058Z ##[group]Determining the checkout info
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8096209Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8102578Z [command]/usr/bin/git sparse-checkout disable
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8158207Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8197341Z ##[group]Checking out the ref
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.8198297Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/168/merge
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9327693Z Note: switching to 'refs/remotes/pull/168/merge'.
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9328537Z 
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9329042Z You are in 'detached HEAD' state. You can look around, make experimental
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9330345Z changes and commit them, and you can discard any commits you make in this
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9331597Z state without impacting any branches by switching back to a branch.
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9332338Z 
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9332848Z If you want to create a new branch to retain commits you create, you may
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9333983Z do so (now or later) by using -c with the switch command. Example:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9334835Z 
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9335054Z   git switch -c <new-branch-name>
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9335613Z 
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9336153Z Or undo this operation with:
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9336601Z 
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9336845Z   git switch -
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9337223Z 
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9337824Z Turn off this advice by setting config variable advice.detachedHead to false
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9338916Z 
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9340319Z HEAD is now at 6d275b5 Merge 904448a73fb17427a7d05bde16e2d74c6b74e4d0 into 25e19eeffc82ef3a84d77d76c50e5fc9eb9a026f
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9343685Z ##[endgroup]
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9389968Z [command]/usr/bin/git log -1 --format=%H
+cram-public-correctness	Run actions/checkout@v4	2026-10-07T19:39:15.9419128Z 6d275b51021cf71fa6a01de6baf097b93eb15338
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	﻿2026-10-07T19:39:16.0071336Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0072147Z with:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0072598Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0157298Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0236268Z ##[group]Run if [[ -z $toolchain ]]; then
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0237162Z [36;1mif [[ -z $toolchain ]]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0238542Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0240053Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0240822Z [36;1m  exit 1[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0241734Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0243303Z [36;1m  if [[ Linux == macOS ]]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0245024Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0246458Z [36;1m  else[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0247504Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0248728Z [36;1m  fi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0249468Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0250881Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0252106Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0253501Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0254934Z [36;1melse[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0255549Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0256316Z [36;1mfi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0521195Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0522131Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0522571Z   toolchain: 1.89.0
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0523060Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0679798Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=52]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0695749Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0743756Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0745841Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0747562Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0748880Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0816747Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0817623Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0818064Z   targets: 
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0818562Z   components: 
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0819048Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0933733Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=23]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0938491Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0976362Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.0977795Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1047500Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1048378Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1161877Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=22]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1166763Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1211879Z ##[group]Run if ! command -v rustup &>/dev/null; then
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1212834Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1215241Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1217235Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1217996Z [36;1mfi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1286984Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1287851Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1288329Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1288956Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1394739Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=22]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1399439Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1410086Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1424034Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1462026Z ##[group]Run log=$(mktemp)
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1462658Z [36;1mlog=$(mktemp)[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1463214Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1463847Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1465425Z [36;1m  if rustup toolchain install 1.89.0 --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1466814Z [36;1m    break[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1467288Z [36;1m  else[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1467759Z [36;1m    status=$?[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1468267Z [36;1m  fi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1468973Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1470414Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1471626Z [36;1m    exit "$status"[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1472175Z [36;1m  fi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1473065Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1474156Z [36;1m  sleep 30[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1474807Z [36;1mdone[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1542501Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1543335Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1543795Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1544702Z   RUSTUP_PERMIT_COPY_RENAME: 1
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.1545287Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.2036824Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.3035350Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:16.3036587Z info: downloading 3 components
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9671435Z 
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9754478Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9755160Z 
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9851768Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=7842]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9860461Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9890716Z ##[group]Run rustup default 1.89.0 --force-non-host
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9891166Z [36;1mrustup default 1.89.0 --force-non-host[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9963601Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9964463Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9964741Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:23.9965048Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0100802Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0106289Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0106762Z 
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0183966Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0184887Z 
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0185540Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0201935Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=34]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0205033Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0256860Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0257763Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0258450Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0258997Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0328263Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0328688Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0328986Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0329326Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0707566Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=50]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0710741Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0738281Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0738765Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0739158Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0739500Z [36;1mfi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0813545Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0814002Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0814511Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0814827Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0913366Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=20]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0916219Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0942186Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0942623Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0943014Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.0943361Z [36;1mfi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1010165Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1010571Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1010851Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1011162Z   CARGO_INCREMENTAL: 0
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1011436Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1106972Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=18]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1109462Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1137205Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1137770Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1138539Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1139315Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1140132Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1140725Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1141276Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1141881Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1142445Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1142850Z [36;1m  fi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1143245Z [36;1mfi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1211717Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1212129Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1212399Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1212724Z   CARGO_INCREMENTAL: 0
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1213008Z   CARGO_TERM_COLOR: always
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1213294Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1564090Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=45]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1567538Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1596423Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1597233Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1597887Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1598415Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1598788Z [36;1mfi[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1673251Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1673672Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1673950Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1674480Z   CARGO_INCREMENTAL: 0
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1674784Z   CARGO_TERM_COLOR: always
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1675074Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1912500Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=34]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1917033Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1944748Z ##[group]Run rustc +1.89.0 --version --verbose
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.1945159Z [36;1mrustc +1.89.0 --version --verbose[0m
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2017049Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2017424Z env:
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2017662Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2017958Z   CARGO_INCREMENTAL: 0
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2018198Z   CARGO_TERM_COLOR: always
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2018436Z ##[endgroup]
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2224113Z rustc 1.89.0 (29483883e 2025-08-04)
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2225407Z binary: rustc
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2226383Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2227006Z commit-date: 2025-08-04
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2227267Z host: x86_64-unknown-linux-gnu
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2227525Z release: 1.89.0
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2227752Z LLVM version: 20.1.7
+cram-public-correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:39:24.2246003Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=32]
+cram-public-correctness	Build debug test harness (allow_insecure)	﻿2026-10-07T19:39:24.2307147Z ##[group]Run cargo build -p nine65 --features allow_insecure
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.2307630Z [36;1mcargo build -p nine65 --features allow_insecure[0m
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.2378905Z shell: /usr/bin/bash -e {0}
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.2379189Z env:
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.2379420Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.2379700Z   CARGO_INCREMENTAL: 0
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.2379946Z   CARGO_TERM_COLOR: always
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.2380190Z ##[endgroup]
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.3036487Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.3828294Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:24.3970546Z info: downloading 2 components
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.0742898Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.0743782Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.0744586Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.0970774Z [1m[32m    Updating[0m crates.io index
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.4394577Z [1m[32m Downloading[0m crates ...
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6370989Z [1m[32m  Downloaded[0m block-buffer v0.10.4
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6427197Z [1m[32m  Downloaded[0m thiserror v1.0.69
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6492480Z [1m[32m  Downloaded[0m zeroize_derive v1.4.2
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6503792Z [1m[32m  Downloaded[0m subtle v2.6.1
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6518342Z [1m[32m  Downloaded[0m proc-macro2 v1.0.103
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6552387Z [1m[32m  Downloaded[0m generic-array v0.14.7
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6569776Z [1m[32m  Downloaded[0m cpufeatures v0.2.17
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6604801Z [1m[32m  Downloaded[0m syn v2.0.111
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6722100Z [1m[32m  Downloaded[0m thiserror-impl v1.0.69
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6736107Z [1m[32m  Downloaded[0m typenum v1.19.0
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6765051Z [1m[32m  Downloaded[0m getrandom v0.2.16
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.6796420Z [1m[32m  Downloaded[0m digest v0.10.7
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.7377281Z [1m[32m  Downloaded[0m version_check v0.9.5
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.7392464Z [1m[32m  Downloaded[0m sha2 v0.10.9
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.7419961Z [1m[32m  Downloaded[0m crypto-common v0.1.7
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.7567536Z [1m[32m  Downloaded[0m libc v0.2.178
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8001453Z [1m[32m  Downloaded[0m unicode-ident v1.0.22
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8034795Z [1m[32m  Downloaded[0m cfg-if v1.0.4
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8086571Z [1m[32m  Downloaded[0m quote v1.0.42
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8116365Z [1m[32m  Downloaded[0m zeroize v1.8.2
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8240673Z [1m[32m Downloading[0m crates ...
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8393979Z [1m[32m  Downloaded[0m criterion v0.5.1
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8596864Z [1m[32m Downloading[0m crates ...
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.8911431Z [1m[32m  Downloaded[0m proptest v1.9.0
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9028611Z [1m[32m Downloading[0m crates ...
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9134054Z [1m[32m  Downloaded[0m rand_chacha v0.3.1
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9159221Z [1m[32m Downloading[0m crates ...
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9476540Z [1m[32m  Downloaded[0m rand_core v0.6.4
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9610259Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9611048Z [1m[32m   Compiling[0m quote v1.0.42
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9611971Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:25.9612778Z [1m[32m   Compiling[0m version_check v0.9.5
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.0229631Z [1m[32m   Compiling[0m typenum v1.19.0
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.2025710Z [1m[32m   Compiling[0m generic-array v0.14.7
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.2386023Z [1m[32m   Compiling[0m libc v0.2.178
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.3937624Z [1m[32m   Compiling[0m thiserror v1.0.69
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.5645490Z [1m[32m   Compiling[0m cfg-if v1.0.4
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.8468410Z [1m[32m   Compiling[0m syn v2.0.111
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.8536763Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:26.8789971Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:27.1106527Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:27.4054694Z [1m[32m   Compiling[0m crypto-common v0.1.7
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:27.4650372Z [1m[32m   Compiling[0m block-buffer v0.10.4
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:27.4985919Z [1m[32m   Compiling[0m getrandom v0.2.16
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:27.5375777Z [1m[32m   Compiling[0m digest v0.10.7
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:27.6105812Z [1m[32m   Compiling[0m subtle v2.6.1
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:27.6686524Z [1m[32m   Compiling[0m sha2 v0.10.9
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:29.7832948Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:29.7833783Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:30.2762722Z [1m[32m   Compiling[0m zeroize v1.8.2
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:30.3280937Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:30.4615922Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+cram-public-correctness	Build debug test harness (allow_insecure)	2026-10-07T19:39:38.4013156Z [1m[32m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 13.33s
+cram-public-correctness	CRAM-public mode surface (M1)	﻿2026-10-07T19:39:38.4548787Z ##[group]Run cargo test -p nine65 --test cram_public_mode --features allow_insecure
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.4549411Z [36;1mcargo test -p nine65 --test cram_public_mode --features allow_insecure[0m
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.4617462Z shell: /usr/bin/bash -e {0}
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.4617733Z env:
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.4617950Z   CARGO_HOME: /home/runner/.cargo
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.4618223Z   CARGO_INCREMENTAL: 0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.4618457Z   CARGO_TERM_COLOR: always
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.4618711Z ##[endgroup]
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5071965Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5072764Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5073294Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5286649Z [1m[32m Downloading[0m crates ...
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5633236Z [1m[32m  Downloaded[0m ciborium-ll v0.2.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5650874Z [1m[32m  Downloaded[0m ciborium-io v0.2.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5667605Z [1m[32m  Downloaded[0m autocfg v1.5.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5707148Z [1m[32m  Downloaded[0m aho-corasick v1.1.4
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5767315Z [1m[32m  Downloaded[0m num-traits v0.2.19
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5800578Z [1m[32m  Downloaded[0m itoa v1.0.16
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5820202Z [1m[32m  Downloaded[0m tinytemplate v1.2.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5842973Z [1m[32m  Downloaded[0m walkdir v2.5.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5866622Z [1m[32m  Downloaded[0m serde_derive v1.0.228
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.5904159Z [1m[32m  Downloaded[0m plotters v0.3.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6005771Z [1m[32m  Downloaded[0m regex v1.12.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6078805Z [1m[32m  Downloaded[0m rand_xorshift v0.4.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6095223Z [1m[32m  Downloaded[0m rustix v1.1.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6392524Z [1m[32m  Downloaded[0m tempfile v3.24.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6425747Z [1m[32m  Downloaded[0m plotters-backend v0.3.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6444122Z [1m[32m  Downloaded[0m errno v0.3.14
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6473057Z [1m[32m  Downloaded[0m is-terminal v0.4.17
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6492344Z [1m[32m  Downloaded[0m wait-timeout v0.2.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6520929Z [1m[32m  Downloaded[0m zmij v0.1.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6551389Z [1m[32m  Downloaded[0m rusty-fork v0.3.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6578399Z [1m[32m  Downloaded[0m getrandom v0.3.4
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6638239Z [1m[32m  Downloaded[0m serde v1.0.228
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6687958Z [1m[32m  Downloaded[0m memchr v2.7.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6750161Z [1m[32m  Downloaded[0m zerocopy-derive v0.8.31
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6828297Z [1m[32m  Downloaded[0m ppv-lite86 v0.2.21
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6844411Z [1m[32m  Downloaded[0m serde_json v1.0.147
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.6923842Z [1m[32m  Downloaded[0m rayon v1.11.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7026020Z [1m[32m  Downloaded[0m itertools v0.10.5
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7093887Z [1m[32m  Downloaded[0m rand v0.9.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7135767Z [1m[32m  Downloaded[0m clap v4.5.53
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7241547Z [1m[32m  Downloaded[0m rayon-core v1.13.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7284485Z [1m[32m  Downloaded[0m criterion-plot v0.5.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7303981Z [1m[32m  Downloaded[0m bitflags v2.10.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7350287Z [1m[32m  Downloaded[0m rand_core v0.9.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7365448Z [1m[32m  Downloaded[0m regex-syntax v0.8.8
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7439344Z [1m[32m  Downloaded[0m once_cell v1.21.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7467415Z [1m[32m  Downloaded[0m crossbeam-utils v0.8.21
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7496503Z [1m[32m  Downloaded[0m serde_core v1.0.228
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7527349Z [1m[32m  Downloaded[0m cast v0.3.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7541313Z [1m[32m  Downloaded[0m unarray v0.1.4
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7555792Z [1m[32m  Downloaded[0m plotters-svg v0.3.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7564923Z [1m[32m  Downloaded[0m fnv v1.0.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7575441Z [1m[32m  Downloaded[0m crossbeam-epoch v0.9.21
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7602321Z [1m[32m  Downloaded[0m ciborium v0.2.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7627879Z [1m[32m  Downloaded[0m bit-vec v0.8.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7645766Z [1m[32m  Downloaded[0m regex-automata v0.4.13
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7808722Z [1m[32m  Downloaded[0m anes v0.1.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7839065Z [1m[32m  Downloaded[0m bit-set v0.8.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7853297Z [1m[32m  Downloaded[0m anstyle v1.0.13
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7869496Z [1m[32m  Downloaded[0m same-file v1.0.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7884482Z [1m[32m  Downloaded[0m rand_chacha v0.9.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7897828Z [1m[32m  Downloaded[0m quick-error v1.2.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7911465Z [1m[32m  Downloaded[0m oorandom v11.1.5
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7921807Z [1m[32m  Downloaded[0m clap_lex v0.7.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.7933677Z [1m[32m  Downloaded[0m clap_builder v4.5.53
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.8001585Z [1m[32m  Downloaded[0m half v2.7.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.8030218Z [1m[32m  Downloaded[0m either v1.15.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.8046135Z [1m[32m  Downloaded[0m fastrand v2.3.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.8060228Z [1m[32m  Downloaded[0m crossbeam-deque v0.8.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.8097249Z [1m[32m  Downloaded[0m zerocopy v0.8.31
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.8421823Z [1m[32m  Downloaded[0m linux-raw-sys v0.11.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.9241547Z [1m[32m   Compiling[0m libc v0.2.178
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.9256285Z [1m[32m   Compiling[0m zerocopy v0.8.31
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.9257685Z [1m[32m   Compiling[0m zerocopy-derive v0.8.31
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:38.9258362Z [1m[32m   Compiling[0m getrandom v0.3.4
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:39.1865739Z [1m[32m   Compiling[0m crossbeam-utils v0.8.21
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:39.2545847Z [1m[32m   Compiling[0m serde_core v1.0.228
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:39.4466238Z [1m[32m   Compiling[0m crossbeam-epoch v0.9.21
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:39.5632576Z [1m[32m   Compiling[0m autocfg v1.5.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:39.8787397Z [1m[32m   Compiling[0m num-traits v0.2.19
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:40.1945816Z [1m[32m   Compiling[0m getrandom v0.2.16
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:40.3057803Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:40.6965524Z [1m[32m   Compiling[0m serde v1.0.228
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:40.9405527Z [1m[32m   Compiling[0m rustix v1.1.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:41.3265811Z [1m[32m   Compiling[0m rand_core v0.9.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:41.8088672Z [1m[32m   Compiling[0m serde_derive v1.0.228
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:41.8147366Z [1m[32m   Compiling[0m linux-raw-sys v0.11.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:42.0585217Z [1m[32m   Compiling[0m serde_json v1.0.147
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:42.1806093Z [1m[32m   Compiling[0m either v1.15.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:42.2144909Z [1m[32m   Compiling[0m bitflags v2.10.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:42.3215837Z [1m[32m   Compiling[0m rayon-core v1.13.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:42.3882127Z [1m[32m   Compiling[0m regex-syntax v0.8.8
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:42.4835693Z [1m[32m   Compiling[0m once_cell v1.21.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:44.3935751Z [1m[32m   Compiling[0m half v2.7.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:44.6175718Z [1m[32m   Compiling[0m ppv-lite86 v0.2.21
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.3756028Z [1m[32m   Compiling[0m crossbeam-deque v0.8.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.4915921Z [1m[32m   Compiling[0m itoa v1.0.16
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.5516941Z [1m[32m   Compiling[0m clap_lex v0.7.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.6006660Z [1m[32m   Compiling[0m plotters-backend v0.3.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.6335622Z [1m[32m   Compiling[0m memchr v2.7.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.7295684Z [1m[32m   Compiling[0m zmij v0.1.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.7875709Z [1m[32m   Compiling[0m anstyle v1.0.13
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.8357864Z [1m[32m   Compiling[0m fastrand v2.3.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.9336287Z [1m[32m   Compiling[0m ciborium-io v0.2.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:45.9705661Z [1m[32m   Compiling[0m tempfile v3.24.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:46.0105782Z [1m[32m   Compiling[0m ciborium-ll v0.2.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:46.3523422Z [1m[32m   Compiling[0m clap_builder v4.5.53
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:46.3985892Z [1m[32m   Compiling[0m plotters-svg v0.3.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:47.2725770Z [1m[32m   Compiling[0m regex-automata v0.4.13
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:47.4055786Z [1m[32m   Compiling[0m itertools v0.10.5
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:48.5406564Z [1m[32m   Compiling[0m wait-timeout v0.2.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:48.7696032Z [1m[32m   Compiling[0m fnv v1.0.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:48.8065790Z [1m[32m   Compiling[0m quick-error v1.2.3
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:48.8522010Z [1m[32m   Compiling[0m bit-vec v0.8.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.0205841Z [1m[32m   Compiling[0m same-file v1.0.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.1106971Z [1m[32m   Compiling[0m cast v0.3.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.2216125Z [1m[32m   Compiling[0m criterion-plot v0.5.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.5195794Z [1m[32m   Compiling[0m walkdir v2.5.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.6316120Z [1m[32m   Compiling[0m bit-set v0.8.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.7315763Z [1m[32m   Compiling[0m rusty-fork v0.3.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.8335994Z [1m[32m   Compiling[0m regex v1.12.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.8770939Z [1m[32m   Compiling[0m clap v4.5.53
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:49.9135895Z [1m[32m   Compiling[0m tinytemplate v1.2.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.0745623Z [1m[32m   Compiling[0m rayon v1.11.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.2075849Z [1m[32m   Compiling[0m plotters v0.3.7
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.2445756Z [1m[32m   Compiling[0m ciborium v0.2.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.3677060Z [1m[32m   Compiling[0m rand_chacha v0.9.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.6005788Z [1m[32m   Compiling[0m rand_xorshift v0.4.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.6705799Z [1m[32m   Compiling[0m rand v0.9.2
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.8285893Z [1m[32m   Compiling[0m is-terminal v0.4.17
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.8687536Z [1m[32m   Compiling[0m rand_core v0.6.4
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:50.9725562Z [1m[32m   Compiling[0m unarray v0.1.4
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:51.0175763Z [1m[32m   Compiling[0m anes v0.1.6
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:51.1415188Z [1m[32m   Compiling[0m oorandom v11.1.5
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:51.1708575Z [1m[32m   Compiling[0m proptest v1.9.0
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:51.2020090Z [1m[32m   Compiling[0m rand_chacha v0.3.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:52.0955836Z [1m[32m   Compiling[0m criterion v0.5.1
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:58.3749224Z [1m[32m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 19.87s
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:58.3838306Z [1m[32m     Running[0m tests/cram_public_mode.rs (target/debug/deps/cram_public_mode-2088eeb7425e0eeb)
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:58.3850612Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:58.3850759Z running 5 tests
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:58.8848895Z test exact_divide_roundtrip_and_refusal ... ok
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:39:59.4895273Z test lane_local_ops_stay_lane_local_through_the_public_surface ... ok
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:00.7015219Z test public_only_roundtrip_battery ... ok
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:01.1534920Z test multiply_is_recorded_as_a_materialization_pinned ... FAILED
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0385839Z test depth3_public_squaring_chain_reaches_256 ... FAILED
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0386296Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0386429Z failures:
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0386858Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0388973Z ---- multiply_is_recorded_as_a_materialization_pinned stdout ----
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0389386Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0389902Z thread 'multiply_is_recorded_as_a_materialization_pinned' panicked at crates/nine65/tests/cram_public_mode.rs:235:36:
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0392937Z public multiply: InvalidParameter { message: "gadget decomposition capacity exceeded at coefficient 0: the polynomial's exact value needs 255 bits but the evaluation key's gadget spans only 60 bits (6 digits of base 2^10). Relinearize a RESCALED (canonical, < M_level) polynomial — an unrescaled tensor term is ~2*log2(Q)+log2(N) bits wide." }
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0395435Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0396502Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0396726Z ---- depth3_public_squaring_chain_reaches_256 stdout ----
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0397102Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0397590Z thread 'depth3_public_squaring_chain_reaches_256' panicked at crates/nine65/tests/cram_public_mode.rs:131:33:
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0400583Z public multiply failed at depth 1: InvalidParameter { message: "gadget decomposition capacity exceeded at coefficient 0: the polynomial's exact value needs 253 bits but the evaluation key's gadget spans only 120 bits (12 digits of base 2^10). Relinearize a RESCALED (canonical, < M_level) polynomial — an unrescaled tensor term is ~2*log2(Q)+log2(N) bits wide." }
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0402807Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0402814Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0402946Z failures:
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0403291Z     depth3_public_squaring_chain_reaches_256
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0403818Z     multiply_is_recorded_as_a_materialization_pinned
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0404191Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0404794Z test result: FAILED. 3 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.65s
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0405386Z 
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0413230Z [1m[31merror[0m[1m:[0m test failed, to rerun pass `-p nine65 --test cram_public_mode`
+cram-public-correctness	CRAM-public mode surface (M1)	2026-10-07T19:40:06.0457582Z ##[error]Process completed with exit code 101.
+cram-public-correctness	Post Run actions/checkout@v4	﻿2026-10-07T19:40:06.0611441Z Post job cleanup.
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1457411Z [command]/usr/bin/git version
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1500557Z git version 2.55.0
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1537637Z Temporarily overriding HOME='/home/runner/work/_temp/a2c5e25f-8f0e-4580-8fc7-98ea5367a0b6' before making global git config changes
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1539018Z Adding repository directory to the temporary git global config as a safe directory
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1542750Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1582058Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1618382Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1897285Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1934926Z http.https://github.com/.extraheader
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1937369Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.1978942Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.2236998Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+cram-public-correctness	Post Run actions/checkout@v4	2026-10-07T19:40:06.2277762Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+cram-public-correctness	Complete job	﻿2026-10-07T19:40:06.2765296Z Cleaning up orphan processes
+cram-public-correctness	Complete job	2026-10-07T19:40:06.3081990Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

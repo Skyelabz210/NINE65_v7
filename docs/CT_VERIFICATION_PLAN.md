@@ -761,20 +761,60 @@ This is a new input-class finding in the same end-to-end routine; it does not
 undo the narrower fix for the original F-2 magnitude-dependent division.
 Source review found a plausible contributor in
 `crt_reconstruct_u256 -> U512::mod_u256`: its fixed 512-iteration loop
-currently branches on every dividend bit and on each running-remainder
-comparison. Other value-derived operations remain in the full path, so the
-source observation is a candidate cause, not an attribution. The follow-up
-branch replaces those two decisions with a fixed borrow chain and mask
-selection, adds differential arithmetic tests, and measures `U512::mod_u256`
-directly before the end-to-end test. That prototype is not yet compiled or
-measured. Keep this gate red until the isolated and full-path measurements
-pass; if the isolated reducer passes but the full path does not, examine the
-remaining CRT normalization and modulus-switch encoding operations. Do not
-raise the threshold or remove the all-zero-vs-uniform contrast.
+branched on every dividend bit and running-remainder comparison. Other
+value-derived operations remain in the full path, so the source observation
+was a candidate cause, not an attribution.
+
+Hosted run 37676097485 on head `904448a73fb17427a7d05bde16e2d74c6b74e4d0`
+compiled and measured the fixed-work prototype. The isolated and full-path
+contrasts both passed once:
+
+| contrast | control t | signal t | medians | verdict |
+|---|---:|---:|---|---|
+| `U512::mod_u256`, zero vs uniform 128-bit dividends | 1.1190 | 0.1719 | 5,238 ns vs 5,238 ns | pass |
+| `mod_switch_down_dual`, all-zero vs uniform coefficients | 0.0504 | 1.0673 | 79.53 ms vs 79.71 ms | pass |
+| `mod_switch_down_dual`, positive vs negative, magnitude-matched | 1.1069 | 0.5217 | 80.50 ms vs 80.56 ms | pass |
+
+These below-threshold measurements came from an incorrect prototype and are
+diagnostic only. Its caller passed a 64-bit all-ones selector to a helper
+that widened it to `u128` by subtracting the widened value from zero. That
+produced a partial mask and the CRAM multiply tests failed on the same head.
+The follow-up now expands the one-bit condition at 128-bit width; its
+differential arithmetic test and timing contrasts must be rerun before these
+results can support a CT claim.
+
+T2 workspace run 37676097379 confirms a correctness defect in the tested
+prototype: `test_u512_mod_u256_matches_reference_for_sparse_and_dense_values`
+fails for dividend 2 and modulus 2. The cause is the partial 128-bit mask
+described above. The fixed one-bit expansion is on branch
+`codex/2026-10-07-ct-regression-followup`; correctness and timing evidence for
+that repair is still pending.
+
+The PR-head CT job remains red: its separate
+`AdjacencyKElim::extract_k` small-vs-near-cap contrast reported
+`t_control=4.0863`, `t_signal=6.3291` (threshold 5), with medians 1,241,019
+ns and 1,242,111 ns. Keep that finding open. Merge-ref CT run 37676889107
+passed the reducer, full-path, and adjacency contrasts once (`t_signal=1.1272`,
+`1.2671`, and `3.6537` respectively), but it ran the same incorrect
+arithmetic prototype, so those scores also cannot validate constant-time
+correctness. More importantly, CRAM-public
+run 37676097325 on the same source head fails two multiply tests with
+gadget-capacity errors, while those tests passed on `0f85873`. The direct
+arithmetic differential failure confirms the reducer caused a correctness
+regression. PR #168 was merged by the repository owner before these gates
+cleared; the merge does not close them. Raw CT output is retained in
+`artifacts/execution/2026-10-07-session/CI/pr168-904448a/ct/`.
+
+Keep the CT and correctness gates open until the arithmetic differential test,
+T2, and follow-up measurements establish correctness and repeatable timing
+results. Do not raise the threshold or remove the all-zero-vs-uniform
+contrast.
 
 ## 5. CI posture
 
-> **NOTHING BELOW IS CURRENTLY RUNNING. Read this before reading the table.**
+> **Historical snapshot from 2026-08-22; superseded.** This section records
+> the workflow state on that date. Words such as "today" below mean
+> 2026-08-22, not the current session.
 >
 > Checked against the GitHub API on 2026-08-22. Thirteen workflows are
 > registered on `Skyelabz210/NINE65_v7` and all report `state: active`.
@@ -810,6 +850,13 @@ raise the threshold or remove the all-zero-vs-uniform contrast.
 >    rather than by a workflow. `cargo test` runs; the workflow does not.
 > 2. A gate that exists only in YAML in this repository is not a gate. When
 >    adding one, put the enforceable part where `cargo test` will reach it.
+
+> **Current session update (2026-10-07):** GitHub Actions has run on PRs #167
+> and #168. PR #168 merged at `c93a058`; its T1 gate passed, T2 remains in
+> progress, CT source checks passed while the blocking CT workflow found a
+> separate K-Elimination timing signal, and CRAM-public correctness failed two
+> multiply tests on the changed source head. See the current run IDs and
+> evidence links in `docs/execution/2026-10-06/SESSION_PLAN.md`.
 
 | Job | Trigger | Blocking | Contents | Threshold |
 |---|---|---|---|---|

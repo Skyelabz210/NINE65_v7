@@ -242,8 +242,7 @@ impl U512 {
             rem = rem.shl1();
             rem.d0 |= self.get_bit(i) as u128;
             let (difference, borrow) = rem.sub_borrow_mask_ct(m_512);
-            let subtract_mask = 0u64.wrapping_sub(borrow ^ 1);
-            rem = Self::select_mask_ct(rem, difference, subtract_mask);
+            rem = Self::select_mask_ct(rem, difference, borrow ^ 1);
         }
         U256 {
             lo: rem.d0,
@@ -319,11 +318,13 @@ impl U512 {
         )
     }
 
-    /// Select `if_true` only when `true_mask` is all ones. The selector is
+    /// Select `if_true` only when `condition_bit` is one. The selector is
     /// derived from the final borrow of `sub_borrow_mask_ct`.
     #[inline(always)]
-    fn select_mask_ct(if_false: Self, if_true: Self, true_mask: u64) -> Self {
-        let mask = 0u128.wrapping_sub(true_mask as u128);
+    fn select_mask_ct(if_false: Self, if_true: Self, condition_bit: u64) -> Self {
+        // Expand the one-bit condition after converting to the destination
+        // width. Negating a widened u64::MAX would produce a partial u128 mask.
+        let mask = 0u128.wrapping_sub((condition_bit & 1) as u128);
         Self {
             d0: (if_false.d0 & !mask) | (if_true.d0 & mask),
             d1: (if_false.d1 & !mask) | (if_true.d1 & mask),

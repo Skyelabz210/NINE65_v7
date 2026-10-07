@@ -1,0 +1,323 @@
+exact-cram-gate	Set up job	﻿2026-10-07T19:45:29.6928458Z Current runner version: '2.337.0'
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6952995Z ##[group]Runner Image Provisioner
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6953879Z Hosted Compute Agent
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6954575Z Version: 20261002.596
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6955250Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6956083Z Build Date: 2026-10-02T22:28:27Z
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6956770Z Worker ID: {1d235302-cf97-4b35-9cfc-cffda3f88019}
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6957453Z Region: eastus
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6958133Z Cloud: Azure
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6958697Z ##[endgroup]
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6960538Z ##[group]Operating System
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6961226Z Ubuntu
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6961745Z 24.04.5
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6962323Z LTS
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6962892Z ##[endgroup]
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6963498Z ##[group]Runner Image
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6964196Z Image: ubuntu-24.04
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6964741Z Version: 20261004.327.1
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6965917Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6967691Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6968672Z ##[endgroup]
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6970139Z ##[group]GITHUB_TOKEN Permissions
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6972523Z Contents: read
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6973141Z Metadata: read
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6973806Z ##[endgroup]
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6975798Z Secret source: Actions
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6976894Z Cache mode: write
+exact-cram-gate	Set up job	2026-10-07T19:45:29.6977582Z Prepare workflow directory
+exact-cram-gate	Set up job	2026-10-07T19:45:29.7302272Z Prepare all required actions
+exact-cram-gate	Set up job	2026-10-07T19:45:29.7349935Z Getting action download info
+exact-cram-gate	Set up job	2026-10-07T19:45:29.9585565Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+exact-cram-gate	Set up job	2026-10-07T19:45:30.0505611Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+exact-cram-gate	Set up job	2026-10-07T19:45:30.2926682Z Complete job name: exact-cram-gate
+exact-cram-gate	Run actions/checkout@v4	﻿2026-10-07T19:45:30.3785180Z ##[group]Run actions/checkout@v4
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3786067Z with:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3786497Z   submodules: false
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3786966Z   repository: Skyelabz210/NINE65_v7
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3790782Z   token: ***
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3791217Z   ssh-strict: true
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3791654Z   ssh-user: git
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3792081Z   persist-credentials: true
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3792552Z   clean: true
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3792983Z   sparse-checkout-cone-mode: true
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3793486Z   fetch-depth: 1
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3793897Z   fetch-tags: false
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3794320Z   show-progress: true
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3794757Z   lfs: false
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3795170Z   set-safe-directory: true
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3795663Z   allow-unsafe-pr-checkout: false
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.3796414Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4801703Z Syncing repository: Skyelabz210/NINE65_v7
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4803700Z ##[group]Getting Git version info
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4804450Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4805734Z [command]/usr/bin/git version
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4883382Z git version 2.55.0
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4915662Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4923633Z Temporarily overriding HOME='/home/runner/work/_temp/f0eb6225-6635-4b65-baf8-e752ff918db4' before making global git config changes
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4925960Z Adding repository directory to the temporary git global config as a safe directory
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4931228Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4986913Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4991500Z ##[group]Initializing the repository
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.4996555Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5119324Z hint: Using 'master' as the name for the initial branch. This default branch name
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5121161Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5123149Z hint: to use in all of your new repositories, which will suppress this warning,
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5124423Z hint: call:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5125144Z hint:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5126128Z hint: 	git config --global init.defaultBranch <name>
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5127273Z hint:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5128396Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5130390Z hint: 'development'. The just-created branch can be renamed via this command:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5131810Z hint:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5132586Z hint: 	git branch -m <name>
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5133417Z hint:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5134514Z hint: Disable this message with "git config set advice.defaultBranchName false"
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5136334Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5138867Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5205076Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5205922Z ##[group]Disabling automatic garbage collection
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5209399Z [command]/usr/bin/git config --local gc.auto 0
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5242026Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5243023Z ##[group]Setting up auth
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5338575Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5347913Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5694817Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5742268Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.5965434Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.6003469Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.6229994Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.6271416Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.6272859Z ##[group]Fetching the repository
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:30.6283010Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c93a058e2106441029647e69e252d3b410fdeab1:refs/remotes/origin/main
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2051071Z From https://github.com/Skyelabz210/NINE65_v7
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2054167Z  * [new ref]         c93a058e2106441029647e69e252d3b410fdeab1 -> origin/main
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2061126Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2063779Z ##[group]Determining the checkout info
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2066683Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2068752Z [command]/usr/bin/git sparse-checkout disable
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2128002Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2160526Z ##[group]Checking out the ref
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.2164194Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.3280396Z Switched to a new branch 'main'
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.3287807Z branch 'main' set up to track 'origin/main'.
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.3298109Z ##[endgroup]
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.3342559Z [command]/usr/bin/git log -1 --format=%H
+exact-cram-gate	Run actions/checkout@v4	2026-10-07T19:45:31.3369919Z c93a058e2106441029647e69e252d3b410fdeab1
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	﻿2026-10-07T19:45:31.4043254Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4044613Z with:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4045562Z   components: rustfmt
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4046591Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4136391Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4222407Z ##[group]Run if [[ -z $toolchain ]]; then
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4223799Z [36;1mif [[ -z $toolchain ]]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4226060Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4228227Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4229665Z [36;1m  exit 1[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4231051Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4232719Z [36;1m  if [[ Linux == macOS ]]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4234795Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4236896Z [36;1m  else[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4238535Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4240531Z [36;1m  fi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4241797Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4243931Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4245800Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4247918Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4250295Z [36;1melse[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4251373Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4252651Z [36;1mfi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4523445Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4524891Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4525726Z   toolchain: 1.89.0
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4526643Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4682341Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=54]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4700092Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4755383Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4757851Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4760587Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4762571Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4823090Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4824449Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4825278Z   targets: 
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4826140Z   components: rustfmt
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4827080Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4943938Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=24]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4950796Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4995180Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.4997028Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5060245Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5061639Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5169895Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=21]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5176609Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5231070Z ##[group]Run if ! command -v rustup &>/dev/null; then
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5232734Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5235531Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5238319Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5239886Z [36;1mfi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5301314Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5302698Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5303579Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5304667Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5408622Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=22]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5415923Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5430694Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5446465Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5492273Z ##[group]Run log=$(mktemp)
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5493302Z [36;1mlog=$(mktemp)[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5494382Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5495649Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5497880Z [36;1m  if rustup toolchain install 1.89.0 --component rustfmt --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5500375Z [36;1m    break[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5501286Z [36;1m  else[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5502153Z [36;1m    status=$?[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5503073Z [36;1m  fi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5504249Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5506358Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5508235Z [36;1m    exit "$status"[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5509211Z [36;1m  fi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5510885Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5512562Z [36;1m  sleep 30[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5513427Z [36;1mdone[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5575007Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5576326Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5577164Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5578239Z   RUSTUP_PERMIT_COPY_RENAME: 1
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.5579243Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.6180542Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.7985028Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.7988049Z info: downloading 4 components
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.3848932Z 
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.3927691Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.3929673Z 
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.3995193Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=7854]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4002823Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4055354Z ##[group]Run rustup default 1.89.0 --force-non-host
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4056141Z [36;1mrustup default 1.89.0 --force-non-host[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4123782Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4124187Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4124440Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4124745Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4248107Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4254720Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4255282Z 
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4324739Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4325245Z 
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4327914Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4342042Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=33]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4344770Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4369982Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4370934Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4371675Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4372250Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4435086Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4435518Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4435796Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4436108Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4782103Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=43]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4785232Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4808466Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4808960Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4809756Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4810140Z [36;1mfi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4878008Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4878468Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4878733Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4879038Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4969140Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=18]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4972173Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4994265Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4994701Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4995095Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.4995460Z [36;1mfi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5056125Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5056544Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5056810Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5057136Z   CARGO_INCREMENTAL: 0
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5057410Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5143877Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=17]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5146390Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5169679Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5170317Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5171114Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5171908Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5172569Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5173197Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5173761Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5174397Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5174992Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5175576Z [36;1m  fi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5175817Z [36;1mfi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5236426Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5236840Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5237092Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5237407Z   CARGO_INCREMENTAL: 0
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5237695Z   CARGO_TERM_COLOR: always
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5238144Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5558119Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=41]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5561555Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5586373Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5587261Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5587958Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5588498Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5588873Z [36;1mfi[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5656179Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5656599Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5656870Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5657199Z   CARGO_INCREMENTAL: 0
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5657483Z   CARGO_TERM_COLOR: always
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5657768Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5861476Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=29]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5865548Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5888214Z ##[group]Run rustc +1.89.0 --version --verbose
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5888626Z [36;1mrustc +1.89.0 --version --verbose[0m
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5952814Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5953263Z env:
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5953522Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5953855Z   CARGO_INCREMENTAL: 0
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5954136Z   CARGO_TERM_COLOR: always
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.5954415Z ##[endgroup]
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6136876Z rustc 1.89.0 (29483883e 2025-08-04)
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6137755Z binary: rustc
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6138523Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6139599Z commit-date: 2025-08-04
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6140289Z host: x86_64-unknown-linux-gnu
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6140911Z release: 1.89.0
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6141498Z LLVM version: 20.1.7
+exact-cram-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:39.6156271Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=28]
+exact-cram-gate	Enforce CRAM recumbency contract	﻿2026-10-07T19:45:39.6219553Z ##[group]Run python3 .github/scripts/check_cram_recumbency.py
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.6220134Z [36;1mpython3 .github/scripts/check_cram_recumbency.py[0m
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.6283941Z shell: /usr/bin/bash -e {0}
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.6284263Z env:
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.6284515Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.6284827Z   CARGO_INCREMENTAL: 0
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.6285099Z   CARGO_TERM_COLOR: always
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.6285372Z ##[endgroup]
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8009618Z CRAM recumbency contract failed:
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8011253Z   - crates/nine65/src/ops/bootstrap.rs: number-line CRT reconstruction in bootstrap [\bcrt_reconstruct_n\s*\(] at line(s) 789, 798, 953, 970, 1233, 1238, 1336, 1436
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8013582Z   - crates/nine65/src/ops/bootstrap.rs: U256 number-line reconstruction in bootstrap [\bcrt_reconstruct_u256\s*\(] at line(s) 823, 831, 1004, 1011, 1252, 1254, 1351, 1413, +1 more
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8015685Z   - crates/nine65/src/ops/rns_fhe.rs: zero sentinel used as modulus-overflow state [q_product\s*==\s*0] at line(s) 1060, 1321, 1339, 2808, 2949, 4491, 5161
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8017467Z   - crates/nine65/src/ops/rns_fhe.rs: zero overflow sentinel construction [unwrap_or\s*\(\s*0\s*\)] at line(s) 1056, 3935
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8019590Z   - crates/nine65/src/arithmetic/rns.rs: zero sentinel for unavailable anchor inverse [main_inv_anchor\s*=\s*if anchor_product > 0.*?else\s*\{\s*0] at line(s) 1459
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8025644Z   - crates/nine65/src/arithmetic/rns.rs: u128::MAX fallback in capacity decision [unwrap_or\s*\(\s*u128::MAX\s*\)] at line(s) 1644
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8027009Z   - crates/nine65/src/arithmetic/rns.rs: saturated k bound [k_max_bound\s*=\s*q_max\.saturating_mul] at line(s) 1640
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8028147Z   - crates/nine65/src/arithmetic/rns.rs: summed lane widths used as exact anchor capacity [fn\s+anchor(?:3)?_capacity_bits.*?map\s*\(\s*\|&p\|\s*64\s*-\s*p\.leading_zeros\(\)\s*\).*?sum] at line(s) 1669, 1682
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8029971Z   - crates/nine65/src/arithmetic/rns.rs: bounded k extraction reconstructs a number-line representative [fn\s+extract_k_rns(?:_level)?\b.*?(?:crt_reconstruct_n|crt_reconstruct_u256)\s*\(] at line(s) 1807
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8031218Z   - crates/nine65/src/arithmetic/rns.rs: missing checked scalar main inverse metadata [main_inv_anchor_checked\s*:\s*Option<u128>]
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-07T19:45:39.8064440Z ##[error]Process completed with exit code 1.
+exact-cram-gate	Post Run actions/checkout@v4	﻿2026-10-07T19:45:39.8316051Z Post job cleanup.
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9201167Z [command]/usr/bin/git version
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9245346Z git version 2.55.0
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9290205Z Temporarily overriding HOME='/home/runner/work/_temp/c6c8ae0d-acce-45ca-9930-b596cf8ef854' before making global git config changes
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9291739Z Adding repository directory to the temporary git global config as a safe directory
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9296055Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9336231Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9375618Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9630989Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9660311Z http.https://github.com/.extraheader
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9673308Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9712176Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:39.9964673Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+exact-cram-gate	Post Run actions/checkout@v4	2026-10-07T19:45:40.0006028Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+exact-cram-gate	Complete job	﻿2026-10-07T19:45:40.0403677Z Cleaning up orphan processes
+exact-cram-gate	Complete job	2026-10-07T19:45:40.0691432Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
