@@ -116,6 +116,43 @@ pub enum TransductionCapacityError {
     },
 }
 
+/// Typed refusal for a source basis that cannot carry a CRT idempotent
+/// decomposition at construction time — a modulus that is not strictly
+/// positive, or two moduli that are not coprime (so no modular inverse
+/// exists).
+///
+/// This is the *coprimality/validity* half of the failure surface; the
+/// *capacity* half is [`TransductionCapacityError`]. Both halves come back
+/// together in [`TransductionBuildError`], the error type of the fully
+/// fallible constructor [`TransductionMap::try_build`] — the entry point
+/// callers under a "typed failure, never a panic" contract must use.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransductionBasisError {
+    /// A basis-A modulus was not strictly positive.
+    InvalidSourceModulus { index: usize, modulus: i128 },
+    /// Two basis-A moduli share a factor, so the CRT idempotent `e_i`
+    /// cannot be computed.
+    NotPairwiseCoprime { lane_i: usize, lane_j: usize },
+}
+
+/// Combined typed failure of the fully fallible constructor
+/// [`TransductionMap::try_build`]: either a capacity refusal
+/// ([`TransductionCapacityError`]) or a basis-validity refusal
+/// ([`TransductionBasisError`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransductionBuildError {
+    /// The basis pair fails the `i128` capacity certificate (see
+    /// [`TransductionMap::try_new`]).
+    Capacity(TransductionCapacityError),
+    /// The source basis is malformed (non-positive or not pairwise
+    /// coprime), see [`TransductionBasisError`].
+    Basis(TransductionBasisError),
+    /// An idempotent intermediate exceeded `i128` despite the raw/wrap
+    /// bounds clearing the certificate — a defensive guard, documented on
+    /// `TransductionMap::check_idempotents`.
+    IdempotentOverflow { lane: usize },
+}
+
 /// Precomputed CRT coefficient matrix for converting residues from basis A
 /// to basis B.
 ///
@@ -231,6 +268,77 @@ impl TransductionMap {
         Ok(Self::construct_checked(basis_a, basis_b, m_a, m_b))
     }
 
+    /// Construct a transduction map from `basis_a` to `basis_b`, returning a
+    /// typed error instead of panicking on **every** construction failure:
+    ///
+    /// - capacity: the basis pair's CRT bookkeeping cannot be carried in
+    ///   `i128` ([`TransductionCapacityError`], same certificate as
+    ///   [`Self::try_new`]);
+    /// - validity: a non-positive basis-A modulus, or a basis-A pair that is
+    ///   not coprime ([`TransductionBasisError`]).
+    ///
+    /// [`Self::new`] is the panic-wrapping convenience form of this
+    /// function; production-facing callers whose contract is "typed failure,
+    /// never a panic" (e.g. `lifted_transduction`) must go through
+    /// `try_build` so no reachable input can hit `new`'s `.expect()`.
+    pub fn try_build(
+        basis_a: &[i128],
+        basis_b: &[i128],
+    ) -> Result<Self, TransductionBuildError> {
+        for (i, &a) in basis_a.iter().enumerate() {
+            if a <= 0 {
+                return Err(TransductionBuildError::Basis(
+                    TransductionBasisError::InvalidSourceModulus { index: i, modulus: a },
+                ));
+            }
+        }
+        for i in 0..basis_a.len() {
+            for j in (i + 1)..basis_a.len() {
+                if k_elim::gcd(basis_a[i], basis_a[j]) != 1 {
+                    return Err(TransductionBuildError::Basis(
+                        TransductionBasisError::NotPairwiseCoprime { lane_i: i, lane_j: j },
+                    ));
+                }
+            }
+        }
+        Self::try_new(basis_a, basis_b)
+            .map_err(TransductionBuildError::Capacity)
+            .and_then(|map| map.check_idempotents(basis_a))
+    }
+
+    /// Post-certificate guard: recompute each idempotent's formation under
+    /// checked arithmetic and refuse (rather than silently wrap) if any
+    /// intermediate exceeds `i128` despite the raw/wrap bounds having passed
+    /// the [`Self::try_new`] certificate. In practice the certificate
+    /// already dominates every intermediate here (`m_over_ai < M_A`,
+    /// `inv < a_i`, `e_i < M_A`, and `M_A` itself is `< i128::MAX / 2`
+    /// because `raw_bound = M_A * sum(basis_a) >= M_A` passed the margin
+    /// check), so this runs only when `k_elim::mulmod`'s fast path would
+    /// have overflowed anyway — but it makes the guarantee structural
+    /// rather than argued.
+    fn check_idempotents(self, basis_a: &[i128]) -> Result<Self, TransductionBuildError> {
+        for (i, &a_i) in basis_a.iter().enumerate() {
+            let m_over_ai = self
+                .m_a
+                .checked_div(a_i)
+                .ok_or(TransductionBuildError::IdempotentOverflow { lane: i })?;
+            let inv = k_elim::mod_inv(k_elim::modd(m_over_ai, a_i), a_i).ok_or(
+                TransductionBuildError::Basis(TransductionBasisError::NotPairwiseCoprime {
+                    lane_i: i,
+                    lane_j: i,
+                }),
+            )?;
+            // e_i = m_over_ai * inv reduced mod M_A. Both factors are
+            // < M_A <= i128::MAX/2, so the product fits u128 exactly;
+            // verify it also fits i128 before accepting the table.
+            let wide = (m_over_ai as u128) * (inv as u128);
+            if wide > i128::MAX as u128 {
+                return Err(TransductionBuildError::IdempotentOverflow { lane: i });
+            }
+        }
+        Ok(self)
+    }
+
     /// Construct a transduction map from `basis_a` to `basis_b`.
     ///
     /// # Panics
@@ -239,8 +347,9 @@ impl TransductionMap {
     /// others (i.e., if a CRT inverse does not exist), or if the basis pair
     /// fails the `i128` capacity certificate documented on
     /// [`Self::try_new`] (see [`TransductionCapacityError`]).
+    /// Fallible callers must use [`Self::try_build`] instead.
     pub fn new(basis_a: &[i128], basis_b: &[i128]) -> Self {
-        Self::try_new(basis_a, basis_b)
+        Self::try_build(basis_a, basis_b)
             .expect("TransductionMap: basis capacity or coprimality violated")
     }
 
@@ -399,8 +508,17 @@ impl TransductionMap {
             }
         }
 
-        // B -> A lanewise read must reproduce x_a.
-        let map_ba = TransductionMap::new(&self.basis_b, &self.basis_a);
+        // B -> A lanewise read must reproduce x_a. The reverse map's
+        // construction cannot fail for a pair that cleared try_build going
+        // forward only if basis_b is also pairwise coprime — which was just
+        // checked above — but capacity of the reverse bookkeeping is a
+        // separate question, so this uses the fallible form and reports
+        // "unverifiable" rather than panicking on a reverse-direction
+        // refusal (the old Garner path's contract for malformed inputs).
+        let map_ba = match TransductionMap::try_build(&self.basis_b, &self.basis_a) {
+            Ok(map) => map,
+            Err(_) => return false,
+        };
         let from_b = map_ba.apply(x_b);
         for (i, &a_i) in self.basis_a.iter().enumerate() {
             if k_elim::modd(from_b[i], a_i) != k_elim::modd(x_a[i], a_i) {
