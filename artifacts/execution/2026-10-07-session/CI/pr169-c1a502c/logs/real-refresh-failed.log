@@ -1,0 +1,59 @@
+forced-real-refresh	Force and prove real automatic refresh	﻿2026-10-07T20:14:30.8294467Z ##[group]Run cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8294974Z [36;1mcargo run --release -p nine65 --bin nine65_bench --features serde -- \[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8295357Z [36;1m  --config secure_128_deep --max-depth 1 --auto-bootstrap \[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8295673Z [36;1m  --trigger-pct 100 --statistical-test \[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8296450Z [36;1m  --output /tmp/nine65-forced-refresh.json[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8296702Z [36;1mpython3 - <<'PY'[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8296903Z [36;1mimport json[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8297095Z [36;1mfrom pathlib import Path[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8297300Z [36;1m[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8297564Z [36;1mreport = json.loads(Path('/tmp/nine65-forced-refresh.json').read_text())[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8297961Z [36;1massert report['metadata']['integer_only_reporting'] is True[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8298290Z [36;1massert report['metadata']['simulated_refreshes'] == 0[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8298587Z [36;1massert report['metadata']['trigger_pct'] == 100[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8299043Z [36;1massert report['depth_chain']['correct'] is True[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8299317Z [36;1massert report['depth_chain']['final_depth'] == 1[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8299619Z [36;1massert report['depth_chain']['total_bootstrap_calls'] > 0[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8299952Z [36;1massert report['depth_chain']['exercised_real_refresh'] is True[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8300276Z [36;1massert report['statistical_test']['correct'] is True[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8300574Z [36;1massert report['statistical_test']['failures'] == 0[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8300895Z [36;1massert report['statistical_test']['total_bootstrap_calls'] > 0[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8301250Z [36;1massert report['statistical_test']['exercised_real_refresh'] is True[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8301566Z [36;1massert report['overall_correct'] is True[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8301789Z [36;1mPY[0m
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8357223Z shell: /usr/bin/bash -e {0}
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8357443Z env:
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8357613Z   CARGO_HOME: /home/runner/.cargo
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8357821Z   CARGO_INCREMENTAL: 0
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8358001Z   CARGO_TERM_COLOR: always
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8358185Z ##[endgroup]
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8720198Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8720823Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.8721215Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.9020671Z [1m[32m   Compiling[0m serde_core v1.0.228
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.9021111Z [1m[32m   Compiling[0m libc v0.2.178
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.9021870Z [1m[32m   Compiling[0m serde v1.0.228
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:30.9056548Z [1m[32m   Compiling[0m virtue v0.0.18
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.0827877Z [1m[32m   Compiling[0m zmij v0.1.7
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.1857634Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.3241961Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.3327658Z [1m[32m   Compiling[0m memchr v2.7.6
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.8043648Z [1m[32m   Compiling[0m unty v0.0.4
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.8287229Z [1m[32m   Compiling[0m itoa v1.0.16
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.9067225Z [1m[32m   Compiling[0m getrandom v0.2.16
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:31.9777430Z [1m[32m   Compiling[0m bincode v2.0.1
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:32.5569437Z [1m[32m   Compiling[0m serde_json v1.0.147
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:49.7952315Z [1m[32m    Finished[0m `release` profile [optimized] target(s) in 18.93s
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:49.7987100Z [1m[32m     Running[0m `target/release/nine65_bench --config secure_128_deep --max-depth 1 --auto-bootstrap --trigger-pct 100 --statistical-test --output /tmp/nine65-forced-refresh.json`
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:49.8007321Z NINE65 exact benchmark harness
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:49.8007946Z Config: secure_128_deep (n=8192, lanes=4, q0=998244353, t=65537)
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:49.8010145Z Requested mixed operations: 1
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:49.8010435Z Bootstrap: real
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.0966401Z 
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.0966980Z thread 'main' panicked at crates/nine65/src/entropy/rng_trait.rs:144:9:
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.0967395Z SECURITY ERROR: Non-secure RNG used for generate_keys_dual_with_rng!
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.0967740Z Use SecureRng for production. Shadow entropy is test-only.
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.0968536Z (If this fired from one of nine65's own integration tests or benches in a --release build: those targets link the library without cfg(test), so they must be run with `--features allow_insecure`; their Cargo target stanzas declare it via required-features.)
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.0969368Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.2670562Z /home/runner/work/_temp/6dd4761b-e5a5-433e-b71c-fc6766262832.sh: line 4:  4247 Aborted                 (core dumped) cargo run --release -p nine65 --bin nine65_bench --features serde -- --config secure_128_deep --max-depth 1 --auto-bootstrap --trigger-pct 100 --statistical-test --output /tmp/nine65-forced-refresh.json
+forced-real-refresh	Force and prove real automatic refresh	2026-10-07T20:14:50.2680934Z ##[error]Process completed with exit code 134.

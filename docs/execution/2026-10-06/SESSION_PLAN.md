@@ -432,7 +432,7 @@ and rest of T2 are still running. The full-path CT timing contrast fails at
 contrast passes once at `2.9168`; this head does not close the end-to-end CT
 finding.
 
-### Draft PR #169 validation checkpoint
+### PR #169 first correction checkpoint (`84ce6da`, historical)
 
 Draft [PR #169](https://github.com/Skyelabz210/NINE65_v7/pull/169) is based on
 merge commit `c93a058` and remote head
@@ -458,15 +458,53 @@ reproducers are retained under `pr169-84ce6da/`.
 
 Source review of the full-path signal found additional coefficient-derived
 branches and variable-latency reductions in centering, rounding, signed lane
-encoding, and residue normalization. The current local checkout has a second
-fixed-work correction for these operations; it is formatted but not yet
-published or hosted-tested. Push this correction, then require the arithmetic
-differential test, T2, CRAM-public, scale/comparative, all five fuzz targets,
-and repeated CT measurements on that exact head. Keep the adjacency
-K-Elimination timing finding and all three fuzz defect classes open. Continue
-the active local feature matrix in parallel; run the separate extreme target
-after it exits. The complete 43-card DAG below remains gated by its
-prerequisites.
+encoding, and residue normalization. Commits `48ef562` and `c1a502c` implement
+the fixed-work follow-up and preserve existing `SignedU256::is_neg` callers.
+The next checkpoint records validation of that code.
+
+### Current checkpoint: `c1a502c` (2026-10-07)
+
+The user requested committing and pushing the session work to `main`.
+The code SHA validated here is
+`c1a502cafaa90aeeb53b90e9df2c18097c42dab7`; the publication commit adds this
+checkpoint and raw evidence without changing the tested Rust code.
+
+T1 static analysis, formatting, Clippy, dependency checks, application platform,
+and CT source/functional gates pass. CRAM-public run 37680342717 is complete:
+48 correctness tests and 2 informational timing tests pass. Quick scale run
+37680831309 passes both configurations through required depth 2/2. Comparative
+v7 smoke run 37680837528 also passes depth 2/2; its v6 comparison is skipped
+because `NINE65_CROSS_REPO_TOKEN` is absent. These short runs establish
+correctness for their inputs, not a performance baseline.
+
+Blocking CT run 37680342677 is green. The isolated reducer reports control
+`0.0954` and signal `1.7807`; full zero-vs-uniform modulus switching reports
+control `0.9485` and signal `0.0290`; magnitude-matched signs report control
+`0.5590` and signal `0.1890`. These are single-run measurements. Adjacency
+K-Elimination magnitude is inconclusive because control `34.2862` exceeds the
+threshold; keep that independent finding open. CI T2 run 37680342663 remains
+in progress at this checkpoint.
+
+Fuzz run 37680342693 reproduces deserialize allocation failure and exact-output
+mismatches in encrypt/decrypt and homomorphic operations; NTT and K-Elimination
+fuzz pass. Real Refresh run 37680342700 reaches the secure RNG guard before
+refresh because its release benchmark supplies the test Shadow RNG. The
+exact-noise, CRAM recumbency, and residue-native architecture gates remain red.
+Raw reports, crash inputs and hashes are archived in
+`artifacts/execution/2026-10-07-session/CI/pr169-c1a502c/`.
+
+The passing float scans have explicit scope exclusions. CT statistics use
+`f64` for means, variances and square-root standard error; compiler estimates
+and benchmark reporting also retain floats. GitHub issue #90 is closed, but
+#92 Phase 5 still requires an all-owned-source gate. Reconcile those exclusions
+with that requirement before accepting the parent checklist item.
+
+Next, collect T2 and repeat the relevant CT measurements with clean controls;
+repair the three fuzz defects and the secure-RNG refresh harness; then resolve
+the architecture findings in the dependency order below. Let the serial local
+27-target feature matrix finish before running
+`nine65-extreme-tests/full_system_measurement`. Publishing to `main` does not
+accept any still-failing or pending card.
 
 ## Execute in dependency order
 

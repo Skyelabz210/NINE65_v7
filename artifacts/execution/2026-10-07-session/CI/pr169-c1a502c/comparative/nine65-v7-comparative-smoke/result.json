@@ -1,0 +1,109 @@
+{
+  "correctness": {
+    "dual_rns": {
+      "add_ct": true,
+      "add_plain": true,
+      "decrypt": true,
+      "encrypt": true,
+      "mul_ct": true,
+      "mul_plain": true
+    },
+    "legacy": {
+      "add_ct": true,
+      "add_plain": true,
+      "decrypt": true,
+      "encrypt": true,
+      "mul_ct": false,
+      "mul_ct_status": "refused-#135",
+      "mul_plain": true,
+      "negate_ct": true,
+      "sub_ct": true
+    }
+  },
+  "correctness_gate": {
+    "dual_rns_all_correct": true,
+    "legacy_mul_ct_refused_as_expected": true,
+    "legacy_supported_operations_correct": true
+  },
+  "ct_mul_depth": {
+    "all_completed_entries_correct": true,
+    "completed": 2,
+    "entries": [
+      {
+        "correct": true,
+        "decrypted": 64,
+        "depth": 1,
+        "expected": 64,
+        "level_after": 3,
+        "level_before": 3,
+        "mismatch_delta_mod_t": 0,
+        "operation_ns": 5254191381
+      },
+      {
+        "correct": true,
+        "decrypted": 4096,
+        "depth": 2,
+        "expected": 4096,
+        "level_after": 3,
+        "level_before": 3,
+        "mismatch_delta_mod_t": 0,
+        "operation_ns": 5206170719
+      }
+    ],
+    "first_error": null,
+    "requested": 2
+  },
+  "key_structure": {
+    "decomposition_base": 65536,
+    "decomposition_digits": 6,
+    "relinearization_components": 6
+  },
+  "keygen_ns": {
+    "dual_rns": 198684599,
+    "legacy": 20716194
+  },
+  "metadata": {
+    "allow_insecure_feature": true,
+    "build_profile": "debug",
+    "comparison_only_parameter_set": true,
+    "config": "v6_compat_4096",
+    "crate_version": "0.1.0",
+    "eta": 3,
+    "exact_log_q_bits": 90,
+    "iterations": 2,
+    "mul_iterations": 1,
+    "n": 4096,
+    "plaintext_modulus": 65537,
+    "rng_source": "shadow-test",
+    "rns_primes": [
+      998244353,
+      985661441,
+      754974721
+    ],
+    "security_claim_bits": 0,
+    "seed": 42,
+    "timestamp": "1791404289s_since_epoch"
+  },
+  "operations_ns": {
+    "dual_rns": {
+      "add_ct": 2048212,
+      "add_plain": 1183247,
+      "decrypt": 21190886,
+      "encrypt": 45078556,
+      "mul_ct": 5204498910,
+      "mul_plain": 41056506
+    },
+    "legacy": {
+      "add_ct": 940026,
+      "add_plain": 1242584,
+      "decrypt": 4065461,
+      "encrypt": 10851216,
+      "mul_ct": "refused-#135",
+      "mul_plain": 995698,
+      "negate_ct": 856991,
+      "sub_ct": 954159
+    }
+  },
+  "schema": "nine65-comparative-probe-v1",
+  "status": "PASS"
+}

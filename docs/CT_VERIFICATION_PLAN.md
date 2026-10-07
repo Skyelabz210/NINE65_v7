@@ -806,11 +806,11 @@ derived decisions after CRT reduction: `SignedU256::center` branches on the
 centered sign; quotient rounding branches on `rem >= q_last_half`; signed
 lane encoding branches on the sign and nonzero remainder; and quotient and
 CRT residue normalization use `%` on coefficient-derived values. The current
-working-tree follow-up converts centering, rounding, and sign encoding to
-mask selection and replaces those reductions with fixed-work routines. This
-source change is not validated yet. Require the differential/T2 and CRAM
-correctness checks, then repeat the isolated and full-path measurements with
-clean controls; keep the threshold and contrasts unchanged.
+follow-up in `48ef562` converts centering, rounding, and sign encoding to
+mask selection and replaces those reductions with fixed-work routines.
+`c1a502c` preserves existing sign-field callers. The newer measurement below
+records that code; differential/T2 completion and repeated clean-control
+measurements remain required.
 
 The PR-head CT job remains red: its separate
 `AdjacencyKElim::extract_k` small-vs-near-cap contrast reported
@@ -831,6 +831,33 @@ Keep the CT and correctness gates open until the arithmetic differential test,
 T2, and follow-up measurements establish correctness and repeatable timing
 results. Do not raise the threshold or remove the all-zero-vs-uniform
 contrast.
+
+### Follow-up measurement on `c1a502c` (2026-10-07)
+
+Run 37680342677 passes the blocking workflow on
+`c1a502cafaa90aeeb53b90e9df2c18097c42dab7`. The isolated reducer reports
+control `0.0954` and signal `1.7807`. Full zero-vs-uniform
+`mod_switch_down_dual` reports control `0.9485` and signal `0.0290`, with
+medians 239,281,405 ns and 239,271,675 ns. The magnitude-matched sign contrast
+reports control `0.5590` and signal `0.1890`.
+
+This is one passing run for those contrasts. Montgomery exponent Hamming weight
+and adjacency K-Elimination magnitude are inconclusive on this runner (controls
+`12.7978` and `34.2862` respectively). A green workflow does not turn those
+inconclusive measurements into CT evidence. CRAM-public correctness and timing
+run 37680342717 passes; full CI T2 run 37680342663 is still in progress.
+
+The raw Dudect report is archived under
+`artifacts/execution/2026-10-07-session/CI/pr169-c1a502c/ct/`, SHA-256
+`303ec2b59e8ec2c54f6a1cbab05d90b6031793da40a6174d146bcb8af0760e6d`.
+Retain the threshold and contrasts and repeat with clean controls before
+closing the finding.
+
+These decimal statistics are computed using `f64` in the test harness, while
+raw duration samples are integer nanoseconds. The float scanners explicitly
+exclude this harness and some compiler/benchmark analysis code; their passing
+status does not establish an all-owned-source zero-float guarantee. Issue #90
+is closed, but #92 Phase 5's broader requirement remains unchecked.
 
 ## 5. CI posture
 
