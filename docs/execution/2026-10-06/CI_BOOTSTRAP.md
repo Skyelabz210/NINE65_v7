@@ -32,8 +32,23 @@ Source-bound local logs are under
 The first sandbox WASM attempt failed at DNS; the network-enabled rerun passed.
 The service Clippy failure is preserved as a failure, not suppressed.
 
-Next CI gate: publish this patch on an indexed PR head, observe `cargo-deny`
-resolution, then triage the full workspace Clippy backlog without blanket lint
-allows. Make T2 run on that exact head, preserve its failing tests, and only
+The first hosted run on follow-up PR #164 at `ed6ec8f` verifies that the
+corrected cargo-deny action resolves and formatting passes. Static analysis,
+mode/claim policy, and the WASM client boundary pass. Service tests and both
+private-feedback test steps also pass. T1 Fast Gate, the service boundary, and
+the private-feedback stack stop at strict Clippy; T2 is skipped after T1 fails.
+The exact local T1 Clippy command fails on 23 existing
+`exact_transcendentals` errors, starting with `int_plus_one` and
+`should_implement_trait`. The service-specific local Clippy run encounters the
+same dependency errors. None have been suppressed.
+
+All five Fuzz Smoke jobs on that head fail before any fuzz target runs because
+the action reference `dtolnay/rust-toolchain@nightly-2025-08-04` does not exist.
+The follow-up patch uses the action's documented `@master` reference with
+`toolchain: nightly-2025-08-04` and keeps the same pinned compiler date. A
+fresh hosted run must confirm the action resolves and the targets actually run.
+
+Next CI gate: triage the workspace Clippy errors without blanket lint allows;
+make T1 green so T2 runs on the same indexed head; preserve T2's failing tests;
 then configure required check names/rulesets. A job skipped because T1 failed
 does not count as execution. #79 and release remain open.

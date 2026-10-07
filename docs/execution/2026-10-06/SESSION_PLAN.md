@@ -1,6 +1,6 @@
 # NINE65 v7: current remote plan and session execution order
 
-Updated 2026-10-06. This is the live-session control sheet for the 43 cards in
+Updated 2026-10-07. This is the live-session control sheet for the 43 cards in
 [`tasks.json`](../2026-10-03/tasks.json). The detailed contracts and acceptance
 criteria remain in the individual task cards and the
 [October 5 runbook](../2026-10-05/SESSION_RUNBOOK.md). A listed card is queued,
@@ -9,31 +9,31 @@ dependents. Preserve red correctness assertions and explicit refusals.
 
 ## Pinned starting state
 
-* Fetched `origin/main` and the clean checkout both point to
-  `017f0163be76c0adb102e581c9e7157ea7ae736a` (PR #162). There are no open
-  PRs and 31 open issues in the live GitHub inventory. The original 29-issue
-  manifest is historical and must not be rewritten.
+* The intake checkout and `origin/main` were
+  `017f0163be76c0adb102e581c9e7157ea7ae736a` (PR #162). PR #163 merged
+  the initial execution plan at `4666570868456b84fc76929a433450e7281cc477`.
+  PR #164 carries the later plan correction, F02 evidence and CI bootstrap
+  changes. The original 29-issue manifest is historical and must not be
+  rewritten.
 * `python3 scripts/nine65_execution_plan.py validate --self-test` passes 12
   self-tests and validates the 43-card DAG, while correctly reporting source
   drift from the original baseline. `ready` reports F00 alone until acceptance
   is established. Neither result verifies ciphertext correctness.
-* At intake the latest listed Actions run was the cancelled 2026-02-27 run and
-  current `main` had no executed CI. Publishing PR #163 triggered fresh hosted
-  CI and application-platform runs on 2026-10-07. Runners now start, but the
-  jobs fail before the full suite: an unavailable `cargo-deny` action, missing
-  `rg` in the claim script, pre-existing formatting drift, a WASM manifest
-  without a resolvable workspace root, and a Clippy command requesting a
-  nonexistent `fhe-service` library target. T2 is skipped after T1 failure.
-  The [CI bootstrap patch](CI_BOOTSTRAP.md) repairs those setup paths locally;
-  the service Clippy command now reaches an existing lint backlog, and a fresh
-  hosted run on the corrected PR head is still required.
-  Actions are enabled, but there are still no repository rulesets. #79 is now
-  an execution-and-green-check blocker, not an unstarted-run claim.
+* At intake the latest listed Actions run was the cancelled 2026-02-27 run.
+  Publishing PR #163 resumed hosted CI. On PR #164 at `ed6ec8f`, the
+  cargo-deny action resolves, formatting and static policy checks pass, and
+  the WASM boundary builds and passes. T1 and two application jobs reach real
+  Clippy failures; local T1 reports 23 `exact_transcendentals` lint errors.
+  T2 is skipped after T1 failure. Five Fuzz Smoke jobs fail during action
+  setup; the action reference is corrected in the follow-up patch and needs a
+  fresh hosted run. The [CI bootstrap record](CI_BOOTSTRAP.md) retains the
+  exact pass/fail boundary. Actions are enabled, but there are still no
+  repository rulesets. #79 remains open until checks execute and pass.
 * At intake this host had about 745 MiB free on `/home/acid`, 2.7 GiB RAM and
   no swap. The 1.0 GiB rebuildable Cargo `target` cache was cleared. A damaged
   partial toolchain was removed and Rust 1.89.0 reinstalled serially. `rustc`
-  and `cargo` now report the pinned 1.89.0; about 1.5 GiB is free. A complete
-  release build has not yet proved that capacity sufficient.
+  and `cargo` now report the pinned 1.89.0. The serial release sweep completed;
+  the filesystem now has roughly 4.4 GiB free.
 * The depth-four repeated-square plaintext assertions still fail; the exact
   scalar rescale oracle at the last step does not cure the prior phase overrun.
   No public bootstrap tuple has passed R03 admission. Checked decrypt #158 and
@@ -76,10 +76,9 @@ commit before each patch.
 
 ## First commands and stop rules for this session
 
-1. Finish independent F00 review without changing the original historical
-   baseline. The pinned toolchain was restored after clearing only rebuildable
-   Cargo output. If the new build exhausts storage, record the exact failure
-   and continue only work that does not depend on a passing suite.
+1. Obtain independent F00 review without changing the original historical
+   baseline. The pinned toolchain and build space are restored. The fresh
+   baseline artifact is an observation awaiting review, not acceptance.
 2. Inventory the workspace with Cargo metadata and classify all 94 targets
    across 12 packages, including the 43 integration-test targets (34 in
    `nine65`). F02's serial release `--no-fail-fast` sweep has now exercised 59
@@ -98,9 +97,12 @@ commit before each patch.
    independent oracle, then update #92 with the exact pass/fail gate and next
    blocked dependency. A merge, a model statement or a zero-match test is not
    acceptance.
-5. Before release, run the complete serial `--no-fail-fast` target matrix and
-   hosted CI on the final SHA. Keep owner-side Actions/billing, external lattice
-   estimation and external audit on the visible blocker list until evidenced.
+5. Clear the strict Clippy backlog so hosted T1 and then T2 execute. Rerun
+   Fuzz Smoke after the action-reference repair and record positive target
+   counts. Before release, run the complete serial `--no-fail-fast` target
+   matrix and hosted CI on the final SHA. Keep external lattice estimation,
+   external audit, and required-check rulesets on the visible blocker list
+   until evidenced.
 
 The session will attempt every dependency-ready wave in order. A failed gate
 halts its dependent branch; it does not authorize weakening tests, guessing a
