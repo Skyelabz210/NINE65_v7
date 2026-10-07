@@ -227,6 +227,38 @@ current cargo-deny schema; re-review its two direct consumers before adding
 any consumer and replace the deployed format only through a versioned codec
 migration with compatibility fixtures.
 
+### Follow-up head `57af1de6a08803f8893f23f00f446a1728d8e69b`
+
+The hosted rerun set is CI 37672722326, Fuzz Smoke 37672722486, CT
+verification 37672722432, CRAM-public 37672722228, application platform
+37672722576, exploratory matrix 37672722294, v7 scale sweep 37672722502,
+and comparative harness 37672722619. T1 Fast Gate (including cargo-deny),
+static analysis, T3 review, both seeded smoke jobs, application platform,
+and exploratory probe/source inventory pass. The scale sweep passes both
+cases with complete depth and zero operation failures. The comparative probe
+passes while preserving legacy `mul_ct=false` and `refused-#135` in its JSON.
+The full T2 workspace suite is now running because T1 passed.
+
+Fuzz Smoke has three reproduced failures again: a six-byte deserialize input,
+a 16-byte encrypt/decrypt input, and a 33-byte homomorphic input. Their raw
+corpus files are retained under
+[`pr167-57af1de/fuzz`](../../../artifacts/execution/2026-10-07-session/CI/pr167-57af1de/fuzz/);
+NTT and K-Elimination fuzz targets pass. CT source and functional gates pass;
+the blocking dudect measurement is still running. CRAM-public correctness is
+also still running after its mode, rescale, relin, and tripwire tests passed.
+Retain the raw timing artifact when the CT job finishes and record exact
+CRAM-public outcome before changing the gate plan. Comparative and scale
+outputs, the scale manifest, CT source report, and all three fuzz inputs are
+saved under
+[`pr167-57af1de`](../../../artifacts/execution/2026-10-07-session/CI/pr167-57af1de/).
+
+Next on this exact head: collect T2, CT dudect, and CRAM-public completion;
+read the full fuzz regressions and keep them open; finish the local 27-target
+debug matrix and then run the separate extreme target. Do not merge or accept
+F00/F02 while these gates or the existing release correctness failures remain
+red. Isolate the measured CT path before attributing the previously observed
+signal to a specific operation.
+
 ## Execute in dependency order
 
 The following waves cover each of the 43 task cards once. Within a wave, use
