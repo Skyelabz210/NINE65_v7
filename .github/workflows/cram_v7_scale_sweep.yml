@@ -75,7 +75,7 @@ jobs:
           fi
       - name: Build comparative probe
         run: |
-          cargo build --release -p nine65 \
+          cargo build -p nine65 \
             --bin cram_comparative_probe \
             --features serde,allow_insecure
       - name: Run quick scale correctness matrix
@@ -109,7 +109,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.89.0
       - name: Build comparative probe
         run: |
-          cargo build --release -p nine65 \
+          cargo build -p nine65 \
             --bin cram_comparative_probe \
             --features serde,allow_insecure
       - name: Assemble exact sweep command

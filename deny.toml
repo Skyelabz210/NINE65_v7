@@ -15,6 +15,8 @@ allow = [
     "BSL-1.0",
     "ISC",
     "Unicode-DFS-2016",
+    # First-party Cargo.toml files declare this exact custom SPDX license.
+    "LicenseRef-Proprietary-AllRightsReserved",
 ]
 confidence-threshold = 0.8
 

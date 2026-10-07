@@ -24,7 +24,7 @@ from itertools import product
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = ROOT / "target" / "release" / "cram_comparative_probe"
+BINARY = ROOT / "target" / "debug" / "cram_comparative_probe"
 
 
 @dataclass(frozen=True)
@@ -148,7 +148,6 @@ def build_probe() -> dict[str, object]:
     command = [
         "cargo",
         "build",
-        "--release",
         "-p",
         "nine65",
         "--bin",
@@ -334,6 +333,7 @@ def main() -> int:
         "branch": git_output("rev-parse", "--abbrev-ref", "HEAD"),
         "dirty": git_output("status", "--porcelain") != "",
         "profile": args.profile,
+        "build_profile": "debug",
         "hardware": hardware,
         "hardware_fingerprint": canonical_hash(hardware),
         "build": build,

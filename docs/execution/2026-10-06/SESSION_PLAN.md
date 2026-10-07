@@ -1,6 +1,6 @@
 # NINE65 v7: current remote plan and session execution order
 
-Updated 2026-10-07 after PR #167 hosted run set 37668430997–37668431023. This is the live-session
+Updated 2026-10-07 after PR #167 hosted run set 37671711811–37671712033. This is the live-session
 control sheet for the 43 cards in
 [`tasks.json`](../2026-10-03/tasks.json). The detailed contracts and acceptance
 criteria remain in the individual task cards and the
@@ -178,13 +178,54 @@ The hosted v6/v7 comparative smoke also exposed a release build with
 `allow_insecure`; update that deterministic harness to run both comparison
 sides in debug and record the profile consistently before resuming its smoke.
 
-The local `allow_insecure` run has started executing the 27 `nine65`
-integration targets after an 11m02s serial compile. Its first target passed
-3/3 tests in 420.61s; the second target is active. The one
-`nine65-extreme-tests` target remains queued. The lockfile/policy and profile
-changes have passed local Python regression, Python syntax, TOML parse,
-formatting and whitespace checks; hosted confirmation is pending on the next
-PR head.
+The local `allow_insecure` run is executing the 27 `nine65` integration
+targets after an 11m02s serial compile. Its first target,
+`anchor_drift_diagnostics`, passed 3/3 tests in 420.61s. The second target,
+`arrow_emission_fhe_gate_matrix`, is active; two winding tests have exceeded
+60 seconds. The one `nine65-extreme-tests` target remains queued. Preserve the
+full log and record the exact source SHA, toolchain, target count and exit
+status when the run finishes.
+
+### Live run at PR #167 head `13306310547ef96e8737365a8ffab1f8a74d385d`
+
+Hosted run set 37671711811–37671712033 confirms these passing gates: T1 Static
+Analysis, T3 review, exploratory `probe-smoke` and `source-inventory`, CT
+source/functional tests, NTT and K-Elimination fuzz targets, WASM boundary,
+authenticated service boundary, private-feedback stack, mode/claim policy,
+and CRAM-public correctness. CRAM-public debug timings are still running as
+an informational job. The failed gates
+are T1 Fast Gate (cargo-deny licenses rejects the first-party
+`LicenseRef-Proprietary-AllRightsReserved` declaration), scale sweep
+`quick-correctness` (builds the seeded probe with forbidden release
+`allow_insecure`), and comparative smoke (the expected legacy `mul_ct`
+refusal is counted as an ordinary failed correctness assertion). CT dudect
+remains blocking-red. Three fuzz targets remain red with preserved
+reproducers: deserialize requests a 37.95 GiB allocation from a six-byte
+input; encrypt/decrypt decrypts 65,536 as 65,533; homomorphic addition returns
+65,289 for 65,292 + 0. NTT and K-Elimination fuzz targets pass. The complete
+check list is on [PR #167](https://github.com/Skyelabz210/NINE65_v7/pull/167).
+
+The current follow-up adds only the exact custom license identifier already
+declared by first-party manifests; moves both scale-sweep builds and its
+runner to debug while recording `build_profile`; and makes the comparative
+smoke accept only the exact `mul_ct=false` plus `mul_ct_status="refused-#135"`
+pair while keeping that refusal visible. Local Python regression, syntax,
+TOML parse, formatting and whitespace checks pass; cargo-deny is unavailable
+on this host. Commit and push this follow-up, then inspect all hosted results.
+Require T1 Fast Gate and T2 to execute and pass before treating the CI
+foundation as complete. Keep the dudect and three fuzz regressions open;
+do not change timing thresholds or correctness assertions. Finish the local
+27-target debug matrix, then run the separate
+`nine65-extreme-tests/full_system_measurement` target and retain both results.
+
+After those independent gates, resume the 43-card DAG below in earliest-ready
+waves. In particular, keep the F02 release failures, fuzz/security gates and
+architecture prerequisites visible; do not accept F00/F02, claim production
+security or performance, or advance dependent cards while their own gates are
+red. The bincode exception remains advisory-ID-and-reason only under the
+current cargo-deny schema; re-review its two direct consumers before adding
+any consumer and replace the deployed format only through a versioned codec
+migration with compatibility fixtures.
 
 ## Execute in dependency order
 

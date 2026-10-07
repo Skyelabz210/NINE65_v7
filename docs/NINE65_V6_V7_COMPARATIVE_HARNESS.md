@@ -41,7 +41,7 @@ plaintext multiplication
 ciphertext multiplication
 ```
 
-Every reported operation class has an explicit decrypt-and-compare correctness check. The probe also runs a ciphertext-squaring chain and records, per attempted depth:
+Every supported operation has an explicit decrypt-and-compare correctness check. Legacy ciphertext multiplication is deliberately refused by issue #135: the JSON keeps `correctness.legacy.mul_ct` false and reports `mul_ct_status: "refused-#135"`. The smoke gate accepts that exact refusal while requiring every supported legacy check and every DualRNS check to pass. This records a missing capability; it does not claim legacy ciphertext multiplication works. The probe also runs a ciphertext-squaring chain and records, per attempted depth:
 
 ```text
 operation latency
@@ -87,6 +87,8 @@ parameter-contract failures
 ```
 
 It produces normalized `fhe-comparison-record-v1` records and passes them to `cram_compare_results.py`.
+
+The separate v7 scale sweep also uses a debug build because the seeded probe enables the test-only `allow_insecure` feature. Its manifest records `build_profile: "debug"`; its timings are functional/regression evidence, not release performance evidence.
 
 ## Ranking rules
 
