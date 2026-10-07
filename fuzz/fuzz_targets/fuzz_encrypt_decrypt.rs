@@ -1,7 +1,7 @@
 #![no_main]
 
-use libfuzzer_sys::fuzz_target;
 use arbitrary::Arbitrary;
+use libfuzzer_sys::fuzz_target;
 use nine65::prelude::*;
 
 #[derive(Arbitrary, Debug)]
@@ -16,7 +16,7 @@ struct EncryptInput {
 // - Decryption correctly recovers the plaintext (mod t)
 fuzz_target!(|input: EncryptInput| {
     // Use a fixed secure config to avoid parameter fuzzing overhead
-    let config = FHEConfig::standard_128_insecure();
+    let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fuzz configuration");
 
     // Bound plaintext to valid range
     let plaintext = input.plaintext % config.t;

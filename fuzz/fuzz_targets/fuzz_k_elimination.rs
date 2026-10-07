@@ -1,8 +1,8 @@
 #![no_main]
 
-use libfuzzer_sys::fuzz_target;
 use arbitrary::Arbitrary;
-use nine65::arithmetic::k_elimination::{KElimination, KElimConfig};
+use libfuzzer_sys::fuzz_target;
+use nine65::arithmetic::k_elimination::{KElimConfig, KElimination};
 
 #[derive(Arbitrary, Debug)]
 struct KElimInput {
@@ -11,6 +11,31 @@ struct KElimInput {
     v_beta: u64,
     divisor: u64,
     config_choice: u8,
+}
+
+fn add_mod(a: u128, b: u128, modulus: u128) -> u128 {
+    debug_assert!(a < modulus && b < modulus);
+    if a >= modulus - b {
+        a - (modulus - b)
+    } else {
+        a + b
+    }
+}
+
+fn mul_mod(mut a: u128, mut b: u128, modulus: u128) -> u128 {
+    debug_assert!(modulus > 0);
+    a %= modulus;
+    let mut result = 0;
+    while b > 0 {
+        if b & 1 == 1 {
+            result = add_mod(result, a, modulus);
+        }
+        b >>= 1;
+        if b > 0 {
+            a = add_mod(a, a, modulus);
+        }
+    }
+    result
 }
 
 // Fuzz K-Elimination exact division
@@ -39,31 +64,34 @@ fuzz_target!(|input: KElimInput| {
     // Ensure divisor is non-zero and reasonable
     let divisor = if input.divisor == 0 { 1 } else { input.divisor };
 
-    // Compute k = (v_beta - v_alpha) * alpha_inv_beta mod beta_cap
-    // Then full_value = v_alpha + k * alpha_cap
-    let k = if v_beta >= v_alpha {
-        ((v_beta - v_alpha) * ke.alpha_inv_beta) % beta_cap
+    // Independently compute the winding with overflow-safe modular
+    // multiplication, then keep the scalar oracle within u128. Some
+    // configurations have a combined alpha/beta capacity wider than u128,
+    // so overflow is a checked refusal.
+    let alpha_mod_beta = v_alpha % beta_cap;
+    let diff = if v_beta >= alpha_mod_beta {
+        v_beta - alpha_mod_beta
     } else {
-        ((beta_cap + v_beta - v_alpha) * ke.alpha_inv_beta) % beta_cap
+        beta_cap - (alpha_mod_beta - v_beta)
     };
-    let full_value = v_alpha + k * alpha_cap;
+    let k = mul_mod(diff, ke.alpha_inv_beta, beta_cap);
+    let full_value = k
+        .checked_mul(alpha_cap)
+        .and_then(|lift| v_alpha.checked_add(lift));
 
-    // Only test exact division when divisor actually divides the value
-    if full_value % (divisor as u128) == 0 && divisor > 0 {
-        // Test exact division - should not panic
-        let result = ke.exact_divide(v_alpha, v_beta, divisor);
-
-        // Verify correctness
-        let expected = full_value / (divisor as u128);
-        assert_eq!(
-            result, expected,
-            "K-elimination exact_divide failed: {} / {} = {} (expected {})",
-            full_value, divisor, result, expected
-        );
-
-        // Also test that checked version returns Some
-        let checked_result = ke.exact_divide_checked(v_alpha, v_beta, divisor);
-        assert!(checked_result.is_some(), "exact_divide_checked returned None for valid division");
-        assert_eq!(checked_result.unwrap(), expected);
+    if let Some(full_value) = full_value {
+        let validated = ke.exact_divide_validated(v_alpha, v_beta, divisor);
+        let checked = ke.exact_divide_checked(v_alpha, v_beta, divisor);
+        if full_value % divisor as u128 == 0 {
+            let expected = full_value / divisor as u128;
+            assert_eq!(validated.unwrap(), expected);
+            assert_eq!(checked, Some(expected));
+        } else {
+            assert!(validated.is_err());
+            assert_eq!(checked, None);
+        }
+    } else {
+        assert!(ke.exact_divide_validated(v_alpha, v_beta, divisor).is_err());
+        assert_eq!(ke.exact_divide_checked(v_alpha, v_beta, divisor), None);
     }
 });

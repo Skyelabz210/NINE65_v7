@@ -1,7 +1,7 @@
 #![no_main]
 
-use libfuzzer_sys::fuzz_target;
 use arbitrary::Arbitrary;
+use libfuzzer_sys::fuzz_target;
 use nine65::prelude::*;
 
 #[derive(Arbitrary, Debug)]
@@ -16,16 +16,12 @@ struct NTTInput {
 // - INTT(NTT(poly)) == poly
 // - No panics on edge cases
 fuzz_target!(|input: NTTInput| {
-    let config = FHEConfig::standard_128_insecure();
+    let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fuzz configuration");
     let ntt = NTTEngine::new(config.q, config.n);
 
     // Take at most n coefficients
     let n = config.n;
-    let mut poly: Vec<u64> = input.coeffs
-        .iter()
-        .take(n)
-        .map(|&c| c % config.q)
-        .collect();
+    let mut poly: Vec<u64> = input.coeffs.iter().take(n).map(|&c| c % config.q).collect();
 
     // Pad to full size if needed
     poly.resize(n, 0);
