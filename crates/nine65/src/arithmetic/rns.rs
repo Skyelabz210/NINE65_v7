@@ -340,6 +340,7 @@ impl U512 {
         Self { d0, d1, d2, d3 }
     }
 
+    #[cfg(test)]
     fn ge(self, other: Self) -> bool {
         if self.d3 != other.d3 {
             return self.d3 > other.d3;
