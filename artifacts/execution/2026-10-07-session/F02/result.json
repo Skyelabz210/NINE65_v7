@@ -1,0 +1,106 @@
+{
+  "task_id": "F02",
+  "run_id": "2026-10-07-local-release-rerun",
+  "status": "failed_validation",
+  "source_commit": "d1d082c9579e0b0026398cd08fec15c092c361f4",
+  "source_tree": "0da0812d3da71a5eadb96b68461c925298168149",
+  "published_equivalent_commit": "a5f5cfd7d5ecf69cc6d4f83bc6e1e9c0bafb4b3a",
+  "toolchain": "rustc 1.89.0",
+  "checks": [
+    {
+      "command": "cargo +1.89.0 clippy --offline -j1 --workspace --all-targets -- -D warnings",
+      "exit_code": 0,
+      "result": "passed"
+    },
+    {
+      "command": "cargo +1.89.0 test --offline -j1 -p mana -p private-feedback-core -p fhe-service -p cram-core --no-fail-fast",
+      "exit_code": 0,
+      "passed": 98,
+      "failed": 0,
+      "ignored": 29,
+      "result": "passed"
+    },
+    {
+      "command": "cargo +1.89.0 test --release --offline -j1 --workspace --no-fail-fast",
+      "exit_code": 101,
+      "result": "failed_validation",
+      "build_duration": "61m54s",
+      "nine65_library": {
+        "passed": 941,
+        "failed": 8,
+        "ignored": 125,
+        "duration_seconds": 3013.2
+      },
+      "k_elimination_basis_regression": {
+        "passed": 3,
+        "failed": 1,
+        "ignored": 0
+      },
+      "failed_targets": [
+        "-p nine65 --lib",
+        "-p nine65 --test k_elimination_basis_regression"
+      ],
+      "other_default_targets": "passed",
+      "doctests": "passed"
+    },
+    {
+      "command": "cargo +1.89.0 fmt --all -- --check",
+      "exit_code": 0,
+      "result": "passed"
+    },
+    {
+      "command": "python3 scripts/nine65_execution_plan.py validate --self-test",
+      "exit_code": 0,
+      "self_tests_passed": 12,
+      "cards": 43,
+      "dependency_graph": "acyclic",
+      "baseline_drift": "reported and preserved"
+    }
+  ],
+  "nine65_library_failures": [
+    {
+      "test": "ops::auto_bootstrap::tests::repeated_squaring_is_exact_under_auto_refresh_secure_128_deep",
+      "cause": "public BFV refresh is explicitly disabled until Phase 1 propagates the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
+    },
+    {
+      "test": "ops::auto_bootstrap::tests::repeated_squaring_is_exact_under_auto_refresh_secure_192",
+      "cause": "public BFV refresh is explicitly disabled until Phase 1 propagates the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
+    },
+    {
+      "test": "ops::auto_bootstrap::tests::repeated_squaring_is_exact_under_auto_refresh_secure_256",
+      "cause": "public BFV refresh is explicitly disabled until Phase 1 propagates the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
+    },
+    {
+      "test": "ops::auto_bootstrap::tests::squaring_refresh_costs_exactly_one_bootstrap",
+      "cause": "public BFV refresh is explicitly disabled until Phase 1 propagates the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
+    },
+    {
+      "test": "ops::bootstrap::tests::diag_measure_noise_growth",
+      "cause": "supports_public_refresh admits configurations whose public refresh returns wrong plaintexts"
+    },
+    {
+      "test": "ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128",
+      "cause": "wrong plaintext at depth 4: got 56106, expected 65536"
+    },
+    {
+      "test": "ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_192",
+      "cause": "wrong plaintext at depth 4: got 0, expected 65536"
+    },
+    {
+      "test": "ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128",
+      "cause": "depth-4 zero-noise controls fail: seed 4 with c1 got 2 instead of 1; seed 2 with c1 got 0 instead of 65536"
+    }
+  ],
+  "integration_failure": {
+    "test": "nine65/tests/k_elimination_basis_regression.rs::class_f_alpha_lanes_must_be_prime_and_distinct",
+    "cause": "the regression expected a composite Class-F alpha lane to be rejected"
+  },
+  "unresolved": [
+    "Eight nine65 library failures and one K-Elimination integration failure remain open",
+    "28 feature-gated integration targets remain unexecuted",
+    "Three PR #165 fuzz failures remain open",
+    "F00 is awaiting independent review; F02 acceptance remains blocked",
+    "Hosted CI has not rerun on this commit"
+  ],
+  "capture_note": "The release sweep stdout was observed in the execution session but was not redirected to a raw log file. This record preserves the final Cargo summary and all nine failure names and causes; it is not a replacement for the prior baseline log."
+}
