@@ -924,6 +924,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Retired (#135): test name is misleading - does not test BFVEvaluator::mul(), only tests mul_no_relin + decrypt_degree2"]
     fn test_ct_mul_multiple_values() {
         // Test multiple ct×ct cases with OLD BFV degree-2 decrypt
         // Note: light_mul config supports products up to ~250 (Δ²×product < q)
@@ -994,6 +995,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "Retired (#135): test name is misleading - does not test BFVEvaluator::mul(), only tests mul_no_relin + decrypt_degree2"]
     fn test_homomorphic_mul_with_relin() {
         // Test ct×ct multiplication with degree-2 decrypt
         let (config, ntt, keys, mut harvester, encoder) = setup_mul();
