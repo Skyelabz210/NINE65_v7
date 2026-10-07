@@ -1,0 +1,8 @@
+app-core: Enforce residue-native application vocabulary: 0
+app-core: Assert evaluator adapter exposes no decrypt API: 0
+service-boundary: Assert base authentication and tenant isolation: 0
+service-boundary: Assert rate operator audit and decrypt controls: 0
+service-boundary: Assert loopback default: 0
+wasm-client: Assert secure browser entropy and validated boundaries: 0
+wasm-client: Assert secret-key export remains disabled: 0
+policy-and-claims: Assert normative contracts exist: 0

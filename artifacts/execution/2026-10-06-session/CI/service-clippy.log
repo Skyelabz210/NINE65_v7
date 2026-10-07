@@ -1,0 +1,291 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+   Compiling proc-macro2 v1.0.103
+   Compiling quote v1.0.42
+   Compiling unicode-ident v1.0.22
+   Compiling typenum v1.19.0
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling syn v2.0.111
+   Compiling serde_core v1.0.228
+   Compiling libc v0.2.178
+   Compiling serde v1.0.228
+    Checking block-buffer v0.10.4
+    Checking crypto-common v0.1.7
+    Checking cfg-if v1.0.4
+   Compiling virtue v0.0.18
+   Compiling zeroize_derive v1.4.2
+   Compiling serde_derive v1.0.228
+    Checking zeroize v1.8.2
+   Compiling serde_json v1.0.147
+   Compiling thiserror v1.0.69
+    Checking mana v0.1.0 (/home/acid/Projects/NINE65_v7/crates/mana)
+   Compiling bincode_derive v2.0.1
+   Compiling thiserror-impl v1.0.69
+    Checking digest v0.10.7
+   Compiling nine65 v0.1.0 (/home/acid/Projects/NINE65_v7/crates/nine65)
+    Checking unty v0.0.4
+    Checking cpufeatures v0.2.17
+    Checking memchr v2.7.6
+    Checking zmij v0.1.7
+    Checking itoa v1.0.16
+    Checking getrandom v0.2.16
+    Checking sha2 v0.10.9
+    Checking bincode v2.0.1
+    Checking unhal v0.1.0 (/home/acid/Projects/NINE65_v7/crates/unhal)
+    Checking subtle v2.6.1
+    Checking exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7/crates/exact_transcendentals)
+    Checking bincode v1.3.3
+error: unnecessary `>= y + 1` or `x - 1 >=`
+    --> crates/exact_transcendentals/src/cram_ct.rs:2075:16
+     |
+2075 |             if (kappa.unsigned_abs() as u32) >= anchor / 2 + 1 {
+     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: change it to: `(kappa.unsigned_abs() as u32) > anchor / 2`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#int_plus_one
+     = note: `-D clippy::int-plus-one` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::int_plus_one)]`
+
+    Checking base64 v0.22.1
+error: method `add` can be confused for the standard trait method `std::ops::Add::add`
+   --> crates/exact_transcendentals/src/cram_carry.rs:105:5
+    |
+105 | /     pub fn add(self, o: Self) -> Self {
+106 | |         Frac::new(self.num * o.den + o.num * self.den, self.den * o.den)
+107 | |     }
+    | |_____^
+    |
+    = help: consider implementing the trait `std::ops::Add` or choosing a less ambiguous method name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#should_implement_trait
+    = note: `-D clippy::should-implement-trait` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::should_implement_trait)]`
+
+error: method `sub` can be confused for the standard trait method `std::ops::Sub::sub`
+   --> crates/exact_transcendentals/src/cram_carry.rs:108:5
+    |
+108 | /     pub fn sub(self, o: Self) -> Self {
+109 | |         Frac::new(self.num * o.den - o.num * self.den, self.den * o.den)
+110 | |     }
+    | |_____^
+    |
+    = help: consider implementing the trait `std::ops::Sub` or choosing a less ambiguous method name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#should_implement_trait
+
+error: method `mul` can be confused for the standard trait method `std::ops::Mul::mul`
+   --> crates/exact_transcendentals/src/cram_carry.rs:111:5
+    |
+111 | /     pub fn mul(self, o: Self) -> Self {
+112 | |         Frac::new(self.num * o.num, self.den * o.den)
+113 | |     }
+    | |_____^
+    |
+    = help: consider implementing the trait `std::ops::Mul` or choosing a less ambiguous method name
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#should_implement_trait
+
+error: the loop variable `k` is used to index `signatures`
+   --> crates/exact_transcendentals/src/cram_ct.rs:894:18
+    |
+894 |         for k in 0..n {
+    |                  ^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_range_loop
+    = note: `-D clippy::needless-range-loop` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::needless_range_loop)]`
+help: consider using an iterator and enumerate()
+    |
+894 -         for k in 0..n {
+894 +         for (k, <item>) in signatures.iter_mut().enumerate().take(n) {
+    |
+
+error: this if-then-else expression returns a bool literal
+    --> crates/exact_transcendentals/src/cram_ct.rs:1241:16
+     |
+1241 |     let sign = if d < 0 { true } else { false };
+     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: you can reduce it to: `d < 0`
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_bool
+     = note: `-D clippy::needless-bool` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::needless_bool)]`
+
+error: unnecessary closure used to substitute value for `Option::None`
+    --> crates/exact_transcendentals/src/cram_ct.rs:1592:23
+     |
+1592 |           let aux_set = self.witness.c0_aux.as_ref().ok_or_else(|| {
+     |  _______________________^
+1593 | |             CramOpError::DivisionLaneNotImplemented {
+1594 | |                 primary: plan.primary,
+1595 | |                 gcd_with_basis: plan.gcd_with_basis,
+1596 | |             }
+1597 | |         })?;
+     | |__________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_lazy_evaluations
+     = note: `-D clippy::unnecessary-lazy-evaluations` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::unnecessary_lazy_evaluations)]`
+help: use `ok_or` instead
+     |
+1592 ~         let aux_set = self.witness.c0_aux.as_ref().ok_or({
+1593 +             CramOpError::DivisionLaneNotImplemented {
+1594 +                 primary: plan.primary,
+1595 +                 gcd_with_basis: plan.gcd_with_basis,
+1596 +             }
+1597 ~         })?;
+     |
+
+error: the loop variable `i` is used to index `S8`
+  --> crates/exact_transcendentals/src/lane_projector.rs:91:14
+   |
+91 |     for i in 1..S8.len() {
+   |              ^^^^^^^^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+   |
+91 -     for i in 1..S8.len() {
+91 +     for (i, <item>) in S8.iter().enumerate().skip(1) {
+   |
+
+error: calls to `push` immediately after creation
+   --> crates/exact_transcendentals/src/substrate.rs:135:5
+    |
+135 | /     let mut lanes = Vec::with_capacity(5);
+136 | |     lanes.push(SubstrateAssignment {
+137 | |         prime: 3,
+138 | |         substrate: LaneSubstrate::AlgebraicFp2,
+...   |
+164 | |         role: "boundary",
+165 | |     });
+    | |_______^ help: consider using the `vec![]` macro: `let lanes = vec![..];`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#vec_init_then_push
+    = note: `-D clippy::vec-init-then-push` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::vec_init_then_push)]`
+
+error: manually reimplementing `div_ceil`
+   --> crates/exact_transcendentals/src/substrate.rs:258:21
+    |
+258 |         let mut y = (x + 1) / 2;
+    |                     ^^^^^^^^^^^ help: consider using `.div_ceil()`: `x.div_ceil(2)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#manual_div_ceil
+    = note: `-D clippy::manual-div-ceil` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_div_ceil)]`
+
+error: the loop variable `i` is only used to index `basis_a`
+   --> crates/exact_transcendentals/src/transduction.rs:263:18
+    |
+263 |         for i in 0..n {
+    |                  ^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_range_loop
+help: consider using an iterator
+    |
+263 -         for i in 0..n {
+263 +         for <item> in basis_a.iter().take(n) {
+    |
+
+error: the loop variable `j` is only used to index `basis_b`
+   --> crates/exact_transcendentals/src/transduction.rs:274:22
+    |
+274 |             for j in 0..m {
+    |                      ^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_range_loop
+help: consider using an iterator
+    |
+274 -             for j in 0..m {
+274 +             for <item> in basis_b.iter().take(m) {
+    |
+
+error: casting to the same type is unnecessary (`u128` -> `u128`)
+   --> crates/exact_transcendentals/src/chimera_page.rs:132:26
+    |
+132 |         let winding = if magnitude as u128 >= m_product && m_product > 0 && m_product < u128::MAX {
+    |                          ^^^^^^^^^^^^^^^^^ help: try: `magnitude`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+    = note: `-D clippy::unnecessary-cast` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::unnecessary_cast)]`
+
+error: casting to the same type is unnecessary (`u128` -> `u128`)
+   --> crates/exact_transcendentals/src/chimera_page.rs:133:21
+    |
+133 |             let k = magnitude as u128 / m_product;
+    |                     ^^^^^^^^^^^^^^^^^ help: try: `magnitude`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:198:39
+    |
+198 |                 .map(|((&a, &b), &m)| ((a as u64 + b as u64) % m) as u64)
+    |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `((a as u64 + b as u64) % m)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:198:41
+    |
+198 |                 .map(|((&a, &b), &m)| ((a as u64 + b as u64) % m) as u64)
+    |                                         ^^^^^^^^ help: try: `a`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:198:52
+    |
+198 |                 .map(|((&a, &b), &m)| ((a as u64 + b as u64) % m) as u64)
+    |                                                    ^^^^^^^^ help: try: `b`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:239:35
+    |
+239 |             .map(|((&a, &b), &m)| ((a as u64 * b as u64) % m) as u64)
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `((a as u64 * b as u64) % m)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:239:37
+    |
+239 |             .map(|((&a, &b), &m)| ((a as u64 * b as u64) % m) as u64)
+    |                                     ^^^^^^^^ help: try: `a`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:239:48
+    |
+239 |             .map(|((&a, &b), &m)| ((a as u64 * b as u64) % m) as u64)
+    |                                                ^^^^^^^^ help: try: `b`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:532:29
+    |
+532 |             .map(|(&a, &b)| ((a as u64 + b as u64) % self.modulus) as u64)
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: try: `((a as u64 + b as u64) % self.modulus)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:532:31
+    |
+532 |             .map(|(&a, &b)| ((a as u64 + b as u64) % self.modulus) as u64)
+    |                               ^^^^^^^^ help: try: `a`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: casting to the same type is unnecessary (`u64` -> `u64`)
+   --> crates/exact_transcendentals/src/dyn_crt.rs:532:42
+    |
+532 |             .map(|(&a, &b)| ((a as u64 + b as u64) % self.modulus) as u64)
+    |                                          ^^^^^^^^ help: try: `b`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#unnecessary_cast
+
+error: could not compile `exact_transcendentals` (lib) due to 23 previous errors
