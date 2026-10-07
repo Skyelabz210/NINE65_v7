@@ -158,7 +158,8 @@ mod tests {
             for k in 0..spin {
                 acc = acc.wrapping_mul(6364136223846793005).wrapping_add(k);
             }
-            (i as u64) << 32 | (acc & 0) // value encodes only the lane index
+            std::hint::black_box(acc);
+            (i as u64) << 32 // value encodes only the lane index
         });
         for (i, v) in out.iter().enumerate() {
             assert_eq!(*v >> 32, i as u64);

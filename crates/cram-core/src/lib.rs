@@ -130,6 +130,10 @@ impl ResidueLane {
         })
     }
 
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "addition is fallible when residue bases differ"
+    )]
     pub fn add(self, rhs: Self) -> Result<Self, CramError> {
         self.compatible(rhs)?;
         let sum = self.residue as u128 + rhs.residue as u128;
@@ -139,6 +143,10 @@ impl ResidueLane {
         })
     }
 
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "subtraction is fallible when residue bases differ"
+    )]
     pub fn sub(self, rhs: Self) -> Result<Self, CramError> {
         self.compatible(rhs)?;
         let residue = if self.residue >= rhs.residue {
@@ -149,6 +157,10 @@ impl ResidueLane {
         Ok(Self { residue, ..self })
     }
 
+    #[expect(
+        clippy::should_implement_trait,
+        reason = "multiplication is fallible when residue bases differ"
+    )]
     pub fn mul(self, rhs: Self) -> Result<Self, CramError> {
         self.compatible(rhs)?;
         let product = self.residue as u128 * rhs.residue as u128;

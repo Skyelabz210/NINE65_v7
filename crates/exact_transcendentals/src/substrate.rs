@@ -132,37 +132,38 @@ impl HeterogeneousLayout {
 /// basis `{3, 5, 7, 11, 13}`. Bridge prime 7 is quantum; the rest are
 /// algebraic deterministic checks.
 pub fn theorem_q4_safe_basis_layout() -> HeterogeneousLayout {
-    let mut lanes = Vec::with_capacity(5);
-    lanes.push(SubstrateAssignment {
-        prime: 3,
-        substrate: LaneSubstrate::AlgebraicFp2,
-        oracle_gates: 2,
-        role: "coprimality",
-    });
-    lanes.push(SubstrateAssignment {
-        prime: 5,
-        substrate: LaneSubstrate::AlgebraicFp2,
-        oracle_gates: 3,
-        role: "coprimality + QR",
-    });
-    lanes.push(SubstrateAssignment {
-        prime: 7,
-        substrate: LaneSubstrate::QuantumHilbert,
-        oracle_gates: 8,
-        role: "quartic residue (Grover)",
-    });
-    lanes.push(SubstrateAssignment {
-        prime: 11,
-        substrate: LaneSubstrate::AlgebraicFp2,
-        oracle_gates: 5,
-        role: "Ramanujan",
-    });
-    lanes.push(SubstrateAssignment {
-        prime: 13,
-        substrate: LaneSubstrate::AlgebraicFp2,
-        oracle_gates: 4,
-        role: "boundary",
-    });
+    let lanes = vec![
+        SubstrateAssignment {
+            prime: 3,
+            substrate: LaneSubstrate::AlgebraicFp2,
+            oracle_gates: 2,
+            role: "coprimality",
+        },
+        SubstrateAssignment {
+            prime: 5,
+            substrate: LaneSubstrate::AlgebraicFp2,
+            oracle_gates: 3,
+            role: "coprimality + QR",
+        },
+        SubstrateAssignment {
+            prime: 7,
+            substrate: LaneSubstrate::QuantumHilbert,
+            oracle_gates: 8,
+            role: "quartic residue (Grover)",
+        },
+        SubstrateAssignment {
+            prime: 11,
+            substrate: LaneSubstrate::AlgebraicFp2,
+            oracle_gates: 5,
+            role: "Ramanujan",
+        },
+        SubstrateAssignment {
+            prime: 13,
+            substrate: LaneSubstrate::AlgebraicFp2,
+            oracle_gates: 4,
+            role: "boundary",
+        },
+    ];
     HeterogeneousLayout { lanes }
 }
 
@@ -255,7 +256,7 @@ pub mod cost_model {
         }
         // Newton's method.
         let mut x = n;
-        let mut y = (x + 1) / 2;
+        let mut y = x.div_ceil(2);
         while y < x {
             x = y;
             y = (x + n / x) / 2;

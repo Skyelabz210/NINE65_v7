@@ -248,9 +248,9 @@ mod tests {
 
     #[test]
     fn safe_basis_is_pairwise_coprime() {
-        for i in 0..LANE_COUNT {
-            for j in (i + 1)..LANE_COUNT {
-                assert_eq!(gcd(SAFE_BASIS[i], SAFE_BASIS[j]), 1);
+        for (i, &left) in SAFE_BASIS.iter().enumerate() {
+            for &right in SAFE_BASIS.iter().skip(i + 1) {
+                assert_eq!(gcd(left, right), 1);
             }
         }
     }
@@ -260,8 +260,8 @@ mod tests {
         let frame = ResidueSignal::from_signal(sample_signal(42, 5));
         assert!(frame.validate());
         for slot in 0..SLOT_COUNT {
-            for lane in 0..LANE_COUNT {
-                assert!(frame.lane(slot, lane).unwrap() < SAFE_BASIS[lane]);
+            for (lane, &basis) in SAFE_BASIS.iter().enumerate() {
+                assert!(frame.lane(slot, lane).unwrap() < basis);
             }
         }
     }
@@ -275,8 +275,8 @@ mod tests {
         residue_a.add_assign(&residue_b);
 
         for slot in 0..SLOT_COUNT {
-            for lane in 0..LANE_COUNT {
-                let expected = (a[slot] + b[slot]) % SAFE_BASIS[lane];
+            for (lane, &basis) in SAFE_BASIS.iter().enumerate() {
+                let expected = (a[slot] + b[slot]) % basis;
                 assert_eq!(residue_a.lane(slot, lane), Some(expected));
             }
         }

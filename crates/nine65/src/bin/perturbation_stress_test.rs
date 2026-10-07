@@ -2,10 +2,9 @@
 //! Verifies the "Time Crystal" hypothesis: S8 Safe Basis periodicity and A2 localization.
 
 use nine65::arithmetic::integer_math::format_ratio;
-use nine65::arithmetic::rns::{U256, U512};
+use nine65::arithmetic::rns::U512;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
-use std::time::Instant;
 
 fn main() {
     println!("NINE65 v7 Perturbation & Self-Stabilization Stress Test");
@@ -44,11 +43,11 @@ fn main() {
     println!("\n[3] Analysis: Recovery Metrics");
 
     // A2 Path: Parallel Summation
-    let (a2_val, a2_metrics) =
+    let (_a2_val, a2_metrics) =
         crt_reconstruct_parallel_with_metrics(&residues, &correct_residues, primes);
 
     // Sequential Path (Simulated Garner)
-    let (seq_val, seq_metrics) =
+    let (_seq_val, seq_metrics) =
         crt_reconstruct_sequential_with_metrics(&residues, &correct_residues, primes);
 
     println!("  Metric | A2 Parallel (Time Crystal) | Sequential Garner");
@@ -130,7 +129,7 @@ fn crt_reconstruct_parallel_with_metrics(
     )
 }
 
-fn div_u512_by_u512(mut a: U512, b: U512) -> U512 {
+fn div_u512_by_u512(a: U512, b: U512) -> U512 {
     let mut q = U512::zero();
     let mut r = U512::zero();
     for i in (0..512).rev() {

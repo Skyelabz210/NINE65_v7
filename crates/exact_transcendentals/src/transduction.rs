@@ -260,8 +260,7 @@ impl TransductionMap {
         let mut coefficients = Vec::with_capacity(n);
         let mut idempotents = Vec::with_capacity(n);
 
-        for i in 0..n {
-            let a_i = basis_a[i];
+        for &a_i in basis_a {
             // M_A / a_i
             let m_over_ai = m_a / a_i;
             // (M_A / a_i)^{-1} mod a_i
@@ -271,8 +270,7 @@ impl TransductionMap {
             let e_i = k_elim::mulmod(m_over_ai, inv, m_a);
 
             let mut row = Vec::with_capacity(m);
-            for j in 0..m {
-                let b_j = basis_b[j];
+            for &b_j in basis_b {
                 row.push(k_elim::modd(e_i, b_j));
             }
             coefficients.push(row);

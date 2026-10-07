@@ -39,7 +39,8 @@ fn median_exact(sorted: &[u64]) -> (u128, u128) {
 /// p95 by nearest-rank: rank = ceil(95*n/100), 1-based. Integer only.
 fn p95_nearest_rank(sorted: &[u64]) -> u64 {
     let n = sorted.len();
-    let rank = (95 * n + 99) / 100;
+    // ceil(95*n/100) == n - floor(n/20), without a potentially overflowing multiply.
+    let rank = n - n / 20;
     let rank = if rank == 0 { 1 } else { rank };
     sorted[rank - 1]
 }

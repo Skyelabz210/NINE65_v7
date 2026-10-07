@@ -9,7 +9,7 @@
 use exact_transcendentals::k_elim::modd;
 use exact_transcendentals::lifted_transduction::{
     project_with_lift, transduct_with_lift, transduct_with_lift_provider, LiftEvidence,
-    LiftEvidenceProvider, LiftedTransductionError, PrecomputedLiftEvidence,
+    LiftedTransductionError, PrecomputedLiftEvidence,
 };
 use exact_transcendentals::transduction::{S6_BASIS, S8_BASIS};
 

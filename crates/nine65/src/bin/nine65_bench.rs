@@ -11,7 +11,7 @@ use nine65::ops::bootstrap::ClockworkBootstrap;
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::prelude::*;
 use serde_json::{json, Value};
-use std::time::{Instant, SystemTime};
+use std::time::Instant;
 
 fn percent_floor(remaining: i64, total: i64) -> u64 {
     if remaining <= 0 || total <= 0 {

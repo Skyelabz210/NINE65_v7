@@ -663,6 +663,10 @@ mod constant_time_statistical {
 
     #[test]
     #[ignore] // Statistical timing test — run in controlled environment only
+    #[expect(
+        deprecated,
+        reason = "this benchmark intentionally compares the retained variable-time path"
+    )]
     fn test_ct_vs_vartime_comparison() {
         print_environment_info();
         warmup();
@@ -744,7 +748,9 @@ mod constant_time_statistical {
         let mut class_samples: HashMap<String, Vec<u128>> = HashMap::new();
 
         let alpha_cap = ke.alpha_cap;
-        let classes: Vec<(&str, Box<dyn Fn(&mut ShadowHarvester) -> u128>)> = vec![
+        type InputGenerator = Box<dyn Fn(&mut ShadowHarvester) -> u128>;
+        type InputClass = (&'static str, InputGenerator);
+        let classes: Vec<InputClass> = vec![
             (
                 "small",
                 Box::new(|rng: &mut ShadowHarvester| random_u128(rng) % 1000),
@@ -1803,7 +1809,7 @@ See docs/CT_VERIFICATION_PLAN.md."]
         let mut rb = ShadowHarvester::with_seed(803);
 
         // Sorted: v_alpha >= v_beta on every pair, so `a < b` is always false.
-        let mut sorted_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
+        let sorted_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
             (0..DUDECT_BATCH)
                 .map(|_| {
                     let x = random_u128(rng) % anchor;
@@ -1819,7 +1825,7 @@ See docs/CT_VERIFICATION_PLAN.md."]
         // Shuffled: the same construction, then each pair independently
         // swapped, so `a < b` holds about half the time. The VALUES are drawn
         // identically; only their order differs.
-        let mut shuffled_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
+        let shuffled_batch = |rng: &mut ShadowHarvester| -> Vec<OperandPair> {
             (0..DUDECT_BATCH)
                 .map(|_| {
                     let x = random_u128(rng) % anchor;
@@ -1909,7 +1915,7 @@ See docs/CT_VERIFICATION_PLAN.md."]
         for _ in 0..COST_ROUNDS {
             // Alternate the order every round so drift is shared.
             let general_first = rng.next_u64() & 1 == 0;
-            let mut run_general = || {
+            let run_general = || {
                 let start = Instant::now();
                 let mut acc = 0u128;
                 for &(a, b) in batch.iter() {
@@ -1918,7 +1924,7 @@ See docs/CT_VERIFICATION_PLAN.md."]
                 std::hint::black_box(acc);
                 start.elapsed().as_nanos() as u64
             };
-            let mut run_adjacent = || {
+            let run_adjacent = || {
                 let start = Instant::now();
                 let mut acc = 0u128;
                 for &(a, b) in batch.iter() {

@@ -1619,7 +1619,7 @@ mod tests {
     /// becoming optimistic.
     #[test]
     fn error_width_bits_bound_the_sampler_that_produces_them() {
-        use crate::entropy::{FheRng, ShadowHarvester};
+        use crate::entropy::ShadowHarvester;
 
         for eta in [2_usize, 3, 5] {
             let mut rng = ShadowHarvester::with_seed(0xE7A_u64.wrapping_add(eta as u64));

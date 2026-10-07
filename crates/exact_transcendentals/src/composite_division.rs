@@ -397,6 +397,8 @@ fn garner_5modulus_to_u128(ntt_residues: &[u128], lane4_residue: u128) -> u128 {
 // Tests
 // ============================================================================
 
+const _: () = assert!(LANE_COMPOSITE_V5 < u128::MAX / 2);
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -407,7 +409,6 @@ mod tests {
         assert_eq!(LANE_7POW_V5, 7u128.pow(22));
         assert_eq!(LANE_5POW_V5, 5u128.pow(25));
         assert_eq!(LANE_COMPOSITE_V5, LANE_2POW_V5 * LANE_7POW_V5);
-        assert!(LANE_COMPOSITE_V5 < u128::MAX / 2);
     }
 
     #[test]

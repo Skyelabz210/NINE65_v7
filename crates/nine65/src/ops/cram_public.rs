@@ -45,6 +45,7 @@
 //!       ledger (the entropy meter and the noise budget are one number).
 //!     * G5: the level inverses are derived by extended Euclid from the
 //!       declared chain at construction — derivable, nothing opaque.
+//!
 //!   Cross-lane reads and linear combinations are not the fault (Universal
 //!   Projection reads every lane and is compliant); the residue-native
 //!   policy point is narrower: R8 materialization is licensed for

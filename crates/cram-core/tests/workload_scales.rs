@@ -1,5 +1,3 @@
-#![allow(clippy::manual_is_multiple_of)]
-
 use cram_core::{
     anchor::recover_winding, ArchitectureCounters, BasisFrame, BoundCertificate, CramState,
     DomainState, FrameId, LaneId, LaneOperator, LineageDigest, OperatorTopology, ResidueLane,

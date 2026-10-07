@@ -1,6 +1,7 @@
 # NINE65 v7: current remote plan and session execution order
 
-Updated 2026-10-07. This is the live-session control sheet for the 43 cards in
+Updated 2026-10-07 after hosted run 37639373719. This is the live-session
+control sheet for the 43 cards in
 [`tasks.json`](../2026-10-03/tasks.json). The detailed contracts and acceptance
 criteria remain in the individual task cards and the
 [October 5 runbook](../2026-10-05/SESSION_RUNBOOK.md). A listed card is queued,
@@ -47,6 +48,62 @@ dependents. Preserve red correctness assertions and explicit refusals.
 The fresh F00 observation is in
 [`artifacts/execution/2026-10-06-session/F00/baseline.json`](../../../artifacts/execution/2026-10-06-session/F00/baseline.json).
 It records the recovery and is **ready for independent review**, not accepted.
+
+## Current session checkpoint
+
+PRs #163 and #164 merged the plan, F02 record and CI bootstrap. PR #165 is
+open at `f0545a058b236c71f81650ed2b8953e585855db8`; it makes the fuzz targets
+release-buildable and fixes the K-Elimination harness oracle. Its hosted
+Fuzz Smoke run
+[37639373719](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37639373719)
+completed all five bounded target runs: NTT and K-Elimination pass; deserialize,
+encrypt/decrypt and homomorphic addition fail on saved reproducers. The latest
+short-input decoder witness requests a 101.9 GB allocation; the other two
+targets produce wrong plaintexts. Exact data and artifact hashes are in
+[Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md). Treat all three as open gates. The
+local exact-toolchain replay stopped before target execution when the
+ASan-instrumented build left 44 MiB free RAM on this 2.7 GiB host. Hosted logs
+and uploaded artifacts remain the failure evidence.
+
+On the same PR head, WASM boundary, static analysis, T3 and mode/claim policy
+pass. Strict Clippy fails in T1 and application jobs; T2 and T4 are skipped.
+The full 43-card order below remains the execution contract. For this session,
+run every independent task in the earliest unblocked wave, capture its evidence,
+and keep dependent waves queued whenever an acceptance gate fails. Do not mark
+F00/F02 accepted: F00 still lacks an independent review, and F02's default
+matrix failed with 21 failures while its 28 feature-gated integration targets
+remain unexecuted.
+
+After the hosted run, the local working tree was updated to clear the strict
+Clippy findings without blanket lint allowances. The exact pinned-toolchain
+command `cargo +1.89.0 clippy --offline -j1 --workspace --all-targets -- -D
+warnings` now passes for the whole workspace. This is local, uncommitted
+follow-up work on top of the recorded plan commit; PR #165 and its hosted
+statuses still refer to the older head until the follow-up is published and
+Actions reruns. Focused tests for `cram-core`, `fhe-service`, `mana`, and
+`private-feedback-core` also pass (12, 52, 28, and 6 tests respectively; 29
+fhe-service tests remain intentionally ignored under the documented wire-Q
+outage).
+
+The current-tree pinned release sweep completed with exit 101. The changed
+workspace took 61m54s to compile under the release LTO profile; test execution
+then took about 50 minutes in `nine65`. The `nine65 --lib` target ran 1,074
+tests: 941 passed, 8 failed, and 125 were ignored. Four failures are the
+`repeated_squaring_is_exact_under_auto_refresh_*` cases and
+`squaring_refresh_costs_exactly_one_bootstrap`; all stop at the explicit
+public BFV refresh refusal. `diag_measure_noise_growth` catches
+`supports_public_refresh` admitting a corrupting path. The secure-128 and
+secure-192 symmetric max-depth benchmarks return wrong plaintexts at depth 4.
+`diagnostic_zero_noise_constant_self_square_secure_128` also fails its depth-4
+zero-noise controls. The `k_elimination_basis_regression` integration target
+ran 3 tests successfully and failed
+`class_f_alpha_lanes_must_be_prime_and_distinct`, which expected a composite
+Class-F alpha lane to be rejected. These are the only two failed targets in
+this local workspace run; other default targets and doc tests passed. The
+unrestricted local host did not reproduce the earlier sandbox-only HTTP socket
+failures. The 28 feature-gated integration targets remain unexecuted. A
+concise result record is under
+[`artifacts/execution/2026-10-07-session/F02`](../../../artifacts/execution/2026-10-07-session/F02/).
 
 ## Execute in dependency order
 
@@ -102,12 +159,31 @@ commit before each patch.
    independent oracle, then update #92 with the exact pass/fail gate and next
    blocked dependency. A merge, a model statement or a zero-match test is not
    acceptance.
-5. Clear the strict Clippy backlog so hosted T1 and then T2 execute. Rerun
-   Fuzz Smoke after the action-reference repair and record positive target
-   counts. Before release, run the complete serial `--no-fail-fast` target
-   matrix and hosted CI on the final SHA. Keep external lattice estimation,
-   external audit, and required-check rulesets on the visible blocker list
-   until evidenced.
+5. Analyze the three PR #165 fuzz failures from their uploaded artifacts and
+   confirm them on a runner with enough build memory if local replay is needed.
+   Repair bounded deserialization and investigate the encrypt/decrypt and
+   homomorphic plaintext mismatches with independent integer oracles; retain
+   failing assertions until fixed. The run now compiles all five targets; NTT
+   completed 7,591 executions and K-Elimination completed 5,445,050 runs in
+   61 seconds.
+6. The local strict Clippy backlog is clear: the pinned-toolchain
+   `--workspace --all-targets -- -D warnings` gate passes on the current
+   working tree. The current-tree release matrix has reproduced the eight
+   `nine65` library failures and the K-Elimination integration failure, with
+   all other default targets passing. Preserve all red assertions. Publish
+   this follow-up and rerun hosted CI so T1 passes and T2 executes on the exact
+   SHA; preserve all T2 failures, then run the 28 feature-gated integration
+   targets on the pinned toolchain.
+7. Return to the ready dependency order: complete F00's independent review;
+   finish F02 target and feature inventory; then execute F01/F02/F03/S00 and
+   continue each wave only after its own gate and review. The depth-four
+   repeated-square assertion, the prior eight library failures, one
+   K-Elimination integration failure, three new fuzz failures, the 28
+   unexecuted feature-gated targets, and the required hosted rerun remain
+   visible blockers. The local Clippy pass does not accept F00 or F02.
+8. Before release, run the complete serial `--no-fail-fast` matrix and hosted
+   CI on the final SHA. Keep external lattice estimation, external audit, and
+   required-check rulesets on the visible blocker list until evidenced.
 
 The session will attempt every dependency-ready wave in order. A failed gate
 halts its dependent branch; it does not authorize weakening tests, guessing a

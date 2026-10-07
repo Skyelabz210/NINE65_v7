@@ -1352,7 +1352,9 @@ mod tests {
             KElimConfig::HardwareOpt,
         ] {
             let ke = KElimination::from_config(config);
-            let capacity = ke.capacity();
+            let capacity = ke
+                .try_capacity()
+                .expect("test configurations fit within the u128 capacity API");
 
             // Randomly test 10,000 values for each config
             for _ in 0..10_000 {
@@ -1464,7 +1466,6 @@ mod tests {
 
 #[cfg(test)]
 mod bench_compat {
-    use super::*;
     use std::time::Instant;
 
     #[test]

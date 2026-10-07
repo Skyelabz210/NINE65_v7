@@ -451,7 +451,7 @@ impl std::fmt::Display for DepthAnalysis {
             self.initial_budget_mb,
             self.initial_budget_mb / 1000
         )?;
-        writeln!(f, "")?;
+        writeln!(f)?;
         writeln!(f, "  SYMMETRIC MODE:")?;
         writeln!(
             f,
@@ -463,7 +463,7 @@ impl std::fmt::Display for DepthAnalysis {
             "    Conservative depth: {} | Actual: {}",
             self.conservative_sym_depth, self.actual_sym_depth_note
         )?;
-        writeln!(f, "")?;
+        writeln!(f)?;
         writeln!(f, "  PUBLIC MODE:")?;
         writeln!(
             f,
@@ -492,8 +492,7 @@ mod tests {
     use crate::arithmetic::rns::DualRNSContext;
     use crate::entropy::ShadowHarvester;
     use crate::keys::bootstrap::mod_inverse_u128;
-    use crate::noise::budget::NoiseBudget;
-    use crate::ops::bootstrap::{crt_reconstruct_n, ClockworkBootstrap};
+    use crate::ops::bootstrap::ClockworkBootstrap;
     use crate::ops::rns_fhe::RNSFHEContext;
     use crate::params::SecureConfig;
 
@@ -512,7 +511,7 @@ mod tests {
             ("secure_192", SecureConfig::secure_192().into_config()),
             ("secure_256", SecureConfig::secure_256().into_config()),
         ] {
-            let boot = ClockworkBootstrap::new(&cfg).expect(&format!("{} boot", label));
+            let boot = ClockworkBootstrap::new(&cfg).unwrap_or_else(|_| panic!("{} boot", label));
             for &wp in &cfg.primes {
                 assert!(
                     boot.boot_config.primes.contains(&wp),
@@ -540,7 +539,7 @@ mod tests {
             ("secure_192", SecureConfig::secure_192().into_config()),
             ("secure_256", SecureConfig::secure_256().into_config()),
         ] {
-            let boot = ClockworkBootstrap::new(&cfg).expect(&format!("{} boot", label));
+            let boot = ClockworkBootstrap::new(&cfg).unwrap_or_else(|_| panic!("{} boot", label));
             let extras: Vec<u64> = boot
                 .boot_config
                 .primes
@@ -568,7 +567,7 @@ mod tests {
             ("secure_192", SecureConfig::secure_192().into_config()),
             ("secure_256", SecureConfig::secure_256().into_config()),
         ] {
-            let boot = ClockworkBootstrap::new(&cfg).expect(&format!("{} boot", label));
+            let boot = ClockworkBootstrap::new(&cfg).unwrap_or_else(|_| panic!("{} boot", label));
             let canonical = DualRNSContext::canonical_anchor_primes_for_n(cfg.n);
             let boot_anchors = &boot.boot_ctx.dual_rns.anchor.primes;
             assert_eq!(
@@ -766,7 +765,7 @@ mod tests {
             ("secure_192", SecureConfig::secure_192().into_config()),
             ("secure_256", SecureConfig::secure_256().into_config()),
         ] {
-            let boot = ClockworkBootstrap::new(&cfg).expect(&format!("{} boot", label));
+            let boot = ClockworkBootstrap::new(&cfg).unwrap_or_else(|_| panic!("{} boot", label));
             let boot_count = boot.boot_config.primes.len();
             let work_count = cfg.primes.len();
             let depth = boot.bootstrap_depth;
@@ -780,10 +779,9 @@ mod tests {
                 boot_count
             );
             assert!(
-                boot_count >= work_count + 1,
-                "{}: need {} boot primes for modswitch ({} work), got {}",
+                boot_count > work_count,
+                "{}: need more boot primes than the {} work primes for modswitch, got {}",
                 label,
-                work_count + 1,
                 work_count,
                 boot_count
             );

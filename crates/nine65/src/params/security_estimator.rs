@@ -2218,21 +2218,15 @@ mod tests {
     fn min_modelled_lane_bits_brackets_the_documented_interval() {
         use crate::params::secure_configs::SecureConfig;
 
+        const _: () = assert!(MIN_MODELLED_LANE_BITS > 17);
+        const _: () = assert!(MIN_MODELLED_LANE_BITS <= 29);
+
         // The threshold is an engineering choice; the bracket is its whole
         // justification, so the bracket is asserted rather than described.
-        assert!(
-            MIN_MODELLED_LANE_BITS > 17,
-            "must be above a t = 65537 lane (17 bits) or the manufactured-Q case escapes"
-        );
         // The narrowest shipped lane is 754974721 at 30 bits, and the classify
         // test is the strict `lane_bits < MIN_MODELLED_LANE_BITS`, so 30 is
         // itself still inert. 29 is asserted instead of 30 on purpose: one bit
         // of margin so a future 30-bit lane does not land on the boundary.
-        assert!(
-            MIN_MODELLED_LANE_BITS <= 29,
-            "must stay one bit below the narrowest shipped lane (754974721, 30 bits); \
-             the true inert bound is 30, and 29 is the deliberate margin"
-        );
 
         for secure_config in [
             SecureConfig::secure_128(),

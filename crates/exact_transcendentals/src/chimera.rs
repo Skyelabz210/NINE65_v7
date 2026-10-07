@@ -427,9 +427,9 @@ mod tests {
         assert_eq!(64 - product.leading_zeros(), 33);
         assert_eq!(SHADOW_ANCHOR_PRODUCT / SHADOW_LIFT_11_6, 13 * 17 * 19);
 
-        for i in 0..SHADOW_ANCHOR_SET.len() {
-            for j in (i + 1)..SHADOW_ANCHOR_SET.len() {
-                let (mut a, mut b) = (SHADOW_ANCHOR_SET[i], SHADOW_ANCHOR_SET[j]);
+        for (i, &left_prime) in SHADOW_ANCHOR_SET.iter().enumerate() {
+            for &right_prime in SHADOW_ANCHOR_SET.iter().skip(i + 1) {
+                let (mut a, mut b) = (left_prime, right_prime);
                 while b != 0 {
                     let t = a % b;
                     a = b;

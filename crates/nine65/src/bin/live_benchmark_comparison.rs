@@ -18,7 +18,6 @@ fn run_benchmark(name: &str, secure_config: SecureConfig, ops_count: usize) {
     );
     println!("--------------------------------------------------");
 
-    let ntt = NTTEngine::new(config.q, config.n);
     let mut rng = ShadowHarvester::with_seed(1234);
 
     let start_keygen = Instant::now();
@@ -30,7 +29,7 @@ fn run_benchmark(name: &str, secure_config: SecureConfig, ops_count: usize) {
     println!("  KeyGen Latency: {} ms", keygen_ms);
 
     let ctx = RNSFHEContext::new(&config);
-    let mut bootstrap = ClockworkBootstrap::new(&config).ok();
+    let bootstrap = ClockworkBootstrap::new(&config).ok();
     let bootstrap_keys = bootstrap.as_ref().map(|engine| {
         engine
             .generate_keys(&dual_keys.secret_key, &mut rng)
@@ -44,12 +43,10 @@ fn run_benchmark(name: &str, secure_config: SecureConfig, ops_count: usize) {
     let mut total_mul_ns = 0u64;
     let mut mul_count = 0usize;
 
-    for i in 0..ops_count {
+    for _ in 0..ops_count {
         let op_start = Instant::now();
         if budget.remaining_millibits() < NoiseBudget::mul_plain_cost(3, &config) {
-            if let (Some(ref engine), Some(ref b_keys)) =
-                (bootstrap.as_ref(), bootstrap_keys.as_ref())
-            {
+            if let (Some(engine), Some(b_keys)) = (bootstrap.as_ref(), bootstrap_keys.as_ref()) {
                 ct = engine
                     .bootstrap(&ct, &b_keys.bsk, &b_keys.ksk)
                     .expect("Bootstrap failed");
