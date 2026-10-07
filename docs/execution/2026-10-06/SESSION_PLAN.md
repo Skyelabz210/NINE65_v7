@@ -1,0 +1,94 @@
+# NINE65 v7: current remote plan and session execution order
+
+Updated 2026-10-06. This is the live-session control sheet for the 43 cards in
+[`tasks.json`](../2026-10-03/tasks.json). The detailed contracts and acceptance
+criteria remain in the individual task cards and the
+[October 5 runbook](../2026-10-05/SESSION_RUNBOOK.md). A listed card is queued,
+not accepted. Record a result and independent review before advancing a card's
+dependents. Preserve red correctness assertions and explicit refusals.
+
+## Pinned starting state
+
+* Fetched `origin/main` and the clean checkout both point to
+  `017f0163be76c0adb102e581c9e7157ea7ae736a` (PR #162). There are no open
+  PRs and 31 open issues in the live GitHub inventory. The original 29-issue
+  manifest is historical and must not be rewritten.
+* `python3 scripts/nine65_execution_plan.py validate --self-test` passes 12
+  self-tests and validates the 43-card DAG, while correctly reporting source
+  drift from the original baseline. `ready` reports F00 alone until acceptance
+  is established. Neither result verifies ciphertext correctness.
+* The latest listed Actions run is the cancelled run created 2026-02-27;
+  current `main` has no executed CI. Actions are enabled and allow all actions,
+  but the repository has no rulesets. #79 remains open. A workflow file or a
+  newly queued run is not a passing required check.
+* At intake this host had about 745 MiB free on `/home/acid`, 2.7 GiB RAM and
+  no swap. The 1.0 GiB rebuildable Cargo `target` cache was cleared. A damaged
+  partial toolchain was removed and Rust 1.89.0 reinstalled serially. `rustc`
+  and `cargo` now report the pinned 1.89.0; about 1.5 GiB is free. A complete
+  release build has not yet proved that capacity sufficient.
+* The depth-four repeated-square plaintext assertions still fail; the exact
+  scalar rescale oracle at the last step does not cure the prior phase overrun.
+  No public bootstrap tuple has passed R03 admission. Checked decrypt #158 and
+  Recumbent carry/parking #159 remain separate active defects.
+
+The fresh F00 observation is in
+[`artifacts/execution/2026-10-06-session/F00/baseline.json`](../../../artifacts/execution/2026-10-06-session/F00/baseline.json).
+It records the recovery and is **ready for independent review**, not accepted.
+
+## Execute in dependency order
+
+The following waves cover each of the 43 task cards once. Within a wave, use
+the DAG for exact prerequisites and distinct files for any concurrent work.
+Advance only after the prior card's own gate passes; a blocked card leaves its
+dependents queued. Re-fetch `main`, review open issues/PRs, and pin the parent
+commit before each patch.
+
+| Wave | Cards | Work and advance gate |
+| --- | --- | --- |
+| 0 | **F00** | Preserve the clean starting tree, live issue inventory and exact toolchain/resource record. Recover enough build space and a single working pinned 1.89 toolchain. Independent review of the fresh baseline is still required. |
+| 1 | **F01, F02, F03, S00** | Repair tuple/evidence producers; inventory every target and execute a serial `--no-fail-fast` sweep; reconcile historical mechanisms and proof statements; freeze the live S8 root/2-11 phase contract. For #157/#158, export every depth's components, fold and full phase against an independent integer/negacyclic oracle. Locate the first divergence or certified margin crossing. Keep wrong-plaintext tests red until behavior is fixed. |
+| 2 | **C00, C01, C06, S01, S02, V00** | Expose the distinct main-Q exact route, derive sound noise bounds, check fallible/capacity edges, bind on-demand lift to the intact root, validate composite unit-domain operators and capture exact security inputs. Require coherent tensor provenance and independent signed/boundary oracles before an arithmetic repair. |
+| 3 | **C02, S03, S04** | Make ciphertext history immutable and provenance-bound; integrate sister frames; certify their operator domains and DIV3 scope. Refuse capacity aliases and nonunit inverses. |
+| 4 | **S05, R00, H00** | Connect preserved S8 execution to the public CRAM route, test the tighter-parameter hypothesis term by term, and capture real off-path shadow-source traces with provenance. No regenerated fingerprint or synthetic entropy claim counts as integration. |
+| 5 | **C03, R01, H01** | Define strict main-Q wire import/export, derive the live bounded-digit input radius, and evaluate shadow entropy conditioned on the attacker's stated view. Imported bytes alone cannot create a noise certificate. |
+| 6 | **C04, R02, H02** | Route the service through certified exact operations, compile the encrypted digit DAG with nodewise bounds, and freeze the Three Locks key/mask and interruption model. Require a real ciphertext/plaintext service test. |
+| 7 | **C05, V03, R03, G00, H03** | Stabilize Python on the same route; make CI execute all declared targets and reject zero-test/missing-artifact results; select a secure complete tuple only if every inequality passes; allow GSO only to optimize certified plans; implement the reviewed Shadow Lock lifecycle. R03 remains `blocked_design` until R01/R02/V00 yield an admitted tuple. Do not enable hosted required checks before Actions actually runs. |
+| 8 | **B00, B02** | Implement required fixed-work capacity and independently specified clear transforms for the admitted tuple. Verify full coefficient and boundary oracles. |
+| 9 | **B01** | Implement exact scale-round, transient NTT capacity and relinearization with coherent main/auxiliary provenance. |
+| 10 | **B03, B04** | Add public Galois transforms and the reviewed error/key-domain transition. Verify key relationships and all floor/noise terms. |
+| 11 | **B05** | Evaluate the bounded canonical digit under encryption; no evaluator secret, clear digit or component-wise BFV rounding shortcut. |
+| 12 | **B06** | Contract and return to the work-key domain; verify every coefficient and exact plaintext. |
+| 13 | **B07** | Assemble the admitted native public refresh backend. Refuse unsupported inputs before keygen or output. |
+| 14 | **B08** | Predict next-operation and per-ciphertext refresh eligibility across branched/rejoined DAGs; no session-wide counter reset. |
+| 15 | **B09** | Prove refresh, multiply, refresh on admitted tuples plus all boundary refusals. #95/#117/#16 remain open until this actually decrypts correctly. |
+| 16 | **H04, V01, V02, V04** | Test interruption transitions, close constant-time boundaries on the chosen runtime, connect formal statements to actual kernels, and measure fixed complete workloads with raw before/after integer timings. External lattice estimation and audit remain explicit gates. |
+| 17 | **V05** | Reconcile every issue, target, claim, proof, tuple and artifact on one final SHA. Release only after required hosted CI executes and passes, no accepted wrong-output path remains, and independent security evidence exists. |
+
+## First commands and stop rules for this session
+
+1. Finish independent F00 review without changing the original historical
+   baseline. The pinned toolchain was restored after clearing only rebuildable
+   Cargo output. If the new build exhausts storage, record the exact failure
+   and continue only work that does not depend on a passing suite.
+2. Inventory the workspace with Cargo metadata and classify all 94 targets
+   across 12 packages, including the 43 integration-test targets (34 in
+   `nine65`). Metadata discovery alone does not establish which tests compile
+   or execute. F02's full serial release sweep runs only after the disk/RAM
+   gate and pinned compiler are available. Preserve exit codes and positive
+   matched counts; reproduce each real failure individually.
+3. On the accepted parent, run the focused depth oracle and the two expected
+   red repeated-square tests from the October 5 runbook. Extend the depth dump
+   only after the first failing boundary is specified. No auto-refresh claim
+   follows from a counter or from zero-error synthetic keys.
+4. For each completed card, save source SHA, toolchain, tuple fingerprint,
+   checks, logs and hashes under a new execution ID. Review the diff and
+   independent oracle, then update #92 with the exact pass/fail gate and next
+   blocked dependency. A merge, a model statement or a zero-match test is not
+   acceptance.
+5. Before release, run the complete serial `--no-fail-fast` target matrix and
+   hosted CI on the final SHA. Keep owner-side Actions/billing, external lattice
+   estimation and external audit on the visible blocker list until evidenced.
+
+The session will attempt every dependency-ready wave in order. A failed gate
+halts its dependent branch; it does not authorize weakening tests, guessing a
+cryptographic construction or marking the remaining cards complete.

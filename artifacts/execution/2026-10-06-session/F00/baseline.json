@@ -1,0 +1,52 @@
+{
+  "schema": "nine65-f00-session-observation-v1",
+  "recorded_utc": "2026-10-07T04:28:54Z",
+  "source_commit": "017f0163be76c0adb102e581c9e7157ea7ae736a",
+  "remote_main_commit": "017f0163be76c0adb102e581c9e7157ea7ae736a",
+  "source_tree_before_branch": "clean",
+  "source_tree_uncommitted_inputs": [],
+  "historical_baseline": "artifacts/execution/baseline.json",
+  "cargo_lock_sha256": "892c3f6cadf3abcd198847ebc1744c67ef68fb6202053ca1943f170d9736bd54",
+  "rust_toolchain_toml_sha256": "a93527593d1f1e9a134e588cadec40ac33c2b08194b7342c9d24cf05b128a0d5",
+  "pinned_toolchain": "1.89.0",
+  "pinned_toolchain_status": "verified_after_serial_reinstall",
+  "pinned_rustc_version": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "pinned_cargo_version": "cargo 1.89.0 (c24e10642 2025-06-23)",
+  "toolchain_recovered_utc": "2026-10-07T04:32:53Z",
+  "metadata_toolchain_only": "cargo 1.98.1; rustc 1.98.1",
+  "metadata_command": "cargo +stable metadata --locked --offline --no-deps --format-version 1",
+  "metadata_counts": {
+    "packages": 12,
+    "targets": 94,
+    "integration_test_targets": 43,
+    "nine65_integration_test_targets": 34
+  },
+  "resources_observed": {
+    "cpu": "2 x Intel Celeron N4000 virtual CPUs",
+    "memory_total_gib_approx": 2.7,
+    "swap": "none",
+    "home_free_mib_approx": 745,
+    "repo_target_mib_approx": 1018
+  },
+  "resources_after_recovery": {
+    "home_free_gib_approx": 1.5,
+    "cargo_target_cache": "cleared; 3333 rebuildable files, about 1.1 GiB",
+    "pinned_toolchain_mib_approx": 590
+  },
+  "remote_observed": {
+    "open_issues": 31,
+    "issue_numbers": [16, 17, 18, 29, 63, 64, 67, 69, 71, 72, 73, 74, 75, 79, 82, 83, 84, 85, 86, 88, 89, 92, 94, 95, 117, 130, 135, 137, 157, 158, 159],
+    "open_pull_requests": 0,
+    "latest_listed_actions_run_created_utc": "2026-02-27T09:58:47Z",
+    "latest_listed_actions_run_conclusion": "cancelled",
+    "actions_enabled": true,
+    "allowed_actions": "all",
+    "rulesets": 0
+  },
+  "plan_validation": "12 self-tests passed; 43 cards valid; historical source drift reported",
+  "status": "ready_for_review",
+  "remaining": [
+    "independent review of fresh F00 evidence",
+    "verify the remaining storage is sufficient for the required serial release sweep"
+  ]
+}

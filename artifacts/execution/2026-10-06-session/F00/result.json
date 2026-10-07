@@ -1,0 +1,50 @@
+{
+  "task_id": "F00",
+  "status": "ready_for_review",
+  "source_commit": "017f0163be76c0adb102e581c9e7157ea7ae736a",
+  "worktree_manifest_sha256": "6063432a61f283943fb34183b071ef3441b9bc54a6b44dd3e243c0000c2b09c3",
+  "files_changed": [
+    "docs/execution/2026-10-05/SESSION_RUNBOOK.md",
+    "docs/execution/2026-10-06/SESSION_PLAN.md",
+    "artifacts/execution/2026-10-06-session/F00/baseline.json",
+    "artifacts/execution/2026-10-06-session/F00/checks.txt",
+    "artifacts/execution/2026-10-06-session/F00/result.json"
+  ],
+  "checks": [
+    {
+      "command": "git status --short --branch; git rev-parse HEAD; git rev-parse origin/main",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/F00/checks.txt",
+      "log_sha256": "7adc8c6ebe3410ab3f25a45ac74f7b1f857452a5b19c6105bba1a6f779854007"
+    },
+    {
+      "command": "rustc --version; cargo --version; df -h /home/acid",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/F00/checks.txt",
+      "log_sha256": "7adc8c6ebe3410ab3f25a45ac74f7b1f857452a5b19c6105bba1a6f779854007"
+    },
+    {
+      "command": "python3 scripts/nine65_execution_plan.py validate --self-test",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/F00/checks.txt",
+      "log_sha256": "7adc8c6ebe3410ab3f25a45ac74f7b1f857452a5b19c6105bba1a6f779854007"
+    },
+    {
+      "command": "cargo +stable metadata --locked --offline --no-deps --format-version 1",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-06-session/F00/checks.txt",
+      "log_sha256": "7adc8c6ebe3410ab3f25a45ac74f7b1f857452a5b19c6105bba1a6f779854007"
+    }
+  ],
+  "acceptance_evidence": [
+    "Clean starting tree and remote main at identical SHA",
+    "No dirty or untracked source inputs before session work",
+    "Pinned Rust 1.89.0 verified after serial toolchain recovery",
+    "Current 31 open GitHub issues and zero open pull requests recorded"
+  ],
+  "unresolved": [
+    "Independent F00 review",
+    "Sufficient storage for full serial release sweep remains unproven"
+  ],
+  "claims_changed": []
+}
