@@ -4919,6 +4919,7 @@ impl RNSFHEContext {
                 let v_canonical = SignedU256 {
                     mag: v_m,
                     is_neg: false,
+                    negative_mask: 0,
                 };
 
                 // k_mod_delta = k (mod delta) (magnitude; sign handled separately)
@@ -6104,6 +6105,7 @@ impl RNSFHEContext {
 #[derive(Clone, Copy, Debug)]
 struct SignedU256 {
     mag: U256,
+    is_neg: bool,
     negative_mask: u128,
 }
 
@@ -6117,6 +6119,7 @@ impl SignedU256 {
         let negative_magnitude = m.sub_ct(v);
         Self {
             mag: U256::select_mask_ct(v, negative_magnitude, negative_mask),
+            is_neg: negative_mask != 0,
             negative_mask,
         }
     }
