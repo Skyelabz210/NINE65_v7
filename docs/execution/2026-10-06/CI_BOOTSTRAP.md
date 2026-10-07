@@ -42,17 +42,24 @@ The exact local T1 Clippy command fails on 23 existing
 `should_implement_trait`. The service-specific local Clippy run encounters the
 same dependency errors. None have been suppressed.
 
-All five Fuzz Smoke jobs on that head fail before any fuzz target runs because
-the action reference `dtolnay/rust-toolchain@nightly-2025-08-04` does not exist.
-The follow-up patch uses the action's documented `@master` reference with
-`toolchain: nightly-2025-08-04` and keeps the same pinned compiler date. The
-next hosted run confirms that the action resolves and installs the pinned
-nightly, but `cargo install` selects the repository's 1.89.0 toolchain file.
-Its `cargo-fuzz 0.13.2` dependency `cargo-platform 0.3.3` requires Rust 1.91,
-so all five jobs stop at install. The workflow now sets `RUSTUP_TOOLCHAIN` for
-the whole fuzz job, which rustup documents as taking precedence over the
-repository toolchain file, and pins `cargo-fuzz` to 0.13.2. Another hosted run
-must prove installation and positive target execution.
+The first Fuzz Smoke attempt failed before target execution because the
+`dtolnay/rust-toolchain@nightly-2025-08-04` action reference does not exist.
+The follow-up uses the action's documented `@master` plus
+`toolchain: nightly-2025-08-04`. The next run installed nightly but
+`cargo install` selected the repository's 1.89.0 toolchain file, while
+`cargo-fuzz 0.13.2`'s `cargo-platform 0.3.3` dependency requires Rust 1.91.
+The workflow then set `RUSTUP_TOOLCHAIN` for the whole fuzz job and pinned
+`cargo-fuzz` to 0.13.2.
+
+That run reached the targets and exposed three remaining issues: one target
+reported a 4.04 GB allocation from a five-byte bincode input; one K-Elimination
+target hit the panic-on-overflow helper after the fuzz harness computed its
+oracle with unchecked arithmetic; and three targets did not compile because
+their insecure test config is gated behind `allow_insecure`. The latest patch
+enables that feature only in the separate fuzz dependency graph and preserves
+failing artifacts. See the
+[Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md) for inputs, interpretations and
+next actions. Hosted confirmation is pending.
 
 Next CI gate: triage the workspace Clippy errors without blanket lint allows;
 make T1 green so T2 runs on the same indexed head; preserve T2's failing tests;

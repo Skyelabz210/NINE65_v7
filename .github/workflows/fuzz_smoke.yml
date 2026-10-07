@@ -81,3 +81,11 @@ jobs:
           seconds="${seconds:-60}"
           cargo fuzz run '${{ matrix.target }}' --release -- \
             -max_total_time="$seconds"
+
+      - name: Preserve failing fuzz artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}-${{ github.sha }}
+          path: fuzz/artifacts
+          if-no-files-found: ignore

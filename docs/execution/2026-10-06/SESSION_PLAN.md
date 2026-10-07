@@ -24,11 +24,13 @@ dependents. Preserve red correctness assertions and explicit refusals.
   cargo-deny action resolves, formatting and static policy checks pass, and
   the WASM boundary builds and passes. T1 and two application jobs reach real
   Clippy failures; local T1 reports 23 `exact_transcendentals` lint errors.
-  T2 is skipped after T1 failure. Five Fuzz Smoke jobs first failed during
-  action setup; after that repair, they installed the pinned nightly but
-  `cargo install` selected the repository's 1.89.0 file and failed the
-  `cargo-fuzz` dependency MSRV. The fuzz job now explicitly selects its pinned
-  nightly and needs a fresh hosted run. The
+  T2 is skipped after T1 failure. Fuzz Smoke now installs its pinned nightly
+  and runs targets. The latest run finds a five-byte bincode input that
+  attempts a 4.04 GB allocation, a K-Elimination harness oracle that reaches
+  its panic-on-overflow helper, and three stale fuzz targets that lack the
+  `allow_insecure` feature. The next patch scopes that feature to the separate
+  fuzz graph and preserves artifacts; see the
+  [Fuzz Smoke triage](FUZZ_SMOKE_TRIAGE.md). The
   [CI bootstrap record](CI_BOOTSTRAP.md) retains the exact pass/fail boundary.
   Actions are enabled, but there are still no
   repository rulesets. #79 remains open until checks execute and pass.

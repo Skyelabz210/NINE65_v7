@@ -14,7 +14,9 @@ arbitrary = { version = "1.3", features = ["derive"] }
 
 [dependencies.nine65]
 path = "../crates/nine65"
-features = ["serde"]
+# These legacy fuzz targets intentionally use the insecure test configuration;
+# keep this feature scoped to the separate fuzz package/build graph.
+features = ["serde", "allow_insecure"]
 
 [[bin]]
 name = "fuzz_deserialize"
