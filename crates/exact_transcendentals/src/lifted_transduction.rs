@@ -48,7 +48,9 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 use crate::k_elim::{gcd, modd, mulmod};
-use crate::transduction::TransductionMap;
+use crate::transduction::{
+    TransductionBuildError, TransductionCapacityError, TransductionBasisError, TransductionMap,
+};
 
 /// Typed failure for lift-aware transduction.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -69,6 +71,36 @@ pub enum LiftedTransductionError {
     /// A [`LiftEvidenceProvider`] could not supply `K mod b_j` for the named
     /// target lane (out of range, or the provider's own derivation failed).
     EvidenceUnavailable { lane: usize },
+    /// The basis pair cleared validity but its CRT bookkeeping cannot be
+    /// carried in `i128` — the capacity half of `TransductionMap`'s failure
+    /// surface. Surfaced as a typed refusal here because this module's
+    /// contract is "never a panic": it goes through
+    /// [`TransductionMap::try_build`] instead of the panic-wrapping
+    /// `TransductionMap::new`.
+    Capacity(TransductionCapacityError),
+}
+
+/// Map the fully fallible constructor's combined error onto this module's
+/// single typed error, so neither failure half (validity or capacity) can
+/// escape as a panic.
+fn map_build_error(err: TransductionBuildError) -> LiftedTransductionError {
+    match err {
+        TransductionBuildError::Capacity(c) => LiftedTransductionError::Capacity(c),
+        TransductionBuildError::IdempotentOverflow { .. } => {
+            LiftedTransductionError::Capacity(TransductionCapacityError::InsufficientI128Capacity {
+                bound_kind: "idempotent intermediate",
+                approx_bits: 128,
+            })
+        }
+        TransductionBuildError::Basis(TransductionBasisError::InvalidSourceModulus {
+            index,
+            modulus,
+        }) => LiftedTransductionError::InvalidSourceModulus { index, modulus },
+        TransductionBuildError::Basis(TransductionBasisError::NotPairwiseCoprime {
+            lane_i,
+            lane_j,
+        }) => LiftedTransductionError::SourceBasisNotPairwiseCoprime { lane_i, lane_j },
+    }
 }
 
 /// Every source-basis modulus must be positive and pairwise coprime with
