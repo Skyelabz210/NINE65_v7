@@ -1,0 +1,36 @@
+==============================================
+  CRAM-CT Gate DAG
+  Filter: C0 C1 C2 C3 C4 C5
+==============================================
+  [RUN  ] C0  phase 0 topology                         ... PASS (2s)
+  [RUN  ] C1  phase 1 projection                       ... PASS (0s)
+  [RUN  ] C2  phase 2 phase-locks                      ... PASS (3s)
+  [RUN  ] C3  phase 3 ops                              ... PASS (2s)
+  [RUN  ] C4  phase 4 division lanes                   ... PASS (3s)
+  [RUN  ] C5  phase 5 bootstrap                        ... PASS (1s)
+
+==============================================
+  R0 — Summary
+==============================================
+ID   STATUS   DURATION   NOTES
+---  ------   --------   ----
+B0   SKIPPED  -          not in filter
+B1   SKIPPED  -          not in filter
+B2   SKIPPED  -          not in filter
+B3   SKIPPED  -          not in filter
+Q0   SKIPPED  -          not in filter
+Q1   SKIPPED  -          not in filter
+T0   SKIPPED  -          not in filter
+T1   SKIPPED  -          not in filter
+T2   SKIPPED  -          not in filter
+T3   SKIPPED  -          not in filter
+T4   SKIPPED  -          not in filter
+C0   PASS     2s         
+C1   PASS     0s         
+C2   PASS     3s         
+C3   PASS     2s         
+C4   PASS     3s         
+C5   PASS     1s         
+C6   SKIPPED  -          not in filter
+
+ALL GATES GREEN.

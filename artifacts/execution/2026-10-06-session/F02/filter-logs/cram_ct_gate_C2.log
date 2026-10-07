@@ -1,0 +1,308 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:465:11
+    |
+465 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `exact_transcendentals` (lib test) generated 1 warning
+warning: unused import: `LiftEvidenceProvider`
+  --> crates/exact_transcendentals/tests/lifted_transduction_module.rs:12:5
+   |
+12 |     LiftEvidenceProvider, LiftedTransductionError, PrecomputedLiftEvidence,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `exact_transcendentals` (test "lifted_transduction_module") generated 1 warning (run `cargo fix --test "lifted_transduction_module"` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 0.24s
+     Running unittests src/lib.rs (target/release/deps/exact_transcendentals-0b58a65b26564105)
+     Running tests/a2_residue_native.rs (target/release/deps/a2_residue_native-e29bd77aaf8d2c63)
+     Running tests/arrow_emission_joint_property.rs (target/release/deps/arrow_emission_joint_property-c7a32b9696fc427d)
+     Running tests/arrow_emission_reversibility.rs (target/release/deps/arrow_emission_reversibility-606baea6fb5503a0)
+     Running tests/composite_operator_domains.rs (target/release/deps/composite_operator_domains-a2e6cbd700f3d962)
+     Running tests/cram_gates.rs (target/release/deps/cram_gates-37e5c984659b3a70)
+     Running tests/lifted_transduction_module.rs (target/release/deps/lifted_transduction_module-ef4bef284fbafca9)
+     Running tests/safe_basis_lifted_transduction.rs (target/release/deps/safe_basis_lifted_transduction-0db7f624463650bf)
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:465:11
+    |
+465 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `exact_transcendentals` (lib test) generated 1 warning
+warning: unused import: `LiftEvidenceProvider`
+  --> crates/exact_transcendentals/tests/lifted_transduction_module.rs:12:5
+   |
+12 |     LiftEvidenceProvider, LiftedTransductionError, PrecomputedLiftEvidence,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `exact_transcendentals` (test "lifted_transduction_module") generated 1 warning (run `cargo fix --test "lifted_transduction_module"` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 0.22s
+     Running unittests src/lib.rs (target/release/deps/exact_transcendentals-0b58a65b26564105)
+
+running 2 tests
+test cram_ct::tests::default_phase_locks_have_one_of_each_directional_kind ... ok
+test cram_ct::tests::default_phase_locks_reference_only_s8 ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 554 filtered out; finished in 0.00s
+
+     Running tests/a2_residue_native.rs (target/release/deps/a2_residue_native-e29bd77aaf8d2c63)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/arrow_emission_joint_property.rs (target/release/deps/arrow_emission_joint_property-c7a32b9696fc427d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/arrow_emission_reversibility.rs (target/release/deps/arrow_emission_reversibility-606baea6fb5503a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/composite_operator_domains.rs (target/release/deps/composite_operator_domains-a2e6cbd700f3d962)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/cram_gates.rs (target/release/deps/cram_gates-37e5c984659b3a70)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+     Running tests/lifted_transduction_module.rs (target/release/deps/lifted_transduction_module-ef4bef284fbafca9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/safe_basis_lifted_transduction.rs (target/release/deps/safe_basis_lifted_transduction-0db7f624463650bf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:465:11
+    |
+465 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `exact_transcendentals` (lib test) generated 1 warning
+warning: unused import: `LiftEvidenceProvider`
+  --> crates/exact_transcendentals/tests/lifted_transduction_module.rs:12:5
+   |
+12 |     LiftEvidenceProvider, LiftedTransductionError, PrecomputedLiftEvidence,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `exact_transcendentals` (test "lifted_transduction_module") generated 1 warning (run `cargo fix --test "lifted_transduction_module"` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 0.21s
+     Running unittests src/lib.rs (target/release/deps/exact_transcendentals-0b58a65b26564105)
+     Running tests/a2_residue_native.rs (target/release/deps/a2_residue_native-e29bd77aaf8d2c63)
+     Running tests/arrow_emission_joint_property.rs (target/release/deps/arrow_emission_joint_property-c7a32b9696fc427d)
+     Running tests/arrow_emission_reversibility.rs (target/release/deps/arrow_emission_reversibility-606baea6fb5503a0)
+     Running tests/composite_operator_domains.rs (target/release/deps/composite_operator_domains-a2e6cbd700f3d962)
+     Running tests/cram_gates.rs (target/release/deps/cram_gates-37e5c984659b3a70)
+     Running tests/lifted_transduction_module.rs (target/release/deps/lifted_transduction_module-ef4bef284fbafca9)
+     Running tests/safe_basis_lifted_transduction.rs (target/release/deps/safe_basis_lifted_transduction-0db7f624463650bf)
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:465:11
+    |
+465 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `exact_transcendentals` (lib test) generated 1 warning
+warning: unused import: `LiftEvidenceProvider`
+  --> crates/exact_transcendentals/tests/lifted_transduction_module.rs:12:5
+   |
+12 |     LiftEvidenceProvider, LiftedTransductionError, PrecomputedLiftEvidence,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `exact_transcendentals` (test "lifted_transduction_module") generated 1 warning (run `cargo fix --test "lifted_transduction_module"` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 0.21s
+     Running unittests src/lib.rs (target/release/deps/exact_transcendentals-0b58a65b26564105)
+
+running 5 tests
+test cram_ct::tests::agreement_lock_detects_lane_17_tampering ... ok
+test cram_ct::tests::anchor_lock_detects_lane_5_tampering ... ok
+test cram_ct::tests::shadow_lock_detects_lane_11_tampering ... ok
+test cram_ct::tests::shadow_lock_detects_lane_11_tampering_when_other_locks_skipped ... ok
+test cram_ct::tests::signature_lock_detects_op_counter_drift_alone ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 551 filtered out; finished in 0.00s
+
+     Running tests/a2_residue_native.rs (target/release/deps/a2_residue_native-e29bd77aaf8d2c63)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/arrow_emission_joint_property.rs (target/release/deps/arrow_emission_joint_property-c7a32b9696fc427d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/arrow_emission_reversibility.rs (target/release/deps/arrow_emission_reversibility-606baea6fb5503a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/composite_operator_domains.rs (target/release/deps/composite_operator_domains-a2e6cbd700f3d962)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/cram_gates.rs (target/release/deps/cram_gates-37e5c984659b3a70)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+     Running tests/lifted_transduction_module.rs (target/release/deps/lifted_transduction_module-ef4bef284fbafca9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/safe_basis_lifted_transduction.rs (target/release/deps/safe_basis_lifted_transduction-0db7f624463650bf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:465:11
+    |
+465 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: unused import: `LiftEvidenceProvider`
+  --> crates/exact_transcendentals/tests/lifted_transduction_module.rs:12:5
+   |
+12 |     LiftEvidenceProvider, LiftedTransductionError, PrecomputedLiftEvidence,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: `exact_transcendentals` (lib test) generated 1 warning
+warning: `exact_transcendentals` (test "lifted_transduction_module") generated 1 warning (run `cargo fix --test "lifted_transduction_module"` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 0.21s
+     Running unittests src/lib.rs (target/release/deps/exact_transcendentals-0b58a65b26564105)
+     Running tests/a2_residue_native.rs (target/release/deps/a2_residue_native-e29bd77aaf8d2c63)
+     Running tests/arrow_emission_joint_property.rs (target/release/deps/arrow_emission_joint_property-c7a32b9696fc427d)
+     Running tests/arrow_emission_reversibility.rs (target/release/deps/arrow_emission_reversibility-606baea6fb5503a0)
+     Running tests/composite_operator_domains.rs (target/release/deps/composite_operator_domains-a2e6cbd700f3d962)
+     Running tests/cram_gates.rs (target/release/deps/cram_gates-37e5c984659b3a70)
+     Running tests/lifted_transduction_module.rs (target/release/deps/lifted_transduction_module-ef4bef284fbafca9)
+     Running tests/safe_basis_lifted_transduction.rs (target/release/deps/safe_basis_lifted_transduction-0db7f624463650bf)
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7/Cargo.toml
+warning: unused import: `LiftEvidenceProvider`
+  --> crates/exact_transcendentals/tests/lifted_transduction_module.rs:12:5
+   |
+12 |     LiftEvidenceProvider, LiftedTransductionError, PrecomputedLiftEvidence,
+   |     ^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: constant `S8` is never used
+   --> crates/exact_transcendentals/src/cram_ops.rs:465:11
+    |
+465 |     const S8: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
+    |           ^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `exact_transcendentals` (test "lifted_transduction_module") generated 1 warning (run `cargo fix --test "lifted_transduction_module"` to apply 1 suggestion)
+warning: `exact_transcendentals` (lib test) generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.24s
+     Running unittests src/lib.rs (target/release/deps/exact_transcendentals-0b58a65b26564105)
+
+running 1 test
+test cram_ct::tests::anchor_k_inverse_relationship_holds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 555 filtered out; finished in 0.00s
+
+     Running tests/a2_residue_native.rs (target/release/deps/a2_residue_native-e29bd77aaf8d2c63)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/arrow_emission_joint_property.rs (target/release/deps/arrow_emission_joint_property-c7a32b9696fc427d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/arrow_emission_reversibility.rs (target/release/deps/arrow_emission_reversibility-606baea6fb5503a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/composite_operator_domains.rs (target/release/deps/composite_operator_domains-a2e6cbd700f3d962)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/cram_gates.rs (target/release/deps/cram_gates-37e5c984659b3a70)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+     Running tests/lifted_transduction_module.rs (target/release/deps/lifted_transduction_module-ef4bef284fbafca9)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/safe_basis_lifted_transduction.rs (target/release/deps/safe_basis_lifted_transduction-0db7f624463650bf)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
