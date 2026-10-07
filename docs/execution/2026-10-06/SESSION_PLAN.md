@@ -181,8 +181,9 @@ sides in debug and record the profile consistently before resuming its smoke.
 The local `allow_insecure` run is executing the 27 `nine65` integration
 targets after an 11m02s serial compile. Its first target,
 `anchor_drift_diagnostics`, passed 3/3 tests in 420.61s. The second target,
-`arrow_emission_fhe_gate_matrix`, is active; two winding tests have exceeded
-60 seconds. The one `nine65-extreme-tests` target remains queued. Preserve the
+`arrow_emission_fhe_gate_matrix`, is active; G1 winding and early G2 checks
+passed, including depth-1 decrypt/noise-margin. A G3 test is active. The one
+`nine65-extreme-tests` target remains queued. Preserve the
 full log and record the exact source SHA, toolchain, target count and exit
 status when the run finishes.
 
@@ -315,12 +316,13 @@ through dependency-ready cards with their own evidence and review.
    Then run `nine65-extreme-tests/full_system_measurement` serially and record
    it as a separate gate. Do not start a competing local Cargo build while
    this matrix is consuming the host.
-3. On `codex/2026-10-07-ct-fuzz-followup`, finish the CT reducer hypothesis:
-   run formatting and diff checks, publish a draft PR, and use hosted T1/T2
-   plus the blocking isolated-reducer and full-path dudect measurements to
-   validate it. Keep the timing gate red unless both required contrasts pass
-   with clean controls; if the isolated reducer passes but the full path
-   fails, inspect the remaining CRT and modulus-switch operations.
+3. On `codex/2026-10-07-ct-fuzz-followup`, finish the CT reducer hypothesis.
+   Draft PR #168 is open at `c61edecedda489039868f3082abb70fd779273fb`;
+   source and documentation formatting checks passed before publication.
+   Collect hosted T1/T2 plus the blocking isolated-reducer and full-path
+   dudect measurements. Keep the timing gate red unless both required
+   contrasts pass with clean controls; if the isolated reducer passes but the
+   full path fails, inspect the remaining CRT and modulus-switch operations.
 4. Triage the three merged-head fuzz reproducers independently: the
    short-input deserialize allocation, encrypt/decrypt roundtrip mismatch,
    and homomorphic-addition mismatch. Add a minimal regression for each
@@ -339,6 +341,20 @@ through dependency-ready cards with their own evidence and review.
    Continue through Waves 0–19 only while those per-card gates pass, then
    reconcile V05 on one final SHA. A session stop or failed gate records the
    exact next card and blocker; it does not waive the acceptance criteria.
+
+### Follow-up PR #168 checkpoint
+
+Draft PR [#168](https://github.com/Skyelabz210/NINE65_v7/pull/168) is based on
+merged main and carries commit `c61edecedda489039868f3082abb70fd779273fb`.
+Its first hosted check set is running: CI run 37675698603, CT run
+37675698599, Fuzz Smoke run 37675698606, CRAM-public run 37675698506,
+application platform run 37675698466, exact CRAM run 37675698618, and exact
+Dual-RNS run 37675698455. At the last check, all unscheduled checks were
+pending; T2 had not started because the T1 Fast Gate was still pending. The
+separate T2 run on merged PR #167, 37673287983, also remains in progress.
+This PR's reducer and arithmetic test are still uncompiled and unmeasured
+locally; hosted results are the validation gate. Its fuzz jobs are evidence
+replays only, and all three regressions remain open.
 
 ## Execute in dependency order
 
