@@ -17,10 +17,18 @@ dependents. Preserve red correctness assertions and explicit refusals.
   self-tests and validates the 43-card DAG, while correctly reporting source
   drift from the original baseline. `ready` reports F00 alone until acceptance
   is established. Neither result verifies ciphertext correctness.
-* The latest listed Actions run is the cancelled run created 2026-02-27;
-  current `main` has no executed CI. Actions are enabled and allow all actions,
-  but the repository has no rulesets. #79 remains open. A workflow file or a
-  newly queued run is not a passing required check.
+* At intake the latest listed Actions run was the cancelled 2026-02-27 run and
+  current `main` had no executed CI. Publishing PR #163 triggered fresh hosted
+  CI and application-platform runs on 2026-10-07. Runners now start, but the
+  jobs fail before the full suite: an unavailable `cargo-deny` action, missing
+  `rg` in the claim script, pre-existing formatting drift, a WASM manifest
+  without a resolvable workspace root, and a Clippy command requesting a
+  nonexistent `fhe-service` library target. T2 is skipped after T1 failure.
+  The [CI bootstrap patch](CI_BOOTSTRAP.md) repairs those setup paths locally;
+  the service Clippy command now reaches an existing lint backlog, and a fresh
+  hosted run on the corrected PR head is still required.
+  Actions are enabled, but there are still no repository rulesets. #79 is now
+  an execution-and-green-check blocker, not an unstarted-run claim.
 * At intake this host had about 745 MiB free on `/home/acid`, 2.7 GiB RAM and
   no swap. The 1.0 GiB rebuildable Cargo `target` cache was cleared. A damaged
   partial toolchain was removed and Rust 1.89.0 reinstalled serially. `rustc`
@@ -74,10 +82,13 @@ commit before each patch.
    and continue only work that does not depend on a passing suite.
 2. Inventory the workspace with Cargo metadata and classify all 94 targets
    across 12 packages, including the 43 integration-test targets (34 in
-   `nine65`). Metadata discovery alone does not establish which tests compile
-   or execute. F02's full serial release sweep runs only after the disk/RAM
-   gate and pinned compiler are available. Preserve exit codes and positive
-   matched counts; reproduce each real failure individually.
+   `nine65`). F02's serial release `--no-fail-fast` sweep has now exercised 59
+   targets: 1,859 passed, 21 failed and 193 ignored, exit 101. Only 15 of 43
+   integration targets run by default; the other 28 require features. Twelve
+   HTTP failures came from sandbox socket denial and all 28 HTTP tests pass
+   outside that sandbox. Eight library failures and one K-Elimination
+   integration failure remain real gates. Preserve exact logs and positive
+   matched counts; run required feature matrices separately.
 3. On the accepted parent, run the focused depth oracle and the two expected
    red repeated-square tests from the October 5 runbook. Extend the depth dump
    only after the first failing boundary is specified. No auto-refresh claim

@@ -827,24 +827,45 @@ mod depth_benchmarks {
                 let encoded = ((seed as u128 * delta) % p as u128) as u64;
                 for k in 0..n {
                     let target = if k == 0 { encoded } else { 0 };
-                    let secret_term = if with_c1 { keys.secret_key.s.main[j][k] } else { 0 };
+                    let secret_term = if with_c1 {
+                        keys.secret_key.s.main[j][k]
+                    } else {
+                        0
+                    };
                     c0.main[j][k] = (target + p - secret_term) % p;
                 }
-                if with_c1 { c1.main[j][0] = 1; }
+                if with_c1 {
+                    c1.main[j][0] = 1;
+                }
             }
             for (j, &p) in anchor.iter().enumerate() {
                 let encoded = ((seed as u128 * delta) % p as u128) as u64;
                 for k in 0..n {
                     let target = if k == 0 { encoded } else { 0 };
-                    let secret_term = if with_c1 { keys.secret_key.s.anchor[j][k] } else { 0 };
+                    let secret_term = if with_c1 {
+                        keys.secret_key.s.anchor[j][k]
+                    } else {
+                        0
+                    };
                     c0.anchor[j][k] = (target + p - secret_term) % p;
                 }
-                if with_c1 { c1.anchor[j][0] = 1; }
+                if with_c1 {
+                    c1.anchor[j][0] = 1;
+                }
             }
             let mut ct = GSOCiphertext::wrap(
-                DualRNSCiphertext { c0, c1, level: main.len() }, 0
+                DualRNSCiphertext {
+                    c0,
+                    c1,
+                    level: main.len(),
+                },
+                0,
             );
-            assert_eq!(ctx.decrypt(&ct, &keys.secret_key), seed, "control input encoding");
+            assert_eq!(
+                ctx.decrypt(&ct, &keys.secret_key),
+                seed,
+                "control input encoding"
+            );
             let mut expected = seed;
             for depth in 1..=4 {
                 crate::arithmetic::rns::k_probe::start();
@@ -852,7 +873,9 @@ mod depth_benchmarks {
                 let k_samples = crate::arithmetic::rns::k_probe::stop();
                 let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
                 expected = ((expected as u128 * expected as u128) % ctx.inner.t as u128) as u64;
-                let (actual, margin) = ctx.inner.decrypt_dual_with_diagnostics(&ct.inner, &keys.secret_key);
+                let (actual, margin) = ctx
+                    .inner
+                    .decrypt_dual_with_diagnostics(&ct.inner, &keys.secret_key);
                 println!("ZERO_NOISE seed={seed} with_c1={with_c1} step={depth} got={actual} expected={expected} margin={margin} max_observed_k_bits={max_k_bits} k_samples={}", k_samples.len());
                 if actual != expected {
                     mismatches.push((seed, with_c1, depth, actual, expected));
@@ -860,7 +883,10 @@ mod depth_benchmarks {
                 }
             }
         }
-        assert!(mismatches.is_empty(), "zero-noise controls failed: {mismatches:?}");
+        assert!(
+            mismatches.is_empty(),
+            "zero-noise controls failed: {mismatches:?}"
+        );
     }
 
     /// Benchmark symmetric mode to maximum depth
