@@ -610,7 +610,7 @@ Unmeasured sites stay listed as unmeasured. `kelim_residue_divider.rs` and
 `clockwork-core/garner.rs` have no dudect coverage; neither is on a production
 ciphertext path today, and both need this contrast before either is put on one.
 
-### 4.9 F-2 closed — the recorded diagnosis was right, the fix is its CT counterpart
+### 4.9 F-2 original magnitude leak closed — the recorded diagnosis was right, the fix is its CT counterpart
 
 Date: 2026-09-04. Same shared 4 vCPU container class as the rest of this
 document (a fresh instance, not the literal 2026-08-22 one), so absolute
@@ -641,11 +641,12 @@ and the barrier is what keeps LLVM from recompiling it back into a branch.
 
 `mod_switch_down_dual`'s call site changes from `div_mod_u64` to
 `div_mod_u64_ct` and nothing else — the `if rem >= q_last_half` rounding
-branch and the two `is_neg` sign-encoding branches that follow are
-unchanged, because §4.1 already measured them constant-time on their own
-(magnitude-matched positive-vs-negative contrast, t_signal up to 2.29). This
-was never a "the branches must all become masks" fix; it was "the one
-non-branch, magnitude-dependent operation must become fixed-work."
+branch and the two `is_neg` sign-encoding branches that follow were
+unchanged. The matched positive-vs-negative contrast passed, which addresses
+that contrast only; it does not establish timing independence across all
+input classes. The 2026-10-07 all-zero-vs-uniform regression in §4.10
+demonstrates why the end-to-end test must remain and why the F-2 fix must not
+be described as a general constant-time proof for the entire path.
 
 **Correctness first.** `div_mod_u64_ct` is differential-tested against
 `div_mod_u64` (both quotient and remainder) over the same magnitude classes
@@ -685,8 +686,9 @@ throughout, `test_ct_dudect_mod_switch_rescale_fixed_vs_random`
 
 t_signal dropped from a 6-run range of 160.5–701.0 to 2.14, well inside the
 documented `t < 5` threshold, with a clean control. The companion sign-class
-test (§4.1) still passes after the change (t_signal 0.78, was 0.08–2.29),
-confirming the sign branches remain unaffected. Both tests were run once each
+contrast (§4.1) remained below threshold after the change (t_signal 0.78,
+previously 0.08–2.29). This is evidence for that magnitude-matched contrast
+only. Both tests were run once each
 on this container; §5's posture caveats about a single shared-host run apply
 here exactly as everywhere else in this document.
 
@@ -735,6 +737,40 @@ known, unaddressed instance of the same `__umodti3` defect class — a
 per-anchor-prime CT reduction context would close it, and building one was
 judged out of scope for this pass. See the doc comments in `rns.rs` at each
 site for the specifics.
+
+### 4.10 New all-zero-vs-uniform regression in `mod_switch_down_dual`
+
+Date: 2026-10-07, hosted CT run 37673287889 on source head `57af1de` (the
+evidence-only commit `0f85873` has the same code). The blocking test
+`test_ct_dudect_mod_switch_rescale_fixed_vs_random` again measures the full
+`mod_switch_down_dual` path after the F-2 division fix:
+
+| contrast | control t | signal t | medians | verdict |
+|---|---:|---:|---|---|
+| all-zero vs uniform coefficients | 0.8098 | **49.4668** | 64.47 ms vs 66.02 ms | **timing dependence measured** |
+
+The same test had `t_control=0.1291`, `t_signal=92.4920`, and medians 85.92
+ms vs 86.99 ms in hosted run 37672722432. On both runs the same-class
+control stayed below threshold 5, so the cross-class timing difference is
+measured, although its magnitude varied. The matched positive-vs-negative
+contrast passed in the latest run (`t_signal=0.2654`), which narrows but does
+not identify the cause. The current raw result is retained in
+`artifacts/execution/2026-10-07-session/CI/pr167-0f85873/ct/ct-dudect-blocking/`.
+
+This is a new input-class finding in the same end-to-end routine; it does not
+undo the narrower fix for the original F-2 magnitude-dependent division.
+Source review found a plausible contributor in
+`crt_reconstruct_u256 -> U512::mod_u256`: its fixed 512-iteration loop
+currently branches on every dividend bit and on each running-remainder
+comparison. Other value-derived operations remain in the full path, so the
+source observation is a candidate cause, not an attribution. The follow-up
+branch replaces those two decisions with a fixed borrow chain and mask
+selection, adds differential arithmetic tests, and measures `U512::mod_u256`
+directly before the end-to-end test. That prototype is not yet compiled or
+measured. Keep this gate red until the isolated and full-path measurements
+pass; if the isolated reducer passes but the full path does not, examine the
+remaining CRT normalization and modulus-switch encoding operations. Do not
+raise the threshold or remove the all-zero-vs-uniform contrast.
 
 ## 5. CI posture
 

@@ -54,6 +54,7 @@
 #[cfg(test)]
 mod constant_time_statistical {
     use crate::arithmetic::k_elimination::{AdjacencyKElim, KElimConfig};
+    use crate::arithmetic::rns::{U256, U512};
     use crate::arithmetic::{BarrettContext, KElimination, MontgomeryContext};
     use crate::entropy::ShadowHarvester;
     use crate::ops::rns_fhe::{exact_modulus_switch_drop_poly, DualRNSPoly, RNSFHEContext};
@@ -1442,6 +1443,34 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
             .iter()
             .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
             .expect("secure_128 main product must fit in u128 for this test");
+
+        // Isolate the CRT reduction called by `crt_reconstruct_u256` before
+        // measuring the full modulus-switch path. These 128-bit dividends
+        // cover the width produced by the three-prime secure_128 reconstruction.
+        let modulus = U256::product_u64s(&ctx.config.primes);
+        let mut reduction_rng = ShadowHarvester::with_seed(303);
+        let (zero_reductions, zero_reductions2, uniform_reductions) =
+            interleaved_pools(DUDECT_POOL, U512::zero, || U512 {
+                d0: ((reduction_rng.next_u64() as u128) << 64) | reduction_rng.next_u64() as u128,
+                d1: 0,
+                d2: 0,
+                d3: 0,
+            });
+        let mut reduction_order_rng = ShadowHarvester::with_seed(304);
+        let reduction_result = dudect_two_class(
+            &mut reduction_order_rng,
+            &zero_reductions,
+            &zero_reductions2,
+            &uniform_reductions,
+            DUDECT_ROUNDS,
+            |dividend| {
+                std::hint::black_box(dividend.mod_u256(modulus));
+            },
+        );
+        assert_dudect(
+            "U512::mod_u256 — zero vs uniform 128-bit dividends",
+            &reduction_result,
+        );
 
         // Class A: the all-zero polynomial (dudect's fixed vector).
         // Class B: uniform over [0, M).

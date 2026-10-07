@@ -1,0 +1,190 @@
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_pow_exponent_hamming_weight ... === Environment Information ===
+CPU Governor: performance
+WARNING: Turbo boost is enabled! Timing measurements may be unreliable.
+Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+Timer floor (empty measured region): median 21 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: MontgomeryContext::montgomery_pow — exponent Hamming weight 8 vs 56 (batched) ---
+  samples kept 5401/6000 after 90th-percentile crop
+  median class A = 216584.0ns, median class B = 216597.0ns
+  t_control (A vs A', same class) = 1.2952
+  t_signal  (A vs B,  cross class) = 1.5963
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1053 filtered out; finished in 1.32s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_reduce_operand_magnitude ... === Environment Information ===
+CPU Governor: performance
+WARNING: Turbo boost is enabled! Timing measurements may be unreliable.
+Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+Timer floor (empty measured region): median 21 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: MontgomeryContext::montgomery_reduce — small cofactor vs top-bit cofactor (batched) ---
+  samples kept 5406/6000 after 90th-percentile crop
+  median class A = 4488.0ns, median class B = 4495.0ns
+  t_control (A vs A', same class) = 0.2624
+  t_signal  (A vs B,  cross class) = 2.6113
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1053 filtered out; finished in 0.03s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude ... === Environment Information ===
+CPU Governor: performance
+WARNING: Turbo boost is enabled! Timing measurements may be unreliable.
+Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+Timer floor (empty measured region): median 21 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: MontgomeryContext::montgomery_mul — small operands vs near-modulus operands (batched) ---
+  samples kept 5401/6000 after 90th-percentile crop
+  median class A = 5017.0ns, median class B = 5013.0ns
+  t_control (A vs A', same class) = 1.0253
+  t_signal  (A vs B,  cross class) = 1.3368
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1053 filtered out; finished in 0.03s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_barrett_reduce_operand_magnitude ... === Environment Information ===
+CPU Governor: performance
+WARNING: Turbo boost is enabled! Timing measurements may be unreliable.
+Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+Timer floor (empty measured region): median 22 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: BarrettContext::reduce_ct — 40-bit dividends vs 128-bit dividends (batched) ---
+  samples kept 5402/6000 after 90th-percentile crop
+  median class A = 13107.0ns, median class B = 13102.0ns
+  t_control (A vs A', same class) = 0.5709
+  t_signal  (A vs B,  cross class) = 0.5065
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1053 filtered out; finished in 0.08s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_sign_classes ... === Environment Information ===
+CPU Governor: performance
+WARNING: Turbo boost is enabled! Timing measurements may be unreliable.
+Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+Timer floor (empty measured region): median 22 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: mod_switch_down_dual — positive-centred vs negative-centred coefficients              (magnitude-matched) ---
+  samples kept 406/450 after 90th-percentile crop
+  median class A = 66002599.0ns, median class B = 66017183.0ns
+  t_control (A vs A', same class) = 0.0510
+  t_signal  (A vs B,  cross class) = 0.2654
+  VERDICT: CONSTANT-TIME at this sample size (control and signal both below 5).
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1053 filtered out; finished in 34.66s
+
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.05s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random ... === Environment Information ===
+CPU Governor: performance
+WARNING: Turbo boost is enabled! Timing measurements may be unreliable.
+Run: echo 1 | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+Timer floor (empty measured region): median 22 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: mod_switch_down_dual — all-zero coefficients vs uniform coefficients ---
+  samples kept 406/450 after 90th-percentile crop
+  median class A = 64466796.0ns, median class B = 66000689.0ns
+  t_control (A vs A', same class) = 0.8098
+  t_signal  (A vs B,  cross class) = 49.4668
+  VERDICT: TIMING DEPENDENCE MEASURED — control t=0.8098 is below threshold but signal t=49.4668 is not. The difference tracks the input class, not the machine.
+
+thread 'security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random' panicked at crates/nine65/src/security/ct_verification.rs:1143:13:
+mod_switch_down_dual — all-zero coefficients vs uniform coefficients: MEASURED timing dependence on input class — t_signal=49.4668 >= 5 while the same-class control t_control=0.8098 stayed below it. medians: A=64466796.0ns B=66000689.0ns.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1053 filtered out; finished in 34.12s
+
+[1m[31merror[0m[1m:[0m test failed, to rerun pass `-p nine65 --lib`
