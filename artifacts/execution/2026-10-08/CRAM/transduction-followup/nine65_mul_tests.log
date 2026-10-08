@@ -1,0 +1,32 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7-ci/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7-ci/Cargo.toml
+   Compiling crossbeam-epoch v0.9.21
+   Compiling crossbeam-deque v0.8.6
+   Compiling rayon-core v1.13.0
+   Compiling rayon v1.11.0
+   Compiling mana v0.1.0 (/home/acid/Projects/NINE65_v7-ci/crates/mana)
+   Compiling nine65 v0.1.0 (/home/acid/Projects/NINE65_v7-ci/crates/nine65)
+   Compiling criterion v0.5.1
+   Compiling unhal v0.1.0 (/home/acid/Projects/NINE65_v7-ci/crates/unhal)
+   Compiling exact_transcendentals v1.0.0 (/home/acid/Projects/NINE65_v7-ci/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8m 07s
+     Running unittests src/lib.rs (/home/acid/Projects/NINE65_v7/target/debug/deps/nine65-70f1af4e1b6e15ee)
+
+running 2 tests
+test ops::homomorphic::tests::test_mul_no_relin_degree2_single_case ... ok
+test ops::homomorphic::tests::test_mul_no_relin_degree2_multiple_values ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1055 filtered out; finished in 1.01s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7-ci/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7-ci/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.81s
+     Running unittests src/lib.rs (/home/acid/Projects/NINE65_v7/target/debug/deps/nine65-70f1af4e1b6e15ee)
+
+running 1 test
+test ops::homomorphic::tests::test_retired_mul_fails_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1056 filtered out; finished in 0.07s
+

@@ -28,6 +28,8 @@ are retained beside this file.
 - Seeded Python unbounded-integer oracle: 2,048 modular-reduction/multiplication/inverse cases; all 6,144 outputs matched.
 - Deliberate Garner mutation: new call counter fails the test with 25 calls; the prior permutation-based test alone passed that mutation.
 - `clippy-driver` direct library check with `-D warnings`, formatting and whitespace checks: passed.
+- PR #174 follow-up: both renamed `mul_no_relin + decrypt_degree2` diagnostics passed in Cargo; the new `test_retired_mul_fails_closed` regression also passed. The tests distinguish supported degree-two diagnostics from retired `BFVEvaluator::mul()`.
+- Hosted run for `ff1f633`: CRAM correctness and ordinary CI T1 gates passed. Broader gates remain red: architecture scans still find scalar Garner/CRT reconstruction (21 constructs across 11 files), recumbency enforcement fails, and exact noise-accounting is not active. See [CRAM-public gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047363), [residue-native gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047472), and [recumbency gate](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047468). These are open architecture/workflow requirements, not passed checks.
 
 ## Open CRAM architecture work
 
@@ -55,3 +57,4 @@ operation is disabled fail-closed under the required interface.
 4. Keep #148's scalar `canonical()` reads and full-integer nonlinear PDE path out of claims of application hot-path compliance until redesigned or explicitly classified as reference/oracle code. Add caller-level architecture and boundary tests after that routing decision.
 5. Resolve the remaining #170 review defects on current main: reject invalid target bases in `try_build` (done in this follow-up) and restore `.gitignore` (done here); check CI on the exact merged SHA.
 6. Resume the repository's session DAG from F00/F02 gates: complete the interrupted 27-target debug feature matrix, run the separate extreme target, preserve all failure counts, then advance the earliest unblocked cards. Keep full workspace and hosted CI distinct from the focused results above.
+7. PR #174 test follow-up is now in `main`: keep the degree-two diagnostics under accurate names and retain the fail-closed regression for the retired `BFVEvaluator::mul()`. Review its CI on the new `main` SHA, and continue auditing its remaining issue #130/#135 claims before considering the draft resolved.

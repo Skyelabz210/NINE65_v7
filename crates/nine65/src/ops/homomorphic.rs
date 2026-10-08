@@ -924,8 +924,10 @@ mod tests {
     }
 
     #[test]
-    fn test_ct_mul_multiple_values() {
-        // Test multiple ct×ct cases with OLD BFV degree-2 decrypt
+    fn test_mul_no_relin_degree2_multiple_values() {
+        // Multiple ct×ct cases through mul_no_relin + degree-2 decrypt.
+        // This does NOT exercise BFVEvaluator::mul() (retired, #135);
+        // it exercises mul_no_relin() + decrypt_degree2() only.
         // Note: light_mul config supports products up to ~250 (Δ²×product < q)
         let (config, ntt, keys, mut harvester, encoder) = setup_mul();
 
@@ -994,8 +996,10 @@ mod tests {
     }
 
     #[test]
-    fn test_homomorphic_mul_with_relin() {
-        // Test ct×ct multiplication with degree-2 decrypt
+    fn test_mul_no_relin_degree2_single_case() {
+        // ct×ct multiplication via mul_no_relin + degree-2 decrypt.
+        // This does NOT exercise BFVEvaluator::mul() (retired, #135);
+        // it exercises mul_no_relin() + decrypt_degree2() only.
         let (config, ntt, keys, mut harvester, encoder) = setup_mul();
 
         let (supported, max_prod) = config.supports_single_mod_mul();
@@ -1046,6 +1050,31 @@ mod tests {
             result, expected,
             "ct×ct failed: {} × {} = {} (got {})",
             a, b, expected, result
+        );
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn test_retired_mul_fails_closed() {
+        // #135 regression: BFVEvaluator::mul() is retired and must fail
+        // closed. It previously returned silently wrong plaintexts
+        // (including 1x1). It must never return a ciphertext.
+        let (config, ntt, keys, mut harvester, encoder) = setup_mul();
+
+        let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
+        let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
+
+        let ct_a = encryptor.encrypt(1, &mut harvester);
+        let ct_b = encryptor.encrypt(1, &mut harvester);
+
+        let result = evaluator.mul(&ct_a, &ct_b);
+        assert!(
+            result.is_err(),
+            "retired BFVEvaluator::mul must fail closed (#135), not return a ciphertext"
+        );
+        assert!(
+            matches!(result, Err(Nine65Error::InvalidParameter { .. })),
+            "retired BFVEvaluator::mul must return InvalidParameter"
         );
     }
 
