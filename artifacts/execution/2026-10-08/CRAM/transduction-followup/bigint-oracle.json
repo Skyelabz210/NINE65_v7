@@ -1,0 +1,19 @@
+{
+  "oracle": "Python unbounded integers: a % m, (a*b) % m, pow(a,-1,m) when gcd(a,m)==1",
+  "seed": 1507697,
+  "cases": 2048,
+  "scalar_results_checked": 6144,
+  "status": "pass",
+  "rustc": "1.89.0",
+  "profile": "unoptimized",
+  "command": [
+    "rustc",
+    "+1.89.0",
+    "--edition=2021",
+    "/tmp/nine65-cram-followup-build/bigint_probe.rs",
+    "--extern",
+    "exact_transcendentals=/tmp/nine65-cram-followup-build/libexact_transcendentals.rlib",
+    "-o",
+    "/tmp/nine65-cram-followup-build/bigint-probe"
+  ]
+}

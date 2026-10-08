@@ -1,10 +1,11 @@
 //! Safe-basis entry layer: feed text and arithmetic straight in, read the
 //! actual magnitude back out.
 //!
-//! This is the residue-native front door. Values enter as Safe Basis residues
-//! plus an exact winding count and never leave that form until an explicit
-//! read-out. It is deliberately NOT an adapter over `DualRNSCiphertext` — the
-//! safe basis is the foundation, not a witness bolted onto something else.
+//! This staged reference stores Safe Basis residues, an adjacent anchor, and
+//! an exact scalar winding. Addition and multiplication read scalar canonical
+//! representatives internally to calculate carries. Those reads remain a gap
+//! against the application contract's prohibition on internal number-line
+//! projection; this module is not an admitted residue-only application path.
 //!
 //! # Why the winding is the point
 //!

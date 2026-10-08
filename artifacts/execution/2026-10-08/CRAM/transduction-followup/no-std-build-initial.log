@@ -1,0 +1,16 @@
+COMMAND ['rustc', '+1.89.0', '--edition=2021', '--crate-name', 'exact_transcendentals', '--crate-type', 'lib', '/home/acid/Projects/NINE65_v7-ci/crates/exact_transcendentals/src/lib.rs', '-o', '/tmp/nine65-cram-followup-build/libexact_transcendentals_no_std.rlib']
+error: cannot find macro `vec` in this scope
+   --> /home/acid/Projects/NINE65_v7-ci/crates/exact_transcendentals/src/substrate.rs:135:17
+    |
+135 |     let lanes = vec![
+    |                 ^^^
+    |
+help: consider importing this macro
+    |
+27  + use alloc::vec;
+    |
+
+error: aborting due to 1 previous error
+
+
+EXIT 1

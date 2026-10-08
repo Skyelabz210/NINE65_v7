@@ -1,0 +1,3 @@
+COMMAND ['rustc', '+1.89.0', '--edition=2021', '--test', '/home/acid/Projects/NINE65_v7-ci/crates/exact_transcendentals/tests/cram_gates.rs', '--extern', 'exact_transcendentals=/tmp/nine65-cram-followup-build/libexact_transcendentals.rlib', '-o', '/tmp/nine65-cram-followup-build/cram_gates']
+
+EXIT 0

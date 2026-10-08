@@ -41,6 +41,9 @@
 //!
 //! A1/A2: exact integer arithmetic only; no floating point and no
 //! mixed-radix/Garner reconstruction is introduced by this module.
+//! The delegated canonical `TransductionMap` still forms a scalar rank
+//! aggregate. Its use here does not certify the application's broader
+//! no-internal-scalar-projection contract.
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
@@ -49,7 +52,7 @@ use std::vec::Vec;
 
 use crate::k_elim::{gcd, modd, mulmod};
 use crate::transduction::{
-    TransductionBuildError, TransductionCapacityError, TransductionBasisError, TransductionMap,
+    TransductionBasisError, TransductionBuildError, TransductionCapacityError, TransductionMap,
 };
 
 /// Typed failure for lift-aware transduction.
@@ -96,6 +99,10 @@ fn map_build_error(err: TransductionBuildError) -> LiftedTransductionError {
             index,
             modulus,
         }) => LiftedTransductionError::InvalidSourceModulus { index, modulus },
+        TransductionBuildError::Basis(TransductionBasisError::InvalidTargetModulus {
+            index,
+            modulus,
+        }) => LiftedTransductionError::InvalidTargetModulus { index, modulus },
         TransductionBuildError::Basis(TransductionBasisError::NotPairwiseCoprime {
             lane_i,
             lane_j,
@@ -175,9 +182,11 @@ pub fn project_with_lift(
 /// the existing bounded [`TransductionMap`].  It then adds the exact lift
 /// contribution independently on every target lane.
 ///
-/// The operation never requires full integer materialization.  `k_mod_targets`
-/// must contain `K mod b_j` for each target modulus `b_j`, obtained from the
-/// caller's certified phase-lock/anchor mechanism.
+/// The lifted integer `X` is not formed, but the canonical map still forms
+/// its scalar CRT aggregate. `k_mod_targets` must contain `K mod b_j` for
+/// this same source state and source product, obtained from the caller's
+/// certified phase-lock/anchor mechanism. This slice does not itself certify
+/// the source binding or the uniqueness bound.
 pub fn transduct_with_lift(
     basis_a: &[i128],
     basis_b: &[i128],
@@ -233,11 +242,10 @@ pub fn transduct_with_lift(
 /// One target lane's lift evidence: `K mod target_modulus`, already reduced
 /// into `[0, target_modulus)`.
 ///
-/// This is a type-level tag, not a general-purpose integer. It exists so a
-/// caller cannot hand a raw magnitude, or a stored full-precision `K`, where
-/// only a single lane's reduced residue is asked for — the type only comes
-/// into existence already reduced against the lane it names, via
-/// [`LiftEvidence::new`] or a [`LiftEvidenceProvider`].
+/// This tag records the lane, modulus, and normalized residue. It does not
+/// prove that the supplied integer was derived from the right source state
+/// or that the caller's phase/corridor bound holds; those are provider
+/// obligations. [`LiftEvidence::new`] accepts an integer and normalizes it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LiftEvidence {
     lane: usize,
@@ -372,8 +380,9 @@ where
 /// [`LiftedTransductionError`] — never a panic, never a silently truncated
 /// or wrong residue.
 ///
-/// The operation never requires full integer materialization, and — like
-/// [`transduct_with_lift`] — introduces no Garner/mixed-radix cascade.
+/// The lifted integer `X` is not formed. The canonical map's scalar rank
+/// aggregate and the caller's source/range certification obligations are
+/// the same as for [`transduct_with_lift`].
 pub fn transduct_with_lift_provider<P>(
     basis_a: &[i128],
     basis_b: &[i128],
@@ -654,8 +663,7 @@ mod tests {
 
         // Same guarantee through the provider entry point.
         let provider = PrecomputedLiftEvidence::new(&k_mod_targets);
-        let err =
-            transduct_with_lift_provider(&huge_a, &S8_BASIS, &source, &provider).unwrap_err();
+        let err = transduct_with_lift_provider(&huge_a, &S8_BASIS, &source, &provider).unwrap_err();
         assert_eq!(
             err,
             LiftedTransductionError::Capacity(TransductionCapacityError::BasisAProductOverflow)

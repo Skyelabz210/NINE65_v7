@@ -1,0 +1,23 @@
+COMMAND ['/tmp/nine65-cram-followup-build/mutation/mutant-tests', 'transduction::tests::transduction_does_not_call_garner_primitive', '--exact']
+
+running 1 test
+test transduction::tests::transduction_does_not_call_garner_primitive ... FAILED
+
+failures:
+
+---- transduction::tests::transduction_does_not_call_garner_primitive stdout ----
+
+thread 'transduction::tests::transduction_does_not_call_garner_primitive' panicked at /tmp/nine65-cram-followup-build/mutation/transduction.rs:612:9:
+assertion `left == right` failed: transduction called Garner reconstruction
+  left: 25
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    transduction::tests::transduction_does_not_call_garner_primitive
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 51 filtered out; finished in 0.01s
+
+
+EXIT 101

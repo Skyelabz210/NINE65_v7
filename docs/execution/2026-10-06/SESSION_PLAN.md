@@ -611,3 +611,25 @@ commit before each patch.
 The session will attempt every dependency-ready wave in order. A failed gate
 halts its dependent branch; it does not authorize weakening tests, guessing a
 cryptographic construction or marking the remaining cards complete.
+
+### CRAM transduction follow-up (2026-10-08)
+
+PR #171 merged the first correction from the PR #170 review: the slice and
+provider lifted APIs now use the typed fallible transduction builder. The
+follow-up on this branch closes the remaining invalid-target panic, restores
+the generated-artifact ignore rules, fixes modular normalization at the
+`i128::MAX` boundary, and records the result of the previous anti-Garner test
+being unable to detect a correct scalar Garner replacement. A deliberate
+mutation now fails the new named-Garner call-counter test. The S6/S8 output
+oracle passes; scalar rank aggregation is still an explicit architecture gap.
+Focused results, commands, failure scope, and ordered next work are in
+[`CRAM transduction follow-up`](../../../artifacts/execution/2026-10-08/CRAM/transduction-followup/README.md).
+
+Do not treat that focused crate run as full Cargo workspace acceptance. PR
+#173's draft addition fixes the S8 boundary example by reconstructing both
+operands and re-encoding their sum, as explicitly acknowledged in its body.
+That does not implement issue #159's required phase witness. Keep the
+carry/recumbency architecture card open until the witness contract is proved
+or the operations fail closed under the admitted interface. The local debug
+feature-matrix log stops before a final target/exit summary; preserve it as an
+incomplete run, then repeat that matrix before advancing F02.

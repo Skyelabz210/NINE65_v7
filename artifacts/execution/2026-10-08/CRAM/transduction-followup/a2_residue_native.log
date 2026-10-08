@@ -1,0 +1,13 @@
+COMMAND ['/tmp/nine65-cram-followup-build/a2_residue_native', '--test-threads=1']
+
+running 5 tests
+test a1_exact_on_disjoint_target_basis ... ok
+test a1_exact_over_full_corridor ... ok
+test a2_result_is_independent_of_source_lane_order ... ok
+test phase_lock_shared_lanes_pass_through_unchanged ... ok
+test roundtrip_exact_within_corridor ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.03s
+
+
+EXIT 0

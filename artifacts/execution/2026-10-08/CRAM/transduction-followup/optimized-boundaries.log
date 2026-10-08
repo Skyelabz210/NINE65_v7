@@ -1,0 +1,14 @@
+COMMAND ['/tmp/nine65-cram-followup-build/optimized-boundaries', '--test-threads=1']
+
+running 6 tests
+test builder_refuses_nonpositive_target_moduli ... ok
+test lifted_apis_refuse_accumulator_capacity_even_when_product_fits ... ok
+test multiplication_reduces_before_narrowing_to_i128 ... ok
+test normalization_and_inverse_cover_signed_extremes ... ok
+test projection_and_evidence_preserve_canonical_residues_at_i128_limit ... ok
+test shared_factor_and_overlapping_targets_remain_valid ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+EXIT 0

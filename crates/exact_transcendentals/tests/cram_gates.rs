@@ -30,8 +30,10 @@
 //! # Coverage
 //!
 //! Landed: C1–C6, C8, P1, P3, P6, P7, P8, P9.
-//! Pending their build steps: C7 and P10 (Shared-Factor Lift), P2's runtime
-//! counter (Garner retirement), P4 (five trays), P5's Σ half (Adelic tuple).
+//! Pending their build steps: C7 and P10 (Shared-Factor Lift), P2's full
+//! architecture closure (this crate now counts calls to the Garner primitive,
+//! but scalar rank aggregation and broader runtime counters remain open),
+//! P4 (five trays), P5's Σ half (Adelic tuple).
 //! C9 (`nine65 --lib` baseline 648/3/103) is cross-crate and lives in the
 //! verification command list, not here.
 
@@ -413,7 +415,9 @@ fn p1_no_cram_module_contains_a_float() {
 ///
 /// `ExactState::to_u128` and the Safe Basis add/mul carry both go through
 /// `canonical_from`: one add and one remainder on the anchor lane. A Garner
-/// walk in either file is a regression.
+/// walk in either file is a regression. This source check only covers that
+/// named primitive. Internal canonical/scalar evaluation remains present;
+/// this check does not certify the no-internal-projection application rule.
 #[test]
 fn p2_anchored_read_is_garner_free() {
     let anchor = production_code(include_str!("../src/cram_anchor.rs"));
@@ -649,10 +653,10 @@ fn p3b_the_winding_is_measured_and_absent_when_it_should_be() {
     assert_eq!(m.project_integer(2).unwrap(), 41 * 17);
 }
 
-/// **P6** — shuffle invariance: the lift is flat, not a cascade.
+/// **P6** — shuffle invariance of the returned winding vector.
 ///
-/// Every winding is returned indexed by lane, so if any depended on an earlier
-/// one, a permuted evaluation would differ. Exhaustive over the family capacity.
+/// Exhaustive over the family capacity. Equal results under reordering are a
+/// functional property, not proof that an implementation has no dependencies.
 #[test]
 fn p6_windings_are_invariant_under_evaluation_order() {
     let family = AnchorFamily::disjoint(&[&[3, 5], &[7, 11], &[13, 17]]).unwrap();

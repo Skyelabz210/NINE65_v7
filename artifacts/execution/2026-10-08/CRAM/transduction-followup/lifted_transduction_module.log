@@ -1,0 +1,13 @@
+COMMAND ['/tmp/nine65-cram-followup-build/lifted_transduction_module', '--test-threads=1']
+
+running 5 tests
+test exported_absent_evidence_and_bad_source_basis_fail_closed ... ok
+test exported_closure_provider_derives_k_on_demand ... ok
+test exported_module_resolves_first_s6_wrap ... ok
+test exported_projection_handles_shared_factor_composites ... ok
+test exported_typed_provider_api_matches_the_slice_api_from_outside_the_crate ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+EXIT 0

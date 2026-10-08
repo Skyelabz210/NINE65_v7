@@ -22,6 +22,11 @@
 //!    Boundedness is a graph-theoretic property, not an analytic estimate.
 //!
 //! All arithmetic is exact integer. Zero floating point (A1 mandate).
+//!
+//! Architecture scope: the staged step functions also evaluate scalar
+//! canonical representatives; nonlinear winding propagation reconstructs the
+//! full integer. Lane correctness here does not establish compliance with
+//! the application's no-internal-projection contract.
 
 #![allow(clippy::needless_range_loop)]
 
@@ -241,8 +246,9 @@ pub fn step_lane_parallel(states: &[ExactState], f: &dyn PolynomialMap) -> Vec<E
 /// Evolve one step with exact winding propagation.
 ///
 /// The new corridor representative is the integer map reduced mod `M`.
-/// Linear maps add the stencil of the old winding. Nonlinear maps evaluate
-/// the full integer. Neither path reconstructs the lanes.
+/// Linear maps evaluate scalar canonical representatives and add the stencil
+/// of the old winding. Nonlinear maps reconstruct and evaluate the full
+/// integer. These internal scalar reads remain an architecture limitation.
 pub fn step_lane_parallel_winding(states: &[ExactState], f: &dyn PolynomialMap) -> Vec<ExactState> {
     let n = states.len();
     let old_g: Vec<i128> = states.iter().map(|s| s.canonical()).collect();

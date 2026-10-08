@@ -1,0 +1,17 @@
+COMMAND ['/tmp/nine65-cram-followup-build/safe_basis_lifted_transduction', '--test-threads=1']
+
+running 9 tests
+test adjacency_lift_is_exact_for_composite_and_prime_neighbors ... ok
+test canonical_adjacent_products_include_composite_anchors ... ok
+test heterogeneous_affine_maps_are_reversible_on_composite_product_state ... ok
+test lift_aware_s6_to_s8_regression_distinguishes_the_first_wrapped_sheet ... ok
+test overlapping_composites_are_views_not_full_product_basis ... ok
+test s6_expansion_to_17x19_is_not_product_uniform ... ok
+test s6_saturates_exactly_30030_states ... ok
+test safe_basis_repack_to_composite_carriers_preserves_product_space ... ok
+test universal_projection_accepts_composite_and_shared_factor_targets ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.97s
+
+
+EXIT 0

@@ -69,23 +69,29 @@ pub fn extended_gcd(a: i128, b: i128) -> (i128, i128, i128) {
     (g, y1 - (b / a) * x1, x1)
 }
 
-/// Modular inverse of `a` mod `m`. Returns `None` if `gcd(a, m) != 1`.
+/// Modular inverse of `a` mod positive `m`.
+/// Returns `None` if `m <= 0` or `gcd(a, m) != 1`.
 pub fn mod_inv(a: i128, m: i128) -> Option<i128> {
-    let a_mod = ((a % m) + m) % m;
+    if m <= 0 {
+        return None;
+    }
+    let a_mod = modd(a, m);
     let (g, x, _) = extended_gcd(a_mod, m);
     if g != 1 {
         return None;
     }
-    Some(((x % m) + m) % m)
+    Some(modd(x, m))
 }
 
-/// Safe modular reduction (handles negatives correctly).
+/// Canonical reduction for positive `m`, including negative `a`.
+/// `rem_euclid` avoids overflowing `a % m + m` near `i128::MAX`.
 #[inline(always)]
 pub fn modd(a: i128, m: i128) -> i128 {
-    ((a % m) + m) % m
+    a.rem_euclid(m)
 }
 
-/// Modular multiplication via widening to avoid overflow.
+/// Modular multiplication for positive `m`, without signed overflow.
+/// This staged arithmetic helper is variable-time.
 #[inline(always)]
 pub fn mulmod(a: i128, b: i128, m: i128) -> i128 {
     // For i128 inputs, the product may exceed i128 range.
@@ -96,18 +102,20 @@ pub fn mulmod(a: i128, b: i128, m: i128) -> i128 {
     if a < (1i128 << 63) && b < (1i128 << 63) {
         return (a * b) % m;
     }
-    // Binary-double-add method for large moduli.
-    let mut result = 0i128;
-    let mut base = a % m;
+    // Each reduced operand is at most i128::MAX - 1. Their sum fits
+    // u128 even when it does not fit i128. Reduce before the final cast.
+    let modulus = m as u128;
+    let mut result = 0u128;
+    let mut base = a as u128;
     let mut exp = b;
     while exp > 0 {
         if exp & 1 == 1 {
-            result = (result + base) % m;
+            result = (result + base) % modulus;
         }
-        base = (base + base) % m;
+        base = (base + base) % modulus;
         exp >>= 1;
     }
-    result
+    result as i128
 }
 
 /// Modular exponentiation.
@@ -177,11 +185,26 @@ pub fn k_eliminate(r: i128, m: i128, s: i128, a: i128) -> Option<KElimResult> {
     Some(KElimResult { k, value, m, a })
 }
 
+// Unit-test instrumentation for this specific reconstruction primitive.
+// Thread-local storage prevents unrelated parallel tests changing the count.
+// This does not detect other scalar materialization or prove full A2 compliance.
+#[cfg(all(test, feature = "std"))]
+std::thread_local! {
+    static GARNER_CALLS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
+}
+
+#[cfg(all(test, feature = "std"))]
+pub(crate) fn garner_call_count() -> u64 {
+    GARNER_CALLS.with(|calls| calls.get())
+}
+
 /// Multi-lane CRT reconstruction via iterated K-Elimination (Garner's algorithm).
 ///
 /// Given residues `(r_i, m_i)` with all `m_i` pairwise coprime, reconstructs
 /// the unique X in `[0, ∏m_i)`. Returns `None` if any pair is not coprime.
 pub fn garner_reconstruct(residues: &[(i128, i128)]) -> Option<i128> {
+    #[cfg(all(test, feature = "std"))]
+    GARNER_CALLS.with(|calls| calls.set(calls.get() + 1));
     if residues.is_empty() {
         return Some(0);
     }

@@ -1,0 +1,16 @@
+COMMAND ['rustc', '+1.89.0', '--edition=2021', '--cfg', 'feature="std"', '--test', '/tmp/nine65-cram-followup-build/mutation/lib.rs', '-o', '/tmp/nine65-cram-followup-build/mutation/mutant-tests']
+warning: field `idempotents` is never read
+   --> /tmp/nine65-cram-followup-build/mutation/transduction.rs:172:5
+    |
+168 | pub struct TransductionMap {
+    |            --------------- field in this struct
+...
+172 |     idempotents: Vec<i128>,
+    |     ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: 1 warning emitted
+
+
+EXIT 0

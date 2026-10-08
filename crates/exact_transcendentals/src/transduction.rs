@@ -1,8 +1,9 @@
 //! # Transduction: CRT Basis-to-Basis Bridge
 //!
-//! Transduction converts a value represented as residues in one CRT basis
-//! to residues in a different CRT basis, without reconstructing the full
-//! integer when the value lies within the representable range of both bases.
+//! This bounded reference transduction converts a canonical source value
+//! into target residues using a CRT sum and an exact rank correction.
+//! It forms a scalar aggregate internally; it is not evidence of compliance
+//! with the application's prohibition on internal scalar materialization.
 //!
 //! Given a value `v` with residue representation `x_a[i] = v mod a_i` in
 //! basis A = {a_0, ..., a_{N-1}}, transduction produces the representation
@@ -15,16 +16,21 @@
 //!    value in `[0, M_A)` that is `1 mod a_i` and `0 mod a_k` for `k != i`)
 //!    has residue `alpha_ij = e_i mod b_j`.
 //!
-//! 2. Apply: `y_j = sum_i (x_i * alpha_ij) mod b_j`.
+//! 2. Form `raw = sum_i ((x_i mod a_i) * e_i)` and rank `t = raw / M_A`.
+//! 3. Apply: `y_j = (sum_i (x_i * alpha_ij) - t*(M_A mod b_j)) mod b_j`,
+//!    using normalized source residues.
 //!
-//! This works because `v = sum_i x_i * e_i (mod M_A)`, so the formula
-//! recovers `v mod b_j` for values in `[0, M_A)`.
+//! `v = raw - t*M_A` is the canonical representative in `[0, M_A)`.
+//! The correction vanishes when `b_j` divides `M_A`; merely sharing a
+//! factor is insufficient. Rank `t` is not the represented integer's
+//! external winding `K`, which must come from separate lift evidence.
 //!
 //! ## CRAM Integration (Phase 4)
 //!
-//! Transduction is the key operation enabling CRAM (Configurable Residue
-//! Arithmetic Machine) to switch between heterogeneous modular bases
-//! without leaving the residue domain.
+//! CRAM's application contract requires movement between heterogeneous
+//! bases to remain in residue coordinates. This staged implementation's
+//! scalar rank calculation remains an integration gap. Correct target
+//! residues and source-order invariance do not certify that architecture.
 //!
 //! ## Two scales, same identity, deliberately separate implementations
 //!
@@ -116,10 +122,9 @@ pub enum TransductionCapacityError {
     },
 }
 
-/// Typed refusal for a source basis that cannot carry a CRT idempotent
-/// decomposition at construction time — a modulus that is not strictly
-/// positive, or two moduli that are not coprime (so no modular inverse
-/// exists).
+/// Typed refusal for non-positive source/target moduli, or a source basis
+/// that cannot carry a CRT idempotent decomposition because two source
+/// moduli share a factor. Target lanes need not be pairwise coprime.
 ///
 /// This is the *coprimality/validity* half of the failure surface; the
 /// *capacity* half is [`TransductionCapacityError`]. Both halves come back
@@ -130,6 +135,8 @@ pub enum TransductionCapacityError {
 pub enum TransductionBasisError {
     /// A basis-A modulus was not strictly positive.
     InvalidSourceModulus { index: usize, modulus: i128 },
+    /// A basis-B modulus was not strictly positive.
+    InvalidTargetModulus { index: usize, modulus: i128 },
     /// Two basis-A moduli share a factor, so the CRT idempotent `e_i`
     /// cannot be computed.
     NotPairwiseCoprime { lane_i: usize, lane_j: usize },
@@ -144,8 +151,8 @@ pub enum TransductionBuildError {
     /// The basis pair fails the `i128` capacity certificate (see
     /// [`TransductionMap::try_new`]).
     Capacity(TransductionCapacityError),
-    /// The source basis is malformed (non-positive or not pairwise
-    /// coprime), see [`TransductionBasisError`].
+    /// A source or target modulus is non-positive, or the source basis is
+    /// not pairwise coprime; see [`TransductionBasisError`].
     Basis(TransductionBasisError),
     /// An idempotent intermediate exceeded `i128` despite the raw/wrap
     /// bounds clearing the certificate — a defensive guard, documented on
@@ -274,21 +281,29 @@ impl TransductionMap {
     /// - capacity: the basis pair's CRT bookkeeping cannot be carried in
     ///   `i128` ([`TransductionCapacityError`], same certificate as
     ///   [`Self::try_new`]);
-    /// - validity: a non-positive basis-A modulus, or a basis-A pair that is
-    ///   not coprime ([`TransductionBasisError`]).
+    /// - validity: a non-positive source/target modulus, or a basis-A pair
+    ///   that is not coprime ([`TransductionBasisError`]). Target moduli may
+    ///   share factors with each other or with the source product.
     ///
     /// [`Self::new`] is the panic-wrapping convenience form of this
     /// function; production-facing callers whose contract is "typed failure,
     /// never a panic" (e.g. `lifted_transduction`) must go through
     /// `try_build` so no reachable input can hit `new`'s `.expect()`.
-    pub fn try_build(
-        basis_a: &[i128],
-        basis_b: &[i128],
-    ) -> Result<Self, TransductionBuildError> {
+    pub fn try_build(basis_a: &[i128], basis_b: &[i128]) -> Result<Self, TransductionBuildError> {
         for (i, &a) in basis_a.iter().enumerate() {
             if a <= 0 {
                 return Err(TransductionBuildError::Basis(
-                    TransductionBasisError::InvalidSourceModulus { index: i, modulus: a },
+                    TransductionBasisError::InvalidSourceModulus {
+                        index: i,
+                        modulus: a,
+                    },
+                ));
+            }
+        }
+        for (index, &modulus) in basis_b.iter().enumerate() {
+            if modulus <= 0 {
+                return Err(TransductionBuildError::Basis(
+                    TransductionBasisError::InvalidTargetModulus { index, modulus },
                 ));
             }
         }
@@ -296,7 +311,10 @@ impl TransductionMap {
             for j in (i + 1)..basis_a.len() {
                 if k_elim::gcd(basis_a[i], basis_a[j]) != 1 {
                     return Err(TransductionBuildError::Basis(
-                        TransductionBasisError::NotPairwiseCoprime { lane_i: i, lane_j: j },
+                        TransductionBasisError::NotPairwiseCoprime {
+                            lane_i: i,
+                            lane_j: j,
+                        },
                     ));
                 }
             }
@@ -310,12 +328,9 @@ impl TransductionMap {
     /// checked arithmetic and refuse (rather than silently wrap) if any
     /// intermediate exceeds `i128` despite the raw/wrap bounds having passed
     /// the [`Self::try_new`] certificate. In practice the certificate
-    /// already dominates every intermediate here (`m_over_ai < M_A`,
-    /// `inv < a_i`, `e_i < M_A`, and `M_A` itself is `< i128::MAX / 2`
-    /// because `raw_bound = M_A * sum(basis_a) >= M_A` passed the margin
-    /// check), so this runs only when `k_elim::mulmod`'s fast path would
-    /// have overflowed anyway — but it makes the guarantee structural
-    /// rather than argued.
+    /// already dominates this product: `inv < a_i`, so
+    /// `(M_A / a_i) * inv < M_A`. This is a defensive consistency check
+    /// after construction, not protection for arithmetic executed earlier.
     fn check_idempotents(self, basis_a: &[i128]) -> Result<Self, TransductionBuildError> {
         for (i, &a_i) in basis_a.iter().enumerate() {
             let m_over_ai = self
@@ -328,13 +343,10 @@ impl TransductionMap {
                     lane_j: i,
                 }),
             )?;
-            // e_i = m_over_ai * inv reduced mod M_A. Both factors are
-            // < M_A <= i128::MAX/2, so the product fits u128 exactly;
-            // verify it also fits i128 before accepting the table.
-            let wide = (m_over_ai as u128) * (inv as u128);
-            if wide > i128::MAX as u128 {
-                return Err(TransductionBuildError::IdempotentOverflow { lane: i });
-            }
+            // The product is < M_A because inv < a_i.
+            m_over_ai
+                .checked_mul(inv)
+                .ok_or(TransductionBuildError::IdempotentOverflow { lane: i })?;
         }
         Ok(self)
     }
@@ -343,7 +355,8 @@ impl TransductionMap {
     ///
     /// # Panics
     ///
-    /// Panics if any modulus in `basis_a` is not pairwise coprime with the
+    /// Panics if a source or target modulus is non-positive, any modulus in
+    /// `basis_a` is not pairwise coprime with the
     /// others (i.e., if a CRT inverse does not exist), or if the basis pair
     /// fails the `i128` capacity certificate documented on
     /// [`Self::try_new`] (see [`TransductionCapacityError`]).
@@ -403,10 +416,9 @@ impl TransductionMap {
     ///
     /// The algorithm uses the precomputed coefficient matrix. For lanes in
     /// basis B that also appear in basis A, the residue is copied directly.
-    /// For lanes that share factors with M_A, the CRT lifting formula
-    /// `y_j = sum_i (x_i * alpha_ij) mod b_j` applies directly. For
-    /// disjoint-basis lanes, Garner reconstruction is used to recover the
-    /// canonical value in `[0, M_A)` before reducing mod `b_j`.
+    /// Other lanes use the coefficient sum with the exact rank correction
+    /// described in the module docs. The calculation forms a scalar CRT
+    /// aggregate internally. It does not call the Garner primitive.
     ///
     /// # Panics
     ///
@@ -420,24 +432,11 @@ impl TransductionMap {
 
         let m = self.basis_b.len();
 
-        // A2 — RESIDUE-NATIVE. The precomputed coefficient matrix
-        // `alpha_ij = e_i mod b_j` (CRT idempotents of basis A, reduced into
-        // each target lane) lets every target residue be read directly:
-        //
-        //     y_j = ( sum_i x_i * alpha_ij )  mod b_j
-        //
-        // exact for values in [0, M_A) — the documented domain of this method.
-        // Nothing proportional to the value is ever formed: the largest
-        // intermediate is basis-sized, not value-sized.
-        //
-        // The previous implementation called `garner_reconstruct` here, which
-        // materialised the integer and destroyed the winding — a mixed-radix
-        // cascade inside the very operator whose purpose is to move between
-        // fixtures WITHOUT leaving residue space. Retired per A2: Garner's
-        // digit i depends on digits 0..i-1, whereas each target lane below is
-        // read independently, so the source lanes stay i.i.d.
-        // raw = sum_i x_i * e_i, unreduced. x = raw - t*M_A with t = floor(raw/M_A),
-        // since apply() is documented for values in [0, M_A).
+        // This scalar CRT aggregate determines the rank correction for the
+        // canonical source corridor. The constructor certifies its numeric
+        // capacity, not the absence of internal scalar materialization.
+        // It carries no evidence for the external winding K. Expansion into
+        // a larger target product also makes no IID/uniformity guarantee.
         let mut raw: i128 = 0;
         for (i, &a_i) in self.basis_a.iter().enumerate() {
             raw += k_elim::modd(x_a[i], a_i) * self.idempotents[i];
@@ -461,10 +460,9 @@ impl TransductionMap {
                 acc = k_elim::modd(acc + r_i * self.coefficients[i][j], b_j);
             }
             // Wrap term. sum_i x_i*e_i overshoots x by t*M_A, and that term
-            // only vanishes mod b_j when b_j | M_A. t is basis-sized (raw is
-            // bounded by M_A * sum(a_i)), so forming it is not a value-sized
-            // reconstruction — and each e_i term is read independently, so
-            // there is no threaded accumulator. A2 holds.
+            // vanishes for all source inputs when b_j | M_A. The bound
+            // raw < M_A * sum(a_i) prevents overflow; it does not turn this
+            // scalar aggregate into a residue-coordinate calculation.
             acc = k_elim::modd(acc - t * k_elim::modd(self.m_a, b_j), b_j);
             result.push(acc);
         }
@@ -472,19 +470,14 @@ impl TransductionMap {
         result
     }
 
-    /// Verify that transduction preserved the value — residue-native.
+    /// Verify that the bounded canonical representatives agree.
     ///
     /// Two representations agree modulo `lcm(M_A, M_B)` iff the value read
     /// from basis A reproduces `x_b` on every B lane AND the value read
     /// from basis B reproduces `x_a` on every A lane: by CRT, lanewise
-    /// agreement on both bases IS agreement mod the lcm. Both reads are
-    /// lanewise transductions through the idempotent tables — no integer is
-    /// ever materialised, no digit depends on another digit. There are no
-    /// cascades.
-    ///
-    /// (Previous implementation Garner-reconstructed both sides and compared
-    /// mod lcm — a positional exit for a question residue space answers
-    /// directly. Retired per A2; semantics unchanged.)
+    /// agreement on both bases IS agreement mod the lcm. Both reads use
+    /// [`Self::apply`], including its scalar rank aggregate. This checks
+    /// arithmetic equality, not the CRAM architecture contract.
     pub fn verify(&self, x_a: &[i128], x_b: &[i128]) -> bool {
         assert_eq!(x_a.len(), self.basis_a.len());
         assert_eq!(x_b.len(), self.basis_b.len());
@@ -607,7 +600,7 @@ pub fn verify_roundtrip(basis_a: &[i128], basis_b: &[i128], value: i128) -> bool
     // Garner "double check" that used to follow this loop reconstructed both
     // vectors to positional integers and compared them mod M_A: a value-sized
     // exit that could never disagree with the lanewise comparison above it.
-    // Retired per A2. There are no cascades.
+    // The calls to apply above still form scalar rank aggregates.
     for (i, &a_i) in basis_a.iter().enumerate() {
         if k_elim::modd(residues_a[i], a_i) != k_elim::modd(residues_a_prime[i], a_i) {
             return false;
@@ -629,6 +622,40 @@ mod tests {
     /// Helper: decompose a value into residues for a given basis.
     fn decompose(value: i128, basis: &[i128]) -> Vec<i128> {
         basis.iter().map(|&m| k_elim::modd(value, m)).collect()
+    }
+
+    /// Check calls to the known Garner primitive; lane-order invariance
+    /// cannot distinguish it from another correct transduction algorithm.
+    /// The scalar rank accumulator remains separate architecture debt.
+    #[cfg(feature = "std")]
+    #[test]
+    fn transduction_does_not_call_garner_primitive() {
+        let before = k_elim::garner_call_count();
+        assert_eq!(k_elim::garner_reconstruct(&[(1, 3), (1, 5)]), Some(1));
+        assert_eq!(
+            k_elim::garner_call_count(),
+            before + 1,
+            "counter must observe the forbidden primitive"
+        );
+        let baseline = k_elim::garner_call_count();
+        let map = TransductionMap::new(&S6_BASIS, &S8_BASIS);
+        for value in [0, 1, 12345, 30029] {
+            let source = decompose(value, &S6_BASIS);
+            let target = map.apply(&source);
+            assert_eq!(target, decompose(value, &S8_BASIS));
+            assert!(map.verify(&source, &target));
+            assert!(verify_roundtrip(&S6_BASIS, &S8_BASIS, value));
+            let lifted = crate::lifted_transduction::transduct_with_lift(
+                &S6_BASIS, &S8_BASIS, &source, &[1; 8],
+            )
+            .unwrap();
+            assert_eq!(lifted, decompose(value + 30030, &S8_BASIS));
+        }
+        assert_eq!(
+            k_elim::garner_call_count(),
+            baseline,
+            "transduction called Garner reconstruction"
+        );
     }
 
     // Test 1: Transducting to the same basis is identity.
