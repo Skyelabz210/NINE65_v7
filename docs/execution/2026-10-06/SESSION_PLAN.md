@@ -633,3 +633,74 @@ carry/recumbency architecture card open until the witness contract is proved
 or the operations fail closed under the admitted interface. The local debug
 feature-matrix log stops before a final target/exit summary; preserve it as an
 incomplete run, then repeat that matrix before advancing F02.
+
+### Live checkpoint (2026-10-08, main `4a98ddb1bdba536756504d402704dfa93f1ab2b3`)
+
+The CRAM/transduction follow-up was committed to `main` in three reviewed
+commits: `ff1f633` fixes target-modulus validation, signed modular boundaries,
+ignored build products, missing `no_std` macro import, and inaccurate
+residue-native claims; `fb656c6` renames two degree-two diagnostics and adds a
+typed refusal regression for retired `BFVEvaluator::mul()`; `4a98ddb` records
+the PR audit and exact open gates. Local and `origin/main` matched at this
+checkpoint and the working tree was clean. The standalone `nine65` Cargo test
+harness was compiled using the warmed target cache (8m07s): both renamed
+`mul_no_relin + decrypt_degree2` tests passed, and
+`test_retired_mul_fails_closed` passed. Formatting and `git diff --check` passed.
+These focused tests do not establish a workspace-wide Cargo pass.
+
+Hosted correctness and CRAM-core format/test/Clippy checks pass on the tested
+heads. On `fb656c6`, residue-native architecture still fails with 21
+prohibited scalar Garner/CRT constructs in 11 scanned files; recumbency still
+fails on bootstrap CRT reconstruction, zero overflow sentinels, estimated
+capacity, saturated K bounds and missing checked inverse metadata. The exact
+noise-accounting gate still finds the old lane-width approximation in
+`crates/nine65/src/noise/budget.rs`. See [architecture run
+37742019432](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019432),
+[recumbency run
+37742019429](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019429),
+and [audit-remediation run
+37742019420](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019420).
+Do not waive these gates or interpret CRAM correctness as architecture
+acceptance. The latest run on `4a98ddb` is still in progress; keep its final
+statuses distinct from `fb656c6`.
+
+PR #173 is still an unverified draft. Its `try_add` invokes `to_i128()` twice,
+so each successful add performs two instrumented Garner reconstructions, not
+the one claimed in its body. It omits the issue's multiplication-across-laps
+and parking-overflow acceptance tests, retains an unused `add_windings`
+helper, and has no required toolchain/performance evidence; its T1 fast gate
+failed. Issue #159 explicitly separates this carrier from the GSO depth-four
+failure. PR #174 is also still a draft at its old head; it only ignores the two
+misnamed diagnostics, while the fix and retired-mul refusal test now live on
+main. Its old run had T1 and three fuzz failures, and skipped T2. Neither PR
+is approved or merged by this work.
+
+Continue with the ordered gates, not a green-check shortcut:
+
+1. Collect all hosted jobs for `4a98ddb` and record the final SHA-bound result;
+   inspect/upload the quick FHE matrix artifact. It is diagnostic evidence and
+   cannot accept F00/F02 or the production refresh path.
+2. Repeat the incomplete 27-target debug feature matrix and the separate
+   `nine65-extreme-tests` target on the pinned toolchain. Preserve the previous
+   equality finding (`128_deep` and `128` both measured 84,000) as an
+   unresolved assertion; do not change its expected value just to obtain a
+   green matrix. Record every target count, failure and exit code.
+3. Execute the remaining 28 feature-gated integration targets and reconcile
+   them with the 43-card target inventory. The earlier release sweep exercised
+   only 15 integration targets by default; do not claim F02 accepted until all
+   required targets execute and their correctness failures are triaged.
+4. Continue the earliest independent F01/F02/F03/S00 work only where its input
+   contracts permit. Keep the depth-four wrong-plaintext assertions, scalar
+   reconstruction architecture findings, fuzz failures, and explicit public
+   refresh refusal visible. F00 still requires an independent reviewer.
+5. Resolve #173 against the literal #159 contract: correct the reconstruction
+   count, choose the admitted fail-closed behavior or implement a proved phase
+   witness, add omitted boundary cases, remove dead code, and attach real test
+   and performance evidence. Keep it separate from the unrelated GSO depth
+   failure. Re-review #174 on current main and verify its #130/#135 claims
+   before treating either draft as resolved.
+
+Each result must retain exact command, toolchain, source SHA, logs/artifact
+hashes and matched test counts. A skipped or zero-match command is not
+evidence; a failed gate holds its dependent cards without weakening its
+assertions.
