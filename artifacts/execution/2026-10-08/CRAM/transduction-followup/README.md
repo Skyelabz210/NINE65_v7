@@ -31,6 +31,7 @@ are retained beside this file.
 - PR #174 follow-up: both renamed `mul_no_relin + decrypt_degree2` diagnostics passed in Cargo; the new `test_retired_mul_fails_closed` regression also passed. The tests distinguish supported degree-two diagnostics from retired `BFVEvaluator::mul()`.
 - Hosted run for `ff1f633`: CRAM correctness and ordinary CI T1 gates passed. Broader gates remain red: architecture scans still find scalar Garner/CRT reconstruction (21 constructs across 11 files), recumbency enforcement fails, and exact noise-accounting is not active. See [CRAM-public gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047363), [residue-native gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047472), and [recumbency gate](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047468). These are open architecture/workflow requirements, not passed checks.
 - Hosted run for `fb656c6`: CRAM correctness and CRAM core formatting/tests/Clippy passed; the architecture and recumbency gates failed again. The focused test commit did not change those production paths. New run: [residue-native gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019432) and [recumbency gate](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019429). Other workflows are still running as of this evidence update.
+- Exploratory run [37742221872](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742221872) passed at `140be8e`. It records five small seeded BFV workload groups with no observed plaintext mismatches. They use the shadow test RNG, debug profile, no refresh and an unverified candidate winding; each comparison group has one NINE65 record, so this is not a v6 comparison or a production refresh/security/performance result. The raw reports and logs are preserved in [`ci-run-37742221872`](ci-run-37742221872/), with hashes in [`SHA256SUMS`](ci-run-37742221872/SHA256SUMS). The degree-256 NTT probe accepted 998244353 and rejected three composite candidates.
 
 ## Open CRAM architecture work
 
@@ -50,19 +51,34 @@ the code calls `to_i128()` on both operands: the existing counter records two
 Garner reconstructions per successful add. Its new tests cover addition
 boundaries but omit the issue's multiplication-across-laps and parking-overflow
 cases. The PR also leaves the old private `add_windings` helper unused after
-removing its only call; its T1 fast gate failed and the PR body says it has no
-toolchain test results or mandatory performance evidence. Keep #159 open until
-the admitted fail-closed API contract and required tests/evidence are satisfied,
-or a bounded phase witness is implemented. The issue itself cautions that this
-carrier is not the GSO depth-4 FHE path.
+removing its only call; its T1 fast gate failed at formatting, so Clippy did
+not execute and the potential dead-code lint remains unverified. The PR body
+says it has no toolchain test results or mandatory performance evidence. Keep
+#159 open until the admitted fail-closed API contract and required tests/evidence
+are satisfied, or a bounded phase witness is implemented. The issue itself
+cautions that this carrier is not the GSO depth-4 FHE path.
 
 PR #174 remains a draft at the old head `457cdc3`. It only adds `#[ignore]` to
 two valid `mul_no_relin + decrypt_degree2` diagnostics; it does not test the
-retired `BFVEvaluator::mul()` behavior or change the claimed #130 plan. The
-follow-up now on `main` renames and runs those diagnostics and adds a regression
-that asserts `mul()` returns `InvalidParameter`. The old PR run also had three
-fuzz failures and its T1 fast gate failed; its T2 suite was skipped. Re-review
-the PR against current `main` before treating its claims as resolved.
+retired `BFVEvaluator::mul()` behavior. Issue #130's `--no-fail-fast` command
+change was already merged in PR #136; #130 remains open for triage of failures
+that the full run exposed, and #174 contains no such triage. The follow-up now
+on `main` renames and runs those diagnostics and adds a regression that asserts
+`mul()` returns `InvalidParameter`. The old PR run also had three fuzz failures
+and its T1 fast gate failed; its T2 suite was skipped. Re-review the PR against
+current `main` before treating its claims as resolved.
+
+The separate #135 near-modulus encode/decode defect remains open. An exact
+noise-free integer oracle for the exposed single-modulus pair
+`q=998244353`, `t=65537` gives `delta=floor(q/t)=15231` and `q mod t=50306`.
+With `c=delta*m` followed by the current rounded `t*c/q` decoder, 55,615 of
+65,537 messages do not round-trip; the error is deterministic and downward,
+up to 3 units (`65536` decodes as `65533`). This isolates the floor-scale
+encoding bias from encryption noise. Retiring `BFVEvaluator::mul()` does not
+fix it; changing encoding needs separate additive/multiplicative compatibility
+tests and parameter review. The exhaustive integer calculation is reproducible
+with [`encoder_bias_oracle.py`](encoder_bias_oracle.py); its result is in
+[`encoder_bias_oracle.json`](encoder_bias_oracle.json).
 
 ## Remaining ordered work
 

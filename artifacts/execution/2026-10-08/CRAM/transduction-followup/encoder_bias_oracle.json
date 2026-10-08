@@ -1,0 +1,18 @@
+{
+  "delta_floor_q_over_t": 15231,
+  "first_failure": {
+    "decoded": 9921,
+    "message": 9922
+  },
+  "maximum_downward_bias": 3,
+  "messages_checked": 65537,
+  "near_modulus_example": {
+    "decoded": 65533,
+    "message": 65536
+  },
+  "q": 998244353,
+  "q_mod_t": 50306,
+  "roundtrip_failures": 55615,
+  "scope": "exact integer encode/decode only; no encryption noise or homomorphic operation",
+  "t": 65537
+}

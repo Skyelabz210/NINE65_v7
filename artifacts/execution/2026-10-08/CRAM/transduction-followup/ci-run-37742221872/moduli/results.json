@@ -1,0 +1,66 @@
+{
+  "candidate_count": 4,
+  "interpretation": "Structural congruence is necessary but runtime roundtrip and convolution equality are independently checked. Security is not inferred by this probe.",
+  "n": 256,
+  "passing_candidates": 1,
+  "results": [
+    {
+      "convolution_correct": true,
+      "engine_constructed": true,
+      "first_mismatch": null,
+      "is_composite": false,
+      "is_power_of_two": false,
+      "is_prime": true,
+      "modulus": 998244353,
+      "n": 256,
+      "ntt_multiply_ns": 16090,
+      "q_minus_one_divisible_by_2n": true,
+      "roundtrip_correct": true,
+      "roundtrip_ns": 8245,
+      "schoolbook_reference_ns": 287266,
+      "status": "PASS"
+    },
+    {
+      "convolution_correct": false,
+      "engine_constructed": false,
+      "engine_error": "NTT configuration error: CLASS-F NTT modulus must be prime, got 1006632961",
+      "is_composite": true,
+      "is_power_of_two": false,
+      "is_prime": false,
+      "modulus": 1006632961,
+      "n": 256,
+      "q_minus_one_divisible_by_2n": true,
+      "roundtrip_correct": false,
+      "status": "REJECTED_CONFIGURATION"
+    },
+    {
+      "convolution_correct": false,
+      "engine_constructed": false,
+      "engine_error": "NTT configuration error: CLASS-F NTT modulus must be prime, got 4294967296",
+      "is_composite": true,
+      "is_power_of_two": true,
+      "is_prime": false,
+      "modulus": 4294967296,
+      "n": 256,
+      "q_minus_one_divisible_by_2n": false,
+      "roundtrip_correct": false,
+      "status": "REJECTED_CONFIGURATION"
+    },
+    {
+      "convolution_correct": false,
+      "engine_constructed": false,
+      "engine_error": "NTT configuration error: CLASS-F NTT modulus must be prime, got 4294967295",
+      "is_composite": true,
+      "is_power_of_two": false,
+      "is_prime": false,
+      "modulus": 4294967295,
+      "n": 256,
+      "q_minus_one_divisible_by_2n": false,
+      "roundtrip_correct": false,
+      "status": "REJECTED_CONFIGURATION"
+    }
+  ],
+  "schema": "nine65-cram-modulus-probe-v1",
+  "scope": "exploratory_ntt_candidate_validation",
+  "seed": 42
+}

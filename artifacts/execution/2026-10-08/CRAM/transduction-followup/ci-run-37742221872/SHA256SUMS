@@ -1,0 +1,15 @@
+765742c0acf68ab0dadcf5a6a6c72706cd5ece4e53aad63b3492ef70ec5e3a1c  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/moduli/results.json
+b3f0e7cb34b5528e1fe3188acec81456f58b427568791340d31d9895100d2829  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/cases/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.json
+c1c9ad32e7aa48fe0ae184337b1978b647c980dde89796e1e4f0bace5243e62f  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/cases/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.json
+7b3e123ca2421fd3e4d482e305a209c414b72517f7770660d2ca50b2674b05e5  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/cases/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.json
+9c216963f40d22033737c2670f7394672363ad25ecf3464bb1cd63a39d05bd68  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json
+6695ee3a9d119f7e0854c70367ac66c86862b6712ba5d839d9983d2b89587993  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/comparison.json
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.stderr.log
+124027db276fe6543341a6da76462044a5239ee427f8563afa46055bc4270d35  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.stderr.log
+4c169ac5a91c887e836505390c6e81d99a687714d5b0eb98ef13f01badba67e2  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.stderr.log
+a77e4ad78909d3754ffc190dcbc5a1e267f1d45d50b6800f88626f752ed4d6f7  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.stdout.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.stderr.log
+067f3cd7e052280022608274381a660504350d010c981968d075ae0f0f711062  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/logs/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.stdout.log
+626b6e007ce760c51df8ddd9d8c085bfe006c59db3c11d18031c4016a1615836  artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/quick/manifest.json

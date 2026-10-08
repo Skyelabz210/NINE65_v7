@@ -1,0 +1,13 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/Projects/NINE65_v7-ci/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/Projects/NINE65_v7-ci/Cargo.toml
+   Compiling nine65 v0.1.0 (/home/acid/Projects/NINE65_v7-ci/crates/nine65)
+error: linking with `cc` failed: exit status: 1
+  |
+  = note:  "cc" "-m64" "/tmp/rustcFIg9bW/symbols.o" "<29 object files omitted>" "-Wl,--as-needed" "-Wl,-Bstatic" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib/{libtest-*,libgetopts-*,libunicode_width-*,librustc_std_workspace_std-*}.rlib" "/home/acid/Projects/NINE65_v7/target/debug/deps/{libnine65-874c3c0f47b38394.rlib,libunhal-c710b6cd25a74ed1.rlib,libmana-045882bf07a1b050.rlib,libsha2-2e3d60e6b0fa6af2.rlib,libcpufeatures-e2bead5fbcbc1f9e.rlib,libdigest-1250b64b9b171cc0.rlib,libblock_buffer-8e0ca6bf05e51825.rlib,libcrypto_common-f14cc4cfd475e80a.rlib,libgeneric_array-78fc21f211004220.rlib,libtypenum-04039d40d9b7e78e.rlib,libthiserror-e711999b13fdb22e.rlib,libgetrandom-af74f28f791bb550.rlib,liblibc-a6951857eb647fb1.rlib,libcfg_if-281312080690f83c.rlib,libexact_transcendentals-32e357ff0c29f606.rlib,libzeroize-8754210920eefd14.rlib,libsubtle-8f72d1efd6ca09ed.rlib}.rlib" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib/{libstd-*,libpanic_unwind-*,libobject-*,libmemchr-*,libaddr2line-*,libgimli-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libminiz_oxide-*,libadler2-*,libunwind-*,libcfg_if-*,liblibc-*,librustc_std_workspace_core-*,liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "-Wl,-Bdynamic" "-lgcc_s" "-lutil" "-lrt" "-lpthread" "-lm" "-ldl" "-lc" "-L" "/tmp/rustcFIg9bW/raw-dylibs" "-Wl,--eh-frame-hdr" "-Wl,-z,noexecstack" "-L" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib" "-o" "/home/acid/Projects/NINE65_v7/target/debug/deps/depth2_full_matrix_issue81-75377012cb525dd7" "-Wl,--gc-sections" "-pie" "-Wl,-z,relro,-z,now" "-nodefaultlibs"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: /usr/bin/ld: final link failed: No space left on device
+          collect2: error: ld returned 1 exit status
+          
+
+error: could not compile `nine65` (test "depth2_full_matrix_issue81") due to 1 previous error

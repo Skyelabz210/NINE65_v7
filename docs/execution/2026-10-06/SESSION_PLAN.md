@@ -661,30 +661,71 @@ noise-accounting gate still finds the old lane-width approximation in
 and [audit-remediation run
 37742019420](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019420).
 Do not waive these gates or interpret CRAM correctness as architecture
-acceptance. The latest run on `4a98ddb` is still in progress; keep its final
-statuses distinct from `fb656c6`.
+acceptance.
+
+On `140be8e`, hosted T1 format/Clippy/deny and static analysis pass, CRAM-public
+correctness and timings pass, and the quick scale sweep passes; the workspace
+T2 suite is executing. The exploratory FHE run
+[37742221872](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742221872)
+passed its smoke gate. Its degree-256 candidate probe accepted only prime
+998244353 and rejected three composites. Five quick BFV workload groups report
+0 plaintext mismatches, but each group contains only NINE65, has no comparison
+entry, runs with refresh disabled in debug, and labels security estimation
+`config-claim-only`. This is useful diagnostic evidence, not a v6 comparison,
+security estimate, performance result or refresh validation. The raw report
+and per-case logs are preserved under
+[`ci-run-37742221872`](../../../artifacts/execution/2026-10-08/CRAM/transduction-followup/ci-run-37742221872/)
+with SHA256 sums. Audit and architecture gates remain red on `140be8e` as
+above.
 
 PR #173 is still an unverified draft. Its `try_add` invokes `to_i128()` twice,
 so each successful add performs two instrumented Garner reconstructions, not
 the one claimed in its body. It omits the issue's multiplication-across-laps
 and parking-overflow acceptance tests, retains an unused `add_windings`
 helper, and has no required toolchain/performance evidence; its T1 fast gate
-failed. Issue #159 explicitly separates this carrier from the GSO depth-four
-failure. PR #174 is also still a draft at its old head; it only ignores the two
+failed at formatting before Clippy/deny ran. Issue #159 explicitly separates
+this carrier from the GSO depth-four failure. PR #174 is also still a draft at
+its old head; it only ignores the two
 misnamed diagnostics, while the fix and retired-mul refusal test now live on
-main. Its old run had T1 and three fuzz failures, and skipped T2. Neither PR
-is approved or merged by this work.
+main. Its old T1 failure was formatting; Clippy/deny did not run. Three fuzz
+targets also failed, and T2 was skipped. Neither PR
+is approved or merged by this work. Clarification for #130: the
+`--no-fail-fast` command change was already merged in PR #136; issue #130
+remains open to triage failures revealed by full execution. PR #174 makes no
+change to that triage. Its title should not be read as resolving #130.
+The separate #135 encoding bias also remains open: an exact noise-free oracle
+for `q=998244353`, `t=65537` finds 55,615 of 65,537 plaintexts fail the current
+floor-scale encode/rounded-decode roundtrip, with downward error up to 3
+(`65536` decodes as `65533`). This is distinct from the retired multiply
+behavior and needs compatibility tests before changing encoding. The exact
+oracle is preserved at
+[`encoder_bias_oracle.py`](../../../artifacts/execution/2026-10-08/CRAM/transduction-followup/encoder_bias_oracle.py)
+with the full output beside it.
+
+The repeated local `allow_insecure` debug matrix attempt on this exact main
+SHA used the pinned Rust 1.89.0 and `--no-fail-fast`, but failed while linking
+`depth2_full_matrix_issue81` with `No space left on device` (exit 101) before
+any test target executed. The host reached 14 MiB free. The exact command,
+source SHA and outcome are in
+[`F02 manifest`](../../../artifacts/execution/2026-10-08/F02/manifest.json)
+and [log](../../../artifacts/execution/2026-10-08/F02/feature-gated-debug.log).
+Only files created by that failed build were removed from the shared Cargo
+target to recover 700 MiB; the prior partial run and unrelated untracked files
+were preserved. Do not repeat the local matrix or start the extreme target
+until a larger build volume is available. This infrastructure failure adds no
+test evidence and does not replace the unfinished matrix.
 
 Continue with the ordered gates, not a green-check shortcut:
 
 1. Collect all hosted jobs for `4a98ddb` and record the final SHA-bound result;
    inspect/upload the quick FHE matrix artifact. It is diagnostic evidence and
    cannot accept F00/F02 or the production refresh path.
-2. Repeat the incomplete 27-target debug feature matrix and the separate
-   `nine65-extreme-tests` target on the pinned toolchain. Preserve the previous
-   equality finding (`128_deep` and `128` both measured 84,000) as an
-   unresolved assertion; do not change its expected value just to obtain a
-   green matrix. Record every target count, failure and exit code.
+2. After providing a larger build volume, repeat the incomplete 27-target
+   debug feature matrix and the separate `nine65-extreme-tests` target on the
+   pinned toolchain. Preserve the previous equality finding (`128_deep` and
+   `128` both measured 84,000) as an unresolved assertion; do not change its
+   expected value just to obtain a green matrix. Record every target count,
+   failure and exit code.
 3. Execute the remaining 28 feature-gated integration targets and reconcile
    them with the 43-card target inventory. The earlier release sweep exercised
    only 15 integration targets by default; do not claim F02 accepted until all

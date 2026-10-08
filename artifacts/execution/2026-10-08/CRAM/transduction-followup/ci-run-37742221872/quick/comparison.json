@@ -1,0 +1,388 @@
+{
+  "compatibility_rule": [
+    "operation",
+    "scheme",
+    "plaintext_semantics",
+    "target_security_bits",
+    "security_estimator",
+    "n",
+    "log_q_bits",
+    "plaintext_modulus",
+    "slots",
+    "refresh_kind",
+    "hardware_fingerprint",
+    "threads",
+    "build_profile",
+    "sample_policy"
+  ],
+  "groups": [
+    {
+      "comparisons": [],
+      "compatibility": {
+        "build_profile": "debug",
+        "hardware_fingerprint": "818fb824c86530521771d4db947a50c59e49eed351a7c9fbfa5fe376121410fb",
+        "log_q_bits": 119,
+        "n": 8192,
+        "plaintext_modulus": 65537,
+        "plaintext_semantics": "scalar-mod-t",
+        "refresh_kind": "none",
+        "sample_policy": "chain:add_only:refresh=none:timing=pre",
+        "scheme": "BFV-DualRNS",
+        "security_estimator": "config-claim-only",
+        "slots": 1,
+        "target_security_bits": 128,
+        "threads": 1
+      },
+      "entries": [
+        {
+          "implementation": "NINE65",
+          "metrics": {
+            "correctness": {
+              "failures": 0,
+              "trials": 32
+            },
+            "max_ns": 5154202,
+            "median_ns": {
+              "denominator": 2,
+              "numerator": 9458519
+            },
+            "min_ns": 4193088,
+            "p95_ns": 4867487,
+            "samples": 32
+          },
+          "provenance": {
+            "command": [
+              "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+              "--config",
+              "secure_128",
+              "--workload",
+              "add_only",
+              "--depth",
+              "32",
+              "--seed",
+              "42",
+              "--initial",
+              "3",
+              "--rhs",
+              "2",
+              "--refresh",
+              "none",
+              "--refresh-timing",
+              "pre",
+              "--trigger-permille",
+              "0",
+              "--candidate-wall",
+              "0",
+              "--output",
+              "artifacts/exploratory/quick/cases/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.json"
+            ],
+            "commit": "140be8e9e640a75cd562cf7d1902ff818bb80b32",
+            "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+            "raw_artifact": "artifacts/exploratory/quick/cases/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.json",
+            "repository": "https://github.com/Skyelabz210/NINE65_v7"
+          },
+          "source_file": "artifacts/exploratory/quick/cases/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.json",
+          "version": "140be8e9e640a75cd562cf7d1902ff818bb80b32"
+        }
+      ],
+      "operation": "add_ct",
+      "record_count": 1
+    },
+    {
+      "comparisons": [],
+      "compatibility": {
+        "build_profile": "debug",
+        "hardware_fingerprint": "818fb824c86530521771d4db947a50c59e49eed351a7c9fbfa5fe376121410fb",
+        "log_q_bits": 119,
+        "n": 8192,
+        "plaintext_modulus": 65537,
+        "plaintext_semantics": "scalar-mod-t",
+        "refresh_kind": "none",
+        "sample_policy": "chain:mul_plain_only:refresh=none:timing=pre",
+        "scheme": "BFV-DualRNS",
+        "security_estimator": "config-claim-only",
+        "slots": 1,
+        "target_security_bits": 128,
+        "threads": 1
+      },
+      "entries": [
+        {
+          "implementation": "NINE65",
+          "metrics": {
+            "correctness": {
+              "failures": 0,
+              "trials": 12
+            },
+            "max_ns": 123765469,
+            "median_ns": {
+              "denominator": 2,
+              "numerator": 199382655
+            },
+            "min_ns": 99401389,
+            "p95_ns": 123765469,
+            "samples": 12
+          },
+          "provenance": {
+            "command": [
+              "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+              "--config",
+              "secure_128",
+              "--workload",
+              "mul_plain_only",
+              "--depth",
+              "12",
+              "--seed",
+              "42",
+              "--initial",
+              "3",
+              "--rhs",
+              "2",
+              "--refresh",
+              "none",
+              "--refresh-timing",
+              "pre",
+              "--trigger-permille",
+              "0",
+              "--candidate-wall",
+              "0",
+              "--output",
+              "artifacts/exploratory/quick/cases/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.json"
+            ],
+            "commit": "140be8e9e640a75cd562cf7d1902ff818bb80b32",
+            "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+            "raw_artifact": "artifacts/exploratory/quick/cases/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.json",
+            "repository": "https://github.com/Skyelabz210/NINE65_v7"
+          },
+          "source_file": "artifacts/exploratory/quick/cases/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.json",
+          "version": "140be8e9e640a75cd562cf7d1902ff818bb80b32"
+        }
+      ],
+      "operation": "mul_plain",
+      "record_count": 1
+    },
+    {
+      "comparisons": [],
+      "compatibility": {
+        "build_profile": "debug",
+        "hardware_fingerprint": "818fb824c86530521771d4db947a50c59e49eed351a7c9fbfa5fe376121410fb",
+        "log_q_bits": 119,
+        "n": 8192,
+        "plaintext_modulus": 65537,
+        "plaintext_semantics": "scalar-mod-t",
+        "refresh_kind": "none",
+        "sample_policy": "chain:mul_ct_only:refresh=none:timing=pre",
+        "scheme": "BFV-DualRNS",
+        "security_estimator": "config-claim-only",
+        "slots": 1,
+        "target_security_bits": 128,
+        "threads": 1
+      },
+      "entries": [
+        {
+          "implementation": "NINE65",
+          "metrics": {
+            "correctness": {
+              "failures": 0,
+              "trials": 4
+            },
+            "max_ns": 15062909001,
+            "median_ns": {
+              "denominator": 1,
+              "numerator": 15026483161
+            },
+            "min_ns": 14993493640,
+            "p95_ns": 15062909001,
+            "samples": 4
+          },
+          "provenance": {
+            "command": [
+              "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+              "--config",
+              "secure_128",
+              "--workload",
+              "mul_ct_only",
+              "--depth",
+              "4",
+              "--seed",
+              "42",
+              "--initial",
+              "3",
+              "--rhs",
+              "2",
+              "--refresh",
+              "none",
+              "--refresh-timing",
+              "pre",
+              "--trigger-permille",
+              "0",
+              "--candidate-wall",
+              "0",
+              "--output",
+              "artifacts/exploratory/quick/cases/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.json"
+            ],
+            "commit": "140be8e9e640a75cd562cf7d1902ff818bb80b32",
+            "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+            "raw_artifact": "artifacts/exploratory/quick/cases/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.json",
+            "repository": "https://github.com/Skyelabz210/NINE65_v7"
+          },
+          "source_file": "artifacts/exploratory/quick/cases/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.json",
+          "version": "140be8e9e640a75cd562cf7d1902ff818bb80b32"
+        }
+      ],
+      "operation": "mul_ct",
+      "record_count": 1
+    },
+    {
+      "comparisons": [],
+      "compatibility": {
+        "build_profile": "debug",
+        "hardware_fingerprint": "818fb824c86530521771d4db947a50c59e49eed351a7c9fbfa5fe376121410fb",
+        "log_q_bits": 119,
+        "n": 8192,
+        "plaintext_modulus": 65537,
+        "plaintext_semantics": "scalar-mod-t",
+        "refresh_kind": "none",
+        "sample_policy": "chain:interleaved:refresh=none:timing=pre",
+        "scheme": "BFV-DualRNS",
+        "security_estimator": "config-claim-only",
+        "slots": 1,
+        "target_security_bits": 128,
+        "threads": 1
+      },
+      "entries": [
+        {
+          "implementation": "NINE65",
+          "metrics": {
+            "correctness": {
+              "failures": 0,
+              "trials": 4
+            },
+            "max_ns": 15129332056,
+            "median_ns": {
+              "denominator": 2,
+              "numerator": 30103141441
+            },
+            "min_ns": 15033903814,
+            "p95_ns": 15129332056,
+            "samples": 4
+          },
+          "provenance": {
+            "command": [
+              "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+              "--config",
+              "secure_128",
+              "--workload",
+              "interleaved",
+              "--depth",
+              "8",
+              "--seed",
+              "42",
+              "--initial",
+              "3",
+              "--rhs",
+              "2",
+              "--refresh",
+              "none",
+              "--refresh-timing",
+              "pre",
+              "--trigger-permille",
+              "0",
+              "--candidate-wall",
+              "0",
+              "--output",
+              "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json"
+            ],
+            "commit": "140be8e9e640a75cd562cf7d1902ff818bb80b32",
+            "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+            "raw_artifact": "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json",
+            "repository": "https://github.com/Skyelabz210/NINE65_v7"
+          },
+          "source_file": "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json",
+          "version": "140be8e9e640a75cd562cf7d1902ff818bb80b32"
+        }
+      ],
+      "operation": "mul_ct",
+      "record_count": 1
+    },
+    {
+      "comparisons": [],
+      "compatibility": {
+        "build_profile": "debug",
+        "hardware_fingerprint": "818fb824c86530521771d4db947a50c59e49eed351a7c9fbfa5fe376121410fb",
+        "log_q_bits": 119,
+        "n": 8192,
+        "plaintext_modulus": 65537,
+        "plaintext_semantics": "scalar-mod-t",
+        "refresh_kind": "none",
+        "sample_policy": "chain:interleaved:refresh=none:timing=pre",
+        "scheme": "BFV-DualRNS",
+        "security_estimator": "config-claim-only",
+        "slots": 1,
+        "target_security_bits": 128,
+        "threads": 1
+      },
+      "entries": [
+        {
+          "implementation": "NINE65",
+          "metrics": {
+            "correctness": {
+              "failures": 0,
+              "trials": 4
+            },
+            "max_ns": 4731813,
+            "median_ns": {
+              "denominator": 1,
+              "numerator": 4316886
+            },
+            "min_ns": 4238682,
+            "p95_ns": 4731813,
+            "samples": 4
+          },
+          "provenance": {
+            "command": [
+              "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+              "--config",
+              "secure_128",
+              "--workload",
+              "interleaved",
+              "--depth",
+              "8",
+              "--seed",
+              "42",
+              "--initial",
+              "3",
+              "--rhs",
+              "2",
+              "--refresh",
+              "none",
+              "--refresh-timing",
+              "pre",
+              "--trigger-permille",
+              "0",
+              "--candidate-wall",
+              "0",
+              "--output",
+              "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json"
+            ],
+            "commit": "140be8e9e640a75cd562cf7d1902ff818bb80b32",
+            "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+            "raw_artifact": "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json",
+            "repository": "https://github.com/Skyelabz210/NINE65_v7"
+          },
+          "source_file": "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json",
+          "version": "140be8e9e640a75cd562cf7d1902ff818bb80b32"
+        }
+      ],
+      "operation": "add_ct",
+      "record_count": 1
+    }
+  ],
+  "incompatibility_dimension_counts": {
+    "operation": 8,
+    "sample_policy": 9
+  },
+  "input_errors": [],
+  "ranking_rule": "Records must share every compatibility field and each record must have at least one trial with zero recorded failures.",
+  "record_count": 5,
+  "schema": "fhe-comparison-analysis-v1"
+}
