@@ -30,6 +30,7 @@ are retained beside this file.
 - `clippy-driver` direct library check with `-D warnings`, formatting and whitespace checks: passed.
 - PR #174 follow-up: both renamed `mul_no_relin + decrypt_degree2` diagnostics passed in Cargo; the new `test_retired_mul_fails_closed` regression also passed. The tests distinguish supported degree-two diagnostics from retired `BFVEvaluator::mul()`.
 - Hosted run for `ff1f633`: CRAM correctness and ordinary CI T1 gates passed. Broader gates remain red: architecture scans still find scalar Garner/CRT reconstruction (21 constructs across 11 files), recumbency enforcement fails, and exact noise-accounting is not active. See [CRAM-public gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047363), [residue-native gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047472), and [recumbency gate](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37741047468). These are open architecture/workflow requirements, not passed checks.
+- Hosted run for `fb656c6`: CRAM correctness and CRAM core formatting/tests/Clippy passed; the architecture and recumbency gates failed again. The focused test commit did not change those production paths. New run: [residue-native gates](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019432) and [recumbency gate](https://github.com/Skyelabz210/NINE65_v7/actions/runs/37742019429). Other workflows are still running as of this evidence update.
 
 ## Open CRAM architecture work
 
@@ -40,14 +41,28 @@ Safe Basis operators also read canonical scalars internally. Their comments
 now say so plainly; this follow-up does not claim the no-internal-projection
 application contract is implemented.
 
-PR #173's draft `WindingCRT::try_add` fixes the wraparound output by
-reconstructing both operands into `i128` and re-encoding the sum. That is a
-functional fail-closed path, but it is not the accepted residue-native
-phase/witness implementation. It also deletes `add_windings` without removing
-the now-unused private helper, so strict Clippy may reject the draft. Review
-the full-tree draft against `gh pr checks` before any merge. Keep the S8 carry
-defect open until an explicitly admitted witness exists or the arithmetic
-operation is disabled fail-closed under the required interface.
+PR #173's draft `WindingCRT::try_add` fixes the small counterexample by
+reconstructing both operands into `i128`, using `checked_add`, and re-encoding
+the sum. Issue #159 explicitly allows making the API fail closed until the
+phase contract exists; this is a correctness workaround, but it does not
+implement phase transduction. The draft says one reconstruction per add, while
+the code calls `to_i128()` on both operands: the existing counter records two
+Garner reconstructions per successful add. Its new tests cover addition
+boundaries but omit the issue's multiplication-across-laps and parking-overflow
+cases. The PR also leaves the old private `add_windings` helper unused after
+removing its only call; its T1 fast gate failed and the PR body says it has no
+toolchain test results or mandatory performance evidence. Keep #159 open until
+the admitted fail-closed API contract and required tests/evidence are satisfied,
+or a bounded phase witness is implemented. The issue itself cautions that this
+carrier is not the GSO depth-4 FHE path.
+
+PR #174 remains a draft at the old head `457cdc3`. It only adds `#[ignore]` to
+two valid `mul_no_relin + decrypt_degree2` diagnostics; it does not test the
+retired `BFVEvaluator::mul()` behavior or change the claimed #130 plan. The
+follow-up now on `main` renames and runs those diagnostics and adds a regression
+that asserts `mul()` returns `InvalidParameter`. The old PR run also had three
+fuzz failures and its T1 fast gate failed; its T2 suite was skipped. Re-review
+the PR against current `main` before treating its claims as resolved.
 
 ## Remaining ordered work
 
@@ -58,3 +73,4 @@ operation is disabled fail-closed under the required interface.
 5. Resolve the remaining #170 review defects on current main: reject invalid target bases in `try_build` (done in this follow-up) and restore `.gitignore` (done here); check CI on the exact merged SHA.
 6. Resume the repository's session DAG from F00/F02 gates: complete the interrupted 27-target debug feature matrix, run the separate extreme target, preserve all failure counts, then advance the earliest unblocked cards. Keep full workspace and hosted CI distinct from the focused results above.
 7. PR #174 test follow-up is now in `main`: keep the degree-two diagnostics under accurate names and retain the fail-closed regression for the retired `BFVEvaluator::mul()`. Review its CI on the new `main` SHA, and continue auditing its remaining issue #130/#135 claims before considering the draft resolved.
+8. For #173/#159, correct the claimed add reconstruction count to two, decide whether the API must refuse arithmetic until the phase contract exists, add multiplication-across-laps and parking-overflow acceptance tests, remove the unused helper, then supply the missing toolchain and performance evidence. Keep this distinct from GSO depth-4 FHE, which #159 explicitly says it does not affect.
