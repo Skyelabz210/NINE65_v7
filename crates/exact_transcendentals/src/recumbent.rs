@@ -108,7 +108,12 @@ impl Recumbent {
         let new_primary = self.primary.add(&other.primary);
 
         // Combine parking and hot tiers
-        let new_parking = self.parking.saturating_add(other.parking);
+        // #159: parking is an exact-integer tier. saturating_add silently
+        // clamps, contradicting the exactness invariant. Fail closed.
+        let new_parking = self
+            .parking
+            .checked_add(other.parking)
+            .expect("Recumbent::add: parking overflow (#159)");
         let new_hot = self.hot.add(&other.hot);
 
         let mut result = Recumbent {
@@ -356,6 +361,17 @@ mod tests {
         let b = Recumbent::from_i128(30);
         let prod = a.mul(&b);
         assert_eq!(prod.reconstruct(), Some(-1500));
+    }
+
+    #[test]
+    fn add_boundary_no_lost_carry_at_basis_product() {
+        // #159 minimal counterexample: the lane-parallel primary add used
+        // to discard the carry when the sum crossed M = 9,699,690 and
+        // reconstruct to 0.
+        let m: i128 = 9_699_690;
+        let a = Recumbent::from_i128(m - 1);
+        let b = Recumbent::from_i128(1);
+        assert_eq!(a.add(&b).reconstruct(), Some(m));
     }
 
     #[test]
