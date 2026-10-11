@@ -24,9 +24,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo update -p rand@0.8.5 --precise 0.8.6
+          cargo update -p rand@0.8.5 --precise 0.8.8
           cargo update -p crossbeam-epoch@0.9.18 --precise 0.9.20
-          grep -A3 -F 'name = "rand"' Cargo.lock | grep -F 'version = "0.8.6"'
+          grep -A3 -F 'name = "rand"' Cargo.lock | grep -F 'version = "0.8.8"'
           grep -A3 -F 'name = "crossbeam-epoch"' Cargo.lock | grep -F 'version = "0.9.20"'
 
       - name: Compile workspace after lock update
