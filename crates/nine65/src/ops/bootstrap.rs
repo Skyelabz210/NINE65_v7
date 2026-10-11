@@ -843,159 +843,6 @@ impl ClockworkBootstrap {
         }
     }
 
-    /// Phase 1 modulus switch using Clockwork Bootstrap phase computation.
-    /// 
-    /// This implements the correct BFV Phase 1: compute phase = c0 + c1*s_boot before
-    /// applying modulus switch. In circular bootstrap, s_boot = s_work (same secret
-    /// polynomial), so phase = Δ*m + e where Δ = floor(Q/t), and round(phase/Δ) = m.
-    /// 
-    /// This fixes the mathematical defect in the legacy component-wise approach which
-    /// computes round(c0 * t / Q) and round(c1 * t / Q) separately, losing the
-    /// secret-dependent correction term K_j = round((c0 + c1*s) / Q).
-    pub(crate) fn modswitch_to_t_phase_based(
-        &self,
-        ct: &DualRNSCiphertext,
-        s_boot: &DualRNSSecretKey,
-    ) -> Nine65Result<(Vec<u64>, Vec<u64>)> {
-        let n = self.n;
-        let t = self.t;
-        let ct_level = ct.c0.main.len();
-
-        if ct_level < 2 {
-            return Err(Nine65Error::BootstrapConfigMismatch {
-                reason: format!("Need >= 2 RNS limbs for modswitch, got {}", ct_level),
-            });
-        }
-
-        let primes_u64: Vec<u64> = self.work_config.primes[..ct_level].to_vec();
-
-        // ===================================================================
-        // CLOCKWORK BOOTSTRAP PHASE 1: Compute phase = c0 + c1 * s_boot
-        // ===================================================================
-        // In circular bootstrap, s_boot = s_work (same secret polynomial).
-        // For each coefficient i, in each main lane j:
-        //   phase[j][i] = c0[j][i] + c1[j][i] * s_boot[j][i]  (mod p_j)
-        // 
-        // This preserves the secret-dependent term K = round((c0 + c1*s) / Q)
-        // that the old component-wise approach lost.
-        //
-        // In standard BFV: c0 + c1*s = Δ*m + e where Δ = floor(Q_level / t)
-        // Therefore: phase = Δ*m + e, and round(phase / Δ) = m (for |e| < Δ/2)
-        
-        // Step 1: Compute c1 * s_boot (polynomial multiply in each main lane)
-        let mut c1s_main: Vec<Vec<u64>> = vec![vec![0u64; n]; ct_level];
-        for j in 0..ct_level {
-            let c1_lane = &ct.c1.main[j];
-            let s_lane = &s_boot.s.main[j];
-            
-            // Use the NTT engine for polynomial multiplication mod p_j
-            // This computes (c1 * s) mod p_j for this lane
-            let product = self.boot_ctx.ntt_engines[j].multiply(c1_lane, s_lane);
-            c1s_main[j] = product;
-        }
-        
-        // Step 2: Add c0: phase = c0 + c1*s_boot (mod p_j for each lane j)
-        let mut phase_main: Vec<Vec<u64>> = vec![vec![0u64; n]; ct_level];
-        for j in 0..ct_level {
-            let p = self.work_config.primes[j];
-            for i in 0..n {
-                phase_main[j][i] = (ct.c0.main[j][i] + c1s_main[j][i]) % p;
-            }
-        }
-        
-        // Step 3: CRT reconstruct phase for each coefficient
-        // Then apply BFV rounding: m = round(phase * t / Q_level) mod t
-        
-        // Try u128 fast path; fall back to U256 if product overflows
-        let primes_u128: Vec<u128> = primes_u64.iter().map(|&p| p as u128).collect();
-        let q_level_u128: Option<u128> = primes_u128
-            .iter()
-            .try_fold(1u128, |acc, &p| acc.checked_mul(p));
-        
-        let q_level_u256 = if let Some(q) = q_level_u128 {
-            U256::from_u128(q)
-        } else {
-            U256::product_u64s(&primes_u64)
-        };
-        let t_u256 = U256::from_u64(t);
-        
-        if let Some(q_level) = q_level_u128 {
-            // Fast u128 path for CRT reconstruction
-            let q_level_half = q_level / 2;
-            let q_level_half_u256 = U256::from_u128(q_level_half);
-
-            let mut crt_inverses = Vec::with_capacity(ct_level);
-            let mut partial_product = 1u128;
-            for k in 0..ct_level {
-                if k > 0 {
-                    let inv =
-                        mod_inverse_u128(partial_product, primes_u128[k]).ok_or_else(|| {
-                            Nine65Error::BootstrapOverflow {
-                                operation: format!("CRT inverse for prime {}", primes_u128[k]),
-                            }
-                        })?;
-                    crt_inverses.push(inv);
-                } else {
-                    crt_inverses.push(0);
-                }
-                partial_product *= primes_u128[k];
-            }
-
-            let mut c0_small = vec![0u64; n];
-            // In BFV after Phase 1 (modswitch to t), c1 component is zero
-            // because we've extracted the message
-            let c1_small = vec![0u64; n];
-
-            for i in 0..n {
-                // Collect phase[i] across all main lanes
-                let phase_coeff: Vec<u128> = (0..ct_level)
-                    .map(|j| phase_main[j][i] as u128)
-                    .collect();
-                
-                // CRT reconstruct phase
-                let phase_val = crt_reconstruct_n(
-                    phase_coeff.iter().copied(),
-                    &primes_u128,
-                    &crt_inverses,
-                );
-                
-                // Apply BFV rounding: m = round(phase / Δ) where Δ = floor(Q_level / t)
-                // In integer: round(phase * t / Q_level) = floor((phase * t + Q_level/2) / Q_level)
-                let scaled = U256::from_u128(phase_val).mul_u64(t).add(q_level_half_u256);
-                let (quotient, _) = scaled.div_mod_u256(q_level_u256);
-                c0_small[i] = quotient.mod_u64(t);
-            }
-
-            Ok((c0_small, c1_small))
-        } else {
-            // U256 fallback path — Q_level product exceeds u128
-            // Use the same phase-based approach as the u128 path
-            let q_level = U256::product_u64s(&primes_u64);
-            let half_q_level = q_level.shr1();
-
-            let mut c0_small = vec![0u64; n];
-            // In BFV after Phase 1 (modswitch to t), c1 component is zero
-            let c1_small = vec![0u64; n];
-
-            for i in 0..n {
-                // Collect phase[i] across all main lanes
-                let phase_coeff: Vec<u64> = (0..ct_level)
-                    .map(|j| phase_main[j][i])
-                    .collect();
-                
-                // CRT reconstruct phase using U256 arithmetic
-                let phase_val = crt_reconstruct_u256(&phase_coeff, &primes_u64);
-                
-                // Apply BFV rounding: m = round(phase * t / Q_level) mod t
-                let numerator = phase_val.mul_low(t_u256).add(half_q_level);
-                let (quotient, _) = numerator.div_mod_u256(q_level);
-                c0_small[i] = quotient.rem_u256(t_u256).lo as u64;
-            }
-
-            Ok((c0_small, c1_small))
-        }
-    }
-
     /// Verified modulus switching with K-Elimination capacity validation.
     ///
     /// Switches ciphertext from modulus Q_level to plaintext modulus t with
@@ -1864,9 +1711,8 @@ mod tests {
         boot: &ClockworkBootstrap,
         ct: &DualRNSCiphertext,
         bsk: &BootstrapKey,
-        boot_sk: &DualRNSSecretKey,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let (c0_small, c1_small) = boot.modswitch_to_t_phase_based(ct, boot_sk)?;
+        let (c0_small, c1_small) = boot.modswitch_to_t(ct)?;
         let ct_boot = boot.homomorphic_inner_product(&c0_small, &c1_small, bsk)?;
         boot.modswitch_boot_to_work(&ct_boot)
     }
@@ -1930,7 +1776,7 @@ mod tests {
                 .expect("bootstrap keygen");
 
             let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
-            let refreshed = refresh_bypassing_the_gate(&boot, &ct, &boot_keys.bsk, &boot_keys.boot_sk)
+            let refreshed = refresh_bypassing_the_gate(&boot, &ct, &boot_keys.bsk)
                 .expect("the three phases must run; only Gate 0 is bypassed");
             let after_refresh = ctx.decrypt_dual(&refreshed, &keys.secret_key);
 
