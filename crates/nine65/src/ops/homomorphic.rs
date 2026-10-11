@@ -924,8 +924,9 @@ mod tests {
     }
 
     #[test]
-    fn test_ct_mul_multiple_values() {
-        // Test multiple ct×ct cases with OLD BFV degree-2 decrypt
+    fn test_degree2_mul_multiple_values() {
+        // Test raw ct×ct tensor products with the degree-2 decrypt oracle.
+        // This does not exercise the retired BFVEvaluator::mul/relinearization path.
         // Note: light_mul config supports products up to ~250 (Δ²×product < q)
         let (config, ntt, keys, mut harvester, encoder) = setup_mul();
 
@@ -994,8 +995,9 @@ mod tests {
     }
 
     #[test]
-    fn test_homomorphic_mul_with_relin() {
-        // Test ct×ct multiplication with degree-2 decrypt
+    fn test_degree2_mul_without_relinearization() {
+        // Test the raw degree-2 tensor product with degree-2 decrypt.
+        // No relinearization occurs here; BFVEvaluator::mul is retired and fail-closed.
         let (config, ntt, keys, mut harvester, encoder) = setup_mul();
 
         let (supported, max_prod) = config.supports_single_mod_mul();
@@ -1014,7 +1016,7 @@ mod tests {
 
         let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
         let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
-        let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
+        let evaluator = BFVEvaluator::new(&ntt, &encoder, None);
 
         let a = 5u64;
         let b = 7u64;

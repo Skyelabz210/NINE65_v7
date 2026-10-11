@@ -28,8 +28,9 @@ def test_ciphertext_times_ciphertext_multiplication_is_refused() -> None:
         "SecureConfig this crate exposes reduces to through this "
         "single-modulus path: q mod t != 0, so t*floor(q/t) != q, and the "
         "rounding error grows with the plaintext value. Values near t "
-        "(such as t - 1) do not round-trip. See conftest.py SAFE_MAX for "
-        "the measured safe range and README.md 'Known limitations'."
+        "(such as t - 1) do not round-trip. Issue #176 tracks the exact "
+        "full-range fix or a mathematically derived fail-closed bound; "
+        "conftest.py SAFE_MAX is a test-fixture guardrail only."
     ),
 )
 def test_plaintext_near_modulus_does_not_roundtrip(

@@ -6,7 +6,7 @@
 - Ensure `cargo test` and `cargo bench` run without warnings.
 
 ## Functional Verification
-- `cargo test --workspace`
+- `cargo test --workspace --no-fail-fast`
 - `cargo test -p nine65 --features shadow-entropy,parallel,accelerated`
 
 (The `v2` and `wassan` Cargo feature aliases were removed 2026-03-01 as

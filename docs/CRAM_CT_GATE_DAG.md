@@ -117,7 +117,7 @@ Foundational; every other gate depends on at least one of these.
 | `T1` | exact_transcendentals arb-prec | `cargo test --release -p exact_transcendentals --features arbitrary-precision` | Adds CRTBigInt / bigint paths |
 | `T2` | nine65 lib | `cargo test --release -p nine65 --lib` | All nine65 unit tests |
 | `T3` | cram_ct_wrap | `cargo test --release -p nine65 --lib cram_ct_wrap` | The five end-to-end BFV-via-CRAM-CT tests |
-| `T4` | workspace sweep | `cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm` | Full cross-crate sweep |
+| `T4` | workspace sweep | `cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast` | Full cross-crate sweep; do not stop after the first failing target |
 
 ### Tier 3 — Spec coverage gates
 

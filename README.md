@@ -501,7 +501,8 @@ cargo fmt --all -- --check
 cargo test --release --workspace \
   --exclude nine65-python \
   --exclude nine65-wasm \
-  --exclude nine65-ffi
+  --exclude nine65-ffi \
+  --no-fail-fast
 
 # Application stack
 cargo test -p private-feedback-core --release
