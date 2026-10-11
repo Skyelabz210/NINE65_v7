@@ -1,0 +1,45 @@
+name: Resolve audited dependency patches once
+
+on:
+  push:
+    branches:
+      - codex/oct11-dependency-gate
+
+permissions:
+  contents: write
+
+jobs:
+  resolve:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/oct11-dependency-gate
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@1.89.0
+
+      - name: Resolve only the audited fixed patch versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo update -p rand@0.8.5 --precise 0.8.6
+          cargo update -p crossbeam-epoch@0.9.18 --precise 0.9.20
+          grep -A3 -F 'name = "rand"' Cargo.lock | grep -F 'version = "0.8.6"'
+          grep -A3 -F 'name = "crossbeam-epoch"' Cargo.lock | grep -F 'version = "0.9.20"'
+
+      - name: Compile workspace after lock update
+        run: cargo check --workspace --all-targets
+
+      - name: Commit lockfile and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/resolve_audited_dependencies_once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Cargo.lock .github/workflows/resolve_audited_dependencies_once.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'deps: update rand and crossbeam-epoch security patches'
+          git push origin HEAD:codex/oct11-dependency-gate
