@@ -7,7 +7,7 @@ echo "cargo:  $(cargo -V)"
 
 echo ""
 echo "--- running tests (workspace) ---"
-cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm
+cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast
 
 echo ""
 echo "--- counting tests (approx) ---"

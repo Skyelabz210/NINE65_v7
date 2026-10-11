@@ -153,7 +153,7 @@ QMNF integer-only architecture.
 cargo build --release --workspace
 
 # Run tests
-cargo test --workspace --release
+cargo test --workspace --release --no-fail-fast
 
 # Depth benchmark
 cargo test --package nine65 --lib --release \

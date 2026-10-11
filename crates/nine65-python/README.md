@@ -8,22 +8,21 @@ introduced by crossing the FFI boundary itself -- every value crossing that
 boundary is checked (see "Integer widths" below), and every operation this
 README recommends is covered by a real, passing, exact-equality pytest
 assertion against the compiled extension. Ciphertext x ciphertext
-multiplication is also bound (`mul()`) but is currently NOT correct for any
-config checked -- read "Known limitations" before reaching for it; this is
-a `nine65` core-arithmetic issue found and verified while doing this work,
-not an FFI-layer one.
+multiplication remains present at the Python API boundary for compatibility,
+but it is **retired and fail-closed**: `mul()` raises `ValueError` and
+returns no ciphertext. See "Known limitations" for the disposition and the
+DualRNS route that replaces the historical single-modulus path.
 
 This is a *binding*, not a reimplementation: every operation below calls
 straight into the same Rust code path exercised by the crate's own test
 suite (`cargo test -p nine65`). It inherits that code's guarantees and its
 limits alike -- in particular, **finite multiplicative depth** (see the
 repository root `README.md` and `docs/CLAIM_SURFACE_AND_LIMITS_*.md`). This
-package does not itself track leveled-depth budgets for you; if you chain
-more multiplications than the config's noise budget supports, decryption
-will return a wrong plaintext rather than raise an error (the same behavior
-`nine65`'s own untracked `BFVEvaluator::mul` has in Rust -- use
-`TrackedEvaluator` on the Rust side if you need depth accounting; it is not
-currently exposed to Python).
+package does not itself expose the Rust DualRNS ct×ct evaluator or its
+leveled-depth budget tracking. The retired single-modulus `mul()` boundary
+fails closed rather than returning a ciphertext. Use the Rust DualRNS and
+`TrackedEvaluator` surfaces when ct×ct depth accounting is required; they
+are not currently exposed to Python.
 
 ## Status
 
@@ -89,11 +88,8 @@ Two independent reasons:
    crates/nine65-python && cargo build`, which is what a bare `maturin
    build` does before the `[workspace]` fix) failed with `error: current
    package believes it's in a workspace when it's not`. Being its own
-   workspace root also means this crate's release profile is no longer the
-   parent workspace's `panic = "abort"` (see "Panics cross the FFI boundary
-   as `ValueError`, not a process abort" below) -- it uses Rust's normal
-   `panic = "unwind"` default, which `std::panic::catch_unwind` in
-   `src/lib.rs` depends on.
+   workspace root also means this crate owns its standalone release profile
+   instead of inheriting the parent workspace profile.
 
 ## Quickstart
 
@@ -114,12 +110,11 @@ assert fhe.decrypt(ct_sum) == 13
 assert fhe.decrypt(ct_scaled) == 42
 ```
 
-`fhe.mul(ct_a, ct_b)` (ciphertext x ciphertext) also exists and is callable
--- but **read "Known limitations" below before using it**: it does not
-currently return correct results for `secure_128` / `secure_192` /
-`secure_256`, or for any other config this was checked against. This is a
-`nine65` core-arithmetic issue, verified independently of Python, not
-something introduced by this quickstart or by the binding.
+`fhe.mul(ct_a, ct_b)` (ciphertext x ciphertext) is intentionally
+fail-closed. It raises `ValueError` and produces no ciphertext because the
+historical single-modulus `BFVEvaluator::mul` route was retired under
+issue #135. The Rust DualRNS multiplication routes remain the supported
+ct×ct direction and are not yet bound into this Python surface.
 
 The lower-level API this wraps is available directly too, if you want
 explicit control over keys (e.g. to serialize a public key to a different
@@ -166,49 +161,33 @@ as the default choice.
 
 ## Known limitations
 
-Found while verifying this binding's round-trip correctness (the actual
-point of this exercise) -- both reproduced directly against `nine65`'s Rust
-API with no PyO3 or Python involved, so neither is an FFI-boundary defect.
-Both are exercised from Python in `tests/test_known_limitations.py`, marked
-`xfail(strict=True)` so CI shows them as an acknowledged, tracked gap
-instead of a silent false claim of correctness or an unexplained red X.
+Found while verifying this binding's round-trip correctness. Both findings
+were reproduced directly against `nine65`'s Rust API with no PyO3 or Python
+involved, so neither is an FFI-boundary defect. The retired multiplication
+route is now covered by a passing refusal test. The near-`t` decode defect
+remains open and is the single `xfail(strict=True)` in
+`tests/test_known_limitations.py`.
 
-### 1. Ciphertext x ciphertext multiplication (`mul()`) does not work
+### 1. Ciphertext x ciphertext multiplication (`mul()`) is retired
 
-`FHEContext.mul()` wraps `nine65::ops::BFVEvaluator::mul()` -- the
-already-`#[deprecated]` single-modulus ct x ct path (tensor product,
-relinearize, rescale). Its Rust doc says it "only works when `Δ² ≤ Q`" and
-recommends `RNSFHEContext::mul_dual_symmetric()` instead. That capacity
-bound is real and is exposed here as `mul_capacity()` -- but it turned out
-not to be the binding constraint: **every case checked came back wrong,
-including the simplest possible one, `1 * 1`**, which is trivially within
-every tested config's `mul_capacity()`. Checked directly in Rust (no PyO3):
-`SecureConfig::secure_128()` (n=8192) and, at n=1024, `light_mul_insecure`,
-`light_insecure`, and `SecureConfig::test_fast_insecure()` -- all wrong,
-every time.
+Issue #135 established that the historical single-modulus
+`BFVEvaluator::mul()` route could return a plausible ciphertext decrypting
+to the wrong plaintext, including the `1 * 1` case. That route is now
+retired and fail-closed in Rust, and the Python boundary mirrors the same
+disposition: `FHEContext.mul()` raises `ValueError` and returns no
+ciphertext.
 
-This appears to have gone unnoticed because none of `nine65`'s own passing
-`#[test]`s actually exercise this function with a real assertion on the
-decrypted result:
+The Rust tests that previously had misleading names have also been made
+explicit: `test_degree2_mul_multiple_values` and
+`test_degree2_mul_without_relinearization` exercise the raw tensor product
+with the degree-2 decrypt oracle. They do not claim to cover
+relinearization/rescaling.
 
-- `test_homomorphic_mul_with_relin` and `test_ct_mul_multiple_values`
-  (names that read as if they cover exactly this) both construct a
-  `BFVEvaluator` *with* an eval key, but then call `mul_no_relin()` +
-  `decrypt_degree2()` -- bypassing relinearize/rescale (and the eval key)
-  entirely.
-- `test_homomorphic_mul_diagnostic` does call `mul()`, but only prints a
-  `[FAIL]`/`[OK]` diagnosis line for a human to read; it asserts nothing
-  about the actual result.
-
-**Until this is fixed upstream in `nine65`, do not rely on `mul()`'s
-output for anything.** `mul_plain()` (ciphertext x a *known* plaintext
-scalar -- verified exact by `tests/test_homomorphic.py`) is the safe
-alternative wherever the multiplier isn't itself encrypted. This binding
-still exposes `mul()` faithfully rather than hiding it -- disabling
-existing bound functionality based on this change's own risk judgment
-would be a policy call outside its mandate to expose, not redesign, the
-underlying crate -- but every doc comment on it says this plainly (see
-`src/lib.rs`).
+`mul_plain()` remains available for a known plaintext scalar. For encrypted
+ct×ct multiplication, the supported architectural direction is the
+multi-lane DualRNS/K-Elimination path, such as
+`RNSFHEContext::mul_dual_symmetric()`; that surface is not yet bound to
+Python.
 
 ### 2. Plaintext values near the modulus don't round-trip through plain encrypt/decrypt either
 
@@ -227,15 +206,13 @@ keysets, while values near `t` (e.g. `t - 1`) failed consistently, by a
 small (single-digit), always-*downward* drift rather than random
 corruption (see `test_plaintext_near_modulus_bias_is_directional_not_random`).
 
-`tests/conftest.py`'s `SAFE_MAX = 4000` keeps the rest of this suite's
-correctness assertions comfortably inside the verified-safe range so they
-aren't flaky against an edge that shifts slightly by key. If you need the
-full plaintext range `[0, t)` to round-trip exactly, this single-modulus
-path is not yet the right tool -- `nine65` has the machinery to do this
-correctly (`params::exact_params::ExactDelta`, and the DualRNS/K-Elimination
-stack generally), but it isn't what this simple encode/decode path uses,
-and rewiring this binding onto that stack is out of scope for this change
-(see "What's exposed" below).
+`tests/conftest.py`'s `SAFE_MAX = 4000` is a test-fixture guardrail, not a
+production theorem or API guarantee. The full-range exactness defect is
+tracked in **issue #176**. That issue requires either an exact-integer
+full-range encoding/decoding route, using the repository's ExactDelta or
+equivalent proven machinery, or a mathematically derived typed refusal
+boundary. Empirical cutoffs and floating-point patches are explicitly
+insufficient.
 
 ## Integer widths: Python ints vs. Rust `u64`
 
@@ -261,16 +238,6 @@ plaintext value the active config accepts) so a regression here -- silent
 truncation, a wraparound, an unchecked cast -- fails loudly in CI rather
 than showing up as a wrong decryption downstream.
 
-## Panics cross the FFI boundary as `ValueError`, not a process abort
-
-`FHEContext.mul()` wraps the underlying multiplication in
-`std::panic::catch_unwind` and converts any internal panic into a Python
-`ValueError` rather than letting it unwind into (and crash) the Python
-interpreter. This only works because this crate's release profile uses
-Rust's default `panic = "unwind"` -- see "Why this is excluded from the
-workspace" above for why that's true here even though the main workspace's
-`[profile.release]` sets `panic = "abort"`.
-
 ## Running the tests
 
 ```bash
@@ -281,13 +248,12 @@ pytest crates/nine65-python/tests -v
 The suite covers: encrypt/decrypt round-trips (seeded and OS-CSPRNG-backed,
 across all three named configs), homomorphic add / add_plain / mul_plain
 with exact-value assertions, batch encrypt/decrypt, ciphertext/key byte
-serialization round-trips (both "decrypts correctly" and "bytes are
-byte-identical after a round trip"), out-of-bounds plaintext rejection, the
-integer-width boundary cases described below, and the two known limitations
-above (as `xfail(strict=True)`, so they read as understood-and-tracked, not
-silently passing or mysteriously red). All of it runs against the real
-compiled extension -- these are not mocks of the Rust layer. Expect
-`75 passed, 2 xfailed`.
+serialization round-trips, out-of-bounds plaintext rejection, the
+integer-width boundary cases described below, a passing fail-closed ct×ct
+multiplication refusal test, and the open near-`t` decode limitation as
+`xfail(strict=True)`. All of it runs against the real compiled extension;
+these are not mocks of the Rust layer. Release evidence should record the
+discovered test count from the actual run rather than a hard-coded total.
 
 ## What's exposed
 
@@ -295,7 +261,7 @@ compiled extension -- these are not mocks of the Rust layer. Expect
 |---|---|
 | `FHEConfig` | `nine65::params::FHEConfig` (`standard_128`, `high_192`, `large_single`) |
 | `SecureConfig` | `nine65::params::secure_configs::SecureConfig` (`secure_128`, `secure_192`, `secure_256`) |
-| `FHEContext` | Bundles the NTT engine + encoder for a config; `encrypt`/`decrypt`/`add`/`add_plain`/`mul_plain` (all verified exact) and `mul`/`mul_capacity` (ciphertext x ciphertext -- see "Known limitations") live here |
+| `FHEContext` | Bundles the NTT engine + encoder for a config; `encrypt`/`decrypt`/`add`/`add_plain`/`mul_plain` live here. `mul` remains as a fail-closed compatibility boundary; `mul_capacity` is historical single-modulus metadata, not permission to use the retired route. |
 | `KeySet`, `PublicKey`, `SecretKey`, `EvaluationKey` | `nine65::keys::*` |
 | `Ciphertext` | `nine65::ops::Ciphertext` |
 | `Nine65` (pure Python, in `__init__.py`) | Convenience facade bundling one `FHEContext` + `KeySet` |

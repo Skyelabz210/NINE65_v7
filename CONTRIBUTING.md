@@ -19,7 +19,7 @@ NINE65 is proprietary software. All contributions require prior written authoriz
 
 ```bash
 cargo build --release --workspace        # Build all crates
-cargo test --workspace --release          # Run all tests
+cargo test --workspace --release --no-fail-fast   # Run all tests; report every failing target
 cargo test -p nine65 --lib --release      # Core crate only
 ```
 
@@ -125,7 +125,7 @@ Changes to proven algorithms require updated proofs.
 
 1. Branch from `main` with descriptive name
 2. Follow all standards above
-3. Validate: `cargo fmt && cargo clippy && cargo test --workspace --release`
+3. Validate: `cargo fmt && cargo clippy && cargo test --workspace --release --no-fail-fast`
 4. Prefix commits: `fix:`, `feat:`, `refactor:`, `test:`, `proof:`, `docs:`
 5. Open PR with description and validation confirmation
 

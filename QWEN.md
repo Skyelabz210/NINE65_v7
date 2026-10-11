@@ -89,7 +89,7 @@ cargo build --release -p nine65
 
 ```bash
 # Run all tests
-cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm
+cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast
 
 # Core FHE tests only
 cargo test -p nine65 --lib --release
