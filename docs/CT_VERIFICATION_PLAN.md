@@ -1,5 +1,12 @@
 # Constant-Time Verification — Measured Results and CI Posture
 
+**Restoration 2026-10-12:** The October 7 reducer and modulus-switch fixes from
+merged PRs #168/#169 were absent from remote `main`. This restoration preserves
+their final reviewed source from local `main@47fc49c`, including the corrected
+128-bit selection mask and sign compatibility. The timing observations below
+are historical; the new functional checks do not establish a fresh timing
+certification. See `artifacts/execution/2026-10-12-history/ct/` for this run.
+
 **Measurement date:** 2026-08-22
 **Status:** Measured. Five open findings (F-5 added on the integration pass), five paths gated as blocking CI.
 **Harness:** `crates/nine65/src/security/ct_verification.rs`
@@ -610,7 +617,7 @@ Unmeasured sites stay listed as unmeasured. `kelim_residue_divider.rs` and
 `clockwork-core/garner.rs` have no dudect coverage; neither is on a production
 ciphertext path today, and both need this contrast before either is put on one.
 
-### 4.9 F-2 closed — the recorded diagnosis was right, the fix is its CT counterpart
+### 4.9 F-2 original magnitude leak closed — the recorded diagnosis was right, the fix is its CT counterpart
 
 Date: 2026-09-04. Same shared 4 vCPU container class as the rest of this
 document (a fresh instance, not the literal 2026-08-22 one), so absolute
@@ -641,11 +648,12 @@ and the barrier is what keeps LLVM from recompiling it back into a branch.
 
 `mod_switch_down_dual`'s call site changes from `div_mod_u64` to
 `div_mod_u64_ct` and nothing else — the `if rem >= q_last_half` rounding
-branch and the two `is_neg` sign-encoding branches that follow are
-unchanged, because §4.1 already measured them constant-time on their own
-(magnitude-matched positive-vs-negative contrast, t_signal up to 2.29). This
-was never a "the branches must all become masks" fix; it was "the one
-non-branch, magnitude-dependent operation must become fixed-work."
+branch and the two `is_neg` sign-encoding branches that follow were
+unchanged. The matched positive-vs-negative contrast passed, which addresses
+that contrast only; it does not establish timing independence across all
+input classes. The 2026-10-07 all-zero-vs-uniform regression in §4.10
+demonstrates why the end-to-end test must remain and why the F-2 fix must not
+be described as a general constant-time proof for the entire path.
 
 **Correctness first.** `div_mod_u64_ct` is differential-tested against
 `div_mod_u64` (both quotient and remainder) over the same magnitude classes
@@ -685,8 +693,9 @@ throughout, `test_ct_dudect_mod_switch_rescale_fixed_vs_random`
 
 t_signal dropped from a 6-run range of 160.5–701.0 to 2.14, well inside the
 documented `t < 5` threshold, with a clean control. The companion sign-class
-test (§4.1) still passes after the change (t_signal 0.78, was 0.08–2.29),
-confirming the sign branches remain unaffected. Both tests were run once each
+contrast (§4.1) remained below threshold after the change (t_signal 0.78,
+previously 0.08–2.29). This is evidence for that magnitude-matched contrast
+only. Both tests were run once each
 on this container; §5's posture caveats about a single shared-host run apply
 here exactly as everywhere else in this document.
 
@@ -736,9 +745,132 @@ per-anchor-prime CT reduction context would close it, and building one was
 judged out of scope for this pass. See the doc comments in `rns.rs` at each
 site for the specifics.
 
+### 4.10 New all-zero-vs-uniform regression in `mod_switch_down_dual`
+
+Date: 2026-10-07, hosted CT run 37673287889 on source head `57af1de` (the
+evidence-only commit `0f85873` has the same code). The blocking test
+`test_ct_dudect_mod_switch_rescale_fixed_vs_random` again measures the full
+`mod_switch_down_dual` path after the F-2 division fix:
+
+| contrast | control t | signal t | medians | verdict |
+|---|---:|---:|---|---|
+| all-zero vs uniform coefficients | 0.8098 | **49.4668** | 64.47 ms vs 66.02 ms | **timing dependence measured** |
+
+The same test had `t_control=0.1291`, `t_signal=92.4920`, and medians 85.92
+ms vs 86.99 ms in hosted run 37672722432. On both runs the same-class
+control stayed below threshold 5, so the cross-class timing difference is
+measured, although its magnitude varied. The matched positive-vs-negative
+contrast passed in the latest run (`t_signal=0.2654`), which narrows but does
+not identify the cause. The current raw result is retained in
+`artifacts/execution/2026-10-07-session/CI/pr167-0f85873/ct/ct-dudect-blocking/`.
+
+This is a new input-class finding in the same end-to-end routine; it does not
+undo the narrower fix for the original F-2 magnitude-dependent division.
+Source review found a plausible contributor in
+`crt_reconstruct_u256 -> U512::mod_u256`: its fixed 512-iteration loop
+branched on every dividend bit and running-remainder comparison. Other
+value-derived operations remain in the full path, so the source observation
+was a candidate cause, not an attribution.
+
+Hosted run 37676097485 on head `904448a73fb17427a7d05bde16e2d74c6b74e4d0`
+compiled and measured the fixed-work prototype. The isolated and full-path
+contrasts both passed once:
+
+| contrast | control t | signal t | medians | verdict |
+|---|---:|---:|---|---|
+| `U512::mod_u256`, zero vs uniform 128-bit dividends | 1.1190 | 0.1719 | 5,238 ns vs 5,238 ns | pass |
+| `mod_switch_down_dual`, all-zero vs uniform coefficients | 0.0504 | 1.0673 | 79.53 ms vs 79.71 ms | pass |
+| `mod_switch_down_dual`, positive vs negative, magnitude-matched | 1.1069 | 0.5217 | 80.50 ms vs 80.56 ms | pass |
+
+These below-threshold measurements came from an incorrect prototype and are
+diagnostic only. Its caller passed a 64-bit all-ones selector to a helper
+that widened it to `u128` by subtracting the widened value from zero. That
+produced a partial mask and the CRAM multiply tests failed on the same head.
+The follow-up now expands the one-bit condition at 128-bit width; its
+differential arithmetic test and timing contrasts must be rerun before these
+results can support a CT claim.
+
+T2 workspace run 37676097379 confirms a correctness defect in the tested
+prototype: `test_u512_mod_u256_matches_reference_for_sparse_and_dense_values`
+fails for dividend 2 and modulus 2. The cause is the partial 128-bit mask
+described above. The fixed one-bit expansion is on branch
+`codex/2026-10-07-ct-regression-followup`; correctness and timing evidence for
+that repair is still pending.
+
+Hosted PR #169 run 37678425725 on head `84ce6da2a18faa2c63a55fa7d662aff670fbe472`
+corrects the mask width and passes the isolated reducer contrast once
+(`t_control=1.0633`, `t_signal=2.9168`, equal 10,296 ns medians). The full
+`mod_switch_down_dual` all-zero-vs-uniform contrast still fails with a clean
+same-class control: `t_control=0.9809`, `t_signal=18.2519`, medians 134.46 ms
+and 134.64 ms. The magnitude-matched sign contrast passes once
+(`t_signal=0.5676`). Thus the corrected reducer alone does not close the
+end-to-end timing finding. These are Dudect t-statistics, not floating-point
+arithmetic in the Rust crypto path. Raw output is retained under
+`artifacts/execution/2026-10-07-session/CI/pr169-84ce6da/ct/`.
+
+Review of the rest of `mod_switch_down_dual` found additional coefficient-
+derived decisions after CRT reduction: `SignedU256::center` branches on the
+centered sign; quotient rounding branches on `rem >= q_last_half`; signed
+lane encoding branches on the sign and nonzero remainder; and quotient and
+CRT residue normalization use `%` on coefficient-derived values. The current
+follow-up in `48ef562` converts centering, rounding, and sign encoding to
+mask selection and replaces those reductions with fixed-work routines.
+`c1a502c` preserves existing sign-field callers. The newer measurement below
+records that code; differential/T2 completion and repeated clean-control
+measurements remain required.
+
+The PR-head CT job remains red: its separate
+`AdjacencyKElim::extract_k` small-vs-near-cap contrast reported
+`t_control=4.0863`, `t_signal=6.3291` (threshold 5), with medians 1,241,019
+ns and 1,242,111 ns. Keep that finding open. Merge-ref CT run 37676889107
+passed the reducer, full-path, and adjacency contrasts once (`t_signal=1.1272`,
+`1.2671`, and `3.6537` respectively), but it ran the same incorrect
+arithmetic prototype, so those scores also cannot validate constant-time
+correctness. More importantly, CRAM-public
+run 37676097325 on the same source head fails two multiply tests with
+gadget-capacity errors, while those tests passed on `0f85873`. The direct
+arithmetic differential failure confirms the reducer caused a correctness
+regression. PR #168 was merged by the repository owner before these gates
+cleared; the merge does not close them. Raw CT output is retained in
+`artifacts/execution/2026-10-07-session/CI/pr168-904448a/ct/`.
+
+Keep the CT and correctness gates open until the arithmetic differential test,
+T2, and follow-up measurements establish correctness and repeatable timing
+results. Do not raise the threshold or remove the all-zero-vs-uniform
+contrast.
+
+### Follow-up measurement on `c1a502c` (2026-10-07)
+
+Run 37680342677 passes the blocking workflow on
+`c1a502cafaa90aeeb53b90e9df2c18097c42dab7`. The isolated reducer reports
+control `0.0954` and signal `1.7807`. Full zero-vs-uniform
+`mod_switch_down_dual` reports control `0.9485` and signal `0.0290`, with
+medians 239,281,405 ns and 239,271,675 ns. The magnitude-matched sign contrast
+reports control `0.5590` and signal `0.1890`.
+
+This is one passing run for those contrasts. Montgomery exponent Hamming weight
+and adjacency K-Elimination magnitude are inconclusive on this runner (controls
+`12.7978` and `34.2862` respectively). A green workflow does not turn those
+inconclusive measurements into CT evidence. CRAM-public correctness and timing
+run 37680342717 passes; full CI T2 run 37680342663 is still in progress.
+
+The raw Dudect report is archived under
+`artifacts/execution/2026-10-07-session/CI/pr169-c1a502c/ct/`, SHA-256
+`303ec2b59e8ec2c54f6a1cbab05d90b6031793da40a6174d146bcb8af0760e6d`.
+Retain the threshold and contrasts and repeat with clean controls before
+closing the finding.
+
+These decimal statistics are computed using `f64` in the test harness, while
+raw duration samples are integer nanoseconds. The float scanners explicitly
+exclude this harness and some compiler/benchmark analysis code; their passing
+status does not establish an all-owned-source zero-float guarantee. Issue #90
+is closed, but #92 Phase 5's broader requirement remains unchecked.
+
 ## 5. CI posture
 
-> **NOTHING BELOW IS CURRENTLY RUNNING. Read this before reading the table.**
+> **Historical snapshot from 2026-08-22; superseded.** This section records
+> the workflow state on that date. Words such as "today" below mean
+> 2026-08-22, not the current session.
 >
 > Checked against the GitHub API on 2026-08-22. Thirteen workflows are
 > registered on `Skyelabz210/NINE65_v7` and all report `state: active`.
@@ -774,6 +906,13 @@ site for the specifics.
 >    rather than by a workflow. `cargo test` runs; the workflow does not.
 > 2. A gate that exists only in YAML in this repository is not a gate. When
 >    adding one, put the enforceable part where `cargo test` will reach it.
+
+> **Current session update (2026-10-07):** GitHub Actions has run on PRs #167
+> and #168. PR #168 merged at `c93a058`; its T1 gate passed, T2 remains in
+> progress, CT source checks passed while the blocking CT workflow found a
+> separate K-Elimination timing signal, and CRAM-public correctness failed two
+> multiply tests on the changed source head. See the current run IDs and
+> evidence links in `docs/execution/2026-10-06/SESSION_PLAN.md`.
 
 | Job | Trigger | Blocking | Contents | Threshold |
 |---|---|---|---|---|
