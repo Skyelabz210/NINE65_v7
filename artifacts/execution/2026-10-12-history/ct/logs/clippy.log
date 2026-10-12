@@ -1,0 +1,12 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-history-resolution/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-history-resolution/Cargo.toml
+    Checking mana v0.1.0 (/tmp/nine65-history-resolution/crates/mana)
+   Compiling nine65 v0.1.0 (/tmp/nine65-history-resolution/crates/nine65)
+    Checking unhal v0.1.0 (/tmp/nine65-history-resolution/crates/unhal)
+    Checking getrandom v0.2.16
+    Checking exact_transcendentals v1.0.0 (/tmp/nine65-history-resolution/crates/exact_transcendentals)
+    Checking rand_core v0.6.4
+    Checking rand_chacha v0.3.1
+    Checking criterion v0.5.1
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 53.85s

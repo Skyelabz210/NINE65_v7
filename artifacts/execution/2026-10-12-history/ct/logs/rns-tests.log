@@ -1,0 +1,125 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-history-resolution/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-history-resolution/Cargo.toml
+   Compiling mana v0.1.0 (/tmp/nine65-history-resolution/crates/mana)
+   Compiling rand v0.9.5
+   Compiling nine65 v0.1.0 (/tmp/nine65-history-resolution/crates/nine65)
+   Compiling criterion v0.5.1
+   Compiling proptest v1.9.0
+   Compiling unhal v0.1.0 (/tmp/nine65-history-resolution/crates/unhal)
+   Compiling exact_transcendentals v1.0.0 (/tmp/nine65-history-resolution/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 43s
+     Running unittests src/lib.rs (target/debug/deps/nine65-25a76f5276f78796)
+
+running 46 tests
+
+thread 'arithmetic::rns::tests::exact_divide_panics_instead_of_wrapping_when_the_answer_exceeds_u128' panicked at crates/nine65/src/arithmetic/rns.rs:2284:17:
+K-Elimination u128 reconstruct: v_main + k*M overflowed u128 (k=4593671624212873216, M=742843007632383847780319233, v_main=600, M*A needs 152 bits). Reconstructing anyway would silently return the value mod 2^128. Use the U256 path (extract_k_rns_level + to_u256_level).
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test arithmetic::rns::tests::exact_divide_panics_instead_of_wrapping_when_the_answer_exceeds_u128 - should panic ... ok
+test arithmetic::rns::tests::reconstruct_succeeds_on_wide_basis_when_the_value_fits ... ok
+
+thread 'arithmetic::rns::tests::reconstruct_panics_instead_of_wrapping_when_the_answer_exceeds_u128' panicked at crates/nine65/src/arithmetic/rns.rs:2284:17:
+K-Elimination u128 reconstruct: v_main + k*M overflowed u128 (k=4593671624212873216, M=742843007632383847780319233, v_main=12345, M*A needs 152 bits). Reconstructing anyway would silently return the value mod 2^128. Use the U256 path (extract_k_rns_level + to_u256_level).
+test arithmetic::rns::tests::reconstruct_panics_instead_of_wrapping_when_the_answer_exceeds_u128 - should panic ... ok
+=== 4-Prime CRT u128 Boundary Test ===
+A4 product = 32914700008434506216455842496163872769 (125 bits)
+M_level = 348959453350711275087786864768188417 (119 bits)
+  k (90 bits): OK
+  k (100 bits): OK
+  k (123 bits): OK
+=== 4-Prime CRT u128 Boundary Test PASSED ===
+test arithmetic::rns::tests::test_4prime_crt_near_u128_limit ... ok
+=== 4-Prime CRT Large k Test ===
+Main primes: [998244353, 985661441, 754974721, 469762049]
+Anchor primes: [2013265921, 2281701377, 2483027969, 2885681153]
+M_level = 348959453350711275087786864768188417 (119 bits)
+Anchor capacity (4 primes) = 32914700008434506216455842496163872769 (125 bits)
+  k = 0 (0 bits): OK
+  k = 1 (1 bits): OK
+  k = 4294967295 (32 bits): OK
+  k = 1152921504606846975 (60 bits): OK
+  k = 1208925819614629174706175 (80 bits): OK
+=== 4-Prime CRT Large k Test PASSED ===
+test arithmetic::rns::tests::test_4prime_crt_large_k ... ok
+test arithmetic::rns::tests::test_crt_reconstruct_u256_handles_zero_residues ... ok
+test arithmetic::rns::tests::test_crt_reconstruct_u256_roundtrip ... ok
+test arithmetic::rns::tests::test_crt_reconstruct_u256_wraps_past_prime_subset_capacity ... ok
+test arithmetic::rns::tests::test_div_mod_u64_ct_iteration_count_is_input_independent ... ok
+test arithmetic::rns::tests::test_dual_rns_exact_division ... ok
+FHE-sized K-Elimination:
+  M = 742843007632383847780319233 (90 bits)
+  A = 4593671624212873217 (62 bits)
+  Total capacity = 90 + 62 = 152 bits
+  Δ = M/t = 11334711806039090098422 (74 bits)
+  Δ² = 340282366920938463463374607431768211455 (128 bits)
+  Δ² < M×A? false
+test arithmetic::rns::tests::test_dual_rns_fhe_capacity ... ok
+
+thread 'arithmetic::rns::tests::test_anchor_capacity_insufficient' panicked at crates/nine65/src/arithmetic/rns.rs:2010:9:
+Level exceeds main prime count
+test arithmetic::rns::tests::test_anchor_capacity_insufficient - should panic ... ok
+K-Elimination test:
+  Main product M = 697
+  Anchor product A = 6497
+  M^-1 mod A = 261
+  Testing v = 500
+    v mod M = 500
+    v mod A = 500
+    k = 0
+    reconstructed = 500
+test arithmetic::rns::tests::test_dual_rns_k_elimination_basic ... ok
+test arithmetic::rns::tests::test_dual_rns_polynomial_operations ... ok
+=== Full Dual-RNS FHE Chain Test ===
+Main primes: [998244353, 985661441, 754974721]
+M = 742843007632383847780319233 (90 bits)
+A = 4593671624212873217 (62 bits)
+t = 65537, Δ = M/t = 11334711806039090098422 (74 bits)
+Encoded m = 5 × Δ = 56673559030195450492110 (76 bits)
+Δ reconstruction: OK
+=== Full chain test PASSED ===
+test arithmetic::rns::tests::test_dual_rns_fhe_full_chain ... ok
+K-Elimination rescaling test passed!
+test arithmetic::rns::tests::test_k_elim_rescale ... ok
+test arithmetic::rns::tests::test_k_elim_rescale_full_nearest_integer ... ok
+test arithmetic::rns::tests::test_mod_u64_ct_iteration_count_is_input_independent ... ok
+test arithmetic::rns::tests::test_mod_u64_word_ct_matches_native_across_magnitudes ... ok
+test arithmetic::rns::tests::test_mul_low_kelim_scale_values ... ok
+test arithmetic::rns::tests::test_mul_low_large_lo_triggers_wide_mul_overflow ... ok
+test arithmetic::rns::tests::test_mul_u64_kelim_rescale_scale ... ok
+test arithmetic::rns::tests::test_product_u64s_large_prime_set ... ok
+test arithmetic::rns::tests::test_rns_add ... ok
+test arithmetic::rns::tests::test_rns_mul ... ok
+test arithmetic::rns::tests::test_rns_polynomial_add ... ok
+test arithmetic::rns::tests::test_rns_polynomial_mul ... ok
+test arithmetic::rns::tests::test_rns_roundtrip ... ok
+=== Signed-k Boundary Test ===
+A (3 anchors) = 11406215123322221807662006273 (94 bits)
+A/2 = 5703107561661110903831003136
+  k = 5703107561661110903831003036: is_negative = false (expected false), magnitude = 5703107561661110903831003036
+  k = 5703107561661110903831003135: is_negative = false (expected false), magnitude = 5703107561661110903831003135
+  k = 5703107561661110903831003136: is_negative = false (expected true), magnitude = 5703107561661110903831003136
+  k = 5703107561661110903831003137: is_negative = true (expected true), magnitude = 5703107561661110903831003136
+  k = 5703107561661110903831003236: is_negative = true (expected true), magnitude = 5703107561661110903831003037
+=== Signed-k Boundary Test PASSED ===
+test arithmetic::rns::tests::test_signed_k_boundary ... ok
+test arithmetic::rns::tests::test_try_to_int_level_matches_to_int_level ... ok
+test arithmetic::rns::tests::test_extract_k_rns_level_recovers_depth2_k_beyond_4anchor_capacity_secure_128_deep ... ok
+test arithmetic::rns::tests::test_try_to_int_level_partial_overflow_chain_works ... ok
+test arithmetic::rns::tests::test_try_to_int_level_returns_some_for_valid_configs ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u256_basic ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u256_large ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u256_self ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u64_ct_matches_vartime_across_magnitude_classes ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u64_ct_matches_vartime_random ... ok
+test arithmetic::rns::tests::test_u256_mod_u64_ct ... ok
+test arithmetic::rns::tests::test_u256_mod_u64_ct_matches_vartime_across_magnitude_classes ... ok
+test arithmetic::rns::tests::test_try_to_int_level_returns_none_for_overflow_chain ... ok
+test arithmetic::rns::tests::test_wide_mul_256_cross_term_boundary ... ok
+test arithmetic::rns::tests::test_wide_mul_256_mid_carry_overflow ... ok
+test arithmetic::rns::tests::u256_fixed_work_compare_matches_unsigned_order_at_word_boundaries ... ok
+test arithmetic::rns::tests::u256_fixed_work_mul_u64_matches_checked_helper_under_proved_bound ... ok
+test arithmetic::rns::tests::test_u512_mod_u256_matches_reference_for_sparse_and_dense_values ... ok
+
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 1010 filtered out; finished in 2.33s
+
