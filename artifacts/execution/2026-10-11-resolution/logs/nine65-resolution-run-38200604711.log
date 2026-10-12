@@ -1,0 +1,135 @@
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	﻿2026-10-12T03:40:16.1101194Z ##[group]Run EmbarkStudios/cargo-deny-action@v2
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1101540Z with:
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1101733Z   command: check
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1101963Z   arguments: --all-features
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1102223Z   manifest-path: ./Cargo.toml
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1102465Z   log-level: warn
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1102669Z   use-git-cli: false
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1102872Z env:
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1103064Z   CARGO_TERM_COLOR: always
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1103289Z   RUST_BACKTRACE: 1
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1103491Z   CARGO_NET_RETRY: 10
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1103702Z   RUSTUP_MAX_RETRIES: 10
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1103937Z   CARGO_HOME: /home/runner/.cargo
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1104200Z   CARGO_INCREMENTAL: 0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1104411Z ##[endgroup]
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:16.1223901Z ##[command]/usr/bin/docker run --name a1e6bd2ce4aa5ab9c42cf8a7248e471c5ce57_2d28c9 --label 2a1e6b --workdir /github/workspace --rm -e "CARGO_TERM_COLOR" -e "RUST_BACKTRACE" -e "CARGO_NET_RETRY" -e "RUSTUP_MAX_RETRIES" -e "CARGO_HOME" -e "CARGO_INCREMENTAL" -e "INPUT_COMMAND" -e "INPUT_ARGUMENTS" -e "INPUT_COMMAND-ARGUMENTS" -e "INPUT_MANIFEST-PATH" -e "INPUT_LOG-LEVEL" -e "INPUT_RUST-VERSION" -e "INPUT_CREDENTIALS" -e "INPUT_SSH-KEY" -e "INPUT_SSH-KNOWN-HOSTS" -e "INPUT_USE-GIT-CLI" -e "HOME" -e "GITHUB_JOB" -e "GITHUB_REF" -e "GITHUB_SHA" -e "GITHUB_REPOSITORY" -e "GITHUB_REPOSITORY_OWNER" -e "GITHUB_REPOSITORY_OWNER_ID" -e "GITHUB_RUN_ID" -e "GITHUB_RUN_NUMBER" -e "GITHUB_RETENTION_DAYS" -e "GITHUB_RUN_ATTEMPT" -e "GITHUB_ACTOR_ID" -e "GITHUB_ACTOR" -e "GITHUB_WORKFLOW" -e "GITHUB_HEAD_REF" -e "GITHUB_BASE_REF" -e "GITHUB_EVENT_NAME" -e "GITHUB_SERVER_URL" -e "GITHUB_API_URL" -e "GITHUB_GRAPHQL_URL" -e "GITHUB_REF_NAME" -e "GITHUB_REF_PROTECTED" -e "GITHUB_REF_TYPE" -e "GITHUB_WORKFLOW_REF" -e "GITHUB_WORKFLOW_SHA" -e "GITHUB_REPOSITORY_ID" -e "GITHUB_TRIGGERING_ACTOR" -e "GITHUB_WORKSPACE" -e "GITHUB_ACTION" -e "GITHUB_EVENT_PATH" -e "GITHUB_ACTION_REPOSITORY" -e "GITHUB_ACTION_REF" -e "GITHUB_PATH" -e "GITHUB_ENV" -e "GITHUB_STEP_SUMMARY" -e "GITHUB_STATE" -e "GITHUB_OUTPUT" -e "GITHUB_ARTIFACTS" -e "GITHUB_ARTIFACTS_LIST" -e "RUNNER_OS" -e "RUNNER_ARCH" -e "RUNNER_NAME" -e "RUNNER_ENVIRONMENT" -e "RUNNER_TOOL_CACHE" -e "RUNNER_TEMP" -e "RUNNER_WORKSPACE" -e "ACTIONS_RUNTIME_URL" -e "ACTIONS_RUNTIME_TOKEN" -e "ACTIONS_CACHE_URL" -e "ACTIONS_RESULTS_URL" -e "ACTIONS_CACHE_MODE" -e "ACTIONS_ORCHESTRATION_ID" -e GITHUB_ACTIONS=true -e CI=true -v "/var/run/docker.sock":"/var/run/docker.sock" -v "/home/runner/work/_temp":"/github/runner_temp" -v "/home/runner/work/_temp/_github_home":"/github/home" -v "/home/runner/work/_temp/_github_workflow":"/github/workflow" -v "/home/runner/work/_temp/_runner_file_commands":"/github/file_commands" -v "/home/runner/work/NINE65_v7/NINE65_v7":"/github/workspace" 2a1e6b:d2ce4aa5ab9c42cf8a7248e471c5ce57  "" "" "" "" "--log-level" "warn" "--manifest-path" "./Cargo.toml" "--all-features" "check" ""
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2046614Z Default host: x86_64-unknown-linux-musl
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2047173Z rustup home:  /usr/local/rustup
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2047539Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2051949Z installed toolchains
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2052488Z --------------------
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2052984Z 1.85.0-x86_64-unknown-linux-musl (default)
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2053338Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2053483Z active toolchain
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2053812Z ----------------
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2075028Z error: override toolchain '1.89.0-x86_64-unknown-linux-musl' is not installed
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2075823Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2076018Z Caused by:
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2076782Z     the toolchain file at '/github/workspace/rust-toolchain.toml' specifies an uninstalled toolchain
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2077705Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2077869Z Stack backtrace:
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2083956Z    0: anyhow::kind::Adhoc::new
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2084369Z    1: rustup::toolchain::Toolchain::with_reason
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2084759Z    2: rustup::cli::rustup_mode::show
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2085161Z    3: rustup::cli::rustup_mode::main::{{closure}}::{{closure}}
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2085963Z    4: rustup_init::run_rustup_inner::{{closure}}::{{closure}}
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2086405Z    5: rustup_init::run_rustup::{{closure}}::{{closure}}
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2086791Z    6: rustup_init::main::{{closure}}
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2087420Z    7: rustup_init::main
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2087755Z    8: std::sys::backtrace::__rust_begin_short_backtrace
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2088120Z    9: main
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.2173738Z info: syncing channel updates for '1.89.0-x86_64-unknown-linux-musl'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.5829532Z info: latest update on 2025-08-07, rust version 1.89.0 (29483883e 2025-08-04)
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:17.5830153Z info: downloading component 'cargo'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:19.1038914Z info: downloading component 'clippy'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:19.8734924Z info: downloading component 'rust-std'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:20.2511278Z info: downloading component 'rustc'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:29.6278161Z info: downloading component 'rustfmt'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:30.3683416Z info: installing component 'cargo'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:31.1255262Z info: installing component 'clippy'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:31.4548751Z info: installing component 'rust-std'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:34.0485141Z info: installing component 'rustc'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:40.2845408Z info: installing component 'rustfmt'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:40.6518953Z info: the active toolchain `1.89.0-x86_64-unknown-linux-musl` has been installed
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:40.6519797Z info: it's active because: overridden by '/github/workspace/rust-toolchain.toml'
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9234371Z [0m[1m[38;5;9merror[rejected][0m[1m: failed to satisfy license requirements[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9236227Z    [0m[36m┌─[0m /home/runner/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/subtle-2.6.1/Cargo.toml:43:12
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9237538Z    [0m[36m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9238273Z [0m[36m43[0m [0m[36m│[0m license = "[0m[31mBSD-3-Clause[0m"
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9239035Z    [0m[36m│[0m            [0m[31m━━━━━━━━━━━━[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9239607Z    [0m[36m│[0m            [0m[31m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9240421Z    [0m[36m│[0m            [0m[31mrejected: license is not explicitly allowed[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9241352Z    [0m[36m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9242508Z    [0m[36m├[0m BSD-3-Clause - BSD 3-Clause "New" or "Revised" License:
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9243581Z    [0m[36m├[0m   - OSI approved
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9244328Z    [0m[36m├[0m   - FSF Free/Libre
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9264254Z    [0m[36m├[0m subtle v2.6.1
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9264897Z      ├── clockwork-core v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9265405Z      │   └── nine65 v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9265882Z      │       ├── (dev) fhe-service v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9266464Z      │       ├── nine65-extreme-tests v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9267396Z      │       └── private-feedback-nine65 v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9268067Z      ├── fhe-service v0.1.0 (*)
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9268602Z      └── nine65 v0.1.0 (*)
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9268827Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9269401Z [0m[1m[38;5;11mwarning[duplicate][0m[1m: found 2 duplicate entries for crate 'bincode'[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9270430Z   [0m[36m┌─[0m /github/workspace/Cargo.lock:5:1
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9271073Z   [0m[36m│[0m  
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9272068Z [0m[36m5[0m [0m[36m│[0m [0m[33m╭[0m [0m[33mbincode 1.3.3 registry+https://github.com/rust-lang/crates.io-index[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9273648Z [0m[36m6[0m [0m[36m│[0m [0m[33m│[0m [0m[33mbincode 2.0.1 registry+https://github.com/rust-lang/crates.io-index[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9275241Z   [0m[36m│[0m [0m[33m╰[0m[0m[33m───────────────────────────────────────────────────────────────────┘ lock entries[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9276204Z   [0m[36m│[0m  
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9276604Z   [0m[36m├[0m bincode v1.3.3
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9277341Z     └── fhe-service v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9277896Z   [0m[36m├[0m bincode v2.0.1
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9278416Z     └── nine65 v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9278858Z         ├── (dev) fhe-service v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9279448Z         ├── nine65-extreme-tests v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9280553Z         └── private-feedback-nine65 v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9280976Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9281637Z [0m[1m[38;5;11mwarning[license-not-encountered][0m[1m: license was not encountered[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9282583Z    [0m[36m┌─[0m ./deny.toml:21:6
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9283070Z    [0m[36m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9283665Z [0m[36m21[0m [0m[36m│[0m     "[0m[33mBSL-1.0[0m",
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9284650Z    [0m[36m│[0m      [0m[33m━━━━━━━[0m [0m[33munmatched license allowance[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9285290Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9285907Z [0m[1m[38;5;11mwarning[license-not-encountered][0m[1m: license was not encountered[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9287109Z    [0m[36m┌─[0m ./deny.toml:22:6
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9287663Z    [0m[36m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9288228Z [0m[36m22[0m [0m[36m│[0m     "[0m[33mISC[0m",
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9289175Z    [0m[36m│[0m      [0m[33m━━━[0m [0m[33munmatched license allowance[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9289761Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9290347Z [0m[1m[38;5;11mwarning[license-not-encountered][0m[1m: license was not encountered[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9291668Z    [0m[36m┌─[0m ./deny.toml:23:6
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9292201Z    [0m[36m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9292823Z [0m[36m23[0m [0m[36m│[0m     "[0m[33mUnicode-DFS-2016[0m",
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9293861Z    [0m[36m│[0m      [0m[33m━━━━━━━━━━━━━━━━[0m [0m[33munmatched license allowance[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:42.9294496Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0859253Z [0m[1m[38;5;9merror[unsound][0m[1m: Rand is unsound with a custom logger using `rand::rng()`[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0860701Z    [0m[36m┌─[0m /github/workspace/Cargo.lock:72:1
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0861498Z    [0m[36m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0862618Z [0m[36m72[0m [0m[36m│[0m [0m[31mrand 0.8.5 registry+https://github.com/rust-lang/crates.io-index[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0864607Z    [0m[36m│[0m [0m[31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m [0m[31munsound advisory detected[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0865988Z    [0m[36m│[0m
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0866463Z    [0m[36m├[0m ID: RUSTSEC-2026-0097
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0867400Z    [0m[36m├[0m Advisory: https://rustsec.org/advisories/RUSTSEC-2026-0097
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0869451Z    [0m[36m├[0m It has been reported (by [@lopopolo](https://github.com/lopopolo)) that the `rand` library is [unsound](https://rust-lang.github.io/unsafe-code-guidelines/glossary.html#soundness-of-code--of-a-library) (i.e. that safe code using the public API can cause Undefined Behaviour) when all the following conditions are met:
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0871109Z      
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0871423Z      - The `log` and `thread_rng` features are enabled
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0872032Z      - A [custom logger](https://docs.rs/log/latest/log/#implementing-a-logger) is defined
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0873050Z      - The custom logger accesses `rand::rng()` (previously `rand::thread_rng()`) and calls any `TryRng` (previously `RngCore`) methods on `ThreadRng`
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0874173Z      - The `ThreadRng` (attempts to) reseed while called from the custom logger (this happens every 64 kB of generated data)
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0875300Z      - Trace-level logging is enabled or warn-level logging is enabled and the random source (the `getrandom` crate) is unable to provide a new seed
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0876083Z      
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0879051Z      `TryRng` (previously `RngCore`) methods for `ThreadRng` use `unsafe` code to cast `*mut BlockRng<ReseedingCore>` to `&mut BlockRng<ReseedingCore>`. When all the above conditions are met this results in an aliased mutable reference, violating the Stacked Borrows rules. Miri is able to detect this violation in sample code. Since construction of [aliased mutable references is Undefined Behaviour](https://doc.rust-lang.org/stable/nomicon/references.html), the behaviour of optimized builds is hard to predict.
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0881689Z    [0m[36m├[0m Announcement: https://github.com/rust-random/rand/pull/1763
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0882919Z    [0m[36m├[0m Solution: Upgrade to >=0.10.1 OR <0.10.0, >=0.9.3 OR <0.9.0, >=0.8.6 (try `cargo update -p rand`)
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0883578Z    [0m[36m├[0m rand v0.8.5
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0883964Z      └── (dev) clockwork-core v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0884351Z          └── nine65 v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0884706Z              ├── (dev) fhe-service v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0885140Z              ├── nine65-extreme-tests v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0885573Z              └── private-feedback-nine65 v0.1.0
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0885841Z 
+T1 · Fast Gate (fmt + clippy + deny)	Check licenses and advisories	2026-10-12T03:40:43.0963540Z advisories [31mFAILED[0m, bans [32mok[0m, licenses [31mFAILED[0m, sources [32mok[0m

@@ -1,0 +1,10 @@
+[package]
+name = "nine65-codec-compat"
+version = "0.0.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+bincode_old = { package = "bincode", version = "=2.0.1", default-features = false, features = ["std"] }
+bincode = { package = "bincode-next", version = "=2.1.0" }

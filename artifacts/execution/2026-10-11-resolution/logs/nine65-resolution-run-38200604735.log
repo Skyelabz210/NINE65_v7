@@ -1,0 +1,9 @@
+probe-smoke	Enforce matrix result after artifact capture	﻿2026-10-12T03:40:12.1186183Z ##[group]Run test 'failure' = 'success'
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1186587Z [36;1mtest 'failure' = 'success'[0m
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1222465Z shell: /usr/bin/bash -e {0}
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1222869Z env:
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1223140Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1223534Z   CARGO_INCREMENTAL: 0
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1223839Z   CARGO_TERM_COLOR: always
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1224174Z ##[endgroup]
+probe-smoke	Enforce matrix result after artifact capture	2026-10-12T03:40:12.1402047Z ##[error]Process completed with exit code 1.

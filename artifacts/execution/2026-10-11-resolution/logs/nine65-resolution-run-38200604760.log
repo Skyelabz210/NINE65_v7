@@ -1,0 +1,20 @@
+exact-cram-gate	Enforce CRAM recumbency contract	﻿2026-10-12T03:39:37.1519812Z ##[group]Run python3 .github/scripts/check_cram_recumbency.py
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.1520361Z [36;1mpython3 .github/scripts/check_cram_recumbency.py[0m
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.1588695Z shell: /usr/bin/bash -e {0}
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.1589026Z env:
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.1589309Z   CARGO_HOME: /home/runner/.cargo
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.1589634Z   CARGO_INCREMENTAL: 0
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.1589930Z   CARGO_TERM_COLOR: always
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.1590209Z ##[endgroup]
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3305874Z CRAM recumbency contract failed:
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3307328Z   - crates/nine65/src/ops/bootstrap.rs: number-line CRT reconstruction in bootstrap [\bcrt_reconstruct_n\s*\(] at line(s) 789, 798, 953, 970, 1233, 1238, 1336, 1436
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3309017Z   - crates/nine65/src/ops/bootstrap.rs: U256 number-line reconstruction in bootstrap [\bcrt_reconstruct_u256\s*\(] at line(s) 823, 831, 1004, 1011, 1252, 1254, 1351, 1413, +1 more
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3310497Z   - crates/nine65/src/ops/rns_fhe.rs: zero sentinel used as modulus-overflow state [q_product\s*==\s*0] at line(s) 1060, 1321, 1339, 2808, 2949, 4491, 5161
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3311829Z   - crates/nine65/src/ops/rns_fhe.rs: zero overflow sentinel construction [unwrap_or\s*\(\s*0\s*\)] at line(s) 1056, 3935
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3313150Z   - crates/nine65/src/arithmetic/rns.rs: zero sentinel for unavailable anchor inverse [main_inv_anchor\s*=\s*if anchor_product > 0.*?else\s*\{\s*0] at line(s) 1414
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3319309Z   - crates/nine65/src/arithmetic/rns.rs: u128::MAX fallback in capacity decision [unwrap_or\s*\(\s*u128::MAX\s*\)] at line(s) 1599
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3320226Z   - crates/nine65/src/arithmetic/rns.rs: saturated k bound [k_max_bound\s*=\s*q_max\.saturating_mul] at line(s) 1595
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3360631Z   - crates/nine65/src/arithmetic/rns.rs: summed lane widths used as exact anchor capacity [fn\s+anchor(?:3)?_capacity_bits.*?map\s*\(\s*\|&p\|\s*64\s*-\s*p\.leading_zeros\(\)\s*\).*?sum] at line(s) 1624, 1637
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3362148Z   - crates/nine65/src/arithmetic/rns.rs: bounded k extraction reconstructs a number-line representative [fn\s+extract_k_rns(?:_level)?\b.*?(?:crt_reconstruct_n|crt_reconstruct_u256)\s*\(] at line(s) 1762
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3363405Z   - crates/nine65/src/arithmetic/rns.rs: missing checked scalar main inverse metadata [main_inv_anchor_checked\s*:\s*Option<u128>]
+exact-cram-gate	Enforce CRAM recumbency contract	2026-10-12T03:39:37.3373505Z ##[error]Process completed with exit code 1.

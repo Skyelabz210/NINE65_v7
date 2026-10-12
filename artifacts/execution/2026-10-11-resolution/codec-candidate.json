@@ -1,0 +1,8 @@
+{
+  "base_commit": "148f28903dfeacc3fac8986b7522b6b3288fe9a2",
+  "local_candidate_commit": "40d62f7",
+  "archive": "codec-candidate.patch.gz",
+  "archive_sha256": "cc1c9a1b2785685771c337cb20d92f075fb055355fddc50071ee622c99cec46d",
+  "patch_sha256": "5ba612d55131a5a4e6229c1f57ab64a32ffacbc21729ce943a8ed466cd76bcfc",
+  "integration_status": "candidate only; rebase and complete #178 gates before integration"
+}

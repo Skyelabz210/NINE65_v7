@@ -218,7 +218,7 @@ impl WindingCRT {
     /// (an on-demand phase/parking witness per #159 acceptance 2), so
     /// until that contract exists this method computes the sum exactly
     /// through the i128 corridor — fail-closed, never silently wrapped.
-    /// This adds one reconstruction per add on the std build; the
+    /// This performs two operand reconstructions per add on the std build; the
     /// reconstruction-count instrumentation will honestly reflect that.
     pub fn add(&self, other: &WindingCRT) -> WindingCRT {
         self.try_add(other)

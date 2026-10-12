@@ -1,0 +1,65 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-pr179/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-pr179/Cargo.toml
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.84s
+     Running unittests src/lib.rs (target/debug/deps/clockwork_core-e22a9279ddddb9fb)
+
+running 46 tests
+test basis::tests::centered_lift_properties ... ok
+test basis::tests::ct01_roundtrip_exhaustive_small ... ok
+test basis::tests::ct04_promote_demote_roundtrip ... ok
+test basis::tests::rejects_degenerate ... ok
+test basis::tests::rejects_empty ... ok
+test basis::tests::rejects_non_coprime ... ok
+test basis::tests::t1_ring_homomorphism_add ... ok
+test basis::tests::t1_ring_homomorphism_mul ... ok
+test bound_tracker::tests::addition_bound_correct ... ok
+test bound_tracker::tests::bound_from_value ... ok
+test bound_tracker::tests::dot_product_bound_tighter_than_chain ... ok
+test bound_tracker::tests::multiplication_bound_correct ... ok
+test bound_tracker::tests::promotion_policy ... ok
+test decode_to_q::tests::ct05_multiple_bases ... ok
+test decode_to_q::tests::ct05_roundtrip_centered_exhaustive ... ok
+test decode_to_q::tests::ct05_roundtrip_unsigned_exhaustive ... ok
+test decode_to_q::tests::invariant_q_never_changes ... ok
+test decode_to_q::tests::rejects_insufficient_basis - should panic ... ok
+test basis::tests::ct01_roundtrip_medium_random ... ok
+test garner::tests::ct02_k_eliminate_vs_crt ... ok
+test garner::tests::garner_decompose_ct_matches_standard ... ok
+test garner::tests::garner_decompose_roundtrip_exhaustive ... ok
+test gearstack::tests::ct03_bound_tracker_never_underestimates ... ok
+test gearstack::tests::ct03_bound_tracker_soundness ... ok
+test gearstack::tests::ct06_lane_add_matches_ring ... ok
+test gearstack::tests::ct06_lane_mul_matches_ring ... ok
+test gearstack::tests::insufficient_capacity_detected ... ok
+test gro::tests::golden_ratio_approximation ... ok
+test gro::tests::golden_ratio_maximal_period ... ok
+test gro::tests::gt01_maximal_period_with_odd_difference ... ok
+test gro::tests::gt02_window_equidistribution ... ok
+test gro::tests::windows_exist ... ok
+test integrity::tests::it01_single_copy_corruption_recovery ... ok
+test integrity::tests::it02_double_corruption_fails ... ok
+test integrity::tests::it03_crc_catches_corruption ... ok
+test integrity::tests::repair_restores_redundancy ... ok
+test integrity::tests::tier_state_corruption_recovery ... ok
+test integrity::tests::tier_state_integrity ... ok
+test key_lifecycle::tests::kt01_multiple_reshares ... ok
+test key_lifecycle::tests::kt01_reshare_preserves_secret ... ok
+test key_lifecycle::tests::kt02_memory_zeroing ... ok
+test key_lifecycle::tests::kt03_lifecycle_state_machine ... ok
+test key_lifecycle::tests::kt04_share_distribution_uniformity ... ok
+test key_lifecycle::tests::rejects_double_init ... ok
+test key_lifecycle::tests::rejects_reshare_before_init ... ok
+test garner::tests::ct02_k_eliminate_large_random ... ok
+
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.83s
+
+   Doc-tests clockwork_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

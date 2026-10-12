@@ -1,0 +1,34 @@
+advisories ok, bans ok, licenses ok, sources ok
+warning[duplicate]: found 2 duplicate entries for crate 'bincode'
+  ┌─ /tmp/nine65-pr179/Cargo.lock:5:1
+  │  
+5 │ ╭ bincode 1.3.3 registry+https://github.com/rust-lang/crates.io-index
+6 │ │ bincode 2.0.1 registry+https://github.com/rust-lang/crates.io-index
+  │ ╰───────────────────────────────────────────────────────────────────┘ lock entries
+  │  
+  ├ bincode v1.3.3
+    └── fhe-service v0.1.0
+  ├ bincode v2.0.1
+    └── nine65 v0.1.0
+        ├── (dev) fhe-service v0.1.0
+        ├── nine65-extreme-tests v0.1.0
+        └── private-feedback-nine65 v0.1.0
+
+warning[license-not-encountered]: license was not encountered
+   ┌─ /tmp/nine65-deny-check-twwxinx3/deny.toml:23:6
+   │
+23 │     "BSL-1.0",
+   │      ━━━━━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ┌─ /tmp/nine65-deny-check-twwxinx3/deny.toml:24:6
+   │
+24 │     "ISC",
+   │      ━━━ unmatched license allowance
+
+warning[license-not-encountered]: license was not encountered
+   ┌─ /tmp/nine65-deny-check-twwxinx3/deny.toml:25:6
+   │
+25 │     "Unicode-DFS-2016",
+   │      ━━━━━━━━━━━━━━━━ unmatched license allowance
+

@@ -1,0 +1,752 @@
+{
+  "task_id": "F00",
+  "status": "ready_for_review",
+  "observed_utc": "2026-10-12T03:54:44.890065+00:00",
+  "intake_workspace": {
+    "path": "/home/acid/Projects/NINE65_v7",
+    "commit": "558ae72bcbbff5f98c5b0eb16ded82cf895700e1",
+    "tracked_changes": [
+      {
+        "status": "D",
+        "path": "artifacts/N22_N27/correctness_scale_2026-07-13.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/app_platform/private_feedback_correctness_2026-07-13.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/bounded_digit_polynomial_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/bounded_digit_polynomial_b17_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/canonical_lift_feasibility_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/canonical_lift_probe_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.run.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b17_q820_run1_2026-09-28.stderr.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.run.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b32_q1000_run1_2026-09-28.stderr.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.run.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n1024_b32_run1_2026-09-28.stderr.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.run.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/bootstrap/public_bfv_reference_n8192_b32_q1000_run1_2026-09-28.stderr.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/NOSTD/before.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/exact_scale_round_harness.rs",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/historical_safe_basis_probe.rs",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix-complete.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix-complete.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix-fixtures.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-fhe-gate-matrix.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-joint-compile.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-joint-compile.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-joint-run.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-joint-run.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-module-compile.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-module-compile.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-reversibility-compile.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-reversibility-compile.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-reversibility-run.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/arrow-reversibility-run.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/baseline-regressions.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/baseline-regressions.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/composite-domains-corrected.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/composite-domains-corrected.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/composite-domains.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/composite-domains.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/coordinator-baseline.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/coordinator-baseline.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/crate-debug-tests.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/crate-debug-tests.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-full-debug.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-full-debug.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-no-std.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-no-std.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-release-composites.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/current-leaf-release-composites.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-cram-machine.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-cram-machine.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-cram-ops.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-cram-ops.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-div3-corrected.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-div3-corrected.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-div3.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/existing-div3.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/final-composite-domains.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/final-composite-domains.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-existing-unit-tests.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-existing-unit-tests.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-harness-compile.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/fpd-scaler-harness-compile.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/integer-only-scan-corrected.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/integer-only-scan-corrected.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/integer-only-scan.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/integer-only-scan.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/no-std-build-corrected.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/no-std-build-corrected.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/no-std-build.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/no-std-build.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/plan-validation.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/plan-validation.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/reference-profile-equations.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/reference-profile-equations.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/release-composite-domains.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/release-composite-domains.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/revised-operator-arrow-cargo.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/revised-operator-arrow-cargo.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/source-probe-compile.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/source-probe-compile.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/source-probe-run.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/logs/source-probe-run.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/S02/review.md",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-03-s02/worktree_manifest.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/coefficient-audit-128.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/large-phase-oracle.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/checked-k-128.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/checked-k-192.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-128.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-192.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/fixed-zero-noise-128.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/phase-profile-128.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/secure-128.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/secure-192.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/logs/zero-noise-128.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-depth-gate/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-f01/F01/logs/exporter.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-f01/F01/logs/parameter-tests.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-f01/F01/logs/wr1-oracle.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-f01/F01/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-rescale-phase/logs/after.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-rescale-phase/logs/before.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-04-rescale-phase/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/check-assertions.js",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/claim-registry.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/format.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/service-clippy.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/static-assertions.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/wasm-check-sandbox.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/CI/wasm-check.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F00/baseline.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F00/checks.txt",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F00/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/cram-filter-gates.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/cram-t3-gate.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/filter-logs/cram_ct_gate_C0.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/filter-logs/cram_ct_gate_C1.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/filter-logs/cram_ct_gate_C2.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/filter-logs/cram_ct_gate_C3.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/filter-logs/cram_ct_gate_C4.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/filter-logs/cram_ct_gate_C5.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/filter-logs/cram_ct_gate_T3.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/http-unsandboxed.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/release-sweep.log",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-06-session/F02/test_inventory.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-07-session/F02/result.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/2026-10-07-session/F02/summary.md",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/baseline.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/bootstrap_candidates.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/parameter_registry.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/execution/priming_root_profiles.json",
+        "sha256": null
+      },
+      {
+        "status": "D",
+        "path": "artifacts/security/modulus_class_audit_2026-07-13.json",
+        "sha256": null
+      },
+      {
+        "status": "M",
+        "path": "crates/nine65/src/ops/bootstrap.rs",
+        "sha256": "dd30abb737eea969afee556c91fec1bd6d0a994ddd868aff195f136e0562a875"
+      }
+    ],
+    "tracked_diff_sha256": "25f8431d03ad332994da9852709331d8e0ff54a359939b77cae88ccb3e4ff9bd"
+  },
+  "resolution_worktree": {
+    "path": "/tmp/nine65-pr179",
+    "commit": "33f06166bdcef8250b32e4a663334b34f8488bfc",
+    "tracked_changes": [
+      {
+        "status": "M",
+        "path": "Cargo.lock",
+        "sha256": "c9fe22b212d7e69f5e2b812cac42a1143cf6f982f696922445992adc6d46aac7"
+      },
+      {
+        "status": "M",
+        "path": "deny.toml",
+        "sha256": "ee4da92c28c4e0b66bf4085919e05126f74ef26045d018676a53968952e7130e"
+      }
+    ],
+    "tracked_diff_sha256": "8ba27eef628767b4ad150857162a0cc4fef0971b62730e78e92b97e8556630f2"
+  },
+  "toolchain": {
+    "rustc": "rustc 1.89.0 (29483883e 2025-08-04)",
+    "cargo": "cargo 1.89.0 (c24e10642 2025-06-23)"
+  },
+  "source_sha256": {
+    "Cargo.lock": "c9fe22b212d7e69f5e2b812cac42a1143cf6f982f696922445992adc6d46aac7",
+    "deny.toml": "ee4da92c28c4e0b66bf4085919e05126f74ef26045d018676a53968952e7130e",
+    "crates/exact_transcendentals/src/dyn_crt.rs": "4285de41455f3a364dcc74114f7bdb4a72023eb6920c70646246a6afb9eedb43",
+    "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+    "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+    "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+  },
+  "resources": {
+    "disk": "Filesystem      Size  Used Avail Use% Mounted on\ntmpfs           1.4G   43M  1.3G   4% /tmp\ntmpfs           1.4G   43M  1.3G   4% /tmp",
+    "memory": "total        used        free      shared  buff/cache   available\nMem:            2747        1722         153          43         957        1025\nSwap:              0           0           0",
+    "kernel": "Linux 6.6.143-09589-gf9e106250941 x86_64 GNU/Linux",
+    "cpu_threads": 2
+  },
+  "provenance": {
+    "intake_changes": "Pre-existing deleted evidence and bootstrap edit; owner not inferred; preserved without staging or restoration",
+    "resolution_changes": "Cargo.lock rand patch upgrades and deny.toml license-policy corrections authored in this session"
+  },
+  "acceptance": "Independent baseline review is still required; no task card accepted by this record."
+}
