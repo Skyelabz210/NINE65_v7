@@ -1,0 +1,106 @@
+v7-comparative-smoke	Compile comparative probe	﻿2026-10-12T03:39:36.5193521Z ##[group]Run cargo check --release -p nine65 \
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5194260Z [36;1mcargo check --release -p nine65 \[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5194587Z [36;1m  --bin cram_comparative_probe \[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5194979Z [36;1m  --features serde,allow_insecure[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5258491Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5258931Z env:
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5259242Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5259659Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5259986Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5260288Z ##[endgroup]
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5789621Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5790584Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5791199Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.5986414Z [1m[32m    Updating[0m crates.io index
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9303394Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9687661Z [1m[32m  Downloaded[0m cpufeatures v0.2.17
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9719280Z [1m[32m  Downloaded[0m zeroize_derive v1.4.2
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9742174Z [1m[32m  Downloaded[0m version_check v0.9.5
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9767872Z [1m[32m  Downloaded[0m unty v0.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9787254Z [1m[32m  Downloaded[0m itoa v1.0.16
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9813827Z [1m[32m  Downloaded[0m thiserror-impl v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9837726Z [1m[32m  Downloaded[0m thiserror v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9931916Z [1m[32m  Downloaded[0m zeroize v1.8.2
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9949344Z [1m[32m  Downloaded[0m virtue v0.0.18
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:36.9980238Z [1m[32m  Downloaded[0m zmij v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0000482Z [1m[32m  Downloaded[0m serde_core v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0031028Z [1m[32m  Downloaded[0m typenum v1.19.0
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0062921Z [1m[32m  Downloaded[0m serde_json v1.0.147
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0141345Z [1m[32m  Downloaded[0m memchr v2.7.6
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0198647Z [1m[32m  Downloaded[0m getrandom v0.2.16
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0232776Z [1m[32m  Downloaded[0m proc-macro2 v1.0.103
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0266698Z [1m[32m  Downloaded[0m unicode-ident v1.0.22
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0297426Z [1m[32m  Downloaded[0m serde_derive v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0331166Z [1m[32m  Downloaded[0m sha2 v0.10.9
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0359935Z [1m[32m  Downloaded[0m quote v1.0.42
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0390471Z [1m[32m  Downloaded[0m serde v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0431206Z [1m[32m  Downloaded[0m digest v0.10.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0451804Z [1m[32m  Downloaded[0m syn v2.0.111
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0564989Z [1m[32m  Downloaded[0m crypto-common v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0575182Z [1m[32m  Downloaded[0m bincode_derive v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0586153Z [1m[32m  Downloaded[0m subtle v2.6.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0599009Z [1m[32m  Downloaded[0m generic-array v0.14.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0614127Z [1m[32m  Downloaded[0m cfg-if v1.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0629076Z [1m[32m  Downloaded[0m block-buffer v0.10.4
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0640442Z [1m[32m  Downloaded[0m bincode v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.0746163Z [1m[32m  Downloaded[0m libc v0.2.178
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1276264Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1395088Z [1m[32m  Downloaded[0m criterion v0.5.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1487573Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1589095Z [1m[32m  Downloaded[0m proptest v1.9.0
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1712601Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1782366Z [1m[32m  Downloaded[0m rand_chacha v0.3.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1809038Z [1m[32m Downloading[0m crates ...
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1864064Z [1m[32m  Downloaded[0m rand_core v0.6.4
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1993845Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1995443Z [1m[32m   Compiling[0m quote v1.0.42
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1996125Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.1997147Z [1m[32m   Compiling[0m version_check v0.9.5
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.2594806Z [1m[32m   Compiling[0m typenum v1.19.0
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.4275196Z [1m[32m   Compiling[0m generic-array v0.14.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.4712555Z [1m[32m   Compiling[0m serde_core v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.6188085Z [1m[32m   Compiling[0m libc v0.2.178
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:37.9035186Z [1m[32m   Compiling[0m serde_json v1.0.147
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:38.2485257Z [1m[32m   Compiling[0m syn v2.0.111
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:38.2595400Z [1m[32m   Compiling[0m thiserror v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:38.4745313Z [1m[32m   Compiling[0m virtue v0.0.18
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:38.7648918Z [1m[32m    Checking[0m crypto-common v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:38.8195573Z [1m[32m    Checking[0m block-buffer v0.10.4
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:38.8788518Z [1m[32m   Compiling[0m serde v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.1110442Z [1m[32m    Checking[0m cfg-if v1.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.1464716Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.1585007Z [1m[32m    Checking[0m digest v0.10.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.7985597Z [1m[32m    Checking[0m cpufeatures v0.2.17
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.8065215Z [1m[32m    Checking[0m memchr v2.7.6
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.8297439Z [1m[32m    Checking[0m unty v0.0.4
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.8576159Z [1m[32m    Checking[0m zmij v0.1.7
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:39.9455454Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:40.1375088Z [1m[32m    Checking[0m itoa v1.0.16
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:40.2434841Z [1m[32m    Checking[0m bincode v2.0.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:40.3395042Z [1m[32m    Checking[0m getrandom v0.2.16
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:40.4279719Z [1m[32m    Checking[0m sha2 v0.10.9
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:40.6756393Z [1m[32m    Checking[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:40.8895708Z [1m[32m    Checking[0m subtle v2.6.1
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:41.9522729Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:41.9523985Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:41.9524380Z [1m[32m   Compiling[0m serde_derive v1.0.228
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:42.5514968Z [1m[32m    Checking[0m zeroize v1.8.2
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:42.6375313Z [1m[32m    Checking[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:42.7979204Z [1m[32m    Checking[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:44.2332421Z [0m[1m[38;5;9merror[0m[0m[1m: The `allow_insecure` feature must not be enabled in release builds[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:44.2334005Z [0m   [0m[0m[1m[38;5;12m--> [0m[0mcrates/nine65/src/lib.rs:156:1[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:44.2334805Z [0m    [0m[0m[1m[38;5;12m|[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:44.2336172Z [0m[1m[38;5;12m156[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0mcompile_error!("The `allow_insecure` feature must not be enabled in release builds");[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:44.2337927Z [0m    [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;9m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:44.2338727Z 
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:46.0026507Z [1m[31merror[0m[1m:[0m could not compile `nine65` (lib) due to 1 previous error
+v7-comparative-smoke	Compile comparative probe	2026-10-12T03:39:46.0395039Z ##[error]Process completed with exit code 101.
+v7-comparative-smoke	Enforce smoke result after evidence capture	﻿2026-10-12T03:39:46.2375653Z ##[group]Run test 'skipped' = 'success'
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2376018Z [36;1mtest 'skipped' = 'success'[0m
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2439687Z shell: /usr/bin/bash -e {0}
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2439966Z env:
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2440177Z   CARGO_HOME: /home/runner/.cargo
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2440433Z   CARGO_INCREMENTAL: 0
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2440667Z   CARGO_TERM_COLOR: always
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2440886Z ##[endgroup]
+v7-comparative-smoke	Enforce smoke result after evidence capture	2026-10-12T03:39:46.2557557Z ##[error]Process completed with exit code 1.

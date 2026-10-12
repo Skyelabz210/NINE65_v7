@@ -1,0 +1,41 @@
+[advisories]
+db-path = "/tmp/nine65-deny-advisory-db"
+# cargo-deny 0.18 removed the old severity switches. Keep the advisory gate
+# fail-closed for unmaintained dependencies instead of silently ignoring them.
+unmaintained = "all"
+yanked = "warn"
+# bincode (1.3.3 pinned by fhe-service, 2.x used by nine65) is permanently
+# unmaintained (RUSTSEC-2025-0141, 2025-12-16). Serializer migration is a
+# separate breaking work item; the advisory is ignored here, deliberately,
+# so the gate keeps failing on every OTHER unignored advisory.
+ignore = [
+    { id = "RUSTSEC-2025-0141", reason = "Temporary maintenance-status exception tracked in #178; remove after supported codecs migrate and compatibility/fuzz gates pass" },
+]
+
+[licenses]
+# Unlicensed crates are denied by default; keep this allowlist explicit.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "Unicode-3.0",
+    "BSL-1.0",
+    "ISC",
+    "Unicode-DFS-2016",
+    # Proprietary marker declared by every workspace crate in its Cargo.toml
+    # (the repository LICENSE is "All rights reserved" — see the
+    # [workspace.package] comment in the root Cargo.toml).
+    "LicenseRef-Proprietary-AllRightsReserved",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "warn"
+unknown-git = "warn"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

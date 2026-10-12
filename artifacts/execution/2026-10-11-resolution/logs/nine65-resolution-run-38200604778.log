@@ -1,0 +1,28 @@
+architecture	Reject prohibited production mechanisms	﻿2026-10-12T03:39:28.0264331Z ##[group]Run python3 scripts/check_residue_native_architecture.py
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.0266527Z [36;1mpython3 scripts/check_residue_native_architecture.py[0m
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.0556192Z shell: /usr/bin/bash -e {0}
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.0558140Z ##[endgroup]
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1489044Z Residue-native architecture gate FAILED
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1491976Z 21 prohibited construct(s) in 11 scanned file(s):
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1500331Z crates/exact_transcendentals/src/cram_ct.rs:1757: garner_call: let unsigned = crate::lane_projector::garner_reconstruct(sig);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1505892Z crates/exact_transcendentals/src/cram_ct.rs:1962: garner_call: fn garner_reconstruct_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1510729Z crates/exact_transcendentals/src/cram_ct.rs:2067: garner_call: let (x_main, m_main_actual) = garner_reconstruct_subset(sig, &main_indices);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1513999Z crates/nine65/src/ops/bootstrap.rs:791: crt_reconstruct: let c0_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1516605Z crates/nine65/src/ops/bootstrap.rs:800: crt_reconstruct: let c1_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1519646Z crates/nine65/src/ops/bootstrap.rs:825: crt_reconstruct: let c0_val = crt_reconstruct_u256(&c0_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1522901Z crates/nine65/src/ops/bootstrap.rs:833: crt_reconstruct: let c1_val = crt_reconstruct_u256(&c1_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1525773Z crates/nine65/src/ops/bootstrap.rs:955: crt_reconstruct: let c0_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1529349Z crates/nine65/src/ops/bootstrap.rs:972: crt_reconstruct: let c1_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1534001Z crates/nine65/src/ops/bootstrap.rs:1006: crt_reconstruct: let c0_val = crt_reconstruct_u256(&c0_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1537998Z crates/nine65/src/ops/bootstrap.rs:1013: crt_reconstruct: let c1_val = crt_reconstruct_u256(&c1_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1540966Z crates/nine65/src/ops/bootstrap.rs:1235: crt_reconstruct: let c0_full = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1543573Z crates/nine65/src/ops/bootstrap.rs:1240: crt_reconstruct: let c1_full = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1546517Z crates/nine65/src/ops/bootstrap.rs:1254: crt_reconstruct: let c0_full = crt_reconstruct_u256(&c0_residues, &work_primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1550156Z crates/nine65/src/ops/bootstrap.rs:1256: crt_reconstruct: let c1_full = crt_reconstruct_u256(&c1_residues, &work_primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1553087Z crates/nine65/src/ops/bootstrap.rs:1338: crt_reconstruct: let c1_full = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1556083Z crates/nine65/src/ops/bootstrap.rs:1353: crt_reconstruct: let c1_full = crt_reconstruct_u256(&c1_residues, &boot_primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1559908Z crates/nine65/src/ops/bootstrap.rs:1413: crt_reconstruct: pub fn crt_reconstruct_2(r0: u128, r1: u128, p0: u128, p1: u128, _p0_inv_mod_p1: u128) -> u128 {
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1563505Z crates/nine65/src/ops/bootstrap.rs:1415: crt_reconstruct: crt_reconstruct_u256(&[r0 as u64, r1 as u64], &[p0 as u64, p1 as u64]).lo
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1566407Z crates/nine65/src/ops/bootstrap.rs:1438: crt_reconstruct: pub fn crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1569281Z crates/nine65/src/ops/bootstrap.rs:1446: crt_reconstruct: crt_reconstruct_u256(&residues_u64, &primes_u64).lo
+architecture	Reject prohibited production mechanisms	2026-10-12T03:39:28.1583743Z ##[error]Process completed with exit code 1.

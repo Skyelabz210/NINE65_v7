@@ -1,0 +1,106 @@
+quick-correctness	Build comparative probe	﻿2026-10-12T03:39:37.1274495Z ##[group]Run cargo build --release -p nine65 \
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1274871Z [36;1mcargo build --release -p nine65 \[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1275181Z [36;1m  --bin cram_comparative_probe \[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1275480Z [36;1m  --features serde,allow_insecure[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1330730Z shell: /usr/bin/bash -e {0}
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1330985Z env:
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1331184Z   CARGO_HOME: /home/runner/.cargo
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1331446Z   CARGO_INCREMENTAL: 0
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1331667Z   CARGO_TERM_COLOR: always
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1331886Z ##[endgroup]
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1908988Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1910261Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.1911339Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+quick-correctness	Build comparative probe	2026-10-12T03:39:37.2120839Z [1m[32m    Updating[0m crates.io index
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.8062942Z [1m[32m Downloading[0m crates ...
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.8958392Z [1m[32m  Downloaded[0m cfg-if v1.0.4
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.8984339Z [1m[32m  Downloaded[0m crypto-common v0.1.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.8995419Z [1m[32m  Downloaded[0m getrandom v0.2.16
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9028535Z [1m[32m  Downloaded[0m virtue v0.0.18
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9055355Z [1m[32m  Downloaded[0m unty v0.0.4
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9066252Z [1m[32m  Downloaded[0m bincode_derive v2.0.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9082604Z [1m[32m  Downloaded[0m subtle v2.6.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9123422Z [1m[32m  Downloaded[0m quote v1.0.42
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9153614Z [1m[32m  Downloaded[0m thiserror-impl v1.0.69
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9167563Z [1m[32m  Downloaded[0m generic-array v0.14.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9184358Z [1m[32m  Downloaded[0m memchr v2.7.6
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9241746Z [1m[32m  Downloaded[0m unicode-ident v1.0.22
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9272219Z [1m[32m  Downloaded[0m sha2 v0.10.9
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9300707Z [1m[32m  Downloaded[0m zeroize_derive v1.4.2
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9310353Z [1m[32m  Downloaded[0m serde_derive v1.0.228
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9343477Z [1m[32m  Downloaded[0m zeroize v1.8.2
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9358639Z [1m[32m  Downloaded[0m version_check v0.9.5
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9371966Z [1m[32m  Downloaded[0m itoa v1.0.16
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9386542Z [1m[32m  Downloaded[0m bincode v2.0.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9443168Z [1m[32m  Downloaded[0m zmij v0.1.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9461355Z [1m[32m  Downloaded[0m serde_core v1.0.228
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9490688Z [1m[32m  Downloaded[0m thiserror v1.0.69
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9548711Z [1m[32m  Downloaded[0m proc-macro2 v1.0.103
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9580262Z [1m[32m  Downloaded[0m serde v1.0.228
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9616766Z [1m[32m  Downloaded[0m block-buffer v0.10.4
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9627723Z [1m[32m  Downloaded[0m cpufeatures v0.2.17
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9643764Z [1m[32m  Downloaded[0m digest v0.10.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9665630Z [1m[32m  Downloaded[0m syn v2.0.111
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9772171Z [1m[32m  Downloaded[0m serde_json v1.0.147
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9846727Z [1m[32m  Downloaded[0m typenum v1.19.0
+quick-correctness	Build comparative probe	2026-10-12T03:39:38.9922632Z [1m[32m  Downloaded[0m libc v0.2.178
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.0412426Z [1m[32m Downloading[0m crates ...
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.0597914Z [1m[32m  Downloaded[0m criterion v0.5.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.0694797Z [1m[32m Downloading[0m crates ...
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.0925652Z [1m[32m  Downloaded[0m proptest v1.9.0
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1041562Z [1m[32m Downloading[0m crates ...
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1198382Z [1m[32m  Downloaded[0m rand_chacha v0.3.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1224110Z [1m[32m Downloading[0m crates ...
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1453253Z [1m[32m  Downloaded[0m rand_core v0.6.4
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1579810Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1580930Z [1m[32m   Compiling[0m quote v1.0.42
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1581861Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.1583244Z [1m[32m   Compiling[0m version_check v0.9.5
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.2201135Z [1m[32m   Compiling[0m typenum v1.19.0
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.3711893Z [1m[32m   Compiling[0m generic-array v0.14.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.3921871Z [1m[32m   Compiling[0m serde_core v1.0.228
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.5220890Z [1m[32m   Compiling[0m libc v0.2.178
+quick-correctness	Build comparative probe	2026-10-12T03:39:39.7971998Z [1m[32m   Compiling[0m serde v1.0.228
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.0271968Z [1m[32m   Compiling[0m cfg-if v1.0.4
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.0712119Z [1m[32m   Compiling[0m serde_json v1.0.147
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.1922092Z [1m[32m   Compiling[0m syn v2.0.111
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.2151343Z [1m[32m   Compiling[0m virtue v0.0.18
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.6832095Z [1m[32m   Compiling[0m crypto-common v0.1.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.7522020Z [1m[32m   Compiling[0m block-buffer v0.10.4
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.7726686Z [1m[32m   Compiling[0m thiserror v1.0.69
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.8242330Z [1m[32m   Compiling[0m digest v0.10.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:40.9812547Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:41.5841814Z [1m[32m   Compiling[0m memchr v2.7.6
+quick-correctness	Build comparative probe	2026-10-12T03:39:41.9672860Z [1m[32m   Compiling[0m zmij v0.1.7
+quick-correctness	Build comparative probe	2026-10-12T03:39:42.0982148Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+quick-correctness	Build comparative probe	2026-10-12T03:39:42.1367086Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+quick-correctness	Build comparative probe	2026-10-12T03:39:42.1730680Z [1m[32m   Compiling[0m itoa v1.0.16
+quick-correctness	Build comparative probe	2026-10-12T03:39:42.2661700Z [1m[32m   Compiling[0m unty v0.0.4
+quick-correctness	Build comparative probe	2026-10-12T03:39:42.2951423Z [1m[32m   Compiling[0m bincode v2.0.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:42.4543837Z [1m[32m   Compiling[0m sha2 v0.10.9
+quick-correctness	Build comparative probe	2026-10-12T03:39:43.1331787Z [1m[32m   Compiling[0m getrandom v0.2.16
+quick-correctness	Build comparative probe	2026-10-12T03:39:43.2472257Z [1m[32m   Compiling[0m subtle v2.6.1
+quick-correctness	Build comparative probe	2026-10-12T03:39:43.3652423Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+quick-correctness	Build comparative probe	2026-10-12T03:39:44.2880364Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+quick-correctness	Build comparative probe	2026-10-12T03:39:44.2881519Z [1m[32m   Compiling[0m serde_derive v1.0.228
+quick-correctness	Build comparative probe	2026-10-12T03:39:44.2882194Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+quick-correctness	Build comparative probe	2026-10-12T03:39:44.9432396Z [1m[32m   Compiling[0m zeroize v1.8.2
+quick-correctness	Build comparative probe	2026-10-12T03:39:45.0528829Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+quick-correctness	Build comparative probe	2026-10-12T03:39:45.5720201Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+quick-correctness	Build comparative probe	2026-10-12T03:39:47.0429172Z [0m[1m[38;5;9merror[0m[0m[1m: The `allow_insecure` feature must not be enabled in release builds[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:47.0431645Z [0m   [0m[0m[1m[38;5;12m--> [0m[0mcrates/nine65/src/lib.rs:156:1[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:47.0432905Z [0m    [0m[0m[1m[38;5;12m|[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:47.0434478Z [0m[1m[38;5;12m156[0m[0m [0m[0m[1m[38;5;12m|[0m[0m [0m[0mcompile_error!("The `allow_insecure` feature must not be enabled in release builds");[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:47.0436323Z [0m    [0m[0m[1m[38;5;12m|[0m[0m [0m[0m[1m[38;5;9m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+quick-correctness	Build comparative probe	2026-10-12T03:39:47.0437317Z 
+quick-correctness	Build comparative probe	2026-10-12T03:39:48.8166921Z [1m[31merror[0m[1m:[0m could not compile `nine65` (lib) due to 1 previous error
+quick-correctness	Build comparative probe	2026-10-12T03:39:48.8514354Z ##[error]Process completed with exit code 101.
+quick-correctness	Enforce quick matrix after evidence capture	﻿2026-10-12T03:39:49.0448234Z ##[group]Run test 'skipped' = 'success'
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0448743Z [36;1mtest 'skipped' = 'success'[0m
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0528098Z shell: /usr/bin/bash -e {0}
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0528474Z env:
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0528777Z   CARGO_HOME: /home/runner/.cargo
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0529190Z   CARGO_INCREMENTAL: 0
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0529536Z   CARGO_TERM_COLOR: always
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0529884Z ##[endgroup]
+quick-correctness	Enforce quick matrix after evidence capture	2026-10-12T03:39:49.0640989Z ##[error]Process completed with exit code 1.
