@@ -5,7 +5,7 @@ unmaintained = "all"
 yanked = "warn"
 
 [licenses]
-unlicensed = "deny"
+# Unlicensed crates are denied by default; keep this allowlist explicit.
 allow = [
     "MIT",
     "Apache-2.0",
