@@ -1,0 +1,42 @@
+{
+  "source_commit": "b56725fbcda80ceea1640e6632087b20f1095984",
+  "restored_from": "47fc49c96f5e3776b257ad7a7045a0dab0f307a3",
+  "original_merged_prs": [
+    168,
+    169
+  ],
+  "source_input_sha256": {
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+    "crates/nine65/src/arithmetic/rns.rs": "9cf6fe6634a2fd4bb430f3993c47898e00662d9293b318ff35e256bc5fec8544",
+    "crates/nine65/src/ops/rns_fhe.rs": "b7f4ec534a9a30d969f5ac8430d316810523effe5431a3d1e6af527a549be34e",
+    "crates/nine65/src/security/ct_verification.rs": "6e659274f92fd515d16f8ca87ba4b2de3dd05387e08ec439d866ec3a92328982"
+  },
+  "checks": [
+    {
+      "command": "CARGO_INCREMENTAL=0 cargo test --locked -j1 -p nine65 --lib arithmetic::rns::tests -- --nocapture",
+      "exit_code": 0,
+      "log": "logs/rns-tests.log",
+      "log_sha256": "e41e0823c003fdfd13af943f91816ddb88bdcb520d8bd35eb23174997912934d",
+      "passed": 46,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 cargo test --locked -j1 -p nine65 --lib mod_switch -- --nocapture",
+      "exit_code": 0,
+      "log": "logs/mod-switch-tests.log",
+      "log_sha256": "55cc83c9569f89dad6a629c71aa1ac72579f429b09fcc6ccfd88354b2d5faa35",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 4
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 cargo clippy --locked -j1 -p nine65 --all-targets -- -D warnings",
+      "exit_code": 0,
+      "log": "logs/clippy.log",
+      "log_sha256": "c0fa6a0adde95001b977aa371023441410650eac00c50dae0eaf63e92b58191f"
+    }
+  ],
+  "timing_certification": "Not rerun; four selected timing/retired cases remain ignored. Historical timing observations are identified separately.",
+  "integration_note": "The merge of #181 changes documentation, evidence and dependency-policy annotations; tested runtime and lock bytes are unchanged."
+}
