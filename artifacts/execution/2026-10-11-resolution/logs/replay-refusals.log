@@ -1,6 +1,9 @@
 Recorded compiler differs: refused
+Benchmark driver hash mismatch: refused
 Advisory database checkout is dirty: refused
 Advisory database checkout is dirty: refused
 Dependency manifests are dirty: refused
 Dependency manifests are dirty: refused
-5 refusal cases passed
+Policy or lock inputs are dirty: refused
+Policy or lock inputs are dirty: refused
+8 refusal cases passed

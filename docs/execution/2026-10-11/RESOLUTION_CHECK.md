@@ -84,8 +84,8 @@ It requires the database to be clean at the requested revision before and after
 checking, and verifies the dependency inputs did not change during the run.
 The replay requires clean repository manifests, hashes the root/member and
 resolved-package manifests, and gives cargo-deny the archived, frozen Cargo
-metadata graph. Five refusal fixtures cover the compiler, dirty database and
-initially/during-run changed manifest cases.
+metadata graph. Eight refusal fixtures cover the compiler, driver, dirty
+database, policy/lock and initially/during-run changed manifest cases.
 The original preliminary snapshot is preserved separately; the primary
 `baseline.json` and `checks.json` identify the final source and policy inputs.
 

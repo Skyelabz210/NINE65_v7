@@ -18,7 +18,9 @@ compiler/profile. The database checker requires a clean checkout at the pinned
 revision before and after checking, and refuses dependency inputs that change
 during the check. The checked dependency graph is frozen in the archived Cargo
 metadata, and all relevant manifests are hashed and checked again after use.
-`check-replay-refusals.py` verifies five invalid-input cases.
+Dirty policy/lock inputs are refused, and the historical benchmark record binds
+the driver as well as the six imported modules. `check-replay-refusals.py`
+verifies eight invalid-input cases.
 
 `codec-candidate.patch.gz`, `codec-compatibility/`, and the codec logs preserve the
 tested migration proposal and fixtures independently of a local Git branch.

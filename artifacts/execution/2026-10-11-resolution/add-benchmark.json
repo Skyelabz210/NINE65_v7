@@ -145,5 +145,7 @@
       "reconstructions": 1220000,
       "expected_value": 465
     }
-  ]
+  ],
+  "driver_file": "add-benchmark.rs",
+  "driver_sha256": "ebb28f03379c8309804ea599361d4bdd0dbdd8ba3caf336b867bb7e189121b82"
 }

@@ -15,19 +15,19 @@ warning[duplicate]: found 2 duplicate entries for crate 'bincode'
         └── private-feedback-nine65 v0.1.0
 
 warning[license-not-encountered]: license was not encountered
-   ┌─ /tmp/nine65-deny-check-xrm3vd6s/deny.toml:23:6
+   ┌─ /tmp/nine65-deny-check-jsqh4ffh/deny.toml:23:6
    │
 23 │     "BSL-1.0",
    │      ━━━━━━━ unmatched license allowance
 
 warning[license-not-encountered]: license was not encountered
-   ┌─ /tmp/nine65-deny-check-xrm3vd6s/deny.toml:24:6
+   ┌─ /tmp/nine65-deny-check-jsqh4ffh/deny.toml:24:6
    │
 24 │     "ISC",
    │      ━━━ unmatched license allowance
 
 warning[license-not-encountered]: license was not encountered
-   ┌─ /tmp/nine65-deny-check-xrm3vd6s/deny.toml:25:6
+   ┌─ /tmp/nine65-deny-check-jsqh4ffh/deny.toml:25:6
    │
 25 │     "Unicode-DFS-2016",
    │      ━━━━━━━━━━━━━━━━ unmatched license allowance

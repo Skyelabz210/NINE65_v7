@@ -87,10 +87,10 @@
       "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
     },
     "log": "artifacts/execution/2026-10-11-resolution/logs/benchmark-replay.json",
-    "log_sha256": "52ef31ade75d9d3384d7352d273b626c958ecee3399f4cba6011f4fbe99cda43",
+    "log_sha256": "959d9adcf19cb6087b4916dbc8994c0ab757e02dd9f14eaa801a343b5e5041db",
     "verified_run_records": 12,
     "script": "artifacts/execution/2026-10-11-resolution/replay-add-benchmark.py",
-    "script_sha256": "cb60b72b123f135571b9820dd8505f7bf143ed9b13f7bbdd7d0b2f7ebf879ac7",
+    "script_sha256": "d531cd3d98c9bf35de81b360ce2c9bf37af4bfc9ceeee6f1d2d041b1f8977e28",
     "actual_toolchain": "rustc 1.89.0 (29483883e 2025-08-04)"
   },
   {
@@ -108,16 +108,16 @@
     "log_sha256": "304c5b5d49fd0717ec1eae018faa4ad0b0f6d2c660a9cb685f8a2316d3371e67"
   },
   {
-    "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-xrm3vd6s/deny.toml --metadata-path /tmp/nine65-deny-check-xrm3vd6s/cargo-metadata.json check",
+    "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-jsqh4ffh/deny.toml --metadata-path /tmp/nine65-deny-check-jsqh4ffh/cargo-metadata.json check",
     "argv": [
       "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny",
       "--offline",
       "--locked",
       "--all-features",
       "--config",
-      "/tmp/nine65-deny-check-xrm3vd6s/deny.toml",
+      "/tmp/nine65-deny-check-jsqh4ffh/deny.toml",
       "--metadata-path",
-      "/tmp/nine65-deny-check-xrm3vd6s/cargo-metadata.json",
+      "/tmp/nine65-deny-check-jsqh4ffh/cargo-metadata.json",
       "check"
     ],
     "exit_code": 0,
@@ -130,11 +130,11 @@
       "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
     },
     "log": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny-final.log",
-    "log_sha256": "ec670dec08481c4ec4189c5657013fee2854e2d7fb9271bf5f5f15ea4011c528",
+    "log_sha256": "9c51db4b08b17c218301c733637fbe1b6dc6bba975b18ca2f34342911ede12b2",
     "invocation_metadata": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny-invocation.json",
-    "invocation_metadata_sha256": "e6c93bc0bd7b2bedccc7f01bf50a0ea405163ccbf1cda58b815979188daa8e29",
+    "invocation_metadata_sha256": "d89e56db27046f8c195382d7ccb6b4bbd66ce62828863e75621b93325ac2e83a",
     "script": "artifacts/execution/2026-10-11-resolution/verify-deny.py",
-    "script_sha256": "27938a1df39f5c8c81a3eb6cd3af5fc02baaf9b3866ac20dd0ad3f186747e06d",
+    "script_sha256": "96587e264712a7ee261f89d856fce5ba3d82d23dd5a18bd42244047ee4b11d7e",
     "metadata_archive": "artifacts/execution/2026-10-11-resolution/logs/cargo-metadata.json.gz",
     "metadata_archive_sha256": "8d22269dd2f1225b93800a4fd19607ccac3c7e372f3d7116177848771f0c6f60",
     "repository_manifest_sha256": {
@@ -163,10 +163,10 @@
   {
     "command": "python3 artifacts/execution/2026-10-11-resolution/check-replay-refusals.py",
     "exit_code": 0,
-    "cases_verified": 5,
+    "cases_verified": 8,
     "script": "artifacts/execution/2026-10-11-resolution/check-replay-refusals.py",
-    "script_sha256": "52c2e7dcdef211d8e11b1e98ee0723041dc801b37f1d4e15779140087e6d8c3e",
+    "script_sha256": "21ab3e31ea0f24ca2acfd99d2f071fb2da23227af617d46445d286cd74baa1c5",
     "log": "artifacts/execution/2026-10-11-resolution/logs/replay-refusals.log",
-    "log_sha256": "0ba161eda7dc4d08d5173b2117cf73ed259aaa71e34fcd3b696ca759234cfa8e"
+    "log_sha256": "090dc76b79b843e90cbbff2a76515e84336c7f4fca12c75a56da4707dd778238"
   }
 ]

@@ -25,6 +25,10 @@ def main():
         data["toolchain"] = "rustc 0.0.0 (invalid recorded compiler)"
         (root / "add-benchmark.json").write_text(json.dumps(data))
         must_refuse([sys.executable, str(replay)], "Recorded compiler differs")
+        data = json.loads((artifact / "add-benchmark.json").read_text())
+        (root / "add-benchmark.json").write_text(json.dumps(data))
+        (root / data["driver_file"]).write_bytes((artifact / data["driver_file"]).read_bytes() + b"\n// changed driver\n")
+        must_refuse([sys.executable, str(replay)], "Benchmark driver hash mismatch")
 
         db = root / "database" / "advisory-db-3157b0e258782691"
         db.mkdir(parents=True)
@@ -85,7 +89,14 @@ def main():
         must_refuse(manifest_command, "Dependency manifests are dirty")
         if (output / "cargo-deny-invocation.json").exists():
             raise RuntimeError("Changed manifest produced verification metadata")
-    print("5 refusal cases passed")
+        manifest.write_text(original_manifest)
+        for name in ["deny.toml", "Cargo.lock"]:
+            path = project / name
+            original = path.read_bytes()
+            path.write_bytes(original + b"\n# dirty input\n")
+            must_refuse(manifest_command, "Policy or lock inputs are dirty")
+            path.write_bytes(original)
+    print("8 refusal cases passed")
 
 
 if __name__ == "__main__":

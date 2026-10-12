@@ -43,6 +43,16 @@ def main():
 
     revision = verify_database()
 
+    def verify_policy_inputs():
+        status = subprocess.check_output(
+            ["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=all",
+             "--", "deny.toml", "Cargo.lock"], text=True,
+        )
+        if status.strip():
+            raise RuntimeError("Policy or lock inputs are dirty")
+
+    verify_policy_inputs()
+
     def repository_manifests():
         patterns = ["Cargo.toml", ":(glob)**/Cargo.toml"]
         status = subprocess.check_output(
@@ -89,6 +99,7 @@ def main():
                    "--config", str(config), "--metadata-path", str(graph), "check"]
         result = subprocess.run(command, cwd=repo, capture_output=True)
         verify_database()
+        verify_policy_inputs()
         if repository_manifests() != manifest_hashes:
             raise RuntimeError("Dependency manifests changed during verification")
         if any(digest(Path(path)) != expected for path, expected in package_manifests.items()):

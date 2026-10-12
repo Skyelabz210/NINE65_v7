@@ -1,14 +1,14 @@
 {
-  "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-xrm3vd6s/deny.toml --metadata-path /tmp/nine65-deny-check-xrm3vd6s/cargo-metadata.json check",
+  "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-jsqh4ffh/deny.toml --metadata-path /tmp/nine65-deny-check-jsqh4ffh/cargo-metadata.json check",
   "argv": [
     "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny",
     "--offline",
     "--locked",
     "--all-features",
     "--config",
-    "/tmp/nine65-deny-check-xrm3vd6s/deny.toml",
+    "/tmp/nine65-deny-check-jsqh4ffh/deny.toml",
     "--metadata-path",
-    "/tmp/nine65-deny-check-xrm3vd6s/cargo-metadata.json",
+    "/tmp/nine65-deny-check-jsqh4ffh/cargo-metadata.json",
     "check"
   ],
   "cwd": "/tmp/nine65-pr179",
@@ -20,7 +20,7 @@
   "config_sha256": "272979f67994c02ef7a44217e46c4a6f66f8fbb7b20240fb85886be0e28625b5",
   "config_archive": "cargo-deny-config.toml",
   "policy_equivalence_verified": true,
-  "source_commit": "4ace0e1fc6175afe7081e42695c30cca62d97d69",
+  "source_commit": "cc7c29293796f34f783dfc38f16806c59af41a34",
   "repository_manifest_sha256": {
     "Cargo.toml": "37bd46f5ac77fe53e191fef462508ad65b85c0f1af551f2b1273af3959eae892",
     "artifacts/execution/2026-10-11-resolution/codec-compatibility/Cargo.toml": "c6ac9eab21a845782b917f247670f8e6ace396ad0a346ee16a8c479de6c16669",
@@ -184,5 +184,5 @@
     "worktree_clean_before_and_after": true
   },
   "log": "cargo-deny-final.log",
-  "log_sha256": "ec670dec08481c4ec4189c5657013fee2854e2d7fb9271bf5f5f15ea4011c528"
+  "log_sha256": "9c51db4b08b17c218301c733637fbe1b6dc6bba975b18ca2f34342911ede12b2"
 }

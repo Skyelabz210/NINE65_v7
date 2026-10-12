@@ -3,7 +3,6 @@
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 
@@ -19,6 +18,9 @@ def main():
     if recorded["profile"] != expected_profile:
         raise RuntimeError("Unsupported recorded benchmark profile")
     compiler_details = subprocess.check_output([*compiler, "-vV"], text=True).strip()
+    driver = (artifact / recorded["driver_file"]).read_bytes()
+    if hashlib.sha256(driver).hexdigest() != recorded["driver_sha256"]:
+        raise RuntimeError("Benchmark driver hash mismatch")
     rows = []
     with tempfile.TemporaryDirectory(prefix="nine65-add-replay-") as tmp:
         root = Path(tmp)
@@ -30,7 +32,7 @@ def main():
                 if hashlib.sha256(data).hexdigest() != expected:
                     raise RuntimeError(f"Source hash mismatch: {label}/{name}")
                 (directory / name).write_bytes(data)
-            shutil.copyfile(artifact / "add-benchmark.rs", directory / "bench.rs")
+            (directory / "bench.rs").write_bytes(driver)
             subprocess.run(
                 [*compiler, "--edition", "2021", "--cfg", 'feature="std"',
                  "-C", "opt-level=3", "-C", "lto=fat", "-C", "codegen-units=1",
@@ -44,6 +46,7 @@ def main():
                             for line in output.splitlines())
     print(json.dumps({"source_record": "add-benchmark.json", "toolchain": actual_version,
                       "compiler_command": compiler, "compiler_details": compiler_details,
+                      "driver_sha256": recorded["driver_sha256"],
                       "profile": expected_profile, "records": rows}, indent=2))
 
 
