@@ -71,18 +71,24 @@ pub fn extended_gcd(a: i128, b: i128) -> (i128, i128, i128) {
 
 /// Modular inverse of `a` mod `m`. Returns `None` if `gcd(a, m) != 1`.
 pub fn mod_inv(a: i128, m: i128) -> Option<i128> {
-    let a_mod = ((a % m) + m) % m;
+    let a_mod = modd(a, m);
     let (g, x, _) = extended_gcd(a_mod, m);
     if g != 1 {
         return None;
     }
-    Some(((x % m) + m) % m)
+    Some(modd(x, m))
 }
 
 /// Safe modular reduction (handles negatives correctly).
+///
+/// `rem_euclid` returns the least non-negative residue without the naive
+/// `((a % m) + m) % m` re-addition, which overflowed for moduli above
+/// `i128::MAX / 2` even when the input was already canonical (review
+/// finding on b1b42af1). Identical results to the previous form for
+/// every positive modulus.
 #[inline(always)]
 pub fn modd(a: i128, m: i128) -> i128 {
-    ((a % m) + m) % m
+    a.rem_euclid(m)
 }
 
 /// Modular multiplication via widening to avoid overflow.
@@ -96,18 +102,36 @@ pub fn mulmod(a: i128, b: i128, m: i128) -> i128 {
     if a < (1i128 << 63) && b < (1i128 << 63) {
         return (a * b) % m;
     }
-    // Binary-double-add method for large moduli.
+    // Binary-double-add method for large moduli. addmod keeps every
+    // partial sum inside [0, m) by construction, so this is safe for any
+    // modulus up to i128::MAX (review finding on b1b42af1: the previous
+    // base + base doubling overflowed above i128::MAX / 2).
     let mut result = 0i128;
     let mut base = a % m;
     let mut exp = b;
     while exp > 0 {
         if exp & 1 == 1 {
-            result = (result + base) % m;
+            result = addmod(result, base, m);
         }
-        base = (base + base) % m;
+        base = addmod(base, base, m);
         exp >>= 1;
     }
     result
+}
+
+/// Addition mod `m` for operands already in [0, m).
+///
+/// Comparison-based reduction: `a + b` would overflow for moduli above
+/// `i128::MAX / 2`, while `if a >= m - b { a - (m - b) } else { a + b }`
+/// stays inside [0, m) for any positive modulus up to `i128::MAX`.
+#[inline(always)]
+fn addmod(a: i128, b: i128, m: i128) -> i128 {
+    let (a, b) = (a % m, b % m);
+    if a >= m - b {
+        a - (m - b)
+    } else {
+        a + b
+    }
 }
 
 /// Modular exponentiation.
@@ -185,13 +209,58 @@ pub fn garner_reconstruct(residues: &[(i128, i128)]) -> Option<i128> {
     if residues.is_empty() {
         return Some(0);
     }
-    let (mut value, mut modulus) = residues[0];
-    value = modd(value, modulus);
+    let (first_residue, mut modulus) = residues[0];
+    if modulus <= 0 {
+        return None;
+    }
+    let mut value = modd(first_residue, modulus);
+    // `None` means the accumulated positive modulus has exceeded i128. The
+    // canonical CRT representative can still fit in i128 (for example, 123
+    // encoded on an extended WindingCRT basis), but any nonzero next winding
+    // would put it above the i128 corridor. In that case, accept only lanes
+    // already matching the current representative and fail closed otherwise.
+    let mut modulus_fits = true;
 
-    for &(r_i, m_i) in &residues[1..] {
-        let result = k_eliminate(value, modulus, r_i, m_i)?;
-        value = result.value;
-        modulus *= m_i;
+    for (i, &(r_i, m_i)) in residues.iter().enumerate().skip(1) {
+        if m_i <= 0 {
+            return None;
+        }
+        let wanted = modd(r_i, m_i);
+        if !modulus_fits {
+            // The accumulated modulus has overflowed, so `mod_inv` below
+            // is never reached and coprimality cannot be certified
+            // through the product. Certify it directly against every
+            // lane already accepted: the documented None-on-non-coprime
+            // contract must hold on this path too (review finding on
+            // b1b42af1: a duplicate modulus was silently accepted).
+            for &(_, m_j) in &residues[..i] {
+                if gcd(m_i, m_j) != 1 {
+                    return None;
+                }
+            }
+            if modd(value, m_i) != wanted {
+                return None;
+            }
+            continue;
+        }
+
+        let current = modd(value, m_i);
+        let delta = if wanted >= current {
+            wanted - current
+        } else {
+            m_i - (current - wanted)
+        };
+        let inverse = mod_inv(modd(modulus, m_i), m_i)?;
+        let winding = mulmod(delta, inverse, m_i);
+        if winding != 0 {
+            let offset = modulus.checked_mul(winding)?;
+            value = value.checked_add(offset)?;
+        }
+
+        match modulus.checked_mul(m_i) {
+            Some(next) => modulus = next,
+            None => modulus_fits = false,
+        }
     }
     Some(value)
 }
@@ -608,6 +677,46 @@ mod tests {
         // 42 mod 3 = 0, 42 mod 5 = 2, 42 mod 7 = 0
         let val = garner_reconstruct(&[(0, 3), (2, 5), (0, 7)]).unwrap();
         assert_eq!(val, 42);
+    }
+
+    #[test]
+    fn garner_extended_basis_keeps_small_value_after_modulus_exceeds_i128() {
+        let basis = [
+            2i128, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79,
+            83, 89, 97, 101,
+        ];
+        let residues: Vec<_> = basis.iter().map(|&p| (123 % p, p)).collect();
+        assert_eq!(garner_reconstruct(&residues), Some(123));
+
+        let mut inconsistent = residues;
+        inconsistent.last_mut().unwrap().0 = 0;
+        assert_eq!(garner_reconstruct(&inconsistent), None);
+    }
+
+    /// Review finding on b1b42af1 (coprimality): once the accumulated
+    /// modulus overflowed i128 the loop skipped `mod_inv`, so a duplicate
+    /// modulus was silently accepted. The contract requires `None` for
+    /// any non-coprime pair regardless of the accumulated product.
+    #[test]
+    fn garner_rejects_non_coprime_lane_after_modulus_overflow() {
+        let basis = [
+            2i128, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79,
+            83, 89, 97, 101,
+        ];
+        let mut lanes: Vec<_> = basis.iter().map(|&p| (123 % p, p)).collect();
+        // Duplicate modulus 2 with a residue consistent with 123 (odd).
+        lanes.push((1, 2));
+        assert_eq!(garner_reconstruct(&lanes), None);
+    }
+
+    /// Review finding on b1b42af1 (normalization): re-normalizing an
+    /// already-canonical positive delta via `modd` overflowed for moduli
+    /// above `i128::MAX / 2`. Must return `m - 1`, not panic in debug
+    /// builds or wrap in release builds.
+    #[test]
+    fn garner_modulus_above_half_range_does_not_overflow() {
+        let m = i128::MAX / 2 + 2;
+        assert_eq!(garner_reconstruct(&[(0, 1), (-1, m)]), Some(m - 1));
     }
 
     #[test]

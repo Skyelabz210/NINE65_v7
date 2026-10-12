@@ -114,10 +114,16 @@ impl WindingCRT {
     /// Encode an i128 value. This is an I/O operation — decomposes the scalar
     /// into residue lanes and winding tower digits.
     pub fn from_i128(val: i128) -> Self {
-        if val == 0 {
-            return Self::zero();
-        }
+        Self::encode_with_basis(val, &S8_PRIMES)
+    }
 
+    /// Encode an i128 value against an explicit prime basis, preserving the
+    /// given lane set in the result. `try_add` re-encodes against the
+    /// operands' active basis so an `extend_basis()` lane is never silently
+    /// dropped from a sum (Codex review of #179); a dropped lane would make
+    /// a later op against another carrier on the same extended basis panic
+    /// on basis mismatch.
+    fn encode_with_basis(val: i128, primes: &[u64]) -> Self {
         let sign = val < 0;
         let magnitude = if val == i128::MIN {
             i128::MAX as u128 + 1
@@ -125,16 +131,28 @@ impl WindingCRT {
             val.unsigned_abs()
         };
 
-        let primes = S8_PRIMES.to_vec();
         let lanes: Vec<u64> = primes
             .iter()
             .map(|&p| (magnitude % p as u128) as u64)
             .collect();
 
-        // Compute winding: how many times magnitude wraps M
-        let m = S8_PRODUCT as u128;
-        let winding = if magnitude >= m {
-            let k = (magnitude / m) as i128;
+        // Compute winding: how many times magnitude wraps the basis product.
+        // A basis whose product overflows u128 cannot be wrapped by any
+        // encodable magnitude, so the winding tower is trivially empty then.
+        let mut product: u128 = 1;
+        let mut product_fits = true;
+        for &p in primes {
+            match product.checked_mul(p as u128) {
+                Some(next) => product = next,
+                None => {
+                    product_fits = false;
+                    break;
+                }
+            }
+        }
+
+        let winding = if product_fits && magnitude >= product {
+            let k = (magnitude / product) as i128;
             k_elim::k_to_tower(k, &TOWER_MODULI, DEFAULT_TOWER_DEPTH)
         } else {
             Vec::new()
@@ -142,7 +160,7 @@ impl WindingCRT {
 
         Self {
             lanes,
-            primes,
+            primes: primes.to_vec(),
             sign,
             winding,
         }
@@ -183,37 +201,43 @@ impl WindingCRT {
             .expect("WindingCRT value outside i128 corridor")
     }
 
-    /// Lane-parallel addition. NO reconstruction during computation.
-    /// Residues are added mod each prime; winding towers are added with carry.
+    /// Addition, fail-closed on the i128 corridor.
+    ///
+    /// # Panics
+    ///
+    /// Panics on basis mismatch, or if the exact sum leaves the i128
+    /// corridor. Use [`WindingCRT::try_add`] for the fallible variant.
+    ///
+    /// # Why this is no longer lane-parallel (issue #159)
+    ///
+    /// The previous same-sign fast path added residues mod each prime and
+    /// merged the winding towers with a hard-coded carry of 0, so the wrap
+    /// of the base values across M was silently lost: from_i128(M - 1) +
+    /// from_i128(1) returned Some(0) instead of M. Detecting that carry
+    /// from residues alone requires information the carrier does not keep
+    /// (an on-demand phase/parking witness per #159 acceptance 2), so
+    /// until that contract exists this method computes the sum exactly
+    /// through the i128 corridor — fail-closed, never silently wrapped.
+    /// This adds one reconstruction per add on the std build; the
+    /// reconstruction-count instrumentation will honestly reflect that.
     pub fn add(&self, other: &WindingCRT) -> WindingCRT {
-        assert_eq!(self.primes, other.primes, "WindingCRT::add: basis mismatch");
+        self.try_add(other)
+            .expect("WindingCRT::add: exact sum outside i128 corridor (#159)")
+    }
 
-        if self.sign == other.sign {
-            // Same sign: add residues, add windings
-            let lanes: Vec<u64> = self
-                .lanes
-                .iter()
-                .zip(other.lanes.iter())
-                .zip(self.primes.iter())
-                .map(|((&a, &b), &m)| (a + b) % m)
-                .collect();
-
-            // Detect carry: if sum of residues wrapped M, winding increments
-            let winding = self.add_windings(&other.winding, 0);
-
-            WindingCRT {
-                lanes,
-                primes: self.primes.clone(),
-                sign: self.sign,
-                winding,
-            }
-        } else {
-            // Opposite signs: need magnitude comparison via residues
-            // Compare by reconstructing winding + residue ordering
-            let a_val = self.to_i128_exact();
-            let b_val = other.to_i128_exact();
-            WindingCRT::from_i128(a_val.checked_add(b_val).expect("WindingCRT::add overflow"))
-        }
+    /// Exact, fallible addition. Never returns a silently-wrapped value.
+    ///
+    /// Returns None when either operand cannot be extracted into the
+    /// i128 corridor, or when the exact sum overflows i128.
+    pub fn try_add(&self, other: &WindingCRT) -> Option<WindingCRT> {
+        assert_eq!(
+            self.primes, other.primes,
+            "WindingCRT::try_add: basis mismatch"
+        );
+        let a = self.to_i128()?;
+        let b = other.to_i128()?;
+        let sum = a.checked_add(b)?;
+        Some(WindingCRT::encode_with_basis(sum, &self.primes))
     }
 
     /// Lane-parallel subtraction.
@@ -367,6 +391,12 @@ impl WindingCRT {
 
     // ── Internal helpers ─────────────────────────────────────
 
+    // #159: currently unused — the fail-closed `add` above computes the
+    // exact sum through the i128 corridor instead of merging winding
+    // towers with a hard-coded carry. Retained for the lane-parallel
+    // comeback via the on-demand phase/parking witness (issue #159
+    // acceptance 2), which is the real fix this fail-closed path defers.
+    #[allow(dead_code)]
     fn add_windings(&self, other_winding: &[i128], carry: i128) -> Vec<i128> {
         if self.winding.is_empty() && other_winding.is_empty() && carry == 0 {
             return Vec::new();
@@ -715,6 +745,69 @@ mod tests {
         let val: i128 = -1_000_000_000_000_000;
         let c = WindingCRT::from_i128(val);
         assert_eq!(c.to_i128(), Some(val));
+    }
+
+    // ── #159 boundary tests: no lost carry at the basis product ──
+
+    #[test]
+    fn add_boundary_wrap_at_basis_product() {
+        // The minimal #159 counterexample: M - 1 + 1 must be M, not 0.
+        let m = S8_PRODUCT as i128; // 9_699_690
+        let a = WindingCRT::from_i128(m - 1);
+        let b = WindingCRT::from_i128(1);
+        assert_eq!(a.add(&b).to_i128(), Some(m));
+    }
+
+    #[test]
+    fn add_boundary_m_plus_m() {
+        let m = S8_PRODUCT as i128;
+        let a = WindingCRT::from_i128(m);
+        assert_eq!(a.add(&a).to_i128(), Some(2 * m));
+    }
+
+    #[test]
+    fn add_boundary_negative_wrap() {
+        let m = S8_PRODUCT as i128;
+        let a = WindingCRT::from_i128(-(m - 1));
+        let b = WindingCRT::from_i128(-1);
+        assert_eq!(a.add(&b).to_i128(), Some(-m));
+    }
+
+    #[test]
+    fn add_boundary_mixed_sign_cancellation() {
+        let m = S8_PRODUCT as i128;
+        let a = WindingCRT::from_i128(m - 1);
+        let b = WindingCRT::from_i128(-(m - 1));
+        assert_eq!(a.add(&b).to_i128(), Some(0));
+    }
+
+    #[test]
+    fn try_add_is_exact_across_multiple_laps() {
+        // Sum crossing several multiples of M in one add.
+        let m = S8_PRODUCT as i128;
+        let a = WindingCRT::from_i128(3 * m + 17);
+        let b = WindingCRT::from_i128(2 * m + 25);
+        assert_eq!(a.try_add(&b).unwrap().to_i128(), Some(5 * m + 42));
+    }
+
+    #[test]
+    fn add_preserves_extended_basis() {
+        // Codex review of #179: re-encoding the sum against S8 dropped every
+        // extend_basis() lane, so a later add against another carrier on the
+        // same extended basis panicked on basis mismatch.
+        let mut a = WindingCRT::from_i128(123);
+        a.extend_basis();
+        let mut b = WindingCRT::from_i128(456);
+        b.extend_basis();
+
+        let sum = a.add(&b);
+        assert_eq!(sum.num_lanes(), a.num_lanes());
+        assert_eq!(sum.basis(), a.basis());
+        assert_eq!(sum.to_i128(), Some(579));
+
+        let mut c = WindingCRT::from_i128(1);
+        c.extend_basis();
+        assert_eq!(sum.add(&c).to_i128(), Some(580));
     }
 
     // ── WASSAN Ring tests ────────────────────────────────────

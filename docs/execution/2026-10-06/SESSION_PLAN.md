@@ -133,6 +133,27 @@ reproducers, or open architecture/security gates. Re-run hosted CI after these
 changes; keep T2, F00 acceptance, and later DAG cards queued behind their own
 passing gates.
 
+## PR resolution checkpoint (2026-10-11)
+
+The GitHub inventory has one open PR, #179; the other recent PRs in the
+inventory are merged or closed, including #175 and #177. PR #179 is the
+replacement for superseded #173 and carries only the #159 winding-add and
+parking subset. Its resolution check found the earlier reconstruction-count
+and extended-basis review notes reflected in the follow-up commit, plus a new
+finding: Garner reconstruction panicked when the accumulated coprime basis
+exceeded `i128`. The follow-up makes that reconstruction checked while still
+accepting small values whose remaining lanes agree, and pins the behavior on a
+26-prime basis. Local `cargo fmt --all -- --check`, strict Clippy for
+`exact_transcendentals`, and the full `exact_transcendentals` test suite pass
+(564 unit tests and all crate integration tests). Hosted CI and inline-thread
+resolution remain merge gates.
+
+This PR does not close #159 acceptance 2: the phase/parking witness and its
+source/epoch invariant remain unimplemented. Keep #159 open and keep the
+lane-parallel add and public CRAM integration claims gated. The 43-card
+execution plan remains in progress; passing this crate's checks does not
+accept F00/F02 or unblock their dependent waves.
+
 ## Execute in dependency order
 
 The following waves cover each of the 43 task cards once. Within a wave, use
