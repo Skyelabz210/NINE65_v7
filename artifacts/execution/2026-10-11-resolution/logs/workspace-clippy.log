@@ -1,0 +1,70 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-pr179/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-pr179/Cargo.toml
+    Checking serde v1.0.228
+    Checking zeroize v1.8.2
+    Checking exact_transcendentals v1.0.0 (/tmp/nine65-pr179/crates/exact_transcendentals)
+    Checking typenum v1.19.0
+    Checking mana v0.1.0 (/tmp/nine65-pr179/crates/mana)
+    Checking getrandom v0.2.16
+    Checking generic-array v0.14.7
+    Checking block-buffer v0.10.4
+    Checking crypto-common v0.1.7
+    Checking subtle v2.6.1
+   Compiling virtue v0.0.18
+   Compiling bincode_derive v2.0.1
+    Checking digest v0.10.7
+    Checking unhal v0.1.0 (/tmp/nine65-pr179/crates/unhal)
+    Checking unty v0.0.4
+   Compiling nine65 v0.1.0 (/tmp/nine65-pr179/crates/nine65)
+    Checking cpufeatures v0.2.17
+    Checking sha2 v0.10.9
+    Checking bincode v2.0.1
+    Checking zerocopy v0.8.31
+    Checking thiserror v1.0.69
+    Checking regex-syntax v0.8.8
+    Checking crossbeam-epoch v0.9.21
+    Checking crossbeam-deque v0.8.6
+    Checking rayon-core v1.13.0
+    Checking half v2.7.1
+    Checking ciborium-ll v0.2.2
+    Checking rayon v1.11.0
+    Checking getrandom v0.3.4
+    Checking regex-automata v0.4.13
+    Checking regex v1.12.2
+    Checking ciborium v0.2.2
+    Checking tinytemplate v1.2.1
+    Checking criterion v0.5.1
+    Checking ppv-lite86 v0.2.21
+    Checking rand_core v0.9.3
+    Checking linux-raw-sys v0.11.0
+    Checking bitflags v2.10.0
+    Checking rustix v1.1.3
+    Checking fastrand v2.3.0
+    Checking tempfile v3.24.0
+    Checking wait-timeout v0.2.1
+    Checking quick-error v1.2.3
+    Checking bit-vec v0.8.0
+    Checking fnv v1.0.7
+    Checking rusty-fork v0.3.1
+    Checking bit-set v0.8.0
+    Checking rand_xorshift v0.4.0
+    Checking rand v0.9.3
+    Checking rand_chacha v0.9.0
+    Checking unarray v0.1.4
+    Checking proptest v1.9.0
+    Checking rand_core v0.6.4
+    Checking rand_chacha v0.3.1
+    Checking crc32fast v1.5.0
+    Checking bincode v1.3.3
+    Checking private-feedback-core v0.1.0 (/tmp/nine65-pr179/crates/private-feedback-core)
+    Checking base64 v0.22.1
+    Checking rand v0.8.6
+    Checking cram-core v0.1.0 (/tmp/nine65-pr179/crates/cram-core)
+    Checking clockwork-core v0.1.0 (/tmp/nine65-pr179/crates/clockwork-core)
+    Checking fhe-service v0.1.0 (/tmp/nine65-pr179/crates/fhe-service)
+    Checking private-feedback-nine65 v0.1.0 (/tmp/nine65-pr179/crates/private-feedback-nine65)
+    Checking nine65-extreme-tests v0.1.0 (/tmp/nine65-pr179/crates/nine65-extreme-tests)
+    Checking nexgen_rational v0.1.0 (/tmp/nine65-pr179/crates/nexgen_rational)
+    Checking math_utils v0.1.0 (/tmp/nine65-pr179/crates/math_utils)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 05s

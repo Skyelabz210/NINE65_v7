@@ -1,0 +1,13 @@
+exact-dual-rns-gate	Verify exact noise accounting is active	﻿2026-10-12T03:39:35.9678557Z ##[group]Run set -euo pipefail
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9678888Z [36;1mset -euo pipefail[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9679233Z [36;1mgrep -F 'let delta_bits = exact_delta_bit_length(config);' \[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9679605Z [36;1m  crates/nine65/src/noise/budget.rs[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9679936Z [36;1m! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9680311Z [36;1m  crates/nine65/src/noise/budget.rs[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9706301Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9706679Z env:
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9706986Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9707276Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9707541Z   CARGO_TERM_COLOR: always
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9707968Z ##[endgroup]
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-12T03:39:35.9766863Z ##[error]Process completed with exit code 1.

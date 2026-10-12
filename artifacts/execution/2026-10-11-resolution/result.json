@@ -1,0 +1,18 @@
+{
+  "task_id": "F00",
+  "status": "ready_for_review",
+  "source_commit": "33f06166bdcef8250b32e4a663334b34f8488bfc",
+  "baseline": "baseline.json",
+  "baseline_sha256": "19a86e1f35c3dbe08c50a2b45b51a0eae25ac704b169ab6f05fc15bc279699bb",
+  "checks": "checks.json",
+  "acceptance_evidence": [
+    "Intake and isolated-worktree changes and hashes are recorded",
+    "94-target metadata and live PR/issue inventory are recorded",
+    "Existing local changes were preserved"
+  ],
+  "unresolved": [
+    "Independent baseline acceptance",
+    "Full exact-head workspace and feature-matrix evidence",
+    "Native public-refresh construction and security gates"
+  ]
+}
