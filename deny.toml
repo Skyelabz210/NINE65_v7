@@ -21,6 +21,9 @@ allow = [
     "BSL-1.0",
     "ISC",
     "Unicode-DFS-2016",
+    # subtle (dalek-cryptography) is BSD-3-Clause; it is a direct dependency
+    # of nine65, clockwork-core and fhe-service.
+    "BSD-3-Clause",
     # Proprietary marker declared by every workspace crate in its Cargo.toml
     # (the repository LICENSE is "All rights reserved" — see the
     # [workspace.package] comment in the root Cargo.toml).
