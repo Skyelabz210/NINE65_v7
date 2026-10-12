@@ -1,0 +1,5 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-transduction-restoration/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-transduction-restoration/Cargo.toml
+    Checking exact_transcendentals v1.0.0 (/tmp/nine65-transduction-restoration/crates/exact_transcendentals)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.62s

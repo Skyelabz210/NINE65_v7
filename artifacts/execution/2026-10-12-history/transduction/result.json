@@ -1,0 +1,55 @@
+{
+  "source_commit": "83c7c6deb66c9abd245048e4159e99f792ecda89",
+  "restoration_source": "47fc49c96f5e3776b257ad7a7045a0dab0f307a3",
+  "original_merged_prs": [
+    170,
+    171
+  ],
+  "source_input_sha256": {
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+    "crates/exact_transcendentals/Cargo.toml": "d9682bcb3182ec3c8404581aad30dd6a430a75035e1d3809d063a6b8d328487c",
+    "crates/exact_transcendentals/src/cram_pde.rs": "1b87d3f77a6c329f996a48ed71647b85217dfcf12c04b702a90e1039ad0715e2",
+    "crates/exact_transcendentals/src/k_elim.rs": "f09e31d136a817da0219c01531d7b7504a9701026d14bc1f25a69aeca9193f48",
+    "crates/exact_transcendentals/src/lifted_transduction.rs": "9e0bc33b2a0a75263ebdf695ac07e27dfdb41b02cdcdb953ce5543b03221f68e",
+    "crates/exact_transcendentals/src/safe_basis_io.rs": "6f16e86ea94d79961367decd1d49c0db942cc0a8ff10b22d08ba5c1b6f76227d",
+    "crates/exact_transcendentals/src/substrate.rs": "0503a84dc86911c30fa5f60a66c29f4c04a6deef4b315c9595ed3368630caad4",
+    "crates/exact_transcendentals/src/transduction.rs": "38d462863903787d1e1ecbaf785f5bf10d10fd00147e9f9dfbe94256c74ee3b0",
+    "crates/exact_transcendentals/tests/a2_residue_native.rs": "72e1757c56825756c880be14e0af80c45a5de8be2b4c86191061270705d357ba",
+    "crates/exact_transcendentals/tests/cram_gates.rs": "8d40b55ed4b8facd6c944ecf51b91de9bbe223b2144ef8c54aa421168d6aa11e",
+    "crates/exact_transcendentals/tests/transduction_boundaries.rs": "bda0d67735d5e668c48bfd214b6ca39eee3bb6c497eaaf68e72caba54c84ca5f"
+  },
+  "checks": [
+    {
+      "command": "CARGO_INCREMENTAL=0 cargo test --locked -j1 -p exact_transcendentals",
+      "exit_code": 0,
+      "log": "logs/package-tests.log",
+      "log_sha256": "8a0ca7c03cd2402d2390ca2100e17b0e182afb7f8b8247d88e91c9a144340245",
+      "passed": 640,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 cargo clippy --locked -j1 -p exact_transcendentals --all-targets -- -D warnings",
+      "exit_code": 0,
+      "log": "logs/clippy.log",
+      "log_sha256": "8c9a7aeae5f880cb9b45d92d327114d907f6b87aca8eaa5dcc217b3f8988478b"
+    },
+    {
+      "command": "CARGO_INCREMENTAL=0 cargo check --locked -j1 -p exact_transcendentals --no-default-features",
+      "exit_code": 0,
+      "log": "logs/no-std.log",
+      "log_sha256": "7c1953f776eb274348c2a33515742ef9ab3e4890fe23c9cacd8e990d0ee8c853"
+    }
+  ],
+  "preserved_newer_repairs": [
+    "Checked extended-basis Garner extraction",
+    "Post-overflow coprimality checks",
+    "Full-range modular reduction and multiplication",
+    "Fail-closed WindingCRT and Recumbent additions"
+  ],
+  "unresolved": [
+    "Scalar rank materialization remains architecture debt",
+    "Caller lift residues do not certify source/epoch/range",
+    "Native public-refresh and release acceptance remain gated"
+  ]
+}
