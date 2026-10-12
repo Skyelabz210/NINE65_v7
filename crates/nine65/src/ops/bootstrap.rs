@@ -843,16 +843,14 @@ impl ClockworkBootstrap {
         }
     }
 
-    /// Phase 1 modulus switch using Clockwork Bootstrap phase computation.
-    /// 
-    /// This implements the correct BFV Phase 1: compute phase = c0 + c1*s_boot before
-    /// applying modulus switch. In circular bootstrap, s_boot = s_work (same secret
-    /// polynomial), so phase = Δ*m + e where Δ = floor(Q/t), and round(phase/Δ) = m.
-    /// 
-    /// This fixes the mathematical defect in the legacy component-wise approach which
-    /// computes round(c0 * t / Q) and round(c1 * t / Q) separately, losing the
-    /// secret-dependent correction term K_j = round((c0 + c1*s) / Q).
-    pub(crate) fn modswitch_to_t_phase_based(
+    /// Test-only secret-key oracle for measuring BFV phase rounding.
+    ///
+    /// This reconstructs the secret-dependent phase in clear and therefore is
+    /// not an evaluator-side bootstrap operation. Keep it confined to tests that
+    /// need a reference measurement; production Phase 1 must use a homomorphic
+    /// displaced-state transducer.
+    #[cfg(test)]
+    pub(crate) fn test_only_modswitch_to_t_secret_key_oracle(
         &self,
         ct: &DualRNSCiphertext,
         s_boot: &DualRNSSecretKey,
@@ -869,32 +867,22 @@ impl ClockworkBootstrap {
 
         let primes_u64: Vec<u64> = self.work_config.primes[..ct_level].to_vec();
 
-        // ===================================================================
-        // CLOCKWORK BOOTSTRAP PHASE 1: Compute phase = c0 + c1 * s_boot
-        // ===================================================================
-        // In circular bootstrap, s_boot = s_work (same secret polynomial).
-        // For each coefficient i, in each main lane j:
-        //   phase[j][i] = c0[j][i] + c1[j][i] * s_boot[j][i]  (mod p_j)
-        // 
-        // This preserves the secret-dependent term K = round((c0 + c1*s) / Q)
-        // that the old component-wise approach lost.
-        //
-        // In standard BFV: c0 + c1*s = Δ*m + e where Δ = floor(Q_level / t)
-        // Therefore: phase = Δ*m + e, and round(phase / Δ) = m (for |e| < Δ/2)
-        
-        // Step 1: Compute c1 * s_boot (polynomial multiply in each main lane)
+        // Reconstruct the phase only as a test oracle. The secret-dependent
+        // multiplication below is deliberately unavailable to production code.
+
+        // Step 1: Compute c1 * s_boot (polynomial multiply in each main lane).
         let mut c1s_main: Vec<Vec<u64>> = vec![vec![0u64; n]; ct_level];
         for j in 0..ct_level {
             let c1_lane = &ct.c1.main[j];
             let s_lane = &s_boot.s.main[j];
-            
+
             // Use the NTT engine for polynomial multiplication mod p_j
             // This computes (c1 * s) mod p_j for this lane
             let product = self.boot_ctx.ntt_engines[j].multiply(c1_lane, s_lane);
             c1s_main[j] = product;
         }
-        
-        // Step 2: Add c0: phase = c0 + c1*s_boot (mod p_j for each lane j)
+
+        // Step 2: Add c0 to obtain the phase residues.
         let mut phase_main: Vec<Vec<u64>> = vec![vec![0u64; n]; ct_level];
         for j in 0..ct_level {
             let p = self.work_config.primes[j];
@@ -902,23 +890,22 @@ impl ClockworkBootstrap {
                 phase_main[j][i] = (ct.c0.main[j][i] + c1s_main[j][i]) % p;
             }
         }
-        
-        // Step 3: CRT reconstruct phase for each coefficient
-        // Then apply BFV rounding: m = round(phase * t / Q_level) mod t
-        
+
+        // Step 3: Reconstruct each phase coefficient and apply BFV rounding.
+
         // Try u128 fast path; fall back to U256 if product overflows
         let primes_u128: Vec<u128> = primes_u64.iter().map(|&p| p as u128).collect();
         let q_level_u128: Option<u128> = primes_u128
             .iter()
             .try_fold(1u128, |acc, &p| acc.checked_mul(p));
-        
+
         let q_level_u256 = if let Some(q) = q_level_u128 {
             U256::from_u128(q)
         } else {
             U256::product_u64s(&primes_u64)
         };
         let t_u256 = U256::from_u64(t);
-        
+
         if let Some(q_level) = q_level_u128 {
             // Fast u128 path for CRT reconstruction
             let q_level_half = q_level / 2;
@@ -942,23 +929,18 @@ impl ClockworkBootstrap {
             }
 
             let mut c0_small = vec![0u64; n];
-            // In BFV after Phase 1 (modswitch to t), c1 component is zero
-            // because we've extracted the message
+            // The oracle returns the rounded phase as plaintext in c0.
             let c1_small = vec![0u64; n];
 
             for i in 0..n {
                 // Collect phase[i] across all main lanes
-                let phase_coeff: Vec<u128> = (0..ct_level)
-                    .map(|j| phase_main[j][i] as u128)
-                    .collect();
-                
+                let phase_coeff: Vec<u128> =
+                    (0..ct_level).map(|j| phase_main[j][i] as u128).collect();
+
                 // CRT reconstruct phase
-                let phase_val = crt_reconstruct_n(
-                    phase_coeff.iter().copied(),
-                    &primes_u128,
-                    &crt_inverses,
-                );
-                
+                let phase_val =
+                    crt_reconstruct_n(phase_coeff.iter().copied(), &primes_u128, &crt_inverses);
+
                 // Apply BFV rounding: m = round(phase / Δ) where Δ = floor(Q_level / t)
                 // In integer: round(phase * t / Q_level) = floor((phase * t + Q_level/2) / Q_level)
                 let scaled = U256::from_u128(phase_val).mul_u64(t).add(q_level_half_u256);
@@ -974,18 +956,16 @@ impl ClockworkBootstrap {
             let half_q_level = q_level.shr1();
 
             let mut c0_small = vec![0u64; n];
-            // In BFV after Phase 1 (modswitch to t), c1 component is zero
+            // The oracle returns the rounded phase as plaintext in c0.
             let c1_small = vec![0u64; n];
 
             for i in 0..n {
                 // Collect phase[i] across all main lanes
-                let phase_coeff: Vec<u64> = (0..ct_level)
-                    .map(|j| phase_main[j][i])
-                    .collect();
-                
+                let phase_coeff: Vec<u64> = (0..ct_level).map(|j| phase_main[j][i]).collect();
+
                 // CRT reconstruct phase using U256 arithmetic
                 let phase_val = crt_reconstruct_u256(&phase_coeff, &primes_u64);
-                
+
                 // Apply BFV rounding: m = round(phase * t / Q_level) mod t
                 let numerator = phase_val.mul_low(t_u256).add(half_q_level);
                 let (quotient, _) = numerator.div_mod_u256(q_level);
@@ -1866,7 +1846,7 @@ mod tests {
         bsk: &BootstrapKey,
         boot_sk: &DualRNSSecretKey,
     ) -> Nine65Result<DualRNSCiphertext> {
-        let (c0_small, c1_small) = boot.modswitch_to_t_phase_based(ct, boot_sk)?;
+        let (c0_small, c1_small) = boot.test_only_modswitch_to_t_secret_key_oracle(ct, boot_sk)?;
         let ct_boot = boot.homomorphic_inner_product(&c0_small, &c1_small, bsk)?;
         boot.modswitch_boot_to_work(&ct_boot)
     }
@@ -1930,8 +1910,9 @@ mod tests {
                 .expect("bootstrap keygen");
 
             let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
-            let refreshed = refresh_bypassing_the_gate(&boot, &ct, &boot_keys.bsk, &boot_keys.boot_sk)
-                .expect("the three phases must run; only Gate 0 is bypassed");
+            let refreshed =
+                refresh_bypassing_the_gate(&boot, &ct, &boot_keys.bsk, &boot_keys.boot_sk)
+                    .expect("the three phases must run; only Gate 0 is bypassed");
             let after_refresh = ctx.decrypt_dual(&refreshed, &keys.secret_key);
 
             // Square the refreshed ciphertext through the PUBLIC multiply: the
