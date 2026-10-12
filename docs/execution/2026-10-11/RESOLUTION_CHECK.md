@@ -56,6 +56,8 @@ The raw integer timings and source hashes are in `add-benchmark.json`. The exact
 module snapshots are under `sources/base` and `sources/head`; run
 `python3 artifacts/execution/2026-10-11-resolution/replay-add-benchmark.py` to
 verify their hashes, build each optimized probe, and replay all three runs.
+The script invokes the pinned Rust 1.89.0 compiler, checks its full version
+against the original record, and includes the actual compiler/profile in output.
 These measurements cover the staged carriers.
 
 | Carrier | Before median ns | After median ns | Before scalar extractions per chain | After scalar extractions per chain |
@@ -78,6 +80,8 @@ Cargo.lock hash and frozen RustSec revision are in
 `logs/cargo-deny-invocation.json`. The archived generated configuration differs
 from `deny.toml` only in its advisory-cache path; `verify-deny.py` checks the
 parsed policies for equality before invoking cargo-deny with `--offline`.
+It requires the database to be clean at the requested revision before and after
+checking, and verifies the dependency inputs did not change during the run.
 The original preliminary snapshot is preserved separately; the primary
 `baseline.json` and `checks.json` identify the final source and policy inputs.
 

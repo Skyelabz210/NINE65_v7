@@ -27,12 +27,25 @@ def main():
     binary = args.cargo_deny.resolve()
     db_root = args.advisory_db.resolve()
     db_repo = db_root / "advisory-db-3157b0e258782691"
-    revision = subprocess.check_output(["git", "-C", str(db_repo), "rev-parse", "HEAD"],
-                                       text=True).strip()
-    if revision != args.advisory_revision:
-        raise RuntimeError("Advisory database revision differs from the requested snapshot")
+    def verify_database():
+        status = subprocess.check_output(
+            ["git", "-C", str(db_repo), "status", "--porcelain", "--untracked-files=all"],
+            text=True,
+        )
+        if status.strip():
+            raise RuntimeError("Advisory database checkout is dirty")
+        revision = subprocess.check_output(["git", "-C", str(db_repo), "rev-parse", "HEAD"],
+                                           text=True).strip()
+        if revision != args.advisory_revision:
+            raise RuntimeError("Advisory database revision differs from the requested snapshot")
+        return revision
+
+    revision = verify_database()
     policy = repo / "deny.toml"
-    original = policy.read_text()
+    original_bytes = policy.read_bytes()
+    original = original_bytes.decode()
+    policy_hash = hashlib.sha256(original_bytes).hexdigest()
+    lock_hash = digest(repo / "Cargo.lock")
     generated = original.replace("[advisories]\n",
                                  "[advisories]\ndb-path = " + json.dumps(str(db_root)) + "\n", 1)
     normalized = tomllib.loads(generated)
@@ -47,19 +60,23 @@ def main():
         command = [str(binary), "--offline", "--locked", "--all-features",
                    "--config", str(config), "check"]
         result = subprocess.run(command, cwd=repo, capture_output=True)
+        verify_database()
+        if digest(policy) != policy_hash or digest(repo / "Cargo.lock") != lock_hash:
+            raise RuntimeError("Dependency inputs changed during verification")
         (output / "cargo-deny-final.log").write_bytes(result.stdout + result.stderr)
         (output / "cargo-deny-config.toml").write_text(generated)
         record = {
             "command": shlex.join(command), "argv": command, "cwd": str(repo),
             "exit_code": result.returncode,
             "binary_version": subprocess.check_output([str(binary), "--version"], text=True).strip(),
-            "binary_sha256": digest(binary), "policy_sha256": digest(policy),
-            "cargo_lock_sha256": digest(repo / "Cargo.lock"),
+            "binary_sha256": digest(binary), "policy_sha256": policy_hash,
+            "cargo_lock_sha256": lock_hash,
             "config_sha256": digest(config), "config_archive": "cargo-deny-config.toml",
             "policy_equivalence_verified": True,
             "advisory_database": {"root": str(db_root), "repository": str(db_repo),
                                   "url": "https://github.com/RustSec/advisory-db",
-                                  "revision": revision, "fetch_disabled": True},
+                                  "revision": revision, "fetch_disabled": True,
+                                  "worktree_clean_before_and_after": True},
             "log": "cargo-deny-final.log",
             "log_sha256": digest(output / "cargo-deny-final.log"),
         }

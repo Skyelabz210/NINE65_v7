@@ -1,5 +1,19 @@
 {
   "source_record": "add-benchmark.json",
+  "toolchain": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "compiler_command": [
+    "rustup",
+    "run",
+    "1.89.0",
+    "rustc"
+  ],
+  "compiler_details": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7",
+  "profile": {
+    "opt_level": 3,
+    "lto": "fat",
+    "codegen_units": 1,
+    "feature": "std"
+  },
   "records": [
     {
       "run": 1,
@@ -7,7 +21,7 @@
       "carrier": "WindingCRT",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 80825816,
+      "elapsed_ns": 53978918,
       "reconstructions": 10000,
       "expected_value": 465
     },
@@ -17,7 +31,7 @@
       "carrier": "Recumbent",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 111790145,
+      "elapsed_ns": 102813517,
       "reconstructions": 20000,
       "expected_value": 465
     },
@@ -27,7 +41,7 @@
       "carrier": "WindingCRT",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 1103455108,
+      "elapsed_ns": 1249844479,
       "reconstructions": 610000,
       "expected_value": 465
     },
@@ -37,7 +51,7 @@
       "carrier": "Recumbent",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 2090282209,
+      "elapsed_ns": 1728680462,
       "reconstructions": 1220000,
       "expected_value": 465
     },
@@ -47,7 +61,7 @@
       "carrier": "WindingCRT",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 58810425,
+      "elapsed_ns": 49976959,
       "reconstructions": 10000,
       "expected_value": 465
     },
@@ -57,7 +71,7 @@
       "carrier": "Recumbent",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 114824156,
+      "elapsed_ns": 108052041,
       "reconstructions": 20000,
       "expected_value": 465
     },
@@ -67,7 +81,7 @@
       "carrier": "WindingCRT",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 998157070,
+      "elapsed_ns": 870659356,
       "reconstructions": 610000,
       "expected_value": 465
     },
@@ -77,7 +91,7 @@
       "carrier": "Recumbent",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 2334454722,
+      "elapsed_ns": 1700896302,
       "reconstructions": 1220000,
       "expected_value": 465
     },
@@ -87,7 +101,7 @@
       "carrier": "WindingCRT",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 62281592,
+      "elapsed_ns": 46606473,
       "reconstructions": 10000,
       "expected_value": 465
     },
@@ -97,7 +111,7 @@
       "carrier": "Recumbent",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 139143639,
+      "elapsed_ns": 100006964,
       "reconstructions": 20000,
       "expected_value": 465
     },
@@ -107,7 +121,7 @@
       "carrier": "WindingCRT",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 1108742345,
+      "elapsed_ns": 868434199,
       "reconstructions": 610000,
       "expected_value": 465
     },
@@ -117,7 +131,7 @@
       "carrier": "Recumbent",
       "chains": 10000,
       "adds_per_chain": 30,
-      "elapsed_ns": 2226534956,
+      "elapsed_ns": 1703670320,
       "reconstructions": 1220000,
       "expected_value": 465
     }

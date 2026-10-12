@@ -87,8 +87,11 @@
       "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
     },
     "log": "artifacts/execution/2026-10-11-resolution/logs/benchmark-replay.json",
-    "log_sha256": "8f3a69ec061b854d63b46d191165fea269d77a383779dafafeb6e3b123b9de76",
-    "verified_run_records": 12
+    "log_sha256": "52ef31ade75d9d3384d7352d273b626c958ecee3399f4cba6011f4fbe99cda43",
+    "verified_run_records": 12,
+    "script": "artifacts/execution/2026-10-11-resolution/replay-add-benchmark.py",
+    "script_sha256": "cb60b72b123f135571b9820dd8505f7bf143ed9b13f7bbdd7d0b2f7ebf879ac7",
+    "actual_toolchain": "rustc 1.89.0 (29483883e 2025-08-04)"
   },
   {
     "command": "CARGO_TARGET_DIR=/home/acid/Projects/NINE65_v7/target/pr179-resolution CARGO_INCREMENTAL=0 cargo run --locked -j1 --manifest-path artifacts/execution/2026-10-11-resolution/codec-compatibility/Cargo.toml",
@@ -105,14 +108,14 @@
     "log_sha256": "304c5b5d49fd0717ec1eae018faa4ad0b0f6d2c660a9cb685f8a2316d3371e67"
   },
   {
-    "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-twwxinx3/deny.toml check",
+    "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-jh_7bg3j/deny.toml check",
     "argv": [
       "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny",
       "--offline",
       "--locked",
       "--all-features",
       "--config",
-      "/tmp/nine65-deny-check-twwxinx3/deny.toml",
+      "/tmp/nine65-deny-check-jh_7bg3j/deny.toml",
       "check"
     ],
     "exit_code": 0,
@@ -125,8 +128,19 @@
       "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
     },
     "log": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny-final.log",
-    "log_sha256": "9078b37a1bf807b01fc28ef29d5b7e72f58658d0cfbc617dad3faa6f784a00e8",
+    "log_sha256": "99a776ed451ae93f18fb93416a6ad9e3e42206bda0cdf55bac38fbf4f67ad4a4",
     "invocation_metadata": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny-invocation.json",
-    "invocation_metadata_sha256": "a3e315d532d4950607c62506a188ad4afd3c1c1f554e4fb6f2f3f903ef77090e"
+    "invocation_metadata_sha256": "e1f699435f36325ccd765935f629fe68352b2d1456ec3bdab72837832868a4fc",
+    "script": "artifacts/execution/2026-10-11-resolution/verify-deny.py",
+    "script_sha256": "23bb57f7907645e93746a9eb051b7f8ca6a668879f99a021cb737f90bc79c86b"
+  },
+  {
+    "command": "python3 artifacts/execution/2026-10-11-resolution/check-replay-refusals.py",
+    "exit_code": 0,
+    "cases_verified": 3,
+    "script": "artifacts/execution/2026-10-11-resolution/check-replay-refusals.py",
+    "script_sha256": "7fdfd3fa7e6e2094869d70884ead2367307483f026f68edde5807dd4c227deeb",
+    "log": "artifacts/execution/2026-10-11-resolution/logs/replay-refusals.log",
+    "log_sha256": "67547c2f49670f4b056941d726549192cff411363fc819490f2d4fa89c8badb3"
   }
 ]

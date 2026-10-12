@@ -13,6 +13,10 @@ The reproduction procedure is in `docs/execution/2026-10-11/RESOLUTION_CHECK.md`
 `add-benchmark.json`, compiles the two probes, and replays three independent
 runs. `logs/benchmark-replay.json` records the successful replay; the original
 timings remain unchanged.
+The replay invokes Rust 1.89.0 explicitly and rejects a mismatched recorded
+compiler/profile. The database checker requires a clean checkout at the pinned
+revision before and after checking, and refuses dependency inputs that change
+during the check. `check-replay-refusals.py` verifies three invalid-input cases.
 
 `codec-candidate.patch.gz`, `codec-compatibility/`, and the codec logs preserve the
 tested migration proposal and fixtures independently of a local Git branch.
