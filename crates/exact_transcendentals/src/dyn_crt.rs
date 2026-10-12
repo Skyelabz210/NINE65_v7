@@ -221,7 +221,8 @@ impl WindingCRT {
     /// This adds one reconstruction per add on the std build; the
     /// reconstruction-count instrumentation will honestly reflect that.
     pub fn add(&self, other: &WindingCRT) -> WindingCRT {
-        self.try_add(other).expect("WindingCRT::add: exact sum outside i128 corridor (#159)")
+        self.try_add(other)
+            .expect("WindingCRT::add: exact sum outside i128 corridor (#159)")
     }
 
     /// Exact, fallible addition. Never returns a silently-wrapped value.
@@ -229,7 +230,10 @@ impl WindingCRT {
     /// Returns None when either operand cannot be extracted into the
     /// i128 corridor, or when the exact sum overflows i128.
     pub fn try_add(&self, other: &WindingCRT) -> Option<WindingCRT> {
-        assert_eq!(self.primes, other.primes, "WindingCRT::try_add: basis mismatch");
+        assert_eq!(
+            self.primes, other.primes,
+            "WindingCRT::try_add: basis mismatch"
+        );
         let a = self.to_i128()?;
         let b = other.to_i128()?;
         let sum = a.checked_add(b)?;

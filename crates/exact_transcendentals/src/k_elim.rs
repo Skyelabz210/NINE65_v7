@@ -185,13 +185,47 @@ pub fn garner_reconstruct(residues: &[(i128, i128)]) -> Option<i128> {
     if residues.is_empty() {
         return Some(0);
     }
-    let (mut value, mut modulus) = residues[0];
-    value = modd(value, modulus);
+    let (first_residue, mut modulus) = residues[0];
+    if modulus <= 0 {
+        return None;
+    }
+    let mut value = modd(first_residue, modulus);
+    // `None` means the accumulated positive modulus has exceeded i128. The
+    // canonical CRT representative can still fit in i128 (for example, 123
+    // encoded on an extended WindingCRT basis), but any nonzero next winding
+    // would put it above the i128 corridor. In that case, accept only lanes
+    // already matching the current representative and fail closed otherwise.
+    let mut modulus_fits = true;
 
     for &(r_i, m_i) in &residues[1..] {
-        let result = k_eliminate(value, modulus, r_i, m_i)?;
-        value = result.value;
-        modulus *= m_i;
+        if m_i <= 0 {
+            return None;
+        }
+        let wanted = modd(r_i, m_i);
+        if !modulus_fits {
+            if modd(value, m_i) != wanted {
+                return None;
+            }
+            continue;
+        }
+
+        let current = modd(value, m_i);
+        let delta = if wanted >= current {
+            wanted - current
+        } else {
+            m_i - (current - wanted)
+        };
+        let inverse = mod_inv(modd(modulus, m_i), m_i)?;
+        let winding = mulmod(delta, inverse, m_i);
+        if winding != 0 {
+            let offset = modulus.checked_mul(winding)?;
+            value = value.checked_add(offset)?;
+        }
+
+        match modulus.checked_mul(m_i) {
+            Some(next) => modulus = next,
+            None => modulus_fits = false,
+        }
     }
     Some(value)
 }
@@ -608,6 +642,20 @@ mod tests {
         // 42 mod 3 = 0, 42 mod 5 = 2, 42 mod 7 = 0
         let val = garner_reconstruct(&[(0, 3), (2, 5), (0, 7)]).unwrap();
         assert_eq!(val, 42);
+    }
+
+    #[test]
+    fn garner_extended_basis_keeps_small_value_after_modulus_exceeds_i128() {
+        let basis = [
+            2i128, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79,
+            83, 89, 97, 101,
+        ];
+        let residues: Vec<_> = basis.iter().map(|&p| (123 % p, p)).collect();
+        assert_eq!(garner_reconstruct(&residues), Some(123));
+
+        let mut inconsistent = residues;
+        inconsistent.last_mut().unwrap().0 = 0;
+        assert_eq!(garner_reconstruct(&inconsistent), None);
     }
 
     #[test]
