@@ -6,8 +6,16 @@
 //! boundaries, whereas a reconstruct-per-op carrier reconstructs on every step.
 //! Fewer reconstructions ⇒ no compute blow-up, no noise growth.
 //!
+//! Post-#159 amendment: the lane-parallel same-sign `add` silently lost the
+//! wrap carry across the basis product M, so `WindingCRT::add` is now
+//! fail-closed through the i128 corridor — two extractions per add until the
+//! deferred on-demand phase/parking witness lands (#159 acceptance 2). The
+//! WindingTower strategy therefore runs at parity with the baseline on
+//! AddChain; the reconstruction counter reports that honestly.
+//!
 //! Strategies compared:
-//! - **WindingTower**: lane-parallel `WindingCRT`, reconstruct at I/O only
+//! - **WindingTower**: `WindingCRT`; `mul` is lane-parallel within the basis,
+//!   `add` is fail-closed per #159 (corridor fallback, see amendment above)
 //! - **ReconstructPerOp**: baseline that reconstructs both operands every op
 //!   (this is the OLD DynCRT behaviour we replaced)
 //! - **WassanRing**: ℤ_p residue ring for add-chains (no scalar extraction)
@@ -97,8 +105,10 @@ pub fn ground_truth(workload: Workload, inputs: &[i128]) -> Option<i128> {
 // Strategy: Winding Tower (reconstruct at I/O only)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Run a workload using the winding-tower carrier. Reconstruction happens
-/// only once, at the final readout.
+/// Run a workload using the winding-tower carrier. `mul` stays lane-parallel
+/// within the basis; `add` is fail-closed through the i128 corridor since
+/// #159 (two extractions per op). One further reconstruction happens at the
+/// final readout.
 #[cfg(feature = "std")]
 pub fn run_winding(workload: Workload, inputs: &[i128]) -> ChainStats {
     use crate::dyn_crt::{reconstruction_count, reset_reconstruction_count};
@@ -137,7 +147,7 @@ pub fn run_winding(workload: Workload, inputs: &[i128]) -> ChainStats {
         }
     };
 
-    // Single I/O reconstruction at the end.
+    // Final I/O readout.
     let final_value = acc.to_i128();
     let reconstructions = reconstruction_count();
     let truth = ground_truth(workload, inputs);
@@ -350,27 +360,23 @@ mod tests {
     }
 
     #[test]
-    fn winding_uses_fewer_reconstructions_on_add() {
-        // The headline result: same correct answer, far fewer reconstructions.
+    fn winding_add_fail_closed_matches_baseline_cost() {
+        // Since the #159 fail-closed fix, WindingCRT::add computes the exact
+        // sum through the i128 corridor: two Garner extractions per add plus
+        // one final I/O readout. The lane-parallel same-sign fast path is
+        // deferred until the on-demand phase/parking witness exists
+        // (#159 acceptance 2). Until then the honest expectation is parity
+        // with the reconstruct-per-op baseline — never more, never wrapped.
         let inputs: Vec<i128> = (1..=30).collect();
         let winding = run_winding(Workload::AddChain, &inputs);
         let baseline = run_reconstruct_per_op(Workload::AddChain, &inputs);
 
         assert!(winding.correct && baseline.correct);
         assert_eq!(winding.final_value, baseline.final_value);
-
-        // Winding does a single I/O reconstruction (all-positive add chain
-        // stays lane-parallel). Baseline reconstructs on every op.
-        assert!(
-            winding.reconstructions < baseline.reconstructions,
-            "winding {} should be < baseline {}",
-            winding.reconstructions,
-            baseline.reconstructions
-        );
-        assert_eq!(
-            winding.reconstructions, 1,
-            "all-positive add chain should reconstruct exactly once (final I/O)"
-        );
+        assert_eq!(winding.reconstructions, baseline.reconstructions);
+        // Exact fail-closed cost, pinned: any change here (for example the
+        // phase/parking witness landing) must consciously update this test.
+        assert_eq!(winding.reconstructions, 2 * 30 + 1);
     }
 
     #[test]

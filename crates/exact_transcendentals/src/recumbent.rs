@@ -110,10 +110,8 @@ impl Recumbent {
         // Combine parking and hot tiers
         // #159: parking is an exact-integer tier. saturating_add silently
         // clamps, contradicting the exactness invariant. Fail closed.
-        let new_parking = self
-            .parking
-            .checked_add(other.parking)
-            .expect("Recumbent::add: parking overflow (#159)");
+        let parking_sum = self.parking.checked_add(other.parking);
+        let new_parking = parking_sum.expect("Recumbent::add: parking overflow (#159)");
         let new_hot = self.hot.add(&other.hot);
 
         let mut result = Recumbent {
