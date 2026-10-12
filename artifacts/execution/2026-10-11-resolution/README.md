@@ -16,7 +16,9 @@ timings remain unchanged.
 The replay invokes Rust 1.89.0 explicitly and rejects a mismatched recorded
 compiler/profile. The database checker requires a clean checkout at the pinned
 revision before and after checking, and refuses dependency inputs that change
-during the check. `check-replay-refusals.py` verifies three invalid-input cases.
+during the check. The checked dependency graph is frozen in the archived Cargo
+metadata, and all relevant manifests are hashed and checked again after use.
+`check-replay-refusals.py` verifies five invalid-input cases.
 
 `codec-candidate.patch.gz`, `codec-compatibility/`, and the codec logs preserve the
 tested migration proposal and fixtures independently of a local Git branch.

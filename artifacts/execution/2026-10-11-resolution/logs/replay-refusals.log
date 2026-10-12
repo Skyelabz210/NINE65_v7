@@ -1,4 +1,6 @@
 Recorded compiler differs: refused
 Advisory database checkout is dirty: refused
 Advisory database checkout is dirty: refused
-3 refusal cases passed
+Dependency manifests are dirty: refused
+Dependency manifests are dirty: refused
+5 refusal cases passed

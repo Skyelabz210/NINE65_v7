@@ -25,6 +25,6 @@
     "revision": "7eebec69c352c7191b1f13eb95dd510eeca5d1de",
     "fetch_disabled": true
   },
-  "log": "cargo-deny-final.log",
+  "log": "cargo-deny-final-v1.log",
   "log_sha256": "9078b37a1bf807b01fc28ef29d5b7e72f58658d0cfbc617dad3faa6f784a00e8"
 }

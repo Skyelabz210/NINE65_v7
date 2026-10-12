@@ -49,7 +49,43 @@ def main():
         must_refuse(command, "Advisory database checkout is dirty")
         if output.exists():
             raise RuntimeError("Dirty fixture produced verification metadata")
-    print("3 refusal cases passed")
+        (db / "untracked.toml").unlink()
+
+        project = root / "project"
+        test_artifact = project / "artifacts" / "execution" / "fixture"
+        test_artifact.mkdir(parents=True)
+        shutil.copyfile(artifact / "verify-deny.py", test_artifact / "verify-deny.py")
+        (project / "src").mkdir()
+        (project / "src" / "lib.rs").write_text("// Manifest verification fixture.\n")
+        manifest = project / "Cargo.toml"
+        original_manifest = '[package]\nname="manifest-fixture"\nversion="0.0.0"\nedition="2021"\n'
+        manifest.write_text(original_manifest)
+        (project / "deny.toml").write_text('[advisories]\nunmaintained="all"\n[licenses]\nallow=["MIT"]\n')
+        subprocess.run(["cargo", "generate-lockfile", "--offline"], cwd=project,
+                       check=True, capture_output=True)
+        subprocess.run(["git", "init", "-q", str(project)], check=True)
+        subprocess.run(["git", "-C", str(project), "add", "."], check=True)
+        subprocess.run(["git", "-C", str(project), "-c", "user.name=Fixture",
+                        "-c", "user.email=fixture@example.invalid", "commit", "-q",
+                        "-m", "Create manifest fixture"], check=True)
+        fake_binary = root / "fake-cargo-deny"
+        fake_binary.write_text(
+            "#!/usr/bin/env python3\nfrom pathlib import Path\nimport sys\n"
+            "if '--version' in sys.argv: print('cargo-deny fixture')\n"
+            "else:\n    p=Path(" + repr(str(manifest)) + ")\n"
+            "    p.write_text(p.read_text()+'\\n# changed during verification\\n')\n"
+        )
+        fake_binary.chmod(0o755)
+        manifest_command = [sys.executable, str(test_artifact / "verify-deny.py"),
+                            "--cargo-deny", str(fake_binary), "--advisory-db", str(db.parent),
+                            "--advisory-revision", revision, "--output-directory", str(output)]
+        manifest.write_text(original_manifest + "\n# initially dirty\n")
+        must_refuse(manifest_command, "Dependency manifests are dirty")
+        manifest.write_text(original_manifest)
+        must_refuse(manifest_command, "Dependency manifests are dirty")
+        if (output / "cargo-deny-invocation.json").exists():
+            raise RuntimeError("Changed manifest produced verification metadata")
+    print("5 refusal cases passed")
 
 
 if __name__ == "__main__":
