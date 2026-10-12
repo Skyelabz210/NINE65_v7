@@ -2,43 +2,131 @@
   {
     "command": "CARGO_INCREMENTAL=0 cargo test --locked -j1 -p exact_transcendentals",
     "exit_code": 0,
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/exact-transcendentals-final.log",
+    "log_sha256": "db14cd6deb07fa7a23bc7898e60b3de4e7a6ce4f1cc3bb504c500a546627439d",
     "passed": 632,
     "failed": 0,
-    "ignored": 0,
-    "log": "artifacts/execution/2026-10-11-resolution/logs/exact-transcendentals.log",
-    "log_sha256": "f75d23947dbe2f08d81873eca730c76692a2a00a374b889974c199e86419dbce"
+    "ignored": 0
   },
   {
     "command": "CARGO_INCREMENTAL=0 cargo test --locked -j1 -p clockwork-core",
     "exit_code": 0,
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/clockwork-core-final.log",
+    "log_sha256": "c9a02a34336641d5ae0582118f1ac60f85eeffe60fde4c8aa8068ff1d1e6fd99",
     "passed": 46,
     "failed": 0,
-    "ignored": 0,
-    "log": "artifacts/execution/2026-10-11-resolution/logs/clockwork-core.log",
-    "log_sha256": "6dbd4fb2e0bca1e096e3d171b1bca2a9a277ed3df57581e9520b8da3b8f91ede"
+    "ignored": 0
   },
   {
     "command": "CARGO_INCREMENTAL=0 cargo clippy --locked -j1 --workspace --all-targets -- -D warnings",
     "exit_code": 0,
-    "log": "artifacts/execution/2026-10-11-resolution/logs/workspace-clippy.log",
-    "log_sha256": "ce9cf96bda95ee4fb6e4453a49f95e7871a0789f56568b8d3223ef9b248ce4b8"
-  },
-  {
-    "command": "cargo-deny 0.20.2 --locked --all-features check (temporary advisory-db path; all policy settings identical to deny.toml)",
-    "exit_code": 0,
-    "log": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny.log",
-    "log_sha256": "dfefe482ba2a88e74e2c7944d09c675560430e1a424c35be52338dcc2d648a15"
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/workspace-clippy-final.log",
+    "log_sha256": "a72cc18c07698b504e1c8937e816d7cfbfd9119faa20aaa15af9e40dc93b146e"
   },
   {
     "command": "cargo fmt --all -- --check",
     "exit_code": 0,
-    "log": "artifacts/execution/2026-10-11-resolution/logs/format.log",
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/format-final.log",
     "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   {
     "command": "python3 scripts/nine65_execution_plan.py validate --self-test",
     "exit_code": 0,
-    "log": "artifacts/execution/2026-10-11-resolution/logs/plan-validation.log",
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/plan-validation-final.log",
     "log_sha256": "eb2d1a71cfb1d101c7519d8db061f6f811ac2389034fa76085a6dfbf92982eda"
+  },
+  {
+    "command": "python3 artifacts/execution/2026-10-11-resolution/replay-add-benchmark.py",
+    "exit_code": 0,
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/benchmark-replay.json",
+    "log_sha256": "8f3a69ec061b854d63b46d191165fea269d77a383779dafafeb6e3b123b9de76",
+    "verified_run_records": 12
+  },
+  {
+    "command": "CARGO_TARGET_DIR=/home/acid/Projects/NINE65_v7/target/pr179-resolution CARGO_INCREMENTAL=0 cargo run --locked -j1 --manifest-path artifacts/execution/2026-10-11-resolution/codec-compatibility/Cargo.toml",
+    "exit_code": 0,
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/codec-compatibility.log",
+    "log_sha256": "304c5b5d49fd0717ec1eae018faa4ad0b0f6d2c660a9cb685f8a2316d3371e67"
+  },
+  {
+    "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-twwxinx3/deny.toml check",
+    "argv": [
+      "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny",
+      "--offline",
+      "--locked",
+      "--all-features",
+      "--config",
+      "/tmp/nine65-deny-check-twwxinx3/deny.toml",
+      "check"
+    ],
+    "exit_code": 0,
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "log": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny-final.log",
+    "log_sha256": "9078b37a1bf807b01fc28ef29d5b7e72f58658d0cfbc617dad3faa6f784a00e8",
+    "invocation_metadata": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny-invocation.json",
+    "invocation_metadata_sha256": "a3e315d532d4950607c62506a188ad4afd3c1c1f554e4fb6f2f3f903ef77090e"
   }
 ]

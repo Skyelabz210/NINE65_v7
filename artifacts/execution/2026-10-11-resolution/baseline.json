@@ -1,7 +1,7 @@
 {
   "task_id": "F00",
   "status": "ready_for_review",
-  "observed_utc": "2026-10-12T03:54:44.890065+00:00",
+  "observed_utc": "2026-10-12T04:47:31.767722+00:00",
   "intake_workspace": {
     "path": "/home/acid/Projects/NINE65_v7",
     "commit": "558ae72bcbbff5f98c5b0eb16ded82cf895700e1",
@@ -711,42 +711,78 @@
   },
   "resolution_worktree": {
     "path": "/tmp/nine65-pr179",
-    "commit": "33f06166bdcef8250b32e4a663334b34f8488bfc",
-    "tracked_changes": [
-      {
-        "status": "M",
-        "path": "Cargo.lock",
-        "sha256": "c9fe22b212d7e69f5e2b812cac42a1143cf6f982f696922445992adc6d46aac7"
-      },
-      {
-        "status": "M",
-        "path": "deny.toml",
-        "sha256": "ee4da92c28c4e0b66bf4085919e05126f74ef26045d018676a53968952e7130e"
-      }
+    "commit": "6e24ce8c5561cbbef4f648b0894d66a4fdb75997",
+    "source_input_scope": [
+      "Cargo.lock",
+      "deny.toml",
+      "crates/exact_transcendentals/src/dyn_crt.rs",
+      "crates/exact_transcendentals/src/k_elim.rs",
+      "crates/exact_transcendentals/src/recumbent.rs",
+      "crates/clockwork-core/Cargo.toml"
     ],
-    "tracked_diff_sha256": "8ba27eef628767b4ad150857162a0cc4fef0971b62730e78e92b97e8556630f2"
+    "source_input_sha256": {
+      "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+      "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+      "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
+      "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
+      "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
+      "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
+    },
+    "source_diff_against_main_sha256": "0311afdea26622826914cfaecf137ea73270ef83907dd70d29aa16a7c919919d",
+    "generated_evidence_excluded_from_own_hash_inputs": true
   },
   "toolchain": {
     "rustc": "rustc 1.89.0 (29483883e 2025-08-04)",
     "cargo": "cargo 1.89.0 (c24e10642 2025-06-23)"
   },
   "source_sha256": {
-    "Cargo.lock": "c9fe22b212d7e69f5e2b812cac42a1143cf6f982f696922445992adc6d46aac7",
-    "deny.toml": "ee4da92c28c4e0b66bf4085919e05126f74ef26045d018676a53968952e7130e",
-    "crates/exact_transcendentals/src/dyn_crt.rs": "4285de41455f3a364dcc74114f7bdb4a72023eb6920c70646246a6afb9eedb43",
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+    "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+    "crates/exact_transcendentals/src/dyn_crt.rs": "6afc610846e0b0623493bdad558597d6c3a14c4b6a8484d5a1290a715b183fb1",
     "crates/exact_transcendentals/src/k_elim.rs": "e811de4e128457fef62a2ba2e36457b746eede37c0518ecb7c71725a949413ec",
     "crates/exact_transcendentals/src/recumbent.rs": "74c778d5099ce8ee77b2209078b01798977e72056e2e83ded4eeac05f31c138c",
     "crates/clockwork-core/Cargo.toml": "0708f09ae3e8e8fb44fccae5a60a7ca2b2268c4df29b7330571c67476093671b"
   },
   "resources": {
-    "disk": "Filesystem      Size  Used Avail Use% Mounted on\ntmpfs           1.4G   43M  1.3G   4% /tmp\ntmpfs           1.4G   43M  1.3G   4% /tmp",
-    "memory": "total        used        free      shared  buff/cache   available\nMem:            2747        1722         153          43         957        1025\nSwap:              0           0           0",
+    "disk": "Filesystem      Size  Used Avail Use% Mounted on\ntmpfs           1.4G   46M  1.3G   4% /tmp\ntmpfs           1.4G   46M  1.3G   4% /tmp",
+    "memory": "total        used        free      shared  buff/cache   available\nMem:            2747        1687         163          46         984        1060\nSwap:              0           0           0",
     "kernel": "Linux 6.6.143-09589-gf9e106250941 x86_64 GNU/Linux",
     "cpu_threads": 2
   },
   "provenance": {
     "intake_changes": "Pre-existing deleted evidence and bootstrap edit; owner not inferred; preserved without staging or restoration",
-    "resolution_changes": "Cargo.lock rand patch upgrades and deny.toml license-policy corrections authored in this session"
+    "resolution_changes": "PR180 dependency upgrades integrated; policy annotation and reproducible execution evidence authored in this session. The only arithmetic-source edit is the scalar-extraction-count comment."
   },
-  "acceptance": "Independent baseline review is still required; no task card accepted by this record."
+  "acceptance": "Independent baseline review is still required; no task card accepted by this record.",
+  "historical_observation": "baseline-initial.json preserves the earlier intake and pre-final-edit source snapshot; checks-initial.json is superseded by checks.json",
+  "current_main_commit": "ba4c46b57d79337fadee3304e532f18c0dec68d1",
+  "historical_selected_upstream_revisions": [
+    {
+      "repository": "https://github.com/Skyelabz210/NINE65_v6_a_Clockwork_Prime",
+      "commit": "bd5c5c29f5c367bf34831cf5c1b97b3b938ac829",
+      "local_review_copy": "/tmp/nine65-v6-plan-review",
+      "files": {
+        "NINE65/NINE65_v6_a_Clockwork_Prime/crates/nine65/src/bootstrap/three_lock.rs": "89f29ef7429cd7b78f45494e935dd74fd7b1d2f8c60d7dda3637b02d7c893240",
+        "NINE65/NINE65_v6_a_Clockwork_Prime/docs/DEPTH_CORRECTNESS_MATRIX.json": "07e5aac990ce864e5944e2d240b12accc3b57ef9c468736e5be5160e7dccab2b"
+      },
+      "verification_scope": "selected source inspection only; no complete historical build"
+    },
+    {
+      "repository": "https://github.com/Skyelabz210/qmnf-lean-coq-security-proofs",
+      "commit": "d5c7a1f6e3da3068ddafbb2b48424ee13beac5d6",
+      "local_review_copy": "/tmp/nine65-security-proofs-review",
+      "files": {
+        "nist/shadow_nist_tests.py": "87a5f91ca327e3e0295460ac53ae5b6f0fc44e2c7986108141144eb3bbe5b7a3",
+        "lean4/shadow-nist/ShadowUniform.lean": "ce7d2e4f157e84d268fd994fe6b95fafd608b7be9f1153d498c3e31340908b29",
+        "lean4/shadow-nist/ShadowSecurityTheorems.lean": "0ee749ea2ac59cad032df882c114660fff0e73932c0bfe27f5a19d2e7017e702",
+        "lean4/shadow-nist/ShadowNISTCompliance.lean": "c410dde0ef3ddf7446df5868d4304dc87af3239551a6473a21aa9929b1c2a024",
+        "lean4/shadow-nist/ShadowCorrelation.lean": "0eccd608e7bfc13e348de05e2b790a9d01c7f2f5eb93239b925c1fbb64fc3683"
+      },
+      "verification_scope": "selected source inspection only; no complete historical build"
+    }
+  ],
+  "historical_issue_inventory_reference": "docs/execution/2026-10-03/evidence.json:issue_inventory",
+  "current_pr_inventory": "pr-inventory.json",
+  "tested_inputs_note": "Checks use these runtime/policy bytes; the subsequent main ancestry merge changed no tested runtime/policy input.",
+  "intake_observed_utc": "2026-10-12T03:54:44.890065+00:00"
 }

@@ -1,0 +1,44 @@
+[
+  {
+    "command": "CARGO_INCREMENTAL=0 cargo test --locked -j1 -p exact_transcendentals",
+    "exit_code": 0,
+    "passed": 632,
+    "failed": 0,
+    "ignored": 0,
+    "log": "artifacts/execution/2026-10-11-resolution/logs/exact-transcendentals.log",
+    "log_sha256": "f75d23947dbe2f08d81873eca730c76692a2a00a374b889974c199e86419dbce"
+  },
+  {
+    "command": "CARGO_INCREMENTAL=0 cargo test --locked -j1 -p clockwork-core",
+    "exit_code": 0,
+    "passed": 46,
+    "failed": 0,
+    "ignored": 0,
+    "log": "artifacts/execution/2026-10-11-resolution/logs/clockwork-core.log",
+    "log_sha256": "6dbd4fb2e0bca1e096e3d171b1bca2a9a277ed3df57581e9520b8da3b8f91ede"
+  },
+  {
+    "command": "CARGO_INCREMENTAL=0 cargo clippy --locked -j1 --workspace --all-targets -- -D warnings",
+    "exit_code": 0,
+    "log": "artifacts/execution/2026-10-11-resolution/logs/workspace-clippy.log",
+    "log_sha256": "ce9cf96bda95ee4fb6e4453a49f95e7871a0789f56568b8d3223ef9b248ce4b8"
+  },
+  {
+    "command": "cargo-deny 0.20.2 --locked --all-features check (temporary advisory-db path; all policy settings identical to deny.toml)",
+    "exit_code": 0,
+    "log": "artifacts/execution/2026-10-11-resolution/logs/cargo-deny.log",
+    "log_sha256": "dfefe482ba2a88e74e2c7944d09c675560430e1a424c35be52338dcc2d648a15"
+  },
+  {
+    "command": "cargo fmt --all -- --check",
+    "exit_code": 0,
+    "log": "artifacts/execution/2026-10-11-resolution/logs/format.log",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": "python3 scripts/nine65_execution_plan.py validate --self-test",
+    "exit_code": 0,
+    "log": "artifacts/execution/2026-10-11-resolution/logs/plan-validation.log",
+    "log_sha256": "eb2d1a71cfb1d101c7519d8db061f6f811ac2389034fa76085a6dfbf92982eda"
+  }
+]

@@ -1,0 +1,14 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /tmp/nine65-pr179/crates/exact_transcendentals/Cargo.toml
+workspace: /tmp/nine65-pr179/Cargo.toml
+    Checking exact_transcendentals v1.0.0 (/tmp/nine65-pr179/crates/exact_transcendentals)
+    Checking nine65 v0.1.0 (/tmp/nine65-pr179/crates/nine65)
+    Checking rand v0.9.5
+    Checking proptest v1.9.0
+    Checking cram-core v0.1.0 (/tmp/nine65-pr179/crates/cram-core)
+    Checking private-feedback-nine65 v0.1.0 (/tmp/nine65-pr179/crates/private-feedback-nine65)
+    Checking fhe-service v0.1.0 (/tmp/nine65-pr179/crates/fhe-service)
+    Checking nine65-extreme-tests v0.1.0 (/tmp/nine65-pr179/crates/nine65-extreme-tests)
+    Checking nexgen_rational v0.1.0 (/tmp/nine65-pr179/crates/nexgen_rational)
+    Checking mana v0.1.0 (/tmp/nine65-pr179/crates/mana)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 23s

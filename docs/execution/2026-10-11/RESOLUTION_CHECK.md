@@ -1,13 +1,17 @@
 # PR resolution and execution checkpoint — 2026-10-11
 
-Parent: `main@33f06166bdcef8250b32e4a663334b34f8488bfc`.
+Current parent: `main@ba4c46b57d79337fadee3304e532f18c0dec68d1` after #180.
+The earlier main CI inventory is pinned separately to `33f0616`.
 Evidence: [resolution artifacts](../../../artifacts/execution/2026-10-11-resolution/).
 This checkpoint records completed maintenance and the gates still required by
 the [43-card plan](../2026-10-03/PLAN.md).
 
 ## Pull requests and review resolution
 
-The refreshed inventory had no open PRs after #179 merged at `33f0616`.
+The initial check after #179 merged found no open PRs. The later inventory
+captured concurrent #180; it has now merged at `ba4c46b` after its full CI result
+was reviewed. This checkpoint is the remaining follow-up #181. Its open status
+is explicitly represented in the refreshed inventory.
 #179 supersedes closed #173; #175 and its child #177 were already merged.
 All five inline #179 findings are resolved: add-chain reconstruction counts,
 preserved extension lanes, checked large-basis extraction, coprimality after
@@ -21,18 +25,23 @@ and the full carrier acceptance contract. A PR merge does not close those gates.
 The main CI run [38200604711](https://github.com/Skyelabz210/NINE65_v7/actions/runs/38200604711)
 passes formatting and Clippy but fails cargo-deny on `subtle`'s BSD-3-Clause
 license and the old Rand dependency. This follow-up explicitly allows that
-existing license, updates Rand 0.8.5 to 0.8.6 and 0.9.2 to 0.9.3, and removes
+existing license, preserves #180's Rand 0.8.6/0.9.5 updates, and removes
 the obsolete UNHAL MIT clarification so its declared proprietary metadata is
 used. The main branch's fixed Crossbeam 0.9.21 is preserved.
 
 Local formatting, strict workspace Clippy, and all four cargo-deny checks pass.
 `clockwork-core` passes 46 tests against the new Rand lockfile. The narrow
 RUSTSEC-2025-0141 exception remains as explicitly permitted by #178; other
-advisories remain enforced. Hosted T1 and T2 must be captured on the published
-follow-up before assigning it a final resolution state.
+advisories remain enforced. At #180 head `9ac1adf`, hosted T1 passes and the
+complete default suite reports 1,881 passed, nine failed and 193 ignored in
+[run 38201693119](https://github.com/Skyelabz210/NINE65_v7/actions/runs/38201693119).
+The failures match the previously archived eight `nine65 --lib` cases and
+`class_f_alpha_lanes_must_be_prime_and_distinct`; the raw current log is archived.
+They remain release blockers. #181 adds evidence and policy metadata without
+changing the production arithmetic; capture its exact-head hosted gates too.
 
-The maintained-codec candidate is preserved on local branch
-`codex/oct11-serialization-maintenance` at `40d62f7`. Its Bincode 2.0.1 versus
+The maintained-codec candidate is archived as `codec-candidate.patch.gz`, with its
+six-fixture probe, lockfile and golden-test log beside it. Its Bincode 2.0.1 versus
 bincode-next 2.1.0 probe matches six byte fixtures, and its actual ciphertext
 golden test passes once. It needs rebasing onto the updated parent, inventory
 and corpus checks for the excluded Python/WASM codecs, malformed-input fuzzing,
@@ -43,8 +52,11 @@ and full review before integration. #178 is not closed by that candidate.
 Three independent runs compare `b0b01ea9` with `33f0616` using the same Rust
 1.89.0 compiler, optimized profile, source modules and fixed input workload.
 Each run executes 10,000 chains of 30 additions; every readout must equal 465.
-The raw integer timings and source hashes are in `add-benchmark.json`, with the
-standalone probe beside it. These measurements cover the staged carriers.
+The raw integer timings and source hashes are in `add-benchmark.json`. The exact
+module snapshots are under `sources/base` and `sources/head`; run
+`python3 artifacts/execution/2026-10-11-resolution/replay-add-benchmark.py` to
+verify their hashes, build each optimized probe, and replay all three runs.
+These measurements cover the staged carriers.
 
 | Carrier | Before median ns | After median ns | Before scalar extractions per chain | After scalar extractions per chain |
 | --- | ---: | ---: | ---: | ---: |
@@ -58,6 +70,34 @@ lane-parallel phase/parking contract. The workload stays inside the basis so
 both versions return correct answers; the wrap-boundary regressions separately
 check the defect that motivated the fallback. No public BFV performance or
 noise conclusion follows from these carrier measurements.
+
+## Reproduce the dependency-policy check
+
+The executable invocation, binary version/hash, generated configuration/hash,
+Cargo.lock hash and frozen RustSec revision are in
+`logs/cargo-deny-invocation.json`. The archived generated configuration differs
+from `deny.toml` only in its advisory-cache path; `verify-deny.py` checks the
+parsed policies for equality before invoking cargo-deny with `--offline`.
+The original preliminary snapshot is preserved separately; the primary
+`baseline.json` and `checks.json` identify the final source and policy inputs.
+
+Use the official cargo-deny 0.20.2 binary, run `cargo fetch --locked`, and clone
+`https://github.com/RustSec/advisory-db` into
+`/tmp/nine65-deny-advisory-db/advisory-db-3157b0e258782691`. Check out its
+recorded revision `7eebec69c352c7191b1f13eb95dd510eeca5d1de`, then run:
+
+```sh
+python3 artifacts/execution/2026-10-11-resolution/verify-deny.py \
+  --cargo-deny /path/to/cargo-deny \
+  --advisory-db /tmp/nine65-deny-advisory-db \
+  --advisory-revision 7eebec69c352c7191b1f13eb95dd510eeca5d1de \
+  --output-directory /tmp/nine65-deny-replay
+```
+
+The codec probe can be rerun with
+`cargo run --locked --manifest-path artifacts/execution/2026-10-11-resolution/codec-compatibility/Cargo.toml`.
+The candidate patch remains outside the production build and needs its stated
+compatibility, malformed-input and integration gates.
 
 ## Remaining execution gates
 

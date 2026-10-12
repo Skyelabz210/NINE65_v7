@@ -1,0 +1,30 @@
+{
+  "command": "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny --offline --locked --all-features --config /tmp/nine65-deny-check-twwxinx3/deny.toml check",
+  "argv": [
+    "/tmp/nine65-deny-tool/cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny",
+    "--offline",
+    "--locked",
+    "--all-features",
+    "--config",
+    "/tmp/nine65-deny-check-twwxinx3/deny.toml",
+    "check"
+  ],
+  "cwd": "/tmp/nine65-pr179",
+  "exit_code": 0,
+  "binary_version": "cargo-deny 0.20.2",
+  "binary_sha256": "b329e25933d01c36dd7c47d84ea5716694f9b7caf53a5003d45674703a8ed54a",
+  "policy_sha256": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+  "cargo_lock_sha256": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+  "config_sha256": "272979f67994c02ef7a44217e46c4a6f66f8fbb7b20240fb85886be0e28625b5",
+  "config_archive": "cargo-deny-config.toml",
+  "policy_equivalence_verified": true,
+  "advisory_database": {
+    "root": "/tmp/nine65-deny-advisory-db",
+    "repository": "/tmp/nine65-deny-advisory-db/advisory-db-3157b0e258782691",
+    "url": "https://github.com/RustSec/advisory-db",
+    "revision": "7eebec69c352c7191b1f13eb95dd510eeca5d1de",
+    "fetch_disabled": true
+  },
+  "log": "cargo-deny-final.log",
+  "log_sha256": "9078b37a1bf807b01fc28ef29d5b7e72f58658d0cfbc617dad3faa6f784a00e8"
+}

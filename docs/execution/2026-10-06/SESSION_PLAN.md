@@ -138,8 +138,10 @@ passing gates.
 
 ## PR resolution checkpoint (2026-10-11)
 
-The GitHub inventory has no open PRs after #179 merged at `33f0616`; the other
-recent PRs are merged or closed, including #175 and #177. PR #179 is the
+The captured intake records #179 merged at `33f0616` and concurrent #180 open;
+#180 subsequently merged at `ba4c46b` after its full result was reviewed. The
+remaining checkpoint follow-up is #181. Earlier PRs including #175 and #177 are merged.
+PR #179 is the
 replacement for superseded #173 and carries only the #159 winding-add and
 parking subset. Its resolution check found the earlier reconstruction-count
 and extended-basis review notes reflected in the follow-up commit, plus a new
@@ -149,8 +151,9 @@ accepting small values whose remaining lanes agree, and pins the behavior on a
 26-prime basis. Local `cargo fmt --all -- --check`, strict Clippy for
 `exact_transcendentals`, and the full `exact_transcendentals` test suite pass
 (566 unit tests and 66 crate integration tests). All five inline threads are
-resolved. Main's hosted T1 reaches license/advisory failures and skips T2; the
-current dependency follow-up passes all four policy checks locally. The
+resolved. #180's hosted T1 now passes, and its complete default suite reports
+1,881 passed, nine pre-existing failures and 193 ignored. The evidence follow-up
+passes all four policy checks locally and preserves every failing assertion. The
 [resolution checkpoint](../2026-10-11/RESOLUTION_CHECK.md) records the exact
 remaining hosted and execution gates.
 

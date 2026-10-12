@@ -1,0 +1,5 @@
+    Blocking waiting for file lock on package cache
+   Compiling nine65-codec-compat v0.0.0 (/tmp/nine65-pr179/artifacts/execution/2026-10-11-resolution/codec-compatibility)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.78s
+     Running `/home/acid/Projects/NINE65_v7/target/pr179-resolution/debug/nine65-codec-compat`
+bincode 2.0.1 / bincode-next 2.1.0: 6 fixtures match; ciphertext golden = [2, 2, 0, 250, 2, 251, 251, 0, 252, 0, 0, 1, 0, 1, 2, 251, 255, 255, 253, 255, 255, 255, 255, 255, 255, 255, 255, 2, 2, 2, 0, 250, 2, 251, 251, 0, 252, 0, 0, 1, 0, 1, 2, 251, 255, 255, 253, 255, 255, 255, 255, 255, 255, 255, 255, 2, 2]

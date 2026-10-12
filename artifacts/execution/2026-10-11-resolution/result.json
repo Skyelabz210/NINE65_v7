@@ -1,9 +1,9 @@
 {
   "task_id": "F00",
   "status": "ready_for_review",
-  "source_commit": "33f06166bdcef8250b32e4a663334b34f8488bfc",
+  "source_commit": "6e24ce8c5561cbbef4f648b0894d66a4fdb75997",
   "baseline": "baseline.json",
-  "baseline_sha256": "19a86e1f35c3dbe08c50a2b45b51a0eae25ac704b169ab6f05fc15bc279699bb",
+  "baseline_sha256": "f84539f0213412446c469622b7b3445847113a16a962f346fc33909011fd622c",
   "checks": "checks.json",
   "acceptance_evidence": [
     "Intake and isolated-worktree changes and hashes are recorded",
