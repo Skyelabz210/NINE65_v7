@@ -41,6 +41,9 @@
 //!
 //! A1/A2: exact integer arithmetic only; no floating point and no
 //! mixed-radix/Garner reconstruction is introduced by this module.
+//! The delegated canonical `TransductionMap` still forms a scalar rank
+//! aggregate. Its use here does not certify the application's broader
+//! no-internal-scalar-projection contract.
 
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
@@ -48,7 +51,9 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 use crate::k_elim::{gcd, modd, mulmod};
-use crate::transduction::TransductionMap;
+use crate::transduction::{
+    TransductionBasisError, TransductionBuildError, TransductionCapacityError, TransductionMap,
+};
 
 /// Typed failure for lift-aware transduction.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -69,6 +74,40 @@ pub enum LiftedTransductionError {
     /// A [`LiftEvidenceProvider`] could not supply `K mod b_j` for the named
     /// target lane (out of range, or the provider's own derivation failed).
     EvidenceUnavailable { lane: usize },
+    /// The basis pair cleared validity but its CRT bookkeeping cannot be
+    /// carried in `i128` — the capacity half of `TransductionMap`'s failure
+    /// surface. Surfaced as a typed refusal here because this module's
+    /// contract is "never a panic": it goes through
+    /// [`TransductionMap::try_build`] instead of the panic-wrapping
+    /// `TransductionMap::new`.
+    Capacity(TransductionCapacityError),
+}
+
+/// Map the fully fallible constructor's combined error onto this module's
+/// single typed error, so neither failure half (validity or capacity) can
+/// escape as a panic.
+fn map_build_error(err: TransductionBuildError) -> LiftedTransductionError {
+    match err {
+        TransductionBuildError::Capacity(c) => LiftedTransductionError::Capacity(c),
+        TransductionBuildError::IdempotentOverflow { .. } => {
+            LiftedTransductionError::Capacity(TransductionCapacityError::InsufficientI128Capacity {
+                bound_kind: "idempotent intermediate",
+                approx_bits: 128,
+            })
+        }
+        TransductionBuildError::Basis(TransductionBasisError::InvalidSourceModulus {
+            index,
+            modulus,
+        }) => LiftedTransductionError::InvalidSourceModulus { index, modulus },
+        TransductionBuildError::Basis(TransductionBasisError::InvalidTargetModulus {
+            index,
+            modulus,
+        }) => LiftedTransductionError::InvalidTargetModulus { index, modulus },
+        TransductionBuildError::Basis(TransductionBasisError::NotPairwiseCoprime {
+            lane_i,
+            lane_j,
+        }) => LiftedTransductionError::SourceBasisNotPairwiseCoprime { lane_i, lane_j },
+    }
 }
 
 /// Every source-basis modulus must be positive and pairwise coprime with
@@ -143,9 +182,11 @@ pub fn project_with_lift(
 /// the existing bounded [`TransductionMap`].  It then adds the exact lift
 /// contribution independently on every target lane.
 ///
-/// The operation never requires full integer materialization.  `k_mod_targets`
-/// must contain `K mod b_j` for each target modulus `b_j`, obtained from the
-/// caller's certified phase-lock/anchor mechanism.
+/// The lifted integer `X` is not formed, but the canonical map still forms
+/// its scalar CRT aggregate. `k_mod_targets` must contain `K mod b_j` for
+/// this same source state and source product, obtained from the caller's
+/// certified phase-lock/anchor mechanism. This slice does not itself certify
+/// the source binding or the uniqueness bound.
 pub fn transduct_with_lift(
     basis_a: &[i128],
     basis_b: &[i128],
@@ -174,8 +215,14 @@ pub fn transduct_with_lift(
         }
     }
 
+    // Fully fallible construction: capacity refusals (an `i128`-uncarryable
+    // basis pair) come back typed instead of panicking inside
+    // `TransductionMap::new`'s `.expect()` — this module's contract is
+    // "typed failure, never a panic". Source-basis validity was already
+    // checked by `validate_source_basis`, so `try_build` re-runs those
+    // checks and clears them.
+    let map = TransductionMap::try_build(basis_a, basis_b).map_err(map_build_error)?;
     // `apply` returns g mod b_j for the canonical g in [0,M_A).
-    let map = TransductionMap::new(basis_a, basis_b);
     let canonical_targets = map.apply(source_residues);
     let m_a = map.m_a();
 
@@ -195,11 +242,10 @@ pub fn transduct_with_lift(
 /// One target lane's lift evidence: `K mod target_modulus`, already reduced
 /// into `[0, target_modulus)`.
 ///
-/// This is a type-level tag, not a general-purpose integer. It exists so a
-/// caller cannot hand a raw magnitude, or a stored full-precision `K`, where
-/// only a single lane's reduced residue is asked for — the type only comes
-/// into existence already reduced against the lane it names, via
-/// [`LiftEvidence::new`] or a [`LiftEvidenceProvider`].
+/// This tag records the lane, modulus, and normalized residue. It does not
+/// prove that the supplied integer was derived from the right source state
+/// or that the caller's phase/corridor bound holds; those are provider
+/// obligations. [`LiftEvidence::new`] accepts an integer and normalizes it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LiftEvidence {
     lane: usize,
@@ -334,8 +380,9 @@ where
 /// [`LiftedTransductionError`] — never a panic, never a silently truncated
 /// or wrong residue.
 ///
-/// The operation never requires full integer materialization, and — like
-/// [`transduct_with_lift`] — introduces no Garner/mixed-radix cascade.
+/// The lifted integer `X` is not formed. The canonical map's scalar rank
+/// aggregate and the caller's source/range certification obligations are
+/// the same as for [`transduct_with_lift`].
 pub fn transduct_with_lift_provider<P>(
     basis_a: &[i128],
     basis_b: &[i128],
@@ -361,8 +408,10 @@ where
         }
     }
 
+    // Fully fallible construction — same typed-capacity-refusal contract as
+    // [`transduct_with_lift`]; see the comment there.
+    let map = TransductionMap::try_build(basis_a, basis_b).map_err(map_build_error)?;
     // `apply` returns g mod b_j for the canonical g in [0,M_A).
-    let map = TransductionMap::new(basis_a, basis_b);
     let canonical_targets = map.apply(source_residues);
     let m_a = map.m_a();
 
@@ -592,5 +641,32 @@ mod tests {
         assert_eq!(ev.lane(), 2);
         assert_eq!(ev.target_modulus(), 7);
         assert_eq!(ev.k_mod_target(), 2); // 30 mod 7
+    }
+
+    #[test]
+    fn capacity_overflow_fails_typed_not_panicked() {
+        // Basis-A product alone overflows i128, yet every modulus stays
+        // pairwise coprime so the only reachable refusal is capacity.
+        // Before the `try_build` wiring, this input reached
+        // `TransductionMap::new`'s `.expect()` and panicked; under this
+        // module's contract it must come back as a typed capacity refusal
+        // instead.
+        let huge_a = [i128::MAX, i128::MAX - 1, 5];
+        let source = vec![0i128; 3];
+        let k_mod_targets = vec![0i128; S8_BASIS.len()];
+
+        let err = transduct_with_lift(&huge_a, &S8_BASIS, &source, &k_mod_targets).unwrap_err();
+        assert_eq!(
+            err,
+            LiftedTransductionError::Capacity(TransductionCapacityError::BasisAProductOverflow)
+        );
+
+        // Same guarantee through the provider entry point.
+        let provider = PrecomputedLiftEvidence::new(&k_mod_targets);
+        let err = transduct_with_lift_provider(&huge_a, &S8_BASIS, &source, &provider).unwrap_err();
+        assert_eq!(
+            err,
+            LiftedTransductionError::Capacity(TransductionCapacityError::BasisAProductOverflow)
+        );
     }
 }

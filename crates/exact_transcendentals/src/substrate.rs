@@ -24,6 +24,9 @@
 //! how the bridge is computed. The corresponding `cram_ct` ciphertext
 //! does not change shape — only the lane metadata gains a substrate tag.
 
+#[cfg(not(feature = "std"))]
+use alloc::vec;
+
 use crate::lane_projector::mod_inv_u32;
 use crate::triad::S8;
 use crate::Vec;

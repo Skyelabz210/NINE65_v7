@@ -71,6 +71,9 @@ pub fn extended_gcd(a: i128, b: i128) -> (i128, i128, i128) {
 
 /// Modular inverse of `a` mod `m`. Returns `None` if `gcd(a, m) != 1`.
 pub fn mod_inv(a: i128, m: i128) -> Option<i128> {
+    if m <= 0 {
+        return None;
+    }
     let a_mod = modd(a, m);
     let (g, x, _) = extended_gcd(a_mod, m);
     if g != 1 {
@@ -201,11 +204,26 @@ pub fn k_eliminate(r: i128, m: i128, s: i128, a: i128) -> Option<KElimResult> {
     Some(KElimResult { k, value, m, a })
 }
 
+// Unit-test instrumentation for this specific reconstruction primitive.
+// Thread-local storage prevents unrelated parallel tests changing the count.
+// This does not detect other scalar materialization or prove full A2 compliance.
+#[cfg(all(test, feature = "std"))]
+std::thread_local! {
+    static GARNER_CALLS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
+}
+
+#[cfg(all(test, feature = "std"))]
+pub(crate) fn garner_call_count() -> u64 {
+    GARNER_CALLS.with(|calls| calls.get())
+}
+
 /// Multi-lane CRT reconstruction via iterated K-Elimination (Garner's algorithm).
 ///
 /// Given residues `(r_i, m_i)` with all `m_i` pairwise coprime, reconstructs
 /// the unique X in `[0, ∏m_i)`. Returns `None` if any pair is not coprime.
 pub fn garner_reconstruct(residues: &[(i128, i128)]) -> Option<i128> {
+    #[cfg(all(test, feature = "std"))]
+    GARNER_CALLS.with(|calls| calls.set(calls.get() + 1));
     if residues.is_empty() {
         return Some(0);
     }
