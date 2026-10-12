@@ -1,18 +1,16 @@
-//! A2 — residue-native transduction, verified in Rust so it gates the build.
+//! Functional transduction regressions (historical target name retained).
 //!
-//! This replaces a Python model that carried the note "Rust has no toolchain in
-//! this box". There is a toolchain. Verification that lives outside `cargo test`
-//! cannot fail a build, cannot stop a regression, and is therefore not
-//! verification — it is documentation that happens to execute.
+//! These tests establish output properties, not absence of scalar or Garner
+//! reconstruction. A correct Garner implementation passes the permutation
+//! test too. The unit test `transduction_does_not_call_garner_primitive`
+//! separately instruments calls to that known primitive. Neither test
+//! certifies the broader application architecture; the scalar rank aggregate
+//! in TransductionMap::apply remains an explicit integration gap.
 //!
 //! What is asserted here:
 //!   A1  every target residue is exact — `y_j == v mod b_j` — over the full
 //!       domain [0, M_A), not a sample;
-//!   A2  the transduction performs no mixed-radix cascade. Each target lane is
-//!       read independently from the source tray, so the result cannot depend
-//!       on lane ORDER. A Garner cascade threads digit i through digits 0..i-1
-//!       and is order-sensitive; permuting the source basis is the observable
-//!       that separates the two;
+//!   ORD source-basis permutations preserve the projected value;
 //!   PL  a lane shared by both fixtures carries its residue across unchanged —
 //!       the phase lock;
 //!   RT  round trips are exact within the smaller corridor.
@@ -50,9 +48,8 @@ fn a1_exact_over_full_corridor() {
     );
 }
 
-/// A2 — no threaded accumulator. Permuting the source basis must not move the
-/// answer. A mixed-radix cascade is order-dependent; independent per-lane reads
-/// are not. This is the observable that distinguishes them.
+/// Permuting the source basis preserves the projected value. This is a
+/// correctness property shared by scalar reconstruction algorithms.
 #[test]
 fn a2_result_is_independent_of_source_lane_order() {
     let forward = [2i128, 3, 5, 7, 11, 13];
@@ -67,8 +64,8 @@ fn a2_result_is_independent_of_source_lane_order() {
         let a = m_f.apply(&residues(v, &forward));
         let b = m_r.apply(&residues(v, &reversed));
         let c = m_o.apply(&residues(v, &rotated));
-        assert_eq!(a, b, "lane order changed the result at v={v} (cascade!)");
-        assert_eq!(a, c, "lane rotation changed the result at v={v} (cascade!)");
+        assert_eq!(a, b, "lane order changed the result at v={v}");
+        assert_eq!(a, c, "lane rotation changed the result at v={v}");
     }
 }
 
