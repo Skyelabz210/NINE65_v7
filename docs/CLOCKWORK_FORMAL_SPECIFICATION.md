@@ -186,7 +186,7 @@ where W is the window width parameter and the distance is the circular (folded) 
 
 **Definition D15 (Window).** A contiguous interval [start, end) of time steps where D14 holds.
 
-**Golden Ratio Construction.** `GroGate::golden_ratio(n_acc, delta_phi_a, window_width)` computes delta_phi_B = delta_phi_A * F_86 / F_85 using Fibonacci numbers F_85 = 420196140727489673 and F_86 = 679891637638612258. This is pure integer arithmetic. The ratio F_86/F_85 approximates the golden ratio phi with error < 10^{-18}. If the phase increment difference is even, it is nudged by 1 to ensure maximal period (T9).
+**Golden Ratio Construction.** `GroGate::golden_ratio(n_acc, delta_phi_a, window_width)` computes the integer quotient delta_phi_B = floor(delta_phi_A * F_87 / F_86), using exact Fibonacci numbers F_86 = 420196140727489673 and F_87 = 679891637638612258 (with F_0 = 0, F_1 = 1). The rational F_87/F_86 closely approximates the golden ratio phi, but the executed frequency ratio also includes integer truncation and an optional +1 parity adjustment. Consequently, the approximation error of the *final increments* depends on delta_phi_A. All operations are integer-only; no irrational number is numerically evaluated. If the phase increment difference is even, it is nudged by 1 to enforce the intended odd-difference period condition (T9).
 
 **Theorem T9 (Coincidence Period).** The coincidence period is:
 
@@ -340,7 +340,7 @@ The entire Clockwork-Core crate contains zero floating-point operations. This is
 
 1. All arithmetic uses u32, u64, u128, i128 integer types
 2. Logarithms are computed as `128 - leading_zeros()` (integer bit-counting)
-3. Golden ratio approximation uses Fibonacci ratio F_86/F_85 (integer division)
+3. Golden ratio construction uses Fibonacci ratio F_87/F_86 (integer division, optional odd-difference adjustment)
 4. Modular inverses use extended GCD (integer recursion)
 5. CRC32 uses bitwise operations (crc32fast)
 6. Statistical tests in test code use f64, but this is test-only and does not affect production paths
