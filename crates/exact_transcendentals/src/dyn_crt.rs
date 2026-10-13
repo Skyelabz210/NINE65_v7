@@ -481,16 +481,16 @@ impl WindingCRT {
     }
 }
 
-/// WASSAN-style residue ring for astronomically large values.
+/// WASSAN-style polynomial residue ring over Z/modulus Z.
 ///
-/// When a value exceeds the u128 corridor, it can still be represented
-/// exactly as a polynomial in ℤ_p[X]/(X^N - 1). This ring stores
-/// residue arrays that are too large for scalar extraction but can
-/// still participate in lane-parallel arithmetic.
+/// The coefficient array is the ring element in (Z/modulus Z)[X]/(X^N - 1).
+/// `add`, `negate`, and `scalar_mul` operate coefficient-wise in this ring.
+/// Their exactness is **ring exactness**, not positional integer exactness:
+/// adding positional base-modulus digits requires carry propagation.
 ///
-/// The key property: you NEVER NEED to reconstruct. The residue array
-/// IS the value. Arithmetic operates directly on the polynomial
-/// coefficients with modular reduction.
+/// The `from_u128` and `to_u128` helpers give a *positional integer view*
+/// at I/O boundaries. Use `try_add_positional` for integer-valued addition.
+/// Large ring elements need no scalar extraction during ring computation.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WassanRing {
     /// Polynomial coefficients in ℤ_p, one per slot.
@@ -502,18 +502,31 @@ pub struct WassanRing {
 }
 
 impl WassanRing {
-    /// Create a zero ring element.
-    pub fn zero(modulus: u64, dimension: usize) -> Self {
-        Self {
+    /// Construct zero if the radix and dimension are valid.
+    pub fn try_zero(modulus: u64, dimension: usize) -> Option<Self> {
+        if modulus < 2 || dimension == 0 {
+            return None;
+        }
+        Some(Self {
             coefficients: vec![0; dimension],
             modulus,
             dimension,
-        }
+        })
     }
 
-    /// Encode a u128 value into the ring. The value is stored as
-    /// base-p digits across the polynomial slots.
-    pub fn from_u128(val: u128, modulus: u64, dimension: usize) -> Self {
+    /// Create a zero ring element. Invalid parameters are rejected.
+    pub fn zero(modulus: u64, dimension: usize) -> Self {
+        Self::try_zero(modulus, dimension)
+            .expect("WassanRing requires modulus >= 2 and dimension > 0")
+    }
+
+    /// Fallible encoding of u128 into positional base-modulus digits.
+    ///
+    /// Rejects undersized capacity instead of silently discarding high digits.
+    pub fn try_from_u128(val: u128, modulus: u64, dimension: usize) -> Option<Self> {
+        if modulus < 2 || dimension == 0 {
+            return None;
+        }
         let mut coeffs = vec![0u64; dimension];
         let mut remaining = val;
         for c in coeffs.iter_mut() {
@@ -523,11 +536,23 @@ impl WassanRing {
                 break;
             }
         }
-        Self {
+        if remaining != 0 {
+            return None;
+        }
+        Some(Self {
             coefficients: coeffs,
             modulus,
             dimension,
-        }
+        })
+    }
+
+    /// Encode a u128 value into the ring as positional base-modulus digits.
+    ///
+    /// Panics on invalid radix, zero dimension, or insufficient capacity.
+    /// Use `try_from_u128` to handle these conditions without panicking.
+    pub fn from_u128(val: u128, modulus: u64, dimension: usize) -> Self {
+        Self::try_from_u128(val, modulus, dimension)
+            .expect("WassanRing input exceeds valid positional capacity")
     }
 
     /// Reconstruct to u128 if the value fits. I/O operation.
@@ -551,21 +576,54 @@ impl WassanRing {
         Some(value)
     }
 
-    /// Lane-parallel addition in the ring.
+    /// Exact coefficient-wise ring addition modulo `modulus` (no carries).
     pub fn add(&self, other: &WassanRing) -> WassanRing {
         assert_eq!(self.modulus, other.modulus);
         assert_eq!(self.dimension, other.dimension);
+        let p = self.modulus as u128;
         let coefficients: Vec<u64> = self
             .coefficients
             .iter()
             .zip(other.coefficients.iter())
-            .map(|(&a, &b)| (a + b) % self.modulus)
+            // The widened sum handles moduli up to u64::MAX.
+            .map(|(&a, &b)| ((a as u128 + b as u128) % p) as u64)
             .collect();
         WassanRing {
             coefficients,
             modulus: self.modulus,
             dimension: self.dimension,
         }
+    }
+
+    /// Exact addition when coefficients represent positional base-modulus digits.
+    ///
+    /// Unlike `add`, this operation propagates integer carries across slots.
+    /// Returns None on incompatible rings or when the sum needs another slot.
+    /// It performs no scalar reconstruction during computation.
+    pub fn try_add_positional(&self, other: &WassanRing) -> Option<WassanRing> {
+        if self.modulus != other.modulus
+            || self.dimension != other.dimension
+            || self.modulus < 2
+            || self.dimension == 0
+        {
+            return None;
+        }
+        let base = self.modulus as u128;
+        let mut carry = 0u128;
+        let mut coefficients = Vec::with_capacity(self.dimension);
+        for (&a, &b) in self.coefficients.iter().zip(other.coefficients.iter()) {
+            let sum = a as u128 + b as u128 + carry;
+            coefficients.push((sum % base) as u64);
+            carry = sum / base;
+        }
+        if carry != 0 {
+            return None;
+        }
+        Some(WassanRing {
+            coefficients,
+            modulus: self.modulus,
+            dimension: self.dimension,
+        })
     }
 
     /// Lane-parallel scalar multiplication.
@@ -848,5 +906,43 @@ mod tests {
         let a = WassanRing::from_u128(10, 997, 256);
         let scaled = a.scalar_mul(5);
         assert_eq!(scaled.to_u128(), Some(50));
+    }
+
+    #[test]
+    fn wassan_ring_and_positional_addition_have_distinct_semantics() {
+        let a = WassanRing::from_u128(996, 997, 2);
+        let b = WassanRing::from_u128(1, 997, 2);
+        // Ring coefficient arithmetic reduces to zero in the first slot.
+        assert_eq!(a.add(&b).to_u128(), Some(0));
+        // Positional integer arithmetic propagates a carry to the second slot.
+        assert_eq!(a.try_add_positional(&b).unwrap().to_u128(), Some(997));
+    }
+
+    #[test]
+    fn wassan_positional_addition_propagates_multiple_carries() {
+        let a = WassanRing::from_u128(342, 7, 4);
+        let b = WassanRing::from_u128(1, 7, 4);
+        assert_eq!(a.try_add_positional(&b).unwrap().to_u128(), Some(343));
+    }
+
+    #[test]
+    fn wassan_rejects_invalid_or_insufficient_capacity() {
+        assert!(WassanRing::try_zero(0, 3).is_none());
+        assert!(WassanRing::try_zero(1, 3).is_none());
+        assert!(WassanRing::try_zero(7, 0).is_none());
+        assert!(WassanRing::try_from_u128(10, 1, 5).is_none());
+        assert!(WassanRing::try_from_u128(1, 7, 0).is_none());
+        assert!(WassanRing::try_from_u128(1000, 997, 1).is_none());
+        let a = WassanRing::from_u128(48, 7, 2);
+        let b = WassanRing::from_u128(1, 7, 2);
+        assert!(a.try_add_positional(&b).is_none());
+    }
+
+    #[test]
+    fn wassan_ring_addition_widens_before_reduction() {
+        let p = u64::MAX;
+        let a = WassanRing::from_u128((p - 1) as u128, p, 1);
+        assert_eq!(a.add(&a).to_u128(), Some((p - 2) as u128));
+        assert!(a.try_add_positional(&a).is_none());
     }
 }
