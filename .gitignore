@@ -29,3 +29,6 @@ bench-archive/
 # Per-run, per-machine measurement output -- not committed. The checked-in
 # regression baseline lives at docs/benchmarks/op_timings_baseline.json.
 /bench-results/
+
+# Local Aider session files
+.aider*
