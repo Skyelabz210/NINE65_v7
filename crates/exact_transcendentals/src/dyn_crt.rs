@@ -945,4 +945,37 @@ mod tests {
         assert_eq!(a.add(&a).to_u128(), Some((p - 2) as u128));
         assert!(a.try_add_positional(&a).is_none());
     }
+
+    #[test]
+    fn wassan_positional_small_exhaustive_oracle() {
+        // Oracle uses native checked u128 addition, independent of the
+        // per-slot carry algorithm in try_add_positional.
+        for p in 2u64..=17 {
+            for dim in 1usize..=4 {
+                let capacity = (p as u128).pow(dim as u32);
+                let limit = capacity.min(40);
+                for x in 0..limit {
+                    let a = WassanRing::from_u128(x, p, dim);
+                    for y in 0..limit {
+                        let b = WassanRing::from_u128(y, p, dim);
+                        let actual = a
+                            .try_add_positional(&b)
+                            .and_then(|sum| sum.to_u128());
+                        let expected = x.checked_add(y).filter(|&n| n < capacity);
+                        assert_eq!(
+                            actual, expected,
+                            "p={p}, dim={dim}, x={x}, y={y}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn wassan_u128_max_boundary_roundtrip() {
+        let max = WassanRing::try_from_u128(u128::MAX, 2, 128).unwrap();
+        assert_eq!(max.to_u128(), Some(u128::MAX));
+        assert!(max.try_add_positional(&WassanRing::from_u128(1, 2, 128)).is_none());
+    }
 }
