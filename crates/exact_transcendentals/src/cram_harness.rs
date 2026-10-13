@@ -235,10 +235,11 @@ pub fn run_reconstruct_per_op(workload: Workload, inputs: &[i128]) -> ChainStats
 // Strategy: WASSAN Ring (add chains, no scalar extraction during compute)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Run an add-chain in the WASSAN residue ring. The residue array IS the value;
-/// no Garner reconstruction occurs — extraction to u128 is a positional decode
-/// at I/O only. MulChain is not supported (ring mul needs convolution); returns
-/// a stats row flagged accordingly.
+/// Run an exact *positional integer* add-chain in the WASSAN carrier.
+/// Carry propagation is required: coefficient-wise polynomial-ring addition
+/// is a distinct operation. There is no scalar reconstruction during compute;
+/// extraction to u128 happens at the I/O boundary only. Unsupported workloads
+/// or insufficient capacity are reported as failures, never silent wraparound.
 #[cfg(feature = "std")]
 pub fn run_wassan(workload: Workload, inputs: &[i128], modulus: u64, dim: usize) -> ChainStats {
     // Only add-chains over non-negative inputs are modelled here.
@@ -254,21 +255,29 @@ pub fn run_wassan(workload: Workload, inputs: &[i128], modulus: u64, dim: usize)
         };
     }
 
-    let mut acc = WassanRing::zero(modulus, dim);
+    let mut acc = WassanRing::try_zero(modulus, dim);
     for &v in inputs {
-        acc = acc.add(&WassanRing::from_u128(v as u128, modulus, dim));
+        acc = acc.and_then(|running| {
+            WassanRing::try_from_u128(v as u128, modulus, dim)
+                .and_then(|term| running.try_add_positional(&term))
+        });
+        if acc.is_none() {
+            break;
+        }
     }
 
-    let final_value = acc.to_u128().and_then(|u| i128::try_from(u).ok());
+    let final_value = acc
+        .and_then(|running| running.to_u128())
+        .and_then(|u| i128::try_from(u).ok());
     let truth = ground_truth(workload, inputs);
 
     ChainStats {
         strategy: "WassanRing",
         workload,
         ops: inputs.len(),
-        reconstructions: 0, // residue array is the value — no Garner extraction
+        reconstructions: 0, // no Garner extraction in positional carry chain
         final_value,
-        correct: final_value == truth,
+        correct: truth.is_some() && final_value == truth,
         max_winding_depth: 0,
     }
 }
@@ -385,7 +394,31 @@ mod tests {
         let stats = run_wassan(Workload::AddChain, &inputs, 1_000_003, 32);
         assert!(stats.correct, "wassan add chain must be exact");
         assert_eq!(stats.final_value, Some(5050));
-        assert_eq!(stats.reconstructions, 0, "ring needs no Garner extraction");
+        assert_eq!(stats.reconstructions, 0, "carry chain needs no Garner extraction");
+    }
+
+    #[test]
+    fn wassan_harness_proves_cross_slot_carries() {
+        let s = run_wassan(Workload::AddChain, &[996, 1], 997, 2);
+        assert!(s.correct);
+        assert_eq!(s.final_value, Some(997));
+        let many = run_wassan(Workload::AddChain, &[342, 1], 7, 4);
+        assert!(many.correct);
+        assert_eq!(many.final_value, Some(343));
+    }
+
+    #[test]
+    fn wassan_harness_rejects_capacity_or_invalid_parameters() {
+        let exhausted = run_wassan(Workload::AddChain, &[48, 1], 7, 2);
+        assert_eq!(exhausted.final_value, None);
+        assert!(!exhausted.correct);
+        let unrepresentable = run_wassan(Workload::AddChain, &[1000], 997, 1);
+        assert_eq!(unrepresentable.final_value, None);
+        assert!(!unrepresentable.correct);
+        let invalid_base = run_wassan(Workload::AddChain, &[1], 1, 2);
+        assert!(!invalid_base.correct);
+        let invalid_dim = run_wassan(Workload::AddChain, &[1], 7, 0);
+        assert!(!invalid_dim.correct);
     }
 
     #[test]
