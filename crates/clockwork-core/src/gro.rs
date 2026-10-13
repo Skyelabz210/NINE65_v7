@@ -110,20 +110,21 @@ impl GroGate {
     /// arithmetic only (Fibonacci ratio approximation).
     ///
     /// Uses the identity: F_{n+1}/F_n → φ as n → ∞.
-    /// With large Fibonacci numbers, the approximation error is < 10^{-18}.
+    /// The exact rational F_87/F_86 is close to φ; final integer frequency
+    /// increments additionally undergo truncation and an odd-difference step.
     pub fn golden_ratio(n_acc: u32, delta_phi_a: u64, window_width: u64) -> Option<Self> {
         // Guard: n_acc must be in valid range (same as GroGate::new)
         if !(8..=63).contains(&n_acc) {
             return None;
         }
 
-        // Fibonacci numbers for φ approximation (F_86/F_85 is extremely close to φ)
-        // All integer arithmetic — NO FLOATING POINT
-        const FIB_85: u128 = 420196140727489673; // F(85)
-        const FIB_86: u128 = 679891637638612258; // F(86)
+        // Exact Fibonacci integers, F_86 and F_87 (zero-based F_0 = 0).
+        // All integer arithmetic — NO FLOATING POINT.
+        const FIB_86: u128 = 420196140727489673; // F(86)
+        const FIB_87: u128 = 679891637638612258; // F(87)
 
-        // Δφ_B = Δφ_A * F(86) / F(85) — integer division, guaranteed > Δφ_A
-        let delta_phi_b_128 = (delta_phi_a as u128 * FIB_86) / FIB_85;
+        // Δφ_B = floor(Δφ_A * F(87) / F(86)) with integer division.
+        let delta_phi_b_128 = (delta_phi_a as u128 * FIB_87) / FIB_86;
 
         // Check it fits in the accumulator
         let acc_mask = (1u64 << n_acc) - 1;
