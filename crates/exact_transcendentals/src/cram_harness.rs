@@ -394,7 +394,10 @@ mod tests {
         let stats = run_wassan(Workload::AddChain, &inputs, 1_000_003, 32);
         assert!(stats.correct, "wassan add chain must be exact");
         assert_eq!(stats.final_value, Some(5050));
-        assert_eq!(stats.reconstructions, 0, "carry chain needs no Garner extraction");
+        assert_eq!(
+            stats.reconstructions, 0,
+            "carry chain needs no Garner extraction"
+        );
     }
 
     #[test]
