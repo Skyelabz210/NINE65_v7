@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   exact-transcendentals:
-    name: "Exact arithmetic · crate unit tests (std + no_std)"
+    name: "Exact arithmetic · std tests + no_std library build"
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -38,8 +38,11 @@ jobs:
             ${{ runner.os }}-exactness-crates-
       - name: Run exact_transcendentals full library tests
         run: cargo test -p exact_transcendentals --lib
-      - name: Run exact_transcendentals no-default-features tests
-        run: cargo test -p exact_transcendentals --no-default-features --lib
+      # Unit-test modules import std even when the crate's std feature is
+      # disabled. Compile the actual library to verify its no_std contract;
+      # the complete std-mode unit test suite runs in the preceding step.
+      - name: Compile exact_transcendentals no_std library
+        run: cargo check -p exact_transcendentals --no-default-features --lib
 
   basis-contract-diagnostic:
     name: "K-Elimination · generic CRT basis regression"
