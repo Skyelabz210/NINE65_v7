@@ -1,0 +1,68 @@
+name: Exactness Focused Gates
+
+# Independent, always-reporting arithmetic evidence.
+# This complements the full workspace suite. It never overrides or bypasses
+# the required CI gate, which remains red on unresolved nine65 failures.
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: exactness-focused-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exact-transcendentals:
+    name: "Exact arithmetic · std tests + no_std library build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust 1.89.0
+        uses: dtolnay/rust-toolchain@1.89.0
+      - name: Cache dependency crates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-exactness-crates-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-exactness-crates-
+      - name: Run exact_transcendentals full library tests
+        run: cargo test -p exact_transcendentals --lib
+      # Unit-test modules import std even when the crate's std feature is
+      # disabled. Compile the actual library to verify its no_std contract;
+      # the complete std-mode unit test suite runs in the preceding step.
+      - name: Compile exact_transcendentals no_std library
+        run: cargo check -p exact_transcendentals --no-default-features --lib
+
+  basis-contract-diagnostic:
+    name: "K-Elimination · generic CRT basis regression"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust 1.89.0
+        uses: dtolnay/rust-toolchain@1.89.0
+      - name: Cache dependency crates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-exactness-crates-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-exactness-crates-
+      # Generic coprime CRT lifting admits composite alpha moduli; field/NTT
+      # entry points enforce their own prime requirements. This assertion is
+      # required and must fail when the generic CRT contract is violated.
+      - name: Check K-Elimination basis contract
+        run: cargo test -p nine65 --test k_elimination_basis_regression

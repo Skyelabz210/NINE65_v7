@@ -106,8 +106,10 @@ use crate::errors::{Nine65Error, Nine65Result};
 ///
 /// # Separation Principle (NINE65 v8)
 ///
-/// Alpha moduli are CLASS-F: they must be prime (participate in NTT-adjacent operations).
-/// Beta moduli are CLASS-R: they require only pairwise coprimality with alpha and with
+/// NTT-adjacent CLASS-F moduli must be prime in field-specific consumers.
+/// This generic K-Elimination CRT lift accepts pairwise-coprime alpha moduli,
+/// including composites, because its inverse uses extended Euclid.
+/// Beta moduli are CLASS-R: they require only pairwise coprimality with alpha and
 /// each other. Composite beta values are mathematically valid and may offer hardware
 /// advantages (equal-bit-width reduction, pseudo-Mersenne shift tricks, parallel CRT-split).
 ///
@@ -294,7 +296,8 @@ impl KElimination {
     #[must_use = "this returns a Result that must be handled"]
     pub fn try_new(alpha_primes: &[u64], beta_moduli: &[u64]) -> Nine65Result<Self> {
         // Safe-basis family validation (see k_elimination_basis_regression.rs):
-        // CLASS-F alpha lanes must be non-empty, prime, and pairwise distinct;
+        // Generic CRT alpha lanes must be non-empty, > 1, and pairwise coprime;
+        // prime-only CLASS-F field validation belongs at NTT-specific entry points.
         // CLASS-R beta lanes must be non-empty, > 1, and pairwise coprime
         // (a bare pairwise-gcd check silently admits unit moduli, since 1 is
         // coprime to everything); the two families must be cross-coprime.
@@ -645,7 +648,8 @@ impl AdjacencyKElim {
     /// Build the adjacency-anchored context from a CLASS-F alpha family.
     ///
     /// The alpha family is validated exactly as for [`KElimination`]
-    /// (non-empty, prime, pairwise distinct). No validation of `A` is required
+    /// (non-empty, greater than 1, pairwise coprime). NTT field consumers
+    /// separately require prime CLASS-F moduli. No validation of `A` is required
     /// or performed beyond overflow: coprimality with `M` is a theorem, not a
     /// check.
     #[must_use = "this returns a Result that must be handled"]

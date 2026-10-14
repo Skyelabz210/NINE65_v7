@@ -64,6 +64,12 @@ on:
         required: false
         default: 'full'
 
+# Cancel superseded commits on the same PR to avoid repeating ~30-minute
+# workspace sweeps. The final head still runs all required gates.
+concurrency:
+  group: primary-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
@@ -394,12 +400,18 @@ jobs:
           echo "$REVIEW" >> $GITHUB_OUTPUT
           echo "REVIEWEOF" >> $GITHUB_OUTPUT
 
+      # A missing API key or unavailable API is not an AI review.
+      # Do not spam PRs with misleading "review completed" comments.
       - name: Post Gemini review to PR
+        if: ${{ !startsWith(steps.gemini.outputs.review, 'Gemini review skipped:') && !startsWith(steps.gemini.outputs.review, 'Gemini review unavailable') }}
         uses: actions/github-script@v7
+        env:
+          GEMINI_REVIEW: ${{ steps.gemini.outputs.review }}
+          DIFF_SIZE: ${{ steps.diff.outputs.diff_size }}
         with:
           script: |
-            const review = `${{ steps.gemini.outputs.review }}`;
-            const diffSize = '${{ steps.diff.outputs.diff_size }}';
+            const review = process.env.GEMINI_REVIEW;
+            const diffSize = process.env.DIFF_SIZE;
             const body = [
               '## Gemini Flash · AI Code Review',
               '',
