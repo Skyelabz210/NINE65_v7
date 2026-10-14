@@ -3,14 +3,21 @@
 use nine65::arithmetic::KElimination;
 
 #[test]
-fn class_f_alpha_lanes_must_be_prime_and_distinct() {
+fn exact_crt_alpha_lanes_must_be_coprime_and_distinct() {
+    // KElimination::try_new is the *generic* two-family exact CRT lift.
+    // Its inverse requires coprimality, not primality (15 and 17 are valid).
+    // NTT-adjacent CLASS-F prime requirements belong at the NTT boundary.
     assert!(
-        KElimination::try_new(&[15, 17], &[23]).is_err(),
-        "CLASS-F alpha lanes must reject composite moduli"
+        KElimination::try_new(&[15, 17], &[23]).is_ok(),
+        "generic CRT alpha accepts coprime composite moduli"
+    );
+    assert!(
+        KElimination::try_new(&[15, 21], &[23]).is_err(),
+        "generic CRT alpha rejects non-coprime composite moduli"
     );
     assert!(
         KElimination::try_new(&[17, 17], &[23]).is_err(),
-        "CLASS-F alpha lanes must reject duplicates"
+        "generic CRT alpha rejects duplicates"
     );
 }
 
