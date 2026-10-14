@@ -42,7 +42,7 @@ jobs:
         run: cargo test -p exact_transcendentals --no-default-features --lib
 
   basis-contract-diagnostic:
-    name: "K-Elimination · contract diagnostic (tracked failing gate)"
+    name: "K-Elimination · generic CRT basis regression"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -58,7 +58,8 @@ jobs:
           key: ${{ runner.os }}-exactness-crates-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-exactness-crates-
-      # This is intentionally failing until the alpha-prime versus generic-CRT
-      # constructor contract is reconciled. Do NOT add continue-on-error.
+      # Generic coprime CRT lifting admits composite alpha moduli; field/NTT
+      # entry points enforce their own prime requirements. This assertion is
+      # required and must fail when the generic CRT contract is violated.
       - name: Check K-Elimination basis contract
         run: cargo test -p nine65 --test k_elimination_basis_regression
