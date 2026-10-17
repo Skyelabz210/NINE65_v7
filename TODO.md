@@ -1,5 +1,7 @@
 # NINE65 execution TODO
 
+**Current-head audit addendum (2026-10-17):** [October gate reconciliation and expansion](docs/execution/2026-10-17/GATE_RECONCILIATION_AND_EXPANSION.md) crosswalks this existing 43-card plan to `main@89d641b`, the October 14 hosted red gates, arithmetic provenance, WIRE-Q and public refresh. The 43-card task contracts remain authoritative for acceptance.
+
 Updated 2026-10-13 from the repository review. This checklist follows the
 [session plan](docs/execution/2026-10-06/SESSION_PLAN.md) and the
 [43 task contracts](docs/execution/2026-10-03/tasks.json).
