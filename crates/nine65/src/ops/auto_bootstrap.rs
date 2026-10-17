@@ -564,7 +564,7 @@ mod tests {
     /// and the refresh re-funds it, so depth is bounded only by how long the
     /// test is willing to run. Eight levels is four full refresh cycles.
     ///
-    /// KNOWN PRE-EXISTING FAILURE (issue #117, not this issue's problem): the
+    /// KNOWN PRE-EXISTING FAILURE (issue #95, measured in #117): the
     /// real (non-bypassed) `ClockworkBootstrap::bootstrap` unconditionally
     /// fails `public_phase1_soundness_gate` for every config, so the first
     /// triggered refresh in this circuit panics via the `unwrap_or_else`
@@ -585,7 +585,7 @@ mod tests {
         assert_squaring_circuit_is_exact(SecureConfig::secure_192(), 11, 8);
     }
 
-    /// secure_256 is the one admitted config whose fresh budget funds **two**
+    /// secure_256 is the named config whose hypothetical refreshed budget funds **two**
     /// multiplies before the reserve-aware trigger fires (its chain is 158
     /// Delta bits against 49 mb per multiply and a 15 mb reserve), so its first
     /// refresh input carries two levels of noise rather than one. That is the
@@ -774,13 +774,12 @@ mod tests {
         );
     }
 
-    /// The ledger must fund at least one multiply immediately after a refresh
-    /// on every config whose chain is admitted for public refresh -- otherwise
-    /// `mul_auto` would refresh and then fail, making forward progress
-    /// impossible. Configs that are *not* admitted are expected to fail closed.
+    /// Under the ledger's hypothetical exact-Phase-1 assumption, a chain
+    /// clearing the capacity screen must fund one multiply after refresh.
+    /// Actual public refresh remains closed at the soundness gate.
     #[test]
-    fn a_refreshed_budget_funds_at_least_one_multiply_where_refresh_is_supported() {
-        use crate::params::secure_configs::supports_public_refresh;
+    fn a_refreshed_budget_funds_at_least_one_multiply_where_headroom_clears() {
+        use crate::params::secure_configs::public_refresh_headroom_clears;
 
         for secure in [
             SecureConfig::secure_128(),
@@ -804,20 +803,19 @@ mod tests {
             println!(
                 "{}: post-refresh budget {} mb, one multiply costs {} mb, \
                  funds a multiply = {}, would trigger another refresh first = {}, \
-                 chain admitted for public refresh = {}",
+                  circular headroom clears = {}",
                 config.name,
                 budget.remaining_millibits(),
                 cost,
                 funds_a_multiply,
                 would_trigger_again,
-                supports_public_refresh(&config),
+                public_refresh_headroom_clears(&config),
             );
-            if supports_public_refresh(&config) {
+            if public_refresh_headroom_clears(&config) {
                 assert!(
                     funds_a_multiply,
-                    "{}: chain is admitted for public refresh but a refreshed budget \
-                     ({} mb) cannot fund one multiply ({} mb) -- mul_auto could never \
-                     make forward progress",
+                    "{}: chain clears the capacity screen but a hypothetical \
+                     refreshed budget ({} mb) cannot fund one multiply ({} mb)",
                     config.name,
                     budget.remaining_millibits(),
                     cost,
@@ -837,28 +835,17 @@ mod tests {
         }
     }
 
-    /// Regression guard on the measured refresh envelope.
+    /// Regression guard on the noise-budget model's refresh envelope.
     ///
-    /// Measured on this commit (`ClockworkBootstrap::bootstrap`, circular path,
-    /// repeated squaring of an encrypted 3, every intermediate decrypted):
-    ///
-    /// | policy | secure_128_deep | secure_192 |
-    /// |--------|-----------------|------------|
-    /// | refresh after every multiply (k=1) | correct through depth 9 | correct through depth 9 |
-    /// | refresh after every 2nd multiply (k=2) | refresh before depth 3 returned 65534 for 16 | refresh before depth 3 returned 65508 for 16 |
-    ///
-    /// The refresh is plaintext-exact only while its input carries at most one
-    /// multiply's worth of noise above a refresh output. That envelope is what
-    /// `bootstrap_input_reserve_mb` exists to enforce, and it is not something
-    /// the ledger can re-derive from `Delta` alone -- the noise-independent
-    /// residue of `modswitch_to_t` sets it. So pin it: a steady-state refresh
-    /// cycle must never be modelled as funding more than one ct x ct multiply.
-    /// Widening the reserve is safe and will keep this test green; narrowing it
-    /// past the measured envelope will not.
+    /// This exercises only `NoiseBudget` arithmetic under a hypothetical
+    /// correct refresh. It does not run `ClockworkBootstrap::bootstrap`, which
+    /// currently refuses every public call. Pin the configured steady-state
+    /// reserve to at most one ct x ct multiply without claiming decryption
+    /// correctness from a ledger-only test.
     #[test]
     fn a_refresh_cycle_never_funds_more_than_one_multiply() {
         use crate::noise::budget::bootstrap_input_reserve_mb;
-        use crate::params::secure_configs::supports_public_refresh;
+        use crate::params::secure_configs::public_refresh_headroom_clears;
 
         for secure in [
             SecureConfig::secure_128_deep(),
@@ -867,8 +854,8 @@ mod tests {
         ] {
             let config = secure.into_config();
             assert!(
-                supports_public_refresh(&config),
-                "{}: expected an admitted config",
+                public_refresh_headroom_clears(&config),
+                "{}: expected a chain clearing the capacity screen",
                 config.name
             );
             let mut budget = NoiseBudget::from_config(&config);
@@ -888,8 +875,8 @@ mod tests {
 
             assert!(
                 funded <= 1,
-                "{}: a refresh cycle is modelled as funding {} multiplies, but the refresh \
-                 is only measured plaintext-exact for an input carrying one multiply",
+                "{}: a hypothetical refresh cycle is modelled as funding {} \
+                 multiplies, beyond the configured one-multiply reserve",
                 config.name,
                 funded,
             );

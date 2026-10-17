@@ -127,36 +127,26 @@ VESTIGIAL/RETIRED, so "verified exact" cannot be sourced to the running suite.
 - Non-Circular (KSK): `bootstrap_with_ksk()` — independent boot_sk, gadget key switch
 - Auto-Bootstrap: `AutoBootstrapEvaluator::mul_auto()` — auto trigger on noise threshold
 
-**Admissibility gate.** All three refuse configs whose main chain cannot carry a
-public refresh, via `params::secure_configs::ensure_public_refresh_supported`
-(typed `Nine65Error::BootstrapConfigMismatch`, never a panic).
+**Public refresh is disabled on every config.** The circular and KSK support
+predicates require both enough post-refresh noise headroom and a sound Phase 1.
+The headroom screens clear for the four named configs, but Phase 1 still omits
+a secret-dependent quotient/carry. `ensure_public_refresh_supported` and its
+KSK counterpart return typed `BootstrapFailed` for a chain with sufficient
+headroom, or `BootstrapConfigMismatch` when the chain is too short.
 
 `secure_128` was **re-cut 2026-08-26** (`docs/OPEN_WORK_2026-08-26.md` §A3)
 from three main primes to four; it now builds the exact same tuple as
-`secure_128_deep` and is therefore **admitted**, not refused. The retired
-three-lane tuple — 42 bits of post-refresh `Delta` headroom against the 47 one
-multiply needs, refused, with `refresh(7)` squaring to a wrong-but-plausible
-`34037` instead of `49` (measured by
-`ops::bootstrap::tests::diag_measure_noise_growth`) — is historical only; see
-`docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md` (flagged there as superseded on
-this point) for its archived numbers. `hardware_opt` no longer has a
-constructor in `secure_configs.rs` as of this writing; its continued presence
-in older docs is a separate, unresolved discrepancy, not addressed here.
+`secure_128_deep`. The retired three-lane tuple is historical only; see
+`docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md` for its archived numbers.
+`hardware_opt` no longer has a constructor in `secure_configs.rs`.
 
-`secure_128_deep`, `secure_192` and `secure_256` (4/5/6 lanes) are admitted,
-and `secure_128` now joins them on the same arithmetic. The symmetric
-secret-key refresh (`SymmetricBootstrap::bootstrap`) is a separate path and is
-not gated by this.
-
-**Open regression, separate from the above (2026-09-03):**
-`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md` found that on
-current `main`, `diag_measure_noise_growth` itself now decrypts wrong for
-every admitted config it measured (`secure_128_deep`, `secure_192`) — not just
-the historical secure_128 failure mode above, and not just at the subsequent
-multiply, but on `refresh(7)` itself. Tracked separately as issue #95 /
-WR-5A / WR-5B; not resolved by the 2026-08-26 re-cut and not resolved by this
-documentation pass. Do not read "admitted" in this section as "refresh
-verified working."
+The diagnostic in
+`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md` measured
+`refresh(7)` itself returning 65536 on the four-prime `secure_128` /
+`secure_128_deep` tuple and 40 on `secure_192`. Issue #117 tracks that
+observed failure; issue #95 tracks the missing exact encrypted Phase-1
+transition. The symmetric secret-key refresh
+(`SymmetricBootstrap::bootstrap`) is a separate path.
 
 ## Security Configs
 Screened 2026-08-22 by `params::secure_configs::tests::screened_levels_for_named_configs`
@@ -168,10 +158,10 @@ that tuple under the `secure_128_deep` name and are simply carried over.
 
 | constructor | n | lanes | log2(q) | claimed | Core-SVP | MATZOV | binding | public refresh |
 |---|---|---|---|---|---|---|---|---|
-| `secure_128()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | yes |
-| `secure_128_deep()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | yes |
-| `secure_192()` | 16384 | 5 | 146 | 192 | 320 | 288 | 288 | yes |
-| `secure_256()` | 16384 | 6 | 175 | 256 | 267 | **240** | **240** | yes |
+| `secure_128()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | disabled |
+| `secure_128_deep()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | disabled |
+| `secure_192()` | 16384 | 5 | 146 | 192 | 320 | 288 | 288 | disabled |
+| `secure_256()` | 16384 | 6 | 175 | 256 | 267 | **240** | **240** | disabled |
 
 Every name clears its own number under Core-SVP, the model `new_verified` gates
 on. `secure_256` falls 16 bits short under MATZOV; that gap is documented on the

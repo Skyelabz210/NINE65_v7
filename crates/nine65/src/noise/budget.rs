@@ -104,8 +104,9 @@
 //!   `bootstrap_input_reserve_mb`, and `can_perform_with_reserve` is what the
 //!   auto-refresh trigger consults. The noise-*independent* residue `r0 + r1*s`
 //!   is a property of `modswitch_to_t`, not of the noise level; no ledger term
-//!   can bound it away, which is why some configs cannot carry a public refresh
-//!   at all (see `params::secure_configs::supports_public_refresh`).
+//!   can bound it away. The ledger models capacity only; public refresh
+//!   remains blocked by the separate Phase-1 soundness gate on every config
+//!   (see `params::secure_configs::supports_public_refresh`).
 
 use crate::params::FHEConfig;
 

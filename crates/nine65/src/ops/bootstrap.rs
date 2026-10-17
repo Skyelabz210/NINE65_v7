@@ -86,7 +86,7 @@ pub struct ClockworkBootstrap {
 /// transduce the secret-dependent convolution and rounding.  Silently omitting
 /// `K` returns a plausible ciphertext of the wrong plaintext, so production
 /// callers must receive a typed error instead.
-fn public_phase1_soundness_gate() -> Nine65Result<()> {
+pub(crate) fn public_phase1_soundness_gate() -> Nine65Result<()> {
     Err(Nine65Error::BootstrapFailed {
         reason: "public BFV refresh disabled: Phase 1 does not yet propagate the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
             .into(),
@@ -627,8 +627,8 @@ impl ClockworkBootstrap {
     /// Use with keys from `generate_keys()` (circular security mode).
     ///
     /// Currently refuses every call because the secret-dependent Phase-1 carry
-    /// is not yet propagated. It also refuses configs whose main chain cannot
-    /// carry a public refresh — see
+    /// is not yet propagated. It first refuses configs whose main chain cannot
+    /// fund a public refresh — see
     /// [`ensure_public_refresh_supported`] and the PUBLIC-REFRESH
     /// ADMISSIBILITY section of `params::secure_configs`. The Phase-1 refusal
     /// is a typed `Nine65Error::BootstrapFailed` (while an ineligible chain is
@@ -640,15 +640,12 @@ impl ClockworkBootstrap {
         bsk: &BootstrapKey,
         _ksk: &KeySwitchKey,
     ) -> Nine65Result<DualRNSCiphertext> {
-        // Gate 0: this chain must be able to carry a public refresh at all.
+        // The support check applies both the capacity and Phase-1 soundness
+        // gates before touching the ciphertext or bootstrap key.
         ensure_public_refresh_supported(&self.work_config)?;
 
-        // Gate 1: component-wise rounding drops the BFV displaced-state term.
-        // This must remain before Phase 1 until an exact encrypted CRAM
-        // quotient/carry transducer replaces `modswitch_to_t`.
-        public_phase1_soundness_gate()?;
-
-        // Legacy diagnostic Phase 1. Unreachable while Gate 1 is active.
+        // Legacy diagnostic Phase 1. Unreachable while the soundness gate is
+        // closed.
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
         // Phase 2: Homomorphic inner product
@@ -690,14 +687,12 @@ impl ClockworkBootstrap {
         bsk: &BootstrapKey,
         ksk: &KeySwitchKey,
     ) -> Nine65Result<DualRNSCiphertext> {
-        // Gate 0: this chain must be able to carry a KSK public refresh.
+        // The KSK support check applies both its stronger capacity bound and
+        // the shared Phase-1 soundness gate before touching ciphertext data.
         ensure_public_refresh_with_ksk_supported(&self.work_config)?;
 
-        // The non-circular path shares the same unsound Phase 1 and therefore
-        // must fail closed independently of its stronger noise admission gate.
-        public_phase1_soundness_gate()?;
-
-        // Legacy diagnostic Phase 1. Unreachable while Gate 1 is active.
+        // Legacy diagnostic Phase 1. Unreachable while the soundness gate is
+        // closed.
         let (c0_small, c1_small) = self.modswitch_to_t(ct)?;
 
         // Phase 2: Homomorphic inner product -> Enc_{boot_sk, Q_boot}(m)
@@ -1699,14 +1694,13 @@ mod tests {
     // THE MEASUREMENT THE PUBLIC-REFRESH REFUSAL RESTS ON
     // =====================================================================
 
-    /// Run the three refresh phases with the admissibility gate BYPASSED.
+    /// Run the three refresh phases with both support gates BYPASSED.
     ///
-    /// `ClockworkBootstrap::bootstrap` calls `ensure_public_refresh_supported`
-    /// first, so it refuses exactly the configs a measurement of the refusal
-    /// needs to reach. Going through the public entry point would make the gate
-    /// its own evidence. This helper is the same three phases in the same order,
-    /// minus Gate 0, and is `#[cfg(test)]`-only for that single reason — it does
-    /// not widen the crate's API and no production path can reach it.
+    /// `ClockworkBootstrap::bootstrap` checks capacity and Phase-1 soundness
+    /// first. Going through the public entry point would make the gate its own
+    /// evidence. This helper is the same three phases in the same order, with
+    /// both gates bypassed, and is `#[cfg(test)]`-only. No production path can
+    /// reach it.
     fn refresh_bypassing_the_gate(
         boot: &ClockworkBootstrap,
         ct: &DualRNSCiphertext,
@@ -1725,21 +1719,16 @@ mod tests {
     /// cargo test -p nine65 --lib --release diag_measure_noise_growth -- --nocapture
     /// ```
     ///
-    /// This is the measurement cited by the PUBLIC-REFRESH ADMISSIBILITY
-    /// section of `params::secure_configs`, by the runtime refusal string in
-    /// `ensure_public_refresh_supported`, and by §3 of
-    /// `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`. Those citations named a
-    /// test that did not exist in any commit; this is that test, written so the
-    /// claim can be reproduced rather than taken on trust.
+    /// This is the measured regression behind issue #117. The historical
+    /// three-prime numbers in `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`
+    /// are not measurements of the current named configs.
     ///
     /// What it does, per config: encrypt `7`, run one public refresh with the
-    /// admissibility gate bypassed, decrypt; then square the refreshed
+    /// capacity and soundness gates bypassed, decrypt; then square the refreshed
     /// ciphertext with the public (eval-key) multiply and decrypt again. It
-    /// asserts nothing about how the refresh *should* behave — it asserts that
-    /// `supports_public_refresh` predicts what actually happens. A config the
-    /// predicate admits must survive both steps; a config it refuses must be
-    /// observed corrupting at least one of them, because a refusal nobody can
-    /// reproduce is a refusal nobody should trust.
+    /// asserts that `supports_public_refresh` never admits a corrupting
+    /// path. While the legacy Phase 1 is still in place, a refused config must
+    /// exhibit the known corruption so the refusal remains reproducible.
     #[test]
     fn diag_measure_noise_growth() {
         use crate::params::secure_configs::{
@@ -1777,7 +1766,7 @@ mod tests {
 
             let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
             let refreshed = refresh_bypassing_the_gate(&boot, &ct, &boot_keys.bsk)
-                .expect("the three phases must run; only Gate 0 is bypassed");
+                .expect("the three legacy phases must run with support gates bypassed");
             let after_refresh = ctx.decrypt_dual(&refreshed, &keys.secret_key);
 
             // Square the refreshed ciphertext through the PUBLIC multiply: the
@@ -3120,37 +3109,26 @@ mod tests {
 
                 let ct = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
 
-                // Whichever gate fires first -- Gate 0
-                // (`ensure_public_refresh_supported`, `BootstrapConfigMismatch`
-                // for chains like secure_128 whose Delta headroom cannot carry
-                // a refresh at all) or Gate 1 (`public_phase1_soundness_gate`,
-                // `BootstrapFailed` for chains that pass Gate 0) -- both are
-                // typed refusals this sampler fix must not weaken or bypass:
-                // no config may reach a decrypted plaintext here, and no path
-                // may panic.
+                // Every named chain clears the capacity screen. Both public
+                // entry points must therefore reach the shared Phase-1
+                // soundness refusal before touching ciphertext data.
                 let refused = boot
                     .bootstrap(&ct, &circular.bsk, &circular.ksk)
                     .expect_err("public refresh must still be refused after the sampler fix");
-                match refused {
-                    Nine65Error::BootstrapFailed { .. }
-                    | Nine65Error::BootstrapConfigMismatch { .. } => {}
-                    other => panic!(
-                        "{}: expected a typed gate refusal, got {other:?}",
-                        config.name
-                    ),
-                }
+                assert!(
+                    matches!(refused, Nine65Error::BootstrapFailed { .. }),
+                    "{}: expected a Phase-1 soundness refusal, got {refused:?}",
+                    config.name
+                );
 
                 let refused_ksk = boot
                     .bootstrap_with_ksk(&ct, &with_ksk.bsk, &with_ksk.ksk)
                     .expect_err("KSK public refresh must still be refused after the sampler fix");
-                match refused_ksk {
-                    Nine65Error::BootstrapFailed { .. }
-                    | Nine65Error::BootstrapConfigMismatch { .. } => {}
-                    other => panic!(
-                        "{}: expected a typed gate refusal from bootstrap_with_ksk, got {other:?}",
-                        config.name
-                    ),
-                }
+                assert!(
+                    matches!(refused_ksk, Nine65Error::BootstrapFailed { .. }),
+                    "{}: expected a KSK Phase-1 soundness refusal, got {refused_ksk:?}",
+                    config.name
+                );
             }
         }
     }
