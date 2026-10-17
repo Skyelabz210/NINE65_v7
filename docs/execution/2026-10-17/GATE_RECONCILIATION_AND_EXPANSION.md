@@ -97,9 +97,9 @@ Store a machine-readable result with: `{ source_sha, parent_sha, toolchain, carg
 
 1. #137/#86: reproduce both fuzz cases and persist minimized seeds with resource caps; fix imports before transport exposure.
 2. #157/#158/#176: provide coefficient-first arithmetic trace before another depth report.
-3. C02/B08: make noise lineage impossible to reset by public wrapping or mutation.
+3. [#189](https://github.com/Skyelabz210/NINE65_v7/issues/189) / C02/B08: make noise lineage impossible to reset by public wrapping or mutation.
 4. C03/S05: map source reachability of all 21 residue-architecture findings, then remove or isolate production violations without disabling scanner coverage.
-5. F02/G00/#79: repair remaining release-insecure comparative/scale runners and configure required branch checks.
+5. [#190](https://github.com/Skyelabz210/NINE65_v7/issues/190) / F02/G00/#79: repair remaining release-insecure comparative/scale runners and configure required branch checks.
 6. R00-R03/B00-B09: mathematical encrypted Phase-1 circuit, certified tuple and all-coefficient repeated refresh; retain the public fail-closed gate meanwhile.
 
 **Boundary preserved:** exact integer/residue runtime; no Garner/MRS evaluator reconstruction; heterogeneous Safe Basis including composite operator lanes where valid; WIRE-Q published-state partition; typed failures; no depth/security/performance claims without reproducible source-bound evidence.
