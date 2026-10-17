@@ -1,5 +1,7 @@
 # Clockwork Bootstrap Correctness Contract
 
+> **Current-tree interpretation (2026-10-17):** Sections 1–8 below document the **legacy ClockworkBootstrap dual-RNS implementation and historical structural tests**. In particular, the three-lane `secure_128` / `u128` table and persistent canonical-anchor requirements are historical and must not be promoted as current WIRE-Q-compliant production behavior. Current `secure_128` has four main lanes; D3 derived transient auxiliary state is distinct from publishable mod-Q-only ciphertexts. Both public refresh entry points still fail closed at `public_phase1_soundness_gate`. Treat current tuple/security admission and complete encrypted correction as R00–R03/B00–B09 gates. See [October gate reconciliation](execution/2026-10-17/GATE_RECONCILIATION_AND_EXPANSION.md) and [October execution plan](execution/2026-10-03/PLAN.md).
+
 Revision: 2026-09-27 (public refresh fail-closed; paired views and gated polynomial lift implemented)
 
 ## 0. Public BFV Phase-1 Soundness Gate
