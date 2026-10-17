@@ -5,6 +5,10 @@
 > **Stale-context warning (2026-08-22):** this file describes the v7 "Bootstrap
 > Complete" snapshot. `CLAUDE.md` and `README.md` are current; prefer them.
 > The claims corrected below were corrected there too.
+> **Current public-refresh status (2026-10-17):** every named config is
+> refused by the Phase-1 soundness gate. The chain-only headroom screens are
+> capacity estimates, not permission to call public bootstrap. See issues
+> #117 and #95.
 
 **NINE65** is a proprietary exact-integer BFV/DualRNS Fully Homomorphic Encryption substrate built on the QMNF (Quantized Modular Number Field) architecture. Written entirely in Rust with **zero floating-point arithmetic** across all cryptographic runtime paths.
 
@@ -12,14 +16,13 @@
 
 | Path | Method | Status |
 |------|--------|--------|
-| **Circular Bootstrap** | `bootstrap()` — boot_sk = lift(work_sk) | roundtrip tests `#[ignore]`d as VESTIGIAL/RETIRED |
-| **Non-Circular (KSK)** | `bootstrap_with_ksk()` — independent boot_sk, gadget key switch | roundtrip tests `#[ignore]`d as VESTIGIAL/RETIRED |
-| **Auto-Bootstrap** | `AutoBootstrapEvaluator::mul_auto()` — auto-trigger on noise threshold | roundtrip tests `#[ignore]`d as VESTIGIAL/RETIRED |
+| **Circular Bootstrap** | `bootstrap()` — boot_sk = lift(work_sk) | disabled by Phase-1 gate |
+| **Non-Circular (KSK)** | `bootstrap_with_ksk()` — independent boot_sk, gadget key switch | disabled by Phase-1 gate |
+| **Auto-Bootstrap** | `AutoBootstrapEvaluator::mul_auto()` — auto-trigger on noise threshold | triggered refresh returns an error |
 
-All three are public (evaluator-side) refresh paths and all three refuse configs
-whose main chain cannot carry a refresh — `secure_128` and `hardware_opt` are
-refused, `secure_128_deep`/`secure_192`/`secure_256` are admitted. See
-`params::secure_configs::ensure_public_refresh_supported`.
+All three are public (evaluator-side) refresh paths. The named configs clear
+the headroom screen but are not supported until the exact Phase-1 transition
+is implemented. See `params::secure_configs::supports_public_refresh`.
 
 This is **not** an unlimited-depth system: measured public direct-square depths
 are 2–4. Results are deterministic and bit-identical across platforms.
@@ -157,56 +160,9 @@ cargo test --workspace --release
 
 ### Usage Example
 
-```rust
-use nine65::params::secure_configs::SecureConfig;
-use nine65::ops::rns_fhe::RNSFHEContext;
-use nine65::ops::bootstrap::ClockworkBootstrap;
-use nine65::entropy::ShadowHarvester;
-
-// Setup with production-safe config
-let config = SecureConfig::secure_128().into_config();
-let ctx = RNSFHEContext::try_new(&config).expect("Context");
-let boot = ClockworkBootstrap::new(&config).expect("Bootstrap");
-let mut rng = ShadowHarvester::from_os_seed();
-
-// Generate keys
-let keys = ctx.generate_keys_dual_full(&mut rng);
-let boot_keys = boot.generate_keys(&keys.secret_key, &mut rng).expect("KeyGen");
-
-// Encrypt and compute
-let ct_a = ctx.encrypt_dual(42, &keys.public_key, &mut rng);
-let ct_b = ctx.encrypt_dual(7, &keys.public_key, &mut rng);
-let ct_prod = ctx.mul_dual_public(&ct_a, &ct_b, &keys.eval_key).expect("mul");
-
-// Bootstrap refreshes noise -> enables unlimited depth
-let ct_fresh = boot.bootstrap(&ct_prod, &boot_keys.bsk, &boot_keys.ksk)
-    .expect("bootstrap");
-
-// Continue computing on refreshed ciphertext
-let ct_c = ctx.encrypt_dual(3, &keys.public_key, &mut rng);
-let ct_result = ctx.mul_dual_public(&ct_fresh, &ct_c, &keys.eval_key)
-    .expect("mul after boot");
-let result = ctx.decrypt_dual(&ct_result, &keys.secret_key);
-assert_eq!(result, 42 * 7 * 3);
-```
-
-### Auto-Bootstrap (Unlimited Depth)
-
-```rust
-use nine65::ops::auto_bootstrap::AutoBootstrapEvaluator;
-
-let mut evaluator = AutoBootstrapEvaluator::new(
-    &ctx, &boot, &boot_keys.bsk, &boot_keys.ksk, &keys.eval_key, &config,
-);
-
-// Chain arbitrary multiplications - bootstrap fires automatically
-let ct_x = ctx.encrypt_dual(2, &keys.public_key, &mut rng);
-let mut ct = ctx.encrypt_dual(1, &keys.public_key, &mut rng);
-for _ in 0..20 {
-    ct = evaluator.mul_auto(&ct, &ct_x).expect("unlimited depth");
-}
-// Result is exact: 2^20 mod t
-```
+The historical public-bootstrap example was removed because it currently
+returns `BootstrapFailed`. Use the direct public-evaluation example in
+`README.md` until issue #95 provides a correct Phase-1 implementation.
 
 ---
 

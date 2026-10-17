@@ -1,5 +1,13 @@
 # Public refresh corrupts plaintext on configs CLAUDE.md lists as admitted
 
+> **Status update (2026-10-17):** This document preserves the original
+> measurement at `2547cf0`. The support predicates now include the existing
+> Phase-1 soundness gate, so no named config is admitted while that gate is
+> closed. The independent headroom screens still clear on the named chains.
+> `diag_measure_noise_growth` continues to run the legacy phases with the
+> gates bypassed and checks that a corrupting result is never admitted. The
+> exact encrypted Phase-1 construction remains open in issue #95.
+
 ## Status: pre-existing, confirmed by bisection to predate PR #107/#99/#103. Not fixed here.
 
 ## What this is not
