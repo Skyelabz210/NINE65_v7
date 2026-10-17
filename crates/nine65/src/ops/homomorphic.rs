@@ -483,6 +483,26 @@ mod tests {
     }
 
     #[test]
+    fn test_saved_fuzz_addition_at_plaintext_boundary() {
+        let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fixture");
+        let ntt = NTTEngine::new(config.q, config.n);
+        let mut harvester = ShadowHarvester::with_seed(0);
+        let keys = KeySet::generate(&config, &ntt, &mut harvester);
+        let encoder = BFVEncoder::new(&config);
+        let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
+        let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
+        let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
+
+        let a = 18_446_744_073_709_551_370u64 % config.t;
+        let b = u64::MAX % config.t;
+        assert_eq!((a, b), (65_292, 0));
+        let ct_a = encryptor.encrypt(a, &mut harvester);
+        let ct_b = encryptor.encrypt(b, &mut harvester);
+        let ct_sum = evaluator.add(&ct_a, &ct_b);
+        assert_eq!(decryptor.decrypt(&ct_sum), (a + b) % config.t);
+    }
+
+    #[test]
     fn test_subtraction() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
 

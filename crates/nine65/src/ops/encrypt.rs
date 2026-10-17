@@ -1,7 +1,7 @@
 //! Encryption Module - BFV Encrypt/Decrypt
 //!
-//! BFV encoding: m → Δ*m where Δ = floor(q/t)
-//! Encryption: ct = (pk0*u + e1 + Δ*m, pk1*u + e2)
+//! BFV encoding: m → round(q*m/t)
+//! Encryption: ct = (pk0*u + e1 + encoded(m), pk1*u + e2)
 //! Decryption: m = round(t * (c0 + c1*s) / q) mod t
 //!
 //! # Security
@@ -18,13 +18,26 @@ use crate::keys::{PublicKey, SecretKey};
 use crate::params::FHEConfig;
 use crate::ring::RingPolynomial;
 
+/// Use the same rational scale as decryption. `floor(q/t) * m` loses a
+/// message-dependent fraction: for q=998244353 and t=65537 it decodes 59905
+/// as 59902 even with zero encryption noise.
+#[inline]
+pub(crate) fn encode_bfv_coefficient(m: u64, q: u64, t: u64) -> u64 {
+    (((q as u128 * m as u128 + (t as u128 / 2)) / t as u128) % q as u128) as u64
+}
+
+#[inline]
+pub(crate) fn decode_bfv_coefficient(c: u64, q: u64, t: u64) -> u64 {
+    (((t as u128 * c as u128 + (q as u128 / 2)) / q as u128) % t as u128) as u64
+}
+
 /// BFV Encoder: handles message ↔ polynomial conversion
 pub struct BFVEncoder {
     /// Ciphertext modulus
     pub q: u64,
     /// Plaintext modulus
     pub t: u64,
-    /// Scaling factor Δ = floor(q/t)
+    /// Floor scale reference Δ = floor(q/t). Encoding uses nearest q·m/t.
     pub delta: u64,
     /// Polynomial degree
     pub n: usize,
@@ -63,23 +76,14 @@ impl BFVEncoder {
         }
 
         let mut coeffs = vec![0u64; self.n];
-        coeffs[0] = ((self.delta as u128 * m as u128) % self.q as u128) as u64;
+        coeffs[0] = encode_bfv_coefficient(m, self.q, self.t);
 
         Ok(RingPolynomial::from_coeffs(coeffs, self.q))
     }
 
     /// Decode polynomial to scalar message
     pub fn decode(&self, poly: &RingPolynomial) -> u64 {
-        // m = round(t * c / q) mod t
-        // Using integer formula: floor((2*t*c + q) / (2*q)) mod t
-        let c = poly.coeffs[0];
-
-        // Careful computation to avoid overflow
-        let numerator = 2u128 * (self.t as u128) * (c as u128) + (self.q as u128);
-        let denominator = 2u128 * (self.q as u128);
-        let result = (numerator / denominator) as u64;
-
-        result % self.t
+        decode_bfv_coefficient(poly.coeffs[0], self.q, self.t)
     }
 
     /// Decode a polynomial from a degree-2 ciphertext (at Δ² level)
@@ -134,7 +138,7 @@ impl BFVEncoder {
                     modulus: self.t,
                 });
             }
-            coeffs[i] = ((self.delta as u128 * m as u128) % self.q as u128) as u64;
+            coeffs[i] = encode_bfv_coefficient(m, self.q, self.t);
         }
 
         Ok(RingPolynomial::from_coeffs(coeffs, self.q))
@@ -143,12 +147,7 @@ impl BFVEncoder {
     /// Decode polynomial to vector of messages
     pub fn decode_vector(&self, poly: &RingPolynomial, len: usize) -> Vec<u64> {
         (0..len)
-            .map(|i| {
-                let c = poly.coeffs[i];
-                let numerator = 2u128 * (self.t as u128) * (c as u128) + (self.q as u128);
-                let denominator = 2u128 * (self.q as u128);
-                ((numerator / denominator) as u64) % self.t
-            })
+            .map(|i| decode_bfv_coefficient(poly.coeffs[i], self.q, self.t))
             .collect()
     }
 }
@@ -270,12 +269,21 @@ impl Ciphertext {
         expected_n: usize,
         expected_q: u64,
     ) -> Nine65Result<Self> {
-        let (ct, consumed): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
-                Nine65Error::ConfigError {
-                    message: e.to_string(),
-                }
-            })?;
+        // A tiny bincode payload can declare an enormous coefficient vector.
+        // Bound both the supplied bytes and Bincode's pre-allocation budget.
+        const MAX_CIPHERTEXT_PAYLOAD: usize = 64 * 1024 * 1024;
+        if bytes.len() > MAX_CIPHERTEXT_PAYLOAD {
+            return Err(Nine65Error::ConfigError {
+                message: "Bincode ciphertext payload exceeds maximum size".to_string(),
+            });
+        }
+        let (ct, consumed): (Self, usize) = bincode::decode_from_slice(
+            bytes,
+            bincode::config::standard().with_limit::<MAX_CIPHERTEXT_PAYLOAD>(),
+        )
+        .map_err(|e| Nine65Error::ConfigError {
+            message: e.to_string(),
+        })?;
         // `decode_from_slice` does not itself reject trailing bytes after a
         // well-formed value; a validated decoder must, or extra bytes on an
         // otherwise-valid payload pass through unexamined.
@@ -675,6 +683,37 @@ mod tests {
     }
 
     #[test]
+    fn test_depth_aware_plaintext_scale_roundtrips_all_messages() {
+        let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fixture");
+        let encoder = BFVEncoder::new(&config);
+        for m in 0..config.t {
+            let c = encode_bfv_coefficient(m, config.q, config.t);
+            assert_eq!(decode_bfv_coefficient(c, config.q, config.t), m);
+        }
+        for m in [0, 1, 16_640, 59_905, config.t - 1] {
+            let encoded = encoder.encode(m);
+            assert_eq!(encoder.decode(&encoded), m);
+            assert_eq!(
+                encoded.coeffs[0],
+                encode_bfv_coefficient(m, config.q, config.t)
+            );
+        }
+    }
+
+    #[test]
+    fn test_saved_fuzz_roundtrip_seed() {
+        let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fixture");
+        let ntt = NTTEngine::new(config.q, config.n);
+        let mut harvester = ShadowHarvester::with_seed(8_246_779_862_454_530_674);
+        let keys = KeySet::generate(&config, &ntt, &mut harvester);
+        let encoder = BFVEncoder::new(&config);
+        let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
+        let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
+        let ciphertext = encryptor.encrypt(16_640, &mut harvester);
+        assert_eq!(decryptor.decrypt(&ciphertext), 16_640);
+    }
+
+    #[test]
     fn test_encrypt_decrypt_roundtrip() {
         let (config, ntt, keys, mut harvester, encoder) = setup();
 
@@ -701,6 +740,21 @@ mod tests {
             let ct = encryptor.encrypt(m, &mut harvester);
             let decrypted = decryptor.decrypt(&ct);
             assert_eq!(decrypted, m, "Random encrypt/decrypt failed");
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn test_ciphertext_decode_rejects_short_huge_length_witnesses() {
+        let config = test_config();
+        for bytes in [
+            &[252, 10, 10, 10, 10][..],
+            &[252, 252, 252, 252, 252, 91][..],
+        ] {
+            assert!(
+                Ciphertext::from_bytes_validated(bytes, config.n, config.q).is_err(),
+                "short payload with a huge declared vector length must be rejected"
+            );
         }
     }
 

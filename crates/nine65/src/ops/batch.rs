@@ -6,7 +6,7 @@
 //! ## Encoding Modes
 //!
 //! ### Coefficient Batching (Default - Works with all parameters)
-//! - Packs values into polynomial coefficients: `p(X) = Δ·m₀ + Δ·m₁·X + Δ·m₂·X² + ...`
+//! - Packs values into polynomial coefficients using `round(q·m/t)` per value
 //! - Supports up to N values per ciphertext
 //! - Homomorphic add/sub work coefficient-wise
 //! - Homomorphic mul results in polynomial product (not element-wise!)
@@ -37,7 +37,7 @@ use crate::ring::RingPolynomial;
 /// Batch Encoder for packing multiple values
 ///
 /// Encodes multiple values into polynomial coefficients for batch homomorphic operations.
-/// Each coefficient stores one scaled message value: `coeff[i] = Δ · value[i]`
+/// Each coefficient stores `round(q · value[i] / t)`.
 ///
 /// ## Capacity
 /// - Supports up to N values per ciphertext (where N is polynomial degree)
@@ -57,8 +57,6 @@ pub struct BatchEncoder {
     t: u64,
     /// Ciphertext modulus q
     q: u64,
-    /// Scaling factor Δ = q/t
-    delta: u64,
 }
 
 impl BatchEncoder {
@@ -71,7 +69,6 @@ impl BatchEncoder {
             n: config.n,
             t: config.t,
             q: config.q,
-            delta: config.q / config.t,
         })
     }
 
@@ -96,8 +93,8 @@ impl BatchEncoder {
 
     /// Encode values into polynomial coefficients
     ///
-    /// Each value is scaled by Δ and placed in a coefficient:
-    /// `p(X) = Δ·v[0] + Δ·v[1]·X + Δ·v[2]·X² + ...`
+    /// Each value is rounded onto the q/t plaintext lattice and placed in a
+    /// coefficient.
     ///
     /// # Arguments
     /// * `values` - Values to encode (each must be < t)
@@ -121,8 +118,7 @@ impl BatchEncoder {
                     modulus: self.t,
                 });
             }
-            // Scale by delta
-            coeffs[i] = ((self.delta as u128 * v as u128) % self.q as u128) as u64;
+            coeffs[i] = super::encrypt::encode_bfv_coefficient(v, self.q, self.t);
         }
 
         Ok(RingPolynomial::from_coeffs(coeffs, self.q))
@@ -141,12 +137,7 @@ impl BatchEncoder {
 
         poly.coeffs[..count]
             .iter()
-            .map(|&c| {
-                // round(c * t / q) mod t
-                let num = 2u128 * self.t as u128 * c as u128 + self.q as u128;
-                let den = 2u128 * self.q as u128;
-                ((num / den) % self.t as u128) as u64
-            })
+            .map(|&c| super::encrypt::decode_bfv_coefficient(c, self.q, self.t))
             .collect()
     }
 
@@ -250,42 +241,17 @@ mod tests {
         let config = test_config();
         let encoder = BatchEncoder::new(&config).unwrap();
 
-        // Use smaller values to avoid rounding errors near t
-        let values: Vec<u64> = (0..encoder.capacity())
-            .map(|i| (i as u64 * 7 + 13) % 10000)
+        let mut values: Vec<u64> = (0..encoder.capacity())
+            .map(|i| (i as u64 * 97 + 13) % config.t)
             .collect();
+        values[0] = config.t - 1;
 
         let poly = encoder.encode(&values).unwrap();
         let decoded = encoder.decode(&poly, values.len());
 
-        // BFV coefficient encoding has inherent rounding error due to Δ = floor(q/t).
-        // The error is proportional to the value: err ≈ v * (1 - Δ*t/q)
-        // For q=132120577, t=65537: Δ=2016, Δ*t/q ≈ 0.99977, so max error ≈ v * 0.00023
-        // For v=10000, max error ≈ 2.3, so use tolerance of 4 to be safe.
-        let tolerance = 4i64;
-
-        let mut max_error = 0i64;
-        let mut errors = 0;
-        for (i, (&expected, &got)) in values.iter().zip(decoded.iter()).enumerate() {
-            let diff = (expected as i64 - got as i64).abs();
-            max_error = max_error.max(diff);
-            if diff > tolerance {
-                eprintln!(
-                    "Error at index {}: expected {}, got {} (diff={})",
-                    i, expected, got, diff
-                );
-                errors += 1;
-            }
-        }
-
-        println!(
-            "Full capacity encode/decode: max_error={}, tolerance={}",
-            max_error, tolerance
-        );
         assert_eq!(
-            errors, 0,
-            "Values should roundtrip within tolerance={}",
-            tolerance
+            decoded, values,
+            "Every batch coefficient must round-trip exactly"
         );
     }
 
@@ -367,9 +333,7 @@ mod tests {
         let config = test_config();
         let encoder = BatchEncoder::new(&config).unwrap();
 
-        // Test boundary values: 0, 1, small values
-        // Note: t-1 may not roundtrip exactly due to scaling factor precision
-        let values = vec![0, 1, 100, 1000];
+        let values = vec![0, 1, 100, 1000, config.t - 1];
         let poly = encoder.encode(&values).unwrap();
         let decoded = encoder.decode(&poly, values.len());
 
