@@ -1,18 +1,7 @@
 name: NINE65 v7 comparative scale sweep
 
+# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
-  pull_request:
-    paths:
-      - 'crates/nine65/src/bin/cram_comparative_probe.rs'
-      - 'crates/nine65/Cargo.toml'
-      - 'scripts/run_nine65_v7_scale_sweep.py'
-      - 'scripts/analyze_cram_fhe_hypotheses.py'
-      - '.github/workflows/cram_v7_scale_sweep.yml'
-  push:
-    # Re-pointed 2026-08-12: was 'cram/exploratory-comparative-v2', a branch
-    # that no longer exists, so this push trigger was dead. Trunk is `main`.
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       profile:

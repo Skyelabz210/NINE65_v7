@@ -43,34 +43,9 @@ name: Constant-Time Verification
 # Ten dudect tests block, one stable leak is a scheduled tripwire, and one
 # unstable verdict is recorded by the scheduled findings job.
 
+# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'crates/nine65/src/arithmetic/ntt_fft.rs'
-      - 'crates/nine65/src/arithmetic/montgomery.rs'
-      - 'crates/nine65/src/arithmetic/persistent_montgomery.rs'
-      - 'crates/nine65/src/arithmetic/barrett.rs'
-      - 'crates/nine65/src/arithmetic/k_elimination.rs'
-      - 'crates/nine65/src/ops/rns_fhe.rs'
-      - 'crates/nine65/src/security/**'
-      - 'scripts/check_ct_ntt_source.py'
-      - 'scripts/verify_constant_time.sh'
-      - '.github/workflows/ct_verification.yml'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'crates/nine65/src/arithmetic/**'
-      - 'crates/nine65/src/ops/rns_fhe.rs'
-      - 'crates/nine65/src/security/**'
-      - 'scripts/check_ct_ntt_source.py'
-      - 'scripts/verify_constant_time.sh'
-      - '.github/workflows/ct_verification.yml'
-  schedule:
-    # Sunday 04:00 UTC — timing diagnostics on an otherwise idle runner.
-    - cron: '0 4 * * 0'
   workflow_dispatch:
-
 permissions:
   contents: read
 

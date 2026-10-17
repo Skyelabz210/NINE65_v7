@@ -5,17 +5,9 @@ name: Lean Formal Verification
 # or any `sorry` — fails CI. The previous CI only checked that the .lean files
 # existed; nothing was ever machine-checked.
 
+# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'lean4/**'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'lean4/**'
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
