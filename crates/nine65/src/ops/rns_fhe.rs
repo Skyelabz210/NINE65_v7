@@ -784,12 +784,16 @@ impl DualRNSCiphertext {
                 ),
             });
         }
-        let (ct, consumed): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
-                Nine65Error::DeserializationError {
-                    message: format!("Bincode parse error: {}", e),
-                }
-            })?;
+        // The slice-length check above does not constrain lengths encoded inside
+        // a short payload. Bincode must enforce a decode limit before it
+        // reserves storage for attacker-declared vectors.
+        let (ct, consumed): (Self, usize) = bincode::decode_from_slice(
+            bytes,
+            bincode::config::standard().with_limit::<MAX_BINCODE_PAYLOAD>(),
+        )
+        .map_err(|e| Nine65Error::DeserializationError {
+            message: format!("Bincode parse error: {}", e),
+        })?;
         // `bincode::decode_from_slice` stops at the first well-formed value
         // and reports how many bytes it consumed; it does not itself reject
         // extra bytes after that value. Without this check, a payload of
@@ -855,12 +859,13 @@ impl DualRNSKeySet {
                 ),
             });
         }
-        let (keys, consumed): (Self, usize) =
-            bincode::decode_from_slice(bytes, bincode::config::standard()).map_err(|e| {
-                Nine65Error::DeserializationError {
-                    message: format!("Bincode parse error: {}", e),
-                }
-            })?;
+        let (keys, consumed): (Self, usize) = bincode::decode_from_slice(
+            bytes,
+            bincode::config::standard().with_limit::<MAX_BINCODE_PAYLOAD>(),
+        )
+        .map_err(|e| Nine65Error::DeserializationError {
+            message: format!("Bincode parse error: {}", e),
+        })?;
         // See the matching comment in `DualRNSCiphertext::from_bytes_validated`:
         // bincode does not reject trailing bytes on its own.
         if consumed != bytes.len() {
@@ -12976,6 +12981,30 @@ mod tests {
             DualRNSKeySet::from_bytes_validated(&bytes).is_err(),
             "trailing byte after a valid keyset must be rejected"
         );
+    }
+
+    /// Saved fuzz inputs declare huge vector lengths in only a few bytes.
+    /// The decoder must refuse them before allocating from the declaration.
+    #[test]
+    #[cfg(feature = "serde")]
+    fn from_bytes_validated_rejects_short_huge_length_witnesses() {
+        let witnesses: [&[u8]; 2] = [&[252, 10, 10, 10, 10], &[252, 252, 252, 252, 252, 91]];
+        for bytes in witnesses {
+            assert!(
+                matches!(
+                    DualRNSCiphertext::from_bytes_validated(bytes),
+                    Err(Nine65Error::DeserializationError { .. })
+                ),
+                "short ciphertext payload with huge declared vector length must be rejected"
+            );
+            assert!(
+                matches!(
+                    DualRNSKeySet::from_bytes_validated(bytes),
+                    Err(Nine65Error::DeserializationError { .. })
+                ),
+                "short keyset payload with huge declared vector length must be rejected"
+            );
+        }
     }
 
     /// `RNSFHEContext::validate_dual_ciphertext` must reject a ciphertext
