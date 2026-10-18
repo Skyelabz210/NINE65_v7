@@ -260,21 +260,22 @@ the suites in `ops/bootstrap.rs`, `tests/bootstrap_integration.rs`,
 VESTIGIAL/RETIRED (`docs/RETIRED_MECHANISMS.md` Part II, §8), so "verified
 exact" cannot currently be sourced to a running suite for any of the three.
 
-**The admissibility gate.** All three refuse configurations whose main chain
-cannot carry a public refresh, via
-`params::secure_configs::ensure_public_refresh_supported` (a typed
-`Nine65Error::BootstrapConfigMismatch`, never a panic):
+**Support and capacity.** The chain-only headroom screens clear on all four
+named configs, but neither public support predicate admits a refresh until
+Phase 1 propagates the secret-dependent quotient/carry. The `ensure_*`
+functions return `BootstrapConfigMismatch` for insufficient headroom and
+`BootstrapFailed` for the currently unsound Phase 1:
 
-| constructor | lanes | admits public refresh? |
-|---|---|---|
-| `secure_128()` | 4 | admitted |
-| `secure_128_deep()` | 4 | admitted |
-| `secure_192()` | 5 | admitted |
-| `secure_256()` | 6 | admitted |
+| constructor | lanes | capacity screen | public refresh |
+|---|---|---|---|
+| `secure_128()` | 4 | clears | disabled |
+| `secure_128_deep()` | 4 | clears | disabled |
+| `secure_192()` | 5 | clears | disabled |
+| `secure_256()` | 6 | clears | disabled |
 
 `secure_128()` was **re-cut 2026-08-26** (`docs/OPEN_WORK_2026-08-26.md` §A3)
 from three main primes to four; it now builds the exact same tuple as
-`secure_128_deep()` and is therefore admitted, not refused. The retired
+`secure_128_deep()` and clears the same capacity screen. The retired
 three-lane tuple — 42 bits of post-refresh `Delta` headroom against the 47
 one multiply needs, refused — is historical only
 (`docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`, flagged there as superseded on
@@ -282,11 +283,12 @@ this point). `hardware_opt()` no longer has a constructor in
 `secure_configs.rs` as of this writing; its continued presence in older docs
 is a separate, unresolved discrepancy.
 
-**Public bootstrap is currently fail-closed regardless of admission.** Per
+**Public bootstrap is currently fail-closed.** Per
 `docs/NINE65_LIVE_STATE_ADDENDUM_2026-09-03.md` and
 `docs/NINE65_CURRENT_STATE_AND_WORK_REQUESTS_2026-09-03.md` §1.1 item 6,
-`bootstrap()` and `bootstrap_with_ksk()` still call
-`public_phase1_soundness_gate()`, which unconditionally returns a typed
+`bootstrap()` and `bootstrap_with_ksk()` reach
+`public_phase1_soundness_gate()` through their `ensure_*` support checks.
+The gate unconditionally returns a typed
 `Nine65Error::BootstrapFailed` ("Phase 1 does not yet propagate the
 secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift
 state"). Issue #95 — the replacement Phase-1 correction/encoding — was
@@ -303,21 +305,16 @@ bootstrap availability" — it does not touch, and does not resolve, the
 Phase-1 issue #95 defect below. Public refresh remains fail-closed on every
 config.
 
-**Open question about the admissibility gate itself.** A 2026-09-03 finding
+**Measured Phase-1 failure.** A 2026-09-03 finding
 (`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`) measured
-`ops::bootstrap::tests::diag_measure_noise_growth` — which bypasses only the
-soundness gate to measure what the refresh phases actually produce — and
+`ops::bootstrap::tests::diag_measure_noise_growth` — which bypasses both
+support checks to measure what the legacy phases actually produce — and
 found `refresh(7)` itself (not just the following multiply) wrong for
 `secure_128` and `secure_128_deep` (both `65536`, identical since the recut
-made them the same tuple) and `secure_192` (`40`) — three of the four configs
-the table above calls "admitted" (`secure_256` was not part of that
-measurement). This directly contradicts the implication of the admissibility
-table (that admitted configs don't have this problem) and trips the test's
-own built-in tripwire assertion ("the gate is admitting a corrupting path —
-fix the predicate, do not relax this assertion"). This is confirmed and
-unfixed as of the snapshot date; it is left deliberately red rather than
-`#[ignore]`d, pending an owner decision. Do not read "admitted" in the table
-above as "safe" without also reading that finding.
+made them the same tuple) and `secure_192` (`40`). `secure_256` was not
+measured in that pass. The support predicates now refuse all four while the
+independent capacity screens still report their arithmetic result. Issue
+#95 tracks the exact Phase-1 construction needed to enable public refresh.
 
 The symmetric secret-key refresh (`SymmetricBootstrap::bootstrap`,
 `ops/symmetric_bootstrap.rs`) is architecturally separate and is **not**
@@ -335,10 +332,10 @@ the architecture map):
 
 | constructor | n | lanes | log2(q) | claimed | Core-SVP | MATZOV | binding | public refresh |
 |---|---|---|---|---|---|---|---|---|
-| `secure_128()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | yes (§4 caveat) |
-| `secure_128_deep()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | yes (§4 caveat) |
-| `secure_192()` | 16384 | 5 | 146 | 192 | 320 | 288 | 288 | yes (§4 caveat) |
-| `secure_256()` | 16384 | 6 | 175 | 256 | 267 | **240** | **240** | yes |
+| `secure_128()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | disabled |
+| `secure_128_deep()` | 8192 | 4 | 119 | 128 | 196 | 176 | 176 | disabled |
+| `secure_192()` | 16384 | 5 | 146 | 192 | 320 | 288 | 288 | disabled |
+| `secure_256()` | 16384 | 6 | 175 | 256 | 267 | **240** | **240** | disabled |
 
 (`hardware_opt()` has no constructor in current `secure_configs.rs`; the
 retired three-lane `secure_128` figures this table replaces — 259/233/233,

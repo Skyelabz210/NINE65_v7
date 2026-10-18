@@ -116,40 +116,23 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
 // (`SymmetricBootstrap::bootstrap`) takes the secret key and is a different,
 // single-party path — none of the predicates below apply to it.
 //
-// MEASURED EVIDENCE (`cargo test -p nine65 --lib --release
-// diag_measure_noise_growth -- --nocapture`, defined in `ops::bootstrap`'s test
-// module, seed 20260822). It encrypts `7` under each config, runs the three
-// refresh phases with THIS gate bypassed — otherwise the gate would be its own
-// evidence — decrypts, then squares the refreshed ciphertext through the public
-// eval-key multiply and decrypts again:
+// The bit-bound functions below screen only whether a chain could fund one
+// multiply after a refresh. They do not establish plaintext correctness.
+// The 2026-09-03 decryption oracle in `ops::bootstrap::tests::
+// diag_measure_noise_growth` found that the legacy Phase 1 already corrupts
+// `encrypt(7)`: it returned 65536 on the identical four-prime `secure_128` /
+// `secure_128_deep` tuple and 40 on `secure_192`. The independently rounded
+// ciphertext components omit a secret-dependent quotient/carry. More headroom
+// cannot repair that structural error (issues #117 and #95).
 //
-//   secure_128       3 lanes  refresh(7)   -> 7      correct
-//                             refresh(7)^2 -> 34037, expected 49   WRONG
-//   secure_128_deep  4 lanes  refresh(7)   -> 7      correct
-//                             refresh(7)^2 -> 49     correct
-//   secure_192       5 lanes  refresh(7)   -> 7      correct
-//                             refresh(7)^2 -> 49     correct
+// `public_refresh_headroom_clears` and its KSK counterpart remain available
+// for capacity modelling. The `supports_*` predicates and `ensure_*` gates
+// also require Phase 1 to be sound. Today that gate fails for every config.
 //
-// CORRECTION (2026-08-22, integration pass). Earlier revisions of this block,
-// of README.md, of CLAUDE.md and of the runtime refusal string below stated
-// that a `secure_128` refresh returns `encrypt(7)` as `8`. That is NOT what the
-// diagnostic measures, and the diagnostic it cited did not exist when the claim
-// was written. The refresh output itself decrypts correctly on all three
-// configs. What `secure_128` cannot do is survive the FIRST MULTIPLY after the
-// refresh — which is precisely the bar `post_refresh_required_bits` encodes, so
-// the corrected measurement supports the gate's derivation more directly than
-// the withdrawn one did. The failure is still silent: no error is raised
-// anywhere in the pipeline, which is why the gate is fail-closed at the refresh
-// rather than a warning at the multiply.
-//
-// The refusal predicate below is derived from the noise ledger, not from that
-// table and not from a name match — the table is what it is checked against.
-//
-// Derivation. Let `Delta = floor(Q / t)` be the exact BFV scaling factor, whose
-// bit length is `exact_delta_bit_length`. A refreshed ciphertext decrypts
-// correctly only while its noise stays under `Delta / 2`, and it is only *useful*
-// if what remains can still fund the smallest unit of work a caller performs
-// after a refresh: one ciphertext-ciphertext multiply plus its relinearization
+// Capacity derivation, conditional on a future exact Phase 1. Let
+// `Delta = floor(Q / t)` be the BFV scaling factor, whose bit length is
+// `exact_delta_bit_length`. A refreshed ciphertext would need enough margin
+// to fund one ciphertext-ciphertext multiply plus relinearization
 // (`NoiseBudget::mul_ct_cost + NoiseBudget::relin_cost`).
 //
 // The refresh's own noise deposit is the load-bearing term. Phase 2 of the
@@ -157,16 +140,13 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
 // `n`-term homomorphic accumulation, so worst case its noise grows by a factor
 // of `n` — `log2(n)` bits. `noise::budget::bootstrap_noise_bit_bound` instead
 // charges `sqrt(n)` (`root_n_bits`), the averaged/heuristic growth. That
-// difference is exactly what decides this question: under the averaged bound
-// secure_128 is predicted to clear the bar with 49 bits against a 47-bit
-// requirement, and the decryption oracle above says it does not. Under the
-// worst-case bound it is 42 bits against 47 and is correctly refused, while
-// every 4+-lane config still clears by 23 bits or more. The worst-case bound is
-// therefore what this gate uses; the averaged bound stays where it is, for the
-// budget ledger's own purposes.
+// difference mattered for the retired three-prime `secure_128` tuple. The
+// headroom screen uses the worst-case bound; the budget ledger retains its
+// averaged bound for its own modelling. Neither one bounds away the
+// secret-dependent Phase-1 carry.
 //
-// The predicate is a headroom inequality in exact bits. It reads no config
-// name, so a new tuple is admitted or refused on its own arithmetic.
+// The headroom screens use exact-bit inequalities and read no config name.
+// The support predicates additionally require the independent soundness gate.
 
 /// Bit length of a `u64` value (`0` for zero).
 fn scalar_bit_length(value: u64) -> u32 {
@@ -306,7 +286,7 @@ pub fn public_refresh_key_switch_noise_bits(config: &FHEConfig) -> u32 {
 /// fail-closed gate's job is to reject chains that CAN carry the circular path
 /// but CANNOT carry the noisier KSK path, and a bound with no key-switch term
 /// cannot do that: a tuple sitting exactly at `headroom == required` would be
-/// admitted on the KSK entry point with zero margin for the key-switch deposit.
+/// cleared by the KSK capacity screen with zero margin for the key-switch deposit.
 /// The named configs all clear by 20+ bits so nothing misfires today, but
 /// `SecureConfig::custom` admits arbitrary user tuples, and a bound documented
 /// as worst-case must be a worst-case bound on the path it actually guards.
@@ -329,19 +309,22 @@ pub fn public_refresh_ksk_headroom_clears(config: &FHEConfig) -> bool {
     public_refresh_ksk_headroom_bits(config) >= post_refresh_required_bits(config)
 }
 
-/// Historical name for [`public_refresh_ksk_headroom_clears`].
+/// Whether the KSK path is both capacity-eligible and Phase-1 sound.
+///
+/// A passing headroom screen alone never admits the current public path.
 pub fn supports_public_refresh_with_ksk(config: &FHEConfig) -> bool {
     public_refresh_ksk_headroom_clears(config)
+        && crate::ops::bootstrap::public_phase1_soundness_gate().is_ok()
 }
 
-/// Typed refusal for configs whose chain cannot carry a non-circular (KSK)
-/// public refresh. Counterpart of [`ensure_public_refresh_supported`], wired
-/// into `ClockworkBootstrap::bootstrap_with_ksk`.
+/// Typed refusal for an underfunded KSK chain or unsound public Phase 1.
+/// Counterpart of [`ensure_public_refresh_supported`], wired into
+/// `ClockworkBootstrap::bootstrap_with_ksk`.
 pub fn ensure_public_refresh_with_ksk_supported(config: &FHEConfig) -> Nine65Result<()> {
     let headroom = public_refresh_ksk_headroom_bits(config);
     let required = post_refresh_required_bits(config);
     if headroom >= required {
-        return Ok(());
+        return crate::ops::bootstrap::public_phase1_soundness_gate();
     }
     Err(Nine65Error::BootstrapConfigMismatch {
         reason: format!(
@@ -350,10 +333,8 @@ pub fn ensure_public_refresh_with_ksk_supported(config: &FHEConfig) -> Nine65Res
              circuit's worst-case {}-bit noise deposit (refresh circuit {} bits, \
              Phase 3a key switch {} bits; Delta is {} bits), but {} bits are \
              required to fund one ct x ct multiply plus relinearization \
-             afterwards. The failure is silent — the refresh output still \
-             decrypts, and the first multiply after it does not. Use a config \
-             with a longer main chain (e.g. SecureConfig::secure_128_deep), or \
-             use the symmetric secret-key refresh path.",
+             afterwards. This is a capacity refusal; the public Phase-1 \
+             soundness gate must also clear before any public refresh can run.",
             config.name,
             config.primes.len(),
             headroom,
@@ -386,41 +367,33 @@ pub fn public_refresh_headroom_clears(config: &FHEConfig) -> bool {
     public_refresh_headroom_bits(config) >= post_refresh_required_bits(config)
 }
 
-/// Historical name for [`public_refresh_headroom_clears`].
+/// Whether the circular path is both capacity-eligible and Phase-1 sound.
 ///
-/// "Supports" means the headroom screen clears. It does not mean a public
-/// refresh is correct, and it does not lift Gate 1.
+/// A passing headroom screen alone never admits the current public path.
 pub fn supports_public_refresh(config: &FHEConfig) -> bool {
     public_refresh_headroom_clears(config)
+        && crate::ops::bootstrap::public_phase1_soundness_gate().is_ok()
 }
 
-/// Typed refusal for configs whose chain cannot carry a public refresh.
+/// Typed refusal for an underfunded chain or unsound public Phase 1.
 ///
-/// Returns `Nine65Error::BootstrapConfigMismatch` — never panics — mirroring
-/// how the security screen refuses a failing tuple. Wired into
-/// `ClockworkBootstrap::bootstrap` and `ClockworkBootstrap::bootstrap_with_ksk`
-/// so the refusal fires at the operation that would otherwise return a
-/// wrong-but-plausible plaintext, rather than being left to a report.
+/// Returns `BootstrapConfigMismatch` for insufficient headroom, and
+/// `BootstrapFailed` when the Phase-1 soundness gate is closed. Wired into
+/// `ClockworkBootstrap::bootstrap` before any ciphertext work.
 pub fn ensure_public_refresh_supported(config: &FHEConfig) -> Nine65Result<()> {
     let headroom = public_refresh_headroom_bits(config);
     let required = post_refresh_required_bits(config);
     if headroom >= required {
-        return Ok(());
+        return crate::ops::bootstrap::public_phase1_soundness_gate();
     }
     Err(Nine65Error::BootstrapConfigMismatch {
         reason: format!(
             "config '{}' cannot carry a public refresh: its {}-prime chain leaves \
              {} bits of Delta headroom after the refresh circuit's worst-case \
              {}-bit noise deposit (Delta is {} bits), but {} bits are required to \
-             fund one ct x ct multiply plus relinearization afterwards. The \
-             refresh output still decrypts, but the first multiply after it \
-             returns a wrong-but-plausible plaintext with no error raised \
-             anywhere in the pipeline (measured: refresh(encrypt(7)) decrypts to \
-             7, then squaring it decrypts to 34037 instead of 49 — see \
-             ops::bootstrap::tests::diag_measure_noise_growth). Use a config \
-             with a longer main chain (e.g. SecureConfig::secure_128_deep, which \
-             carries the same 128-bit claim with 4 primes), or use the symmetric \
-             secret-key refresh path.",
+             fund one ct x ct multiply plus relinearization afterwards. This \
+             is a capacity refusal; the public Phase-1 soundness gate must \
+             also clear before any public refresh can run.",
             config.name,
             config.primes.len(),
             headroom,
@@ -923,9 +896,9 @@ impl SecureConfig {
         public_refresh_headroom_clears(&self.config)
     }
 
-    /// Historical name for [`Self::public_refresh_headroom_clears`].
+    /// Whether the public refresh path is currently safe to call.
     pub fn supports_public_refresh(&self) -> bool {
-        self.public_refresh_headroom_clears()
+        supports_public_refresh(&self.config)
     }
 
     /// The level this tuple actually **screens** at under the conservative
@@ -1361,116 +1334,60 @@ mod tests {
     // PUBLIC-REFRESH ADMISSIBILITY
     // =====================================================================
 
-    /// The predicate must split the named configs exactly where the decryption
-    /// oracle splits them.
-    ///
-    /// Ground truth is `ops::bootstrap::tests::diag_measure_noise_growth`
-    /// (`cargo test -p nine65 --lib --release diag_measure_noise_growth --
-    /// --nocapture`), which runs the refresh phases with this gate bypassed and
-    /// checks the result against the decryption oracle. Historically (pre the
-    /// 2026-08-26 `secure_128` re-cut, `docs/OPEN_WORK_2026-08-26.md` A3), the
-    /// three-prime `secure_128` refreshed `encrypt(7)` back to `7` but then
-    /// squared it to `34037` instead of `49`. That chain has since been removed
-    /// from the tree. This test pins the predicate's verdicts for the named
-    /// configs that remain.
-    ///
-    /// This test pins the predicate against that split. It is deliberately
-    /// sensitive to the noise ledger it reads (`NoiseBudget::mul_ct_cost`,
-    /// `relin_cost`): if those change enough to move a config across the line,
-    /// this fails loudly instead of silently re-admitting a corrupting path.
+    /// Capacity clearance must not be mistaken for a correct public refresh.
+    /// All named configs clear the circular headroom screen, while the
+    /// secret-dependent Phase-1 carry is still missing on every config.
     #[test]
-    fn public_refresh_predicate_matches_the_decryption_oracle() {
-        struct Case {
-            config: FHEConfig,
-            expect_supported: bool,
-        }
-
-        let cases = [
-            Case {
-                config: SecureConfig::secure_128().into_config(),
-                expect_supported: true,
-            },
-            Case {
-                config: SecureConfig::secure_128_deep().into_config(),
-                expect_supported: true,
-            },
-            Case {
-                config: SecureConfig::secure_192().into_config(),
-                expect_supported: true,
-            },
-            Case {
-                config: SecureConfig::secure_256().into_config(),
-                expect_supported: true,
-            },
-        ];
-
-        for case in &cases {
-            let headroom = public_refresh_headroom_bits(&case.config);
-            let required = post_refresh_required_bits(&case.config);
-            println!(
-                "{:16} lanes={} delta={:3} bits, refresh noise={:2} bits, \
-                 headroom={:3} bits, required={:3} bits -> supported={}",
-                case.config.name,
-                case.config.primes.len(),
-                exact_delta_bit_length(&case.config),
-                public_refresh_noise_bits(&case.config),
-                headroom,
-                required,
-                supports_public_refresh(&case.config),
+    fn public_refresh_support_requires_sound_phase1() {
+        for secure in [
+            SecureConfig::secure_128(),
+            SecureConfig::secure_128_deep(),
+            SecureConfig::secure_192(),
+            SecureConfig::secure_256(),
+        ] {
+            let config = secure.into_config();
+            assert!(
+                public_refresh_headroom_clears(&config),
+                "{}: expected the independent circular capacity screen to clear",
+                config.name
             );
-
-            assert_eq!(
-                public_refresh_headroom_clears(&case.config),
-                case.expect_supported,
-                "{}: headroom screen disagrees with the bound \
-                 (headroom {} bits, required {} bits). A clear screen is not \
-                 a decryption oracle.",
-                case.config.name,
-                headroom,
-                required,
+            assert!(
+                public_refresh_ksk_headroom_clears(&config),
+                "{}: expected the independent KSK capacity screen to clear",
+                config.name
             );
-
-            let outcome = ensure_public_refresh_supported(&case.config);
-            assert_eq!(
-                outcome.is_ok(),
-                case.expect_supported,
-                "{}: ensure_public_refresh_supported disagrees with \
-                 public_refresh_headroom_clears",
-                case.config.name
-            );
-
-            if !case.expect_supported {
-                let message = outcome.unwrap_err().to_string();
-                assert!(
-                    message.contains("cannot carry a public refresh"),
-                    "{}: refusal must say what it refuses, got: {}",
-                    case.config.name,
-                    message
-                );
-            }
+            assert!(!supports_public_refresh(&config));
+            assert!(!supports_public_refresh_with_ksk(&config));
+            assert!(matches!(
+                ensure_public_refresh_supported(&config),
+                Err(Nine65Error::BootstrapFailed { .. })
+            ));
+            assert!(matches!(
+                ensure_public_refresh_with_ksk_supported(&config),
+                Err(Nine65Error::BootstrapFailed { .. })
+            ));
         }
     }
 
-    /// The predicate reads arithmetic, not names: the refusal is driven by the
-    /// chain, so lengthening a chain admits it and shortening one refuses it,
-    /// whatever the config is called. Both cases are built by editing a named
-    /// config's chain rather than by naming a short config, because no short
-    /// named config exists.
+    /// The capacity screen reads arithmetic, not names. The soundness gate
+    /// remains closed even when lengthening a chain clears that screen.
     #[test]
-    fn public_refresh_predicate_is_not_a_name_match() {
+    fn public_refresh_headroom_screen_is_not_a_name_match() {
         let mut lengthened = SecureConfig::secure_128().into_config();
         lengthened.primes.push(167_772_161);
         assert!(
-            supports_public_refresh(&lengthened),
-            "a lengthened chain must be admitted on its arithmetic, not its name"
+            public_refresh_headroom_clears(&lengthened),
+            "a lengthened chain must clear the capacity screen on its arithmetic"
         );
+        assert!(!supports_public_refresh(&lengthened));
 
         let mut shortened = SecureConfig::secure_128_deep().into_config();
         shortened.primes.pop();
         assert!(
-            !supports_public_refresh(&shortened),
-            "a shortened chain must be refused even while still named secure_128_deep"
+            !public_refresh_headroom_clears(&shortened),
+            "a shortened chain must fail the capacity screen despite its name"
         );
+        assert!(!supports_public_refresh(&shortened));
     }
 
     /// Wiring proof: the refusal actually fires at
@@ -1727,24 +1644,22 @@ mod tests {
                 config.name
             );
 
-            // 4. Admissibility is monotone: KSK admitted implies circular
-            //    admitted. Never the reverse by accident.
+            // 4. Capacity is monotone: KSK clearance implies circular
+            //    clearance. Keep this meaningful while the soundness gate is
+            //    closed on both public paths.
             assert!(
-                !supports_public_refresh_with_ksk(&config) || supports_public_refresh(&config),
-                "{}: KSK admitted a config the circular gate refuses",
+                !public_refresh_ksk_headroom_clears(&config)
+                    || public_refresh_headroom_clears(&config),
+                "{}: KSK cleared a config the circular capacity screen refused",
                 config.name
             );
 
-            // 5. The named configs must not have moved across the line. The
-            //    KSK term costs at most a couple of bits on these tuples, and
-            //    if it ever costs enough to flip one, that is a finding, not a
-            //    number to quietly update.
+            // 5. The KSK term should not change the capacity result for any
+            //    named config, even while both support predicates return false.
             assert_eq!(
-                supports_public_refresh_with_ksk(&config),
-                supports_public_refresh(&config),
-                "{}: adding the key-switch term flipped this config's verdict. \
-                 That is a real change in what the library will refresh — \
-                 report it, do not relax this assertion.",
+                public_refresh_ksk_headroom_clears(&config),
+                public_refresh_headroom_clears(&config),
+                "{}: adding the key-switch term flipped this config's capacity result",
                 config.name
             );
         }

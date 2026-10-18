@@ -27,10 +27,10 @@ this table is outside the claim surface.
 
 | Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth † | public refresh |
 |---|---|---|---|---|---|---|---|
-| `secure_128` | 8192 | 4 | 119 | 408.66 ms §§ | 93.14 ms §§ | 2 | admitted §§§ |
-| `secure_128_deep` | 8192 | 4 | 119 | 408.66 ms | 93.14 ms | 2 | admitted §§§ |
-| `secure_192` | 16384 | 5 | 146 | 1114.12 ms | 247.21 ms | 3 | admitted §§§ |
-| `secure_256` | 16384 | 6 | 175 | 1017.91 ms | 262.96 ms | 4 ‡ | admitted §§§ |
+| `secure_128` | 8192 | 4 | 119 | 408.66 ms §§ | 93.14 ms §§ | 2 | disabled §§§ |
+| `secure_128_deep` | 8192 | 4 | 119 | 408.66 ms | 93.14 ms | 2 | disabled §§§ |
+| `secure_192` | 16384 | 5 | 146 | 1114.12 ms | 247.21 ms | 3 | disabled §§§ |
+| `secure_256` | 16384 | 6 | 175 | 1017.91 ms | 262.96 ms | 4 ‡ | disabled §§§ |
 
 **`secure_128` was re-cut 2026-08-26** (`docs/OPEN_WORK_2026-08-26.md` §A3;
 constructor comment on `SecureConfig::secure_128` in
@@ -52,26 +52,23 @@ states 2. `secure_128` inherits this figure because it is the identical tuple
 as of the 2026-08-26 recut. `secure_192` and `secure_256` are single-seed
 measurements and their depths should be read as provisional in the same way.
 See §4 of the claim-surface doc.
-‡ `secure_256`'s depth is from the correctness-gated benchmark run;
-its refresh is covered by the auto-refresh acceptance suite rather than
-exercised standalone. Per-number provenance is in
+‡ `secure_256`'s direct depth is from the correctness-gated benchmark run.
+The auto-refresh acceptance suite currently fails at the public Phase-1
+soundness gate. Per-number provenance is in
 `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 §§ The figures reused here are `secure_128_deep`'s 2026-08-23 measurements
 (`tests/op_timings.rs`), carried over rather than independently sourced under
 quiet conditions, because the two constructors build the identical tuple as
 of 2026-08-26. A same-machine confirmation run backs the reuse; see the § note
 under "Measured performance" below for the numbers and its own caveat.
-§§§ **"Admitted" is the admissibility-gate predicate result
-(`params::secure_configs::ensure_public_refresh_supported` /
-`supports_public_refresh`), not an unqualified correctness claim.** A fresh
-2026-09-03 decryption-oracle re-run
-(`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`) found that on
-current `main`, the refresh output itself — not just a subsequent multiply —
-decrypts incorrectly for every config the gate admits, `secure_128_deep` and
-`secure_192` included (`secure_256` untested in that pass). That finding is a
-pre-existing, open regression tracked separately (issue #95 / WR-5A / WR-5B)
-and is **not** resolved by this documentation pass. Do not read "admitted"
-above as "public refresh verified working."
+§§§ The chain-only headroom screen clears for all four named profiles, but
+`supports_public_refresh` and `supports_public_refresh_with_ksk` return
+`false` while the public Phase-1 soundness gate is closed. The diagnostic
+decryption oracle measured wrong refresh plaintexts on `secure_128`,
+`secure_128_deep`, and `secure_192`; `secure_256` was not measured in that
+pass. See [issue #117](https://github.com/Skyelabz210/NINE65_v7/issues/117)
+for the measured failure and [issue #95](https://github.com/Skyelabz210/NINE65_v7/issues/95)
+for the missing exact Phase-1 transition.
 
 **Timings re-measured 2026-08-23** by `tests/op_timings.rs` — see
 [Measured performance](#measured-performance) for the machine, the method, and
@@ -83,9 +80,8 @@ worst-case noise deposit against the 47 bits one subsequent multiply needs, so
 `ClockworkBootstrap::bootstrap` / `bootstrap_with_ksk` refused that config with
 a typed `Nine65Error`
 (`params::secure_configs::ensure_public_refresh_supported`). The recut chain
-carries the same 71-bit headroom `secure_128_deep` always has, so the
-admissibility gate now admits `secure_128` on the same arithmetic basis — see
-the §§§ caveat above for what "admitted" does and does not currently mean.
+carries the same 71-bit headroom `secure_128_deep` has, so both clear the
+capacity screen. Neither currently supports public refresh.
 
 Screened security levels for the shipped tuples, measured by
 `params::secure_configs::tests::screened_levels_for_named_configs`:
@@ -376,37 +372,21 @@ The token is hashed to a fixed-size digest before constant-time comparison. mTLS
 
 The browser or device can own key generation and decryption. Secret-key byte export remains disabled. Browser memory and hardware side channels remain part of the deployment threat model.
 
-## Production-Oriented Example
+## Direct Public Evaluation Example
 
-`secure_128_deep` is the shortest chain that carries a public refresh.
-`secure_128` is now the identical chain and is equally admitted (see "Verified
-Capability" for what "admitted" does and does not currently mean); before the
-2026-08-26 recut, the three-lane `secure_128` was refused on this path
-instead. Check admissibility explicitly rather than assuming a profile
-supports refresh.
+Public multiplication works within the measured direct depth of the chosen
+profile. Public refresh is currently disabled on every profile; check
+`supports_public_refresh` before adding a refresh call when Phase 1 is fixed.
 
 ```rust
-use nine65::entropy::SecureRng;
-use nine65::ops::bootstrap::ClockworkBootstrap;
 use nine65::ops::rns_fhe::RNSFHEContext;
-use nine65::params::secure_configs::{supports_public_refresh, SecureConfig};
+use nine65::params::secure_configs::SecureConfig;
 
 // API profile identifier. External named-security use still requires an
 // independent exact-tuple estimator artifact.
 let config = SecureConfig::secure_128_deep().into_config();
-assert!(
-    supports_public_refresh(&config),
-    "this profile cannot carry an evaluator-side refresh"
-);
-
 let context = RNSFHEContext::try_new(&config).expect("valid context");
-let bootstrap = ClockworkBootstrap::new(&config).expect("bootstrap context");
-let mut secure_rng = SecureRng::new();
-
 let keys = context.generate_keys_dual_full_secure();
-let bootstrap_keys = bootstrap
-    .generate_keys(&keys.secret_key, &mut secure_rng)
-    .expect("bootstrap keys");
 
 // Public evaluation: the evaluator holds only the public and evaluation keys.
 let a = context.encrypt_dual_secure(7, &keys.public_key);
@@ -414,19 +394,13 @@ let squared = context
     .mul_dual_public(&a, &a, &keys.eval_key)
     .expect("public multiply");
 
-// Evaluator-side refresh. A profile whose chain cannot carry it returns
-// Nine65Error::BootstrapConfigMismatch here rather than a wrong plaintext.
-let refreshed = bootstrap
-    .bootstrap(&squared, &bootstrap_keys.bsk, &bootstrap_keys.ksk)
-    .expect("public refresh admitted for this profile");
-
-let result = context.decrypt_dual(&refreshed, &keys.secret_key);
+let result = context.decrypt_dual(&squared, &keys.secret_key);
 println!("result mod t = {result}");
 ```
 
-`AutoBootstrapEvaluator::mul_auto` drives the same refresh automatically from the
-tracked noise budget. It inherits the admissibility gate above: on a refused
-profile the first triggered refresh returns an error instead of continuing.
+`AutoBootstrapEvaluator::mul_auto` returns an error when its tracked noise
+budget triggers a public refresh. Its budget model does not establish that
+the Phase-1 ciphertext transition is sound.
 
 The depths in the capability table are **direct-square depths without refresh**.
 How far an auto-refreshed chain extends past them is a separate question, tracked
