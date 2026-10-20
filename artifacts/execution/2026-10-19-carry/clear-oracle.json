@@ -2,7 +2,7 @@
   "schema": "nine65-refresh-carry-bridge-v1",
   "scope": "clear integer identities; no encrypted correction or security admission",
   "source_sha256": {
-    "refresh_carry_bridge.py": "af6bf0a9bfdf97fe70290345333dd812ae51a1ac158e197446cc2748957d923d",
+    "refresh_carry_bridge.py": "e5cc3dc0cf7354ff730453074c731d9813a069bfeae4ac135f2ff4f364bf63cb",
     "bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137"
   },
   "checks": {
@@ -10,6 +10,7 @@
     "composable_translation_block_cases": 14094,
     "local_piecewise_threshold_cases": 1284,
     "full_cycle_extension_winding_cases": 56,
+    "phase1_carry_bound_boundary_cases": 4,
     "scalar_component_cases": 3825,
     "negacyclic_n2_cases": 5625,
     "cases_where_uncorrected_affine_result_is_wrong": 3116,
@@ -67,5 +68,20 @@
       "input_support_proved_for_native_ciphertexts": false
     }
   ],
+  "wide_sum_candidate": {
+    "scope": "range and encoding width only; no noise or security admission",
+    "native_Q": 348959453350711275087786864768188417,
+    "native_Q_bits": 119,
+    "N": 8192,
+    "sum_abs_bound": 1429512400651188738397118891522883846144,
+    "minimum_plaintext_modulus": 2859024801302377476794237783045767692289,
+    "minimum_plaintext_bits": 132,
+    "p_power_base": 65537,
+    "p_power_exponent": 9,
+    "p_power_modulus_bits": 145,
+    "carry_radius": 4096,
+    "carry_coordinate_modulus": 8193,
+    "current_main_Q_can_encode_sum": false
+  },
   "public_refresh_admitted": false
 }

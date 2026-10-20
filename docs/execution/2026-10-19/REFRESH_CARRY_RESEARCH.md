@@ -88,6 +88,33 @@ answer once produced; it does not itself produce the answer. This separates
 the Safe-Root/Lift representation question from the ultradiscrete threshold
 transduction question.
 
+## One final winding instead of N local thresholds
+
+Composability suggests an implementation candidate: evaluate the unwrapped
+secret-linear sum
+
+```text
+S_j = R0_j + (R1*s)_j
+```
+
+in a temporary plaintext domain wide enough to retain its signed integer value,
+then apply one nearest-quotient map `K_j=n_Q(S_j)`. The cocycle proof says this
+is exactly the same total winding as N stepwise threshold updates. It does not
+remove the final quotient circuit, but it avoids losing the winding at each
+mod-Q intermediate.
+
+For native `N=8192` and
+`Q=348959453350711275087786864768188417`, the exact `S` bound is
+`(N+1)(Q-1)/2`, requiring a plaintext modulus greater than `2|S|`, i.e. at
+least 132 bits. The smallest same-prime power `65537^e` that fits is `e=9`
+(145 bits). The current main `Q` is only 119 bits, so it cannot carry that
+temporary plaintext encoding at all; a larger temporary boot modulus/key
+family would be required. Even then, multiplication by 119-bit public
+residual coefficients and the final quotient's noise/depth schedule need a
+complete bound, and the larger key distribution needs independent security
+review. The oracle emits this as `wide_sum_candidate` range evidence only; it
+does not claim an admitted construction.
+
 The new `composable_translation_block_cases` check exhaustively compares
 stepwise accumulation, one-shot quotient, and every two-block split for small
 odd moduli. `local_piecewise_threshold_cases` separately checks this three-way
@@ -196,6 +223,8 @@ binds both Python sources by SHA-256. It checks:
   residue generator for each tested odd modulus;
 - 4 sharp Phase-1 carry-radius boundary checks, including the exact native
   `N=8192`, four-prime `Q` product;
+- exact width calculation for the single-final-winding candidate: 132-bit
+  minimum plaintext range, 145-bit `65537^9`, versus the current 119-bit `Q`;
 - 3,825 scalar and 5,625 exhaustive N=2 negacyclic cases; 3,116 cases expose
   a wrong uncorrected affine answer, while the corrected identity holds;
 - 1,284 contractions and 8,988 expanded-winding invariance cases;

@@ -46,6 +46,19 @@ def carry_block(state, terms, modulus):
     return state, winding
 
 
+def wide_carry_requirements(n, q, base):
+    """Exact range/encoding floor for aggregating K before one quotient."""
+    half = (q - 1) // 2
+    sum_bound = (n + 1) * half
+    minimum_plaintext_modulus = 2 * sum_bound + 1
+    exponent, modulus = 1, base
+    while modulus < minimum_plaintext_modulus:
+        exponent += 1
+        modulus *= base
+    carry_radius = (sum_bound + half) // q
+    return sum_bound, minimum_plaintext_modulus, exponent, modulus, carry_radius
+
+
 def convolution(a, b):
     n = len(a)
     result = [0] * n
@@ -147,6 +160,14 @@ def run():
         assert nearest(max_sum, q) == radius
         assert nearest(-max_sum, q) == -radius
         carry_bound_cases += 1
+    native_q = 348959453350711275087786864768188417
+    native_sum_bound, minimum_plaintext, wide_exp, wide_modulus, native_k = (
+        wide_carry_requirements(8192, native_q, 65537)
+    )
+    assert native_k == 4096
+    assert minimum_plaintext.bit_length() == 132
+    assert wide_exp == 9 and wide_modulus.bit_length() == 145
+    assert native_q.bit_length() == 119 < wide_modulus.bit_length()
     for q, t in ((5, 3), (17, 5), (31, 7)):
         values = range(-q // 2 + 1, q // 2 + 1)
         for a, b, s in itertools.product(values, values, (-1, 0, 1)):
@@ -217,6 +238,21 @@ def run():
             "existing_bounded_polynomial_exhaustive_cases": self_test(),
         },
         "bounded_candidates": bounded,
+        "wide_sum_candidate": {
+            "scope": "range and encoding width only; no noise or security admission",
+            "native_Q": native_q,
+            "native_Q_bits": native_q.bit_length(),
+            "N": 8192,
+            "sum_abs_bound": native_sum_bound,
+            "minimum_plaintext_modulus": minimum_plaintext,
+            "minimum_plaintext_bits": minimum_plaintext.bit_length(),
+            "p_power_base": 65537,
+            "p_power_exponent": wide_exp,
+            "p_power_modulus_bits": wide_modulus.bit_length(),
+            "carry_radius": native_k,
+            "carry_coordinate_modulus": 8193,
+            "current_main_Q_can_encode_sum": False,
+        },
         "public_refresh_admitted": False,
     }
 
