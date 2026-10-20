@@ -17,7 +17,7 @@ const POWER_FRAME: [u64; 8] = [
     131072, 177147, 390625, 117649, 161051, 371293, 83521, 130321,
 ];
 
-fn signed_secret(sk: &DualRNSSecretKey, first_prime: u64) -> Vec<i8> {
+pub(super) fn signed_secret(sk: &DualRNSSecretKey, first_prime: u64) -> Vec<i8> {
     sk.s.main[0]
         .iter()
         .map(|&value| match value {
@@ -31,7 +31,7 @@ fn signed_secret(sk: &DualRNSSecretKey, first_prime: u64) -> Vec<i8> {
 
 // Only the key holder calls this. Every output is a full main-Q ciphertext
 // under the SAME independent boot secret, with its own plaintext scale.
-fn precharge(
+pub(super) fn precharge(
     ctx: &RNSFHEContext,
     keys: &DualRNSKeySet,
     s: &[i8],
@@ -73,7 +73,7 @@ fn precharge(
     }
 }
 
-fn decode_indices(
+pub(super) fn decode_indices(
     ctx: &RNSFHEContext,
     ct: &RNSCiphertext,
     sk: &DualRNSSecretKey,
@@ -144,7 +144,7 @@ fn phase_mod(c0: &[u64], c1: &[u64], s: &[i8], j: usize, modulus: u64) -> u64 {
     sum.rem_euclid(modulus as i128) as u64
 }
 
-fn inverse(a: u64, m: u64) -> u64 {
+pub(super) fn inverse(a: u64, m: u64) -> u64 {
     let (mut r, mut next_r) = (m as i128, a as i128);
     let (mut t, mut next_t) = (0i128, 1i128);
     while next_r != 0 {

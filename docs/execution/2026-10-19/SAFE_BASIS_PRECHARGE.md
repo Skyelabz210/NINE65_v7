@@ -160,3 +160,9 @@ The next required implementation is encrypted CRT rank/quotient evaluation
 across the precharged coordinates, with its output encoding and complete
 error bound. No test here evaluates that carry circuit; public refresh stays
 unadmitted.
+
+The [encrypted carry follow-up](SAFE_BASIS_CARRY_TRANSDUCTION.md) now tests
+aligned sister-frame carry decoding and a nonlinear local ternary carry gate
+at native ring size. The aligned frame retains the input residual; the local
+gate removes it only for its one-trit domain. General encrypted-remainder
+composition remains required before public refresh can be admitted.

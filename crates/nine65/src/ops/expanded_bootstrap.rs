@@ -20,6 +20,10 @@ use crate::ops::rns_fhe::{RNSCiphertext, RNSFHEContext};
 #[path = "safe_basis_precharge_tests.rs"]
 mod safe_basis_precharge_tests;
 
+#[cfg(test)]
+#[path = "safe_basis_carry_tests.rs"]
+mod safe_basis_carry_tests;
+
 /// Shared main-only arithmetic for the high and authentic same-prime views.
 /// Callers validate the context, key, dimensions and canonical inputs first.
 pub(crate) fn evaluate_centered_components(

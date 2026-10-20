@@ -1,0 +1,35 @@
+Baseline: 2b9c40704a730e4dda4505a80cf087ccbd7a2fb2 plus sources hashed in safe-basis-carry.json
+Date: 2026-10-20
+
+$ cargo test --locked --offline -j1 -p nine65 --lib precharged_ -- --nocapture
+running 4 tests
+nonlinear local gate: 60 encrypted coefficient checks, 147 signed native boundary cases; depth=1; output_error_bound=7085963949472963821568; bound independent of r0/r1 and their retained residual; full secret-sum gate still required
+test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_local_ternary_carry_gate_removes_residual_at_native_ring_size ... ok
+clear rank bridge: 24579 recoveries covering every native carry; encrypted rank is still unimplemented
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_clear_rank_bridge_recovers_every_native_carry ... ok
+aligned frame: 18 encrypted native carry checks, 18 nonzero; both signs of injected input noise retained; assembly error=287487982247299167448314438; no refresh admission
+test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_aligned_frame_encodes_native_carry_and_retains_input_residual ... ok
+precharge: 256 encrypted native phase-coordinate checks, 16 encrypted S8 CRT assemblies, exact-grid noise bounds and 128 root/power coherence checks; all main-Q, independent boot secret; no encrypted carry extraction
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_encrypts_native_residual_coordinates ... ok
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1067 filtered out; finished in 50.72s
+
+$ python3 scripts/safe_basis_carry_probe.py
+Passed: 1633 rational aligned-phase cases, 24579 native aligned-phase cases,
+3825 exhaustive local-ternary cases, 147 native local boundaries,
+5 distinct local gates and 2 negative controls.
+The recorded JSON was reproduced and compared exactly after parsing.
+
+$ cargo test --locked --offline -j1 -p nine65 --lib public_phase1_is_typed_fail_closed -- --nocapture
+test ops::bootstrap::tests::public_phase1_is_typed_fail_closed ... ok
+test result: ok. 1 passed; 0 failed.
+
+$ cargo test --locked --offline -j1 -p nine65 --lib phase2_affine_inner_product_cannot_supply_missing_carry -- --nocapture
+test ops::bootstrap::tests::phase2_affine_inner_product_cannot_supply_missing_carry ... ok
+test result: ok. 1 passed; 0 failed.
+
+The aligned carry test uses public parameter/history noise bounds, not
+decryption-selected admission. Its measured residual law proves old input
+noise survives. The nonlinear scalar-trit gate has a fixed fresh output bound,
+but does not handle the full 8192-term secret sum or an encrypted starting remainder.
+All new Rust implementations are test-only; no runtime refresh API was enabled.
+No lint tool was run.

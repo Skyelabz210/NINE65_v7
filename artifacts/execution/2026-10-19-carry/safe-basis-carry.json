@@ -1,0 +1,76 @@
+{
+  "schema": "nine65-safe-basis-carry-v1",
+  "scope": "clear exact certificates; actual encrypted tests recorded separately",
+  "source_sha256": {
+    "scripts/safe_basis_carry_probe.py": "4ff7c11bffec7cf9df7653bcf766dad51795695d6dc7771e65e824e35fc09562",
+    "crates/nine65/src/ops/safe_basis_carry_tests.rs": "79661ebdad4cb5cba7d44d158ba0cc6269dc7f57c9998b9a7fb2967cde0d1168",
+    "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "b5f600c334da84a5b129b6eaf8d7c489fbec4e034b6cec0ab87cc7eae1d40520",
+    "crates/nine65/src/ops/expanded_bootstrap.rs": "2a10a2e1b6018895f6c276b19c3417d5be8ed68b7196e1ffd2bed1d9a228efbe",
+    "crates/nine65/src/ops/exact_mul.rs": "e100300207606227b371514a50566519b3a58322802a208f91bd7594e3b8caf6",
+    "crates/nine65/src/arithmetic/main_only_base_ext.rs": "713e85887bdb33de36730c6151c0731461d681e54238d5c1216fbf31df59cb7e",
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1"
+  },
+  "checks": {
+    "rational_aligned_phase_cases": 1633,
+    "native_aligned_phase_cases": 24579,
+    "exhaustive_local_ternary_cases": 3825,
+    "native_local_boundary_cases": 147,
+    "distinct_local_gates": 5,
+    "negative_controls": 2
+  },
+  "aligned_frame": {
+    "work_Q": 348959453350711275087786864768188417,
+    "boot_Q": 9036942976776574374355364829233938433,
+    "boot_primes": [
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257
+    ],
+    "payload_bits": 135,
+    "coordinate_bounds": [
+      {
+        "plaintext_modulus": 998244353,
+        "CRT_weight": 786850957,
+        "error_bound": 200991542352008363
+      },
+      {
+        "plaintext_modulus": 985661441,
+        "CRT_weight": 289191870,
+        "error_bound": 198459687134495792
+      },
+      {
+        "plaintext_modulus": 754974721,
+        "CRT_weight": 342364384,
+        "error_bound": 152007800121812390
+      },
+      {
+        "plaintext_modulus": 469762049,
+        "CRT_weight": 210423425,
+        "error_bound": 94583622950326930
+      },
+      {
+        "plaintext_modulus": 65537,
+        "CRT_weight": 1111,
+        "error_bound": 13195099197027
+      }
+    ],
+    "assembly_error_bound": 287487982247299167448314438,
+    "retained_residual_law": "Ecarry = Qboot*g/(Qwork*t) + Eassembly",
+    "removes_input_noise": false
+  },
+  "local_ternary_gate": {
+    "N": 8192,
+    "t": 65537,
+    "multiplicative_depth": 1,
+    "input_error_bound": 49156,
+    "square_error_bound": 216246458418925570,
+    "output_error_bound": 7085963949472963821568,
+    "half_delta": 68945351303664909702575375964981,
+    "output_error_bits": 73,
+    "half_delta_bits": 106,
+    "covers": "public centered r0,r1 and one freshly precharged ternary coefficient",
+    "covers_full_secret_sum": false
+  },
+  "public_refresh_admitted": false
+}
