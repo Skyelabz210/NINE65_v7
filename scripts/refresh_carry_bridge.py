@@ -87,7 +87,7 @@ def component_case(c0, c1, secret, q, t):
 
 def run():
     cocycles = scalar_cases = ring_cases = affine_failures = 0
-    transfer_cases = 0
+    transfer_cases = local_rule_cases = 0
     for q in (3, 5, 17, 31):
         for a, b, c in itertools.product(range(q), repeat=3):
             assert carry(a, b, q) + carry(a + b, c, q) == (
@@ -114,6 +114,17 @@ def run():
                             final_state, total_winding
                         )
                         transfer_cases += 1
+    # For centered x,v, a single representative crossing has only three
+    # possible windings. This is the exact piecewise-threshold local rule.
+    for q in (3, 5, 17, 31):
+        radius = q // 2
+        for state, term in itertools.product(range(-radius, radius + 1), repeat=2):
+            _, actual = carry_step(state, term, q)
+            total = state + term
+            threshold = int(total >= radius + 1) - int(total <= -radius - 1)
+            assert actual == threshold
+            assert actual in (-1, 0, 1)
+            local_rule_cases += 1
     for q, t in ((5, 3), (17, 5), (31, 7)):
         values = range(-q // 2 + 1, q // 2 + 1)
         for a, b, s in itertools.product(values, values, (-1, 0, 1)):
@@ -173,6 +184,7 @@ def run():
         "checks": {
             "centered_section_cocycle_triples": cocycles,
             "composable_translation_block_cases": transfer_cases,
+            "local_piecewise_threshold_cases": local_rule_cases,
             "scalar_component_cases": scalar_cases,
             "negacyclic_n2_cases": ring_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,
