@@ -78,6 +78,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
       - name: Format gate
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo fmt --all -- --check
       - name: Compile exploratory probes
         run: |

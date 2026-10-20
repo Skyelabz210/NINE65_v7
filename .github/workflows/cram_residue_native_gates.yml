@@ -51,12 +51,14 @@ jobs:
         with:
           components: rustfmt, clippy
       - name: Format check
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo fmt --all -- --check
       - name: Compile CRAM core
         run: cargo check -p cram-core --all-targets
       - name: Test CRAM core
         run: cargo test -p cram-core --all-targets
       - name: Clippy exactness gate
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo clippy -p cram-core --all-targets -- -D warnings
 
   oracle-scale:

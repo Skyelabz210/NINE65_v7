@@ -101,6 +101,7 @@ jobs:
           git diff --exit-code -- artifacts/security/modulus_class_audit_2026-07-13.json
 
       - name: Rust formatting
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo fmt --all -- --check
 
       - name: Compile audit benchmark

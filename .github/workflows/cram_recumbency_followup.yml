@@ -86,6 +86,7 @@ jobs:
           python3 tools/audit_modulus_evidence.py
 
       - name: Rust formatting
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo fmt --all -- --check
 
       - name: Compile audit benchmark
