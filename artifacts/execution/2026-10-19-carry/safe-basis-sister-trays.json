@@ -1,0 +1,121 @@
+{
+  "schema": "nine65-one-root-sister-trays-v1",
+  "baseline": "128cbc16655c5f038dbc20502f74531d60895217",
+  "source_sha256": {
+    "scripts/safe_basis_sister_tray_probe.py": "c353a2d315cf49d9d86b0fd814edf9a36fdc20dd8910f47125c45b71424963cc",
+    "crates/nine65/src/ops/safe_basis_sister_tray_tests.rs": "584e4edc6ab0b6cd099a48f1e5b01b3654724eaf141c35f69a9ccf50aa67e463",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "01950bb975e6202308c779d35fb34f20f3b445d984aed1c80fe875289bc5b111",
+    "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "b5f600c334da84a5b129b6eaf8d7c489fbec4e034b6cec0ab87cc7eae1d40520",
+    "crates/exact_transcendentals/src/chimera.rs": "90796cb939f799bb77c16caf07016969a01b53981676855b76c0ce2a2c42a08e",
+    "crates/exact_transcendentals/src/cram_ct.rs": "228e57594e3ea07dbd0dc87605150ad09cc5173ca0f1f5351f8dd36d9a568930",
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1"
+  },
+  "safe_basis_root_count": 1,
+  "root_moduli": [
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19
+  ],
+  "dependent_tray_count": 2,
+  "arbitrary_target_moduli": [
+    1,
+    6,
+    10,
+    8,
+    27,
+    121,
+    77,
+    221,
+    385,
+    4199,
+    6,
+    65537
+  ],
+  "catalogue_views": {
+    "shadow_bridge": 77,
+    "boundary_saturation": 221
+  },
+  "phase_quantity": "j=floor(S/2) mod 11, with S=(S mod 2)+2*j modulo 22",
+  "checks": {
+    "additive_phase_transitions": 50004,
+    "native_full_carry_range_views": 24579,
+    "negative_controls": 4
+  },
+  "public_bounds": [
+    {
+      "sign": -1,
+      "two_term_rows": 5,
+      "view_error_bounds": {
+        "1": 0,
+        "385": 37291861003546862636724760596,
+        "65537": 4304582482427877262781590757348,
+        "2": 0,
+        "3": 163083940248747212697047058,
+        "6": 326167880497494425394094116,
+        "5": 326167880497494425394094116,
+        "8": 0,
+        "7": 0,
+        "10": 507372258551657995057479736,
+        "11": 815419701243736063485235290,
+        "13": 924142328076234205283266662,
+        "17": 1304671521989977701576376464,
+        "19": 1304671521989977701576376464,
+        "27": 1630839402487472126970470580,
+        "77": 5200565650154494449339167294,
+        "221": 12702426901596866233403331962,
+        "4199": 405154868891304325410363907758,
+        "121": 12176934205239791881379513664
+      },
+      "phase_211_error_bound": 706697074411237921687203918,
+      "half_scale_bits": 137,
+      "balanced_four_rows": 9,
+      "balanced_four_view_6_bits": 133,
+      "balanced_four_view_4199_bits": 143,
+      "mixed_tray_refused_before_evaluation": true
+    },
+    {
+      "sign": 1,
+      "two_term_rows": 5,
+      "view_error_bounds": {
+        "1": 0,
+        "385": 11542718882050219387557663994,
+        "65537": 4008331444747125242738921607210,
+        "2": 0,
+        "3": 163083940248747212697047058,
+        "6": 326167880497494425394094116,
+        "5": 308047442692078068427755554,
+        "8": 0,
+        "7": 0,
+        "10": 761058387827486992586219604,
+        "11": 579854009773323422922833984,
+        "13": 724817512216654278653542480,
+        "17": 851660576854568777417912414,
+        "19": 1105346706130397774946652282,
+        "27": 1793923342736219339667517638,
+        "77": 4566350326964921955517317624,
+        "221": 15329890383382237993522423452,
+        "4199": 127459159523298654901225445108,
+        "121": 3171076615947862469109248350
+      },
+      "phase_211_error_bound": 688576636605821564720865356,
+      "half_scale_bits": 137,
+      "balanced_four_rows": 9,
+      "balanced_four_view_6_bits": 133,
+      "balanced_four_view_4199_bits": 142,
+      "mixed_tray_refused_before_evaluation": true
+    }
+  ],
+  "encoding": "integer view under existing main-Q BFV t=65537; no free plaintext conversion",
+  "limits": [
+    "bounded research source-state capability; not cryptographic provenance",
+    "2/11 transition tested for the additive reference quantity, not the full operator fabric",
+    "dependent views add no multiplication depth or fresh noise budget",
+    "general full secret-sum circuit remains unadmitted"
+  ],
+  "public_refresh_admitted": false
+}

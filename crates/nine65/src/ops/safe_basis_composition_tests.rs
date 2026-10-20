@@ -16,6 +16,10 @@ use crate::params::{is_prime, FHEConfig, SecureConfig};
 use std::cell::Cell;
 use std::collections::BTreeMap;
 
+#[cfg(feature = "exact_transcendentals_backend")]
+#[path = "safe_basis_sister_tray_tests.rs"]
+mod sister_tray;
+
 const ROOT: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
 const BOOT: [u64; 6] = [
     1811939329, 2113929217, 2130706433, 1107296257, 1711276033, 1224736769,
@@ -743,6 +747,10 @@ fn precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder(
                 left_pair = Some(state.clone());
             }
             exact_sum += terms[step] * source[step] as i128;
+            #[cfg(feature = "exact_transcendentals_backend")]
+            if step == 1 {
+                sister_tray::check_native_trays(&runtime, &state, &keys.secret_key, exact_sum);
+            }
             let expected_carry = (exact_sum + h).div_euclid(source_q);
             let expected_remainder = exact_sum - source_q * expected_carry;
             assert!(state
@@ -829,6 +837,8 @@ fn precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder(
             checked += 4;
         }
         assert_eq!(balanced.rows.len(), 9);
+        #[cfg(feature = "exact_transcendentals_backend")]
+        sister_tray::check_native_noise_refusal(&runtime, &balanced);
         let before = runtime.multiplications.get();
         assert!(matches!(
             runtime.compose(&balanced, &right_pair, &relin),

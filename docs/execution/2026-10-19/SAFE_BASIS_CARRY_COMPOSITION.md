@@ -195,3 +195,8 @@ tier, or explicitly with the command above. No existing correctness,
 security or admission check is disabled, and no workflow is changed.
 New artifacts preserve the earlier source-bound evidence rather than
 rewriting historical hashes.
+
+The follow-up [one-root sister-tray experiment](SAFE_BASIS_SISTER_TRAYS.md)
+attaches arbitrary-modulus dependent trays to this same encrypted state,
+preserves the S8 root, and tests the additive 2/11 phase relation. It does
+not require another Safe Basis or another ciphertext-modulus prime.
