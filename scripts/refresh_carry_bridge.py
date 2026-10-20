@@ -87,7 +87,7 @@ def component_case(c0, c1, secret, q, t):
 
 def run():
     cocycles = scalar_cases = ring_cases = affine_failures = 0
-    transfer_cases = local_rule_cases = 0
+    transfer_cases = local_rule_cases = extension_cases = 0
     for q in (3, 5, 17, 31):
         for a, b, c in itertools.product(range(q), repeat=3):
             assert carry(a, b, q) + carry(a + b, c, q) == (
@@ -117,6 +117,13 @@ def run():
     # For centered x,v, a single representative crossing has only three
     # possible windings. This is the exact piecewise-threshold local rule.
     for q in (3, 5, 17, 31):
+        # A full circuit of the residue generator crosses the centered cut
+        # exactly once: the section cocycle represents the non-split integer
+        # lift Z -> Z/QZ, rather than a carry removable by a homomorphic choice
+        # of centered representatives.
+        generator_winding = sum(carry(a, 1, q) for a in range(q))
+        assert generator_winding == 1
+        extension_cases += q
         radius = q // 2
         for state, term in itertools.product(range(-radius, radius + 1), repeat=2):
             _, actual = carry_step(state, term, q)
@@ -185,6 +192,7 @@ def run():
             "centered_section_cocycle_triples": cocycles,
             "composable_translation_block_cases": transfer_cases,
             "local_piecewise_threshold_cases": local_rule_cases,
+            "full_cycle_extension_winding_cases": extension_cases,
             "scalar_component_cases": scalar_cases,
             "negacyclic_n2_cases": ring_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,

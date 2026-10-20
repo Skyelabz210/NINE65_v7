@@ -2,13 +2,14 @@
   "schema": "nine65-refresh-carry-bridge-v1",
   "scope": "clear integer identities; no encrypted correction or security admission",
   "source_sha256": {
-    "refresh_carry_bridge.py": "7730187a1393d9613249f75597750c5bc1128e9060d8cfcf000d3fee46fa9ce8",
+    "refresh_carry_bridge.py": "af6bf0a9bfdf97fe70290345333dd812ae51a1ac158e197446cc2748957d923d",
     "bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137"
   },
   "checks": {
     "centered_section_cocycle_triples": 34856,
     "composable_translation_block_cases": 14094,
     "local_piecewise_threshold_cases": 1284,
+    "full_cycle_extension_winding_cases": 56,
     "scalar_component_cases": 3825,
     "negacyclic_n2_cases": 5625,
     "cases_where_uncorrected_affine_result_is_wrong": 3116,

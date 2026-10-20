@@ -51,6 +51,17 @@ constant, while the representative update is piecewise affine. This is the
 precise ultradiscrete-like feature: an integer, piecewise-linear lift with a
 lattice winding, not a replacement of BFV arithmetic by max-plus arithmetic.
 
+There is a sharper algebraic statement. Summing `kappa(a,1)` around every
+residue `a in Z/QZ` gives exactly one: repeatedly adding the residue generator
+returns to the same class but its integer lift has advanced by `Q`. Thus this
+cocycle records the generator of the nonsplit extension
+`0 -> Z --(*Q)--> Z -> Z/QZ -> 0`. A homomorphic section cannot erase it:
+there is no nontrivial homomorphism from finite `Z/QZ` into torsion-free `Z`.
+For refresh, that means a residue-only additive view cannot in general retain
+the integer winding; some lift/carry information must be recovered or carried
+through the nonlinear step. This is an obstruction to a class of shortcuts,
+not a lower bound against all encrypted circuits.
+
 The new `composable_translation_block_cases` check exhaustively compares
 stepwise accumulation, one-shot quotient, and every two-block split for small
 odd moduli. `local_piecewise_threshold_cases` separately checks this three-way
@@ -155,6 +166,8 @@ binds both Python sources by SHA-256. It checks:
 - 14,094 composable translation-block cases, comparing iterative carry,
   one-shot quotient and every two-block split;
 - 1,284 local piecewise-threshold cases for centered operands;
+- 56 full-cycle checks showing the section cocycle winds once around the
+  residue generator for each tested odd modulus;
 - 3,825 scalar and 5,625 exhaustive N=2 negacyclic cases; 3,116 cases expose
   a wrong uncorrected affine answer, while the corrected identity holds;
 - 1,284 contractions and 8,988 expanded-winding invariance cases;
