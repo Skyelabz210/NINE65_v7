@@ -16,6 +16,10 @@ use crate::keys::expanded_bootstrap::ExpandedBootstrapKey;
 use crate::ops::expanded_phase1::ExpandedPhase1Components;
 use crate::ops::rns_fhe::{RNSCiphertext, RNSFHEContext};
 
+#[cfg(test)]
+#[path = "safe_basis_precharge_tests.rs"]
+mod safe_basis_precharge_tests;
+
 /// Shared main-only arithmetic for the high and authentic same-prime views.
 /// Callers validate the context, key, dimensions and canonical inputs first.
 pub(crate) fn evaluate_centered_components(

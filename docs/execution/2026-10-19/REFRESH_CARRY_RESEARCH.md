@@ -115,6 +115,13 @@ complete bound, and the larger key distribution needs independent security
 review. The oracle emits this as `wide_sum_candidate` range evidence only; it
 does not claim an admitted construction.
 
+The [precharged Safe Basis experiment](SAFE_BASIS_PRECHARGE.md) tests a
+different representation: eight encrypted higher-power plaintext coordinates
+jointly provide a 139-bit interval while every ciphertext remains modulo the
+existing Q. Their encrypted production passes native tests and coordinate
+error bounds. This avoids the single-wide-plaintext requirement for representing
+S; encrypted CRT rank/quotient evaluation is still required to produce K.
+
 The new `composable_translation_block_cases` check exhaustively compares
 stepwise accumulation, one-shot quotient, and every two-block split for small
 odd moduli. `local_piecewise_threshold_cases` separately checks this three-way

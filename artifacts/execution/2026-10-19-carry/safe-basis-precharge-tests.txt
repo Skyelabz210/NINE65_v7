@@ -1,0 +1,30 @@
+Baseline: 64d76bb7d56cb4acbdf426d159746da189d99a3e plus the sources hashed in safe-basis-precharge.json
+Date: 2026-10-20
+
+$ cargo test --locked --offline -j1 -p nine65 --lib precharged_safe_basis_ -- --nocapture
+running 2 tests
+clear rank bridge: 24579 recoveries covering every native carry; encrypted rank is still unimplemented
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_clear_rank_bridge_recovers_every_native_carry ... ok
+precharge: 256 encrypted native phase-coordinate checks, 16 encrypted S8 CRT assemblies, exact-grid noise bounds and 128 root/power coherence checks; all main-Q, independent boot secret; no encrypted carry extraction
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_encrypts_native_residual_coordinates ... ok
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1067 filtered out; finished in 24.09s
+
+$ python3 scripts/safe_basis_precharge_probe.py
+Passed: 11250 negacyclic residual cases, 22500 coefficient recoveries,
+57347 native boundary recoveries, all 8193 native carries, 6 negative controls.
+All 16 coordinate noise bounds and the S8 assembly noise bound pass.
+Output matches safe-basis-precharge.json exactly after JSON parsing.
+
+$ python3 scripts/refresh_carry_bridge.py
+Output matches the pre-existing clear-oracle.json exactly after JSON parsing.
+
+$ cargo test --locked --offline -j1 -p nine65 --lib public_phase1_is_typed_fail_closed -- --nocapture
+test ops::bootstrap::tests::public_phase1_is_typed_fail_closed ... ok
+test result: ok. 1 passed; 0 failed.
+
+$ cargo test --locked --offline -j1 -p nine65 --lib encrypted_ciphertext_exhibits_missing_phase1_carry -- --nocapture
+test ops::bootstrap::tests::encrypted_ciphertext_exhibits_missing_phase1_carry ... ok
+test result: ok. 1 passed; 0 failed; finished in 15.41s.
+
+No encrypted carry circuit or completed public refresh is claimed by these tests.
+No lint tool was run.

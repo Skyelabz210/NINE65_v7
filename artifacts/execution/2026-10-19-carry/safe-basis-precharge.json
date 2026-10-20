@@ -1,0 +1,152 @@
+{
+  "schema": "nine65-safe-basis-precharge-v1",
+  "scope": "clear carry oracle plus parameter bounds; encrypted coordinate tests are separate",
+  "source_sha256": {
+    "scripts/safe_basis_precharge_probe.py": "d3d0535b0c1a581d11d6fb19a6d3e64e64cabaf103927f32a86a40cb94542d06",
+    "scripts/refresh_carry_bridge.py": "e5cc3dc0cf7354ff730453074c731d9813a069bfeae4ac135f2ff4f364bf63cb",
+    "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "bcb9c4cacc71cd0f1c1339f3c01e2882a7619dda62a31baa3ab9ee674fae06f3",
+    "crates/nine65/src/ops/expanded_bootstrap.rs": "b689457bbc122bc44d1bb50a95194124a3367a7850fa0e796a8a22d8f9cdb3b8",
+    "crates/nine65/src/arithmetic/main_only_base_ext.rs": "713e85887bdb33de36730c6151c0731461d681e54238d5c1216fbf31df59cb7e",
+    "crates/nine65/src/params/secure_configs.rs": "4e9d66f459bb9ec745dd29b51a0d680782b36153a2c31e33726dd95fb37c0210",
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1"
+  },
+  "checks": {
+    "negacyclic_n2_residual_cases": 11250,
+    "signed_coefficient_recoveries": 22500,
+    "nonzero_carries": 5520,
+    "native_boundary_recoveries": 57347,
+    "distinct_native_carries": 8193,
+    "negative_controls": 6
+  },
+  "native": {
+    "N": 8192,
+    "Q": 348959453350711275087786864768188417,
+    "S_abs_bound": 1429512400651188738397118891522883846144,
+    "minimum_signed_range_bits": 132,
+    "safe_product": 9699690,
+    "Q_times_safe_product_bits": 142,
+    "power_frame": [
+      131072,
+      177147,
+      390625,
+      117649,
+      161051,
+      371293,
+      83521,
+      130321
+    ],
+    "power_frame_product": 694516038899403967736728343141836800000000,
+    "power_frame_product_bits": 139,
+    "power_frame_preserves_root_roles": true,
+    "power_frame_covers_full_signed_S": true
+  },
+  "coordinate_noise_bounds_eta3": [
+    {
+      "plaintext_modulus": 2,
+      "error_bound": 402685954,
+      "half_delta": 87239863337677818771946716192047104,
+      "headroom_bit_difference": 88
+    },
+    {
+      "plaintext_modulus": 3,
+      "error_bound": 402694147,
+      "half_delta": 58159908891785212514631144128031402,
+      "headroom_bit_difference": 87
+    },
+    {
+      "plaintext_modulus": 5,
+      "error_bound": 805371907,
+      "half_delta": 34895945335071127508778686476818841,
+      "headroom_bit_difference": 85
+    },
+    {
+      "plaintext_modulus": 7,
+      "error_bound": 1208041474,
+      "half_delta": 24925675239336519649127633197727744,
+      "headroom_bit_difference": 84
+    },
+    {
+      "plaintext_modulus": 11,
+      "error_bound": 2013405187,
+      "half_delta": 15861793334123239776717584762190382,
+      "headroom_bit_difference": 83
+    },
+    {
+      "plaintext_modulus": 13,
+      "error_bound": 2416123915,
+      "half_delta": 13421517436565818272607187106468785,
+      "headroom_bit_difference": 82
+    },
+    {
+      "plaintext_modulus": 17,
+      "error_bound": 3221438467,
+      "half_delta": 10263513333844449267287848963770247,
+      "headroom_bit_difference": 81
+    },
+    {
+      "plaintext_modulus": 19,
+      "error_bound": 3624132614,
+      "half_delta": 9183143509229244081257549072847063,
+      "headroom_bit_difference": 81
+    },
+    {
+      "plaintext_modulus": 131072,
+      "error_bound": 26389889687554,
+      "half_delta": 1331174672510953045226237734864,
+      "headroom_bit_difference": 56
+    },
+    {
+      "plaintext_modulus": 177147,
+      "error_bound": 35666387380033,
+      "half_delta": 984943164012687979722453286728,
+      "headroom_bit_difference": 54
+    },
+    {
+      "plaintext_modulus": 390625,
+      "error_bound": 78649598502685,
+      "half_delta": 446668100288910432112367186903,
+      "headroom_bit_difference": 52
+    },
+    {
+      "plaintext_modulus": 117649,
+      "error_bound": 23687262816409,
+      "half_delta": 1483053206362617935927151377267,
+      "headroom_bit_difference": 56
+    },
+    {
+      "plaintext_modulus": 161051,
+      "error_bound": 32426848151948,
+      "half_delta": 1083381827342615926283558825366,
+      "headroom_bit_difference": 55
+    },
+    {
+      "plaintext_modulus": 371293,
+      "error_bound": 74756691208404,
+      "half_delta": 469924632770764968754847067906,
+      "headroom_bit_difference": 52
+    },
+    {
+      "plaintext_modulus": 83521,
+      "error_bound": 16815871886023,
+      "half_delta": 2089052174607052568143262561321,
+      "headroom_bit_difference": 57
+    },
+    {
+      "plaintext_modulus": 130321,
+      "error_bound": 26238537361149,
+      "half_delta": 1338845824351836139562261127401,
+      "headroom_bit_difference": 56
+    }
+  ],
+  "s8_assembly_noise_bound": {
+    "error_bound": 152616231167,
+    "half_delta": 17988175568018734366138859322,
+    "headroom_bit_difference": 56
+  },
+  "unresolved": [
+    "encrypted canonical CRT rank or equivalent quotient circuit",
+    "complete carry-output noise and key transition admission"
+  ],
+  "encrypted_carry_tested": false,
+  "public_refresh_admitted": false
+}
