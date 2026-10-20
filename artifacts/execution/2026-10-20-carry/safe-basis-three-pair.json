@@ -1,0 +1,145 @@
+{
+  "baseline": "ad276249b8b827868959957919ded3319c96b795",
+  "boot_primes": [
+    1811939329,
+    2113929217,
+    2130706433,
+    1107296257,
+    1711276033
+  ],
+  "carry_profiles": [
+    {
+      "error_bits": 133,
+      "error_bound": 5859067381411400074356497700474151450001,
+      "initial": 174479726675355637543893432384094208,
+      "nonzero_pair_terms": 50,
+      "nonzero_three_way_terms": 83,
+      "selected_carry": 3,
+      "sign": 1
+    },
+    {
+      "error_bits": 133,
+      "error_bound": 5859067381411400074356497700474151450001,
+      "initial": 174479726675355637543893432384094208,
+      "nonzero_pair_terms": 50,
+      "nonzero_three_way_terms": 83,
+      "selected_carry": -3,
+      "sign": -1
+    },
+    {
+      "error_bits": 132,
+      "error_bound": 5141630559197833949505430524368704074988,
+      "initial": -174479726675355637543893432384094168,
+      "nonzero_pair_terms": 48,
+      "nonzero_three_way_terms": 65,
+      "selected_carry": 2,
+      "sign": 1
+    },
+    {
+      "error_bits": 132,
+      "error_bound": 5141630559197833949505430524368704074988,
+      "initial": -174479726675355637543893432384094168,
+      "nonzero_pair_terms": 48,
+      "nonzero_three_way_terms": 65,
+      "selected_carry": -2,
+      "sign": -1
+    }
+  ],
+  "existing_state_limit": 27,
+  "full_refresh_admitted": false,
+  "half_scale": 117984527272727065037126399264836478558604,
+  "half_scale_bits": 137,
+  "input_pair_rows": [
+    9,
+    9,
+    9
+  ],
+  "linear_and_pair_only_carry_failures": 1096,
+  "native_carry_and_phase_products": {
+    "carry": 146,
+    "phase211": 4
+  },
+  "native_checks": 425984,
+  "oversized_modulus": {
+    "error_bits": 148,
+    "error_bound": 225594022984943170450849436487690241285761036,
+    "modulus": 20000,
+    "refused_before_products": true
+  },
+  "phase211_products_per_query": 4,
+  "phase211_profiles": [
+    {
+      "error_bits": 128,
+      "error_bound": 318860809872897386608247125226028765451,
+      "initial": 174479726675355637543893432384094208,
+      "selector_products": 4,
+      "sign": 1
+    },
+    {
+      "error_bits": 128,
+      "error_bound": 318860809872897386608247125226028765456,
+      "initial": 174479726675355637543893432384094208,
+      "selector_products": 4,
+      "sign": -1
+    },
+    {
+      "error_bits": 128,
+      "error_bound": 318860809872897386608247125226028765454,
+      "initial": -174479726675355637543893432384094168,
+      "selector_products": 4,
+      "sign": 1
+    },
+    {
+      "error_bits": 128,
+      "error_bound": 318860809872897386608247125226028765453,
+      "initial": -174479726675355637543893432384094168,
+      "selector_products": 4,
+      "sign": -1
+    }
+  ],
+  "plaintext_modulus": 65537,
+  "possible_joint_labels": 729,
+  "reusable_joint_state_emitted": false,
+  "refresh": {
+    "affine_error_bound": 108098153386033152,
+    "six_term_error_bits": 133,
+    "six_term_error_bound": 5859067381411400074356605798627537483153,
+    "subsequent_square_bits": 175,
+    "subsequent_square_bound": 25775135667317951398989074957133011994845489625157633,
+    "subsequent_square_refused_before_multiplication": true
+  },
+  "residue_views": [
+    {"error_bits": 46, "error_bound": 49428503887872, "modulus": 2, "representation": "additive residue representative"},
+    {"error_bits": 47, "error_bound": 111214133747714, "modulus": 3, "representation": "additive residue representative"},
+    {"error_bits": 48, "error_bound": 185356889579523, "modulus": 5, "representation": "additive residue representative"},
+    {"error_bits": 49, "error_bound": 345999527215104, "modulus": 7, "representation": "additive residue representative"},
+    {"error_bits": 49, "error_bound": 543713542766598, "modulus": 11, "representation": "additive residue representative"},
+    {"error_bits": 49, "error_bound": 535475458785283, "modulus": 13, "representation": "additive residue representative"},
+    {"error_bits": 50, "error_bound": 700237138411529, "modulus": 17, "representation": "additive residue representative"},
+    {"error_bits": 50, "error_bound": 939141573869579, "modulus": 19, "representation": "additive residue representative"},
+    {"error_bits": 48, "error_bound": 222428267495426, "modulus": 6, "representation": "additive residue representative"},
+    {"error_bits": 49, "error_bound": 453094618972168, "modulus": 10, "representation": "additive residue representative"},
+    {"error_bits": 52, "error_bound": 3805994799366172, "modulus": 77, "representation": "additive residue representative"},
+    {"error_bits": 54, "error_bound": 10923699359219806, "modulus": 221, "representation": "additive residue representative"},
+    {"error_bits": 0, "error_bound": 0, "modulus": 1, "representation": "additive residue representative"},
+    {"error_bits": 49, "error_bound": 395428031102976, "modulus": 8, "representation": "additive residue representative"},
+    {"error_bits": 51, "error_bound": 1223355471224843, "modulus": 27, "representation": "additive residue representative"},
+    {"error_bits": 53, "error_bound": 5980848970432518, "modulus": 121, "representation": "additive residue representative"},
+    {"error_bits": 58, "error_bound": 207550287825174843, "modulus": 4199, "representation": "additive residue representative"},
+    {"error_bits": 62, "error_bound": 3239395859299513688, "modulus": 65537, "representation": "additive residue representative"}
+  ],
+  "safe_basis_root_count": 1,
+  "schema": "nine65-safe-basis-three-pair-terminal-v1",
+  "shared_carry_selector_products": 146,
+  "small_exact_assignments": 2916,
+  "source_sha256": {
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+    "crates/nine65/src/ops/exact_mul.rs": "e100300207606227b371514a50566519b3a58322802a208f91bd7594e3b8caf6",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "e249e92f98045b6553ead419561d8f66badafcb5a72464ffe48017fd657fb262",
+    "crates/nine65/src/ops/safe_basis_pair_tests.rs": "556768a693eb5b57f8d2155163e371f0cfa4ec6168bebbec8c1899f55f45664f",
+    "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "b5f600c334da84a5b129b6eaf8d7c489fbec4e034b6cec0ab87cc7eae1d40520",
+    "crates/nine65/src/ops/safe_basis_terminal_tests.rs": "198295598d008f8b41769e2c99b7a3bb4062e90be56d0da56276551bae197e52",
+    "scripts/safe_basis_pair_probe.py": "79e8ec7e0161187c26f86eb241aab31ae2049b2c772a888069a5bcd28e56a26d",
+    "scripts/safe_basis_three_pair_probe.py": "486c7f43546f467370c60e230597bcc4828d3744f4fe43dd9cca4e7ee842511c"
+  }
+}

@@ -1,0 +1,31 @@
+Baseline: ad276249b8b827868959957919ded3319c96b795
+
+$ python3 scripts/safe_basis_three_pair_probe.py
+exit_code=0
+small_exact_assignments=2916
+linear_and_pair_only_carry_failures=1096
+carry_error_bits=[133,133,132,132]
+carry_top_order_terms=[83,83,65,65]
+phase211_error_bits=[128,128,128,128]
+residue_view_error_bits=[46,47,48,49,49,49,50,50,48,49,52,54,0,49,51,53,58,62]
+modulus_20000_error_bits=148 (refused before products)
+refreshed_output_error_bits=133
+subsequent_square_error_bits=175 (refused before multiplication)
+
+$ cargo check --locked --offline -j1 -p nine65 --tests
+exit_code=0
+
+$ cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib terminal_three_pair_ -- --include-ignored --nocapture
+running 3 tests
+three-pair terminal: 2916 label assignments; cubic carry terms=1096; linear/pair-only failures=1096
+three-pair preflight: carry bits=[133, 133, 132, 132], cubic terms=[83, 83, 65, 65], phase211 bits=[128, 128, 128, 128], residue-view bits=[46, 47, 48, 49, 49, 49, 50, 50, 48, 49, 52, 54, 0, 49, 51, 53, 58, 62]; modulus 20000 refused without products
+three-pair follow-up square refused before multiplication: 175 error bits >= 137-bit half-scale
+three-pair native: 425984 coefficient/error checks, carry bounds=[133, 132], carry selector products=146, 2/11 phase products=4, tray moduli=[2, 3, 5, 7, 11, 13, 17, 19, 6, 10, 77, 221, 1, 8, 27, 121, 4199, 65537]; modulus 20000 preflight refused
+test result: ok. 3 passed; 0 failed; 0 ignored; 1081 filtered out; finished in 442.90s
+
+The native checks cover one selected all-positive source and all 8192 ring
+coefficients of each listed selector/output; they are not independent source
+samples. The square refusal is a bound preflight; no square multiplication ran.
+
+$ git diff --check
+exit_code=0
