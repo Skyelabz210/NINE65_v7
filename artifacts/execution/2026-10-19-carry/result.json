@@ -1,0 +1,69 @@
+{
+  "task_id": "carry-research-collection",
+  "status": "ready_for_review",
+  "source_commit": "4f835d35623f1392b782bb6650a6d2466fe977f9",
+  "checks": [
+    {
+      "command": "python3 scripts/refresh_carry_bridge.py",
+      "exit_code": 0,
+      "log": "clear-oracle.json",
+      "scope": "Clear arithmetic only; public_refresh_admitted=false"
+    },
+    {
+      "command": "cargo test --locked --offline -j1 -p nine65 --lib displaced_state -- --test-threads=1",
+      "exit_code": 0,
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --offline -j1 -p nine65 --lib phase2_affine_inner_product_cannot_supply_missing_carry -- --test-threads=1",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo test --locked --offline -j1 -p nine65 --lib public_prime_power_lift_four_prime_noise_gate_refuses_before_keys -- --test-threads=1",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "command": "cargo run --locked --offline -j1 -q -p nine65 --features serde --example canonical_lift_feasibility",
+      "exit_code": 0,
+      "log": "canonical-probe.json"
+    },
+    {
+      "command": "python3 scripts/canonical_lift_feasibility.py artifacts/execution/2026-10-19-carry/canonical-probe.json",
+      "exit_code": 0,
+      "log": "canonical-feasibility.json",
+      "scope": "All 14 existing-circuit certificates refuse; 8 production noise results cross-checked"
+    },
+    {
+      "command": "python3 scripts/bootstrap_candidate_search.py --self-test",
+      "exit_code": 1,
+      "output": "bootstrap candidate search failed: canonical probe source changed: Cargo.lock"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "verification": [
+    "Clear-oracle artifact reproduced exactly from current source",
+    "All 9 emitted canonical probe source hashes match current files"
+  ],
+  "unresolved": [
+    "No native encrypted bounded residual evaluator admitted",
+    "R01 actual input radius absent; B=17/32 are hypotheses, not admitted bounds",
+    "Signed section needs its own producer/contraction contract",
+    "Full circuit error/resource and joint key-security admission remain open",
+    "Archived candidate search refuses source drift",
+    "Fresh probe embeds cached build SHA 0ec19eb2e142f8ae86d86c747c267e65fb5f1f8e; actual checkout recorded separately"
+  ],
+  "public_refresh_admitted": false,
+  "lint_run": false,
+  "remote_changes": []
+}

@@ -1,0 +1,68 @@
+{
+  "schema": "nine65-refresh-carry-bridge-v1",
+  "scope": "clear integer identities; no encrypted correction or security admission",
+  "source_sha256": {
+    "refresh_carry_bridge.py": "30b728c3efae723d1ca208b02ca86e75347ecdcc8715865c03b946b3fded9eab",
+    "bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137"
+  },
+  "checks": {
+    "centered_section_cocycle_triples": 34856,
+    "scalar_component_cases": 3825,
+    "negacyclic_n2_cases": 5625,
+    "cases_where_uncorrected_affine_result_is_wrong": 3116,
+    "prime_power_contractions": 1284,
+    "expanded_winding_invariance_cases": 8988,
+    "existing_bounded_polynomial_exhaustive_cases": 9482
+  },
+  "bounded_candidates": [
+    {
+      "p": 17,
+      "bound": 2,
+      "degree": 9,
+      "degree_depth_lower_bound": 4,
+      "certificate": {
+        "value_identities": 5,
+        "derivative_identities": 5,
+        "implied_domain_elements": 85,
+        "identity": "F(r+p*m) = r (mod p^2), for -B <= r <= B and every m"
+      },
+      "sampled_contractions": 20,
+      "outside_support_counterexample": 3,
+      "output_section": "signed [-B,B], not canonical [0,p)",
+      "input_support_proved_for_native_ciphertexts": false
+    },
+    {
+      "p": 65537,
+      "bound": 17,
+      "degree": 69,
+      "degree_depth_lower_bound": 7,
+      "certificate": {
+        "value_identities": 35,
+        "derivative_identities": 35,
+        "implied_domain_elements": 2293795,
+        "identity": "F(r+p*m) = r (mod p^2), for -B <= r <= B and every m"
+      },
+      "sampled_contractions": 140,
+      "outside_support_counterexample": 18,
+      "output_section": "signed [-B,B], not canonical [0,p)",
+      "input_support_proved_for_native_ciphertexts": false
+    },
+    {
+      "p": 65537,
+      "bound": 32,
+      "degree": 129,
+      "degree_depth_lower_bound": 8,
+      "certificate": {
+        "value_identities": 65,
+        "derivative_identities": 65,
+        "implied_domain_elements": 4259905,
+        "identity": "F(r+p*m) = r (mod p^2), for -B <= r <= B and every m"
+      },
+      "sampled_contractions": 260,
+      "outside_support_counterexample": 33,
+      "output_section": "signed [-B,B], not canonical [0,p)",
+      "input_support_proved_for_native_ciphertexts": false
+    }
+  ],
+  "public_refresh_admitted": false
+}
