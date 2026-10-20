@@ -1,0 +1,502 @@
+{
+  "baseline": "7441e7d2a87f6000beecd1c8edd18b2e637d0fee",
+  "boot_primes": [
+    1811939329,
+    2113929217,
+    2130706433,
+    1107296257,
+    1711276033
+  ],
+  "distinct_joint_sums": 81,
+  "emits_composable_joint_state": false,
+  "existing_combined_state_limit": 27,
+  "full_refresh_admitted": false,
+  "half_bits": 137,
+  "half_bound": 117984527272727065037126399264836478558604,
+  "inflated_input_bundle_refused_before_execution": true,
+  "input_pair_rows": [
+    9,
+    9
+  ],
+  "linear_only_failures": 220899,
+  "native_readout_checks": 6480,
+  "product_bound": 18120437805416356966338562,
+  "profiles": [
+    {
+      "fresh_bits": 89,
+      "fresh_bound": 344288318411058364250353703,
+      "initial": 174479726675355637543893432384094208,
+      "next_square_error_bits": 173,
+      "next_square_refused_by_clear_bound": true,
+      "outputs": [
+        {
+          "error_bits": 89,
+          "error_bound": 344288318302960210864320551,
+          "name": "carry"
+        },
+        {
+          "error_bits": 89,
+          "error_bound": 579854009773356375258759232,
+          "name": "root 2"
+        },
+        {
+          "error_bits": 90,
+          "error_bound": 978503641492532704686170221,
+          "name": "root 3"
+        },
+        {
+          "error_bits": 90,
+          "error_bound": 1087226268325055560736145529,
+          "name": "root 5"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2410018228120519642992701711,
+          "name": "root 7"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 6976368555085655788693533442,
+          "name": "root 11"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 2826788297645141162680385853,
+          "name": "root 13"
+        },
+        {
+          "error_bits": 90,
+          "error_bound": 924142328076477228760715379,
+          "name": "root 17"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 8951496275876034578982446051,
+          "name": "root 19"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 8661569270989385224647001020,
+          "name": "phase211"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1413394148822591176550146208,
+          "name": "tray 0 mod 6"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1449635024433448604734767270,
+          "name": "tray 1 mod 10"
+        },
+        {
+          "error_bits": 95,
+          "error_bound": 25114926798308454753454107381,
+          "name": "tray 2 mod 77"
+        },
+        {
+          "error_bits": 97,
+          "error_bound": 92106185364937224451861567614,
+          "name": "tray 3 mod 221"
+        },
+        {
+          "error_bits": 0,
+          "error_bound": 0,
+          "name": "tray 4 mod 1"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 4058978068413494626811314624,
+          "name": "tray 5 mod 8"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 9785036414925343523029664831,
+          "name": "tray 6 mod 27"
+        },
+        {
+          "error_bits": 95,
+          "error_bound": 32888594616832833914781621828,
+          "name": "tray 7 mod 121"
+        },
+        {
+          "error_bits": 101,
+          "error_bound": 2434806987038263891316681057950,
+          "name": "tray 8 mod 4199"
+        },
+        {
+          "error_bits": 105,
+          "error_bound": 27313860046434041136699062276177,
+          "name": "tray 9 mod 65537"
+        }
+      ],
+      "selected_carry": 2,
+      "selected_carry_mixed_coefficient": 0,
+      "sign": 1,
+      "source_grid_distance": 174479726675355637543893432384094166,
+      "square_bits": 131,
+      "square_bound": 1514588847370646951058985702689958612993
+    },
+    {
+      "fresh_bits": 89,
+      "fresh_bound": 344288318411058364250353703,
+      "initial": 174479726675355637543893432384094208,
+      "next_square_error_bits": 173,
+      "next_square_refused_by_clear_bound": true,
+      "outputs": [
+        {
+          "error_bits": 89,
+          "error_bound": 344288318302960210864320551,
+          "name": "carry"
+        },
+        {
+          "error_bits": 89,
+          "error_bound": 579854009773356375258759232,
+          "name": "root 2"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1467755462238799057029255332,
+          "name": "root 3"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2446259103731344118841397522,
+          "name": "root 5"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2029489034206751432447647970,
+          "name": "root 7"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 5381770028208979304277824082,
+          "name": "root 11"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2120091223233903240993181938,
+          "name": "root 13"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 2772426984228945639327248694,
+          "name": "root 17"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 7574343002664391449540715344,
+          "name": "root 19"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 4620711640381496430733595134,
+          "name": "phase211"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1304671521990076558584152210,
+          "name": "tray 0 mod 6"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1630839402487595698230190264,
+          "name": "tray 1 mod 10"
+        },
+        {
+          "error_bits": 95,
+          "error_bound": 23719653087291395267046038118,
+          "name": "tray 2 mod 77"
+        },
+        {
+          "error_bits": 97,
+          "error_bound": 92106185364937224451861567435,
+          "name": "tray 3 mod 221"
+        },
+        {
+          "error_bits": 0,
+          "error_bound": 0,
+          "name": "tray 4 mod 1"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 4058978068413494626811314624,
+          "name": "tray 5 mod 8"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 9295784594179155432484402198,
+          "name": "tray 6 mod 27"
+        },
+        {
+          "error_bits": 95,
+          "error_bound": 30696021642377454721854655903,
+          "name": "tray 7 mod 121"
+        },
+        {
+          "error_bits": 101,
+          "error_bound": 2434806987038263891316681055561,
+          "name": "tray 8 mod 4199"
+        },
+        {
+          "error_bits": 105,
+          "error_bound": 27313860046434041136699062226956,
+          "name": "tray 9 mod 65537"
+        }
+      ],
+      "selected_carry": -2,
+      "selected_carry_mixed_coefficient": 0,
+      "sign": -1,
+      "source_grid_distance": 174479726675355637543893432384094166,
+      "square_bits": 131,
+      "square_bound": 1514588847370646951058985702689958612993
+    },
+    {
+      "fresh_bits": 88,
+      "fresh_bound": 308047442800233888401657892,
+      "initial": -174479726675355637543893432384094168,
+      "next_square_error_bits": 172,
+      "next_square_refused_by_clear_bound": true,
+      "outputs": [
+        {
+          "error_bits": 88,
+          "error_bound": 308047442692135735015624740,
+          "name": "carry"
+        },
+        {
+          "error_bits": 89,
+          "error_bound": 579854009773356375258759232,
+          "name": "root 2"
+        },
+        {
+          "error_bits": 90,
+          "error_bound": 978503641492532704686170221,
+          "name": "root 3"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2446259103731344118841397518,
+          "name": "root 5"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1902645969568828695599296725,
+          "name": "root 7"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 4385145948910964337953464810,
+          "name": "root 11"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2120091223233960907581051114,
+          "name": "root 13"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 7393138624610318498801124145,
+          "name": "root 17"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 7574343002664391449540715338,
+          "name": "root 19"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1485875900044314271003369639,
+          "name": "phase211"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1413394148822591176550146208,
+          "name": "tray 0 mod 6"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 4348905073300205766776619488,
+          "name": "tray 1 mod 10"
+        },
+        {
+          "error_bits": 95,
+          "error_bound": 37672390197462323773527973967,
+          "name": "tray 2 mod 77"
+        },
+        {
+          "error_bits": 97,
+          "error_bound": 80092335099945001737169773244,
+          "name": "tray 3 mod 221"
+        },
+        {
+          "error_bits": 0,
+          "error_bound": 0,
+          "name": "tray 4 mod 1"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 4058978068413494626811314624,
+          "name": "tray 5 mod 8"
+        },
+        {
+          "error_bits": 94,
+          "error_bound": 11252791877164307341738546419,
+          "name": "tray 6 mod 27"
+        },
+        {
+          "error_bits": 51,
+          "error_bound": 1186284093308978,
+          "name": "tray 7 mod 121"
+        },
+        {
+          "error_bits": 101,
+          "error_bound": 2358719268693286997032381682562,
+          "name": "tray 8 mod 4199"
+        },
+        {
+          "error_bits": 105,
+          "error_bound": 29688978311340509038532943676878,
+          "name": "tray 9 mod 65537"
+        }
+      ],
+      "selected_carry": 1,
+      "selected_carry_mixed_coefficient": -1,
+      "sign": 1,
+      "source_grid_distance": 174479726675355637543893432384094207,
+      "square_bits": 130,
+      "square_bound": 1355158442434379458593412274610021699585
+    },
+    {
+      "fresh_bits": 88,
+      "fresh_bound": 308047442800233888401657892,
+      "initial": -174479726675355637543893432384094168,
+      "next_square_error_bits": 172,
+      "next_square_refused_by_clear_bound": true,
+      "outputs": [
+        {
+          "error_bits": 88,
+          "error_bound": 308047442692135735015624740,
+          "name": "carry"
+        },
+        {
+          "error_bits": 89,
+          "error_bound": 579854009773356375258759232,
+          "name": "root 2"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1467755462238799057029255332,
+          "name": "root 3"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1630839402487583341104218292,
+          "name": "root 5"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2156332098844665931212017906,
+          "name": "root 7"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 3388521869613052347678871931,
+          "name": "root 11"
+        },
+        {
+          "error_bits": 94,
+          "error_bound": 10600456116169071348430918802,
+          "name": "root 13"
+        },
+        {
+          "error_bits": 94,
+          "error_bound": 14786277249220439283586696816,
+          "name": "root 17"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 6197189729452748320098984633,
+          "name": "root 19"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 2283175163482683406026154244,
+          "name": "phase211"
+        },
+        {
+          "error_bits": 91,
+          "error_bound": 1304671521990076558584152210,
+          "name": "tray 0 mod 6"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 3805291939137690343534518692,
+          "name": "tray 1 mod 10"
+        },
+        {
+          "error_bits": 95,
+          "error_bound": 37672390197462323773527974010,
+          "name": "tray 2 mod 77"
+        },
+        {
+          "error_bits": 97,
+          "error_bound": 80092335099945001737169773361,
+          "name": "tray 3 mod 221"
+        },
+        {
+          "error_bits": 0,
+          "error_bound": 0,
+          "name": "tray 4 mod 1"
+        },
+        {
+          "error_bits": 92,
+          "error_bound": 4058978068413494626811314624,
+          "name": "tray 5 mod 8"
+        },
+        {
+          "error_bits": 93,
+          "error_bound": 9295784594179246051408196612,
+          "name": "tray 6 mod 27"
+        },
+        {
+          "error_bits": 51,
+          "error_bound": 1186284093308999,
+          "name": "tray 7 mod 121"
+        },
+        {
+          "error_bits": 101,
+          "error_bound": 2358719268693286997032381681353,
+          "name": "tray 8 mod 4199"
+        },
+        {
+          "error_bits": 105,
+          "error_bound": 29688978311340509038532943682199,
+          "name": "tray 9 mod 65537"
+        }
+      ],
+      "selected_carry": -1,
+      "selected_carry_mixed_coefficient": 1,
+      "sign": -1,
+      "source_grid_distance": 174479726675355637543893432384094207,
+      "square_bits": 130,
+      "square_bound": 1355158442434379458593412274610021699585
+    }
+  ],
+  "query_frames": 4,
+  "safe_basis_roots_per_query": 1,
+  "schema": "nine65-terminal-readout-v1",
+  "shared_selector_products": 64,
+  "small_readout_checks": 1180980,
+  "source_sha256": {
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+    "crates/nine65/src/ops/exact_mul.rs": "e100300207606227b371514a50566519b3a58322802a208f91bd7594e3b8caf6",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "e249e92f98045b6553ead419561d8f66badafcb5a72464ffe48017fd657fb262",
+    "crates/nine65/src/ops/safe_basis_pair_tests.rs": "556768a693eb5b57f8d2155163e371f0cfa4ec6168bebbec8c1899f55f45664f",
+    "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "b5f600c334da84a5b129b6eaf8d7c489fbec4e034b6cec0ab87cc7eae1d40520",
+    "crates/nine65/src/ops/safe_basis_terminal_tests.rs": "605cb85964b425574196718d44dd22133c92aad2693a0a16136201bec0601624",
+    "scripts/safe_basis_pair_probe.py": "79e8ec7e0161187c26f86eb241aab31ae2049b2c772a888069a5bcd28e56a26d",
+    "scripts/safe_basis_terminal_probe.py": "e5f8a06d9da3526bcedc975d0ef01e9aa77776881fc0ddb104eda503f3c28354"
+  },
+  "total_outputs": 80
+}

@@ -141,3 +141,7 @@ Evidence is `safe-basis-pairs.json` and `safe-basis-pairs-tests.txt` under
 historical. Production refresh, S00/S01/S03 acceptance, cryptographic source
 provenance and the full-sum circuit remain open. No CI or lint policy changes
 are part of this experiment.
+
+The next experiment, [terminal readout](SAFE_BASIS_TERMINAL_READOUT.md), computes
+carry and frame views for 81 distinct sums without retaining a combined
+81-selector state. It also tests non-canceling source pairs and carry +/-2.

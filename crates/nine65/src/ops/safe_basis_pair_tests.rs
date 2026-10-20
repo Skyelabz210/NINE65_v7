@@ -4,6 +4,9 @@
 use super::*;
 use crate::ops::rns_fhe::DualRNSKeySet;
 
+#[path = "safe_basis_terminal_tests.rs"]
+mod terminal;
+
 struct PackedPairs {
     indicators: [RNSCiphertext; 9],
     family: [u64; 2],
