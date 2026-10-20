@@ -1,0 +1,48 @@
+Baseline: c5bb6a21ee2a174ba047b4ec9a771bf9392f4b3c
+
+$ python3 scripts/safe_basis_triple_precharge_probe.py
+exit_code=0
+small_exact_assignments=2916
+small_linear_only_carry_failures=990
+native_lookup_checks=61236
+native_linear_only_carry_failures=19079
+input_blocks=[27,27]; possible_joint_labels=729
+one_safe_basis_root=1; keyholder_precharge_ciphertexts=27
+max_terminal_products=676; max_products_per_selector=1
+carry_bits=[92,92,92,92]; maximum_view_bits=109
+target_moduli=[2,3,5,7,11,13,17,19,6,10,77,221,1,8,27,121,4199,65537,20000]
+six_term_refresh_bits=92; followup_square_bits=134 (predicted admitted)
+full_refresh_admitted=false
+
+$ cargo check --locked --offline -j1 -p nine65 --tests
+exit_code=0
+
+$ cargo test --locked --offline -j1 -p nine65 --lib triple_precharge_ -- --nocapture
+2 passed; 0 failed; 1 ignored (native)
+triple precharge exact table: 91854 assignment/output checks; linear-only failures=26212
+triple precharge preflight: carry bits=[92, 92, 92, 92], maximum view bits=109, products=676, outputs=84
+675-product and 83-output plans refused before multiplication
+
+$ cargo test --locked --offline -j1 -p nine65 --lib terminal_readout_ -- --nocapture
+2 passed; 0 failed; 1 ignored (native)
+terminal readout: 1180980 exact lookup/difference checks; linear-only failures=220899
+
+$ cargo test --locked --offline -j1 -p nine65 --lib precharged_pairs_ -- --nocapture
+1 passed; 0 failed; 1 ignored (native)
+pair precharge: 34425 public assignments, arbitrary centered terms, all S8 views
+
+$ cargo test --locked --offline -j1 -p nine65 --lib sister_tray_ -- --nocapture
+3 passed; 0 failed; 0 ignored
+sister tray: 50004 exact 2/11 transitions with arbitrary target views
+
+$ cargo test --release --locked --offline -j1 -p nine65 --lib triple_precharge_native_readouts_refresh_and_square -- --include-ignored --nocapture
+native run duration=1138.90s; checks reached=1155072
+both 27-row selector blocks passed full coefficient checks
+676 shared terminal products executed; all 84 dependent views matched
+affine-only refresh was wrong; carry-corrected refresh matched source oracle
+follow-up square matched expected plaintext and was admitted at 134 bits
+first run exited only at final counter assertion (expected 677, counted 676)
+counter-only fix applied and fast checks passed; full native rerun pending
+
+$ git diff --check
+exit_code=0

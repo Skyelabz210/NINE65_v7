@@ -1,7 +1,10 @@
-//! Terminal readouts of two pair states. No combined one-hot State is emitted.
+//! Terminal readouts of two adjacent precharged blocks. No combined one-hot State is emitted.
 //! Public lookup differences share selector products across all requested views.
 
 use super::*;
+
+#[path = "safe_basis_triple_precharge_tests.rs"]
+mod triple_precharge;
 
 const TRAYS: [u64; 10] = [6, 10, 77, 221, 1, 8, 27, 121, 4199, 65537];
 
@@ -12,7 +15,7 @@ struct Query {
     moduli: Vec<u64>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum Readout {
     Carry,
     Residue(u64),
@@ -109,32 +112,28 @@ impl CubeDifferences {
         let c = (1..9).map(|k| table[0][0][k] - base).collect();
         let ab = (1..9)
             .flat_map(|i| {
-                (1..9).map(move |j| {
-                    table[i][j][0] - table[i][0][0] - table[0][j][0] + base
-                })
+                (1..9).map(move |j| table[i][j][0] - table[i][0][0] - table[0][j][0] + base)
             })
             .collect();
         let ac = (1..9)
             .flat_map(|i| {
-                (1..9).map(move |k| {
-                    table[i][0][k] - table[i][0][0] - table[0][0][k] + base
-                })
+                (1..9).map(move |k| table[i][0][k] - table[i][0][0] - table[0][0][k] + base)
             })
             .collect();
         let bc = (1..9)
             .flat_map(|j| {
-                (1..9).map(move |k| {
-                    table[0][j][k] - table[0][j][0] - table[0][0][k] + base
-                })
+                (1..9).map(move |k| table[0][j][k] - table[0][j][0] - table[0][0][k] + base)
             })
             .collect();
         let abc = (1..9)
             .flat_map(|i| {
                 (1..9).flat_map(move |j| {
                     (1..9).map(move |k| {
-                        table[i][j][k] - table[i][j][0] - table[i][0][k]
-                            - table[0][j][k] + table[i][0][0] + table[0][j][0]
-                            + table[0][0][k] - base
+                        table[i][j][k] - table[i][j][0] - table[i][0][k] - table[0][j][k]
+                            + table[i][0][0]
+                            + table[0][j][0]
+                            + table[0][0][k]
+                            - base
                     })
                 })
             })
@@ -229,7 +228,9 @@ fn cube_table(
                     states[2]
                         .rows
                         .iter()
-                        .map(|c| three_pair_readout(runtime.source_q, initial, sign, [a, b, c], output))
+                        .map(|c| {
+                            three_pair_readout(runtime.source_q, initial, sign, [a, b, c], output)
+                        })
                         .collect()
                 })
                 .collect()
@@ -248,9 +249,15 @@ fn cube_error_bound(
     for i in 1..9 {
         for j in 1..9 {
             let index = (i - 1) * 8 + j - 1;
-            ab[index] = runtime.noise.multiply(states[0].rows[i].bound, states[1].rows[j].bound)?;
-            ac[index] = runtime.noise.multiply(states[0].rows[i].bound, states[2].rows[j].bound)?;
-            bc[index] = runtime.noise.multiply(states[1].rows[i].bound, states[2].rows[j].bound)?;
+            ab[index] = runtime
+                .noise
+                .multiply(states[0].rows[i].bound, states[1].rows[j].bound)?;
+            ac[index] = runtime
+                .noise
+                .multiply(states[0].rows[i].bound, states[2].rows[j].bound)?;
+            bc[index] = runtime
+                .noise
+                .multiply(states[1].rows[i].bound, states[2].rows[j].bound)?;
         }
     }
     let mut bound = U512::from_u64(diff.base.unsigned_abs());
@@ -273,10 +280,9 @@ fn cube_error_bound(
             for k in 1..9 {
                 let coefficient = diff.abc[((i - 1) * 8 + j - 1) * 8 + k - 1];
                 if coefficient != 0 {
-                    let triple = runtime.noise.multiply(
-                        ab[(i - 1) * 8 + j - 1],
-                        states[2].rows[k].bound,
-                    )?;
+                    let triple = runtime
+                        .noise
+                        .multiply(ab[(i - 1) * 8 + j - 1], states[2].rows[k].bound)?;
                     bound = bound.add(triple.mul_u128(coefficient.unsigned_abs() as u128));
                 }
             }
@@ -300,13 +306,28 @@ fn execute_cube_batch(
         .map(|diff| {
             let mut output = public_constant(ctx, diff.base);
             for (row, &coefficient) in states[0].rows[1..].iter().zip(&diff.a) {
-                add_scaled(ctx, &mut output, row.selector.as_ref().unwrap(), coefficient);
+                add_scaled(
+                    ctx,
+                    &mut output,
+                    row.selector.as_ref().unwrap(),
+                    coefficient,
+                );
             }
             for (row, &coefficient) in states[1].rows[1..].iter().zip(&diff.b) {
-                add_scaled(ctx, &mut output, row.selector.as_ref().unwrap(), coefficient);
+                add_scaled(
+                    ctx,
+                    &mut output,
+                    row.selector.as_ref().unwrap(),
+                    coefficient,
+                );
             }
             for (row, &coefficient) in states[2].rows[1..].iter().zip(&diff.c) {
-                add_scaled(ctx, &mut output, row.selector.as_ref().unwrap(), coefficient);
+                add_scaled(
+                    ctx,
+                    &mut output,
+                    row.selector.as_ref().unwrap(),
+                    coefficient,
+                );
             }
             output
         })
@@ -329,7 +350,9 @@ fn execute_cube_batch(
                     relin,
                 )
                 .unwrap();
-            runtime.multiplications.set(runtime.multiplications.get() + 1);
+            runtime
+                .multiplications
+                .set(runtime.multiplications.get() + 1);
             for (output, diff) in outputs.iter_mut().zip(differences) {
                 let coefficient = diff.ab[(i - 1) * 8 + j - 1];
                 if coefficient != 0 {
@@ -347,7 +370,9 @@ fn execute_cube_batch(
                     .exact
                     .try_mul_exact(&xy, states[2].rows[k].selector.as_ref().unwrap(), relin)
                     .unwrap();
-                runtime.multiplications.set(runtime.multiplications.get() + 1);
+                runtime
+                    .multiplications
+                    .set(runtime.multiplications.get() + 1);
                 for (output, diff) in outputs.iter_mut().zip(differences) {
                     let coefficient = diff.abc[((i - 1) * 8 + j - 1) * 8 + k - 1];
                     if coefficient != 0 {
@@ -357,10 +382,7 @@ fn execute_cube_batch(
             }
         }
     }
-    for (left, right, surface) in [
-        (0, 2, 1),
-        (1, 2, 2),
-    ] {
+    for (left, right, surface) in [(0, 2, 1), (1, 2, 2)] {
         for i in 1..9 {
             for j in 1..9 {
                 let needs_product = differences.iter().any(|diff| {
@@ -381,7 +403,9 @@ fn execute_cube_batch(
                         relin,
                     )
                     .unwrap();
-                runtime.multiplications.set(runtime.multiplications.get() + 1);
+                runtime
+                    .multiplications
+                    .set(runtime.multiplications.get() + 1);
                 for (output, diff) in outputs.iter_mut().zip(differences) {
                     let coefficient = match surface {
                         1 => diff.ac[(i - 1) * 8 + j - 1],
@@ -464,12 +488,10 @@ fn execute_three_pair_residue(
     relin: &RNSHybridGadgetKey,
 ) -> Projection {
     let ciphertext = match plan.kind {
-        ResiduePlanKind::Linear(components) => {
-            components.into_iter().fold(
-                public_constant(runtime.ctx, plan.offset),
-                |sum, component| runtime.ctx.add(&sum, &component.ciphertext),
-            )
-        }
+        ResiduePlanKind::Linear(components) => components.into_iter().fold(
+            public_constant(runtime.ctx, plan.offset),
+            |sum, component| runtime.ctx.add(&sum, &component.ciphertext),
+        ),
         ResiduePlanKind::Cube(diff) => execute_cube_batch(runtime, states, &[diff], relin)
             .into_iter()
             .next()
@@ -502,7 +524,8 @@ fn plan_three_pair_phase211(
         .iter()
         .map(|state| {
             runtime.project(*state, |row| {
-                let signed = sign as i128 * (row.remainder + runtime.source_q * row.winding as i128);
+                let signed =
+                    sign as i128 * (row.remainder + runtime.source_q * row.winding as i128);
                 signed.div_euclid(2).rem_euclid(11) as i64
             })
         })
@@ -601,7 +624,9 @@ fn execute_three_pair_phase211(
         &p123,
         if plan.offset_parity == 0 { -2 } else { 2 },
     );
-    runtime.multiplications.set(runtime.multiplications.get() + 4);
+    runtime
+        .multiplications
+        .set(runtime.multiplications.get() + 4);
     Projection {
         ciphertext,
         bound: plan.bound,
@@ -649,28 +674,32 @@ fn plan_terminal<'r, 'c>(
     max_outputs: usize,
 ) -> Result<TerminalPlan<'r, 'c>, TerminalRefusal> {
     let q = runtime.source_q;
-    // This private route accepts two actual adjacent-pair states, with no
-    // public-unit placeholders or caller-supplied combined-state certificate.
+    // This private route accepts two actual adjacent precharged blocks (two
+    // or three trits each), with no public-unit placeholders or caller-
+    // supplied combined-state certificate.
+    let block_width = left.coefficients.len();
     if q > i128::MAX / 4
+        || ![2, 3].contains(&block_width)
+        || right.coefficients.len() != block_width
         || [left, right].iter().any(|s| {
             s.family != runtime.family
                 || s.source_q != q
                 || s.rows.is_empty()
-                || s.rows.len() > 9
-                || s.coefficients.len() != 2
-                || s.coefficients[0] % 2 != 0
-                || s.coefficients[1] >= runtime.ctx.n
-                || s.coefficients[0].checked_add(1) != Some(s.coefficients[1])
+                || s.rows.len() > 3usize.pow(block_width as u32)
+                || s.coefficients.len() != block_width
+                || s.coefficients[0] % block_width != 0
+                || s.coefficients
+                    .windows(2)
+                    .any(|w| w[0].checked_add(1) != Some(w[1]))
+                || s.coefficients.last().copied().unwrap_or(runtime.ctx.n) >= runtime.ctx.n
                 || s.rows.iter().any(|r| {
                     r.selector.is_none()
                         || r.remainder.unsigned_abs() > q as u128 / 2
                         || r.winding.unsigned_abs() > 1
                 })
         })
-        || left
-            .coefficients
-            .iter()
-            .any(|j| right.coefficients.contains(j))
+        || left.coefficients.last().and_then(|j| j.checked_add(1))
+            != right.coefficients.first().copied()
     {
         return Err(TerminalRefusal::Regime);
     }
@@ -1012,8 +1041,7 @@ fn terminal_three_pair_carry_and_additive_211_phase_are_exact() {
                         linear_pair_failures += usize::from(linear_pair_only != expected);
 
                         let parts = [
-                            sign as i128
-                                * (initial + a[i].remainder + q * a[i].winding as i128),
+                            sign as i128 * (initial + a[i].remainder + q * a[i].winding as i128),
                             sign as i128 * (b[j].remainder + q * b[j].winding as i128),
                             sign as i128 * (c[k].remainder + q * c[k].winding as i128),
                         ];
@@ -1021,7 +1049,7 @@ fn terminal_three_pair_carry_and_additive_211_phase_are_exact() {
                         let phase_parts = parts.map(|part| part.div_euclid(2).rem_euclid(11));
                         let phase = (phase_parts.into_iter().sum::<i128>()
                             + (parities.into_iter().sum::<i128>() / 2))
-                        .rem_euclid(11);
+                            .rem_euclid(11);
                         let signed_total = sign as i128
                             * (initial
                                 + a[i].remainder
@@ -1124,9 +1152,11 @@ fn terminal_three_pair_native_carry_phase_and_sister_views() {
     let h = q / 2;
     let config = config_with(5);
     validate_bootstrap_primes(&config.primes, config.n).unwrap();
-    assert!(screen_bootstrap_security(&config.primes, config.n, 128)
-        .unwrap()
-        .meets_claim_under_both);
+    assert!(
+        screen_bootstrap_security(&config.primes, config.n, 128)
+            .unwrap()
+            .meets_claim_under_both
+    );
     let ctx = RNSFHEContext::try_new(&config).unwrap();
     let work_ctx = RNSFHEContext::try_new(&work).unwrap();
     let family = [0x43554245, 1];
@@ -1213,7 +1243,9 @@ fn terminal_three_pair_native_carry_phase_and_sister_views() {
         .iter()
         .map(|diff| cube_error_bound(&runtime, states_ref, diff).unwrap())
         .collect::<Vec<_>>();
-    assert!(carry_bounds.iter().all(|bound| bits(*bound) < bits(runtime.noise.half)));
+    assert!(carry_bounds
+        .iter()
+        .all(|bound| bits(*bound) < bits(runtime.noise.half)));
     let phase_plan = plan_three_pair_phase211(&runtime, states_ref, h, 1).unwrap();
     let moduli: Vec<_> = ROOT.into_iter().chain(TRAYS).collect();
     let residue_plans = moduli
@@ -1288,7 +1320,10 @@ fn terminal_three_pair_native_carry_phase_and_sister_views() {
             output.bound,
             0..ctx.n,
         );
-        assert_eq!(values[0] % modulus, total.rem_euclid(modulus as i128) as u64);
+        assert_eq!(
+            values[0] % modulus,
+            total.rem_euclid(modulus as i128) as u64
+        );
         assert!(values[1..].iter().all(|&x| x == 0));
         checks += ctx.n;
     }
@@ -1301,7 +1336,10 @@ fn terminal_three_pair_native_carry_phase_and_sister_views() {
         residue_outputs[root11_index].bound,
         0..ctx.n,
     );
-    assert_eq!((2 * phase_values[0] + phase_parity) % 11, root11_values[0] % 11);
+    assert_eq!(
+        (2 * phase_values[0] + phase_parity) % 11,
+        root11_values[0] % 11
+    );
 
     // Feed the recovered six-term winding into a real sparse BFV coefficient
     // refresh, then test whether its certified output can support a square.
@@ -1328,8 +1366,7 @@ fn terminal_three_pair_native_carry_phase_and_sister_views() {
         &carry_refresh,
         5,
     );
-    let (message, old_grid_distance) =
-        source_decode_oracle_at(&work_ctx, &components, &source, 5);
+    let (message, old_grid_distance) = source_decode_oracle_at(&work_ctx, &components, &source, 5);
     assert_ne!(old_grid_distance, U256::zero());
     let affine_values = decode_at(
         &ctx,
@@ -1363,7 +1400,10 @@ fn terminal_three_pair_native_carry_phase_and_sister_views() {
             );
             assert!(values[1..].iter().all(|&x| x == 0));
             checks += ctx.n;
-            eprintln!("three-pair follow-up square admitted at {} bits", bits(square_bound));
+            eprintln!(
+                "three-pair follow-up square admitted at {} bits",
+                bits(square_bound)
+            );
         }
         Err(Refusal::Noise {
             stage,
