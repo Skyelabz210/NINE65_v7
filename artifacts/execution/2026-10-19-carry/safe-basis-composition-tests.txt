@@ -1,0 +1,134 @@
+Date: 2026-10-20
+Baseline: 4485bd6d89fdc402de215fccb6a993c4bcbef6ed plus sources hashed in safe-basis-composition.json
+Scope: bounded encrypted carry composition and a sparse work-domain coefficient refresh; not full public refresh.
+
+$ cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib precharged_composition_ -- --include-ignored --nocapture
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 14s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 2 tests
+composition profile: primes=4, Qbits=123, security=(190,171) pass=true, projection_bits=42, two-term_bits=84, third=Err(Noise { stage: "selector multiply", error_bits: 125, half_bits: 106 }), half_bits=106, evaluation_key_bytes=117440512
+composition profile: primes=5, Qbits=154, security=(151,136) pass=true, projection_bits=42, two-term_bits=84, third=Ok(U512 { d0: 39857601234084993554192019077306372105, d1: 0, d2: 0, d3: 0 }), half_bits=137, evaluation_key_bytes=183500800
+composition profile: primes=6, Qbits=184, security=(127,114) pass=false, projection_bits=43, two-term_bits=85, third=Ok(U512 { d0: 47828342057835750939640907092263981058, d1: 0, d2: 0, d3: 0 }), half_bits=167, evaluation_key_bytes=264241152
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_profiles_check_security_and_noise_before_keys ... ok
+composition: generating 13 native trace keys and one relinearization key
+composition: projecting selector coefficient 0
+composition: projecting selector coefficient 1
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder has been running for over 60 seconds
+composition: projecting selector coefficient 2
+composition: projecting selector coefficient 3
+composition: sign=1, terms=1, public_rows=3, carry_error_bits=42
+composition: sign=1, terms=2, public_rows=5, carry_error_bits=86
+composition: sign=1, terms=3, public_rows=7, carry_error_bits=129
+composition: fourth term refused before execution: Noise { stage: "selector multiply", error_bits: 169, half_bits: 137 }
+composition: balanced four terms, sign=1, rows=9, carry_error_bits=131, largest_root_error_bits=135
+composition: sparse coefficient refresh sign=1, fresh_error_bits=86, post_multiply_error_bits=128, half_bits=137
+composition: sign=-1, terms=1, public_rows=3, carry_error_bits=42
+composition: sign=-1, terms=2, public_rows=5, carry_error_bits=86
+composition: sign=-1, terms=3, public_rows=7, carry_error_bits=129
+composition: fourth term refused before execution: Noise { stage: "selector multiply", error_bits: 169, half_bits: 137 }
+composition: balanced four terms, sign=-1, rows=9, carry_error_bits=131, largest_root_error_bits=135
+composition: sparse coefficient refresh sign=-1, fresh_error_bits=86, post_multiply_error_bits=128, half_bits=137
+composition: 49488 encrypted coefficient/noise checks; compact precharge; both carry signs; all eight root views; three sequential or four balanced terms; selector multiplications=116; not full refresh
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1071 filtered out; finished in 266.85s
+
+
+$ cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib precharged_ -- --nocapture
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 29.55s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 6 tests
+nonlinear local gate: 60 encrypted coefficient checks, 147 signed native boundary cases; depth=1; output_error_bound=7085963949472963821568; bound independent of r0/r1 and their retained residual; full secret-sum gate still required
+test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_local_ternary_carry_gate_removes_residual_at_native_ring_size ... ok
+composition profile: primes=4, Qbits=123, security=(190,171) pass=true, projection_bits=42, two-term_bits=84, third=Err(Noise { stage: "selector multiply", error_bits: 125, half_bits: 106 }), half_bits=106, evaluation_key_bytes=117440512
+composition profile: primes=5, Qbits=154, security=(151,136) pass=true, projection_bits=42, two-term_bits=84, third=Ok(U512 { d0: 39857601234084993554192019077306372105, d1: 0, d2: 0, d3: 0 }), half_bits=137, evaluation_key_bytes=183500800
+composition profile: primes=6, Qbits=184, security=(127,114) pass=false, projection_bits=43, two-term_bits=85test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_profiles_check_security_and_noise_before_keys ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder ... ignored, expensive native research probe; enable slow_tests or run this filter with --include-ignored
+, third=Ok(U512 { d0: 47828342057835750939640907092263981058, d1: 0, d2: 0, d3: 0 }), half_bits=167, evaluation_key_bytes=264241152
+clear rank bridge: 24579 recoveries covering every native carry; encrypted rank is still unimplemented
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_clear_rank_bridge_recovers_every_native_carry ... ok
+precharge: 256 encrypted native phase-coordinate checks, 16 encrypted S8 CRT assemblies, exact-grid noise bounds and 128 root/power coherence checks; all main-Q, independent boot secret; no encrypted carry extraction
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_encrypts_native_residual_coordinates ... ok
+aligned frame: 18 encrypted native carry checks, 18 nonzero; both signs of injected input noise retained; assembly error=287487982247299167448314438; no refresh admission
+test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_aligned_frame_encodes_native_carry_and_retains_input_residual ... ok
+
+test result: ok. 5 passed; 0 failed; 1 ignored; 0 measured; 1067 filtered out; finished in 25.47s
+
+
+$ cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib public_phase1_is_typed_fail_closed -- --nocapture
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.73s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 1 test
+test ops::bootstrap::tests::public_phase1_is_typed_fail_closed ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1072 filtered out; finished in 0.01s
+
+
+$ cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib phase2_affine_inner_product_cannot_supply_missing_carry -- --nocapture
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.94s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 1 test
+test ops::bootstrap::tests::phase2_affine_inner_product_cannot_supply_missing_carry ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1072 filtered out; finished in 0.03s
+
+
+$ cargo check --locked --offline -j1 -p nine65
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.12s
+$ python3 scripts/safe_basis_composition_probe.py
+Passed: 50625 small three-trit cases, 64827 native three-trit boundary cases,
+253125 small balanced four-trit cases, 19683 native balanced four-trit cases,
+three prefixes/all eight root views, two negative controls, independent exact
+quadratic-noise ceiling cross-checks, both sparse near-cut source signs.
+The recorded JSON was reproduced exactly after parsing with Python arbitrary-
+precision integers. All recorded source hashes match the final working tree.
+
+The native run checked 336 sampled composition coefficients plus every one of
+8192 coefficients of the uncorrected affine, corrected refresh and encrypted
+square outputs for each sign: 49488 encrypted coefficient/error checks total.
+Uncorrected affine results miss the message; adding the encrypted carry
+corrects both signs. The source exact-grid distance is floor(Q_work/2)-1.
+The new 86-bit output bound does not retain that old residual; its follow-up
+square has a 128-bit bound below the 137-bit half-scale.
+
+The new expensive probe is ignored by default for runtime cost, enabled by
+the existing slow_tests feature in the slow CI tier, and explicitly executed
+above with its narrow filter and --include-ignored. The fast security/noise
+profile test remains in the default suite. No pre-existing test is disabled.
+The six-prime native candidate fails the in-tree 128-bit screens; no keys
+are generated for it. The five-prime profile passes those screens, which
+are not an external security certification.
+
+The command-scoped package optimization retains debug assertions and test-
+profile overflow checks; rustc was observed with opt-level=2 and
+-C debug-assertions=on. Repository/CI profiles and workflows are unchanged.
+An initial unoptimized exploratory run was interrupted and is not a pass.
+No full workspace or hosted-CI success is claimed. No lint tool was run.
+Production public-refresh admission remains closed. This test-only runtime
+does not supply a scalable full secret sum or authenticated source/key/input-
+lineage factory, and does not admit a second general refresh.

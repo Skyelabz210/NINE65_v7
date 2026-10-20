@@ -146,6 +146,12 @@ removal agrees with the bootstrapping objective in
 new constructions above are derived and tested here, not attributed to that
 paper.
 
+The follow-up [encrypted-state composition experiment](SAFE_BASIS_CARRY_COMPOSITION.md)
+tests a packed selector producer, bounded sequential/balanced composition,
+and a sparse near-cut coefficient refresh followed by an encrypted square.
+It addresses the public-starting-remainder limitation for those bounded
+cases, not the full secret sum or production refresh admission.
+
 ## Reproduction
 
 ```sh

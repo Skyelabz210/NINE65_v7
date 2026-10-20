@@ -1,0 +1,399 @@
+{
+  "schema": "nine65-safe-basis-composition-v1",
+  "scope": "clear exact composition oracles and public bounds; Rust encrypted tests separate",
+  "source_sha256": {
+    "scripts/safe_basis_composition_probe.py": "a3d41728156884db61ad5b7662b85c91641ab130fc7f1a8e44ee70bd4c2ac745",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "e7c82ef973c0bd6507deb7b539ba94922cd60d4ab48ce5993de8ae203030e73c",
+    "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "b5f600c334da84a5b129b6eaf8d7c489fbec4e034b6cec0ab87cc7eae1d40520",
+    "crates/nine65/src/ops/expanded_bootstrap.rs": "0bac74a6f594973d681212a14821f26aad10a6c007dbbab5165a31ebc6060583",
+    "crates/nine65/src/ops/rns_galois.rs": "69266b719ea229dde7e7d88298bddf1e6d32bfa8e226cfc21e77178c216a2847",
+    "crates/nine65/src/ops/exact_mul.rs": "e100300207606227b371514a50566519b3a58322802a208f91bd7594e3b8caf6",
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1"
+  },
+  "checks": {
+    "small_three_trit_cases": 50625,
+    "native_three_trit_boundary_cases": 64827,
+    "small_balanced_four_trit_cases": 253125,
+    "native_balanced_four_trit_cases": 19683,
+    "prefix_checks_per_case": 3,
+    "root_views_per_prefix": 8,
+    "negative_controls": 2
+  },
+  "profiles": [
+    {
+      "boot_primes": [
+        1811939329,
+        2113929217,
+        2130706433,
+        1107296257
+      ],
+      "Q_bits": 123,
+      "half_delta_bits": 106,
+      "projected_selector_error_bound": 3295314141184,
+      "projected_selector_error_bits": 42,
+      "accepted_prefixes": [
+        {
+          "terms": 1,
+          "distinct_public_rows": 3,
+          "row_error_bits": 42,
+          "carry_error_bound": 3295314141184,
+          "carry_error_bits": 42,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 9885942423552,
+            "5": 13181256564736,
+            "7": 0,
+            "11": 23067198988288,
+            "13": 29657827270656,
+            "17": 32953141411840,
+            "19": 46134397976576
+          },
+          "largest_root_error_bits": 46
+        },
+        {
+          "terms": 2,
+          "distinct_public_rows": 5,
+          "row_error_bits": 86,
+          "carry_error_bound": 43490113778949738170560518,
+          "carry_error_bits": 86,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 130470341336849214511681554,
+            "5": 246443978080715182966509602,
+            "7": 0,
+            "11": 463894546975463873819312192,
+            "13": 579868183719329842274140240,
+            "17": 681345115870212564672114782,
+            "19": 884298980171978009468063866
+          },
+          "largest_root_error_bits": 90
+        }
+      ],
+      "first_refusal": {
+        "term": 3,
+        "stage": "selector multiply",
+        "error_bits": 127,
+        "half_bits": 106
+      },
+      "balanced_four_term": {
+        "stage": "selector multiply",
+        "error_bits": 127,
+        "admitted": false
+      },
+      "optimistic_balanced_selector_levels": [
+        {
+          "leaves": 1,
+          "error_bits": 42,
+          "admitted": true
+        },
+        {
+          "leaves": 2,
+          "error_bits": 84,
+          "admitted": true
+        },
+        {
+          "leaves": 4,
+          "error_bits": 126,
+          "admitted": false
+        }
+      ],
+      "full_reference_tree_multiplication_levels": 13,
+      "bounded_coefficient_refresh": {
+        "domain": "two-term sparse source, one target coefficient",
+        "affine_error_bound": 108097547533443072,
+        "fresh_error_bound": 43490113887047285704003590,
+        "fresh_error_bits": 86,
+        "post_multiply_error_bound": 191321162937504509629683290005781450753,
+        "post_multiply_error_bits": 128,
+        "post_multiply_admitted": false
+      },
+      "quadratic_bound_cross_checks": 23,
+      "compact_packed_precharge_bytes": 1572864,
+      "shared_trace_and_relinearization_key_bytes": 117440512,
+      "direct_unpacked_selector_key_bytes": 12884901888
+    },
+    {
+      "boot_primes": [
+        1811939329,
+        2113929217,
+        2130706433,
+        1107296257,
+        1711276033
+      ],
+      "Q_bits": 154,
+      "half_delta_bits": 137,
+      "projected_selector_error_bound": 4119041990656,
+      "projected_selector_error_bits": 42,
+      "accepted_prefixes": [
+        {
+          "terms": 1,
+          "distinct_public_rows": 3,
+          "row_error_bits": 42,
+          "carry_error_bound": 4119041990656,
+          "carry_error_bits": 42,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 12357125971968,
+            "5": 16476167962624,
+            "7": 0,
+            "11": 28833293934592,
+            "13": 37071377915904,
+            "17": 41190419906560,
+            "19": 57666587869184
+          },
+          "largest_root_error_bits": 46
+        },
+        {
+          "terms": 2,
+          "distinct_public_rows": 5,
+          "row_error_bits": 86,
+          "carry_error_bound": 54361313416249070899015686,
+          "carry_error_bits": 86,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 163083940248747212697047058,
+            "5": 308047442692078068427755554,
+            "7": 0,
+            "11": 579854009773323422922833984,
+            "13": 724817512216654278653542480,
+            "17": 851660576854568777417912414,
+            "19": 1105346706130397774946652282
+          },
+          "largest_root_error_bits": 90
+        },
+        {
+          "terms": 3,
+          "distinct_public_rows": 7,
+          "row_error_bits": 128,
+          "carry_error_bound": 478291214808983681774693396212671021168,
+          "carry_error_bits": 129,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 1076155233320186103336352016942255714559,
+            "5": 2032737662938144406666836101188846395862,
+            "7": 0,
+            "11": 3826329718471806032665228212450108642161,
+            "13": 5301060964132860191981305836522930799812,
+            "17": 5619921774005467658663620323711370888460,
+            "19": 7293941025836874303999436377740714018452
+          },
+          "largest_root_error_bits": 133
+        }
+      ],
+      "first_refusal": {
+        "term": 4,
+        "stage": "selector multiply",
+        "error_bits": 169,
+        "half_bits": 137
+      },
+      "balanced_four_term": {
+        "terms": 4,
+        "distinct_public_rows": 9,
+        "carry_error_bound": 2072595264171948533435045820398930886672,
+        "carry_error_bits": 131,
+        "root_error_bounds": {
+          "2": 0,
+          "3": 3587184111066834000176041534505477939226,
+          "5": 7174368222133668000352082822719278489650,
+          "7": 0,
+          "11": 14508166849203639734045322537192274436202,
+          "13": 20088231021974270400985830566607840395404,
+          "17": 21443389463932852134385668966755177910429,
+          "19": 27342314446576090268008492609263381868743
+        },
+        "largest_root_error_bits": 135,
+        "admitted": true
+      },
+      "optimistic_balanced_selector_levels": [
+        {
+          "leaves": 1,
+          "error_bits": 42,
+          "admitted": true
+        },
+        {
+          "leaves": 2,
+          "error_bits": 84,
+          "admitted": true
+        },
+        {
+          "leaves": 4,
+          "error_bits": 126,
+          "admitted": true
+        },
+        {
+          "leaves": 8,
+          "error_bits": 168,
+          "admitted": false
+        }
+      ],
+      "full_reference_tree_multiplication_levels": 13,
+      "bounded_coefficient_refresh": {
+        "domain": "two-term sparse source, one target coefficient",
+        "affine_error_bound": 108098153386033152,
+        "fresh_error_bound": 54361313524347224285048838,
+        "fresh_error_bits": 86,
+        "post_multiply_error_bound": 239145607879999639076027287412785811457,
+        "post_multiply_error_bits": 128,
+        "post_multiply_admitted": true
+      },
+      "quadratic_bound_cross_checks": 63,
+      "compact_packed_precharge_bytes": 1966080,
+      "shared_trace_and_relinearization_key_bytes": 183500800,
+      "direct_unpacked_selector_key_bytes": 16106127360
+    },
+    {
+      "boot_primes": [
+        1811939329,
+        2113929217,
+        2130706433,
+        1107296257,
+        1711276033,
+        1224736769
+      ],
+      "Q_bits": 184,
+      "half_delta_bits": 167,
+      "projected_selector_error_bound": 4942769840128,
+      "projected_selector_error_bits": 43,
+      "accepted_prefixes": [
+        {
+          "terms": 1,
+          "distinct_public_rows": 3,
+          "row_error_bits": 43,
+          "carry_error_bound": 4942769840128,
+          "carry_error_bits": 43,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 14828309520384,
+            "5": 19771079360512,
+            "7": 0,
+            "11": 34599388880896,
+            "13": 44484928561152,
+            "17": 49427698401280,
+            "19": 69198777761792
+          },
+          "largest_root_error_bits": 46
+        },
+        {
+          "terms": 2,
+          "distinct_public_rows": 5,
+          "row_error_bits": 86,
+          "carry_error_bound": 65232513053548403627470854,
+          "carry_error_bits": 86,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 195697539160645210882412562,
+            "5": 369650907303440953889001506,
+            "7": 0,
+            "11": 695813472571182972026355776,
+            "13": 869766840713978715032944720,
+            "17": 1021976037838924990163710046,
+            "19": 1326394432088817540425240698
+          },
+          "largest_root_error_bits": 91
+        },
+        {
+          "terms": 3,
+          "distinct_public_rows": 7,
+          "row_error_bits": 128,
+          "carry_error_bound": 573940104693985522933655186170142228496,
+          "carry_error_bits": 129,
+          "root_error_bounds": {
+            "2": 0,
+            "3": 1291365235561434810344197394680050855966,
+            "5": 2439245444949394984125998842286078926908,
+            "7": 0,
+            "11": 4591520837551808078870679016221343125618,
+            "13": 6361169493691622142782303331292546564264,
+            "17": 6743796230154221173615359190156607324328,
+            "19": 8752586596583127015541116642815079579864
+          },
+          "largest_root_error_bits": 133
+        }
+      ],
+      "first_refusal": {
+        "term": 4,
+        "stage": "selector multiply",
+        "error_bits": 169,
+        "half_bits": 167
+      },
+      "balanced_four_term": {
+        "terms": 4,
+        "distinct_public_rows": 9,
+        "carry_error_bound": 2487073787006893700414863082626590703632,
+        "carry_error_bits": 131,
+        "root_error_bounds": {
+          "2": 0,
+          "3": 4304550785204239096871878412237252730906,
+          "5": 8609101570408478193743756824473231171634,
+          "7": 0,
+          "11": 17409516509048255902904041578382314152042,
+          "13": 24105484397143738942482519108525046284428,
+          "17": 25731648027109784823523006508708135784605,
+          "19": 32810242651667866893934539897720025313479
+        },
+        "largest_root_error_bits": 135,
+        "admitted": true
+      },
+      "optimistic_balanced_selector_levels": [
+        {
+          "leaves": 1,
+          "error_bits": 43,
+          "admitted": true
+        },
+        {
+          "leaves": 2,
+          "error_bits": 85,
+          "admitted": true
+        },
+        {
+          "leaves": 4,
+          "error_bits": 127,
+          "admitted": true
+        },
+        {
+          "leaves": 8,
+          "error_bits": 169,
+          "admitted": false
+        }
+      ],
+      "full_reference_tree_multiplication_levels": 13,
+      "bounded_coefficient_refresh": {
+        "domain": "two-term sparse source, one target coefficient",
+        "affine_error_bound": 108101732772773888,
+        "fresh_error_bound": 65232513161650136400244742,
+        "fresh_error_bits": 86,
+        "post_multiply_error_bound": 286970052822509058582288788250786435073,
+        "post_multiply_error_bits": 128,
+        "post_multiply_admitted": true
+      },
+      "quadratic_bound_cross_checks": 63,
+      "compact_packed_precharge_bytes": 2359296,
+      "shared_trace_and_relinearization_key_bytes": 264241152,
+      "direct_unpacked_selector_key_bytes": 19327352832
+    }
+  ],
+  "sparse_work_coefficient_cases": [
+    {
+      "sign": -1,
+      "decoded": 63871,
+      "uncorrected_affine": 63872,
+      "carry": -1,
+      "source_exact_grid_distance": 174479726675355637543893432384094207
+    },
+    {
+      "sign": 1,
+      "decoded": 1666,
+      "uncorrected_affine": 1665,
+      "carry": 1,
+      "source_exact_grid_distance": 174479726675355637543893432384094207
+    }
+  ],
+  "root_encoding": "canonical root residue encoded as an integer under common plaintext t=65537",
+  "known_limits": [
+    "three sequential or four balanced terms in the selected five-prime reference profile",
+    "six-prime security screening must be checked in Rust, not inferred from range",
+    "public support may grow exponentially for arbitrary coefficients",
+    "chosen source-polynomial fixture; production key/lineage factory not supplied"
+  ],
+  "public_refresh_admitted": false
+}
