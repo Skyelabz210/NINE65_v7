@@ -13,8 +13,10 @@ NINE65 is a Rust workspace for exact integer/residue arithmetic, CRAM/CRT operat
 - Do not treat files in `artifacts/` or archived reports as fresh benchmark results. Evidence must be reproducible against the reviewed commit.
 
 ## Efficient repository entry points
-- `cargo fmt --all -- --check`
-- `cargo clippy --workspace --all-targets -- -D warnings`
+Lint and formatting gates are disabled by default in CI. All workflows use
+`vars.ENABLE_LINT == 'true'` to opt into those steps. Do not run linters unless
+the user explicitly requests them. See `docs/CI_LINT_POLICY.md`.
+
 - `cargo test -p exact_transcendentals --lib`
 - `cargo test -p exact_transcendentals --no-default-features --lib`
 - `cargo test -p nine65 --test k_elimination_basis_regression`

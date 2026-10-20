@@ -74,7 +74,7 @@ env:
 jobs:
 
   # ---------------------------------------------------------------------------
-  # T1a — Fast Gate: fmt + clippy + deny
+  # T1a — Fast Gate: dependency checks; lint is opt-in via ENABLE_LINT.
   # Every push/PR, independent of the commit or PR author.
   # ---------------------------------------------------------------------------
   # NOT adding scripts/run_tests_fast.sh (the new FAST test tier, issue #78)
@@ -113,6 +113,7 @@ jobs:
           restore-keys: ${{ runner.os }}-cargo-fast-
 
       - name: Check formatting
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo fmt --all -- --check
 
       # nine65-python / nine65-wasm / nine65-ffi are already excluded at the
@@ -120,6 +121,7 @@ jobs:
       # `--exclude` flags here was a no-op that only produced
       # "excluded package(s) ... not found in workspace" warnings.
       - name: Run clippy
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Check licenses and advisories

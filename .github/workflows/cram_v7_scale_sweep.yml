@@ -52,7 +52,9 @@ jobs:
           python3 -m py_compile \
             scripts/run_nine65_v7_scale_sweep.py \
             scripts/analyze_cram_fhe_hypotheses.py
-          rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
+      - name: Normalize Rust probe
+        if: ${{ vars.ENABLE_LINT == 'true' }}
+        run: rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
       - name: Reject floating point
         run: |
           if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \

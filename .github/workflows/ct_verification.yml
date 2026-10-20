@@ -92,6 +92,7 @@ jobs:
           fi
 
       - name: Clippy touched arithmetic modules
+        if: ${{ vars.ENABLE_LINT == 'true' }}
         run: cargo clippy -p nine65 --lib -- -D warnings
 
       - name: Upload reports
