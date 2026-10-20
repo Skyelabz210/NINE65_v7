@@ -153,7 +153,8 @@ def run():
     carry = profiles[0]['carry_bound']
     fresh = affine_error + carry
     square = multiply(fresh, fresh)
-    assert fresh < HALF and square < HALF
+    second_square = multiply(square, square)
+    assert fresh < HALF and square < HALF and second_square >= HALF
     repo = Path(__file__).resolve().parent.parent
     paths = (
         'scripts/safe_basis_triple_precharge_probe.py',
@@ -203,7 +204,10 @@ def run():
                              'six_term_error_bits': fresh.bit_length(),
                              'square_bound': square,
                              'square_bits': square.bit_length(),
-                             'square_predicted_admitted': square < HALF},
+                             'square_predicted_admitted': square < HALF,
+                             'second_square_bound': second_square,
+                             'second_square_bits': second_square.bit_length(),
+                             'second_square_predicted_admitted': second_square < HALF},
         'safe_basis_root_count': 1,
         'full_refresh_admitted': False,
         'boot_primes': list(BOOT),

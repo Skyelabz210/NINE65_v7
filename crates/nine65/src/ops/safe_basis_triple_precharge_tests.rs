@@ -286,6 +286,40 @@ fn triple_precharge_terminal_plan_preflights_all_views_and_limits() {
         .unwrap();
     assert!(carry_bits.iter().all(|&b| b < 100), "{carry_bits:?}");
     assert!(max_view_bits < 110, "{max_view_bits}");
+    let boot_q = U512::product_u64s(&ctx.config.primes);
+    let n = ctx.n as u128;
+    let remainder = boot_q.mod_u64(ctx.t) as u128;
+    let beta = ctx.config.eta as u128 * (2 * n + 1);
+    let inner_error = U512::from_u128(
+        beta * n * (ctx.t / 2) as u128 + (n + 1) * remainder + remainder.div_ceil(2),
+    );
+    let affine_error = inner_error
+        .mul_u128(n)
+        .add(runtime.noise.switch.mul_u128(n - 1));
+    let refreshed_bound = runtime
+        .noise
+        .admit(
+            affine_error.add(plan.frames[0].outputs[0].bound),
+            "bounded coefficient refresh",
+        )
+        .unwrap();
+    let square_bound = runtime
+        .noise
+        .multiply(refreshed_bound, refreshed_bound)
+        .unwrap();
+    assert_eq!(bits(square_bound), 134);
+    match runtime.noise.multiply(square_bound, square_bound) {
+        Err(Refusal::Noise {
+            stage,
+            error_bits,
+            half_bits,
+        }) => {
+            assert_eq!(stage, "selector multiply");
+            assert_eq!(error_bits, 176);
+            assert_eq!(half_bits, 137);
+        }
+        other => panic!("second square must preflight-refuse, got {other:?}"),
+    }
     drop(plan);
     assert!(matches!(
         plan_terminal(&runtime, &states[0], &states[1], &queries, 675, 84),
@@ -310,7 +344,7 @@ fn triple_precharge_terminal_plan_preflights_all_views_and_limits() {
         Err(TerminalRefusal::Regime)
     ));
     assert_eq!(runtime.multiplications.get(), 0);
-    eprintln!("triple precharge preflight: carry bits={carry_bits:?}, maximum view bits={max_view_bits}, products=676, outputs=84; 675-product and 83-output plans refused before multiplication");
+    eprintln!("triple precharge preflight: carry bits={carry_bits:?}, maximum view bits={max_view_bits}, products=676, outputs=84; one square admitted at 134 bits, next square refused at 176/137 bits; 675-product and 83-output plans refused before multiplication");
 }
 
 #[test]

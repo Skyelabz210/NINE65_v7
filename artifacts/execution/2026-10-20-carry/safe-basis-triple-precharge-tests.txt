@@ -12,6 +12,7 @@ max_terminal_products=676; max_products_per_selector=1
 carry_bits=[92,92,92,92]; maximum_view_bits=109
 target_moduli=[2,3,5,7,11,13,17,19,6,10,77,221,1,8,27,121,4199,65537,20000]
 six_term_refresh_bits=92; followup_square_bits=134 (predicted admitted)
+next_square_bits=176 (refused vs 137-bit half-scale before multiplication)
 full_refresh_admitted=false
 
 $ cargo check --locked --offline -j1 -p nine65 --tests
@@ -21,6 +22,7 @@ $ cargo test --locked --offline -j1 -p nine65 --lib triple_precharge_ -- --nocap
 2 passed; 0 failed; 1 ignored (native)
 triple precharge exact table: 91854 assignment/output checks; linear-only failures=26212
 triple precharge preflight: carry bits=[92, 92, 92, 92], maximum view bits=109, products=676, outputs=84
+one square admitted at 134 bits; next square refused at 176/137 bits
 675-product and 83-output plans refused before multiplication
 
 $ cargo test --locked --offline -j1 -p nine65 --lib terminal_readout_ -- --nocapture

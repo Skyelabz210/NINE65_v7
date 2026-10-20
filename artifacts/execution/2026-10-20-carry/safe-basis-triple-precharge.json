@@ -30,6 +30,9 @@
   ],
   "followup_refresh": {
     "affine_error_bound": 108098153386033152,
+    "second_square_bits": 176,
+    "second_square_bound": 61369370656597726990525833027974502477281563766280193,
+    "second_square_predicted_admitted": false,
     "six_term_error_bits": 92,
     "six_term_error_bound": 3171076616056211884056711520,
     "square_bits": 134,
@@ -617,9 +620,9 @@
     "crates/nine65/src/ops/safe_basis_pair_tests.rs": "556768a693eb5b57f8d2155163e371f0cfa4ec6168bebbec8c1899f55f45664f",
     "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "b5f600c334da84a5b129b6eaf8d7c489fbec4e034b6cec0ab87cc7eae1d40520",
     "crates/nine65/src/ops/safe_basis_terminal_tests.rs": "de681e62fb8c910cd232e76cb5bb32820bc43ec2338538d17e83d7060a7d2887",
-    "crates/nine65/src/ops/safe_basis_triple_precharge_tests.rs": "59aaaf5794f4218cbf1dcf4d7b52a49c5bcd989c27c45f73fdf10cba4f2ad83e",
+    "crates/nine65/src/ops/safe_basis_triple_precharge_tests.rs": "7b551ebcb4905350f7847d6b407dbf50464ac3920e226582b7502d8c7fbc8931",
     "scripts/safe_basis_pair_probe.py": "79e8ec7e0161187c26f86eb241aab31ae2049b2c772a888069a5bcd28e56a26d",
-    "scripts/safe_basis_triple_precharge_probe.py": "6940c11879e062c1b5fbd513e0ee1d57d43b457114dd3d061dae90f409f82a16"
+    "scripts/safe_basis_triple_precharge_probe.py": "059ce37e047245ce1b10453537f4a9a87c8d49e443510397fb28ee880664319d"
   },
   "two_triple_projection_traces": 54
 }

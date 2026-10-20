@@ -28,6 +28,9 @@ Exhaustive small-table tests check 91,854 assignments/output pairs. Omitting
 the mixed term fails 26,212 checks. The clear production-size probe checks
 61,236 lookup cells and predicts a 92-bit six-term refresh error. Its square
 bound is 134 bits and admitted, unlike the earlier three-pair grouping.
+The next square is refused in preflight at 176 bits versus the 137-bit
+half-scale, before any ciphertext multiplication; this certifies one
+follow-up square, not a deeper multiplication chain.
 
 ## Native encrypted evidence and limitation
 
