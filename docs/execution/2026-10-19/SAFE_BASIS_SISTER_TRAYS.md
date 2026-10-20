@@ -128,3 +128,8 @@ New source-bound evidence is recorded in `safe-basis-sister-trays.json` and
 Earlier composition/precharge evidence remains historical for its own source
 hashes. No lint tool, CI/profile change, new ciphertext prime, or production
 refresh admission is part of this change.
+
+The [atomic-update follow-up](SAFE_BASIS_TRAY_TRANSITIONS.md) now preflights
+the proposed encrypted state and all retained trays together, verifies the
+2/11 transition edges, and tests refusal followed by a smaller-view retry
+without resetting the source error bound.

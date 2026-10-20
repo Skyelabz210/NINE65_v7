@@ -1,0 +1,221 @@
+{
+  "schema": "nine65-atomic-tray-transition-v1",
+  "baseline": "3198cff3bfb932c90441c27f41d85bb2f0babd8c",
+  "source_sha256": {
+    "scripts/safe_basis_tray_transition_probe.py": "05c92f008e284c57642608b4e54c1093a903f26e664eb71427f1d994141efb70",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "a49fc98e5aebceb5fd66defb8df1e6e0ce21bc111e227202b92e4c7f8b9632a7",
+    "crates/nine65/src/ops/safe_basis_sister_tray_tests.rs": "af8711da24e182d19ac8d5b257d20524da6d1c08272a742cc3e8710ce362f177",
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1"
+  },
+  "safe_basis_roots": 1,
+  "wide_layouts": [
+    [
+      77,
+      221
+    ],
+    [
+      1,
+      6,
+      10,
+      8,
+      27,
+      121,
+      385,
+      4199,
+      6,
+      65537
+    ]
+  ],
+  "compact_layouts": [
+    [
+      6,
+      10,
+      15,
+      21
+    ],
+    [
+      1,
+      8,
+      9,
+      11,
+      22,
+      6
+    ]
+  ],
+  "half_scale_bits": 137,
+  "public_schedules": [
+    {
+      "sign": -1,
+      "prefixes": [
+        {
+          "step": 1,
+          "wide_refusal": null,
+          "selector_products": 0,
+          "rows": 3,
+          "carry_error_bits": 42,
+          "phase_error_bits": 46,
+          "largest_view_error_bits": 58,
+          "view_error_bounds": {
+            "77": 288332939345920,
+            "221": 659046718504960,
+            "1": 0,
+            "6": 24714251943936,
+            "10": 24714251943936,
+            "8": 0,
+            "27": 86499881803776,
+            "121": 922665405906944,
+            "385": 2825662805590016,
+            "4199": 30699219956359168,
+            "65537": 236181748702224384
+          },
+          "layout_periods": [
+            17017,
+            251732679077880
+          ]
+        },
+        {
+          "step": 2,
+          "wide_refusal": null,
+          "selector_products": 9,
+          "rows": 5,
+          "carry_error_bits": 86,
+          "phase_error_bits": 90,
+          "largest_view_error_bits": 102,
+          "view_error_bounds": {
+            "77": 5200565650154494449339167294,
+            "221": 12702426901596866233403331962,
+            "1": 0,
+            "6": 326167880497494425394094116,
+            "10": 507372258551657995057479736,
+            "8": 0,
+            "27": 1630839402487472126970470580,
+            "121": 12176934205239791881379513664,
+            "385": 37291861003546862636724760596,
+            "4199": 405154868891304325410363907758,
+            "65537": 4304582482427877262781590757348
+          },
+          "layout_periods": [
+            17017,
+            251732679077880
+          ]
+        },
+        {
+          "step": 3,
+          "wide_refusal": "view 385: 138 bits",
+          "selector_products": 15,
+          "rows": 7,
+          "carry_error_bits": 129,
+          "phase_error_bits": 132,
+          "largest_view_error_bits": 133,
+          "view_error_bounds": {
+            "6": 2152310466640372206672704033884511429118,
+            "10": 3746614516003681346651357715189252703068,
+            "15": 7533086633241302723354464118595790001913,
+            "21": 7533086633241302723354464118595790001913,
+            "1": 0,
+            "8": 0,
+            "9": 3945902522173979471357679896073265509291,
+            "11": 5380776166600930516681760084711278572795,
+            "22": 9326678688774946228915050813499549526178
+          },
+          "layout_periods": [
+            210,
+            792
+          ]
+        }
+      ],
+      "committed_selector_products": 24,
+      "rejected_proposals_execute_products": 0,
+      "fourth_update_refused": true
+    },
+    {
+      "sign": 1,
+      "prefixes": [
+        {
+          "step": 1,
+          "wide_refusal": null,
+          "selector_products": 0,
+          "rows": 3,
+          "carry_error_bits": 42,
+          "phase_error_bits": 46,
+          "largest_view_error_bits": 59,
+          "view_error_bounds": {
+            "77": 345999527215104,
+            "221": 1161569841364992,
+            "1": 0,
+            "6": 24714251943936,
+            "10": 57666587869184,
+            "8": 0,
+            "27": 135928385691648,
+            "121": 74142755831808,
+            "385": 345999527215104,
+            "4199": 3892494681169920,
+            "65537": 303717561181020160
+          },
+          "layout_periods": [
+            17017,
+            251732679077880
+          ]
+        },
+        {
+          "step": 2,
+          "wide_refusal": null,
+          "selector_products": 9,
+          "rows": 5,
+          "carry_error_bits": 86,
+          "phase_error_bits": 90,
+          "largest_view_error_bits": 102,
+          "view_error_bounds": {
+            "77": 4566350326964921955517317624,
+            "221": 15329890383382237993522423452,
+            "1": 0,
+            "6": 326167880497494425394094116,
+            "10": 761058387827486992586219604,
+            "8": 0,
+            "27": 1793923342736219339667517638,
+            "121": 3171076615947862469109248350,
+            "385": 11542718882050219387557663994,
+            "4199": 127459159523298654901225445108,
+            "65537": 4008331444747125242738921607210
+          },
+          "layout_periods": [
+            17017,
+            251732679077880
+          ]
+        },
+        {
+          "step": 3,
+          "wide_refusal": "view 4199: 140 bits",
+          "selector_products": 15,
+          "rows": 7,
+          "carry_error_bits": 129,
+          "phase_error_bits": 132,
+          "largest_view_error_bits": 133,
+          "view_error_bounds": {
+            "6": 2152310466640372206672704033884511429118,
+            "10": 4623481743153351880027722554957462946892,
+            "15": 5022057755494247116664156286624283473027,
+            "21": 7533086633241302723354464118595790001913,
+            "1": 0,
+            "8": 0,
+            "9": 3587184111067350432653492347058778575673,
+            "11": 3826329718471806032665228212450108642161,
+            "22": 9087533081370526869778925780823224903734
+          },
+          "layout_periods": [
+            210,
+            792
+          ]
+        }
+      ],
+      "committed_selector_products": 24,
+      "rejected_proposals_execute_products": 0,
+      "fourth_update_refused": true
+    }
+  ],
+  "clear_three_trit_cases": 54,
+  "native_encrypted_execution": "separate Rust probe",
+  "scope": "atomic bounded state/tray planning; not full refresh or authenticated production provenance",
+  "error_bounds_reset_by_reconfiguration": false,
+  "public_refresh_admitted": false
+}

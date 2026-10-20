@@ -163,6 +163,24 @@ struct Projection {
     ciphertext: RNSCiphertext,
     bound: U512,
 }
+// Private immutable-input plan: dependent trays may inspect the proposed
+// public support/bounds before ANY ciphertext multiplication is executed.
+struct CompositionPlan {
+    result: State,
+    edges: Vec<(usize, usize, usize)>,
+}
+struct AdvancePlan<'r, 'c> {
+    runtime: &'r CarryRuntime<'c>,
+    left: &'r State,
+    right: State,
+    composition: CompositionPlan,
+}
+impl AdvancePlan<'_, '_> {
+    fn commit(self, relin: &RNSHybridGadgetKey) -> State {
+        self.runtime
+            .execute_plan(self.left, &self.right, self.composition, relin)
+    }
+}
 struct CarryRuntime<'a> {
     ctx: &'a RNSFHEContext,
     exact: ExactMulEvaluator<'a>,
@@ -225,6 +243,14 @@ impl<'a> CarryRuntime<'a> {
         trit: &Trit,
         relin: &RNSHybridGadgetKey,
     ) -> Result<State, Refusal> {
+        Ok(self.plan_advance(state, term, trit)?.commit(relin))
+    }
+    fn plan_advance<'r>(
+        &'r self,
+        state: &'r State,
+        term: i128,
+        trit: &Trit,
+    ) -> Result<AdvancePlan<'r, 'a>, Refusal> {
         if state.family != self.family
             || trit.family != self.family
             || state.source_q != self.source_q
@@ -247,7 +273,13 @@ impl<'a> CarryRuntime<'a> {
             source_q: self.source_q,
             coefficients: vec![trit.coefficient],
         };
-        self.compose(state, &right, relin)
+        let composition = self.plan_compose(state, &right)?;
+        Ok(AdvancePlan {
+            runtime: self,
+            left: state,
+            right,
+            composition,
+        })
     }
     fn compose(
         &self,
@@ -255,6 +287,10 @@ impl<'a> CarryRuntime<'a> {
         right: &State,
         relin: &RNSHybridGadgetKey,
     ) -> Result<State, Refusal> {
+        let plan = self.plan_compose(left, right)?;
+        Ok(self.execute_plan(left, right, plan, relin))
+    }
+    fn plan_compose(&self, left: &State, right: &State) -> Result<CompositionPlan, Refusal> {
         if left.family != self.family
             || right.family != self.family
             || left.source_q != self.source_q
@@ -305,7 +341,7 @@ impl<'a> CarryRuntime<'a> {
                 edges.push((source, branch, index));
             }
         }
-        let mut result = State {
+        let result = State {
             rows,
             family: left.family,
             source_q: left.source_q,
@@ -326,6 +362,16 @@ impl<'a> CarryRuntime<'a> {
                 "Safe Basis projection",
             )?;
         }
+        Ok(CompositionPlan { result, edges })
+    }
+    fn execute_plan(
+        &self,
+        left: &State,
+        right: &State,
+        plan: CompositionPlan,
+        relin: &RNSHybridGadgetKey,
+    ) -> State {
+        let CompositionPlan { mut result, edges } = plan;
         for (source, branch, destination) in edges {
             let output = match (&left.rows[source].selector, &right.rows[branch].selector) {
                 (None, None) => None,
@@ -343,7 +389,7 @@ impl<'a> CarryRuntime<'a> {
                     });
             }
         }
-        Ok(result)
+        result
     }
     fn project(&self, state: &State, value: impl Fn(&Row) -> i64) -> Projection {
         let bound = self.projection_bound(state, &value);
@@ -740,17 +786,29 @@ fn precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder(
         let mut exact_sum = initial;
         let mut left_pair = None;
         for step in 0..3 {
-            state = runtime
-                .advance(&state, terms[step], &trits[step], &relin)
-                .unwrap();
+            #[cfg(feature = "exact_transcendentals_backend")]
+            {
+                state = sister_tray::advance_native_with_trays(
+                    &runtime,
+                    &state,
+                    terms[step],
+                    &trits[step],
+                    &relin,
+                    &keys.secret_key,
+                    exact_sum + terms[step] * source[step] as i128,
+                    step,
+                );
+            }
+            #[cfg(not(feature = "exact_transcendentals_backend"))]
+            {
+                state = runtime
+                    .advance(&state, terms[step], &trits[step], &relin)
+                    .unwrap();
+            }
             if step == 1 {
                 left_pair = Some(state.clone());
             }
             exact_sum += terms[step] * source[step] as i128;
-            #[cfg(feature = "exact_transcendentals_backend")]
-            if step == 1 {
-                sister_tray::check_native_trays(&runtime, &state, &keys.secret_key, exact_sum);
-            }
             let expected_carry = (exact_sum + h).div_euclid(source_q);
             let expected_remainder = exact_sum - source_q * expected_carry;
             assert!(state
