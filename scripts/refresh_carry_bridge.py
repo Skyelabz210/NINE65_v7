@@ -87,7 +87,7 @@ def component_case(c0, c1, secret, q, t):
 
 def run():
     cocycles = scalar_cases = ring_cases = affine_failures = 0
-    transfer_cases = local_rule_cases = extension_cases = 0
+    transfer_cases = local_rule_cases = extension_cases = carry_bound_cases = 0
     for q in (3, 5, 17, 31):
         for a, b, c in itertools.product(range(q), repeat=3):
             assert carry(a, b, q) + carry(a + b, c, q) == (
@@ -132,6 +132,21 @@ def run():
             assert actual == threshold
             assert actual in (-1, 0, 1)
             local_rule_cases += 1
+    # Phase-1 K is a rounded sum of one centered residual plus a ternary
+    # negacyclic combination of N centered residuals. The l1 extremum is
+    # (N+1)*h_Q, and for the listed even N / odd Q tuples its rounded quotient
+    # reaches exactly N/2, the sharp signed carry radius.
+    for n, q in (
+        (2, 5), (4, 17), (8, 31),
+        (8192, 348959453350711275087786864768188417),
+    ):
+        half = (q - 1) // 2
+        max_sum = (n + 1) * half
+        radius = (max_sum + half) // q
+        assert radius == n // 2
+        assert nearest(max_sum, q) == radius
+        assert nearest(-max_sum, q) == -radius
+        carry_bound_cases += 1
     for q, t in ((5, 3), (17, 5), (31, 7)):
         values = range(-q // 2 + 1, q // 2 + 1)
         for a, b, s in itertools.product(values, values, (-1, 0, 1)):
@@ -193,6 +208,7 @@ def run():
             "composable_translation_block_cases": transfer_cases,
             "local_piecewise_threshold_cases": local_rule_cases,
             "full_cycle_extension_winding_cases": extension_cases,
+            "phase1_carry_bound_boundary_cases": carry_bound_cases,
             "scalar_component_cases": scalar_cases,
             "negacyclic_n2_cases": ring_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,

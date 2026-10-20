@@ -62,6 +62,32 @@ the integer winding; some lift/carry information must be recovered or carried
 through the nonlinear step. This is an obstruction to a class of shortcuts,
 not a lower bound against all encrypted circuits.
 
+## The carry fits a small signed lift coordinate
+
+For even ring degree `N`, odd `Q`, and centered component residuals bounded by
+`h_Q=(Q-1)/2`, the original Phase-1 carry has the deterministic full-ternary
+bound
+
+```text
+|R0_j + (R1*s)_j| <= (N+1)*h_Q
+|K_j| = |n_Q(R0_j + (R1*s)_j)| <= floor((N+2)*h_Q/Q) = N/2,
+```
+
+where the last equality holds for the production `N,Q` tuple.
+It is sharp: align all `N` signed convolution terms and `R0_j` at `h_Q`.
+Thus one signed coordinate modulo any odd `A>N` can represent `K_j` without
+aliasing after centering. For `N=8192`, the tight radius is 4096, so `A=8193`
+is sufficient as a representation. The four `phase1_carry_bound_boundary_cases`
+check the exact floor and both signs, including native `N=8192` and
+`Q=348959453350711275087786864768188417` (the four-prime `secure_128` product).
+
+This is a payload-range result only. The evaluator still needs an encrypted
+method that computes the hidden quotient from the secret-linear residual and
+binds that coordinate to the same phase/key epoch. A small anchor can store the
+answer once produced; it does not itself produce the answer. This separates
+the Safe-Root/Lift representation question from the ultradiscrete threshold
+transduction question.
+
 The new `composable_translation_block_cases` check exhaustively compares
 stepwise accumulation, one-shot quotient, and every two-block split for small
 odd moduli. `local_piecewise_threshold_cases` separately checks this three-way
@@ -168,6 +194,8 @@ binds both Python sources by SHA-256. It checks:
 - 1,284 local piecewise-threshold cases for centered operands;
 - 56 full-cycle checks showing the section cocycle winds once around the
   residue generator for each tested odd modulus;
+- 4 sharp Phase-1 carry-radius boundary checks, including the exact native
+  `N=8192`, four-prime `Q` product;
 - 3,825 scalar and 5,625 exhaustive N=2 negacyclic cases; 3,116 cases expose
   a wrong uncorrected affine answer, while the corrected identity holds;
 - 1,284 contractions and 8,988 expanded-winding invariance cases;
