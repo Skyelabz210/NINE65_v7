@@ -169,3 +169,48 @@ fn certified_main_production_128_roundtrip_and_early_refusal() {
         Err(CramMainError::NoiseExhausted(_))
     ));
 }
+
+#[test]
+fn certified_main_refresh_radius_tracks_live_history_and_transport() {
+    let (client, eval) = pair(&toy());
+    let fresh = eval.encrypt(7).unwrap();
+    let original = fresh.prime_square_residual_radius();
+    assert_eq!(original, 4, "N=8 rounding dominates a fresh input");
+    let mut current = fresh.clone();
+    let mut increased = false;
+    for _ in 0..16 {
+        let next = match eval.multiply(&current, &current) {
+            Ok(next) => next,
+            Err(CramMainError::NoiseExhausted(_)) => break,
+            Err(error) => panic!("unexpected refusal: {error}"),
+        };
+        assert!(next.prime_square_residual_radius() >= current.prime_square_residual_radius());
+        increased |= next.prime_square_residual_radius() > original;
+        current = next;
+    }
+    // At this tiny ring, squaring can hit the operation gate before the
+    // integral radius crosses its next boundary. Additions grow the history
+    // bound more gradually and must expose that boundary while still admitted.
+    for _ in 0..256 {
+        if increased {
+            break;
+        }
+        let next = eval.add(&current, &current).expect("radius boundary precedes decoding exhaustion");
+        assert!(next.prime_square_residual_radius() >= current.prime_square_residual_radius());
+        increased = next.prime_square_residual_radius() > original;
+        current = next;
+    }
+    assert!(increased, "radius must reflect accumulated error");
+    assert_eq!(fresh.prime_square_residual_radius(), original);
+    let mut transport = eval.transport(1);
+    let wire = transport.export(&current).unwrap();
+    let restored = transport.import(&wire).unwrap();
+    assert_eq!(
+        restored.prime_square_residual_radius(),
+        current.prime_square_residual_radius()
+    );
+    assert_eq!(
+        client.decrypt(&restored).unwrap(),
+        client.decrypt(&current).unwrap()
+    );
+}

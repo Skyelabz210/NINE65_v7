@@ -11,6 +11,52 @@ fn words(v: U512) -> (u128, u128, u128, u128) {
     (v.d3, v.d2, v.d1, v.d0)
 }
 
+#[cfg(test)]
+mod refresh_radius_tests {
+    use super::*;
+    use crate::params::SecureConfig;
+
+    #[test]
+    fn certified_refresh_radius_matches_small_integer_quotients() {
+        let mut config = SecureConfig::secure_128().into_config();
+        for q in (5u64..52).step_by(2) {
+            config.primes = vec![q];
+            for t in (3..q).step_by(2) {
+                config.t = t;
+                for n in [2, 4, 8] {
+                    config.n = n;
+                    let model = ScalarNoiseModel::new(&config, 1, 10).unwrap();
+                    for v in 0..=q / 2 {
+                        let bound = model.admit(U512::from_u64(v)).unwrap();
+                        let expected = (2 * t * v + (n as u64 + 1) * (q - 1)) / (2 * q);
+                        assert_eq!(model.prime_square_residual_radius(&bound), expected);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn certified_refresh_radius_native_history_cannot_assume_small_support() {
+        let config = SecureConfig::secure_128().into_config();
+        let digits = config
+            .primes
+            .iter()
+            .map(|q| (64 - q.leading_zeros()).div_ceil(10) as usize)
+            .sum();
+        let model = ScalarNoiseModel::new(&config, digits, 10).unwrap();
+        let fresh = model.fresh().unwrap();
+        let square = model.multiply(&fresh, &fresh).unwrap();
+        let fourth = model.multiply(&square, &square).unwrap();
+        // Independently computed with Python arbitrary-precision integers.
+        assert_eq!(model.prime_square_residual_radius(&fresh), 4096);
+        assert_eq!(model.prime_square_residual_radius(&square), 4096);
+        assert_eq!(model.prime_square_residual_radius(&fourth), 22310);
+        assert!(model.prime_square_residual_radius(&fresh) > 32);
+        assert!(model.multiply(&fourth, &fourth).is_err());
+    }
+}
+
 fn bits(v: U512) -> u32 {
     for (offset, limb) in [(384, v.d3), (256, v.d2), (128, v.d1), (0, v.d0)] {
         if limb != 0 {
@@ -156,5 +202,35 @@ impl ScalarNoiseModel {
     pub(crate) fn remaining_millibits(&self, bound: &CertifiedNoiseBound) -> i64 {
         // A conservative display only. Admission compares the exact integers.
         i64::from(bits(self.q).saturating_sub(bits(bound.scaled_error) + 2)) * 1000
+    }
+
+    /// Bound the signed residual of the unshifted p^2 expanded phase, p=t.
+    /// If t*phase = Q*m + v (mod tQ), expanding each public component gives
+    /// w = t*m + rho (mod t^2), with
+    /// |rho| <= t*V/Q + (N+1)*(Q-1)/(2Q).
+    /// The first term uses this ciphertext's actual producer-issued history
+    /// bound V. The second covers odd-Q nearest rounding and a ternary secret
+    /// of weight at most N. rho is integral, so floor the rational bound.
+    /// This does not include encryption error of the bootstrap ciphertext or
+    /// admit a digit circuit. No smaller secret-weight assumption is accepted.
+    pub(crate) fn prime_square_residual_radius(&self, bound: &CertifiedNoiseBound) -> u64 {
+        let numerator = bound
+            .scaled_error
+            .mul_u128(2 * self.t)
+            .add(self.q.sub(U512::from_u64(1)).mul_u128(self.n + 1));
+        // 2V<Q implies radius < (t+N+1)/2. All products fit within
+        // 290 bits under new()'s parameter limits. Search on public metadata
+        // instead of reconstructing ciphertext coefficients or dividing Q.
+        let mut lower = 0u64;
+        let mut upper = ((self.t + self.n + 1) / 2 + 1) as u64;
+        while lower + 1 < upper {
+            let middle = lower + (upper - lower) / 2;
+            if words(self.q.mul_u128(2 * middle as u128)) <= words(numerator) {
+                lower = middle;
+            } else {
+                upper = middle;
+            }
+        }
+        lower
     }
 }

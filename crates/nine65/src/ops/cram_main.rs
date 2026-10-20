@@ -62,6 +62,14 @@ impl CramMainCiphertext {
     pub fn remaining_millibits(&self) -> i64 {
         self.state.noise.remaining_millibits(&self.bound)
     }
+
+    /// Deterministic |rho| bound for w=t*m+rho (mod t^2), derived from this
+    /// ciphertext's immutable operation history and the full ternary key
+    /// support. A bounded digit circuit needs radius <= B <= (t-1)/2.
+    /// This bound alone does not implement or admit public refresh.
+    pub fn prime_square_residual_radius(&self) -> u64 {
+        self.state.noise.prime_square_residual_radius(&self.bound)
+    }
 }
 
 /// Public key and evaluation key only; no decryption secret or noise observation.
