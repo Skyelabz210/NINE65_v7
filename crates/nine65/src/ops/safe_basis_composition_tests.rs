@@ -20,6 +20,9 @@ use std::collections::BTreeMap;
 #[path = "safe_basis_sister_tray_tests.rs"]
 mod sister_tray;
 
+#[path = "safe_basis_pair_tests.rs"]
+mod pair_precharge;
+
 const ROOT: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
 const BOOT: [u64; 6] = [
     1811939329, 2113929217, 2130706433, 1107296257, 1711276033, 1224736769,
@@ -582,6 +585,19 @@ fn refresh_coefficient(
     trace: &[RNSGaloisKey],
     carry: &Projection,
 ) -> (Projection, Projection) {
+    refresh_coefficient_at(runtime, work, components, encrypted_source, trace, carry, 1)
+}
+
+fn refresh_coefficient_at(
+    runtime: &CarryRuntime<'_>,
+    work: &FHEConfig,
+    components: &[Vec<Vec<u64>>; 2],
+    encrypted_source: &RNSCiphertext,
+    trace: &[RNSGaloisKey],
+    carry: &Projection,
+    coefficient: usize,
+) -> (Projection, Projection) {
+    assert!(coefficient < runtime.ctx.n);
     let q = U512::product_u64s(&runtime.ctx.config.primes);
     let n = runtime.ctx.n as u128;
     let t = runtime.ctx.t;
@@ -609,7 +625,15 @@ fn refresh_coefficient(
     let phase =
         evaluate_centered_components(runtime.ctx, &prepared[0], &prepared[1], encrypted_source);
     let galois = RNSGaloisEvaluator::new(runtime.ctx).unwrap();
-    let mut affine = shift(runtime.ctx, &phase, 2 * runtime.ctx.n - 1);
+    let mut affine = shift(
+        runtime.ctx,
+        &phase,
+        if coefficient == 0 {
+            0
+        } else {
+            2 * runtime.ctx.n - coefficient
+        },
+    );
     for key in trace {
         affine = runtime
             .ctx
@@ -633,6 +657,15 @@ fn source_decode_oracle(
     components: &[Vec<Vec<u64>>; 2],
     source: &[i8],
 ) -> (u64, U256) {
+    source_decode_oracle_at(work, components, source, 1)
+}
+
+fn source_decode_oracle_at(
+    work: &RNSFHEContext,
+    components: &[Vec<Vec<u64>>; 2],
+    source: &[i8],
+    coefficient: usize,
+) -> (u64, U256) {
     let residues: Vec<_> = work
         .config
         .primes
@@ -644,7 +677,8 @@ fn source_decode_oracle(
                 .map(|&x| (x as i128).rem_euclid(q as i128) as u64)
                 .collect();
             let product = work.ntt_engines[lane].multiply(&components[1][lane], &secret);
-            ((components[0][lane][1] as u128 + product[1] as u128) % q as u128) as u64
+            ((components[0][lane][coefficient] as u128 + product[coefficient] as u128) % q as u128)
+                as u64
         })
         .collect();
     let message = CanonicalScaleRound::new(&work.config.primes, work.t)

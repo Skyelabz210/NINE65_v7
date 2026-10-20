@@ -109,3 +109,8 @@ the complete heterogeneous operator fabric, authenticate remote provenance,
 or enable production public refresh. Those gates, full-sum circuit scaling,
 and the key/input-history factory remain open. CI, profiles and linting policy
 are unchanged; no lint tool is used.
+
+The next bounded experiment is [pair precharge](SAFE_BASIS_PAIR_PRECHARGE.md).
+It moves one multiplication level into key-holder preparation and tests
+four-term coefficient refresh and six-term carry composition, with the same
+root and noise admission requirements.
