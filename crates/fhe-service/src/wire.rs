@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 const MAX_STRING_FIELD_LEN: usize = 1024;
 
 /// Maximum length of a single ciphertext field.
-/// DualRNS ciphertexts include both main + anchor limbs:
-/// N=16384 (secure_256) with 2 polys × (6 main + 5 anchor) × 16384 × 8 bytes × 4/3 base64 ≈ 3.8 MB.
+/// Main-Q v1 ciphertext at N=16384 (secure_256) is 84 bytes of header plus
+/// 2 polynomials × 6 main limbs × 16384 coefficients × 8 bytes, then base64.
 const MAX_CIPHERTEXT_FIELD_LEN: usize = 4 * 1024 * 1024;
 
 /// Maximum total allocation per request to prevent memory amplification attacks.
@@ -29,7 +29,7 @@ pub struct CreateSessionResponse {
     pub session_id: String,
     pub config: String,
     pub params: SessionParams,
-    /// Upper-bound heuristic estimate; actual noise may be lower.
+    /// Conservative display derived from the certified integer bound; never used for admission.
     pub noise_budget_estimate_millibits: i64,
 }
 
@@ -45,7 +45,7 @@ pub struct SessionParams {
 pub struct SessionInfoResponse {
     pub session_id: String,
     pub config: String,
-    /// Upper-bound heuristic estimate; actual noise may be lower.
+    /// Conservative display derived from the certified integer bound; never used for admission.
     pub noise_budget_estimate_millibits: i64,
     pub operation_count: u64,
     pub created_at: u64,
@@ -63,22 +63,22 @@ pub struct EncryptRequest {
 
 #[derive(Debug, Serialize)]
 pub struct EncryptResponse {
-    /// Base64-encoded bincode ciphertexts
+    /// Base64-encoded N65Qv001 main-Q ciphertexts issued by this session.
     pub ciphertexts: Vec<String>,
-    /// Upper-bound heuristic estimate; actual noise may be lower.
+    /// Conservative display derived from the certified integer bound; never used for admission.
     pub noise_budget_estimate_millibits: i64,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct DecryptRequest {
-    /// Base64-encoded bincode ciphertexts
+    /// Base64-encoded N65Qv001 ciphertexts previously issued by this session.
     pub ciphertexts: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct DecryptResponse {
     pub values: Vec<u64>,
-    /// Upper-bound heuristic estimate; actual noise may be lower.
+    /// Conservative display derived from the certified integer bound; never used for admission.
     pub noise_budget_estimate_millibits: i64,
 }
 
@@ -95,7 +95,7 @@ pub struct EvaluateRequest {
 pub struct Operation {
     /// Operation type: "add", "sub", "negate", "add_plain", "mul_plain", "mul"
     pub op: String,
-    /// Base64-encoded ciphertext inputs
+    /// Base64-encoded N65Qv001 ciphertext inputs previously issued by this session.
     pub inputs: Vec<String>,
     /// Scalar for add_plain / mul_plain
     #[serde(default)]
@@ -104,9 +104,9 @@ pub struct Operation {
 
 #[derive(Debug, Serialize)]
 pub struct EvaluateResponse {
-    /// Base64-encoded result ciphertexts (one per operation)
+    /// Base64-encoded N65Qv001 result ciphertexts (one per operation).
     pub results: Vec<String>,
-    /// Upper-bound heuristic estimate; actual noise may be lower.
+    /// Conservative display derived from the certified integer bound; never used for admission.
     pub noise_budget_estimate_millibits: i64,
     pub operation_count: u64,
 }

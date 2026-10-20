@@ -1,0 +1,114 @@
+{
+  "branch": "fix/comparison-correctness-gaps",
+  "build": {
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "nine65",
+      "--bin",
+      "cram_comparative_probe",
+      "--features",
+      "serde,allow_insecure"
+    ],
+    "duration_ns": 72133739640,
+    "returncode": 0,
+    "stderr": "warning: profiles for the non root package will be ignored, specify profiles at the workspace root:\npackage:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml\nworkspace: /home/acid/projects/NINE65_v7/Cargo.toml\n   Compiling serde_core v1.0.228\n   Compiling libc v0.2.178\n   Compiling serde v1.0.228\n   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)\n   Compiling serde_json v1.0.147\n   Compiling getrandom v0.2.16\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 11s\n",
+    "stdout": ""
+  },
+  "commit": "0ec19eb2e142f8ae86d86c747c267e65fb5f1f8e",
+  "created_utc": "20261019T033604Z",
+  "depth_policy": "required",
+  "dirty": true,
+  "evidence_contract": {
+    "allocation_tracking": "UNMEASURED",
+    "binary_sha256": "fcc2224f90cf8acb0319d799e7b99e1fe276672795d996955d890a34491dbf9c",
+    "cargo_lock_sha256": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+    "cargo_profile": "debug",
+    "features": [
+      "serde",
+      "allow_insecure"
+    ],
+    "performance_ranking_allowed": false,
+    "purpose": "comparison-only correctness",
+    "security_equivalence": "NON_SECURITY_EQUIVALENT",
+    "timing_sample_policy": "integer per-process operation averages; depth entries individually timed",
+    "worker_count": "UNMEASURED"
+  },
+  "hardware": {
+    "kernel": "Linux penguin 6.6.143-09589-gf9e106250941 #1 SMP PREEMPT_DYNAMIC Wed, 26 Aug 2026 12:08:14 -0700 x86_64 GNU/Linux",
+    "logical_cpus": 2,
+    "lscpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           39 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  2\nOn-line CPU(s) list:                     0,1\nVendor ID:                               GenuineIntel\nModel name:                              Intel(R) Celeron(R) N4000 CPU @ 1.10GHz\nCPU family:                              6\nModel:                                   122\nThread(s) per core:                      1\nCore(s) per socket:                      1\nSocket(s):                               2\nStepping:                                1\nBogoMIPS:                                2188.80\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology nonstop_tsc cpuid tsc_known_freq pni pclmulqdq ssse3 cx16 pdcm sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave rdrand hypervisor lahf_lm 3dnowprefetch cpuid_fault pti ssbd ibrs ibpb stibp ibrs_enhanced fsgsbase tsc_adjust smep erms mpx rdseed smap clflushopt sha_ni xsaveopt xsavec xgetbv1 xsaves arat umip rdpid md_clear arch_capabilities\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               48 KiB (2 instances)\nL1i cache:                               64 KiB (2 instances)\nL2 cache:                                4 MiB (1 instance)\nVulnerability Gather data sampling:      Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Mitigation; PTI\nVulnerability Mmio stale data:           Not affected\nVulnerability Reg file data sampling:    Vulnerable: No microcode\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Not affected\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI SW loop, KVM SW loop\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected",
+    "machine": "x86_64",
+    "memory_total": "2813804 kB",
+    "platform": "Linux-6.6.143-09589-gf9e106250941-x86_64-with-glibc2.41",
+    "processor": ""
+  },
+  "hardware_fingerprint": "35a13c6f44041befd4b57d31318a50639b6db7f64c80bed807a9715b0f09d3e4",
+  "profile": "quick",
+  "records": [
+    {
+      "case": {
+        "a": 8,
+        "b": 8,
+        "case_id": "0000-v6_compat_4096-s42-i1-m1-d2",
+        "config": "v6_compat_4096",
+        "ct_mul_depth": 2,
+        "iterations": 1,
+        "mul_iterations": 1,
+        "seed": 42
+      },
+      "command": [
+        "/home/acid/projects/NINE65_v7/target/debug/cram_comparative_probe",
+        "--config",
+        "v6_compat_4096",
+        "--iterations",
+        "1",
+        "--mul-iterations",
+        "1",
+        "--ct-mul-depth",
+        "2",
+        "--seed",
+        "42",
+        "--a",
+        "8",
+        "--b",
+        "8",
+        "--output",
+        "artifacts/execution/2026-10-18-gap/scale-smoke/cases/0000-v6_compat_4096-s42-i1-m1-d2.json"
+      ],
+      "command_display": "/home/acid/projects/NINE65_v7/target/debug/cram_comparative_probe --config v6_compat_4096 --iterations 1 --mul-iterations 1 --ct-mul-depth 2 --seed 42 --a 8 --b 8 --output artifacts/execution/2026-10-18-gap/scale-smoke/cases/0000-v6_compat_4096-s42-i1-m1-d2.json",
+      "depth_complete": true,
+      "depth_completed": 2,
+      "depth_first_error": null,
+      "depth_requested": 2,
+      "duration_ns": 137191162519,
+      "first_divergence": {
+        "operation": "mul_ct",
+        "path": "legacy"
+      },
+      "operation_correctness_pass": false,
+      "parse_error": null,
+      "reported_status": "FAIL",
+      "result_path": "cases/0000-v6_compat_4096-s42-i1-m1-d2.json",
+      "returncode": 1,
+      "schema": "nine65-comparative-probe-v1",
+      "status": "WRONG_PLAINTEXT",
+      "stderr_path": "logs/0000-v6_compat_4096-s42-i1-m1-d2.stderr.log",
+      "stdout_path": "logs/0000-v6_compat_4096-s42-i1-m1-d2.stdout.log",
+      "tuple_fingerprint": "82057db5f228c60853650747115004b82bc0bce6d8d4c746e98d4a2116099446"
+    }
+  ],
+  "repository": "https://github.com/Skyelabz210/NINE65_v7.git",
+  "rustc": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7",
+  "schema": "nine65-v7-scale-sweep-v1",
+  "summary": {
+    "cases": 1,
+    "depth_complete": 1,
+    "depth_stops": 0,
+    "missing_or_invalid_results": 0,
+    "operation_correctness_failures": 1,
+    "process_failures": 1
+  }
+}

@@ -2,7 +2,9 @@
 
 **Version**: 1.0 — Production-Scale Verification
 **Snapshot**: `main` (2026-10-17)
-**Status**: All checks green. Mathematical verdict folded into durable canvas.
+**Status**: Clear arithmetic oracle only. The local oracle's nine tests pass;
+the repository release, service wire, lineage, and public-refresh gates remain
+open. See [the current gap analysis](execution/2026-10-18/GAP_ANALYSIS.md).
 
 ---
 
@@ -42,7 +44,7 @@ operation with a secret-dependent rounding term that BFV cannot natively express
 
 ```text
 Prime modulus:      t = 65537  (2^16 + 1, Fermat prime)
-Expansion modulus:  P = t^2 = 65537^2 = 4295098367
+Expansion modulus:  P = t^2 = 65537^2 = 4295098369
 Work modulus:       A = t + 1 = 65538 = 2 * 3^2 * 11 * 331
 ```
 
@@ -194,7 +196,7 @@ With production parameters:
 ```text
 t = 65537  (Fermat prime: 2^16 + 1)
 A = t + 1 = 65538
-P = t^2 = 4295098367
+P = t^2 = 4295098369
 ```
 
 **Algebraic verification:**
@@ -403,8 +405,8 @@ t * t = 65537 * 65537 = 4295098369
 Minimum w: 0
   K = floor(0 / 65537) = 0 ≤ 65536 < 65538 ✓
 
-Maximum w: t^2 - 1 = 4295098366
-  K = floor(4295098366 / 65537) = floor(65536.99999...) = 65536 ≤ 65536 < 65538 ✓
+Maximum w: t^2 - 1 = 4295098368
+  K = floor(4295098368 / 65537) = 65536 ≤ 65536 < 65538 ✓
 
 At w = t: 65537
   K = floor(65537 / 65537) = 1 ≤ 65536 < 65538 ✓
@@ -419,15 +421,15 @@ For `h = (t - 1) / 2 = 32768`:
 
 ```
 w = 0:
-  x = (0 + 32768) mod 4295098367 = 32768
+  x = (0 + 32768) mod 4295098369 = 32768
   K = floor(32768 / 65537) = 0 ✓
 
-w = t^2 - 1 = 4295098366:
-  x = (4295098366 + 32768) mod 4295098367 = 32767
+w = t^2 - 1 = 4295098368:
+  x = (4295098368 + 32768) mod 4295098369 = 32767
   K = floor(32767 / 65537) = 0 ✓
 
 w = t = 65537:
-  x = (65537 + 32768) mod 4295098367 = 98305
+  x = (65537 + 32768) mod 4295098369 = 98305
   K = floor(98305 / 65537) = 1 ✓
 ```
 

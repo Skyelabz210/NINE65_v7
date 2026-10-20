@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "-p",
+    "nine65",
+    "--bin",
+    "cram_comparative_probe",
+    "--features",
+    "serde,allow_insecure"
+  ],
+  "duration_ns": 72133739640,
+  "returncode": 0,
+  "stderr": "warning: profiles for the non root package will be ignored, specify profiles at the workspace root:\npackage:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml\nworkspace: /home/acid/projects/NINE65_v7/Cargo.toml\n   Compiling serde_core v1.0.228\n   Compiling libc v0.2.178\n   Compiling serde v1.0.228\n   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)\n   Compiling serde_json v1.0.147\n   Compiling getrandom v0.2.16\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 11s\n",
+  "stdout": ""
+}

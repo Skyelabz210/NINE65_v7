@@ -45,6 +45,7 @@ jobs:
             scripts/analyze_cram_fhe_hypotheses.py \
             scripts/test_analyze_cram_fhe_hypotheses.py
           python3 scripts/test_cram_compare_results.py
+          python3 scripts/test_benchmark_contract.py
           python3 scripts/test_analyze_cram_fhe_hypotheses.py
       - name: Parse and normalize new Rust probe
         if: ${{ vars.ENABLE_LINT == 'true' }}
@@ -68,9 +69,12 @@ jobs:
             --features serde,allow_insecure
       - name: Build comparison-only correctness probe (debug)
         run: |
-          cargo build -p nine65 \
+          mkdir -p artifacts/v6_v7_compare/smoke
+          cargo build --locked -p nine65 \
             --bin cram_comparative_probe \
-            --features serde,allow_insecure
+            --features serde,allow_insecure \
+            > artifacts/v6_v7_compare/smoke/build.stdout.log \
+            2> artifacts/v6_v7_compare/smoke/build.stderr.log
       - name: Execute same-process correctness smoke
         id: smoke
         continue-on-error: true
@@ -158,6 +162,7 @@ jobs:
           python3 scripts/run_nine65_v6_v7_compare.py \
             --v6-root "$GITHUB_WORKSPACE/v6-repo/NINE65/NINE65_v6_a_Clockwork_Prime" \
             --v7-root "$GITHUB_WORKSPACE/v7" \
+            --cargo-profile debug \
             --output-dir "$GITHUB_WORKSPACE/v7/artifacts/v6_v7_compare/dispatched" \
             --repetitions '${{ inputs.repetitions }}' \
             --iterations '${{ inputs.iterations }}' \

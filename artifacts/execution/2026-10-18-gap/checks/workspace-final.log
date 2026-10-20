@@ -1,0 +1,5 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on build directory
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.37s

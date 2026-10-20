@@ -45,6 +45,9 @@ mod track1_exact_multiply_lock;
 #[path = "exact_mul.rs"]
 pub mod exact_mul;
 
+#[path = "cram_main.rs"]
+pub mod cram_main;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]

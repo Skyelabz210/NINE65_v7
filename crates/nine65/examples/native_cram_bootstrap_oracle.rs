@@ -42,7 +42,7 @@ pub const PRODUCTION_T: u64 = 65537;
 /// Work modulus: A = t + 1 = 65538 = 2 * 3^2 * 11 * 331
 pub const WORK_MODULUS_A: u64 = 65538;
 
-/// Expansion modulus: P = t^2 = 4295098367
+/// Expansion modulus: P = t^2 = 4295098369
 pub const EXPANSION_MODULUS_P: u64 = 65537 * 65537;
 
 /// Rounding shift: h = (t - 1) / 2 = 32768
@@ -259,6 +259,12 @@ pub struct BootstrapOracle {
     pub contraction: StarLiftContractionOracle,
 }
 
+impl Default for BootstrapOracle {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl BootstrapOracle {
     /// Create a new bootstrap oracle.
     pub fn new() -> Self {
@@ -307,6 +313,12 @@ impl BootstrapOracle {
 pub struct GateC {
     /// Range certificate
     pub range_cert: RangeCertificate,
+}
+
+impl Default for GateC {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl GateC {
@@ -362,6 +374,12 @@ pub struct NativeCramBootstrapOracleHarness {
     pub gate_c: GateC,
 }
 
+impl Default for NativeCramBootstrapOracleHarness {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NativeCramBootstrapOracleHarness {
     /// Create a new test harness.
     pub fn new() -> Self {
@@ -379,38 +397,71 @@ impl NativeCramBootstrapOracleHarness {
         // §8.1: Structural Fit
         println!("Section 8.1 Structural Fit Verification:");
         let starlift_ok = self.verify_starlift_identities();
-        println!("  StarLift identities: {}", if starlift_ok { "PASS" } else { "FAIL" });
+        println!(
+            "  StarLift identities: {}",
+            if starlift_ok { "PASS" } else { "FAIL" }
+        );
 
         // §8.2: Range Certificate
         println!("\nSection 8.2 Range Certificate Verification:");
         let range_ok = self.verify_range_certificate();
-        println!("  Automatic range certificate: {}", if range_ok { "PASS" } else { "FAIL" });
+        println!(
+            "  Automatic range certificate: {}",
+            if range_ok { "PASS" } else { "FAIL" }
+        );
 
         // §8.3: Consequences
         println!("\nSection 8.3 Consequences Verification:");
         let k_exact_ok = self.verify_k_exact_bounded();
-        println!("  K_EXACT_BOUNDED for free: {}", if k_exact_ok { "PASS" } else { "FAIL" });
+        println!(
+            "  K_EXACT_BOUNDED for free: {}",
+            if k_exact_ok { "PASS" } else { "FAIL" }
+        );
 
         let full_quotient_ok = self.verify_full_quotient();
-        println!("  Full quotient property: {}", if full_quotient_ok { "PASS" } else { "FAIL" });
+        println!(
+            "  Full quotient property: {}",
+            if full_quotient_ok { "PASS" } else { "FAIL" }
+        );
 
         let a_composite_ok = self.verify_a_composite();
-        println!("  A = 65538 is composite: {}", if a_composite_ok { "PASS" } else { "FAIL" });
+        println!(
+            "  A = 65538 is composite: {}",
+            if a_composite_ok { "PASS" } else { "FAIL" }
+        );
 
         // §8.4: Boundary Cases
         println!("\nSection 8.4 Boundary Cases Verification:");
         let boundaries_ok = self.verify_boundary_cases();
-        println!("  All boundary cases: {}", if boundaries_ok { "PASS" } else { "FAIL" });
+        println!(
+            "  All boundary cases: {}",
+            if boundaries_ok { "PASS" } else { "FAIL" }
+        );
 
         // §8.5: Random Sampling
         println!("\nSection 8.5 Random Sampling Verification:");
         let sampling_ok = self.verify_random_sampling(20_000);
-        println!("  20,000 random samples: {}", if sampling_ok { "PASS" } else { "FAIL" });
+        println!(
+            "  20,000 random samples: {}",
+            if sampling_ok { "PASS" } else { "FAIL" }
+        );
 
-        let all_pass = starlift_ok && range_ok && k_exact_ok && full_quotient_ok
-            && a_composite_ok && boundaries_ok && sampling_ok;
+        let all_pass = starlift_ok
+            && range_ok
+            && k_exact_ok
+            && full_quotient_ok
+            && a_composite_ok
+            && boundaries_ok
+            && sampling_ok;
 
-        println!("\n=== Overall Result: {} ===", if all_pass { "ALL CHECKS PASS" } else { "SOME CHECKS FAILED" });
+        println!(
+            "\n=== Overall Result: {} ===",
+            if all_pass {
+                "ALL CHECKS PASS"
+            } else {
+                "SOME CHECKS FAILED"
+            }
+        );
 
         all_pass
     }
@@ -439,7 +490,9 @@ impl NativeCramBootstrapOracleHarness {
         // We test a few representative values
         let cert = &self.contraction.range_cert;
         let test_values = [0, 1, cert.t - 1, cert.t, cert.p - cert.t, cert.p - 1];
-        test_values.iter().all(|&w| self.gate_c.verify_full_quotient(w))
+        test_values
+            .iter()
+            .all(|&w| self.gate_c.verify_full_quotient(w))
     }
 
     /// Verify that A = 65538 is composite.
@@ -453,9 +506,9 @@ impl NativeCramBootstrapOracleHarness {
     pub fn verify_boundary_cases(&self) -> bool {
         let cert = &self.contraction.range_cert;
         let boundaries = [0, cert.t - 1, cert.t, cert.p - cert.t, cert.p - 1];
-        boundaries.iter().all(|&w| {
-            cert.verify_k_in_range(w) && cert.verify_k_rounded_in_range(w)
-        })
+        boundaries
+            .iter()
+            .all(|&w| cert.verify_k_in_range(w) && cert.verify_k_rounded_in_range(w))
     }
 
     /// Verify random sampling.
@@ -490,9 +543,20 @@ impl NativeCramBootstrapOracleHarness {
         // Test that non-reduced values are refused
         let non_reduced = cert.p; // w = t^2 is not reduced mod t^2
         let non_reduced_ok = !self.gate_c.check_reduced_mod_t2(non_reduced);
-        println!("  w = {}: reduced = {} (should be false)", non_reduced, self.gate_c.check_reduced_mod_t2(non_reduced));
+        println!(
+            "  w = {}: reduced = {} (should be false)",
+            non_reduced,
+            self.gate_c.check_reduced_mod_t2(non_reduced)
+        );
 
-        println!("\nGate C: {}", if reduced_ok && non_reduced_ok { "PASS" } else { "FAIL" });
+        println!(
+            "\nGate C: {}",
+            if reduced_ok && non_reduced_ok {
+                "PASS"
+            } else {
+                "FAIL"
+            }
+        );
         reduced_ok && non_reduced_ok
     }
 }
@@ -567,8 +631,18 @@ mod tests {
         let test_values = [0, 1, cert.t - 1, cert.t, cert.p - cert.t, cert.p - 1];
         for &w in &test_values {
             let (r, d) = oracle.canonical_low_digit_lift(w);
-            assert!(oracle.verify_canonical(r), "r = {} not canonical for w = {}", r, w);
-            assert!(oracle.verify_quotient(d), "d = {} not in range for w = {}", d, w);
+            assert!(
+                oracle.verify_canonical(r),
+                "r = {} not canonical for w = {}",
+                r,
+                w
+            );
+            assert!(
+                oracle.verify_quotient(d),
+                "d = {} not in range for w = {}",
+                d,
+                w
+            );
         }
     }
 

@@ -52,6 +52,7 @@ jobs:
           python3 -m py_compile \
             scripts/run_nine65_v7_scale_sweep.py \
             scripts/analyze_cram_fhe_hypotheses.py
+          python3 scripts/test_benchmark_contract.py
       - name: Normalize Rust probe
         if: ${{ vars.ENABLE_LINT == 'true' }}
         run: rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
@@ -64,18 +65,13 @@ jobs:
             echo 'floating-point token found in scale path' >&2
             exit 1
           fi
-      - name: Build comparative probe
-        run: |
-          cargo build --release -p nine65 \
-            --bin cram_comparative_probe \
-            --features serde,allow_insecure
       - name: Run quick scale correctness matrix
         id: sweep
         continue-on-error: true
         run: |
           python3 scripts/run_nine65_v7_scale_sweep.py \
             --profile quick \
-            --skip-build \
+            --cargo-profile debug \
             --require-depth-complete \
             --output-dir artifacts/v7_scale_sweep/quick
           python3 scripts/analyze_cram_fhe_hypotheses.py \
@@ -98,16 +94,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
-      - name: Build comparative probe
-        run: |
-          cargo build --release -p nine65 \
-            --bin cram_comparative_probe \
-            --features serde,allow_insecure
       - name: Assemble exact sweep command
         id: arguments
         shell: bash
         run: |
-          args=(--profile '${{ inputs.profile }}' --skip-build \
+          args=(--profile '${{ inputs.profile }}' --cargo-profile debug \
             --output-dir artifacts/v7_scale_sweep/dispatched \
             --iterations '${{ inputs.iterations }}' \
             --mul-iterations '${{ inputs.mul_iterations }}' \

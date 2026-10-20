@@ -375,10 +375,6 @@ mod tests {
     // --- Encrypt / Decrypt roundtrip ---
 
     #[test]
-    #[ignore = "WIRE-Q fail-closed: handle_encrypt calls dual_ct_to_b64 on its own \
-        output, which unconditionally rejects (docs/WIRE_Q_FAIL_CLOSED_2026-09-02.md); \
-        /encrypt 400s for every config until the single-RNS mod-Q wire type is \
-        integrated -- see docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md"]
     fn encrypt_decrypt_roundtrip() {
         let store = make_store();
         let metrics = make_metrics();
@@ -427,8 +423,6 @@ mod tests {
     // --- Homomorphic add ---
 
     #[test]
-    #[ignore = "WIRE-Q fail-closed: encrypt is non-functional, see \
-        docs/FHE_SERVICE_WIRE_Q_OUTAGE_2026-09-03.md"]
     fn homomorphic_add() {
         let store = make_store();
         let metrics = make_metrics();

@@ -7,7 +7,8 @@ use crate::wire::{
     EncryptResponse, EvaluateRequest, EvaluateResponse, SessionInfoResponse,
 };
 
-use nine65::noise::budget::{NoiseBudget, NoiseOpType};
+use crate::session::SessionError;
+use nine65::ops::cram_main::CramMainCiphertext;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -16,6 +17,7 @@ use std::sync::Mutex;
 use subtle::ConstantTimeEq;
 
 const DEFAULT_RATE_LIMIT_PER_MINUTE: u64 = 120;
+const MAX_ESTIMATED_CIPHERTEXT_RESPONSE_BYTES: usize = 4 * 1024 * 1024;
 const _: () = assert!(DEFAULT_RATE_LIMIT_PER_MINUTE > 0);
 
 #[derive(Clone, Debug)]
@@ -169,6 +171,23 @@ fn decrypt_route_authorized(request: &HttpRequest) -> bool {
             .get("x-fhe-decrypt-token")
             .map(String::as_str);
         decrypt_authorized_with(enabled, expected.as_deref(), provided)
+    }
+}
+
+fn session_error_response(operation: &str, error: SessionError) -> HttpResponse {
+    match error {
+        SessionError::InvalidInput => error_response(400, operation, "operation failed"),
+        SessionError::NoiseExhausted => error_response(
+            422,
+            "NOISE_EXHAUSTED",
+            "certified noise bound refuses this operation",
+        ),
+        SessionError::Capacity => error_response(
+            429,
+            "SESSION_CAPACITY",
+            "ciphertext registry capacity reached",
+        ),
+        SessionError::Operation => error_response(400, operation, "operation failed"),
     }
 }
 
@@ -335,6 +354,10 @@ fn handle_version() -> HttpResponse {
             "service": "fhe-service",
             "version": env!("CARGO_PKG_VERSION"),
             "supported_configs": ["secure_128", "secure_192", "secure_256"],
+            "key_model": "server_keyholder",
+            "ciphertext_format": "N65Qv001",
+            "ciphertext_imports": "session-issued ciphertexts only",
+            "evaluation_operations": ["add", "sub", "negate", "add_plain", "mul_plain", "mul"],
             "api_authentication": "required",
             "tenant_header": "x-fhe-tenant-id",
             "decrypt_endpoint": "disabled_by_default",
@@ -382,7 +405,6 @@ fn handle_create_session(
     if let Err(message) = req.validate() {
         return error_response(400, "INVALID_PAYLOAD", message);
     }
-
     let session = match crate::session::Session::new_for_tenant(&req.config, tenant_id) {
         Ok(session) => session,
         Err(message) => return error_response(400, "SESSION_CREATE_FAILED", message),
@@ -391,7 +413,7 @@ fn handle_create_session(
         session_id: session.session_id.clone(),
         config: session.config_name.clone(),
         params: session.params(),
-        noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
+        noise_budget_estimate_millibits: session.last_budget_millibits,
     };
 
     match store.insert(session) {
@@ -407,7 +429,7 @@ fn handle_get_session(id: &str, tenant_id: &str, store: &SessionStore) -> HttpRe
     match store.with_session_for_tenant(id, tenant_id, |session| SessionInfoResponse {
         session_id: session.session_id.clone(),
         config: session.config_name.clone(),
-        noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
+        noise_budget_estimate_millibits: session.last_budget_millibits,
         operation_count: session.operation_count,
         created_at: session.created_at,
     }) {
@@ -440,41 +462,35 @@ fn handle_encrypt(
     if let Err(message) = req.validate() {
         return error_response(400, "INVALID_PAYLOAD", message);
     }
-
-    let estimated_ct_size = 4 * 1024 * 1024;
-    if req.values.len().saturating_mul(estimated_ct_size) > MAX_RESPONSE_BYTES {
+    if req
+        .values
+        .len()
+        .saturating_mul(MAX_ESTIMATED_CIPHERTEXT_RESPONSE_BYTES)
+        > MAX_RESPONSE_BYTES
+    {
         return error_response(413, "PAYLOAD_TOO_LARGE", "reduce batch count");
     }
 
     match store.with_session_mut_for_tenant(session_id, tenant_id, |session| {
+        if req.values.iter().any(|&value| value >= session.config.t) {
+            return Err(SessionError::InvalidInput);
+        }
+        session.require_capacity(req.values.len())?;
         let mut ciphertexts = Vec::with_capacity(req.values.len());
         for &value in &req.values {
-            if value >= session.config.t {
-                return Err("invalid value".to_owned());
-            }
-            session
-                .noise_budget
-                .consume(
-                    NoiseOpType::Encrypt,
-                    NoiseBudget::encrypt_cost(&session.config),
-                )
-                .map_err(|error| format!("noise exhausted: {error}"))?;
-            let ciphertext = session
-                .rns_ctx
-                .encrypt_dual_secure(value, &session.dual_keys.public_key);
-            ciphertexts.push(session.dual_ct_to_b64(&ciphertext)?);
+            ciphertexts.push(session.evaluator.encrypt(value)?);
         }
-        session.operation_count += req.values.len() as u64;
+        let ciphertexts = session.publish_batch(&ciphertexts)?;
         Ok(EncryptResponse {
             ciphertexts,
-            noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
+            noise_budget_estimate_millibits: session.last_budget_millibits,
         })
     }) {
         Some(Ok(response)) => serde_json::to_value(&response).map_or_else(
             |_| error_response(500, "INTERNAL_ERROR", "serialization failure"),
             |value| json_response(200, value),
         ),
-        Some(Err(_)) => error_response(400, "ENCRYPT_FAILED", "operation failed"),
+        Some(Err(error)) => session_error_response("ENCRYPT_FAILED", error),
         None => error_response(404, "SESSION_NOT_FOUND", "session does not exist"),
     }
 }
@@ -497,26 +513,30 @@ fn handle_decrypt(
     }
 
     match store.with_session_mut_for_tenant(session_id, tenant_id, |session| {
-        let mut values = Vec::with_capacity(req.ciphertexts.len());
+        let mut ciphertexts = Vec::with_capacity(req.ciphertexts.len());
         for encoded in &req.ciphertexts {
-            let ciphertext = session.dual_ct_from_b64(encoded)?;
+            ciphertexts.push(session.ct_from_b64(encoded)?);
+        }
+        let mut values = Vec::with_capacity(req.ciphertexts.len());
+        for ciphertext in &ciphertexts {
             values.push(
                 session
-                    .rns_ctx
-                    .decrypt_dual(&ciphertext, &session.dual_keys.secret_key),
+                    .client
+                    .decrypt(ciphertext)
+                    .map_err(SessionError::from)?,
             );
         }
         session.operation_count += req.ciphertexts.len() as u64;
-        Ok::<DecryptResponse, String>(DecryptResponse {
+        Ok::<DecryptResponse, SessionError>(DecryptResponse {
             values,
-            noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
+            noise_budget_estimate_millibits: session.last_budget_millibits,
         })
     }) {
         Some(Ok(response)) => serde_json::to_value(&response).map_or_else(
             |_| error_response(500, "INTERNAL_ERROR", "serialization failure"),
             |value| json_response(200, value),
         ),
-        Some(Err(_)) => error_response(400, "DECRYPT_FAILED", "operation failed"),
+        Some(Err(error)) => session_error_response("DECRYPT_FAILED", error),
         None => error_response(404, "SESSION_NOT_FOUND", "session does not exist"),
     }
 }
@@ -534,134 +554,74 @@ fn handle_evaluate(
     if let Err(message) = req.validate() {
         return error_response(400, "INVALID_PAYLOAD", message);
     }
-    let estimated_ct_size = 4 * 1024 * 1024;
-    if req.operations.len().saturating_mul(estimated_ct_size) > MAX_RESPONSE_BYTES {
-        return error_response(413, "PAYLOAD_TOO_LARGE", "reduce batch count");
+    if req
+        .operations
+        .len()
+        .saturating_mul(MAX_ESTIMATED_CIPHERTEXT_RESPONSE_BYTES)
+        > MAX_RESPONSE_BYTES
+    {
+        return error_response(413, "PAYLOAD_TOO_LARGE", "reduce operation count");
     }
-
     match store.with_session_mut_for_tenant(session_id, tenant_id, |session| {
-        let mut results = Vec::with_capacity(req.operations.len());
+        session.require_capacity(req.operations.len())?;
+        let mut results: Vec<CramMainCiphertext> = Vec::with_capacity(req.operations.len());
         for operation in &req.operations {
             let mut ciphertexts = Vec::with_capacity(operation.inputs.len());
             for encoded in &operation.inputs {
-                ciphertexts.push(session.dual_ct_from_b64(encoded)?);
+                ciphertexts.push(session.ct_from_b64(encoded)?);
             }
 
             let result = match operation.op.as_str() {
                 "add" => {
                     if ciphertexts.len() != 2 {
-                        return Err("add requires two inputs".to_owned());
+                        return Err(SessionError::InvalidInput);
                     }
-                    session
-                        .noise_budget
-                        .consume(NoiseOpType::Add, NoiseBudget::add_cost())
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
-                    session.rns_ctx.add_dual(&ciphertexts[0], &ciphertexts[1])
+                    session.evaluator.add(&ciphertexts[0], &ciphertexts[1])?
                 }
                 "sub" => {
                     if ciphertexts.len() != 2 {
-                        return Err("sub requires two inputs".to_owned());
+                        return Err(SessionError::InvalidInput);
                     }
-                    session
-                        .noise_budget
-                        .consume(NoiseOpType::Add, NoiseBudget::add_cost())
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
-                    session.rns_ctx.sub_dual(&ciphertexts[0], &ciphertexts[1])
+                    session.evaluator.sub(&ciphertexts[0], &ciphertexts[1])?
                 }
                 "negate" => {
                     if ciphertexts.len() != 1 {
-                        return Err("negate requires one input".to_owned());
+                        return Err(SessionError::InvalidInput);
                     }
-                    session
-                        .noise_budget
-                        .consume(NoiseOpType::Add, NoiseBudget::add_cost())
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
-                    session.rns_ctx.negate_dual(&ciphertexts[0])
+                    session.evaluator.negate(&ciphertexts[0])?
                 }
                 "add_plain" => {
                     if ciphertexts.len() != 1 {
-                        return Err("add_plain requires one input".to_owned());
+                        return Err(SessionError::InvalidInput);
                     }
-                    let scalar = operation
-                        .scalar
-                        .ok_or_else(|| "add_plain requires scalar".to_owned())?;
-                    if scalar >= session.config.t {
-                        return Err("invalid scalar".to_owned());
-                    }
-                    session
-                        .noise_budget
-                        .consume(NoiseOpType::AddPlain, NoiseBudget::add_plain_cost())
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
-                    session.rns_ctx.add_plain_dual(&ciphertexts[0], scalar)
+                    let scalar = operation.scalar.ok_or(SessionError::InvalidInput)?;
+                    session.evaluator.add_plain(&ciphertexts[0], scalar)?
                 }
                 "mul_plain" => {
                     if ciphertexts.len() != 1 {
-                        return Err("mul_plain requires one input".to_owned());
+                        return Err(SessionError::InvalidInput);
                     }
-                    let scalar = operation
-                        .scalar
-                        .ok_or_else(|| "mul_plain requires scalar".to_owned())?;
-                    if scalar >= session.config.t {
-                        return Err("invalid scalar".to_owned());
-                    }
-                    session
-                        .noise_budget
-                        // `mul_plain_scalar_cost`, not `mul_plain_cost`:
-                        // `mul_plain_dual` builds its multiplier with
-                        // `scalar_to_constant_dual_poly`, a degree-0 polynomial,
-                        // so no ring expansion occurs and the `n` factor would
-                        // over-charge by log2(n) — 13 bits at n=8192. See
-                        // `NoiseBudget::mul_plain_scalar_cost`.
-                        .consume(
-                            NoiseOpType::MulPlain,
-                            NoiseBudget::mul_plain_scalar_cost(scalar),
-                        )
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
-                    session.rns_ctx.mul_plain_dual(&ciphertexts[0], scalar)
+                    let scalar = operation.scalar.ok_or(SessionError::InvalidInput)?;
+                    session.evaluator.mul_plain(&ciphertexts[0], scalar)?
                 }
                 "mul" => {
                     if ciphertexts.len() != 2 {
-                        return Err("mul requires two inputs".to_owned());
+                        return Err(SessionError::InvalidInput);
                     }
                     session
-                        .noise_budget
-                        .consume(
-                            NoiseOpType::MulCt,
-                            NoiseBudget::mul_ct_cost(&session.config),
-                        )
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
-                    session
-                        .noise_budget
-                        .consume(NoiseOpType::Relin, NoiseBudget::relin_cost(&session.config))
-                        .map_err(|error| format!("noise exhausted: {error}"))?;
-                    // No `NoiseBudget::rescale_cost` here, deliberately.
-                    //
-                    // That credit belongs to an RNS prime drop. `mul_dual_public`
-                    // rescales the tensor product by `Delta = M_level / t` and
-                    // consumes no level, and that division is already inside
-                    // `mul_ct_cost` (the FV Lemma-2 bound is stated *after* the
-                    // rescaling). Charging both credited the same division twice
-                    // and under-charged this untrusted-caller-facing path by
-                    // ~16 bits per multiply. See `NoiseBudget::rescale_cost`.
-                    session
-                        .rns_ctx
-                        .mul_dual_public(
-                            &ciphertexts[0],
-                            &ciphertexts[1],
-                            &session.dual_keys.eval_key,
-                        )
-                        .map_err(|error| format!("mul failed: {error}"))?
+                        .evaluator
+                        .multiply(&ciphertexts[0], &ciphertexts[1])?
                 }
-                _ => return Err("unknown operation".to_owned()),
+                _ => return Err(SessionError::InvalidInput),
             };
 
-            results.push(session.dual_ct_to_b64(&result)?);
-            session.operation_count += 1;
+            results.push(result);
         }
 
+        let results = session.publish_batch(&results)?;
         Ok(EvaluateResponse {
             results,
-            noise_budget_estimate_millibits: session.noise_budget.remaining_millibits(),
+            noise_budget_estimate_millibits: session.last_budget_millibits,
             operation_count: session.operation_count,
         })
     }) {
@@ -669,7 +629,7 @@ fn handle_evaluate(
             |_| error_response(500, "INTERNAL_ERROR", "serialization failure"),
             |value| json_response(200, value),
         ),
-        Some(Err(_)) => error_response(400, "EVALUATE_FAILED", "operation failed"),
+        Some(Err(error)) => session_error_response("EVALUATE_FAILED", error),
         None => error_response(404, "SESSION_NOT_FOUND", "session does not exist"),
     }
 }

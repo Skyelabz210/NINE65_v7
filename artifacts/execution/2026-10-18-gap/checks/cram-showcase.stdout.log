@@ -1,0 +1,8 @@
+NINE65 CRAM public evaluator
+Config: secure_128_deep, N=8192
+encrypted 6 + 7 = 13 [verified by client decryption]
+encrypted 6 × 7 = 42 [verified by client decryption]
+encrypted (6 × 97) ÷ 97 = 6 [verified by client decryption]
+division by a non-unit lane divisor was refused [verified]
+cram-public emission ledger: 4 ops (3 lane-local, 1 R8 materialization, 0 elimination-first) — R8 materialization on the hot path (gate-qualified: order-invariant, metered discard, no cascade; see docs/CRAM_PUBLIC_MODE.md M2/M3)
+Public refresh: not demonstrated; native refresh remains disabled.

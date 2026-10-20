@@ -1,0 +1,35 @@
+..................{
+  "manifest": "/tmp/tmp5vxzmteb/manifest.json",
+  "summary": {
+    "cases": 1,
+    "build_failures": 1,
+    "unrun": 0
+  }
+}
+{
+  "manifest": "/tmp/tmplehl0ehm/manifest.json",
+  "summary": {
+    "cases": 1,
+    "build_failures": 0,
+    "unrun": 1
+  }
+}
+{
+  "manifest": "/tmp/tmp6nq3uda3/manifest.json",
+  "summary": {
+    "cases": 1,
+    "process_failures": 0,
+    "missing_or_invalid_results": 0,
+    "operation_correctness_failures": 0,
+    "depth_complete": 0,
+    "depth_stops": 1,
+    "wrong_plaintext": 1,
+    "unsupported": 0,
+    "unrun": 0
+  }
+}
+.
+----------------------------------------------------------------------
+Ran 19 tests in 3.197s
+
+OK

@@ -28,6 +28,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from benchmark_contract import build_command, classify_result, evidence_contract, file_sha256
+
 V7_ROOT = pathlib.Path(__file__).resolve().parents[1]
 PARAMETERS = {
     "n": 4096,
@@ -62,7 +64,10 @@ class RunResult:
 
 
 def run(command: list[str], cwd: pathlib.Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
+    try:
+        return subprocess.run(command, cwd=cwd, text=True, capture_output=True, check=False)
+    except OSError as error:
+        return subprocess.CompletedProcess(command, 127, "", str(error))
 
 
 def command_output(command: list[str], cwd: pathlib.Path) -> str:
@@ -162,6 +167,8 @@ def execute_case(
     log_dir = output_dir / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     result_path.parent.mkdir(parents=True, exist_ok=True)
+    if result_path.exists():
+        raise SystemExit(f"result already exists; choose a fresh output directory: {result_path}")
     started = time.perf_counter_ns()
     completed = run(command, root)
     duration_ns = time.perf_counter_ns() - started
@@ -289,15 +296,17 @@ def normalized_records(
                     "refresh_kind": "none",
                     "hardware_fingerprint": hardware_fingerprint,
                     "threads": 1,
-                    "build_profile": "release",
+                    "build_profile": "debug",
                     "sample_policy": "repeated-process integer average",
                 },
                 "provenance": {
                     "raw_artifacts": sources[(implementation, operation)],
                     "parameter_tuple": PARAMETERS,
                     "security_ranking_allowed": False,
+                    "performance_ranking_allowed": False,
+                    "security_equivalence": "NON_SECURITY_EQUIVALENT",
                     "note": (
-                        "v6 and v7 legacy records are rankable for implementation regression. "
+                        "Debug timings are correctness diagnostics only. "
                         "The v7 DualRNS path is retained as a separate scheme group."
                     ),
                 },
@@ -307,6 +316,14 @@ def normalized_records(
 
 
 def serialize_run(result: RunResult) -> dict[str, object]:
+    if result.label == "v7-comparative":
+        status, divergence = classify_result(result.parsed, result.returncode)
+    elif result.parsed is None:
+        status, divergence = "UNRUN", result.parse_error
+    elif result.parsed.get("depth_chain", {}).get("correct") is False:
+        status, divergence = "WRONG_PLAINTEXT", "v6 depth_chain oracle"
+    else:
+        status, divergence = "UNRUN", "v6 artifact lacks per-operation correctness evidence"
     return {
         "label": result.label,
         "repetition": result.repetition,
@@ -319,6 +336,8 @@ def serialize_run(result: RunResult) -> dict[str, object]:
         "parse_error": result.parse_error,
         "reported_schema": result.parsed.get("schema") if result.parsed else None,
         "reported_status": result.parsed.get("status") if result.parsed else None,
+        "status": status,
+        "first_divergence": divergence,
     }
 
 
@@ -334,6 +353,7 @@ def main() -> int:
     parser.add_argument("--v6-max-depth", type=int, default=8)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--skip-build", action="store_true")
+    parser.add_argument("--cargo-profile", choices=("debug",), default="debug")
     args = parser.parse_args()
 
     if min(
@@ -359,17 +379,7 @@ def main() -> int:
             build(
                 "v6",
                 v6_root,
-                [
-                    "cargo",
-                    "build",
-                    "--release",
-                    "-p",
-                    "nine65",
-                    "--bin",
-                    "nine65_bench",
-                    "--features",
-                    "serde",
-                ],
+                build_command("nine65_bench", args.cargo_profile, insecure=False),
                 output_dir,
             )
         )
@@ -377,17 +387,7 @@ def main() -> int:
             build(
                 "v7",
                 v7_root,
-                [
-                    "cargo",
-                    "build",
-                    "--release",
-                    "-p",
-                    "nine65",
-                    "--bin",
-                    "cram_comparative_probe",
-                    "--features",
-                    "serde,allow_insecure",
-                ],
+                build_command("cram_comparative_probe", args.cargo_profile),
                 output_dir,
             )
         )
@@ -396,12 +396,26 @@ def main() -> int:
                 json.dumps(builds, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
+            (output_dir / "manifest.json").write_text(json.dumps({
+                "schema": "nine65-v6-v7-same-machine-comparison-v1",
+                "status": "BUILD_FAILURE", "builds": builds,
+                "runs": [{"label": label, "repetition": rep, "status": "BUILD_FAILURE"}
+                         for rep in range(args.repetitions) for label in ("v6-legacy", "v7-comparative")],
+                "performance_ranking_allowed": False,
+            }, indent=2) + "\n", encoding="utf-8")
             return 2
 
-    v6_binary = v6_root / "target" / "release" / "nine65_bench"
-    v7_binary = v7_root / "target" / "release" / "cram_comparative_probe"
+    v6_binary = v6_root / "target" / "debug" / "nine65_bench"
+    v7_binary = v7_root / "target" / "debug" / "cram_comparative_probe"
     if not v6_binary.exists() or not v7_binary.exists():
-        raise SystemExit("comparison binary missing after build")
+        (output_dir / "manifest.json").write_text(json.dumps({
+            "schema": "nine65-v6-v7-same-machine-comparison-v1",
+            "status": "UNRUN", "reason": "comparison binary missing", "builds": builds,
+            "runs": [{"label": label, "repetition": rep, "status": "UNRUN"}
+                     for rep in range(args.repetitions) for label in ("v6-legacy", "v7-comparative")],
+            "performance_ranking_allowed": False,
+        }, indent=2) + "\n", encoding="utf-8")
+        return 2
 
     results: list[RunResult] = []
     metadata_failures: list[str] = []
@@ -506,7 +520,7 @@ def main() -> int:
     run_failures = [
         serialize_run(result)
         for result in results
-        if result.returncode != 0 or result.parsed is None
+        if serialize_run(result)["status"] != "PASS"
     ]
     manifest = {
         "schema": "nine65-v6-v7-same-machine-comparison-v1",
@@ -523,6 +537,12 @@ def main() -> int:
         "record_count": len(records),
         "comparison_returncode": comparison_process.returncode,
         "security_ranking_allowed": False,
+        "performance_ranking_allowed": False,
+        "security_equivalence": "NON_SECURITY_EQUIVALENT",
+        "evidence_contract": evidence_contract(v7_root, v7_binary),
+        "v6_cargo_lock_sha256": file_sha256(v6_root / "Cargo.lock"),
+        "v6_binary_sha256": file_sha256(v6_binary),
+        "rustc": command_output(["rustc", "-Vv"], v7_root),
     }
     manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(
@@ -531,7 +551,8 @@ def main() -> int:
     )
     print(json.dumps({"manifest": str(manifest_path), "record_count": len(records)}, indent=2))
 
-    if metadata_failures or run_failures or comparison_process.returncode != 0:
+    if (metadata_failures or run_failures or comparison_process.returncode != 0
+            or any(serialize_run(result)["status"] != "PASS" for result in results)):
         return 1
     return 0
 

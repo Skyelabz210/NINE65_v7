@@ -30,6 +30,7 @@
 
 pub mod boundary;
 pub mod budget;
+pub mod certified;
 
 #[cfg(feature = "exact_rational")]
 pub mod exact_noise;

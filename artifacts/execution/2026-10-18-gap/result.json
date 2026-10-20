@@ -1,0 +1,182 @@
+{
+  "schema": "nine65-session-gap-checkpoint-v1",
+  "status": "ready_for_review",
+  "overall_service_status": "BLOCKED",
+  "source_commit": "0ec19eb2e142f8ae86d86c747c267e65fb5f1f8e",
+  "final_remote_main": "0ec19eb2e142f8ae86d86c747c267e65fb5f1f8e",
+  "branch": "fix/comparison-correctness-gaps",
+  "toolchain": "rustc 1.89.0 (29483883e 2025-08-04); cargo 1.89.0",
+  "files_changed": [
+    ".github/workflows/ci.yml",
+    ".github/workflows/cram_v6_v7_comparative.yml",
+    ".github/workflows/cram_v7_scale_sweep.yml",
+    "crates/nine65/examples/native_cram_bootstrap_oracle.rs",
+    "crates/nine65/src/bin/cram_comparative_probe.rs",
+    "docs/DEEP_DIVE_CANVAS.md",
+    "docs/execution/2026-10-18/GAP_ANALYSIS.md",
+    "scripts/benchmark_contract.py",
+    "scripts/cram_compare_results.py",
+    "scripts/run_nine65_v6_v7_compare.py",
+    "scripts/run_nine65_v7_scale_sweep.py",
+    "scripts/test_benchmark_contract.py"
+  ],
+  "source_sha256": {
+    ".github/workflows/ci.yml": "a0eea67966905b136e02679431876f63e6adc5613d2f2fbbdc19095f12930052",
+    ".github/workflows/cram_v6_v7_comparative.yml": "3799db27c4b124aad82cd44088c097848b2cac44d3326b3538f595e1eec707b4",
+    ".github/workflows/cram_v7_scale_sweep.yml": "31b943570cbfdafef16ee311ea125190b4a1aa1524e01ede7505c12b646019b7",
+    "crates/nine65/examples/native_cram_bootstrap_oracle.rs": "ebda4feff18b519b17cf6bf3703477b6606694ab170f26aca969472f49639b01",
+    "crates/nine65/src/bin/cram_comparative_probe.rs": "48f74ce26030010cf4a320d0f8b1335c88a30e8c68391b183b3663562792a2a8",
+    "docs/DEEP_DIVE_CANVAS.md": "83f7e0937d119f78041b27ae13a891469a3bc70f987881a9f2ce5bfcb35791a3",
+    "docs/execution/2026-10-18/GAP_ANALYSIS.md": "88756345abb6ca08ac67ba491c13f59ada1a7694a02b433a929688580f8d39d9",
+    "scripts/benchmark_contract.py": "5419987938d85aa1f0d5d4e5602e34f7f627ec9386ae09dac7d7283b637cc68f",
+    "scripts/cram_compare_results.py": "4c991ed1753761f31e81b4ace4b711f424ca7f1f292a31d598a1638b8e79cd12",
+    "scripts/run_nine65_v6_v7_compare.py": "63e7f2b75a4a1d1098ec637b3ba40de92d0a446f37cc4b0eef719f7a00f4beb2",
+    "scripts/run_nine65_v7_scale_sweep.py": "44091376acf6312a30c11f87dc13d6bf5b1996aa49aedfecaf738be4a6af5c0d",
+    "scripts/test_benchmark_contract.py": "9c731c4c64c6336a5a261b326af87e6a8184551f6af48778d336f651e7dccc14"
+  },
+  "worktree_manifest_sha256": "effe9fe54bac94dc7aac7040cc4d85a050dc8bf272bde26a1f01e8a77b3ae265",
+  "artifact_sha256": {
+    "artifacts/execution/2026-10-18-gap/checks/benchmark-contract-final.log": "f9b157ddf8ea07c59bf24b7b9c77248746aec20494d69ca9eae952b777855694",
+    "artifacts/execution/2026-10-18-gap/checks/benchmark-contract.log": "cf098d9a8a4c6dddef6447624a27ec40a274507f4d8c297c20c0b97d4540d933",
+    "artifacts/execution/2026-10-18-gap/checks/comparison-analysis.log": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "artifacts/execution/2026-10-18-gap/checks/comparison-reclassification.log": "a3710c7424476ad5b1fbfece1a9107f439db1141f2389e8ecbc01afe285e7d43",
+    "artifacts/execution/2026-10-18-gap/checks/cram-showcase.stdout.log": "879c681465f319afc9025664180526e203cda126f3608e35b13eb8185c3cdd89",
+    "artifacts/execution/2026-10-18-gap/checks/format-diff.log": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "artifacts/execution/2026-10-18-gap/checks/fuzz-encoding-oracle-final.log": "555541d12224bd6bf57244a59f48f1bba784440d11935db86716fa7b185cdf22",
+    "artifacts/execution/2026-10-18-gap/checks/plan-policy.log": "13a271760bff34243f9e80d1282a44891dda14142c369b0a1ab01c9ad2212532",
+    "artifacts/execution/2026-10-18-gap/checks/service-start.log": "e48d9753d62f87a23f95bb95afc323acab068a1f9cedbf564ed518d7b6fc484f",
+    "artifacts/execution/2026-10-18-gap/checks/workspace-final.log": "a0580995c619008a749661678119b68864e87a33fbbcab9ba05c1635dd5ef9dc",
+    "artifacts/execution/2026-10-18-gap/remote-state.json": "139eec339e35240ab504be34836c6884d21788a5636f491dd682e27f9dd45123",
+    "artifacts/execution/2026-10-18-gap/scale-smoke/build.json": "49274ec1cd0867eee7f8ae01d827c0698d85491d243503478b203e2af22eb000",
+    "artifacts/execution/2026-10-18-gap/scale-smoke/cases/0000-v6_compat_4096-s42-i1-m1-d2.json": "7a022113d95525335233d469c09826ed222b5f2761545641e4c8fbd8acac9c64",
+    "artifacts/execution/2026-10-18-gap/scale-smoke/logs/0000-v6_compat_4096-s42-i1-m1-d2.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "artifacts/execution/2026-10-18-gap/scale-smoke/logs/0000-v6_compat_4096-s42-i1-m1-d2.stdout.log": "7d74324c0bb21de99b22507c01540332dd1cb2bcc0e8f980e21ca83be9713916",
+    "artifacts/execution/2026-10-18-gap/scale-smoke/manifest.json": "3b6a77b9c691ad03853f845fc78d10a35223bc44055c5c0f801b76dfb3c9b608"
+  },
+  "cargo_lock_sha256": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1",
+  "checks": [
+    {
+      "name": "benchmark-contract",
+      "command": "python3 scripts/test_benchmark_contract.py",
+      "exit_code": 0,
+      "elapsed_seconds": 6.510008991,
+      "log": "artifacts/execution/2026-10-18-gap/checks/benchmark-contract.log",
+      "log_sha256": "cf098d9a8a4c6dddef6447624a27ec40a274507f4d8c297c20c0b97d4540d933"
+    },
+    {
+      "name": "comparison-analysis",
+      "command": "set -e\npython3 scripts/test_cram_compare_results.py\npython3 scripts/test_analyze_cram_fhe_hypotheses.py",
+      "exit_code": 0,
+      "elapsed_seconds": 1.350507179,
+      "log": "artifacts/execution/2026-10-18-gap/checks/comparison-analysis.log",
+      "log_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "plan-policy",
+      "command": "set -e\npython3 scripts/nine65_execution_plan.py validate --self-test\npython3 scripts/check_required_ci_actor_bypass.py\npython3 -m scripts.test_check_required_ci_actor_bypass",
+      "exit_code": 0,
+      "elapsed_seconds": 3.190321047,
+      "log": "artifacts/execution/2026-10-18-gap/checks/plan-policy.log",
+      "log_sha256": "13a271760bff34243f9e80d1282a44891dda14142c369b0a1ab01c9ad2212532"
+    },
+    {
+      "name": "format-diff",
+      "command": "set -e\ncargo fmt --all -- --check\ngit diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 9.780360794,
+      "log": "artifacts/execution/2026-10-18-gap/checks/format-diff.log",
+      "log_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    {
+      "name": "benchmark-contract-final",
+      "command": "python3 scripts/test_benchmark_contract.py",
+      "exit_code": 0,
+      "elapsed_seconds": 4.536521853,
+      "log": "artifacts/execution/2026-10-18-gap/checks/benchmark-contract-final.log",
+      "log_sha256": "f9b157ddf8ea07c59bf24b7b9c77248746aec20494d69ca9eae952b777855694",
+      "passed": 19,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "name": "workspace-final",
+      "command": "set -e\ncargo clippy --locked --offline -j1 --workspace --all-targets -- -D warnings\ncargo fmt --all -- --check\ngit diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 7.909859884,
+      "log": "artifacts/execution/2026-10-18-gap/checks/workspace-final.log",
+      "log_sha256": "a0580995c619008a749661678119b68864e87a33fbbcab9ba05c1635dd5ef9dc"
+    },
+    {
+      "name": "fuzz-encoding-oracle-final",
+      "command": "set -e\ncargo test --locked --offline -j1 -p nine65 --lib test_saved_fuzz\ncargo test --locked --offline -j1 -p nine65 --lib test_depth_aware_plaintext_scale_roundtrips_all_messages\ncargo test --locked --offline -j1 -p nine65 --example native_cram_bootstrap_oracle",
+      "exit_code": 0,
+      "elapsed_seconds": 3.679417784,
+      "log": "artifacts/execution/2026-10-18-gap/checks/fuzz-encoding-oracle-final.log",
+      "log_sha256": "555541d12224bd6bf57244a59f48f1bba784440d11935db86716fa7b185cdf22",
+      "passed": 12,
+      "failed": 0,
+      "ignored": 0,
+      "scope": "2 saved-fuzz tests, 1 exhaustive encoder test, 9 clear oracle tests"
+    },
+    {
+      "name": "comparison-reclassification",
+      "command": "python3 -c 'import sys,json,pathlib; sys.path.insert(0,\"scripts\"); from benchmark_contract import classify_result; p=next(pathlib.Path(\"artifacts/execution/2026-10-18-gap/scale-smoke/cases\").glob(\"*.json\")); v=json.loads(p.read_text()); status,first=classify_result(v,1); print(json.dumps({\"input\":str(p),\"status\":status,\"first_divergence\":first,\"depth\":v[\"ct_mul_depth\"],\"scope\":\"Reclassification of preserved raw probe output; no ciphertext re-execution\"},indent=2)); assert status==\"UNSUPPORTED\"; assert all(e[\"decrypted\"]==e[\"expected\"] for e in v[\"ct_mul_depth\"][\"entries\"])'",
+      "exit_code": 0,
+      "elapsed_seconds": 0.446071357,
+      "log": "artifacts/execution/2026-10-18-gap/checks/comparison-reclassification.log",
+      "log_sha256": "a3710c7424476ad5b1fbfece1a9107f439db1141f2389e8ecbc01afe285e7d43"
+    },
+    {
+      "name": "cram-showcase",
+      "command": "cargo run --locked --offline -j1 -p nine65 --example cram_public_showcase",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-18-gap/checks/cram-showcase.stdout.log",
+      "log_sha256": "879c681465f319afc9025664180526e203cda126f3608e35b13eb8185c3cdd89",
+      "scope": "Captured runtime stdout; four client-side correctness/refusal assertions"
+    },
+    {
+      "name": "service-start",
+      "command": "CARGO_BUILD_JOBS=1 cargo run --locked --offline -p fhe-service",
+      "exit_code": 1,
+      "build": "PASS",
+      "runtime": "BLOCKED_INFRASTRUCTURE",
+      "log": "artifacts/execution/2026-10-18-gap/checks/service-start.log",
+      "log_sha256": "e48d9753d62f87a23f95bb95afc323acab068a1f9cedbf564ed518d7b6fc484f"
+    }
+  ],
+  "acceptance_evidence": [
+    "Exact upstream commit/tree verified; git fsck passes",
+    "Supported CRAM demo client-decryption assertions pass",
+    "Default-feature workspace strict Clippy and formatting pass",
+    "19 comparison profile/status contract regressions pass",
+    "Focused existing encoding/fuzz and clear-oracle regressions pass"
+  ],
+  "comparison_smoke": {
+    "exit_code": 1,
+    "current_classification": "UNSUPPORTED",
+    "reason": "retired legacy ciphertext multiplication #135; current classifier does not label it a wrong plaintext",
+    "dual_rns_depth_requested": 2,
+    "dual_rns_depth_correct": 2,
+    "first_manifest_preserved": true
+  },
+  "unresolved": [
+    "Sandbox socket bind is denied; no HTTP service is running",
+    "C01/C02/#189: sound immutable producer-issued lineage and noise bounds",
+    "C03/C04: certified main-Q-only service wire/evaluator integration",
+    "Public refresh admission on current tuple; retain Phase-1 refusal",
+    "Current-tip release suite and hosted required checks remain unrun; workflows manual-only",
+    "PR #187 has merge conflicts and four unresolved review threads",
+    "Secure release performance route, raw operation distributions, allocations and worker counts remain unimplemented/unmeasured",
+    "True cross-version v6 execution and external security attestation remain unrun"
+  ],
+  "claims_changed": [
+    "Corrected unsupported repository-wide green claim and written t^2 value; no new depth/security/performance claim"
+  ],
+  "publication": {
+    "committed": false,
+    "pushed": false,
+    "merged": false,
+    "deployed": false
+  },
+  "independent_acceptance": false
+}

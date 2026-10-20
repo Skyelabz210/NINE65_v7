@@ -1,0 +1,331 @@
+{
+  "captured_utc": "2026-10-19T03:40:02.076Z",
+  "source_sha": "0ec19eb2e142f8ae86d86c747c267e65fb5f1f8e",
+  "source_tree": "a6d788a155c0ff4ee1a929f692c5938646f7769a",
+  "open_prs": [
+    {
+      "number": 187,
+      "title": "Update from task 0d260a86-b848-469b-8877-1154a00a8af0",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/pull/187"
+    }
+  ],
+  "pr187": {
+    "number": 187,
+    "merged": false,
+    "mergeable": false,
+    "base_sha": "89d641b35b355f3cd9ddbcd7437df7c2f87ade81",
+    "head_sha": "cca7a8132c92b544492aaf65cc770ccf6c720473",
+    "changed_files": 196,
+    "additions": 34804,
+    "deletions": 171
+  },
+  "pr187_unresolved_threads": [
+    {
+      "path": "crates/exact_transcendentals/src/transduction.rs",
+      "line": 306,
+      "comments": [
+        "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Reject invalid target moduli in `try_build`**\n\nWhen a caller supplies a non-positive target modulus, this supposedly fully fallible constructor still delegates directly to `try_new`: `basis_b = [0]` panics in `modd` during table construction, while a negative target modulus is accepted and produces an invalid map. This is reachable through the new public API with inputs such as `try_build(&[2, 3], &[0])`, so validate `basis_b` and return a typed basis error before constructing the map.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+      ]
+    },
+    {
+      "path": "crates/nine65/src/bin/cram_modulus_probe.rs",
+      "line": 183,
+      "comments": [
+        "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve panic isolation around NTT construction**\n\nThe `--moduli` parser accepts arbitrary `u64` values, but `NTTEngine::try_new` is not panic-free for all of them—for example, modulus `1` passes its divisibility check and then triggers `MontgomeryContext::new`'s `q > 1` assertion, while modulus `0` can underflow in debug builds. Replacing `catch_unwind` with this direct call therefore makes the entire probe abort instead of emitting the intended `REJECTED_CONFIGURATION` record for malformed candidates.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+      ]
+    },
+    {
+      "path": ".gitignore",
+      "line": 2,
+      "comments": [
+        "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Restore ignores for generated repository outputs**\n\nReplacing the existing ignore file with only `target/` exposes generated outputs that repository tooling still creates, including `scripts/__pycache__/`, `bench-results/`, `bench-archive/`, Lean `.lake/` directories, and Coq build files. For example, simply running `python3 scripts/test_cram_compare_results.py` now leaves `scripts/__pycache__/` in `git status`, and benchmark/proof workflows can leave much larger artifacts available for accidental commits; retain the prior generated-artifact rules alongside this Rust target rule.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+      ]
+    },
+    {
+      "path": "scripts/run_cram_exploratory_matrix.py",
+      "line": 318,
+      "comments": [
+        "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Do not advertise an unusable release profile**\n\nWhen `--cargo-profile release` is selected, the runner builds the probe with only the `serde` feature, but the probe always uses a seeded `ShadowHarvester` and its key-generation path calls `require_secure_rng`, which panics in release builds without `allow_insecure`. Enabling that feature is not an alternative because the crate has a release-mode `compile_error!` for it, so every advertised release-profile matrix run aborts before producing result JSON; restrict this option to debug or provide a release-compatible RNG path.\n\nUseful? React with 👍 / 👎.\n\n<!-- codex-code-review-finding:v1 -->"
+      ]
+    }
+  ],
+  "pr188_merged": true,
+  "open_issues": [
+    {
+      "number": 190,
+      "title": "[P1] Split comparison-only debug correctness from secure release performance across both v7 harnesses",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/190"
+    },
+    {
+      "number": 189,
+      "title": "[P0] Authenticate ciphertext lineage: prevent fresh-budget reset and mutable tracked ciphertext substitution",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/189"
+    },
+    {
+      "number": 184,
+      "title": "[A1/WASSAN] End-to-end exactness audit: positional carries, ring semantics, φ claim registry",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/184"
+    },
+    {
+      "number": 178,
+      "title": "[P1] Replace unmaintained bincode serialization dependencies",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/178"
+    },
+    {
+      "number": 176,
+      "title": "[P1] Resolve full-range single-modulus BFV encode/decode exactness near t",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/176"
+    },
+    {
+      "number": 79,
+      "title": "[P0] Restore active GitHub Actions execution and required release checks",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/79"
+    },
+    {
+      "number": 92,
+      "title": "[META] NINE65 v7 completion-to-100% tracker: correctness, security, CI, performance, claims",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/92"
+    },
+    {
+      "number": 157,
+      "title": "Fix GSO symmetric repeated-square plaintext failure at depth 4",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/157"
+    },
+    {
+      "number": 158,
+      "title": "Checked dual decrypt accepts a wrong plaintext at depth 4",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/158"
+    },
+    {
+      "number": 95,
+      "title": "[P0] Replace invalid component-wise BFV bootstrap Phase 1 with a mathematically valid public decryption/encoding transition",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/95"
+    },
+    {
+      "number": 16,
+      "title": "Bootstrap path stress testing - edge cases and error recovery",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/16"
+    },
+    {
+      "number": 73,
+      "title": "[H1] Increase public-mode depth beyond 2-4",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/73"
+    },
+    {
+      "number": 137,
+      "title": "Triage the 15 test failures --no-fail-fast newly surfaced (beyond the known 5 in #117)",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/137"
+    },
+    {
+      "number": 64,
+      "title": "[G2] Make full test suite reproducible in constrained environments",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/64"
+    },
+    {
+      "number": 18,
+      "title": "Security audit - constant-time verification and side-channel hardening",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/18"
+    },
+    {
+      "number": 72,
+      "title": "[G3] Close open constant-time findings F-2 and F-3",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/72"
+    },
+    {
+      "number": 63,
+      "title": "[M4] Stabilize one binding to published package (recommend Python)",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/63"
+    },
+    {
+      "number": 17,
+      "title": "Enable Python bindings via PyO3 (nine65-python crate)",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/17"
+    },
+    {
+      "number": 71,
+      "title": "[G4] Engage external security audit (Trail of Bits / NCC Group / Kudelski)",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/71"
+    },
+    {
+      "number": 74,
+      "title": "[H5] Restore allow_insecure gate without breaking workspace tests",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/74"
+    },
+    {
+      "number": 89,
+      "title": "[P1] Enforce or ratchet the production panic/unwrap/expect quality gate",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/89"
+    },
+    {
+      "number": 84,
+      "title": "[P1] Fix negative-branch DualRNS noise diagnostic ideal-point calculation",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/84"
+    },
+    {
+      "number": 86,
+      "title": "[P1] Harden validated deserialization: reject trailing bytes and context-invalid DualRNS state",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/86"
+    },
+    {
+      "number": 85,
+      "title": "[P1] Make fallible constructors truly fallible: remove production-security panics from try_* APIs",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/85"
+    },
+    {
+      "number": 94,
+      "title": "[P1] Harden fhe-service HTTP framing: reject ambiguous lengths and preserve/disable keep-alive pipelining",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/94"
+    },
+    {
+      "number": 75,
+      "title": "[G1] Run external lattice-estimator attestation for all shipped parameter sets",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/75"
+    },
+    {
+      "number": 88,
+      "title": "[P1] Remove unchecked security labeling from FHEConfig::custom and for_depth",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/88"
+    },
+    {
+      "number": 83,
+      "title": "[P1] Make bootstrap security validation exact and non-tautological",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/83"
+    },
+    {
+      "number": 82,
+      "title": "[P0] Fix bootstrap circular public-key mask sampling to be uniform over full Q_boot",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/82"
+    },
+    {
+      "number": 69,
+      "title": "[L1] Fix 4 compiler warnings (unused variables, dead code)",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/69"
+    },
+    {
+      "number": 29,
+      "title": "Restore recumbent CRAM bootstrap and exact RNS context metadata after PR #26",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/29"
+    },
+    {
+      "number": 67,
+      "title": "[M1] Remove or clearly mark deprecated Coq proofs as historical",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/issues/67"
+    }
+  ],
+  "hosted_runs": [
+    {
+      "id": 39009000453,
+      "name": "CRAM Recumbency Follow-up Gate",
+      "conclusion": "failure",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000453"
+    },
+    {
+      "id": 39009000435,
+      "name": "Audit Remediation Gate",
+      "conclusion": "failure",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000435"
+    },
+    {
+      "id": 39009000440,
+      "name": "CRAM residue-native gates",
+      "conclusion": "failure",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000440"
+    },
+    {
+      "id": 39009000382,
+      "name": "NINE65 v7 comparative scale sweep",
+      "conclusion": "failure",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000382"
+    },
+    {
+      "id": 39009000462,
+      "name": "CRAM exploratory FHE matrix",
+      "conclusion": "failure",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000462"
+    },
+    {
+      "id": 39009000461,
+      "name": "NINE65 v6 v7 comparative harness",
+      "conclusion": "failure",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000461"
+    },
+    {
+      "id": 39009000441,
+      "name": "Exactness Focused Gates",
+      "conclusion": "success",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000441"
+    },
+    {
+      "id": 39009000467,
+      "name": "CI",
+      "conclusion": "failure",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000467"
+    },
+    {
+      "id": 39009000448,
+      "name": "CRAM-public gates",
+      "conclusion": "success",
+      "head_sha": "59084fe4b58cd857cad10482f432c6c605fbb96f",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009000448"
+    },
+    {
+      "id": 38517099674,
+      "name": "CI",
+      "conclusion": "failure",
+      "head_sha": "89d641b35b355f3cd9ddbcd7437df7c2f87ade81",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/38517099674"
+    },
+    {
+      "id": 38517099628,
+      "name": "CRAM-public gates",
+      "conclusion": "success",
+      "head_sha": "89d641b35b355f3cd9ddbcd7437df7c2f87ade81",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/38517099628"
+    },
+    {
+      "id": 38517099782,
+      "name": "Constant-Time Verification",
+      "conclusion": "success",
+      "head_sha": "89d641b35b355f3cd9ddbcd7437df7c2f87ade81",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/38517099782"
+    },
+    {
+      "id": 38517099724,
+      "name": "Audit Remediation Gate",
+      "conclusion": "failure",
+      "head_sha": "89d641b35b355f3cd9ddbcd7437df7c2f87ade81",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/38517099724"
+    },
+    {
+      "id": 38517099703,
+      "name": "CRAM Recumbency Follow-up Gate",
+      "conclusion": "failure",
+      "head_sha": "89d641b35b355f3cd9ddbcd7437df7c2f87ade81",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/38517099703"
+    },
+    {
+      "id": 38517099741,
+      "name": "Exactness Focused Gates",
+      "conclusion": "success",
+      "head_sha": "89d641b35b355f3cd9ddbcd7437df7c2f87ade81",
+      "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/38517099741"
+    }
+  ],
+  "sync": {
+    "method": "Verified GitHub connector objects; shallow partial checkout because shell DNS is restricted",
+    "missing_binary_paths": [
+      "archive/artifacts/collected_logs_reports.tar.gz",
+      "lean4/KElimination/docs/assets/k_elimination_diagram.png",
+      "lean4/KElimination/docs/k_elimination_diagram.png"
+    ],
+    "submodule": "NINE65-Rust-Guide remains uninitialized"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "input": "artifacts/execution/2026-10-18-gap/scale-smoke/cases/0000-v6_compat_4096-s42-i1-m1-d2.json",
+  "status": "UNSUPPORTED",
+  "first_divergence": {
+    "path": "legacy",
+    "operation": "mul_ct",
+    "reason": "refused-#135"
+  },
+  "depth": {
+    "all_completed_entries_correct": true,
+    "completed": 2,
+    "entries": [
+      {
+        "correct": true,
+        "decrypted": 64,
+        "depth": 1,
+        "expected": 64,
+        "level_after": 3,
+        "level_before": 3,
+        "mismatch_delta_mod_t": 0,
+        "operation_ns": 35983067546
+      },
+      {
+        "correct": true,
+        "decrypted": 4096,
+        "depth": 2,
+        "expected": 4096,
+        "level_after": 3,
+        "level_before": 3,
+        "mismatch_delta_mod_t": 0,
+        "operation_ns": 34286443984
+      }
+    ],
+    "first_error": null,
+    "requested": 2
+  },
+  "scope": "Reclassification of preserved raw probe output; no ciphertext re-execution"
+}

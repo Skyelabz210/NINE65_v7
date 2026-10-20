@@ -1,7 +1,10 @@
 //! Session management — FHE key material and state per tenant session.
 
-use nine65::noise::budget::NoiseBudget;
-use nine65::ops::rns_fhe::{DualRNSCiphertext, DualRNSFullKeySet, RNSFHEContext};
+use base64::{engine::general_purpose::STANDARD, Engine};
+use nine65::ops::cram_main::wire_q::MainQTransport;
+use nine65::ops::cram_main::{
+    CramMainCiphertext, CramMainClient, CramMainError, CramMainEvaluator,
+};
 use nine65::params::secure_configs::SecureConfig;
 use nine65::params::FHEConfig;
 
@@ -24,18 +27,37 @@ fn generate_session_id() -> Result<String, &'static str> {
     Ok(hex)
 }
 
-/// Server-key-holder DualRNS session bound to one authenticated tenant.
+/// Server-key-holder main-Q session bound to one authenticated tenant.
 pub struct Session {
     pub session_id: String,
     pub tenant_id: String,
     pub config_name: String,
     pub config: FHEConfig,
-    pub noise_budget: NoiseBudget,
+    /// Display value for the last result batch, never used for admission.
+    pub last_budget_millibits: i64,
     pub operation_count: u64,
     pub created_at: u64,
     pub last_accessed: u64,
-    pub rns_ctx: RNSFHEContext,
-    pub dual_keys: DualRNSFullKeySet,
+    pub evaluator: CramMainEvaluator,
+    pub client: CramMainClient,
+    transport: MainQTransport,
+}
+
+#[derive(Debug)]
+pub enum SessionError {
+    InvalidInput,
+    NoiseExhausted,
+    Capacity,
+    Operation,
+}
+
+impl From<CramMainError> for SessionError {
+    fn from(error: CramMainError) -> Self {
+        match error {
+            CramMainError::NoiseExhausted(_) => Self::NoiseExhausted,
+            _ => Self::Operation,
+        }
+    }
 }
 
 impl Session {
@@ -53,9 +75,10 @@ impl Session {
         };
 
         let config = secure_config.into_config();
-        let noise_budget = NoiseBudget::from_config(&config);
-        let rns_ctx = RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
-        let dual_keys = rns_ctx.generate_keys_dual_full_secure();
+        let (client, evaluator) =
+            CramMainEvaluator::generate(&config).map_err(|_| "main-Q context creation failed")?;
+        let last_budget_millibits = evaluator.fresh_budget_millibits();
+        let transport = evaluator.transport(4096);
         let now = crate::unix_now_seconds();
 
         Ok(Self {
@@ -63,12 +86,13 @@ impl Session {
             tenant_id: tenant_id.to_owned(),
             config_name: config_name.to_owned(),
             config,
-            noise_budget,
+            last_budget_millibits,
             operation_count: 0,
             created_at: now,
             last_accessed: now,
-            rns_ctx,
-            dual_keys,
+            evaluator,
+            client,
+            transport,
         })
     }
 
@@ -101,31 +125,7 @@ impl Session {
     #[cfg(test)]
     #[allow(dead_code)]
     pub fn new_test(config_name: &str) -> Result<Self, &'static str> {
-        let secure_config = match config_name {
-            "secure_128" => SecureConfig::secure_128(),
-            "secure_192" => SecureConfig::secure_192(),
-            "secure_256" => SecureConfig::secure_256(),
-            _ => return Err("unsupported config"),
-        };
-
-        let config = secure_config.into_config();
-        let noise_budget = NoiseBudget::from_config(&config);
-        let rns_ctx = RNSFHEContext::try_new(&config).map_err(|_| "RNS context creation failed")?;
-        let dual_keys = rns_ctx.generate_keys_dual_full_secure();
-        let now = crate::unix_now_seconds();
-
-        Ok(Self {
-            session_id: generate_session_id()?,
-            tenant_id: "test".to_string(),
-            config_name: config_name.to_owned(),
-            config,
-            noise_budget,
-            operation_count: 0,
-            created_at: now,
-            last_accessed: now,
-            rns_ctx,
-            dual_keys,
-        })
+        Self::new_for_tenant(config_name, "test")
     }
 
     pub fn params(&self) -> SessionParams {
@@ -143,28 +143,49 @@ impl Session {
         }
     }
 
-    /// Deliberately refuses to export a dual-RNS ciphertext.
-    ///
-    /// The anchor limbs are operation-local CRAM state.  Publishing them with
-    /// the mod-Q ciphertext violates the WIRE-Q boundary.  A future transport
-    /// path must project a verified transient computation to the single-RNS
-    /// mod-Q wire type before it reaches this service boundary.
-    pub fn dual_ct_to_b64(&self, _ciphertext: &DualRNSCiphertext) -> Result<String, String> {
-        Err(
-            "WIRE-Q: dual-RNS ciphertext export is disabled; project to the single-RNS mod-Q wire type first"
-                .to_string(),
-        )
+    pub fn require_capacity(&self, count: usize) -> Result<(), SessionError> {
+        if count > self.transport.remaining_capacity() {
+            Err(SessionError::Capacity)
+        } else {
+            Ok(())
+        }
     }
 
-    /// Deliberately refuses to import a dual-RNS ciphertext from the wire.
-    ///
-    /// This rejects before base64 decoding or allocation so untrusted input
-    /// cannot revive the retired anchor-bearing wire format.
-    pub fn dual_ct_from_b64(&self, _encoded: &str) -> Result<DualRNSCiphertext, String> {
-        Err(
-            "WIRE-Q: dual-RNS ciphertext import is disabled; accept only the single-RNS mod-Q wire type"
-                .to_string(),
-        )
+    pub fn publish_batch(
+        &mut self,
+        ciphertexts: &[CramMainCiphertext],
+    ) -> Result<Vec<String>, SessionError> {
+        self.require_capacity(ciphertexts.len())?;
+        let mut encoded = Vec::with_capacity(ciphertexts.len());
+        for ct in ciphertexts {
+            encoded.push(
+                STANDARD.encode(
+                    self.transport
+                        .export(ct)
+                        .map_err(|_| SessionError::Operation)?,
+                ),
+            );
+        }
+        self.last_budget_millibits = ciphertexts
+            .iter()
+            .map(CramMainCiphertext::remaining_millibits)
+            .min()
+            .unwrap_or(self.last_budget_millibits);
+        self.operation_count += ciphertexts.len() as u64;
+        Ok(encoded)
+    }
+
+    pub fn ct_from_b64(&self, encoded: &str) -> Result<CramMainCiphertext, SessionError> {
+        let expected = self.transport.encoded_len().div_ceil(3) * 4;
+        if encoded.len() != expected {
+            return Err(SessionError::InvalidInput);
+        }
+        let bytes = STANDARD
+            .decode(encoded)
+            .map_err(|_| SessionError::InvalidInput)?;
+        self.transport
+            .import(&bytes)
+            .map_err(|_| SessionError::InvalidInput)
     }
 }
 
@@ -320,9 +341,7 @@ mod tests {
     #[test]
     fn dual_rns_wire_boundary_is_fail_closed() {
         let session = Session::new_test("secure_128").expect("test session");
-        let err = session
-            .dual_ct_from_b64("AA==")
-            .expect_err("dual-RNS wire input must be rejected");
-        assert!(err.starts_with("WIRE-Q:"));
+        let err = session.ct_from_b64("AA==");
+        assert!(matches!(err, Err(SessionError::InvalidInput)));
     }
 }

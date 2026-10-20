@@ -1,0 +1,3 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 44s
+     Running `target/debug/fhe-service`
+Error: Os { code: 1, kind: PermissionDenied, message: "Operation not permitted" }

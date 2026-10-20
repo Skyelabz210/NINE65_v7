@@ -1,0 +1,41 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.08s
+     Running unittests src/lib.rs (target/debug/deps/nine65-22164d61dd17bb7e)
+
+running 2 tests
+test ops::encrypt::tests::test_saved_fuzz_roundtrip_seed ... ok
+test ops::homomorphic::tests::test_saved_fuzz_addition_at_plaintext_boundary ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1057 filtered out; finished in 0.50s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running unittests src/lib.rs (target/debug/deps/nine65-22164d61dd17bb7e)
+
+running 1 test
+test ops::encrypt::tests::test_depth_aware_plaintext_scale_roundtrips_all_messages ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1058 filtered out; finished in 0.02s
+
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+     Running unittests examples/native_cram_bootstrap_oracle.rs (target/debug/examples/native_cram_bootstrap_oracle-97ae8d1e80ff5129)
+
+running 9 tests
+test tests::test_a_composite ... ok
+test tests::test_boundary_cases ... ok
+test tests::test_canonical_low_digit_lift ... ok
+test tests::test_full_quotient_property ... ok
+test tests::test_gate_c ... ok
+test tests::test_k_exact_bounded_free ... ok
+test tests::test_random_sampling ... ok
+test tests::test_range_certificate_automatic ... ok
+test tests::test_starlift_identities ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s

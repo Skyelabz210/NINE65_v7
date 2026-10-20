@@ -66,6 +66,7 @@ pub use rns_fhe::{
 // WR-1 derived-transient exact evaluator multiply. Lives under `rns_fhe` so it
 // can use that module's private polynomial helpers; surfaced here so callers
 // see it as `ops::exact_mul`.
+pub use rns_fhe::cram_main;
 pub use rns_fhe::exact_mul;
 pub use rns_fhe::exact_mul::{
     ExactMulCertificate, ExactMulError, ExactMulEvaluator, ExactMulPlan, ExactTensor3,

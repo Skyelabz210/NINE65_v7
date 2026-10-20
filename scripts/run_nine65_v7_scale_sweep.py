@@ -23,8 +23,10 @@ from dataclasses import asdict, dataclass
 from itertools import product
 from typing import Any
 
+from benchmark_contract import build_command, classify_result, evidence_contract
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BINARY = ROOT / "target" / "release" / "cram_comparative_probe"
+BINARY = ROOT / "target" / "debug" / "cram_comparative_probe"
 
 
 @dataclass(frozen=True)
@@ -135,27 +137,16 @@ def hardware_metadata() -> dict[str, object]:
 
 
 def run(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        command,
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    try:
+        return subprocess.run(
+            command, cwd=ROOT, text=True, capture_output=True, check=False,
+        )
+    except OSError as error:
+        return subprocess.CompletedProcess(command, 127, "", str(error))
 
 
-def build_probe() -> dict[str, object]:
-    command = [
-        "cargo",
-        "build",
-        "--release",
-        "-p",
-        "nine65",
-        "--bin",
-        "cram_comparative_probe",
-        "--features",
-        "serde,allow_insecure",
-    ]
+def build_probe(cargo_profile: str = "debug") -> dict[str, object]:
+    command = build_command("cram_comparative_probe", cargo_profile)
     started = time.perf_counter_ns()
     completed = run(command)
     return {
@@ -171,6 +162,10 @@ def make_cases(args: argparse.Namespace) -> list[Case]:
     profile = PROFILES[args.profile]
     configs = parse_csv(args.configs) if args.configs else profile.configs
     seeds = parse_int_csv(args.seeds) if args.seeds else profile.seeds
+    if not configs or not seeds:
+        raise SystemExit("configuration and seed lists must contain at least one entry")
+    if any(seed < 0 or seed > (1 << 64) - 1 for seed in seeds):
+        raise SystemExit("seeds must fit unsigned 64-bit integers")
     iterations = args.iterations or profile.iterations
     mul_iterations = args.mul_iterations or profile.mul_iterations
     depth = args.ct_mul_depth or profile.ct_mul_depth
@@ -210,6 +205,8 @@ def execute(case: Case, output_dir: pathlib.Path) -> dict[str, object]:
     stderr_path = output_dir / "logs" / f"{case.case_id}.stderr.log"
     result_path.parent.mkdir(parents=True, exist_ok=True)
     stdout_path.parent.mkdir(parents=True, exist_ok=True)
+    if result_path.exists():
+        raise SystemExit(f"result already exists; choose a fresh output directory: {result_path}")
     command = [
         str(BINARY),
         "--config",
@@ -235,12 +232,24 @@ def execute(case: Case, output_dir: pathlib.Path) -> dict[str, object]:
     stdout_path.write_text(completed.stdout, encoding="utf-8")
     stderr_path.write_text(completed.stderr, encoding="utf-8")
     payload, parse_error = load_result(result_path)
+    status, first_divergence = classify_result(payload, completed.returncode)
     depth = payload.get("ct_mul_depth", {}) if payload else {}
+    depth = depth if isinstance(depth, dict) else {}
+    entries = depth.get("entries", [])
+    entries = entries if isinstance(entries, list) else []
+    metadata = payload.get("metadata", {}) if payload else {}
+    metadata = metadata if isinstance(metadata, dict) else {}
     depth_complete = bool(
         isinstance(depth, dict)
         and depth.get("completed") == depth.get("requested")
         and depth.get("all_completed_entries_correct") is True
         and depth.get("first_error") is None
+        and len(entries) == depth.get("requested")
+        and len(entries) > 0
+        and all(isinstance(entry, dict) and entry.get("correct") is True
+                and isinstance(entry.get("expected"), int)
+                and isinstance(entry.get("decrypted"), int)
+                and entry["decrypted"] == entry["expected"] for entry in entries)
     )
     return {
         "case": asdict(case),
@@ -253,7 +262,11 @@ def execute(case: Case, output_dir: pathlib.Path) -> dict[str, object]:
         "stderr_path": str(stderr_path.relative_to(output_dir)),
         "parse_error": parse_error,
         "schema": payload.get("schema") if payload else None,
-        "status": payload.get("status") if payload else None,
+        "status": status,
+        "first_divergence": first_divergence,
+        "reported_status": payload.get("status") if payload else None,
+        "tuple_fingerprint": canonical_hash({key: metadata.get(key)
+                                              for key in ("n", "rns_primes", "plaintext_modulus", "eta")}) if payload else None,
         "operation_correctness_pass": payload.get("status") == "PASS" if payload else False,
         "depth_complete": depth_complete,
         "depth_completed": depth.get("completed") if isinstance(depth, dict) else None,
@@ -270,8 +283,17 @@ def summarize(records: list[dict[str, object]]) -> dict[str, int]:
         "operation_correctness_failures": 0,
         "depth_complete": 0,
         "depth_stops": 0,
+        "wrong_plaintext": 0,
+        "unsupported": 0,
+        "unrun": 0,
     }
     for record in records:
+        if record["status"] == "WRONG_PLAINTEXT":
+            summary["wrong_plaintext"] += 1
+        elif record["status"] == "UNSUPPORTED":
+            summary["unsupported"] += 1
+        elif record["status"] == "UNRUN":
+            summary["unrun"] += 1
         if record["returncode"] != 0:
             summary["process_failures"] += 1
         if record["parse_error"] or record["schema"] != "nine65-comparative-probe-v1":
@@ -288,6 +310,8 @@ def summarize(records: list[dict[str, object]]) -> dict[str, int]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", choices=tuple(PROFILES), default="quick")
+    parser.add_argument("--cargo-profile", choices=("debug",), default="debug",
+                        help="Seeded fixtures support debug correctness only; no release performance claims")
     parser.add_argument("--configs", default="")
     parser.add_argument("--seeds", default="")
     parser.add_argument("--iterations", type=int, default=0)
@@ -309,22 +333,24 @@ def main() -> int:
     output_dir = args.output_dir or ROOT / "artifacts" / "v7_scale_sweep" / created
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    cases = make_cases(args)
     build: dict[str, object] = {"skipped": True}
     if not args.skip_build:
-        build = build_probe()
+        build = build_probe(args.cargo_profile)
         (output_dir / "build.json").write_text(
             json.dumps(build, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
-        if build["returncode"] != 0:
-            print(json.dumps(build, indent=2, sort_keys=True))
-            return 2
-    if not BINARY.exists():
-        raise SystemExit(f"probe binary missing: {BINARY}")
-
-    cases = make_cases(args)
-    records = [execute(case, output_dir) for case in cases]
-    summary = summarize(records)
+    build_failed = build.get("returncode", 0) != 0
+    if build_failed or not BINARY.exists():
+        records = [{"case": asdict(case), "status": "BUILD_FAILURE" if build_failed else "UNRUN",
+                    "first_divergence": "build failed" if build_failed else "probe binary missing"}
+                   for case in cases]
+        summary = {"cases": len(cases), "build_failures": len(cases) if build_failed else 0,
+                   "unrun": 0 if build_failed else len(cases)}
+    else:
+        records = [execute(case, output_dir) for case in cases]
+        summary = summarize(records)
     hardware = hardware_metadata()
     manifest = {
         "schema": "nine65-v7-scale-sweep-v1",
@@ -334,6 +360,8 @@ def main() -> int:
         "branch": git_output("rev-parse", "--abbrev-ref", "HEAD"),
         "dirty": git_output("status", "--porcelain") != "",
         "profile": args.profile,
+        "evidence_contract": evidence_contract(ROOT, BINARY),
+        "rustc": command_output(["rustc", "-Vv"]),
         "hardware": hardware,
         "hardware_fingerprint": canonical_hash(hardware),
         "build": build,
@@ -350,10 +378,14 @@ def main() -> int:
     )
     print(json.dumps({"manifest": str(manifest_path), "summary": summary}, indent=2))
 
+    if build_failed or not BINARY.exists():
+        return 2
+
     hard_failure = (
         summary["process_failures"] > 0
         or summary["missing_or_invalid_results"] > 0
         or summary["operation_correctness_failures"] > 0
+        or any(record["status"] in ("WRONG_PLAINTEXT", "UNRUN") for record in records)
     )
     if args.require_depth_complete and summary["depth_stops"] > 0:
         hard_failure = True

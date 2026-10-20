@@ -178,7 +178,7 @@ def normalize_probe_manifest(
                         "refresh_kind": metadata.get("refresh_kind"),
                         "hardware_fingerprint": hardware_fingerprint,
                         "threads": 1,
-                        "build_profile": "release",
+                        "build_profile": manifest.get("cargo_profile", "UNVERIFIED"),
                         "sample_policy": (
                             f"chain:{metadata.get('workload')}:"
                             f"refresh={metadata.get('refresh_mode')}:"
@@ -191,6 +191,7 @@ def normalize_probe_manifest(
                         "command": matrix_record.get("command"),
                         "raw_artifact": str(result_path),
                         "matrix_manifest": str(path),
+                        "performance_ranking_allowed": manifest.get("performance_ranking_allowed", False),
                     },
                     "source_file": str(result_path),
                 }
@@ -253,16 +254,23 @@ def group_report(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 and left["metrics"]["correctness"].get("trials", 0) > 0
                 and right["metrics"]["correctness"].get("trials", 0) > 0
             )
+            profile_gate = key[COMPATIBILITY_FIELDS.index("build_profile") + 1] == "release"
+            evidence_gate = all(
+                entry["provenance"].get("performance_ranking_allowed", True) is True
+                for entry in (left, right)
+            )
+            ranking_allowed = correctness_gate and profile_gate and evidence_gate
             comparisons.append(
                 {
                     "left": f"{left['implementation']}@{left['version']}",
                     "right": f"{right['implementation']}@{right['version']}",
-                    "left_over_right_median": ratio if correctness_gate else None,
-                    "ranking_allowed": correctness_gate,
+                    "left_over_right_median": ratio if ranking_allowed else None,
+                    "ranking_allowed": ranking_allowed,
                     "correctness_gate": correctness_gate,
                     "blocked_reason": None
-                    if correctness_gate
-                    else "one or both records lack a passing correctness trial",
+                    if ranking_allowed
+                    else ("one or both records lack a passing correctness trial" if not correctness_gate
+                          else "debug or explicitly non-performance evidence cannot support ranking"),
                 }
             )
         compatibility = {
@@ -322,7 +330,8 @@ def main() -> int:
         "incompatibility_dimension_counts": incompatibility_summary(records),
         "ranking_rule": (
             "Records must share every compatibility field and each record must have "
-            "at least one trial with zero recorded failures."
+            "at least one trial with zero recorded failures, a release build profile, "
+            "and no explicit prohibition on performance ranking."
         ),
     }
     rendered = json.dumps(output, indent=2, sort_keys=True)

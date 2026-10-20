@@ -140,6 +140,8 @@ jobs:
 
       - name: Reject actor-dependent required-job bypasses
         run: python3 scripts/check_required_ci_actor_bypass.py
+      - name: Verify comparison profile and evidence contract
+        run: python3 scripts/test_benchmark_contract.py
 
       - name: Test required-job bypass scanner
         run: python3 -m unittest scripts.test_check_required_ci_actor_bypass
