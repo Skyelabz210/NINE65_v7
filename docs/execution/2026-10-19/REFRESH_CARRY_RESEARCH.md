@@ -31,6 +31,33 @@ This correspondence is a derivation here, not a theorem claimed from a
 tropical paper. In particular, it supplies an identity for K, not a public
 procedure to compute secret-dependent K cheaply under encryption.
 
+## What the ultradiscrete analogy buys—and what it does not
+
+The carry update has a small exact state:
+
+```text
+x' = sigma_Q(x + v)
+c  = (x + v - x') / Q
+```
+
+For a block of signed terms `v_i`, the state transition composes and telescopes
+to `x' = sigma_Q(x + sum(v_i))`; the block's total carry is
+`(x + sum(v_i) - x')/Q`. Thus the carry is the integer winding of a lifted
+translation on `Z/QZ`. As a function of the integer lift it is piecewise
+constant, while the representative update is piecewise affine. This is the
+precise ultradiscrete-like feature: an integer, piecewise-linear lift with a
+lattice winding, not a replacement of BFV arithmetic by max-plus arithmetic.
+
+The new `composable_translation_block_cases` check exhaustively compares
+stepwise accumulation, one-shot quotient, and every two-block split for small
+odd moduli. It tests associativity/composability of the carry state, not
+integrability. The state summary does not make the hidden carry public or
+cheaper: evaluating a secret-dependent term still needs an encrypted sign or
+threshold decision. No conserved spectral data, Toda map, or tropical Abel-Jacobi
+coordinate has been identified for NINE65. The connection is therefore a
+useful exact model for a possible encrypted carry transducer, not evidence that
+the existing refresh circuit is solved.
+
 [Mikhalkin–Zharkov](https://arxiv.org/abs/math/0612267), sections 5–6,
 describe tropical Jacobians as real vector spaces modulo period lattices;
 the Abel–Jacobi construction is independent of path modulo that lattice.
@@ -121,6 +148,8 @@ Run `python3 scripts/refresh_carry_bridge.py`. The
 binds both Python sources by SHA-256. It checks:
 
 - 34,856 centered-section cocycle triples;
+- 14,094 composable translation-block cases, comparing iterative carry,
+  one-shot quotient and every two-block split;
 - 3,825 scalar and 5,625 exhaustive N=2 negacyclic cases; 3,116 cases expose
   a wrong uncorrected affine answer, while the corrected identity holds;
 - 1,284 contractions and 8,988 expanded-winding invariance cases;

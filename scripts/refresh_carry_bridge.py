@@ -28,6 +28,24 @@ def carry(a, b, modulus):
             - centered(a + b, modulus)) // modulus
 
 
+def carry_step(state, term, modulus):
+    """Advance one centered representative and return its integer winding."""
+    if centered(state, modulus) != state:
+        raise ValueError("carry state must be the centered representative")
+    next_state = centered(state + term, modulus)
+    winding = (state + term - next_state) // modulus
+    return next_state, winding
+
+
+def carry_block(state, terms, modulus):
+    """Compose local carry steps; equivalent to one translation by sum(terms)."""
+    winding = 0
+    for term in terms:
+        state, increment = carry_step(state, term, modulus)
+        winding += increment
+    return state, winding
+
+
 def convolution(a, b):
     n = len(a)
     result = [0] * n
@@ -69,12 +87,33 @@ def component_case(c0, c1, secret, q, t):
 
 def run():
     cocycles = scalar_cases = ring_cases = affine_failures = 0
+    transfer_cases = 0
     for q in (3, 5, 17, 31):
         for a, b, c in itertools.product(range(q), repeat=3):
             assert carry(a, b, q) + carry(a + b, c, q) == (
                 carry(b, c, q) + carry(a, b + c, q)
             )
             cocycles += 1
+    # The cocycle is a composable lift of translations on Z/QZ. Exhaustively
+    # check that a block's winding equals the one-shot quotient and is
+    # independent of where a sequence is split into sub-blocks.
+    for q in (3, 5, 7):
+        radius = q // 2
+        terms = range(-radius, radius + 1)
+        for initial in range(-radius, radius + 1):
+            for length in range(4):
+                for sequence in itertools.product(terms, repeat=length):
+                    final_state, total_winding = carry_block(initial, sequence, q)
+                    direct_state = centered(initial + sum(sequence), q)
+                    direct_winding = (initial + sum(sequence) - direct_state) // q
+                    assert (final_state, total_winding) == (direct_state, direct_winding)
+                    for split in range(length + 1):
+                        middle, left_winding = carry_block(initial, sequence[:split], q)
+                        final, right_winding = carry_block(middle, sequence[split:], q)
+                        assert (final, left_winding + right_winding) == (
+                            final_state, total_winding
+                        )
+                        transfer_cases += 1
     for q, t in ((5, 3), (17, 5), (31, 7)):
         values = range(-q // 2 + 1, q // 2 + 1)
         for a, b, s in itertools.product(values, values, (-1, 0, 1)):
@@ -133,6 +172,7 @@ def run():
         "source_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},
         "checks": {
             "centered_section_cocycle_triples": cocycles,
+            "composable_translation_block_cases": transfer_cases,
             "scalar_component_cases": scalar_cases,
             "negacyclic_n2_cases": ring_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,
