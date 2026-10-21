@@ -3,6 +3,7 @@
 
 use super::evaluate_centered_components;
 use super::safe_basis_precharge_tests::{decode_indices, inverse, precharge, signed_secret};
+use crate::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use crate::arithmetic::main_only_base_ext::MainOnlyBaseExt;
 use crate::arithmetic::rns::U256;
 use crate::arithmetic::RNSPolynomial;
@@ -228,10 +229,12 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
     }
     assert!(assembly_error < qb / config.t as u128 / 4);
     let indices = [0, 1, config.n / 3, config.n / 2, config.n - 2, config.n - 1];
+    let all_indices: Vec<_> = (0..config.n).collect();
     let original = work.encrypt_dual(7, &work_keys.public_key, &mut rng);
     let injected = q / (8 * config.t as u128);
     let mut checked = 0;
     let mut nonzero = 0;
+    let mut affine_only_failures = 0;
     for offset_sign in [0i128, 1, -1] {
         let mut input = original.clone();
         let offset = offset_sign * injected as i128;
@@ -306,6 +309,93 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
         assert_eq!(root.len(), 8, "preserve the intact encrypted priming root");
         // End evaluator boundary. Everything below is an independent oracle.
         let r = residual_oracle(&work, &input);
+        // Exercise the complete hidden negacyclic sum for all three input
+        // residual profiles, not just sampled coefficients.
+        let expected_all: Vec<_> = (0..config.n)
+            .map(|j| carry_oracle(&r, &secret, q, j))
+            .collect();
+        assert!(expected_all
+            .iter()
+            .all(|(_, g)| g.unsigned_abs() <= public_g_bound));
+        let decoded_all = decode_indices(
+            &boot,
+            &carry,
+            &boot_keys.secret_key,
+            &all_indices,
+            total_bound,
+        );
+        for ((&j, &actual), &(k, _)) in all_indices.iter().zip(&decoded_all).zip(&expected_all) {
+            assert_eq!(
+                actual as i128,
+                k.rem_euclid(config.t as i128),
+                "full native carry at j={j}, offset_sign={offset_sign}"
+            );
+            assert!(k.unsigned_abs() <= (config.n / 2) as u128);
+            nonzero += usize::from(k != 0);
+        }
+        checked += config.n;
+
+        // Feed the complete carry into the affine path using the same
+        // precharged old secret. N*(t-8)=1 mod t; unlike the scalar
+        // coefficient probe, no coefficient trace is needed here.
+        let scaler = CanonicalScaleRound::new(&config.primes, config.t).unwrap();
+        let prepared = [&input.c0, &input.c1].map(|poly| {
+            (0..config.n)
+                .map(|j| {
+                    let residues: Vec<_> = poly.main.iter().map(|lane| lane[j]).collect();
+                    let scaled = scaler.scale_round(&residues).unwrap();
+                    (scaled as u128 * (config.t - 8) as u128 % config.t as u128) as u64
+                })
+                .collect::<Vec<_>>()
+        });
+        assert_eq!(config.n as u64 * (config.t - 8) % config.t, 1);
+        let source_lane = ROOT.len() + config.primes.len();
+        let affine_half = evaluate_centered_components(
+            &boot,
+            &prepared[0],
+            &prepared[1],
+            &coordinates[source_lane].1,
+        );
+        let affine = scale(&boot, &affine_half, config.n as i64);
+        let refreshed = boot.add(&affine, &carry);
+        let n = config.n as u128;
+        let remainder = qb % config.t as u128;
+        let beta = config.eta as u128 * (2 * n + 1);
+        let affine_inner_error =
+            beta * n * (config.t / 2) as u128 + (n + 1) * remainder + remainder.div_ceil(2);
+        // Multiplication by N restores the inverse-N preconditioning and
+        // scales the affine error by N. This path has no trace key-switch
+        // term, unlike the per-coefficient trace implementation.
+        let affine_bound = affine_inner_error * n;
+        let refresh_bound = affine_bound + total_bound;
+        assert!(refresh_bound < qb / config.t as u128 / 2);
+        let wrong_j = expected_all
+            .iter()
+            .position(|(k, _)| *k != 0)
+            .expect("fixture must exercise a nonzero hidden carry");
+        let affine_only = decode_indices(
+            &boot,
+            &affine,
+            &boot_keys.secret_key,
+            &[wrong_j],
+            affine_bound,
+        );
+        assert_ne!(
+            affine_only[0],
+            u64::from(wrong_j == 0) * 7,
+            "affine-only phase must miss the carry at j={wrong_j}"
+        );
+        affine_only_failures += 1;
+        let refreshed_all =
+            decode_indices(&boot, &refreshed, &boot_keys.secret_key, &all_indices, refresh_bound);
+        for (&j, &actual) in all_indices.iter().zip(&refreshed_all) {
+            assert_eq!(
+                actual,
+                u64::from(j == 0) * 7,
+                "full refresh at j={j}, offset_sign={offset_sign}"
+            );
+        }
+        checked += config.n;
         let expected: Vec<_> = indices
             .iter()
             .map(|&j| carry_oracle(&r, &secret, q, j))
@@ -341,9 +431,10 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
             nonzero += usize::from(k != 0);
         }
     }
-    assert_eq!(checked, 18);
+    assert_eq!(checked, 18 + 6 * config.n);
+    assert_eq!(affine_only_failures, 3);
     assert!(nonzero > 0);
-    eprintln!("aligned frame: {checked} encrypted native carry checks, {nonzero} nonzero; both signs of injected input noise retained; assembly error={assembly_error}; no refresh admission");
+    eprintln!("aligned frame: {checked} encrypted native carry/refresh checks across all {n} coefficients and three residual profiles; {nonzero} nonzero carries; {affine_only_failures} affine-only negative controls fail; assembly error={assembly_error}; refreshed output matches all-coefficient oracle", n = config.n);
 }
 
 fn scale(ctx: &RNSFHEContext, ct: &RNSCiphertext, scalar: i64) -> RNSCiphertext {

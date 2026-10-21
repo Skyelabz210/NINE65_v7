@@ -1,0 +1,22 @@
+Baseline: ca9f9b68e6dc0dc25990daa94f96596c982b23ad
+Changed source SHA-256: 0de0556ace7904622fd8efe6567cded90d2bc75089cb5471aa7beb21e5c82392
+
+$ cargo test --locked --offline -j1 -p nine65 --lib precharged_ -- --nocapture
+aligned frame: 49170 encrypted native carry/refresh checks across all 8192 coefficients and three residual profiles; 24078 nonzero carries; 3 affine-only negative controls fail; assembly error=287487982247299167448314438; refreshed output matches all-coefficient oracle
+test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_aligned_frame_encodes_native_carry_and_retains_input_residual ... ok
+test result: ok. 6 passed; 0 failed; 2 ignored; 1079 filtered out; finished in 122.10s
+
+$ python3 scripts/safe_basis_carry_probe.py
+Passed: 1633 rational aligned-phase cases, 24579 native aligned-phase cases,
+3825 exhaustive local-ternary cases, 147 native local boundaries,
+5 distinct local gates and 2 negative controls.
+Probe exit code was 0; parsed output reports public_refresh_admitted=false,
+which remains the production-admission status despite this test-only refresh.
+
+$ git diff --check
+exit 0
+
+Bounds:
+  fresh profile: 287487982355393420071986223 (88 bits)
+  +/- offset profiles: 17236625313898582819063915977463 (104 bits)
+  half-scale: 68945351303664909702575375964981 (106 bits)

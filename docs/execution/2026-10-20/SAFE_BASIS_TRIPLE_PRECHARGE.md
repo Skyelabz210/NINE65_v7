@@ -75,3 +75,42 @@ Detailed bounds and run output are in
 `artifacts/execution/2026-10-20-carry/safe-basis-triple-precharge.json` and
 `safe-basis-triple-precharge-tests.txt`. No linting or workflow changes were
 made.
+
+## Follow-up: all-coefficient carry and one full refresh
+
+After the sparse six-term refresh result, the aligned-frame carry test was
+extended from six sampled coefficients to all `N=8192` coefficients for its
+zero-offset ciphertext. It uses one independently generated work key and one
+boot key, with the old work secret precharged under the boot key. The existing
+single S8 root and the work-prime/`t` coordinate views assemble an encrypted
+carry polynomial; the oracle independently reconstructs the input residuals
+and checks every coefficient. For each of three residual profiles (fresh,
+positive injected offset and negative injected offset), the test builds the
+affine phase over the whole polynomial, restores the inverse-`N`
+preconditioning with a public scalar, adds the encrypted carry, and checks the
+refreshed ciphertext at all coefficients. Each profile also has a sampled
+carry-only residual-retention check and an affine-only negative control.
+
+The native command
+`cargo test --locked --offline -j1 -p nine65 --lib precharged_aligned_frame_encodes_native_carry_and_retains_input_residual -- --nocapture`
+passed 49,170 carry/refresh checks: 24,576 carry coefficients and 24,576
+refreshed coefficients across the three profiles, plus 18 signed-noise
+carry-only checks. There were 24,078 nonzero carries across the three runs,
+and all three affine-only controls failed at a nonzero-carry coefficient. The
+`precharged_` regression filter passed 6 tests, with 2 expensive tests ignored.
+For this four-prime boot tuple, the refreshed error bound is 88 bits on the
+fresh profile and at most
+`17236625313898582819063915977463` (104 bits) on the injected profiles,
+against a half-scale of `68945351303664909702575375964981` (106 bits). All
+three refreshed outputs matched the expected constant polynomial `7` at every
+coefficient. The carry-only controls still show the old residual; adding the
+affine phase and carry produces the tested corrected output.
+
+This establishes one research-only all-coefficient refresh family for one
+seeded input/key pair; it is not production S00/S01/S03 admission. Remaining
+gates include independent review of the complete error derivation, repeating
+across source/key patterns, and a second key epoch. Refreshing the resulting
+boot-key ciphertext requires that boot secret precharged under a next boot key
+and a fresh carry bound for the dense output ciphertext. Exact source hashes
+and test counts are in
+`artifacts/execution/2026-10-20-carry/safe-basis-all-coefficient-carry.json`.

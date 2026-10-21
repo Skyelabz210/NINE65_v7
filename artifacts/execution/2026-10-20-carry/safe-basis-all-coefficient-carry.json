@@ -1,0 +1,65 @@
+{
+  "schema": "nine65-safe-basis-all-coefficient-carry-v1",
+  "source_commit": "ca9f9b68e6dc0dc25990daa94f96596c982b23ad",
+  "source_sha256": {
+    "crates/nine65/src/ops/safe_basis_carry_tests.rs": "0de0556ace7904622fd8efe6567cded90d2bc75089cb5471aa7beb21e5c82392"
+  },
+  "parameters": {
+    "ring_degree": 8192,
+    "work_key_count": 1,
+    "boot_key_count": 1,
+    "safe_basis_roots": 1,
+    "coordinates": "S8 root plus work-prime and plaintext-modulus views"
+  },
+  "native_carry_result": {
+    "profiles": ["fresh", "positive_offset", "negative_offset"],
+    "offset_magnitude": "665577180353676692341324108458",
+    "all_coefficients_per_profile": 8192,
+    "encrypted_carry_checks": 24576,
+    "encrypted_refresh_checks": 24576,
+    "signed_noise_carry_controls": 18,
+    "affine_only_negative_controls_failed": 3,
+    "total_encrypted_checks": 49170,
+    "nonzero_carries_across_profiles": 24078,
+    "assembly_error_bound": "287487982247299167448314438",
+    "carry_matches_independent_source_oracle": true,
+    "carry_error_bound": "287487982247299167449941039",
+    "affine_error_bound": "108094252622045184",
+    "fresh_profile_refreshed_error_bound": "287487982355393420071986223",
+    "max_refreshed_error_bound": "17236625313898582819063915977463",
+    "half_scale": "68945351303664909702575375964981",
+    "all_coefficients_refreshed_per_profile": 8192,
+    "refresh_matches_constant_plaintext": 7,
+    "refresh_matches_independent_oracle": true,
+    "injected_residual_full_refresh_cases": true,
+    "research_only": true,
+    "production_refresh_admitted": false
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -j1 -p nine65 --lib precharged_ -- --nocapture",
+      "exit_code": 0,
+      "passed": 6,
+      "failed": 0,
+      "ignored": 2,
+      "filtered_out": 1079,
+      "elapsed_seconds": 122.10
+    },
+    {
+      "command": "python3 scripts/safe_basis_carry_probe.py",
+      "exit_code": 0,
+      "rational_aligned_phase_cases": 1633,
+      "native_aligned_phase_cases": 24579,
+      "exhaustive_local_ternary_cases": 3825,
+      "native_local_boundary_cases": 147,
+      "negative_controls": 2
+    }
+  ],
+  "unresolved": [
+    "independent review of the complete error derivation",
+    "repeat across randomized source/key patterns",
+    "next key epoch must precharge the boot secret under a next boot key",
+    "fresh all-coefficient carry bound for a subsequent dense output ciphertext",
+    "production S00/S01/S03 admission and review"
+  ]
+}
