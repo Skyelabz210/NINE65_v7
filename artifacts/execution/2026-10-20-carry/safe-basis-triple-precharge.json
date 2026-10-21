@@ -55,15 +55,31 @@
   "native_observation": {
     "affine_only_negative_control_fails": true,
     "counter_fix": "count the separately executed square product",
-    "elapsed_seconds": 1138.9,
+    "elapsed_seconds": 1306.91,
+    "first_run_elapsed_seconds": 1138.9,
+    "uniform_clean_run_elapsed_seconds": 1328.8,
+    "source_patterns": [
+      [
+        1,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        1
+      ]
+    ],
     "first_run_harness_exit": "failed_only_at_final_product_counter_assertion",
     "followup_square_matches_source_oracle": true,
-    "native_rerun_after_counter_fix": false,
-    "profile": "release",
+    "native_rerun_after_counter_fix": true,
+    "profile": "test with nine65 opt-level=2",
     "projected_selectors": 54,
     "refresh_matches_source_oracle": true,
     "terminal_products": 676,
-    "terminal_views": 84
+    "terminal_views": 84,
+    "clean_rerun_coefficient_checks": 1155072,
+    "all_sister_moduli_admitted": true
   },
   "possible_joint_labels": 729,
   "profiles": [
@@ -620,9 +636,9 @@
     "crates/nine65/src/ops/safe_basis_pair_tests.rs": "556768a693eb5b57f8d2155163e371f0cfa4ec6168bebbec8c1899f55f45664f",
     "crates/nine65/src/ops/safe_basis_precharge_tests.rs": "b5f600c334da84a5b129b6eaf8d7c489fbec4e034b6cec0ab87cc7eae1d40520",
     "crates/nine65/src/ops/safe_basis_terminal_tests.rs": "de681e62fb8c910cd232e76cb5bb32820bc43ec2338538d17e83d7060a7d2887",
-    "crates/nine65/src/ops/safe_basis_triple_precharge_tests.rs": "7b551ebcb4905350f7847d6b407dbf50464ac3920e226582b7502d8c7fbc8931",
+    "crates/nine65/src/ops/safe_basis_triple_precharge_tests.rs": "f10876613a9176c23af45fc6abb0589bc61db779a979ac53598c86f0d6f60119",
     "scripts/safe_basis_pair_probe.py": "79e8ec7e0161187c26f86eb241aab31ae2049b2c772a888069a5bcd28e56a26d",
-    "scripts/safe_basis_triple_precharge_probe.py": "059ce37e047245ce1b10453537f4a9a87c8d49e443510397fb28ee880664319d"
+    "scripts/safe_basis_triple_precharge_probe.py": "09b53ca1ec502ce505b1624b4f426edd6285cac65c4eb64a257afd57868f9841"
   },
   "two_triple_projection_traces": 54
 }

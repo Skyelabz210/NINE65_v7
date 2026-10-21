@@ -34,26 +34,30 @@ follow-up square, not a deeper multiplication chain.
 
 ## Native encrypted evidence and limitation
 
-The optimized native run projected and checked both 27-row selectors, executed
-all 676 shared products, and checked all 84 views at all 8192 coefficients. It
-then verified that affine-only refresh is wrong, carry-corrected refresh
-matches the independent work-domain source oracle, and the refreshed square
-decrypts to the expected value. The coefficient/error-check counter reached
-1,155,072.
+The first optimized native run projected and checked both 27-row selectors,
+executed all 676 shared products, and checked all 84 views at all 8192
+coefficients. It verified that affine-only refresh is wrong, carry-corrected
+refresh matches the independent work-domain source oracle, and the refreshed
+square decrypts to the expected value. The coefficient/error-check counter
+reached 1,155,072, but that run took 1,138.90 seconds and exited nonzero only
+at the final instrumentation assertion: the assertion expected the
+multiplication counter to include the separately executed square, while the
+counter recorded only the 676 terminal products.
 
-That first run took 1,138.90 seconds and exited nonzero only at the final test
-instrumentation assertion: the assertion expected the multiplication counter
-to include the separately executed square, while the counter recorded only
-the 676 terminal products. I corrected the counter increment and reran the
-compile check and fast exact/preflight tests; the full release native test has
-not yet been repeated after that counter-only fix. So the encrypted arithmetic
-completed successfully, but the checked-in native test is not yet recorded as
-a clean end-to-end pass.
+After correcting the counter, the native test first passed for the original
+uniform all-`+1` source in 1,328.80 seconds. I then changed the first two
+adjacent three-trit blocks to distinct patterns, `[1,0,1]` and `[0,1,1]`,
+leaving the rest of the source at `+1`. That mixed-source run passed in
+1,306.91 seconds. Both clean runs reached 1,155,072 coefficient/error checks;
+the mixed-source run verified both selector projections, all 676 shared
+terminal products and 84 views, carry-corrected refresh, the follow-up square,
+and admission of all 19 sister moduli. The separately executed square is now
+included in the multiplication count.
 
-The fixture uses one selected all-`+1` source and checks every ring coefficient
-of each listed selector/output; it is not a test across independent hidden
-sources. This remains research-only. Full 8192-term refresh admission,
-reusable encrypted state, and production S00/S01/S03 gates remain open.
+The mixed-source fixture still exercises one fixed vector and two adjacent
+patterns, not a randomized family of independent hidden sources. This remains
+research-only. Full 8192-term refresh admission, reusable encrypted state,
+and production S00/S01/S03 gates remain open.
 
 ## Verified commands
 
@@ -64,6 +68,7 @@ cargo test --locked --offline -j1 -p nine65 --lib triple_precharge_ -- --nocaptu
 cargo test --locked --offline -j1 -p nine65 --lib terminal_readout_ -- --nocapture
 cargo test --locked --offline -j1 -p nine65 --lib precharged_pairs_ -- --nocapture
 cargo test --locked --offline -j1 -p nine65 --lib sister_tray_ -- --nocapture
+cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib triple_precharge_native_readouts_refresh_and_square -- --include-ignored --nocapture
 ```
 
 Detailed bounds and run output are in

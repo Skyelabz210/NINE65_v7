@@ -396,7 +396,10 @@ fn triple_precharge_native_readouts_refresh_and_square() {
     let relin = runtime
         .exact
         .generate_hybrid_gadget_key_with_rng(&native, &mut rng);
-    let source = vec![1i8; ctx.n];
+    let mut source = vec![1i8; ctx.n];
+    // Distinct adjacent source patterns exercise the actual precharged
+    // indicators instead of reusing only the uniform all-+1 pattern.
+    source[..6].copy_from_slice(&[1, 0, 1, 0, 1, 1]);
     let encrypted_source = precharge(&ctx, &keys, &source, &mut rng);
     eprintln!("triple precharge native: encrypting 27 direct pattern indicators");
     let packed = precharge_triples(&ctx, &keys, &source, family, &mut rng);
@@ -412,7 +415,11 @@ fn triple_precharge_native_readouts_refresh_and_square() {
         ];
         let state = project_triple(&runtime, &packed, &trace, triple, terms, 0).unwrap();
         assert_eq!(state.rows.len(), 27);
-        let selected_sum = terms.into_iter().sum::<i128>();
+        let selected_sum = terms
+            .iter()
+            .enumerate()
+            .map(|(offset, &term)| term * source[3 * triple + offset] as i128)
+            .sum::<i128>();
         for row in &state.rows {
             let actual = decode_at(
                 &ctx,
@@ -440,6 +447,12 @@ fn triple_precharge_native_readouts_refresh_and_square() {
     assert_eq!(runtime.multiplications.get(), 0);
 
     let queries = native_queries(h);
+    let selected_source_sum = weights
+        .iter()
+        .zip(&source)
+        .take(weights.len())
+        .map(|(&weight, &trit)| weight * trit as i128)
+        .sum::<i128>();
     let plan = plan_terminal(&runtime, &states[0], &states[1], &queries, 676, 84).unwrap();
     assert_eq!(plan.products.len(), 676);
     let bounds: Vec<Vec<_>> = plan
@@ -454,7 +467,7 @@ fn triple_precharge_native_readouts_refresh_and_square() {
     assert_eq!(runtime.multiplications.get(), 676);
     for (frame_index, frame) in frames.iter().enumerate() {
         let query = &frame.query;
-        let signed = query.sign as i128 * (query.initial + weights.iter().sum::<i128>());
+        let signed = query.sign as i128 * (query.initial + selected_source_sum);
         let expected_carry = (signed + q / 2).div_euclid(q);
         for ((view, output), bound) in frame
             .views

@@ -38,13 +38,27 @@ $ cargo test --locked --offline -j1 -p nine65 --lib sister_tray_ -- --nocapture
 sister tray: 50004 exact 2/11 transitions with arbitrary target views
 
 $ cargo test --release --locked --offline -j1 -p nine65 --lib triple_precharge_native_readouts_refresh_and_square -- --include-ignored --nocapture
-native run duration=1138.90s; checks reached=1155072
+first native run duration=1138.90s; checks reached=1155072
 both 27-row selector blocks passed full coefficient checks
 676 shared terminal products executed; all 84 dependent views matched
 affine-only refresh was wrong; carry-corrected refresh matched source oracle
 follow-up square matched expected plaintext and was admitted at 134 bits
 first run exited only at final counter assertion (expected 677, counted 676)
-counter-only fix applied and fast checks passed; full native rerun pending
+
+$ cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib triple_precharge_native_readouts_refresh_and_square -- --include-ignored --nocapture
+uniform-source counter-corrected run: exit_code=0; duration=1328.80s; checks=1155072
+both 27-row selector blocks passed full coefficient checks
+676 shared terminal products plus separately executed square counted; all 84 dependent views matched
+affine-only refresh was wrong; carry-corrected refresh matched source oracle
+follow-up square matched expected plaintext; all 19 sister moduli admitted
+
+$ cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib triple_precharge_native_readouts_refresh_and_square -- --include-ignored --nocapture
+mixed source first six trits: [1,0,1,0,1,1]
+exit_code=0; native run duration=1306.91s; checks reached=1155072
+both distinct 27-row selector projections passed full coefficient checks
+676 shared terminal products plus separately executed square counted; all 84 dependent views matched
+affine-only refresh was wrong; carry-corrected refresh matched source oracle
+follow-up square matched expected plaintext; all 19 sister moduli admitted
 
 $ git diff --check
 exit_code=0
