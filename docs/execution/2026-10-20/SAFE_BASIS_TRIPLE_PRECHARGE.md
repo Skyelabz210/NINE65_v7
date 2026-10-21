@@ -79,8 +79,8 @@ made.
 ## Follow-up: all-coefficient carry and one full refresh
 
 After the sparse six-term refresh result, the aligned-frame carry test was
-extended from six sampled coefficients to all `N=8192` coefficients for its
-zero-offset ciphertext. It uses one independently generated work key and one
+extended from six sampled coefficients to all `N=8192` coefficients across
+three residual profiles. It uses one independently generated work key and one
 boot key, with the old work secret precharged under the boot key. The existing
 single S8 root and the work-prime/`t` coordinate views assemble an encrypted
 carry polynomial; the oracle independently reconstructs the input residuals
@@ -109,8 +109,12 @@ affine phase and carry produces the tested corrected output.
 This establishes one research-only all-coefficient refresh family for one
 seeded input/key pair; it is not production S00/S01/S03 admission. Remaining
 gates include independent review of the complete error derivation, repeating
-across source/key patterns, and a second key epoch. Refreshing the resulting
-boot-key ciphertext requires that boot secret precharged under a next boot key
-and a fresh carry bound for the dense output ciphertext. Exact source hashes
-and test counts are in
+across source/key patterns, multiplication headroom and a second key epoch.
+The follow-up preflight is decisive: at the four-prime output tuple, the fresh
+and injected refresh bounds are 88 and 104 bits against a 106-bit half-scale,
+but their next-square bounds are 130 and 146 bits. Both are refused before
+ciphertext multiplication. This is an all-coefficient correctness pass, not a
+usable multiply-refresh-multiply chain. A later refresh also requires the boot
+secret precharged under a next boot key and a fresh carry bound for the dense
+output ciphertext. Exact source hashes and test counts are in
 `artifacts/execution/2026-10-20-carry/safe-basis-all-coefficient-carry.json`.

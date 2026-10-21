@@ -732,6 +732,45 @@ fn precharged_composition_profiles_check_security_and_noise_before_keys() {
 }
 
 #[test]
+fn precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale() {
+    let config = config_with(4);
+    let screen = screen_bootstrap_security(&config.primes, config.n, 128).unwrap();
+    assert!(screen.meets_claim_under_both);
+    let noise = Noise::new(&config);
+    assert_eq!(bits(noise.half), 106);
+
+    // Bounds emitted by the native all-coefficient refresh fixture for its
+    // fresh and +/- injected-residual profiles. Keep the next-stage refusal
+    // explicit: correct refresh output is not enough if its square is unsafe.
+    let refreshed_bounds = [
+        U512::from_u128(287_487_982_355_393_420_071_986_223),
+        U512::from_u128(17_236_625_313_898_582_819_063_915_977_463),
+    ];
+    assert!(refreshed_bounds
+        .iter()
+        .all(|bound| words(*bound) < words(noise.half)));
+    let mut square_bits = Vec::new();
+    for bound in refreshed_bounds {
+        let refusal = noise.multiply(bound, bound).unwrap_err();
+        match refusal {
+            Refusal::Noise {
+                stage,
+                error_bits,
+                half_bits,
+            } => {
+                assert_eq!(stage, "selector multiply");
+                assert_eq!(half_bits, 106);
+                assert!(error_bits > half_bits);
+                square_bits.push(error_bits);
+            }
+            other => panic!("unexpected follow-up square refusal: {other:?}"),
+        }
+    }
+    assert_eq!(square_bits, [130, 146]);
+    eprintln!("full-refresh follow-up: fresh/offset output bounds={:?} bits; square bounds={square_bits:?} bits; half-scale=106 bits; both squares refused before ciphertext multiplication", refreshed_bounds.map(bits));
+}
+
+#[test]
 #[cfg_attr(
     not(feature = "slow_tests"),
     ignore = "expensive native research probe; enable slow_tests or run this filter with --include-ignored"

@@ -1,10 +1,17 @@
-Baseline: ca9f9b68e6dc0dc25990daa94f96596c982b23ad
+Baseline: a640d3cb9e0f4d4015afc14027721b1a5e75788b
 Changed source SHA-256: 0de0556ace7904622fd8efe6567cded90d2bc75089cb5471aa7beb21e5c82392
+Changed preflight source SHA-256: 44c039ae154b5dea7e7d56f9cb8996646142f7e6a066c074dee79b3742cbe3e1
+
+$ cargo test --locked --offline -j1 -p nine65 --lib precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale -- --nocapture
+full-refresh follow-up: fresh/offset output bounds=[88, 104] bits; square bounds=[130, 146] bits; half-scale=106 bits; both squares refused before ciphertext multiplication
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; finished in 0.20s
 
 $ cargo test --locked --offline -j1 -p nine65 --lib precharged_ -- --nocapture
 aligned frame: 49170 encrypted native carry/refresh checks across all 8192 coefficients and three residual profiles; 24078 nonzero carries; 3 affine-only negative controls fail; assembly error=287487982247299167448314438; refreshed output matches all-coefficient oracle
 test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_aligned_frame_encodes_native_carry_and_retains_input_residual ... ok
-test result: ok. 6 passed; 0 failed; 2 ignored; 1079 filtered out; finished in 122.10s
+full-refresh follow-up: fresh/offset output bounds=[88, 104] bits; square bounds=[130, 146] bits; half-scale=106 bits; both squares refused before ciphertext multiplication
+test result: ok. 7 passed; 0 failed; 2 ignored; 1079 filtered out; finished in 124.59s
 
 $ python3 scripts/safe_basis_carry_probe.py
 Passed: 1633 rational aligned-phase cases, 24579 native aligned-phase cases,
