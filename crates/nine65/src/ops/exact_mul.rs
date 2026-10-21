@@ -765,6 +765,51 @@ impl<'a> ExactMulEvaluator<'a> {
         self.try_mul_no_relin_exact_observed(a, b).map(|(t, _)| t)
     }
 
+    /// Test-only comparison path: wrap each raw tensor component into main Q,
+    /// take its centered representative, and then scale-and-round. This is an
+    /// isolation control for distinguishing tensor-wrap effects from
+    /// scale-round error; it is not a second production route or a statement
+    /// of the accepted multiply semantics.
+    #[cfg(test)]
+    pub(crate) fn try_mul_no_relin_centered_tensor_for_diagnostic(
+        &self,
+        a: &RNSCiphertext,
+        b: &RNSCiphertext,
+    ) -> Result<ExactTensor3, ExactMulError> {
+        self.check_ciphertext(a)?;
+        self.check_ciphertext(b)?;
+
+        let mut tally = RankPathTally::default();
+        let d0 = self
+            .ctx
+            .convert_from_montgomery_form(&self.ctx.rns_poly_mul(&a.c0, &b.c0));
+        let d1 = self
+            .ctx
+            .convert_from_montgomery_form(
+                &self
+                    .ctx
+                    .rns_poly_mul(&a.c0, &b.c1)
+                    .add(&self.ctx.rns_poly_mul(&a.c1, &b.c0), &self.ctx.rns),
+            );
+        let d2 = self
+            .ctx
+            .convert_from_montgomery_form(&self.ctx.rns_poly_mul(&a.c1, &b.c1));
+
+        let d0_aux = self.centered_aux_limbs(&d0, &mut tally)?;
+        let d1_aux = self.centered_aux_limbs(&d1, &mut tally)?;
+        let d2_aux = self.centered_aux_limbs(&d2, &mut tally)?;
+        let e0 = self.scale_round_poly(&d0, &d0_aux, &mut tally)?;
+        let e1 = self.scale_round_poly(&d1, &d1_aux, &mut tally)?;
+        let e2 = self.scale_round_poly(&d2, &d2_aux, &mut tally)?;
+
+        Ok(ExactTensor3 {
+            e0,
+            e1,
+            e2,
+            num_primes: self.plan.main.len(),
+        })
+    }
+
     /// As [`Self::try_mul_no_relin_exact`], also returning the rank-path tally
     /// so tests can prove both §A paths execute in the evaluator itself.
     pub fn try_mul_no_relin_exact_observed(

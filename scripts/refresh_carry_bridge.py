@@ -8,6 +8,7 @@ admission. Toy secrets below are public exhaustive test inputs.
 import hashlib
 import itertools
 import json
+from math import prod
 from pathlib import Path
 
 from bounded_digit_polynomial import certify, construct, evaluate, self_test
@@ -66,6 +67,84 @@ def convolution(a, b):
         for j, y in enumerate(b):
             result[(i + j) % n] += x * y * (1 if i + j < n else -1)
     return result
+
+
+def multiplication_winding_case(c0, c1, secret, q, t):
+    """Independent integer check of tensor winding and its cancellation."""
+    n = len(secret)
+    lifted = [a + b for a, b in zip(c0, convolution(c1, secret))]
+    phase = [centered(value, q) for value in lifted]
+    winding = [(a - p) // q for a, p in zip(lifted, phase)]
+    d0 = convolution(c0, c0)
+    d1 = [2 * value for value in convolution(c0, c1)]
+    d2 = convolution(c1, c1)
+    rounded = [[nearest(t * value, q) for value in part]
+               for part in (d0, d1, d2)]
+    tensor_phase = [a + b + c for a, b, c in zip(
+        rounded[0], convolution(rounded[1], secret),
+        convolution(rounded[2], convolution(secret, secret)),
+    )]
+    phase_only = [nearest(t * value, q) for value in convolution(phase, phase)]
+    correction = [2 * t * value for value in convolution(winding, phase)]
+    combined_round = [nearest(t * value, q) for value in convolution(lifted, lifted)]
+    rounding_bound = (n * n + n + 2) // 2
+    for actual, ideal, term, combined in zip(
+            tensor_phase, phase_only, correction, combined_round):
+        assert (combined - ideal - term) % q == 0
+        assert abs(actual - combined) <= rounding_bound
+        assert abs(centered(actual - ideal - term, q)) <= rounding_bound
+
+
+def multiplication_winding_budget():
+    """Sufficient next-square bound for constant plaintext one, not admission.
+
+    For P=Delta+e and ||e||_inf<=E, ||K||_1<=N^2/2 gives a winding
+    contribution at most t*N^2*E + N*r. Bound the phase-only product,
+    independent component rounding and the hybrid key switch separately.
+    """
+    primes = [1811939329, 2113929217, 2130706433, 1107296257, 1711276033]
+    n, t, eta, base_bits = 8192, 65537**2, 3, 10
+    q = prod(primes)
+    remainder = q % t
+    half_delta = q // t // 2
+    rounding = (n * n + n + 2) // 2
+    switch = (eta * n * ((1 << base_bits) - 1)
+              * sum((p.bit_length() + base_bits - 1) // base_bits for p in primes))
+
+    def square_bound(error):
+        quadratic = (t * n * error * error + q - 1) // q
+        return (2 * error + quadratic + t * n * n * error
+                + n * remainder + rounding + switch + 2)
+
+    low, high = 0, half_delta
+    while low < high:
+        middle = (low + high + 1) // 2
+        if square_bound(middle) < half_delta:
+            low = middle
+        else:
+            high = middle - 1
+    assert square_bound(low) < half_delta <= square_bound(low + 1)
+    assert square_bound((1 << 62) - 1) < half_delta
+    assert square_bound((1 << 63) - 1) >= half_delta
+    # An ideal Delta-scaled unit with just ONE unit of phase error cannot be
+    # converted to a raw-phase unit by modular inversion without amplification.
+    delta = q // t
+    inverse = pow(delta, -1, q)
+    converted_unit_error = abs(centered((delta + 1) * inverse - 1, q))
+    assert converted_unit_error > half_delta
+    return {
+        "scope": "constant-one plaintext, assumed certified input error; no correction producer",
+        "primes": primes, "N": n, "t": t, "Q_bits": q.bit_length(),
+        "Q_mod_t": remainder, "component_rounding_bound": rounding,
+        "hybrid_switch_bound": switch,
+        "maximum_input_error_for_next_square": low,
+        "adjacent_boundary_checked": True,
+        "any_62_bit_input_error_fits": True,
+        "arbitrary_63_bit_input_error_fits": False,
+        "modular_Delta_inverse_unit_error_bits": converted_unit_error.bit_length(),
+        "modular_Delta_inverse_unit_error_exceeds_half_delta": True,
+        "half_delta_bits": half_delta.bit_length(),
+    }
 
 
 def component_case(c0, c1, secret, q, t):
@@ -172,11 +251,13 @@ def run():
         values = range(-q // 2 + 1, q // 2 + 1)
         for a, b, s in itertools.product(values, values, (-1, 0, 1)):
             affine_failures += component_case([a], [b], [s], q, t)
+            multiplication_winding_case([a], [b], [s], q, t)
             scalar_cases += 1
     for c0 in itertools.product(range(-2, 3), repeat=2):
         for c1 in itertools.product(range(-2, 3), repeat=2):
             for s in itertools.product((-1, 0, 1), repeat=2):
                 affine_failures += component_case(c0, c1, s, 5, 3)
+                multiplication_winding_case(c0, c1, s, 5, 3)
                 ring_cases += 1
     assert affine_failures > 0, "dropping the carry must have counterexamples"
 
@@ -232,12 +313,14 @@ def run():
             "phase1_carry_bound_boundary_cases": carry_bound_cases,
             "scalar_component_cases": scalar_cases,
             "negacyclic_n2_cases": ring_cases,
+            "multiplication_winding_cancellation_cases": scalar_cases + ring_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,
             "prime_power_contractions": contractions,
             "expanded_winding_invariance_cases": winding_cases,
             "existing_bounded_polynomial_exhaustive_cases": self_test(),
         },
         "bounded_candidates": bounded,
+        "multiplication_winding_next_square_budget": multiplication_winding_budget(),
         "wide_sum_candidate": {
             "scope": "range and encoding width only; no noise or security admission",
             "native_Q": native_q,

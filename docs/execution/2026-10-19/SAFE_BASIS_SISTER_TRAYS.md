@@ -101,6 +101,21 @@ storage/work. They do not reset noise, create new independent information
 from overlapping factors, or add multiplication depth. The full secret-sum
 circuit and production input/key/phase provenance remain unresolved.
 
+The 2026-10-21 exact-multiply isolation identifies a concrete error that these
+views cannot repair: for one native ciphertext, the centered component lift is
+`P+Q*K`, and the square's extra phase term is `2*t*K*P` modulo Q. Its measured
+noise-times-winding contribution is 95 bits, while the input error is 56 bits;
+an identical-phase `(P,0)` control squares with 57-bit error. A tray can expose
+another residue view of the same encrypted state, but it does not alter this
+component lift or reset that error. The derivation and rounding-bound check
+are recorded in [the digit-radius contract](../2026-10-03/DIGIT_RADIUS_CONTRACT.md).
+Its follow-up oracle cancellation preserves the actual relinearized c1 and
+recovers one further correct square at 96-bit error. Correcting only the
+encoded-message winding term still fails at 140 bits. The required full
+correction is in raw boot-phase encoding, while these trays output canonical
+Delta-scaled residues in plaintext 65537; that conversion and a source-bound
+encrypted correction producer remain open.
+
 ## Evidence and reproduction
 
 The fast Rust tests check 50,004 exact additive phase transitions, arbitrary

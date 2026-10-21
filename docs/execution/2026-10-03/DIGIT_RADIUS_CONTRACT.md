@@ -136,8 +136,145 @@ the first polynomial multiply needs 131 error bits against 113 half-scale
 bits. A shorter domain alone does not change this first multiplication.
 This rejects that circuit/certificate, not every possible refresh.
 
+A separate test-only native diagnostic isolates the next stage on the
+five-prime SQUARE_BOOT tuple (Q=154 bits, half-Delta=121 bits). For the
+support-valid sample m=32769, the traced coefficient is x=2147614722 and
+w=x-h=2147581954=32769*65537+1: its centered low digit is 1, while the
+hidden high digit is 32769. The full-size trace residual is 56 bits. The
+exact tensor for w(w-1) decrypts correctly but already has a 95-bit residual
+before relinearization; after relinearization it remains 95 bits, while the
+isolated relinearization difference is only 20 bits. Thus the dominant
+observed first-product error is in the tensor/scale-round path, not the hybrid
+relinearization key. Shifting that same trace ciphertext to low digits
+{-17,-1,0,17} preserves the observed 56-bit input-residual size; both
+w(w-1) and w^2 decode correctly at each point and each tensor output has a
+95-bit residual. An oracle-only carry-removal control subtracts the known
+high component 2147581953, leaving plaintext 1 with the same 56-bit input
+residual; its square also decodes correctly with a 95-bit residual. In this
+sample, hidden-carry magnitude therefore does not explain the first-product
+residual increase. The exact test-only winding control now reconstructs the
+centered integer lift `A = c0 + c1*s` and centered mod-Q phase `P`, then
+extracts `K = (A-P)/Q` coefficientwise. Expanding `A=P+QK` gives
+`t*A^2/Q = t*P^2/Q + 2*t*K*P + t*Q*K^2`; the last term vanishes modulo Q,
+and the integer `2*t*K*P` commutes with the scale-round. Against the
+phase-only tensor result, the predicted `2*t*K*P` term and the observed
+original-vs-phase-only phase difference are both 95 bits. The maximum
+coefficient magnitude of K is 7 bits; their unexplained difference is only
+14 bits, at coefficient 2992. At the actual native degree N=8192, the
+deterministic bound is `(N^2+N+2)/2 = 33558529` (26 bits): round the three
+tensor components before multiplying by `1`, `s`, and `s^2`, and include the
+phase-only rounding. The test checks this magnitude bound at every
+coefficient. This corrects the earlier explanation's incorrect N=4096 and
+24-bit worst-case bound; the measured 14-bit mismatch is unchanged. This
+quantitatively confirms the component-representation winding as the source of
+the extra residual for this sample, not the hidden high digit. It remains a
+diagnostic only: extracting P/K or constructing `(phase, 0)` uses the secret
+and is not a public or secure evaluation path. The measured multiplication
+winding is not asserted to be identical to Phase 1's missing `K`. More
+specifically, writing `P = Delta*m + e` and `Q = t*Delta + r` gives
+`2*t*K*(Delta*m) = 2*K*m*(Q-r) = -2*K*m*r (mod Q)`. For this sample
+`m=1`, `|K|<2^7`, and `r<t<2^33`, so the encoded-message part is below
+`2^41`; it cannot account for the 95-bit term. The measured 56-bit input
+error instead enters through `2*t*K*e`, the noise-times-winding cross term.
+That predicts why one product still fits the 121-bit half-Delta, while another
+multiply can push the 95-bit error beyond it. A tray that only changes the
+residue view cannot remove that term.
+
+The follow-up applies the oracle correction to the actual relinearized
+ciphertext, preserving its c1 exactly. It also tests only the encoded-message
+part `-2*r*K` as a control. The expected plaintext is constant one throughout.
+
+| Square output treatment | Error after treatment | Next square error | Next square correct |
+| --- | ---: | ---: | --- |
+| No correction | 95 bits | 140 bits | No |
+| Encoded-message winding term only | 95 bits | 140 bits | No |
+| Full oracle `2*t*K*P` correction | 57 bits | 96 bits | Yes |
+
+Squaring the 96-bit result once more without a new correction fails at 141
+bits, against the same 121-bit half-Delta. Thus the full correction suffices
+to recover one additional multiplication in this sample; one cancellation
+does not reset all subsequent noise growth. No ciphertext component is
+replaced by a clear phase in this follow-up, but computing the subtracted
+correction still requires the test oracle's boot secret. The native test
+passes with both the correction controls and the original schedule probes.
+
+A test-only control that wraps each tensor component into its centered main-Q
+representative before scale-round instead decodes the same square as 0 with a
+122-bit residual, so simple tensor wrapping is not a valid replacement under
+the current contract. A balanced four-factor
+node then decodes 65537 as 64609,
+with 139-bit intended residual against 121-bit half-Delta; at the original
+point w^2 is correct at 95 bits, but w^4 is wrong at 140 bits. This is one
+deterministic native sample and rejects these tested schedules, not all
+possible polynomial circuits. Reproduce with
+`NINE65_TRACE_NOISE_DIAGNOSTIC=1 cargo test --locked --offline -j1 -p nine65
+--lib contraction_with_oracle_lift_refreshes_boundary_input_and_supports_multiply
+-- --nocapture`. The added probe is test-only; production admission remains
+unchanged. A plausible next target is a public refresh/state transform that
+reduces or cancels the `t*K*P`-dependent noise before another multiplication;
+the current sister-tray/composite-modulus tests only provide budgeted views and
+do not reset this winding.
+
 The next work is a source-bound sparse switch plus post-transform history
 and security assessment, and a reduced/certified outer transform/polynomial
 schedule (or separately admitted wider backend). R00's full-history proof
 and specialist review remain outstanding. No production gate or acceptance
 flag changes; the incorrect dense-key substitution is no longer a blocker.
+
+## Public multiplication correction contract (2026-10-21)
+
+Call this ciphertext-specific winding `K_mul` to distinguish it from the
+original Phase-1 component-rounding carry. All products below are negacyclic
+polynomial products. For centered ciphertext component lifts `C0,C1` under
+the boot secret, define
+
+```text
+A = C0 + C1*s_boot
+P = center_Qboot(A)
+K_mul = (A-P)/Qboot
+W_square(C) = 2*t*K_mul*P mod Qboot.
+```
+
+A public correction producer would need a ciphertext D with
+`D.c0 + D.c1*s_boot = W_square(C) + epsilon (mod Qboot)`, bound to that
+same input C, boot key, modulus, and operation. Its independent error
+certificate must include epsilon and all work needed to produce D. Subtracting
+an oracle-manufactured D with epsilon=0 tests this target; it does not supply
+the producer or certify its error.
+
+The current encrypted carry runtime cannot be substituted unchanged. Its
+`source_q: i128` and `(remainder,winding)` rows describe the source work sum;
+the multiplication winding above uses the 154-bit boot modulus and boot
+secret. Its precharged selector/noise implementation also requires
+`t=8*N+1=65537`. The sister-tray projections encode canonical integer residues
+with the BFV Delta scale in that plaintext ring. D instead needs raw phase
+residues under `t=65537^2`, without multiplying W_square by Delta. A residue
+view modulo 2 or 11 supplies neither this source conversion nor this encoding
+conversion. The required full secret-sum circuit and producer error bound
+remain outstanding.
+
+The independent `scripts/refresh_carry_bridge.py` now checks this
+multiplication-winding identity, exact component-rounding bound, and
+cancellation on 9,450 scalar/degree-two integer cases. It also computes a
+conservative next-square budget for the constant-one case above. For a
+certified input phase error bound E, `||K_mul||_1 <= N^2/2` gives
+
+```text
+E_next <= 2*E + ceil(t*N*E^2/Q) + t*N^2*E + N*r
+          + (N^2+N+2)/2 + E_switch + 2.
+E_switch = eta*N*(2^10-1)*sum_i ceil(bitlen(q_i)/10).
+```
+
+For this native tuple, `E_switch=502824960`. Exact integer binary search
+checks both sides of the admission boundary: E at most
+6245762953937978686 satisfies `E_next < half-Delta`; the next integer does
+not. Every E below 2^62 fits this bound, whereas arbitrary 63-bit errors do
+not. This is a target for the **total** certified error after correction,
+including the producer's own error; a sampled 57-bit residual is not itself
+that public certificate.
+
+The same probe rejects a naive encoding adapter. Multiplying an ideal
+Delta-scaled unit with just one unit of phase error by `Delta^-1 mod Q`
+produces a 152-bit centered error, already above the 121-bit half-Delta.
+Modular inversion alone therefore does not turn the existing noisy
+Delta-scaled carry views into a suitably bounded raw-phase correction.
