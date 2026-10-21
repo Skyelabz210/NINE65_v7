@@ -1,4 +1,37 @@
-# Execution status — updated 2026-10-04
+# Live execution update — 2026-10-21
+
+The checkout is synchronized and clean on `main` at
+[`7a7f203`](https://github.com/Skyelabz210/NINE65_v7/commit/7a7f203464746fbba6543295a3280dc38b92eed7).
+The append-only F00 snapshot in
+[`baseline.json`](../../../artifacts/execution/baseline.json) records the tree,
+toolchain, lockfile and feature-graph hashes, available CPU/RAM/disk, the
+historical 29-issue inventory, and the selected upstream revisions. It does not
+rewrite the original October 3 baseline. At freeze time, the worktree had no
+dirty or untracked paths.
+
+R01 remains **`BLOCKED_DESIGN`**, not accepted. Its partial derivation is in
+[`DIGIT_RADIUS_CONTRACT.md`](DIGIT_RADIUS_CONTRACT.md), with three passing
+scalar-oracle tests and a preserved log. The reference's weight-32 sparse key
+is temporary; it re-encrypts under the full work key before the next transform,
+so it does not justify substituting 32 for the work-secret norm in the
+expanded-phase rounding bound. The full transform/switch/encapsulation error
+recurrence and R00's `TIGHT_BOUND_RESULT.md` are still missing.
+
+Live GitHub check: [issue #95](https://github.com/Skyelabz210/NINE65_v7/issues/95)
+is open (reopened), and [issue #83](https://github.com/Skyelabz210/NINE65_v7/issues/83)
+is open. No closure is proposed; other issue numbers below remain the October 3
+historical inventory, not a fresh 29-issue status sweep. The only open PR
+returned was [#187](https://github.com/Skyelabz210/NINE65_v7/pull/187): it is
+unmergeable against an older `main` base and its head has no status checks.
+Automated review comments flag lost generated-output ignore rules, panic
+isolation, target-modulus validation, and a release-profile path that aborts.
+No action was taken on that unrelated PR. The latest main commit also has no
+status checks reported. No lint command was run.
+
+F00's required independent code review remains outstanding; the baseline is
+recorded but the coordinator has not marked the packet accepted.
+
+## Historical execution status — updated 2026-10-04
 
 The [2026-10-05 session runbook](../2026-10-05/SESSION_RUNBOOK.md) supersedes
 this snapshot for current remote merge state, depth-four coefficient evidence,

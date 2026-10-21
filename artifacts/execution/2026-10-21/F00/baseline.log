@@ -1,0 +1,599 @@
+## main...origin/main
+ M artifacts/execution/baseline.json
+ M docs/execution/2026-10-03/STATUS.md
+?? artifacts/execution/2026-10-21/F00/
+7a7f203464746fbba6543295a3280dc38b92eed7
+rustc 1.89.0 (29483883e 2025-08-04)
+cargo 1.89.0 (c24e10642 2025-06-23)
+4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1  Cargo.lock
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+clockwork-core v0.1.0 (/home/acid/projects/NINE65_v7/crates/clockwork-core)
+├── crc32fast feature "default"
+│   ├── crc32fast v1.5.0
+│   │   └── cfg-if feature "default"
+│   │       └── cfg-if v1.0.4
+│   └── crc32fast feature "std"
+│       └── crc32fast v1.5.0 (*)
+├── subtle feature "default"
+│   ├── subtle v2.6.1
+│   ├── subtle feature "i128"
+│   │   └── subtle v2.6.1
+│   └── subtle feature "std"
+│       └── subtle v2.6.1
+├── zeroize feature "default"
+│   ├── zeroize v1.8.2
+│   │   └── zeroize_derive feature "default"
+│   │       └── zeroize_derive v1.4.2 (proc-macro)
+│   │           ├── proc-macro2 feature "default"
+│   │           │   ├── proc-macro2 v1.0.103
+│   │           │   │   └── unicode-ident feature "default"
+│   │           │   │       └── unicode-ident v1.0.22
+│   │           │   └── proc-macro2 feature "proc-macro"
+│   │           │       └── proc-macro2 v1.0.103 (*)
+│   │           ├── quote feature "default"
+│   │           │   ├── quote v1.0.42
+│   │           │   │   └── proc-macro2 v1.0.103 (*)
+│   │           │   └── quote feature "proc-macro"
+│   │           │       ├── quote v1.0.42 (*)
+│   │           │       └── proc-macro2 feature "proc-macro" (*)
+│   │           ├── syn feature "default"
+│   │           │   ├── syn v2.0.111
+│   │           │   │   ├── proc-macro2 v1.0.103 (*)
+│   │           │   │   ├── quote v1.0.42 (*)
+│   │           │   │   └── unicode-ident feature "default" (*)
+│   │           │   ├── syn feature "clone-impls"
+│   │           │   │   └── syn v2.0.111 (*)
+│   │           │   ├── syn feature "derive"
+│   │           │   │   └── syn v2.0.111 (*)
+│   │           │   ├── syn feature "parsing"
+│   │           │   │   └── syn v2.0.111 (*)
+│   │           │   ├── syn feature "printing"
+│   │           │   │   └── syn v2.0.111 (*)
+│   │           │   └── syn feature "proc-macro"
+│   │           │       ├── syn v2.0.111 (*)
+│   │           │       ├── proc-macro2 feature "proc-macro" (*)
+│   │           │       └── quote feature "proc-macro" (*)
+│   │           ├── syn feature "extra-traits"
+│   │           │   └── syn v2.0.111 (*)
+│   │           ├── syn feature "full"
+│   │           │   └── syn v2.0.111 (*)
+│   │           └── syn feature "visit"
+│   │               └── syn v2.0.111 (*)
+│   └── zeroize feature "alloc"
+│       └── zeroize v1.8.2 (*)
+└── zeroize feature "derive"
+    ├── zeroize v1.8.2 (*)
+    └── zeroize feature "zeroize_derive"
+        └── zeroize v1.8.2 (*)
+[dev-dependencies]
+└── rand feature "default"
+    ├── rand v0.8.6
+    │   ├── libc v0.2.178
+    │   ├── rand_chacha v0.3.1
+    │   │   ├── ppv-lite86 feature "simd"
+    │   │   │   └── ppv-lite86 v0.2.21
+    │   │   │       ├── zerocopy feature "default"
+    │   │   │       │   └── zerocopy v0.8.31
+    │   │   │       │       └── zerocopy-derive feature "default"
+    │   │   │       │           └── zerocopy-derive v0.8.31 (proc-macro)
+    │   │   │       │               ├── proc-macro2 feature "default" (*)
+    │   │   │       │               ├── quote feature "default" (*)
+    │   │   │       │               ├── syn feature "default" (*)
+    │   │   │       │               └── syn feature "full" (*)
+    │   │   │       └── zerocopy feature "simd"
+    │   │   │           └── zerocopy v0.8.31 (*)
+    │   │   └── rand_core feature "default"
+    │   │       └── rand_core v0.6.4
+    │   │           └── getrandom feature "default"
+    │   │               └── getrandom v0.2.16
+    │   │                   ├── libc v0.2.178
+    │   │                   └── cfg-if feature "default" (*)
+    │   └── rand_core feature "default" (*)
+    ├── rand feature "std"
+    │   ├── rand v0.8.6 (*)
+    │   ├── rand feature "alloc"
+    │   │   ├── rand v0.8.6 (*)
+    │   │   └── rand_core feature "alloc"
+    │   │       └── rand_core v0.6.4 (*)
+    │   ├── rand feature "getrandom"
+    │   │   ├── rand v0.8.6 (*)
+    │   │   └── rand_core feature "getrandom"
+    │   │       └── rand_core v0.6.4 (*)
+    │   ├── rand feature "libc"
+    │   │   └── rand v0.8.6 (*)
+    │   ├── rand feature "rand_chacha"
+    │   │   └── rand v0.8.6 (*)
+    │   ├── rand_chacha feature "std"
+    │   │   ├── rand_chacha v0.3.1 (*)
+    │   │   └── ppv-lite86 feature "std"
+    │   │       └── ppv-lite86 v0.2.21 (*)
+    │   └── rand_core feature "std"
+    │       ├── rand_core v0.6.4 (*)
+    │       ├── rand_core feature "alloc" (*)
+    │       ├── rand_core feature "getrandom" (*)
+    │       └── getrandom feature "std"
+    │           └── getrandom v0.2.16 (*)
+    └── rand feature "std_rng"
+        ├── rand v0.8.6 (*)
+        └── rand feature "rand_chacha" (*)
+
+cram-core v0.1.0 (/home/acid/projects/NINE65_v7/crates/cram-core)
+[dev-dependencies]
+└── proptest feature "default"
+    ├── proptest v1.9.0
+    │   ├── num-traits v0.2.19
+    │   │   [build-dependencies]
+    │   │   └── autocfg feature "default"
+    │   │       └── autocfg v1.5.0
+    │   ├── rand_chacha v0.9.0
+    │   │   ├── ppv-lite86 feature "simd" (*)
+    │   │   └── rand_core feature "default"
+    │   │       └── rand_core v0.9.3
+    │   │           └── getrandom feature "default"
+    │   │               └── getrandom v0.3.4
+    │   │                   ├── libc v0.2.178
+    │   │                   └── cfg-if feature "default" (*)
+    │   ├── rusty-fork v0.3.1
+    │   │   ├── fnv feature "default"
+    │   │   │   ├── fnv v1.0.7
+    │   │   │   └── fnv feature "std"
+    │   │   │       └── fnv v1.0.7
+    │   │   ├── quick-error feature "default"
+    │   │   │   └── quick-error v1.2.3
+    │   │   ├── tempfile feature "default"
+    │   │   │   ├── tempfile v3.24.0
+    │   │   │   │   ├── getrandom v0.3.4 (*)
+    │   │   │   │   ├── fastrand feature "default"
+    │   │   │   │   │   ├── fastrand v2.3.0
+    │   │   │   │   │   └── fastrand feature "std"
+    │   │   │   │   │       ├── fastrand v2.3.0
+    │   │   │   │   │       └── fastrand feature "alloc"
+    │   │   │   │   │           └── fastrand v2.3.0
+    │   │   │   │   ├── once_cell feature "std"
+    │   │   │   │   │   ├── once_cell v1.21.3
+    │   │   │   │   │   └── once_cell feature "alloc"
+    │   │   │   │   │       ├── once_cell v1.21.3
+    │   │   │   │   │       └── once_cell feature "race"
+    │   │   │   │   │           └── once_cell v1.21.3
+    │   │   │   │   ├── rustix feature "default"
+    │   │   │   │   │   ├── rustix v1.1.3
+    │   │   │   │   │   │   ├── bitflags v2.10.0
+    │   │   │   │   │   │   ├── linux-raw-sys feature "auxvec"
+    │   │   │   │   │   │   │   └── linux-raw-sys v0.11.0
+    │   │   │   │   │   │   ├── linux-raw-sys feature "elf"
+    │   │   │   │   │   │   │   └── linux-raw-sys v0.11.0
+    │   │   │   │   │   │   ├── linux-raw-sys feature "errno"
+    │   │   │   │   │   │   │   └── linux-raw-sys v0.11.0
+    │   │   │   │   │   │   ├── linux-raw-sys feature "general"
+    │   │   │   │   │   │   │   └── linux-raw-sys v0.11.0
+    │   │   │   │   │   │   ├── linux-raw-sys feature "ioctl"
+    │   │   │   │   │   │   │   └── linux-raw-sys v0.11.0
+    │   │   │   │   │   │   └── linux-raw-sys feature "no_std"
+    │   │   │   │   │   │       └── linux-raw-sys v0.11.0
+    │   │   │   │   │   └── rustix feature "std"
+    │   │   │   │   │       ├── rustix v1.1.3 (*)
+    │   │   │   │   │       ├── bitflags feature "std"
+    │   │   │   │   │       │   └── bitflags v2.10.0
+    │   │   │   │   │       └── rustix feature "alloc"
+    │   │   │   │   │           └── rustix v1.1.3 (*)
+    │   │   │   │   └── rustix feature "fs"
+    │   │   │   │       └── rustix v1.1.3 (*)
+    │   │   │   └── tempfile feature "getrandom"
+    │   │   │       └── tempfile v3.24.0 (*)
+    │   │   └── wait-timeout feature "default"
+    │   │       └── wait-timeout v0.2.1
+    │   │           └── libc feature "default"
+    │   │               ├── libc v0.2.178
+    │   │               └── libc feature "std"
+    │   │                   └── libc v0.2.178
+    │   ├── bit-set feature "default"
+    │   │   ├── bit-set v0.8.0
+    │   │   │   └── bit-vec v0.8.0
+    │   │   └── bit-set feature "std"
+    │   │       ├── bit-set v0.8.0 (*)
+    │   │       └── bit-vec feature "std"
+    │   │           └── bit-vec v0.8.0
+    │   ├── bit-vec feature "default"
+    │   │   ├── bit-vec v0.8.0
+    │   │   └── bit-vec feature "std" (*)
+    │   ├── bitflags feature "default"
+    │   │   └── bitflags v2.10.0
+    │   ├── rand feature "alloc"
+    │   │   └── rand v0.9.5
+    │   │       └── rand_core v0.9.3 (*)
+    │   ├── rand_xorshift feature "default"
+    │   │   └── rand_xorshift v0.4.0
+    │   │       └── rand_core feature "default" (*)
+    │   ├── regex-syntax feature "default"
+    │   │   ├── regex-syntax v0.8.8
+    │   │   ├── regex-syntax feature "std"
+    │   │   │   └── regex-syntax v0.8.8
+    │   │   └── regex-syntax feature "unicode"
+    │   │       ├── regex-syntax v0.8.8
+    │   │       ├── regex-syntax feature "unicode-age"
+    │   │       │   └── regex-syntax v0.8.8
+    │   │       ├── regex-syntax feature "unicode-bool"
+    │   │       │   └── regex-syntax v0.8.8
+    │   │       ├── regex-syntax feature "unicode-case"
+    │   │       │   └── regex-syntax v0.8.8
+    │   │       ├── regex-syntax feature "unicode-gencat"
+    │   │       │   └── regex-syntax v0.8.8
+    │   │       ├── regex-syntax feature "unicode-perl"
+    │   │       │   └── regex-syntax v0.8.8
+    │   │       ├── regex-syntax feature "unicode-script"
+    │   │       │   └── regex-syntax v0.8.8
+    │   │       └── regex-syntax feature "unicode-segment"
+    │   │           └── regex-syntax v0.8.8
+    │   ├── tempfile feature "default" (*)
+    │   └── unarray feature "default"
+    │       └── unarray v0.1.4
+    ├── proptest feature "bit-set"
+    │   └── proptest v1.9.0 (*)
+    ├── proptest feature "fork"
+    │   ├── proptest v1.9.0 (*)
+    │   ├── proptest feature "rusty-fork"
+    │   │   └── proptest v1.9.0 (*)
+    │   ├── proptest feature "std"
+    │   │   ├── proptest v1.9.0 (*)
+    │   │   ├── proptest feature "regex-syntax"
+    │   │   │   └── proptest v1.9.0 (*)
+    │   │   ├── num-traits feature "std"
+    │   │   │   └── num-traits v0.2.19 (*)
+    │   │   ├── rand feature "os_rng"
+    │   │   │   ├── rand v0.9.5 (*)
+    │   │   │   └── rand_core feature "os_rng"
+    │   │   │       └── rand_core v0.9.3 (*)
+    │   │   └── rand feature "std"
+    │   │       ├── rand v0.9.5 (*)
+    │   │       ├── rand feature "alloc" (*)
+    │   │       └── rand_core feature "std"
+    │   │           ├── rand_core v0.9.3 (*)
+    │   │           └── getrandom feature "std"
+    │   │               └── getrandom v0.3.4 (*)
+    │   └── proptest feature "tempfile"
+    │       └── proptest v1.9.0 (*)
+    ├── proptest feature "std" (*)
+    └── proptest feature "timeout"
+        ├── proptest v1.9.0 (*)
+        ├── proptest feature "fork" (*)
+        ├── proptest feature "rusty-fork" (*)
+        └── rusty-fork feature "timeout"
+            ├── rusty-fork v0.3.1 (*)
+            └── rusty-fork feature "wait-timeout"
+                └── rusty-fork v0.3.1 (*)
+
+exact_transcendentals v1.0.0 (/home/acid/projects/NINE65_v7/crates/exact_transcendentals)
+[dev-dependencies]
+├── criterion feature "default"
+│   ├── criterion v0.5.1
+│   │   ├── num-traits feature "std" (*)
+│   │   ├── once_cell feature "default"
+│   │   │   ├── once_cell v1.21.3
+│   │   │   └── once_cell feature "std" (*)
+│   │   ├── anes feature "default"
+│   │   │   └── anes v0.1.6
+│   │   ├── cast feature "default"
+│   │   │   └── cast v0.3.0
+│   │   ├── ciborium feature "default"
+│   │   │   ├── ciborium v0.2.2
+│   │   │   │   ├── ciborium-io feature "alloc"
+│   │   │   │   │   └── ciborium-io v0.2.2
+│   │   │   │   ├── ciborium-io feature "default"
+│   │   │   │   │   └── ciborium-io v0.2.2
+│   │   │   │   ├── ciborium-ll feature "default"
+│   │   │   │   │   └── ciborium-ll v0.2.2
+│   │   │   │   │       ├── half v2.7.1
+│   │   │   │   │       │   ├── cfg-if feature "default" (*)
+│   │   │   │   │       │   ├── zerocopy feature "derive"
+│   │   │   │   │       │   │   ├── zerocopy v0.8.31 (*)
+│   │   │   │   │       │   │   └── zerocopy feature "zerocopy-derive"
+│   │   │   │   │       │   │       └── zerocopy v0.8.31 (*)
+│   │   │   │   │       │   └── zerocopy feature "simd" (*)
+│   │   │   │   │       └── ciborium-io feature "default" (*)
+│   │   │   │   ├── serde feature "alloc"
+│   │   │   │   │   ├── serde v1.0.228
+│   │   │   │   │   │   ├── serde_core feature "result"
+│   │   │   │   │   │   │   └── serde_core v1.0.228
+│   │   │   │   │   │   └── serde_derive feature "default"
+│   │   │   │   │   │       └── serde_derive v1.0.228 (proc-macro)
+│   │   │   │   │   │           ├── proc-macro2 feature "proc-macro" (*)
+│   │   │   │   │   │           ├── quote feature "proc-macro" (*)
+│   │   │   │   │   │           ├── syn feature "clone-impls" (*)
+│   │   │   │   │   │           ├── syn feature "derive" (*)
+│   │   │   │   │   │           ├── syn feature "parsing" (*)
+│   │   │   │   │   │           ├── syn feature "printing" (*)
+│   │   │   │   │   │           └── syn feature "proc-macro" (*)
+│   │   │   │   │   └── serde_core feature "alloc"
+│   │   │   │   │       └── serde_core v1.0.228
+│   │   │   │   └── serde feature "derive"
+│   │   │   │       ├── serde v1.0.228 (*)
+│   │   │   │       └── serde feature "serde_derive"
+│   │   │   │           └── serde v1.0.228 (*)
+│   │   │   └── ciborium feature "std"
+│   │   │       ├── ciborium v0.2.2 (*)
+│   │   │       ├── ciborium-io feature "std"
+│   │   │       │   ├── ciborium-io v0.2.2
+│   │   │       │   └── ciborium-io feature "alloc" (*)
+│   │   │       └── serde feature "std"
+│   │   │           ├── serde v1.0.228 (*)
+│   │   │           └── serde_core feature "std"
+│   │   │               └── serde_core v1.0.228
+│   │   ├── serde feature "default"
+│   │   │   ├── serde v1.0.228 (*)
+│   │   │   └── serde feature "std" (*)
+│   │   ├── serde_derive feature "default" (*)
+│   │   ├── clap feature "std"
+│   │   │   ├── clap v4.5.53
+│   │   │   │   └── clap_builder v4.5.53
+│   │   │   │       ├── anstyle feature "default"
+│   │   │   │       │   ├── anstyle v1.0.13
+│   │   │   │       │   └── anstyle feature "std"
+│   │   │   │       │       └── anstyle v1.0.13
+│   │   │   │       └── clap_lex feature "default"
+│   │   │   │           └── clap_lex v0.7.6
+│   │   │   └── clap_builder feature "std"
+│   │   │       ├── clap_builder v4.5.53 (*)
+│   │   │       └── anstyle feature "std" (*)
+│   │   ├── criterion-plot feature "default"
+│   │   │   └── criterion-plot v0.5.0
+│   │   │       ├── cast feature "default" (*)
+│   │   │       └── itertools feature "default"
+│   │   │           ├── itertools v0.10.5
+│   │   │           │   └── either v1.15.0
+│   │   │           └── itertools feature "use_std"
+│   │   │               ├── itertools v0.10.5 (*)
+│   │   │               ├── itertools feature "use_alloc"
+│   │   │               │   └── itertools v0.10.5 (*)
+│   │   │               └── either feature "use_std"
+│   │   │                   ├── either v1.15.0
+│   │   │                   └── either feature "std"
+│   │   │                       └── either v1.15.0
+│   │   ├── itertools feature "default" (*)
+│   │   ├── is-terminal feature "default"
+│   │   │   └── is-terminal v0.4.17
+│   │   │       └── libc feature "default" (*)
+│   │   ├── oorandom feature "default"
+│   │   │   └── oorandom v11.1.5
+│   │   ├── plotters feature "area_series"
+│   │   │   └── plotters v0.3.7
+│   │   │       ├── num-traits feature "default"
+│   │   │       │   ├── num-traits v0.2.19 (*)
+│   │   │       │   └── num-traits feature "std" (*)
+│   │   │       ├── plotters-backend feature "default"
+│   │   │       │   └── plotters-backend v0.3.7
+│   │   │       └── plotters-svg feature "default"
+│   │   │           └── plotters-svg v0.3.7
+│   │   │               └── plotters-backend feature "default" (*)
+│   │   ├── plotters feature "line_series"
+│   │   │   └── plotters v0.3.7 (*)
+│   │   ├── plotters feature "svg_backend"
+│   │   │   ├── plotters v0.3.7 (*)
+│   │   │   └── plotters feature "plotters-svg"
+│   │   │       └── plotters v0.3.7 (*)
+│   │   ├── rayon feature "default"
+│   │   │   └── rayon v1.11.0
+│   │   │       ├── either v1.15.0
+│   │   │       └── rayon-core feature "default"
+│   │   │           └── rayon-core v1.13.0
+│   │   │               ├── crossbeam-deque feature "default"
+│   │   │               │   ├── crossbeam-deque v0.8.6
+│   │   │               │   │   ├── crossbeam-epoch v0.9.21
+│   │   │               │   │   │   └── crossbeam-utils v0.8.21
+│   │   │               │   │   └── crossbeam-utils v0.8.21
+│   │   │               │   └── crossbeam-deque feature "std"
+│   │   │               │       ├── crossbeam-deque v0.8.6 (*)
+│   │   │               │       ├── crossbeam-epoch feature "std"
+│   │   │               │       │   ├── crossbeam-epoch v0.9.21 (*)
+│   │   │               │       │   ├── crossbeam-epoch feature "alloc"
+│   │   │               │       │   │   └── crossbeam-epoch v0.9.21 (*)
+│   │   │               │       │   └── crossbeam-utils feature "std"
+│   │   │               │       │       └── crossbeam-utils v0.8.21
+│   │   │               │       └── crossbeam-utils feature "std" (*)
+│   │   │               └── crossbeam-utils feature "default"
+│   │   │                   ├── crossbeam-utils v0.8.21
+│   │   │                   └── crossbeam-utils feature "std" (*)
+│   │   ├── regex feature "std"
+│   │   │   ├── regex v1.12.2
+│   │   │   │   ├── regex-syntax v0.8.8
+│   │   │   │   ├── regex-automata feature "alloc"
+│   │   │   │   │   └── regex-automata v0.4.13
+│   │   │   │   │       └── regex-syntax v0.8.8
+│   │   │   │   ├── regex-automata feature "meta"
+│   │   │   │   │   ├── regex-automata v0.4.13 (*)
+│   │   │   │   │   ├── regex-automata feature "nfa-pikevm"
+│   │   │   │   │   │   ├── regex-automata v0.4.13 (*)
+│   │   │   │   │   │   └── regex-automata feature "nfa-thompson"
+│   │   │   │   │   │       ├── regex-automata v0.4.13 (*)
+│   │   │   │   │   │       └── regex-automata feature "alloc" (*)
+│   │   │   │   │   └── regex-automata feature "syntax"
+│   │   │   │   │       ├── regex-automata v0.4.13 (*)
+│   │   │   │   │       └── regex-automata feature "alloc" (*)
+│   │   │   │   ├── regex-automata feature "nfa-pikevm" (*)
+│   │   │   │   └── regex-automata feature "syntax" (*)
+│   │   │   ├── regex-syntax feature "std" (*)
+│   │   │   └── regex-automata feature "std"
+│   │   │       ├── regex-automata v0.4.13 (*)
+│   │   │       ├── regex-syntax feature "std" (*)
+│   │   │       └── regex-automata feature "alloc" (*)
+│   │   ├── serde_json feature "default"
+│   │   │   ├── serde_json v1.0.147
+│   │   │   │   ├── memchr v2.7.6
+│   │   │   │   ├── serde_core v1.0.228
+│   │   │   │   ├── itoa feature "default"
+│   │   │   │   │   └── itoa v1.0.16
+│   │   │   │   └── zmij feature "default"
+│   │   │   │       └── zmij v0.1.7
+│   │   │   └── serde_json feature "std"
+│   │   │       ├── serde_json v1.0.147 (*)
+│   │   │       ├── serde_core feature "std" (*)
+│   │   │       └── memchr feature "std"
+│   │   │           ├── memchr v2.7.6
+│   │   │           └── memchr feature "alloc"
+│   │   │               └── memchr v2.7.6
+│   │   ├── tinytemplate feature "default"
+│   │   │   └── tinytemplate v1.2.1
+│   │   │       ├── serde feature "default" (*)
+│   │   │       └── serde_json feature "default" (*)
+│   │   └── walkdir feature "default"
+│   │       └── walkdir v2.5.0
+│   │           └── same-file feature "default"
+│   │               └── same-file v1.0.6
+│   ├── criterion feature "cargo_bench_support"
+│   │   └── criterion v0.5.1 (*)
+│   ├── criterion feature "plotters"
+│   │   └── criterion v0.5.1 (*)
+│   └── criterion feature "rayon"
+│       └── criterion v0.5.1 (*)
+└── criterion feature "html_reports"
+    └── criterion v0.5.1 (*)
+
+fhe-service v0.1.0 (/home/acid/projects/NINE65_v7/crates/fhe-service)
+├── getrandom feature "default" (*)
+├── subtle feature "default" (*)
+├── serde feature "default" (*)
+├── serde feature "derive" (*)
+├── serde_json feature "default" (*)
+├── base64 feature "default"
+│   ├── base64 v0.22.1
+│   └── base64 feature "std"
+│       ├── base64 v0.22.1
+│       └── base64 feature "alloc"
+│           └── base64 v0.22.1
+├── bincode feature "default"
+│   └── bincode v1.3.3
+│       └── serde feature "default" (*)
+├── nine65 feature "default" (command-line)
+│   ├── nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)
+│   │   ├── unhal v0.1.0 (/home/acid/projects/NINE65_v7/crates/unhal)
+│   │   │   └── mana feature "default" (command-line)
+│   │   │       └── mana v0.1.0 (/home/acid/projects/NINE65_v7/crates/mana)
+│   │   │           ├── zeroize feature "default" (*)
+│   │   │           └── zeroize feature "derive" (*)
+│   │   │           [dev-dependencies]
+│   │   │           ├── proptest feature "default" (*)
+│   │   │           └── criterion feature "default" (*)
+│   │   ├── getrandom feature "default" (*)
+│   │   ├── subtle feature "default" (*)
+│   │   ├── zeroize feature "default" (*)
+│   │   ├── zeroize feature "derive" (*)
+│   │   ├── exact_transcendentals feature "default" (command-line)
+│   │   │   ├── exact_transcendentals v1.0.0 (/home/acid/projects/NINE65_v7/crates/exact_transcendentals) (*)
+│   │   │   └── exact_transcendentals feature "std"
+│   │   │       └── exact_transcendentals v1.0.0 (/home/acid/projects/NINE65_v7/crates/exact_transcendentals) (*)
+│   │   ├── serde feature "default" (*)
+│   │   ├── serde feature "derive" (*)
+│   │   ├── serde_json feature "default" (*)
+│   │   ├── bincode feature "default"
+│   │   │   ├── bincode v2.0.1
+│   │   │   │   ├── bincode_derive feature "default"
+│   │   │   │   │   └── bincode_derive v2.0.1 (proc-macro)
+│   │   │   │   │       └── virtue feature "default"
+│   │   │   │   │           └── virtue v0.0.18
+│   │   │   │   └── unty feature "default"
+│   │   │   │       └── unty v0.0.4
+│   │   │   ├── bincode feature "derive"
+│   │   │   │   ├── bincode v2.0.1 (*)
+│   │   │   │   └── bincode feature "bincode_derive"
+│   │   │   │       └── bincode v2.0.1 (*)
+│   │   │   └── bincode feature "std"
+│   │   │       ├── bincode v2.0.1 (*)
+│   │   │       └── bincode feature "alloc"
+│   │   │           └── bincode v2.0.1 (*)
+│   │   ├── mana feature "default" (command-line) (*)
+│   │   ├── sha2 feature "default"
+│   │   │   ├── sha2 v0.10.9
+│   │   │   │   ├── cfg-if feature "default" (*)
+│   │   │   │   ├── cpufeatures feature "default"
+│   │   │   │   │   └── cpufeatures v0.2.17
+│   │   │   │   └── digest feature "default"
+│   │   │   │       ├── digest v0.10.7
+│   │   │   │       │   ├── block-buffer feature "default"
+│   │   │   │       │   │   └── block-buffer v0.10.4
+│   │   │   │       │   │       └── generic-array feature "default"
+│   │   │   │       │   │           └── generic-array v0.14.7
+│   │   │   │       │   │               └── typenum feature "default"
+│   │   │   │       │   │                   └── typenum v1.19.0
+│   │   │   │       │   │               [build-dependencies]
+│   │   │   │       │   │               └── version_check feature "default"
+│   │   │   │       │   │                   └── version_check v0.9.5
+│   │   │   │       │   └── crypto-common feature "default"
+│   │   │   │       │       └── crypto-common v0.1.7
+│   │   │   │       │           ├── generic-array feature "default" (*)
+│   │   │   │       │           ├── generic-array feature "more_lengths"
+│   │   │   │       │           │   └── generic-array v0.14.7 (*)
+│   │   │   │       │           └── typenum feature "default" (*)
+│   │   │   │       └── digest feature "core-api"
+│   │   │   │           ├── digest v0.10.7 (*)
+│   │   │   │           └── digest feature "block-buffer"
+│   │   │   │               └── digest v0.10.7 (*)
+│   │   │   └── sha2 feature "std"
+│   │   │       ├── sha2 v0.10.9 (*)
+│   │   │       └── digest feature "std"
+│   │   │           ├── digest v0.10.7 (*)
+│   │   │           ├── digest feature "alloc"
+│   │   │           │   └── digest v0.10.7 (*)
+│   │   │           └── crypto-common feature "std"
+│   │   │               └── crypto-common v0.1.7 (*)
+│   │   └── thiserror feature "default"
+│   │       └── thiserror v1.0.69
+│   │           └── thiserror-impl feature "default"
+│   │               └── thiserror-impl v1.0.69 (proc-macro)
+│   │                   ├── proc-macro2 feature "default" (*)
+│   │                   ├── quote feature "default" (*)
+│   │                   └── syn feature "default" (*)
+│   │   [dev-dependencies]
+│   │   ├── rand_chacha feature "default"
+│   │   │   ├── rand_chacha v0.3.1 (*)
+│   │   │   └── rand_chacha feature "std" (*)
+│   │   ├── rand_core feature "default" (*)
+│   │   ├── proptest feature "default" (*)
+│   │   └── criterion feature "default" (*)
+│   ├── nine65 feature "accelerated"
+│   │   ├── nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65) (*)
+│   │   ├── nine65 feature "mana"
+│   │   │   └── nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65) (*)
+│   │   └── nine65 feature "unhal"
+│   │       └── nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65) (*)
+│   └── nine65 feature "exact_transcendentals_backend"
+│       └── nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65) (*)
+├── nine65 feature "serde"
+│   └── nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65) (*)
+├── sha2 feature "default" (*)
+└── thiserror feature "default" (*)
+[dev-dependencies]
+├── nine65 feature "default" (command-line) (*)
+└── nine65 feature "serde" (*)
+
+mana v0.1.0 (/home/acid/projects/NINE65_v7/crates/mana) (*)
+
+math_utils v0.1.0 (/home/acid/projects/NINE65_v7/crates/math_utils)
+
+nexgen_rational v0.1.0 (/home/acid/projects/NINE65_v7/crates/nexgen_rational)
+[dev-dependencies]
+└── proptest feature "default" (*)
+
+nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65) (*)
+
+nine65-extreme-tests v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65-extreme-tests)
+[dev-dependencies]
+├── rand_chacha feature "default" (*)
+├── rand_core feature "default" (*)
+├── proptest feature "default" (*)
+└── rayon feature "default" (*)
+
+private-feedback-core v0.1.0 (/home/acid/projects/NINE65_v7/crates/private-feedback-core)
+
+private-feedback-nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/private-feedback-nine65)
+├── nine65 feature "default" (command-line) (*)
+└── private-feedback-core feature "default" (command-line)
+    └── private-feedback-core v0.1.0 (/home/acid/projects/NINE65_v7/crates/private-feedback-core)
+
+unhal v0.1.0 (/home/acid/projects/NINE65_v7/crates/unhal) (*)
+2
+               total        used        free      shared  buff/cache   available
+Mem:      2881335296  1896427520    58728448     1114112   970784768   984907776
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vdb         13G  9.6G  3.2G  75% /

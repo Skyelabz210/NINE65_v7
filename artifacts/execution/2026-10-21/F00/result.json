@@ -1,0 +1,80 @@
+{
+  "task_id": "F00",
+  "status": "ready_for_review",
+  "source_commit": "7a7f203464746fbba6543295a3280dc38b92eed7",
+  "worktree_manifest_sha256": "37e7f96cf56461ebdcea301259a89d4fb9871b2347fc30142e6b2ede97e5b23f",
+  "manifest_scope": "SHA256 of changed-files.sha256; it records the appended baseline, status update, and command log.",
+  "files_changed": [
+    "artifacts/execution/baseline.json",
+    "docs/execution/2026-10-03/STATUS.md",
+    "artifacts/execution/2026-10-21/F00/baseline.log",
+    "artifacts/execution/2026-10-21/F00/changed-files.sha256",
+    "artifacts/execution/2026-10-21/F00/result.json"
+  ],
+  "checks": [
+    {
+      "command": "git status --short --branch",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-21/F00/baseline.log",
+      "log_sha256": "3020a855908ffa60a01c064dbcb93aa67c3bbc16fb0b560e924017b1ae32327e"
+    },
+    {
+      "command": "git rev-parse HEAD",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-21/F00/baseline.log",
+      "log_sha256": "3020a855908ffa60a01c064dbcb93aa67c3bbc16fb0b560e924017b1ae32327e"
+    },
+    {
+      "command": "rustc --version",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-21/F00/baseline.log",
+      "log_sha256": "3020a855908ffa60a01c064dbcb93aa67c3bbc16fb0b560e924017b1ae32327e"
+    },
+    {
+      "command": "cargo --version",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-21/F00/baseline.log",
+      "log_sha256": "3020a855908ffa60a01c064dbcb93aa67c3bbc16fb0b560e924017b1ae32327e"
+    },
+    {
+      "command": "sha256sum Cargo.lock",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-21/F00/baseline.log",
+      "log_sha256": "3020a855908ffa60a01c064dbcb93aa67c3bbc16fb0b560e924017b1ae32327e"
+    },
+    {
+      "command": "cargo tree --workspace --locked --offline --edges features",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-21/F00/baseline.log",
+      "log_sha256": "3020a855908ffa60a01c064dbcb93aa67c3bbc16fb0b560e924017b1ae32327e"
+    },
+    {
+      "command": "nproc; free -b; df -h .",
+      "exit_code": 0,
+      "log": "artifacts/execution/2026-10-21/F00/baseline.log",
+      "log_sha256": "3020a855908ffa60a01c064dbcb93aa67c3bbc16fb0b560e924017b1ae32327e"
+    },
+    {
+      "command": "python3 -m json.tool artifacts/execution/baseline.json",
+      "exit_code": 0
+    },
+    {
+      "command": "python3 -c 'import json; d=json.load(open(\"artifacts/execution/baseline.json\"))[\"execution_freeze_2026-10-21\"]; assert len(d[\"historical_issue_inventory\"][\"numbers\"]) == 29; assert d[\"worktree\"][\"clean\"] is True; print(\"baseline assertions: 2 passed; issue_count=29\")'",
+      "exit_code": 0,
+      "assertions_passed": 2
+    }
+  ],
+  "acceptance_evidence": [
+    "The October 3 baseline and hashes remain intact; a separate October 21 execution snapshot records the current main tree and clean pre-edit worktree.",
+    "The new snapshot records the toolchain, lockfile, feature-graph digest, CPU/RAM/disk, selected upstream commits, and all 29 issue numbers.",
+    "Issues #95 and #83 were refreshed as open; no issue closure is proposed. One open PR (#187) and its base/head/mergeability/review summary are recorded.",
+    "No credentials, raw environment values, private keys, or chat history were added to the baseline."
+  ],
+  "unresolved": [
+    "F00 requires independent code review before acceptance.",
+    "The 29 issue numbers are preserved from the October 3 inventory; a full live status sweep was not run because no issue closure is proposed."
+  ],
+  "claims_changed": [
+    "The current checkout is synchronized at main 7a7f203; R01 remains blocked_design; issue #95 is open/reopened and issue #83 is open; PR #187 is open and unmergeable against its recorded older base."
+  ]
+}
