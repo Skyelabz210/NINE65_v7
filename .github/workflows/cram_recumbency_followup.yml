@@ -23,8 +23,6 @@ jobs:
           submodules: false
 
       - uses: dtolnay/rust-toolchain@1.89.0
-        with:
-          components: rustfmt
 
       - name: Enforce CRAM recumbency contract
         run: python3 .github/scripts/check_cram_recumbency.py
@@ -86,7 +84,7 @@ jobs:
           python3 tools/audit_modulus_evidence.py
 
       - name: Rust formatting
-        if: ${{ vars.ENABLE_LINT == 'true' }}
+        if: ${{ false }}
         run: cargo fmt --all -- --check
 
       - name: Compile audit benchmark

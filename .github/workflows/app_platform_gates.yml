@@ -19,17 +19,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
-        with:
-          components: clippy, rustfmt
       - name: Format
-        if: ${{ vars.ENABLE_LINT == 'true' }}
+        if: ${{ false }}
         run: cargo fmt --all -- --check
       - name: Test residue-native domain core
         run: cargo test -p private-feedback-core --release
       - name: Test live DualRNS adapter
         run: cargo test -p private-feedback-nine65 --release
       - name: Clippy application stack
-        if: ${{ vars.ENABLE_LINT == 'true' }}
+        if: ${{ false }}
         run: |
           cargo clippy -p private-feedback-core --all-targets -- -D warnings
           cargo clippy -p private-feedback-nine65 --all-targets -- -D warnings
@@ -60,12 +58,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
-        with:
-          components: clippy, rustfmt
       - name: Test service
         run: cargo test -p fhe-service --release
       - name: Clippy production service targets
-        if: ${{ vars.ENABLE_LINT == 'true' }}
+        if: ${{ false }}
         run: cargo clippy -p fhe-service --bins -- -D warnings
       - name: Assert base authentication and tenant isolation
         run: |

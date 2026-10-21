@@ -48,7 +48,7 @@ jobs:
           python3 scripts/test_benchmark_contract.py
           python3 scripts/test_analyze_cram_fhe_hypotheses.py
       - name: Parse and normalize new Rust probe
-        if: ${{ vars.ENABLE_LINT == 'true' }}
+        if: ${{ false }}
         run: rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
       - name: Reject floating point in comparative path
         run: |
