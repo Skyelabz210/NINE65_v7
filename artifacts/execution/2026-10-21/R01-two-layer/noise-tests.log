@@ -1,0 +1,14 @@
+test_d1_cross_term_exceeds_single_product_bound (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_d1_cross_term_exceeds_single_product_bound) ... ok
+test_floor_delta_encoding_correction_is_required (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_floor_delta_encoding_correction_is_required) ... ok
+test_fpd_auxiliary_capacity_is_strict_and_lift_fits (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_fpd_auxiliary_capacity_is_strict_and_lift_fits) ... ok
+test_fpd_identity_and_rounding_bound_exhaustive (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_fpd_identity_and_rounding_bound_exhaustive) ... ok
+test_fresh_error_bound_exhausts_ternary_and_cbd_support (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_fresh_error_bound_exhausts_ternary_and_cbd_support) ... ok
+test_negacyclic_product_bound_exhaustive_toy_domain (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_negacyclic_product_bound_exhaustive_toy_domain) ... ok
+test_negative_inputs_use_floor_rule (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_negative_inputs_use_floor_rule) ... ok
+test_omitting_fpd_floor_scale_term_fails_fixture (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_omitting_fpd_floor_scale_term_fails_fixture) ... ok
+test_scalar_multiply_bound_on_actual_phase_and_missing_winding_negative (test_certified_noise_oracle.CertifiedNoiseOracleTests.test_scalar_multiply_bound_on_actual_phase_and_missing_winding_negative) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 14.942s
+
+OK

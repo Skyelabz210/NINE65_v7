@@ -1,0 +1,13 @@
+{
+  "native_record": "candidate_n8192_lanes5",
+  "native_noise_cross_check": true,
+  "first_failure": {
+    "stage": "polynomial multiply",
+    "product_factors": 2,
+    "depth": 1,
+    "error_bits": 131,
+    "half_delta_bits": 113,
+    "error_bound": "2042469688645631428039401063486574800897"
+  },
+  "bounded_polynomial_self_test_cases": 9482
+}

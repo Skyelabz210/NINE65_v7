@@ -1,0 +1,75 @@
+{
+  "task_id": "R01",
+  "subtask": "two-layer sparse-rounding correction and conditional route",
+  "status": "blocked_design",
+  "source_commit": "0eb556659e1d91d433d6f4038ad9ed866f1015b0",
+  "worktree_manifest_sha256": "2cc6d8c3f211c516c63114c1fc30e085b8bde0b307972e92a9cb3e6dc8a280e2",
+  "manifest_scope": "source-and-evidence.sha256 includes changed code/docs, oracle dependencies and run evidence; not this self-referencing result file. Native Rust source hashes are inside native-probe.json.",
+  "supersedes": {
+    "commit": "7a7f203464746fbba6543295a3280dc38b92eed7",
+    "artifact": "artifacts/execution/2026-10-21/R01-partial/result.json",
+    "claim": "Dense outer-key re-encryption replaces the sparse key norm in prior component-scale rounding.",
+    "historical_artifacts_modified": false
+  },
+  "files_changed": [
+    "scripts/digit_radius_oracle.py",
+    "scripts/test_digit_radius_oracle.py",
+    "docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md",
+    "docs/execution/2026-10-03/STATUS.md",
+    "artifacts/execution/2026-10-21/R01-two-layer/"
+  ],
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s scripts -p test_digit_radius_oracle.py -v",
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-21/R01-two-layer/radius-tests.log",
+      "log_sha256": "1ae885d0be9b42ebf08b11882c214d9f9754c0dfba722495650dc5de003a748b"
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p test_certified_noise_oracle.py -v",
+      "exit_code": 0,
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-21/R01-two-layer/noise-tests.log",
+      "log_sha256": "48a8dcb50758aab7242060c01b69912fcf4ca039ac66f7ec300b181231016300"
+    },
+    {
+      "command": "cargo run --locked --offline --quiet -j1 -p nine65 --features serde --example canonical_lift_feasibility",
+      "exit_code": 0,
+      "artifact": "artifacts/execution/2026-10-21/R01-two-layer/native-probe.json",
+      "interpretation": "Successful metadata probe reproduces native refusal, not successful refresh."
+    },
+    {
+      "command": "PYTHONPATH=scripts python3 - <<'PY'\nimport json\nfrom canonical_lift_feasibility import assess\nfrom bounded_digit_polynomial import self_test\nwith open('artifacts/execution/2026-10-21/R01-two-layer/native-probe.json') as stream:\n    probe=json.load(stream)\nrecords=[r for r in probe['records'] if r['n']==8192 and len(r['primes'])==5]\nassert len(records)==1\nr=records[0]\ncheck=assess(r,10)\nassert check['production_noise_result_cross_checked']\nassert check['first_noise_refusal']['error_bits']==131\nassert check['first_noise_refusal']['half_delta_bits']==113\nprint(json.dumps({'native_record':r['name'],'native_noise_cross_check':True,'first_failure':check['first_noise_refusal'],'bounded_polynomial_self_test_cases':self_test()},indent=2))\nPY",
+      "exit_code": 0,
+      "artifact": "artifacts/execution/2026-10-21/R01-two-layer/followup-check.json"
+    }
+  ],
+  "acceptance_evidence": [
+    "Corrected inner rho depends on the secret at component scaling; outer BFV W is tracked separately.",
+    "Exact nearest-component modulus-switch and noisy per-lane gadget-switch bounds, including floor encoding.",
+    "Toy per-lane noisy switching and expansion checked over five messages and all 16 dense degree-four outer sign patterns.",
+    "60 constant-projection encrypted polynomial cases followed by squares; nonzero residuals strictly reduce actual ideal-grid phase error.",
+    "9482 exhaustive small-prime polynomial evaluations and corrupt-value/derivative rejection checks.",
+    "Conditional native-lane 10-bit gadget bound: K=150847488; first two supplied V fixtures give B=17, high-error third fixture refused.",
+    "Source V=4480644730138606536169473115610 yields radius 17; the next integer yields 18.",
+    "Actual native five-prime constructor refuses first polynomial multiply at 131 versus 113 bits; independent oracle agrees."
+  ],
+  "unresolved": [
+    "No native sparse-switch key family, deterministic post-transform operation lineage, or joint sparse/dense security certificate.",
+    "No complete admitted outer transform/polynomial schedule, native repeated refresh, or post-refresh multiply certification.",
+    "Toy encrypted circuit is constant-projection only, uses wide moduli and unrelinearized tensors; not a SIMD or production evaluator.",
+    "R00 full-history derivation and R01 specialist acceptance remain incomplete."
+  ],
+  "claims_changed": [
+    "The old dense-key substitution blocker is withdrawn.",
+    "Sparse B=17 is conditionally supported for the stated low-error histories, not selected by successful random samples."
+  ],
+  "production_refresh_enabled": false,
+  "production_files_modified": false,
+  "lint_run": false
+}

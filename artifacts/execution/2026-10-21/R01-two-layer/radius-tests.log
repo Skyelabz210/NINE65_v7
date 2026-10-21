@@ -1,0 +1,15 @@
+test_actual_negacyclic_phases_exhaustive (test_digit_radius_oracle.DigitRadiusTests.test_actual_negacyclic_phases_exhaustive) ... ok
+test_encrypted_bounded_removal_and_followup_square (test_digit_radius_oracle.DigitRadiusTests.test_encrypted_bounded_removal_and_followup_square) ... ok
+test_invalid_and_ambiguous_inputs_refuse (test_digit_radius_oracle.DigitRadiusTests.test_invalid_and_ambiguous_inputs_refuse) ... ok
+test_modswitch_exhaustive_with_floor_encoding (test_digit_radius_oracle.DigitRadiusTests.test_modswitch_exhaustive_with_floor_encoding) ... ok
+test_native_history_and_first_support_boundary (test_digit_radius_oracle.DigitRadiusTests.test_native_history_and_first_support_boundary) ... ok
+test_native_lane_gadget_support_and_first_switch_failure (test_digit_radius_oracle.DigitRadiusTests.test_native_lane_gadget_support_and_first_switch_failure) ... ok
+test_noisy_keyswitch_then_expansion_under_every_dense_outer_key (test_digit_radius_oracle.DigitRadiusTests.test_noisy_keyswitch_then_expansion_under_every_dense_outer_key) ... ok
+test_outer_noise_can_fail_without_changing_inner_residual (test_digit_radius_oracle.DigitRadiusTests.test_outer_noise_can_fail_without_changing_inner_residual) ... ok
+test_sparse_native_fixtures_and_exact_boundary (test_digit_radius_oracle.DigitRadiusTests.test_sparse_native_fixtures_and_exact_boundary) ... ok
+test_switch_error_and_invalid_support_cannot_be_omitted (test_digit_radius_oracle.DigitRadiusTests.test_switch_error_and_invalid_support_cannot_be_omitted) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 8.465s
+
+OK

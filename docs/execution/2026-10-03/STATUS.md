@@ -1,6 +1,26 @@
 # Live execution update — 2026-10-21
 
-The checkout is synchronized and clean on `main` at
+## Sparse-rounding correction (after `0eb5566`)
+
+The previous R01 key-domain explanation was incorrect. Component scaling
+happens under the temporary sparse secret; encryption under a dense work key
+adds a separate outer-ciphertext error. It does not replace the sparse norm
+in the plaintext residual bound. The corrected
+[`DIGIT_RADIUS_CONTRACT.md`](DIGIT_RADIUS_CONTRACT.md) gives both inequalities,
+modulus-switch/key-switch composition, and exact first-refusal boundaries.
+
+Ten focused tests cover those bounds and encrypted bounded-digit removal
+followed by a square in toy rings. The conditional native-lane calculation
+supports B=17 for the first two V fixtures with weight 32 and the current
+10-bit gadget base; the high-error third fixture still fails. This is not
+a live post-transform certificate or a sparse-key security assessment.
+The native nonlinear circuit remains unadmitted. No production gate or task
+acceptance flag changed. Historical R01-partial and F00 artifacts are retained;
+their dense-key substitution claim is superseded, not endorsed.
+
+## Earlier baseline freeze (historical)
+
+The checkout was synchronized and clean on `main` at
 [`7a7f203`](https://github.com/Skyelabz210/NINE65_v7/commit/7a7f203464746fbba6543295a3280dc38b92eed7).
 The append-only F00 snapshot in
 [`baseline.json`](../../../artifacts/execution/baseline.json) records the tree,
@@ -9,24 +29,22 @@ historical 29-issue inventory, and the selected upstream revisions. It does not
 rewrite the original October 3 baseline. At freeze time, the worktree had no
 dirty or untracked paths.
 
-R01 remains **`BLOCKED_DESIGN`**, not accepted. Its partial derivation is in
-[`DIGIT_RADIUS_CONTRACT.md`](DIGIT_RADIUS_CONTRACT.md), with three passing
-scalar-oracle tests and a preserved log. The reference's weight-32 sparse key
-is temporary; it re-encrypts under the full work key before the next transform,
-so it does not justify substituting 32 for the work-secret norm in the
-expanded-phase rounding bound. The full transform/switch/encapsulation error
-recurrence and R00's `TIGHT_BOUND_RESULT.md` are still missing.
+At this freeze R01 was recorded as **`BLOCKED_DESIGN`**, not accepted, with
+three scalar tests. Its key-domain explanation has since been corrected above.
+The full native transform/circuit history and R00's `TIGHT_BOUND_RESULT.md`
+remain incomplete.
 
 Live GitHub check: [issue #95](https://github.com/Skyelabz210/NINE65_v7/issues/95)
 is open (reopened), and [issue #83](https://github.com/Skyelabz210/NINE65_v7/issues/83)
 is open. No closure is proposed; other issue numbers below remain the October 3
 historical inventory, not a fresh 29-issue status sweep. The only open PR
 returned was [#187](https://github.com/Skyelabz210/NINE65_v7/pull/187): it is
-unmergeable against an older `main` base and its head has no status checks.
+unmergeable against an older `main` base and the combined-status API returned
+no entries (not a complete Actions/check-run inventory).
 Automated review comments flag lost generated-output ignore rules, panic
 isolation, target-modulus validation, and a release-profile path that aborts.
-No action was taken on that unrelated PR. The latest main commit also has no
-status checks reported. No lint command was run.
+No action was taken on that unrelated PR. The then-current main commit also
+had no combined-status entries. No lint command was run.
 
 F00's required independent code review remains outstanding; the baseline is
 recorded but the coordinator has not marked the packet accepted.
