@@ -1,0 +1,44 @@
+{
+  "task_id": "R01",
+  "status": "blocked_design",
+  "source_commit": "f113f51ad55e760682c523e2ee2428bdf1df7953",
+  "worktree_manifest_sha256": "ecfd401c135a045fc23bb99bf8075c942b1e760c161a5c4bb9f296a194d2149c",
+  "manifest_scope": "SHA256 of changed-files.sha256; that manifest records the R01 contract note and test log.",
+  "files_changed": [
+    "docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md",
+    "artifacts/execution/2026-10-21/R01-partial/test.log",
+    "artifacts/execution/2026-10-21/R01-partial/changed-files.sha256",
+    "artifacts/execution/2026-10-21/R01-partial/result.json"
+  ],
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s scripts -p test_digit_radius_oracle.py",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-21/R01-partial/test.log",
+      "log_sha256": "ad61b50ad36703f26189a260f1f7b459939be0d9e78046aec6209256af600d25"
+    },
+    {
+      "command": "python3 -m json.tool artifacts/execution/2026-10-21/R01-partial/result.json",
+      "exit_code": 0
+    },
+    {
+      "command": "! grep -nE '[[:blank:]]+$' docs/execution/2026-10-03/DIGIT_RADIUS_CONTRACT.md artifacts/execution/2026-10-21/R01-partial/result.json",
+      "exit_code": 0
+    }
+  ],
+  "acceptance_evidence": [
+    "The scalar expanded-phase oracle is exercised on exhaustive toy rings and checks an exact radius boundary.",
+    "The pinned reference call sequence shows temporary sparse-key switching followed by re-encryption under the work key; HWT 32 cannot replace the work-secret norm in the expanded-phase rounding term."
+  ],
+  "unresolved": [
+    "R01 depends on R00; TIGHT_BOUND_RESULT.md is absent and the execution planner currently reports only F00 as dependency-ready.",
+    "No complete transform, modulus-switch, sparse key-switch, encapsulation, or work-key noise recurrence is available for one exact family.",
+    "No live operation-lineage certificate, selected B, composed sampler failure probability, specialist review, or complete-route admission vectors exist."
+  ],
+  "claims_changed": [
+    "The reference's temporary sparse Hamming-weight bound applies to an intermediate stage; it does not reduce the work-secret norm in the later expanded-phase component-rounding bound."
+  ]
+}
