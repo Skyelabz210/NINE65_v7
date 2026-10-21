@@ -118,3 +118,34 @@ usable multiply-refresh-multiply chain. A later refresh also requires the boot
 secret precharged under a next boot key and a fresh carry bound for the dense
 output ciphertext. Exact source hashes and test counts are in
 `artifacts/execution/2026-10-20-carry/safe-basis-all-coefficient-carry.json`.
+
+## Follow-up: screened five-prime fresh refresh and square
+
+The four-prime refusal was parameter-headroom, not a failed carry identity. The
+repository's existing five-prime tuple is security-screened for the 128-bit
+claim (Core-SVP 151 bits, Matzov 136 bits), and its modeled square bound is
+130 bits against a 137-bit half-scale. The native carry test now has a
+separate five-prime path. Since this tuple's Q is wider than `u128`, its carry
+assembly, phase-grid checks, and refresh bounds form Q with `U256`; they do not
+read `RNSFHEContext::q_product`'s overflow sentinel. The original four-prime
+three-profile residual regression remains intact.
+
+The fresh five-prime path passed 16,390 encrypted carry/refresh checks, then
+performed the exact ciphertext square and verified all 8,192 coefficients:
+49 at coefficient 0 and zero elsewhere. Its public refresh error bound was
+`287482076757990300936636629` (88 bits), the modeled square bound was
+`1264687542366000320447941098417326051329` (130 bits), and the half-scale was
+`117984527272727065037126399264836478558604` (137 bits). The five-prime test
+finished in 60.49 seconds. The four-prime carry test still passes 49,170
+checks across fresh and positive/negative injected-residual profiles, with the
+same two injected cases refused for their next square. The complete
+`precharged_` filter passed 7 tests, with 2 expensive research tests ignored;
+the five-prime square test was run separately.
+
+This demonstrates one fresh-profile refresh→square path under one seeded
+work/boot key pair. It does not establish square admission for injected-offset
+profiles, another square, a second key epoch, randomized hidden sources, or
+production S00/S01/S03 admission. The independent derivation review and a new
+all-coefficient carry bound for a later dense ciphertext remain open. Detailed
+outputs and source hashes are in
+`artifacts/execution/2026-10-20-carry/safe-basis-all-coefficient-carry.json`.

@@ -53,7 +53,7 @@ fn pow2(exponent: u32) -> U512 {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum Refusal {
+pub(super) enum Refusal {
     Regime,
     NonCentered,
     StateLimit {
@@ -67,7 +67,7 @@ enum Refusal {
     },
 }
 
-struct Noise {
+pub(super) struct Noise {
     n: u128,
     t: u64,
     q_bits: u32,
@@ -78,7 +78,7 @@ struct Noise {
 }
 
 impl Noise {
-    fn new(config: &FHEConfig) -> Self {
+    pub(super) fn new(config: &FHEConfig) -> Self {
         let arithmetic = ExactMulPlan::new(&config.primes, config.n, config.t).unwrap();
         let c = arithmetic.certificate();
         let n = config.n as u128;
@@ -119,7 +119,7 @@ impl Noise {
             Ok(value)
         }
     }
-    fn multiply(&self, a: U512, b: U512) -> Result<U512, Refusal> {
+    pub(super) fn multiply(&self, a: U512, b: U512) -> Result<U512, Refusal> {
         let np = self.n * self.t as u128;
         let factor = np * (self.n / 2 + 1) + (self.t - 1) as u128 / 2;
         let exponent =
@@ -138,6 +138,9 @@ impl Noise {
                 .add(self.switch),
             "selector multiply",
         )
+    }
+    pub(super) fn half(&self) -> U512 {
+        self.half
     }
 }
 
@@ -483,7 +486,7 @@ fn decode(ctx: &RNSFHEContext, ct: &RNSCiphertext, sk: &DualRNSSecretKey, bound:
     decode_at(ctx, ct, sk, bound, [0, 1, ctx.n / 2, ctx.n - 1])
 }
 
-fn decode_at(
+pub(super) fn decode_at(
     ctx: &RNSFHEContext,
     ct: &RNSCiphertext,
     sk: &DualRNSSecretKey,

@@ -5,7 +5,7 @@ use super::evaluate_centered_components;
 use super::safe_basis_precharge_tests::{decode_indices, inverse, precharge, signed_secret};
 use crate::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use crate::arithmetic::main_only_base_ext::MainOnlyBaseExt;
-use crate::arithmetic::rns::U256;
+use crate::arithmetic::rns::{U256, U512};
 use crate::arithmetic::RNSPolynomial;
 use crate::entropy::ShadowHarvester;
 use crate::keys::bootstrap::{screen_bootstrap_security, validate_bootstrap_primes};
@@ -18,9 +18,14 @@ const ROOT: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
 // All boot primes exceed every work/coordinate prime. No plaintext-range
 // or security check is bypassed to admit the source-prime coordinates.
 const BOOT: [u64; 4] = [1811939329, 2113929217, 2130706433, 1107296257];
+// Existing screened five-prime tuple from the composition experiments. Its
+// product is wider than u128, so the follow-up test exercises the U256 path.
+const SQUARE_BOOT: [u64; 5] = [
+    1811939329, 2113929217, 2130706433, 1107296257, 1711276033,
+];
 
-fn coordinate_error(n: usize, eta: usize, qb: u128, m: u64) -> u128 {
-    let remainder = qb % m as u128;
+fn coordinate_error(n: usize, eta: usize, qb: U256, m: u64) -> u128 {
+    let remainder = qb.mod_u64(m) as u128;
     eta as u128 * (2 * n as u128 + 1) * n as u128 * (m / 2) as u128
         + (n as u128 + 1) * remainder
         + remainder.div_ceil(2)
@@ -147,10 +152,10 @@ fn phase_oracle(
         .collect()
 }
 
-fn signed_grid_error(phase: U256, qb: u128, t: u64, decoded: u64) -> i128 {
+fn signed_grid_error(phase: U256, qb: U256, t: u64, decoded: u64) -> i128 {
     let scaled = phase.mul_u64(t);
-    let ideal = U256::from_u128(qb).mul_u64(decoded);
-    let period = U256::from_u128(qb).mul_u64(t);
+    let ideal = qb.mul_u64(decoded);
+    let period = qb.mul_u64(t);
     let mut negative = ideal.ge(scaled);
     let mut difference = abs_difference(scaled, ideal);
     if difference.ge(period.shr1()) {
@@ -166,9 +171,9 @@ fn signed_grid_error(phase: U256, qb: u128, t: u64, decoded: u64) -> i128 {
     }
 }
 
-fn residual_subtracted_error(grid_error: i128, q: u128, g: i128, qb: u128) -> U256 {
+fn residual_subtracted_error(grid_error: i128, q: u128, g: i128, qb: U256) -> U256 {
     let a = U256::from_u128(grid_error.unsigned_abs()).mul_low(U256::from_u128(q));
-    let b = U256::from_u128(g.unsigned_abs()).mul_low(U256::from_u128(qb));
+    let b = U256::from_u128(g.unsigned_abs()).mul_low(qb);
     if (grid_error < 0) == (g < 0) {
         abs_difference(a, b)
     } else {
@@ -178,21 +183,30 @@ fn residual_subtracted_error(grid_error: i128, q: u128, g: i128, qb: u128) -> U2
 
 #[test]
 fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
+    run_precharged_aligned_frame(&BOOT, &[0, 1, -1], false);
+}
+
+#[test]
+fn five_prime_full_refresh_supports_one_followup_square() {
+    run_precharged_aligned_frame(&SQUARE_BOOT, &[0], true);
+}
+
+fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_square: bool) {
     let config = SecureConfig::secure_128().into_config();
     let work = RNSFHEContext::try_new(&config).unwrap();
     let q = work.q_product;
     let mut boot_config = config.clone();
-    boot_config.primes = BOOT.to_vec();
-    boot_config.q = BOOT[0];
-    assert!(BOOT.iter().all(|&p| is_prime(p)));
-    validate_bootstrap_primes(&BOOT, config.n).unwrap();
+    boot_config.primes = boot_primes.to_vec();
+    boot_config.q = boot_primes[0];
+    assert!(boot_primes.iter().all(|&p| is_prime(p)));
+    validate_bootstrap_primes(boot_primes, config.n).unwrap();
     assert!(
-        screen_bootstrap_security(&BOOT, config.n, 128)
+        screen_bootstrap_security(boot_primes, config.n, 128)
             .unwrap()
             .meets_claim_under_both
     );
     let boot = RNSFHEContext::try_new(&boot_config).unwrap();
-    let qb = boot.q_product;
+    let qb = U256::product_u64s(boot_primes);
     let mut rng = ShadowHarvester::with_seed(0x4341_5252_5951);
     let work_keys = work.generate_keys_dual(&mut rng);
     let boot_keys = boot.generate_keys_dual(&mut rng);
@@ -209,7 +223,7 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
     let mut weights = Vec::new();
     let mut assembly_error = 0u128;
     for (lane, &m) in moduli.iter().enumerate() {
-        assert!(BOOT.iter().all(|&p| m < p));
+        assert!(boot_primes.iter().all(|&p| m < p));
         let mut encoding = boot_config.clone();
         encoding.t = m;
         let ctx = RNSFHEContext::try_new(&encoding).unwrap();
@@ -227,7 +241,8 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
         }
         coordinates.push((ctx, key));
     }
-    assert!(assembly_error < qb / config.t as u128 / 4);
+    let boot_delta = qb.div_mod_u64(config.t).0;
+    assert!(U256::from_u128(assembly_error).mul_u64(4).lt(boot_delta));
     let indices = [0, 1, config.n / 3, config.n / 2, config.n - 2, config.n - 1];
     let all_indices: Vec<_> = (0..config.n).collect();
     let original = work.encrypt_dual(7, &work_keys.public_key, &mut rng);
@@ -235,7 +250,8 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
     let mut checked = 0;
     let mut nonzero = 0;
     let mut affine_only_failures = 0;
-    for offset_sign in [0i128, 1, -1] {
+    let mut square_checks = 0;
+    for &offset_sign in profiles {
         let mut input = original.clone();
         let offset = offset_sign * injected as i128;
         for (values, &prime) in input.c0.main.iter_mut().zip(&config.primes) {
@@ -252,12 +268,12 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
             + (q % config.t as u128) * ((config.t - 1) / 2) as u128;
         assert!(public_g_bound < q / 2);
         let retained_bound = ceil_ratio(
-            U256::from_u128(qb).mul_low(U256::from_u128(public_g_bound)),
+            qb.mul_low(U256::from_u128(public_g_bound)),
             q,
             config.t,
         );
         let total_bound = assembly_error + retained_bound;
-        assert!(total_bound < qb / config.t as u128 / 2);
+        assert!(U256::from_u128(total_bound).mul_u64(2).lt(boot_delta));
         let mut residuals = [
             vec![vec![0; config.n]; moduli.len()],
             vec![vec![0; config.n]; moduli.len()],
@@ -359,7 +375,7 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
         let affine = scale(&boot, &affine_half, config.n as i64);
         let refreshed = boot.add(&affine, &carry);
         let n = config.n as u128;
-        let remainder = qb % config.t as u128;
+        let remainder = qb.mod_u64(config.t) as u128;
         let beta = config.eta as u128 * (2 * n + 1);
         let affine_inner_error =
             beta * n * (config.t / 2) as u128 + (n + 1) * remainder + remainder.div_ceil(2);
@@ -368,7 +384,7 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
         // term, unlike the per-coefficient trace implementation.
         let affine_bound = affine_inner_error * n;
         let refresh_bound = affine_bound + total_bound;
-        assert!(refresh_bound < qb / config.t as u128 / 2);
+        assert!(U256::from_u128(refresh_bound).mul_u64(2).lt(boot_delta));
         let wrong_j = expected_all
             .iter()
             .position(|(k, _)| *k != 0)
@@ -396,6 +412,58 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
             );
         }
         checked += config.n;
+        let noise = super::safe_basis_composition_tests::Noise::new(&boot.config);
+        let refresh_bound_value = refresh_bound;
+        let refresh_bound = U512::from_u128(refresh_bound_value);
+        let square_preflight = noise.multiply(refresh_bound, refresh_bound);
+        if check_square {
+            assert_eq!(offset_sign, 0);
+            let square_bound = square_preflight.unwrap();
+            assert!(
+                (square_bound.d3, square_bound.d2, square_bound.d1, square_bound.d0)
+                    < (
+                        noise.half().d3,
+                        noise.half().d2,
+                        noise.half().d1,
+                        noise.half().d0
+                    )
+            );
+            let native_boot_secret = RNSSecretKey {
+                s: RNSPolynomial {
+                    n: boot.n,
+                    limbs: boot
+                        .rns
+                        .mont_contexts
+                        .iter()
+                        .zip(&boot_keys.secret_key.s.main)
+                        .map(|(mont, lane)| {
+                            lane.iter().map(|&x| mont.to_montgomery(x)).collect()
+                        })
+                        .collect(),
+                },
+            };
+            let exact = boot.try_exact_evaluator().unwrap();
+            let relin = exact.generate_hybrid_gadget_key_with_rng(&native_boot_secret, &mut rng);
+            let square = exact.try_mul_exact(&refreshed, &refreshed, &relin).unwrap();
+            let actual = super::safe_basis_composition_tests::decode_at(
+                &boot,
+                &square,
+                &boot_keys.secret_key,
+                square_bound,
+                0..config.n,
+            );
+            for (j, &value) in actual.iter().enumerate() {
+                assert_eq!(value, u64::from(j == 0) * 49, "follow-up square at j={j}");
+            }
+            eprintln!(
+                "five-prime refresh→square bounds: refresh={refresh_bound_value}; square={square_bound:?}; half-scale={:?}; checked={} coefficients",
+                noise.half(),
+                config.n
+            );
+            square_checks += config.n;
+        } else {
+            assert!(square_preflight.is_err());
+        }
         let expected: Vec<_> = indices
             .iter()
             .map(|&j| carry_oracle(&r, &secret, q, j))
@@ -431,10 +499,11 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
             nonzero += usize::from(k != 0);
         }
     }
-    assert_eq!(checked, 18 + 6 * config.n);
-    assert_eq!(affine_only_failures, 3);
+    assert_eq!(checked, profiles.len() * (6 + 2 * config.n));
+    assert_eq!(affine_only_failures, profiles.len());
+    assert_eq!(square_checks, if check_square { config.n } else { 0 });
     assert!(nonzero > 0);
-    eprintln!("aligned frame: {checked} encrypted native carry/refresh checks across all {n} coefficients and three residual profiles; {nonzero} nonzero carries; {affine_only_failures} affine-only negative controls fail; assembly error={assembly_error}; refreshed output matches all-coefficient oracle", n = config.n);
+    eprintln!("aligned frame ({boot_prime_count} boot primes): {checked} encrypted native carry/refresh checks across all {n} coefficients and {profiles} residual profiles; {square_checks} follow-up square coefficients checked; {nonzero} nonzero carries; {affine_only_failures} affine-only negative controls fail; assembly error={assembly_error}; outputs match all-coefficient oracle", n = config.n, boot_prime_count = boot_primes.len(), profiles = profiles.len());
 }
 
 fn scale(ctx: &RNSFHEContext, ct: &RNSCiphertext, scalar: i64) -> RNSCiphertext {

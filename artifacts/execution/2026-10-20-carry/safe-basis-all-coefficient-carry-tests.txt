@@ -1,17 +1,22 @@
 Baseline: a640d3cb9e0f4d4015afc14027721b1a5e75788b
-Changed source SHA-256: 0de0556ace7904622fd8efe6567cded90d2bc75089cb5471aa7beb21e5c82392
-Changed preflight source SHA-256: 44c039ae154b5dea7e7d56f9cb8996646142f7e6a066c074dee79b3742cbe3e1
+Changed source SHA-256: 7af003e7a605f64458bd30545dfc4b7a865b96a3db28bb779f7150b62f627274
+Changed preflight source SHA-256: 8001f3aaad72ed744d222dfa082bb7ac6453aa49aa88289f200e6544cb836e44
 
 $ cargo test --locked --offline -j1 -p nine65 --lib precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale -- --nocapture
 full-refresh follow-up: fresh/offset output bounds=[88, 104] bits; square bounds=[130, 146] bits; half-scale=106 bits; both squares refused before ciphertext multiplication
 test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale ... ok
-test result: ok. 1 passed; 0 failed; 0 ignored; finished in 0.20s
+test result: ok. 1 passed; 0 failed; 0 ignored; 1088 filtered out; finished in 0.13s
 
 $ cargo test --locked --offline -j1 -p nine65 --lib precharged_ -- --nocapture
-aligned frame: 49170 encrypted native carry/refresh checks across all 8192 coefficients and three residual profiles; 24078 nonzero carries; 3 affine-only negative controls fail; assembly error=287487982247299167448314438; refreshed output matches all-coefficient oracle
+aligned frame (4 boot primes): 49170 encrypted native carry/refresh checks across all 8192 coefficients and 3 residual profiles; 0 follow-up square coefficients checked; 24078 nonzero carries; 3 affine-only negative controls fail; assembly error=287487982247299167448314438; outputs match all-coefficient oracle
 test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_aligned_frame_encodes_native_carry_and_retains_input_residual ... ok
 full-refresh follow-up: fresh/offset output bounds=[88, 104] bits; square bounds=[130, 146] bits; half-scale=106 bits; both squares refused before ciphertext multiplication
-test result: ok. 7 passed; 0 failed; 2 ignored; 1079 filtered out; finished in 124.59s
+test result: ok. 7 passed; 0 failed; 2 ignored; 1080 filtered out; finished in 104.04s
+
+$ cargo test --locked --offline -j1 -p nine65 --lib five_prime_full_refresh_supports_one_followup_square -- --nocapture
+five-prime refresh→square bounds: refresh=287482076757990300936636629; square=U512 { d0: 243840441603184930057817276122021416961, d1: 3, d2: 0, d3: 0 }; half-scale=U512 { d0: 246828318082356678798785093444677394828, d1: 346, d2: 0, d3: 0 }; checked=8192 coefficients
+aligned frame (5 boot primes): 16390 encrypted native carry/refresh checks across all 8192 coefficients and 1 residual profile; 8192 follow-up square coefficients checked; 8037 nonzero carries; 1 affine-only negative control fails; assembly error=287482076647112704126449784; outputs match all-coefficient oracle
+test result: ok. 1 passed; 0 failed; 0 ignored; 1088 filtered out; finished in 60.38s
 
 $ python3 scripts/safe_basis_carry_probe.py
 Passed: 1633 rational aligned-phase cases, 24579 native aligned-phase cases,
