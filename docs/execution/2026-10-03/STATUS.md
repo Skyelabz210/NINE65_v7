@@ -1,5 +1,27 @@
 # Live execution update — 2026-10-21
 
+## Composite sister-view budget control (after `a323d6b`)
+
+The bounded research tray planner now accepts an exact per-view error cap
+and modulus interval, then selects the largest feasible composite without
+aliasing any admitted support rows. It plans against the proposed encrypted
+update, preserves requested retained views, the one S8 root and the 2/11
+relation, and does not reset source bounds or change ciphertext Q.
+
+The new [composite budget contract](../2026-10-21/COMPOSITE_SISTER_BUDGET.md)
+records the candidate interval, information-preservation checks, atomic
+refusals, native test matrix and independent integer oracle. At a quarter
+of the native projection allowance the selected moduli are 158 and 123 for
+the two public sign schedules. Full native refresh and its outer nonlinear
+circuit remain unadmitted; this controls sister-view cost, not BFV depth.
+
+The native encrypted composition test passed for both sign schedules and all
+8192 coefficients, including the added quarter-cap composite views. Four
+focused Rust planner tests passed; the independent oracle covered 918 small
+budget cases and matched all ten native bounds, and the inherited digit-radius
+regression suite passed 10 tests. This change remains in the test-only bounded
+research evaluator and does not change R01 acceptance or production admission.
+
 ## Sparse-rounding correction (after `0eb5566`)
 
 The previous R01 key-domain explanation was incorrect. Component scaling

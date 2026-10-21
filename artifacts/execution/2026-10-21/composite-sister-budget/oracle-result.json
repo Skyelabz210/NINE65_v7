@@ -1,0 +1,60 @@
+{
+  "schema": "nine65-composite-sister-budget-v1",
+  "scope_status": "bounded_research_path_passed",
+  "full_R01_status": "blocked_design",
+  "clear_budget_cases": 918,
+  "source_sha256": {
+    "scripts/composite_sister_budget_probe.py": "05a8cb5648810259506466839d50ff757345e3bad6bda306c76040daae6f571d",
+    "scripts/safe_basis_tray_transition_probe.py": "05c92f008e284c57642608b4e54c1093a903f26e664eb71427f1d994141efb70",
+    "crates/nine65/src/ops/safe_basis_sister_tray_tests.rs": "b6e4f278dff6efc63db77da44ee2f3b7c03a4f8086b4123ed1476a5b2dbf8ca9",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "8001f3aaad72ed744d222dfa082bb7ac6453aa49aa88289f200e6544cb836e44",
+    "Cargo.lock": "4d85f0decfb3ce439b1b1dfba6645c5f1c3b948296334fbd333b1e47fdd2cfa1"
+  },
+  "selected_composites": [
+    {"sign": -1, "cap_divisor": 2, "modulus": 315, "error_bound": "57753664188185540632682055079695140131338", "cap": "58992263636363532518563199632418239279302", "distinct_support": 7},
+    {"sign": -1, "cap_divisor": 3, "modulus": 194, "error_bound": "37386429957569313935603993518965515001984", "cap": "39328175757575688345708799754945492852868", "distinct_support": 7},
+    {"sign": -1, "cap_divisor": 4, "modulus": 158, "error_bound": "27342314446580656618335432198499423557528", "cap": "29496131818181766259281599816209119639651", "distinct_support": 7},
+    {"sign": -1, "cap_divisor": 5, "modulus": 78, "error_bound": "23197123918235672325197018883599539082400", "cap": "23596905454545413007425279852967295711720", "distinct_support": 7},
+    {"sign": -1, "cap_divisor": 8, "modulus": 45, "error_bound": "14707454855376193853258405684467125734688", "cap": "14748065909090883129640799908104559819825", "distinct_support": 7},
+    {"sign": 1, "cap_divisor": 2, "modulus": 300, "error_bound": "56438363347460763026050426574680283934972", "cap": "58992263636363532518563199632418239279302", "distinct_support": 7},
+    {"sign": 1, "cap_divisor": 3, "modulus": 206, "error_bound": "39299594816805284903578377936531204530724", "cap": "39328175757575688345708799754945492852868", "distinct_support": 7},
+    {"sign": 1, "cap_divisor": 4, "modulus": 123, "error_bound": "28219181673730191248428256415586363386057", "cap": "29496131818181766259281599816209119639651", "distinct_support": 7},
+    {"sign": 1, "cap_divisor": 5, "modulus": 93, "error_bound": "20207803825679705518483239320845372420530", "cap": "23596905454545413007425279852967295711720", "distinct_support": 7},
+    {"sign": 1, "cap_divisor": 8, "modulus": 65, "error_bound": "13591442020822067719870304979307585424352", "cap": "14748065909090883129640799908104559819825", "distinct_support": 7}
+  ],
+  "native_bound_cross_checks": 10,
+  "candidate_interval": {"minimum": 35, "maximum": 65537, "searched_descending": true},
+  "all_support_states_distinguished": true,
+  "exact_budget_boundary_checked": true,
+  "safe_basis_roots": 1,
+  "ciphertext_modulus_changed": false,
+  "source_error_reset": false,
+  "fourth_update_refused": true,
+  "native_public_refresh_admitted": false,
+  "tests": [
+    {
+      "command": "cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib sister_tray_ -- --nocapture",
+      "result": "passed",
+      "passed": 4,
+      "failed": 0,
+      "log": "fast-tests.log"
+    },
+    {
+      "command": "cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder -- --include-ignored --nocapture",
+      "result": "passed",
+      "passed": 1,
+      "failed": 0,
+      "elapsed_seconds": 387.45,
+      "both_sign_schedules": true,
+      "encrypted_coefficient_and_error_checks": 1065296,
+      "log": "native-tests.log"
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p test_digit_radius_oracle.py -v",
+      "result": "passed",
+      "passed": 10,
+      "failed": 0
+    }
+  ],
+  "linting": "not run per account instructions"
+}

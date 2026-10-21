@@ -14,6 +14,67 @@ enum TrayRefusal {
     Noise(Refusal),
     Transition(Refusal),
     PhaseTransition,
+    InvalidCompositeBudget,
+    NoCompositeFits,
+}
+
+// A per-output error cap, NOT a pool of BFV headroom and not a new Q lane.
+// The modulus must also separate every admitted public support row. A large
+// modulus/LCM alone would not exclude a constant, information-losing view.
+#[derive(Clone, Copy)]
+struct CompositeBudget {
+    min_modulus: u64,
+    max_modulus: u64,
+    max_view_error: U512,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct CompositeChoice {
+    modulus: u64,
+    error_bound: U512,
+    distinct_support: usize,
+}
+
+fn choose_composite(
+    runtime: &CarryRuntime<'_>,
+    state: &State,
+    budget: CompositeBudget,
+) -> Result<CompositeChoice, TrayRefusal> {
+    Root211::preflight_root(runtime, state)?;
+    if budget.min_modulus < 4
+        || budget.min_modulus > budget.max_modulus
+        || budget.max_modulus > runtime.ctx.t
+        || words(budget.max_view_error) >= words(runtime.noise.half())
+    {
+        return Err(TrayRefusal::InvalidCompositeBudget);
+    }
+    // Projection error need NOT increase with m: residues wrap. Exhaust the
+    // declared finite range in descending order, rather than binary-searching
+    // a false monotonic predicate or choosing from decrypted samples.
+    for modulus in (budget.min_modulus..=budget.max_modulus).rev() {
+        if is_prime(modulus) {
+            continue;
+        }
+        let mut values: Vec<_> = state
+            .rows
+            .iter()
+            .map(|row| runtime.root_value(row, modulus))
+            .collect();
+        values.sort_unstable();
+        values.dedup();
+        if values.len() != state.rows.len() {
+            continue;
+        }
+        let error_bound = runtime.projection_bound(state, |row| runtime.root_value(row, modulus));
+        if words(error_bound) <= words(budget.max_view_error) {
+            return Ok(CompositeChoice {
+                modulus,
+                error_bound,
+                distinct_support: values.len(),
+            });
+        }
+    }
+    Err(TrayRefusal::NoCompositeFits)
 }
 
 // If X=b+2*j, b=X mod 2, then j mod 11 is derived from BOTH root roles.
@@ -212,6 +273,113 @@ impl<'a> Root211<'a> {
             layouts: layouts.to_vec(),
         })
     }
+
+    fn prepare_composite_advance<'b>(
+        &'b self,
+        term: i128,
+        trit: &Trit,
+        retained_layouts: &[Vec<u64>],
+        budget: CompositeBudget,
+    ) -> Result<(PreparedStep<'a, 'b>, CompositeChoice), TrayRefusal> {
+        // Bind to the exact proposed state/history, not the cheaper old state.
+        // Retained views cannot be silently removed to make the new one fit.
+        let mut prepared = self.prepare_advance(term, trit, retained_layouts)?;
+        let choice = choose_composite(self.runtime, &prepared.advance.composition.result, budget)?;
+        prepared.layouts.push(vec![choice.modulus]);
+        Ok((prepared, choice))
+    }
+}
+
+#[test]
+fn sister_tray_composite_budget_is_exact_nonmonotone_and_preserves_support() {
+    let ctx = RNSFHEContext::try_new(&config_with(5)).unwrap();
+    let runtime = CarryRuntime::new(&ctx, 101, [211, 3], 27);
+    // Public bound-only support fixture, not an encrypted execution claim.
+    let mut state = runtime.initial(1).unwrap();
+    state.rows.push(row_for(11, 101));
+    let budget = CompositeBudget {
+        min_modulus: 4,
+        max_modulus: 12,
+        max_view_error: U512::from_u64(4),
+    };
+    let choice = choose_composite(&runtime, &state, budget).unwrap();
+    assert_eq!(choice.modulus, 9);
+    assert_eq!(choice.error_bound, U512::from_u64(3));
+    assert_eq!(choice.distinct_support, 2);
+    // 6 costs 6, but 8 costs 4 and 9 costs 3: no monotonic modulus shortcut.
+    for (m, expected) in [(6, 6), (8, 4), (9, 3)] {
+        assert_eq!(
+            runtime.projection_bound(&state, |row| runtime.root_value(row, m)),
+            U512::from_u64(expected)
+        );
+    }
+    let exact = CompositeBudget {
+        min_modulus: 9,
+        max_modulus: 9,
+        max_view_error: choice.error_bound,
+    };
+    assert_eq!(choose_composite(&runtime, &state, exact).unwrap(), choice);
+    assert_eq!(
+        choose_composite(
+            &runtime,
+            &state,
+            CompositeBudget {
+                max_view_error: U512::from_u64(2),
+                ..exact
+            }
+        ),
+        Err(TrayRefusal::NoCompositeFits)
+    );
+    // Modulo 10 both rows become 1. Its lower error does not excuse aliasing.
+    assert_eq!(
+        choose_composite(
+            &runtime,
+            &state,
+            CompositeBudget {
+                min_modulus: 10,
+                max_modulus: 10,
+                ..budget
+            }
+        ),
+        Err(TrayRefusal::NoCompositeFits)
+    );
+    for invalid in [
+        CompositeBudget {
+            min_modulus: 3,
+            ..budget
+        },
+        CompositeBudget {
+            min_modulus: 13,
+            ..budget
+        },
+        CompositeBudget {
+            max_modulus: ctx.t + 1,
+            ..budget
+        },
+        CompositeBudget {
+            max_view_error: runtime.noise.half(),
+            ..budget
+        },
+    ] {
+        assert_eq!(
+            choose_composite(&runtime, &state, invalid),
+            Err(TrayRefusal::InvalidCompositeBudget)
+        );
+    }
+    assert_eq!(
+        choose_composite(
+            &runtime,
+            &state,
+            CompositeBudget {
+                min_modulus: 11,
+                max_modulus: 11,
+                ..budget
+            }
+        ),
+        Err(TrayRefusal::NoCompositeFits)
+    );
+    assert_eq!(runtime.multiplications.get(), 0);
+    assert_eq!(state.rows[0].bound, U512::zero());
 }
 
 fn row_for(value: i128, q: i128) -> Row {
@@ -481,6 +649,39 @@ fn sister_tray_update_plan_is_bound_to_its_parent_and_refuses_before_execution()
         root.prepare_advance(50, &foreign, &wide_layouts()),
         Err(TrayRefusal::Transition(Refusal::Regime))
     ));
+    assert!(matches!(
+        root.prepare_composite_advance(
+            50,
+            &trit,
+            &wide_layouts(),
+            CompositeBudget {
+                min_modulus: 4,
+                max_modulus: 12,
+                max_view_error: U512::zero(),
+            }
+        ),
+        Err(TrayRefusal::NoCompositeFits)
+    ));
+    let (cancelled, choice) = root
+        .prepare_composite_advance(
+            50,
+            &trit,
+            &[vec![6, 10]],
+            CompositeBudget {
+                min_modulus: 35,
+                max_modulus: ctx.t,
+                max_view_error: runtime.noise.half().div_u64(4),
+            },
+        )
+        .unwrap();
+    cancelled.validate_parent(&root).unwrap();
+    assert_eq!(
+        cancelled.validate_parent(&other),
+        Err(TrayRefusal::ForeignRoot)
+    );
+    assert_eq!(cancelled.layouts, vec![vec![6, 10], vec![choice.modulus]]);
+    assert_eq!(choice.distinct_support, 3);
+    drop(cancelled);
     assert_eq!(root.evaluated_views.get(), before);
     assert_eq!(runtime.multiplications.get(), 0);
     assert!(state.coefficients.is_empty());
@@ -502,8 +703,8 @@ pub(super) fn advance_native_with_trays(
     let before = runtime.multiplications.get();
     let views_before = root.evaluated_views.get();
     let wide = wide_layouts();
-    let layouts = if step < 2 {
-        wide.clone()
+    let prepared = if step < 2 {
+        root.prepare_advance(term, trit, &wide).unwrap()
     } else {
         // Carry/root updates fit, but keeping the larger sister targets does
         // not. Reject the WHOLE proposal before multiplication, then retry
@@ -513,9 +714,71 @@ pub(super) fn advance_native_with_trays(
         assert_eq!(runtime.multiplications.get(), before);
         assert_eq!(root.evaluated_views.get(), views_before);
         eprintln!("sister transition: wide third-step proposal refused before multiplication: {refused:?}");
-        vec![vec![6, 10, 15, 21], vec![1, 8, 9, 11, 22, 6]]
+        let retained = vec![vec![6, 10, 15, 21], vec![1, 8, 9, 11, 22, 6]];
+        let budget = CompositeBudget {
+            min_modulus: 35,
+            max_modulus: runtime.ctx.t,
+            max_view_error: runtime.noise.half().div_u64(4),
+        };
+        let (prepared, choice) = root
+            .prepare_composite_advance(term, trit, &retained, budget)
+            .unwrap();
+        let proposed = &prepared.advance.composition.result;
+        // Independently reproduced by the arbitrary-precision Python probe.
+        let expected = if term < 0 {
+            [315, 194, 158, 78, 45]
+        } else {
+            [300, 206, 123, 93, 65]
+        };
+        for (divisor, expected_modulus) in [2, 3, 4, 5, 8].into_iter().zip(expected) {
+            let alternative = choose_composite(
+                runtime,
+                proposed,
+                CompositeBudget {
+                    max_view_error: runtime.noise.half().div_u64(divisor),
+                    ..budget
+                },
+            )
+            .unwrap();
+            assert_eq!(alternative.modulus, expected_modulus);
+            assert_eq!(alternative.distinct_support, 7);
+            let b = alternative.error_bound;
+            eprintln!("composite tray: sign={}, cap=half/{divisor}, modulus={}, error_bits={}, distinct_support={}, bound_hex={:032x}{:032x}{:032x}{:032x}", term.signum(), alternative.modulus, bits(b), alternative.distinct_support, b.d3, b.d2, b.d1, b.d0);
+        }
+        assert_eq!(choice.modulus, if term < 0 { 158 } else { 123 });
+        let fixed = CompositeBudget {
+            min_modulus: choice.modulus,
+            max_modulus: choice.modulus,
+            max_view_error: choice.error_bound,
+        };
+        assert_eq!(choose_composite(runtime, proposed, fixed).unwrap(), choice);
+        assert_eq!(
+            choose_composite(
+                runtime,
+                proposed,
+                CompositeBudget {
+                    max_view_error: choice.error_bound.sub(U512::from_u64(1)),
+                    ..fixed
+                }
+            ),
+            Err(TrayRefusal::NoCompositeFits)
+        );
+        assert_eq!(
+            choose_composite(
+                runtime,
+                proposed,
+                CompositeBudget {
+                    max_view_error: runtime.noise.half().div_u64(16),
+                    ..budget
+                }
+            ),
+            Err(TrayRefusal::NoCompositeFits)
+        );
+        assert_eq!(runtime.multiplications.get(), before);
+        assert_eq!(root.evaluated_views.get(), views_before);
+        prepared
     };
-    let prepared = root.prepare_advance(term, trit, &layouts).unwrap();
+    let layouts = prepared.layouts.clone();
     prepared.validate_parent(&root).unwrap();
     let planned_bounds: Vec<_> = prepared
         .advance
@@ -539,7 +802,7 @@ pub(super) fn advance_native_with_trays(
     } else {
         assert_eq!(
             check_native_views(runtime, &next_state, secret, expected_sum, &layouts),
-            19 * runtime.ctx.n
+            20 * runtime.ctx.n
         );
     }
     eprintln!("sister transition: committed step={}, source coefficients={:?}, executed selector products={}", step + 1, next_state.coefficients, runtime.multiplications.get() - before);

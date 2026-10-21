@@ -1,0 +1,17 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on build directory
+   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7m 57s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 4 tests
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_composite_budget_is_exact_nonmonotone_and_preserves_support ... ok
+sister tray: 50004 exact 2/11 transitions with arbitrary target views
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_211_phase_transition_carries_the_parity_crossing ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_one_root_accepts_arbitrary_views_and_refuses_snapshot_rebinding ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_update_plan_is_bound_to_its_parent_and_refuses_before_execution ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1090 filtered out; finished in 3.69s
+

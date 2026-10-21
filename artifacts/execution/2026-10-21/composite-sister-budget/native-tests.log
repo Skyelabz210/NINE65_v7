@@ -1,0 +1,54 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.29s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 1 test
+composition: generating 13 native trace keys and one relinearization key
+composition: projecting selector coefficient 0
+composition: projecting selector coefficient 1
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder has been running for over 60 seconds
+composition: projecting selector coefficient 2
+composition: projecting selector coefficient 3
+sister tray: 172032 encrypted coefficient/error checks; one S8 root, two borrowed trays; live 2/11 index; arbitrary/shared/repeated targets; no extra ciphertext multiplication
+sister transition: committed step=1, source coefficients=[0], executed selector products=0
+composition: sign=1, terms=1, public_rows=3, carry_error_bits=42
+sister tray: 172032 encrypted coefficient/error checks; one S8 root, two borrowed trays; live 2/11 index; arbitrary/shared/repeated targets; no extra ciphertext multiplication
+sister transition: committed step=2, source coefficients=[0, 1], executed selector products=9
+composition: sign=1, terms=2, public_rows=5, carry_error_bits=86
+sister transition: wide third-step proposal refused before multiplication: Noise(Noise { stage: "dependent sister view", error_bits: 140, half_bits: 137 })
+composite tray: sign=1, cap=half/2, modulus=300, error_bits=136, distinct_support=7, bound_hex=0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a5db8165f7863b7622da85af5b2947f0fc
+composite tray: sign=1, cap=half/3, modulus=206, error_bits=135, distinct_support=7, bound_hex=0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000737dbaa5601062ff0db02c4e0e2c3ee224
+composite tray: sign=1, cap=half/4, modulus=123, error_bits=135, distinct_support=7, bound_hex=000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000052edc0b2fbc28058f8f55ab336794028c9
+composite tray: sign=1, cap=half/5, modulus=93, error_bits=134, distinct_support=7, bound_hex=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003b62a9732744e2e407024ab489ba30f1b2
+composite tray: sign=1, cap=half/8, modulus=65, error_bits=134, distinct_support=7, bound_hex=000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000027f110847cdf9e4c6df0a63c1ab0b14be0
+sister tray: 163840 encrypted coefficient/error checks; one S8 root, two borrowed trays; live 2/11 index; arbitrary/shared/repeated targets; no extra ciphertext multiplication
+sister transition: committed step=3, source coefficients=[0, 1, 2], executed selector products=15
+composition: sign=1, terms=3, public_rows=7, carry_error_bits=129
+composition: fourth term refused before execution: Noise { stage: "selector multiply", error_bits: 169, half_bits: 137 }
+composition: balanced four terms, sign=1, rows=9, carry_error_bits=131, largest_root_error_bits=135
+composition: sparse coefficient refresh sign=1, fresh_error_bits=86, post_multiply_error_bits=128, half_bits=137
+sister tray: 172032 encrypted coefficient/error checks; one S8 root, two borrowed trays; live 2/11 index; arbitrary/shared/repeated targets; no extra ciphertext multiplication
+sister transition: committed step=1, source coefficients=[0], executed selector products=0
+composition: sign=-1, terms=1, public_rows=3, carry_error_bits=42
+sister tray: 172032 encrypted coefficient/error checks; one S8 root, two borrowed trays; live 2/11 index; arbitrary/shared/repeated targets; no extra ciphertext multiplication
+sister transition: committed step=2, source coefficients=[0, 1], executed selector products=9
+composition: sign=-1, terms=2, public_rows=5, carry_error_bits=86
+sister transition: wide third-step proposal refused before multiplication: Noise(Noise { stage: "dependent sister view", error_bits: 138, half_bits: 137 })
+composite tray: sign=-1, cap=half/2, modulus=315, error_bits=136, distinct_support=7, bound_hex=0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a9b907203528754a987b965594ae92120a
+composite tray: sign=-1, cap=half/3, modulus=194, error_bits=135, distinct_support=7, bound_hex=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006dde6c7f34f619909a08c598145d0ea080
+composite tray: sign=-1, cap=half/4, modulus=158, error_bits=135, distinct_support=7, bound_hex=0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000505a1236d2acb56ed351d2812bf8b51798
+composite tray: sign=-1, cap=half/5, modulus=78, error_bits=135, distinct_support=7, bound_hex=0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000442b938eca9d30e5fd21f9034b2baf94a0
+composite tray: sign=-1, cap=half/8, modulus=45, error_bits=134, distinct_support=7, bound_hex=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002b38a8c56b5901156e450f571ff8d44d20
+sister tray: 163840 encrypted coefficient/error checks; one S8 root, two borrowed trays; live 2/11 index; arbitrary/shared/repeated targets; no extra ciphertext multiplication
+sister transition: committed step=3, source coefficients=[0, 1, 2], executed selector products=15
+composition: sign=-1, terms=3, public_rows=7, carry_error_bits=129
+composition: fourth term refused before execution: Noise { stage: "selector multiply", error_bits: 169, half_bits: 137 }
+composition: balanced four terms, sign=-1, rows=9, carry_error_bits=131, largest_root_error_bits=135
+composition: sparse coefficient refresh sign=-1, fresh_error_bits=86, post_multiply_error_bits=128, half_bits=137
+composition: 49488 encrypted coefficient/noise checks; compact precharge; both carry signs; all eight root views; three sequential or four balanced terms; selector multiplications=116; not full refresh
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1093 filtered out; finished in 387.45s
+
