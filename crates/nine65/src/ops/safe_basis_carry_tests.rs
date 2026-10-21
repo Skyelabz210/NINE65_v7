@@ -20,9 +20,7 @@ const ROOT: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
 const BOOT: [u64; 4] = [1811939329, 2113929217, 2130706433, 1107296257];
 // Existing screened five-prime tuple from the composition experiments. Its
 // product is wider than u128, so the follow-up test exercises the U256 path.
-const SQUARE_BOOT: [u64; 5] = [
-    1811939329, 2113929217, 2130706433, 1107296257, 1711276033,
-];
+const SQUARE_BOOT: [u64; 5] = [1811939329, 2113929217, 2130706433, 1107296257, 1711276033];
 
 fn coordinate_error(n: usize, eta: usize, qb: U256, m: u64) -> u128 {
     let remainder = qb.mod_u64(m) as u128;
@@ -225,15 +223,78 @@ fn residual_subtracted_error(grid_error: i128, q: u128, g: i128, qb: U256) -> U2
 
 #[test]
 fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
-    run_precharged_aligned_frame(&BOOT, &[0, 1, -1], false);
+    run_precharged_aligned_frame(&BOOT, &[0, 1, -1], false, 8, true);
 }
 
 #[test]
 fn five_prime_full_refresh_supports_one_followup_square() {
-    run_precharged_aligned_frame(&SQUARE_BOOT, &[0, 1, -1], true);
+    run_precharged_aligned_frame(&SQUARE_BOOT, &[0, 1, -1], true, 8, false);
 }
 
-fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_square: bool) {
+#[test]
+fn five_prime_square_preflight_pins_the_input_error_ceiling() {
+    let mut config = SecureConfig::secure_128().into_config();
+    config.primes = SQUARE_BOOT.to_vec();
+    config.q = SQUARE_BOOT[0];
+    let screen = screen_bootstrap_security(&SQUARE_BOOT, config.n, 128).unwrap();
+    assert!(screen.meets_claim_under_both);
+    let noise = super::safe_basis_composition_tests::Noise::new(&config);
+    let below = U512::from_u128(1u128 << 94);
+    let above = U512::from_u128(1u128 << 95);
+    let admitted = noise.multiply(below, below).unwrap();
+    let refusal = noise.multiply(above, above).unwrap_err();
+    match refusal {
+        super::safe_basis_composition_tests::Refusal::Noise {
+            stage,
+            error_bits,
+            half_bits,
+        } => {
+            assert_eq!(stage, "selector multiply");
+            assert_eq!(error_bits, 138);
+            assert_eq!(half_bits, 137);
+        }
+        other => panic!("unexpected square preflight result: {other:?}"),
+    }
+    eprintln!(
+        "five-prime square input ceiling: 2^94 admitted with output {admitted:?}; 2^95 refused at 138/137 bits; screened security=({},{})",
+        screen.core_svp_bits, screen.matzov_bits
+    );
+}
+
+#[test]
+#[cfg_attr(
+    not(feature = "slow_tests"),
+    ignore = "expensive native diagnostic; enable slow_tests or run this filter with --include-ignored"
+)]
+fn five_prime_small_offset_square_diagnostic_keeps_preflight_refusal() {
+    run_precharged_aligned_frame(&SQUARE_BOOT, &[1, -1], true, 64, false);
+}
+
+#[test]
+#[cfg_attr(
+    not(feature = "slow_tests"),
+    ignore = "expensive native diagnostic; enable slow_tests or run this filter with --include-ignored"
+)]
+fn five_prime_tiny_offset_square_diagnostic_keeps_preflight_refusal() {
+    run_precharged_aligned_frame(&SQUARE_BOOT, &[1, -1], true, 256, false);
+}
+
+#[test]
+#[cfg_attr(
+    not(feature = "slow_tests"),
+    ignore = "expensive native diagnostic; enable slow_tests or run this filter with --include-ignored"
+)]
+fn five_prime_subnoise_offset_square_is_admitted_and_correct() {
+    run_precharged_aligned_frame(&SQUARE_BOOT, &[1], true, 1u128 << 48, true);
+}
+
+fn run_precharged_aligned_frame(
+    boot_primes: &[u64],
+    profiles: &[i128],
+    check_square: bool,
+    offset_denominator: u128,
+    expected_offset_square_correct: bool,
+) {
     let config = SecureConfig::secure_128().into_config();
     let work = RNSFHEContext::try_new(&config).unwrap();
     let q = work.q_product;
@@ -288,7 +349,22 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
     let indices = [0, 1, config.n / 3, config.n / 2, config.n - 2, config.n - 1];
     let all_indices: Vec<_> = (0..config.n).collect();
     let original = work.encrypt_dual(7, &work_keys.public_key, &mut rng);
-    let injected = q / (8 * config.t as u128);
+    let injected = q / (offset_denominator * config.t as u128);
+    let native_boot_secret = RNSSecretKey {
+        s: RNSPolynomial {
+            n: boot.n,
+            limbs: boot
+                .rns
+                .mont_contexts
+                .iter()
+                .zip(&boot_keys.secret_key.s.main)
+                .map(|(mont, lane)| lane.iter().map(|&x| mont.to_montgomery(x)).collect())
+                .collect(),
+        },
+    };
+    let exact = boot.try_exact_evaluator().unwrap();
+    let relin = check_square
+        .then(|| exact.generate_hybrid_gadget_key_with_rng(&native_boot_secret, &mut rng));
     let mut checked = 0;
     let mut nonzero = 0;
     let mut affine_only_failures = 0;
@@ -501,31 +577,21 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
         if check_square && offset_sign == 0 {
             let square_bound = square_preflight.unwrap();
             assert!(
-                (square_bound.d3, square_bound.d2, square_bound.d1, square_bound.d0)
-                    < (
-                        noise.half().d3,
-                        noise.half().d2,
-                        noise.half().d1,
-                        noise.half().d0
-                    )
+                (
+                    square_bound.d3,
+                    square_bound.d2,
+                    square_bound.d1,
+                    square_bound.d0
+                ) < (
+                    noise.half().d3,
+                    noise.half().d2,
+                    noise.half().d1,
+                    noise.half().d0
+                )
             );
-            let native_boot_secret = RNSSecretKey {
-                s: RNSPolynomial {
-                    n: boot.n,
-                    limbs: boot
-                        .rns
-                        .mont_contexts
-                        .iter()
-                        .zip(&boot_keys.secret_key.s.main)
-                        .map(|(mont, lane)| {
-                            lane.iter().map(|&x| mont.to_montgomery(x)).collect()
-                        })
-                        .collect(),
-                },
-            };
-            let exact = boot.try_exact_evaluator().unwrap();
-            let relin = exact.generate_hybrid_gadget_key_with_rng(&native_boot_secret, &mut rng);
-            let square = exact.try_mul_exact(&refreshed, &refreshed, &relin).unwrap();
+            let square = exact
+                .try_mul_exact(&refreshed, &refreshed, relin.as_ref().unwrap())
+                .unwrap();
             let actual = super::safe_basis_composition_tests::decode_at(
                 &boot,
                 &square,
@@ -543,14 +609,50 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
                 config.n
             );
             square_checks += config.n;
+        } else if check_square {
+            assert_eq!(
+                square_preflight.is_ok(),
+                expected_offset_square_correct,
+                "expected exact preflight state for 1/{offset_denominator} spacing"
+            );
+            let (decode_bound, preflight_result) = match square_preflight {
+                Ok(square_bound) => (square_bound, format!("admitted with {square_bound:?}")),
+                Err(refusal) => (noise.half(), format!("refused: {refusal:?}")),
+            };
+            eprintln!(
+                "five-prime offset profile {offset_sign} (1/{offset_denominator} spacing): refresh={refresh_bound_value:?} ({} bits); square preflight {preflight_result}",
+                refresh_bound_value.bitlen(),
+            );
+            // For refused profiles this deliberately probes the raw result
+            // after preflight, solely to classify the retained-error failure.
+            // Admitted profiles use the preflight's actual square bound.
+            let square = exact
+                .try_mul_exact(&refreshed, &refreshed, relin.as_ref().unwrap())
+                .unwrap();
+            let observed = super::safe_basis_composition_tests::decode_at(
+                &boot,
+                &square,
+                &boot_keys.secret_key,
+                decode_bound,
+                0..config.n,
+            );
+            let mismatches = observed
+                .iter()
+                .enumerate()
+                .filter(|(j, value)| **value != u64::from(*j == 0) * 49)
+                .count();
+            eprintln!(
+                "five-prime offset square diagnostic: 1/{offset_denominator} spacing, {mismatches}/{} plaintext coefficients differ from 49 at j=0 and 0 elsewhere; {preflight_result}",
+                config.n,
+            );
+            assert_eq!(mismatches == 0, expected_offset_square_correct);
+            square_checks += config.n;
         } else {
-            let refusal = square_preflight.expect_err("profile must refuse another exact square");
-            if check_square {
-                eprintln!(
-                    "five-prime offset profile {offset_sign}: refresh={refresh_bound_value:?} ({} bits); next square refused: {refusal:?}",
-                    refresh_bound_value.bitlen()
-                );
-            }
+            let refusal = square_preflight.expect_err("four-prime profile must refuse square");
+            eprintln!(
+                "four-prime offset profile {offset_sign} (1/{offset_denominator} spacing): refresh={refresh_bound_value:?} ({} bits); next square refused: {refusal:?}",
+                refresh_bound_value.bitlen(),
+            );
         }
         let expected: Vec<_> = indices
             .iter()
@@ -593,7 +695,14 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
     }
     assert_eq!(checked, profiles.len() * (6 + 2 * config.n));
     assert_eq!(affine_only_failures, profiles.len());
-    assert_eq!(square_checks, if check_square { config.n } else { 0 });
+    assert_eq!(
+        square_checks,
+        if check_square {
+            profiles.len() * config.n
+        } else {
+            0
+        }
+    );
     assert!(nonzero > 0);
     eprintln!("aligned frame ({boot_prime_count} boot primes): {checked} encrypted native carry/refresh checks across all {n} coefficients and {profiles} residual profiles; {square_checks} follow-up square coefficients checked; {nonzero} nonzero carries; {affine_only_failures} affine-only negative controls fail; assembly error={assembly_error}; outputs match all-coefficient oracle", n = config.n, boot_prime_count = boot_primes.len(), profiles = profiles.len());
 }

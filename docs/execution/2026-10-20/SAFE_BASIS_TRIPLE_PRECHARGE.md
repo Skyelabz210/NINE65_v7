@@ -153,3 +153,50 @@ hidden sources, or production S00/S01/S03 admission. The independent derivation
 review and a new all-coefficient carry bound for a later dense ciphertext
 remain open. Detailed outputs and source hashes are in
 `artifacts/execution/2026-10-20-carry/safe-basis-all-coefficient-carry.json`.
+
+## Follow-up: measure retained-residual square failures (2026-10-21)
+
+The five-prime carry test now runs a test-only exact square after recording
+the normal public preflight result. For refused profiles, this raw multiply is
+used only as an independent failure diagnostic; it does not relax or bypass
+any production admission path. The five-prime tuple remains screened at
+Core-SVP 151 / MATZOV 136 bits for the 128-bit claim.
+
+On the same seeded work/boot keys and constant plaintext 7, each injected
+profile still refreshes correctly at all 8,192 coefficients. But the injected
+phase residual survives refresh and breaks the follow-up square:
+
+| Input offset | Refresh bound | Square preflight | Raw square coefficients wrong |
+| --- | ---: | ---: | ---: |
+| `1/8` plaintext spacing | 135 bits | refused, 177 vs 137 | 6,154 / 8,192 |
+| `1/64` plaintext spacing | 132 bits | refused, 174 vs 137 | 7,940 / 8,192 |
+| `1/256` plaintext spacing | 130 bits | refused, 172 vs 137 | 8,037 / 8,192 |
+| `1/2^48` plaintext spacing | 90 bits | admitted, 132 vs 137 | 0 / 8,192 |
+
+The separate recurrence boundary test admits an input coefficient-error bound
+of `2^94`, but refuses `2^95` with a 138-bit predicted output against the
+137-bit half-scale. On this fixed screened tuple, the limiting gap is retained
+phase error, not ciphertext-modulus width: the carry-corrected affine path
+preserves old phase error, while the square needs that error removed. The tiny
+`1/2^48` perturbation is effectively a fresh-noise profile and is not evidence
+that arbitrary refresh residuals can be cleaned.
+
+The next implementation target is an encrypted phase-rounding/digit-removal
+stage that converts the decoded plaintext back to the boot-key domain without
+carrying the old fractional phase residual. It must have a public, complete
+error recurrence and pass sign/tie-boundary and independent-key-epoch tests.
+Until then, keep public refresh admission closed. No production code or gate
+was changed by these diagnostics.
+
+Verified on 2026-10-21:
+
+```sh
+cargo check --locked --offline -j1 -p nine65 --tests
+cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib five_prime_ -- --include-ignored --nocapture
+cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib precharged_aligned_frame_encodes_native_carry_and_retains_input_residual -- --nocapture
+```
+
+The five-prime filter passed 5 tests, including all three refused-offset
+negative controls and the admitted tiny-offset positive control. The four-
+prime all-coefficient carry regression also passed. No lint or static-lint
+tool was run.
