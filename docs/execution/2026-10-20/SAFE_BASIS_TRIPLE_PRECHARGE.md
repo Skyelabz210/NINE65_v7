@@ -136,7 +136,7 @@ performed the exact ciphertext square and verified all 8,192 coefficients:
 `287482076757990300936636629` (88 bits), the modeled square bound was
 `1264687542366000320447941098417326051329` (130 bits), and the half-scale was
 `117984527272727065037126399264836478558604` (137 bits). The five-prime test
-finished in 60.49 seconds. The four-prime carry test still passes 49,170
+finished in 60.38 seconds. The four-prime carry test still passes 49,170
 checks across fresh and positive/negative injected-residual profiles, with the
 same two injected cases refused for their next square. The complete
 `precharged_` filter passed 7 tests, with 2 expensive research tests ignored;
