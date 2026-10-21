@@ -116,6 +116,19 @@ correction is in raw boot-phase encoding, while these trays output canonical
 Delta-scaled residues in plaintext 65537; that conversion and a source-bound
 encrypted correction producer remain open.
 
+The next encoding-isolation test strengthens that requirement: even an
+oracle-supplied carry encrypted with a fresh full-width mask and eta=3 CBD
+error fails to recover the next native square through the raw-phase adapter.
+Its 2-bit carry error becomes a 90-bit correction error before relinearization;
+the following square fails at 135 bits. A compensated Delta-scale adapter
+works for a zero-error clear carry control (next square correct at 109 bits),
+but its encrypted counterpart already corrupts the corrected product at
+128 bits. The independent probe verifies the adapters' error identities on
+56,700 integer cases, including the encrypted carry's own winding term. A
+sister-tray producer must therefore certify the final correction precision,
+not merely the correctness of the carry residues. See the encoding-isolation
+section of the linked contract for the full measurement table and limits.
+
 ## Evidence and reproduction
 
 The fast Rust tests check 50,004 exact additive phase transitions, arbitrary

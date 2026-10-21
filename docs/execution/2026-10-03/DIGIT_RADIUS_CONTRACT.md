@@ -278,3 +278,79 @@ Delta-scaled unit with just one unit of phase error by `Delta^-1 mod Q`
 produces a 152-bit centered error, already above the 121-bit half-Delta.
 Modular inversion alone therefore does not turn the existing noisy
 Delta-scaled carry views into a suitably bounded raw-phase correction.
+
+### Encrypted-carry encoding isolation
+
+The native diagnostic now supplies the oracle's `K_mul` through two test-only
+key-holder encryption fixtures: a raw phase `K_mul + nu`, and an ordinary
+BFV phase `Delta*K_mul + nu`. Each uses a fresh full-width uniform mask and
+signed CBD error with eta=3. The carry is still secret-derived; encrypting it
+does not provide a public producer or establish security for this key-dependent
+message. No production evaluator or admission gate changes.
+
+For the raw encoding, unscaled ring multiplication, relinearization, and
+public scaling by `2*t` produce
+
+```text
+D_raw = W_square(C) + 2*t*nu*P + 2*t*rho (mod Q),
+```
+
+where rho is the relinearization phase error. Since `P=Delta+e`, even one
+unit of carry error contributes `-2*r + 2*t*e` modulo Q. Small integer
+encryption noise is not automatically small enough after this adapter.
+
+For the Delta encoding, the diagnostic also tries the compensated circuit
+`D_comp = 2*t*Mul(C,B) - t^2*Mul(B,B)`. Let the centered component lift of
+the carry ciphertext be `B_lift=Delta*K_mul+nu+Q*J`, and set
+`V=P+r*K_mul-t*nu`. Before component rounding and relinearization,
+
+```text
+D_comp - W_square(C)
+  = (t/Q)*(P^2-V^2) + 2*t^2*J*V (mod Q).
+```
+
+This is an identity of rational scaled lifts; the final ciphertext has the
+separately measured integer-rounding and key-switch errors. The compensation
+removes the leading floor-scale bias for an ideal carry, but an encrypted
+carry introduces its own component winding J. It cannot be omitted from a
+public error certificate. The independent integer probe checks both adapter
+identities and exact component-rounding bounds on 56,700 scalar/degree-two
+cases, including 3,152 with nonzero J.
+
+Measured on the same native constant-one sample (half-Delta=121 bits):
+
+| Carry / adapter | Correction-target error | Corrected product error | Next square |
+| --- | ---: | ---: | --- |
+| Raw K, zero error, clear oracle control | 0 bits | 57 bits | Correct, 96 bits |
+| Raw K, one-unit error, clear control | 89 bits | 89 bits | Wrong, 128 bits |
+| Raw K, fresh uniform mask + sampled CBD | 90 bits | 90 bits | Wrong, 135 bits |
+| Delta K, zero error, clear oracle control | 82 bits | 82 bits | Wrong, 127 bits |
+| Delta K, fresh uniform mask + sampled CBD | 128 bits | 128 bits, already wrong | Skipped |
+| Delta K, compensated clear oracle control | 63 bits | 63 bits | Correct, 109 bits |
+| Delta K, compensated fresh mask + sampled CBD | 128 bits | 128 bits, already wrong | Skipped |
+
+For the raw encrypted carry, the sampled input error has magnitude at most
+eta=3 (2 bits). Its `2*t*nu*P` contribution is 90 bits **before**
+relinearization, while the isolated scaled key-switch difference is 53 bits.
+The test additionally checks exact componentwise linearity of the noisy
+raw-carry adapter relative to its zero-error control. This independently
+isolates carry error amplification from relinearization. Follow-up squares
+run for every adapter that preserves the intended plaintext; already-wrong
+products are not treated as valid next-square inputs.
+
+Thus this sample supplies a useful positive algebraic control for the
+compensated Delta adapter, but neither encrypted-carry adapter meets the
+required correction precision. In particular, a standard small-error
+encryption of the correct carry is insufficient here. The next public
+construction must address its **own encoding, winding, and total phase-error
+budget**, or reduce the input error before applying this adapter. Producing
+the carry value alone, adding another residue view, or improving only the
+hybrid relinearization noise does not close the demonstrated gap. These
+controls do not rule out other refresh constructions.
+
+Reproduce the complete opt-in native diagnostic and its dependent tests:
+
+```sh
+NINE65_TRACE_NOISE_DIAGNOSTIC=1 cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib contraction_with_oracle_lift_refreshes_boundary_input_and_supports_multiply -- --include-ignored --nocapture
+python3 scripts/refresh_carry_bridge.py
+```

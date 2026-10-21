@@ -470,8 +470,8 @@ mod tests {
     use crate::arithmetic::canonical_scale_round::CanonicalScaleRound;
     use crate::arithmetic::rns::{crt_reconstruct_u256, U256};
     use crate::entropy::ShadowHarvester;
-    use crate::ops::rns_galois::{shift, RNSGaloisEvaluator};
     use crate::ops::rns_fhe::{DualRNSPoly, DualRNSSecretKey, RNSSecretKey};
+    use crate::ops::rns_galois::{shift, RNSGaloisEvaluator};
     use crate::params::SecureConfig;
 
     fn decode_all(ctx: &RNSFHEContext, ct: &RNSCiphertext, sk: &DualRNSSecretKey) -> Vec<u64> {
@@ -532,9 +532,7 @@ mod tests {
                 let c1s = ctx.ntt_engines[lane].multiply(&c1, &sk.s.main[lane]);
                 c0.iter()
                     .zip(c1s)
-                    .map(|(&left, right)| {
-                        ((left as u128 + right as u128) % prime as u128) as u64
-                    })
+                    .map(|(&left, right)| ((left as u128 + right as u128) % prime as u128) as u64)
                     .collect()
             })
             .collect();
@@ -552,7 +550,9 @@ mod tests {
                 .iter()
                 .zip(&ctx.rns.mont_contexts)
                 .map(|(limb, mont)| {
-                    limb.iter().map(|&value| mont.to_montgomery(value)).collect()
+                    limb.iter()
+                        .map(|&value| mont.to_montgomery(value))
+                        .collect()
                 })
                 .collect(),
             n: ctx.n,
@@ -626,10 +626,7 @@ mod tests {
 
     // Test oracle only: these are raw phase residues, not Delta-scaled
     // plaintext encodings or a publicly produced encrypted correction.
-    fn raw_phase_addend_for_diagnostic(
-        ctx: &RNSFHEContext,
-        residues: &[U256],
-    ) -> RNSCiphertext {
+    fn raw_phase_addend_for_diagnostic(ctx: &RNSFHEContext, residues: &[U256]) -> RNSCiphertext {
         assert_eq!(residues.len(), ctx.n);
         RNSCiphertext {
             c0: RNSPolynomial {
@@ -649,6 +646,136 @@ mod tests {
             },
             c1: RNSPolynomial {
                 limbs: vec![vec![0; ctx.n]; ctx.config.primes.len()],
+                n: ctx.n,
+            },
+            num_primes: ctx.config.primes.len(),
+        }
+    }
+
+    fn scale_ciphertext_for_diagnostic(
+        ctx: &RNSFHEContext,
+        input: &RNSCiphertext,
+        scalar: u128,
+    ) -> RNSCiphertext {
+        let scale = |poly: &RNSPolynomial| RNSPolynomial {
+            limbs: poly
+                .limbs
+                .iter()
+                .zip(&ctx.config.primes)
+                .map(|(limb, &prime)| {
+                    let factor = scalar % prime as u128;
+                    limb.iter()
+                        .map(|&value| (value as u128 * factor % prime as u128) as u64)
+                        .collect()
+                })
+                .collect(),
+            n: ctx.n,
+        };
+        RNSCiphertext {
+            c0: scale(&input.c0),
+            c1: scale(&input.c1),
+            num_primes: input.num_primes,
+        }
+    }
+
+    // Key-holder test fixture only. Encrypt a raw phase target using a fresh
+    // full-width uniform mask and a consistent signed CBD error. The target
+    // K below is manufactured by the secret oracle, not a public producer.
+    fn encrypt_raw_phase_for_diagnostic(
+        ctx: &RNSFHEContext,
+        target: &RNSCiphertext,
+        sk: &DualRNSSecretKey,
+        rng: &mut ShadowHarvester,
+    ) -> RNSCiphertext {
+        assert!(target.c1.limbs.iter().flatten().all(|&value| value == 0));
+        let mask = ctx.sample_uniform_main_poly(rng);
+        let errors = Zeroizing::new(
+            (0..ctx.n)
+                .map(|_| {
+                    (0..ctx.config.eta)
+                        .map(|_| (rng.next_u64() & 1) as i64 - (rng.next_u64() & 1) as i64)
+                        .sum::<i64>()
+                })
+                .collect::<Vec<_>>(),
+        );
+        let mut c0 = Vec::with_capacity(ctx.config.primes.len());
+        let mut c1 = Vec::with_capacity(ctx.config.primes.len());
+        for (lane, &prime) in ctx.config.primes.iter().enumerate() {
+            let mont = &ctx.rns.mont_contexts[lane];
+            let product = ctx.ntt_engines[lane].multiply(&mask.limbs[lane], &sk.s.main[lane]);
+            c0.push(
+                (0..ctx.n)
+                    .map(|j| {
+                        let value = mont.from_montgomery(target.c0.limbs[lane][j]);
+                        let error = errors[j].rem_euclid(prime as i64) as u64;
+                        mont.to_montgomery(
+                            ((value as u128 + error as u128 + prime as u128 - product[j] as u128)
+                                % prime as u128) as u64,
+                        )
+                    })
+                    .collect(),
+            );
+            c1.push(
+                mask.limbs[lane]
+                    .iter()
+                    .map(|&v| mont.to_montgomery(v))
+                    .collect(),
+            );
+        }
+        RNSCiphertext {
+            c0: RNSPolynomial {
+                limbs: c0,
+                n: ctx.n,
+            },
+            c1: RNSPolynomial {
+                limbs: c1,
+                n: ctx.n,
+            },
+            num_primes: ctx.config.primes.len(),
+        }
+    }
+
+    // Evaluator-side arithmetic only: no secret, reconstruction, or BFV
+    // scale-and-round. Its phase is the raw ring product of its input phases.
+    fn raw_ring_tensor_for_diagnostic(
+        ctx: &RNSFHEContext,
+        left: &RNSCiphertext,
+        right: &RNSCiphertext,
+    ) -> crate::ops::rns_fhe::exact_mul::ExactTensor3 {
+        let mut parts = [Vec::new(), Vec::new(), Vec::new()];
+        for (lane, &prime) in ctx.config.primes.iter().enumerate() {
+            let mont = &ctx.rns.mont_contexts[lane];
+            let standard = |poly: &RNSPolynomial| {
+                poly.limbs[lane]
+                    .iter()
+                    .map(|&v| mont.from_montgomery(v))
+                    .collect::<Vec<_>>()
+            };
+            let (a0, a1) = (standard(&left.c0), standard(&left.c1));
+            let (b0, b1) = (standard(&right.c0), standard(&right.c1));
+            let ntt = &ctx.ntt_engines[lane];
+            parts[0].push(ntt.multiply(&a0, &b0));
+            parts[1].push(
+                ntt.multiply(&a0, &b1)
+                    .iter()
+                    .zip(ntt.multiply(&a1, &b0))
+                    .map(|(&a, b)| ((a as u128 + b as u128) % prime as u128) as u64)
+                    .collect(),
+            );
+            parts[2].push(ntt.multiply(&a1, &b1));
+        }
+        let [e0, e1, e2] = parts;
+        crate::ops::rns_fhe::exact_mul::ExactTensor3 {
+            e0: RNSPolynomial {
+                limbs: e0,
+                n: ctx.n,
+            },
+            e1: RNSPolynomial {
+                limbs: e1,
+                n: ctx.n,
+            },
+            e2: RNSPolynomial {
+                limbs: e2,
                 n: ctx.n,
             },
             num_primes: ctx.config.primes.len(),
@@ -693,10 +820,8 @@ mod tests {
                 .collect::<Vec<_>>();
             (0..ctx.n)
                 .map(|coefficient| {
-                    let residues: Vec<u64> = standard
-                        .iter()
-                        .map(|lane| lane[coefficient])
-                        .collect();
+                    let residues: Vec<u64> =
+                        standard.iter().map(|lane| lane[coefficient]).collect();
                     SignedU256::centered(crt_reconstruct_u256(&residues, primes), q)
                 })
                 .collect::<Vec<_>>()
@@ -728,10 +853,7 @@ mod tests {
         let phase_lanes = phase_residues(input);
         let phase = (0..ctx.n)
             .map(|coefficient| {
-                let residues: Vec<u64> = phase_lanes
-                    .iter()
-                    .map(|lane| lane[coefficient])
-                    .collect();
+                let residues: Vec<u64> = phase_lanes.iter().map(|lane| lane[coefficient]).collect();
                 SignedU256::centered(crt_reconstruct_u256(&residues, primes), q)
             })
             .collect::<Vec<_>>();
@@ -774,7 +896,10 @@ mod tests {
                 "phase lift did not differ by a Q multiple"
             );
             assert_eq!(quotient.hi, 0, "diagnostic winding exceeded i64");
-            assert!(quotient.lo <= ctx.n as u128, "diagnostic winding exceeded its ternary bound");
+            assert!(
+                quotient.lo <= ctx.n as u128,
+                "diagnostic winding exceeded its ternary bound"
+            );
             let magnitude = quotient.lo as i64;
             winding.push(if difference.negative {
                 -magnitude
@@ -868,11 +993,7 @@ mod tests {
     // Test-only measurement of the actual centered phase residual. This is
     // evidence about one sampled key/ciphertext, not a replacement for the
     // public worst-case certificate.
-    fn phase_residual_max(
-        ctx: &RNSFHEContext,
-        ct: &RNSCiphertext,
-        sk: &DualRNSSecretKey,
-    ) -> U256 {
+    fn phase_residual_max(ctx: &RNSFHEContext, ct: &RNSCiphertext, sk: &DualRNSSecretKey) -> U256 {
         let decoded = decode_all(ctx, ct, sk);
         phase_residual_max_against(ctx, ct, sk, &decoded)
     }
@@ -900,8 +1021,7 @@ mod tests {
                     .iter()
                     .zip(product)
                     .map(|(&v, product)| {
-                        ((mont.from_montgomery(v) as u128 + product as u128)
-                            % prime as u128) as u64
+                        ((mont.from_montgomery(v) as u128 + product as u128) % prime as u128) as u64
                     })
                     .collect()
             })
@@ -914,12 +1034,10 @@ mod tests {
                 let (mut value, mut prefix) = (0u128, 1u128);
                 for (lane, &prime) in primes.iter().enumerate() {
                     let modulus = prime as u128;
-                    let difference =
-                        (residues[lane] as u128 + modulus - value % modulus) % modulus;
-                    let inverse = crate::arithmetic::rns::mod_inverse(
-                        (prefix % modulus) as u64,
-                        prime,
-                    ) as u128;
+                    let difference = (residues[lane] as u128 + modulus - value % modulus) % modulus;
+                    let inverse =
+                        crate::arithmetic::rns::mod_inverse((prefix % modulus) as u64, prime)
+                            as u128;
                     value += prefix * (difference * inverse % modulus);
                     prefix *= modulus;
                 }
@@ -933,8 +1051,7 @@ mod tests {
                     .map(|(lane, &prime)| {
                         let modulus = prime as u128;
                         let expected = message as u128 * ctx.delta_rns[lane] as u128 % modulus;
-                        ((phases[lane][coefficient] as u128 + modulus - expected) % modulus)
-                            as u64
+                        ((phases[lane][coefficient] as u128 + modulus - expected) % modulus) as u64
                     })
                     .collect::<Vec<_>>();
                 let difference = crt_u128(&residual_residues);
@@ -1061,13 +1178,7 @@ mod tests {
                     a.limbs[lane]
                         .iter()
                         .zip(&b.limbs[lane])
-                        .map(|(&x, &y)| {
-                            if x >= y {
-                                x - y
-                            } else {
-                                prime - (y - x)
-                            }
-                        })
+                        .map(|(&x, &y)| if x >= y { x - y } else { prime - (y - x) })
                         .collect()
                 })
                 .collect(),
@@ -1088,8 +1199,7 @@ mod tests {
         let mut out = ciphertext.clone();
         for (lane, &prime) in ctx.config.primes.iter().enumerate() {
             let mont = &ctx.rns.mont_contexts[lane];
-            let encoded =
-                (ctx.delta_rns[lane] as u128 * constant as u128 % prime as u128) as u64;
+            let encoded = (ctx.delta_rns[lane] as u128 * constant as u128 % prime as u128) as u64;
             let encoded = mont.to_montgomery(encoded);
             out.c0.limbs[lane][0] = ((out.c0.limbs[lane][0] as u128 + prime as u128
                 - encoded as u128)
@@ -1106,8 +1216,7 @@ mod tests {
         let mut out = ciphertext.clone();
         for (lane, &prime) in ctx.config.primes.iter().enumerate() {
             let mont = &ctx.rns.mont_contexts[lane];
-            let encoded =
-                (ctx.delta_rns[lane] as u128 * constant as u128 % prime as u128) as u64;
+            let encoded = (ctx.delta_rns[lane] as u128 * constant as u128 % prime as u128) as u64;
             let encoded = mont.to_montgomery(encoded);
             out.c0.limbs[lane][0] =
                 ((out.c0.limbs[lane][0] as u128 + encoded as u128) % prime as u128) as u64;
@@ -1245,11 +1354,8 @@ mod tests {
             let phase = evaluator
                 .evaluate(&input, &bootstrap.bootstrap_key)
                 .unwrap();
-            let high_residual = phase_residual_max(
-                &boot,
-                phase.high_lift(),
-                &bootstrap.boot_keys.secret_key,
-            );
+            let high_residual =
+                phase_residual_max(&boot, phase.high_lift(), &bootstrap.boot_keys.secret_key);
             let projection_residual = phase_residual_max(
                 &boot,
                 phase.coefficient_projection_view(),
@@ -1262,10 +1368,7 @@ mod tests {
                 integer_bits(projection_residual),
                 u128_bits(certificate.high_error_bound.d0)
             );
-            assert!(
-                words(as_u512(high_residual))
-                    < words(certificate.high_error_bound)
-            );
+            assert!(words(as_u512(high_residual)) < words(certificate.high_error_bound));
             assert!(
                 words(as_u512(projection_residual))
                     < words(certificate.projection_input_error_bound)
@@ -1278,8 +1381,7 @@ mod tests {
                     0,
                     &mut rng,
                 );
-                let traced_messages =
-                    decode_all(&boot, &traced, &bootstrap.boot_keys.secret_key);
+                let traced_messages = decode_all(&boot, &traced, &bootstrap.boot_keys.secret_key);
                 let expected_messages =
                     decode_all(&boot, phase.high_lift(), &bootstrap.boot_keys.secret_key);
                 assert_eq!(traced_messages[0], expected_messages[0]);
@@ -1315,11 +1417,8 @@ mod tests {
                 let high_component = (w as i128 - centered_low_digit as i128) as u128;
                 assert!(centered_low_digit >= 0);
                 assert!(high_component <= w && high_component < p_squared);
-                let low_representative = subtract_plain_constant(
-                    &boot,
-                    &w_ciphertext,
-                    high_component as u64,
-                );
+                let low_representative =
+                    subtract_plain_constant(&boot, &w_ciphertext, high_component as u64);
                 let low_messages =
                     decode_all(&boot, &low_representative, &bootstrap.boot_keys.secret_key);
                 assert_eq!(low_messages[0], centered_low_digit as u64);
@@ -1336,11 +1435,8 @@ mod tests {
                 let low_square_tensor = exact
                     .try_mul_no_relin_exact(&low_representative, &low_representative)
                     .unwrap();
-                let low_square_phase = tensor_phase(
-                    &boot,
-                    &low_square_tensor,
-                    &bootstrap.boot_keys.secret_key,
-                );
+                let low_square_phase =
+                    tensor_phase(&boot, &low_square_tensor, &bootstrap.boot_keys.secret_key);
                 let low_square_messages =
                     decode_all(&boot, &low_square_phase, &bootstrap.boot_keys.secret_key);
                 assert_eq!(low_square_messages[0], 1);
@@ -1369,8 +1465,11 @@ mod tests {
                     &centered_square_tensor,
                     &bootstrap.boot_keys.secret_key,
                 );
-                let centered_square_messages =
-                    decode_all(&boot, &centered_square_phase, &bootstrap.boot_keys.secret_key);
+                let centered_square_messages = decode_all(
+                    &boot,
+                    &centered_square_phase,
+                    &bootstrap.boot_keys.secret_key,
+                );
                 let centered_square_residual = phase_residual_max_against(
                     &boot,
                     &centered_square_phase,
@@ -1399,11 +1498,8 @@ mod tests {
                 let phase_only_tensor = exact
                     .try_mul_no_relin_exact(&phase_only, &phase_only)
                     .unwrap();
-                let phase_only_square_phase = tensor_phase(
-                    &boot,
-                    &phase_only_tensor,
-                    &bootstrap.boot_keys.secret_key,
-                );
+                let phase_only_square_phase =
+                    tensor_phase(&boot, &phase_only_tensor, &bootstrap.boot_keys.secret_key);
                 let phase_only_square_messages = decode_all(
                     &boot,
                     &phase_only_square_phase,
@@ -1449,7 +1545,11 @@ mod tests {
                     subtract_ciphertexts(&boot, &native_low_square, &winding.correction);
                 assert_eq!(corrected_low_square.c1.limbs, native_low_square.c1.limbs);
                 assert_eq!(
-                    decode_all(&boot, &corrected_low_square, &bootstrap.boot_keys.secret_key),
+                    decode_all(
+                        &boot,
+                        &corrected_low_square,
+                        &bootstrap.boot_keys.secret_key
+                    ),
                     low_square_expected,
                 );
                 let corrected_residual = phase_residual_max_against(
@@ -1512,25 +1612,236 @@ mod tests {
                 };
                 let (_, uncorrected_fourth_error, _) =
                     next_square("uncorrected native product", &native_low_square);
-                let (_, message_only_fourth_error, _) =
-                    next_square("encoded-message/carry-only correction", &message_only_square);
+                let (_, message_only_fourth_error, _) = next_square(
+                    "encoded-message/carry-only correction",
+                    &message_only_square,
+                );
                 let (corrected_fourth, corrected_fourth_error, corrected_fourth_correct) =
                     next_square("full winding correction", &corrected_low_square);
                 assert!(corrected_fourth_correct);
                 assert!(corrected_fourth_error.lt(uncorrected_fourth_error));
                 assert!(corrected_fourth_error.lt(message_only_fourth_error));
                 assert!(
-                    words(as_u512(corrected_fourth_error))
-                        < words(high.certificate().half_delta)
+                    words(as_u512(corrected_fourth_error)) < words(high.certificate().half_delta)
                 );
                 // This final control checks whether one oracle cancellation
                 // resets the whole chain or only buys the next operation.
-                next_square("one more multiply without another correction", &corrected_fourth);
+                next_square(
+                    "one more multiply without another correction",
+                    &corrected_fourth,
+                );
+
+                // Oracle-provided carry coordinates at two different scales.
+                // The circuit closures below receive only ciphertexts and the
+                // ordinary relinearization key. Their carry producer is still
+                // a key-holder test fixture, with no public admission claim.
+                let raw_k_values: Vec<U256> = winding
+                    .winding
+                    .iter()
+                    .map(|&k| {
+                        SignedU256::from_magnitude(k < 0, U256::from_u64(k.unsigned_abs()))
+                            .modulo(q)
+                    })
+                    .collect();
+                let delta = q.div_mod_u64(boot.t).0;
+                let delta_k_values: Vec<U256> = winding
+                    .winding
+                    .iter()
+                    .map(|&k| {
+                        SignedU256::from_magnitude(k < 0, delta.mul_u64(k.unsigned_abs())).modulo(q)
+                    })
+                    .collect();
+                let raw_k_clear = raw_phase_addend_for_diagnostic(&boot, &raw_k_values);
+                let delta_k_clear = raw_phase_addend_for_diagnostic(&boot, &delta_k_values);
+                let mut adapter_rng = ShadowHarvester::with_seed(0x5749_4e44_5f41_4450);
+                let raw_k_noisy = encrypt_raw_phase_for_diagnostic(
+                    &boot,
+                    &raw_k_clear,
+                    &bootstrap.boot_keys.secret_key,
+                    &mut adapter_rng,
+                );
+                let delta_k_noisy = encrypt_raw_phase_for_diagnostic(
+                    &boot,
+                    &delta_k_clear,
+                    &bootstrap.boot_keys.secret_key,
+                    &mut adapter_rng,
+                );
+                let expected_k: Vec<u64> = winding
+                    .winding
+                    .iter()
+                    .map(|&k| (k as i128).rem_euclid(boot.t as i128) as u64)
+                    .collect();
+                assert_eq!(
+                    decode_all(&boot, &delta_k_noisy, &bootstrap.boot_keys.secret_key),
+                    expected_k
+                );
+                let adapter_zero = vec![0; boot.n];
+                assert_eq!(
+                    decode_all(&boot, &raw_k_noisy, &bootstrap.boot_keys.secret_key),
+                    adapter_zero
+                );
+                let raw_k_noise = subtract_ciphertexts(&boot, &raw_k_noisy, &raw_k_clear);
+                let carry_noise = phase_residual_max_against(
+                    &boot,
+                    &raw_k_noise,
+                    &bootstrap.boot_keys.secret_key,
+                    &adapter_zero,
+                );
+                assert!(carry_noise.le(U256::from_u64(boot.config.eta as u64)));
+
+                let factor = 2 * boot.t as u128;
+                let raw_adapter = |carry: &RNSCiphertext| {
+                    let tensor = raw_ring_tensor_for_diagnostic(&boot, &low_representative, carry);
+                    let product = exact.relinearize_tensor(&tensor, &relin).unwrap();
+                    scale_ciphertext_for_diagnostic(&boot, &product, factor)
+                };
+                let raw_ideal_correction = raw_adapter(&raw_k_clear);
+                let raw_noisy_correction = raw_adapter(&raw_k_noisy);
+                let raw_noise_correction = raw_adapter(&raw_k_noise);
+                let raw_delta =
+                    subtract_ciphertexts(&boot, &raw_noisy_correction, &raw_ideal_correction);
+                // Both tensors have exactly the same e2, so the deterministic
+                // relinearization error is identical. This is an exact
+                // component identity, not merely matching decoded values.
+                assert_eq!(raw_delta.c0.limbs, raw_noise_correction.c0.limbs);
+                assert_eq!(raw_delta.c1.limbs, raw_noise_correction.c1.limbs);
+                let raw_noise_tensor =
+                    raw_ring_tensor_for_diagnostic(&boot, &low_representative, &raw_k_noise);
+                let raw_noise_phase = scale_ciphertext_for_diagnostic(
+                    &boot,
+                    &tensor_phase(&boot, &raw_noise_tensor, &bootstrap.boot_keys.secret_key),
+                    factor,
+                );
+                let noise_product_error = phase_residual_max_against(
+                    &boot,
+                    &raw_noise_phase,
+                    &bootstrap.boot_keys.secret_key,
+                    &adapter_zero,
+                );
+                let raw_switch_delta =
+                    subtract_ciphertexts(&boot, &raw_noise_correction, &raw_noise_phase);
+                let raw_switch_error = phase_residual_max_against(
+                    &boot,
+                    &raw_switch_delta,
+                    &bootstrap.boot_keys.secret_key,
+                    &adapter_zero,
+                );
+                eprintln!(
+                    "raw encrypted-carry adapter decomposition: input CBD error={} bits; 2*t*carry_error*P={} bits before relinearization; scaled key-switch delta={} bits",
+                    integer_bits(carry_noise), integer_bits(noise_product_error), integer_bits(raw_switch_error),
+                );
+
+                let mut unit_error = vec![U256::zero(); boot.n];
+                unit_error[0] = U256::from_u64(1);
+                let raw_k_unit_error = boot.add(
+                    &raw_k_clear,
+                    &raw_phase_addend_for_diagnostic(&boot, &unit_error),
+                );
+                let raw_unit_correction = raw_adapter(&raw_k_unit_error);
+                let scaled_ideal_product = exact
+                    .try_mul_exact(&low_representative, &delta_k_clear, &relin)
+                    .unwrap();
+                let scaled_noisy_product = exact
+                    .try_mul_exact(&low_representative, &delta_k_noisy, &relin)
+                    .unwrap();
+                let scaled_ideal_correction =
+                    scale_ciphertext_for_diagnostic(&boot, &scaled_ideal_product, factor);
+                let scaled_noisy_correction =
+                    scale_ciphertext_for_diagnostic(&boot, &scaled_noisy_product, factor);
+
+                // A difference-of-squares control tries cancelling the
+                // structured floor-scale bias using the SAME encrypted K:
+                // 2*t*Mul(C, Enc(K)) - t^2*Mul(Enc(K), Enc(K)).
+                let carry_square_ideal = exact
+                    .try_mul_exact(&delta_k_clear, &delta_k_clear, &relin)
+                    .unwrap();
+                let carry_square_noisy = exact
+                    .try_mul_exact(&delta_k_noisy, &delta_k_noisy, &relin)
+                    .unwrap();
+                let t_squared = boot.t as u128 * boot.t as u128;
+                let compensated_ideal = subtract_ciphertexts(
+                    &boot,
+                    &scaled_ideal_correction,
+                    &scale_ciphertext_for_diagnostic(&boot, &carry_square_ideal, t_squared),
+                );
+                let compensated_noisy = subtract_ciphertexts(
+                    &boot,
+                    &scaled_noisy_correction,
+                    &scale_ciphertext_for_diagnostic(&boot, &carry_square_noisy, t_squared),
+                );
+
+                let assess_adapter = |label: &str,
+                                      candidate: &RNSCiphertext,
+                                      exact_control: bool| {
+                    let difference = subtract_ciphertexts(&boot, candidate, &winding.correction);
+                    let producer_error = phase_residual_max_against(
+                        &boot,
+                        &difference,
+                        &bootstrap.boot_keys.secret_key,
+                        &adapter_zero,
+                    );
+                    let output = subtract_ciphertexts(&boot, &native_low_square, candidate);
+                    let decoded = decode_all(&boot, &output, &bootstrap.boot_keys.secret_key);
+                    let correct = decoded == low_square_expected;
+                    let output_error = phase_residual_max_against(
+                        &boot,
+                        &output,
+                        &bootstrap.boot_keys.secret_key,
+                        &low_square_expected,
+                    );
+                    eprintln!(
+                        "encrypted-carry adapter {label}: correction-target error={} bits; corrected product error={} bits; product correct={correct}",
+                        integer_bits(producer_error), integer_bits(output_error),
+                    );
+                    if exact_control {
+                        assert!(producer_error.is_zero());
+                        assert_eq!(output_error, corrected_residual);
+                        assert!(correct);
+                    }
+                    if correct {
+                        let (_, _, next_correct) = next_square(label, &output);
+                        if exact_control {
+                            assert!(next_correct);
+                        }
+                    } else {
+                        eprintln!("encrypted-carry adapter {label}: dependent square skipped because correction already changes the plaintext");
+                    }
+                };
+                for (label, candidate, exact_control) in [
+                    (
+                        "raw K, zero error (oracle control)",
+                        &raw_ideal_correction,
+                        true,
+                    ),
+                    ("raw K, one-unit error", &raw_unit_correction, false),
+                    ("raw K, sampled CBD error", &raw_noisy_correction, false),
+                    (
+                        "Delta K, zero error (oracle control)",
+                        &scaled_ideal_correction,
+                        false,
+                    ),
+                    (
+                        "Delta K, sampled CBD error",
+                        &scaled_noisy_correction,
+                        false,
+                    ),
+                    (
+                        "Delta K, compensated zero-error control",
+                        &compensated_ideal,
+                        false,
+                    ),
+                    (
+                        "Delta K, compensated sampled CBD error",
+                        &compensated_noisy,
+                        false,
+                    ),
+                ] {
+                    assess_adapter(label, candidate, exact_control);
+                }
 
                 let right = subtract_plain_constant(&boot, &w_ciphertext, 1);
-                let first_product_tensor = exact
-                    .try_mul_no_relin_exact(&w_ciphertext, &right)
-                    .unwrap();
+                let first_product_tensor =
+                    exact.try_mul_no_relin_exact(&w_ciphertext, &right).unwrap();
                 let first_tensor_phase = tensor_phase(
                     &boot,
                     &first_product_tensor,
@@ -1538,20 +1849,15 @@ mod tests {
                 );
                 let tensor_messages =
                     decode_all(&boot, &first_tensor_phase, &bootstrap.boot_keys.secret_key);
-                let expected_first_product =
-                    (factor_zero * factor_one % p_squared) as u64;
+                let expected_first_product = (factor_zero * factor_one % p_squared) as u64;
                 assert_eq!(tensor_messages[0], expected_first_product);
                 assert!(tensor_messages[1..].iter().all(|&value| value == 0));
-                let tensor_residual = phase_residual_max(
-                    &boot,
-                    &first_tensor_phase,
-                    &bootstrap.boot_keys.secret_key,
-                );
+                let tensor_residual =
+                    phase_residual_max(&boot, &first_tensor_phase, &bootstrap.boot_keys.secret_key);
                 let first_product = exact
                     .relinearize_tensor(&first_product_tensor, &relin)
                     .unwrap();
-                let switch_delta =
-                    subtract_ciphertexts(&boot, &first_product, &first_tensor_phase);
+                let switch_delta = subtract_ciphertexts(&boot, &first_product, &first_tensor_phase);
                 let zero_messages = vec![0; boot.n];
                 let switch_residual = phase_residual_max_against(
                     &boot,
@@ -1566,11 +1872,8 @@ mod tests {
                     (factor_zero * factor_one % p_squared) as u64
                 );
                 assert!(product_messages[1..].iter().all(|&value| value == 0));
-                let product_residual = phase_residual_max(
-                    &boot,
-                    &first_product,
-                    &bootstrap.boot_keys.secret_key,
-                );
+                let product_residual =
+                    phase_residual_max(&boot, &first_product, &bootstrap.boot_keys.secret_key);
                 eprintln!(
                     "native first canonical-factor tensor residual={} bits (0x{:032x}{:032x}); relinearized residual={} bits (0x{:032x}{:032x}); isolated relinearization delta={} bits (0x{:032x}{:032x}); product plaintext verified",
                     integer_bits(tensor_residual),
@@ -1595,13 +1898,9 @@ mod tests {
                     let shifted_tensor = exact
                         .try_mul_no_relin_exact(&shifted_w, &shifted_right)
                         .unwrap();
-                    let shifted_phase = tensor_phase(
-                        &boot,
-                        &shifted_tensor,
-                        &bootstrap.boot_keys.secret_key,
-                    );
-                    let shifted_message =
-                        (w as i128 + shift).rem_euclid(p_squared as i128) as u64;
+                    let shifted_phase =
+                        tensor_phase(&boot, &shifted_tensor, &bootstrap.boot_keys.secret_key);
+                    let shifted_message = (w as i128 + shift).rem_euclid(p_squared as i128) as u64;
                     let mut shifted_input_expected = vec![0; boot.n];
                     shifted_input_expected[0] = shifted_message;
                     let shifted_input_messages =
@@ -1633,11 +1932,8 @@ mod tests {
                     let square_tensor = exact
                         .try_mul_no_relin_exact(&shifted_w, &shifted_w)
                         .unwrap();
-                    let square_phase = tensor_phase(
-                        &boot,
-                        &square_tensor,
-                        &bootstrap.boot_keys.secret_key,
-                    );
+                    let square_phase =
+                        tensor_phase(&boot, &square_tensor, &bootstrap.boot_keys.secret_key);
                     let square_expected =
                         (shifted_message as u128 * shifted_message as u128 % p_squared) as u64;
                     let square_decoded =
@@ -1678,14 +1974,10 @@ mod tests {
                     .unwrap();
                 let depth_two_messages =
                     decode_all(&boot, &depth_two, &bootstrap.boot_keys.secret_key);
-                let expected_depth_two =
-                    (factor_zero
-                        * factor_one
-                        % p_squared
-                        * factor_two_value
-                        % p_squared
-                        * factor_three_value
-                        % p_squared) as u64;
+                let expected_depth_two = (factor_zero * factor_one % p_squared * factor_two_value
+                    % p_squared
+                    * factor_three_value
+                    % p_squared) as u64;
                 let depth_two_correct = depth_two_messages[0] == expected_depth_two
                     && depth_two_messages[1..].iter().all(|&value| value == 0);
                 let mut expected_depth_two_vector = vec![0; boot.n];
@@ -1719,8 +2011,7 @@ mod tests {
                     .try_mul_exact(&w_ciphertext, &w_ciphertext, &relin)
                     .unwrap();
                 let expected_square = (w * w % p_squared) as u64;
-                let square_messages =
-                    decode_all(&boot, &square, &bootstrap.boot_keys.secret_key);
+                let square_messages = decode_all(&boot, &square, &bootstrap.boot_keys.secret_key);
                 let square_correct = square_messages[0] == expected_square
                     && square_messages[1..].iter().all(|&value| value == 0);
                 let mut expected_square_vector = vec![0; boot.n];

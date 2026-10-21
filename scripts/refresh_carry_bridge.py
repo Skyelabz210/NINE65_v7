@@ -95,6 +95,75 @@ def multiplication_winding_case(c0, c1, secret, q, t):
         assert abs(centered(actual - ideal - term, q)) <= rounding_bound
 
 
+def carry_encoding_adapter_case(c0, c1, secret, q, t):
+    """Check raw/Delta carry adapters, including the carry ciphertext's winding.
+
+    All coordinates and secrets are public toy inputs. No producer or security
+    claim: this separates algebra, scale mismatch, and component rounding.
+    """
+    n, delta, remainder = len(secret), q // t, q % t
+    lifted = [a + b for a, b in zip(c0, convolution(c1, secret))]
+    phase = [centered(a, q) for a in lifted]
+    winding = [(a - p) // q for a, p in zip(lifted, phase)]
+    correction = [2 * t * v for v in convolution(winding, phase)]
+    secret_square = convolution(secret, secret)
+    rounding_weight = 1 + sum(map(abs, secret)) + sum(map(abs, secret_square))
+
+    def tensor(a0, a1, b0, b1):
+        parts = (convolution(a0, b0),
+                 [a + b for a, b in zip(convolution(a0, b1), convolution(a1, b0))],
+                 convolution(a1, b1))
+        rounded = [[nearest(t * v, q) for v in part] for part in parts]
+        result = [a + b + c for a, b, c in zip(
+            rounded[0], convolution(rounded[1], secret),
+            convolution(rounded[2], secret_square))]
+        a = [x + y for x, y in zip(a0, convolution(a1, secret))]
+        b = [x + y for x, y in zip(b0, convolution(b1, secret))]
+        rounding = [q * x - t * y for x, y in zip(result, convolution(a, b))]
+        assert all(2 * abs(v) <= q * rounding_weight for v in rounding)
+        return result, rounding
+
+    cases = nonzero_winding = 0
+    for unit_error in (-1, 0, 1):
+        noise = [unit_error] + [0] * (n - 1)
+        for mask in ([0] * n, c1):
+            mask_phase = convolution(mask, secret)
+            raw_target = [k + e for k, e in zip(winding, noise)]
+            raw_b0 = [centered(v - a, q) for v, a in zip(raw_target, mask_phase)]
+            raw_lift = [a + b for a, b in zip(raw_b0, mask_phase)]
+            raw_product = [2 * t * v for v in convolution(lifted, raw_lift)]
+            raw_error = [2 * t * v for v in convolution(phase, noise)]
+            assert all((a - b - e) % q == 0
+                       for a, b, e in zip(raw_product, correction, raw_error))
+
+            target = [delta * k + e for k, e in zip(winding, noise)]
+            b0 = [centered(v - a, q) for v, a in zip(target, mask_phase)]
+            carry_lift = [a + b for a, b in zip(b0, mask_phase)]
+            own_winding = [(a - b) // q for a, b in zip(carry_lift, target)]
+            assert carry_lift == [b + q * j for b, j in zip(target, own_winding)]
+            cross, cross_rounding = tensor(c0, c1, b0, mask)
+            square, square_rounding = tensor(b0, mask, b0, mask)
+            compensated = [2 * t * a - t * t * b for a, b in zip(cross, square)]
+            v = [p + remainder * k - t * e
+                 for p, k, e in zip(phase, winding, noise)]
+            # A-t*B = V-t*Q*J. Even after compensating Delta's floor
+            # mismatch, the encrypted carry's own J contributes 2*t^2*J*V.
+            predicted_numerator = [t * (a - b) + 2 * t * t * q * j
+                                   for a, b, j in zip(
+                                       convolution(phase, phase), convolution(v, v),
+                                       convolution(own_winding, v))]
+            rounding = [2 * t * a - t * t * b
+                        for a, b in zip(cross_rounding, square_rounding)]
+            assert all((q * (d - w) - prediction - rounding_error) % (q * q) == 0
+                       for d, w, prediction, rounding_error in zip(
+                           compensated, correction, predicted_numerator, rounding))
+            assert all(2 * abs(value) <= q * (2 * t + t * t) * rounding_weight
+                       for value in rounding)
+            nonzero_winding += any(own_winding)
+            cases += 1
+    return cases, nonzero_winding
+
+
 def multiplication_winding_budget():
     """Sufficient next-square bound for constant plaintext one, not admission.
 
@@ -247,19 +316,28 @@ def run():
     assert minimum_plaintext.bit_length() == 132
     assert wide_exp == 9 and wide_modulus.bit_length() == 145
     assert native_q.bit_length() == 119 < wide_modulus.bit_length()
+    adapter_cases = adapter_own_winding_cases = 0
     for q, t in ((5, 3), (17, 5), (31, 7)):
         values = range(-q // 2 + 1, q // 2 + 1)
         for a, b, s in itertools.product(values, values, (-1, 0, 1)):
             affine_failures += component_case([a], [b], [s], q, t)
             multiplication_winding_case([a], [b], [s], q, t)
+            count, own = carry_encoding_adapter_case([a], [b], [s], q, t)
+            adapter_cases += count
+            adapter_own_winding_cases += own
             scalar_cases += 1
     for c0 in itertools.product(range(-2, 3), repeat=2):
         for c1 in itertools.product(range(-2, 3), repeat=2):
             for s in itertools.product((-1, 0, 1), repeat=2):
                 affine_failures += component_case(c0, c1, s, 5, 3)
                 multiplication_winding_case(c0, c1, s, 5, 3)
+                count, own = carry_encoding_adapter_case(c0, c1, s, 5, 3)
+                adapter_cases += count
+                adapter_own_winding_cases += own
                 ring_cases += 1
     assert affine_failures > 0, "dropping the carry must have counterexamples"
+    assert adapter_cases == 6 * (scalar_cases + ring_cases)
+    assert adapter_own_winding_cases > 0, "the carry ciphertext's winding must be exercised"
 
     contractions = winding_cases = 0
     for p in (3, 5, 17, 31):
@@ -314,6 +392,8 @@ def run():
             "scalar_component_cases": scalar_cases,
             "negacyclic_n2_cases": ring_cases,
             "multiplication_winding_cancellation_cases": scalar_cases + ring_cases,
+            "carry_encoding_adapter_cases": adapter_cases,
+            "adapter_cases_with_nonzero_carry_ciphertext_winding": adapter_own_winding_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,
             "prime_power_contractions": contractions,
             "expanded_winding_invariance_cases": winding_cases,
