@@ -124,28 +124,32 @@ output ciphertext. Exact source hashes and test counts are in
 The four-prime refusal was parameter-headroom, not a failed carry identity. The
 repository's existing five-prime tuple is security-screened for the 128-bit
 claim (Core-SVP 151 bits, Matzov 136 bits), and its modeled square bound is
-130 bits against a 137-bit half-scale. The native carry test now has a
-separate five-prime path. Since this tuple's Q is wider than `u128`, its carry
-assembly, phase-grid checks, and refresh bounds form Q with `U256`; they do not
-read `RNSFHEContext::q_product`'s overflow sentinel. The original four-prime
-three-profile residual regression remains intact.
+130 bits against a 137-bit half-scale. The native carry test now has a separate
+five-prime path. Since this tuple's Q is wider than `u128`, its carry assembly
+and phase-grid checks form Q with `U256`; they do not read
+`RNSFHEContext::q_product`'s overflow sentinel. This follow-up also caught a
+test-bound bug: `Qboot × G` can exceed 256 bits, so the old `U256::mul_low`
+estimate truncated its high bits and understated the injected-profile bound
+by about 13 bits. The ratio now uses an exact `U512` numerator and division
+before rounding up. The original four-prime three-profile residual regression
+remains intact.
 
-The fresh five-prime path passed 16,390 encrypted carry/refresh checks, then
-performed the exact ciphertext square and verified all 8,192 coefficients:
-49 at coefficient 0 and zero elsewhere. Its public refresh error bound was
-`287482076757990300936636629` (88 bits), the modeled square bound was
-`1264687542366000320447941098417326051329` (130 bits), and the half-scale was
-`117984527272727065037126399264836478558604` (137 bits). The five-prime test
-finished in 60.38 seconds. The four-prime carry test still passes 49,170
-checks across fresh and positive/negative injected-residual profiles, with the
-same two injected cases refused for their next square. The complete
-`precharged_` filter passed 7 tests, with 2 expensive research tests ignored;
-the five-prime square test was run separately.
+Across the five-prime fresh and positive/negative injected-residual profiles,
+the test passed 49,170 encrypted carry/refresh checks. Every profile refreshed
+all 8,192 coefficients to the expected constant polynomial 7. The fresh
+profile bound is 88 bits; both injected-profile bounds are 135 bits, all below
+the 137-bit half-scale. The fresh profile then performed the exact ciphertext
+square and verified all 8,192 coefficients: 49 at coefficient 0 and zero
+elsewhere. Its modeled square bound is 130 bits and is admitted. The two
+injected-profile next squares are both refused before ciphertext multiplication
+at 177 bits against the 137-bit half-scale. The five-prime test finished in
+115.86 seconds; the four-prime `precharged_` regression passed 7 tests with 2
+expensive research tests ignored.
 
-This demonstrates one fresh-profile refresh→square path under one seeded
-work/boot key pair. It does not establish square admission for injected-offset
-profiles, another square, a second key epoch, randomized hidden sources, or
-production S00/S01/S03 admission. The independent derivation review and a new
-all-coefficient carry bound for a later dense ciphertext remain open. Detailed
-outputs and source hashes are in
+This demonstrates a one-square fresh-profile path and refresh-only injected
+profiles under one seeded work/boot key pair. It does not establish square
+admission for injected offsets, another square, a second key epoch, randomized
+hidden sources, or production S00/S01/S03 admission. The independent derivation
+review and a new all-coefficient carry bound for a later dense ciphertext
+remain open. Detailed outputs and source hashes are in
 `artifacts/execution/2026-10-20-carry/safe-basis-all-coefficient-carry.json`.

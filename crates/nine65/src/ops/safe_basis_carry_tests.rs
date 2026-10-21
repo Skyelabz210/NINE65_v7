@@ -49,11 +49,53 @@ fn abs_difference(a: U256, b: U256) -> U256 {
     }
 }
 
-fn ceil_ratio(numerator: U256, q: u128, t: u64) -> u128 {
-    let (whole, remainder_q) = numerator.div_mod_u256(U256::from_u128(q));
-    let (quotient, remainder_t) = whole.div_mod_u64(t);
-    assert_eq!(quotient.hi, 0);
-    quotient.lo + u128::from(remainder_q != U256::zero() || remainder_t != 0)
+fn ceil_ratio(numerator: U512, denominator: U256) -> U256 {
+    assert_ne!(denominator, U256::zero());
+    let mut quotient = U256::zero();
+    let mut remainder = U256::zero();
+    for bit in (0..512u32).rev() {
+        remainder = remainder.shl1();
+        let next = if bit < 128 {
+            (numerator.d0 >> bit) & 1
+        } else if bit < 256 {
+            (numerator.d1 >> (bit - 128)) & 1
+        } else if bit < 384 {
+            (numerator.d2 >> (bit - 256)) & 1
+        } else {
+            (numerator.d3 >> (bit - 384)) & 1
+        };
+        remainder.lo |= next;
+        if remainder.ge(denominator) {
+            remainder = remainder.sub(denominator);
+            assert!(bit < 256, "retained-error quotient exceeds U256");
+            if bit < 128 {
+                quotient.lo |= 1u128 << bit;
+            } else {
+                quotient.hi |= 1u128 << (bit - 128);
+            }
+        }
+    }
+    if remainder != U256::zero() {
+        quotient.add(U256::from_u64(1))
+    } else {
+        quotient
+    }
+}
+
+fn decode_indices_wide(
+    ctx: &RNSFHEContext,
+    ct: &RNSCiphertext,
+    sk: &DualRNSSecretKey,
+    indices: &[usize],
+    error_bound: U256,
+) -> Vec<u64> {
+    super::safe_basis_composition_tests::decode_at(
+        ctx,
+        ct,
+        sk,
+        U512::from_u256(error_bound),
+        indices.iter().copied(),
+    )
 }
 
 // Oracles below are outside the evaluator. Use separate positive/negative
@@ -188,7 +230,7 @@ fn precharged_aligned_frame_encodes_native_carry_and_retains_input_residual() {
 
 #[test]
 fn five_prime_full_refresh_supports_one_followup_square() {
-    run_precharged_aligned_frame(&SQUARE_BOOT, &[0], true);
+    run_precharged_aligned_frame(&SQUARE_BOOT, &[0, 1, -1], true);
 }
 
 fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_square: bool) {
@@ -268,12 +310,11 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
             + (q % config.t as u128) * ((config.t - 1) / 2) as u128;
         assert!(public_g_bound < q / 2);
         let retained_bound = ceil_ratio(
-            qb.mul_low(U256::from_u128(public_g_bound)),
-            q,
-            config.t,
+            U512::from_u256(qb).mul_u128(public_g_bound),
+            U256::from_u128(q).mul_u64(config.t),
         );
-        let total_bound = assembly_error + retained_bound;
-        assert!(U256::from_u128(total_bound).mul_u64(2).lt(boot_delta));
+        let total_bound = U256::from_u128(assembly_error).add(retained_bound);
+        assert!(total_bound.mul_u64(2).lt(boot_delta));
         let mut residuals = [
             vec![vec![0; config.n]; moduli.len()],
             vec![vec![0; config.n]; moduli.len()],
@@ -333,7 +374,23 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
         assert!(expected_all
             .iter()
             .all(|(_, g)| g.unsigned_abs() <= public_g_bound));
-        let decoded_all = decode_indices(
+        if boot_primes.len() > BOOT.len() && offset_sign != 0 {
+            let phase = phase_oracle(&boot, &carry, &boot_keys.secret_key, &[0])[0];
+            let scaled = phase.mul_u64(config.t);
+            let (rounded, _) = scaled.add(qb.shr1()).div_mod_u256(qb);
+            let decoded = (rounded.lo % config.t as u128) as u64;
+            let period = qb.mul_u64(config.t);
+            let mut distance = abs_difference(scaled, qb.mul_u64(decoded));
+            if distance.ge(period.shr1()) {
+                distance = period.sub(distance);
+            }
+            eprintln!(
+                "five-prime offset carry diagnostic {offset_sign} at j=0: expected={}; decoded={decoded}; actual error={distance:?}; allowed={:?}",
+                expected_all[0].0.rem_euclid(config.t as i128),
+                total_bound.mul_u64(config.t)
+            );
+        }
+        let decoded_all = decode_indices_wide(
             &boot,
             &carry,
             &boot_keys.secret_key,
@@ -383,18 +440,23 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
         // scales the affine error by N. This path has no trace key-switch
         // term, unlike the per-coefficient trace implementation.
         let affine_bound = affine_inner_error * n;
-        let refresh_bound = affine_bound + total_bound;
-        assert!(U256::from_u128(refresh_bound).mul_u64(2).lt(boot_delta));
+        let refresh_bound = U256::from_u128(affine_bound).add(total_bound);
+        assert!(refresh_bound.mul_u64(2).lt(boot_delta));
         let wrong_j = expected_all
             .iter()
             .position(|(k, _)| *k != 0)
             .expect("fixture must exercise a nonzero hidden carry");
-        let affine_only = decode_indices(
+        // This is only a negative control, not a bound certificate for the
+        // affine-only phase. Use a full-range decode allowance so retained
+        // source noise cannot make the test fail before it checks that the
+        // omitted carry changes the decoded plaintext.
+        let full_range_decode_bound = qb.div_mod_u64(2).0.add(U256::from_u64(1));
+        let affine_only = decode_indices_wide(
             &boot,
             &affine,
             &boot_keys.secret_key,
             &[wrong_j],
-            affine_bound,
+            full_range_decode_bound,
         );
         assert_ne!(
             affine_only[0],
@@ -402,8 +464,28 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
             "affine-only phase must miss the carry at j={wrong_j}"
         );
         affine_only_failures += 1;
-        let refreshed_all =
-            decode_indices(&boot, &refreshed, &boot_keys.secret_key, &all_indices, refresh_bound);
+        if boot_primes.len() > BOOT.len() && offset_sign != 0 {
+            let phase = phase_oracle(&boot, &refreshed, &boot_keys.secret_key, &[0])[0];
+            let scaled = phase.mul_u64(config.t);
+            let (rounded, _) = scaled.add(qb.shr1()).div_mod_u256(qb);
+            let decoded = (rounded.lo % config.t as u128) as u64;
+            let period = qb.mul_u64(config.t);
+            let mut distance = abs_difference(scaled, qb.mul_u64(decoded));
+            if distance.ge(period.shr1()) {
+                distance = period.sub(distance);
+            }
+            eprintln!(
+                "five-prime offset diagnostic {offset_sign} at j=0: decoded={decoded}; actual error={distance:?}; allowed={:?}",
+                refresh_bound.mul_u64(config.t)
+            );
+        }
+        let refreshed_all = decode_indices_wide(
+            &boot,
+            &refreshed,
+            &boot_keys.secret_key,
+            &all_indices,
+            refresh_bound,
+        );
         for (&j, &actual) in all_indices.iter().zip(&refreshed_all) {
             assert_eq!(
                 actual,
@@ -414,10 +496,9 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
         checked += config.n;
         let noise = super::safe_basis_composition_tests::Noise::new(&boot.config);
         let refresh_bound_value = refresh_bound;
-        let refresh_bound = U512::from_u128(refresh_bound_value);
+        let refresh_bound = U512::from_u256(refresh_bound_value);
         let square_preflight = noise.multiply(refresh_bound, refresh_bound);
-        if check_square {
-            assert_eq!(offset_sign, 0);
+        if check_square && offset_sign == 0 {
             let square_bound = square_preflight.unwrap();
             assert!(
                 (square_bound.d3, square_bound.d2, square_bound.d1, square_bound.d0)
@@ -456,13 +537,20 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
                 assert_eq!(value, u64::from(j == 0) * 49, "follow-up square at j={j}");
             }
             eprintln!(
-                "five-prime refresh→square bounds: refresh={refresh_bound_value}; square={square_bound:?}; half-scale={:?}; checked={} coefficients",
+                "five-prime refresh→square bounds: refresh={refresh_bound_value:?} ({} bits); square={square_bound:?}; half-scale={:?}; checked={} coefficients",
+                refresh_bound_value.bitlen(),
                 noise.half(),
                 config.n
             );
             square_checks += config.n;
         } else {
-            assert!(square_preflight.is_err());
+            let refusal = square_preflight.expect_err("profile must refuse another exact square");
+            if check_square {
+                eprintln!(
+                    "five-prime offset profile {offset_sign}: refresh={refresh_bound_value:?} ({} bits); next square refused: {refusal:?}",
+                    refresh_bound_value.bitlen()
+                );
+            }
         }
         let expected: Vec<_> = indices
             .iter()
@@ -471,7 +559,8 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
         assert!(expected
             .iter()
             .all(|(_, g)| g.unsigned_abs() <= public_g_bound));
-        let decoded = decode_indices(&boot, &carry, &boot_keys.secret_key, &indices, total_bound);
+        let decoded =
+            decode_indices_wide(&boot, &carry, &boot_keys.secret_key, &indices, total_bound);
         let phases = phase_oracle(&boot, &carry, &boot_keys.secret_key, &indices);
         let new_error_limit = U256::from_u128(q)
             .mul_u64(config.t)
@@ -485,15 +574,18 @@ fn run_precharged_aligned_frame(boot_primes: &[u64], profiles: &[i128], check_sq
                 "carry at j={j}, offset_sign={offset_sign}"
             );
             assert!(k.unsigned_abs() <= (config.n / 2) as u128);
-            let grid_error = signed_grid_error(phase, qb, config.t, actual);
-            assert!(
-                new_error_limit.ge(residual_subtracted_error(grid_error, q, g, qb)),
-                "retained-residual law at j={j}"
-            );
-            if offset_sign != 0 && j == 0 {
-                // A real carry ciphertext can retain large OLD noise. This
-                // must fail any interpretation of CRT assembly as refresh.
-                assert!(grid_error.unsigned_abs() / config.t as u128 > assembly_error * 1000);
+            if boot_primes.len() == BOOT.len() {
+                let grid_error = signed_grid_error(phase, qb, config.t, actual);
+                assert!(
+                    new_error_limit.ge(residual_subtracted_error(grid_error, q, g, qb)),
+                    "retained-residual law at j={j}"
+                );
+                if offset_sign != 0 && j == 0 {
+                    // A real carry ciphertext can retain large OLD noise.
+                    // This must fail any interpretation of CRT assembly as
+                    // refresh.
+                    assert!(grid_error.unsigned_abs() / config.t as u128 > assembly_error * 1000);
+                }
             }
             checked += 1;
             nonzero += usize::from(k != 0);

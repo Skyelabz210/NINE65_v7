@@ -2,7 +2,7 @@
   "schema": "nine65-safe-basis-all-coefficient-carry-v1",
   "source_commit": "a640d3cb9e0f4d4015afc14027721b1a5e75788b",
   "source_sha256": {
-    "crates/nine65/src/ops/safe_basis_carry_tests.rs": "7af003e7a605f64458bd30545dfc4b7a865b96a3db28bb779f7150b62f627274",
+    "crates/nine65/src/ops/safe_basis_carry_tests.rs": "52aab29cbc890fd0d4367a242ce6398fe82a03f2aaa8650ff81fa441c38acae7",
     "crates/nine65/src/ops/safe_basis_composition_tests.rs": "8001f3aaad72ed744d222dfa082bb7ac6453aa49aa88289f200e6544cb836e44"
   },
   "parameters": {
@@ -49,22 +49,26 @@
     "tuple_prime_count": 5,
     "tuple_q_bits": 154,
     "tuple_security_screen_passes_128": true,
-    "modulus_bookkeeping": "U256; does not use q_product overflow sentinel",
-    "profiles": ["fresh"],
-    "encrypted_carry_refresh_checks": 16390,
-    "all_coefficients_refreshed": 8192,
+    "modulus_bookkeeping": "U256 modulus; exact U512 retained-bound numerator/division; does not use q_product overflow sentinel",
+    "profiles": ["fresh", "positive_offset", "negative_offset"],
+    "encrypted_carry_refresh_checks": 49170,
+    "all_coefficients_refreshed_per_profile": 8192,
     "refresh_error_bound": "287482076757990300936636629",
     "refresh_error_bits": 88,
+    "injected_offset_refresh_error_bound": "29496131818182053741358357806502208125680",
+    "injected_offset_refresh_error_bits": 135,
     "followup_square_error_bound": "1264687542366000320447941098417326051329",
     "followup_square_error_bits": 130,
     "half_scale": "117984527272727065037126399264836478558604",
     "half_scale_bits": 137,
-    "square_admitted": true,
+    "fresh_profile_square_admitted": true,
+    "injected_offset_square_error_bits": [177, 177],
+    "injected_offset_squares_admitted": false,
     "all_coefficients_squared": 8192,
     "square_plaintext_constant": 49,
-    "nonzero_carries": 8037,
-    "affine_only_negative_controls_failed": 1,
-    "elapsed_seconds": 60.38,
+    "nonzero_carries": 24111,
+    "affine_only_negative_controls_failed": 3,
+    "elapsed_seconds": 115.86,
     "research_only": true,
     "production_refresh_admitted": false
   },
@@ -85,7 +89,7 @@
       "failed": 0,
       "ignored": 2,
       "filtered_out": 1080,
-      "elapsed_seconds": 104.04
+      "elapsed_seconds": 105.11
     },
     {
       "command": "cargo test --locked --offline -j1 -p nine65 --lib five_prime_full_refresh_supports_one_followup_square -- --nocapture",
@@ -94,7 +98,7 @@
       "failed": 0,
       "ignored": 0,
       "filtered_out": 1088,
-      "elapsed_seconds": 60.38
+      "elapsed_seconds": 115.86
     },
     {
       "command": "python3 scripts/safe_basis_carry_probe.py",
@@ -109,7 +113,7 @@
   "unresolved": [
     "independent review of the complete error derivation",
     "repeat across randomized source/key patterns",
-    "five-prime follow-up under injected-offset profiles",
+    "find a security-screened lower-error route that admits a square after injected-offset refreshes",
     "next key epoch must precharge the boot secret under a next boot key",
     "fresh all-coefficient carry bound for a subsequent dense output ciphertext",
     "production S00/S01/S03 admission and review"
