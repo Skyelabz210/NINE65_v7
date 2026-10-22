@@ -735,6 +735,51 @@ fn precharged_composition_profiles_check_security_and_noise_before_keys() {
 }
 
 #[test]
+fn distinct_weight_carry_support_hits_state_cap_before_ciphertext_work() {
+    let config = config_with(5);
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    let work = SecureConfig::secure_128().into_config();
+    let source_q = work.primes.iter().map(|&p| p as u128).product::<u128>() as i128;
+    let family = [0x5355_5050_4f52_54, 1];
+    let runtime = CarryRuntime::new(&ctx, source_q, family, 27);
+    let mut state = runtime.initial(0).unwrap();
+
+    // Balanced-ternary weights give 3^k distinct sums. Unit synthetic bounds
+    // isolate support growth from the separate native noise limit; no plan is
+    // committed, and the zero ciphertexts are never used as selectors.
+    for (step, term) in [1i128, 3, 9, 27].into_iter().enumerate() {
+        let trit = Trit {
+            encrypted: core::array::from_fn(|_| zero(&ctx)),
+            bound: U512::from_u64(1),
+            family,
+            coefficient: step,
+        };
+        if step < 3 {
+            let plan = runtime.plan_advance(&state, term, &trit).unwrap();
+            state = plan.composition.result;
+            assert_eq!(state.rows.len(), 3usize.pow((step + 1) as u32));
+            // Mark planned rows as encrypted only so the next public planner
+            // charges a selector product. Ciphertext work is not executed.
+            for row in &mut state.rows {
+                row.selector = Some(zero(&ctx));
+            }
+        } else {
+            assert!(matches!(
+                runtime.plan_advance(&state, term, &trit),
+                Err(Refusal::StateLimit {
+                    needed: 28,
+                    limit: 27
+                })
+            ));
+        }
+    }
+    assert_eq!(runtime.multiplications.get(), 0);
+    eprintln!(
+        "carry support planner: 3 distinct trit-weighted terms already require 27 rows; fourth is refused at row 28 before ciphertext multiplication"
+    );
+}
+
+#[test]
 fn precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale() {
     let config = config_with(4);
     let screen = screen_bootstrap_security(&config.primes, config.n, 128).unwrap();

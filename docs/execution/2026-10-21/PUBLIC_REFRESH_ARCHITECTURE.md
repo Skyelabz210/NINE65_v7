@@ -346,6 +346,16 @@ full N=8192 convolution carry, its all-coefficient selector/contraction, a
 public return-key path, or a second real refresh cycle. Issue #95 therefore
 remains open and the production refresh gate stays fail-closed.
 
+A planner-only follow-up isolates why simply extending this tree is not the
+bridge: with synthetic unit noise bounds and distinct balanced-ternary public
+weights `1,3,9,27`, the support has `3^3=27` rows after three terms, and the
+fourth is refused at row 28 before any ciphertext multiplication. Thus the
+current one-hot state representation is combinatorial even when noise is
+deliberately removed from the experiment. Composite tray selection manages
+view-error budgets; it does not compress this support. The next mathematical
+gate is a compact encrypted quotient/carry state that avoids enumerating all
+ternary assignments while retaining exact boundary decisions.
+
 There are two implementation mismatches to fix before extrapolating:
 
 - The composition prototype's `source_q: i128` accommodates Q_w (119 bits),
@@ -442,6 +452,9 @@ This analysis does not prove that no such construction can exist.
   pair assignments, 91,854 triple assignment/readouts, and all preflight
   budget/limit checks. Their separate ignored native pair/triple execution
   probes were not run in this turn.
+- Carry-support growth probe: **1 passed**; distinct weighted support reaches
+  the configured 27-row limit after three terms and refuses the fourth before
+  ciphertext work, independently of the native noise budget.
 - Clear carry oracle: passed, including 56,700 single-round unwrapped cases,
   113,400 signed second-carry perturbations, and 9,482 bounded-polynomial cases.
 - The exact source-hashed analysis output is retained in
@@ -460,6 +473,7 @@ cargo test --locked --offline -j1 -p nine65 --features allow_insecure,slow_tests
 cargo test --locked --offline -j1 -p nine65 --features allow_insecure,exact_transcendentals_backend --lib key_holder_precharge_has_exact_eta_phase_error -- --nocapture
 cargo test --locked --offline -j1 -p nine65 --features allow_insecure,exact_transcendentals_backend --lib precharged_pairs_ -- --nocapture
 cargo test --locked --offline -j1 -p nine65 --features allow_insecure,exact_transcendentals_backend --lib triple_precharge_ -- --nocapture
+cargo test --locked --offline -j1 -p nine65 --features allow_insecure --lib distinct_weight_carry_support_hits_state_cap_before_ciphertext_work -- --nocapture
 NINE65_TRACE_NOISE_DIAGNOSTIC=1 cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib contraction_with_oracle_lift_refreshes_boundary_input_and_supports_multiply -- --include-ignored --nocapture
 ```
 
