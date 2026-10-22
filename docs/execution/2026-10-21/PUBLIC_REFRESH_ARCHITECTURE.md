@@ -318,6 +318,34 @@ implementation. The next gate is a structured transform that is both
 operationally affordable and admitted by a measured native noise/error
 certificate; this work does not replace CRAM with a prebuilt bootstrap.
 
+### Native Safe Basis / sister-tray follow-up (2026-10-22)
+
+Running the existing N=8192 composition probe exposed a setup mismatch before
+its encrypted selector path could start: selector masks are encoded as `-8`
+so the 8192-term trace normalizes them modulo `t=65537`, but the only precharge
+constructor correctly accepted only ternary source-secret coefficients. The
+strict `CramPrechargedSecret` contract remains unchanged. A separate
+key-holder-only centered-polynomial precharge now encrypts bounded selector
+masks directly with the same `|e|<=eta` phase-error guarantee; it does not
+scale an already noisy ciphertext.
+
+With that path, the native Safe Basis/sister-tray probe passes; its carry/noise
+counter reports **49,488 checks**, with additional per-transition tray decode
+loops reporting 172,032 checks on the first two steps and 163,840 on the
+composite-tray third step. Both signs pass three sequential carry terms and
+four balanced terms; the dependent wide tray is rejected
+before multiplication when its error exceeds the 137-bit half-scale, then a
+composite view is selected under tighter error budgets while preserving the
+2/11 phase relation. The sparse coefficient Phase-1 correction decodes
+correctly on both signs and its next square passes (86-bit refresh bound,
+128-bit square bound, 137-bit half-scale).
+
+This still is not public refresh: the probe exercises one sparse output
+coefficient with at most four secret-weighted terms. It does not produce the
+full N=8192 convolution carry, its all-coefficient selector/contraction, a
+public return-key path, or a second real refresh cycle. Issue #95 therefore
+remains open and the production refresh gate stays fail-closed.
+
 There are two implementation mismatches to fix before extrapolating:
 
 - The composition prototype's `source_q: i128` accommodates Q_w (119 bits),
@@ -402,6 +430,18 @@ This analysis does not prove that no such construction can exist.
   encrypted N=8 BSGS maps and the native N=8192 direct-versus-BSGS key-size
   estimate; it does not establish an affordable/noise-certified transform or
   a full carry refresh.
+- Native Safe Basis/sister-tray composition probe: **1 passed**, its carry/noise
+  counter reports 49,488 checks plus the separately reported per-transition
+  tray decodes, both signs, three sequential or four balanced terms, sparse
+  Phase-1 correction and follow-up square. Runtime was 2,893 s. It does not
+  implement the full 8192-term carry or repeated public refresh.
+- Strict key-holder precharge error-bound regression: **1 passed**. Ternary
+  secret precharge remains strict; selector masks use the separate bounded
+  centered-polynomial path.
+- Pair/triple Safe Basis support regressions: **3 passed** across 34,425
+  pair assignments, 91,854 triple assignment/readouts, and all preflight
+  budget/limit checks. Their separate ignored native pair/triple execution
+  probes were not run in this turn.
 - Clear carry oracle: passed, including 56,700 single-round unwrapped cases,
   113,400 signed second-carry perturbations, and 9,482 bounded-polynomial cases.
 - The exact source-hashed analysis output is retained in
@@ -416,6 +456,10 @@ python3 -m unittest discover -s scripts -p 'test_digit_radius_oracle.py' -v
 python3 scripts/refresh_carry_bridge.py
 cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib public_prime_power_lift_ -- --nocapture
 cargo test --locked --offline -j1 -p nine65 --features allow_insecure --test coefficient_slot_gate -- --nocapture
+cargo test --locked --offline -j1 -p nine65 --features allow_insecure,slow_tests,exact_transcendentals_backend --lib precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder -- --include-ignored --nocapture
+cargo test --locked --offline -j1 -p nine65 --features allow_insecure,exact_transcendentals_backend --lib key_holder_precharge_has_exact_eta_phase_error -- --nocapture
+cargo test --locked --offline -j1 -p nine65 --features allow_insecure,exact_transcendentals_backend --lib precharged_pairs_ -- --nocapture
+cargo test --locked --offline -j1 -p nine65 --features allow_insecure,exact_transcendentals_backend --lib triple_precharge_ -- --nocapture
 NINE65_TRACE_NOISE_DIAGNOSTIC=1 cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib contraction_with_oracle_lift_refreshes_boundary_input_and_supports_multiply -- --include-ignored --nocapture
 ```
 

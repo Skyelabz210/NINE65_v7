@@ -7,7 +7,9 @@ use crate::arithmetic::main_only_base_ext::MainOnlyBaseExt;
 use crate::arithmetic::rns::{U256, U512};
 use crate::arithmetic::RNSPolynomial;
 use crate::entropy::ShadowHarvester;
-use crate::ops::rns_fhe::cram_precharge::CramPrechargedSecret;
+use crate::ops::rns_fhe::cram_precharge::{
+    precharge_centered_polynomial_with_rng, CramPrechargedSecret,
+};
 use crate::ops::rns_fhe::{
     DualRNSKeySet, DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey,
 };
@@ -52,9 +54,8 @@ pub(super) fn precharge(
                 .collect(),
         },
     };
-    let precharged = CramPrechargedSecret::generate_with_rng(ctx, s, &native_secret, rng).unwrap();
-    assert_eq!(precharged.phase_error_bound(), ctx.config.eta as u64);
-    precharged.encrypted_secret().clone()
+    let message: Vec<i64> = s.iter().map(|&value| value as i64).collect();
+    precharge_centered_polynomial_with_rng(ctx, &message, &native_secret, rng).unwrap()
 }
 
 #[test]
@@ -65,7 +66,30 @@ fn key_holder_precharge_has_exact_eta_phase_error() {
     let source_keys = ctx.generate_keys_dual(&mut rng);
     let boot_keys = ctx.generate_keys_dual(&mut rng);
     let source = signed_secret(&source_keys.secret_key, config.primes[0]);
-    let encrypted = precharge(&ctx, &boot_keys, &source, &mut rng);
+    let native_secret = RNSSecretKey {
+        s: RNSPolynomial {
+            n: ctx.n,
+            limbs: ctx
+                .rns
+                .mont_contexts
+                .iter()
+                .zip(&boot_keys.secret_key.s.main)
+                .map(|(mont, lane)| lane.iter().map(|&v| mont.to_montgomery(v)).collect())
+                .collect(),
+        },
+    };
+    let precharged =
+        CramPrechargedSecret::generate_with_rng(&ctx, &source, &native_secret, &mut rng).unwrap();
+    assert_eq!(precharged.phase_error_bound(), ctx.config.eta as u64);
+    let invalid_secret = vec![-8; config.n];
+    assert!(CramPrechargedSecret::generate_with_rng(
+        &ctx,
+        &invalid_secret,
+        &native_secret,
+        &mut rng
+    )
+    .is_err());
+    let encrypted = precharged.encrypted_secret().clone();
     let mut first_lane_error = vec![0i64; config.n];
     for (lane, &prime) in config.primes.iter().enumerate() {
         let mont = &ctx.rns.mont_contexts[lane];

@@ -51,61 +51,86 @@ impl CramPrechargedSecret {
                 reason: "CRAM precharge source secret must have N ternary coefficients".into(),
             });
         }
-        validate_ternary_secret(ctx, boot_secret)?;
-        let sum_bits: u32 = ctx
-            .config
-            .primes
-            .iter()
-            .map(|&q| 64 - q.leading_zeros())
-            .sum();
-        if sum_bits > 256 || ctx.config.eta as u128 > i64::MAX as u128 {
-            return Err(Nine65Error::KeyGenFailed {
-                reason: "CRAM precharge sampler or error exceeds its integer capacity".into(),
-            });
-        }
-        require_secure_rng(rng, "CramPrechargedSecret::generate_with_rng");
-
-        let a = ctx.to_montgomery_form(&ctx.sample_uniform_main_poly(rng));
-        let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
-            (0..ctx.n)
-                .map(|_| sample_cbd_signed_rng(rng, ctx.config.eta))
-                .collect(),
-        );
-        let error = ctx.to_montgomery_form(&RNSPolynomial {
-            limbs: ctx
-                .config
-                .primes
-                .iter()
-                .map(|&q| e_signed.iter().map(|&e| signed_to_mod(e, q)).collect())
-                .collect(),
-            n: ctx.n,
-        });
-        let encoded = ctx.to_montgomery_form(&RNSPolynomial {
-            limbs: ctx
-                .config
-                .primes
-                .iter()
-                .enumerate()
-                .map(|(lane, &q)| {
-                    source_trits
-                        .iter()
-                        .map(|&s| {
-                            (s as i128 * ctx.delta_rns[lane] as i128).rem_euclid(q as i128) as u64
-                        })
-                        .collect()
-                })
-                .collect(),
-            n: ctx.n,
-        });
-        let masked_secret = ctx.rns_poly_mul(&a, &boot_secret.s);
-        let c0 = encoded.add(&error, &ctx.rns).sub(&masked_secret, &ctx.rns);
+        let plaintext: Vec<i64> = source_trits.iter().map(|&value| value as i64).collect();
+        let encrypted = precharge_centered_polynomial_with_rng(ctx, &plaintext, boot_secret, rng)?;
         Ok(Self {
-            encrypted: RNSCiphertext {
-                c0,
-                c1: a,
-                num_primes: ctx.config.primes.len(),
-            },
+            encrypted,
             phase_error_bound: ctx.config.eta as u64,
         })
     }
+}
+
+/// Key-holder helper for precharging bounded plaintext polynomials such as
+/// one-hot selector masks. Unlike `CramPrechargedSecret`, this accepts any
+/// centered coefficient in `[-t/2,t/2]`; it does not relax the secret-trit
+/// contract of that type. The returned phase satisfies
+/// `c0+c1*s_boot = Delta*message+e (mod Q)` with `|e|<=eta`.
+pub(crate) fn precharge_centered_polynomial_with_rng<R: FheRng>(
+    ctx: &RNSFHEContext,
+    message: &[i64],
+    boot_secret: &RNSSecretKey,
+    rng: &mut R,
+) -> Nine65Result<RNSCiphertext> {
+    if message.len() != ctx.n
+        || message
+            .iter()
+            .any(|&coefficient| coefficient.unsigned_abs() > ctx.t / 2)
+    {
+        return Err(Nine65Error::KeyGenFailed {
+            reason: "CRAM precharge message must have N centered coefficients".into(),
+        });
+    }
+    validate_ternary_secret(ctx, boot_secret)?;
+    let sum_bits: u32 = ctx
+        .config
+        .primes
+        .iter()
+        .map(|&q| 64 - q.leading_zeros())
+        .sum();
+    if sum_bits > 256 || ctx.config.eta as u128 > i64::MAX as u128 {
+        return Err(Nine65Error::KeyGenFailed {
+            reason: "CRAM precharge sampler or error exceeds its integer capacity".into(),
+        });
+    }
+    require_secure_rng(rng, "precharge_centered_polynomial_with_rng");
+
+    let a = ctx.to_montgomery_form(&ctx.sample_uniform_main_poly(rng));
+    let e_signed: Zeroizing<Vec<i64>> = Zeroizing::new(
+        (0..ctx.n)
+            .map(|_| sample_cbd_signed_rng(rng, ctx.config.eta))
+            .collect(),
+    );
+    let error = ctx.to_montgomery_form(&RNSPolynomial {
+        limbs: ctx
+            .config
+            .primes
+            .iter()
+            .map(|&q| e_signed.iter().map(|&e| signed_to_mod(e, q)).collect())
+            .collect(),
+        n: ctx.n,
+    });
+    let encoded = ctx.to_montgomery_form(&RNSPolynomial {
+        limbs: ctx
+            .config
+            .primes
+            .iter()
+            .enumerate()
+            .map(|(lane, &q)| {
+                message
+                    .iter()
+                    .map(|&value| {
+                        (value as i128 * ctx.delta_rns[lane] as i128).rem_euclid(q as i128) as u64
+                    })
+                    .collect()
+            })
+            .collect(),
+        n: ctx.n,
+    });
+    let masked_secret = ctx.rns_poly_mul(&a, &boot_secret.s);
+    let c0 = encoded.add(&error, &ctx.rns).sub(&masked_secret, &ctx.rns);
+    Ok(RNSCiphertext {
+        c0,
+        c1: a,
+        num_primes: ctx.config.primes.len(),
+    })
 }
