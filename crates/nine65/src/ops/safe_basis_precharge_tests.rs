@@ -7,7 +7,10 @@ use crate::arithmetic::main_only_base_ext::MainOnlyBaseExt;
 use crate::arithmetic::rns::{U256, U512};
 use crate::arithmetic::RNSPolynomial;
 use crate::entropy::ShadowHarvester;
-use crate::ops::rns_fhe::{DualRNSKeySet, DualRNSSecretKey, RNSCiphertext, RNSFHEContext};
+use crate::ops::rns_fhe::cram_precharge::CramPrechargedSecret;
+use crate::ops::rns_fhe::{
+    DualRNSKeySet, DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey,
+};
 use crate::params::SecureConfig;
 
 const ROOT: [u64; 8] = [2, 3, 5, 7, 11, 13, 17, 19];
@@ -37,39 +40,67 @@ pub(super) fn precharge(
     s: &[i8],
     rng: &mut ShadowHarvester,
 ) -> RNSCiphertext {
-    let zero = ctx.encrypt_dual(0, &keys.public_key, rng);
-    let mut c0 = Vec::new();
-    let mut c1 = Vec::new();
-    for (lane, &prime) in ctx.config.primes.iter().enumerate() {
+    let native_secret = RNSSecretKey {
+        s: RNSPolynomial {
+            n: ctx.n,
+            limbs: ctx
+                .rns
+                .mont_contexts
+                .iter()
+                .zip(&keys.secret_key.s.main)
+                .map(|(mont, lane)| lane.iter().map(|&v| mont.to_montgomery(v)).collect())
+                .collect(),
+        },
+    };
+    let precharged = CramPrechargedSecret::generate_with_rng(ctx, s, &native_secret, rng).unwrap();
+    assert_eq!(precharged.phase_error_bound(), ctx.config.eta as u64);
+    precharged.encrypted_secret().clone()
+}
+
+#[test]
+fn key_holder_precharge_has_exact_eta_phase_error() {
+    let config = SecureConfig::secure_128().into_config();
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x4352_414d_5052_4543);
+    let source_keys = ctx.generate_keys_dual(&mut rng);
+    let boot_keys = ctx.generate_keys_dual(&mut rng);
+    let source = signed_secret(&source_keys.secret_key, config.primes[0]);
+    let encrypted = precharge(&ctx, &boot_keys, &source, &mut rng);
+    let mut first_lane_error = vec![0i64; config.n];
+    for (lane, &prime) in config.primes.iter().enumerate() {
         let mont = &ctx.rns.mont_contexts[lane];
-        c0.push(
-            zero.c0.main[lane]
-                .iter()
-                .zip(s)
-                .map(|(&value, &sign)| {
-                    let encoded = (value as i128 + sign as i128 * ctx.delta_rns[lane] as i128)
-                        .rem_euclid(prime as i128) as u64;
-                    mont.to_montgomery(encoded)
-                })
-                .collect(),
-        );
-        c1.push(
-            zero.c1.main[lane]
-                .iter()
-                .map(|&value| mont.to_montgomery(value))
-                .collect(),
-        );
-    }
-    RNSCiphertext {
-        c0: RNSPolynomial {
-            limbs: c0,
-            n: ctx.n,
-        },
-        c1: RNSPolynomial {
-            limbs: c1,
-            n: ctx.n,
-        },
-        num_primes: ctx.config.primes.len(),
+        let c0: Vec<_> = encrypted.c0.limbs[lane]
+            .iter()
+            .map(|&v| mont.from_montgomery(v))
+            .collect();
+        let c1: Vec<_> = encrypted.c1.limbs[lane]
+            .iter()
+            .map(|&v| mont.from_montgomery(v))
+            .collect();
+        let product = ctx.ntt_engines[lane].multiply(&c1, &boot_keys.secret_key.s.main[lane]);
+        for j in 0..config.n {
+            let phase = ((c0[j] as u128 + product[j] as u128) % prime as u128) as u64;
+            let ideal =
+                (source[j] as i128 * ctx.delta_rns[lane] as i128).rem_euclid(prime as i128) as u64;
+            let residue = (phase as u128 + prime as u128 - ideal as u128) % prime as u128;
+            let error = if residue > prime as u128 / 2 {
+                residue as i64 - prime as i64
+            } else {
+                residue as i64
+            };
+            assert!(
+                error.unsigned_abs() <= config.eta as u64,
+                "lane={lane}, j={j}"
+            );
+            if lane == 0 {
+                first_lane_error[j] = error;
+            } else {
+                assert_eq!(
+                    error, first_lane_error[j],
+                    "inconsistent error at lane={lane}, j={j}"
+                );
+            }
+        }
     }
 }
 

@@ -48,6 +48,9 @@ pub mod exact_mul;
 #[path = "cram_main.rs"]
 pub mod cram_main;
 
+#[path = "cram_precharge.rs"]
+pub mod cram_precharge;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]

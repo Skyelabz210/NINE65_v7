@@ -21,12 +21,46 @@ function instead. It need not explicitly recover every multiplication winding.
 Both require a noise budget for the entire encrypted circuit. Combining a
 success from one route with a missing producer from the other is not a solution.
 
-The recommended primary route is **bounded-error BFV bootstrapping implemented
-on the native CRAM substrate**, with complete circuit/parameter selection before
-further integration. Keep one Safe Basis root and arbitrary valid dependent
-composite views. Do not replace CRAM with an external backend. Keep the direct
-carry correction experiments as an alternative until they have a public
-source-bound producer, a precision proof, and a complete circuit cost.
+The owner-selected primary route is **CRAM-native public refresh**: one Safe
+Basis root, phase-locked dependent composite sister trays, a public encrypted
+integer carry/digit producer, and a certified return to the work domain. The
+expanded-plaintext BFV circuit remains a comparison, not a substitute for
+CRAM or an approved implementation plan. No external bootstrap backend is
+admitted.
+
+The precharged aligned-frame experiment now computes a ciphertext that
+**decodes** to the full hidden carry at all 8192 coefficients and supports one
+following square for a fresh input. Its linear CRT assembly also retains a
+fractional `g/Q_work` term. Thus it is not yet an encrypted *integer* carry
+producer and cannot by itself reset old phase noise. A return-key/basis path
+and a repeat-refresh history certificate are separate requirements.
+If the return key encrypts the boot secret under the original work secret,
+while the precharge encrypts that work secret under the boot secret, a repeated
+same-key path also forms a two-key KDM cycle. A lattice parameter screen does
+not certify that assumption; admission must either justify it explicitly or
+use a key-rotation plan that avoids the cycle.
+
+The native 8192-coefficient follow-up now tests five input histories with a
+direct `eta=3` precharge and a public, test-only boot-to-work return:
+
+| History | Certified phase-error bits | Result |
+| --- | ---: | --- |
+| Fresh work input -> first aligned frame | 75 at boot Q | All coefficients decode; first square admitted |
+| First boot square -> work return | 81 at work Q | All coefficients decode to 49 at coefficient zero |
+| Returned fresh ciphertext -> second aligned frame | 76 at boot Q | All coefficients decode; second square admitted at 118 bits |
+| Returned square -> second aligned frame | 117 at boot Q | All coefficients decode to 49 |
+| Square after that second frame | 159 required vs 137 allowed | Correctly refused before execution |
+
+The public return used here switches from the independent boot secret to the
+work secret at `Q_boot`, then scales public ciphertext components to `Q_work`.
+Its current coefficient-wise wide-integer division is **test-only**, not an
+admitted CRAM-native hot path. The more important obstruction is algebraic:
+the linear frame's error has a term approximately
+`(Q_boot/Q_work) * E_source`; the return scales it back by
+`Q_work/Q_boot`. Their composition preserves old error rather than refreshing
+it. A genuine solution must homomorphically extract the **integer**
+`round(S/Q_work)` (or an equivalent digit map with zero local slope), so the
+new phase-error certificate no longer depends on `E_source` after admission.
 
 This is an architectural recommendation, not a claim that the proposed larger
 tuple is already secure or implemented. The repository's independent reference
@@ -57,9 +91,10 @@ Native expanded research route
   -> return-key/modulus/history integration and repeat closure: incomplete
 
 Safe Basis research route
-  precharged encrypted coordinates/selectors -> bounded carry composition
+  precharged encrypted coordinates/selectors -> full carry decoding,
+  but retained fractional source residual in the phase
   -> root / 2-and-11 coordinates / arbitrary dependent composite views
-  -> full-source carry producer + consuming-encoding adapter: incomplete
+  -> exact integer extraction + return + repeat closure: incomplete
 ```
 
 Source boundaries:
@@ -71,7 +106,7 @@ Source boundaries:
 | Expansion | `ops/expanded_phase1.rs`, `ops/expanded_bootstrap.rs`, `keys/expanded_bootstrap.rs` | Public component scaling and encrypted inner product exist. Their output is a noisy expanded plaintext, not the recovered message. |
 | Nonlinear producer | `ops/prime_power_digit_lift.rs` | A real public full-domain polynomial producer exists, but refuses the native parameters before key generation. The bounded polynomial compiler is not yet that native admitted producer. |
 | Contraction | `ops/prime_power_phase.rs` | Requires a private, lineage-bound `CanonicalLowDigitLift`. Tests that construct it with a secret oracle do not close the producer gap. |
-| Safe Basis | `ops/safe_basis_*_tests.rs` | Recent encrypted carry/tray prototypes are test-only; they are not on the service's production path. |
+| Safe Basis | `ops/safe_basis_*_tests.rs`, `ops/cram_precharge.rs` | The full-frame evaluator is test-only; key-holder low-noise precharge is a library primitive. Neither is on the service's public refresh path. |
 | Exact arithmetic | `ops/exact_mul.rs`, `arithmetic/exact_scale_round.rs`, `arithmetic/main_only_base_ext.rs` | Derived transient lanes preserve the integer tensor. These kernels do not remove encryption noise. |
 
 All abbreviated source paths above are under `crates/nine65/src/`.
@@ -215,10 +250,12 @@ This is **not** a lower bound against arbitrary non-polynomial refresh methods.
 
 There is an avoidable key-generation cost. Current `ExpandedBootstrapKey`
 public-key-encrypts zero, then inserts the source secret, giving
-`beta=eta*(2N+1)=49155`. A proposed direct secret-key encryption **during key
-generation**, `b=Delta*s_in+e-a*s_b` with uniform a and bounded e, would have
-beta=eta=3. The evaluator would still receive no secret. This requires its own
-sampler/proof/implementation; it is not implemented by this patch.
+`beta=eta*(2N+1)=49155`. The CRAM-specific key-holder precharge now uses direct
+secret-key encryption, `b=Delta*s_in+e-a*s_b` with uniform full-`Q` `a` and
+bounded `e`, giving `beta=eta=3`; the evaluator still receives no secret.
+This improves the **precharge** error, not the retained source residual or the
+missing encrypted integer extraction. The expanded circuit itself has not
+been retrofitted with this producer.
 
 Holding the current multiplier and coefficient-trace envelopes fixed:
 

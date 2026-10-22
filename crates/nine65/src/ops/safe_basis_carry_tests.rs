@@ -9,8 +9,9 @@ use crate::arithmetic::rns::{U256, U512};
 use crate::arithmetic::RNSPolynomial;
 use crate::entropy::ShadowHarvester;
 use crate::keys::bootstrap::{screen_bootstrap_security, validate_bootstrap_primes};
+use crate::ops::rns_fhe::exact_mul::{ExactTensor3, RNSHybridGadgetKey};
 use crate::ops::rns_fhe::{
-    DualRNSCiphertext, DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey,
+    DualRNSCiphertext, DualRNSPoly, DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey,
 };
 use crate::params::{is_prime, SecureConfig};
 
@@ -24,9 +25,7 @@ const SQUARE_BOOT: [u64; 5] = [1811939329, 2113929217, 2130706433, 1107296257, 1
 
 fn coordinate_error(n: usize, eta: usize, qb: U256, m: u64) -> u128 {
     let remainder = qb.mod_u64(m) as u128;
-    eta as u128 * (2 * n as u128 + 1) * n as u128 * (m / 2) as u128
-        + (n as u128 + 1) * remainder
-        + remainder.div_ceil(2)
+    eta as u128 * n as u128 * (m / 2) as u128 + (n as u128 + 1) * remainder + remainder.div_ceil(2)
 }
 
 fn weighted_add(ctx: &RNSFHEContext, dst: &mut RNSCiphertext, src: &RNSCiphertext, weight: u64) {
@@ -77,6 +76,103 @@ fn ceil_ratio(numerator: U512, denominator: U256) -> U256 {
         quotient.add(U256::from_u64(1))
     } else {
         quotient
+    }
+}
+
+fn floor_ratio(numerator: U512, denominator: U256) -> U256 {
+    ceil_ratio(numerator.add(U512::from_u64(1)), denominator).sub(U256::from_u64(1))
+}
+
+// Public return path for the research frame. The holder creates `switch_key`
+// for s_boot -> s_work lifted into Q_boot; this evaluator sees only the key.
+fn return_to_work(
+    boot: &RNSFHEContext,
+    work: &RNSFHEContext,
+    ct: &RNSCiphertext,
+    switch_key: &RNSHybridGadgetKey,
+) -> RNSCiphertext {
+    let ordinary = |poly: &RNSPolynomial| RNSPolynomial {
+        limbs: boot
+            .rns
+            .mont_contexts
+            .iter()
+            .zip(&poly.limbs)
+            .map(|(mont, limb)| limb.iter().map(|&v| mont.from_montgomery(v)).collect())
+            .collect(),
+        n: boot.n,
+    };
+    let exact = boot.try_exact_evaluator().unwrap();
+    let switched = exact
+        .relinearize_tensor(
+            &ExactTensor3 {
+                e0: ordinary(&ct.c0),
+                e1: RNSPolynomial::zero(&boot.rns),
+                e2: ordinary(&ct.c1),
+                num_primes: boot.config.primes.len(),
+            },
+            switch_key,
+        )
+        .unwrap();
+    let qb = U256::product_u64s(&boot.config.primes);
+    let qw = U256::product_u64s(&work.config.primes);
+    assert_eq!(qw.hi, 0);
+    let rebase = |poly: &RNSPolynomial| {
+        let canonical = ordinary(poly);
+        let mut limbs = vec![vec![0; work.n]; work.config.primes.len()];
+        for j in 0..work.n {
+            let residues: Vec<_> = canonical.limbs.iter().map(|lane| lane[j]).collect();
+            let x = boot.rns.to_u256_level(&residues, residues.len());
+            let numerator = U512::from_u256(x)
+                .mul_u128(qw.lo)
+                .add(U512::from_u256(qb.shr1()));
+            let y = floor_ratio(numerator, qb);
+            for (lane, &prime) in work.config.primes.iter().enumerate() {
+                limbs[lane][j] = work.rns.mont_contexts[lane].to_montgomery(y.mod_u64(prime));
+            }
+        }
+        RNSPolynomial { limbs, n: work.n }
+    };
+    RNSCiphertext {
+        c0: rebase(&switched.c0),
+        c1: rebase(&switched.c1),
+        num_primes: work.config.primes.len(),
+    }
+}
+
+fn returned_native_as_dual(work: &RNSFHEContext, ct: &RNSCiphertext) -> DualRNSCiphertext {
+    let anchors = &work.dual_rns.anchor.primes;
+    let projector = MainOnlyBaseExt::new(&work.config.primes, anchors).unwrap();
+    let lift = |poly: &RNSPolynomial| {
+        let main: Vec<Vec<u64>> = poly
+            .limbs
+            .iter()
+            .enumerate()
+            .map(|(lane, values)| {
+                values
+                    .iter()
+                    .map(|&v| work.rns.mont_contexts[lane].from_montgomery(v))
+                    .collect()
+            })
+            .collect();
+        let mut anchor = vec![vec![0; work.n]; anchors.len()];
+        for j in 0..work.n {
+            let residues: Vec<_> = main.iter().map(|lane| lane[j]).collect();
+            let mut views = vec![0; anchors.len()];
+            projector.project(&residues, &mut views).unwrap();
+            for (lane, value) in views.into_iter().enumerate() {
+                anchor[lane][j] = value;
+            }
+        }
+        DualRNSPoly {
+            main,
+            anchor,
+            n: work.n,
+        }
+    };
+    DualRNSCiphertext {
+        c0: lift(&ct.c0),
+        c1: lift(&ct.c1),
+        level: work.config.primes.len(),
     }
 }
 
@@ -365,23 +461,70 @@ fn run_precharged_aligned_frame(
     let exact = boot.try_exact_evaluator().unwrap();
     let relin = check_square
         .then(|| exact.generate_hybrid_gadget_key_with_rng(&native_boot_secret, &mut rng));
+    let work_secret_at_boot = RNSSecretKey {
+        s: RNSPolynomial {
+            n: boot.n,
+            limbs: boot
+                .config
+                .primes
+                .iter()
+                .enumerate()
+                .map(|(lane, &prime)| {
+                    secret
+                        .iter()
+                        .map(|&s| {
+                            boot.rns.mont_contexts[lane]
+                                .to_montgomery((s as i128).rem_euclid(prime as i128) as u64)
+                        })
+                        .collect()
+                })
+                .collect(),
+        },
+    };
+    let return_key = check_square.then(|| {
+        exact.generate_hybrid_target_key(&work_secret_at_boot, &native_boot_secret.s, &mut rng)
+    });
     let mut checked = 0;
     let mut nonzero = 0;
     let mut affine_only_failures = 0;
     let mut square_checks = 0;
-    for &offset_sign in profiles {
-        let mut input = original.clone();
+    let repeat_enabled =
+        check_square && boot_primes.len() == SQUARE_BOOT.len() && profiles.contains(&0);
+    let total_profiles = profiles.len() + if repeat_enabled { 2 } else { 0 };
+    let mut returned_fresh: Option<(DualRNSCiphertext, u128)> = None;
+    let mut returned_square: Option<(DualRNSCiphertext, u128)> = None;
+    for profile_idx in 0..total_profiles {
+        let repeating = profile_idx >= profiles.len();
+        let repeat_square = profile_idx == profiles.len() + 1;
+        let expected_plain = if repeat_square { 49u64 } else { 7u64 };
+        let offset_sign = if repeating { 0 } else { profiles[profile_idx] };
         let offset = offset_sign * injected as i128;
-        for (values, &prime) in input.c0.main.iter_mut().zip(&config.primes) {
-            values[0] = (values[0] as i128 + offset.rem_euclid(prime as i128))
-                .rem_euclid(prime as i128) as u64;
-        }
-        assert_eq!(work.decrypt_dual(&input, &work_keys.secret_key), 7);
-        // Public parameter/history bound: fresh public-key encryption plus
-        // this known additive perturbation. Do not select a noise allowance
-        // by decrypting the input or observing its actual residual.
-        let fresh_error = config.eta as u128 * (2 * config.n as u128 + 1);
-        let source_error_bound = fresh_error + offset.unsigned_abs();
+        let (input, source_error_bound) = if repeating {
+            if repeat_square {
+                returned_square
+                    .take()
+                    .expect("first square must return to work")
+            } else {
+                returned_fresh
+                    .take()
+                    .expect("first refresh must return to work")
+            }
+        } else {
+            let mut input = original.clone();
+            for (values, &prime) in input.c0.main.iter_mut().zip(&config.primes) {
+                values[0] = (values[0] as i128 + offset.rem_euclid(prime as i128))
+                    .rem_euclid(prime as i128) as u64;
+            }
+            let fresh_error = config.eta as u128 * (2 * config.n as u128 + 1);
+            (input, fresh_error + offset.unsigned_abs())
+        };
+        assert_eq!(
+            work.decrypt_dual(&input, &work_keys.secret_key),
+            expected_plain
+        );
+        // Public parameter/history bound: either fresh encryption plus the
+        // known perturbation, or the certified previous public return.
+        // Never select an allowance by decrypting the input.
         let public_g_bound = config.t as u128 * source_error_bound
             + (q % config.t as u128) * ((config.t - 1) / 2) as u128;
         assert!(public_g_bound < q / 2);
@@ -509,7 +652,7 @@ fn run_precharged_aligned_frame(
         let refreshed = boot.add(&affine, &carry);
         let n = config.n as u128;
         let remainder = qb.mod_u64(config.t) as u128;
-        let beta = config.eta as u128 * (2 * n + 1);
+        let beta = config.eta as u128;
         let affine_inner_error =
             beta * n * (config.t / 2) as u128 + (n + 1) * remainder + remainder.div_ceil(2);
         // Multiplication by N restores the inverse-N preconditioning and
@@ -536,7 +679,7 @@ fn run_precharged_aligned_frame(
         );
         assert_ne!(
             affine_only[0],
-            u64::from(wrong_j == 0) * 7,
+            u64::from(wrong_j == 0) * expected_plain,
             "affine-only phase must miss the carry at j={wrong_j}"
         );
         affine_only_failures += 1;
@@ -565,7 +708,7 @@ fn run_precharged_aligned_frame(
         for (&j, &actual) in all_indices.iter().zip(&refreshed_all) {
             assert_eq!(
                 actual,
-                u64::from(j == 0) * 7,
+                u64::from(j == 0) * expected_plain,
                 "full refresh at j={j}, offset_sign={offset_sign}"
             );
         }
@@ -574,7 +717,7 @@ fn run_precharged_aligned_frame(
         let refresh_bound_value = refresh_bound;
         let refresh_bound = U512::from_u256(refresh_bound_value);
         let square_preflight = noise.multiply(refresh_bound, refresh_bound);
-        if check_square && offset_sign == 0 {
+        if check_square && offset_sign == 0 && !repeat_square {
             let square_bound = square_preflight.unwrap();
             assert!(
                 (
@@ -600,7 +743,77 @@ fn run_precharged_aligned_frame(
                 0..config.n,
             );
             for (j, &value) in actual.iter().enumerate() {
-                assert_eq!(value, u64::from(j == 0) * 49, "follow-up square at j={j}");
+                assert_eq!(
+                    value,
+                    u64::from(j == 0) * expected_plain * expected_plain,
+                    "follow-up square at j={j}"
+                );
+            }
+            let return_key = return_key.as_ref().unwrap();
+            let digit_count: u128 = return_key
+                .digits_per_lane
+                .iter()
+                .map(|&digits| digits as u128)
+                .sum();
+            let switch_error = config.eta as u128
+                * config.n as u128
+                * ((1u128 << return_key.base_bits) - 1)
+                * digit_count;
+            for (label, boot_ct, bound, expected) in [
+                ("refresh", &refreshed, refresh_bound_value, expected_plain),
+                (
+                    "square",
+                    &square,
+                    square_bound.to_u256_truncated(),
+                    expected_plain * expected_plain,
+                ),
+            ] {
+                assert_eq!(
+                    U512::from_u256(bound),
+                    if label == "square" {
+                        square_bound
+                    } else {
+                        refresh_bound
+                    }
+                );
+                let returned = return_to_work(&boot, &work, boot_ct, return_key);
+                let returned_bound = ceil_ratio(
+                    U512::from_u256(bound.add(U256::from_u128(switch_error))).mul_u128(q),
+                    qb,
+                )
+                .add(U256::from_u128(config.n as u128 / 2 + 1 + config.t as u128));
+                let work_delta = U256::from_u128(q / config.t as u128);
+                assert!(returned_bound.mul_u64(2).lt(work_delta));
+                let returned_plain = decode_indices_wide(
+                    &work,
+                    &returned,
+                    &work_keys.secret_key,
+                    &all_indices,
+                    returned_bound,
+                );
+                for (j, &value) in returned_plain.iter().enumerate() {
+                    assert_eq!(
+                        value,
+                        u64::from(j == 0) * expected,
+                        "returned {label} at j={j}"
+                    );
+                }
+                if !repeating {
+                    assert_eq!(returned_bound.hi, 0);
+                    let history = (returned_native_as_dual(&work, &returned), returned_bound.lo);
+                    if label == "refresh" {
+                        returned_fresh = Some(history);
+                    } else {
+                        returned_square = Some(history);
+                    }
+                }
+                eprintln!(
+                    "CRAM return {label}{}: boot bound={} bits, work bound={} bits, checked={} coefficients",
+                    if repeating { " after second refresh" } else { "" },
+                    bound.bitlen(),
+                    returned_bound.bitlen(),
+                    config.n
+                );
             }
             eprintln!(
                 "five-prime refresh→square bounds: refresh={refresh_bound_value:?} ({} bits); square={square_bound:?}; half-scale={:?}; checked={} coefficients",
@@ -609,6 +822,14 @@ fn run_precharged_aligned_frame(
                 config.n
             );
             square_checks += config.n;
+        } else if repeat_square {
+            let refusal = square_preflight.expect_err(
+                "a second CRAM pass after the returned square must not invent noise headroom",
+            );
+            eprintln!(
+                "CRAM square→return→refresh: plaintext={expected_plain}, refresh bound={} bits; next square refused: {refusal:?}",
+                refresh_bound_value.bitlen()
+            );
         } else if check_square {
             assert_eq!(
                 square_preflight.is_ok(),
@@ -693,18 +914,18 @@ fn run_precharged_aligned_frame(
             nonzero += usize::from(k != 0);
         }
     }
-    assert_eq!(checked, profiles.len() * (6 + 2 * config.n));
-    assert_eq!(affine_only_failures, profiles.len());
+    assert_eq!(checked, total_profiles * (6 + 2 * config.n));
+    assert_eq!(affine_only_failures, total_profiles);
     assert_eq!(
         square_checks,
         if check_square {
-            profiles.len() * config.n
+            (total_profiles - usize::from(repeat_enabled)) * config.n
         } else {
             0
         }
     );
     assert!(nonzero > 0);
-    eprintln!("aligned frame ({boot_prime_count} boot primes): {checked} encrypted native carry/refresh checks across all {n} coefficients and {profiles} residual profiles; {square_checks} follow-up square coefficients checked; {nonzero} nonzero carries; {affine_only_failures} affine-only negative controls fail; assembly error={assembly_error}; outputs match all-coefficient oracle", n = config.n, boot_prime_count = boot_primes.len(), profiles = profiles.len());
+    eprintln!("aligned frame ({boot_prime_count} boot primes): {checked} encrypted native carry/refresh checks across all {n} coefficients and {profiles} input histories; {square_checks} follow-up square coefficients checked; {nonzero} nonzero carries; {affine_only_failures} affine-only negative controls fail; assembly error={assembly_error}; outputs match all-coefficient oracle", n = config.n, boot_prime_count = boot_primes.len(), profiles = total_profiles);
 }
 
 fn scale(ctx: &RNSFHEContext, ct: &RNSCiphertext, scalar: i64) -> RNSCiphertext {
