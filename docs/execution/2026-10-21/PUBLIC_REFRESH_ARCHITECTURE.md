@@ -304,15 +304,19 @@ is explicitly insecure and the test does not implement the Safe Basis root,
 an 8192-term hidden-carry accumulation, contraction, key return, or repeat
 refresh.
 
-The prototype expresses each linear transform as a direct sum of
-automorphism/diagonal terms. That is useful correctness evidence but not a
-viable native transform: the exact N=8192 hybrid-key plan requires 8,191
-non-identity Galois keys, with an estimated **47.99 GiB** of key payload
-before metadata. The next implementation gate is therefore a structured
-coefficient-to-slot / slot-to-coefficient transform with a reviewed key-size
-and error certificate. Until that exists, the dense Jacobian gate is only a
-toy proof that the scalar map can be vectorized algebraically; it is not a
-CRAM refresh implementation.
+The first version expressed each linear transform as a direct sum of
+automorphism/diagonal terms. A baby-step/giant-step (BSGS) factorization now
+groups those same terms: the toy proves unique coverage of all automorphisms
+and applies both dense transforms with four Galois keys at `N=8`. At native
+`N=8192`, the exact hybrid-key plan estimates **190 keys / 1.11 GiB** of key
+payload before metadata, down from 8,191 keys / 47.99 GiB. This is a material
+reduction, but still far too large for the intended public refresh. It also
+leaves all 8,192 diagonal plaintext multiply/add terms per transform, and no
+native transform noise/error certificate exists. Therefore the dense
+Jacobian gate remains a toy vectorization proof, not a CRAM refresh
+implementation. The next gate is a structured transform that is both
+operationally affordable and admitted by a measured native noise/error
+certificate; this work does not replace CRAM with a prebuilt bootstrap.
 
 There are two implementation mismatches to fix before extrapolating:
 
@@ -395,8 +399,9 @@ This analysis does not prove that no such construction can exist.
 - Native public polynomial/gate tests: **4 passed, 0 ignored**, including the
   expected native noise refusal and public encrypted toy cases.
 - Dense coefficient/slot gate probe: **3 passed**. This includes the two
-  encrypted N=8 maps and the native N=8192 direct-transform key-size estimate;
-  it does not establish an efficient transform or a full carry refresh.
+  encrypted N=8 BSGS maps and the native N=8192 direct-versus-BSGS key-size
+  estimate; it does not establish an affordable/noise-certified transform or
+  a full carry refresh.
 - Clear carry oracle: passed, including 56,700 single-round unwrapped cases,
   113,400 signed second-carry perturbations, and 9,482 bounded-polynomial cases.
 - The exact source-hashed analysis output is retained in

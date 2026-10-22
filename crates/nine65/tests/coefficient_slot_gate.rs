@@ -1,6 +1,6 @@
 //! Encrypted toy proof of the coefficient/slot bridge needed by a
 //! coefficientwise CRAM carry or digit gate. The linear transform is the
-//! direct automorphism-diagonal decomposition (N terms), intentionally a
+//! baby-step/giant-step automorphism-diagonal decomposition, intentionally a
 //! correctness prototype rather than a production-cost transform.
 
 use nine65::arithmetic::canonical_scale_round::CanonicalScaleRound;
@@ -10,7 +10,7 @@ use nine65::ops::rns_fhe::exact_mul::{ExactMulEvaluator, RNSHybridGadgetKey};
 use nine65::ops::rns_fhe::{RNSCiphertext, RNSFHEContext, RNSKeySet};
 use nine65::ops::rns_galois::{RNSGaloisEvaluator, RNSGaloisKey};
 use nine65::params::SecureConfig;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 fn inverse(a: u64, modulus: u64) -> u64 {
     let (mut r, mut next_r) = (modulus as i128, a as i128);
@@ -117,35 +117,104 @@ fn local_carry_coefficients(source_q: i64, r0: i64, r1: i64, plaintext: u64) -> 
     )
 }
 
-fn linear_map_from_slots(
+fn automorphism_factor_sets(n: usize) -> (Vec<u64>, Vec<u64>) {
+    assert!(n.is_power_of_two() && n >= 2);
+    let two_n = (2 * n) as u64;
+    let cyclic_order = (n / 2) as u64;
+    let baby_cyclic = 1u64 << (cyclic_order.ilog2() / 2);
+    let giant_count = cyclic_order / baby_cyclic;
+    let baby_step = giant_count;
+
+    let mut baby = BTreeSet::new();
+    for sign in [1u64, two_n - 1] {
+        for index in 0..baby_cyclic {
+            baby.insert(sign * mod_pow(5, baby_step * index, two_n) % two_n);
+        }
+    }
+    let giant: BTreeSet<u64> = (0..giant_count)
+        .map(|index| mod_pow(5, index, two_n))
+        .collect();
+
+    // The product map must be a unique factorization of every odd residue.
+    let products: BTreeSet<u64> = baby
+        .iter()
+        .flat_map(|&b| giant.iter().map(move |&c| b * c % two_n))
+        .collect();
+    assert_eq!(baby.len() * giant.len(), n);
+    assert_eq!(products.len(), n);
+    assert_eq!(
+        products,
+        (0..n).map(|index| (2 * index + 1) as u64).collect()
+    );
+
+    (baby.into_iter().collect(), giant.into_iter().collect())
+}
+
+fn required_galois_exponents(baby: &[u64], giant: &[u64]) -> Vec<u64> {
+    baby.iter()
+        .chain(giant)
+        .copied()
+        .filter(|&exponent| exponent != 1)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect()
+}
+
+fn linear_map_from_slots_bsgs(
     ctx: &RNSFHEContext,
     input: &RNSCiphertext,
     matrix: &[Vec<u64>],
     roots: &[u64],
     galois: &RNSGaloisEvaluator<'_>,
     keys: &BTreeMap<u64, RNSGaloisKey>,
+    baby: &[u64],
+    giant: &[u64],
 ) -> RNSCiphertext {
     let n = ctx.n;
-    let two_n = 2 * n;
+    let two_n = (2 * n) as u64;
+    let source_slot =
+        |exponent: u64, slot: usize| ((exponent as usize * (2 * slot + 1) % (2 * n)) - 1) / 2;
+    let baby_inputs: BTreeMap<u64, RNSCiphertext> = baby
+        .iter()
+        .map(|&exponent| {
+            let permuted = if exponent == 1 {
+                input.clone()
+            } else {
+                galois.apply(input, &keys[&exponent]).unwrap()
+            };
+            (exponent, permuted)
+        })
+        .collect();
     let mut output: Option<RNSCiphertext> = None;
-    for exponent in (1..two_n).step_by(2) {
-        let permuted = if exponent == 1 {
-            input.clone()
+    for &giant_exponent in giant {
+        let mut giant_sum: Option<RNSCiphertext> = None;
+        for &baby_exponent in baby {
+            let exponent = baby_exponent * giant_exponent % two_n;
+            let diagonal: Vec<u64> = (0..n)
+                .map(|slot| matrix[slot][source_slot(exponent, slot)])
+                .collect();
+            // P_c(D_g P_b x) needs the diagonal reindexed by P_c's
+            // permutation: d'[source_c(k)] = d_g[k].
+            let mut reindexed_diagonal = vec![0u64; n];
+            for slot in 0..n {
+                reindexed_diagonal[source_slot(giant_exponent, slot)] = diagonal[slot];
+            }
+            let polynomial = inverse_ntt(&reindexed_diagonal, roots, ctx.t);
+            let term = multiply_plain(&ctx, &baby_inputs[&baby_exponent], &polynomial);
+            giant_sum = Some(match giant_sum {
+                None => term,
+                Some(previous) => add(ctx, &previous, &term),
+            });
+        }
+        let giant_sum = giant_sum.expect("each giant factor has baby factors");
+        let permuted = if giant_exponent == 1 {
+            giant_sum
         } else {
-            galois.apply(input, &keys[&(exponent as u64)]).unwrap()
+            galois.apply(&giant_sum, &keys[&giant_exponent]).unwrap()
         };
-        let diagonal: Vec<u64> = (0..n)
-            .map(|slot| {
-                let odd_root_index = exponent * (2 * slot + 1) % two_n;
-                let source_slot = (odd_root_index - 1) / 2;
-                matrix[slot][source_slot]
-            })
-            .collect();
-        let diagonal_polynomial = inverse_ntt(&diagonal, roots, ctx.t);
-        let term = multiply_plain(ctx, &permuted, &diagonal_polynomial);
         output = Some(match output {
-            None => term,
-            Some(previous) => add(ctx, &previous, &term),
+            None => permuted,
+            Some(previous) => add(ctx, &previous, &permuted),
         });
     }
     output.expect("N is positive")
@@ -300,12 +369,13 @@ fn encrypted_slot_bridge_applies_jacobian_digit_gate_to_dense_coefficients() {
     let exact = ctx.try_exact_evaluator().unwrap();
     let relin = exact.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
     let galois = RNSGaloisEvaluator::new(&ctx).unwrap();
+    let (baby_exponents, giant_exponents) = automorphism_factor_sets(ctx.n);
     let mut galois_keys = BTreeMap::new();
-    for exponent in (3..2 * ctx.n).step_by(2) {
+    for exponent in required_galois_exponents(&baby_exponents, &giant_exponents) {
         galois_keys.insert(
-            exponent as u64,
+            exponent,
             galois
-                .generate_key_with_rng(&keys.secret_key, exponent as u64, &mut rng)
+                .generate_key_with_rng(&keys.secret_key, exponent, &mut rng)
                 .unwrap(),
         );
     }
@@ -315,13 +385,15 @@ fn encrypted_slot_bridge_applies_jacobian_digit_gate_to_dense_coefficients() {
     let input = vec![0, 16, 17, 18, 33, 143, 255, 288];
     let encrypted = encrypt_polynomial(&ctx, &keys, &input, &mut rng);
 
-    let coefficient_slots = linear_map_from_slots(
+    let coefficient_slots = linear_map_from_slots_bsgs(
         &ctx,
         &encrypted,
         &slot_to_coefficient,
         &root_values,
         &galois,
         &galois_keys,
+        &baby_exponents,
+        &giant_exponents,
     );
     let slots_as_coefficients = decrypt_coefficients(&ctx, &coefficient_slots, &keys);
     let recovered_slots: Vec<u64> = (0..ctx.n)
@@ -339,28 +411,31 @@ fn encrypted_slot_bridge_applies_jacobian_digit_gate_to_dense_coefficients() {
     assert_eq!(recovered_slots, input);
 
     let low_digits = evaluate_full_domain_low_digit(&ctx, &coefficient_slots, BASE, &relin);
-    let output = linear_map_from_slots(
+    let output = linear_map_from_slots_bsgs(
         &ctx,
         &low_digits,
         &coefficient_to_slot,
         &root_values,
         &galois,
         &galois_keys,
+        &baby_exponents,
+        &giant_exponents,
     );
     assert_eq!(
         decrypt_coefficients(&ctx, &output, &keys),
         input.iter().map(|value| value % BASE).collect::<Vec<_>>()
     );
     eprintln!(
-        "encrypted coefficientwise digit gate: N={}, 2 transforms × {} automorphism-diagonal terms, degree={}, output checked at every coefficient; insecure toy only",
+        "encrypted coefficientwise digit gate: N={}, 2 BSGS transforms × {} diagonal terms using {} Galois keys, degree={}, output checked at every coefficient; insecure toy only",
         ctx.n,
         ctx.n,
+        galois_keys.len(),
         BASE
     );
 }
 
 #[test]
-fn direct_native_slot_bridge_cost_is_explicitly_too_large() {
+fn bsgs_native_slot_bridge_cost_is_explicitly_too_large() {
     let config = SecureConfig::secure_128().into_config();
     let ctx = RNSFHEContext::try_new(&config).unwrap();
     let exact = ctx.try_exact_evaluator().unwrap();
@@ -371,17 +446,27 @@ fn direct_native_slot_bridge_cost_is_explicitly_too_large() {
         .and_then(|v| v.checked_mul(config.primes.len()))
         .and_then(|v| v.checked_mul(config.n))
         .expect("key size fits usize");
-    let key_count = config.n - 1;
+    let direct_key_count = config.n - 1;
+    let direct_bytes = words_per_key as u128 * direct_key_count as u128 * 8;
+    let direct_gib = direct_bytes as f64 / (1024.0_f64.powi(3));
+    let (baby, giant) = automorphism_factor_sets(config.n);
+    let key_count = required_galois_exponents(&baby, &giant).len();
     let total_bytes = words_per_key as u128 * key_count as u128 * 8;
     let total_gib = total_bytes as f64 / (1024.0_f64.powi(3));
     eprintln!(
-        "naive N={} coefficient/slot transform needs {} Galois keys; {} gadget digits/lane-set; estimated key payload {:.2} GiB before metadata",
+        "N={} coefficient/slot transform: direct={} Galois keys ({:.2} GiB); BSGS baby={} giant={} keys={} ({:.2} GiB); {} gadget digits/lane-set; diagonal multiply/add count remains N per transform; estimates exclude metadata",
         config.n,
+        direct_key_count,
+        direct_gib,
+        baby.len(),
+        giant.len(),
         key_count,
+        total_gib,
         digit_count,
-        total_gib
     );
-    assert!(total_gib > 8.0, "the direct transform is a toy only");
+    assert_eq!(key_count, 190);
+    assert!(total_gib > 1.0, "the BSGS transform remains too large");
+    assert!(total_gib < direct_gib / 32.0);
 }
 
 #[test]
@@ -399,12 +484,13 @@ fn encrypted_slot_bridge_applies_dense_cram_ternary_carry_gate() {
     let exact = ctx.try_exact_evaluator().unwrap();
     let relin = exact.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
     let galois = RNSGaloisEvaluator::new(&ctx).unwrap();
+    let (baby_exponents, giant_exponents) = automorphism_factor_sets(ctx.n);
     let mut galois_keys = BTreeMap::new();
-    for exponent in (3..2 * ctx.n).step_by(2) {
+    for exponent in required_galois_exponents(&baby_exponents, &giant_exponents) {
         galois_keys.insert(
-            exponent as u64,
+            exponent,
             galois
-                .generate_key_with_rng(&keys.secret_key, exponent as u64, &mut rng)
+                .generate_key_with_rng(&keys.secret_key, exponent, &mut rng)
                 .unwrap(),
         );
     }
@@ -465,13 +551,15 @@ fn encrypted_slot_bridge_applies_dense_cram_ternary_carry_gate() {
             .collect::<Vec<_>>()
     );
 
-    let secret_slots = linear_map_from_slots(
+    let secret_slots = linear_map_from_slots_bsgs(
         &ctx,
         &encrypted_secret,
         &slot_to_coefficient,
         &root_values,
         &galois,
         &galois_keys,
+        &baby_exponents,
+        &giant_exponents,
     );
     let square_slots = exact
         .try_mul_exact(&secret_slots, &secret_slots, &relin)
@@ -487,13 +575,15 @@ fn encrypted_slot_bridge_applies_dense_cram_ternary_carry_gate() {
         &inverse_ntt(&linear_weights, &root_values, ctx.t),
     );
     let carry_slots = add(&ctx, &weighted_square, &weighted_linear);
-    let carry_coefficients = linear_map_from_slots(
+    let carry_coefficients = linear_map_from_slots_bsgs(
         &ctx,
         &carry_slots,
         &coefficient_to_slot,
         &root_values,
         &galois,
         &galois_keys,
+        &baby_exponents,
+        &giant_exponents,
     );
     let expected: Vec<u64> = profiles
         .iter()
