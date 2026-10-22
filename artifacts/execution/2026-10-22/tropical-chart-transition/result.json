@@ -1,0 +1,106 @@
+{
+  "task_id": "TROPICAL_CHART_TRANSITION",
+  "status": "ready_for_review",
+  "source_commit": "0d70790ca7cd72268dfda4cce7ca00f29620764e",
+  "scope": "Endogenous local period-13 chart transition in an explicitly insecure N=8 BFV toy; initial coordinates are supplied once.",
+  "worktree_manifest_sha256": "35c960a8399aa5cdbf8e95860f27fb703fac9520a8a8a426fe6bd76b9a447aa0",
+  "manifest": "artifacts/execution/2026-10-22/tropical-chart-transition/source_manifest.txt",
+  "manifest_scope": "Four changed source/document files; unchanged tracked content is bound by source_commit.",
+  "files_changed": [
+    "crates/nine65/tests/coefficient_slot_gate.rs",
+    "crates/nine65/tests/research/tropical_chart_transition.rs",
+    "docs/execution/2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md",
+    "docs/execution/2026-10-21/PUBLIC_REFRESH_ARCHITECTURE.md",
+    "artifacts/execution/2026-10-22/tropical-chart-transition/checks.log",
+    "artifacts/execution/2026-10-22/tropical-chart-transition/source_manifest.txt",
+    "artifacts/execution/2026-10-22/tropical-chart-transition/native-preflight.json",
+    "artifacts/execution/2026-10-22/tropical-chart-transition/sequential-exploration.log",
+    "artifacts/execution/2026-10-22/tropical-chart-transition/result.json"
+  ],
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate -- --nocapture",
+      "exit_code": 0,
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-22/tropical-chart-transition/checks.log",
+      "log_sha256": "e9b8beec3dd099d6710b826c1160a61b6d726247ed005f45cf81a27ab331a794"
+    },
+    {
+      "command": "cargo test --locked --offline -j1 -p exact_transcendentals --test tropical_theta_k_lift",
+      "exit_code": 0,
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-22/tropical-chart-transition/checks.log",
+      "log_sha256": "e9b8beec3dd099d6710b826c1160a61b6d726247ed005f45cf81a27ab331a794"
+    }
+  ],
+  "exploratory_failure": {
+    "description": "Sequentially re-evaluating the chart polynomial on its noisy updated output failed; this prompted the composed two-increment circuit.",
+    "exit_code": 101,
+    "log": "artifacts/execution/2026-10-22/tropical-chart-transition/sequential-exploration.log",
+    "log_sha256": "d3bea15436253e0cefddfc7e51760578a49509d2b0786cb058cadfc80e2bca1d",
+    "final_negative_control_scaled_error_bits": 126
+  },
+  "observations": {
+    "plaintext_modulus": 289,
+    "local_period": 13,
+    "ring_degree": 8,
+    "ciphertext_Q_bits": 119,
+    "all_two_trit_combinations": 117,
+    "single_step_crossings": 6,
+    "combined_two_step_crossings": 8,
+    "dependent_squares": 30,
+    "single_increment_scaled_error_bits": {
+      "crossing": 88,
+      "chart": 92,
+      "winding": 88,
+      "following_square": 98
+    },
+    "composed_two_increment_scaled_error_bits": {
+      "crossing": 86,
+      "chart": 90,
+      "winding": 86,
+      "following_square": 96
+    },
+    "measurement_scope": "Independent secret-key ideal-grid observations; these are not producer-issued error certificates."
+  },
+  "acceptance_evidence": [
+    "Crossing is computed from encrypted chart plus encrypted trits, without a supplied crossing or a replacement chart during the transition.",
+    "Updated encrypted source, chart and winding agree with independent integer rounding at every coefficient.",
+    "The K-elimination consumer recovers the same winding from the updated coordinate pair.",
+    "The combined degree-15 circuit accounts for its quadratic leaf and stays at four multiplication layers.",
+    "All 117 two-trit cases and 30 following ring squares decrypt correctly; omitted-crossing and sequential-noise controls fail as expected.",
+    "Composite unit refusals and a modulo17 collision isolate the three-trit support limit for a single Z/289 polynomial.",
+    "Exact root checks isolate why the dense N=8 composite transform cannot be used unchanged at N=8192."
+  ],
+  "conditional_native_comparison": {
+    "artifact": "artifacts/execution/2026-10-22/tropical-chart-transition/native-preflight.json",
+    "sha256": "882fbdb83da58072a943dcadb68a9908817632a064658b0872b5dbacb094772f",
+    "projected_bits": 42,
+    "half_delta_bits": 137,
+    "square_bound_bits": [
+      84,
+      126,
+      168
+    ],
+    "first_refusal": 3,
+    "scope": "Existing constant-projection envelope; no new native transform or chart certificate."
+  },
+  "unresolved": [
+    "Generate or preserve the initial authentic native centered-chart coordinate from the live precharged Safe Basis state.",
+    "Local period13 normalization is distinct from division by native Q_work; connect the whole weighted secret convolution.",
+    "Supply native coefficient/slot geometry or a different coefficient-local construction and a complete circuit error certificate.",
+    "Composed batching preserves accumulated noise and does not refresh the next batch's budget.",
+    "Complete return-key, encoding and repeated native refresh."
+  ],
+  "claims_changed": [
+    "A bounded encrypted local chart update now produces its own crossing.",
+    "Composing two hidden increments avoids the measured failure of two sequential nonlinear chart evaluations in this toy."
+  ],
+  "production_code_changed": false,
+  "public_refresh_admitted": false,
+  "linting_run": false
+}

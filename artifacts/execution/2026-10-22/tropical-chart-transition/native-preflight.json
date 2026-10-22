@@ -1,0 +1,45 @@
+{
+  "scope": "Conditional comparison with the existing constant-projection envelope; no native chart producer or transform certificate.",
+  "source_modules": [
+    "scripts/public_refresh_architecture.py::square_schedule",
+    "scripts/digit_radius_oracle.py::rns_keyswitch_phase_bound"
+  ],
+  "parameters": {
+    "N": 8192,
+    "t": 65537,
+    "primes": [
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257,
+      1711276033
+    ],
+    "eta": 3,
+    "base_bits": 10,
+    "preconditioned_chart_magnitude": 48
+  },
+  "projected_formula": "N*(eta*(2*N+1)+48)+(N-1)*switch",
+  "result": {
+    "Q_bits": 154,
+    "projected_bits": 42,
+    "half_delta_bits": 137,
+    "square_error_bits": [
+      84,
+      126,
+      168
+    ],
+    "first_refusal": 3,
+    "required_local_chart_depth": 4
+  },
+  "geometry": {
+    "local_plaintext": 289,
+    "toy_N": 8,
+    "toy_primitive_16th_root_exists": true,
+    "native_N": 8192,
+    "primitive_16384th_root_mod_289_exists": false,
+    "native_work_plaintext": 65537,
+    "root_candidate": 81,
+    "root_candidate_power_8192": 65536
+  },
+  "public_refresh_admitted": false
+}

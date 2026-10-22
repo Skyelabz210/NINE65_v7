@@ -1,0 +1,28 @@
+Exploratory sequential repeat, before extending fixtures to two independent trits. The final test retains an explicit negative control for the same failure mode; its deterministic measured error is 126 bits. This earlier fixture measured 125 bits. The final source manifest binds the current test, not this earlier fixture.
+
+$ cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate tropical_chart_transition -- --nocapture
+   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 16s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-4bf8ad94f4560fd1)
+
+running 2 tests
+test tropical_chart_transition::composite_chart_checks_units_and_exhausts_the_local_boundary_map ... ok
+batch 0: second chart crossing ideal-grid error=125 bits, Q=119 bits
+
+thread 'tropical_chart_transition::encrypted_ternary_step_produces_its_own_chart_and_winding_update' panicked at crates/nine65/tests/research/tropical_chart_transition.rs:285:9:
+assertion `left == right` failed
+  left: [57, 91, 3, 101, 95, 201, 11, 102]
+ right: [0, 0, 0, 288, 0, 0, 0, 0]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test tropical_chart_transition::encrypted_ternary_step_produces_its_own_chart_and_winding_update ... FAILED
+
+failures:
+
+failures:
+    tropical_chart_transition::encrypted_ternary_step_produces_its_own_chart_and_winding_update
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.21s
+
+error: test failed, to rerun pass `-p nine65 --test coefficient_slot_gate`
+
+exit_code: 101

@@ -369,6 +369,19 @@ coordinate (or equivalent theta-difference state). The tropical connection
 therefore supplies a precise lift/state construction target while retaining
 the public-refresh gate.
 
+The same experiment now has a local encrypted chart producer: for period13,
+composite coordinate17^2 and N=8 it computes crossings from the encrypted
+chart plus encrypted ternary increments, then updates source/chart/winding
+without injecting new chart values. All 117 two-increment combinations and
+30 dependent squares pass when the two increments are composed into a
+degree-15, four-layer gate. Sequentially evaluating the degree-13 gate twice
+fails the fixed sample at 126 scaled-error bits versus 119 Q bits. Support
+beyond two increments has an explicit modulo17 collision, and the small
+composite lacks the native 16384th-root geometry. These results establish
+a bounded local transition; native work-Q centering and a complete error
+certificate remain unresolved. See the linked experiment for formulas and
+measured versus conditional native bounds.
+
 There are two implementation mismatches to fix before extrapolating:
 
 - The composition prototype's `source_q: i128` accommodates Q_w (119 bits),

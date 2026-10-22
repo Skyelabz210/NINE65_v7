@@ -2,8 +2,9 @@
 
 Research construction, 2026-10-22. This investigates the owner's proposed
 lift through ultradiscrete/tropical coordinates. It uses CRAM's existing
-K-elimination and arbitrary-target projection primitives. It is a clear-state
-algebraic bridge; an encrypted implementation remains to be constructed.
+K-elimination and arbitrary-target projection primitives. It covers a clear
+native-width lift, a conditional encrypted lift consumer, and a bounded local
+encrypted chart transition. The native refresh construction remains open.
 
 ## The exact correspondence
 
@@ -111,7 +112,96 @@ an independent negacyclic product. The square is a decryption check rather
 than a certified repeat-refresh result. This test uses supplied coordinates
 in one composite ring; it does not construct the entire encrypted S8 frame.
 
-## Remaining encrypted construction
+## Endogenous local chart transition
+
+The follow-up in
+`crates/nine65/tests/research/tropical_chart_transition.rs` computes the cell
+crossing from ciphertexts, after setup supplies the initial source/chart
+pair and encrypted source trits. No fresh chart or crossing is supplied at
+the transition. This is a local period-13 chart, distinct from the 119-bit
+work-Q chart needed by full refresh.
+
+Let `Q_local=13`, `A=17^2=289`, `h=6`, and
+`G(z)=product_(r=-6..6)(z-r)`. For a hidden ternary increment u,
+
+```text
+z = g+u, |g|<=6, |u|<=1
+C1(z) = G(z)/13! = 40*G(z) mod289
+g' = z-13*C1(z), K' = K+C1(z), S' = S+u.
+```
+
+G vanishes at every chart interior point, and its values at 7 and -7 are
+13! and -13!. Thus C1 supplies the exact signed crossing on [-7,7]. The
+encrypted gate uses two coefficient/slot transforms and a balanced product
+with four multiplication layers. The linear K-elimination consumer then
+checks that the updated source/chart pair yields the same updated winding.
+
+Applying that polynomial again to the noisy updated chart fails in the
+deterministic follow-up: its observed ideal-grid error V has 126 bits against
+a 119-bit Q. This is an actual decryption failure in the fixed negative
+control; no error counter is reset.
+
+Composing two hidden increments before the nonlinear gate succeeds. For
+`z=g+u+v`, the widened support is [-8,8] and the exact polynomial is
+
+```text
+C2(z) = G(z)*(65-30*z^2) mod289.
+```
+
+More generally, with `c=(Q_local!)^-1`, the quadratic coefficients are
+`a=-Q_local*c/((Q_local+1)*(Q_local+2))` and
+`b=c-a*((Q_local+1)/2)^2`. At the two positive endpoints G is Q_local!
+and (Q_local+1)*Q_local!, so the quadratic normalizes both crossings to
+one. Oddness supplies the negative crossings. The compiler checks every
+required inverse before ciphertext work. Combining the quadratic (already
+at depth one) with the linear factors in order of depth keeps the degree-15
+circuit at four layers; two sequential degree-13 gates would use eight.
+
+The encrypted test covers all 117 `(g,u,v)` combinations, preserves the
+initial encrypted coordinates throughout each trajectory, and checks both
+updated source/chart/winding states and 30 subsequent ring squares. The
+maximum **observed**, not producer-certified, scaled-error sizes are:
+
+| Output | One increment | Two increments composed |
+| --- | ---: | ---: |
+| Crossing | 88 bits | 86 bits |
+| Centered chart | 92 bits | 90 bits |
+| Winding | 88 bits | 86 bits |
+| Following ring square | 98 bits | 96 bits |
+
+These use N=8 and the existing four-prime ciphertext modulus (119 bits).
+The second column starts from the original chart and both encrypted
+increments; it does not feed the first column's noisy chart into another
+polynomial. This finite batching does not reset noise for the next batch.
+
+There is also a precise composite-domain limit. Three increments require
+support [-9,9]. Inputs -9 and 8 agree modulo17, while their desired carries
+are -1 and +1. Every ordinary polynomial over Z/289 preserves congruence
+modulo17, so no such polynomial can implement this larger domain in that
+single coordinate ring. This is a limitation of this representation, not of
+all multi-tray constructions. Arbitrary sister targets remain valid for
+projection after a lift; gate evaluation has its own unit/domain conditions.
+
+## Native follow-up checks
+
+The small composite supports primitive 16th roots, which enable the toy's
+N=8 transforms. An exact search shows no primitive 16384th root modulo289,
+so this dense transform cannot simply run at N=8192. The native plaintext
+65537 does have that root geometry, verified with `81^8192=-1 mod65537`.
+An implementation at native size needs a compatible encoding or an admitted
+coefficient-local construction that does not require these slot roots.
+
+As a conditional budget check, reusing the existing constant-projection
+envelope at N=8192, plaintext65537 and the screened five-prime boot tuple
+gives a 42-bit projected input allowance. The successive square bounds are
+84,126,168 bits against a 137-bit half-Delta, refusing the third layer. The
+calculation uses the current hybrid-switch bound, the documented -8 trace
+preconditioner, a conservative setup error `3*(2N+1)`, and a maximum chart
+coefficient deposit 48. This is a comparison with the existing envelope,
+not a new certificate for the dense chart transform or a universal lower
+bound. It cannot admit the four-layer local circuit at native size.
+
+## Remaining native encrypted construction
 
 For refresh, `S=R0+R1*s` is a negacyclic secret-dependent sum. The precharged
 root path already computes encrypted residues of S. The other coordinate
@@ -141,6 +231,12 @@ step is an encrypted state transition that supplies this difference or the
 matching centered-chart coordinate through real operation history. The
 compact representation alone does not compute that transition.
 
+The local transition above now supplies such a computation on a small
+chart. The outstanding work is a native chart/coordinate encoding and error
+contract, its connection to actual weighted secret convolutions and the
+intact root, and a complete return/repeat path. Local period13 normalization
+alone does not compute the quotient by Q_work.
+
 ## Reproduction
 
 `cargo test --locked --offline -j1 -p exact_transcendentals --test tropical_theta_k_lift`
@@ -153,3 +249,9 @@ aliases, and even-period ties. Source assignments are never enumerated.
 `cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate encrypted_tropical_lift_consumes_paired_coordinates_without_slot_transforms -- --nocapture`
 
 This is the conditional encrypted consumer and its dependent multiply.
+
+`cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate tropical_chart_transition -- --nocapture`
+
+Three follow-up tests check chart units/support, native slot geometry, and
+the encrypted one-/two-increment transitions with dependent squares and an
+explicit sequential-noise negative control.

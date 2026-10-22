@@ -14,6 +14,9 @@ use nine65::ops::rns_galois::{RNSGaloisEvaluator, RNSGaloisKey};
 use nine65::params::SecureConfig;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "research/tropical_chart_transition.rs"]
+mod tropical_chart_transition;
+
 fn inverse(a: u64, modulus: u64) -> u64 {
     let (mut r, mut next_r) = (modulus as i128, a as i128);
     let (mut t, mut next_t) = (0i128, 1i128);
@@ -291,13 +294,12 @@ fn encrypt_polynomial(
     ciphertext
 }
 
-fn decrypt_coefficients(
+fn decrypted_phase_residues(
     ctx: &RNSFHEContext,
     ciphertext: &RNSCiphertext,
     keys: &RNSKeySet,
-) -> Vec<u64> {
-    let phases: Vec<Vec<u64>> = ctx
-        .config
+) -> Vec<Vec<u64>> {
+    ctx.config
         .primes
         .iter()
         .enumerate()
@@ -321,7 +323,15 @@ fn decrypt_coefficients(
                 .map(|(&a, b)| ((a as u128 + b as u128) % q as u128) as u64)
                 .collect()
         })
-        .collect();
+        .collect()
+}
+
+fn decrypt_coefficients(
+    ctx: &RNSFHEContext,
+    ciphertext: &RNSCiphertext,
+    keys: &RNSKeySet,
+) -> Vec<u64> {
+    let phases = decrypted_phase_residues(ctx, ciphertext, keys);
     let decoder = CanonicalScaleRound::new(&ctx.config.primes, ctx.t).unwrap();
     (0..ctx.n)
         .map(|coefficient| {
