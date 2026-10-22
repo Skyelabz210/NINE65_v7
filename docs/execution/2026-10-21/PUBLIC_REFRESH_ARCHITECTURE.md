@@ -291,6 +291,29 @@ projection cost. It cannot reset the selector errors, supply a missing
 8192-term composition, or convert a Delta-scaled target into an accurate raw
 phase correction for a different Q/key/operation.
 
+### Dense coefficientwise gate probe (2026-10-22)
+
+`crates/nine65/tests/coefficient_slot_gate.rs` now exercises the missing
+coefficient/slot bridge with encrypted toys. At `N=8`, plaintext `17^2`, it
+applies (a) the p-adic low-digit section to a dense vector and (b) the
+quadratic local ternary carry gate with a different public residual pair at
+each coefficient. Both decrypt to the expected value at every coefficient;
+the direct ring-square negative control fails, as expected for negacyclic
+convolution. These tests use no evaluator secret or digit oracle. The context
+is explicitly insecure and the test does not implement the Safe Basis root,
+an 8192-term hidden-carry accumulation, contraction, key return, or repeat
+refresh.
+
+The prototype expresses each linear transform as a direct sum of
+automorphism/diagonal terms. That is useful correctness evidence but not a
+viable native transform: the exact N=8192 hybrid-key plan requires 8,191
+non-identity Galois keys, with an estimated **47.99 GiB** of key payload
+before metadata. The next implementation gate is therefore a structured
+coefficient-to-slot / slot-to-coefficient transform with a reviewed key-size
+and error certificate. Until that exists, the dense Jacobian gate is only a
+toy proof that the scalar map can be vectorized algebraically; it is not a
+CRAM refresh implementation.
+
 There are two implementation mismatches to fix before extrapolating:
 
 - The composition prototype's `source_q: i128` accommodates Q_w (119 bits),
@@ -371,6 +394,9 @@ This analysis does not prove that no such construction can exist.
 - New architecture/degree/budget tests: **6 passed**.
 - Native public polynomial/gate tests: **4 passed, 0 ignored**, including the
   expected native noise refusal and public encrypted toy cases.
+- Dense coefficient/slot gate probe: **3 passed**. This includes the two
+  encrypted N=8 maps and the native N=8192 direct-transform key-size estimate;
+  it does not establish an efficient transform or a full carry refresh.
 - Clear carry oracle: passed, including 56,700 single-round unwrapped cases,
   113,400 signed second-carry perturbations, and 9,482 bounded-polynomial cases.
 - The exact source-hashed analysis output is retained in
@@ -384,6 +410,7 @@ python3 scripts/public_refresh_architecture.py
 python3 -m unittest discover -s scripts -p 'test_digit_radius_oracle.py' -v
 python3 scripts/refresh_carry_bridge.py
 cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib public_prime_power_lift_ -- --nocapture
+cargo test --locked --offline -j1 -p nine65 --features allow_insecure --test coefficient_slot_gate -- --nocapture
 NINE65_TRACE_NOISE_DIAGNOSTIC=1 cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib contraction_with_oracle_lift_refreshes_boundary_input_and_supports_multiply -- --include-ignored --nocapture
 ```
 
