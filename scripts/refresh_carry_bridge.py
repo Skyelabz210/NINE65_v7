@@ -124,6 +124,7 @@ def carry_encoding_adapter_case(c0, c1, secret, q, t):
         return result, rounding
 
     cases = nonzero_winding = 0
+    original_square, _ = tensor(c0, c1, c0, c1)
     for unit_error in (-1, 0, 1):
         noise = [unit_error] + [0] * (n - 1)
         clear_control = None
@@ -160,6 +161,37 @@ def carry_encoding_adapter_case(c0, c1, secret, q, t):
                            compensated, correction, predicted_numerator, rounding))
             assert all(2 * abs(value) <= q * (2 * t + t * t) * rounding_weight
                        for value in rounding)
+            second_term = [2 * t * t * value for value in convolution(own_winding, v)]
+            twice_corrected = [a - b + term for a, b, term in zip(
+                original_square, compensated, second_term)]
+            phase_square = [nearest(t * value, q) for value in convolution(v, v)]
+            amplified_bound = (n*n+n+2)//2 * (t+1)**2 + 1
+            assert all(abs(centered(a-b, q)) <= amplified_bound
+                       for a, b in zip(twice_corrected, phase_square))
+
+            # Positive algebraic control: combine UNROUNDED operands, then
+            # scale/round only once. It needs a wider transient certificate;
+            # feeding reduced main-Q components to the old API is not this.
+            f0 = [a - t*b for a, b in zip(c0, b0)]
+            f1 = [a - t*b for a, b in zip(c1, mask)]
+            single_tensor, _ = tensor(f0, f1, f0, f1)
+            f_lift = [a - t*b for a, b in zip(lifted, carry_lift)]
+            combined_round = [nearest(t*value, q) for value in convolution(f_lift, f_lift)]
+            assert all(abs(a-b) <= (n*n+n+2)//2
+                       for a, b in zip(single_tensor, combined_round))
+            assert all((a+term-b) % q == 0
+                       for a, term, b in zip(combined_round, second_term, phase_square))
+            single_corrected = [a + b for a, b in zip(single_tensor, second_term)]
+            assert all(abs(centered(a-b, q)) <= (n*n+n+2)//2
+                       for a, b in zip(single_corrected, phase_square))
+            for unit_j_error in (-1, 1):
+                perturbed_j = list(own_winding)
+                perturbed_j[0] += unit_j_error
+                perturbed_term = [2*t*t*x for x in convolution(perturbed_j, v)]
+                perturbed = [a-b+term for a, b, term in zip(
+                    original_square, compensated, perturbed_term)]
+                assert all((a-b-2*t*t*unit_j_error*x) % q == 0
+                           for a, b, x in zip(perturbed, twice_corrected, v))
             if clear_control is None:
                 clear_control = (compensated, own_winding, rounding)
             else:
@@ -214,6 +246,36 @@ def multiplication_winding_budget():
     inverse = pow(delta, -1, q)
     converted_unit_error = abs(centered((delta + 1) * inverse - 1, q))
     assert converted_unit_error > half_delta
+    single_round_operand_bound = n//2 * (t+1)**2
+    single_round_shift_multiplier = single_round_operand_bound*t + 1
+    assert single_round_operand_bound >= 1 << 64
+    # Existing catalog's N=8192 seven lanes, followed by two of its N=16384
+    # lanes (also NTT-compatible at N=8192). Transient arithmetic ONLY: the
+    # ciphertext modulus and security screen are unchanged.
+    transient_pool = [2013265921, 2281701377, 2483027969, 2885681153,
+                      3221225473, 3221422081, 3222306817, 3222372353, 3222568961]
+    required = 2*single_round_shift_multiplier*q
+    assert prod(transient_pool[:7]) <= required < prod(transient_pool)
+    assert all((a-1) % (2*n) == 0 for a in transient_pool)
+    aux_product = prod(transient_pool)
+    reverse_rank_peak = (len(transient_pool)+1)*aux_product
+    assert reverse_rank_peak.bit_length() > 256
+    aux_weights = [(aux_product//a)*pow(aux_product//a, -1, a) for a in transient_pool]
+    shift = single_round_shift_multiplier*q
+    operand_limit = single_round_operand_bound*q*q
+    wide_scale_cases = 0
+    for x in (-operand_limit, -operand_limit+1, -q*q, -q//2, -1,
+              0, 1, q//2, q*q, operand_limit-1, operand_limit):
+        z = t*x + q//2
+        w = z % q
+        exact = (z-w)//q
+        residues = [((t*(x % a)+(q//2) % a-w % a)*pow(q, -1, a)+shift % a) % a
+                    for a in transient_pool]
+        recovered = sum(value*weight for value, weight in zip(residues, aux_weights)) % aux_product
+        assert 0 <= exact+shift < aux_product
+        assert recovered == exact+shift
+        assert recovered % q == exact % q
+        wide_scale_cases += 1
     return {
         "scope": "constant-one plaintext, assumed certified input error; no correction producer",
         "primes": primes, "N": n, "t": t, "Q_bits": q.bit_length(),
@@ -223,6 +285,19 @@ def multiplication_winding_budget():
         "compensated_separate_switch_bound_bits": ((2 * t + t * t) * switch).bit_length(),
         "compensated_fused_switch_bound": switch,
         "compensated_fused_switch_bound_bits": switch.bit_length(),
+        "two_winding_rounding_bound_bits": (rounding*(t+1)**2+1).bit_length(),
+        "single_round_unwrapped_operand_bound": single_round_operand_bound,
+        "single_round_unwrapped_operand_bound_bits": single_round_operand_bound.bit_length(),
+        "single_round_shift_multiplier_bits": single_round_shift_multiplier.bit_length(),
+        "single_round_operand_bound_fits_current_u64_api": False,
+        "single_round_required_auxiliary_capacity_bits": (2*single_round_shift_multiplier*q).bit_length(),
+        "single_round_transient_catalog_7_lane_capacity_bits": prod(transient_pool[:7]).bit_length(),
+        "single_round_transient_candidate_lanes": len(transient_pool),
+        "single_round_transient_candidate_capacity_bits": aux_product.bit_length(),
+        "single_round_reverse_rank_fallback_required_bits": reverse_rank_peak.bit_length(),
+        "single_round_reverse_rank_fits_current_u256_kernel": False,
+        "single_round_wide_residue_scale_boundary_cases": wide_scale_cases,
+        "single_round_native_wide_kernel_implemented": False,
         "maximum_input_error_for_next_square": low,
         "adjacent_boundary_checked": True,
         "any_62_bit_input_error_fits": True,
@@ -411,6 +486,9 @@ def run():
             "multiplication_winding_cancellation_cases": scalar_cases + ring_cases,
             "carry_encoding_adapter_cases": adapter_cases,
             "matched_identical_noise_mask_comparisons": adapter_cases // 2,
+            "second_winding_cancellation_and_rounding_cases": adapter_cases,
+            "single_round_unwrapped_tensor_cases": adapter_cases,
+            "second_winding_unit_error_cases": 2*adapter_cases,
             "adapter_cases_with_nonzero_carry_ciphertext_winding": adapter_own_winding_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,
             "prime_power_contractions": contractions,

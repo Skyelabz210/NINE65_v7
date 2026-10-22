@@ -413,3 +413,79 @@ switching work; removing J with a secret oracle is not that construction.
 As an independent sensitivity check, deliberately omitting `2*t^2*J*V`
 from the Python model is rejected on the degree-two witness
 `C0=C1=(-2,-2), s=(-1,-1), Q=5, t=3`; the unmodified model passes it.
+
+### Second winding and the scale-round placement
+
+The next native ablation reconstructs J from the actual masked/noisy carry B
+using its centered integer component lift, independently of the original K.
+Set `V_phase=C-t*B`; its phase is `V=P+r*K-t*nu`. The oracle supplies raw J,
+and evaluator-side raw ring multiplication produces `H=2*t^2*J*V` modulo Q.
+Subtract H from the fused compensated correction, so the square output is
+
+```text
+Y_two = Mul(C,C) - 2*t*Mul(C,B) + t^2*Mul(B,B) + H.
+```
+
+With exact J this cancels the second winding, but it still combines three
+**already rounded** products. Their rounding errors are multiplied by 1,
+2*t and t^2. Against a single-round `(V,0)` square oracle, the deterministic
+rounding bound is `R*(t+1)^2+1`, where `R=(N^2+N+2)/2`; allow two ordinary
+hybrid-switch bounds as well. This bound is 90 bits on the native tuple.
+The `(V,0)` control uses the secret; it is not a public implementation.
+
+A positive independent integer control instead forms the **unwrapped**
+component polynomials `F0=C0-t*B0`, `F1=C1-t*B1`, squares their tensor, and
+scale-rounds only once before adding H. Its integer lift is `V-t*Q*J`, so
+the H cancellation leaves the single-round V square modulo Q, up to the
+ordinary component-rounding bound R rather than `R*(t+1)^2`. The Python
+probe checks the unwrapped rounding bound and exact integer-lift cancellation
+on 56,700 cases, plus 113,400 signed one-unit perturbations of J. An error xi
+in raw J changes the output by `2*t^2*xi*V`; a second tray is not automatically
+accurate enough merely because its error is a small integer.
+
+This single-round arithmetic cannot be obtained by passing `C-t*B` reduced
+modulo Q to the existing multiplication API: that discards the required
+unwrapped component lifts. A sufficient tensor operand bound is
+`(N/2)*(t+1)^2 = 75562475552672386662400` (77 bits); its scale-round shift
+multiplier needs 109 bits. The current kernel and plan accept u64 bounds.
+Their existing seven-lane transient catalog has 220 bits, below the required
+263-bit capacity. A nine-lane candidate, adding two already-catalogued
+NTT-compatible moduli, has 283 bits. Eleven exact residue scale-round
+boundary cases pass with that candidate. The reverse base-extension rank
+fallback would need 286 bits for `(lanes+1)*A`; the existing U256 capacity
+guard must also refuse it. Merely widening the bound type or adding lanes
+is insufficient: a certified wider rank fallback is required too. These are **temporary arithmetic
+lanes**, not extra ciphertext primes; neither the main Q nor its security
+screen changes. A native wide-bound single-round evaluator has not yet been
+implemented or admitted, and a public, adequately precise J producer remains
+a separate requirement. Sampled native residuals also do not replace the
+required public input-error certificate.
+
+Native second-layer measurements on the same masked carry:
+
+| Treatment | Intended output error | Product correct | Dependent square |
+| --- | ---: | --- | --- |
+| Compensated correction, no J cancellation | 128 bits | No | Skipped |
+| Exact raw J oracle cancellation | 78 bits | Yes | Wrong, 122 bits |
+| Raw J oracle with one-unit error | 121 bits | Yes | Wrong, 153 bits |
+| Raw J with fresh mask and sampled CBD error | 122 bits | No | Skipped |
+| Single-round `(V,0)` phase oracle | 57 bits | Yes | Correct, 58 bits |
+
+J has a 7-bit maximum coefficient magnitude. After exact J cancellation,
+the output differs from the single-round phase reference by 78 bits, within
+the independently checked 90-bit rounding-plus-switch bound. This identifies
+amplified rounding as the remaining dominant error in this sample. Exact J
+alone does not recover another square: 122-bit intended error exceeds the
+121-bit half-Delta. One unit of raw J error nearly consumes that margin on
+the corrected product itself; the sampled CBD version already changes the
+plaintext. Bit lengths alone are not threshold comparisons: the one-unit
+case's 121-bit error still lies below the actual 121-bit half-Delta.
+
+The final row is deliberately a clear-phase oracle with c1=0. Its 58-bit
+dependent-square result is **not** a demonstration of a public encrypted
+single-round evaluator. The positive unwrapped integer identity, native
+rounding isolation, and exact capacity requirements now give an explicit
+next implementation target: a wide, jointly scale-rounded tensor with the
+existing admission checks retained, followed by a certified public
+correction producer. Simply adding another noisy raw carry tray fails these
+tested precision controls.

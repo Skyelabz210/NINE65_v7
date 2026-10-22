@@ -139,6 +139,17 @@ tray correction must also address its own component winding J, not just
 produce low-noise carry residues. These are secret-oracle isolation controls,
 not a deployable noiseless encryption or an admitted public refresh.
 
+The second-layer ablation now cancels J exactly with a raw secret-oracle
+coordinate. It restores the product at 78-bit error but the next square still
+fails at 122 bits; amplified component rounding remains. One unit of raw J
+error leaves 121-bit output error and a failed next square at 153 bits; a
+freshly masked CBD-error J already corrupts the product at 122 bits. Thus a
+second residue tray alone does not close the precision gap. Independent
+unwrapped single-round identities avoid the amplified rounding, but require
+a wider bound type and rank fallback in the transient arithmetic kernel,
+as well as a public correction producer. Main ciphertext primes and security
+admission remain unchanged.
+
 ## Evidence and reproduction
 
 The fast Rust tests check 50,004 exact additive phase transitions, arbitrary

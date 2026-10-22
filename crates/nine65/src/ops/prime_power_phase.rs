@@ -818,6 +818,69 @@ mod tests {
         }
     }
 
+    // Secret oracle for the integer lift of a NEW ciphertext. Keeping this
+    // separate prevents confusing the carry ciphertext's J with the input K.
+    fn component_winding_for_diagnostic(
+        ctx: &RNSFHEContext,
+        input: &RNSCiphertext,
+        sk: &DualRNSSecretKey,
+    ) -> Vec<i64> {
+        let q = U256::product_u64s(&ctx.config.primes);
+        let centered_coefficients = |poly: &RNSPolynomial| {
+            (0..ctx.n)
+                .map(|j| {
+                    let residues = poly
+                        .limbs
+                        .iter()
+                        .zip(&ctx.rns.mont_contexts)
+                        .map(|(lane, mont)| mont.from_montgomery(lane[j]))
+                        .collect::<Vec<_>>();
+                    SignedU256::centered(crt_reconstruct_u256(&residues, &ctx.config.primes), q)
+                })
+                .collect::<Vec<_>>()
+        };
+        let c0 = centered_coefficients(&input.c0);
+        let c1 = centered_coefficients(&input.c1);
+        let phase = centered_coefficients(&phase_only_equivalent(ctx, input, sk).c0);
+        let prime = ctx.config.primes[0];
+        let secret = sk.s.main[0]
+            .iter()
+            .map(|&value| match value {
+                0 => 0i8,
+                1 => 1,
+                v if v == prime - 1 => -1,
+                _ => panic!("diagnostic expected a ternary secret"),
+            })
+            .collect::<Vec<_>>();
+        (0..ctx.n)
+            .map(|j| {
+                let mut lifted = c0[j];
+                for (i, &s) in secret.iter().enumerate() {
+                    if s == 0 {
+                        continue;
+                    }
+                    let (source, wrapped) = if j >= i {
+                        (j - i, false)
+                    } else {
+                        (ctx.n + j - i, true)
+                    };
+                    lifted = lifted.add(c1[source].multiply_small(1, (s < 0) ^ wrapped));
+                }
+                assert_eq!(lifted.modulo(q), phase[j].modulo(q));
+                let difference = lifted.add(phase[j].negate());
+                let (quotient, remainder) = difference.magnitude.div_mod_u256(q);
+                assert!(remainder.is_zero());
+                assert_eq!(quotient.hi, 0);
+                assert!(quotient.lo <= ctx.n as u128);
+                if difference.negative {
+                    -(quotient.lo as i64)
+                } else {
+                    quotient.lo as i64
+                }
+            })
+            .collect()
+    }
+
     struct WindingSquareDiagnostic {
         winding_bits: u32,
         predicted_winding_bits: u32,
@@ -1952,6 +2015,104 @@ mod tests {
                 }
                 for (label, candidate) in &matched_adapters {
                     assess_adapter(label, candidate, false);
+                }
+
+                // Second-winding ablation on the actual masked, noisy carry.
+                // V=C-t*B has phase P+r*K-t*nu. The extra term in D_comp is
+                // 2*t^2*J*V. Its producer below is still a secret oracle.
+                let own_j = component_winding_for_diagnostic(
+                    &boot,
+                    &delta_k_noisy,
+                    &bootstrap.boot_keys.secret_key,
+                );
+                let own_j_values = own_j
+                    .iter()
+                    .map(|&j| {
+                        SignedU256::from_magnitude(j < 0, U256::from_u64(j.unsigned_abs()))
+                            .modulo(q)
+                    })
+                    .collect::<Vec<_>>();
+                let raw_j = raw_phase_addend_for_diagnostic(&boot, &own_j_values);
+                let v_ciphertext = subtract_ciphertexts(
+                    &boot,
+                    &low_representative,
+                    &scale_ciphertext_for_diagnostic(&boot, &delta_k_noisy, boot.t as u128),
+                );
+                let cross = exact
+                    .try_mul_no_relin_exact(&low_representative, &delta_k_noisy)
+                    .unwrap();
+                let square = exact
+                    .try_mul_no_relin_exact(&delta_k_noisy, &delta_k_noisy)
+                    .unwrap();
+                let combined = compensated_tensor_for_diagnostic(&boot, &cross, &square);
+                let fused = exact.relinearize_tensor(&combined, &relin).unwrap();
+                let second_adapter = |carry: &RNSCiphertext| {
+                    let tensor = raw_ring_tensor_for_diagnostic(&boot, &v_ciphertext, carry);
+                    let product = exact.relinearize_tensor(&tensor, &relin).unwrap();
+                    scale_ciphertext_for_diagnostic(&boot, &product, 2 * t_squared)
+                };
+                let exact_second_term = second_adapter(&raw_j);
+                let twice_corrected = subtract_ciphertexts(&boot, &fused, &exact_second_term);
+                assess_adapter("two windings, exact raw J oracle", &twice_corrected, false);
+
+                // A single scale-round control: square the same phase V in
+                // oracle (V,0) form. This is NOT an evaluator implementation.
+                let v_phase =
+                    phase_only_equivalent(&boot, &v_ciphertext, &bootstrap.boot_keys.secret_key);
+                assert_eq!(
+                    decode_all(&boot, &v_phase, &bootstrap.boot_keys.secret_key),
+                    low_square_expected
+                );
+                let single_round = exact.try_mul_exact(&v_phase, &v_phase, &relin).unwrap();
+                let corrected_output =
+                    subtract_ciphertexts(&boot, &native_low_square, &twice_corrected);
+                let rounding_delta = subtract_ciphertexts(&boot, &corrected_output, &single_round);
+                let rounding_error = phase_residual_max_against(
+                    &boot,
+                    &rounding_delta,
+                    &bootstrap.boot_keys.secret_key,
+                    &adapter_zero,
+                );
+                let n = boot.n as u128;
+                let rounding_bound = (n * n + n + 2) / 2 * (boot.t as u128 + 1).pow(2) + 1;
+                let switch_bound = boot.config.eta as u128
+                    * n
+                    * ((1u128 << 10) - 1)
+                    * boot
+                        .config
+                        .primes
+                        .iter()
+                        .map(|prime| ((64 - prime.leading_zeros()) as u128).div_ceil(10))
+                        .sum::<u128>();
+                assert!(rounding_error.le(U256::from_u128(rounding_bound + 2 * switch_bound)));
+                let single_error = phase_residual_max_against(
+                    &boot,
+                    &single_round,
+                    &bootstrap.boot_keys.secret_key,
+                    &low_square_expected,
+                );
+                eprintln!("second-winding rounding isolation: |J|={} bits; two-winding output minus single-round phase control={} bits; deterministic rounding+switch bound={} bits; single-round control error={} bits",
+                    own_j.iter().map(|j| j.unsigned_abs()).max().unwrap_or(0).checked_ilog2().unwrap_or(0)+1,
+                    integer_bits(rounding_error), u128_bits(rounding_bound + 2*switch_bound), integer_bits(single_error));
+                let (_, _, single_next_correct) =
+                    next_square("single-round V phase oracle", &single_round);
+                assert!(single_next_correct);
+
+                let unit_phase = raw_phase_addend_for_diagnostic(&boot, &unit_error);
+                let j_one_error = boot.add(&raw_j, &unit_phase);
+                let j_noisy = encrypt_raw_phase_for_diagnostic(
+                    &boot,
+                    &raw_j,
+                    &bootstrap.boot_keys.secret_key,
+                    &mut adapter_rng,
+                );
+                for (label, carry) in [
+                    ("two windings, raw J one-unit error", &j_one_error),
+                    ("two windings, raw J sampled CBD", &j_noisy),
+                ] {
+                    let second_term = second_adapter(carry);
+                    let correction = subtract_ciphertexts(&boot, &fused, &second_term);
+                    assess_adapter(label, &correction, false);
                 }
 
                 let right = subtract_plain_constant(&boot, &w_ciphertext, 1);
