@@ -1,0 +1,60 @@
+{
+  "task_id": "TROPICAL_LIFT_BRIDGE",
+  "status": "ready_for_review",
+  "source_commit": "5be5aac56dd76092742e04bf1f41d6c5fb8d6ee9",
+  "scope": "Rank-one tropical covering-space lift; clear native-width residue checks and a conditional encrypted toy consumer.",
+  "worktree_manifest_sha256": "4f7dc740923432f9b311fbcf1c940285705e7c2bb18f703a82c065fd6a250145",
+  "manifest": "artifacts/execution/2026-10-22/tropical-lift-k-elimination/source_manifest.txt",
+  "manifest_scope": "Four changed source/document files; other tracked content is bound by source_commit.",
+  "files_changed": [
+    "crates/exact_transcendentals/tests/tropical_theta_k_lift.rs",
+    "crates/nine65/tests/coefficient_slot_gate.rs",
+    "docs/execution/2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md",
+    "docs/execution/2026-10-21/PUBLIC_REFRESH_ARCHITECTURE.md",
+    "artifacts/execution/2026-10-22/tropical-lift-k-elimination/source_manifest.txt",
+    "artifacts/execution/2026-10-22/tropical-lift-k-elimination/checks.log",
+    "artifacts/execution/2026-10-22/tropical-lift-k-elimination/result.json"
+  ],
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -j1 -p exact_transcendentals --test tropical_theta_k_lift",
+      "exit_code": 0,
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-22/tropical-lift-k-elimination/checks.log",
+      "log_sha256": "6da05125165422e01e46855f7c16a2767685a642dbc9da95e330f83c2ffd57fb"
+    },
+    {
+      "command": "cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate -- --nocapture",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "log": "artifacts/execution/2026-10-22/tropical-lift-k-elimination/checks.log",
+      "log_sha256": "6da05125165422e01e46855f7c16a2767685a642dbc9da95e330f83c2ffd57fb"
+    }
+  ],
+  "acceptance_evidence": [
+    "Independent exact theta minimization agrees with CRAM K-elimination on 2834 small signed states.",
+    "The theta quasi-periodic cocycle composes and a zero-winding omission control fails.",
+    "Theta finite differences reproduce the 2/11 phase identity, including upper cell walls.",
+    "One intact S8 root is coprime to native work Q; all 8193 winding indices at seven centered chart points recover correctly (57351 cases), with arbitrary composite sister projections.",
+    "Conditional encrypted N=8 lift over plaintext 289 produces correct windings at all coefficients for two source states, including a cell-wall crossing; each output supports a subsequent ring square checked against an independent signed negacyclic product.",
+    "Encrypted consumer has the constructor-derived bound V_lift<=2*(Q_source^-1 mod A)*V_fresh; its input coordinates are provided by the fixture.",
+    "Missing-chart, insufficient-corridor, nonunit, residue-alias and even-period-tie controls are explicit."
+  ],
+  "unresolved": [
+    "Construct or preserve the authentic encrypted centered-chart residue, or equivalent theta-difference state, for the actual precharged native refresh input.",
+    "Certify coordinate encoding, public state transitions and total noise over real operation history.",
+    "Integrate the intact encrypted Safe Basis root, key return and repeated refresh.",
+    "Extend beyond rank-one period geometry only with a separate exact lattice-coordinate contract."
+  ],
+  "claims_changed": [
+    "Exact rank-one correspondence between the tropical theta active cell and CRAM's bounded nearest winding is now executable evidence.",
+    "Conditional encrypted residue-pair lift is a public linear operation with a tested following multiplication."
+  ],
+  "public_refresh_admitted": false,
+  "production_code_changed": false,
+  "linting_run": false
+}

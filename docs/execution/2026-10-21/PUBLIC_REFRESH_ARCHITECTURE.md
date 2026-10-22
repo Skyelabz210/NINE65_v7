@@ -356,6 +356,19 @@ view-error budgets; it does not compress this support. The next mathematical
 gate is a compact encrypted quotient/carry state that avoids enumerating all
 ternary assignments while retaining exact boundary decisions.
 
+The owner's tropical-lift proposal now has an exact rank-one bridge in
+[the K-elimination lift experiment](../2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md).
+For `S=g+Q*K` in a centered chart, the unique active cell of
+`min_n(Q*n^2+2*n*S)` is `n=-K`. Existing K-elimination primitives recover
+that sheet from `S mod A` and `g mod A`, and the native work Q is coprime to
+the intact Safe Basis product. Clear tests cover all 8193 sheet indices at
+seven chart points. A separate encrypted N=8 composite-coordinate test
+consumes the paired coordinates with a linear lift and checks a following
+multiply. The unresolved producer is the authentic encrypted centered-chart
+coordinate (or equivalent theta-difference state). The tropical connection
+therefore supplies a precise lift/state construction target while retaining
+the public-refresh gate.
+
 There are two implementation mismatches to fix before extrapolating:
 
 - The composition prototype's `source_q: i128` accommodates Q_w (119 bits),

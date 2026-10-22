@@ -1,0 +1,46 @@
+$ cargo test --locked --offline -j1 -p exact_transcendentals --test tropical_theta_k_lift
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling exact_transcendentals v1.0.0 (/home/acid/projects/NINE65_v7/crates/exact_transcendentals)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.38s
+     Running tests/tropical_theta_k_lift.rs (target/debug/deps/tropical_theta_k_lift-9b5321bb21370e14)
+
+running 6 tests
+test even_period_theta_wall_needs_a_tie_convention ... ok
+test lifted_theta_cocycle_composes_without_enumerating_source_assignments ... ok
+test missing_corridor_and_missing_lift_information_have_explicit_aliases ... ok
+test k_elimination_selects_the_exact_tropical_theta_sheet ... ok
+test theta_difference_exposes_the_two_eleven_phase_relation_at_cell_walls ... ok
+test native_q_and_one_safe_root_resolve_the_full_bounded_sheet_corridor ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.70s
+
+exit_code: 0
+
+$ cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate -- --nocapture
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 23s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-4bf8ad94f4560fd1)
+
+running 4 tests
+test encrypted_slot_bridge_applies_dense_cram_ternary_carry_gate ... ok
+dense local CRAM carry gate: N=8, all coefficients checked, each has its own residual pair; direct ring square negative control fails as expected; insecure toy only
+encrypted coefficientwise digit gate: N=8, 2 BSGS transforms × 8 diagonal terms using 4 Galois keys, degree=17, output checked at every coefficient; insecure toy only
+test encrypted_slot_bridge_applies_jacobian_digit_gate_to_dense_coefficients ... ok
+test encrypted_tropical_lift_consumes_paired_coordinates_without_slot_transforms ... ok
+N=8192 coefficient/slot transform: direct=8191 Galois keys (47.99 GiB); BSGS baby=128 giant=64 keys=190 (1.11 GiB); 12 gadget digits/lane-set; diagonal multiply/add count remains N per transform; estimates exclude metadata
+test bsgs_native_slot_bridge_cost_is_explicitly_too_large ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+exit_code: 0

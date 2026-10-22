@@ -1,7 +1,9 @@
 //! Encrypted toy proof of the coefficient/slot bridge needed by a
 //! coefficientwise CRAM carry or digit gate. The linear transform is the
 //! baby-step/giant-step automorphism-diagonal decomposition, intentionally a
-//! correctness prototype rather than a production-cost transform.
+//! correctness prototype rather than a production-cost transform. The
+//! tropical lift test separately consumes paired encrypted coordinates with
+//! a linear K-elimination step, requiring no coefficient/slot transform.
 
 use nine65::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use nine65::arithmetic::RNSPolynomial;
@@ -353,6 +355,108 @@ fn evaluate_full_domain_low_digit(
         factors = next;
     }
     add(ctx, input, &factors.pop().unwrap())
+}
+
+// Public residue-pair consumer. The missing refresh construction must supply
+// these two authentic coordinates; this function does not center an encrypted
+// source phase or use a secret to choose its tropical cell.
+fn tropical_winding_from_paired_coordinates(
+    ctx: &RNSFHEContext,
+    source_period: u64,
+    source_residue: &RNSCiphertext,
+    centered_chart_residue: &RNSCiphertext,
+) -> RNSCiphertext {
+    let mut multiplier = vec![0; ctx.n];
+    multiplier[0] = inverse(source_period % ctx.t, ctx.t);
+    multiply_plain(
+        ctx,
+        &ctx.sub(source_residue, centered_chart_residue),
+        &multiplier,
+    )
+}
+
+#[test]
+fn encrypted_tropical_lift_consumes_paired_coordinates_without_slot_transforms() {
+    const SOURCE_PERIOD: i64 = 31;
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 8;
+    config.t = 17 * 17; // Composite lift-coordinate modulus, coprime to 31.
+    config.security_bits = 0;
+    config.name = "INSECURE tropical paired-coordinate lift toy";
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x5452_4f50_4c49_4654);
+    let keys = ctx.generate_keys(&mut rng);
+    let exact = ctx.try_exact_evaluator().unwrap();
+    let relin = exact.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    let sheets = [-33i64, -12, -1, 0, 1, 12, 33, 4];
+    let chart = [-15i64, -14, -1, 0, 1, 14, 15, 0];
+    let reduce = |value: i64| value.rem_euclid(ctx.t as i64) as u64;
+    let qb: u128 = config.primes.iter().map(|&prime| prime as u128).product();
+    let t = ctx.t as u128;
+    // Constructor/sampler bound in ideal-grid units V=t*phase-Q*m mod tQ.
+    // Adding the nonnegative encoded polynomial includes floor-Delta bias.
+    let fresh_v = t * (2 * ctx.n as u128 + 1) * config.eta as u128 + (qb % t) * (t - 1);
+    let inverse_period = inverse(SOURCE_PERIOD as u64, ctx.t) as u128;
+    let lift_v = 2 * inverse_period * fresh_v;
+    assert!(2 * lift_v < qb);
+
+    for increment in [0i64, 1] {
+        // Fixture boundary: the holder supplies BOTH coordinates, rather than
+        // claiming this test implements the unknown encrypted chart producer.
+        let source: Vec<i64> = chart
+            .iter()
+            .zip(sheets)
+            .map(|(&g, k)| g + SOURCE_PERIOD * k + increment)
+            .collect();
+        let expected: Vec<i64> = source
+            .iter()
+            .map(|&s| (s + SOURCE_PERIOD / 2).div_euclid(SOURCE_PERIOD))
+            .collect();
+        let centered: Vec<u64> = source
+            .iter()
+            .zip(&expected)
+            .map(|(&s, &k)| reduce(s - SOURCE_PERIOD * k))
+            .collect();
+        let source_residues: Vec<u64> = source.iter().map(|&s| reduce(s)).collect();
+        let encrypted_source = encrypt_polynomial(&ctx, &keys, &source_residues, &mut rng);
+        let encrypted_chart = encrypt_polynomial(&ctx, &keys, &centered, &mut rng);
+
+        // Evaluator boundary: these calls receive ciphertexts/public periods.
+        let winding = tropical_winding_from_paired_coordinates(
+            &ctx,
+            SOURCE_PERIOD as u64,
+            &encrypted_source,
+            &encrypted_chart,
+        );
+        assert_eq!(
+            decrypt_coefficients(&ctx, &winding, &keys),
+            expected.iter().map(|&k| reduce(k)).collect::<Vec<_>>()
+        );
+
+        // Dependent encrypted operation, checked against an independent
+        // signed schoolbook negacyclic product (not coefficientwise squaring).
+        let square = exact.try_mul_exact(&winding, &winding, &relin).unwrap();
+        let mut expected_square = vec![0i64; ctx.n];
+        for (i, &a) in expected.iter().enumerate() {
+            for (j, &b) in expected.iter().enumerate() {
+                let sign = if i + j >= ctx.n { -1 } else { 1 };
+                expected_square[(i + j) % ctx.n] += sign * a * b;
+            }
+        }
+        assert_eq!(
+            decrypt_coefficients(&ctx, &square, &keys),
+            expected_square.into_iter().map(reduce).collect::<Vec<_>>()
+        );
+
+        // Omission control: a source residue alone does not supply the chart.
+        let mut multiplier = vec![0; ctx.n];
+        multiplier[0] = inverse_period as u64;
+        let omitted_chart = multiply_plain(&ctx, &encrypted_source, &multiplier);
+        assert_ne!(
+            decrypt_coefficients(&ctx, &omitted_chart, &keys),
+            expected.iter().map(|&k| reduce(k)).collect::<Vec<_>>()
+        );
+    }
 }
 
 #[test]
