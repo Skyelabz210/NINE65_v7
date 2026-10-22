@@ -354,3 +354,62 @@ Reproduce the complete opt-in native diagnostic and its dependent tests:
 NINE65_TRACE_NOISE_DIAGNOSTIC=1 cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib contraction_with_oracle_lift_refreshes_boundary_input_and_supports_multiply -- --include-ignored --nocapture
 python3 scripts/refresh_carry_bridge.py
 ```
+
+### Matched carry controls and fused relinearization
+
+The follow-up separates two variables that the preceding encrypted-carry
+experiment changed together. Starting from the same Delta-scaled encrypted
+carry, it constructs a 2x2 diagnostic matrix: clear/masked representation
+versus zero/the same sampled CBD error. The phase-only control preserves the
+exact error polynomial; the masked zero-error control preserves c1 exactly
+and removes only that error. Both transformations require the test oracle.
+In particular, a masked zero-error control is **not** a proposed deployable
+encryption scheme.
+
+For identical carry phase and error, changing its component representation
+from winding J0 to J1 changes the compensated correction by
+`2*t^2*(J1-J0)*V` modulo Q, apart from the independently rounded tensor
+components. The Python oracle now checks this matched identity on 28,350
+cases in addition to the existing 56,700 adapter cases.
+
+The diagnostic also tests an evaluator-side arithmetic improvement. If
+`T_CB=Mul_no_relin(C,B)` and `T_BB=Mul_no_relin(B,B)` are the already
+scale-rounded degree-two tensors, combine **all three** components as
+`T_D=2*t*T_CB-t^2*T_BB` in the main ring, then relinearize T_D once. This
+preserves the compensated tensor phase before key switching. It does not
+combine unrounded tensors or claim to remove component-rounding error.
+
+Separate relinearizations have noise `2*t*rho_CB-t^2*rho_BB`; the fused
+schedule has one ordinary hybrid-switch error rho_D instead. Under the
+existing conservative switch bound 502824960, the separate bound is
+9276049498846062186173399040 (93 bits), versus 502824960 (29 bits) for the
+fused schedule. This improvement does not cancel `2*t^2*J*V`. Both schedules
+and their pre-switch phases are tested on every cell of the matched matrix,
+with dependent squares only when the intended plaintext remains correct.
+
+Native matched results (same N=8192 input, same mask, same CBD polynomial):
+
+| Carry representation | Carry error | Pre-switch correction-target error | Separate / fused switch error | Corrected product / next square |
+| --- | --- | ---: | ---: | --- |
+| Clear | Zero | 63 bits | 0 / 0 bits | Correct at 63 bits / correct at 109 bits |
+| Clear | Sampled CBD | 63 bits | 0 / 0 bits | Correct at 63 bits / correct at 109 bits |
+| Same full-width mask | Zero | 128 bits | 84 / 20 bits | Already wrong at 128 bits / skipped |
+| Same full-width mask | Same sampled CBD | 128 bits | 84 / 20 bits | Already wrong at 128 bits / skipped |
+
+The product/next-square outcomes hold for the pre-switch control and both
+relinearization schedules. Thus in this sample the compensated adapter
+tolerates the isolated small CBD error, but fails with the mask's component
+winding even when its phase error is exactly zero. Its failure is already
+present before relinearization. This refines, rather than contradicts, the
+preceding raw-encoding finding: the **raw** adapter amplifies small carry
+noise; the **compensated Delta** adapter is dominated here by its own carry
+winding. Neither a lower-noise carry encryption nor fused relinearization
+alone closes the latter gap.
+
+The fused schedule is a measured evaluator-side improvement (84 to 20 bits
+of switch error), not a public refresh admission. The next construction
+must avoid or publicly account for J and certify the remaining rounding and
+switching work; removing J with a secret oracle is not that construction.
+As an independent sensitivity check, deliberately omitting `2*t^2*J*V`
+from the Python model is rejected on the degree-two witness
+`C0=C1=(-2,-2), s=(-1,-1), Q=5, t=3`; the unmodified model passes it.

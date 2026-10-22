@@ -129,6 +129,16 @@ sister-tray producer must therefore certify the final correction precision,
 not merely the correctness of the carry residues. See the encoding-isolation
 section of the linked contract for the full measurement table and limits.
 
+A matched follow-up isolates that compensated adapter's failure more tightly:
+the same masked carry still fails at 128 bits after removing its phase noise,
+already before relinearization. The same sampled noise without the masked
+representation supports a correct next square at 109 bits. Combining the two
+scaled tensors before one key switch reduces the measured switching error
+from 84 to 20 bits, but leaves the 128-bit failure unchanged. Thus a proposed
+tray correction must also address its own component winding J, not just
+produce low-noise carry residues. These are secret-oracle isolation controls,
+not a deployable noiseless encryption or an admitted public refresh.
+
 ## Evidence and reproduction
 
 The fast Rust tests check 50,004 exact additive phase transitions, arbitrary

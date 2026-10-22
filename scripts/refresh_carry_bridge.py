@@ -126,6 +126,7 @@ def carry_encoding_adapter_case(c0, c1, secret, q, t):
     cases = nonzero_winding = 0
     for unit_error in (-1, 0, 1):
         noise = [unit_error] + [0] * (n - 1)
+        clear_control = None
         for mask in ([0] * n, c1):
             mask_phase = convolution(mask, secret)
             raw_target = [k + e for k, e in zip(winding, noise)]
@@ -159,6 +160,18 @@ def carry_encoding_adapter_case(c0, c1, secret, q, t):
                            compensated, correction, predicted_numerator, rounding))
             assert all(2 * abs(value) <= q * (2 * t + t * t) * rounding_weight
                        for value in rounding)
+            if clear_control is None:
+                clear_control = (compensated, own_winding, rounding)
+            else:
+                clear_result, clear_winding, clear_rounding = clear_control
+                changed_winding = [a - b for a, b in zip(own_winding, clear_winding)]
+                mask_term = [2 * t * t * q * value
+                             for value in convolution(changed_winding, v)]
+                # Same carry phase and SAME noise: only the representation
+                # winding and tensor-rounding terms may change with the mask.
+                assert all((q * (a - b) - term - (ra - rb)) % (q * q) == 0
+                           for a, b, term, ra, rb in zip(
+                               compensated, clear_result, mask_term, rounding, clear_rounding))
             nonzero_winding += any(own_winding)
             cases += 1
     return cases, nonzero_winding
@@ -206,6 +219,10 @@ def multiplication_winding_budget():
         "primes": primes, "N": n, "t": t, "Q_bits": q.bit_length(),
         "Q_mod_t": remainder, "component_rounding_bound": rounding,
         "hybrid_switch_bound": switch,
+        "compensated_separate_switch_bound": (2 * t + t * t) * switch,
+        "compensated_separate_switch_bound_bits": ((2 * t + t * t) * switch).bit_length(),
+        "compensated_fused_switch_bound": switch,
+        "compensated_fused_switch_bound_bits": switch.bit_length(),
         "maximum_input_error_for_next_square": low,
         "adjacent_boundary_checked": True,
         "any_62_bit_input_error_fits": True,
@@ -393,6 +410,7 @@ def run():
             "negacyclic_n2_cases": ring_cases,
             "multiplication_winding_cancellation_cases": scalar_cases + ring_cases,
             "carry_encoding_adapter_cases": adapter_cases,
+            "matched_identical_noise_mask_comparisons": adapter_cases // 2,
             "adapter_cases_with_nonzero_carry_ciphertext_winding": adapter_own_winding_cases,
             "cases_where_uncorrected_affine_result_is_wrong": affine_failures,
             "prime_power_contractions": contractions,

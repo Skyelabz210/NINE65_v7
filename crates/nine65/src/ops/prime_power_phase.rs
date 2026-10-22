@@ -782,6 +782,42 @@ mod tests {
         }
     }
 
+    // Combine already scaled/rounded tensors before ONE key switch. Scaling
+    // separately relinearized ciphertexts would also scale their switch noise.
+    fn compensated_tensor_for_diagnostic(
+        ctx: &RNSFHEContext,
+        cross: &crate::ops::rns_fhe::exact_mul::ExactTensor3,
+        square: &crate::ops::rns_fhe::exact_mul::ExactTensor3,
+    ) -> crate::ops::rns_fhe::exact_mul::ExactTensor3 {
+        let combine = |a: &RNSPolynomial, b: &RNSPolynomial| RNSPolynomial {
+            limbs: ctx
+                .config
+                .primes
+                .iter()
+                .enumerate()
+                .map(|(lane, &prime)| {
+                    let q = prime as u128;
+                    let left = 2 * ctx.t as u128 % q;
+                    let right = (ctx.t as u128 * ctx.t as u128) % q;
+                    a.limbs[lane]
+                        .iter()
+                        .zip(&b.limbs[lane])
+                        .map(|(&a, &b)| {
+                            ((left * a as u128 % q + q - right * b as u128 % q) % q) as u64
+                        })
+                        .collect()
+                })
+                .collect(),
+            n: ctx.n,
+        };
+        crate::ops::rns_fhe::exact_mul::ExactTensor3 {
+            e0: combine(&cross.e0, &square.e0),
+            e1: combine(&cross.e1, &square.e1),
+            e2: combine(&cross.e2, &square.e2),
+            num_primes: cross.num_primes,
+        }
+    }
+
     struct WindingSquareDiagnostic {
         winding_bits: u32,
         predicted_winding_bits: u32,
@@ -1770,6 +1806,82 @@ mod tests {
                     &scale_ciphertext_for_diagnostic(&boot, &carry_square_noisy, t_squared),
                 );
 
+                // Matched 2x2 control: same sampled error with/without its
+                // mask, and the same mask with/without that exact error.
+                // Removing either uses the secret oracle, not public refresh.
+                let delta_phase_only =
+                    phase_only_equivalent(&boot, &delta_k_noisy, &bootstrap.boot_keys.secret_key);
+                let delta_noise_phase =
+                    subtract_ciphertexts(&boot, &delta_phase_only, &delta_k_clear);
+                let delta_mask_zero_error =
+                    subtract_ciphertexts(&boot, &delta_k_noisy, &delta_noise_phase);
+                let masked_exact_phase = phase_only_equivalent(
+                    &boot,
+                    &delta_mask_zero_error,
+                    &bootstrap.boot_keys.secret_key,
+                );
+                assert_eq!(masked_exact_phase.c0.limbs, delta_k_clear.c0.limbs);
+                assert_eq!(delta_mask_zero_error.c1.limbs, delta_k_noisy.c1.limbs);
+                let delta_noise = phase_residual_max_against(
+                    &boot,
+                    &delta_noise_phase,
+                    &bootstrap.boot_keys.secret_key,
+                    &adapter_zero,
+                );
+                assert!(delta_noise.le(U256::from_u64(boot.config.eta as u64)));
+
+                let mut matched_adapters = Vec::new();
+                for (label, carry) in [
+                    ("clear / zero error", &delta_k_clear),
+                    ("clear / sampled CBD", &delta_phase_only),
+                    ("same mask / zero error", &delta_mask_zero_error),
+                    ("same mask / sampled CBD", &delta_k_noisy),
+                ] {
+                    let cross = exact
+                        .try_mul_no_relin_exact(&low_representative, carry)
+                        .unwrap();
+                    let square = exact.try_mul_no_relin_exact(carry, carry).unwrap();
+                    let combined = compensated_tensor_for_diagnostic(&boot, &cross, &square);
+                    let before_switch =
+                        tensor_phase(&boot, &combined, &bootstrap.boot_keys.secret_key);
+                    let fused = exact.relinearize_tensor(&combined, &relin).unwrap();
+                    let separately_switched = subtract_ciphertexts(
+                        &boot,
+                        &scale_ciphertext_for_diagnostic(
+                            &boot,
+                            &exact.relinearize_tensor(&cross, &relin).unwrap(),
+                            factor,
+                        ),
+                        &scale_ciphertext_for_diagnostic(
+                            &boot,
+                            &exact.relinearize_tensor(&square, &relin).unwrap(),
+                            t_squared,
+                        ),
+                    );
+                    for (schedule, result) in
+                        [("separate", &separately_switched), ("fused", &fused)]
+                    {
+                        let switch_delta = subtract_ciphertexts(&boot, result, &before_switch);
+                        let switch_error = phase_residual_max_against(
+                            &boot,
+                            &switch_delta,
+                            &bootstrap.boot_keys.secret_key,
+                            &adapter_zero,
+                        );
+                        eprintln!("matched Delta carry {label}, {schedule}: isolated key-switch error={} bits",
+                            integer_bits(switch_error));
+                    }
+                    matched_adapters.push((
+                        format!("matched Delta {label}, before switch"),
+                        before_switch,
+                    ));
+                    matched_adapters.push((
+                        format!("matched Delta {label}, separate"),
+                        separately_switched,
+                    ));
+                    matched_adapters.push((format!("matched Delta {label}, fused"), fused));
+                }
+
                 let assess_adapter = |label: &str,
                                       candidate: &RNSCiphertext,
                                       exact_control: bool| {
@@ -1837,6 +1949,9 @@ mod tests {
                     ),
                 ] {
                     assess_adapter(label, candidate, exact_control);
+                }
+                for (label, candidate) in &matched_adapters {
+                    assess_adapter(label, candidate, false);
                 }
 
                 let right = subtract_plain_constant(&boot, &w_ciphertext, 1);
