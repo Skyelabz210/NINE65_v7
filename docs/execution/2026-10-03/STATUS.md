@@ -1,5 +1,23 @@
 # Live execution update — 2026-10-21
 
+## Whole-system public-refresh diagnosis (after `9800fd1`)
+
+The [architecture and variable map](../2026-10-21/PUBLIC_REFRESH_ARCHITECTURE.md)
+separates the legacy missing decryption carry, the bounded-digit construction,
+the original multiplication winding, and the carry ciphertext's own winding.
+The native rerun still fails a dependent square after exact second-winding
+oracle correction. Single-round arithmetic alone would not supply the missing
+public producer or its precision certificate.
+
+New integer analysis verifies a degree-69 / at-least-seven-layer requirement
+for the B=17 polynomial route. A prospective lower-noise bootstrap key improves
+the existing projection-bound schedule from refusal at square one to refusal
+at square two; it is not a complete solution and is not implemented here.
+The report also identifies the larger-ring inverse and same-N key-domain
+constraints, lays out the complete bounded-bootstrap route on native CRAM,
+and defines output-to-next-refresh closure before service integration.
+Production admission and all task acceptance flags remain unchanged.
+
 ## Composite sister-view budget control (after `a323d6b`)
 
 The bounded research tray planner now accepts an exact per-view error cap

@@ -1,0 +1,206 @@
+{
+  "schema": "nine65-public-refresh-architecture-v1",
+  "scope": "research integer analysis; no native public refresh admission",
+  "source_sha256": {
+    "scripts/public_refresh_architecture.py": "3c70431afa810eb2e392a5200fc680fca8c413abbce6b77f8aa533011b092c25",
+    "scripts/test_public_refresh_architecture.py": "6de2a07ecba6d55b3e7f9d06f932427e91acd502fafeb693cc56bb2677220f2e",
+    "scripts/bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137",
+    "scripts/digit_radius_oracle.py": "96b6382aeff71d9f50874b6703f79339e98887003c1c6480270c95344daee0fd",
+    "scripts/refresh_carry_bridge.py": "5a38c6b37ef0fd116343a3dd8f31ee6857d74e9f6e5ef8282ea9317170100bd3",
+    "crates/nine65/src/ops/bootstrap.rs": "cfe14d4015d733758d5135e66212371ddd7a2e6bfae9454fa303c71092a2e8f7",
+    "crates/nine65/src/ops/cram_main.rs": "36ef0b20ac1d959cac5fe344c1863b7e6cc664703d26c3880edd07f37fef62ad",
+    "crates/nine65/src/ops/prime_power_digit_lift.rs": "b6ea97b88d20053836e5791dcf6e1b1a0bb7b656435cb903d77628bf6b6b6d84",
+    "crates/nine65/src/ops/prime_power_phase.rs": "38b1356e92212d9f341d938ab439b6b4364717f9bb91d84cafef0201b3958201",
+    "crates/nine65/src/ops/expanded_bootstrap.rs": "0bac74a6f594973d681212a14821f26aad10a6c007dbbab5165a31ebc6060583",
+    "crates/nine65/src/keys/expanded_bootstrap.rs": "5520f2b6c63969c65ced02bf4b9e65df252eb0d4c40a221fd5f10025e49e3c07",
+    "crates/nine65/src/ops/safe_basis_composition_tests.rs": "8001f3aaad72ed744d222dfa082bb7ac6453aa49aa88289f200e6544cb836e44",
+    "crates/nine65/src/arithmetic/exact_scale_round.rs": "844fa9d96b59e124668d57ce284eca4aea5c53493aac5bb66871b5883d0ab92f",
+    "crates/nine65/src/arithmetic/main_only_base_ext.rs": "713e85887bdb33de36730c6151c0731461d681e54238d5c1216fbf31df59cb7e"
+  },
+  "parameters": {
+    "N": 8192,
+    "p": 65537,
+    "boot_t": 4295098369,
+    "boot_primes": [
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257,
+      1711276033
+    ],
+    "boot_Q": 15464703927745427322676305657239176590590476289
+  },
+  "conditional_sparse_radius_fixtures_not_post_transform": [
+    {
+      "input_scaled_error": 5011390467,
+      "post_modswitch_scaled_error": 268472320,
+      "post_keyswitch_scaled_error": 9886360293376,
+      "plaintext_residual_radius": 17
+    },
+    {
+      "input_scaled_error": 22046046060462580170753,
+      "post_modswitch_scaled_error": 268534481,
+      "post_keyswitch_scaled_error": 9886360355537,
+      "plaintext_residual_radius": 17
+    }
+  ],
+  "polynomial_requirements": [
+    {
+      "radius": 16,
+      "degree": 65,
+      "minimum_polynomial_degree": 65,
+      "binary_multiplication_depth_lower_bound": 7,
+      "scope": "single-variable polynomial on every r+p*m in the specified support",
+      "identities": {
+        "value_identities": 33,
+        "derivative_identities": 33,
+        "implied_domain_elements": 2162721,
+        "identity": "F(r+p*m) = r (mod p^2), for -B <= r <= B and every m"
+      }
+    },
+    {
+      "radius": 17,
+      "degree": 69,
+      "minimum_polynomial_degree": 69,
+      "binary_multiplication_depth_lower_bound": 7,
+      "scope": "single-variable polynomial on every r+p*m in the specified support",
+      "identities": {
+        "value_identities": 35,
+        "derivative_identities": 35,
+        "implied_domain_elements": 2293795,
+        "identity": "F(r+p*m) = r (mod p^2), for -B <= r <= B and every m"
+      }
+    },
+    {
+      "radius": 32,
+      "degree": 129,
+      "minimum_polynomial_degree": 129,
+      "binary_multiplication_depth_lower_bound": 8,
+      "scope": "single-variable polynomial on every r+p*m in the specified support",
+      "identities": {
+        "value_identities": 65,
+        "derivative_identities": 65,
+        "implied_domain_elements": 4259905,
+        "identity": "F(r+p*m) = r (mod p^2), for -B <= r <= B and every m"
+      }
+    }
+  ],
+  "native_coefficient_projection": {
+    "beta": 49155,
+    "expansion_bound": 864779695894217202,
+    "expansion_bits": 60,
+    "schedule": {
+      "initial_error": 7084275272884066566144,
+      "initial_error_bits": 73,
+      "half_delta": 1800273544299053436030431653338365786,
+      "half_delta_bits": 121,
+      "nodes": [
+        {
+          "square": 1,
+          "terms": {
+            "message_linear": 30427659163027108961448458452992,
+            "component_winding_linear": 2042464167853200854352860856375708745728,
+            "quadratic_bit_bound": 549755813888,
+            "component_rounding": 33558529,
+            "key_switch": 502824960
+          },
+          "error_bound": 2042464198280860017379969818374459396097,
+          "error_bits": 131,
+          "bound_fits": false
+        }
+      ],
+      "first_refusal": 1
+    }
+  },
+  "prospective_low_noise_key_same_projection": {
+    "beta": 3,
+    "expansion_bound": 62179160015346,
+    "expansion_bits": 46,
+    "schedule": {
+      "initial_error": 509375797484961792,
+      "initial_error_bits": 59,
+      "half_delta": 1800273544299053436030431653338365786,
+      "half_delta_bits": 121,
+      "nodes": [
+        {
+          "square": 1,
+          "terms": {
+            "message_linear": 2187819156476357897361555456,
+            "component_winding_linear": 146857903491818306728528792208277504,
+            "quadratic_bit_bound": 2048,
+            "component_rounding": 33558529,
+            "key_switch": 502824960
+          },
+          "error_bound": 146857905679637463204886690106218497,
+          "error_bits": 117,
+          "bound_fits": true
+        },
+        {
+          "square": 2,
+          "terms": {
+            "message_linear": 630769151012508799042968872300140813116112896,
+            "component_winding_linear": 42340535702321977577447721477146176400619793893310464,
+            "quadratic_bit_bound": 170141183460469231731687303715884105728,
+            "component_rounding": 33558529,
+            "key_switch": 502824960
+          },
+          "error_bound": 42340536333091298731139980989346780388064323429912577,
+          "error_bits": 175,
+          "bound_fits": false
+        }
+      ],
+      "first_refusal": 2
+    }
+  },
+  "low_noise_key_implemented": false,
+  "joint_single_round_arithmetic": {
+    "scope": "constant-one plaintext, assumed certified input error; no correction producer",
+    "primes": [
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257,
+      1711276033
+    ],
+    "N": 8192,
+    "t": 4295098369,
+    "Q_bits": 154,
+    "Q_mod_t": 1147371852,
+    "component_rounding_bound": 33558529,
+    "hybrid_switch_bound": 502824960,
+    "compensated_separate_switch_bound": 9276049498846062186173399040,
+    "compensated_separate_switch_bound_bits": 93,
+    "compensated_fused_switch_bound": 502824960,
+    "compensated_fused_switch_bound_bits": 29,
+    "two_winding_rounding_bound_bits": 90,
+    "single_round_unwrapped_operand_bound": 75562475552672386662400,
+    "single_round_unwrapped_operand_bound_bits": 77,
+    "single_round_shift_multiplier_bits": 109,
+    "single_round_operand_bound_fits_current_u64_api": false,
+    "single_round_required_auxiliary_capacity_bits": 263,
+    "single_round_transient_catalog_7_lane_capacity_bits": 220,
+    "single_round_transient_candidate_lanes": 9,
+    "single_round_transient_candidate_capacity_bits": 283,
+    "single_round_reverse_rank_fallback_required_bits": 286,
+    "single_round_reverse_rank_fits_current_u256_kernel": false,
+    "single_round_wide_residue_scale_boundary_cases": 11,
+    "single_round_native_wide_kernel_implemented": false,
+    "maximum_input_error_for_next_square": 6245762953937978686,
+    "adjacent_boundary_checked": true,
+    "any_62_bit_input_error_fits": true,
+    "arbitrary_63_bit_input_error_fits": false,
+    "modular_Delta_inverse_unit_error_bits": 152,
+    "modular_Delta_inverse_unit_error_exceeds_half_delta": true,
+    "half_delta_bits": 121
+  },
+  "larger_ring_projection": {
+    "p": 65537,
+    "N": 32768,
+    "slots_split": true,
+    "current_fixed_minus_eight_inverse_works": false,
+    "centered_inverse": -2,
+    "minus_two_is_inverse": true,
+    "same_ring_key_api_accepts_8192_to_32768": false
+  },
+  "public_refresh_admitted": false
+}
