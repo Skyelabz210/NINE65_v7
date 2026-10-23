@@ -237,13 +237,30 @@ Both component and carry bounds fit below `Q/2` before p-view decoding. The
 experiments remain useful alternatives, but are no longer needed to produce
 or apply this carry.
 
+The follow-up now measures the corrected output's phase error under `p` rather
+than stopping at successful decryption. Let `r=99*Z99-A*K` and `V_T` be the
+T-scaled error around its T-scale plaintext `A*m+r`; then
+
+```text
+V_p = |p*phase-Q*m| <= (Q*|r|+V_T)/A.
+```
+
+The native N8192 run observed 121-bit p-view error against a 125-bit
+`Q_outer` (with a 122-bit bound), while the input bound was 56 bits against a
+60-bit `Q_source`: both are at the live `Q/16` scale, so this is carry
+correction without noise contraction. The N512 diagnostic observed 121/125
+bits at the output versus 53/60 at input, showing the same chart remainder can
+raise a quieter input to roughly the `Q/16` scale. The readout therefore
+solves the hidden integer carry but does not refresh the residual phase.
+
 ## Remaining encrypted obligations
 
 The scale-locked experiment closes the dense chart's carry readout and affine
 Phase 1 correction under its sparse-source, basis, level, and error contract.
 Production still needs a typed capability that binds the `T` precharge to the
 source key/history and active level and issues its phase/noise certificate.
-The canonical residual return must prove error reduction through the next
-dense multiplication and a second refresh. A failed phase, history, capacity,
-security, or return certificate must refuse before output. Issue #95 remains
-open and production refresh remains fail-closed.
+The measured p-view error retains the `(Q/A)*r` term, so an independent
+canonical-residual or carry ciphertext is still required to prove error
+reduction through the next dense multiplication and a second refresh. A failed
+phase, history, capacity, security, or return certificate must refuse before
+output. Issue #95 remains open and production refresh remains fail-closed.

@@ -24,7 +24,7 @@ refresh.
 | `r=X mod M`, or `a=X mod (M+1)` | Optional low tray for a K-Elimination readout of `X=99*Z99+M/2` | `M=32768`; adjacent-tray integer identity and bounded encrypted consumer are checked; native `Z99` already has a direct quotient map to `K_phase` | If used, produce its same-root common-`p` view with a producer-issued bound; it is not needed for the direct quotient identity |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
-| `V_out` | Error after residual correction and return | Existing scale-locked probes carry source residual into the return | Must pass return, next dense multiplication, and a second refresh with issued bounds |
+| `V_out` | Error after residual correction and return | New client instrumentation measures the p-view error; native `N8192` remains at the incoming `Q/16` scale because the chart remainder survives | An independent carry/residual producer must contract error, then pass return, next dense multiplication, and a second refresh with issued bounds |
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the
@@ -247,6 +247,21 @@ producer-issued bound for the whole return path and next product. A previous
 scale-locked tray cycle failed its following dense square; the new composite
 Phase 1 candidate still needs its own return, next-product, and second-refresh
 measurements and certificates.
+
+The new diagnostic measures this term directly. With `r=99*Z99-A*K` and
+`V_T` the phase error around the T-scale plaintext `A*m+r`, the same ciphertext
+viewed under `p` has
+
+```text
+V_p = |p*phase-Q*m| <= (Q*|r|+V_T)/A.
+```
+
+At native `N=8192`, the measured p-view error is 121 bits against a 125-bit
+outer modulus, while input error is 56 bits against the 60-bit source modulus.
+That matches the incoming `Q/16` envelope and shows that reading `K` plus
+adding it to the affine result preserves plaintext correctness without
+contracting phase error. A separate carry/residual ciphertext is needed to
+remove `r/A` before the corrected result can qualify as a refresh.
 
 ## Required implementation order
 

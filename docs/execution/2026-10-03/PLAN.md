@@ -261,6 +261,15 @@ subgates. Typed source/history/level capability binding, canonical residual
 return and noise contraction, next dense product, repeat refresh, and R03
 admission remain open; keep public refresh disabled.
 
+The follow-up p-view noise measurement isolates the remaining contraction
+failure. For `r=99*Z99-A*K`, the corrected phase obeys
+`V_p <= (Q_outer*|r|+V_T)/A`; native N8192 measured 121-bit p-view error at a
+125-bit outer modulus, versus 56-bit input error at a 60-bit source modulus.
+It preserves the live Q/16 radius rather than resetting it. The next CRAM step
+must produce an independent carry/residual ciphertext that removes this term,
+then measure the returned work-key phase through the next dense product and a
+second refresh.
+
 Run two parameter searches: (A) current CRAM tuples with sharper sound bounds
 and bounded circuits; (B) a wider native tuple based on the working reference.
 This directly tests the owner's tighter-parameter hypothesis. Preserve a

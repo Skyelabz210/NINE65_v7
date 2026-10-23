@@ -497,7 +497,32 @@ fn check_batched_phase(
                 assert!(words(U512::from_u128(corrected_bound).mul_u128(2)) < words(q_outer));
                 let corrected_p = decrypt_coefficients(&reader, &corrected, &outer_keys);
                 assert_eq!(corrected_p, expected_corrected);
-                eprintln!("composite scale-locked Phase 1: T={chart_t}=p*A, p={}, A={}, same RNS basis/key/history; all {} doubled-ring coefficients including odd zeros decode as K and affine+K recovers the original plaintext; max |99*z-A*K|={}, 99*V<Q/2, V_affine+V_carry<Q/2; evaluator adds/scales ciphertexts only",source.t,quotient_scale,outer.n,max_residual);
+                let corrected_p_noise =
+                    observe_polynomial(&reader, &corrected, &outer_keys, &expected_corrected);
+                let chart_modulus = (2 * outer.n) as u128;
+                let twice_chart_residual_bound = coordinate as u128 * (weight as u128 + 1)
+                    + 2 * chart_modulus / phase_denominator;
+                let chart_residual_bound = (twice_chart_residual_bound - 1) / 2;
+                let corrected_residual_bound = chart_residual_bound + weight.div_ceil(2) as u128;
+                assert!(max_residual <= corrected_residual_bound);
+                let corrected_p_noise_bound = q_outer
+                    .mul_u128(corrected_residual_bound)
+                    .add(U512::from_u128(corrected_bound))
+                    .add(U512::from_u64(quotient_scale as u64 - 1))
+                    .div_u64(quotient_scale as u64);
+                assert_eq!(
+                    (
+                        corrected_p_noise_bound.d3,
+                        corrected_p_noise_bound.d2,
+                        corrected_p_noise_bound.d1
+                    ),
+                    (0, 0, 0),
+                    "p-view phase bound must fit u128 for this screened chain"
+                );
+                assert!(corrected_p_noise <= corrected_p_noise_bound.d0);
+                let q_outer_u128 = q_outer.d0;
+                assert_eq!((q_outer.d3, q_outer.d2, q_outer.d1), (0, 0, 0));
+                eprintln!("composite scale-locked Phase 1: T={chart_t}=p*A, p={}, A={}, same RNS basis/key/history; all {} doubled-ring coefficients including odd zeros decode as K and affine+K recovers the original plaintext; max |99*z-A*K|={}, p-view phase noise observed/bound bits={}/{}, Q_outer bits={}, source input V/Q bits={}/{}, p-output V/Q bits={}/{}, source-certified |r|<={}; evaluator adds/scales ciphertexts only",source.t,quotient_scale,outer.n,max_residual,bits(corrected_p_noise),bits(corrected_p_noise_bound.d0),bits(q_outer_u128),bits(input_v),bits(source_q),bits(corrected_p_noise),bits(q_outer_u128),corrected_residual_bound);
             }
         }
         let readout_status = if coordinate == 99 && chart_t != source.t {
