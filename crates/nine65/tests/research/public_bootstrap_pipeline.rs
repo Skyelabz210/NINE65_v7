@@ -5,6 +5,9 @@ use super::*;
 use nine65::arithmetic::main_only_base_ext::MainOnlyBaseExt;
 use nine65::ops::rns_fhe::{RNSEvalKey, RNSPublicKey, RNSSecretKey};
 
+#[path = "outer_ring_return.rs"]
+mod outer_ring_return;
+
 const SPECIAL: u64 = 1_811_939_329;
 
 // Unlike CanonicalScaleRound, this local prototype supports an EVEN target.
@@ -68,9 +71,31 @@ struct Components {
     clock: Vec<i64>,
 }
 
+// 4*N*V can exceed u128 even though its quotient by Q is tiny. Use
+// bounded public wide arithmetic, never a wrapped intermediate.
+fn phase_window2(clock_n: usize, source_norm: usize, coordinate: usize, cap: u128) -> u128 {
+    assert!(cap < Q_SOURCE as u128);
+    let q = U512::from_u128(Q_SOURCE as u128);
+    let numerator = U512::from_u128(cap)
+        .mul_u128(4 * clock_n as u128)
+        .add(q.sub(U512::from_u64(1)));
+    floor_ratio(numerator, q, 4 * clock_n as u64) as u128
+        + coordinate as u128 * (source_norm + 1) as u128
+}
+
 fn preprocess(ctx: &RNSFHEContext, p: &RNSPolynomial, coordinate: usize) -> Components {
+    preprocess_for_clock(ctx, p, coordinate, ctx.n)
+}
+
+fn preprocess_for_clock(
+    ctx: &RNSFHEContext,
+    p: &RNSPolynomial,
+    coordinate: usize,
+    clock_n: usize,
+) -> Components {
     assert!(coordinate >= 3 && coordinate % 2 == 1);
-    let size = 2 * ctx.n as u64;
+    assert!(clock_n.is_power_of_two());
+    let size = 2 * clock_n as u64;
     let coarse = RoundProjection::new(&ctx.config.primes, ctx.t);
     let fine = RoundProjection::new(&ctx.config.primes, size * ctx.t);
     let input = ordinary(ctx, p);
@@ -223,10 +248,7 @@ impl PublicPipeline<'_> {
             input_v_bound <= self.phase_cap,
             "producer bound cannot enter the clock window"
         );
-        let size = 2 * ctx.n;
-        let q = Q_SOURCE as u128;
-        let window2 = (2 * size as u128 * self.phase_cap).div_ceil(q)
-            + self.coordinate as u128 * (self.source_norm + 1) as u128;
+        let window2 = phase_window2(ctx.n, self.source_norm, self.coordinate, self.phase_cap);
         assert!(
             window2 < ctx.n as u128,
             "phase window refuses this source norm/radius"
@@ -382,6 +404,8 @@ fn floor_ratio(numerator: U512, denominator: U512, upper: u64) -> u64 {
 
 #[test]
 fn phase_clock_residue_preprocessing_matches_wide_client_at_endpoints_and_boundaries() {
+    assert_eq!(phase_window2(8192, 32, 33, Q_SOURCE as u128 / 8), 5185);
+    assert_eq!(phase_window2(16384, 32, 33, Q_SOURCE as u128 / 8), 9281);
     // Exhaustive small-Q control, including even targets and endpoints.
     for target in [2, 3, 9, 64, 257, 576] {
         let projection = RoundProjection::new(&[17, 19], target);

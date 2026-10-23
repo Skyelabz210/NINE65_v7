@@ -13,6 +13,12 @@ native analysis charges the complete polynomial and refuses the compact
 layouts' following-product bound. This advances integration, while native
 resource, source/security, history and intact-root admission remain open.
 
+The subsequent [outer-ring return construction](../2026-10-23/OUTER_RING_PUBLIC_RETURN.md)
+reduces the modulus before switching back to the working key, allowing a
+larger screened outer ring. Its conditional native polynomial bound now
+closes; it retains sparse-source, key-security, history, native cost and
+root-integration requirements. No production gate is enabled.
+
 ## Finding and decision
 
 **A complete, admitted native public refresh has not been obtained.** The

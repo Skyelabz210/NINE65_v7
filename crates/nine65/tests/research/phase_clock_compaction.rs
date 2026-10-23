@@ -398,9 +398,13 @@ fn setup(
     rng: &mut ShadowHarvester,
 ) -> Packed {
     let ctx = engine.ctx;
-    assert_eq!(source.len(), ctx.n);
     assert!(source.iter().all(|s| (-1..=1).contains(s)));
-    assert!(block.is_power_of_two() && block <= ctx.n);
+    assert!(block.is_power_of_two() && block <= source.len() && source.len() <= ctx.n);
+    assert_eq!(
+        source.len() % block,
+        0,
+        "public source length must fill packed blocks"
+    );
     let shape = Shape::new(ctx, bits);
     let gal_shape = Shape::new(ctx, galois_bits);
     let mut galois = BTreeMap::new();

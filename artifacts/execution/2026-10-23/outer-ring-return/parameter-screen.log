@@ -1,0 +1,2 @@
+N=8192: Err(SecurityLevelNotMet { bits: 97, required: 128 })
+N=16384: Ok(SecureConfig { config: FHEConfig { n: 16384, primes: [998244353, 985661441, 754974721, 469762049, 1811939329, 2113929217, 2130706433, 1107296257], q: 998244353, t: 65537, eta: 3, security_bits: 128, name: "custom_screened" }, claimed_security: 128, classical_security: 228, hybrid_security: 194, quantum_security: 129, he_standard_compliant: true, admission_state: ScreenedFullModelAgreement })

@@ -1,0 +1,221 @@
+{
+  "scope": "Public deterministic bounds; native sparse norm32 remains conditional",
+  "minimum_stored_key_candidate": {
+    "parameters": {
+      "source_N": 8192,
+      "outer_N": 16384,
+      "source_norm": 32,
+      "multiplication_norm": 32,
+      "block": 8192,
+      "raw_bits": 10,
+      "galois_bits": 10,
+      "return_bits": 10,
+      "coordinate": 33,
+      "phase_denominator": 8,
+      "output_batch": 64
+    },
+    "outer_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257
+    ],
+    "outer_q_bits": 241,
+    "work_q_bits": 119,
+    "return_key_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049
+    ],
+    "window2": 9281,
+    "carry_per_coefficient_v_bits": 130,
+    "affine_polynomial_v_bits": 63,
+    "assembled_v_bound": 8619523015289380252955284725379368213479424,
+    "assembled_v_bits": 143,
+    "modulus_drops": [
+      {
+        "special": 1107296257,
+        "remaining_q_bits": 211,
+        "v_bound": 7784297075691623378218721207056222,
+        "v_bits": 113,
+        "decode_fits": true
+      },
+      {
+        "special": 2130706433,
+        "remaining_q_bits": 180,
+        "v_bound": 3653387888227971817561178,
+        "v_bits": 82,
+        "decode_fits": true
+      },
+      {
+        "special": 2113929217,
+        "remaining_q_bits": 149,
+        "v_bound": 1728245673431963,
+        "v_bits": 51,
+        "decode_fits": true
+      },
+      {
+        "special": 1811939329,
+        "remaining_q_bits": 119,
+        "v_bound": 537865683,
+        "v_bits": 30,
+        "decode_fits": true
+      }
+    ],
+    "reduced_v_bits": 30,
+    "returned_v_bound": 36220549737939,
+    "returned_v_bits": 46,
+    "following_polynomial_square_v_bound": 680611821799624871113233,
+    "following_polynomial_square_v_bits": 80,
+    "stages": {
+      "clock_window": true,
+      "integer_carry_range": true,
+      "assembled_decode": true,
+      "all_modulus_drops_decode": true,
+      "returned_decode": true,
+      "following_polynomial_square_decode": true,
+      "following_product_phase_reentry": true
+    },
+    "conditional_arithmetic_closure": true,
+    "first_refusal": null,
+    "stored_polynomial_bytes": 1071644672,
+    "stream_expansion_switches": 1376200,
+    "online_switches": 268550146,
+    "output_batches": 128,
+    "total_switches": 444703746,
+    "single_affine_plaintext_multiply": true,
+    "all_clocks_resident_bytes": 17179869184,
+    "resident_clocks_bytes": 134217728,
+    "stream_stack_upper_bytes": 1056964608,
+    "both_polarities_stack_comparison_bytes": 2113929216,
+    "key_stack_and_clocks_bytes_excluding_contexts_and_scratch": 2262827008,
+    "native_encrypted_execution": false,
+    "practical_resources_admitted": false,
+    "sparse_source_and_joint_key_security_certified": false,
+    "public_refresh_admitted": false
+  },
+  "passing_candidates": 1400,
+  "dense_source_refusal": {
+    "parameters": {
+      "source_N": 8192,
+      "outer_N": 16384,
+      "source_norm": 8192,
+      "multiplication_norm": 8192,
+      "block": 8192,
+      "raw_bits": 10,
+      "galois_bits": 10,
+      "return_bits": 10,
+      "coordinate": 33,
+      "phase_denominator": 8,
+      "output_batch": 64
+    },
+    "outer_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257
+    ],
+    "outer_q_bits": 241,
+    "work_q_bits": 119,
+    "return_key_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049
+    ],
+    "window2": 278561,
+    "carry_per_coefficient_v_bits": 130,
+    "affine_polynomial_v_bits": 63,
+    "assembled_v_bound": 8619523015289380252955284725379368213479424,
+    "assembled_v_bits": 143,
+    "modulus_drops": [
+      {
+        "special": 1107296257,
+        "remaining_q_bits": 211,
+        "v_bound": 7784297075691623378218721207056222,
+        "v_bits": 113,
+        "decode_fits": true
+      },
+      {
+        "special": 2130706433,
+        "remaining_q_bits": 180,
+        "v_bound": 3653387888227971817561178,
+        "v_bits": 82,
+        "decode_fits": true
+      },
+      {
+        "special": 2113929217,
+        "remaining_q_bits": 149,
+        "v_bound": 1728245673431963,
+        "v_bits": 51,
+        "decode_fits": true
+      },
+      {
+        "special": 1811939329,
+        "remaining_q_bits": 119,
+        "v_bound": 537865683,
+        "v_bits": 30,
+        "decode_fits": true
+      }
+    ],
+    "reduced_v_bits": 30,
+    "returned_v_bound": 36220549737939,
+    "returned_v_bits": 46,
+    "following_polynomial_square_v_bound": 159360431145689565195272193,
+    "following_polynomial_square_v_bits": 88,
+    "stages": {
+      "clock_window": false,
+      "integer_carry_range": false,
+      "assembled_decode": true,
+      "all_modulus_drops_decode": true,
+      "returned_decode": true,
+      "following_polynomial_square_decode": true,
+      "following_product_phase_reentry": true
+    },
+    "conditional_arithmetic_closure": false,
+    "first_refusal": "clock_window",
+    "stored_polynomial_bytes": 1071644672,
+    "stream_expansion_switches": 1376200,
+    "online_switches": 268550146,
+    "output_batches": 128,
+    "total_switches": 444703746,
+    "single_affine_plaintext_multiply": true,
+    "all_clocks_resident_bytes": 17179869184,
+    "resident_clocks_bytes": 134217728,
+    "stream_stack_upper_bytes": 1056964608,
+    "both_polarities_stack_comparison_bytes": 2113929216,
+    "key_stack_and_clocks_bytes_excluding_contexts_and_scratch": 2262827008,
+    "native_encrypted_execution": false,
+    "practical_resources_admitted": false,
+    "sparse_source_and_joint_key_security_certified": false,
+    "public_refresh_admitted": false
+  },
+  "search": {
+    "raw_bits": [
+      1,
+      10
+    ],
+    "galois_bits": [
+      1,
+      10
+    ],
+    "block_powers": [
+      0,
+      13
+    ]
+  },
+  "outer_dense_parameter_screen": {
+    "N8192": "refused, 97-bit minimum",
+    "N16384": "ScreenedFullModelAgreement, 228 classical/194 hybrid/129 quantum bits"
+  },
+  "public_refresh_admitted": false
+}

@@ -1,0 +1,237 @@
+{
+  "task_id": "OUTER_RING_PUBLIC_RETURN",
+  "status": "conditional_arithmetic_gap_closed_full_goal_open",
+  "source_baseline": "a1f670f0c2ca38d7e4deac4d3975462c01cc6e92",
+  "source_manifest": "artifacts/execution/2026-10-23/outer-ring-return/source_manifest.txt",
+  "source_manifest_sha256": "c453948e232f2114270f24bb4aae3260924d0862dbfcbfa5334bff4ab0b45f6f",
+  "manifest_scope": "Eight changed source/document files; unchanged dependencies bound by baseline.",
+  "checks": {
+    "focused_rust_harness": {
+      "passed": 22,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 153.5,
+      "command": "/tmp/nine65-compact-test.BIinfU/coefficient_slot_gate --include-ignored --nocapture"
+    },
+    "python_public_analysis": {
+      "passed": 20,
+      "failed": 0
+    },
+    "total_passed": 42
+  },
+  "evidence_sha256": {
+    "encrypted-checks.log": "cbabce26eba35d93934c79c339a81b1d734edc4e44a5f1009418203f625a6041",
+    "analysis-checks.log": "c6e1e7fca351972d2046421f6fd0ccae41b165ef5b09bea621a48b33386637ec",
+    "parameter-screen.log": "b5ff3a25268b77fffd81f04fdcadcd90797d956ad1e256208991d2042a7033b9",
+    "public-analysis.json": "291ca62311e2eb03aba29cb847414c5c50522676e44e894636f6694ada8a59f9",
+    "build-provenance.json": "16b90011ae47d7b70894002822a0e7689a8ce03fd2bad139f9e971fc570b451a"
+  },
+  "encrypted_small_context": {
+    "work_N": 16,
+    "outer_N": 32,
+    "explicitly_insecure": true,
+    "source_weight": 2,
+    "source_has_both_signs": true,
+    "work_Q_bits": 119,
+    "outer_Q_bits": 241,
+    "raw_galois_return_bits": 10,
+    "block": 8,
+    "output_batch": 4,
+    "same_precharge_dependent_cycles": 2,
+    "all_coefficients_checked": true,
+    "outer_odd_coefficients_zero_checked": true,
+    "incoming_observed_v_bits": [
+      110,
+      110
+    ],
+    "outer_observed_v_bits": [
+      60,
+      60
+    ],
+    "outer_bound_v_bits": [
+      79,
+      79
+    ],
+    "reduced_observed_v_bits": [
+      19,
+      18
+    ],
+    "reduced_bound_v_bits": [
+      21,
+      21
+    ],
+    "returned_observed_v_bits": [
+      31,
+      31
+    ],
+    "returned_bound_v_bits": [
+      37,
+      37
+    ],
+    "following_polynomial_square_bound_v_bits": [
+      61,
+      61
+    ],
+    "outer_raw_switches": 22816,
+    "return_raw_switches": 4,
+    "carry_omission_corrupt_coefficients": 6,
+    "wrong_key_and_missing_odd_branch_controls": true,
+    "continuation_uses_public_producer_bounds": true
+  },
+  "native_input_geometry": {
+    "actual_work_N": 8192,
+    "actual_clock_N": 16384,
+    "work_Q_bits": 119,
+    "source_weight": 32,
+    "source_security_admitted": false,
+    "actual_public_encryption_and_exact_dense_polynomial_square": true,
+    "all_coefficients_checked": 8192,
+    "source_observed_and_producer_v_bits": 110,
+    "clock_window2": 9281,
+    "observed_hidden_sheets": [
+      -6,
+      -5,
+      -4,
+      -3,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "native_public_preprocessing_executed": true,
+    "native_client_semantics_oracle_only": true,
+    "native_encrypted_clock_or_bootstrap_executed": false,
+    "native_rust_U512_bound_matches_python": true,
+    "native_outer_bound_bits": 143
+  },
+  "native_parameter_screens": {
+    "outer_N8192_Q241": "refused, minimum97 bits",
+    "outer_N16384_Q241": "ScreenedFullModelAgreement",
+    "classical_bits": 228,
+    "hybrid_bits": 194,
+    "quantum_bits": 129,
+    "source_sparse_and_joint_key_security_certified": false
+  },
+  "native_conditional_ledger": {
+    "parameters": {
+      "source_N": 8192,
+      "outer_N": 16384,
+      "source_norm": 32,
+      "multiplication_norm": 32,
+      "block": 8192,
+      "raw_bits": 10,
+      "galois_bits": 10,
+      "return_bits": 10,
+      "coordinate": 33,
+      "phase_denominator": 8,
+      "output_batch": 64
+    },
+    "outer_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257
+    ],
+    "outer_q_bits": 241,
+    "work_q_bits": 119,
+    "return_key_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049
+    ],
+    "window2": 9281,
+    "carry_per_coefficient_v_bits": 130,
+    "affine_polynomial_v_bits": 63,
+    "assembled_v_bound": 8619523015289380252955284725379368213479424,
+    "assembled_v_bits": 143,
+    "modulus_drops": [
+      {
+        "special": 1107296257,
+        "remaining_q_bits": 211,
+        "v_bound": 7784297075691623378218721207056222,
+        "v_bits": 113,
+        "decode_fits": true
+      },
+      {
+        "special": 2130706433,
+        "remaining_q_bits": 180,
+        "v_bound": 3653387888227971817561178,
+        "v_bits": 82,
+        "decode_fits": true
+      },
+      {
+        "special": 2113929217,
+        "remaining_q_bits": 149,
+        "v_bound": 1728245673431963,
+        "v_bits": 51,
+        "decode_fits": true
+      },
+      {
+        "special": 1811939329,
+        "remaining_q_bits": 119,
+        "v_bound": 537865683,
+        "v_bits": 30,
+        "decode_fits": true
+      }
+    ],
+    "reduced_v_bits": 30,
+    "returned_v_bound": 36220549737939,
+    "returned_v_bits": 46,
+    "following_polynomial_square_v_bound": 680611821799624871113233,
+    "following_polynomial_square_v_bits": 80,
+    "stages": {
+      "clock_window": true,
+      "integer_carry_range": true,
+      "assembled_decode": true,
+      "all_modulus_drops_decode": true,
+      "returned_decode": true,
+      "following_polynomial_square_decode": true,
+      "following_product_phase_reentry": true
+    },
+    "conditional_arithmetic_closure": true,
+    "first_refusal": null,
+    "stored_polynomial_bytes": 1071644672,
+    "stream_expansion_switches": 1376200,
+    "online_switches": 268550146,
+    "output_batches": 128,
+    "total_switches": 444703746,
+    "single_affine_plaintext_multiply": true,
+    "all_clocks_resident_bytes": 17179869184,
+    "resident_clocks_bytes": 134217728,
+    "stream_stack_upper_bytes": 1056964608,
+    "both_polarities_stack_comparison_bytes": 2113929216,
+    "key_stack_and_clocks_bytes_excluding_contexts_and_scratch": 2262827008,
+    "native_encrypted_execution": false,
+    "practical_resources_admitted": false,
+    "sparse_source_and_joint_key_security_certified": false,
+    "public_refresh_admitted": false
+  },
+  "initial_native_u128_phase_window_overflow_fixed": true,
+  "runtime_implementation_changed": false,
+  "production_gate_changed": false,
+  "working_modulus_changed": false,
+  "work_key_return_samples_at_outer_modulus": false,
+  "independent_safe_basis_added": false,
+  "external_backend_added": false,
+  "lint_run": false,
+  "hosted_ci_claimed": false,
+  "public_refresh_admitted": false,
+  "goal_complete": false,
+  "unresolved": [
+    "Assessed secure source distribution; default dense source still fails the clock geometry.",
+    "Joint/circular security of precharges and return key relationships.",
+    "Authenticated key/domain/epoch/history and intact S8/Root211 capability integration.",
+    "Measured native encrypted full-source execution with useful latency and actual peak memory.",
+    "Actual native repeated public bootstrap and service integration."
+  ]
+}

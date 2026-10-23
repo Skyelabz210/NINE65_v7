@@ -11,6 +11,12 @@ Implementation: `crates/nine65/tests/research/public_bootstrap_pipeline.rs`,
 a child of the compact-selector integration module. No production API,
 refresh gate, S8 root, or external FHE backend is changed.
 
+Later follow-up: [larger outer ring and reduction before the return switch](OUTER_RING_PUBLIC_RETURN.md)
+changes that ordering and the outer dimension/modulus. Its conditional native
+full-polynomial ledger closes with about1GiB of stored key words; source
+security, native execution and production admission remain open. The200GiB
+search result below is scoped to this earlier Q149/N8192 construction.
+
 ## Residue-only input, without a supplied residual
 
 The input is a real main-Q ciphertext created by public-key encryption and
