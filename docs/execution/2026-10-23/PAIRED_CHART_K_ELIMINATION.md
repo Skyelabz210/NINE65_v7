@@ -62,7 +62,7 @@ e99 = 99*Z99 - M*K = r - M/2.
 
 This is the exact zero response along the integer sheet direction: changing
 `Z99` by one ideal sheet changes `99*Z99` by `M`, which is canceled by
-`M*K`. The source-correlated chart bound is `|e99|<=5313`, strictly inside
+`M*K`. The live source-correlated chart bound is `|e99|<=6849`, strictly inside
 the half-cell `M/2`. That makes `e99` a bounded correction candidate. It does
 not by itself restore the original message or reset ciphertext error; the
 existing return ledger still needs a producer-issued error certificate and
@@ -71,13 +71,13 @@ must pass the following dense multiplication.
 The exact oracle checks every integer `Z99` in `[-16005,16005]` and several
 full `p*M` representative windings. It confirms the quotient, the `2*M+1`
 shortcut, and `|K|<=48`. The wider `Z99` interval alone does not bound the
-centered residual tightly; the source norm and `Q_source/64` phase cap give
+centered residual tightly; the source norm and live `Q_source/16` phase cap give
 
 ```text
-|99*Z99 - M*K| < 99*(96+1)/2 + M/64 = 5313.5,
+|99*Z99 - M*K| < 99*(96+1)/2 + M/16 = 6849.5,
 ```
 
-so its integer magnitude is at most `5313`, strictly below `M/2`.
+so its integer magnitude is at most `6849`, strictly below `M/2`.
 
 ## Adjacent-tray K-Elimination
 
@@ -89,8 +89,8 @@ X = M*K + M/2 + e99
   = A*K + (M/2 + e99 - K),
 ```
 
-and `|e99|<=5313`, `|K|<=48`, the final remainder is strictly inside
-`[11023,21745]`, hence canonical in `[0,A)`. Therefore
+and `|e99|<=6849`, `|K|<=48`, the final remainder is strictly inside
+`[9487,23281]`, hence canonical in `[0,A)`. Therefore
 `floor(X/A)=K` on the admitted source window. Also `2*A=p+1`, so
 `A^(-1)=2 mod p` and
 
@@ -100,9 +100,9 @@ e99 = (X mod A) + K - M/2 mod p.
 ```
 
 This uses a dependent `A` tray in the common `p` encoding and needs no
-signed-centering or carry-sign operation. The exact oracle checks all 10,411
+signed-centering or carry-sign operation. The exact oracle checks all 13,423
 source-correlated chart points, including `K=-48` and `K=48`; observed
-canonical tray residues range from `11038` to `21730`. The proof depends on
+canonical tray residues range from `9553` to `23215`. The proof depends on
 the source-correlated residual bound, not the wider `Z99` interval alone.
 
 A focused Rust fixture now precharges encrypted one-hot chart selectors and
@@ -147,7 +147,7 @@ Set `Y=198*Z99`. Since `e99=99*Z99-M*K` and `p=2*M+1`,
 Y = p*K + (2*e99-K).
 ```
 
-The certified source envelope gives `|2*e99-K| <= 2*5313+48 = 10674 < p/2`.
+The certified source envelope gives `|2*e99-K| <= 2*6849+48 = 13746 < p/2`.
 Thus the centered p residue `w=center(Y mod p)` is exactly `2*e99-K`, and
 `K` is the quotient in `Y=w+p*K`. Modulo the composite tray `A=98=2*7^2`,
 `p=73` and `73^(-1)=47`, so
@@ -157,8 +157,8 @@ K = center_98(47 * ((Y mod 98) - (w mod 98)) mod 98).
 ```
 
 The corridor `|K|<=48<49` makes the centered residue unique. The exact oracle
-checks this identity on all 10,411 source-correlated `Z99` values; the largest
-observed `|w|` is 10,659. Tray 98 uses existing Safe-Basis factors 2 and 7
+checks this identity on all 13,423 source-correlated `Z99` values; the largest
+observed `|w|` is 13,680. Tray 98 uses existing Safe-Basis factors 2 and 7
 and does not add a root. This is an integer identity, not yet an encrypted gate:
 the dense producer still has to bind `Y mod 98` and the centered p residue
 `w mod 98` to one authenticated chart history. Forming `w` requires centering
@@ -187,7 +187,7 @@ K   = k49 - 49*c.
 Here `p^(-1)=47 mod 49`, and `p^(-1)=1 mod 2`. For `|K|<=48`, `c` is one
 exactly when `K` is negative. This reconstructs the signed carry from the
 49-residue and the existing 2-root view. The exact oracle verifies the formula
-for all 10,411 source-correlated chart points and all five carry boundaries.
+for all 13,423 source-correlated chart points and all five carry boundaries.
 
 This factors the residue arithmetic; it does not make signed conversion a
 linear ciphertext operation. The composite route first needs an encrypted

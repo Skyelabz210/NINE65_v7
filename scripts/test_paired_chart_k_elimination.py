@@ -57,7 +57,7 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
 
     def test_source_error_bound_is_strictly_inside_the_half_clock_cell(self):
         bound = source_residual_bound()
-        self.assertEqual(bound, 5_313)
+        self.assertEqual(bound, 6_849)
         self.assertLess(bound, M // 2)
 
     def test_adjacent_m_plus_one_tray_eliminates_signed_carry_on_source_domain(self):
@@ -86,7 +86,7 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
             )
             seen.add(chart["k_centered"])
             checked += 1
-        self.assertEqual(checked, 10_411)
+        self.assertEqual(checked, 13_423)
         self.assertEqual(min(seen), -SOURCE_K_RADIUS)
         self.assertEqual(max(seen), SOURCE_K_RADIUS)
 
@@ -123,7 +123,7 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
                 self.assertEqual(sister["sign_correction_bit"], int(carry < 0))
                 self.assertEqual(sister["k_signed"], carry)
                 checked += 1
-        self.assertEqual(checked, 10_411)
+        self.assertEqual(checked, 13_423)
 
     def test_low_tray_and_eliminated_carry_reconstruct_centered_residual(self):
         checked = 0
@@ -152,7 +152,7 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
             result["adjacent_M_plus_1_tray"]["all_adjacent_tray_checks_pass"]
         )
         self.assertEqual(
-            result["adjacent_M_plus_1_tray"]["source_correlated_checks"], 10_411
+            result["adjacent_M_plus_1_tray"]["source_correlated_checks"], 13_423
         )
         self.assertFalse(
             result["adjacent_M_plus_1_tray"]["dense_same_root_tray_produced"]

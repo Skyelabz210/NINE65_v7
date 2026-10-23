@@ -518,6 +518,52 @@ fn phase_clock_windows_composite_budget_and_dense_refusal() {
 }
 
 #[test]
+fn phase_clock_sparse96_fits_doubled_outer_ring() {
+    // The live sparse-source lift uses Q60, H=96 and V<=Q/16. The batched
+    // chart already moves this source into an outer ring of degree 2*8192.
+    // At that degree, the direct ultradiscrete 99-clock has disjoint lookup
+    // windows and emits the signed carry itself; this is a geometric gate,
+    // not yet a selector-key/noise or return certificate.
+    let q = 998_244_353_i128 * 985_661_441_i128;
+    let n = 16_384;
+    let source_v = q as u128 / 16;
+    let plan = ClockPlan::new(n, 99, q, source_v, 96).unwrap();
+    assert_eq!(plan.twice_window, 13_699);
+    assert!(plan.twice_window < n as u64);
+
+    // |S| < 97Q/2 from H=96 centered source terms plus R0. If |K|=49,
+    // then |S| >= 49Q - V, which is strictly larger than 97Q/2 at V<=Q/16.
+    // This proves the admitted signed carry support is exactly [-48,48].
+    assert!(2 * (49 * q as u128 - source_v) > 97 * q as u128);
+    assert!(99 > 2 * 48);
+
+    // Exhaust every output rotation and every admitted signed carry. Every
+    // rotation in a carry's certified error window must decode to that same
+    // carry; no client-side centering or polynomial quotient is involved.
+    let size = (2 * n) as i64;
+    let period = 99 * size;
+    let mut checked = 0;
+    let mut checks_per_carry = [0usize; 97];
+    for k in -48_i64..=48 {
+        for rotation in 0..size {
+            let distance = (99 * rotation - size * k).rem_euclid(period);
+            let distance = distance.min(period - distance);
+            if 2 * distance <= plan.twice_window as i64 {
+                assert_eq!(plan.lookup(rotation), k, "carry={k}, rotation={rotation}");
+                checked += 1;
+                checks_per_carry[(k + 48) as usize] += 1;
+            }
+        }
+    }
+    assert!(checks_per_carry.iter().all(|&count| count > 0));
+    assert!(matches!(
+        ClockPlan::new(n, 99, q, source_v, 8_192),
+        Err(Refusal::Window)
+    ));
+    eprintln!("sparse96 doubled-ring clock: Q60, V/Q<=1/16, degree{n}, coordinate99, window2={}, all 97 carry plateaus verified across {checked} rotations; dense-source window refused; selector-key, encrypted full-ring noise, return and admission gates remain open", plan.twice_window);
+}
+
+#[test]
 fn phase_clock_public_quantization_distinguishes_native_alias() {
     let step = SOURCE_Q / (13 * ROOT_PRODUCT) * (13 * ROOT_PRODUCT);
     let weight = step / 2;

@@ -17,7 +17,7 @@ ADJACENT_CARRY_TRAY_INV_MOD_P = pow(ADJACENT_CARRY_TRAY, -1, P)
 Z99_ABS_BOUND = 16_005
 SOURCE_K_RADIUS = 48
 SOURCE_NORM = 96
-SOURCE_PHASE_DENOMINATOR = 64
+SOURCE_PHASE_DENOMINATOR = 16
 Z99_TRAY = 99
 COMPOSITE_CARRY_TRAY = 98  # 2 * 7^2; 2 and 7 are already in the Safe Basis.
 P_MOD_COMPOSITE_TRAY = P % COMPOSITE_CARRY_TRAY
@@ -94,8 +94,8 @@ def lift(z99: int) -> dict:
 def adjacent_tray_carry(z99: int) -> dict:
     """Recover the chart carry through the adjacent M+1 tray.
 
-    Let X=99*Z99+M/2=MK+M/2+e. On the source-correlated domain,
-    |e|<=5313 and |K|<=48, so
+    Let X=99*Z99+M/2=MK+M/2+e. On the live Q/16 source-correlated domain,
+    |e|<=6849 and |K|<=48, so
 
         X=(M+1)*K + (M/2+e-K)
 
@@ -141,9 +141,9 @@ def adjacent_tray_carry(z99: int) -> dict:
 
 
 def source_residual_bound() -> int:
-    """Strict integer bound from 97 half-round errors plus Q/64 phase."""
+    """Strict integer bound from 97 half-round errors plus Q/16 phase."""
     strict_real_bound_twice = Z99_TRAY * (SOURCE_NORM + 1) + 2 * M // SOURCE_PHASE_DENOMINATOR
-    # |e| < (99*97/2) + M/64 = 5313.5, hence integer |e| <= 5313.
+    # |e| < (99*97/2) + M/16 = 6849.5, hence integer |e| <= 6849.
     return (strict_real_bound_twice - 1) // 2
 
 

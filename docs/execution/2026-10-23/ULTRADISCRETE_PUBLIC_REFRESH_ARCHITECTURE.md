@@ -23,7 +23,7 @@ refresh.
 | `K_phase,j` | Actual Phase 1 correction between combined BFV rounding and independent component rounding, coefficient `j` | For `S=R0+R1*s` and `Q_s=Q_level`, it is exactly `K_s=round(S/Q_s)`; a deterministic N32 oracle and native N8192 batched-chart cross-check verify the identity and chart map | Turn the encrypted 99-chart value into `K_phase` without a clear quotient/readout, then connect it to the public Phase 1 consumer |
 | `r=X mod M`, or `a=X mod (M+1)` | Optional low tray for a K-Elimination readout of `X=99*Z99+M/2` | `M=32768`; adjacent-tray integer identity and bounded encrypted consumer are checked; native `Z99` already has a direct quotient map to `K_phase` | If used, produce its same-root common-`p` view with a producer-issued bound; it is not needed for the direct quotient identity |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
-| `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; source-correlated bound is 5313 | Establish a correction consumer and a full error/reset certificate |
+| `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
 | `V_out` | Error after residual correction and return | Existing scale-locked probes carry source residual into the return | Must pass return, next dense multiplication, and a second refresh with issued bounds |
 
 When `S` is the exact component-rounding residual polynomial
@@ -91,6 +91,50 @@ connect the result to the residual return and prove error reduction through
 the next product and a second refresh. Keep the public gate closed until the
 encrypted readout and return certificates pass.
 
+## Direct ultradiscrete carry route at the doubled degree
+
+There is a second route to the same `K_phase` that avoids applying a
+polynomial quotient to `Z99`. The existing native phase clock directly selects
+the signed carry from the public component residuals and the encrypted sparse
+source trits. For source degree8192, use its already present doubled outer
+degree16384, source period
+`Q60=998244353*985661441`, source error cap `V<=Q60/16`, and odd clock
+coordinate99. Its certified twice-window is
+
+```text
+ceil(2*(2*16384)*(Q60/16)/Q60) + 99*(96+1)
+= 4096 + 9603
+= 13699 < 16384.
+```
+
+The source phase bound proves the carry radius: `|S| < 97Q/2`, while
+`|K|=49` and `|g|<=Q/16` would imply
+`|S| >= 49Q-Q/16 = 783Q/16 > 776Q/16 = 97Q/2`. Thus `K` is in `[-48,48]`;
+`99 > 2*48` makes its signed representative unique. The integer geometry
+exhausts every admitted rotation on all 97 carry plateaus and refuses the
+dense-source window. This identifies the same hidden sheet as the native
+`Z99` identity and supplies an ultradiscrete lookup geometry without a
+polynomial quotient.
+
+This resolves the *geometric support/window* question, not the encrypted
+readout gate. The current test helper `evaluate_clock` accepts one scalar
+phase and one weight per source-key position, then returns that coefficient's
+constant-term readout; it is not a batched 8192-coefficient evaluator. Naively
+calling it once per target coefficient with 8192 hidden source positions
+would make 67,108,864 selector steps. Each step performs four tensor
+relinearization calls, or 268,435,456 calls before the final traces. The
+batched 99/121 chart remains the CRAM path: its open gate is to consume the
+chart through same-history phase-locked sister trays and K-Elimination, with
+the correction and return proved end to end. The direct clock geometry does
+not replace that gate or prove an efficient selector precharge, online
+switches, ciphertext noise, return, repeat, or admission.
+
+The exact Python mirror checked all 97 plateaus, 13,423 admitted rotations,
+and the dense-source refusal. The matching Rust geometry test is added, but
+its Cargo test target could not be rebuilt in this run because the filesystem
+was 99% full; `rustfmt --check` passed. Do not treat the Rust test as executed
+evidence.
+
 ## Candidate CRAM-native gate
 
 The exact chart oracle establishes `X=99*Z99+M/2`. With the original low tray,
@@ -125,7 +169,7 @@ An alternative small tray follows from `Y=198*Z99=p*K99+(2*e99-K99)`.
 The source-correlated bound puts the second term inside the centered p cell.
 With `A=98=2*7^2`, `p mod A=73`, and `73^(-1)=47`, the residues `Y mod A`
 and `center(Y mod p) mod A` determine `K99 mod A`; `|K99|<=48` selects its
-unique centered lift. The exact oracle checks this over 10,411 source-correlated
+unique centered lift. The exact oracle checks this over 13,423 source-correlated
 chart points. A bounded encrypted selector fixture checks the modular
 identity at five carries, but centers the result only in its client oracle.
 It avoids requiring the full `2^15` low tray, but still requires both
@@ -135,7 +179,7 @@ residue used to form `w`, and a signed lift from `K mod 98` into the p ring.
 Splitting the composite tray as `98=49*2` gives an exact signed reconstruction:
 `k49=((Y49-w49)*47) mod 49`, `k2=(Y2-w2) mod 2`,
 `c=(k49-k2) mod 2`, and `K=k49-49*c`. In the bounded carry range, `c=1`
-exactly for negative `K`. The integer oracle checks this on the same 10,411
+exactly for negative `K`. The integer oracle checks this on the same 13,423
 source-correlated points. This isolates the residue-to-signed lift on the
 composite route: after centering `Y mod p`, the encrypted path must produce
 canonical `k49` and its parity, then apply the correction to obtain `K mod p`.
@@ -158,8 +202,8 @@ relabeled as `Enc_p(r)`. The composite-98 alternative instead needs same-history
 and p residue views, encrypted centering of `Y mod p`, and the
 canonicalization/sign gate described above.
 
-Even after that bridge, `e99` is not a claimed refresh reset. Its 5313 bound
-is a bound on the chart residual under the source-correlation assumptions;
+Even after that bridge, `e99` is not a claimed refresh reset. Its 6849 bound
+is a bound on the chart residual under the live `Q/16` source-correlation assumptions;
 it is not a producer-issued bound for the whole return path and next product.
 The return consumer must prove how this residual reconstructs the original
 plaintext while reducing the incoming phase error. The scale-locked tray
