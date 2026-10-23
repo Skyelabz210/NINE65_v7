@@ -3,6 +3,9 @@
 
 use super::*;
 
+#[path = "batched_lift_phase.rs"]
+mod batched_lift_phase;
+
 fn balanced_source(n: usize, weight: usize, rng: &mut ShadowHarvester) -> Vec<i8> {
     assert!(weight > 0 && weight <= n && weight % 2 == 0 && n.is_power_of_two());
     let mut selected = BTreeSet::new();

@@ -36,6 +36,15 @@ faster in an isolated probe. The remaining444.7million-switch circuit is
 still impractical; a structurally smaller batched integer-lift circuit is
 the next runtime requirement. Production gates remain closed.
 
+The [batched paired-lift initializer](../2026-10-23/BATCHED_PAIRED_LIFT.md)
+now initializes native encrypted composite99/121 views from one source
+precharge using public polynomial multiplication. An integer chart with
+determinant -1 retains both views while cancelling K and the ideal fractional source
+term in its bounded D coordinate. All8192 coefficients and exact encrypted
+reconstructions pass. The nonlinear batched map from (U,D) to the integer
+lift remains unimplemented; linear U still carries a g/Q term. Root/history,
+joint security and native repeated refresh remain open.
+
 ## Finding and decision
 
 **A complete, admitted native public refresh has not been obtained.** The

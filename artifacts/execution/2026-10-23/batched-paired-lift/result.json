@@ -1,0 +1,191 @@
+{
+  "task_id": "NATIVE_BATCHED_PAIRED_K_ELIMINATION_CHART",
+  "status": "bounded_native_encrypted_lift_chart_initialized_nonlinear_gate_open",
+  "source_baseline": "9c045a1df03898dc1a477c3f38189f5cffa4c14e",
+  "source_manifest_sha256": "3d4cfeab057721a7d89db8a473cda6618aea4d1528ba6199154a8746b633d0d1",
+  "checks": {
+    "focused_rust_harness": {
+      "passed": 30,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 131.26
+    },
+    "python_analysis": {
+      "passed": 31,
+      "failed": 0,
+      "suites": 5
+    },
+    "total_local_unit_checks_passed": 61,
+    "additional_isolated_paired_tests": {
+      "passed": 2,
+      "failed": 0,
+      "runtime_seconds": 21.03
+    },
+    "complete_public_rounding_cell_audit_passed": true
+  },
+  "native_chart": {
+    "source_N": 8192,
+    "outer_N": 16384,
+    "source_Q_bits": 60,
+    "outer_Q_bits": 241,
+    "plaintext": 65537,
+    "source_balanced_weight": 96,
+    "source_phase_denominator": 16,
+    "clock_M": 32768,
+    "coordinates": [
+      99,
+      121
+    ],
+    "clock_window2": [
+      13699,
+      15833
+    ],
+    "shared_factor": 11,
+    "source_support_visible_to_evaluator": false,
+    "original_views_all_coefficients_checked": 8192,
+    "odd_zeros_per_view_checked": 8192,
+    "integer_chart_matrix": [
+      [
+        -4,
+        5
+      ],
+      [
+        9,
+        -11
+      ]
+    ],
+    "determinant": -1,
+    "inverse_integer_matrix": [
+      [
+        11,
+        5
+      ],
+      [
+        9,
+        4
+      ]
+    ],
+    "both_original_ciphertexts_reconstructed_bit_identically": true,
+    "chart_constructible_by_signed_public_polynomial_products": 2,
+    "source_precharge_reused": true,
+    "D_eliminates_ideal_K_and_fractional_g_over_Q": true,
+    "U_retains_ideal_g_over_Q": true,
+    "D_observed_magnitude": 142,
+    "D_implemented_bound": 970,
+    "U_observed_magnitude": 344,
+    "U_bound": 1843,
+    "D_public_weight_l1": 27429,
+    "U_public_weight_l1": 61964,
+    "D_observed_direct_triangle_error_bits": [
+      39,
+      49,
+      57
+    ],
+    "U_observed_bound_error_bits": [
+      40,
+      50
+    ],
+    "Z99_cyclic_wrap_omission_wrong_coefficients": 7995,
+    "Z121_cyclic_wrap_omission_wrong_coefficients": 7992,
+    "same_D_different_K_negative_controls": 6824,
+    "isolated_D_direct_multiply_add_seconds": 0.168637,
+    "isolated_U_direct_multiply_add_seconds": 0.21095,
+    "isolated_times_exclude_precharge_setup_preprocessing_client_and_nonlinear_gate": true,
+    "client_checks_integer_K_map": true,
+    "encrypted_integer_K_map_executed": false
+  },
+  "public_cell_audit": {
+    "scope": "Public piecewise rounding cells and exact integer chart; no encrypted nonlinear gate",
+    "M": 32768,
+    "coordinates": [
+      99,
+      121
+    ],
+    "common_factor": 11,
+    "integer_matrix": [
+      [
+        -4,
+        5
+      ],
+      [
+        9,
+        -11
+      ]
+    ],
+    "determinant": -1,
+    "inverse_integer_matrix": [
+      [
+        11,
+        5
+      ],
+      [
+        9,
+        4
+      ]
+    ],
+    "checked_moduli": [
+      2,
+      11,
+      22,
+      99,
+      121,
+      198,
+      65537
+    ],
+    "public_component_pairs": 571,
+    "component_D_range": [
+      -9,
+      9
+    ],
+    "component_U_range": [
+      -19,
+      19
+    ],
+    "source_norm": 96,
+    "source_sum_D_sharp_public_cell_bound": 873,
+    "implemented_D_bound_conservative": 970,
+    "source_sum_U_public_cell_bound": 1843,
+    "component_period": 1089,
+    "D_period_increment": 0,
+    "U_period_increment": 1,
+    "quarter_grid_covers_all_rounding_cells": true,
+    "coverage_reason": "All rounding discontinuities are half-integers; quarter-integer probes include each boundary and each open cell, with no floats.",
+    "ideal_U_scale": "M/1089*(K+g/Q_source)",
+    "ideal_D_scale": 0,
+    "integer_K_extracted": false,
+    "production_admitted": false
+  },
+  "source_attack_evidence": {
+    "configured_searches_complete": 24,
+    "minimum_tested_bits": 161.33894242424722,
+    "workflow_run": 39932572679,
+    "report_path": "artifacts/execution/2026-10-23/shared-digit-kernel/complete-balanced96_low_q.json",
+    "report_sha256": "65fc15bc1f77504b2c15550a5db8658ebbd6db29731cc82c7d65c638ea21b5cb",
+    "all_model_and_joint_key_coverage_complete": false
+  },
+  "evidence_sha256": {
+    "analysis-checks.log": "5553978d8caeddbf05df917366ab5ad097d475319aa91183f54849ebd82d3157",
+    "build-provenance.json": "1b48b0eaa0033da38c994bd488178799d73f64de3676c6f98be09245aecccb27",
+    "encrypted-checks.log": "bd9138155d70cf32c260d0047931066dd2d71df76379774b6592caa5456981ab",
+    "paired-checks.log": "85f0fa208c21fbaca07d91d5fe9c7c9c467aeb7c946ae62f498fc3c1267822f0",
+    "public-chart.json": "98a7be0b28c72c5496bf46aef08a35c231c9bed148d6f59407790ddfbcbe079a",
+    "source_manifest.txt": "3d4cfeab057721a7d89db8a473cda6618aea4d1528ba6199154a8746b633d0d1"
+  },
+  "runtime_library_changed": false,
+  "additional_safe_basis_root": false,
+  "persistent_ciphertext_modulus_changed": false,
+  "intact_root_history_admission_integrated": false,
+  "external_backend_added": false,
+  "lint_run": false,
+  "production_gate_changed": false,
+  "native_encrypted_chart_initialized": true,
+  "native_encrypted_bootstrap_executed": false,
+  "public_refresh_admitted": false,
+  "goal_complete": false,
+  "next_requirements": [
+    "Derive and evaluate a complete encrypted batched nonlinear integer lift on the actual reachable (U,D) domain, with complete budget and encoding proof.",
+    "Connect return/useful next operation and repeated native refresh with measured resources.",
+    "Finish missing source attack-model and joint/KDM security coverage.",
+    "Authenticated key/domain/epoch/history and intact S8/Root211 capability integration."
+  ]
+}

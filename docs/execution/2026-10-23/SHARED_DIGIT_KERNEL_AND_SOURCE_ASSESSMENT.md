@@ -1,5 +1,11 @@
 # Exact shared digit transforms and completed configured source searches
 
+The subsequent [batched paired lift](BATCHED_PAIRED_LIFT.md) now constructs
+native encrypted Z99/Z121 and an invertible integer (U,D) chart for all8192
+coefficients together. Its shared-precharge K-elimination residual has a
+49-bit direct bound instead of the57-bit separate-view bound. The encrypted
+nonlinear chart map and native repeated bootstrap remain open.
+
 The research raw-switch engine now reuses each small-digit transform across
 all main ciphertext primes. Every component of the native N16384/eight-prime
 switch agrees bit for bit with the previous main-prime implementation.

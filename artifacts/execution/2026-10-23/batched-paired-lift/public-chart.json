@@ -1,0 +1,61 @@
+{
+  "scope": "Public piecewise rounding cells and exact integer chart; no encrypted nonlinear gate",
+  "M": 32768,
+  "coordinates": [
+    99,
+    121
+  ],
+  "common_factor": 11,
+  "integer_matrix": [
+    [
+      -4,
+      5
+    ],
+    [
+      9,
+      -11
+    ]
+  ],
+  "determinant": -1,
+  "inverse_integer_matrix": [
+    [
+      11,
+      5
+    ],
+    [
+      9,
+      4
+    ]
+  ],
+  "checked_moduli": [
+    2,
+    11,
+    22,
+    99,
+    121,
+    198,
+    65537
+  ],
+  "public_component_pairs": 571,
+  "component_D_range": [
+    -9,
+    9
+  ],
+  "component_U_range": [
+    -19,
+    19
+  ],
+  "source_norm": 96,
+  "source_sum_D_sharp_public_cell_bound": 873,
+  "implemented_D_bound_conservative": 970,
+  "source_sum_U_public_cell_bound": 1843,
+  "component_period": 1089,
+  "D_period_increment": 0,
+  "U_period_increment": 1,
+  "quarter_grid_covers_all_rounding_cells": true,
+  "coverage_reason": "All rounding discontinuities are half-integers; quarter-integer probes include each boundary and each open cell, with no floats.",
+  "ideal_U_scale": "M/1089*(K+g/Q_source)",
+  "ideal_D_scale": 0,
+  "integer_K_extracted": false,
+  "production_admitted": false
+}

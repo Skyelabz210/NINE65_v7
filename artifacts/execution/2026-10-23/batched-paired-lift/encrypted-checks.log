@@ -1,0 +1,71 @@
+
+running 30 tests
+dense local CRAM carry gate: N=8, all coefficients checked, each has its own residual pair; direct ring square negative control fails as expected; insecure toy only
+test encrypted_slot_bridge_applies_dense_cram_ternary_carry_gate ... ok
+encrypted coefficientwise digit gate: N=8, 2 BSGS transforms × 8 diagonal terms using 4 Galois keys, degree=17, output checked at every coefficient; insecure toy only
+test encrypted_slot_bridge_applies_jacobian_digit_gate_to_dense_coefficients ... ok
+test encrypted_tropical_lift_consumes_paired_coordinates_without_slot_transforms ... ok
+test phase_clock_compaction::phase_clock_compact_cached_transform_is_negacyclic_not_cyclic ... ok
+N=8192 coefficient/slot transform: direct=8191 Galois keys (47.99 GiB); BSGS baby=128 giant=64 keys=190 (1.11 GiB); 12 gadget digits/lane-set; diagonal multiply/add count remains N per transform; estimates exclude metadata
+test bsgs_native_slot_bridge_cost_is_explicitly_too_large ... ok
+compact raw selector: 14 derived boolean controls, positive/negative/zero positions and full-polynomial payloads correct; both derived-column errors charged
+test phase_clock_compaction::phase_clock_compact_raw_columns_preserve_boolean_controls_and_charge_derived_error ... ok
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::outer_ring_even_phase_identity_includes_cross_term_and_negacyclic_wrap ... ok
+native input/clock geometry: workN8192, clockN16384, actual full-mask public encryption and exact dense polynomial square, all8192 coefficient messages and hidden-sheet windows agree, source H32 UNADMITTED, incoming Vbits=110, producer bound bits=110, window=9281, sheets={-6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6}; CLIENT semantic oracle only, no native encrypted clock/bootstrap execution
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::outer_ring_native_preprocessing_covers_all_real_source_coefficients ... ok
+outer ring public return: cycle=0, INSECURE workN16/outerN32, Q119/Q241, source weight2, all16 coefficients/positions; incoming Vbits=110, outer observed/bound=60/79, reduced=19/21, returned=31/37, following polynomial square bound=61; no return key above work Q
+outer ring public return: cycle=1, INSECURE workN16/outerN32, Q119/Q241, source weight2, all16 coefficients/positions; incoming Vbits=110, outer observed/bound=60/79, reduced=18/21, returned=31/37, following polynomial square bound=61; no return key above work Q
+outer ring public return: same precharge reused twice, batch=4, outer raw switches=22816, return raw switches=4, carry omission corrupts 6 coefficients; wrong-key and omitted cross-term controls fail; full native admission remains FALSE
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::outer_ring_reduce_before_switch_recovers_full_polynomial_and_repeats ... ok
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::outer_ring_return_requires_larger_dimension_for_published_outer_tuple ... ok
+encrypted batch lift phase: sourceN16/outerN32, sourceH2, composite9; ONE signed public polynomial multiplication, all16 z coefficients and all16 odd zeros correct, source support hidden from evaluator, signed |z| observed/bound=8/12, V observed/bound=34/37, public weight l1=21, native evaluator time=0.000212s, sheets={-1, 0}, cyclic-wrap omission corrupts 10 z values; clear client checks integer map only, nonlinear encrypted lift gate NOT implemented
+encrypted batch lift phase: sourceN16/outerN32, sourceH2, composite7; ONE signed public polynomial multiplication, all16 z coefficients and all16 odd zeros correct, source support hidden from evaluator, signed |z| observed/bound=10/15, V observed/bound=35/37, public weight l1=29, native evaluator time=0.000183s, sheets={-1, 0}, cyclic-wrap omission corrupts 10 z values; clear client checks integer map only, nonlinear encrypted lift gate NOT implemented
+encrypted paired K-elimination: sourceN16, coordinates=[9, 7], common factor=1, 9*Z0-7*Z1 cancels both ideal K and fractional g/Q; all16 coefficients/odd zeros correct, direct public-weight construction BIT-IDENTICAL to correlated encrypted difference; |D| observed/bound=16/24, residual weight l1=40, V observed/direct/triangle bits=35/38/41, direct evaluator time=0.000135s; same residual/different K controls=1, bounded PAIRED state initialized, encrypted integer K extraction/refresh NOT implemented
+encrypted unimodular lift chart: sourceN16, U=4*Z0+-3*Z1, D=9*Z0-7*Z1, determinant=-1; BOTH original ciphertexts recovered BIT-IDENTICALLY, no division or extra Safe Basis; U ideal scale M/63, |U| observed/bound=7/9, U weight l1=17, V observed/bound=34/37, direct U evaluator time=0.000412s; two signed public polynomial products construct (U,D), encrypted nonlinear chart lift and native repeated refresh remain OPEN
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::batched_lift_phase_is_negacyclic_and_has_an_unambiguous_integer_domain ... ok
+encrypted batch lift phase: sourceN8192/outerN16384, sourceH96, composite99; ONE signed public polynomial multiplication, all8192 z coefficients and all8192 odd zeros correct, source support hidden from evaluator, signed |z| observed/bound=3327/16005, V observed/bound=44/53, public weight l1=672453, native evaluator time=0.223079s, sheets={-9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, cyclic-wrap omission corrupts 7995 z values; clear client checks integer map only, nonlinear encrypted lift gate NOT implemented
+encrypted batch lift phase: sourceN8192/outerN16384, sourceH96, composite121; ONE signed public polynomial multiplication, all8192 z coefficients and all8192 odd zeros correct, source support hidden from evaluator, signed |z| observed/bound=2728/13095, V observed/bound=44/53, public weight l1=550168, native evaluator time=0.175904s, sheets={-9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, cyclic-wrap omission corrupts 7992 z values; clear client checks integer map only, nonlinear encrypted lift gate NOT implemented
+encrypted paired K-elimination: sourceN8192, coordinates=[99, 121], common factor=11, 9*Z0-11*Z1 cancels both ideal K and fractional g/Q; all8192 coefficients/odd zeros correct, direct public-weight construction BIT-IDENTICAL to correlated encrypted difference; |D| observed/bound=142/970, residual weight l1=27429, V observed/direct/triangle bits=39/49/57, direct evaluator time=0.228647s; same residual/different K controls=6824, bounded PAIRED state initialized, encrypted integer K extraction/refresh NOT implemented
+encrypted unimodular lift chart: sourceN8192, U=-4*Z0+5*Z1, D=9*Z0-11*Z1, determinant=-1; BOTH original ciphertexts recovered BIT-IDENTICALLY, no division or extra Safe Basis; U ideal scale M/1089, |U| observed/bound=344/1843, U weight l1=61964, V observed/bound=40/50, direct U evaluator time=0.258982s; two signed public polynomial products construct (U,D), encrypted nonlinear chart lift and native repeated refresh remain OPEN
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::batched_lift_phase_native_constructs_all_source_coefficients_together ... ok
+test phase_clock_compaction::phase_clock_compact_full_position_source_recovers_message_and_following_square has been running for over 60 seconds
+native dense-work/source transform: N8192 workQ119/sourceQ60, original ternary norm=5448, balanced sourceH96, actual public encryption/dense square/modulus drops/key switch, all8192 messages correct; original Vbits=114, source observed/bound=56/56, composite99 window=13699, sheets={-11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}; geometry checked by CLIENT only, no native encrypted clock; source security/admission FALSE
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::sparse_source_native_transform_preserves_dense_work_polynomial_and_clock_geometry ... ok
+dense-work source encapsulation: cycle=0, INSECURE workN16/outerN32, workQ119/sourceQ60/outerQ241, actual original key norm=11, source norm2; incoming Vbits=110, prepared source observed/bound=51/51, returned observed/bound=31/37, all16 coefficients correct, no source-key samples at Q119
+compact full-position clock: N=64, frame=0, all 64 public nonzero weights processed, private source weight2, block16, raw/galois radix2bits, native-Q119 sheet=1, message=24141, observed Vbits=42, bound Vbits=69, following message square correct
+compact full-position clock: N=64, frame=1, all 64 public nonzero weights processed, private source weight2, block16, raw/galois radix2bits, native-Q119 sheet=0, message=43525, observed Vbits=49, bound Vbits=69, following message square correct
+compact key reuse: stored polynomial words=6553600 bytes, 2 message recoveries and 2 dependent squares, raw switches=31116
+test phase_clock_compaction::phase_clock_compact_full_position_source_recovers_message_and_following_square ... ok
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::sparse_source_sampler_and_actual_source_period_are_explicit ... ok
+dense-work source encapsulation: cycle=1, INSECURE workN16/outerN32, workQ119/sourceQ60/outerQ241, actual original key norm=11, source norm2; incoming Vbits=110, prepared source observed/bound=51/51, returned observed/bound=31/37, all16 coefficients correct, no source-key samples at Q119
+dense-work source encapsulation: same complete precharge reused for two cycles and final square; carry omission corrupts 8 coefficients; source security/native bootstrap admission remain FALSE
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::sparse_source_public_transform_closes_two_dense_work_refresh_cycles ... ok
+test phase_clock_compaction::public_bootstrap_pipeline::phase_clock_prefix_outer_tuple_clears_existing_dense_parameter_screen ... ok
+test phase_clock_compaction::public_bootstrap_pipeline::phase_clock_public_modulus_drop_matches_wide_client_rounding ... ok
+test phase_clock_compaction::public_bootstrap_pipeline::phase_clock_residue_preprocessing_matches_wide_client_at_endpoints_and_boundaries ... ok
+test phase_clock_compaction::small_digit_convolution::auxiliary_field_certificate_and_wide_product_boundaries ... ok
+native raw-switch exact comparison: N=16384, lanes=8, rows=28, integer bound=821210941134733312, coefficient words/key=7340032, all components bit-identical; main-prime transforms=240, auxiliary transforms=44, main median=1.179750s, auxiliary median=0.499875s, ratio=2.360; three repetitions, public random rows only, NOT encrypted bootstrap timing
+test phase_clock_compaction::small_digit_convolution::auxiliary_native_raw_switch_matches_all_main_prime_components ... ok
+test phase_clock_compaction::small_digit_convolution::auxiliary_negacyclic_transform_matches_signed_schoolbook ... ok
+test tropical_chart_transition::composite_chart_checks_units_and_exhausts_the_local_boundary_map ... ok
+sequential re-evaluation negative control: second crossing ideal-grid error=126 bits, Q=119 bits
+tropical chart transitions: all 117 chart/two-trit states; single-step crossings=6, two-step crossings=8; 30 dependent squares; observed scaled-error bits [C1,g1,K1,square1,C2,g2,K2,square2]=[88, 92, 88, 98, 86, 90, 86, 96], Q=119 bits; insecure N=8 period-13 toy
+test tropical_chart_transition::encrypted_chart_updates_compose_two_hidden_trit_increments ... ok
+test tropical_chart_transition::local_composite_chart_does_not_supply_native_dense_slot_geometry ... ok
+encrypted source initialization: 20 coefficients, 2 full negacyclic sources, nonzero sheets=13, <=13 remainder channels + one winding, depth=3, products=6832
+observed V bits [chart,winding,paired winding,dependent square]=[50, 49, 56, 59], Qbits=119
+test tropical_cocycle_state::encrypted_cocycle_state_builds_weighted_source_chart_without_chart_oracle ... ok
+composite 2/11: both encrypted collision histories and dependent squares pass at t=22, without plaintext roots or factorial inverses
+test tropical_cocycle_state::encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots ... ok
+native state preflight: period 348959453350711275087786864768188417 exceeds 4096 channels; no native initializer admitted
+small-chart alias: identical period-13/S8 state, native sheets 0 and 1; two public weights=174479726675355637543893432357610800, hidden trits (0,0) versus (1,1), centered native phases 0 versus -52966817
+test tropical_cocycle_state::fixed_remainder_state_refuses_native_period_before_keys_or_ciphertext_work ... ok
+cocycle state: 3645 clear assignments, five payload rings, balanced/sequential agreement, <=13 remainder channels
+test tropical_cocycle_state::lifted_remainder_cocycle_initializes_chart_and_preserves_associativity ... ok
+full polynomial pipeline: cycle=0, N=32 INSECURE, all32 coefficients/all32 hidden selector positions, incoming Vbits=110, outer observed/bound=47/68, returned observed/bound=17/37, following product observed/bound=35/63, source-key return and polynomial square correct
+full polynomial pipeline: cycle=1, N=32 INSECURE, all32 coefficients/all32 hidden selector positions, incoming Vbits=110, outer observed/bound=47/68, returned observed/bound=16/37, following product observed/bound=36/63, source-key return and polynomial square correct
+full polynomial pipeline: same precharge reused for 2 dependent cycles, carry omission corrupts 22 coefficients, wrong-key return refused by client, 44674 raw switches; native public refresh admission remains FALSE
+test phase_clock_compaction::public_bootstrap_pipeline::phase_clock_full_polynomial_public_return_and_two_dependent_refresh_cycles ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 131.26s
+
