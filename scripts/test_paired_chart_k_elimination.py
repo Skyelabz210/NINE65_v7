@@ -13,6 +13,7 @@ from paired_chart_k_elimination import (
     k_eliminate_quotient,
     lift,
     report,
+    scale_locked_carry,
     source_residual_bound,
 )
 
@@ -99,6 +100,26 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             adjacent_tray_carry(outside)
 
+    def test_composite_scale_locked_rounding_covers_the_full_source_window(self):
+        checked = 0
+        carries = set()
+        for z99 in range(-16_005, 16_006):
+            chart = lift(z99)
+            if abs(chart["centered_residual"]) > source_residual_bound():
+                continue
+            locked = scale_locked_carry(z99)
+            self.assertEqual(locked["p_view_carry"], chart["k_centered"])
+            self.assertEqual(
+                locked["e99_minus_K"],
+                chart["centered_residual"] - chart["k_centered"],
+            )
+            self.assertGreater(locked["rounding_margin_numerator"], 0)
+            carries.add(locked["p_view_carry"])
+            checked += 1
+        self.assertEqual(checked, 13_423)
+        self.assertEqual(min(carries), -SOURCE_K_RADIUS)
+        self.assertEqual(max(carries), SOURCE_K_RADIUS)
+
     def test_composite_98_tray_recovers_the_bounded_carry(self):
         checked = 0
         for z99 in range(-16_005, 16_006):
@@ -151,6 +172,13 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         self.assertTrue(
             result["adjacent_M_plus_1_tray"]["all_adjacent_tray_checks_pass"]
         )
+        self.assertTrue(
+            result["composite_scale_locked_quotient"]["all_scale_locked_checks_pass"]
+        )
+        self.assertEqual(
+            result["composite_scale_locked_quotient"]["source_correlated_checks"],
+            13_423,
+        )
         self.assertEqual(
             result["adjacent_M_plus_1_tray"]["source_correlated_checks"], 13_423
         )
@@ -165,7 +193,7 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         )
         self.assertFalse(result["centered_chart_residual"]["refresh_reset_proved"])
         self.assertFalse(result["public_refresh_admitted"])
-        self.assertIn("dense-source tray producer", result["unclosed_encrypted_obligation"])
+        self.assertIn("next dense multiply", result["unclosed_encrypted_obligation"])
 
 
 if __name__ == "__main__":

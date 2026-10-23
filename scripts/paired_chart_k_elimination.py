@@ -19,6 +19,8 @@ SOURCE_K_RADIUS = 48
 SOURCE_NORM = 96
 SOURCE_PHASE_DENOMINATOR = 16
 Z99_TRAY = 99
+SCALE_LOCKED_FACTOR = M + 1
+COMPOSITE_SCALE_T = P * SCALE_LOCKED_FACTOR
 COMPOSITE_CARRY_TRAY = 98  # 2 * 7^2; 2 and 7 are already in the Safe Basis.
 P_MOD_COMPOSITE_TRAY = P % COMPOSITE_CARRY_TRAY
 P_INV_MOD_COMPOSITE_TRAY = pow(P_MOD_COMPOSITE_TRAY, -1, COMPOSITE_CARRY_TRAY)
@@ -140,6 +142,42 @@ def adjacent_tray_carry(z99: int) -> dict:
     }
 
 
+def scale_locked_carry(z99: int) -> dict:
+    """Recover K from 99*Z99 at the composite BFV plaintext scale T=p*(M+1).
+
+    The chart relation is 99*Z99=(M+1)*K+(e99-K). Interpreting that valid
+    T-scale phase under p rounds by M+1. If the T-scale ciphertext error is
+    below Q/2, its additional p-view error is below 1/(2*(M+1)).
+    """
+    result = lift(z99)
+    k = result["k_centered"]
+    e = result["centered_residual"]
+    if abs(e) > source_residual_bound() or abs(k) > SOURCE_K_RADIUS:
+        raise ValueError("chart point lies outside the certified source window")
+
+    x = Z99_TRAY * z99
+    residual = x - SCALE_LOCKED_FACTOR * k
+    if residual != e - k:
+        raise AssertionError("composite scale residual does not equal e99-K")
+    if 2 * abs(residual) + 1 >= SCALE_LOCKED_FACTOR:
+        raise ValueError("composite scale cannot uniquely round the carry")
+    if 2 * abs(x) >= COMPOSITE_SCALE_T:
+        raise ValueError("chart integer is not in the signed composite plaintext cell")
+
+    p_view = nearest_quotient(P * x, COMPOSITE_SCALE_T)
+    if p_view != k:
+        raise AssertionError("composite BFV scale does not decode to the chart carry")
+    return {
+        "plaintext_T": COMPOSITE_SCALE_T,
+        "factor_A": SCALE_LOCKED_FACTOR,
+        "x": x,
+        "e99_minus_K": residual,
+        "p_view_carry": p_view,
+        "expected_carry": k,
+        "rounding_margin_numerator": SCALE_LOCKED_FACTOR - 2 * abs(residual) - 1,
+    }
+
+
 def source_residual_bound() -> int:
     """Strict integer bound from 97 half-round errors plus Q/16 phase."""
     strict_real_bound_twice = Z99_TRAY * (SOURCE_NORM + 1) + 2 * M // SOURCE_PHASE_DENOMINATOR
@@ -253,6 +291,10 @@ def report() -> dict:
     # K-elimination: e=99*Z99-M*K=(X mod M)-M/2. Restrict this check to the
     # source-correlated residual envelope, not the wider Z99 interval alone.
     residual_checks = 0
+    scale_locked_checks = 0
+    scale_locked_max_residual = 0
+    scale_locked_min_margin = SCALE_LOCKED_FACTOR
+    scale_locked_carries = set()
     composite_checks = 0
     adjacent_checks = 0
     adjacent_remainder_min = M
@@ -264,6 +306,15 @@ def report() -> dict:
             if result["centered_residual"] != result["residual_from_low_tray"]:
                 raise AssertionError(f"residual mismatch at Z99={z99}: {result}")
             residual_checks += 1
+            locked = scale_locked_carry(z99)
+            scale_locked_checks += 1
+            scale_locked_max_residual = max(
+                scale_locked_max_residual, abs(locked["e99_minus_K"])
+            )
+            scale_locked_min_margin = min(
+                scale_locked_min_margin, locked["rounding_margin_numerator"]
+            )
+            scale_locked_carries.add(locked["p_view_carry"])
             adjacent = adjacent_tray_carry(z99)
             if adjacent["k_signed"] != result["k_centered"]:
                 raise AssertionError(f"adjacent-tray carry mismatch at Z99={z99}")
@@ -303,8 +354,9 @@ def report() -> dict:
 
     return {
         "scope": (
-            "clear exact quotient oracle plus a bounded one-root encrypted-selector "
-            "K-Elimination fixture; production dense chart gate remains open"
+            "clear exact quotient oracle and bounded encrypted-selector fixtures; "
+            "composite scale-lock algebra is exhaustively checked here, with dense "
+            "ciphertext producer evidence in the Rust research integration"
         ),
         "chart": {
             "integer_jacobian": [[-4, 5], [9, -11]],
@@ -357,6 +409,22 @@ def report() -> dict:
             ),
             "dense_same_root_trays_produced": False,
         },
+        "composite_scale_locked_quotient": {
+            "plaintext_p": P,
+            "plaintext_T": COMPOSITE_SCALE_T,
+            "factor_A": SCALE_LOCKED_FACTOR,
+            "clock_modulus_M": M,
+            "identity": "99*Z99 = A*K + (e99-K), A=M+1",
+            "p_decoder": "round(p*phase_T/Q)=round(99*Z99/A)=K",
+            "valid_T_phase_noise_term": "<1/(2*A) when |T*phase-Q*x|<Q/2",
+            "rounding_certificate": "2*|e99-K|+1 < A",
+            "source_correlated_checks": scale_locked_checks,
+            "all_scale_locked_checks_pass": scale_locked_checks == residual_checks,
+            "max_abs_e99_minus_K": scale_locked_max_residual,
+            "minimum_rounding_margin_numerator": scale_locked_min_margin,
+            "carry_values_in_domain": [min(scale_locked_carries), max(scale_locked_carries)],
+            "requires_low_tray_or_extra_safe_basis_root": False,
+        },
         "composite_sister_trays_49_2": {
             "factorization": "98=49*2",
             "p_inverse_mod_49": P_INV_MOD_ODD_TRAY,
@@ -399,15 +467,15 @@ def report() -> dict:
             "refresh_reset_proved": False,
         },
         "unclosed_encrypted_obligation": (
-            "The adjacent M+1 route needs an authenticated dense producer to "
-            "issue X mod (M+1) from the same chart/root/history in the common "
-            "p encoding; the exact source-correlated bound then makes the "
-            "quotient K directly and the p-ring formula needs no centering. "
-            "The direct M route has the analogous missing same-root low view. "
-            "The composite-98 route additionally needs same-root Y mod 98 and "
-            "Y mod p views, encrypted centering of the p residue w, and a "
-            "signed lift to p. None has a dense-source tray producer, and the "
-            "correction/return error certificate is absent."
+            "The T=p*(M+1) scale-locked carry readout passes native encrypted "
+            "producer tests at N=512 and N=8192, and affine+K Phase 1 recovers "
+            "the source plaintext across all 16,384 native doubled-ring "
+            "coefficients. Production still needs a typed capability binding "
+            "the T precharge to source key/history/level and issued phase/noise "
+            "bounds, plus the canonical residual return, next dense multiply, "
+            "second refresh, and admission. "
+            "The M, M+1, and composite-98 tray alternatives remain separate "
+            "designs; their production same-history tray producers are absent."
         ),
         "public_refresh_admitted": False,
     }

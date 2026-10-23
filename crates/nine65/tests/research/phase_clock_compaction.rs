@@ -259,7 +259,7 @@ impl<'a> Engine<'a> {
         ) else {
             return self.cache_main_prime(shape, rows, beta);
         };
-        assert_eq!(rows.len(), shape.digits.iter().sum());
+        assert_eq!(rows.len(), shape.digits.iter().sum::<usize>());
         let plan = small_digit_convolution::Plan::shared(self.ctx.n);
         let encode = |p: &RNSPolynomial| {
             ordinary(self.ctx, p)
@@ -287,7 +287,7 @@ impl<'a> Engine<'a> {
     }
 
     fn cache_main_prime(&self, shape: &Shape, rows: &[RNSCiphertext], beta: u128) -> RawKey {
-        assert_eq!(rows.len(), shape.digits.iter().sum());
+        assert_eq!(rows.len(), shape.digits.iter().sum::<usize>());
         let encode = |p: &RNSPolynomial| {
             ordinary(self.ctx, p)
                 .iter()

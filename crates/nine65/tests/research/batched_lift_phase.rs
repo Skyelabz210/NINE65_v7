@@ -1,6 +1,7 @@
 //! Research alternative input to a batched integer-lift gate. Construct the
 //! entire encrypted z polynomial with ONE public polynomial multiplication.
-//! This does not evaluate the nonlinear integer-lift gate or admit refresh.
+//! A composite plaintext scale can turn 99*z into the encrypted Phase 1 carry
+//! by ordinary BFV decoding under p; this still does not admit refresh.
 
 use super::*;
 
@@ -87,6 +88,15 @@ fn mul_mod_u128(mut left: u128, mut right: u128, modulus: u128) -> u128 {
     product
 }
 
+// Composite BFV plaintext scale for the direct tropical quotient readout.
+// T = p*A, with p=65,537 and A=32,769. The four 2N-compatible RNS primes
+// are all above T, so this experiment also satisfies SecureConfig's t<q_i
+// shape restriction instead of relying on a raw-context bypass.
+const PHASE_P: u64 = 65_537;
+const COMPOSITE_CHART_T: u64 = PHASE_P * 32_769;
+const COMPOSITE_CHART_PRIMES: [u64; 4] =
+    [2_148_728_833, 2_148_794_369, 2_149_810_177, 2_150_072_321];
+
 fn centered_component_residual(
     ctx: &RNSFHEContext,
     component: &[Vec<u64>],
@@ -156,7 +166,7 @@ impl BatchedPhase<'_> {
     // Evaluator: no source support, phase measurement, clock sheet or key.
     fn apply(&self, input: &RNSCiphertext, input_v: u128) -> BatchedPhaseOutput {
         assert_eq!(self.outer.n, 2 * self.source.n);
-        assert_eq!(self.outer.t, self.source.t);
+        assert_eq!(self.outer.t % self.source.t, 0);
         assert_eq!(input.num_primes, self.source.config.primes.len());
         assert_eq!(
             self.encrypted_source.num_primes,
@@ -221,7 +231,13 @@ impl BatchedPhase<'_> {
     }
 }
 
-fn check_batched_phase(n: usize, weight: usize, coordinate: usize, phase_denominator: u128) {
+fn check_batched_phase(
+    n: usize,
+    weight: usize,
+    coordinate: usize,
+    phase_denominator: u128,
+    chart_t: u64,
+) {
     use std::time::Instant;
     let mut config = SecureConfig::secure_128().into_config();
     config.n = n;
@@ -232,7 +248,8 @@ fn check_batched_phase(n: usize, weight: usize, coordinate: usize, phase_denomin
     let source = RNSFHEContext::try_new(&source_config).unwrap();
     let mut outer_config = config;
     outer_config.n = 2 * n;
-    outer_config.primes.extend(EXTRA);
+    outer_config.primes = COMPOSITE_CHART_PRIMES.to_vec();
+    outer_config.t = chart_t;
     let outer = RNSFHEContext::try_new(&outer_config).unwrap();
     let source_q: u128 = source.config.primes.iter().map(|&q| q as u128).product();
     let mut rng = ShadowHarvester::with_seed(0x4241_5443_4850_4841 + n as u64);
@@ -369,8 +386,8 @@ fn check_batched_phase(n: usize, weight: usize, coordinate: usize, phase_denomin
                 } else {
                     chart_z_residue
                 };
-                let chart_carry = (99 * chart_z + outer.n as i128)
-                    .div_euclid((2 * outer.n) as i128);
+                let chart_carry =
+                    (99 * chart_z + outer.n as i128).div_euclid((2 * outer.n) as i128);
                 let (phase_carry, centered_phase) = phase1[j];
                 assert_eq!(chart_carry, phase_carry, "K99 / K_phase at j={j}");
                 assert!(centered_phase.unsigned_abs() <= (source_q / 2) as u128);
@@ -378,8 +395,117 @@ fn check_batched_phase(n: usize, weight: usize, coordinate: usize, phase_denomin
             }
             assert_eq!(chart_checked, n);
             eprintln!("tropical chart bridge: sourceN{n}, H={weight}, all {chart_checked} coefficients satisfy K99=round((R0+R1*s)/Q)=K_phase; |K|<={carry_radius}, g=center_Q(S); same live source ciphertext and residual history");
+
+            if chart_t != source.t {
+                let quotient_scale = 2 * outer.n as u64 + 1;
+                assert_eq!(chart_t, PHASE_P * quotient_scale);
+                let reader_config = nine65::params::FHEConfig {
+                    t: source.t,
+                    ..outer.config.clone()
+                };
+                let reader = RNSFHEContext::try_new(&reader_config).unwrap();
+                let scaled = signed_scale(&outer, &output.ciphertext, coordinate as i64);
+                let mut expected_scaled = vec![0; outer.n];
+                let mut expected_carry = vec![0; outer.n];
+                let mut affine_weights = vec![0i64; outer.n];
+                let mut affine_constant = vec![0i64; outer.n];
+                let mut expected_affine_t = vec![0; outer.n];
+                let mut expected_affine_p = vec![0; outer.n];
+                let mut expected_corrected = vec![0; outer.n];
+                let mut max_residual = 0u128;
+                for j in 0..n {
+                    let z = expected[2 * j] as i128;
+                    let z = if z > chart_t as i128 / 2 {
+                        z - chart_t as i128
+                    } else {
+                        z
+                    };
+                    let x = coordinate as i128 * z;
+                    let (k, _) = phase1[j];
+                    let residual = x - quotient_scale as i128 * k;
+                    max_residual = max_residual.max(residual.unsigned_abs());
+                    assert!(2 * residual.unsigned_abs() + 1 < quotient_scale as u128);
+                    assert!(x.unsigned_abs() * 2 < chart_t as u128);
+                    expected_scaled[2 * j] = x.rem_euclid(chart_t as i128) as u64;
+                    expected_carry[2 * j] = k.rem_euclid(source.t as i128) as u64;
+                    let center_t = |value: u128| {
+                        let residue = (value % chart_t as u128) as i128;
+                        if residue > chart_t as i128 / 2 {
+                            residue - chart_t as i128
+                        } else {
+                            residue
+                        }
+                    };
+                    affine_constant[2 * j] =
+                        center_t(quotient_scale as u128 * public0.a[j] as u128) as i64;
+                    affine_weights[2 * j] =
+                        center_t(quotient_scale as u128 * public1.a[j] as u128) as i64;
+                    let affine = (public0.a[j] as i128
+                        + trits
+                            .iter()
+                            .enumerate()
+                            .map(|(i, &secret_digit)| {
+                                let source_index = (j + n - i) % n;
+                                let sign = if i > j { -1i128 } else { 1i128 };
+                                sign * public1.a[source_index] as i128 * secret_digit as i128
+                            })
+                            .sum::<i128>())
+                    .rem_euclid(source.t as i128);
+                    expected_affine_p[2 * j] = affine as u64;
+                    expected_affine_t[2 * j] =
+                        (quotient_scale as u128 * affine as u128 % chart_t as u128) as u64;
+                    expected_corrected[2 * j] = message[j];
+                }
+                let scaled_bound = output.bound * coordinate as u128;
+                let q_outer = U512::product_u64s(&outer.config.primes);
+                assert!(words(U512::from_u128(scaled_bound).mul_u128(2)) < words(q_outer));
+                let observed_t = observe_polynomial(&outer, &scaled, &outer_keys, &expected_scaled);
+                assert!(observed_t <= scaled_bound);
+                let observed_p = decrypt_coefficients(&reader, &scaled, &outer_keys);
+                assert_eq!(observed_p, expected_carry);
+
+                // Scale the affine componentwise Phase 1 result by A in the
+                // same T ciphertext space. Interpreting both it and 99*Z99
+                // under p makes their sum affine+K, the original plaintext.
+                let affine_ciphertext = add(
+                    &outer,
+                    &multiply_signed_plain(&outer, &evaluator.encrypted_source, &affine_weights),
+                    &public_plain(&outer, &affine_constant),
+                );
+                let affine_l1 = affine_weights
+                    .iter()
+                    .map(|weight| weight.unsigned_abs() as u128)
+                    .sum::<u128>();
+                let affine_b0_max = affine_constant
+                    .iter()
+                    .map(|weight| weight.unsigned_abs() as u128)
+                    .max()
+                    .unwrap();
+                let remainder_t = U512::product_u64s(&outer.config.primes).mod_u64(chart_t) as u128;
+                let affine_bound = precharge_v * affine_l1 + remainder_t * affine_b0_max;
+                assert!(words(U512::from_u128(affine_bound).mul_u128(2)) < words(q_outer));
+                let affine_observed =
+                    observe_polynomial(&outer, &affine_ciphertext, &outer_keys, &expected_affine_t);
+                assert!(affine_observed <= affine_bound);
+                assert_eq!(
+                    decrypt_coefficients(&reader, &affine_ciphertext, &outer_keys),
+                    expected_affine_p
+                );
+
+                let corrected = add(&outer, &affine_ciphertext, &scaled);
+                let corrected_bound = affine_bound + scaled_bound;
+                assert!(words(U512::from_u128(corrected_bound).mul_u128(2)) < words(q_outer));
+                let corrected_p = decrypt_coefficients(&reader, &corrected, &outer_keys);
+                assert_eq!(corrected_p, expected_corrected);
+                eprintln!("composite scale-locked Phase 1: T={chart_t}=p*A, p={}, A={}, same RNS basis/key/history; all {} doubled-ring coefficients including odd zeros decode as K and affine+K recovers the original plaintext; max |99*z-A*K|={}, 99*V<Q/2, V_affine+V_carry<Q/2; evaluator adds/scales ciphertexts only",source.t,quotient_scale,outer.n,max_residual);
+            }
         }
-        eprintln!("encrypted batch lift phase: sourceN{n}/outerN{}, sourceH{weight}, composite{coordinate}; ONE signed public polynomial multiplication, all{n} z coefficients and all{n} odd zeros correct, source support hidden from evaluator, signed |z| observed/bound={maximum}/{}, V observed/bound={}/{}, public weight l1={}, native evaluator time={seconds:.6}s, sheets={sheets:?}, cyclic-wrap omission corrupts {wrong_cyclic} z values; clear client checks integer map only, nonlinear encrypted lift gate NOT implemented",outer.n,output.integer_coefficient_limit,bits(observed),bits(output.bound),output.public_polynomial_l1);
+        let readout_status = if coordinate == 99 && chart_t != source.t {
+            "scale-locked K and corrected Phase 1 readout passed"
+        } else {
+            "encrypted K readout not evaluated for this chart"
+        };
+        eprintln!("encrypted batch lift phase: sourceN{n}/outerN{}, sourceH{weight}, composite{coordinate}; ONE signed public polynomial multiplication, all{n} z coefficients and all{n} odd zeros correct, source support hidden from evaluator, signed |z| observed/bound={maximum}/{}, V observed/bound={}/{}, public weight l1={}, native evaluator time={seconds:.6}s, sheets={sheets:?}, cyclic-wrap omission corrupts {wrong_cyclic} z values; {readout_status}",outer.n,output.integer_coefficient_limit,bits(observed),bits(output.bound),output.public_polynomial_l1);
         views.push((output, expected, public0, public1));
     }
     // The 99/121 views share factor11. 9*z99-11*z121 cancels
@@ -527,16 +653,34 @@ fn check_batched_phase(n: usize, weight: usize, coordinate: usize, phase_denomin
         .max()
         .unwrap();
     assert!(u_max <= u_limit);
-    eprintln!("encrypted unimodular lift chart: sourceN{n}, U={u0}*Z0+{u1}*Z1, D={a}*Z0-{b}*Z1, determinant=-1; BOTH original ciphertexts recovered BIT-IDENTICALLY, no division or extra Safe Basis; U ideal scale M/{}, |U| observed/bound={u_max}/{u_limit}, U weight l1={u_l1}, V observed/bound={}/{}, direct U evaluator time={u_seconds:.6}s; two signed public polynomial products construct (U,D), encrypted nonlinear chart lift and native repeated refresh remain OPEN",gcd*a as usize*b as usize,bits(u_observed),bits(u_bound));
+    eprintln!("encrypted unimodular lift chart: sourceN{n}, U={u0}*Z0+{u1}*Z1, D={a}*Z0-{b}*Z1, determinant=-1; BOTH original ciphertexts recovered BIT-IDENTICALLY, no division or extra Safe Basis; U ideal scale M/{}, |U| observed/bound={u_max}/{u_limit}, U weight l1={u_l1}, V observed/bound={}/{}, direct U evaluator time={u_seconds:.6}s; two signed public polynomial products construct (U,D), corrected return and native repeated refresh remain OPEN",gcd*a as usize*b as usize,bits(u_observed),bits(u_bound));
 }
 
 #[test]
 fn batched_lift_phase_is_negacyclic_and_has_an_unambiguous_integer_domain() {
-    check_batched_phase(16, 2, 9, 128);
+    check_batched_phase(16, 2, 9, 128, PHASE_P);
+}
+
+#[test]
+fn composite_scale_locked_tropical_chart_decodes_the_encrypted_carry() {
+    check_batched_phase(512, 2, 99, 128, PHASE_P * (4 * 512 + 1));
+}
+
+#[test]
+fn composite_chart_outer_chain_passes_the_128_bit_screen() {
+    let screened = SecureConfig::custom_screened(
+        16_384,
+        COMPOSITE_CHART_PRIMES.to_vec(),
+        COMPOSITE_CHART_T,
+        3,
+        128,
+    )
+    .expect("composite chart scale must retain a screened 128-bit outer chain");
+    assert!(screened.is_production_safe_under_all_models());
 }
 
 #[test]
 #[ignore = "opt-in native encrypted batch PHASE construction; nonlinear lift gate remains open"]
 fn batched_lift_phase_native_constructs_all_source_coefficients_together() {
-    check_batched_phase(8192, 96, 99, 16);
+    check_batched_phase(8192, 96, 99, 16, COMPOSITE_CHART_T);
 }

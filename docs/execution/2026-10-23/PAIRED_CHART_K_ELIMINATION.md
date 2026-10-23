@@ -2,8 +2,9 @@
 
 This connects the native 99/121 chart to the tropical covering-space lift in
 [the 2026-10-22 K-Elimination analysis](../2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md).
-It is a candidate gate replacing the fixed-polynomial LUT; its encrypted
-paired-residue producer is not implemented.
+It now has a direct composite-scale BFV readout experiment: the dense native
+99 chart decodes to the hidden Phase 1 carry under the p view without making a
+low tray. The corrected return and production capability are still open.
 
 The complete variable and execution map is in
 [the public-refresh architecture note](ULTRADISCRETE_PUBLIC_REFRESH_ARCHITECTURE.md).
@@ -199,39 +200,50 @@ implementation. The current Rust selector probe checks the 98 residue only
 and centers `w` and K in its client oracle; it does not test either encrypted
 decision.
 
-## Encrypted gap to bridge
+## Composite scale-locked quotient readout
 
-The direct formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same
-plaintext-`p` encoding and derived from the same authenticated chart state.
-Then `2*(r-X_p)` produces K directly in `Z_p`; negative K already has its
-ordinary residue encoding, and `99*Z99-M*K` is linear ciphertext arithmetic.
-The adjacent `M+1` identity above is an equivalent tray choice whose inverse
-modulo `p` is `2`; its source-correlated remainder also gives `e99` linearly.
-The existing `Root211::attach` research capability already permits an arbitrary
-`M=32768` view and encodes every view in the root's common plaintext ring;
-its composition tests use a bounded selector state. The unresolved step is
-producing either low view from the actual dense public chart while retaining the
-same root/history capability and a useful producer error bound. An independent
-ciphertext modulo `M` or `M+1` cannot be relabeled as a `p` ciphertext.
-Re-decoding one `p*M` ciphertext under `p` also leaves the source residual as
-ciphertext error. The composite route instead needs same-history 49/2 and p
-views, encrypted centering of the p residue, and canonicalization of the
-49-residue with its signed correction bit. The exact 49/2 identity supplies
-none of these encrypted operations.
+The low-tray producer can be avoided by using the chart's adjacent integer
+scale directly. Let `A=M+1`, `T=p*A`, and `x=99*Z99`. On the source-correlated
+window,
 
-The native batched chart now closes a different part of this gap: for its
-source-weight-96, `Q/16` envelope, an all-coefficient independent oracle proves
-`round(99*Z99/32768)=K_phase` on the actual 99/121 outputs. The integer carry
-identity no longer depends on treating `K99` as a separate chart carry. It
-still does not emit an encrypted quotient. The `M+1` tray remains a candidate
-encrypted K-Elimination consumer if its producer can attach that same-history
-low view to the common root.
+```text
+x = A*K + (e99-K),
+|e99-K| <= 6849+48 = 6897 < A/2.
+```
 
-The next implementation test should either evaluate the bounded integer
-quotient from `Z99` in the common `p` encoding or attach the `M+1` tray to the
-actual 99/121 public chart state through the existing single Safe-Basis
-capability, then compute `K` and `e99`. It must check every coefficient,
-signed carry boundaries, nonzero source noise, the correction consumer, the
-first post-return multiplication, and a second refresh. A failed phase-lock,
-capacity, or noise certificate must refuse before output. Until this passes,
-issue #95 stays open and public refresh remains fail-closed.
+Precharge the same sparse source under plaintext scale `T`, form the encrypted
+99 chart there, and multiply its ciphertext by 99. If `phi_T` is a centered
+decryption phase and `B=|T*phi_T-Q*x|<Q/2` is the issued T-scale error bound,
+decoding those same ciphertext components under `p` gives
+
+```text
+round(p*phi_T/Q) = round(x/A + (T*phi_T-Q*x)/(A*Q)) = K.
+```
+
+The ciphertext-noise contribution is below `1/(2*A)`. The integer margin is
+strict because `2*6897+1=13795 < 32769`; no low residue, centering bit, extra
+Safe-Basis root, clear quotient, or re-encryption is involved. Negative carries
+retain their ordinary `Z_p` encoding.
+
+The Rust integration exercises this with a screened four-prime
+`N_outer=16384` chain and `T=2,147,581,953`. In the native source-weight-96,
+`Q/16` test, the same chart ciphertext decodes to `K_phase` at all 16,384
+doubled-ring coefficients, including odd zeros. Its measured maximum
+`|99*Z99-A*K|` is 2,574; the certificate uses the wider source bound 6,897.
+Scaling the affine componentwise Phase 1 term by `A`, then adding the carry
+ciphertext, also recovers the original source plaintext at every coefficient.
+Both component and carry bounds fit below `Q/2` before p-view decoding. The
+`N=512`, weight-2 test checks the same path. The separate `Root211` and tray
+experiments remain useful alternatives, but are no longer needed to produce
+or apply this carry.
+
+## Remaining encrypted obligations
+
+The scale-locked experiment closes the dense chart's carry readout and affine
+Phase 1 correction under its sparse-source, basis, level, and error contract.
+Production still needs a typed capability that binds the `T` precharge to the
+source key/history and active level and issues its phase/noise certificate.
+The canonical residual return must prove error reduction through the next
+dense multiplication and a second refresh. A failed phase, history, capacity,
+security, or return certificate must refuse before output. Issue #95 remains
+open and production refresh remains fail-closed.

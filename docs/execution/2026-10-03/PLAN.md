@@ -248,6 +248,19 @@ replacement.
 | R02: circuit schedule | Exact polynomial identity, encrypted addition/multiply/relin DAG, bound at every node and operation/resource counts | Change schedule or construction explicitly; do not evaluate a refused plan |
 | R03: admitted candidate | Whole-pipeline capacity + noise + return-key + security inputs for at least one tuple | Keep public refresh disabled and report the smallest failed inequality |
 
+2026-10-23 research update: the sparse-source tropical 99-chart now has a
+composite-scale BFV carry readout. With `A=M+1`, `T=65,537*A`, one `T`-scale
+chart ciphertext for `99*Z99` decodes under the same RNS key at plaintext
+`65,537` to `K_phase`; `2*|e99-K|+1 < A` is the integer margin, and a valid
+T-scale phase error below `Q/2` contributes less than `1/(2*A)`. The native
+N8192/weight-96 test checked all 16,384 doubled-ring coefficients, and the
+same-scale affine-plus-carry Phase 1 consumer recovered the source plaintext
+at all of them; the four-prime outer chain passed the in-tree 128-bit screen
+under both models. This closes the research carry-readout and affine Phase 1
+subgates. Typed source/history/level capability binding, canonical residual
+return and noise contraction, next dense product, repeat refresh, and R03
+admission remain open; keep public refresh disabled.
+
 Run two parameter searches: (A) current CRAM tuples with sharper sound bounds
 and bounded circuits; (B) a wider native tuple based on the working reference.
 This directly tests the owner's tighter-parameter hypothesis. Preserve a
