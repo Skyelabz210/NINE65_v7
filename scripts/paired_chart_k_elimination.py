@@ -302,7 +302,10 @@ def report() -> dict:
             representative_checks += 1
 
     return {
-        "scope": "clear exact quotient oracle; no encrypted K-Elimination gate",
+        "scope": (
+            "clear exact quotient oracle plus a bounded one-root encrypted-selector "
+            "K-Elimination fixture; production dense chart gate remains open"
+        ),
         "chart": {
             "integer_jacobian": [[-4, 5], [9, -11]],
             "determinant": -1,
@@ -332,7 +335,9 @@ def report() -> dict:
             "tray_remainder_bounds": [adjacent_remainder_min, adjacent_remainder_max],
             "source_correlated_checks": adjacent_checks,
             "all_adjacent_tray_checks_pass": adjacent_checks == residual_checks,
-            "bounded_encrypted_selector_fixture": False,
+            "bounded_encrypted_selector_fixture": True,
+            "encrypted_selector_fixture_carries": [-48, -1, 0, 1, 48],
+            "encrypted_selector_fixture_checks": ["K mod p", "e99 mod p"],
             "dense_same_root_tray_produced": False,
         },
         "composite_98_candidate": {

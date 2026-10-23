@@ -104,9 +104,15 @@ signed-centering or carry-sign operation. The exact oracle checks all 10,411
 source-correlated chart points, including `K=-48` and `K=48`; observed
 canonical tray residues range from `11038` to `21730`. The proof depends on
 the source-correlated residual bound, not the wider `Z99` interval alone.
-The encrypted `A` tray has not been issued from the actual dense
-chart/root/history, so this is an exact K-Elimination consumer, not a
-completed refresh gate.
+
+A focused Rust fixture now precharges encrypted one-hot chart selectors and
+uses one `Root211` to attach the `M`, `p`, 98, and `M+1` views. It evaluates
+`K mod p` and `e99 mod p` from the `M+1` pair and checks five carries
+`[-48,-1,0,1,48]`; the existing `M` pair and composite-98 residue are checked
+from the same selected state. This verifies the encrypted consumer arithmetic
+and its admitted noise bound. Its chart rows are a bounded research fixture,
+not the production dense chart producer, so it does not yet establish a
+same-history low tray or an end-to-end refresh gate.
 
 Run the integer oracle with:
 

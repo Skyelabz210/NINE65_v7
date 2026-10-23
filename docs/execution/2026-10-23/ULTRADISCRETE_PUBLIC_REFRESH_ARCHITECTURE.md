@@ -11,28 +11,54 @@ refresh.
 | Symbol | Meaning in the refresh path | Current representation and evidence | Open condition |
 |---|---|---|---|
 | `Q_s` | Source ciphertext modulus product | Native source phase and source-to-outer chart probes | Authenticate exact basis, level, key domain, and source history |
-| `S=R0+R1*s` | Secret-dependent source phase before centered reduction | Public chart producer multiplies public weights by one encrypted source precharge | Bind all chart views to this same source and precharge |
+| `S=R0+R1*s` | Secret-dependent source phase before centered reduction | Research probes form public-weighted views from an encrypted source precharge | Prove the coefficientwise map from the live BFV component-rounding residuals into the chart input; wire that producer into public Phase 1 |
 | `V_s` | Certified source phase error, including encryption, scale floor, and prior work | Source bounds and phase caps are recorded per probe | Carry an enforceable producer certificate through the whole route |
 | `K_s=round(S/Q_s)` | Covering-space sheet / hidden carry | Rank-one tropical theta minimizer; Safe-Basis K-Elimination is tested when paired coordinates are supplied | Produce the required paired coordinates from the live source without a clear lift oracle |
 | `g=S-Q_s*K_s` | Centered torus representative | Defined by the lift; local chart and source phase windows are checked | Preserve or recover its high-encoding representative with bounded error |
 | `T_Q(S)` | Rank-one tropical theta lift | `argmin_n(Q_s*n^2+2*n*S)=-K_s`; finite difference is `-2K_s-b` | No encrypted native theta-difference producer yet |
-| `Z99,Z121,Z143` | Publicly weighted integer chart views | Batched native producer constructs 99/121/143 views from one source precharge | The nonlinear readout and complete encrypted root binding remain open |
+| `Z99,Z121,Z143` | Publicly weighted integer chart views | Batched research probes construct 99/121/143 views from one source precharge | Production dense outputs, their common encrypted root/history, and the nonlinear readout remain open |
 | `U,D,E_chart` | Unimodular chart coordinates | Integer Jacobian has determinant 1; `D,E_chart` cancel ideal sheet direction, `U` retains winding | Information preservation alone does not contract ciphertext error or recover canonical `K_s` |
 | `Phi_121,W_11` | 11-adic ring section and Witt quotient | Native section is invariant under `+11H`; chart identity checked coefficientwise | `W_11` is not the coefficientwise integer lift or canonical residual |
-| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle and bounded one-root selector probe pass, including composite-98 residues for five carries; clear identity covers 10,411 source-correlated points | Same-root dense producer for the common-p low tray is missing; direct K-Elimination needs no separate signed-centering operation |
-| `r=X mod M`, or `a=X mod (M+1)` | Canonical low tray for `X=99*Z99+M/2` | `M=32768`; the adjacent-tray oracle proves `X=(M+1)K+a` on all 10,411 source-correlated chart points, with `(M+1)^(-1)=2 mod p` | Produce either low tray from the actual dense chart/root/history in common `p=65537` encoding with an issued error bound |
+| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle covers 10,411 source-correlated points; one-root encrypted-selector fixture checks `K mod p` and `e99 mod p` for `[-48,-1,0,1,48]`, including the composite-98 residue | Same-root dense producer for the common-p low tray is missing; direct K-Elimination needs no separate signed-centering operation |
+| `K_phase,j` | Actual Phase 1 correction between combined BFV rounding and independent component rounding, coefficient `j` | Defined by the `bootstrap.rs` phase oracle; current public gate refuses because this secret-dependent correction has no producer | Derive and prove the coefficientwise bridge from `K_phase,j` to the chart carry `K99`; the chart fixture does not establish this identity |
+| `r=X mod M`, or `a=X mod (M+1)` | Canonical low tray for `X=99*Z99+M/2` | `M=32768`; the adjacent-tray oracle proves `X=(M+1)K+a` on all 10,411 source-correlated chart points, with `(M+1)^(-1)=2 mod p`; bounded encrypted fixture checks `a` with `X_p` on five carries | Produce the low tray from the actual dense chart/root/history in common `p=65537` encoding with a producer-issued error bound |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; source-correlated bound is 5313 | Establish a correction consumer and a full error/reset certificate |
 | `V_out` | Error after residual correction and return | Existing scale-locked probes carry source residual into the return | Must pass return, next dense multiplication, and a second refresh with issued bounds |
 
-`K_s` and `K99` have the same value only under the chart's certified source
-correlation. The latter is not defined as an independent alias for the former.
+`K_phase,j`, `K_s`, and `K99` are distinct variables. `K_s` and `K99` have
+the same value only under the chart's certified source correlation. The
+paired-chart work has not yet proved that the actual BFV component-rounding
+correction `K_phase,j` equals either one, coefficient by coefficient. The
+`Root211` selector fixture is test-only and starts from a bounded synthetic
+row set; it does not implement a public producer for `K_phase,j` or `Z99`.
 Likewise, `D` and `E_chart` are chart residual coordinates; they are not
 automatically the centered source phase `g` or the return residual `e99`.
 
+## Bridge from the disabled Phase 1 target
+
+`ClockworkBootstrap::modswitch_to_t` independently scales the public `c0` and
+`c1` polynomial coefficients. The Phase 1 test oracle separately forms the
+combined phase with the secret and measures the plaintext-ring difference
+between that combined switch and the component switch. That coefficientwise
+difference is the correction the public evaluator must supply. It depends on
+the source rounding remainders and the secret convolution; a chart carry is a
+candidate representation of it only after an explicit integer map and bound
+are proved for the live ciphertext, active `Q_level`, and every coefficient.
+
+This is the first unresolved bridge, before issuing the dependent `M+1` tray.
+The tray equations show how to consume a valid `Z99` carry. They do not create
+`Z99` from the `c0/c1` rounding remainders, nor authenticate it to the source
+ciphertext. Consequently the current implementation order is: (1) derive the
+source-to-chart map for `K_phase,j`; (2) implement its same-history encrypted
+chart and low-tray producer with a per-coefficient error certificate; (3)
+apply the linear K-Elimination consumer; and (4) prove that residual correction
+reduces the returned ciphertext error through the next product and a second
+refresh. The fail-closed gate must remain closed until all four pass.
+
 ## Candidate CRAM-native gate
 
-The chart establishes `X=99*Z99+M/2`. With the original low tray,
+The exact chart oracle establishes `X=99*Z99+M/2`. With the original low tray,
 `X=r+M*K99`; since `p=2M+1`, `M^(-1)=-2 mod p`, so phase-locked
 common-encoding residues give
 
@@ -53,6 +79,12 @@ These are ordinary linear ciphertext operations after the low residue exists.
 They directly match the
 owner's one-root / dependent-tray design: the root supplies its 2 and 11
 roles; `2^15`, 99, and 121 are dependent views, not new Safe-Basis roots.
+
+The Rust selector fixture confirms both direct carry formulas and the residual
+formula under the same test root for five carries. The fixture starts from a
+bounded synthetic row set selected by encrypted one-hot indicators. It does
+not issue the low residue from the production dense chart source, authenticate
+its history, or supply the production projection error certificate.
 
 An alternative small tray follows from `Y=198*Z99=p*K99+(2*e99-K99)`.
 The source-correlated bound puts the second term inside the centered p cell.

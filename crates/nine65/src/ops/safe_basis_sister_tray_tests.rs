@@ -392,6 +392,16 @@ fn row_for(value: i128, q: i128) -> Row {
     }
 }
 
+fn public_constant(ctx: &RNSFHEContext, value: i64) -> RNSCiphertext {
+    let mut ciphertext = zero(ctx);
+    for (lane, &prime) in ctx.config.primes.iter().enumerate() {
+        let value = (value as i128).rem_euclid(ctx.t as i128) as u128;
+        let encoded = (value * ctx.delta_rns[lane] as u128 % prime as u128) as u64;
+        ciphertext.c0.limbs[lane][0] = ctx.rns.mont_contexts[lane].to_montgomery(encoded);
+    }
+    ciphertext
+}
+
 fn check_transition(runtime: &CarryRuntime<'_>, x: i128, y: i128) {
     let left = row_for(x, runtime.source_q);
     let right = row_for(y, runtime.source_q);
@@ -519,7 +529,8 @@ fn sister_tray_one_root_accepts_arbitrary_views_and_refuses_snapshot_rebinding()
 #[test]
 fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
     const M: i128 = 32_768;
-    const Z99_VALUES: [i128; 5] = [-15_888, -331, 0, 331, 15_888];
+    const ADJACENT: i128 = M + 1;
+    const Z99_VALUES: [i128; 5] = [-15_887, -330, 50, 330, 15_887];
     const CARRIES: [i128; 5] = [-48, -1, 0, 1, 48];
 
     let ctx = RNSFHEContext::try_new(&config_with(6)).unwrap();
@@ -584,6 +595,7 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
         runtime.noise.admit(k_bound, "paired-chart K-Elimination").unwrap();
 
         let selected_k = CARRIES[selected_index];
+        let chart_residual = 99 * Z99_VALUES[selected_index] - M * selected_k;
         let actual_k = decode_at(
             &ctx,
             &k_ciphertext,
@@ -593,6 +605,65 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
         );
         assert_eq!(actual_k[0] as i128, selected_k.rem_euclid(ctx.t as i128));
         assert!(actual_k[1..].iter().all(|&value| value == 0));
+
+        // The adjacent M+1 view is another dependent tray on this same root.
+        // Its source-correlated quotient is exactly K, and 2*(M+1)=p+1.
+        let adjacent = root.attach(&[ADJACENT as u64, ctx.t]).unwrap();
+        root.validate(&adjacent).unwrap();
+        let mut adjacent_k = zero(&ctx);
+        add_scaled(&ctx, &mut adjacent_k, &adjacent.views[1].ciphertext, 2);
+        add_scaled(&ctx, &mut adjacent_k, &adjacent.views[0].ciphertext, -2);
+        let adjacent_k_bound = adjacent.views[0]
+            .bound
+            .add(adjacent.views[1].bound)
+            .mul_u128(2);
+        runtime
+            .noise
+            .admit(adjacent_k_bound, "adjacent-tray K-Elimination")
+            .unwrap();
+        let adjacent_k_value = decode_at(
+            &ctx,
+            &adjacent_k,
+            &keys.secret_key,
+            adjacent_k_bound,
+            0..ctx.n,
+        );
+        assert_eq!(
+            adjacent_k_value[0] as i128,
+            selected_k.rem_euclid(ctx.t as i128)
+        );
+        assert!(adjacent_k_value[1..].iter().all(|&value| value == 0));
+
+        let mut adjacent_residual = zero(&ctx);
+        add_scaled(
+            &ctx,
+            &mut adjacent_residual,
+            &adjacent.views[0].ciphertext,
+            1,
+        );
+        add_scaled(&ctx, &mut adjacent_residual, &adjacent_k, 1);
+        let half_modulus = public_constant(&ctx, (M / 2) as i64);
+        add_scaled(&ctx, &mut adjacent_residual, &half_modulus, -1);
+        let adjacent_residual_bound = adjacent.views[0].bound.add(adjacent_k_bound);
+        runtime
+            .noise
+            .admit(
+                adjacent_residual_bound,
+                "adjacent-tray centered chart residual",
+            )
+            .unwrap();
+        let adjacent_residual_value = decode_at(
+            &ctx,
+            &adjacent_residual,
+            &keys.secret_key,
+            adjacent_residual_bound,
+            0..ctx.n,
+        );
+        assert_eq!(
+            adjacent_residual_value[0] as i128,
+            chart_residual.rem_euclid(ctx.t as i128)
+        );
+        assert!(adjacent_residual_value[1..].iter().all(|&value| value == 0));
 
         // Once K is available, the centered chart residual is linear and
         // independent of the integer sheet: e99=99*Z99-M*K=r-M/2.
@@ -704,7 +775,7 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
             Err(other) => panic!("unexpected follow-up refusal: {other:?}"),
         }
         eprintln!(
-            "paired chart K-Elimination: selected K={selected_k}, e99={expected_residual}, one root, 2^15/98/65537 trays in common plaintext; composite-98 residue checked; dense chart producer remains separate"
+            "paired chart K-Elimination: selected K={selected_k}, e99={expected_residual}, one root, 2^15/98/32769/65537 trays in common plaintext; composite-98 residue checked; dense chart producer remains separate"
         );
     }
 }
