@@ -4,6 +4,12 @@
 
 use super::*;
 
+#[path = "lift_gate_domain.rs"]
+mod lift_gate_domain;
+
+#[path = "triple_lift_chart.rs"]
+mod triple_lift_chart;
+
 fn multiply_signed_plain(
     ctx: &RNSFHEContext,
     input: &RNSCiphertext,

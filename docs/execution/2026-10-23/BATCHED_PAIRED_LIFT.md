@@ -1,5 +1,12 @@
 # Native encrypted initialization of a paired integer lift chart
 
+The [three-view continuation](TRIPLE_LIFT_DOMAIN.md) adds143 on the11 anchor
+and a public chart producer, with native winding bound485 and47-bit error
+certificate. It also verifies464 native source fixtures: a fixed two-view
+LUT on the full norm envelope needs degree273 at capQ/16 or187 at Q/64.
+The three-view nonlinear map remains open; its fixed-polynomial class needs
+at least degree33. Source-history image restrictions are a separate question.
+
 The weighted lift phase is now constructed for all8192 source coefficients
 at once. Composites99 and121 share the11 anchor. Their encrypted views
 produce a bounded K-eliminated residual and an integer coordinate preserving

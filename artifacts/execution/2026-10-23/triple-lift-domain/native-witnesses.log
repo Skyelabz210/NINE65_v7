@@ -1,0 +1,7 @@
+
+running 1 test
+fixed paired-LUT native-domain witnesses: sourceN8192, Q60, H96 balanced, 464 CLIENT ideal ciphertexts; every coefficient/lane phase checked, max |g|=60910155257216065, true residue preprocessing gives Z99=Z121=t, U=t,D=-2t and exact K for every witness; input-independent polynomial restriction only, NOT an encrypted gate
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::lift_gate_domain::paired_lut_native_ciphertexts_realize_both_restriction_domains ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 34 filtered out; finished in 40.74s
+

@@ -1,0 +1,7 @@
+
+running 1 test
+public triple lift chart: sourceN8192/outerN16384, H96, cap Q/64, coordinates=[99, 121, 143], windows=[10627, 12761, 14895]; three public signed polynomial products, ALL8192 coefficients and odd zeros correct, integer matrix/inverse determinant1, original three ciphertexts recovered BIT-IDENTICALLY; magnitudes=[68, 156, 182], public bounds=[485, 873, 1067], weight l1=[11909, 26660, 32729], V observed bits=[38, 39, 40], producer bound bits=[47, 49, 49], full public evaluator time=0.876308s, sheets={-12, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}; native encrypted initializer only, nonlinear chart map/refresh admission OPEN
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::triple_lift_chart::triple_chart_native_public_producer_initializes_11_locked_three_view_state ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 34 filtered out; finished in 51.95s
+

@@ -45,6 +45,16 @@ reconstructions pass. The nonlinear batched map from (U,D) to the integer
 lift remains unimplemented; linear U still carries a g/Q term. Root/history,
 joint security and native repeated refresh remain open.
 
+The [three-view domain continuation](../2026-10-23/TRIPLE_LIFT_DOMAIN.md)
+now initializes99/121/143 through a public producer at source capQ60/64,
+preserving all8192 coefficients and reconstructing all three ciphertexts.
+The winding bound is485. Native valid-source witnesses show that a fixed
+paired LUT over the complete norm envelope needs degree187 even at that
+tighter cap; a public three-view simplex requires degree at least33. The
+current generic dense-outer polynomial ledger refuses that minimum depth.
+These constraints do not cover input-adaptive or producer-image-restricted
+gates. The nonlinear lift and production admission remain open.
+
 ## Finding and decision
 
 **A complete, admitted native public refresh has not been obtained.** The

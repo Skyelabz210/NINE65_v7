@@ -1,0 +1,76 @@
+$ python3 -m unittest discover -s scripts -p test_compact_phase_clock_budget.py -v
+test_compaction_does_not_fix_dense_window (test_compact_phase_clock_budget.CompactClockBudgetTests.test_compaction_does_not_fix_dense_window) ... ok
+test_dependent_reentry_check_requires_a_different_tuple (test_compact_phase_clock_budget.CompactClockBudgetTests.test_dependent_reentry_check_requires_a_different_tuple) ... ok
+test_invalid_metadata_refused (test_compact_phase_clock_budget.CompactClockBudgetTests.test_invalid_metadata_refused) ... ok
+test_naive_compaction_decodes_but_cannot_fund_next_square (test_compact_phase_clock_budget.CompactClockBudgetTests.test_naive_compaction_decodes_but_cannot_fund_next_square) ... ok
+test_native_candidate_charges_all_public_positions (test_compact_phase_clock_budget.CompactClockBudgetTests.test_native_candidate_charges_all_public_positions) ... ok
+test_search_has_no_implicit_security_or_latency_claim (test_compact_phase_clock_budget.CompactClockBudgetTests.test_search_has_no_implicit_security_or_latency_claim) ... ok
+test_small_encrypted_probe_tuple_is_budgeted (test_compact_phase_clock_budget.CompactClockBudgetTests.test_small_encrypted_probe_tuple_is_budgeted) ... ok
+test_unsigned_digit_sum_bound_is_exhaustive_on_small_moduli (test_compact_phase_clock_budget.CompactClockBudgetTests.test_unsigned_digit_sum_bound_is_exhaustive_on_small_moduli) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.607s
+
+OK
+$ python3 -m unittest discover -s scripts -p test_full_polynomial_bootstrap_budget.py -v
+test_full_assembly_cannot_reuse_one_coefficient_error (test_full_polynomial_bootstrap_budget.FullPolynomialBootstrapBudgetTests.test_full_assembly_cannot_reuse_one_coefficient_error) ... ok
+test_full_search_retains_resource_and_security_refusal (test_full_polynomial_bootstrap_budget.FullPolynomialBootstrapBudgetTests.test_full_search_retains_resource_and_security_refusal) ... ok
+test_product_refuses_undecodable_input_and_understated_norm (test_full_polynomial_bootstrap_budget.FullPolynomialBootstrapBudgetTests.test_product_refuses_undecodable_input_and_understated_norm) ... ok
+test_public_probe_bound_matches_rust_ledger (test_full_polynomial_bootstrap_budget.FullPolynomialBootstrapBudgetTests.test_public_probe_bound_matches_rust_ledger) ... ok
+test_sparse_norm_does_not_admit_dense_source (test_full_polynomial_bootstrap_budget.FullPolynomialBootstrapBudgetTests.test_sparse_norm_does_not_admit_dense_source) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.795s
+
+OK
+$ python3 -m unittest discover -s scripts -p test_outer_ring_return_budget.py -v
+test_batching_preserves_noise_and_charges_repeated_expansion (test_outer_ring_return_budget.OuterRingReturnBudgetTests.test_batching_preserves_noise_and_charges_repeated_expansion) ... ok
+test_bound_requires_more_than_128_bits_before_dropping (test_outer_ring_return_budget.OuterRingReturnBudgetTests.test_bound_requires_more_than_128_bits_before_dropping) ... ok
+test_dense_source_is_not_silently_replaced_by_sparse_bound (test_outer_ring_return_budget.OuterRingReturnBudgetTests.test_dense_source_is_not_silently_replaced_by_sparse_bound) ... ok
+test_minimum_key_storage_does_not_claim_full_memory_or_latency (test_outer_ring_return_budget.OuterRingReturnBudgetTests.test_minimum_key_storage_does_not_claim_full_memory_or_latency) ... ok
+test_new_return_closes_polynomial_bound_at_work_q (test_outer_ring_return_budget.OuterRingReturnBudgetTests.test_new_return_closes_polynomial_bound_at_work_q) ... ok
+test_ring_ratio_and_understated_source_norm_refuse (test_outer_ring_return_budget.OuterRingReturnBudgetTests.test_ring_ratio_and_understated_source_norm_refuse) ... ok
+test_tiny_probe_ledger_matches_executed_switches (test_outer_ring_return_budget.OuterRingReturnBudgetTests.test_tiny_probe_ledger_matches_executed_switches) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.476s
+
+OK
+$ python3 -m unittest discover -s scripts -p test_source_encapsulation_budget.py -v
+test_actual_low_modulus_source_covers_original_dense_work_key (test_source_encapsulation_budget.SourceEncapsulationBudgetTests.test_actual_low_modulus_source_covers_original_dense_work_key) ... ok
+test_decoder_limit_is_rejected_before_propagation (test_source_encapsulation_budget.SourceEncapsulationBudgetTests.test_decoder_limit_is_rejected_before_propagation) ... ok
+test_dense_following_product_is_reencapsulated_before_reentry (test_source_encapsulation_budget.SourceEncapsulationBudgetTests.test_dense_following_product_is_reencapsulated_before_reentry) ... ok
+test_maximum_input_boundary_is_exact_under_the_public_envelope (test_source_encapsulation_budget.SourceEncapsulationBudgetTests.test_maximum_input_boundary_is_exact_under_the_public_envelope) ... ok
+test_relabeling_dense_source_without_key_switch_remains_invalid (test_source_encapsulation_budget.SourceEncapsulationBudgetTests.test_relabeling_dense_source_without_key_switch_remains_invalid) ... ok
+test_source_switch_error_is_not_credited_with_sparse_norm (test_source_encapsulation_budget.SourceEncapsulationBudgetTests.test_source_switch_error_is_not_credited_with_sparse_norm) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.018s
+
+OK
+$ python3 -m unittest discover -s scripts -p test_cram_gb_series.py -v
+test_lazy_recurrence_matches_independent_binomial_expansions (test_cram_gb_series.ExactGröbnerSeriesTests.test_lazy_recurrence_matches_independent_binomial_expansions) ... ok
+test_native_bounded_error_model_stops_at_degree_seven (test_cram_gb_series.ExactGröbnerSeriesTests.test_native_bounded_error_model_stops_at_degree_seven) ... ok
+test_noninteger_or_negative_exponents_are_rejected (test_cram_gb_series.ExactGröbnerSeriesTests.test_noninteger_or_negative_exponents_are_rejected) ... ok
+test_pinned_upstream_comparison_inputs_are_nontrivial (test_cram_gb_series.ExactGröbnerSeriesTests.test_pinned_upstream_comparison_inputs_are_nontrivial) ... ok
+test_unchanged_inconclusive_cutoff_is_preserved (test_cram_gb_series.ExactGröbnerSeriesTests.test_unchanged_inconclusive_cutoff_is_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 1.567s
+
+OK
+$ python3 -m unittest discover -s scripts -p test_paired_lift_gate_domain.py -v
+test_adjacent_excluded_points_are_not_smuggled_into_the_domain (test_paired_lift_gate_domain.PairedLiftDomainTests.test_adjacent_excluded_points_are_not_smuggled_into_the_domain) ... ok
+test_exact_restriction_rejects_shallow_fixed_pair_luts (test_paired_lift_gate_domain.PairedLiftDomainTests.test_exact_restriction_rejects_shallow_fixed_pair_luts) ... ok
+test_existing_outer_ledger_refuses_the_minimum_generic_gate_depth (test_paired_lift_gate_domain.PairedLiftDomainTests.test_existing_outer_ledger_refuses_the_minimum_generic_gate_depth) ... ok
+test_interpolator_recovers_an_independently_known_polynomial (test_paired_lift_gate_domain.PairedLiftDomainTests.test_interpolator_recovers_an_independently_known_polynomial) ... ok
+test_third_anchored_tray_distinguishes_the_zero_phase_line (test_paired_lift_gate_domain.PairedLiftDomainTests.test_third_anchored_tray_distinguishes_the_zero_phase_line) ... ok
+test_tighter_source_entry_refuses_old_input_and_funds_reference_reentry (test_paired_lift_gate_domain.PairedLiftDomainTests.test_tighter_source_entry_refuses_old_input_and_funds_reference_reentry) ... ok
+test_triple_chart_keeps_bounded_period_and_integer_winding (test_paired_lift_gate_domain.PairedLiftDomainTests.test_triple_chart_keeps_bounded_period_and_integer_winding) ... ok
+test_triple_zero_phase_simplex_is_unisolvent_without_claiming_a_gate (test_paired_lift_gate_domain.PairedLiftDomainTests.test_triple_zero_phase_simplex_is_unisolvent_without_claiming_a_gate) ... ok
+test_valid_edge_witnesses_use_the_true_native_period_and_phase_cap (test_paired_lift_gate_domain.PairedLiftDomainTests.test_valid_edge_witnesses_use_the_true_native_period_and_phase_cap) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 18.336s
+
+OK
