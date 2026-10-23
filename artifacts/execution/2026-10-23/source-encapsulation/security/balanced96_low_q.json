@@ -1,0 +1,312 @@
+{
+  "profile": "balanced96_low_q",
+  "parameters": {
+    "n": 8192,
+    "positive": 48,
+    "negative": 48,
+    "primes": [
+      998244353,
+      985661441
+    ],
+    "purpose": "internal source candidate",
+    "q": 983930967448092673,
+    "error": {
+      "distribution": "CenteredBinomial",
+      "eta": 3
+    },
+    "samples": "infinity (conservative)",
+    "source_support_public": false,
+    "production_admitted": false
+  },
+  "upstream_revision": "f31b86fe490ab11abb4a69efa13007583791e10a",
+  "rotated_revision": "aa2c40d4eee4551e6fba06c55d7432f6918e1597",
+  "rotated_dependency_revision": "6019056011d10d7e9c30a0d5da2d2f729fbc2eec",
+  "driver_sha256": "c7c6ae7560a94fb004557ae3a1bde744024843d4092dcd17ed010e6fadee4f55",
+  "results": [
+    {
+      "status": "finite",
+      "bits": 497.37210943838284,
+      "floor_bits": 497,
+      "cost": "         rop: \u22482^497.4\n         red: \u22482^497.4\n           \u03b4: 1.001387\n           \u03b2:     1652\n           d:    14894\n         tag:     usvp",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 497.37210943838284, \"floor_bits\": 497, \"cost\": \"         rop: \\u22482^497.4\\n         red: \\u22482^497.4\\n           \\u03b4: 1.001387\\n           \\u03b2:     1652\\n           d:    14894\\n         tag:     usvp\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "usvp",
+      "model": "matzov_classical",
+      "elapsed_seconds": 3.210016091
+    },
+    {
+      "status": "finite",
+      "bits": 495.9054316724073,
+      "floor_bits": 495,
+      "cost": "         rop: \u22482^495.9\n         red: \u22482^495.7\n         svp: \u22482^493.0\n           \u03b2:     1646\n           \u03b7:     1684\n           d:    15076\n         tag:      bdd",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 495.9054316724073, \"floor_bits\": 495, \"cost\": \"         rop: \\u22482^495.9\\n         red: \\u22482^495.7\\n         svp: \\u22482^493.0\\n           \\u03b2:     1646\\n           \\u03b7:     1684\\n           d:    15076\\n         tag:      bdd\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "bdd",
+      "model": "matzov_classical",
+      "elapsed_seconds": 6.846516742000006
+    },
+    {
+      "status": "finite",
+      "bits": 221.55524725220613,
+      "floor_bits": 221,
+      "cost": "         rop: \u22482^221.6\n         red: \u22482^220.3\n         svp: \u22482^220.8\n           \u03b2:      467\n           \u03b7:        2\n           \u03b6: \u22482^12.5\n         |S|: \u22482^278.9\n           d:     5278\n        prob: \u22482^-54.4\n           \u21bb: \u22482^56.6\n         tag:   hybrid",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 221.55524725220613, \"floor_bits\": 221, \"cost\": \"         rop: \\u22482^221.6\\n         red: \\u22482^220.3\\n         svp: \\u22482^220.8\\n           \\u03b2:      467\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.5\\n         |S|: \\u22482^278.9\\n           d:     5278\\n        prob: \\u22482^-54.4\\n           \\u21bb: \\u22482^56.6\\n         tag:   hybrid\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "bdd_mitm_hybrid",
+      "model": "matzov_classical",
+      "elapsed_seconds": 59.755814888
+    },
+    {
+      "status": "finite",
+      "bits": 503.8064555751618,
+      "floor_bits": 503,
+      "cost": "         rop: \u22482^503.8\n         mem: \u22482^347.0\n           m: \u22482^12.8\n           \u03b2:     1671\n           d:    15251\n           \u21bb:        1\n         tag:     dual",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 503.8064555751618, \"floor_bits\": 503, \"cost\": \"         rop: \\u22482^503.8\\n         mem: \\u22482^347.0\\n           m: \\u22482^12.8\\n           \\u03b2:     1671\\n           d:    15251\\n           \\u21bb:        1\\n         tag:     dual\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "dual",
+      "model": "matzov_classical",
+      "elapsed_seconds": 1.115402252999985
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "upstream",
+      "attack": "bdd_hybrid",
+      "model": "matzov_classical",
+      "elapsed_seconds": 75.09149610600002
+    },
+    {
+      "status": "finite",
+      "bits": 475.8709036202893,
+      "floor_bits": 475,
+      "cost": "         rop: \u22482^475.9\n         red: \u22482^475.8\n       guess: \u22482^469.8\n           \u03b2:     1572\n           p:        2\n           \u03b6:        0\n           t:      450\n          \u03b2':     1526\n           N: \u22482^310.8\n           m: \u22482^13.0",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 475.8709036202893, \"floor_bits\": 475, \"cost\": \"         rop: \\u22482^475.9\\n         red: \\u22482^475.8\\n       guess: \\u22482^469.8\\n           \\u03b2:     1572\\n           p:        2\\n           \\u03b6:        0\\n           t:      450\\n          \\u03b2':     1526\\n           N: \\u22482^310.8\\n           m: \\u22482^13.0\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "dual_hybrid",
+      "model": "matzov_classical",
+      "elapsed_seconds": 13.659559102999992
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "upstream",
+      "attack": "bkw",
+      "model": "matzov_classical",
+      "elapsed_seconds": 75.09100869800002
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "upstream",
+      "attack": "arora-gb",
+      "model": "matzov_classical",
+      "elapsed_seconds": 75.09568344000002
+    },
+    {
+      "status": "finite",
+      "bits": 248.99407392513186,
+      "floor_bits": 248,
+      "cost": "         rop: \u22482^249.0\n         red: \u22482^247.5\n         svp: \u22482^248.4\n           \u03b2:      613\n           \u03b7:        2\n           \u03b6: \u22482^12.2\n         |S|: \u22482^180.2\n           d:     6758\n        prob: \u22482^-40.5\n           \u21bb: \u22482^42.7\n         tag:   hybrid",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 248.99407392513186, \"floor_bits\": 248, \"cost\": \"         rop: \\u22482^249.0\\n         red: \\u22482^247.5\\n         svp: \\u22482^248.4\\n           \\u03b2:      613\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.2\\n         |S|: \\u22482^180.2\\n           d:     6758\\n        prob: \\u22482^-40.5\\n           \\u21bb: \\u22482^42.7\\n         tag:   hybrid\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "rotated",
+      "attack": "without-mitm",
+      "model": "matzov_classical",
+      "elapsed_seconds": 44.729370754
+    },
+    {
+      "status": "finite",
+      "bits": 249.33320069025757,
+      "floor_bits": 249,
+      "cost": "         rop: \u22482^249.3\n         red: \u22482^248.3\n         svp: \u22482^248.3\n           \u03b2:      617\n           \u03b7:       21\n           \u03b6: \u22482^12.2\n         |S|: \u22482^179.9\n           d:     6829\n        prob: \u22482^-40.2\n           \u21bb: \u22482^42.4\n         tag:   hybrid",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 249.33320069025757, \"floor_bits\": 249, \"cost\": \"         rop: \\u22482^249.3\\n         red: \\u22482^248.3\\n         svp: \\u22482^248.3\\n           \\u03b2:      617\\n           \\u03b7:       21\\n           \\u03b6: \\u22482^12.2\\n         |S|: \\u22482^179.9\\n           d:     6829\\n        prob: \\u22482^-40.2\\n           \\u21bb: \\u22482^42.4\\n         tag:   hybrid\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "rotated",
+      "attack": "projected-cvp",
+      "model": "matzov_classical",
+      "elapsed_seconds": 56.09165642100004
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "rotated",
+      "attack": "mitm-square-root",
+      "model": "matzov_classical",
+      "elapsed_seconds": 75.08731245900003
+    },
+    {
+      "status": "finite",
+      "bits": 437.78000000000003,
+      "floor_bits": 437,
+      "cost": "         rop: \u22482^437.8\n         red: \u22482^437.8\n           \u03b4: 1.001387\n           \u03b2:     1652\n           d:    14894\n         tag:     usvp",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 437.78000000000003, \"floor_bits\": 437, \"cost\": \"         rop: \\u22482^437.8\\n         red: \\u22482^437.8\\n           \\u03b4: 1.001387\\n           \\u03b2:     1652\\n           d:    14894\\n         tag:     usvp\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "usvp",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 1.108549413999981
+    },
+    {
+      "status": "finite",
+      "bits": 438.1717390461766,
+      "floor_bits": 438,
+      "cost": "         rop: \u22482^438.2\n         red: \u22482^438.0\n         svp: \u22482^434.6\n           \u03b2:     1653\n           \u03b7:     1639\n           d:    15110\n         tag:      bdd",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 438.1717390461766, \"floor_bits\": 438, \"cost\": \"         rop: \\u22482^438.2\\n         red: \\u22482^438.0\\n         svp: \\u22482^434.6\\n           \\u03b2:     1653\\n           \\u03b7:     1639\\n           d:    15110\\n         tag:      bdd\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "bdd",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 4.692849234999983
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "rotated",
+      "attack": "mitm-estimator",
+      "model": "matzov_classical",
+      "elapsed_seconds": 75.05848289099998
+    },
+    {
+      "status": "finite",
+      "bits": 204.1591605497129,
+      "floor_bits": 204,
+      "cost": "         rop: \u22482^204.2\n         red: \u22482^203.0\n         svp: \u22482^203.3\n           \u03b2:      550\n           \u03b7:        2\n           \u03b6: \u22482^12.4\n         |S|: \u22482^242.1\n           d:     5922\n        prob: \u22482^-55.0\n           \u21bb: \u22482^57.2\n         tag:   hybrid",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 204.1591605497129, \"floor_bits\": 204, \"cost\": \"         rop: \\u22482^204.2\\n         red: \\u22482^203.0\\n         svp: \\u22482^203.3\\n           \\u03b2:      550\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.4\\n         |S|: \\u22482^242.1\\n           d:     5922\\n        prob: \\u22482^-55.0\\n           \\u21bb: \\u22482^57.2\\n         tag:   hybrid\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "bdd_mitm_hybrid",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 69.67581309600001
+    },
+    {
+      "status": "finite",
+      "bits": 440.96000000000004,
+      "floor_bits": 440,
+      "cost": "         rop: \u22482^441.0\n         mem: \u22482^356.0\n           m: \u22482^12.8\n           \u03b2:     1664\n           d:    15226\n           \u21bb:        1\n         tag:     dual",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 440.96000000000004, \"floor_bits\": 440, \"cost\": \"         rop: \\u22482^441.0\\n         mem: \\u22482^356.0\\n           m: \\u22482^12.8\\n           \\u03b2:     1664\\n           d:    15226\\n           \\u21bb:        1\\n         tag:     dual\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "dual",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 1.0803202980000037
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "upstream",
+      "attack": "bdd_hybrid",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 75.07430576999997
+    },
+    {
+      "status": "finite",
+      "bits": 419.7612668515678,
+      "floor_bits": 419,
+      "cost": "         rop: \u22482^419.8\n         red: \u22482^419.8\n       guess: \u22482^409.6\n           \u03b2:     1584\n           p:        2\n           \u03b6:        0\n           t:      390\n          \u03b2':     1584\n           N: \u22482^325.1\n           m: \u22482^13.0",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 419.7612668515678, \"floor_bits\": 419, \"cost\": \"         rop: \\u22482^419.8\\n         red: \\u22482^419.8\\n       guess: \\u22482^409.6\\n           \\u03b2:     1584\\n           p:        2\\n           \\u03b6:        0\\n           t:      390\\n          \\u03b2':     1584\\n           N: \\u22482^325.1\\n           m: \\u22482^13.0\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "upstream",
+      "attack": "dual_hybrid",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 11.153183464999984
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "upstream",
+      "attack": "bkw",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 75.09149887200005
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "upstream",
+      "attack": "arora-gb",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 75.07272508200003
+    },
+    {
+      "status": "finite",
+      "bits": 226.12676841763326,
+      "floor_bits": 226,
+      "cost": "         rop: \u22482^226.1\n         red: \u22482^225.1\n         svp: \u22482^225.1\n           \u03b2:      701\n           \u03b7:        2\n           \u03b6: \u22482^12.1\n         |S|: \u22482^160.0\n           d:     7463\n        prob: \u22482^-37.2\n           \u21bb: \u22482^39.4\n         tag:   hybrid",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 226.12676841763326, \"floor_bits\": 226, \"cost\": \"         rop: \\u22482^226.1\\n         red: \\u22482^225.1\\n         svp: \\u22482^225.1\\n           \\u03b2:      701\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.1\\n         |S|: \\u22482^160.0\\n           d:     7463\\n        prob: \\u22482^-37.2\\n           \\u21bb: \\u22482^39.4\\n         tag:   hybrid\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "rotated",
+      "attack": "without-mitm",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 42.25622437599998
+    },
+    {
+      "status": "finite",
+      "bits": 220.57260574183573,
+      "floor_bits": 220,
+      "cost": "         rop: \u22482^220.6\n         red: \u22482^219.8\n         svp: \u22482^219.3\n           \u03b2:      669\n           \u03b7:       84\n           \u03b6: \u22482^12.1\n         |S|: \u22482^151.0\n           d:     7273\n        prob: \u22482^-40.3\n           \u21bb: \u22482^42.5\n         tag:   hybrid",
+      "sage_version": "10.6",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "red_shape_model": "gsa",
+      "transcript": "CRAM_RESULT={\"status\": \"finite\", \"bits\": 220.57260574183573, \"floor_bits\": 220, \"cost\": \"         rop: \\u22482^220.6\\n         red: \\u22482^219.8\\n         svp: \\u22482^219.3\\n           \\u03b2:      669\\n           \\u03b7:       84\\n           \\u03b6: \\u22482^12.1\\n         |S|: \\u22482^151.0\\n           d:     7273\\n        prob: \\u22482^-40.3\\n           \\u21bb: \\u22482^42.5\\n         tag:   hybrid\", \"sage_version\": \"10.6\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"red_shape_model\": \"gsa\"}\n",
+      "engine": "rotated",
+      "attack": "projected-cvp",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 67.72414793100006
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "rotated",
+      "attack": "mitm-square-root",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 75.08733357900007
+    },
+    {
+      "status": "timeout",
+      "transcript": "",
+      "engine": "rotated",
+      "attack": "mitm-estimator",
+      "model": "adps16_quantum_lattice",
+      "elapsed_seconds": 75.07585560099994
+    }
+  ],
+  "assessment_complete": false,
+  "quantum_hybrid_coverage_complete": false,
+  "concurrent_hou_jiang_2026_366_covered": false,
+  "joint_key_security_proven": false,
+  "production_admitted": false,
+  "minimum_tested_bits_by_model": {
+    "matzov_classical": 221.55524725220613,
+    "adps16_quantum_lattice": 204.1591605497129
+  }
+}

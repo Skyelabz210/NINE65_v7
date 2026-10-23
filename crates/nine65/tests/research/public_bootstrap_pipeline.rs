@@ -74,8 +74,18 @@ struct Components {
 // 4*N*V can exceed u128 even though its quotient by Q is tiny. Use
 // bounded public wide arithmetic, never a wrapped intermediate.
 fn phase_window2(clock_n: usize, source_norm: usize, coordinate: usize, cap: u128) -> u128 {
-    assert!(cap < Q_SOURCE as u128);
-    let q = U512::from_u128(Q_SOURCE as u128);
+    phase_window2_for_q(clock_n, source_norm, coordinate, cap, Q_SOURCE as u128)
+}
+
+fn phase_window2_for_q(
+    clock_n: usize,
+    source_norm: usize,
+    coordinate: usize,
+    cap: u128,
+    source_q: u128,
+) -> u128 {
+    assert!(source_q > 1 && cap < source_q);
+    let q = U512::from_u128(source_q);
     let numerator = U512::from_u128(cap)
         .mul_u128(4 * clock_n as u128)
         .add(q.sub(U512::from_u64(1)));

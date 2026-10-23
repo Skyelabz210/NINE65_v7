@@ -1,0 +1,21 @@
+{
+  "source_baseline": "82c0440c41d89514a27f7925e1a48b449eb6cde1",
+  "compiler": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "command": "rustc --edition=2021 --test crates/nine65/tests/coefficient_slot_gate.rs -C opt-level=2 -C debuginfo=1 -C debug-assertions=yes -C overflow-checks=yes --extern nine65=/home/acid/projects/NINE65_v7/target/debug/deps/libnine65-0538b578f361749e.rlib -L dependency=/home/acid/projects/NINE65_v7/target/debug/deps -o /tmp/nine65-compact-test.BIinfU/coefficient_slot_gate",
+  "exit_code": 0,
+  "debug_assertions": true,
+  "overflow_checks": true,
+  "library": {
+    "path": "target/debug/deps/libnine65-0538b578f361749e.rlib",
+    "sha256": "60062998e32159a62777d33846ba2508b94b9d3cebb619071d4d16425302ad9f",
+    "production_sources_unchanged_from_baseline": true
+  },
+  "executable": {
+    "path": "/tmp/nine65-compact-test.BIinfU/coefficient_slot_gate",
+    "sha256": "caa91c5ac1ce187494d6859941744cb1483e9826eb6ea6e0d8df21f837bf0e46"
+  },
+  "focused_harness_build_passed": true,
+  "cargo_package_build_passed": false,
+  "hosted_rust_ci_claimed": false,
+  "fallback_reason": "Focused harness links the unchanged existing Cargo-built library and avoids unrelated audit binaries on a nearly full workspace filesystem. No correctness, security or admission check disabled."
+}

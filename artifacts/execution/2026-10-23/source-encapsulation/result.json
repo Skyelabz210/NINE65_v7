@@ -1,0 +1,243 @@
+{
+  "task_id": "DENSE_WORK_SPARSE_SOURCE_PUBLIC_RETURN",
+  "status": "public_source_transform_executed_conditional_cycle_closes_full_goal_open",
+  "source_baseline": "82c0440c41d89514a27f7925e1a48b449eb6cde1",
+  "source_manifest_sha256": "929d82523f2954ade29a016e7d4411a6fb3b8494bd5ada6a354368320a7c0d20",
+  "checks": {
+    "focused_rust_harness": {
+      "passed": 25,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 187.81,
+      "command": "/tmp/nine65-compact-test.BIinfU/coefficient_slot_gate --include-ignored --nocapture"
+    },
+    "python_public_analysis": {
+      "passed": 26,
+      "failed": 0
+    },
+    "total_passed": 51
+  },
+  "evidence_sha256": {
+    "analysis-checks.log": "71bdce2b6b14d1503f85f53c3dd8900597ade4dc4e48a5935f0f0e732e57e090",
+    "build-provenance.json": "a15f587e97fb844f8c75d839cef02966f640222f64eece8e458c1d61ff6ddab9",
+    "encrypted-checks.log": "4c78a366a810ca42842d6145010b7c7f40b6d818453c5db54b281f4c6f5e198d",
+    "public-analysis.json": "866994fabd53326d39b3db2685e31e3654c50bd8d30f730abe2111819024e3d9",
+    "security/balanced96_low_q.json": "0ad83fa249cce729c229fb76133af92c04caf549ae2ad119eccbf27466518a9f",
+    "security/old32_high_q.json": "6f9b941f2b8702d9739d86d26e58a6398e3b0fd82d388a8468743909264ef853",
+    "security/resumed-balanced96_low_q.json": "42eb064ee096190e79875f8d9147805f53cd45271bb43a47906c34d6d304719c",
+    "source_manifest.txt": "929d82523f2954ade29a016e7d4411a6fb3b8494bd5ada6a354368320a7c0d20"
+  },
+  "native_source_transform": {
+    "N": 8192,
+    "working_Q_bits": 119,
+    "source_Q_bits": 60,
+    "ordinary_dense_work_secret_observed_norm": 5448,
+    "balanced_source_weight": 96,
+    "source_positive": 48,
+    "source_negative": 48,
+    "all_coefficients_preserved": 8192,
+    "incoming_observed_v_bits": 114,
+    "prepared_source_observed_and_bound_bits": 56,
+    "coordinate": 99,
+    "clock_window2": 13699,
+    "client_clock_geometry_only": true,
+    "native_encrypted_clock_executed": false
+  },
+  "small_full_encrypted_cycles": {
+    "explicitly_insecure": true,
+    "work_N": 16,
+    "outer_N": 32,
+    "ordinary_dense_work_norm": 11,
+    "source_weight": 2,
+    "same_precharge_dependent_cycles": 2,
+    "following_square_checked": true,
+    "all_coefficients_checked": true,
+    "incoming_v_bits": [
+      110,
+      110
+    ],
+    "prepared_source_observed_bound_bits": [
+      [
+        51,
+        51
+      ],
+      [
+        51,
+        51
+      ]
+    ],
+    "returned_observed_bound_bits": [
+      [
+        31,
+        37
+      ],
+      [
+        31,
+        37
+      ]
+    ],
+    "carry_omission_corrupt_coefficients": 8,
+    "skipped_input_key_switch_negative_control": true
+  },
+  "external_source_assessment": {
+    "old32_high_q": {
+      "sha256": "6f9b941f2b8702d9739d86d26e58a6398e3b0fd82d388a8468743909264ef853",
+      "finite": 15,
+      "timeouts": 9,
+      "errors": 0,
+      "minimum_tested_bits_by_model": {
+        "matzov_classical": 98.46340748197848,
+        "adps16_quantum_lattice": 79.11093789380423
+      },
+      "assessment_complete": false,
+      "production_admitted": false
+    },
+    "balanced96_low_q": {
+      "sha256": "0ad83fa249cce729c229fb76133af92c04caf549ae2ad119eccbf27466518a9f",
+      "finite": 14,
+      "timeouts": 10,
+      "errors": 0,
+      "minimum_tested_bits_by_model": {
+        "matzov_classical": 221.55524725220613,
+        "adps16_quantum_lattice": 204.1591605497129
+      },
+      "assessment_complete": false,
+      "production_admitted": false
+    }
+  },
+  "resumed_assessment": {
+    "run_id": 39928978629,
+    "job_id": 120332244076,
+    "artifact_id": 12492035587,
+    "status": "completed",
+    "conclusion": "failure",
+    "retained_finite_results": 14,
+    "retried_incomplete_searches": 10,
+    "finite_results": 22,
+    "timeouts": 2,
+    "worker_errors": 0,
+    "incomplete_attacks": [
+      "upstream/arora-gb/matzov_classical",
+      "upstream/arora-gb/adps16_quantum_lattice"
+    ],
+    "minimum_tested_bits_by_model": {
+      "matzov_classical": 211.74112224875512,
+      "adps16_quantum_lattice": 194.8985597765987
+    },
+    "assessment_complete": false,
+    "raw_sha256": "42eb064ee096190e79875f8d9147805f53cd45271bb43a47906c34d6d304719c",
+    "archive_sha256": "d00cde786be7bc6f08fd769312047a6e330c0921a541d08a372d490518accd9c",
+    "production_admitted": false
+  },
+  "public_ledger": {
+    "parameters": {
+      "working_N": 8192,
+      "source_N": 8192,
+      "outer_N": 16384,
+      "working_norm_bound": 8192,
+      "source_norm": 96,
+      "outer_norm_bound": 16384,
+      "coordinate": 99,
+      "source_phase_denominator": 16,
+      "source_Q": 983930967448092673,
+      "working_Q": 348959453350711275087786864768188417
+    },
+    "working_input_v": 17447972667535563754389343238409420,
+    "source_phase_cap": 61495685465505792,
+    "maximum_transformable_working_v": 21806547521815194107121290421657598,
+    "source_transform": {
+      "drops": [
+        {
+          "remaining_q": 742843007632383847780319233,
+          "v_bound": 37142150381619192657488283,
+          "decode_fits": true
+        },
+        {
+          "remaining_q": 983930967448092673,
+          "v_bound": 49196548640876956,
+          "decode_fits": true
+        }
+      ],
+      "switch_v": 9638053675008,
+      "source_v_bound": 49206186694551964,
+      "source_v_bits": 56,
+      "source_decode_fits": true,
+      "switch_rows": 6,
+      "source_key_publication_primes": [
+        998244353,
+        985661441
+      ],
+      "source_key_ever_encrypts_at_work_Q": false
+    },
+    "source_window2": 13699,
+    "outer_v_bits": 143,
+    "returned_work_v": 36220549737939,
+    "returned_work_v_bits": 46,
+    "following_dense_work_product_v": 159360431145689565195272193,
+    "following_dense_work_product_v_bits": 88,
+    "following_source_transform": {
+      "drops": [
+        {
+          "remaining_q": 742843007632383847780319233,
+          "v_bound": 339236495606752756,
+          "decode_fits": true
+        },
+        {
+          "remaining_q": 983930967448092673,
+          "v_bound": 717807228,
+          "decode_fits": true
+        }
+      ],
+      "switch_v": 9638053675008,
+      "source_v_bound": 9638771482236,
+      "source_v_bits": 44,
+      "source_decode_fits": true,
+      "switch_rows": 6,
+      "source_key_publication_primes": [
+        998244353,
+        985661441
+      ],
+      "source_key_ever_encrypts_at_work_Q": false
+    },
+    "stages": {
+      "working_input_decode": true,
+      "input_modulus_drops_decode": true,
+      "prepared_source_decode": true,
+      "prepared_source_phase_fits": true,
+      "source_clock_window": true,
+      "integer_carry_range": true,
+      "outer_assembly_decode": true,
+      "outer_modulus_drops_decode": true,
+      "working_return_decode": true,
+      "following_dense_work_product_decode": true,
+      "next_prepared_source_phase_fits": true
+    },
+    "conditional_arithmetic_closure": true,
+    "first_refusal": null,
+    "source_transform_key_bytes": 1572864,
+    "total_stored_polynomial_bytes": 1073217536,
+    "total_raw_switches": 444703747,
+    "bound_resets_to_same_returned_work_bound": true,
+    "original_dense_working_key_changed": false,
+    "sparse_source_security_assessment_complete": false,
+    "joint_key_security_proven": false,
+    "native_encrypted_bootstrap_executed": false,
+    "production_admitted": false
+  },
+  "working_key_changed": false,
+  "source_key_samples_at_work_Q": false,
+  "additional_safe_basis_root": false,
+  "external_backend_added": false,
+  "lint_run": false,
+  "production_gate_changed": false,
+  "native_encrypted_bootstrap_executed": false,
+  "public_refresh_admitted": false,
+  "goal_complete": false,
+  "unresolved": [
+    "Complete source attack assessment including remaining timeout searches and stated model limitations.",
+    "Joint/circular key security.",
+    "Measured full-native encrypted refresh and repeated useful next operation.",
+    "Practical native runtime and process memory.",
+    "Authenticated key/domain/epoch/history and intact S8/Root211 admission; service integration."
+  ]
+}

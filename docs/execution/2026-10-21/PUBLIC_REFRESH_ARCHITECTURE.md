@@ -19,6 +19,15 @@ larger screened outer ring. Its conditional native polynomial bound now
 closes; it retains sparse-source, key-security, history, native cost and
 root-integration requirements. No production gate is enabled.
 
+The [dense-work/source encapsulation follow-up](../2026-10-23/SPARSE_SOURCE_ENCAPSULATION.md)
+now performs real public modulus drops and a source-key switch before the
+lift clock, then returns to the original dense working key. All8192 native
+input coefficients survive that transform, and an insecure small encrypted
+test completes two cycles plus another square. External attack estimates
+reject the previous conditional H32/Q119 source; the replacement balanced
+H96/Q60 source is still under assessment. Native encrypted clock execution,
+joint-key security and root/history admission remain open.
+
 ## Finding and decision
 
 **A complete, admitted native public refresh has not been obtained.** The

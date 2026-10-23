@@ -1,0 +1,194 @@
+{
+  "scope": "Public integer ledger; dense input really switches keys before the clock",
+  "candidate": {
+    "parameters": {
+      "working_N": 8192,
+      "source_N": 8192,
+      "outer_N": 16384,
+      "working_norm_bound": 8192,
+      "source_norm": 96,
+      "outer_norm_bound": 16384,
+      "coordinate": 99,
+      "source_phase_denominator": 16,
+      "source_Q": 983930967448092673,
+      "working_Q": 348959453350711275087786864768188417
+    },
+    "working_input_v": 17447972667535563754389343238409420,
+    "source_phase_cap": 61495685465505792,
+    "maximum_transformable_working_v": 21806547521815194107121290421657598,
+    "source_transform": {
+      "drops": [
+        {
+          "remaining_q": 742843007632383847780319233,
+          "v_bound": 37142150381619192657488283,
+          "decode_fits": true
+        },
+        {
+          "remaining_q": 983930967448092673,
+          "v_bound": 49196548640876956,
+          "decode_fits": true
+        }
+      ],
+      "switch_v": 9638053675008,
+      "source_v_bound": 49206186694551964,
+      "source_v_bits": 56,
+      "source_decode_fits": true,
+      "switch_rows": 6,
+      "source_key_publication_primes": [
+        998244353,
+        985661441
+      ],
+      "source_key_ever_encrypts_at_work_Q": false
+    },
+    "source_window2": 13699,
+    "outer_v_bits": 143,
+    "returned_work_v": 36220549737939,
+    "returned_work_v_bits": 46,
+    "following_dense_work_product_v": 159360431145689565195272193,
+    "following_dense_work_product_v_bits": 88,
+    "following_source_transform": {
+      "drops": [
+        {
+          "remaining_q": 742843007632383847780319233,
+          "v_bound": 339236495606752756,
+          "decode_fits": true
+        },
+        {
+          "remaining_q": 983930967448092673,
+          "v_bound": 717807228,
+          "decode_fits": true
+        }
+      ],
+      "switch_v": 9638053675008,
+      "source_v_bound": 9638771482236,
+      "source_v_bits": 44,
+      "source_decode_fits": true,
+      "switch_rows": 6,
+      "source_key_publication_primes": [
+        998244353,
+        985661441
+      ],
+      "source_key_ever_encrypts_at_work_Q": false
+    },
+    "stages": {
+      "working_input_decode": true,
+      "input_modulus_drops_decode": true,
+      "prepared_source_decode": true,
+      "prepared_source_phase_fits": true,
+      "source_clock_window": true,
+      "integer_carry_range": true,
+      "outer_assembly_decode": true,
+      "outer_modulus_drops_decode": true,
+      "working_return_decode": true,
+      "following_dense_work_product_decode": true,
+      "next_prepared_source_phase_fits": true
+    },
+    "conditional_arithmetic_closure": true,
+    "first_refusal": null,
+    "source_transform_key_bytes": 1572864,
+    "total_stored_polynomial_bytes": 1073217536,
+    "total_raw_switches": 444703747,
+    "bound_resets_to_same_returned_work_bound": true,
+    "original_dense_working_key_changed": false,
+    "sparse_source_security_assessment_complete": false,
+    "joint_key_security_proven": false,
+    "native_encrypted_bootstrap_executed": false,
+    "production_admitted": false
+  },
+  "skipping_encapsulation_still_refuses": {
+    "parameters": {
+      "working_N": 8192,
+      "source_N": 8192,
+      "outer_N": 16384,
+      "working_norm_bound": 8192,
+      "source_norm": 8192,
+      "outer_norm_bound": 16384,
+      "coordinate": 99,
+      "source_phase_denominator": 16,
+      "source_Q": 983930967448092673,
+      "working_Q": 348959453350711275087786864768188417
+    },
+    "working_input_v": 17447972667535563754389343238409420,
+    "source_phase_cap": 61495685465505792,
+    "maximum_transformable_working_v": 21806547521815194107121290421657598,
+    "source_transform": {
+      "drops": [
+        {
+          "remaining_q": 742843007632383847780319233,
+          "v_bound": 37142150381619192657488283,
+          "decode_fits": true
+        },
+        {
+          "remaining_q": 983930967448092673,
+          "v_bound": 49196548640876956,
+          "decode_fits": true
+        }
+      ],
+      "switch_v": 9638053675008,
+      "source_v_bound": 49206186694551964,
+      "source_v_bits": 56,
+      "source_decode_fits": true,
+      "switch_rows": 6,
+      "source_key_publication_primes": [
+        998244353,
+        985661441
+      ],
+      "source_key_ever_encrypts_at_work_Q": false
+    },
+    "source_window2": 815203,
+    "outer_v_bits": 143,
+    "returned_work_v": 36220549737939,
+    "returned_work_v_bits": 46,
+    "following_dense_work_product_v": 159360431145689565195272193,
+    "following_dense_work_product_v_bits": 88,
+    "following_source_transform": {
+      "drops": [
+        {
+          "remaining_q": 742843007632383847780319233,
+          "v_bound": 339236495606752756,
+          "decode_fits": true
+        },
+        {
+          "remaining_q": 983930967448092673,
+          "v_bound": 717807228,
+          "decode_fits": true
+        }
+      ],
+      "switch_v": 9638053675008,
+      "source_v_bound": 9638771482236,
+      "source_v_bits": 44,
+      "source_decode_fits": true,
+      "switch_rows": 6,
+      "source_key_publication_primes": [
+        998244353,
+        985661441
+      ],
+      "source_key_ever_encrypts_at_work_Q": false
+    },
+    "stages": {
+      "working_input_decode": true,
+      "input_modulus_drops_decode": true,
+      "prepared_source_decode": true,
+      "prepared_source_phase_fits": true,
+      "source_clock_window": false,
+      "integer_carry_range": false,
+      "outer_assembly_decode": true,
+      "outer_modulus_drops_decode": true,
+      "working_return_decode": true,
+      "following_dense_work_product_decode": true,
+      "next_prepared_source_phase_fits": true
+    },
+    "conditional_arithmetic_closure": false,
+    "first_refusal": "source_clock_window",
+    "source_transform_key_bytes": 1572864,
+    "total_stored_polynomial_bytes": 1073217536,
+    "total_raw_switches": 444703747,
+    "bound_resets_to_same_returned_work_bound": true,
+    "original_dense_working_key_changed": false,
+    "sparse_source_security_assessment_complete": false,
+    "joint_key_security_proven": false,
+    "native_encrypted_bootstrap_executed": false,
+    "production_admitted": false
+  },
+  "production_admitted": false
+}

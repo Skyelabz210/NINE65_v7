@@ -1,5 +1,12 @@
 # Larger outer ring and reduction before the return key switch
 
+Current follow-up: [sparse-source encapsulation](SPARSE_SOURCE_ENCAPSULATION.md)
+now connects an ordinary dense working key through a real public low-modulus
+source switch. External attack estimates reject the earlier H32/Q119 source
+used conditionally below. Its arithmetic evidence is retained as history;
+it is not a secure source candidate. The replacement H96/Q60 source remains
+under assessment and production admission remains closed.
+
 This research change removes the arithmetic closure refusal found in the
 [full-polynomial return analysis](FULL_POLYNOMIAL_PUBLIC_RETURN.md), under
 the same CONDITIONAL source norm32. It changes the outer parameters and the

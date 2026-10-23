@@ -3,6 +3,9 @@
 
 use super::*;
 
+#[path = "sparse_source_encapsulation.rs"]
+mod sparse_source_encapsulation;
+
 const EXTRA: [u64; 4] = [1811939329, 2113929217, 2130706433, 1107296257];
 
 fn wide_bits(x: U512) -> u32 {
@@ -127,6 +130,7 @@ fn visit_by_polarity(
 
 struct PublicOuterReturn<'a> {
     work: &'a RNSFHEContext,
+    source: &'a RNSFHEContext,
     outer: Engine<'a>,
     packed: Packed,
     // One ordinary BFV precharge of s_work(Y^2). No clear secret in evaluator.
@@ -177,7 +181,9 @@ fn outer_noise_bound(
 impl PublicOuterReturn<'_> {
     fn apply(&self, input: &RNSCiphertext, input_bound: u128) -> RingOutput {
         let ctx = self.outer.ctx;
-        let source_n = self.work.n;
+        let source_n = self.source.n;
+        assert_eq!(source_n, self.work.n);
+        assert_eq!(self.source.t, self.work.t);
         assert_eq!(ctx.n, 2 * source_n);
         assert_eq!(self.packed.source_len, source_n);
         assert_eq!(
@@ -189,18 +195,35 @@ impl PublicOuterReturn<'_> {
                 .product::<u128>(),
             Q_SOURCE as u128
         );
-        assert_eq!(input.num_primes, self.work.config.primes.len());
+        assert_eq!(input.num_primes, self.source.config.primes.len());
+        assert_eq!(
+            &self.work.config.primes[..self.source.config.primes.len()],
+            &self.source.config.primes
+        );
         assert!(input_bound <= self.phase_cap);
         assert_eq!(
             &ctx.config.primes[..self.work.config.primes.len()],
             &self.work.config.primes
         );
-        let window2 = phase_window2(ctx.n, self.source_norm, self.coordinate, self.phase_cap);
+        let source_q = self
+            .source
+            .config
+            .primes
+            .iter()
+            .map(|&q| q as u128)
+            .product();
+        let window2 = phase_window2_for_q(
+            ctx.n,
+            self.source_norm,
+            self.coordinate,
+            self.phase_cap,
+            source_q,
+        );
         assert!(window2 < ctx.n as u128);
         assert!(self.coordinate > 2 * self.source_norm.div_ceil(2));
         assert!(self.output_batch > 0 && self.output_batch <= source_n);
-        let c0 = preprocess_for_clock(self.work, &input.c0, self.coordinate, ctx.n);
-        let c1 = preprocess_for_clock(self.work, &input.c1, self.coordinate, ctx.n);
+        let c0 = preprocess_for_clock(self.source, &input.c0, self.coordinate, ctx.n);
+        let c1 = preprocess_for_clock(self.source, &input.c1, self.coordinate, ctx.n);
         let lookup = clock_lut(ctx, self.coordinate, window2 as i64);
         let mut carry = zero(ctx);
         let mut external_bound = None;
@@ -577,6 +600,7 @@ fn outer_ring_reduce_before_switch_recovers_full_polynomial_and_repeats() {
     };
     let pipeline = PublicOuterReturn {
         work: &work,
+        source: &work,
         outer: engine,
         packed,
         linear_source,
