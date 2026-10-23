@@ -6,6 +6,7 @@ from paired_chart_k_elimination import (
     SOURCE_K_RADIUS,
     chart_carry,
     composite_tray_carry,
+    composite_sister_trays_signed_carry,
     k_eliminate_quotient,
     lift,
     report,
@@ -66,6 +67,21 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
                 checked += 1
         self.assertGreater(checked, 0)
 
+    def test_composite_49_2_trays_isolate_the_signed_carry_bit(self):
+        checked = 0
+        bound = source_residual_bound()
+        for z99 in range(-16_005, 16_006):
+            result = lift(z99)
+            if abs(result["centered_residual"]) <= bound:
+                carry = result["k_centered"]
+                sister = composite_sister_trays_signed_carry(z99)
+                self.assertEqual(sister["k_mod_49_canonical"], carry % 49)
+                self.assertEqual(sister["k_mod_2"], carry % 2)
+                self.assertEqual(sister["sign_correction_bit"], int(carry < 0))
+                self.assertEqual(sister["k_signed"], carry)
+                checked += 1
+        self.assertEqual(checked, 10_411)
+
     def test_low_tray_and_eliminated_carry_reconstruct_centered_residual(self):
         checked = 0
         bound = source_residual_bound()
@@ -85,12 +101,16 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         result = report()
         self.assertTrue(result["k_elimination"]["all_integer_quotient_checks_pass"])
         self.assertTrue(result["k_elimination"]["all_period_winding_checks_pass"])
+        self.assertTrue(result["composite_sister_trays_49_2"]["all_signed_49_2_checks_pass"])
+        self.assertFalse(
+            result["composite_sister_trays_49_2"]["encrypted_canonicalization_or_sign_gate_exists"]
+        )
         self.assertTrue(
             result["centered_chart_residual"]["removes_sheet_direction_exactly"]
         )
         self.assertFalse(result["centered_chart_residual"]["refresh_reset_proved"])
         self.assertFalse(result["public_refresh_admitted"])
-        self.assertIn("does not implement", result["unclosed_encrypted_obligation"])
+        self.assertIn("do not implement", result["unclosed_encrypted_obligation"])
 
 
 if __name__ == "__main__":

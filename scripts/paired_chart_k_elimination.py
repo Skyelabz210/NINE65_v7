@@ -20,6 +20,8 @@ Z99_TRAY = 99
 COMPOSITE_CARRY_TRAY = 98  # 2 * 7^2; 2 and 7 are already in the Safe Basis.
 P_MOD_COMPOSITE_TRAY = P % COMPOSITE_CARRY_TRAY
 P_INV_MOD_COMPOSITE_TRAY = pow(P_MOD_COMPOSITE_TRAY, -1, COMPOSITE_CARRY_TRAY)
+COMPOSITE_CARRY_ODD_TRAY = 49
+P_INV_MOD_ODD_TRAY = pow(P, -1, COMPOSITE_CARRY_ODD_TRAY)
 
 
 def floor_div(numerator: int, denominator: int) -> int:
@@ -134,6 +136,43 @@ def composite_tray_carry(z99: int) -> dict:
     }
 
 
+def composite_sister_trays_signed_carry(z99: int) -> dict:
+    """Recover signed K from phase-locked 49 and 2 residues.
+
+    With Y=p*K+w, the 49-tray gives the canonical k49 in [0,48] and the
+    existing 2-tray gives K's parity k2. Since 49 is odd, their parity
+    mismatch is exactly the sign-correction bit for the certified range
+    [-48,48]: K=k49-49*c. This is an exact CRT identity; producing canonical
+    k49 and its parity from dense encrypted state is still an unimplemented
+    gate, not a linear ciphertext operation.
+    """
+    result = composite_tray_carry(z99)
+    y = 2 * Z99_TRAY * z99
+    w = result["centered_p_residue"]
+    y49 = y % COMPOSITE_CARRY_ODD_TRAY
+    w49 = w % COMPOSITE_CARRY_ODD_TRAY
+    y2 = y % 2
+    w2 = w % 2
+
+    k49 = ((y49 - w49) * P_INV_MOD_ODD_TRAY) % COMPOSITE_CARRY_ODD_TRAY
+    k2 = (y2 - w2) % 2  # p is odd, so p^(-1) mod 2 is one.
+    correction_bit = (k49 - k2) % 2
+    signed_k = k49 - COMPOSITE_CARRY_ODD_TRAY * correction_bit
+    if signed_k != result["k_centered"]:
+        raise AssertionError("49/2 sister-tray sign correction disagrees with K")
+    return {
+        "y_mod_49": y49,
+        "w_mod_49": w49,
+        "y_mod_2": y2,
+        "w_mod_2": w2,
+        "k_mod_49_canonical": k49,
+        "k_mod_2": k2,
+        "sign_correction_bit": correction_bit,
+        "sign_correction_matches_negative_k": correction_bit == int(signed_k < 0),
+        "k_signed": signed_k,
+    }
+
+
 def report() -> dict:
     if P <= 2 * SOURCE_K_RADIUS:
         raise AssertionError("carry radius is not uniquely centered modulo p")
@@ -174,6 +213,11 @@ def report() -> dict:
             composite = composite_tray_carry(z99)
             if composite["k_centered"] != result["k_centered"]:
                 raise AssertionError(f"composite-98 carry mismatch at Z99={z99}")
+            sister = composite_sister_trays_signed_carry(z99)
+            if sister["k_signed"] != result["k_centered"]:
+                raise AssertionError(f"49/2 sister-tray carry mismatch at Z99={z99}")
+            if not sister["sign_correction_matches_negative_k"]:
+                raise AssertionError(f"sign correction mismatch at Z99={z99}")
             max_abs_centered_p_residue = max(
                 max_abs_centered_p_residue,
                 abs(composite["centered_p_residue"]),
@@ -230,6 +274,18 @@ def report() -> dict:
             ),
             "dense_same_root_trays_produced": False,
         },
+        "composite_sister_trays_49_2": {
+            "factorization": "98=49*2",
+            "p_inverse_mod_49": P_INV_MOD_ODD_TRAY,
+            "identity": (
+                "k49=((Y49-w49)*47) mod 49; k2=(Y2-w2) mod 2; "
+                "c=(k49-k2) mod 2; K=k49-49*c"
+            ),
+            "correction_bit": "c=1 exactly when K<0 for |K|<=48",
+            "source_correlated_checks": composite_checks,
+            "all_signed_49_2_checks_pass": composite_checks == residual_checks,
+            "encrypted_canonicalization_or_sign_gate_exists": False,
+        },
         "domain": {
             "Z99_abs_bound": Z99_ABS_BOUND,
             "carry_radius": SOURCE_K_RADIUS,
@@ -257,10 +313,11 @@ def report() -> dict:
         "unclosed_encrypted_obligation": (
             "The composite-98 oracle avoids the wide M low tray, but the actual "
             "dense producer still must issue same-root views of X mod 98 and "
-            "the centered p residue of X, recover the centered K, and produce "
-            "e99 in the common encoding. Its signed-centering and correction/"
-            "return error certificate are not implemented; the clear identity "
-            "does not implement them."
+            "the centered p residue of X. The 49/2 decomposition isolates a "
+            "canonical-residue/sign-correction gate: it must produce canonical "
+            "k49 and its parity from dense encrypted state before emitting "
+            "signed Enc_p(K) and e99. The correction/return error certificate "
+            "is also absent; these clear identities do not implement those gates."
         ),
         "public_refresh_admitted": False,
     }

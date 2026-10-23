@@ -58,6 +58,15 @@ It avoids requiring the full `2^15` low tray, but still requires both
 composite-98 views from the same dense-source history and a producer
 certificate for centered `Enc_p(K)`.
 
+Splitting the composite tray as `98=49*2` gives an exact signed reconstruction:
+`k49=((Y49-w49)*47) mod 49`, `k2=(Y2-w2) mod 2`,
+`c=(k49-k2) mod 2`, and `K=k49-49*c`. In the bounded carry range, `c=1`
+exactly for negative `K`. The integer oracle checks this on the same 10,411
+source-correlated points. This isolates the remaining signed-lift operation:
+the encrypted path must produce canonical `k49` and its parity, then apply the
+correction. That canonicalization/sign gate has not been implemented or tested
+on the dense chart; the formula alone is not a linear ciphertext correction.
+
 The existing `Root211` test capability can attach arbitrary moduli up to the
 plaintext capacity and emits those views in one common plaintext encoding.
 The new encrypted probe confirms the original K-Elimination arithmetic for
@@ -69,7 +78,8 @@ polynomial and emits chart ciphertexts. The missing bridge is an operation
 that produces `Enc_p(r)` from that actual dense state while preserving the
 same root, source, and history binding. A standalone ciphertext with
 plaintext modulus `M` does not satisfy the equation: it cannot be relabeled
-as `Enc_p(r)`.
+as `Enc_p(r)`. The composite-98 alternative instead needs same-history 49/2
+residue views and the canonicalization/sign gate described above.
 
 Even after that bridge, `e99` is not a claimed refresh reset. Its 5313 bound
 is a bound on the chart residual under the source-correlation assumptions;
@@ -84,10 +94,10 @@ residual to fail the following dense square.
 1. Integrate one existing Safe-Basis root with the actual public chart state;
    attach views at `2^15`, 99, and 121 without adding a root or accepting
    caller-supplied phase snapshots.
-2. Produce `r` in the common p encoding. Charge the source precharge error,
-   public polynomial norms, scale-floor terms, and any key switches before
-   output. Refuse before ciphertext work if the common-encoding certificate
-   does not fit.
+2. Produce either `r` in common p encoding or the same-history composite 49/2
+   views with a certified centered p residue. Charge source precharge error,
+   public polynomial norms, scale-floor terms, tray canonicalization, and any
+   key switches before output. Refuse if the producer certificate does not fit.
 3. Compute `K99` and `e99` linearly. Check all coefficients, both signs,
    chart-cell boundaries, nonzero source error, all RNS lanes, and odd zero
    coefficients against an independent client oracle.

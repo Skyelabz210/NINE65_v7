@@ -93,7 +93,7 @@ available. It encrypts one-hot selectors for five public support rows with
 coefficientwise. It also follows the noise ledger through the first square,
 checking the square if admitted and requiring a typed refusal before
 multiplication otherwise. The focused test passed all five cases; the
-root/history-rebinding regression and all seven Python oracle tests passed.
+root/history-rebinding regression and all nine Python oracle tests passed.
 
 This test uses key-holder-precharged one-hot chart-row selectors. It verifies
 that one root can supply the required dependent trays and that the K-Elimination
@@ -134,6 +134,30 @@ state, and checks `47*(Y_98-w_98)` is congruent to each selected carry for
 still does not emit a centered `Enc_p(K)`, and the selector fixture is not the
 dense chart producer.
 
+### Split the composite tray into 49 and 2
+
+Factoring `98=49*2` makes the signed lift step explicit. Write `Y=p*K+w`,
+where `w=center(Y mod p)`. Phase-locked residues give
+
+```text
+k49 = ((Y mod 49 - w mod 49) * 47) mod 49,  with 0 <= k49 < 49
+k2  = (Y mod 2 - w mod 2) mod 2
+c   = (k49 - k2) mod 2
+K   = k49 - 49*c.
+```
+
+Here `p^(-1)=47 mod 49`, and `p^(-1)=1 mod 2`. For `|K|<=48`, `c` is one
+exactly when `K` is negative. This reconstructs the signed carry from the
+49-residue and the existing 2-root view. The exact oracle verifies the formula
+for all 10,411 source-correlated chart points and all five carry boundaries.
+
+This factors the residue arithmetic; it does not make signed conversion a
+linear ciphertext operation. The evaluator still needs to produce canonical
+`k49` in `[0,48]`, obtain its parity, and apply the correction bit in the
+common `p` encoding. No dense-source canonicalization or sign-correction gate
+exists yet. The current Rust selector probe checks the 98 residue only and
+centers it in its client oracle; it does not test an encrypted 49/2 sign gate.
+
 ## Encrypted gap to bridge
 
 The formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same
@@ -146,7 +170,9 @@ producing that low view from the actual dense public chart while retaining the
 same root/history capability and a useful producer error bound. An
 independent ciphertext modulo `M` cannot be relabeled as a `p` ciphertext.
 Re-decoding one `p*M` ciphertext under `p` also leaves the source residual as
-ciphertext error.
+ciphertext error. On the composite route, the additional missing operation is
+canonicalization of the 49-residue and its signed correction bit; the exact
+49/2 identity does not supply an encrypted implementation.
 
 The next implementation test should attach the `2^15` tray to the actual
 99/121 public chart state through the existing single Safe-Basis capability,
