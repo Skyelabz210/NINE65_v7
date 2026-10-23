@@ -1,0 +1,78 @@
+name: CRAM source attack assessment
+
+# One bounded research assessment when its driver changes. The wider CI
+# cost pause and all production correctness/security gates are unchanged.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/cram_sparse_source_screen.py
+      - .github/workflows/cram_source_assessment.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cram-source-assessment-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  attack-costs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        profile: [old32_high_q, balanced96_low_q, binary96_low_q]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Fetch pinned upstream estimator
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: malb/lattice-estimator
+          ref: f31b86fe490ab11abb4a69efa13007583791e10a
+          path: research-upstream
+          persist-credentials: false
+      - name: Fetch pinned rotated sparse estimator
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: jdumezy/sparse-key-estimate
+          ref: aa2c40d4eee4551e6fba06c55d7432f6918e1597
+          path: research-rotated
+          submodules: recursive
+          persist-credentials: false
+      - name: Verify pinned source and prepare evidence directory
+        env:
+          ASSESSMENT_DIR: ${{ runner.temp }}/cram-source-results
+        run: |
+          test "$(git -C research-upstream rev-parse HEAD)" = f31b86fe490ab11abb4a69efa13007583791e10a
+          test "$(git -C research-rotated rev-parse HEAD)" = aa2c40d4eee4551e6fba06c55d7432f6918e1597
+          test "$(git -C research-rotated/PrimalHybrid/lattice_estimator rev-parse HEAD)" = 6019056011d10d7e9c30a0d5da2d2f729fbc2eec
+          mkdir -p "$ASSESSMENT_DIR"
+          chmod 777 "$ASSESSMENT_DIR"
+      - name: Assess concrete source profiles with Sage
+        env:
+          PROFILE: ${{ matrix.profile }}
+          ASSESSMENT_DIR: ${{ runner.temp }}/cram-source-results
+        run: |
+          docker run --rm --network none \
+            -v "$PWD:/repo:ro" \
+            -v "$ASSESSMENT_DIR:/results" \
+            sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb \
+            sage -python /repo/scripts/cram_sparse_source_screen.py \
+              --profile "$PROFILE" \
+              --upstream /repo/research-upstream \
+              --rotated /repo/research-rotated \
+              --output "/results/$PROFILE.json" --jobs 2 --attack-timeout 75
+      - name: Retain complete or partial attack evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cram-source-${{ matrix.profile }}
+          path: ${{ runner.temp }}/cram-source-results/*.json
+          if-no-files-found: warn
+          retention-days: 14
