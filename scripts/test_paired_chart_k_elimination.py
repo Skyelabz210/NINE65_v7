@@ -5,6 +5,7 @@ from paired_chart_k_elimination import (
     P,
     SOURCE_K_RADIUS,
     chart_carry,
+    composite_tray_carry,
     k_eliminate_quotient,
     lift,
     report,
@@ -53,6 +54,17 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         bound = source_residual_bound()
         self.assertEqual(bound, 5_313)
         self.assertLess(bound, M // 2)
+
+    def test_composite_98_tray_recovers_the_bounded_carry(self):
+        checked = 0
+        for z99 in range(-16_005, 16_006):
+            result = lift(z99)
+            if abs(result["centered_residual"]) <= source_residual_bound():
+                composite = composite_tray_carry(z99)
+                self.assertEqual(composite["k_centered"], result["k_centered"])
+                self.assertEqual(composite["e99"], result["centered_residual"])
+                checked += 1
+        self.assertGreater(checked, 0)
 
     def test_low_tray_and_eliminated_carry_reconstruct_centered_residual(self):
         checked = 0

@@ -19,7 +19,7 @@ refresh.
 | `Z99,Z121,Z143` | Publicly weighted integer chart views | Batched native producer constructs 99/121/143 views from one source precharge | The nonlinear readout and complete encrypted root binding remain open |
 | `U,D,E_chart` | Unimodular chart coordinates | Integer Jacobian has determinant 1; `D,E_chart` cancel ideal sheet direction, `U` retains winding | Information preservation alone does not contract ciphertext error or recover canonical `K_s` |
 | `Phi_121,W_11` | 11-adic ring section and Witt quotient | Native section is invariant under `+11H`; chart identity checked coefficientwise | `W_11` is not the coefficientwise integer lift or canonical residual |
-| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle covers native chart bounds; bounded encrypted one-root selector probe verifies the arithmetic for five carries | Encrypted low-residue producer for the same dense lift is missing |
+| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle and a bounded encrypted one-root selector probe pass; composite-98 identity recovers K on 10,411 source-correlated points | Same-root dense producer for the composite-98 residues and centered carry is missing |
 | `r=X mod M` | Canonical low tray, where `X=99*Z99+M/2` | `M=32768=2^15`; encrypted selector probe attaches it with `p=65537` to one bounded `Root211` state and verifies K-Elimination | Attach this tray to the actual dense chart state in the common `p=65537` encoding |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` | Exact zero sheet derivative; source-correlated bound is 5313 | Establish a correction consumer and a full error/reset certificate |
@@ -47,10 +47,20 @@ ciphertext operations after the low residue exists. They directly match the
 owner's one-root / dependent-tray design: the root supplies its 2 and 11
 roles; `2^15`, 99, and 121 are dependent views, not new Safe-Basis roots.
 
+An alternative small tray follows from `Y=198*Z99=p*K99+(2*e99-K99)`.
+The source-correlated bound puts the second term inside the centered p cell.
+With `A=98=2*7^2`, `p mod A=73`, and `73^(-1)=47`, the residues `Y mod A`
+and `center(Y mod p) mod A` determine `K99 mod A`; `|K99|<=48` selects its
+unique centered lift. The exact oracle checks this over 10,411 source-correlated
+chart points. It avoids requiring the full `2^15` low tray, but still requires
+both composite-98 views from the same dense-source history and a producer
+certificate for the centered carry.
+
 The existing `Root211` test capability can attach arbitrary moduli up to the
 plaintext capacity and emits those views in one common plaintext encoding.
-The new encrypted probe confirms the K-Elimination arithmetic for five
-boundary carries, but its source is still a bounded encrypted selector state.
+The new encrypted probe confirms the original K-Elimination arithmetic for
+five boundary carries, but its source is still a bounded encrypted selector
+state. The composite98 identity has only clear-oracle coverage so far.
 The native 99/121/143 producer instead starts from a dense encrypted-source
 polynomial and emits chart ciphertexts. The missing bridge is an operation
 that produces `Enc_p(r)` from that actual dense state while preserving the

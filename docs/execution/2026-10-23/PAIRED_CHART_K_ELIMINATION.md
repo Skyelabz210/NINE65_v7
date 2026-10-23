@@ -101,6 +101,32 @@ identities work in the common plaintext encoding. It does not connect the
 actual dense public `Z99/Z121` producer to that root, so it does not close the
 encrypted low-tray producer gate below.
 
+## Composite-98 carry candidate
+
+There is a second exact residue route that avoids the wide `M=32768` tray.
+Set `Y=198*Z99`. Since `e99=99*Z99-M*K` and `p=2*M+1`,
+
+```text
+Y = p*K + (2*e99-K).
+```
+
+The certified source envelope gives `|2*e99-K| <= 2*5313+48 = 10674 < p/2`.
+Thus the centered p residue `w=center(Y mod p)` is exactly `2*e99-K`, and
+`K` is the quotient in `Y=w+p*K`. Modulo the composite tray `A=98=2*7^2`,
+`p=73` and `73^(-1)=47`, so
+
+```text
+K = center_98(47 * ((Y mod 98) - (w mod 98)) mod 98).
+```
+
+The corridor `|K|<=48<49` makes the centered residue unique. The exact oracle
+checks this identity on all 10,411 source-correlated `Z99` values; the largest
+observed `|w|` is 10,659. Tray 98 uses existing Safe-Basis factors 2 and 7
+and does not add a root. This is an integer identity, not yet an encrypted gate:
+the dense producer still has to bind `Y mod 98` and the centered p residue
+`w mod 98` to one authenticated chart history, and emit centered `K` with a
+bound before the return consumer can use it.
+
 ## Encrypted gap to bridge
 
 The formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same

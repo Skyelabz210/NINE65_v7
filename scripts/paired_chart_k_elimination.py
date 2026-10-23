@@ -17,6 +17,9 @@ SOURCE_K_RADIUS = 48
 SOURCE_NORM = 96
 SOURCE_PHASE_DENOMINATOR = 64
 Z99_TRAY = 99
+COMPOSITE_CARRY_TRAY = 98  # 2 * 7^2; 2 and 7 are already in the Safe Basis.
+P_MOD_COMPOSITE_TRAY = P % COMPOSITE_CARRY_TRAY
+P_INV_MOD_COMPOSITE_TRAY = pow(P_MOD_COMPOSITE_TRAY, -1, COMPOSITE_CARRY_TRAY)
 
 
 def floor_div(numerator: int, denominator: int) -> int:
@@ -91,6 +94,46 @@ def source_residual_bound() -> int:
     return (strict_real_bound_twice - 1) // 2
 
 
+def composite_tray_carry(z99: int) -> dict:
+    """Recover the bounded chart carry from the candidate composite-98 trays.
+
+    Let X=198*Z99 and e=99*Z99-M*K. Since p=2*M+1,
+    X=p*K+(2*e-K). Under the source-correlated bound, the latter term is the
+    centered p residue. The p and composite-98 residues then determine K mod
+    98; the certified |K|<=48 selects its unique centered representative.
+    This is an integer oracle, not an encrypted tray producer.
+    """
+    result = lift(z99)
+    k = result["k_centered"]
+    e = result["centered_residual"]
+    if abs(e) > source_residual_bound() or abs(k) > SOURCE_K_RADIUS:
+        raise ValueError("chart point lies outside the certified source window")
+
+    x = 2 * Z99_TRAY * z99
+    p_residue = x % P
+    centered_p_residue = p_residue - P if p_residue > P // 2 else p_residue
+    if centered_p_residue != 2 * e - k:
+        raise AssertionError("centered p residue does not match the chart carry identity")
+
+    carry_residue = (
+        (x - centered_p_residue) * P_INV_MOD_COMPOSITE_TRAY
+    ) % COMPOSITE_CARRY_TRAY
+    centered_carry = (
+        carry_residue - COMPOSITE_CARRY_TRAY
+        if carry_residue >= COMPOSITE_CARRY_TRAY // 2
+        else carry_residue
+    )
+    if centered_carry != k:
+        raise AssertionError("composite-98 K-Elimination disagrees with the source chart")
+    return {
+        "x": x,
+        "centered_p_residue": centered_p_residue,
+        "carry_residue_mod_98": carry_residue,
+        "k_centered": centered_carry,
+        "e99": e,
+    }
+
+
 def report() -> dict:
     if P <= 2 * SOURCE_K_RADIUS:
         raise AssertionError("carry radius is not uniquely centered modulo p")
@@ -120,12 +163,22 @@ def report() -> dict:
     # K-elimination: e=99*Z99-M*K=(X mod M)-M/2. Restrict this check to the
     # source-correlated residual envelope, not the wider Z99 interval alone.
     residual_checks = 0
+    composite_checks = 0
+    max_abs_centered_p_residue = 0
     for z99 in range(-Z99_ABS_BOUND, Z99_ABS_BOUND + 1):
         result = lift(z99)
         if abs(result["centered_residual"]) <= residual_bound:
             if result["centered_residual"] != result["residual_from_low_tray"]:
                 raise AssertionError(f"residual mismatch at Z99={z99}: {result}")
             residual_checks += 1
+            composite = composite_tray_carry(z99)
+            if composite["k_centered"] != result["k_centered"]:
+                raise AssertionError(f"composite-98 carry mismatch at Z99={z99}")
+            max_abs_centered_p_residue = max(
+                max_abs_centered_p_residue,
+                abs(composite["centered_p_residue"]),
+            )
+            composite_checks += 1
 
     # The low/high residue identity is invariant to representative changes by
     # the full product p*M, as required for a plaintext integer modulo p*M.
@@ -160,6 +213,19 @@ def report() -> dict:
             "same_safe_basis_root_required": 2,
             "new_safe_basis_root_required": False,
         },
+        "composite_98_candidate": {
+            "tray_modulus": COMPOSITE_CARRY_TRAY,
+            "factorization": "2*7^2",
+            "safe_basis_roots_already_present": [2, 7],
+            "p_mod_tray": P_MOD_COMPOSITE_TRAY,
+            "p_inverse_mod_tray": P_INV_MOD_COMPOSITE_TRAY,
+            "identity": "198*Z99 = p*K + (2*e99-K)",
+            "carry_formula": "K=center_98(47*((Y mod 98)-center(Y mod p)) mod 98)",
+            "max_observed_abs_centered_p_residue": max_abs_centered_p_residue,
+            "source_correlated_checks": composite_checks,
+            "all_composite_98_checks_pass": composite_checks == residual_checks,
+            "encrypted_same_root_trays_produced": False,
+        },
         "domain": {
             "Z99_abs_bound": Z99_ABS_BOUND,
             "carry_radius": SOURCE_K_RADIUS,
@@ -185,11 +251,12 @@ def report() -> dict:
             "refresh_reset_proved": False,
         },
         "unclosed_encrypted_obligation": (
-            "Produce same-lift encrypted residues x mod M and x mod p from one "
-            "authenticated 2/11-phase-locked root, then compute Enc_p(K) and "
-            "e99=99*Z99-M*K in the common encoding. The actual dense-chart "
-            "low-residue producer and the correction/return error certificate "
-            "are still missing; the clear identity does not implement them."
+            "The composite-98 oracle avoids the wide M low tray, but the actual "
+            "dense producer still must issue same-root views of X mod 98 and "
+            "the centered p residue of X, recover the centered K, and produce "
+            "e99 in the common encoding. Its signed-centering and correction/"
+            "return error certificate are not implemented; the clear identity "
+            "does not implement them."
         ),
         "public_refresh_admitted": False,
     }
