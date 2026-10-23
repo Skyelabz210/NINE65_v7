@@ -165,6 +165,15 @@ attack-model coverage, authenticated key/domain/epoch/history and intact
 S8/Root211 integration also remain open. The production refresh gate stays
 closed.
 
+The [scale-locked tray follow-up](SCALE_LOCKED_CARRY_TRAY.md) tests
+`T=65537*A` and re-decodes the same phase under plaintext65537. This removes
+the extra winding caused by componentwise rational rescaling, but leaves the
+source chart residual in the output phase: the native A=5632 bound decodes
+once and fails the following dense square after key return. The exact missing
+operation remains a public canonical residual producer in the high encoding,
+with a proved zero response along the carry direction and a finite-difference
+certificate across all admitted sheets.
+
 Implementation and exact evidence are in
 `crates/nine65/tests/research/frobenius_chart_section.rs` and
 `artifacts/execution/2026-10-23/frobenius-chart-section/`. The Python companion
