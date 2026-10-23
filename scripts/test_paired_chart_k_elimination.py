@@ -4,6 +4,9 @@ from paired_chart_k_elimination import (
     M,
     P,
     SOURCE_K_RADIUS,
+    ADJACENT_CARRY_TRAY,
+    ADJACENT_CARRY_TRAY_INV_MOD_P,
+    adjacent_tray_carry,
     chart_carry,
     composite_tray_carry,
     composite_sister_trays_signed_carry,
@@ -57,6 +60,45 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         self.assertEqual(bound, 5_313)
         self.assertLess(bound, M // 2)
 
+    def test_adjacent_m_plus_one_tray_eliminates_signed_carry_on_source_domain(self):
+        self.assertEqual(ADJACENT_CARRY_TRAY, M + 1)
+        self.assertEqual(2 * ADJACENT_CARRY_TRAY, P + 1)
+        self.assertEqual(ADJACENT_CARRY_TRAY_INV_MOD_P, 2)
+        checked = 0
+        seen = set()
+        for z99 in range(-16_005, 16_006):
+            chart = lift(z99)
+            if abs(chart["centered_residual"]) > source_residual_bound():
+                continue
+            adjacent = adjacent_tray_carry(z99)
+            self.assertEqual(adjacent["tray_quotient"], chart["k_centered"])
+            self.assertEqual(
+                adjacent["tray_residue"],
+                M // 2 + chart["centered_residual"] - chart["k_centered"],
+            )
+            self.assertEqual(adjacent["k_signed"], chart["k_centered"])
+            self.assertEqual(
+                adjacent["k_eliminated_mod_p"], chart["k_centered"] % P
+            )
+            self.assertEqual(adjacent["e99"], chart["centered_residual"])
+            self.assertEqual(
+                adjacent["e99_mod_p"], chart["centered_residual"] % P
+            )
+            seen.add(chart["k_centered"])
+            checked += 1
+        self.assertEqual(checked, 10_411)
+        self.assertEqual(min(seen), -SOURCE_K_RADIUS)
+        self.assertEqual(max(seen), SOURCE_K_RADIUS)
+
+    def test_adjacent_tray_refuses_values_without_the_source_residual_bound(self):
+        outside = next(
+            z99
+            for z99 in range(-16_005, 16_006)
+            if abs(lift(z99)["centered_residual"]) > source_residual_bound()
+        )
+        with self.assertRaises(ValueError):
+            adjacent_tray_carry(outside)
+
     def test_composite_98_tray_recovers_the_bounded_carry(self):
         checked = 0
         for z99 in range(-16_005, 16_006):
@@ -106,6 +148,15 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
             result["k_elimination"]["explicit_signed_centering_required_for_ring_arithmetic"]
         )
         self.assertTrue(result["composite_sister_trays_49_2"]["all_signed_49_2_checks_pass"])
+        self.assertTrue(
+            result["adjacent_M_plus_1_tray"]["all_adjacent_tray_checks_pass"]
+        )
+        self.assertEqual(
+            result["adjacent_M_plus_1_tray"]["source_correlated_checks"], 10_411
+        )
+        self.assertFalse(
+            result["adjacent_M_plus_1_tray"]["dense_same_root_tray_produced"]
+        )
         self.assertFalse(
             result["composite_sister_trays_49_2"]["encrypted_centering_or_signed_lift_gate_exists"]
         )
@@ -114,7 +165,7 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         )
         self.assertFalse(result["centered_chart_residual"]["refresh_reset_proved"])
         self.assertFalse(result["public_refresh_admitted"])
-        self.assertIn("dense-source implementation", result["unclosed_encrypted_obligation"])
+        self.assertIn("dense-source tray producer", result["unclosed_encrypted_obligation"])
 
 
 if __name__ == "__main__":

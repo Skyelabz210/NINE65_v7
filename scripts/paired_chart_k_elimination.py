@@ -12,6 +12,8 @@ from dataclasses import dataclass
 P = 65_537
 M = 32_768
 M_INV_MOD_P = pow(M, -1, P)
+ADJACENT_CARRY_TRAY = M + 1
+ADJACENT_CARRY_TRAY_INV_MOD_P = pow(ADJACENT_CARRY_TRAY, -1, P)
 Z99_ABS_BOUND = 16_005
 SOURCE_K_RADIUS = 48
 SOURCE_NORM = 96
@@ -86,6 +88,55 @@ def lift(z99: int) -> dict:
         "expected_k": expected,
         "centered_residual": residual,
         "residual_from_low_tray": residual_from_low_tray,
+    }
+
+
+def adjacent_tray_carry(z99: int) -> dict:
+    """Recover the chart carry through the adjacent M+1 tray.
+
+    Let X=99*Z99+M/2=MK+M/2+e. On the source-correlated domain,
+    |e|<=5313 and |K|<=48, so
+
+        X=(M+1)*K + (M/2+e-K)
+
+    with the parenthesized remainder strictly between 0 and M. Therefore
+    floor(X/(M+1)) is exactly K. Since 2*(M+1)=P+1, K is recovered in Z_P
+    from X mod P and the M+1 tray residue, without a signed-centering step.
+    This is still an integer oracle: an authenticated dense producer for the
+    same-history Enc_P(X mod (M+1)) view is not implemented here.
+    """
+    result = lift(z99)
+    k = result["k_centered"]
+    e = result["centered_residual"]
+    if abs(e) > source_residual_bound() or abs(k) > SOURCE_K_RADIUS:
+        raise ValueError("chart point lies outside the certified source window")
+
+    x = result["x"]
+    tray = ADJACENT_CARRY_TRAY
+    residue = x % tray
+    quotient = (x - residue) // tray
+    expected_residue = M // 2 + e - k
+    if residue != expected_residue or quotient != k:
+        raise AssertionError("adjacent M+1 tray does not preserve the chart carry")
+
+    eliminated = (
+        (x % P - residue % P) * ADJACENT_CARRY_TRAY_INV_MOD_P
+    ) % P
+    if eliminated != k % P:
+        raise AssertionError("adjacent-tray K-Elimination disagrees with the chart")
+    residual_mod_p = (residue + eliminated - M // 2) % P
+    if residual_mod_p != e % P:
+        raise AssertionError("adjacent-tray residual disagrees with the chart")
+    return {
+        "x": x,
+        "tray_modulus": tray,
+        "tray_residue": residue,
+        "tray_quotient": quotient,
+        "expected_remainder": expected_residue,
+        "k_eliminated_mod_p": eliminated,
+        "k_signed": k,
+        "e99_mod_p": residual_mod_p,
+        "e99": e,
     }
 
 
@@ -203,6 +254,9 @@ def report() -> dict:
     # source-correlated residual envelope, not the wider Z99 interval alone.
     residual_checks = 0
     composite_checks = 0
+    adjacent_checks = 0
+    adjacent_remainder_min = M
+    adjacent_remainder_max = 0
     max_abs_centered_p_residue = 0
     for z99 in range(-Z99_ABS_BOUND, Z99_ABS_BOUND + 1):
         result = lift(z99)
@@ -210,6 +264,16 @@ def report() -> dict:
             if result["centered_residual"] != result["residual_from_low_tray"]:
                 raise AssertionError(f"residual mismatch at Z99={z99}: {result}")
             residual_checks += 1
+            adjacent = adjacent_tray_carry(z99)
+            if adjacent["k_signed"] != result["k_centered"]:
+                raise AssertionError(f"adjacent-tray carry mismatch at Z99={z99}")
+            adjacent_remainder_min = min(
+                adjacent_remainder_min, adjacent["tray_residue"]
+            )
+            adjacent_remainder_max = max(
+                adjacent_remainder_max, adjacent["tray_residue"]
+            )
+            adjacent_checks += 1
             composite = composite_tray_carry(z99)
             if composite["k_centered"] != result["k_centered"]:
                 raise AssertionError(f"composite-98 carry mismatch at Z99={z99}")
@@ -256,6 +320,20 @@ def report() -> dict:
             "simplified_quotient": "K=2*(X mod M - X mod p) mod p",
             "same_safe_basis_root_required": 2,
             "new_safe_basis_root_required": False,
+        },
+        "adjacent_M_plus_1_tray": {
+            "tray_modulus": ADJACENT_CARRY_TRAY,
+            "factorization": "3^2*11*331",
+            "plaintext_p": P,
+            "tray_inverse_mod_p": ADJACENT_CARRY_TRAY_INV_MOD_P,
+            "native_relation": "2*(M+1)=p+1, hence (M+1)^(-1)=2 mod p",
+            "identity": "X=(M+1)*K + (M/2+e99-K)",
+            "carry_from_tray": "K=floor(X/(M+1)) on the certified source window",
+            "tray_remainder_bounds": [adjacent_remainder_min, adjacent_remainder_max],
+            "source_correlated_checks": adjacent_checks,
+            "all_adjacent_tray_checks_pass": adjacent_checks == residual_checks,
+            "bounded_encrypted_selector_fixture": False,
+            "dense_same_root_tray_produced": False,
         },
         "composite_98_candidate": {
             "tray_modulus": COMPOSITE_CARRY_TRAY,
@@ -316,14 +394,15 @@ def report() -> dict:
             "refresh_reset_proved": False,
         },
         "unclosed_encrypted_obligation": (
-            "The direct 2^15/p route needs the dense producer to issue the "
-            "same-root low view r in the common p encoding; K mod p then "
-            "already has the correct signed plaintext-ring meaning under the "
-            "|K|<=48 bound. The alternative composite-98 route additionally "
-            "needs same-root Y mod 98 and Y mod p views, encrypted centering "
-            "of the p residue w, and canonical-residue/sign correction to lift "
-            "K mod 98 into p. Neither route has dense-source implementation, "
-            "and the correction/return error certificate is absent."
+            "The adjacent M+1 route needs an authenticated dense producer to "
+            "issue X mod (M+1) from the same chart/root/history in the common "
+            "p encoding; the exact source-correlated bound then makes the "
+            "quotient K directly and the p-ring formula needs no centering. "
+            "The direct M route has the analogous missing same-root low view. "
+            "The composite-98 route additionally needs same-root Y mod 98 and "
+            "Y mod p views, encrypted centering of the p residue w, and a "
+            "signed lift to p. None has a dense-source tray producer, and the "
+            "correction/return error certificate is absent."
         ),
         "public_refresh_admitted": False,
     }

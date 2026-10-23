@@ -79,6 +79,35 @@ centered residual tightly; the source norm and `Q_source/64` phase cap give
 
 so its integer magnitude is at most `5313`, strictly below `M/2`.
 
+## Adjacent-tray K-Elimination
+
+The same source-correlated residual gives a direct carry quotient through the
+arbitrary tray `A=M+1=32769`. Since
+
+```text
+X = M*K + M/2 + e99
+  = A*K + (M/2 + e99 - K),
+```
+
+and `|e99|<=5313`, `|K|<=48`, the final remainder is strictly inside
+`[11023,21745]`, hence canonical in `[0,A)`. Therefore
+`floor(X/A)=K` on the admitted source window. Also `2*A=p+1`, so
+`A^(-1)=2 mod p` and
+
+```text
+K = 2 * (X mod p - (X mod A) mod p) mod p.
+e99 = (X mod A) + K - M/2 mod p.
+```
+
+This uses a dependent `A` tray in the common `p` encoding and needs no
+signed-centering or carry-sign operation. The exact oracle checks all 10,411
+source-correlated chart points, including `K=-48` and `K=48`; observed
+canonical tray residues range from `11038` to `21730`. The proof depends on
+the source-correlated residual bound, not the wider `Z99` interval alone.
+The encrypted `A` tray has not been issued from the actual dense
+chart/root/history, so this is an exact K-Elimination consumer, not a
+completed refresh gate.
+
 Run the integer oracle with:
 
 ```text
@@ -170,19 +199,21 @@ The direct formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same
 plaintext-`p` encoding and derived from the same authenticated chart state.
 Then `2*(r-X_p)` produces K directly in `Z_p`; negative K already has its
 ordinary residue encoding, and `99*Z99-M*K` is linear ciphertext arithmetic.
+The adjacent `M+1` identity above is an equivalent tray choice whose inverse
+modulo `p` is `2`; its source-correlated remainder also gives `e99` linearly.
 The existing `Root211::attach` research capability already permits an arbitrary
 `M=32768` view and encodes every view in the root's common plaintext ring;
 its composition tests use a bounded selector state. The unresolved step is
-producing that low view from the actual dense public chart while retaining the
-same root/history capability and a useful producer error bound. An
-independent ciphertext modulo `M` cannot be relabeled as a `p` ciphertext.
+producing either low view from the actual dense public chart while retaining the
+same root/history capability and a useful producer error bound. An independent
+ciphertext modulo `M` or `M+1` cannot be relabeled as a `p` ciphertext.
 Re-decoding one `p*M` ciphertext under `p` also leaves the source residual as
 ciphertext error. The composite route instead needs same-history 49/2 and p
 views, encrypted centering of the p residue, and canonicalization of the
 49-residue with its signed correction bit. The exact 49/2 identity supplies
 none of these encrypted operations.
 
-The next implementation test should attach the `2^15` tray to the actual
+The next implementation test should attach the `M+1` tray to the actual
 99/121 public chart state through the existing single Safe-Basis capability,
 then compute `K` and `e99` in the common `p` encoding. It must check every
 coefficient, signed carry boundaries, nonzero source noise, the correction
