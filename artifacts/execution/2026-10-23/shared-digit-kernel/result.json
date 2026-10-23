@@ -1,0 +1,103 @@
+{
+  "task_id": "EXACT_SHARED_DIGIT_SWITCH_AND_COMPLETE_CONFIGURED_SOURCE_SEARCH",
+  "source_baseline": "dc1393edbe2fe94d53125781f4fa0430c833032c",
+  "status": "kernel_improved_configured_searches_complete_full_goal_open",
+  "source_manifest_sha256": "c912dbc96237b6ddd728a110c700d2fcb45c3fd5e25f386a3553825f9b134517",
+  "checks": {
+    "focused_rust_harness": {
+      "passed": 28,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 131.9
+    },
+    "python_public_analysis": {
+      "passed": 31,
+      "failed": 0,
+      "suites": 5
+    },
+    "total_local_passed": 59,
+    "additional_isolated_native_kernel_comparison": {
+      "passed": 1,
+      "failed": 0,
+      "runtime_seconds": 10.54
+    }
+  },
+  "native_kernel": {
+    "N": 16384,
+    "main_lanes": 8,
+    "radix_bits": 10,
+    "digit_rows": 28,
+    "auxiliary_prime": 18446744069414584321,
+    "deterministic_prime_and_order_certificate": true,
+    "maximum_signed_integer_coefficient_bound": 821210941134733312,
+    "strict_no_alias_guard": true,
+    "all_output_components_bit_identical_to_old_kernel": true,
+    "repetitions": 3,
+    "main_prime_transforms": 240,
+    "auxiliary_transforms": 44,
+    "old_median_seconds": 0.930115,
+    "new_median_seconds": 0.347873,
+    "ratio": 2.674,
+    "timing_uses_public_random_rows": true,
+    "measured_encrypted_bootstrap_timing": false,
+    "stored_key_polynomial_words_unchanged": true,
+    "small_shared_plan_added_per_degree": true
+  },
+  "configured_source_assessment": {
+    "workflow_run": 39932572679,
+    "job_id": 120344183321,
+    "commit": "dc1393edbe2fe94d53125781f4fa0430c833032c",
+    "artifact_id": 12491468705,
+    "archive_sha256": "f241e3acf14c3117d6902391341bbb624d537fd6912beab2e03421dd2992d877",
+    "raw_report_sha256": "65fc15bc1f77504b2c15550a5db8658ebbd6db29731cc82c7d65c638ea21b5cb",
+    "conclusion": "success",
+    "configured_searches_complete": true,
+    "finite": 24,
+    "timeouts": 0,
+    "errors": 0,
+    "minimum_tested_bits_by_model": {
+      "matzov_classical": 161.33894242424722,
+      "adps16_quantum_lattice": 161.33894242424722
+    },
+    "algebraic_attack_runtime_seconds": [
+      15.911270774999991,
+      16.425803677999994
+    ],
+    "original_upstream_cost_comparisons_per_algebraic_worker": 18,
+    "quantum_hybrid_coverage_complete": false,
+    "concurrent_hou_jiang_2026_366_covered": false,
+    "joint_key_security_proven": false,
+    "production_admitted": false
+  },
+  "native_cost_consequence": {
+    "counted_raw_switches": 444703747,
+    "uniform_serial_extrapolation_seconds": 154700426.580131,
+    "uniform_serial_extrapolation_years": 4.9021607023389295,
+    "extrapolation_is_measurement_or_lower_bound": false,
+    "current_layout_practically_admitted": false,
+    "requires_structural_circuit_reduction": true
+  },
+  "evidence_sha256": {
+    "analysis-checks.log": "684ab3b9a9ce5f61c8702ef9dcd67dc3f8e90cfcd0809d8add45265cc2ded888",
+    "build-provenance.json": "d46b0ff65f129ca00841b1de1f688a03f6e97592a661969b96681b41f145efb0",
+    "complete-balanced96_low_q.json": "65fc15bc1f77504b2c15550a5db8658ebbd6db29731cc82c7d65c638ea21b5cb",
+    "encrypted-checks.log": "c46da6f98abc5eb12a8e51dd17b5ca65b0a451ad0b7a2c71c89d62407e052d8a",
+    "isolated-kernel.log": "fda4ec7278f13911eb4ccafbf6946daac7b0146cab0a29c777eabbd616d22cfb",
+    "source_manifest.txt": "c912dbc96237b6ddd728a110c700d2fcb45c3fd5e25f386a3553825f9b134517"
+  },
+  "runtime_library_changed": false,
+  "working_ciphertext_modulus_changed": false,
+  "independent_safe_basis_added": false,
+  "source_samples_at_auxiliary_ciphertext_modulus": false,
+  "lint_run": false,
+  "production_gate_changed": false,
+  "native_encrypted_bootstrap_executed": false,
+  "public_refresh_admitted": false,
+  "goal_complete": false,
+  "next_requirements": [
+    "Materially reduce repeated per-coefficient source/clock circuit; validate actual native domain and full polynomial error ledger.",
+    "Complete outstanding source attack-model coverage and joint/KDM security.",
+    "Authenticated key/domain/epoch/history and intact S8/Root211 capabilities.",
+    "Measured native encrypted public refresh, useful next operation and another refresh; service integration."
+  ]
+}

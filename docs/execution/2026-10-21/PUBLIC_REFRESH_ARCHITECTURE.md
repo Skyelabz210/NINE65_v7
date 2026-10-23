@@ -28,6 +28,14 @@ reject the previous conditional H32/Q119 source; the replacement balanced
 H96/Q60 source is still under assessment. Native encrypted clock execution,
 joint-key security and root/history admission remain open.
 
+The [shared-digit kernel and source-assessment continuation](../2026-10-23/SHARED_DIGIT_KERNEL_AND_SOURCE_ASSESSMENT.md)
+now finishes all24 configured source attack estimates, minimum161.34bits,
+without claiming complete model or joint-key coverage. Its bit-identical
+native raw-switch kernel reduces transform count240->44 and measures2.674x
+faster in an isolated probe. The remaining444.7million-switch circuit is
+still impractical; a structurally smaller batched integer-lift circuit is
+the next runtime requirement. Production gates remain closed.
+
 ## Finding and decision
 
 **A complete, admitted native public refresh has not been obtained.** The

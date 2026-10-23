@@ -9,6 +9,9 @@ use std::cell::Cell;
 #[path = "public_bootstrap_pipeline.rs"]
 mod public_bootstrap_pipeline;
 
+#[path = "small_digit_convolution.rs"]
+mod small_digit_convolution;
+
 const Q_SOURCE: i128 = 348_959_453_350_711_275_087_786_864_768_188_417;
 const BOOT: [u64; 5] = [1811939329, 2113929217, 2130706433, 1107296257, 1711276033];
 
@@ -185,12 +188,58 @@ struct NttRow {
     c0: Vec<Vec<u64>>,
     c1: Vec<Vec<u64>>,
 }
+enum CachedRows {
+    MainPrime(Vec<NttRow>),
+    SmallDigit {
+        plan: std::sync::Arc<small_digit_convolution::Plan>,
+        rows: Vec<small_digit_convolution::AuxiliaryRow>,
+        integer_bound: u128,
+    },
+}
+impl CachedRows {
+    fn len(&self) -> usize {
+        match self {
+            Self::MainPrime(rows) => rows.len(),
+            Self::SmallDigit { rows, .. } => rows.len(),
+        }
+    }
+}
 struct RawKey {
     shape: Shape,
-    rows: Vec<NttRow>,
+    rows: CachedRows,
     n: usize,
     primes: Vec<u64>,
     beta: u128,
+}
+impl RawKey {
+    fn coefficient_row(&self, ctx: &RNSFHEContext, index: usize) -> RNSCiphertext {
+        let decode = |values: &Vec<Vec<u64>>| {
+            montgomery(
+                ctx,
+                values
+                    .iter()
+                    .enumerate()
+                    .map(|(lane, v)| match &self.rows {
+                        CachedRows::MainPrime(_) => backward(ctx, lane, v),
+                        CachedRows::SmallDigit { plan, .. } => {
+                            let out = plan.backward(v);
+                            assert!(out.iter().all(|&x| x < self.primes[lane]));
+                            out
+                        }
+                    })
+                    .collect(),
+            )
+        };
+        let (c0, c1) = match &self.rows {
+            CachedRows::MainPrime(rows) => (&rows[index].c0, &rows[index].c1),
+            CachedRows::SmallDigit { rows, .. } => (&rows[index].c0, &rows[index].c1),
+        };
+        RNSCiphertext {
+            c0: decode(c0),
+            c1: decode(c1),
+            num_primes: self.primes.len(),
+        }
+    }
 }
 struct Multiplier {
     constant: RawKey,
@@ -203,6 +252,41 @@ struct Engine<'a> {
 }
 impl<'a> Engine<'a> {
     fn cache(&self, shape: &Shape, rows: &[RNSCiphertext], beta: u128) -> RawKey {
+        let Some(integer_bound) = small_digit_convolution::integer_bound(
+            self.ctx.n,
+            shape.digit_sum,
+            &self.ctx.config.primes,
+        ) else {
+            return self.cache_main_prime(shape, rows, beta);
+        };
+        assert_eq!(rows.len(), shape.digits.iter().sum());
+        let plan = small_digit_convolution::Plan::shared(self.ctx.n);
+        let encode = |p: &RNSPolynomial| {
+            ordinary(self.ctx, p)
+                .iter()
+                .map(|v| plan.forward(v))
+                .collect()
+        };
+        RawKey {
+            shape: shape.clone(),
+            rows: CachedRows::SmallDigit {
+                rows: rows
+                    .iter()
+                    .map(|ct| small_digit_convolution::AuxiliaryRow {
+                        c0: encode(&ct.c0),
+                        c1: encode(&ct.c1),
+                    })
+                    .collect(),
+                plan,
+                integer_bound,
+            },
+            n: self.ctx.n,
+            primes: self.ctx.config.primes.clone(),
+            beta,
+        }
+    }
+
+    fn cache_main_prime(&self, shape: &Shape, rows: &[RNSCiphertext], beta: u128) -> RawKey {
         assert_eq!(rows.len(), shape.digits.iter().sum());
         let encode = |p: &RNSPolynomial| {
             ordinary(self.ctx, p)
@@ -213,13 +297,14 @@ impl<'a> Engine<'a> {
         };
         RawKey {
             shape: shape.clone(),
-            rows: rows
-                .iter()
-                .map(|ct| NttRow {
-                    c0: encode(&ct.c0),
-                    c1: encode(&ct.c1),
-                })
-                .collect(),
+            rows: CachedRows::MainPrime(
+                rows.iter()
+                    .map(|ct| NttRow {
+                        c0: encode(&ct.c0),
+                        c1: encode(&ct.c1),
+                    })
+                    .collect(),
+            ),
             n: self.ctx.n,
             primes: self.ctx.config.primes.clone(),
             beta,
@@ -230,6 +315,66 @@ impl<'a> Engine<'a> {
         assert_eq!(key.n, self.ctx.n);
         assert_eq!(key.primes, self.ctx.config.primes);
         self.switches.set(self.switches.get() + 1);
+        if let CachedRows::SmallDigit {
+            plan,
+            rows,
+            integer_bound,
+        } = &key.rows
+        {
+            let plain = ordinary(self.ctx, component);
+            let mut out0 = vec![vec![0; self.ctx.n]; key.primes.len()];
+            let mut out1 = out0.clone();
+            let mask = (1u64 << key.shape.base_bits) - 1;
+            let mut row_index = 0;
+            for (source_lane, &digits) in key.shape.digits.iter().enumerate() {
+                for j in 0..digits {
+                    let digit: Vec<_> = plain[source_lane]
+                        .iter()
+                        .map(|v| (v >> (j as u32 * key.shape.base_bits)) & mask)
+                        .collect();
+                    let transformed = plan.forward(&digit);
+                    let row = &rows[row_index];
+                    row_index += 1;
+                    for lane in 0..key.primes.len() {
+                        small_digit_convolution::accumulate(
+                            &mut out0[lane],
+                            &transformed,
+                            &row.c0[lane],
+                        );
+                        small_digit_convolution::accumulate(
+                            &mut out1[lane],
+                            &transformed,
+                            &row.c1[lane],
+                        );
+                    }
+                }
+            }
+            let inverse = |values: Vec<Vec<u64>>| {
+                montgomery(
+                    self.ctx,
+                    values
+                        .iter()
+                        .zip(&key.primes)
+                        .map(|(lane, &q)| {
+                            plan.backward(lane)
+                                .iter()
+                                .map(|&value| {
+                                    small_digit_convolution::reduce_signed(value, q, *integer_bound)
+                                })
+                                .collect()
+                        })
+                        .collect(),
+                )
+            };
+            return RNSCiphertext {
+                c0: inverse(out0),
+                c1: inverse(out1),
+                num_primes: key.primes.len(),
+            };
+        }
+        let CachedRows::MainPrime(rows) = &key.rows else {
+            unreachable!()
+        };
         let plain = ordinary(self.ctx, component);
         let mut out0 = vec![vec![0u64; self.ctx.n]; key.primes.len()];
         let mut out1 = out0.clone();
@@ -241,7 +386,7 @@ impl<'a> Engine<'a> {
                     .iter()
                     .map(|v| (v >> (j as u32 * key.shape.base_bits)) & mask)
                     .collect();
-                let row = &key.rows[row_index];
+                let row = &rows[row_index];
                 row_index += 1;
                 for (lane, &q) in key.primes.iter().enumerate() {
                     assert!(q <= 1u64 << 31);
@@ -653,26 +798,11 @@ fn observe_raw_column(
 ) {
     let q = U512::product_u64s(&ctx.config.primes);
     let secret = ordinary(ctx, &keys.secret_key.s);
-    let decode_row = |values: &Vec<Vec<u64>>| {
-        montgomery(
-            ctx,
-            values
-                .iter()
-                .enumerate()
-                .map(|(lane, v)| backward(ctx, lane, v))
-                .collect(),
-        )
-    };
     let mut index = 0;
     for (source_lane, &d) in key.shape.digits.iter().enumerate() {
         for digit in 0..d {
-            let row = &key.rows[index];
+            let ct = key.coefficient_row(ctx, index);
             index += 1;
-            let ct = RNSCiphertext {
-                c0: decode_row(&row.c0),
-                c1: decode_row(&row.c1),
-                num_primes: ctx.config.primes.len(),
-            };
             let phase = decrypted_phase_residues(ctx, &ct, keys);
             let power = mod_pow(
                 2,

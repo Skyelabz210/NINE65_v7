@@ -1,5 +1,12 @@
 # Dense working key, bounded internal source, and public return
 
+Current follow-up: the [shared-digit kernel and completed configured source
+assessment](SHARED_DIGIT_KERNEL_AND_SOURCE_ASSESSMENT.md) finishes all24
+selected attack estimates, including the previously timed-out algebraic
+searches. Their minimum is161.34bits; broader model/joint-key assessment and
+native execution remain open. The exact native switch kernel is2.674x faster
+in an isolated probe, but the current circuit still needs structural batching.
+
 The public input transform now connects an ordinary dense N8192 working key
 to the bounded source required by the tropical integer-lift clock. It first
 reduces Q119 to Q60 under the original working key, then switches to an
