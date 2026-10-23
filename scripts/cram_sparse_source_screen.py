@@ -52,6 +52,7 @@ def worker(args):
     import faulthandler
     faulthandler.dump_traceback_later(60, repeat=True)
     spec = describe(args.profile)
+    computational_acceleration = None
     if args.engine == "upstream":
         sys.path.insert(0, str(Path(args.upstream).resolve()))
         from estimator import LWE, ND, RC
@@ -76,6 +77,9 @@ def worker(args):
         elif args.attack == "bkw":
             cost = LWE.coded_bkw(params)
         elif args.attack == "arora-gb":
+            import estimator.gb as gb_module
+            from cram_gb_series import install_verified_upstream_adapter
+            computational_acceleration = install_verified_upstream_adapter(gb_module)
             cost = LWE.guess_composition(LWE.arora_gb)(params)
         else:
             raise ValueError("unknown upstream attack")
@@ -100,7 +104,8 @@ def worker(args):
     print("CRAM_RESULT=" + json.dumps({"status": "finite" if bits is not None else "infinite",
           "bits": bits, "floor_bits": None if bits is None else int(floor(log(RR(rop), 2))),
           "cost": str(cost), "sage_version": sage.version.version,
-          "parameters": repr(params), "red_shape_model": "gsa"}))
+          "parameters": repr(params), "red_shape_model": "gsa",
+          "computational_acceleration": computational_acceleration}))
 
 
 def execute(args, engine, attack, model):
@@ -150,6 +155,7 @@ def main():
               "upstream_revision": UPSTREAM_REV, "rotated_revision": ROTATED_REV,
               "rotated_dependency_revision": ROTATED_DEPENDENCY_REV,
               "driver_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              "gb_recurrence_sha256": hashlib.sha256(Path(__file__).with_name("cram_gb_series.py").read_bytes()).hexdigest(),
               "results": [], "assessment_complete": False,
               "quantum_hybrid_coverage_complete": False,
               "concurrent_hou_jiang_2026_366_covered": False,
