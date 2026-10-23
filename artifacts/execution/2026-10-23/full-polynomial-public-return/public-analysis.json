@@ -1,0 +1,212 @@
+{
+  "scope": "Conditional full-polynomial deterministic bounds; refusals are not impossibility proofs",
+  "compact_block512": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 32,
+      "multiplication_norm": 32,
+      "block": 512,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "outer_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      1811939329
+    ],
+    "outer_modulus_bits": 149,
+    "window2": 5185,
+    "phase_cap": 43619931668838909385973358096023552,
+    "coefficient_v_bound": 368743709478474323949444820983808,
+    "coefficient_v_bits": 109,
+    "assembled_v_bound": 3020748468047661661793851973499355136,
+    "assembled_v_bits": 122,
+    "returned_v_bound": 1667135549022382118510664379,
+    "returned_v_bits": 91,
+    "following_polynomial_square_v_bound": 31326751564611751774929818071015256593,
+    "following_polynomial_square_v_bits": 125,
+    "stages": {
+      "clock_window": true,
+      "integer_carry_range": true,
+      "assembled_decode": true,
+      "returned_decode": true,
+      "following_polynomial_square_decode": false,
+      "following_product_phase_reentry": false
+    },
+    "first_refusal": "following_polynomial_square_decode",
+    "conditional_arithmetic_closure": false,
+    "stored_polynomial_bytes_including_return_key": 2390753280,
+    "stream_expansion_switches": 3733120,
+    "full_polynomial_online_switches": 536977409,
+    "total_switches_per_refresh": 540710529,
+    "security_of_sparse_source_or_key_cycles_certified": false,
+    "native_encrypted_execution": false,
+    "public_refresh_admitted": false
+  },
+  "compact_block2048": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 32,
+      "multiplication_norm": 32,
+      "block": 2048,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "outer_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      1811939329
+    ],
+    "outer_modulus_bits": 149,
+    "window2": 5185,
+    "phase_cap": 43619931668838909385973358096023552,
+    "coefficient_v_bound": 1477139143100829695696283311104000,
+    "coefficient_v_bits": 111,
+    "assembled_v_bound": 12100723860281996867143952884563968000,
+    "assembled_v_bits": 124,
+    "returned_v_bound": 6678327285362432169573991627,
+    "returned_v_bits": 93,
+    "following_polynomial_square_v_bound": 125490875567016160601635977221402751505,
+    "following_polynomial_square_v_bits": 127,
+    "stages": {
+      "clock_window": true,
+      "integer_carry_range": true,
+      "assembled_decode": true,
+      "returned_decode": true,
+      "following_polynomial_square_decode": false,
+      "following_product_phase_reentry": false
+    },
+    "first_refusal": "following_polynomial_square_decode",
+    "conditional_arithmetic_closure": false,
+    "stored_polynomial_bytes_including_return_key": 1195376640,
+    "stream_expansion_switches": 3734944,
+    "full_polynomial_online_switches": 536977409,
+    "total_switches_per_refresh": 540712353,
+    "security_of_sparse_source_or_key_cycles_certified": false,
+    "native_encrypted_execution": false,
+    "public_refresh_admitted": false
+  },
+  "smallest_storage_with_conditional_arithmetic_closure": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 32,
+      "multiplication_norm": 32,
+      "block": 1,
+      "raw_bits": 8,
+      "galois_bits": 10,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "outer_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      1811939329
+    ],
+    "outer_modulus_bits": 149,
+    "window2": 5185,
+    "phase_cap": 43619931668838909385973358096023552,
+    "coefficient_v_bound": 60222659331272707114237247488,
+    "coefficient_v_bits": 96,
+    "assembled_v_bound": 493344025241786016679831531421696,
+    "assembled_v_bits": 109,
+    "returned_v_bound": 272274031114529673441308,
+    "returned_v_bits": 78,
+    "following_polynomial_square_v_bound": 5116237210118856990956601049661969,
+    "following_polynomial_square_v_bits": 112,
+    "stages": {
+      "clock_window": true,
+      "integer_carry_range": true,
+      "assembled_decode": true,
+      "returned_decode": true,
+      "following_polynomial_square_decode": true,
+      "following_product_phase_reentry": true
+    },
+    "first_refusal": null,
+    "conditional_arithmetic_closure": true,
+    "stored_polynomial_bytes_including_return_key": 214924001280,
+    "stream_expansion_switches": 655360,
+    "full_polynomial_online_switches": 536977409,
+    "total_switches_per_refresh": 537632769,
+    "security_of_sparse_source_or_key_cycles_certified": false,
+    "native_encrypted_execution": false,
+    "public_refresh_admitted": false
+  },
+  "fitting_candidates": 93,
+  "fitting_block_sizes": [
+    1,
+    2
+  ],
+  "dense_source_refusal": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 8192,
+      "multiplication_norm": 8192,
+      "block": 512,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "outer_primes": [
+      998244353,
+      985661441,
+      754974721,
+      469762049,
+      1811939329
+    ],
+    "outer_modulus_bits": 149,
+    "window2": 274465,
+    "phase_cap": 43619931668838909385973358096023552,
+    "coefficient_v_bound": 368743709478474323949444820983808,
+    "coefficient_v_bits": 109,
+    "assembled_v_bound": 3020748468047661661793851973499355136,
+    "assembled_v_bits": 122,
+    "returned_v_bound": 1667135549022382118778055339,
+    "returned_v_bits": 91,
+    "following_polynomial_square_v_bound": 7334936708378997988841455131001107873793,
+    "following_polynomial_square_v_bits": 133,
+    "stages": {
+      "clock_window": false,
+      "integer_carry_range": false,
+      "assembled_decode": true,
+      "returned_decode": true,
+      "following_polynomial_square_decode": false,
+      "following_product_phase_reentry": false
+    },
+    "first_refusal": "clock_window",
+    "conditional_arithmetic_closure": false,
+    "stored_polynomial_bytes_including_return_key": 2390753280,
+    "stream_expansion_switches": 3733120,
+    "full_polynomial_online_switches": 536977409,
+    "total_switches_per_refresh": 540710529,
+    "security_of_sparse_source_or_key_cycles_certified": false,
+    "native_encrypted_execution": false,
+    "public_refresh_admitted": false
+  },
+  "search": {
+    "raw_bits": [
+      1,
+      10
+    ],
+    "galois_bits": [
+      1,
+      10
+    ],
+    "block_powers": [
+      0,
+      13
+    ]
+  },
+  "practical_native_execution_admitted": false,
+  "public_refresh_admitted": false
+}

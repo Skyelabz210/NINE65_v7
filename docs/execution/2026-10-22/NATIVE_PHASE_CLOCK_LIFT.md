@@ -29,8 +29,9 @@ most one half, giving the exact sufficient window allowance
 
 where distance is on the circle. H can use both the source-key norm and
 public nonzero residual support. This test's public quantizer uses U256 on
-public coefficients only. An admitted residue-only preprocessing kernel
-has not been implemented; no hidden S or g is reconstructed by evaluation.
+public coefficients only. The later [full-polynomial integration probe](../2026-10-23/FULL_POLYNOMIAL_PUBLIC_RETURN.md)
+implements residue-only preprocessing in a research harness; production
+admission is still open. No hidden S or g is reconstructed by evaluation.
 
 ## Negacyclic geometry and composite control
 

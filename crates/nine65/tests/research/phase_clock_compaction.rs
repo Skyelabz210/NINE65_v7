@@ -6,6 +6,9 @@ use super::*;
 use nine65::arithmetic::rns::U512;
 use std::cell::Cell;
 
+#[path = "public_bootstrap_pipeline.rs"]
+mod public_bootstrap_pipeline;
+
 const Q_SOURCE: i128 = 348_959_453_350_711_275_087_786_864_768_188_417;
 const BOOT: [u64; 5] = [1811939329, 2113929217, 2130706433, 1107296257, 1711276033];
 

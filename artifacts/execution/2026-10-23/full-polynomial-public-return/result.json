@@ -1,0 +1,103 @@
+{
+  "task_id": "FULL_POLYNOMIAL_PUBLIC_RETURN",
+  "status": "functional_research_probe_passed_native_goal_open",
+  "source_baseline": "799c81504e4635a522a7a76e36e4204a0de36887",
+  "source_manifest": "artifacts/execution/2026-10-23/full-polynomial-public-return/source_manifest.txt",
+  "source_manifest_sha256": "a97c5363738fa3471b79ef266e315badb8756ac49e65e4898ffac57808248f22",
+  "manifest_scope": "Eight changed source/document files; unchanged dependencies bound by baseline.",
+  "checks": {
+    "encrypted_harness": {
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 154.56,
+      "command": "/tmp/nine65-compact-test.BIinfU/coefficient_slot_gate --include-ignored --nocapture"
+    },
+    "python_analysis": {
+      "passed": 13,
+      "failed": 0
+    },
+    "total_passed": 31
+  },
+  "evidence_sha256": {
+    "encrypted-checks.log": "773631c897a713121da15b8a5aeceb67fae1a3b4d846f0b35b5005efbd60b584",
+    "analysis-checks.log": "86d6eafecdbc4e17da7078f540a6a870e53415dac590f24203a7fa76ec41f204",
+    "public-analysis.json": "f9f54db1c5a679578c0f47e7828fb2fe07b3284d0b7e0a1a01596dd29c8b6132",
+    "build-provenance.json": "735e5ee83e75a5a19a4c04e7244209ca1246c371e6e4cefd5196ba054cbd566f"
+  },
+  "encrypted_execution": {
+    "N": 32,
+    "explicitly_insecure": true,
+    "plaintext_modulus": 65537,
+    "source_modulus_bits": 119,
+    "outer_modulus_bits": 149,
+    "source_secret_weight": 2,
+    "independent_dense_outer_secret": true,
+    "composite_coordinate": 9,
+    "all_output_coefficients_checked": 32,
+    "all_hidden_selector_positions_processed": 32,
+    "same_precharge_dependent_cycles": 2,
+    "following_polynomial_squares": 2,
+    "initial_exact_polynomial_square": true,
+    "incoming_observed_v_bits": [
+      110,
+      110
+    ],
+    "assembled_observed_v_bits": [
+      47,
+      47
+    ],
+    "assembled_bound_v_bits": [
+      68,
+      68
+    ],
+    "returned_observed_v_bits": [
+      17,
+      16
+    ],
+    "returned_bound_v_bits": [
+      37,
+      37
+    ],
+    "following_product_observed_v_bits": [
+      35,
+      36
+    ],
+    "following_product_bound_v_bits": [
+      63,
+      63
+    ],
+    "continuation_uses_public_producer_bounds_not_observations": true,
+    "raw_switches_two_cycles": 44674,
+    "carry_omission_corrupted_coefficients": 22,
+    "wrong_key_return_negative_control": true,
+    "residue_preprocessing_differential_check": true,
+    "small_divisor_modulus_drop_differential_check": true
+  },
+  "native_analysis": {
+    "dense_outer_parameter_screen_passed": true,
+    "source_norm32_is_conditional": true,
+    "block512_following_product_v_bits": 125,
+    "block512_closure_admitted": false,
+    "best_conditional_key_bytes": 214924001280,
+    "full_polynomial_online_raw_switches": 536977409,
+    "native_encrypted_pipeline_executed": false,
+    "practical_resource_admission": false
+  },
+  "unresolved": [
+    "Native full-polynomial noise/memory/latency closure; coefficient-only comparison does not certify this.",
+    "Secure admitted sparse-source route; default dense source fails the clock geometry.",
+    "Joint/circular key security, authenticated key/domain/history binding.",
+    "Intact S8/Root211 integration and native repeated public execution."
+  ],
+  "runtime_implementation_changed": false,
+  "production_gate_changed": false,
+  "work_ciphertext_modulus_changed": false,
+  "outer_research_tuple_replaced_with_work_prefix_plus_one_prime": true,
+  "independent_safe_basis_added": false,
+  "external_backend_added": false,
+  "lint_run": false,
+  "hosted_ci_claimed": false,
+  "public_refresh_admitted": false,
+  "goal_complete": false
+}

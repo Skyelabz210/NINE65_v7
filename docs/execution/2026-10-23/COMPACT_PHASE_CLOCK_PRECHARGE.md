@@ -165,6 +165,10 @@ in artifacts. That is not a green package-wide Cargo or hosted CI result.
 
 `python3 scripts/compact_phase_clock_budget.py`
 
-The next blockers are latency and peak-memory-bounded derivation, admitted
-source/key history and sparse-key security, residue-only preprocessing,
-root integration, output assembly and an actual return/repeat certificate.
+The [full-polynomial return follow-up](FULL_POLYNOMIAL_PUBLIC_RETURN.md)
+implements residue-only preprocessing, full output assembly, a work-key/
+modulus return and two dependent cycles at insecure N32. Its full-polynomial
+native budget refuses the compact layouts above; their scalar comparison
+must not be read as full-ring repeat admission. Native latency/memory,
+admitted source/key history, joint and sparse-key security, intact root
+integration and native repeated execution remain open.

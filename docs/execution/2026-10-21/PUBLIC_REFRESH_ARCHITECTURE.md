@@ -6,6 +6,13 @@ tray substrate. This report supersedes treating the next carry experiment as
 the whole solution. It does not supersede the owner's architecture, accept a
 task packet, or enable refresh.
 
+Follow-up: the [full-polynomial public return probe](../2026-10-23/FULL_POLYNOMIAL_PUBLIC_RETURN.md)
+now connects residue-only preprocessing, integer lift recovery, full output
+assembly, key/modulus return and two dependent cycles at insecure N32. Its
+native analysis charges the complete polynomial and refuses the compact
+layouts' following-product bound. This advances integration, while native
+resource, source/security, history and intact-root admission remain open.
+
 ## Finding and decision
 
 **A complete, admitted native public refresh has not been obtained.** The
