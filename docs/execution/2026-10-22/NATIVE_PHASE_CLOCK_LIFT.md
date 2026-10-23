@@ -128,6 +128,13 @@ or repeat a full-ring refresh. Fixtures are not authenticated live histories.
 
 ## Practical limits
 
+The [compact precharge follow-up](../2026-10-23/COMPACT_PHASE_CLOCK_PRECHARGE.md)
+derives selectors from packed raw columns and shared key material, with
+explicitly larger derived errors. Native storage/noise comparisons now have
+conditional smaller layouts; the encrypted compaction checks are N16/N64.
+Streaming expansion reduces repeated switches but does not yet establish
+practical native latency, memory, security or repeat closure.
+
 One five-lane N8192 ciphertext stores 655360 bytes. With two bit keys per
 trit, two columns per bit, and D=20 ciphertexts per column, full-source
 precharge is N*4*D*655360 = 429496729600 bytes = 400 GiB, before metadata.

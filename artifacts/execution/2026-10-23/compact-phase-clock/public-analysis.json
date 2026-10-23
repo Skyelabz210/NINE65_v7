@@ -1,0 +1,281 @@
+{
+  "scope": "Public integer analysis, no sparse-key or live-history admission",
+  "naive_full_block_current_radix": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 32,
+      "terms": 8192,
+      "block": 8192,
+      "raw_bits": 10,
+      "galois_bits": 10,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "window2": 5185,
+    "window_limit": 8192,
+    "window_fits": true,
+    "carry_bound": 16,
+    "integer_carry_fits": true,
+    "raw_digits": 20,
+    "galois_digits": 20,
+    "raw_digit_sum_bound": 15350,
+    "galois_digit_sum_bound": 15350,
+    "constant_column_error": 3089985970176,
+    "secret_column_error": 25313165822164992,
+    "external_product_error": 3183448282356734597529600,
+    "output_scaled_error_bound": 28005752751916703619730160808077312000,
+    "output_scaled_error_bits": 125,
+    "output_decode_fits": true,
+    "following_square": {
+      "initial_error": 427327353280081535922153299786035,
+      "initial_error_bits": 109,
+      "half_delta": 117984527272727065037126399264836478558604,
+      "half_delta_bits": 137,
+      "nodes": [
+        {
+          "square": 1,
+          "terms": {
+            "message_linear": 28005325424563423538194238654777589760,
+            "component_winding_linear": 1879893098899091205816884737322074253428572160,
+            "quadratic_bit_bound": 39614081257132168796771975168,
+            "component_rounding": 33558529,
+            "key_switch": 502824960
+          },
+          "error_bound": 1879893126904416669994389532648481705514520577,
+          "error_bits": 151,
+          "bound_fits": false
+        }
+      ],
+      "first_refusal": 1
+    },
+    "following_square_fits": false,
+    "optimistic_reentry_phase_fits": false,
+    "reentry_is_not_a_history_or_key_certificate": true,
+    "conditional_arithmetic_fits": false,
+    "precharge_bytes": 222822400,
+    "packed_rows": 40,
+    "outer_multiplier_rows": 40,
+    "galois_rows": 260,
+    "derived_control_peak_bytes": 26214400,
+    "derive_raw_switches_per_coefficient": 4915200,
+    "stream_expansion_raw_switches_full_coefficient": 983000,
+    "stream_stack_upper_bound_bytes": 471859200,
+    "stream_count_scope": "all N controls, packed blocks loaded as needed; temporary stack not part of stored-key bytes",
+    "online_raw_switches_per_coefficient": 65549,
+    "raw_switch_count_excludes_ntt_work": true,
+    "public_refresh_admitted": false
+  },
+  "minimum_stored_bytes_in_declared_search": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 32,
+      "terms": 8192,
+      "block": 2048,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "window2": 5185,
+    "window_limit": 8192,
+    "window_fits": true,
+    "carry_bound": 16,
+    "integer_carry_fits": true,
+    "raw_digits": 80,
+    "galois_digits": 80,
+    "raw_digit_sum_bound": 230,
+    "galois_digit_sum_bound": 230,
+    "constant_column_error": 11570632704,
+    "secret_column_error": 94786634416128,
+    "external_product_error": 178614986024807301120,
+    "output_scaled_error_bound": 1571329794839513883926765295779840,
+    "output_scaled_error_bits": 111,
+    "output_decode_fits": true,
+    "following_square": {
+      "initial_error": 23976224038932418083323394355,
+      "initial_error_bits": 95,
+      "half_delta": 117984527272727065037126399264836478558604,
+      "half_delta_bits": 137,
+      "nodes": [
+        {
+          "square": 1,
+          "terms": {
+            "message_linear": 1571305818615474951508681972449280,
+            "component_winding_linear": 105475902168391489658027334321297368596480,
+            "quadratic_bit_bound": 147573952589676412928,
+            "component_rounding": 33558529,
+            "key_switch": 502824960
+          },
+          "error_bound": 105475903739697308273649859782569553842177,
+          "error_bits": 137,
+          "bound_fits": true
+        }
+      ],
+      "first_refusal": null
+    },
+    "following_square_fits": true,
+    "optimistic_reentry_phase_fits": false,
+    "reentry_is_not_a_history_or_key_certificate": true,
+    "conditional_arithmetic_fits": true,
+    "precharge_bytes": 1205862400,
+    "packed_rows": 640,
+    "outer_multiplier_rows": 160,
+    "galois_rows": 1040,
+    "derived_control_peak_bytes": 104857600,
+    "derive_raw_switches_per_coefficient": 17039360,
+    "stream_expansion_raw_switches_full_coefficient": 3931520,
+    "stream_stack_upper_bound_bytes": 1677721600,
+    "stream_count_scope": "all N controls, packed blocks loaded as needed; temporary stack not part of stored-key bytes",
+    "online_raw_switches_per_coefficient": 65549,
+    "raw_switch_count_excludes_ntt_work": true,
+    "public_refresh_admitted": false
+  },
+  "minimum_stored_bytes_passing_optimistic_reentry": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 32,
+      "terms": 8192,
+      "block": 512,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "window2": 5185,
+    "window_limit": 8192,
+    "window_fits": true,
+    "carry_bound": 16,
+    "integer_carry_fits": true,
+    "raw_digits": 80,
+    "galois_digits": 80,
+    "raw_digit_sum_bound": 230,
+    "galois_digit_sum_bound": 230,
+    "constant_column_error": 2888418816,
+    "secret_column_error": 23661938245632,
+    "external_product_error": 44588319808086343680,
+    "output_scaled_error_bound": 392256870353241880817129952788480,
+    "output_scaled_error_bits": 109,
+    "output_decode_fits": true,
+    "following_square": {
+      "initial_error": 5985273515010480809575201075,
+      "initial_error_bits": 93,
+      "half_delta": 117984527272727065037126399264836478558604,
+      "half_delta_bits": 137,
+      "nodes": [
+        {
+          "square": 1,
+          "terms": {
+            "message_linear": 392250885079726870336320377651200,
+            "component_winding_linear": 26330339702165208853836290733437266739200,
+            "quadratic_bit_bound": 9223372036854775808,
+            "component_rounding": 33558529,
+            "key_switch": 502824960
+          },
+          "error_bound": 26330340094416093933572384441795035549697,
+          "error_bits": 135,
+          "bound_fits": true
+        }
+      ],
+      "first_refusal": null
+    },
+    "following_square_fits": true,
+    "optimistic_reentry_phase_fits": true,
+    "reentry_is_not_a_history_or_key_certificate": true,
+    "conditional_arithmetic_fits": true,
+    "precharge_bytes": 2464153600,
+    "packed_rows": 2560,
+    "outer_multiplier_rows": 160,
+    "galois_rows": 1040,
+    "derived_control_peak_bytes": 104857600,
+    "derive_raw_switches_per_coefficient": 14417920,
+    "stream_expansion_raw_switches_full_coefficient": 3929600,
+    "stream_stack_upper_bound_bytes": 1468006400,
+    "stream_count_scope": "all N controls, packed blocks loaded as needed; temporary stack not part of stored-key bytes",
+    "online_raw_switches_per_coefficient": 65549,
+    "raw_switch_count_excludes_ntt_work": true,
+    "public_refresh_admitted": false
+  },
+  "full_dense_source_still_refused": {
+    "parameters": {
+      "N": 8192,
+      "source_norm": 8192,
+      "terms": 8192,
+      "block": 2048,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "coordinate": 33,
+      "phase_denominator": 8
+    },
+    "window2": 274465,
+    "window_limit": 8192,
+    "window_fits": false,
+    "carry_bound": 4096,
+    "integer_carry_fits": false,
+    "raw_digits": 80,
+    "galois_digits": 80,
+    "raw_digit_sum_bound": 230,
+    "galois_digit_sum_bound": 230,
+    "constant_column_error": 11570632704,
+    "secret_column_error": 94786634416128,
+    "external_product_error": 178614986024807301120,
+    "output_scaled_error_bound": 1571329794839513883926765295779840,
+    "output_scaled_error_bits": 111,
+    "output_decode_fits": true,
+    "following_square": {
+      "initial_error": 23976224038932418083323394355,
+      "initial_error_bits": 95,
+      "half_delta": 117984527272727065037126399264836478558604,
+      "half_delta_bits": 137,
+      "nodes": [
+        {
+          "square": 1,
+          "terms": {
+            "message_linear": 1571305818615474951508681972449280,
+            "component_winding_linear": 105475902168391489658027334321297368596480,
+            "quadratic_bit_bound": 147573952589676412928,
+            "component_rounding": 33558529,
+            "key_switch": 502824960
+          },
+          "error_bound": 105475903739697308273649859782569553842177,
+          "error_bits": 137,
+          "bound_fits": true
+        }
+      ],
+      "first_refusal": null
+    },
+    "following_square_fits": true,
+    "optimistic_reentry_phase_fits": false,
+    "reentry_is_not_a_history_or_key_certificate": true,
+    "conditional_arithmetic_fits": false,
+    "precharge_bytes": 1205862400,
+    "packed_rows": 640,
+    "outer_multiplier_rows": 160,
+    "galois_rows": 1040,
+    "derived_control_peak_bytes": 104857600,
+    "derive_raw_switches_per_coefficient": 17039360,
+    "stream_expansion_raw_switches_full_coefficient": 3931520,
+    "stream_stack_upper_bound_bytes": 1677721600,
+    "stream_count_scope": "all N controls, packed blocks loaded as needed; temporary stack not part of stored-key bytes",
+    "online_raw_switches_per_coefficient": 65549,
+    "raw_switch_count_excludes_ntt_work": true,
+    "public_refresh_admitted": false
+  },
+  "passing_candidates": 677,
+  "search": {
+    "raw_bits": [
+      1,
+      10
+    ],
+    "galois_bits": [
+      1,
+      10
+    ],
+    "block_powers": [
+      0,
+      13
+    ],
+    "N": 8192
+  },
+  "practical_latency_admitted": false,
+  "public_refresh_admitted": false
+}

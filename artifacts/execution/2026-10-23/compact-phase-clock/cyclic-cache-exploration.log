@@ -1,0 +1,12 @@
+Historical PARTIAL run, stopped after the raw-row failure. Source differs
+from the final manifest. The cached evaluator had omitted the negacyclic psi
+twist. The final transform regression distinguishes X^(N-1)*X=-1 from cyclic
++1, and the raw-row test retains its original error bounds.
+
+
+running 2 tests
+
+thread 'phase_clock_compaction::phase_clock_compact_raw_columns_preserve_boolean_controls_and_charge_derived_error' panicked at crates/nine65/tests/research/phase_clock_compaction.rs:594:17:
+derived raw row 1, coefficient 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test phase_clock_compaction::phase_clock_compact_raw_columns_preserve_boolean_controls_and_charge_derived_error ... FAILED

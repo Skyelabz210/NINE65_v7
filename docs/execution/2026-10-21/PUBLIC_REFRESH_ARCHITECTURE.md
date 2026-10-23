@@ -393,6 +393,13 @@ There are two implementation mismatches to fix before extrapolating:
 
 ## 7. Complete target architecture and its acceptance conditions
 
+The [compacted phase-clock analysis](../2026-10-23/COMPACT_PHASE_CLOCK_PRECHARGE.md)
+now separates stored selector material, derived-key error, expansion work and
+post-square reentry. Conditional native stored-word estimates can be far
+below the direct400GiB layout, but millions of raw switches, temporary memory,
+sparse-source admission and key relationships remain open. Its encrypted
+compaction probe is small-ring, not a deployed native refresh.
+
 A newer [native-Q phase-clock probe](../2026-10-22/NATIVE_PHASE_CLOCK_LIFT.md)
 addresses the projection alias with Q-normalized encrypted rotations. It
 supplies a candidate cell selector rather than assuming a centered chart.

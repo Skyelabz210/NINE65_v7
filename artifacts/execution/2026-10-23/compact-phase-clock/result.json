@@ -1,0 +1,165 @@
+{
+  "task_id": "COMPACT_PHASE_CLOCK_PRECHARGE",
+  "status": "ready_for_review",
+  "source_commit": "d26f6e0cfef46d3777e2e15fc463a28aee9be10b",
+  "scope": "Test-only packed raw selector derivation and streamed expansion; encrypted N16/N64 probes, conditional native N8192 integer analysis. Not native full-source compact refresh.",
+  "manifest": "artifacts/execution/2026-10-23/compact-phase-clock/source_manifest.txt",
+  "worktree_manifest_sha256": "65a29182b7a5a0b2bd14f848f0d30e8a43574b3bd9957c3bfd08b8ea371b2167",
+  "manifest_scope": "Seven changed source/document files; unchanged dependencies bound by source_commit.",
+  "files_changed": [
+    "crates/nine65/tests/coefficient_slot_gate.rs",
+    "crates/nine65/tests/research/phase_clock_compaction.rs",
+    "scripts/compact_phase_clock_budget.py",
+    "scripts/test_compact_phase_clock_budget.py",
+    "docs/execution/2026-10-23/COMPACT_PHASE_CLOCK_PRECHARGE.md",
+    "docs/execution/2026-10-22/NATIVE_PHASE_CLOCK_LIFT.md",
+    "docs/execution/2026-10-21/PUBLIC_REFRESH_ARCHITECTURE.md",
+    "artifacts/execution/2026-10-23/compact-phase-clock/public-analysis.json",
+    "artifacts/execution/2026-10-23/compact-phase-clock/cargo-build-failure.log",
+    "artifacts/execution/2026-10-23/compact-phase-clock/cyclic-cache-exploration.log",
+    "artifacts/execution/2026-10-23/compact-phase-clock/checks.log",
+    "artifacts/execution/2026-10-23/compact-phase-clock/source_manifest.txt",
+    "artifacts/execution/2026-10-23/compact-phase-clock/build-provenance.json",
+    "artifacts/execution/2026-10-23/compact-phase-clock/result.json"
+  ],
+  "checks": [
+    {
+      "command": "Focused rustc test-harness build; exact flags and library/executable hashes in build-provenance.json",
+      "exit_code": 0
+    },
+    {
+      "command": "/tmp/nine65-compact-test.BIinfU/coefficient_slot_gate --include-ignored --nocapture",
+      "exit_code": 0,
+      "passed": 14,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 120.88
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_compact_phase_clock_budget.py' -v",
+      "exit_code": 0,
+      "passed": 8,
+      "failed": 0
+    }
+  ],
+  "total_passed": 22,
+  "total_failed": 0,
+  "total_ignored_in_acceptance": 0,
+  "checks_log": "artifacts/execution/2026-10-23/compact-phase-clock/checks.log",
+  "checks_log_sha256": "38acc563a51d7ce2326c5b5488fc7fd84a7a568f81c9ba66ecde2b911fc72e70",
+  "build_provenance": {
+    "artifact": "artifacts/execution/2026-10-23/compact-phase-clock/build-provenance.json",
+    "sha256": "23ff39fd0521fece741ba7d1e07736ccf759e0bd5fb05eca733ff76bcb58ba30",
+    "cargo_package_build_passed": false,
+    "workspace_disk_near_capacity": true,
+    "focused_harness_passed": true,
+    "new_slow_research_probe_opt_in_and_executed": true
+  },
+  "encrypted_observations": {
+    "explicitly_insecure_ring_degrees": [
+      16,
+      64
+    ],
+    "source_period_bits": 119,
+    "outer_period_bits": 154,
+    "derived_controls_checked": 14,
+    "raw_row_coefficient_error_checks": 8960,
+    "full_position_probe": {
+      "N": 64,
+      "public_nonzero_weights_per_input": 64,
+      "private_source_weight": 2,
+      "shared_precharge_reused": true,
+      "source_inputs": 2,
+      "selected_sheets": [
+        1,
+        0
+      ],
+      "recovered_messages": [
+        24141,
+        43525
+      ],
+      "observed_scaled_error_bits": [
+        42,
+        49
+      ],
+      "analytic_scaled_error_bound_bits": [
+        69,
+        69
+      ],
+      "dependent_message_squares": 2,
+      "stored_polynomial_word_bytes": 6553600,
+      "total_raw_switches": 31116,
+      "encrypted_zero_controls_not_skipped": true
+    },
+    "measurement_scope": "Independent client-only raw-row and BFV observations, not authenticated production bound objects."
+  },
+  "native_analysis": {
+    "artifact": "artifacts/execution/2026-10-23/compact-phase-clock/public-analysis.json",
+    "sha256": "36a370d503a77a5b34eaaf85cd7a8b8a2e6fe161a0114ce2ab9d2ab4db2561f7",
+    "conditional_source_norm": 32,
+    "public_terms_processed": 8192,
+    "coordinate": 33,
+    "baseline_direct_source_key_bytes": 429496729600,
+    "minimum_stored_words": {
+      "bytes": 1205862400,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "block": 2048,
+      "output_scaled_error_bits": 111,
+      "following_square_fits": true,
+      "optimistic_reentry_phase_fits": false,
+      "point_derivation_switches": 17039360,
+      "streamed_derivation_switches": 3931520,
+      "temporary_stack_word_upper_bound_bytes": 1677721600
+    },
+    "optimistic_reentry_candidate": {
+      "bytes": 2464153600,
+      "raw_bits": 2,
+      "galois_bits": 2,
+      "block": 512,
+      "output_scaled_error_bits": 109,
+      "optimistic_reentry_phase_fits": true,
+      "streamed_derivation_switches": 3929600,
+      "temporary_stack_word_upper_bound_bytes": 1468006400,
+      "actual_return_or_repeat_certificate": false
+    },
+    "native_encrypted_compaction_executed": false,
+    "full_dense_source_window_admitted": false,
+    "practical_latency_or_peak_memory_admitted": false
+  },
+  "acceptance_evidence": [
+    "Packed inverse-block normalization is deposited by the key holder before fresh error sampling.",
+    "Public extraction and a shared outer-secret raw multiplier derive both selector columns without a source secret or chart oracle.",
+    "Derived-column errors are propagated explicitly, not reset to eta=3.",
+    "Independent raw-row checks catch matrix/transform errors; cached negacyclic/cyclic distinction is a permanent regression.",
+    "Stream expansion shares even/odd Galois work while visiting every public position, including encrypted zeros.",
+    "One compact precharge recovers two different native-period source coefficients and their following squares at N64.",
+    "A dependent phase-reentry check refuses the minimum-memory tuple even though its first square decodes."
+  ],
+  "historical_diagnostics": [
+    {
+      "artifact": "artifacts/execution/2026-10-23/compact-phase-clock/cyclic-cache-exploration.log",
+      "sha256": "4c9bba034641416c2a98f0492ae3d3b7185df33bd80a90e9a1e2260de0adeeb9",
+      "scope": "Partial earlier source; corrected missing psi twist; not acceptance evidence"
+    },
+    {
+      "artifact": "artifacts/execution/2026-10-23/compact-phase-clock/cargo-build-failure.log",
+      "sha256": "10c63da0ba6175dadacb18a5d479b66dc3246fbf0bee2a14ca45b532eecc3f76",
+      "scope": "Historical workspace disk-capacity link failure on unrelated audit binary; no package-wide Cargo or CI green claim"
+    }
+  ],
+  "unresolved": [
+    "Native latency and proven peak-memory bounded expansion; millions of raw switches remain.",
+    "Admitted sparse-source switch, source/key/epoch/history binding and joint security of the extra self-key-dependent multiplier material.",
+    "Residue-only preprocessing and integration with the intact S8/Root211 capability.",
+    "Full output assembly, work-key/modulus return and actual repeated refresh."
+  ],
+  "runtime_implementation_changed": false,
+  "production_gate_changed": false,
+  "public_refresh_admitted": false,
+  "independent_safe_basis_added": false,
+  "ciphertext_primes_added": false,
+  "external_backend_added": false,
+  "lint_run": false,
+  "hosted_ci_claimed": false
+}

@@ -1,0 +1,31 @@
+{
+  "source_baseline": "d26f6e0cfef46d3777e2e15fc463a28aee9be10b",
+  "compiler": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "command": "rustc --edition=2021 --test crates/nine65/tests/coefficient_slot_gate.rs -C opt-level=2 -C debuginfo=1 -C debug-assertions=yes -C overflow-checks=yes --extern nine65=/home/acid/projects/NINE65_v7/target/debug/deps/libnine65-0538b578f361749e.rlib -L dependency=/home/acid/projects/NINE65_v7/target/debug/deps -o /tmp/nine65-compact-test.BIinfU/coefficient_slot_gate",
+  "exit_code": 0,
+  "debug_assertions": true,
+  "overflow_checks": true,
+  "library": {
+    "path": "target/debug/deps/libnine65-0538b578f361749e.rlib",
+    "sha256": "60062998e32159a62777d33846ba2508b94b9d3cebb619071d4d16425302ad9f",
+    "source_scope": "Production library sources unchanged from baseline; integration tests, analysis scripts and documents changed."
+  },
+  "executable": {
+    "path": "/tmp/nine65-compact-test.BIinfU/coefficient_slot_gate",
+    "sha256": "175967e62f099bcc40f3f5bdfbc19a9c806c164884baa7e80d4ead38297603c9"
+  },
+  "cargo_package_build_passed": false,
+  "hosted_ci_claimed": false,
+  "fallback_reason": "Workspace Cargo attempts linked the integration test but failed linking unrelated audit binaries at disk capacity; direct focused harness avoids those prerequisites without disabling checks.",
+  "new_slow_research_probe_default_ignore": true,
+  "new_slow_probe_explicitly_executed": true,
+  "generated_executables_removed_during_recovery": [
+    "nine65_v7_demo",
+    "deep_audit_all",
+    "debug_secure_256",
+    "transduction_audit",
+    "live_benchmark_comparison"
+  ],
+  "removal_scope": "Only generated executable hardlinks from this build, rebuildable; no source/evidence removed. Subsequent Cargo attempts may regenerate them.",
+  "workspace_disk_still_near_capacity": true
+}
