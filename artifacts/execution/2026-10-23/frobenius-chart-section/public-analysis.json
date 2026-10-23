@@ -1,0 +1,125 @@
+{
+  "scope": "11-adic RING section, not coefficientwise canonical digit lift or public bootstrap",
+  "native_public_budget": {
+    "admitted": true,
+    "ring_N": 16384,
+    "ciphertext_Q_bits": 211,
+    "plaintext": 121,
+    "input_V": 992174,
+    "input_V_bits": 20,
+    "nodes": [
+      {
+        "power": 2,
+        "V": 32232551276208189,
+        "V_bits": 55,
+        "decodes_under_bound": true
+      },
+      {
+        "power": 3,
+        "V": 523563605617192001383333949,
+        "V_bits": 89,
+        "decodes_under_bound": true
+      },
+      {
+        "power": 5,
+        "V": 8504410550264066090956478074579140669,
+        "V_bits": 123,
+        "decodes_under_bound": true
+      },
+      {
+        "power": 6,
+        "V": 17008816810447948282772049466663190589,
+        "V_bits": 124,
+        "decodes_under_bound": true
+      },
+      {
+        "power": 11,
+        "V": 414419415560584978928033170411854507228963094589,
+        "V_bits": 159,
+        "decodes_under_bound": true
+      }
+    ],
+    "section_V": 414419415560584978928033170411854507350611050557,
+    "section_V_bits": 159,
+    "quotient_V": 37674492323689543538912106401077682486419276612,
+    "quotient_V_bits": 155,
+    "multiplication_depth": 4,
+    "exact_ciphertext_products": 5,
+    "raw_galois_switches": 1,
+    "coefficient_slot_transform": false,
+    "canonical_integer_lift": false,
+    "production_admitted": false
+  },
+  "dependent_repeat_budget": {
+    "admitted": false,
+    "refused_exponent": 3,
+    "nodes": [
+      {
+        "power": 2,
+        "V": 13463089959535251484187783383804166657134368886737519067197,
+        "V_bits": 194,
+        "decodes_under_bound": true
+      },
+      {
+        "power": 3,
+        "V": 218685262037132293625577000427407119641975399071539834277106215632957,
+        "V_bits": 228,
+        "decodes_under_bound": false
+      }
+    ]
+  },
+  "full_Q241_exact_plan": "refused by existing U256 rank fallback; nine auxiliary lanes need287bits",
+  "evaluation_level": "public same-key drop from Q241 to Q211 before nonlinear work",
+  "persistent_ciphertext_modulus_changed": false,
+  "example": {
+    "input": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "section": [
+      78,
+      78,
+      99,
+      77,
+      33,
+      88,
+      44,
+      22
+    ],
+    "canonical_coefficient_section": [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "witt_quotient": [
+      4,
+      4,
+      2,
+      4,
+      8,
+      3,
+      7,
+      9
+    ]
+  },
+  "linear_chart_identity": {
+    "Z99": "11*U+5*D",
+    "Phi_Z99": "5^11*Phi_D mod121",
+    "W_Z99": "U+5*W_D+((5-5^11)/11)*D mod11",
+    "native_encrypted_identity_verified_by_this_script": false
+  },
+  "ciphertext_error_reduced_by_section": false,
+  "integer_K_extracted": false,
+  "full_public_bootstrap_admitted": false
+}

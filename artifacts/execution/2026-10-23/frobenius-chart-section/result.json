@@ -1,0 +1,256 @@
+{
+  "task_id": "NATIVE_11_ADIC_RING_SECTION_AND_CHART_WITT_DIGIT",
+  "status": "native_nonlinear_section_and_coherent_witt_quotient_executed_canonical_K_open",
+  "source_baseline": "17afa3f203d692b55026e279d25096c47cd1b883",
+  "source_manifest_sha256": "3a79c9872cd33b0753531e90b2883b568fb029beed540468102186a5754cbdb3",
+  "checks": {
+    "focused_rust_harness": {
+      "passed": 37,
+      "failed": 0,
+      "ignored": 0,
+      "test_threads": 2,
+      "runtime_seconds": 213.7
+    },
+    "python_analysis": {
+      "passed": 46,
+      "failed": 0,
+      "suites": 7
+    },
+    "total_local_unit_checks_passed": 83,
+    "additional_small_section_test": {
+      "passed": 1,
+      "runtime_seconds": 6.64
+    },
+    "additional_native_section_test": {
+      "passed": 1,
+      "runtime_seconds": 103.7
+    }
+  },
+  "native_section": {
+    "source_N": 8192,
+    "outer_N": 16384,
+    "source_Q_bits": 60,
+    "source_plaintext": 65537,
+    "source_balanced_weight": 96,
+    "source_phase_denominator": 64,
+    "initial_outer_Q_bits": 241,
+    "evaluation_outer_Q_bits": 211,
+    "auxiliary_high_plaintext": 121,
+    "auxiliary_low_plaintext": 11,
+    "inverse_galois_exponent": 2979,
+    "exact_ciphertext_products_per_section": 5,
+    "raw_galois_switches_per_section": 1,
+    "multiplicative_depth": 4,
+    "coefficient_slot_transform_used": false,
+    "all_coefficients_checked": 16384,
+    "dense_11H_perturbation_preserves_section_message": true,
+    "quotient_perturbation_equals_H_mod11": true,
+    "clear_ring_idempotence_checked": true,
+    "public_preflight_reapplication_refused": true,
+    "source_support_or_phase_oracle_in_public_evaluator": false,
+    "input_V_observed_bound_bits": [
+      14,
+      20
+    ],
+    "section_V_observed_bound_bits": [
+      95,
+      159
+    ],
+    "quotient_V_observed_bound_bits": [
+      92,
+      155
+    ],
+    "ciphertext_error_reduced_by_section": false,
+    "public_section_evaluation_seconds": 22.470767,
+    "timing_is_full_bootstrap_latency": false
+  },
+  "capacity_followup": {
+    "small_N2048_Q241_required_aux_bits": 259,
+    "small_pool_bits": 220,
+    "small_accepted_fixture_Q_bits": 180,
+    "native_N16384_Q241_refusal": "ScaleRound(BaseExt(FallbackAccumulatorOverCapacity { lanes: 9, required_bits: 287 }))",
+    "native_refusal_retained_as_negative_control": true,
+    "native_workaround": "public same-key outer-prime drop Q241 to Q211 before nonlinear evaluation",
+    "D_V_bound_bits_before_after": [
+      39,
+      20
+    ],
+    "canonical_transient_catalog_changed": false,
+    "fallback_accumulator_guard_changed": false,
+    "numeric_capacity_checks_bypassed": false
+  },
+  "actual_chart_compatibility": {
+    "relation": "Z99=11U+5D",
+    "ring_section_relation": "Phi(Z99)=27Phi(D) mod121",
+    "witt_digit_relation": "W(Z99)=U+5W(D)-2D mod11",
+    "all_coefficients_verified": 16384,
+    "high121_difference_observed_bound_bits": [
+      97,
+      160
+    ],
+    "low11_chart_identity_observed_bound_bits": [
+      94,
+      158
+    ],
+    "independent_coherent_low11_precharge_initialized": true,
+    "arbitrary_encoding_relabel_accepted": false,
+    "canonical_low_digit_lift_token_produced": false
+  },
+  "initial_experiments": {
+    "initial-native-capacity-refusal.log": "unaccepted Q241 diagnostic attempt; preserved separately, not an accepted final check or bound to final source state",
+    "initial-small-section-check.log": "earlier partial small-section experiment; final small check also verifies chart compatibility"
+  },
+  "public_analysis": {
+    "scope": "11-adic RING section, not coefficientwise canonical digit lift or public bootstrap",
+    "native_public_budget": {
+      "admitted": true,
+      "ring_N": 16384,
+      "ciphertext_Q_bits": 211,
+      "plaintext": 121,
+      "input_V": 992174,
+      "input_V_bits": 20,
+      "nodes": [
+        {
+          "power": 2,
+          "V": 32232551276208189,
+          "V_bits": 55,
+          "decodes_under_bound": true
+        },
+        {
+          "power": 3,
+          "V": 523563605617192001383333949,
+          "V_bits": 89,
+          "decodes_under_bound": true
+        },
+        {
+          "power": 5,
+          "V": 8504410550264066090956478074579140669,
+          "V_bits": 123,
+          "decodes_under_bound": true
+        },
+        {
+          "power": 6,
+          "V": 17008816810447948282772049466663190589,
+          "V_bits": 124,
+          "decodes_under_bound": true
+        },
+        {
+          "power": 11,
+          "V": 414419415560584978928033170411854507228963094589,
+          "V_bits": 159,
+          "decodes_under_bound": true
+        }
+      ],
+      "section_V": 414419415560584978928033170411854507350611050557,
+      "section_V_bits": 159,
+      "quotient_V": 37674492323689543538912106401077682486419276612,
+      "quotient_V_bits": 155,
+      "multiplication_depth": 4,
+      "exact_ciphertext_products": 5,
+      "raw_galois_switches": 1,
+      "coefficient_slot_transform": false,
+      "canonical_integer_lift": false,
+      "production_admitted": false
+    },
+    "dependent_repeat_budget": {
+      "admitted": false,
+      "refused_exponent": 3,
+      "nodes": [
+        {
+          "power": 2,
+          "V": 13463089959535251484187783383804166657134368886737519067197,
+          "V_bits": 194,
+          "decodes_under_bound": true
+        },
+        {
+          "power": 3,
+          "V": 218685262037132293625577000427407119641975399071539834277106215632957,
+          "V_bits": 228,
+          "decodes_under_bound": false
+        }
+      ]
+    },
+    "full_Q241_exact_plan": "refused by existing U256 rank fallback; nine auxiliary lanes need287bits",
+    "evaluation_level": "public same-key drop from Q241 to Q211 before nonlinear work",
+    "persistent_ciphertext_modulus_changed": false,
+    "example": {
+      "input": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "section": [
+        78,
+        78,
+        99,
+        77,
+        33,
+        88,
+        44,
+        22
+      ],
+      "canonical_coefficient_section": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "witt_quotient": [
+        4,
+        4,
+        2,
+        4,
+        8,
+        3,
+        7,
+        9
+      ]
+    },
+    "linear_chart_identity": {
+      "Z99": "11*U+5*D",
+      "Phi_Z99": "5^11*Phi_D mod121",
+      "W_Z99": "U+5*W_D+((5-5^11)/11)*D mod11",
+      "native_encrypted_identity_verified_by_this_script": false
+    },
+    "ciphertext_error_reduced_by_section": false,
+    "integer_K_extracted": false,
+    "full_public_bootstrap_admitted": false
+  },
+  "evidence_sha256": {
+    "analysis-checks.log": "c6e9d01a4f534f2c01888f5174638d4b3ccc4cfeee609aaa2e93e7d4d807a88d",
+    "build-provenance.json": "26c995080538067567b92384a800518c3257fb4876ef8e0e69ae0f97716df8e0",
+    "encrypted-checks.log": "572f3e6a84bcc89bda5c0395b8a7e019128d03fb40cc21db0a470d88d78f4ba6",
+    "initial-native-capacity-refusal.log": "08b2de7162654b9c05ce3378128e901a24e50542788dae4f827d3e6b2abaf8da",
+    "initial-small-section-check.log": "a9c9fcce320d21a3d1036612ee78b40578d41d1a052e1c6762dcaac42aee0413",
+    "native-level211-check.log": "e732dc76025e46225652c871bcf8cb15c9890497de8955d313e4e1671df911e9",
+    "public-analysis.json": "0f3b75f8aa695bfe22ab81e359649772c66356b6eefa8dff5f99dc013b548617",
+    "small-final-check.log": "92fa281eef692b60ded41fb2ec63eb1c3248e651d09e2eb4df1ed20fc525c07a",
+    "source_manifest.txt": "3a79c9872cd33b0753531e90b2883b568fb029beed540468102186a5754cbdb3"
+  },
+  "runtime_library_changed": false,
+  "persistent_working_modulus_changed": false,
+  "independent_safe_basis_added": false,
+  "production_gate_changed": false,
+  "lint_run": false,
+  "native_encrypted_nonlinear_ring_section_executed": true,
+  "canonical_integer_K_extracted": false,
+  "plaintext65537_work_key_return_executed_for_this_primitive": false,
+  "native_public_bootstrap_executed": false,
+  "public_refresh_admitted": false,
+  "goal_complete": false,
+  "next_requirements": [
+    "Prove a consumer linking the coherent Witt digits and retained winding to the canonical integer K; ring section is not coefficientwise canonical.",
+    "Close the correct plaintext65537 encoding and original work-key return with a useful next operation and repeated native public refresh.",
+    "Authenticate precharge/key/domain/epoch/history and intact S8/Root211 bindings.",
+    "Finish missing source attack models and joint/KDM security assessment; measure full native resources and service behavior."
+  ]
+}

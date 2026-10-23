@@ -55,6 +55,16 @@ current generic dense-outer polynomial ledger refuses that minimum depth.
 These constraints do not cover input-adaptive or producer-image-restricted
 gates. The nonlinear lift and production admission remain open.
 
+The [native 11-adic ring section](../2026-10-23/FROBENIUS_CHART_SECTION.md)
+now evaluates Phi(D)=sigma_(11^-1)(D^11) over plaintext121 and extracts its
+Witt quotient over11. It checks all16384 coefficients and the actual chart
+identity for W(Z99), using five exact products and one Galois switch without
+a coefficient/slot map. A public same-key reduction to an internal211-bit
+outer level satisfies the existing exact-arithmetic capacity gates. The
+result is a ring section with cross-coefficient carries, not canonical K;
+the consuming encoding, work-key return and full native repeated refresh
+remain unresolved. Production admission stays closed.
+
 ## Finding and decision
 
 **A complete, admitted native public refresh has not been obtained.** The

@@ -3,6 +3,9 @@
 
 use super::*;
 
+#[path = "frobenius_chart_section.rs"]
+mod frobenius_chart_section;
+
 #[derive(Clone)]
 struct ChartSpec {
     coordinates: Vec<usize>,

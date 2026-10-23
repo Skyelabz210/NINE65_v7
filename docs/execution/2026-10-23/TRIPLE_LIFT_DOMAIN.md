@@ -1,5 +1,12 @@
 # Native three-view chart and constraints on its nonlinear readout
 
+The [11-adic ring-section continuation](FROBENIUS_CHART_SECTION.md) now
+executes a native nonlinear section and Witt quotient on the actual chart
+residue, verifying every coefficient and its Z99 compatibility identity.
+It uses a proved auxiliary121->11 encoding change after a public outer-prime
+drop. The section is not the coefficientwise canonical integer K; the
+plaintext65537 return and full public bootstrap remain open.
+
 The public producer now constructs an encrypted 99/121/143 chart for all8192
 source coefficients from one source precharge. The native check preserves
 every coefficient and odd zero, and reconstructs all three original view

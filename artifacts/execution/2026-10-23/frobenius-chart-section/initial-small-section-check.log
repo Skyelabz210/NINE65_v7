@@ -1,0 +1,7 @@
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_small_source_preserves_low_residue_and_extracts_witt_digit ... 11-adic ring section: sourceN128/outerN2048, Qbits=180, sourceH2, coherent D mod121; all2048 coefficients correct, Phi=sigma_2979(D^11), FIVE exact products+ONE raw Galois switch, depth4, no coefficient/slot map; dense +11H perturb has IDENTICAL section message, quotient changes by H mod11; V input observed/bound=21/30, section observed/bound=90/144, quotient observed/bound=86/141, second perturb output observed bits=90, public section time=1.286561s; direct reinterpretation and missing-Galois controls fail, encrypted repeat preflight REFUSED; ring section is NOT canonical integer K, native public bootstrap admission remains FALSE
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 36 filtered out; finished in 6.22s
+

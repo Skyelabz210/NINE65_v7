@@ -1,0 +1,15 @@
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_native_contracts_coherent_residue_and_tracks_quotient ... 
+thread 'phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_native_contracts_coherent_residue_and_tracks_quotient' panicked at crates/nine65/tests/research/frobenius_chart_section.rs:117:47:
+called `Result::unwrap()` on an `Err` value: ScaleRound(BaseExt(FallbackAccumulatorOverCapacity { lanes: 9, required_bits: 287 }))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_native_contracts_coherent_residue_and_tracks_quotient
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 36 filtered out; finished in 13.09s
+
