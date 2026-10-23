@@ -412,6 +412,7 @@ fn check_batched_phase(
                 let mut expected_affine_t = vec![0; outer.n];
                 let mut expected_affine_p = vec![0; outer.n];
                 let mut expected_corrected = vec![0; outer.n];
+                let mut expected_chart_residual = vec![0; outer.n];
                 let mut max_residual = 0u128;
                 for j in 0..n {
                     let z = expected[2 * j] as i128;
@@ -428,6 +429,7 @@ fn check_batched_phase(
                     assert!(x.unsigned_abs() * 2 < chart_t as u128);
                     expected_scaled[2 * j] = x.rem_euclid(chart_t as i128) as u64;
                     expected_carry[2 * j] = k.rem_euclid(source.t as i128) as u64;
+                    expected_chart_residual[2 * j] = residual.rem_euclid(chart_t as i128) as u64;
                     let center_t = |value: u128| {
                         let residue = (value % chart_t as u128) as i128;
                         if residue > chart_t as i128 / 2 {
@@ -523,6 +525,150 @@ fn check_batched_phase(
                 let q_outer_u128 = q_outer.d0;
                 assert_eq!((q_outer.d3, q_outer.d2, q_outer.d1), (0, 0, 0));
                 eprintln!("composite scale-locked Phase 1: T={chart_t}=p*A, p={}, A={}, same RNS basis/key/history; all {} doubled-ring coefficients including odd zeros decode as K and affine+K recovers the original plaintext; max |99*z-A*K|={}, p-view phase noise observed/bound bits={}/{}, Q_outer bits={}, source input V/Q bits={}/{}, p-output V/Q bits={}/{}, source-certified |r|<={}; evaluator adds/scales ciphertexts only",source.t,quotient_scale,outer.n,max_residual,bits(corrected_p_noise),bits(corrected_p_noise_bound.d0),bits(q_outer_u128),bits(input_v),bits(source_q),bits(corrected_p_noise),bits(q_outer_u128),corrected_residual_bound);
+
+                // Isolation control for the open high-encoding carry producer.
+                // The key holder supplies the paired residues S mod T and
+                // g mod T; the evaluator uses the actual K-elimination kernel
+                // to produce K mod T. This tests the consumer/noise path, but
+                // the encrypted centered-g producer is still a client oracle.
+                if n <= 1024 {
+                    let mut expected_source_t = vec![0; outer.n];
+                    let mut expected_centered_t = vec![0; outer.n];
+                    let mut expected_carry_t = vec![0; outer.n];
+                    for (j, &(k, g)) in phase1.iter().enumerate() {
+                        let source_phase = source_q as i128 * k + g;
+                        expected_source_t[2 * j] = source_phase.rem_euclid(chart_t as i128) as u64;
+                        expected_centered_t[2 * j] = g.rem_euclid(chart_t as i128) as u64;
+                        expected_carry_t[2 * j] = k.rem_euclid(chart_t as i128) as u64;
+                    }
+                    let encrypted_source_t =
+                        encrypt_polynomial(&outer, &outer_keys, &expected_source_t, &mut rng);
+                    let encrypted_centered_t =
+                        encrypt_polynomial(&outer, &outer_keys, &expected_centered_t, &mut rng);
+                    assert!(
+                        observe_polynomial(
+                            &outer,
+                            &encrypted_source_t,
+                            &outer_keys,
+                            &expected_source_t,
+                        ) <= precharge_v
+                    );
+                    assert!(
+                        observe_polynomial(
+                            &outer,
+                            &encrypted_centered_t,
+                            &outer_keys,
+                            &expected_centered_t,
+                        ) <= precharge_v
+                    );
+                    let inverse_period = inverse(source_q as u64 % chart_t, chart_t) as u128;
+                    let carry_t_bound = 2 * inverse_period * precharge_v;
+                    assert!(words(U512::from_u128(carry_t_bound).mul_u128(2)) < words(q_outer));
+                    let carry_t = tropical_winding_from_paired_coordinates(
+                        &outer,
+                        source_q as u64,
+                        &encrypted_source_t,
+                        &encrypted_centered_t,
+                    );
+                    let carry_t_observed =
+                        observe_polynomial(&outer, &carry_t, &outer_keys, &expected_carry_t);
+                    assert!(carry_t_observed <= carry_t_bound);
+                    let carry_t_scaled = signed_scale(&outer, &carry_t, quotient_scale as i64);
+                    let residual_t =
+                        add(&outer, &scaled, &signed_scale(&outer, &carry_t_scaled, -1));
+                    let residual_t_bound = scaled_bound + quotient_scale as u128 * carry_t_bound;
+                    assert!(words(U512::from_u128(residual_t_bound).mul_u128(2)) < words(q_outer));
+                    let residual_t_observed = observe_polynomial(
+                        &outer,
+                        &residual_t,
+                        &outer_keys,
+                        &expected_chart_residual,
+                    );
+                    assert!(residual_t_observed <= residual_t_bound);
+
+                    // Removing the independently encrypted residual cancels
+                    // the original chart ciphertext exactly, leaving only the
+                    // affine term and A*Enc_T(K). Thus its p-view error is
+                    // bounded by (V_affine + A*V_carry)/A.
+                    let repaired = add(&outer, &corrected, &signed_scale(&outer, &residual_t, -1));
+                    let expected_repaired_t: Vec<_> = expected_corrected
+                        .iter()
+                        .map(|&m| (quotient_scale as u128 * m as u128 % chart_t as u128) as u64)
+                        .collect();
+                    let repaired_t_observed =
+                        observe_polynomial(&outer, &repaired, &outer_keys, &expected_repaired_t);
+                    let repaired_t_bound = affine_bound + quotient_scale as u128 * carry_t_bound;
+                    assert!(repaired_t_observed <= repaired_t_bound);
+                    let repaired_p = decrypt_coefficients(&reader, &repaired, &outer_keys);
+                    assert_eq!(repaired_p, expected_corrected);
+                    let repaired_p_observed =
+                        observe_polynomial(&reader, &repaired, &outer_keys, &expected_corrected);
+                    let repaired_p_bound = repaired_t_bound.div_ceil(quotient_scale as u128);
+                    assert!(repaired_p_observed <= repaired_p_bound);
+                    assert!(
+                        words(U512::from_u128(repaired_p_observed).mul_u128(source_q))
+                            < words(U512::from_u128(input_v).mul_u128(q_outer_u128))
+                    );
+
+                    // Follow the repaired result through two dependent dense
+                    // products under the p plaintext view. Schoolbook negacyclic
+                    // multiplication supplies only the client-side oracle.
+                    let exact = reader.try_exact_evaluator().unwrap();
+                    let relin =
+                        exact.generate_hybrid_gadget_key_with_rng(&outer_keys.secret_key, &mut rng);
+                    let schoolbook = |left: &[u64], right: &[u64]| {
+                        let mut accum = vec![0i128; outer.n];
+                        for (i, &a) in left.iter().enumerate() {
+                            let a = if a > source.t / 2 {
+                                a as i128 - source.t as i128
+                            } else {
+                                a as i128
+                            };
+                            for (j, &b) in right.iter().enumerate() {
+                                let b = if b > source.t / 2 {
+                                    b as i128 - source.t as i128
+                                } else {
+                                    b as i128
+                                };
+                                let index = i + j;
+                                if index < outer.n {
+                                    accum[index] += a * b;
+                                } else {
+                                    accum[index - outer.n] -= a * b;
+                                }
+                            }
+                        }
+                        accum
+                            .into_iter()
+                            .map(|v| v.rem_euclid(source.t as i128) as u64)
+                            .collect::<Vec<_>>()
+                    };
+                    let square_expected = schoolbook(&expected_corrected, &expected_corrected);
+                    let square = exact.try_mul_exact(&repaired, &repaired, &relin).unwrap();
+                    assert_eq!(
+                        decrypt_coefficients(&reader, &square, &outer_keys),
+                        square_expected
+                    );
+                    let cube_expected = schoolbook(&square_expected, &expected_corrected);
+                    let cube = exact.try_mul_exact(&square, &repaired, &relin).unwrap();
+                    let cube_decoded = decrypt_coefficients(&reader, &cube, &outer_keys);
+                    let cube_matches = cube_decoded == cube_expected;
+                    if n == 512 {
+                        assert!(cube_matches, "small-corridor cubic control");
+                    } else {
+                        assert!(
+                            !cube_matches,
+                            "larger-corridor cubic must expose the next refresh gate"
+                        );
+                    }
+                    let carry_values: BTreeSet<_> = phase1.iter().map(|(k, _)| *k).collect();
+                    let cube_mismatches = cube_decoded
+                        .iter()
+                        .zip(&cube_expected)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    eprintln!("K-elimination residual ablation: sourceN{n}/outerN{}, K values={carry_values:?}, inverse(Q_s mod T)={inverse_period}; paired encrypted (S,g) residues yield Enc_T(K), observed/bound V bits={}/{}, subtracting A*K removes chart residual and gives p-view V bits observed/bound={}/{}, source input V/Q bits={}/{}, first dense square passes; second dependent product mismatches {cube_mismatches}/{} coefficients at this larger stress point; centered-g producer and repeat-refresh gate remain open",outer.n,bits(carry_t_observed),bits(carry_t_bound),bits(repaired_p_observed),bits(repaired_p_bound),bits(input_v),bits(source_q),outer.n);
+                }
             }
         }
         let readout_status = if coordinate == 99 && chart_t != source.t {
@@ -689,6 +835,11 @@ fn batched_lift_phase_is_negacyclic_and_has_an_unambiguous_integer_domain() {
 #[test]
 fn composite_scale_locked_tropical_chart_decodes_the_encrypted_carry() {
     check_batched_phase(512, 2, 99, 128, PHASE_P * (4 * 512 + 1));
+}
+
+#[test]
+fn composite_scale_locked_residual_correction_survives_a_larger_carry_corridor() {
+    check_batched_phase(1024, 8, 99, 16, PHASE_P * (4 * 1024 + 1));
 }
 
 #[test]

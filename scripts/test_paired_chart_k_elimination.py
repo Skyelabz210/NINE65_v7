@@ -3,6 +3,8 @@ import unittest
 from paired_chart_k_elimination import (
     M,
     P,
+    SAFE_BASIS_PRODUCT,
+    SAFE_BASIS_ROOT,
     SOURCE_K_RADIUS,
     ADJACENT_CARRY_TRAY,
     ADJACENT_CARRY_TRAY_INV_MOD_P,
@@ -14,6 +16,7 @@ from paired_chart_k_elimination import (
     lift,
     report,
     scale_locked_carry,
+    safe_basis_high_encoding_carry,
     source_residual_bound,
 )
 
@@ -120,6 +123,36 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         self.assertEqual(min(carries), -SOURCE_K_RADIUS)
         self.assertEqual(max(carries), SOURCE_K_RADIUS)
 
+    def test_one_safe_basis_and_two_sister_trays_lift_carry_into_T(self):
+        checked = 0
+        carries = set()
+        for z99 in range(-16_005, 16_006):
+            chart = lift(z99)
+            if abs(chart["centered_residual"]) > source_residual_bound():
+                continue
+            lifted = safe_basis_high_encoding_carry(z99)
+            self.assertEqual(lifted["k_signed"], chart["k_centered"])
+            self.assertEqual(
+                lifted["canonical_safe_basis_residue"],
+                chart["k_centered"] % SAFE_BASIS_PRODUCT,
+            )
+            self.assertEqual(
+                lifted["k_residue_mod_T"], chart["k_centered"] % (P * (M + 1))
+            )
+            for modulus in SAFE_BASIS_ROOT:
+                self.assertEqual(
+                    lifted["lane_residues"][modulus], chart["k_centered"] % modulus
+                )
+            self.assertEqual(
+                lifted["chart_residual_mod_T"],
+                (chart["centered_residual"] - chart["k_centered"]) % (P * (M + 1)),
+            )
+            carries.add(chart["k_centered"])
+            checked += 1
+        self.assertEqual(checked, 13_423)
+        self.assertEqual(min(carries), -SOURCE_K_RADIUS)
+        self.assertEqual(max(carries), SOURCE_K_RADIUS)
+
     def test_composite_98_tray_recovers_the_bounded_carry(self):
         checked = 0
         for z99 in range(-16_005, 16_006):
@@ -174,6 +207,15 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         )
         self.assertTrue(
             result["composite_scale_locked_quotient"]["all_scale_locked_checks_pass"]
+        )
+        self.assertTrue(
+            result["safe_basis_sister_tray_high_encoding_carry"][
+                "all_sister_lane_and_target_checks_pass"
+            ]
+        )
+        self.assertEqual(
+            result["safe_basis_sister_tray_high_encoding_carry"]["source_correlated_checks"],
+            13_423,
         )
         self.assertEqual(
             result["composite_scale_locked_quotient"]["source_correlated_checks"],

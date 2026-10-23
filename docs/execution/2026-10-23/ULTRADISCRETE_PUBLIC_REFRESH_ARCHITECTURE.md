@@ -24,7 +24,9 @@ refresh.
 | `r=X mod M`, or `a=X mod (M+1)` | Optional low tray for a K-Elimination readout of `X=99*Z99+M/2` | `M=32768`; adjacent-tray integer identity and bounded encrypted consumer are checked; native `Z99` already has a direct quotient map to `K_phase` | If used, produce its same-root common-`p` view with a producer-issued bound; it is not needed for the direct quotient identity |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
-| `V_out` | Error after residual correction and return | New client instrumentation measures the p-view error; native `N8192` remains at the incoming `Q/16` scale because the chart remainder survives | An independent carry/residual producer must contract error, then pass return, next dense multiplication, and a second refresh with issued bounds |
+| `K_T` | High-encoded carry residue modulo `T=p*A` | Paired-coordinate K-Elimination consumer passes oracle-injected N512/N1024 tests; a one-root S8 oracle derives K mod T from odd-lane M residues plus the 2-lane M+1 tray at all 13,423 source points | Produce same-history chart/sister-tray ciphertext residues and evaluate the bounded signed lift into T; certify tray and carry noise |
+| `R_T=x_T-A*K_T` | T-encoded chart residual | Oracle-injected K-Elimination subtraction removes `r/A` from the p-view return | Bind the residual to the same chart capability and include both chart and carry errors in its certificate |
+| `V_out` | Error after residual correction and return | Oracle control: 70/77 bits at N512 and 83/84 bits at N1024; first dense square passes in both; second product fails at 2045/2048 coefficients in the N1024 stress point | Public `g_T` producer, return to work key, refresh after the first product, and a second admitted refresh remain open |
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the
@@ -242,11 +244,19 @@ source and uses the same ciphertext components under p.
 
 The carry readout and affine Phase 1 addition do not reset error. `e99` is
 bounded by 6,849 under the live `Q/16` source-correlation assumptions, and the
-p-view readout retains the fraction `(e99-K)/A`. That is not yet a
-producer-issued bound for the whole return path and next product. A previous
-scale-locked tray cycle failed its following dense square; the new composite
-Phase 1 candidate still needs its own return, next-product, and second-refresh
-measurements and certificates.
+p-view readout retains the fraction `(e99-K)/A`. A new isolation control
+shows the cancellation form: if `S=Q_s*K+g` and `S_T,g_T` are supplied in the
+same T encoding, public K-Elimination yields `K_T=(S_T-g_T)*Q_s^(-1) mod T`.
+Then `R_T=x_T-A*K_T` is a ciphertext for the chart residual, and subtracting
+it from affine-plus-chart removes the p-view residual. That control uses a
+key-holder oracle for `g_T`. A new exact one-root route instead derives K in
+each S8 lane using the M tray on odd lanes and the M+1 tray on lane2, then
+uses the bounded lift to project `K mod T`; its 13,423 checks cover both carry
+boundaries. The encrypted same-history trays and bounded lift remain open. At N512 the
+corrected ciphertext survives a square and another product; at N1024 the
+square passes and the next product fails at 2045/2048 coefficients. The
+larger case therefore needs another refresh before that product, with a
+producer-issued bound at each step.
 
 The new diagnostic measures this term directly. With `r=99*Z99-A*K` and
 `V_T` the phase error around the T-scale plaintext `A*m+r`, the same ciphertext
@@ -260,8 +270,9 @@ At native `N=8192`, the measured p-view error is 121 bits against a 125-bit
 outer modulus, while input error is 56 bits against the 60-bit source modulus.
 That matches the incoming `Q/16` envelope and shows that reading `K` plus
 adding it to the affine result preserves plaintext correctness without
-contracting phase error. A separate carry/residual ciphertext is needed to
-remove `r/A` before the corrected result can qualify as a refresh.
+contracting phase error. The oracle ablation gives the required residual
+consumer and error target; the authenticated public `g_T` producer is still
+the missing part.
 
 ## Required implementation order
 
@@ -275,9 +286,10 @@ remove `r/A` before the corrected result can qualify as a refresh.
    production path. Extend its checked envelope to both signs, chart-cell
    boundaries, nonzero source error, every RNS lane, and odd zero coefficients
    against the client oracle.
-4. Connect the corrected phase to the canonical high-encoding
-   residual/removal consumer. Issue an immutable bound; do not reset error on
-   the strength of the integer identity or a client measurement.
+4. Produce same-history S8 residues for X and the M/M+1 sister trays. Run the
+   bounded K-Elimination lift to `K_T`, subtract its `A*K_T` residual, and
+   issue an immutable bound. The exact CRT oracle is not an encrypted tray
+   producer and cannot reset the certificate.
 5. Return to the work key and run the next dense multiply, a second refresh,
    corrupted-root/history negatives, and the exact security/admission checks.
 

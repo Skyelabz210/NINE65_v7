@@ -7,6 +7,7 @@ realize, using the native 99/121 chart and its 2-adic clock modulus.
 """
 
 from dataclasses import dataclass
+from math import prod
 
 
 P = 65_537
@@ -26,6 +27,8 @@ P_MOD_COMPOSITE_TRAY = P % COMPOSITE_CARRY_TRAY
 P_INV_MOD_COMPOSITE_TRAY = pow(P_MOD_COMPOSITE_TRAY, -1, COMPOSITE_CARRY_TRAY)
 COMPOSITE_CARRY_ODD_TRAY = 49
 P_INV_MOD_ODD_TRAY = pow(P, -1, COMPOSITE_CARRY_ODD_TRAY)
+SAFE_BASIS_ROOT = (2, 3, 5, 7, 11, 13, 17, 19)
+SAFE_BASIS_PRODUCT = prod(SAFE_BASIS_ROOT)
 
 
 def floor_div(numerator: int, denominator: int) -> int:
@@ -178,6 +181,68 @@ def scale_locked_carry(z99: int) -> dict:
     }
 
 
+def safe_basis_high_encoding_carry(z99: int) -> dict:
+    """Lift chart K to the composite T encoding through one S8 root.
+
+    For X=99*Z99+M/2, odd root lanes use the M tray:
+        K_b=(X_b-(X mod M)_b)*M^-1 mod b.
+    The 2 lane uses the adjacent A=M+1 tray:
+        K_2=(X_2-(X mod A)_2)*A^-1 mod 2.
+    The exact client oracle combines those residues, selects the unique
+    signed K in [-48,48], and projects it to T. The encrypted residue producer
+    and bounded-lift circuit are not implemented by this function.
+    """
+    chart = lift(z99)
+    k = chart["k_centered"]
+    e = chart["centered_residual"]
+    if abs(e) > source_residual_bound() or abs(k) > SOURCE_K_RADIUS:
+        raise ValueError("chart point lies outside the certified source window")
+
+    x = chart["x"]
+    low_m = x % M
+    low_a = x % ADJACENT_CARRY_TRAY
+    lane_residues = {}
+    for modulus in SAFE_BASIS_ROOT:
+        if modulus == 2:
+            lane_residues[modulus] = (
+                (x - low_a) * pow(ADJACENT_CARRY_TRAY, -1, modulus)
+            ) % modulus
+        else:
+            lane_residues[modulus] = (
+                (x - low_m) * pow(M, -1, modulus)
+            ) % modulus
+
+    # Independent clear CRT oracle. Runtime must use the root's bounded lift,
+    # not materialize this aggregate from encrypted lane residues.
+    canonical = sum(
+        residue
+        * (SAFE_BASIS_PRODUCT // modulus)
+        * pow(SAFE_BASIS_PRODUCT // modulus, -1, modulus)
+        for modulus, residue in lane_residues.items()
+    ) % SAFE_BASIS_PRODUCT
+    signed = canonical - SAFE_BASIS_PRODUCT if canonical > SAFE_BASIS_PRODUCT // 2 else canonical
+    if signed != k:
+        raise AssertionError("Safe-Basis sister residues did not recover the chart sheet")
+
+    winding = -1 if signed < 0 else 0
+    carry_t = (canonical + winding * SAFE_BASIS_PRODUCT) % COMPOSITE_SCALE_T
+    if carry_t != k % COMPOSITE_SCALE_T:
+        raise AssertionError("bounded Safe-Basis lift did not project K into T")
+    chart_value = Z99_TRAY * z99
+    residual_t = (chart_value - SCALE_LOCKED_FACTOR * carry_t) % COMPOSITE_SCALE_T
+    if residual_t != (e - k) % COMPOSITE_SCALE_T:
+        raise AssertionError("high-encoded carry does not remove the chart residual")
+
+    return {
+        "k_signed": signed,
+        "k_residue_mod_T": carry_t,
+        "canonical_safe_basis_residue": canonical,
+        "winding_to_T": winding,
+        "lane_residues": lane_residues,
+        "chart_residual_mod_T": residual_t,
+    }
+
+
 def source_residual_bound() -> int:
     """Strict integer bound from 97 half-round errors plus Q/16 phase."""
     strict_real_bound_twice = Z99_TRAY * (SOURCE_NORM + 1) + 2 * M // SOURCE_PHASE_DENOMINATOR
@@ -296,6 +361,9 @@ def report() -> dict:
     scale_locked_min_margin = SCALE_LOCKED_FACTOR
     scale_locked_carries = set()
     composite_checks = 0
+    safe_basis_checks = 0
+    safe_basis_carries = set()
+    safe_basis_lane_sets = {modulus: set() for modulus in SAFE_BASIS_ROOT}
     adjacent_checks = 0
     adjacent_remainder_min = M
     adjacent_remainder_max = 0
@@ -333,6 +401,13 @@ def report() -> dict:
                 raise AssertionError(f"49/2 sister-tray carry mismatch at Z99={z99}")
             if not sister["sign_correction_matches_negative_k"]:
                 raise AssertionError(f"sign correction mismatch at Z99={z99}")
+            safe_basis = safe_basis_high_encoding_carry(z99)
+            if safe_basis["k_signed"] != result["k_centered"]:
+                raise AssertionError(f"Safe-Basis carry mismatch at Z99={z99}")
+            safe_basis_carries.add(safe_basis["k_signed"])
+            for modulus, residue in safe_basis["lane_residues"].items():
+                safe_basis_lane_sets[modulus].add(residue)
+            safe_basis_checks += 1
             max_abs_centered_p_residue = max(
                 max_abs_centered_p_residue,
                 abs(composite["centered_p_residue"]),
@@ -425,6 +500,23 @@ def report() -> dict:
             "carry_values_in_domain": [min(scale_locked_carries), max(scale_locked_carries)],
             "requires_low_tray_or_extra_safe_basis_root": False,
         },
+        "safe_basis_sister_tray_high_encoding_carry": {
+            "safe_basis_root": list(SAFE_BASIS_ROOT),
+            "root_product": SAFE_BASIS_PRODUCT,
+            "odd_lane_formula": "K_b=(X_b-(X mod M)_b)*M^(-1) mod b",
+            "two_lane_formula": "K_2=(X_2-(X mod (M+1))_2)*(M+1)^(-1) mod 2",
+            "bounded_lift": "unique signed K in [-48,48], then project to T",
+            "target_plaintext_T": COMPOSITE_SCALE_T,
+            "source_correlated_checks": safe_basis_checks,
+            "all_sister_lane_and_target_checks_pass": safe_basis_checks == residual_checks,
+            "carry_values_in_domain": [min(safe_basis_carries), max(safe_basis_carries)],
+            "observed_lane_residue_counts": {
+                str(modulus): len(residues)
+                for modulus, residues in safe_basis_lane_sets.items()
+            },
+            "same_history_encrypted_sister_trays_produced": False,
+            "crt_reconstruction_used_only_by_clear_test_oracle": True,
+        },
         "composite_sister_trays_49_2": {
             "factorization": "98=49*2",
             "p_inverse_mod_49": P_INV_MOD_ODD_TRAY,
@@ -472,12 +564,11 @@ def report() -> dict:
             "the source plaintext across all 16,384 native doubled-ring "
             "coefficients. The measured p-view error retains r/A; native "
             "N=8192 stays at the incoming Q/16 scale rather than contracting. "
-            "Production still needs a typed capability binding "
-            "the T precharge to source key/history/level and issued phase/noise "
-            "bounds, plus the canonical residual return, next dense multiply, "
-            "second refresh, and admission. "
-            "The M, M+1, and composite-98 tray alternatives remain separate "
-            "designs; their production same-history tray producers are absent."
+            "A one-root S8 sister-tray oracle now lifts K into T from odd-lane "
+            "M residues and the 2-lane M+1 residue across all source-correlated "
+            "points. Its encrypted same-history tray producers and bounded "
+            "lift are absent. Production also needs the typed T precharge, "
+            "residual return, next dense multiply, second refresh, and admission."
         ),
         "public_refresh_admitted": False,
     }

@@ -253,14 +253,92 @@ bits at the output versus 53/60 at input, showing the same chart remainder can
 raise a quieter input to roughly the `Q/16` scale. The readout therefore
 solves the hidden integer carry but does not refresh the residual phase.
 
+## High-encoding K-Elimination residual ablation
+
+The next diagnostic isolates the missing correction encoding. Let the exact
+Phase 1 source residual be `S=Q_s*K+g`, and let `T=p*A` be the chart
+plaintext modulus. If two same-history ciphertexts provide `S mod T` and
+`g mod T` in the **T encoding**, ordinary K-Elimination gives
+
+```text
+K_T = (S_T-g_T) * Q_s^(-1) mod T.
+```
+
+For `x=99*Z99=A*K+r`, the public evaluator can then form
+
+```text
+R_T = x_T - A*K_T = r mod T
+C_repaired = (A*affine + x_T) - R_T = A*affine + A*K_T.
+```
+
+The p view of `C_repaired` returns the message without the `r/A` phase term.
+Because `T=p*A`, a carry known only modulo p would also suffice *if it were
+issued as a T-encoded residue*: `A*(K mod p)=A*K mod T`. A p-view decryption
+of `x_T` is not such a ciphertext; that same ciphertext still contains the
+`r/A` residual.
+
+The new Rust control in `batched_lift_phase.rs` encrypts paired `S_T,g_T`
+fixtures, invokes the existing public `tropical_winding_from_paired_coordinates`
+consumer, subtracts `A*K_T`, returns to the p view, and follows the result
+through two dependent dense products. Its client oracle supplies the pair,
+so this proves the K-Elimination consumer and correction noise budget, not the
+public producer of `g_T`.
+
+| Source / outer ring | K corridor in sample | `K_T` observed / bound | Repaired p-view V observed / bound | Follow-up |
+|---|---:|---:|---:|---|
+| N512 / N1024, T=134,285,313 | -1…1 | 70 / 76 bits | 70 / 77 bits | square and next product pass |
+| N1024 / N2048, T=268,505,089 | -2…3 | 83 / 84 bits | 83 / 84 bits | square passes; next product is wrong at 2,045/2,048 coefficients |
+
+The first row's repaired phase is below its input's normalized noise bound;
+the chart residual was removed. The second row shows that this margin alone
+does not guarantee another product for a denser, larger stress case. It must
+refresh again or have a tighter producer/product certificate before that
+operation. Neither row is a native N8192 repeat-refresh or an admission.
+
+The paired `(S_T,g_T)` route gives a consumer contract and a measured carry
+error target. A one-root residue route may bypass `g_T`: the current chart
+readout supplies `K mod p`, while the determinant-one U/D/E chart alone does
+not encode the signed high target. The following S8/M/(M+1) identity identifies
+the exact same-history tray views and bounded lift needed to produce `K mod T`
+directly. Those encrypted tray outputs and their certificate remain open.
+
+### One-root S8 projection into the high encoding
+
+A second CRAM-native route now closes the integer map without asking for a
+centered `g_T` input. For `X=99*Z99+M/2`, let `r_M=X mod M` and
+`r_A=X mod (M+1)`. The phase-locked chart residues give
+
+```text
+K mod b = (X_b-r_M,b) * M^(-1) mod b,  b in {3,5,7,11,13,17,19}
+K mod 2 = (X_2-r_A,2) * (M+1)^(-1) mod 2.
+```
+
+The odd Safe-Basis product is 4,849,845; the intact root product is
+`B=9,699,690`, much larger than `2*48`. The bounded lift selects the unique
+signed K in `[-48,48]`. In K-Elimination terms, a negative carry is the
+canonical root residue `B+K` with winding `-1`; a nonnegative carry has
+winding zero. `project_with_lift(root_residue, winding, B, T)` then emits
+`K mod T` without constructing the wide source phase or adding a Safe-Basis
+root. Multiplying that high-encoded result by A removes the chart residual.
+
+The exact oracle was added to `paired_chart_k_elimination.py` and its unittest.
+It checks all 13,423 source-correlated chart points, including `K=-48` and
+`K=48`, all eight S8 residues, the bounded signed lift, projection to
+`T=2,147,581,953`, and the resulting `e99-K` residual. The CRT aggregation
+exists only in this clear test oracle. This is a complete integer/K-Elimination
+path through the owner's one root plus M and M+1 sister trays. It does **not**
+yet produce those same-history ciphertext residues or run the bounded lift
+over encrypted root lanes; those are now the direct implementation target.
+
 ## Remaining encrypted obligations
 
 The scale-locked experiment closes the dense chart's carry readout and affine
 Phase 1 correction under its sparse-source, basis, level, and error contract.
 Production still needs a typed capability that binds the `T` precharge to the
 source key/history and active level and issues its phase/noise certificate.
-The measured p-view error retains the `(Q/A)*r` term, so an independent
-canonical-residual or carry ciphertext is still required to prove error
-reduction through the next dense multiplication and a second refresh. A failed
+The measured p-view error retains the `(Q/A)*r` term. The oracle ablation
+shows that K-Elimination from paired high-encoded `(S,g)` coordinates removes
+it and gives a concrete carry-error target. The public same-history `g_T`
+producer, returned next product, and second refresh remain open. A failed
 phase, history, capacity, security, or return certificate must refuse before
 output. Issue #95 remains open and production refresh remains fail-closed.

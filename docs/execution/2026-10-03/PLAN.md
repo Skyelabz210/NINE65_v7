@@ -265,10 +265,24 @@ The follow-up p-view noise measurement isolates the remaining contraction
 failure. For `r=99*Z99-A*K`, the corrected phase obeys
 `V_p <= (Q_outer*|r|+V_T)/A`; native N8192 measured 121-bit p-view error at a
 125-bit outer modulus, versus 56-bit input error at a 60-bit source modulus.
-It preserves the live Q/16 radius rather than resetting it. The next CRAM step
-must produce an independent carry/residual ciphertext that removes this term,
-then measure the returned work-key phase through the next dense product and a
-second refresh.
+It preserves the live Q/16 radius rather than resetting it.
+
+An oracle-paired-residue K-Elimination control now isolates the required
+correction encoding. From same-history `S_T,g_T` ciphertexts with
+`S=Q_s*K+g`, the public consumer computes `K_T=(S_T-g_T)*Q_s^(-1) mod T`;
+subtracting `A*K_T` removes the chart residual. At N512, repaired p-view error
+is 70 bits (77-bit bound), below the source's 53/60-bit normalized envelope,
+and two following products pass. At N1024/weight8 it is 83/84 bits; one dense
+square passes but the next product fails at 2,045/2,048 coefficients. This
+identifies the required high-encoding K precision and the need to refresh
+again before that larger follow-up product. The key-holder oracle still
+supplies `g_T`, so the public producer is open. A separate exact oracle now
+derives K in all eight S8 lanes from same-history X residues and M/M+1 tray
+views, centers the unique `[-48,48]` lift, and projects `K mod T` at all
+13,423 admitted chart points. This avoids requiring a separate `g_T` if the
+phase-locked tray producer can be implemented. That encrypted producer and
+bounded lift must bind provenance/noise, then pass return, the next product,
+and a second refresh.
 
 Run two parameter searches: (A) current CRAM tuples with sharper sound bounds
 and bounded circuits; (B) a wider native tuple based on the working reference.
