@@ -567,10 +567,10 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
             coefficients: vec![0],
         };
         let root = Root211::new(&runtime, &state).unwrap();
-        let tray = root.attach(&[M as u64, ctx.t]).unwrap();
+        let tray = root.attach(&[M as u64, ctx.t, 98]).unwrap();
         root.validate(&tray).unwrap();
         assert_eq!(root.lanes.len(), 8);
-        assert_eq!(tray.moduli, vec![M as u64, ctx.t]);
+        assert_eq!(tray.moduli, vec![M as u64, ctx.t, 98]);
 
         // X_p and r=X mod M are both p-encoded projections of one root.
         // Since p=2*M+1, K = 2*(r-X_p) mod p.
@@ -624,6 +624,60 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
         );
         assert!(actual_residual[1..].iter().all(|&value| value == 0));
 
+        // Composite-98 candidate: Y=198*Z99=2*X-M=p*K+(2*e99-K).
+        // Both residues below come from the same root-bound selector state.
+        // The common-p ciphertext retains the small linear representative
+        // 47*(Y_98-w_98), which is congruent to K modulo 98.
+        let y_mod_98 = runtime.project(&state, |row| {
+            (2 * row.remainder - M).rem_euclid(98) as i64
+        });
+        let centered_y_mod_p_mod_98 = runtime.project(&state, |row| {
+            let y = 2 * row.remainder - M;
+            let residue = y.rem_euclid(ctx.t as i128);
+            let centered = if residue > ctx.t as i128 / 2 {
+                residue - ctx.t as i128
+            } else {
+                residue
+            };
+            centered.rem_euclid(98) as i64
+        });
+        let mut k_mod_98 = zero(&ctx);
+        add_scaled(&ctx, &mut k_mod_98, &y_mod_98.ciphertext, 47);
+        add_scaled(
+            &ctx,
+            &mut k_mod_98,
+            &centered_y_mod_p_mod_98.ciphertext,
+            -47,
+        );
+        let k_mod_98_bound = y_mod_98
+            .bound
+            .add(centered_y_mod_p_mod_98.bound)
+            .mul_u128(47);
+        runtime
+            .noise
+            .admit(k_mod_98_bound, "composite-98 K-Elimination")
+            .unwrap();
+        let decoded_k_mod_98 = decode_at(
+            &ctx,
+            &k_mod_98,
+            &keys.secret_key,
+            k_mod_98_bound,
+            0..ctx.n,
+        );
+        let signed_residue = if decoded_k_mod_98[0] as i128 > ctx.t as i128 / 2 {
+            decoded_k_mod_98[0] as i128 - ctx.t as i128
+        } else {
+            decoded_k_mod_98[0] as i128
+        };
+        let centered_k = signed_residue.rem_euclid(98);
+        let centered_k = if centered_k >= 49 {
+            centered_k - 98
+        } else {
+            centered_k
+        };
+        assert_eq!(centered_k, selected_k);
+        assert!(decoded_k_mod_98[1..].iter().all(|&value| value == 0));
+
         // Follow the recovered carry through its first dependent product
         // whenever the public ledger admits it; otherwise require typed
         // refusal before ciphertext multiplication.
@@ -650,7 +704,7 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
             Err(other) => panic!("unexpected follow-up refusal: {other:?}"),
         }
         eprintln!(
-            "paired chart K-Elimination: selected K={selected_k}, e99={expected_residual}, one root, 2^15 and 65537 trays in common plaintext; dense chart producer remains separate"
+            "paired chart K-Elimination: selected K={selected_k}, e99={expected_residual}, one root, 2^15/98/65537 trays in common plaintext; composite-98 residue checked; dense chart producer remains separate"
         );
     }
 }

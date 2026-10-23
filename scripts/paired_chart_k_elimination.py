@@ -224,7 +224,11 @@ def report() -> dict:
             "max_observed_abs_centered_p_residue": max_abs_centered_p_residue,
             "source_correlated_checks": composite_checks,
             "all_composite_98_checks_pass": composite_checks == residual_checks,
-            "encrypted_same_root_trays_produced": False,
+            "bounded_encrypted_selector_fixture": (
+                "same-root residue check passes for K=-48,-1,0,1,48; "
+                "centering is client-side, not an Enc_p(K) producer"
+            ),
+            "dense_same_root_trays_produced": False,
         },
         "domain": {
             "Z99_abs_bound": Z99_ABS_BOUND,

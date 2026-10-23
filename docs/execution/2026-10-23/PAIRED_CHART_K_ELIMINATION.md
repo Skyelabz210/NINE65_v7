@@ -127,6 +127,13 @@ the dense producer still has to bind `Y mod 98` and the centered p residue
 `w mod 98` to one authenticated chart history, and emit centered `K` with a
 bound before the return consumer can use it.
 
+The encrypted selector probe now also attaches tray98 to the same root as
+`2^15` and p, derives `Y mod 98` and `w mod 98` from the same bounded selector
+state, and checks `47*(Y_98-w_98)` is congruent to each selected carry for
+`K=-48,-1,0,1,48`. Its client-side test centers that residue; the evaluator
+still does not emit a centered `Enc_p(K)`, and the selector fixture is not the
+dense chart producer.
+
 ## Encrypted gap to bridge
 
 The formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same
