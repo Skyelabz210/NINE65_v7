@@ -516,6 +516,168 @@ fn sister_tray_one_root_accepts_arbitrary_views_and_refuses_snapshot_rebinding()
     assert_eq!(runtime.multiplications.get(), 0);
 }
 
+#[test]
+fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
+    const M: i128 = 32_768;
+    const Z99_VALUES: [i128; 5] = [-15_888, -331, 0, 331, 15_888];
+    const CARRIES: [i128; 5] = [-48, -1, 0, 1, 48];
+
+    let ctx = RNSFHEContext::try_new(&config_with(6)).unwrap();
+    assert_eq!(ctx.t, 65_537);
+    let mut rng = ShadowHarvester::with_seed(0x5041_4952_4b45_4c49);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let runtime = CarryRuntime::new(&ctx, 5_000_003, [211, 2], 27);
+    let mut chart_rows = Vec::new();
+
+    for (&z99, &expected_k) in Z99_VALUES.iter().zip(&CARRIES) {
+        let chart_residual = 99 * z99 - M * expected_k;
+        assert!(chart_residual.abs() <= 5_313);
+        assert_eq!((99 * z99 + M / 2).div_euclid(M), expected_k);
+        let x = 99 * z99 + M / 2;
+        let mut row = row_for(x, runtime.source_q);
+        assert_eq!(row.remainder, x);
+        assert_eq!(row.winding, 0);
+
+        // The key holder precharges a one-hot chart-row selector. The
+        // evaluator only receives the encrypted selectors and public rows.
+        row.bound = runtime.noise.projected;
+        chart_rows.push(row);
+    }
+
+    // Precharge encrypted one-hot indicators for the public support. Each
+    // follow-up changes only which hidden row is selected.
+    let mut one_message = vec![0i8; ctx.n];
+    one_message[0] = 1;
+    let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
+    let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
+    let family = runtime.family;
+    let relin = relin_key(&runtime, &keys, &mut rng);
+    for selected_index in 0..chart_rows.len() {
+        for (index, row) in chart_rows.iter_mut().enumerate() {
+            row.selector = Some(if index == selected_index {
+                selected_one.clone()
+            } else {
+                selected_zero.clone()
+            });
+        }
+        let state = State {
+            rows: chart_rows.clone(),
+            family,
+            source_q: runtime.source_q,
+            coefficients: vec![0],
+        };
+        let root = Root211::new(&runtime, &state).unwrap();
+        let tray = root.attach(&[M as u64, ctx.t]).unwrap();
+        root.validate(&tray).unwrap();
+        assert_eq!(root.lanes.len(), 8);
+        assert_eq!(tray.moduli, vec![M as u64, ctx.t]);
+
+        // X_p and r=X mod M are both p-encoded projections of one root.
+        // Since p=2*M+1, K = 2*(r-X_p) mod p.
+        let mut k_ciphertext = zero(&ctx);
+        add_scaled(&ctx, &mut k_ciphertext, &tray.views[0].ciphertext, 2);
+        add_scaled(&ctx, &mut k_ciphertext, &tray.views[1].ciphertext, -2);
+        let k_bound = tray.views[0]
+            .bound
+            .add(tray.views[1].bound)
+            .mul_u128(2);
+        runtime.noise.admit(k_bound, "paired-chart K-Elimination").unwrap();
+
+        let selected_k = CARRIES[selected_index];
+        let actual_k = decode_at(
+            &ctx,
+            &k_ciphertext,
+            &keys.secret_key,
+            k_bound,
+            0..ctx.n,
+        );
+        assert_eq!(actual_k[0] as i128, selected_k.rem_euclid(ctx.t as i128));
+        assert!(actual_k[1..].iter().all(|&value| value == 0));
+
+        // Once K is available, the centered chart residual is linear and
+        // independent of the integer sheet: e99=99*Z99-M*K=r-M/2.
+        let z99_view = runtime.project(&state, |row| {
+            ((row.remainder - M / 2).div_euclid(99)) as i64
+        });
+        let mut residual = zero(&ctx);
+        add_scaled(&ctx, &mut residual, &z99_view.ciphertext, 99);
+        add_scaled(&ctx, &mut residual, &k_ciphertext, -(M as i64));
+        let residual_bound = z99_view
+            .bound
+            .mul_u128(99)
+            .add(k_bound.mul_u128(M as u128));
+        runtime
+            .noise
+            .admit(residual_bound, "paired-chart centered residual")
+            .unwrap();
+        let expected_residual = 99 * Z99_VALUES[selected_index] - M * selected_k;
+        let actual_residual = decode_at(
+            &ctx,
+            &residual,
+            &keys.secret_key,
+            residual_bound,
+            0..ctx.n,
+        );
+        assert_eq!(
+            actual_residual[0] as i128,
+            expected_residual.rem_euclid(ctx.t as i128)
+        );
+        assert!(actual_residual[1..].iter().all(|&value| value == 0));
+
+        // Follow the recovered carry through its first dependent product
+        // whenever the public ledger admits it; otherwise require typed
+        // refusal before ciphertext multiplication.
+        match runtime.noise.multiply(k_bound, k_bound) {
+            Ok(square_bound) => {
+                let square = runtime
+                    .exact
+                    .try_mul_exact(&k_ciphertext, &k_ciphertext, &relin)
+                    .unwrap();
+                let decoded = decode_at(
+                    &ctx,
+                    &square,
+                    &keys.secret_key,
+                    square_bound,
+                    0..ctx.n,
+                );
+                assert_eq!(
+                    decoded[0] as i128,
+                    (selected_k * selected_k).rem_euclid(ctx.t as i128)
+                );
+                assert!(decoded[1..].iter().all(|&value| value == 0));
+            }
+            Err(Refusal::Noise { .. }) => {}
+            Err(other) => panic!("unexpected follow-up refusal: {other:?}"),
+        }
+        eprintln!(
+            "paired chart K-Elimination: selected K={selected_k}, e99={expected_residual}, one root, 2^15 and 65537 trays in common plaintext; dense chart producer remains separate"
+        );
+    }
+}
+
+fn relin_key(
+    runtime: &CarryRuntime<'_>,
+    keys: &DualRNSKeySet,
+    rng: &mut ShadowHarvester,
+) -> RNSHybridGadgetKey {
+    let native = RNSSecretKey {
+        s: RNSPolynomial {
+            n: runtime.ctx.n,
+            limbs: runtime
+                .ctx
+                .rns
+                .mont_contexts
+                .iter()
+                .zip(&keys.secret_key.s.main)
+                .map(|(mont, lane)| lane.iter().map(|&value| mont.to_montgomery(value)).collect())
+                .collect(),
+        },
+    };
+    runtime
+        .exact
+        .generate_hybrid_gadget_key_with_rng(&native, rng)
+}
+
 // Called inside the existing opt-in native composition probe, reusing its
 // actual packed extraction and encrypted states instead of duplicating keys.
 fn wide_layouts() -> Vec<Vec<u64>> {

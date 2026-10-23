@@ -19,8 +19,8 @@ refresh.
 | `Z99,Z121,Z143` | Publicly weighted integer chart views | Batched native producer constructs 99/121/143 views from one source precharge | The nonlinear readout and complete encrypted root binding remain open |
 | `U,D,E_chart` | Unimodular chart coordinates | Integer Jacobian has determinant 1; `D,E_chart` cancel ideal sheet direction, `U` retains winding | Information preservation alone does not contract ciphertext error or recover canonical `K_s` |
 | `Phi_121,W_11` | 11-adic ring section and Witt quotient | Native section is invariant under `+11H`; chart identity checked coefficientwise | `W_11` is not the coefficientwise integer lift or canonical residual |
-| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle covers native chart bounds; it agrees with the source sheet under the correlated source bound | Encrypted low-residue producer for the same lift is missing |
-| `r=X mod M` | Canonical low tray, where `X=99*Z99+M/2` | `M=32768=2^15`; arbitrary target projection exists for bounded `Root211` states | Attach this tray to the actual dense chart state in the common `p=65537` encoding |
+| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle covers native chart bounds; bounded encrypted one-root selector probe verifies the arithmetic for five carries | Encrypted low-residue producer for the same dense lift is missing |
+| `r=X mod M` | Canonical low tray, where `X=99*Z99+M/2` | `M=32768=2^15`; encrypted selector probe attaches it with `p=65537` to one bounded `Root211` state and verifies K-Elimination | Attach this tray to the actual dense chart state in the common `p=65537` encoding |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` | Exact zero sheet derivative; source-correlated bound is 5313 | Establish a correction consumer and a full error/reset certificate |
 | `V_out` | Error after residual correction and return | Existing scale-locked probes carry source residual into the return | Must pass return, next dense multiplication, and a second refresh with issued bounds |
@@ -49,12 +49,14 @@ roles; `2^15`, 99, and 121 are dependent views, not new Safe-Basis roots.
 
 The existing `Root211` test capability can attach arbitrary moduli up to the
 plaintext capacity and emits those views in one common plaintext encoding.
-Its source is a bounded encrypted selector state. The native 99/121/143
-producer instead starts from a dense encrypted-source polynomial and emits
-chart ciphertexts. The missing bridge is an operation that produces
-`Enc_p(r)` from that actual dense state while preserving the same root,
-source, and history binding. A standalone ciphertext with plaintext modulus
-`M` does not satisfy the equation: it cannot be relabeled as `Enc_p(r)`.
+The new encrypted probe confirms the K-Elimination arithmetic for five
+boundary carries, but its source is still a bounded encrypted selector state.
+The native 99/121/143 producer instead starts from a dense encrypted-source
+polynomial and emits chart ciphertexts. The missing bridge is an operation
+that produces `Enc_p(r)` from that actual dense state while preserving the
+same root, source, and history binding. A standalone ciphertext with
+plaintext modulus `M` does not satisfy the equation: it cannot be relabeled
+as `Enc_p(r)`.
 
 Even after that bridge, `e99` is not a claimed refresh reset. Its 5313 bound
 is a bound on the chart residual under the source-correlation assumptions;

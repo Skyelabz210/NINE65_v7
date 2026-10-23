@@ -10,7 +10,9 @@ use crate::arithmetic::RNSPolynomial;
 use crate::entropy::ShadowHarvester;
 use crate::keys::bootstrap::{screen_bootstrap_security, validate_bootstrap_primes};
 use crate::ops::rns_fhe::exact_mul::{ExactMulEvaluator, ExactMulPlan, RNSHybridGadgetKey};
-use crate::ops::rns_fhe::{DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey};
+use crate::ops::rns_fhe::{
+    DualRNSKeySet, DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey,
+};
 use crate::ops::rns_galois::{shift, RNSGaloisEvaluator, RNSGaloisKey};
 use crate::params::{is_prime, FHEConfig, SecureConfig};
 use std::cell::Cell;

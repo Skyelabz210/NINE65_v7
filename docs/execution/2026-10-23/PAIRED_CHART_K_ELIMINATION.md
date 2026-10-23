@@ -84,6 +84,23 @@ python3 scripts/test_paired_chart_k_elimination.py
 python3 scripts/paired_chart_k_elimination.py
 ```
 
+## Bounded encrypted tray check
+
+The Safe-Basis unit probe exercises the arithmetic after a chart state is
+available. It encrypts one-hot selectors for five public support rows with
+`K = -48, -1, 0, 1, 48`, attaches `2^15` and `65537` views to the same
+`Root211`, and checks the common-encoding calculation of `K` and `e99`
+coefficientwise. It also follows the noise ledger through the first square,
+checking the square if admitted and requiring a typed refusal before
+multiplication otherwise. The focused test passed all five cases; the
+root/history-rebinding regression and all seven Python oracle tests passed.
+
+This test uses key-holder-precharged one-hot chart-row selectors. It verifies
+that one root can supply the required dependent trays and that the K-Elimination
+identities work in the common plaintext encoding. It does not connect the
+actual dense public `Z99/Z121` producer to that root, so it does not close the
+encrypted low-tray producer gate below.
+
 ## Encrypted gap to bridge
 
 The formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same

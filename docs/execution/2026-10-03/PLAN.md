@@ -109,7 +109,7 @@ in full during plan preparation.
 | Service ciphertext import/export deliberately refuse | A strict main-Q wire format and compatible main-only keys are on the shipping critical path |
 | Legacy public Phase 1 loses a secret-dependent carry and refuses | Keep the gate; construct a new admitted backend instead of deleting the refusal |
 | Encrypted expanded phase and same-prime paired views exist | Reuse them; canonical high-encoding low-digit removal remains missing at native parameters |
-| The Oct 23 paired-chart K-Elimination identity recovers a bounded chart carry from same-lift `M=2^15` and `p=65537` residues | Keep it as the CRAM-native candidate gate; the dense chart still lacks the phase-locked low-residue producer and the correction consumer remains unadmitted. See [the variable map](../2026-10-23/ULTRADISCRETE_PUBLIC_REFRESH_ARCHITECTURE.md) |
+| The Oct 23 paired-chart identity and bounded encrypted one-root tray probe pass | Keep K-Elimination as the CRAM-native candidate; connect the actual dense chart to the `2^15` tray and admit its correction consumer before closing refresh. See [the variable map](../2026-10-23/ULTRADISCRETE_PUBLIC_REFRESH_ARCHITECTURE.md) |
 | Full-domain canonical polynomial fails present noise certificates | Do not just add eight primes or replace bounded integers with BigInt and call it solved |
 | The current main-only full-Q sampler guards a 256-bit lane-sum limit | A wider bootstrap tuple also needs admitted context/key sampling and exact client decode; widening the multiply alone is insufficient |
 | Bounded digit polynomial identities and external repeatable BFV runs exist | They are a construction reference; input support, native arithmetic and security remain gates |
