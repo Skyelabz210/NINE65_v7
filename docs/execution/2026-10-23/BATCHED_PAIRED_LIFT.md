@@ -109,6 +109,40 @@ The certificate is computed before client observation. The native run gives:
 | D bound from separate-view triangle inequality | 57 bits |
 | U observed / direct error bound | 40 /50 bits |
 
+## Direct bridge to the Phase 1 carry
+
+The native `batched_lift_phase_native_constructs_all_source_coefficients_together`
+test now reconstructs the same input's public `c0,c1` coefficients from their
+two source RNS lanes, forms the exact centered component residuals
+`R_i=center_Q(t*c_i)`, and computes `S=R0+R1*s` by an independent signed
+negacyclic oracle. For the 99 view it checks every coefficient that
+
+```text
+K99 = round(99*Z99/32768) = round(S/Q) = K_phase.
+```
+
+The all-coefficient assertion passes at source degree8192 with the actual
+sparse source key of weight96 and the admitted `Q/16` source-phase cap; the
+observed carry corridor is `[-9,10]`, and the public bound is `|K|<=48`.
+The bound follows from `|R0+R1*s|<=97Q/2` and `|g|<=Q/16`, which rule out
+`|K|=49`. For the chart producer, each of the 97 rounded component terms
+contributes at most1/2 to `epsilon`, so
+
+```text
+|99*Z99/32768 - K|
+    <= |g|/Q + 99*|epsilon|/32768
+    <= 1/16 + 99*48.5/32768
+    < 1/2.
+```
+
+This proves the chart quotient is the live Phase 1 quotient on this producer
+domain. The source key, ciphertext history, component residuals, and Q are
+shared by the client oracle; no chart value or carry is supplied to the
+evaluator. The quotient is still computed only by the client assertion. An
+encrypted integer readout, its producer-issued bound, and source/root/history
+binding remain the next gate. The result does not transfer to a dense
+work-key secret with weight `N` or to inputs outside the `Q/16` phase cap.
+
 Both original encrypted Z views reconstruct from encrypted U/D bit for bit.
 Neglecting the negacyclic wrap changes7995 Z99 values and7992 Z121 values.
 The small N16 version also checks both reconstructions and the same error
@@ -152,6 +186,8 @@ Implementation: `crates/nine65/tests/research/batched_lift_phase.rs` and its
 registration in `sparse_source_encapsulation.rs`. Reproducible public cell
 audit: `python3 scripts/paired_composite_lift_chart.py`. Exact evidence and
 scope flags are in `artifacts/execution/2026-10-23/batched-paired-lift/`.
+Reproduce the native Phase 1/chart comparison with
+`cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate batched_lift_phase_native_constructs_all_source_coefficients_together -- --ignored --nocapture`.
 The complete focused Rust harness passes30 tests and the five Python suites
 pass31, for61 local unit checks; the isolated paired run and public cell
 audit also pass. The focused harness links the unchanged Cargo-built library

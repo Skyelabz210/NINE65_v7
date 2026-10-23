@@ -13,34 +13,49 @@ refresh.
 | `Q_s` | Source ciphertext modulus product | Native source phase and source-to-outer chart probes | Authenticate exact basis, level, key domain, and source history |
 | `S=R0+R1*s` | Secret-dependent source phase before centered reduction | Research probes form public-weighted views from an encrypted source precharge | Prove the coefficientwise map from the live BFV component-rounding residuals into the chart input; wire that producer into public Phase 1 |
 | `V_s` | Certified source phase error, including encryption, scale floor, and prior work | Source bounds and phase caps are recorded per probe | Carry an enforceable producer certificate through the whole route |
-| `K_s=round(S/Q_s)` | Covering-space sheet / hidden carry for the source phase | Rank-one tropical theta minimizer; encrypted K-Elimination is tested when paired coordinates are supplied | Produce the required paired coordinates from the live source without a clear lift oracle |
+| `K_s=round(S/Q_s)` | Covering-space sheet / hidden carry for the source phase | Rank-one tropical theta minimizer; paired-coordinate K-Elimination consumer tested; 99-chart quotient equals `K_phase` for all native sparse-source coefficients | Encrypted quotient/readout and source-history-bound certificate |
 | `g=S-Q_s*K_s` | Centered torus representative | Defined by the lift; local chart and source phase windows are checked | Preserve or recover its high-encoding representative with bounded error |
 | `T_Q(S)` | Rank-one tropical theta lift | `argmin_n(Q_s*n^2+2*n*S)=-K_s`; finite difference is `-2K_s-b` | No encrypted native theta-difference producer yet |
-| `Z99,Z121,Z143` | Publicly weighted integer chart views | Batched research probes construct 99/121/143 views from one source precharge | Production dense outputs, their common encrypted root/history, and the nonlinear readout remain open |
+| `Z99,Z121,Z143` | Publicly weighted integer chart views | Encrypted research producer constructs the 99/121 pair for all native coefficients from one sparse-source precharge; 99 quotient matches `K_phase` on its admitted envelope | Production key/history binding and encrypted nonlinear readout remain open |
 | `U,D,E_chart` | Unimodular chart coordinates | Integer Jacobian has determinant 1; `D,E_chart` cancel ideal sheet direction, `U` retains winding | Information preservation alone does not contract ciphertext error or recover canonical `K_s` |
 | `Phi_121,W_11` | 11-adic ring section and Witt quotient | Native section is invariant under `+11H`; chart identity checked coefficientwise | `W_11` is not the coefficientwise integer lift or canonical residual |
-| `K99` | Candidate scaled-chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle covers 10,411 source-correlated points with `|K99|<=48`; one-root encrypted-selector fixture checks `K mod p` and `e99 mod p` for `[-48,-1,0,1,48]` | Same-root dense producer for the common-p low tray is missing; prove its scale/lift map to `K_s` and `K_phase,j` before using it for Phase 1 |
-| `K_phase,j` | Actual Phase 1 correction between combined BFV rounding and independent component rounding, coefficient `j` | For `S=R0+R1*s` and `Q_s=Q_level`, it is exactly `K_s=round(S/Q_s)`; a deterministic N32 full-polynomial oracle verifies this identity, but no encrypted paired-coordinate producer exists | Produce same-source `S mod A` and `g mod A` for K-Elimination, or prove that the 99/121 chart supplies equivalent coordinates |
-| `r=X mod M`, or `a=X mod (M+1)` | Canonical low tray for `X=99*Z99+M/2` | `M=32768`; the adjacent-tray oracle proves `X=(M+1)K+a` on all 10,411 source-correlated chart points, with `(M+1)^(-1)=2 mod p`; bounded encrypted fixture checks `a` with `X_p` on five carries | Produce the low tray from the actual dense chart/root/history in common `p=65537` encoding with a producer-issued error bound |
+| `K99` | Chart quotient `floor((99*Z99+M/2)/M)` | The native batched 99-chart producer now matches `K_phase` on all 8,192 coefficients for the same source ciphertext, key, and component-rounding residuals; `|K|<=48` under source weight 96 and phase cap `Q/16` | Evaluate this bounded integer quotient homomorphically with a producer-issued bound and bind it to the source/root/history; the current comparison uses a client oracle |
+| `K_phase,j` | Actual Phase 1 correction between combined BFV rounding and independent component rounding, coefficient `j` | For `S=R0+R1*s` and `Q_s=Q_level`, it is exactly `K_s=round(S/Q_s)`; a deterministic N32 oracle and native N8192 batched-chart cross-check verify the identity and chart map | Turn the encrypted 99-chart value into `K_phase` without a clear quotient/readout, then connect it to the public Phase 1 consumer |
+| `r=X mod M`, or `a=X mod (M+1)` | Optional low tray for a K-Elimination readout of `X=99*Z99+M/2` | `M=32768`; adjacent-tray integer identity and bounded encrypted consumer are checked; native `Z99` already has a direct quotient map to `K_phase` | If used, produce its same-root common-`p` view with a producer-issued bound; it is not needed for the direct quotient identity |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; source-correlated bound is 5313 | Establish a correction consumer and a full error/reset certificate |
 | `V_out` | Error after residual correction and return | Existing scale-locked probes carry source residual into the return | Must pass return, next dense multiplication, and a second refresh with issued bounds |
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the
-same quotient by definition. This is the direct tropical connection to the
-hidden Phase 1 correction. The unresolved work is to produce the paired lift
-coordinates from that live source without a secret or clear-lift oracle.
-`K99` is a separate scaled-chart carry. The research oracle relates it to
-`K_s` only on its declared source-correlated domain; it does not construct
-that relation from a live BFV ciphertext. The tested corridors differ: the
-tropical source lift allows `|K_s|<=N/2` (4096 at N=8192), while the paired
-chart proves `|K99|<=48`. The scale/lift map needed to use `K99` as the Phase 1
-correction remains unproved. The `Root211` selector fixture is test-only and
-starts from a bounded synthetic row set; it does not implement the public
-producer for the live residual polynomial or its paired coordinates.
-Likewise, `D` and `E_chart` are chart residual coordinates; they are not
-automatically the centered source phase `g` or the return residual `e99`.
+same quotient by definition. The native N8192 experiment now also checks that
+the *actual batched 99-chart integer* yields that quotient for every
+coefficient under its declared source contract: source-secret weight at most
+96, source phase-error cap `Q/16`, `M=32768`, and chart representative
+`|Z99|<=16005<p/2`. In this domain, with `z=Z99`,
+
+```text
+z = M/99 * (K_s + g/Q_s) + epsilon,
+|epsilon| <= (96+1)/2,
+|g/Q_s| <= 1/16,
+|99*z/M - K_s| <= 1/16 + 99*48.5/32768 < 1/2.
+```
+
+Therefore `round(99*z/M)=K_s=K_phase`. The carry radius tightens to 48:
+`|S| <= 97*Q/2` and `|g|<=Q/16` exclude `|K|=49`. This closes the earlier
+scale/lift identity gap for this producer and sparse-source envelope. The
+experiment independently reconstructs `R0,R1` from the live source
+ciphertext and compares the chart quotient with `round((R0+R1*s)/Q)` at all
+8,192 coefficients. Its quotient comparison remains a client oracle; the
+evaluator still needs an encrypted readout. The general dense work-key path
+has secret weight up to N and does not inherit the radius-48 contract until
+the sparse-source transform and its authenticated history are included.
+
+The `Root211` selector fixture remains a separate test-only consumer: it
+checks K-Elimination and tray arithmetic after receiving bounded selector
+rows. It does not implement the nonlinear readout of the dense chart. `D`
+and `E_chart` are chart residual coordinates; they are not automatically the
+centered source phase `g` or the return residual `e99`.
 
 The new exact oracle
 [`phase1_tropical_k_elimination.py`](../../../scripts/phase1_tropical_k_elimination.py)
@@ -62,20 +77,19 @@ correction as `K_phase,j=round((R0_j+(R1*s)_j)/Q_level)`, where `R0,R1` are
 the component-rounding residuals. Set `S=R0+R1*s` and `Q_s=Q_level`; then
 the tropical lift's `K_s=round(S/Q_s)` is exactly the needed correction, per
 coefficient. The rank-one theta minimizer therefore names the right hidden
-carry. The missing part is not that identity: no public producer currently
-constructs the same-source pair `S mod A` and `g mod A` for the live BFV
-residual polynomial and carries its error certificate through K-Elimination.
+carry. The native N8192 batched chart cross-check now proves that its bounded
+99-view quotient is this same carry under the sparse-source contract. The
+remaining Phase 1 gate is an encrypted quotient/readout with a bound and
+source-history binding; direct paired `S mod A`, `g mod A` production remains
+an alternate route, not a prerequisite for the chart route.
 
-This leaves two implementation routes. The direct tropical route must produce
-the paired residues `S mod A` and `g mod A` from the encrypted residual
-polynomial under one authenticated source history, with `A>2B` for the
-certified carry radius `B`. If using the 99/121 chart, first prove that its
-`Z99` coordinates recover those same source residues; the adjacent `M+1`
-tray currently consumes only the chart carry `K99`. Then check every
-coefficient, signed boundary, source error, and active RNS level against the
-client oracle. In either route, connect the result to the residual return and
-prove error reduction through the next product and a second refresh. Keep the
-public gate closed until those producer and return certificates pass.
+The chart readout must work from the actual encrypted `Z99` and the existing
+Safe-Basis root or a phase-locked dependent tray. It must not center or round
+the decrypted value in the evaluator. Check every coefficient, signed
+boundary, source error, and active RNS level against the client oracle. Then
+connect the result to the residual return and prove error reduction through
+the next product and a second refresh. Keep the public gate closed until the
+encrypted readout and return certificates pass.
 
 ## Candidate CRAM-native gate
 
@@ -154,22 +168,23 @@ residual to fail the following dense square.
 
 ## Required implementation order
 
-1. Integrate one existing Safe-Basis root with the actual public chart state;
-   attach views at `M+1`, 99, and 121 without adding a root or accepting
-   caller-supplied phase snapshots.
-2. Produce `a=X mod (M+1)` in common p encoding; the adjacent-tray
-   K-Elimination result already represents signed K in `Z_p`. The equivalent
-   `M=2^15` view remains available. If using the composite 49/2 route, produce
-   same-history views and certify both the p-residue centering and K lift.
-   Charge source precharge error, public polynomial norms, scale-floor terms,
-   tray canonicalization, and key switches before output. Refuse if the
-   producer certificate does not fit.
-3. Compute `K99` and `e99` linearly. Check all coefficients, both signs,
-   chart-cell boundaries, nonzero source error, all RNS lanes, and odd zero
-   coefficients against an independent client oracle.
-4. Connect `e99` to the existing canonical high-encoding residual/removal
-   consumer. Issue an immutable bound; do not reset error on the strength of
-   the integer identity or a client measurement.
+1. Bind the existing Safe-Basis root and the batched 99/121 chart output to
+   the actual source key, history, phase cap, and active RNS level. Keep 121
+   as the paired chart check; do not add another root or accept caller-
+   supplied phase snapshots.
+2. Implement the encrypted bounded quotient `round(99*Z99/32768)` or an
+   equivalent 2/11 phase-locked K-Elimination readout in the common
+   plaintext-65537 encoding. Prove its support and certify chart error,
+   source precharge, public polynomial norms, scale floors, tray
+   canonicalization, and key switches before output. Refuse if the
+   certificate does not fit.
+3. Add the encrypted carry to the affine Phase 1 result and check all
+   coefficients, both signs, chart-cell boundaries, nonzero source error,
+   all RNS lanes, and odd zero coefficients against an independent client
+   oracle.
+4. Connect the corrected phase to the canonical high-encoding
+   residual/removal consumer. Issue an immutable bound; do not reset error on
+   the strength of the integer identity or a client measurement.
 5. Return to the work key and run the next dense multiply, a second refresh,
    corrupted-root/history negatives, and the exact security/admission checks.
 

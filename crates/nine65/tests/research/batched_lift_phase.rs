@@ -64,6 +64,76 @@ fn signed_scale(ctx: &RNSFHEContext, input: &RNSCiphertext, factor: i64) -> RNSC
     }
 }
 
+fn add_mod_u128(left: u128, right: u128, modulus: u128) -> u128 {
+    debug_assert!(left < modulus && right < modulus);
+    if left >= modulus - right {
+        left - (modulus - right)
+    } else {
+        left + right
+    }
+}
+
+fn mul_mod_u128(mut left: u128, mut right: u128, modulus: u128) -> u128 {
+    let mut product = 0;
+    while right != 0 {
+        if right & 1 != 0 {
+            product = add_mod_u128(product, left, modulus);
+        }
+        right >>= 1;
+        if right != 0 {
+            left = add_mod_u128(left, left, modulus);
+        }
+    }
+    product
+}
+
+fn centered_component_residual(
+    ctx: &RNSFHEContext,
+    component: &[Vec<u64>],
+    coefficient: usize,
+    source_q: u128,
+) -> i128 {
+    assert_eq!(ctx.config.primes.len(), 2);
+    assert!(source_q < i128::MAX as u128);
+    let p0 = ctx.config.primes[0];
+    let p1 = ctx.config.primes[1];
+    let r0 = component[0][coefficient];
+    let r1 = component[1][coefficient];
+    let delta = (r1 + p1 - r0 % p1) % p1;
+    let correction = (delta as u128 * inverse(p0 % p1, p1) as u128 % p1 as u128) as u64;
+    let canonical = r0 as u128 + p0 as u128 * correction as u128;
+    assert!(canonical < source_q);
+
+    // R_i = center(t*c_i mod Q). This equals t*c_i-Q*round(t*c_i/Q)
+    // for odd Q and the repository's nearest-integer convention, without
+    // ever materializing the wider t*c_i product.
+    let residue = mul_mod_u128(canonical, ctx.t as u128, source_q);
+    if residue <= source_q / 2 {
+        residue as i128
+    } else {
+        residue as i128 - source_q as i128
+    }
+}
+
+fn phase1_tropical_carry(
+    residual0: &[i128],
+    residual1: &[i128],
+    secret: &[i8],
+    source_q: u128,
+    coefficient: usize,
+) -> (i128, i128) {
+    let n = secret.len();
+    let mut source = residual0[coefficient];
+    for (i, &weight) in residual1.iter().enumerate() {
+        let secret_index = (coefficient + n - i) % n;
+        let sign = if i + secret_index < n { 1 } else { -1 };
+        source += weight * secret[secret_index] as i128 * sign;
+    }
+    let q = source_q as i128;
+    let carry = (source + q / 2).div_euclid(q);
+    (carry, source - carry * q)
+}
+
 struct BatchedPhase<'a> {
     source: &'a RNSFHEContext,
     outer: &'a RNSFHEContext,
@@ -201,6 +271,23 @@ fn check_batched_phase(n: usize, weight: usize, coordinate: usize, phase_denomin
         + (source_q % source.t as u128) * (source.t - 1) as u128;
     let input_v = source_fresh_v + load * source.t as u128;
     assert!(observe_polynomial(&source, &input, &source_keys, &message) <= input_v);
+
+    // Independent clear oracle for the exact Phase 1 residual polynomial.
+    // Keep the same source ciphertext, secret history, component-rounding
+    // residuals and Q that feed the encrypted chart producer below.
+    let source_q = source_q as u128;
+    let source_components = [ordinary(&source, &input.c0), ordinary(&source, &input.c1)];
+    let residual0: Vec<_> = (0..n)
+        .map(|j| centered_component_residual(&source, &source_components[0], j, source_q))
+        .collect();
+    let residual1: Vec<_> = (0..n)
+        .map(|j| centered_component_residual(&source, &source_components[1], j, source_q))
+        .collect();
+    let phase1: Vec<_> = (0..n)
+        .map(|j| phase1_tropical_carry(&residual0, &residual1, &trits, source_q, j))
+        .collect();
+    let carry_radius = (weight / 2) as i128;
+    assert!(phase1.iter().all(|(k, _)| k.abs() <= carry_radius));
     let encrypted_source = encrypt_polynomial(
         &outer,
         &outer_keys,
@@ -273,6 +360,25 @@ fn check_batched_phase(n: usize, weight: usize, coordinate: usize, phase_denomin
         );
         let observed = observe_polynomial(&outer, &output.ciphertext, &outer_keys, &expected);
         assert!(observed <= output.bound);
+        if coordinate == 99 {
+            let mut chart_checked = 0;
+            for j in 0..n {
+                let chart_z_residue = expected[2 * j] as i128;
+                let chart_z = if chart_z_residue > outer.t as i128 / 2 {
+                    chart_z_residue - outer.t as i128
+                } else {
+                    chart_z_residue
+                };
+                let chart_carry = (99 * chart_z + outer.n as i128)
+                    .div_euclid((2 * outer.n) as i128);
+                let (phase_carry, centered_phase) = phase1[j];
+                assert_eq!(chart_carry, phase_carry, "K99 / K_phase at j={j}");
+                assert!(centered_phase.unsigned_abs() <= (source_q / 2) as u128);
+                chart_checked += 1;
+            }
+            assert_eq!(chart_checked, n);
+            eprintln!("tropical chart bridge: sourceN{n}, H={weight}, all {chart_checked} coefficients satisfy K99=round((R0+R1*s)/Q)=K_phase; |K|<={carry_radius}, g=center_Q(S); same live source ciphertext and residual history");
+        }
         eprintln!("encrypted batch lift phase: sourceN{n}/outerN{}, sourceH{weight}, composite{coordinate}; ONE signed public polynomial multiplication, all{n} z coefficients and all{n} odd zeros correct, source support hidden from evaluator, signed |z| observed/bound={maximum}/{}, V observed/bound={}/{}, public weight l1={}, native evaluator time={seconds:.6}s, sheets={sheets:?}, cyclic-wrap omission corrupts {wrong_cyclic} z values; clear client checks integer map only, nonlinear encrypted lift gate NOT implemented",outer.n,output.integer_coefficient_limit,bits(observed),bits(output.bound),output.public_polynomial_l1);
         views.push((output, expected, public0, public1));
     }

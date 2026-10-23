@@ -219,11 +219,19 @@ views, encrypted centering of the p residue, and canonicalization of the
 49-residue with its signed correction bit. The exact 49/2 identity supplies
 none of these encrypted operations.
 
-The next implementation test should attach the `M+1` tray to the actual
-99/121 public chart state through the existing single Safe-Basis capability,
-then compute `K` and `e99` in the common `p` encoding. It must check every
-coefficient, signed carry boundaries, nonzero source noise, the correction
-consumer, the first post-return multiplication, and a second refresh. A
-failed phase-lock, capacity, or noise certificate must refuse before output.
-Until this passes, issue #95 stays open and public refresh remains
-fail-closed.
+The native batched chart now closes a different part of this gap: for its
+source-weight-96, `Q/16` envelope, an all-coefficient independent oracle proves
+`round(99*Z99/32768)=K_phase` on the actual 99/121 outputs. The integer carry
+identity no longer depends on treating `K99` as a separate chart carry. It
+still does not emit an encrypted quotient. The `M+1` tray remains a candidate
+encrypted K-Elimination consumer if its producer can attach that same-history
+low view to the common root.
+
+The next implementation test should either evaluate the bounded integer
+quotient from `Z99` in the common `p` encoding or attach the `M+1` tray to the
+actual 99/121 public chart state through the existing single Safe-Basis
+capability, then compute `K` and `e99`. It must check every coefficient,
+signed carry boundaries, nonzero source noise, the correction consumer, the
+first post-return multiplication, and a second refresh. A failed phase-lock,
+capacity, or noise certificate must refuse before output. Until this passes,
+issue #95 stays open and public refresh remains fail-closed.
