@@ -1,0 +1,34 @@
+{
+  "scope": "Public integer calculation, not a live-history certificate",
+  "N": 8192,
+  "source_Q": "348959453350711275087786864768188417",
+  "boot_Q": "15464703927745427322676305657239176590590476289",
+  "boot_Q_bits": 154,
+  "plaintext": 65537,
+  "lane_digits": 20,
+  "switch_error_bound": 502824960,
+  "direct_two_term_scaled_error_bounds": {
+    "root2": {
+      "value": "79612247189921381777408",
+      "bits": 77,
+      "decoding_bound_fits": true
+    },
+    "composite33": {
+      "value": "2429572988653764608",
+      "bits": 62,
+      "decoding_bound_fits": true
+    },
+    "message_recovery": {
+      "value": "2429836619085400607",
+      "bits": 62,
+      "decoding_bound_fits": true
+    }
+  },
+  "source_roundings": {
+    "A0": 21513,
+    "A1": 34082
+  },
+  "complete_source_key_bytes": 429496729600,
+  "dense_source_window_admitted": false,
+  "public_refresh_admitted": false
+}

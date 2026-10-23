@@ -51,6 +51,10 @@ pub mod cram_main;
 #[path = "cram_precharge.rs"]
 pub mod cram_precharge;
 
+#[cfg(test)]
+#[path = "tropical_phase_clock_tests.rs"]
+mod tropical_phase_clock_tests;
+
 #[inline]
 fn emit_diagnostic_warn(message: &str) {
     #[cfg(feature = "logging")]

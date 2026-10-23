@@ -314,6 +314,15 @@ bound. It cannot admit the four-layer local circuit at native size.
 
 ## Remaining native encrypted construction
 
+The [native phase-clock follow-up](NATIVE_PHASE_CLOCK_LIFT.md) now investigates
+preserving Q-sheet information BEFORE small-coordinate projection. It uses
+Q-normalized public residuals and native encrypted selector-controlled rotations,
+not period13 centering. Composite33 can cover the full signed carry corridor
+for a conditionally weight32 source, while dense8192 is explicitly refused.
+The encrypted tests use two public residual terms; they do not instantiate the
+full sparse-source or dense-source path. Key size, full history, output assembly
+and return/repeat remain separate requirements.
+
 For refresh, `S=R0+R1*s` is a negacyclic secret-dependent sum. The precharged
 root path already computes encrypted residues of S. The other coordinate
 in the formula, `g mod A` for `g=center_Q(S)`, must be produced or preserved

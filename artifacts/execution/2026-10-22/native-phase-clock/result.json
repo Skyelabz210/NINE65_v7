@@ -1,0 +1,166 @@
+{
+  "task_id": "NATIVE_PHASE_CLOCK_LIFT",
+  "status": "ready_for_review",
+  "source_commit": "d47245de8d1d118becaeed8461a658b84d3c6591",
+  "scope": "Native-Q119 encrypted cell selection; N8192 screened outer tuple, two public residual terms, one high-noise source coefficient recovered under the outer key. Not full-ring refresh.",
+  "manifest": "artifacts/execution/2026-10-22/native-phase-clock/source_manifest.txt",
+  "worktree_manifest_sha256": "9082e8ca587692dee4b6970d5d2121d90085dca8c316ed5ec7d54a98d7cefc94",
+  "manifest_scope": "Five changed source/document files; unchanged tracked files bound by source_commit.",
+  "files_changed": [
+    "crates/nine65/src/ops/rns_fhe.rs",
+    "crates/nine65/src/ops/tropical_phase_clock_tests.rs",
+    "docs/execution/2026-10-22/NATIVE_PHASE_CLOCK_LIFT.md",
+    "docs/execution/2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md",
+    "docs/execution/2026-10-21/PUBLIC_REFRESH_ARCHITECTURE.md",
+    "artifacts/execution/2026-10-22/native-phase-clock/checks.log",
+    "artifacts/execution/2026-10-22/native-phase-clock/source_manifest.txt",
+    "artifacts/execution/2026-10-22/native-phase-clock/public-preflight.json",
+    "artifacts/execution/2026-10-22/native-phase-clock/result.json"
+  ],
+  "checks": [
+    {
+      "command": "cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib phase_clock_ -- --include-ignored --nocapture",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib key_holder_precharge_has_exact_eta_phase_error -- --nocapture",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib precharged_pairs_public_support_covers_arbitrary_centered_terms -- --nocapture",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib triple_precharge_bivariate_readouts_match_every_small_assignment -- --nocapture",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "exit_code": 0
+    },
+    {
+      "command": "cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib distinct_weight_carry_support_hits_state_cap_before_ciphertext_work -- --nocapture",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "exit_code": 0
+    }
+  ],
+  "total_passed": 8,
+  "total_failed": 0,
+  "total_ignored": 0,
+  "checks_log": "artifacts/execution/2026-10-22/native-phase-clock/checks.log",
+  "checks_log_sha256": "f156cbb800c099dd526774185d7960ab3216b3581a0f023d293bd1bdba9dd61f",
+  "observations": {
+    "source_period_bits": 119,
+    "outer_period_bits": 154,
+    "outer_primes": [
+      1811939329,
+      2113929217,
+      2130706433,
+      1107296257,
+      1711276033
+    ],
+    "plaintext": 65537,
+    "native": {
+      "N": 8192,
+      "source_trit_profiles": [
+        0,
+        1
+      ],
+      "participating_public_terms": 2,
+      "clock_coordinates": [
+        2,
+        33
+      ],
+      "observed_scaled_error_bits": {
+        "parity": 65,
+        "composite_carry": 50,
+        "recovered_message": 50
+      },
+      "analytic_scaled_error_bound_bits": {
+        "parity": 77,
+        "composite_carry": 62,
+        "recovered_message": 62
+      },
+      "recovered_source_coefficients": 1,
+      "incoming_observed_scaled_error_bits": 112,
+      "recovered_message": 24141,
+      "dependent_squares": 5,
+      "normalized_error_decrease_checked": true,
+      "full_source_history_certificate": false
+    },
+    "insecure_small_ring": {
+      "N": 256,
+      "source_trit_profiles": [
+        -1,
+        0,
+        1
+      ],
+      "incoming_scaled_error_bits": 112,
+      "recovered_coefficients": 3,
+      "recovered_messages": [
+        18885,
+        21513,
+        24141
+      ],
+      "recovered_output_scaled_error_bits": [
+        41,
+        40,
+        39
+      ],
+      "recovered_output_bound_bits": 52,
+      "dependent_squares": 9
+    },
+    "exact_plateau_checks": 5185,
+    "measurement_scope": "Independent secret-key client observations; analytic bounds are research calculations, not authenticated production bound types."
+  },
+  "acceptance_evidence": [
+    "Public residuals are normalized by native Q before projection; the clock distinguishes the earlier small-chart/S8 alias.",
+    "No centered chart, winding, source plaintext or measured source error is an evaluator input.",
+    "Raw precharged selector columns use existing native RNS hybrid target switching and fresh full-width masks.",
+    "Clock and affine coefficient recovery have output error envelopes without a term proportional to old source g.",
+    "Independent direct BFV rounding of the source agrees with the recovered message, and the following message square succeeds.",
+    "Native work-period parameters remain unchanged; the existing five-prime outer tuple passes both current lattice screens.",
+    "Dense8192 source windows are explicitly refused; H32/composite33 and H64/composite65 entries are conditional preflights only."
+  ],
+  "regressions": {
+    "strict_precharge_error_bound": 1,
+    "pair_assignment_checks": 34425,
+    "triple_assignment_output_checks": 91854,
+    "old_joint_support_cap_refusal_preserved": true
+  },
+  "preflight": {
+    "artifact": "artifacts/execution/2026-10-22/native-phase-clock/public-preflight.json",
+    "sha256": "a410c80aa4dc723caf7a64d0a07de686e4fa385285700feb16d969182030db4d",
+    "full_direct_source_key_bytes": 429496729600,
+    "full_direct_source_key_GiB": 400,
+    "two_term_precharge_bytes": 104857600,
+    "trace_keys_bytes": 170393600
+  },
+  "exploratory_execution": {
+    "unoptimized_native_diagnostic_stopped": true,
+    "reason": "Own debug probe stopped after reaching its first clock, then rerun with package optimization2 and the full coefficient-recovery follow-up. Only the completed optimized run is acceptance evidence."
+  },
+  "unresolved": [
+    "Full dense-source handling or a live, jointly assessed sparse source/key switch with authenticated history.",
+    "Practical precharge compaction with its actual derived-key error and security bounds; hidden support cannot be skipped.",
+    "Residue-only public preprocessing, source/key/epoch binding and integration with the intact S8/Root211 capability.",
+    "Full output assembly, work-key/modulus return, key relationships and repeat-refresh closure."
+  ],
+  "runtime_implementation_changed": false,
+  "source_hook": "cfg(test)-only module registration in rns_fhe.rs",
+  "public_refresh_admitted": false,
+  "production_gate_changed": false,
+  "external_backend_added": false,
+  "lint_run": false,
+  "ci_status_claimed": false
+}

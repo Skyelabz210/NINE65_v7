@@ -393,6 +393,14 @@ There are two implementation mismatches to fix before extrapolating:
 
 ## 7. Complete target architecture and its acceptance conditions
 
+A newer [native-Q phase-clock probe](../2026-10-22/NATIVE_PHASE_CLOCK_LIFT.md)
+addresses the projection alias with Q-normalized encrypted rotations. It
+supplies a candidate cell selector rather than assuming a centered chart.
+Its composite33 window can cover a conditionally weight32 source, but the
+dense8192 window fails and a literal full-source gadget precharge costs 400 GiB.
+The coefficient-recovery probe is not full-ring public refresh or a live
+history/return certificate. Existing production gates remain unchanged.
+
 The latest CRAM-native tropical follow-up now constructs a **small-period**
 chart from public residual weights and precharged encrypted source trits,
 without a supplied centered chart. A partition of unity plus one winding

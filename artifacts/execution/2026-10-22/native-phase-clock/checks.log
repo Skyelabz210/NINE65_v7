@@ -1,0 +1,94 @@
+Command: cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib phase_clock_ -- --include-ignored --nocapture
+Exit: 0
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/home/acid/projects/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9m 41s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 4 tests
+clock evaluation: N=256, coordinate=2, source trit profile=-1, window2=70
+clock evaluation: N=256, coordinate=33, source trit profile=-1, window2=163
+coefficient recovery: N=256, source trit=-1, input Vbits=112, output observed Vbits=41, output bound Vbits=52, message=18885, following message square correct
+clock evaluation: N=256, coordinate=2, source trit profile=0, window2=70
+clock evaluation: N=256, coordinate=33, source trit profile=0, window2=163
+coefficient recovery: N=256, source trit=0, input Vbits=112, output observed Vbits=40, output bound Vbits=52, message=21513, following message square correct
+clock evaluation: N=256, coordinate=2, source trit profile=1, window2=70
+clock evaluation: N=256, coordinate=33, source trit profile=1, window2=163
+coefficient recovery: N=256, source trit=1, input Vbits=112, output observed Vbits=39, output bound Vbits=52, message=24141, following message square correct
+encrypted native-Q clock: N=256, source_Qbits=119, outer_Qbits=154, profiles=[-1, 0, 1], root2/composite33 observed V bits=[56, 41], conservative V bits=[67, 52], recovered coefficients=3, dependent squares=9
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_encrypted_native_q_without_chart_or_winding_oracle ... ok
+native-Q alias: phase clocks distinguish sheets -1,0,1 at N256 and N8192, same public weights, without supplying centered phases
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_public_quantization_distinguishes_native_alias ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_windows_composite_budget_and_dense_refusal ... ok
+native clock windows: signed composite33 carry [-16,16], 5185 exact plateau checks; sparse32 passes at V/Q<=1/8; dense8192 refused; composite65 requires tighter V/Q<=1/16 for weight64
+clock evaluation: N=8192, coordinate=2, source trit profile=0, window2=2054
+clock evaluation: N=8192, coordinate=33, source trit profile=0, window2=2147
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_native_8192_alias_and_dependent_squares has been running for over 60 seconds
+clock evaluation: N=8192, coordinate=2, source trit profile=1, window2=2054
+clock evaluation: N=8192, coordinate=33, source trit profile=1, window2=2147
+coefficient recovery: N=8192, source trit=1, input Vbits=112, output observed Vbits=50, output bound Vbits=62, message=24141, following message square correct
+encrypted native-Q clock: N=8192, source_Qbits=119, outer_Qbits=154, profiles=[0, 1], root2/composite33 observed V bits=[65, 50], conservative V bits=[77, 62], recovered coefficients=1, dependent squares=5
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_native_8192_alias_and_dependent_squares ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1096 filtered out; finished in 158.44s
+
+
+Command: cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib key_holder_precharge_has_exact_eta_phase_error -- --nocapture
+Exit: 0
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.95s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 1 test
+test ops::expanded_bootstrap::safe_basis_precharge_tests::key_holder_precharge_has_exact_eta_phase_error ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1099 filtered out; finished in 0.75s
+
+
+Command: cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib precharged_pairs_public_support_covers_arbitrary_centered_terms -- --nocapture
+Exit: 0
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 1 test
+pair precharge: 34425 public assignments, arbitrary small centered terms, all S8 views
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::precharged_pairs_public_support_covers_arbitrary_centered_terms ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1099 filtered out; finished in 2.43s
+
+
+Command: cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib triple_precharge_bivariate_readouts_match_every_small_assignment -- --nocapture
+Exit: 0
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 1 test
+triple precharge exact table: 91854 assignment/output checks; linear-only failures=26212
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_bivariate_readouts_match_every_small_assignment ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1099 filtered out; finished in 0.04s
+
+
+Command: cargo test --locked --offline --config 'profile.test.package.nine65.opt-level=2' -j1 -p nine65 --lib distinct_weight_carry_support_hits_state_cap_before_ciphertext_work -- --nocapture
+Exit: 0
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/acid/projects/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/acid/projects/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+     Running unittests src/lib.rs (target/debug/deps/nine65-e62cda680e17e233)
+
+running 1 test
+carry support planner: 3 distinct trit-weighted terms already require 27 rows; fourth is refused at row 28 before ciphertext multiplication
+test ops::expanded_bootstrap::safe_basis_composition_tests::distinct_weight_carry_support_hits_state_cap_before_ciphertext_work ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1099 filtered out; finished in 0.99s
