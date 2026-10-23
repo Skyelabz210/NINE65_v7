@@ -3,8 +3,9 @@
 Research construction, 2026-10-22. This investigates the owner's proposed
 lift through ultradiscrete/tropical coordinates. It uses CRAM's existing
 K-elimination and arbitrary-target projection primitives. It covers a clear
-native-width lift, a conditional encrypted lift consumer, and a bounded local
-encrypted chart transition. The native refresh construction remains open.
+native-width lift, a conditional encrypted lift consumer, a bounded local
+encrypted chart transition, and source-driven initialization of a small chart.
+The native refresh construction remains open.
 
 ## The exact correspondence
 
@@ -182,6 +183,116 @@ single coordinate ring. This is a limitation of this representation, not of
 all multi-tray constructions. Arbitrary sister targets remain valid for
 projection after a lift; gate evaluation has its own unit/domain conditions.
 
+## Source-driven lifted remainder algebra
+
+The next experiment in `tests/research/tropical_cocycle_state.rs` removes the
+supplied initial chart from the **small-period** construction. It precharges
+only one-hot secret-trit selectors, before receiving live public residual
+polynomials. For `S=R0+R1*s`, a public balanced composition then computes both
+`g=center_13(S)` and `K=round(S/13)`. No source sum, centered chart, winding,
+boundary selector, or measured error is given to this evaluator.
+
+The compression uses the tropical cell carry cocycle. A state has remainder
+selectors `P_a=1[g=a]` and **one** winding coordinate K. On composition:
+
+```text
+c(a,b) = floor((a+b+floor(q/2))/q)
+r(a,b) = a+b-q*c(a,b)
+P'_r   = sum_(r(a,b)=r) P_a * P_b
+K'     = K_left + K_right + sum_(a,b) c(a,b)*P_a*P_b.
+```
+
+There is no multiplication of K by the other state's selectors. To see why,
+start with a conditional winding moment `M_a=K*P_a`. Its composition contains
+`M_a*P_b+P_a*M_b+c(a,b)*P_a*P_b`. Summing over output remainders and using
+`sum_a P_a=sum_b P_b=1` eliminates both moment/selector products. Thus a
+partition of unity plus one winding ciphertext suffices for sums. The same
+selector product supplies both the new remainder and the cocycle deposit.
+The cocycle identity makes the lifted operation associative.
+
+This replaces selectors for all `(remainder,winding)` pairs with at most
+q remainder selectors plus one lift coordinate. A balanced eight-term tree
+has three multiplication layers. It does not enumerate the `3^8` possible
+secret assignments. Clear exhaustive tests enumerate assignments only to
+validate the algorithm, not as its evaluation strategy.
+
+The encrypted probe uses the production eta-bounded `CramPrechargedSecret`
+primitive to precharge constant-polynomial selector messages under an
+independent outer key. These constants avoid encrypted coefficient/slot
+transforms and need no plaintext roots. The source trits remain distinct
+from the outer encryption secret. The probe checks every coefficient of two
+eight-term negacyclic sources, plus four coefficients after changing the
+public polynomial while reusing setup. An independent client schoolbook
+convolution supplies expected values only after evaluation. The independently
+assembled encrypted S and computed g also recover the same K through the
+existing K-elimination consumer, and all 20 following squares pass.
+
+Maximum observed ideal-grid error sizes at N=8, plaintext289, Q119 bits are
+`[50,49,56,59]` bits for chart, winding, paired-coordinate winding, and its
+dependent square respectively. The program performs 6,832 ciphertext products
+across these 20 coefficient evaluations, including the 20 squares. These are
+test-only secret-key observations, not producer-issued upper bounds.
+
+A separate encrypted follow-up uses composite plaintext22, retaining the
+2/11 coordinate pair without primitive plaintext slot roots or factorial
+inverses. It distinguishes the -9 and 8 source histories that defeated a
+single polynomial of their collapsed coordinate over Z/289, and checks both
+following squares. It succeeds because it retains individual encrypted trit
+inputs and the lifted state, rather than just their sum modulo17. This does
+not change the earlier polynomial congruence obstruction.
+The first run exposed the production `CanonicalScaleRound` decoder's
+odd-target-only contract (`InvalidTarget { target: 22 }`). That contract
+remains unchanged and is asserted in the final test. The even-payload probe
+instead uses an independent, small-Q, secret-key client CRT/rounding oracle
+and separately checks the exact `2*V<Q` criterion. This is evaluator-arithmetic
+evidence, **not** admission of an even-plaintext decoder or service path.
+
+The clear test checks all 729 six-trit assignments in each payload ring
+2,11,22,121,289 (3,645 cases), all with balanced/sequential agreement and the
+partition-of-unity invariant. Omitting the cocycle preserves the torus point
+but loses the lift, as required by the tropical interpretation.
+
+### Native boundary: period size and a low-error alias
+
+The compact state is **O(q)**, not O(log q). Substituting the native 119-bit
+Q_work for q is still infeasible. A typed capacity check rejects it before
+keys, state allocation, or ciphertext operations. Keeping a small local
+period and projecting its winding modulo the Safe Basis product is not an
+equivalent replacement.
+
+There is an explicit native-width alias even with small centered source
+phases. Let `A=9699690`, `L=13*A`, and
+
+```text
+D = floor(Q_work/L)*L
+R0 = 0, two public residual weights = D/2
+hidden trits (0,0) -> S0=0
+hidden trits (1,1) -> S1=D.
+```
+
+Both public weights are centered modulo Q_work. The two sources have identical
+`g_13`, `K_13 mod A`, and `S mod A`; hence their small-chart/S8 projected states
+coincide. But their **native** sheets are 0 and 1. Their native centered phases
+are 0 and `-(Q_work mod L)`, whose magnitude is below 126,095,970, rather than
+near Q_work/2. These are algebraic residual-form fixtures, not a demonstrated
+pair of full authenticated live ciphertext histories. They show that a small
+phase-error allowance alone does not make these projected coordinates
+sufficient. The original encrypted trit selectors still distinguish the
+inputs; the alias concerns the information retained by this state projection,
+not an impossibility result for all CRAM constructions or arbitrary trays.
+
+Consequently a native producer must preserve additional Q-sheet information
+before this collapse, or supply a Q-size-independent cell-selection circuit.
+Any proposed native lift should first distinguish this pair. Increasing the
+number of tests at local period13 does not satisfy that condition. Constant
+selectors remove the plaintext-root obstacle of this particular experiment,
+but entail separate setup per source coefficient and do not certify native
+key size, noise, return, or repeated refresh.
+For scale, the literal three-selector-per-trit layout at N=8192 and five
+RNS lanes stores `3*N * (2*N*5*8) = 16106127360` bytes (15 GiB) per payload,
+before metadata, relinearization keys, or additional frames. This is a size
+estimate for the toy's layout, not a selected native setup.
+
 ## Native follow-up checks
 
 The small composite supports primitive 16th roots, which enable the toy's
@@ -231,8 +342,9 @@ step is an encrypted state transition that supplies this difference or the
 matching centered-chart coordinate through real operation history. The
 compact representation alone does not compute that transition.
 
-The local transition above now supplies such a computation on a small
-chart. The outstanding work is a native chart/coordinate encoding and error
+The local transition and source-driven composition above now supply such
+computations on a small chart. The outstanding work is a native
+Q-size-independent chart/coordinate encoding and error
 contract, its connection to actual weighted secret convolutions and the
 intact root, and a complete return/repeat path. Local period13 normalization
 alone does not compute the quotient by Q_work.
@@ -255,3 +367,10 @@ This is the conditional encrypted consumer and its dependent multiply.
 Three follow-up tests check chart units/support, native slot geometry, and
 the encrypted one-/two-increment transitions with dependent squares and an
 explicit sequential-noise negative control.
+
+`cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate tropical_cocycle_state -- --nocapture`
+
+Four tests cover source-driven chart initialization, associative lifted
+composition, composite 2/11 payloads without slot transforms, dependent
+squares, capacity refusal, and the native low-error alias. Artifacts are in
+`artifacts/execution/2026-10-22/tropical-cocycle-state/`.

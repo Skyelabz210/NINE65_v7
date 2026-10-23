@@ -133,7 +133,7 @@ fn scale(ctx: &RNSFHEContext, ct: &RNSCiphertext, scalar: u64) -> RNSCiphertext 
 
 // Secret-key observation only. Exact ideal-grid error V, with correctness
 // condition 2*V<Q; never used by the public evaluator or as an issued bound.
-fn observed_scaled_error(
+pub(super) fn observed_scaled_error(
     ctx: &RNSFHEContext,
     ct: &RNSCiphertext,
     keys: &RNSKeySet,

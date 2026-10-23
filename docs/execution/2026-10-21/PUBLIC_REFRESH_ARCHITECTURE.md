@@ -393,6 +393,20 @@ There are two implementation mismatches to fix before extrapolating:
 
 ## 7. Complete target architecture and its acceptance conditions
 
+The latest CRAM-native tropical follow-up now constructs a **small-period**
+chart from public residual weights and precharged encrypted source trits,
+without a supplied centered chart. A partition of unity plus one winding
+ciphertext closes under the tropical carry cocycle, avoiding the previous
+joint remainder/winding-row enumeration. Constant-polynomial coordinates
+also avoid slot transforms, including at composite plaintext22 (2/11).
+This is research at period13, N=8, not a native public-refresh implementation.
+The state still costs O(period); native Q is too large. An explicit pair of
+low-centered-phase residual sources has identical period13/S8 projected
+states but different native-Q sheets. It is now a regression condition for
+any native cell-selection proposal, rather than assuming local centering
+transfers to native Q. See the
+[lifted-state derivation](../2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md#source-driven-lifted-remainder-algebra).
+
 ```text
 Certified work ciphertext (actual key/domain/history)
   -> slots-to-coefficients, with propagated V

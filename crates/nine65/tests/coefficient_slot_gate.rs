@@ -17,6 +17,9 @@ use std::collections::{BTreeMap, BTreeSet};
 #[path = "research/tropical_chart_transition.rs"]
 mod tropical_chart_transition;
 
+#[path = "research/tropical_cocycle_state.rs"]
+mod tropical_cocycle_state;
+
 fn inverse(a: u64, modulus: u64) -> u64 {
     let (mut r, mut next_r) = (modulus as i128, a as i128);
     let (mut t, mut next_t) = (0i128, 1i128);

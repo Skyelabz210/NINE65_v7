@@ -1,0 +1,112 @@
+{
+  "task_id": "TROPICAL_COCYCLE_SOURCE_INITIALIZATION",
+  "status": "ready_for_review",
+  "source_commit": "b6a6964e271796bad405c528a775679a612922f6",
+  "scope": "Research-only period-13 source-driven chart initialization, N=8; native public refresh remains closed.",
+  "manifest": "artifacts/execution/2026-10-22/tropical-cocycle-state/source_manifest.txt",
+  "worktree_manifest_sha256": "98f5577905f53a4fbcc40c4823b524f244b2c94ec48091119abe426d166e2db3",
+  "manifest_scope": "Five changed source/document files; unchanged tracked content is bound by source_commit.",
+  "files_changed": [
+    "crates/nine65/tests/coefficient_slot_gate.rs",
+    "crates/nine65/tests/research/tropical_chart_transition.rs",
+    "crates/nine65/tests/research/tropical_cocycle_state.rs",
+    "docs/execution/2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md",
+    "docs/execution/2026-10-21/PUBLIC_REFRESH_ARCHITECTURE.md",
+    "artifacts/execution/2026-10-22/tropical-cocycle-state/checks.log",
+    "artifacts/execution/2026-10-22/tropical-cocycle-state/source_manifest.txt",
+    "artifacts/execution/2026-10-22/tropical-cocycle-state/native-preflight.json",
+    "artifacts/execution/2026-10-22/tropical-cocycle-state/decoder-contract-exploration.log",
+    "artifacts/execution/2026-10-22/tropical-cocycle-state/result.json"
+  ],
+  "checks": [
+    {
+      "command": "cargo test --locked --offline -j1 -p nine65 --test coefficient_slot_gate -- --nocapture",
+      "exit_code": 0,
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 55.13
+    },
+    {
+      "command": "cargo test --locked --offline -j1 -p exact_transcendentals --test tropical_theta_k_lift",
+      "exit_code": 0,
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "runtime_seconds": 1.56
+    }
+  ],
+  "checks_log": "artifacts/execution/2026-10-22/tropical-cocycle-state/checks.log",
+  "checks_log_sha256": "98405b0a750d5ff85839a06880b0f9ae5184c4b337844f92bc6c8c67657d2b23",
+  "observations": {
+    "local_period": 13,
+    "ring_degree": 8,
+    "main_payload": 289,
+    "ciphertext_Q_bits": 119,
+    "clear_assignments": 3645,
+    "payload_rings": [
+      2,
+      11,
+      22,
+      121,
+      289
+    ],
+    "weighted_source_coefficients": 20,
+    "full_negacyclic_sources": 2,
+    "nonzero_local_sheets": 13,
+    "max_remainder_channels": 13,
+    "winding_ciphertexts": 1,
+    "multiplication_depth": 3,
+    "ciphertext_products_in_weighted_probe_including_squares": 6832,
+    "dependent_squares_in_weighted_probe": 20,
+    "composite_22_histories": 2,
+    "composite_22_dependent_squares": 2,
+    "maximum_observed_scaled_error_bits": {
+      "chart": 50,
+      "winding": 49,
+      "paired_coordinate_winding": 56,
+      "dependent_square": 59
+    },
+    "measurement_scope": "Independent secret-key test observations, not producer-issued bounds."
+  },
+  "construction": [
+    "Key-holder setup precharges only ternary selector messages, before live public residual weights are chosen.",
+    "Public evaluator constructs centered chart and winding without receiving either or the source sum.",
+    "Balanced remainder partition and one winding close under the tropical carry cocycle; no per-winding support rows.",
+    "Constant-polynomial encoding avoids encrypted coefficient/slot transforms and plaintext slot-root requirements.",
+    "Independent negacyclic source oracle, paired-coordinate K-elimination and following squares agree."
+  ],
+  "decoder_boundary": {
+    "historical_exit_code": 101,
+    "historical_log": "artifacts/execution/2026-10-22/tropical-cocycle-state/decoder-contract-exploration.log",
+    "historical_log_sha256": "5b80940c680e83753a5973164227b286ccca36dd86a54b691300c5a8fd8dad7c",
+    "production_refusal": "CanonicalScaleRound rejects even target22; final test asserts this unchanged refusal.",
+    "final_even_payload_observation": "Independent small-Q secret-key client CRT decoder plus exact 2V<Q checks; not an admitted even-target service path."
+  },
+  "native_preflight": {
+    "artifact": "artifacts/execution/2026-10-22/tropical-cocycle-state/native-preflight.json",
+    "sha256": "ebcb3eca7210efe19b3e1cdfbe44623ecc4aa3b8efd04cd7eaf4822e1f13c7db",
+    "period_capacity": 4096,
+    "native_period_refused_before_keys": true,
+    "low_error_alias_native_phases": [
+      0,
+      -52966817
+    ],
+    "low_error_alias_native_sheets": [
+      0,
+      1
+    ],
+    "literal_three_selector_per_trit_layout_five_lane_8192_bytes": 16106127360,
+    "claim": "O(period) state compression does not make a 119-bit period practical; small-chart/root state loses native-sheet information."
+  },
+  "unresolved": [
+    "Native Q-size-independent cell selection or preservation of additional Q-sheet information before projected-state collapse.",
+    "Full authenticated native source history and every-node noise/encoding certificate.",
+    "Setup/key-size admission, native return, key relationships and repeated refresh."
+  ],
+  "production_code_changed": false,
+  "public_refresh_admitted": false,
+  "external_backend_added": false,
+  "lint_run": false,
+  "ci_status_claimed": false
+}

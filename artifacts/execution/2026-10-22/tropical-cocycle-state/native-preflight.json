@@ -1,0 +1,26 @@
+{
+  "scope": "Exact clear regression, not an encrypted native refresh or history certificate",
+  "Q_work": "348959453350711275087786864768188417",
+  "safe_basis_product": 9699690,
+  "local_period": 13,
+  "payload_joint_period": 126095970,
+  "native_period_state_capacity": 4096,
+  "native_period_admitted": false,
+  "capacity_refusal_before_keys_or_ciphertext_work": true,
+  "alias": {
+    "public_R0": 0,
+    "two_equal_centered_public_weights": "174479726675355637543893432357610800",
+    "source_values": ["0", "348959453350711275087786864715221600"],
+    "hidden_trits": [[0, 0], [1, 1]],
+    "identical_projected_coordinates": ["g_13", "K_13 mod S8_product", "S mod S8_product"],
+    "native_sheets": [0, 1],
+    "native_centered_phases": [0, -52966817],
+    "claim": "Projected-state insufficiency only; original encrypted trit inputs retain distinguishing information"
+  },
+  "unresolved": [
+    "Q-size-independent native cell selection or preservation of additional Q-sheet information",
+    "Full native ciphertext history and circuit noise certificate",
+    "Native setup/key size and return/repeat path"
+  ],
+  "public_refresh_admitted": false
+}
