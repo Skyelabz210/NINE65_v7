@@ -19,6 +19,7 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         for z99 in range(-16_005, 16_006):
             result = lift(z99)
             self.assertEqual(result["k_centered"], chart_carry(z99))
+            self.assertEqual(result["k_eliminated_mod_p"], result["expected_k"] % P)
             self.assertLessEqual(abs(result["k_centered"]), SOURCE_K_RADIUS)
 
     def test_crt_quotient_recovers_negative_and_positive_carries(self):
@@ -101,16 +102,19 @@ class KEliminationTropicalLiftTests(unittest.TestCase):
         result = report()
         self.assertTrue(result["k_elimination"]["all_integer_quotient_checks_pass"])
         self.assertTrue(result["k_elimination"]["all_period_winding_checks_pass"])
+        self.assertFalse(
+            result["k_elimination"]["explicit_signed_centering_required_for_ring_arithmetic"]
+        )
         self.assertTrue(result["composite_sister_trays_49_2"]["all_signed_49_2_checks_pass"])
         self.assertFalse(
-            result["composite_sister_trays_49_2"]["encrypted_canonicalization_or_sign_gate_exists"]
+            result["composite_sister_trays_49_2"]["encrypted_centering_or_signed_lift_gate_exists"]
         )
         self.assertTrue(
             result["centered_chart_residual"]["removes_sheet_direction_exactly"]
         )
         self.assertFalse(result["centered_chart_residual"]["refresh_reset_proved"])
         self.assertFalse(result["public_refresh_admitted"])
-        self.assertIn("do not implement", result["unclosed_encrypted_obligation"])
+        self.assertIn("dense-source implementation", result["unclosed_encrypted_obligation"])
 
 
 if __name__ == "__main__":

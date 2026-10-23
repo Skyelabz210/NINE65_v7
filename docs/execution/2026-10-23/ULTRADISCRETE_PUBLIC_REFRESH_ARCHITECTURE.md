@@ -19,7 +19,7 @@ refresh.
 | `Z99,Z121,Z143` | Publicly weighted integer chart views | Batched native producer constructs 99/121/143 views from one source precharge | The nonlinear readout and complete encrypted root binding remain open |
 | `U,D,E_chart` | Unimodular chart coordinates | Integer Jacobian has determinant 1; `D,E_chart` cancel ideal sheet direction, `U` retains winding | Information preservation alone does not contract ciphertext error or recover canonical `K_s` |
 | `Phi_121,W_11` | 11-adic ring section and Witt quotient | Native section is invariant under `+11H`; chart identity checked coefficientwise | `W_11` is not the coefficientwise integer lift or canonical residual |
-| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle and bounded one-root selector probe pass, including composite-98 residues for five carries; clear identity covers 10,411 source-correlated points | Same-root dense producer and centered `Enc_p(K)` are missing |
+| `K99` | Candidate chart carry `floor((99*Z99+M/2)/M)` | Clear exact oracle and bounded one-root selector probe pass, including composite-98 residues for five carries; clear identity covers 10,411 source-correlated points | Same-root dense producer for the common-p low tray is missing; direct K-Elimination needs no separate signed-centering operation |
 | `r=X mod M` | Canonical low tray, where `X=99*Z99+M/2` | `M=32768=2^15`; encrypted selector probe attaches it with `p=65537` to one bounded `Root211` state and verifies K-Elimination | Attach this tray to the actual dense chart state in the common `p=65537` encoding |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` | Exact zero sheet derivative; source-correlated bound is 5313 | Establish a correction consumer and a full error/reset certificate |
@@ -41,9 +41,11 @@ K99 = 2*(r-X_p) mod p.
 e99 = 99*Z99-M*K99 = r-M/2.
 ```
 
-The bound `|K99|<=48<p/2` fixes its centered representative. `e99` has
-zero finite difference along the sheet direction. These are ordinary linear
-ciphertext operations after the low residue exists. They directly match the
+The bound `|K99|<=48<p/2` selects a unique signed integer, while the ciphertext
+can retain `K99 mod p`; that is already the correct plaintext-ring encoding
+for both signs. `e99` has zero finite difference along the sheet direction.
+These are ordinary linear ciphertext operations after the low residue exists.
+They directly match the
 owner's one-root / dependent-tray design: the root supplies its 2 and 11
 roles; `2^15`, 99, and 121 are dependent views, not new Safe-Basis roots.
 
@@ -55,17 +57,19 @@ unique centered lift. The exact oracle checks this over 10,411 source-correlated
 chart points. A bounded encrypted selector fixture checks the modular
 identity at five carries, but centers the result only in its client oracle.
 It avoids requiring the full `2^15` low tray, but still requires both
-composite-98 views from the same dense-source history and a producer
-certificate for centered `Enc_p(K)`.
+composite-98 views from the same dense-source history, centering of the p
+residue used to form `w`, and a signed lift from `K mod 98` into the p ring.
 
 Splitting the composite tray as `98=49*2` gives an exact signed reconstruction:
 `k49=((Y49-w49)*47) mod 49`, `k2=(Y2-w2) mod 2`,
 `c=(k49-k2) mod 2`, and `K=k49-49*c`. In the bounded carry range, `c=1`
 exactly for negative `K`. The integer oracle checks this on the same 10,411
-source-correlated points. This isolates the remaining signed-lift operation:
-the encrypted path must produce canonical `k49` and its parity, then apply the
-correction. That canonicalization/sign gate has not been implemented or tested
-on the dense chart; the formula alone is not a linear ciphertext correction.
+source-correlated points. This isolates the residue-to-signed lift on the
+composite route: after centering `Y mod p`, the encrypted path must produce
+canonical `k49` and its parity, then apply the correction to obtain `K mod p`.
+Those centering and canonicalization/sign gates have not been implemented or
+tested on the dense chart. They are not required by the direct `2^15`/p
+K-Elimination route.
 
 The existing `Root211` test capability can attach arbitrary moduli up to the
 plaintext capacity and emits those views in one common plaintext encoding.
@@ -79,7 +83,8 @@ that produces `Enc_p(r)` from that actual dense state while preserving the
 same root, source, and history binding. A standalone ciphertext with
 plaintext modulus `M` does not satisfy the equation: it cannot be relabeled
 as `Enc_p(r)`. The composite-98 alternative instead needs same-history 49/2
-residue views and the canonicalization/sign gate described above.
+and p residue views, encrypted centering of `Y mod p`, and the
+canonicalization/sign gate described above.
 
 Even after that bridge, `e99` is not a claimed refresh reset. Its 5313 bound
 is a bound on the chart residual under the source-correlation assumptions;
@@ -94,10 +99,12 @@ residual to fail the following dense square.
 1. Integrate one existing Safe-Basis root with the actual public chart state;
    attach views at `2^15`, 99, and 121 without adding a root or accepting
    caller-supplied phase snapshots.
-2. Produce either `r` in common p encoding or the same-history composite 49/2
-   views with a certified centered p residue. Charge source precharge error,
-   public polynomial norms, scale-floor terms, tray canonicalization, and any
-   key switches before output. Refuse if the producer certificate does not fit.
+2. Prefer producing `r` in common p encoding; its K-Elimination result already
+   represents signed K in `Z_p`. If using the composite 49/2 route, produce
+   same-history views and certify both the p-residue centering and K lift.
+   Charge source precharge error, public polynomial norms, scale-floor terms,
+   tray canonicalization, and key switches before output. Refuse if the
+   producer certificate does not fit.
 3. Compute `K99` and `e99` linearly. Check all coefficients, both signs,
    chart-cell boundaries, nonzero source error, all RNS lanes, and odd zero
    coefficients against an independent client oracle.

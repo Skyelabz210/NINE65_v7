@@ -46,7 +46,9 @@ K = (X_p-r) * M^(-1) mod p.
 
 Here `p=2*M+1`, so `M^(-1)=-2 mod p` and the quotient is just
 `K=2*(r-X_p) mod p`. The carry range `|K|<=48` gives a unique centered
-representative. `M=2^15` uses the existing Safe-Basis root 2; the 99/121
+integer lift, but ciphertext arithmetic does not need a centering operation:
+the residue `K mod p` already represents a negative carry as `p-|K|` in the
+plaintext ring. `M=2^15` uses the existing Safe-Basis root 2; the 99/121
 chart retains the existing 11 role. This needs one Safe-Basis root with
 dependent phase-locked trays, not another root and not a degree-33 polynomial
 over the whole chart domain.
@@ -124,15 +126,16 @@ checks this identity on all 10,411 source-correlated `Z99` values; the largest
 observed `|w|` is 10,659. Tray 98 uses existing Safe-Basis factors 2 and 7
 and does not add a root. This is an integer identity, not yet an encrypted gate:
 the dense producer still has to bind `Y mod 98` and the centered p residue
-`w mod 98` to one authenticated chart history, and emit centered `K` with a
-bound before the return consumer can use it.
+`w mod 98` to one authenticated chart history. Forming `w` requires centering
+the p residue. Because tray98 gives `K mod 98`, this route also needs a signed
+lift into the p plaintext ring before the return consumer can use it.
 
 The encrypted selector probe now also attaches tray98 to the same root as
 `2^15` and p, derives `Y mod 98` and `w mod 98` from the same bounded selector
 state, and checks `47*(Y_98-w_98)` is congruent to each selected carry for
-`K=-48,-1,0,1,48`. Its client-side test centers that residue; the evaluator
-still does not emit a centered `Enc_p(K)`, and the selector fixture is not the
-dense chart producer.
+`K=-48,-1,0,1,48`. Its client-side test centers that residue and interprets
+the signed carry; the evaluator emits only the residue modulo 98, not the
+corresponding `K mod p`. The selector fixture is not the dense chart producer.
 
 ### Split the composite tray into 49 and 2
 
@@ -152,27 +155,32 @@ exactly when `K` is negative. This reconstructs the signed carry from the
 for all 10,411 source-correlated chart points and all five carry boundaries.
 
 This factors the residue arithmetic; it does not make signed conversion a
-linear ciphertext operation. The evaluator still needs to produce canonical
-`k49` in `[0,48]`, obtain its parity, and apply the correction bit in the
-common `p` encoding. No dense-source canonicalization or sign-correction gate
-exists yet. The current Rust selector probe checks the 98 residue only and
-centers it in its client oracle; it does not test an encrypted 49/2 sign gate.
+linear ciphertext operation. The composite route first needs an encrypted
+centering decision for `Y mod p` to form `w`. It then needs canonical `k49` in
+`[0,48]`, its parity, and the correction bit to lift K into the common p
+encoding. The direct `2^15` route avoids both of these centering operations:
+its K-Elimination output is already `K mod p`. Neither route has a dense-source
+implementation. The current Rust selector probe checks the 98 residue only
+and centers `w` and K in its client oracle; it does not test either encrypted
+decision.
 
 ## Encrypted gap to bridge
 
-The formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same
+The direct formula needs `r=X mod M` and `X_p=X mod p` encrypted in the same
 plaintext-`p` encoding and derived from the same authenticated chart state.
-Then `2*(r-X_p)` and `99*Z99-M*K` are linear ciphertext operations. The
-existing `Root211::attach` research capability already permits an arbitrary
+Then `2*(r-X_p)` produces K directly in `Z_p`; negative K already has its
+ordinary residue encoding, and `99*Z99-M*K` is linear ciphertext arithmetic.
+The existing `Root211::attach` research capability already permits an arbitrary
 `M=32768` view and encodes every view in the root's common plaintext ring;
 its composition tests use a bounded selector state. The unresolved step is
 producing that low view from the actual dense public chart while retaining the
 same root/history capability and a useful producer error bound. An
 independent ciphertext modulo `M` cannot be relabeled as a `p` ciphertext.
 Re-decoding one `p*M` ciphertext under `p` also leaves the source residual as
-ciphertext error. On the composite route, the additional missing operation is
-canonicalization of the 49-residue and its signed correction bit; the exact
-49/2 identity does not supply an encrypted implementation.
+ciphertext error. The composite route instead needs same-history 49/2 and p
+views, encrypted centering of the p residue, and canonicalization of the
+49-residue with its signed correction bit. The exact 49/2 identity supplies
+none of these encrypted operations.
 
 The next implementation test should attach the `2^15` tray to the actual
 99/121 public chart state through the existing single Safe-Basis capability,

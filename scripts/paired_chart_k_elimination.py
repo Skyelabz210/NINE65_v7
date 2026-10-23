@@ -277,6 +277,8 @@ def report() -> dict:
         "composite_sister_trays_49_2": {
             "factorization": "98=49*2",
             "p_inverse_mod_49": P_INV_MOD_ODD_TRAY,
+            "requires_centered_p_residue_w": True,
+            "requires_signed_lift_from_mod_98_to_p": True,
             "identity": (
                 "k49=((Y49-w49)*47) mod 49; k2=(Y2-w2) mod 2; "
                 "c=(k49-k2) mod 2; K=k49-49*c"
@@ -284,7 +286,7 @@ def report() -> dict:
             "correction_bit": "c=1 exactly when K<0 for |K|<=48",
             "source_correlated_checks": composite_checks,
             "all_signed_49_2_checks_pass": composite_checks == residual_checks,
-            "encrypted_canonicalization_or_sign_gate_exists": False,
+            "encrypted_centering_or_signed_lift_gate_exists": False,
         },
         "domain": {
             "Z99_abs_bound": Z99_ABS_BOUND,
@@ -298,6 +300,9 @@ def report() -> dict:
         "k_elimination": {
             "identity": "k = (x mod p - x mod M) * M^(-1) mod p",
             "2_adic_shortcut": "k = 2*(x mod M - x mod p) mod p",
+            "plaintext_ring_output": "K mod p directly encodes signed K; negative K maps to p-|K|",
+            "explicit_signed_centering_required_for_ring_arithmetic": False,
+            "carry_bound_selects_unique_signed_lift": "|K|<=48<p/2",
             "tested_full_plaintext_period_windings": representative_checks,
             "all_integer_quotient_checks_pass": checks == 2 * Z99_ABS_BOUND + 1,
             "all_period_winding_checks_pass": True,
@@ -311,13 +316,14 @@ def report() -> dict:
             "refresh_reset_proved": False,
         },
         "unclosed_encrypted_obligation": (
-            "The composite-98 oracle avoids the wide M low tray, but the actual "
-            "dense producer still must issue same-root views of X mod 98 and "
-            "the centered p residue of X. The 49/2 decomposition isolates a "
-            "canonical-residue/sign-correction gate: it must produce canonical "
-            "k49 and its parity from dense encrypted state before emitting "
-            "signed Enc_p(K) and e99. The correction/return error certificate "
-            "is also absent; these clear identities do not implement those gates."
+            "The direct 2^15/p route needs the dense producer to issue the "
+            "same-root low view r in the common p encoding; K mod p then "
+            "already has the correct signed plaintext-ring meaning under the "
+            "|K|<=48 bound. The alternative composite-98 route additionally "
+            "needs same-root Y mod 98 and Y mod p views, encrypted centering "
+            "of the p residue w, and canonical-residue/sign correction to lift "
+            "K mod 98 into p. Neither route has dense-source implementation, "
+            "and the correction/return error certificate is absent."
         ),
         "public_refresh_admitted": False,
     }
