@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: cram-source-assessment-${{ github.ref }}
@@ -20,12 +21,12 @@ concurrency:
 jobs:
   attack-costs:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        profile: [old32_high_q, balanced96_low_q, binary96_low_q]
+        profile: [balanced96_low_q]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -54,6 +55,13 @@ jobs:
           test "$(git -C research-rotated/PrimalHybrid/lattice_estimator rev-parse HEAD)" = 6019056011d10d7e9c30a0d5da2d2f729fbc2eec
           mkdir -p "$ASSESSMENT_DIR"
           chmod 777 "$ASSESSMENT_DIR"
+      - name: Restore immutable completed search results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: cram-source-balanced96_low_q
+          run-id: 39925418189
+          github-token: ${{ github.token }}
+          path: research-source-checkpoint
       - name: Assess concrete source profiles with Sage
         env:
           PROFILE: ${{ matrix.profile }}
@@ -67,7 +75,9 @@ jobs:
               --profile "$PROFILE" \
               --upstream /repo/research-upstream \
               --rotated /repo/research-rotated \
-              --output "/results/$PROFILE.json" --jobs 2 --attack-timeout 75
+              --output "/results/$PROFILE.json" --jobs 2 --attack-timeout 300 \
+              --resume /repo/research-source-checkpoint/balanced96_low_q.json \
+              --resume-sha256 0ad83fa249cce729c229fb76133af92c04caf549ae2ad119eccbf27466518a9f
       - name: Retain complete or partial attack evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

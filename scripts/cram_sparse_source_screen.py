@@ -49,6 +49,8 @@ def worker(args):
     # ordinary Python. Each engine uses its OWN pinned distribution types.
     from sage.all import RR, floor, log, oo
     import sage.version
+    import faulthandler
+    faulthandler.dump_traceback_later(60, repeat=True)
     spec = describe(args.profile)
     if args.engine == "upstream":
         sys.path.insert(0, str(Path(args.upstream).resolve()))
@@ -131,6 +133,8 @@ def main():
     parser.add_argument("--upstream", default="/upstream")
     parser.add_argument("--rotated", default="/rotated")
     parser.add_argument("--output", default="source-screen.json")
+    parser.add_argument("--resume")
+    parser.add_argument("--resume-sha256")
     parser.add_argument("--attack-timeout", type=int, default=75)
     parser.add_argument("--jobs", type=int, default=2)
     args = parser.parse_args()
@@ -152,12 +156,29 @@ def main():
               "joint_key_security_proven": False, "production_admitted": False}
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
+    if args.resume:
+        raw = Path(args.resume).read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
+        if not args.resume_sha256 or digest != args.resume_sha256:
+            raise ValueError("checkpoint hash mismatch")
+        previous = json.loads(raw)
+        for key in ["profile", "upstream_revision", "rotated_revision", "rotated_dependency_revision"]:
+            if previous[key] != report[key]:
+                raise ValueError("checkpoint parameter/revision mismatch: " + key)
+        if json.dumps(previous["parameters"], sort_keys=True) != json.dumps(report["parameters"], sort_keys=True):
+            raise ValueError("checkpoint source distribution mismatch")
+        report["resumed_from_sha256"] = digest
+        report["results"] = [r for r in previous["results"] if r["status"] == "finite"]
+        report["previous_incomplete_results"] = [r for r in previous["results"] if r["status"] != "finite"]
     def save():
         output.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
     save()
     tasks = [(engine, attack, model) for model in MODELS
              for engine, attacks in [("upstream", UPSTREAM_ATTACKS), ("rotated", ROTATED_ATTACKS)]
              for attack in attacks]
+    retained = {(r["engine"], r["attack"], r["model"]) for r in report["results"]}
+    tasks = [task for task in tasks if task not in retained]
+    print(json.dumps({"retained_finite_results": len(retained), "remaining_searches": len(tasks)}), flush=True)
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
         futures = [pool.submit(execute, args, *task) for task in tasks]
         for future in as_completed(futures):
