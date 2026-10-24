@@ -668,6 +668,287 @@ fn check_batched_phase(
                         .filter(|(actual, expected)| actual != expected)
                         .count();
                     eprintln!("K-elimination residual ablation: sourceN{n}/outerN{}, K values={carry_values:?}, inverse(Q_s mod T)={inverse_period}; paired encrypted (S,g) residues yield Enc_T(K), observed/bound V bits={}/{}, subtracting A*K removes chart residual and gives p-view V bits observed/bound={}/{}, source input V/Q bits={}/{}, first dense square passes; second dependent product mismatches {cube_mismatches}/{} coefficients at this larger stress point; centered-g producer and repeat-refresh gate remain open",outer.n,bits(carry_t_observed),bits(carry_t_bound),bits(repaired_p_observed),bits(repaired_p_bound),bits(input_v),bits(source_q),outer.n);
+
+                    // Join the K-Elimination consumer to the actual encrypted
+                    // chart. Only the low M tray is supplied by the client
+                    // oracle here; X_T is derived from the live chart output.
+                    // X=99*Z99+M/2=M*K+r_M, so one same-encoding tray gives
+                    // Enc_T(K)=(Enc_T(X)-Enc_T(r_M))*M^(-1) mod T without a
+                    // signed lift or a centered-g input.
+                    let low_modulus = 2 * outer.n as u64;
+                    let mut expected_x_t = expected_scaled.clone();
+                    let mut expected_low_tray_t = vec![0; outer.n];
+                    let half = outer.n as u64;
+                    for (x, low) in expected_x_t.iter_mut().zip(&mut expected_low_tray_t) {
+                        let signed_x = if *x > chart_t / 2 {
+                            *x as i128 - chart_t as i128
+                        } else {
+                            *x as i128
+                        };
+                        let chart_x_with_half = signed_x + half as i128;
+                        *x = chart_x_with_half.rem_euclid(chart_t as i128) as u64;
+                        *low = chart_x_with_half.rem_euclid(low_modulus as i128) as u64;
+                    }
+                    let encrypted_low_tray =
+                        encrypt_polynomial(&outer, &outer_keys, &expected_low_tray_t, &mut rng);
+                    let low_tray_observed = observe_polynomial(
+                        &outer,
+                        &encrypted_low_tray,
+                        &outer_keys,
+                        &expected_low_tray_t,
+                    );
+                    assert!(low_tray_observed <= precharge_v);
+                    let high_chart_x = add(
+                        &outer,
+                        &scaled,
+                        &public_plain(&outer, &vec![half as i64; outer.n]),
+                    );
+                    let inverse_low_modulus = inverse(low_modulus % chart_t, chart_t) as i128;
+                    let centered_inverse = if inverse_low_modulus > chart_t as i128 / 2 {
+                        inverse_low_modulus - chart_t as i128
+                    } else {
+                        inverse_low_modulus
+                    };
+                    let low_carry_bound =
+                        centered_inverse.unsigned_abs() * (scaled_bound + precharge_v);
+                    assert!(words(U512::from_u128(low_carry_bound).mul_u128(2)) < words(q_outer));
+                    let low_carry = signed_scale(
+                        &outer,
+                        &add(
+                            &outer,
+                            &high_chart_x,
+                            &signed_scale(&outer, &encrypted_low_tray, -1),
+                        ),
+                        centered_inverse as i64,
+                    );
+                    let low_carry_observed =
+                        observe_polynomial(&outer, &low_carry, &outer_keys, &expected_carry_t);
+                    assert!(low_carry_observed <= low_carry_bound);
+                    let low_residual = add(
+                        &outer,
+                        &scaled,
+                        &signed_scale(&outer, &low_carry, -(quotient_scale as i64)),
+                    );
+                    let low_residual_bound =
+                        scaled_bound + quotient_scale as u128 * low_carry_bound;
+                    assert!(
+                        words(U512::from_u128(low_residual_bound).mul_u128(2)) < words(q_outer)
+                    );
+                    let low_residual_observed = observe_polynomial(
+                        &outer,
+                        &low_residual,
+                        &outer_keys,
+                        &expected_chart_residual,
+                    );
+                    assert!(low_residual_observed <= low_residual_bound);
+                    let low_repaired =
+                        add(&outer, &corrected, &signed_scale(&outer, &low_residual, -1));
+                    assert_eq!(
+                        decrypt_coefficients(&reader, &low_repaired, &outer_keys),
+                        expected_corrected,
+                        "live-chart low-tray K-Elimination return"
+                    );
+                    let low_repaired_observed = observe_polynomial(
+                        &reader,
+                        &low_repaired,
+                        &outer_keys,
+                        &expected_corrected,
+                    );
+                    let low_repaired_bound = (affine_bound
+                        + quotient_scale as u128 * low_carry_bound)
+                        .div_ceil(quotient_scale as u128);
+                    assert!(low_repaired_observed <= low_repaired_bound);
+                    eprintln!("live-chart M-tray K-Elimination ablation: M={low_modulus}, same T/key and actual X_T chart; only Enc_T(r_M) is oracle supplied, inverse(M mod T)={inverse_low_modulus} (centered {centered_inverse}); carry V observed/bound={}/{}, residual V observed/bound={}/{}, repaired p-view observed/bound={}/{}, low-tray producer still open",bits(low_carry_observed),bits(low_carry_bound),bits(low_residual_observed),bits(low_residual_bound),bits(low_repaired_observed),bits(low_repaired_bound));
+
+                    // Continue the same low-tray return through dependent
+                    // products. This separates a correct one-shot carry
+                    // cancellation from an output with enough remaining
+                    // phase budget for useful work.
+                    let low_square_expected = schoolbook(&expected_corrected, &expected_corrected);
+                    let low_square = exact
+                        .try_mul_exact(&low_repaired, &low_repaired, &relin)
+                        .unwrap();
+                    assert_eq!(
+                        decrypt_coefficients(&reader, &low_square, &outer_keys),
+                        low_square_expected,
+                        "live-chart low-tray corrected square"
+                    );
+                    let low_cube_expected = schoolbook(&low_square_expected, &expected_corrected);
+                    let low_cube = exact
+                        .try_mul_exact(&low_square, &low_repaired, &relin)
+                        .unwrap();
+                    let low_cube_decoded = decrypt_coefficients(&reader, &low_cube, &outer_keys);
+                    let low_cube_mismatches = low_cube_decoded
+                        .iter()
+                        .zip(&low_cube_expected)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    eprintln!("live-chart M-tray dependent-product follow-up: square exact; second product mismatches {low_cube_mismatches}/{} coefficients, isolating the carry-consumer return from the still-open noise-reset gate", outer.n);
+                }
+
+                // Run the low-tray consumer once at native N=8192 as well.
+                // Keep the expensive paired-(S,g) oracle/product ablation
+                // limited to the small fixtures; this branch tests whether
+                // the same live-chart K-Elimination arithmetic and bound
+                // survive the admitted native source envelope.
+                if n == 8192 {
+                    let low_modulus = 2 * outer.n as u64;
+                    let half = outer.n as u64;
+                    let mut expected_x_t = expected_scaled.clone();
+                    let mut expected_low_tray_t = vec![0; outer.n];
+                    let mut expected_native_carry = vec![0; outer.n];
+                    for (j, &(k, _)) in phase1.iter().enumerate() {
+                        expected_native_carry[2 * j] = k.rem_euclid(chart_t as i128) as u64;
+                    }
+                    for (x, low) in expected_x_t.iter_mut().zip(&mut expected_low_tray_t) {
+                        let signed_x = if *x > chart_t / 2 {
+                            *x as i128 - chart_t as i128
+                        } else {
+                            *x as i128
+                        };
+                        let chart_x_with_half = signed_x + half as i128;
+                        *x = chart_x_with_half.rem_euclid(chart_t as i128) as u64;
+                        *low = chart_x_with_half.rem_euclid(low_modulus as i128) as u64;
+                    }
+                    let encrypted_low_tray =
+                        encrypt_polynomial(&outer, &outer_keys, &expected_low_tray_t, &mut rng);
+                    let low_tray_observed = observe_polynomial(
+                        &outer,
+                        &encrypted_low_tray,
+                        &outer_keys,
+                        &expected_low_tray_t,
+                    );
+                    assert!(low_tray_observed <= precharge_v);
+                    let high_chart_x = add(
+                        &outer,
+                        &scaled,
+                        &public_plain(&outer, &vec![half as i64; outer.n]),
+                    );
+                    let inverse_low_modulus = inverse(low_modulus % chart_t, chart_t) as i128;
+                    let centered_inverse = if inverse_low_modulus > chart_t as i128 / 2 {
+                        inverse_low_modulus - chart_t as i128
+                    } else {
+                        inverse_low_modulus
+                    };
+                    let low_carry_bound =
+                        centered_inverse.unsigned_abs() * (scaled_bound + precharge_v);
+                    assert!(words(U512::from_u128(low_carry_bound).mul_u128(2)) < words(q_outer));
+                    let low_carry = signed_scale(
+                        &outer,
+                        &add(
+                            &outer,
+                            &high_chart_x,
+                            &signed_scale(&outer, &encrypted_low_tray, -1),
+                        ),
+                        centered_inverse as i64,
+                    );
+                    let low_carry_observed =
+                        observe_polynomial(&outer, &low_carry, &outer_keys, &expected_native_carry);
+                    assert!(low_carry_observed <= low_carry_bound);
+                    let low_residual = add(
+                        &outer,
+                        &scaled,
+                        &signed_scale(&outer, &low_carry, -(quotient_scale as i64)),
+                    );
+                    let low_residual_bound =
+                        scaled_bound + quotient_scale as u128 * low_carry_bound;
+                    assert!(
+                        words(U512::from_u128(low_residual_bound).mul_u128(2)) < words(q_outer)
+                    );
+                    let low_residual_observed = observe_polynomial(
+                        &outer,
+                        &low_residual,
+                        &outer_keys,
+                        &expected_chart_residual,
+                    );
+                    assert!(low_residual_observed <= low_residual_bound);
+                    let low_repaired =
+                        add(&outer, &corrected, &signed_scale(&outer, &low_residual, -1));
+                    assert_eq!(
+                        decrypt_coefficients(&reader, &low_repaired, &outer_keys),
+                        expected_corrected,
+                        "native live-chart low-tray K-Elimination return"
+                    );
+                    let low_repaired_observed = observe_polynomial(
+                        &reader,
+                        &low_repaired,
+                        &outer_keys,
+                        &expected_corrected,
+                    );
+                    let low_repaired_bound = (affine_bound
+                        + quotient_scale as u128 * low_carry_bound)
+                        .div_ceil(quotient_scale as u128);
+                    assert!(low_repaired_observed <= low_repaired_bound);
+                    eprintln!("native N8192 live-chart M-tray K-Elimination: M={low_modulus}, A={quotient_scale}, centered inverse={centered_inverse}, all {} doubled-ring coefficients return exactly; carry V observed/bound bits={}/{}, repaired p-view V observed/bound bits={}/{}, low-tray producer remains oracle supplied",outer.n,bits(low_carry_observed),bits(low_carry_bound),bits(low_repaired_observed),bits(low_repaired_bound));
+
+                    // Check the first native dependent operation too. The
+                    // source occupies even coefficients in the doubled ring,
+                    // so compute the oracle product at source degree n and
+                    // embed it back into the even lanes.
+                    let exact = reader.try_exact_evaluator().unwrap();
+                    let relin =
+                        exact.generate_hybrid_gadget_key_with_rng(&outer_keys.secret_key, &mut rng);
+                    let mut source_square = vec![0i128; n];
+                    for (i, &left) in expected_corrected.iter().step_by(2).enumerate() {
+                        let left = if left > source.t / 2 {
+                            left as i128 - source.t as i128
+                        } else {
+                            left as i128
+                        };
+                        for (j, &right) in expected_corrected.iter().step_by(2).enumerate() {
+                            let right = if right > source.t / 2 {
+                                right as i128 - source.t as i128
+                            } else {
+                                right as i128
+                            };
+                            let index = i + j;
+                            if index < n {
+                                source_square[index] += left * right;
+                            } else {
+                                source_square[index - n] -= left * right;
+                            }
+                        }
+                    }
+                    let mut expected_native_square = vec![0; outer.n];
+                    for (index, value) in source_square.into_iter().enumerate() {
+                        expected_native_square[2 * index] =
+                            value.rem_euclid(source.t as i128) as u64;
+                    }
+                    let native_square = exact
+                        .try_mul_exact(&low_repaired, &low_repaired, &relin)
+                        .unwrap();
+                    let native_square_decoded =
+                        decrypt_coefficients(&reader, &native_square, &outer_keys);
+                    let native_square_mismatches = native_square_decoded
+                        .iter()
+                        .zip(&expected_native_square)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    let native_square_odd_mismatches = native_square_decoded
+                        .iter()
+                        .zip(&expected_native_square)
+                        .enumerate()
+                        .filter(|(index, (actual, expected))| index % 2 == 1 && actual != expected)
+                        .count();
+                    let native_square_examples: Vec<_> = native_square_decoded
+                        .iter()
+                        .zip(&expected_native_square)
+                        .enumerate()
+                        .filter(|(_, (actual, expected))| actual != expected)
+                        .take(8)
+                        .map(|(index, (actual, expected))| (index, *actual, *expected))
+                        .collect();
+                    let native_square_observed_bits = if native_square_mismatches == 0 {
+                        Some(bits(observe_polynomial(
+                            &reader,
+                            &native_square,
+                            &outer_keys,
+                            &expected_native_square,
+                        )))
+                    } else {
+                        None
+                    };
+                    eprintln!("native N8192 low-tray follow-up: first dense square mismatches {native_square_mismatches}/{}, odd-lane mismatches {native_square_odd_mismatches}, observed phase V bits={native_square_observed_bits:?}, first mismatches={native_square_examples:?}",outer.n);
                 }
             }
         }

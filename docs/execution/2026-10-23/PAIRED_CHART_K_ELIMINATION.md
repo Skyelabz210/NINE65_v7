@@ -330,6 +330,37 @@ path through the owner's one root plus M and M+1 sister trays. It does **not**
 yet produce those same-history ciphertext residues or run the bounded lift
 over encrypted root lanes; those are now the direct implementation target.
 
+### Live-chart low-tray consumer with centered inverse
+
+The low-tray K-Elimination consumer is now connected to the actual encrypted
+99 chart. The chart supplies `X_T=99*Z99+M/2`; a client oracle separately
+encrypts only `r_M=X mod M` in the same T/key encoding. Then
+
+```text
+K_T = (X_T-r_M,T) * M^(-1) mod T.
+```
+
+Using the centered representative of `M^(-1) mod T` is algebraically identical
+and lowers the scalar from about 2^27/2^28 to about 2^16. It reduced the
+observed carry and repaired-output bounds by 11–12 bits compared with the
+canonical inverse. The remaining bounds and dependent-product checks are:
+
+| Source / outer ring | M / A | Centered inverse | Carry V observed / bound | Repaired p-view V observed / bound | Follow-up |
+|---|---:|---:|---:|---:|---|
+| N512 / N1024 | 2048 / 2049 | -65,569 | 79 / 87 bits | 79 / 87 bits | square exact; next product mismatches 948/1,024 |
+| N1024 / N2048 | 4096 / 4097 | -65,553 | 85 / 92 bits | 85 / 92 bits | square exact; next product mismatches 2,047/2,048 |
+| N8192 / N16384 | 32768 / 32769 | -65,539 | 96 / 104 bits | 96 / 104 bits | exact return; first square mismatches 69/16,384, including 29 odd lanes |
+
+At native degree the one-shot carry and affine return are exact across all
+16,384 doubled-ring coefficients. The first dense square is not: sampled
+mismatches are one plaintext unit from the expected value. This is a narrow
+phase-budget failure after multiplication, not evidence that the integer
+carry identity is wrong. The low tray remains a separately encrypted oracle
+input, so this experiment isolates the consumer but does not supply the
+producer or an admitted refresh. The centered inverse improves the original
+consumer but does not reset error; the same-history low-tray or `g_T` producer
+and a tighter returned-noise certificate are still required.
+
 ## Remaining encrypted obligations
 
 The scale-locked experiment closes the dense chart's carry readout and affine

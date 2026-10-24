@@ -24,9 +24,9 @@ refresh.
 | `r=X mod M`, or `a=X mod (M+1)` | Optional low tray for a K-Elimination readout of `X=99*Z99+M/2` | `M=32768`; adjacent-tray integer identity and bounded encrypted consumer are checked; native `Z99` already has a direct quotient map to `K_phase` | If used, produce its same-root common-`p` view with a producer-issued bound; it is not needed for the direct quotient identity |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
-| `K_T` | High-encoded carry residue modulo `T=p*A` | Paired-coordinate K-Elimination consumer passes oracle-injected N512/N1024 tests; a one-root S8 oracle derives K mod T from odd-lane M residues plus the 2-lane M+1 tray at all 13,423 source points | Produce same-history chart/sister-tray ciphertext residues and evaluate the bounded signed lift into T; certify tray and carry noise |
+| `K_T` | High-encoded carry residue modulo `T=p*A` | Paired-coordinate K-Elimination consumer passes oracle-injected N512/N1024 tests; one-root S8 clear oracle derives K mod T from odd-lane M residues plus the 2-lane M+1 tray at all 13,423 source points; live-chart M-tray consumer returns exactly at N512, N1024, and native N8192 when `r_M` is oracle encrypted, with centered inverse | Produce same-history chart/sister-tray ciphertext residues and evaluate the bounded signed lift into T; certify tray and carry noise |
 | `R_T=x_T-A*K_T` | T-encoded chart residual | Oracle-injected K-Elimination subtraction removes `r/A` from the p-view return | Bind the residual to the same chart capability and include both chart and carry errors in its certificate |
-| `V_out` | Error after residual correction and return | Oracle control: 70/77 bits at N512 and 83/84 bits at N1024; first dense square passes in both; second product fails at 2045/2048 coefficients in the N1024 stress point | Public `g_T` producer, return to work key, refresh after the first product, and a second admitted refresh remain open |
+| `V_out` | Error after residual correction and return | Paired `(S,g)` oracle control: 70/77 bits at N512 and 83/84 bits at N1024; low-tray oracle route: 79/87, 85/92, and native 96/104 bits; low-tray square passes at N512/N1024 but the next product fails at 948/1024 and 2047/2048 coefficients; native first square fails at 69/16384 | Public same-history `g_T` or low-tray producer, noise contraction/certificate, return to work key, refresh after the first product, and a second admitted refresh remain open |
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the
@@ -286,12 +286,16 @@ the missing part.
    production path. Extend its checked envelope to both signs, chart-cell
    boundaries, nonzero source error, every RNS lane, and odd zero coefficients
    against the client oracle.
-4. Produce same-history S8 residues for X and the M/M+1 sister trays. Run the
-   bounded K-Elimination lift to `K_T`, subtract its `A*K_T` residual, and
-   issue an immutable bound. The exact CRT oracle is not an encrypted tray
-   producer and cannot reset the certificate.
-5. Return to the work key and run the next dense multiply, a second refresh,
-   corrupted-root/history negatives, and the exact security/admission checks.
+4. Produce the same-history T-encoded `r_M` (or the S8/M/(M+1) phase-locked
+   views) for the live `X_T`. Apply centered-inverse K-Elimination or the
+   bounded S8 lift to `K_T`, subtract `A*K_T`, and issue an immutable bound.
+   The exact CRT oracle and separately encrypted tray are not encrypted tray
+   producers and cannot reset the certificate.
+5. Return to the work key and require an exact native next multiply, then a
+   second refresh and the repeat multiply. The current native oracle-tray
+   output misses 69/16,384 coefficients on its first square, so it is not
+   admitted. Also run corrupted-root/history negatives and the exact
+   security/admission checks.
 
 Until all five gates pass, issue #95 remains open, production refresh remains
 fail-closed, and the execution plan's R00--R03 admission gates remain active.
