@@ -11,6 +11,9 @@ mod lift_gate_domain;
 #[path = "triple_lift_chart.rs"]
 mod triple_lift_chart;
 
+#[path = "power_sister_tray.rs"]
+mod power_sister_tray;
+
 fn multiply_signed_plain(
     ctx: &RNSFHEContext,
     input: &RNSCiphertext,

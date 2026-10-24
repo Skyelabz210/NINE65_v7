@@ -21,12 +21,12 @@ refresh.
 | `Phi_121,W_11` | 11-adic ring section and Witt quotient | Native section is invariant under `+11H`; chart identity checked coefficientwise | `W_11` is not the coefficientwise integer lift or canonical residual |
 | `K99` | Chart quotient `floor((99*Z99+M/2)/M)` | The native batched producer matches `K_phase` at all 8,192 source coefficients; its composite-scale ciphertext decodes to `K_phase` at all 16,384 doubled-ring coefficients under the same RNS key | Bind the scale-`T` precharge and its noise bound to production source history and level |
 | `K_phase,j` | Actual Phase 1 correction between combined BFV rounding and independent component rounding, coefficient `j` | For `S=R0+R1*s` and `Q_s=Q_level`, it is exactly `K_s=round(S/Q_s)`; N32 oracle and native N8192 tests verify carry readout and affine-plus-carry recovery | Bind the research precharge to production source history and connect the corrected result to the certified residual return |
-| `r=X mod M`, or `a=X mod (M+1)` | Optional low tray for a K-Elimination readout of `X=99*Z99+M/2` | `M=32768`; adjacent-tray integer identity and bounded encrypted consumer are checked; native `Z99` already has a direct quotient map to `K_phase` | If used, produce its same-root common-`p` view with a producer-issued bound; it is not needed for the direct quotient identity |
+| `r_p` | Same-history p-encoded sister-tray residue for K-Elimination | Native consumer test uses `M*=2^16=p-1`; `L=2` scales `99*Z99`, and `K=-(X_p-r_p)`; returned phase is 51 bits at N8192 and survives two products | Produce/authenticate `r_p` through the one-root Safe-Basis 2/11 phase lock; current tray is a client oracle |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
-| `K_T` | High-encoded carry residue modulo `T=p*A` | Paired-coordinate K-Elimination consumer passes oracle-injected N512/N1024 tests; one-root S8 clear oracle derives K mod T from odd-lane M residues plus the 2-lane M+1 tray at all 13,423 source points; live-chart M-tray consumer returns exactly at N512, N1024, and native N8192 when `r_M` is oracle encrypted, with centered inverse | Produce same-history chart/sister-tray ciphertext residues and evaluate the bounded signed lift into T; certify tray and carry noise |
+| `K_T` / `K_p` | K-Elimination carry in a high or common p encoding | High-encoding oracle consumer remains measured; the power-tray route returns `K_p` with inverse `-1`, using only the 2^16 sister tray and existing root roles | Produce the same-history residue, bind chart and tray to one capability, and certify carry error |
 | `R_T=x_T-A*K_T` | T-encoded chart residual | Oracle-injected K-Elimination subtraction removes `r/A` from the p-view return | Bind the residual to the same chart capability and include both chart and carry errors in its certificate |
-| `V_out` | Error after residual correction and return | Paired `(S,g)` oracle control: 70/77 bits at N512 and 83/84 bits at N1024; low-tray oracle route: 79/87, 85/92, and native 96/104 bits; low-tray square passes at N512/N1024 but the next product fails at 948/1024 and 2047/2048 coefficients; native first square fails at 69/16384 | Public same-history `g_T` or low-tray producer, noise contraction/certificate, return to work key, refresh after the first product, and a second admitted refresh remain open |
+| `V_out` | Error after residual correction and return | Power-tray oracle route: observed 47 bits at N512 and 51 bits at native N8192; square and next product exact at both sizes. Older `T=pA` low-tray control observed 96/104 bits and missed 69/16384 coefficients on its first square | Public same-history p-encoded tray, immutable noise certificate, return to work key, a second admitted refresh, and repeat-cycle admission remain open |
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the
@@ -266,13 +266,13 @@ viewed under `p` has
 V_p = |p*phase-Q*m| <= (Q*|r|+V_T)/A.
 ```
 
-At native `N=8192`, the measured p-view error is 121 bits against a 125-bit
-outer modulus, while input error is 56 bits against the 60-bit source modulus.
-That matches the incoming `Q/16` envelope and shows that reading `K` plus
-adding it to the affine result preserves plaintext correctness without
-contracting phase error. The oracle ablation gives the required residual
-consumer and error target; the authenticated public `g_T` producer is still
-the missing part.
+The direct scale-locked quotient diagnostic at `T=pA` reads `K` but retains
+its chart residual. The power-of-two sister-tray K-Elimination control gives
+a stronger return: with `M*=2^16=p-1`, chart multiplier `L=2` at N8192, and
+an oracle-supplied same-key tray, it cancels the chart ciphertext exactly and
+returns with 51-bit observed p-view error. Its square and following product
+are exact. The unresolved producer is the same-history `r_p` view; the
+client-oracle tray does not establish that gate.
 
 ## Required implementation order
 
@@ -286,16 +286,17 @@ the missing part.
    production path. Extend its checked envelope to both signs, chart-cell
    boundaries, nonzero source error, every RNS lane, and odd zero coefficients
    against the client oracle.
-4. Produce the same-history T-encoded `r_M` (or the S8/M/(M+1) phase-locked
-   views) for the live `X_T`. Apply centered-inverse K-Elimination or the
-   bounded S8 lift to `K_T`, subtract `A*K_T`, and issue an immutable bound.
-   The exact CRT oracle and separately encrypted tray are not encrypted tray
-   producers and cannot reset the certificate.
-5. Return to the work key and require an exact native next multiply, then a
-   second refresh and the repeat multiply. The current native oracle-tray
-   output misses 69/16,384 coefficients on its first square, so it is not
-   admitted. Also run corrupted-root/history negatives and the exact
-   security/admission checks.
+4. Produce/authenticate the same-history p-encoded residue of
+   `X=(2^16/32768)*99*Z99+2^15` using the existing Safe-Basis root and its
+   dependent `2^16` tray, phase-locked through the existing 2/11 roles. Apply
+   `K=-(X_p-r_p)`, subtract `x-K` from `affine+x`, and issue an immutable
+   error certificate. The exact CRT oracle and independent tray ciphertext
+   are not encrypted tray producers.
+5. Return the corrected ciphertext to the work key and execute the next
+   multiply, second refresh and repeat multiply with that producer-issued
+   certificate. The oracle-tray consumer now passes two products at native
+   N8192; production history binding, corrupted-root negatives and the exact
+   security/admission checks remain outstanding.
 
 Until all five gates pass, issue #95 remains open, production refresh remains
 fail-closed, and the execution plan's R00--R03 admission gates remain active.

@@ -477,12 +477,16 @@ fn sister_tray_one_root_accepts_arbitrary_views_and_refuses_snapshot_rebinding()
     let next = Root211::new(&runtime, &next_state).unwrap();
     let first = root.attach(&[6, 10, 6, 1]).unwrap();
     let second = root.attach(&[11, 121, 5]).unwrap();
+    let power = root.attach(&[65_536, 65_537]).unwrap();
     assert_eq!(first.period, 30);
     assert_eq!(second.period, 605);
+    assert_eq!(power.moduli, vec![65_536, 65_537]);
     assert_eq!(root.lanes.len(), 8);
     assert!(std::ptr::eq(first.root, second.root));
+    assert!(std::ptr::eq(first.root, power.root));
     root.validate(&first).unwrap();
     root.validate(&second).unwrap();
+    root.validate(&power).unwrap();
     // X and X+22 share the two snapshots AND the derived 2/11 index.
     // They do not name the same source value. Only the factory capability
     // may attach a tray; agreeing public tags/snapshots cannot rebind it.

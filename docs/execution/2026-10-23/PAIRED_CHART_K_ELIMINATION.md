@@ -361,15 +361,52 @@ producer or an admitted refresh. The centered inverse improves the original
 consumer but does not reset error; the same-history low-tray or `g_T` producer
 and a tighter returned-noise certificate are still required.
 
+### Power-of-two sister tray: remove the inverse amplification
+
+The native low-tray consumer above used `M=2*N_outer=32768` and
+`T=p*(M+1)`. Its centered inverse is about `2^16`, so chart and tray errors
+are amplified before the return. A dependent tray can instead be phase-locked
+at `M*=2^16` by scaling the live 99 chart by `L=M*/M=2`. With
+`x=L*99*Z99`,
+
+```text
+x = M* K + L*e99 = 2^16*K + 2*e99
+X = x + 2^15
+r = X mod 2^16.
+```
+
+The native source certificate gives `|2*e99|<=13698<2^15`, so `r` is the
+canonical sister-tray representative and `X-r=2^16*K`. Since
+`2^16=p-1`, the inverse in the common plaintext-`p` encoding is exactly `-1`:
+
+```text
+K_p = -(X_p-r_p) mod p.
+```
+
+This is the 2-root's dependent power tray; it adds no Safe-Basis root. Once
+the same-history `r_p` exists, form `R=x-K_p` and return
+`(affine+x)-R=affine+K_p`. The identical chart ciphertext cancels, so the
+returned phase error is bounded by the affine producer plus the carry
+consumer.
+
+The focused research test supplies `Enc_p(r)` from a client oracle, isolating
+the encrypted consumer and its products. At N512 it observed 35/46/46/47-bit
+chart/carry/affine/returned phase errors; at native N8192 it observed
+43/50/50/51 bits. In both cases the returned plaintext, its square, and the
+next product were exact. This improves the native consumer from the previous
+oracle-tray result whose first square missed 69 of 16,384 coefficients. It
+does not yet produce the tray publicly: the missing item is the authenticated
+same-history p-encoded `r_p` view, attached to the live `2^16` tray by the
+existing one-root Safe-Basis capability.
+
 ## Remaining encrypted obligations
 
-The scale-locked experiment closes the dense chart's carry readout and affine
-Phase 1 correction under its sparse-source, basis, level, and error contract.
-Production still needs a typed capability that binds the `T` precharge to the
-source key/history and active level and issues its phase/noise certificate.
-The measured p-view error retains the `(Q/A)*r` term. The oracle ablation
-shows that K-Elimination from paired high-encoded `(S,g)` coordinates removes
-it and gives a concrete carry-error target. The public same-history `g_T`
-producer, returned next product, and second refresh remain open. A failed
-phase, history, capacity, security, or return certificate must refuse before
-output. Issue #95 remains open and production refresh remains fail-closed.
+The power-tray experiment closes the encrypted K-Elimination consumer and
+return under its sparse-source, basis, level, and error contract, and its
+oracle-tray output survives two products. Production still needs a typed
+capability that binds the chart and dependent `2^16` tray to the source
+key/history and active level and issues their phase/noise certificates. The
+same-history p-encoded tray producer, work-key return, second refresh, and
+repeat-cycle admission remain open. A failed phase, history, capacity,
+security, or return certificate must refuse before output. Issue #95 remains
+open and production refresh remains fail-closed.
