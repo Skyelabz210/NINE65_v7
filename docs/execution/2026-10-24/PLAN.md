@@ -86,6 +86,25 @@ fail-closed until the complete acceptance ladder passes.
   tree retains 81/6,561 candidate rows and adds 81/6,723 selector products.
   It is an exhaustive small-degree producer, with a 10,000-candidate preflight
   cap, rather than a native implementation.
+- The selector-encoding follow-up confirms the capacity and scale tradeoff.
+  Encoding selectors at `p` cuts the N=8 normalized root bounds to 99/98/82/98
+  bits for C/r/J/K, and the natural `p*M_pJ` output is admitted at 128/142
+  bits. Reusing that ciphertext at the original `p^2*M_pJ` target needs
+  144/126 bits and is refused. The `p` context also correctly refuses an
+  attached `p+1` tray because `p+1 > t`.
+- A just-larger composite selector target removes that tray-capacity failure
+  without returning to `p^2` selectors. Use `t_s=65,545` (composite,
+  `t_s>p+1`) and `d=268,574,725=4,098*(p+1)+1`, with common target
+  `T_s=t_s*d=17,603,730,350,125`. The same root attaches `[p+1,2,11]`;
+  `d` is 1 modulo `p+1`, 2, and 11, so those views retain their residues.
+  `gcd(T_s,p+1)=1`. The live Q-phase normalizer passes at N=4 and N=8 with
+  respectively 81/81 and 6,561/6,723 rows/products. N=4 C/r/J/K bounds are
+  94/93/78/93 bits; the K output is admitted at 93/144 bits and the tray view
+  at 94/144. N=8 bounds are 127/126/110/126 bits; K is admitted at 126/144
+  and the tray view at 127/144. Both tested coefficient-zero outputs and
+  `K-J mod (p+1)` tray residues are exact. This target emits `d*K`, not the
+  existing `M_pJ*K`, and still enumerates `3^N` candidate words. It is a
+  selector/encoding-budget result, not the missing native CRAM producer.
 
 ## Gap analysis
 
@@ -100,13 +119,21 @@ attach the arbitrary M sister and project the signed affine sheet directly
 under T. M-only-to-T raw quotients and adjacent Richardson cancellation fail.
 The remaining producer work is scalable construction and certification of `(K,J)`
 from the actual CRAM source ciphertext and precharged ternary history, while
-preserving the 2/11 lock across coefficients. In particular, the current
-live quotient tree's raw component remainder is a different coordinate from
-BFV-decoded K, despite its correct winding. The parallel Q-phase tree now
-supplies this transition on live N=4/8 histories, but its exhaustive support
-and high-scale noise do not support native degree. The terminal test's supplied support
-rows are not that construction. The consumer result is one step of the public
-refresh, not a completed refresh.
+preserving the 2/11 lock across coefficients. The tuned composite target
+demonstrates a clean representation choice for the M=`p+1` sister: the
+selector plaintext modulus must exceed the largest tray residue, and the
+target scale must be phase-aligned with that modulus. This removes the
+small-p tray-capacity failure while keeping the tested K correction inside
+the N=8 modeled noise radius. It does not resolve the central producer gap.
+The live pair tree still has `3^N` candidate words, only coefficient zero is
+observed, the output scale `d` is not yet aligned with the existing
+`M_pJ*K_lift` sibling, and native all-coefficient error is unproved. Scalable
+construction and certification of `(K,J)` from the actual CRAM ciphertext and
+precharged ternary history remain required. The raw component remainder is a
+different coordinate from BFV-decoded K; the parallel Q-phase tree supplies
+that normalization only on small enumerated histories. The terminal test's
+supplied support rows are not a live producer. No consumer result or tray
+budget experiment closes public refresh.
 
 The synced remote branch `research/phase1-carry-transducer` (head
 `93d6257`) has a useful 49/2 residue identity for a carry bounded by 48:
@@ -118,28 +145,21 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Replace the parallel Q-phase normalizer's exhaustive ternary-word support
-   with a compressed same-history state. First test the smaller p selector
-   encoding and its exact composite output-scale relation to isolate the
-   current p^2 selector budget cost. Preserve the normalized `(K,J)` relation
-   against the actual quotient ciphertext; raw remainders must not be
-   substituted for K. Project the bounded `K-J` sheet from the one 2/11 root
-   directly under common T through the `p+1` composite sister tray. Preserve
-   the unreduced row coefficients and certify `C-r=(p+1)*Enc(J)` in every
-   ciphertext component before cancelling the known factor in Q. Bind root
-   history, scale, and noise before correction. Do not substitute the
-   terminal fixture's supplied support rows for this construction.
-2. Test the producer at increasing degrees and both signs, including full
-   signed boundaries, every output coefficient, every RNS lane, and
-   wrong-history/corrupted-root negatives. Require p² correction and full-T
-   admission before joining it to the consumer.
-3. Connect the live producer to the actual same-history
-   `K_lift mod p` sibling. Remove the clear correction from the medium and
-   native consumers and rerun the dependent residual, carry, Phase 1, square,
-   next product, and return-to-work-key checks.
+1. Preserve the tested `(K,J)` and exact-factor-cancellation invariants while
+   replacing the `3^N` support enumeration with a compressed same-history
+   producer. Measure support growth before any key generation and refuse if
+   the state is not polynomially bounded.
+2. Extend the `t_s,d,T_s` branch to all output coefficients, both signs,
+   signed endpoints, all RNS lanes, and wrong-history/corrupted-root negatives.
+   Prove its noise model beyond the deterministic N=4/8 samples and choose a
+   scale that can be shared with the actual `K_lift mod p` sibling.
+3. Connect the live producer to that same-history sibling. Remove the clear
+   correction from the medium and native consumers and rerun residual, carry,
+   Phase 1, square, next product, return-to-work-key, second-refresh, and
+   repeat-product checks.
 4. Bind source key, RNS level, scale tuple, history, ternary-key domain, carry
    bound, and propagated noise into a typed producer certificate. Re-run the
-   R00-R03 admission checks, second refresh, and repeat product.
+   R00-R03 admission checks and complete Issue #95's acceptance ladder.
 
 Issue #95 remains open and production refresh remains fail-closed. The linked
 scale-Jacobian and ultradiscrete architecture notes contain the derivation and

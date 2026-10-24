@@ -1269,6 +1269,9 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
     const FULL_T: u64 = M_PJ * P2;
     const ADJACENT_SCALE: u64 = M_PJ - 1;
     const ADJACENT_T: u64 = ADJACENT_SCALE * P2;
+    const TRAY_SELECTOR_T: u64 = 65_545; // 5 * 13,109; just above p+1.
+    const TRAY_OUTPUT_SCALE: u64 = 268_574_725; // 4,098 * (p+1) + 1.
+    const TRAY_OUTPUT_T: u64 = TRAY_SELECTOR_T * TRAY_OUTPUT_SCALE;
     const PRIMES: [u64; 3] = [
         9_223_372_036_853_661_697,
         9_223_372_036_853_235_713,
@@ -1778,216 +1781,438 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
         }
     }
 
-    // Parallel Q-phase sister tree. Candidate trits are public labels; only
-    // the precharged pair selectors hide which label is active. No source
-    // secret or decrypted phase is used to construct these coordinates.
-    #[derive(Clone)]
-    struct PhaseCandidate {
-        raw_sum: i128,
-        phase: Vec<u64>,
-        selector: RNSCiphertext,
-        bound: U512,
+    // Key-holder setup for the lower-p selector encoding. Its Q basis,
+    // secret, source ciphertext and public phase coordinates are unchanged.
+    let low_runtime =
+        CarryRuntime::new_composite_sister_target(&p_ctx, P as i128, [211, 4], 10_000);
+    let low_relin = relin_key(&low_runtime, &keys, &mut rng);
+    let low_galois = RNSGaloisEvaluator::new(&p_ctx).unwrap();
+    let mut low_trace = Vec::new();
+    let mut stride = degree;
+    while stride > 1 {
+        low_trace.push(
+            low_galois
+                .generate_key_with_rng(&native_secret, stride as u64 + 1, &mut rng)
+                .unwrap(),
+        );
+        stride /= 2;
     }
-    let ordinary_component = |poly: &RNSPolynomial| {
-        poly.limbs
-            .iter()
-            .zip(&p_ctx.rns.mont_contexts)
-            .map(|(lane, mont)| {
-                lane.iter()
-                    .map(|&v| mont.from_montgomery(v))
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>()
+    let low_inverse_n = inverse(degree as u64, P);
+    let low_trace_unit = if low_inverse_n > P / 2 {
+        low_inverse_n as i64 - P as i64
+    } else {
+        low_inverse_n as i64
     };
-    let source0 = ordinary_component(&encrypted_k_p.c0);
-    let source1 = ordinary_component(&encrypted_k_p.c1);
-    let mut sheets: Vec<Vec<PhaseCandidate>> = (0..degree)
+    let tray_inverse_n = inverse(degree as u64, TRAY_SELECTOR_T);
+    let tray_trace_unit = if tray_inverse_n > TRAY_SELECTOR_T / 2 {
+        tray_inverse_n as i64 - TRAY_SELECTOR_T as i64
+    } else {
+        tray_inverse_n as i64
+    };
+    let low_packed: [RNSCiphertext; 9] = core::array::from_fn(|label| {
+        let first = (label / 3) as i8 - 1;
+        let second = (label % 3) as i8 - 1;
+        let mut indicators = vec![0i64; degree];
+        for start in (0..degree).step_by(2) {
+            if secret[start] == first && secret[start + 1] == second {
+                indicators[start] = low_trace_unit;
+            }
+        }
+        crate::ops::rns_fhe::cram_precharge::precharge_centered_polynomial_with_rng(
+            &p_ctx,
+            &indicators,
+            &native_secret,
+            &mut rng,
+        )
+        .unwrap()
+    });
+    let low_pairs: Vec<[RNSCiphertext; 9]> = (0..degree)
         .step_by(2)
         .map(|start| {
-            (0..9)
-                .map(|label| {
-                    let trits = [(label / 3) as i128 - 1, (label % 3) as i128 - 1];
-                    let mut raw_sum = 0;
-                    let mut phase = vec![0; PRIMES.len()];
-                    for offset in 0..2 {
-                        let key_index = start + offset;
-                        let index = (degree - key_index) % degree;
-                        let sign = if key_index == 0 { 1i128 } else { -1i128 };
-                        raw_sum += sign * r1[index] as i128 * trits[offset];
-                        for (lane, &prime) in PRIMES.iter().enumerate() {
-                            phase[lane] = (phase[lane] as i128
-                                + sign * source1[lane][index] as i128 * trits[offset])
-                                .rem_euclid(prime as i128)
-                                as u64;
-                        }
-                    }
-                    PhaseCandidate {
-                        raw_sum,
-                        phase,
-                        selector: project_pair_selector(label, start),
-                        bound: runtime.noise.projected,
-                    }
-                })
-                .collect()
-        })
-        .collect();
-    let mut sister_products = 0usize;
-    while sheets.len() > 1 {
-        let mut next = Vec::new();
-        for pair in sheets.chunks(2) {
-            if pair.len() == 1 {
-                next.push(pair[0].clone());
-                continue;
-            }
-            let mut joined = Vec::with_capacity(pair[0].len() * pair[1].len());
-            for left in &pair[0] {
-                for right in &pair[1] {
-                    let bound = runtime.noise.multiply(left.bound, right.bound).unwrap();
-                    let selector = runtime
-                        .exact
-                        .try_mul_exact(&left.selector, &right.selector, &relin)
-                        .unwrap();
-                    sister_products += 1;
-                    joined.push(PhaseCandidate {
-                        raw_sum: left.raw_sum + right.raw_sum,
-                        phase: PRIMES
-                            .iter()
-                            .enumerate()
-                            .map(|(lane, &prime)| {
-                                ((left.phase[lane] as u128 + right.phase[lane] as u128)
-                                    % prime as u128) as u64
-                            })
-                            .collect(),
-                        selector,
-                        bound,
-                    });
+            core::array::from_fn(|label| {
+                let mut selected = shift(
+                    &p_ctx,
+                    &low_packed[label],
+                    if start == 0 { 0 } else { 2 * degree - start },
+                );
+                for key in &low_trace {
+                    selected = p_ctx.add(&selected, &low_galois.apply(&selected, key).unwrap());
                 }
-            }
-            next.push(joined);
-        }
-        sheets = next;
-    }
-    let scaler = CanonicalScaleRound::new(&PRIMES, P).unwrap();
-    let normalized_rows = sheets
-        .pop()
-        .unwrap()
-        .into_iter()
-        .map(|candidate| {
-            let phase: Vec<_> = PRIMES
-                .iter()
-                .enumerate()
-                .map(|(lane, &prime)| {
-                    ((candidate.phase[lane] as u128 + source0[lane][0] as u128) % prime as u128)
-                        as u64
-                })
-                .collect();
-            let k = scaler.scale_round(&phase).unwrap() % P;
-            let k = if k > P / 2 {
-                k as i128 - P as i128
-            } else {
-                k as i128
-            };
-            let raw_sum = candidate.raw_sum + r0[0] as i128;
-            let j = (raw_sum + P as i128 / 2).div_euclid(P as i128);
-            Row {
-                remainder: k,
-                winding: i64::try_from(j).unwrap(),
-                selector: Some(candidate.selector),
-                bound: candidate.bound,
-            }
+                selected
+            })
         })
         .collect();
-    let normalized_state = State {
-        rows: normalized_rows,
-        family: runtime.family,
-        source_q: P as i128,
-        coefficients: (0..degree).collect(),
-    };
-    let normalized_root = Root211::new(&runtime, &normalized_state).unwrap();
-    let normalized_tray = normalized_root.attach(&[P, P + 1]).unwrap();
-    normalized_root.validate(&normalized_tray).unwrap();
-    let normalized_c = runtime.project(&normalized_state, |row| {
-        i64::try_from(row.remainder + P as i128 * row.winding as i128).unwrap()
+    let mut lower_output_config = p_ctx.config.clone();
+    lower_output_config.t = P * M_PJ;
+    let lower_output = RNSFHEContext::try_new(&lower_output_config).unwrap();
+    config.t = TRAY_SELECTOR_T;
+    let tray_selector_ctx = RNSFHEContext::try_new(&config).unwrap();
+    let mut tray_output_config = tray_selector_ctx.config.clone();
+    tray_output_config.t = TRAY_OUTPUT_T;
+    let tray_output = RNSFHEContext::try_new(&tray_output_config).unwrap();
+    let tray_runtime =
+        CarryRuntime::new_composite_sister_target(&tray_selector_ctx, P as i128, [211, 4], 10_000);
+    let tray_relin = relin_key(&tray_runtime, &keys, &mut rng);
+    let tray_galois = RNSGaloisEvaluator::new(&tray_selector_ctx).unwrap();
+    let tray_packed: [RNSCiphertext; 9] = core::array::from_fn(|label| {
+        let first = (label / 3) as i8 - 1;
+        let second = (label % 3) as i8 - 1;
+        let mut indicators = vec![0i64; degree];
+        for start in (0..degree).step_by(2) {
+            if secret[start] == first && secret[start + 1] == second {
+                indicators[start] = tray_trace_unit;
+            }
+        }
+        crate::ops::rns_fhe::cram_precharge::precharge_centered_polynomial_with_rng(
+            &tray_selector_ctx,
+            &indicators,
+            &native_secret,
+            &mut rng,
+        )
+        .unwrap()
     });
-    let normalized_r = runtime.project(&normalized_state, |row| {
-        i64::try_from(row.remainder - row.winding as i128).unwrap()
-    });
-    let normalized_j = runtime.project(&normalized_state, |row| row.winding);
-    let normalized_k = runtime.project(&normalized_state, |row| row.remainder as i64);
-    let c_plain = decode_at(
-        &p2_ctx,
-        &normalized_c.ciphertext,
-        &keys.secret_key,
-        normalized_c.bound,
-        [0],
-    );
-    let r_plain = decode_at(
-        &p2_ctx,
-        &normalized_r.ciphertext,
-        &keys.secret_key,
-        normalized_r.bound,
-        [0],
-    );
-    let k_plain = decode_at(
-        &p2_ctx,
-        &normalized_k.ciphertext,
-        &keys.secret_key,
-        normalized_k.bound,
-        [0],
-    );
-    assert_eq!(c_plain[0], lifted_plain[0]);
-    assert_eq!(
-        r_plain[0],
-        (input[0] as i128 - expected_quotient_winding).rem_euclid(P2 as i128) as u64
-    );
-    assert_eq!(k_plain[0], residue_k0);
-    let mut normalized_difference = normalized_c.ciphertext.clone();
-    add_scaled(
-        &p2_ctx,
-        &mut normalized_difference,
-        &normalized_r.ciphertext,
-        -1,
-    );
-    let mut expected_factor = zero(&p2_ctx);
-    add_scaled(
-        &p2_ctx,
-        &mut expected_factor,
-        &normalized_j.ciphertext,
-        (P + 1) as i64,
-    );
-    assert_eq!(normalized_difference.c0.limbs, expected_factor.c0.limbs);
-    assert_eq!(normalized_difference.c1.limbs, expected_factor.c1.limbs);
-    let mut normalized_corrected = normalized_c.ciphertext.clone();
-    add_scaled(
-        &p2_ctx,
-        &mut normalized_corrected,
-        &normalized_j.ciphertext,
-        -(P as i64),
-    );
-    assert_eq!(
-        normalized_corrected.c0.limbs,
-        normalized_k.ciphertext.c0.limbs
-    );
-    assert_eq!(
-        normalized_corrected.c1.limbs,
-        normalized_k.ciphertext.c1.limbs
-    );
-    let normalized_high_bound = normalized_k.bound.mul_u128(M_PJ as u128);
-    let normalized_high_radius = Noise::new_for_composite_sister_target(&full_ctx.config).half();
-    let normalized_high_admitted = words(normalized_high_bound) < words(normalized_high_radius);
-    let (normalized_high, normalized_high_measured) =
-        decode_at_with_error(&full_ctx, &normalized_corrected, &keys.secret_key, [0]);
-    let normalized_high_exact =
-        normalized_high[0] == (M_PJ as i128 * input[0] as i128).rem_euclid(FULL_T as i128) as u64;
-    eprintln!(
-        "parallel Q-phase normalization: N={}, rows={}, extra products={}, C/r/K exact; bounds C/r/J/K={}/{}/{}/{} bits, high modeled/measured={}/{} vs radius={}, admitted={}, exact={}",
-        degree, normalized_state.rows.len(), sister_products,
+    let tray_pairs: Vec<[RNSCiphertext; 9]> = (0..degree)
+        .step_by(2)
+        .map(|start| {
+            core::array::from_fn(|label| {
+                let mut selected = shift(
+                    &tray_selector_ctx,
+                    &tray_packed[label],
+                    if start == 0 { 0 } else { 2 * degree - start },
+                );
+                for key in &low_trace {
+                    selected = tray_selector_ctx
+                        .add(&selected, &tray_galois.apply(&selected, key).unwrap());
+                }
+                selected
+            })
+        })
+        .collect();
+
+    for branch in 0..3 {
+        let selector_ctx = match branch {
+            0 => &p2_ctx,
+            1 => &p_ctx,
+            _ => &tray_selector_ctx,
+        };
+        let selector_runtime = match branch {
+            0 => &runtime,
+            1 => &low_runtime,
+            _ => &tray_runtime,
+        };
+        let selector_relin = match branch {
+            0 => &relin,
+            1 => &low_relin,
+            _ => &tray_relin,
+        };
+        let output_ctx = match branch {
+            0 => &full_ctx,
+            1 => &lower_output,
+            _ => &tray_output,
+        };
+        // Parallel Q-phase sister tree. Candidate trits are public labels; only
+        // the precharged pair selectors hide which label is active. No source
+        // secret or decrypted phase is used to construct these coordinates.
+        #[derive(Clone)]
+        struct PhaseCandidate {
+            raw_sum: i128,
+            phase: Vec<u64>,
+            selector: RNSCiphertext,
+            bound: U512,
+        }
+        let ordinary_component = |poly: &RNSPolynomial| {
+            poly.limbs
+                .iter()
+                .zip(&p_ctx.rns.mont_contexts)
+                .map(|(lane, mont)| {
+                    lane.iter()
+                        .map(|&v| mont.from_montgomery(v))
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>()
+        };
+        let source0 = ordinary_component(&encrypted_k_p.c0);
+        let source1 = ordinary_component(&encrypted_k_p.c1);
+        let mut sheets: Vec<Vec<PhaseCandidate>> = (0..degree)
+            .step_by(2)
+            .map(|start| {
+                (0..9)
+                    .map(|label| {
+                        let trits = [(label / 3) as i128 - 1, (label % 3) as i128 - 1];
+                        let mut raw_sum = 0;
+                        let mut phase = vec![0; PRIMES.len()];
+                        for offset in 0..2 {
+                            let key_index = start + offset;
+                            let index = (degree - key_index) % degree;
+                            let sign = if key_index == 0 { 1i128 } else { -1i128 };
+                            raw_sum += sign * r1[index] as i128 * trits[offset];
+                            for (lane, &prime) in PRIMES.iter().enumerate() {
+                                phase[lane] = (phase[lane] as i128
+                                    + sign * source1[lane][index] as i128 * trits[offset])
+                                    .rem_euclid(prime as i128)
+                                    as u64;
+                            }
+                        }
+                        PhaseCandidate {
+                            raw_sum,
+                            phase,
+                            selector: match branch {
+                                0 => project_pair_selector(label, start),
+                                1 => low_pairs[start / 2][label].clone(),
+                                _ => tray_pairs[start / 2][label].clone(),
+                            },
+                            bound: selector_runtime.noise.projected,
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
+        let mut sister_products = 0usize;
+        while sheets.len() > 1 {
+            let mut next = Vec::new();
+            for pair in sheets.chunks(2) {
+                if pair.len() == 1 {
+                    next.push(pair[0].clone());
+                    continue;
+                }
+                let mut joined = Vec::with_capacity(pair[0].len() * pair[1].len());
+                for left in &pair[0] {
+                    for right in &pair[1] {
+                        let bound = selector_runtime
+                            .noise
+                            .multiply(left.bound, right.bound)
+                            .unwrap();
+                        let selector = selector_runtime
+                            .exact
+                            .try_mul_exact(&left.selector, &right.selector, selector_relin)
+                            .unwrap();
+                        sister_products += 1;
+                        joined.push(PhaseCandidate {
+                            raw_sum: left.raw_sum + right.raw_sum,
+                            phase: PRIMES
+                                .iter()
+                                .enumerate()
+                                .map(|(lane, &prime)| {
+                                    ((left.phase[lane] as u128 + right.phase[lane] as u128)
+                                        % prime as u128) as u64
+                                })
+                                .collect(),
+                            selector,
+                            bound,
+                        });
+                    }
+                }
+                next.push(joined);
+            }
+            sheets = next;
+        }
+        let scaler = CanonicalScaleRound::new(&PRIMES, P).unwrap();
+        let normalized_rows = sheets
+            .pop()
+            .unwrap()
+            .into_iter()
+            .map(|candidate| {
+                let phase: Vec<_> = PRIMES
+                    .iter()
+                    .enumerate()
+                    .map(|(lane, &prime)| {
+                        ((candidate.phase[lane] as u128 + source0[lane][0] as u128) % prime as u128)
+                            as u64
+                    })
+                    .collect();
+                let k = scaler.scale_round(&phase).unwrap() % P;
+                let k = if k > P / 2 {
+                    k as i128 - P as i128
+                } else {
+                    k as i128
+                };
+                let raw_sum = candidate.raw_sum + r0[0] as i128;
+                let j = (raw_sum + P as i128 / 2).div_euclid(P as i128);
+                Row {
+                    remainder: k,
+                    winding: i64::try_from(j).unwrap(),
+                    selector: Some(candidate.selector),
+                    bound: candidate.bound,
+                }
+            })
+            .collect();
+        let normalized_state = State {
+            rows: normalized_rows,
+            family: selector_runtime.family,
+            source_q: P as i128,
+            coefficients: (0..degree).collect(),
+        };
+        let mut root_state = normalized_state.clone();
+        let retarget_runtime = if branch == 2 {
+            for row in &mut root_state.rows {
+                row.bound = row.bound.mul_u128(TRAY_OUTPUT_SCALE as u128);
+            }
+            Some(CarryRuntime::new_composite_sister_target(
+                output_ctx,
+                P as i128,
+                selector_runtime.family,
+                10_000,
+            ))
+        } else {
+            None
+        };
+        let root_runtime = retarget_runtime.as_ref().unwrap_or(selector_runtime);
+        let normalized_root = Root211::new(root_runtime, &root_state).unwrap();
+        let normalized_tray = if branch == 1 {
+            assert!(matches!(
+                normalized_root.attach(&[P, P + 1]),
+                Err(TrayRefusal::EncodingCapacity)
+            ));
+            normalized_root.attach(&[P, 2, 11]).unwrap()
+        } else if branch == 2 {
+            assert_eq!(TRAY_SELECTOR_T, 65_545);
+            assert!(TRAY_SELECTOR_T > P + 1);
+            assert_eq!(TRAY_OUTPUT_SCALE % (P + 1), 1);
+            assert_eq!(gcd(TRAY_OUTPUT_T as u128, (P + 1) as u128), 1);
+            normalized_root.attach(&[P + 1, 2, 11]).unwrap()
+        } else {
+            normalized_root.attach(&[P, P + 1]).unwrap()
+        };
+        normalized_root.validate(&normalized_tray).unwrap();
+        let normalized_c = root_runtime.project(&root_state, |row| {
+            i64::try_from(row.remainder + P as i128 * row.winding as i128).unwrap()
+        });
+        let normalized_r = root_runtime.project(&root_state, |row| {
+            i64::try_from(row.remainder - row.winding as i128).unwrap()
+        });
+        let normalized_j = root_runtime.project(&root_state, |row| row.winding);
+        let normalized_k = root_runtime.project(&root_state, |row| row.remainder as i64);
+        let c_plain = decode_at(
+            selector_ctx,
+            &normalized_c.ciphertext,
+            &keys.secret_key,
+            normalized_c.bound,
+            [0],
+        );
+        let r_plain = decode_at(
+            selector_ctx,
+            &normalized_r.ciphertext,
+            &keys.secret_key,
+            normalized_r.bound,
+            [0],
+        );
+        let k_plain = decode_at(
+            selector_ctx,
+            &normalized_k.ciphertext,
+            &keys.secret_key,
+            normalized_k.bound,
+            [0],
+        );
+        let expected_c = if branch == 2 {
+            (input[0] as i128 + P as i128 * expected_quotient_winding)
+                .rem_euclid(selector_ctx.t as i128) as u64
+        } else {
+            lifted_plain[0] % selector_ctx.t
+        };
+        assert_eq!(c_plain[0], expected_c);
+        assert_eq!(
+            r_plain[0],
+            (input[0] as i128 - expected_quotient_winding).rem_euclid(selector_ctx.t as i128)
+                as u64
+        );
+        assert_eq!(k_plain[0], residue_k0);
+        let mut normalized_difference = normalized_c.ciphertext.clone();
+        add_scaled(
+            selector_ctx,
+            &mut normalized_difference,
+            &normalized_r.ciphertext,
+            -1,
+        );
+        let mut expected_factor = zero(selector_ctx);
+        add_scaled(
+            selector_ctx,
+            &mut expected_factor,
+            &normalized_j.ciphertext,
+            (P + 1) as i64,
+        );
+        assert_eq!(normalized_difference.c0.limbs, expected_factor.c0.limbs);
+        assert_eq!(normalized_difference.c1.limbs, expected_factor.c1.limbs);
+        let mut normalized_corrected = normalized_c.ciphertext.clone();
+        add_scaled(
+            selector_ctx,
+            &mut normalized_corrected,
+            &normalized_j.ciphertext,
+            -(P as i64),
+        );
+        assert_eq!(
+            normalized_corrected.c0.limbs,
+            normalized_k.ciphertext.c0.limbs
+        );
+        assert_eq!(
+            normalized_corrected.c1.limbs,
+            normalized_k.ciphertext.c1.limbs
+        );
+        let output_scale = if branch == 2 { TRAY_OUTPUT_SCALE } else { M_PJ };
+        let normalized_high_bound = if branch == 2 {
+            normalized_k.bound
+        } else {
+            normalized_k.bound.mul_u128(M_PJ as u128)
+        };
+        let normalized_high_radius =
+            Noise::new_for_composite_sister_target(&output_ctx.config).half();
+        let normalized_high_admitted = words(normalized_high_bound) < words(normalized_high_radius);
+        let (normalized_high, normalized_high_measured) =
+            decode_at_with_error(output_ctx, &normalized_corrected, &keys.secret_key, [0]);
+        let normalized_high_exact = normalized_high[0]
+            == (output_scale as i128 * input[0] as i128).rem_euclid(output_ctx.t as i128) as u64;
+        eprintln!(
+        "parallel Q-phase normalization: N={}, branch={}, selector_t={}, output_t={}, output scale={}, rows={}, extra products={}, C/r/K exact; bounds C/r/J/K={}/{}/{}/{} bits, high modeled/measured={}/{} vs radius={}, admitted={}, exact={}",
+        degree, branch, selector_ctx.t, output_ctx.t, output_scale, root_state.rows.len(), sister_products,
         bits(normalized_c.bound), bits(normalized_r.bound), bits(normalized_j.bound), bits(normalized_k.bound),
         bits(normalized_high_bound), bits(normalized_high_measured), bits(normalized_high_radius),
         normalized_high_admitted, normalized_high_exact,
     );
-    if normalized_high_admitted {
-        assert!(normalized_high_exact);
+        if normalized_high_admitted {
+            assert!(normalized_high_exact);
+        }
+        if branch == 2 {
+            let tray_view = &normalized_tray.views[0];
+            let (tray_plain, tray_measured) =
+                decode_at_with_error(output_ctx, &tray_view.ciphertext, &keys.secret_key, [0]);
+            let expected_residual =
+                (input[0] as i128 - expected_quotient_winding).rem_euclid((P + 1) as i128) as u64;
+            let expected_tray = (TRAY_OUTPUT_SCALE as u128 * expected_residual as u128)
+                .rem_euclid(output_ctx.t as u128) as u64;
+            eprintln!(
+                "composite sister tray: N={}, modulus={}, scale mod tray={}, tray bound/measured={}/{} bits, exact={}, residue exact={}",
+                degree,
+                P + 1,
+                TRAY_OUTPUT_SCALE % (P + 1),
+                bits(tray_view.bound),
+                bits(tray_measured),
+                tray_plain[0] == expected_tray,
+                tray_plain[0] % (P + 1) == expected_residual,
+            );
+            assert_eq!(tray_plain[0], expected_tray);
+            assert_eq!(tray_plain[0] % (P + 1), expected_residual);
+        }
+        if branch == 1 {
+            // The smaller encoding naturally targets p*M_pJ. Reusing its
+            // components at the original p^2*M_pJ target multiplies the
+            // desired correction by an additional p; record that boundary.
+            let cross_scale = P * M_PJ;
+            let cross_bound = normalized_k.bound.mul_u128(cross_scale as u128);
+            let cross_radius = Noise::new_for_composite_sister_target(&full_ctx.config).half();
+            let cross_admitted = words(cross_bound) < words(cross_radius);
+            let (cross_plain, cross_measured) =
+                decode_at_with_error(&full_ctx, &normalized_corrected, &keys.secret_key, [0]);
+            let expected_cross =
+                (cross_scale as i128 * input[0] as i128).rem_euclid(FULL_T as i128) as u64;
+            eprintln!("lower selector scale alignment: N={}, natural target={}, original target={}, cross bound/measured={}/{} bits, admitted={}, p-times correction exact={}",
+                degree, lower_output.t, full_ctx.t, bits(cross_bound), bits(cross_measured), cross_admitted, cross_plain[0] == expected_cross);
+            if cross_admitted {
+                assert_eq!(cross_plain[0], expected_cross);
+                assert_ne!(
+                    cross_plain[0],
+                    (M_PJ as i128 * input[0] as i128).rem_euclid(FULL_T as i128) as u64
+                );
+            }
+        }
     }
 }
 
