@@ -284,6 +284,26 @@ phase-locked tray producer can be implemented. That encrypted producer and
 bounded lift must bind provenance/noise, then pass return, the next product,
 and a second refresh.
 
+2026-10-24 scale-Jacobian update for issue #95: a p-locked ultradiscrete
+scale derivative now separates the carry `K` from a bounded residual `e`, and
+same-history p/(p+1) views recover the quotient winding `J` at all 16,384
+native doubled-ring coefficients. For centered component quotients bounded by
+`Q/(2L)+1/2`, a ternary output key, `Q>=L*(n_out+1)`, `B<p`, and
+`T>2*p*(n_out/2+1)`, the decoded winding has the tighter experiment-side
+bound `|J|<=n_out/2+1=8,193`. The p+1 tray radius 32,768 sign-lifts this
+bound. The observed-value `A=517` tray is too small for full `pJ`; a tuned
+11-anchored composite tray `A=16,390` gives `M_pJ=1,074,167,820` and
+`T=4,613,656,451,714,285,580`, enough capacity for the full bound and offset.
+Its 189-bit three-prime chain passes the repository's 128-bit screen, and the
+medium and native consumer/product tests pass. Native N8192 recovered J at
+all 16,384 coefficients (`max |J|=132`), fit the full pJ bound plus offset,
+and had zero K-Elimination mismatches. The corrected residual measured 66 bits;
+carry/Phase 1 measured 123 bits; square and following product both decoded
+exactly. A one-root Safe-Basis fixture projects the bounded offset into
+`M_pJ`, but it still uses symbolic clear support rows rather than the live
+Jacobian history. Work-key return, repeated refresh, and R03 admission remain
+open; issue #95 remains open and ordinary public Phase 1 stays fail-closed.
+
 Run two parameter searches: (A) current CRAM tuples with sharper sound bounds
 and bounded circuits; (B) a wider native tuple based on the working reference.
 This directly tests the owner's tighter-parameter hypothesis. Preserve a

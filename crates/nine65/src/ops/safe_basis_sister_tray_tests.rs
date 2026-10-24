@@ -250,28 +250,43 @@ impl<'a> Root211<'a> {
     fn project_bounded_remainder(
         &self,
         tray: &SisterTray<'_, '_>,
-        odd_period: u64,
+        period: u64,
         bound: u64,
         target: u64,
     ) -> Result<Projection, TrayRefusal> {
+        self.project_bounded_scaled_remainder(tray, period, bound, 1, target)
+    }
+
+    fn project_bounded_scaled_remainder(
+        &self,
+        tray: &SisterTray<'_, '_>,
+        period: u64,
+        bound: u64,
+        scale: i64,
+        target: u64,
+    ) -> Result<Projection, TrayRefusal> {
         self.validate(tray)?;
-        if odd_period < 3
-            || odd_period % 2 == 0
-            || (odd_period as u128) <= 2 * bound as u128
-            || target == 0
-            || target > self.runtime.ctx.t
-            || !tray.moduli.contains(&odd_period)
+        if period < 3
+            || (period as u128) <= 2 * bound as u128
+            || scale == 0
+            || target != self.runtime.ctx.t
+            || !tray.moduli.contains(&period)
             || self.state.rows.iter().any(|row| {
                 row.remainder.unsigned_abs() > bound as u128
-                    || self.runtime.root_value(row, odd_period)
-                        != row.remainder.rem_euclid(odd_period as i128) as i64
+                    || self.runtime.root_value(row, period)
+                        != row.remainder.rem_euclid(period as i128) as i64
+                    || row
+                        .remainder
+                        .checked_mul(scale as i128)
+                        .and_then(|value| i64::try_from(value).ok())
+                        .is_none()
             })
         {
             return Err(TrayRefusal::InvalidLiftBound);
         }
-        let projection = self
-            .runtime
-            .project(self.state, |row| row.remainder as i64);
+        let projection = self.runtime.project(self.state, |row| {
+            (row.remainder * scale as i128) as i64
+        });
         self.evaluated_views.set(self.evaluated_views.get() + 1);
         Ok(projection)
     }
@@ -954,6 +969,164 @@ fn symbolic_scale_jacobian_residual_lifts_through_one_root_into_common_p() {
         );
         assert_eq!(decoded_square[0], (k_expected as u128 * k_expected as u128 % P as u128) as u64);
         assert!(decoded_square[1..].iter().all(|&value| value == 0));
+    }
+}
+
+#[test]
+fn one_root_projects_bounded_offset_into_composite_pj_tray() {
+    const P: u64 = 65_537;
+    const TRAY_FACTOR: u64 = 16_390; // 2 * 5 * 11 * 149
+    const M1: u64 = P + 1;
+    const OFFSET_BOUND: u64 = 129;
+    const OFFSET_MAX: u64 = 2 * OFFSET_BOUND;
+    const P_J_TRAY: u64 = TRAY_FACTOR * M1;
+
+    let mut config = config_with(6);
+    config.n = 32;
+    config.t = P_J_TRAY;
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    assert!(TRAY_FACTOR > 2 * OFFSET_MAX);
+    let mut rng = ShadowHarvester::with_seed(0x504a_5452_4159_3236);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let mut one_message = vec![0i8; ctx.n];
+    one_message[0] = 1;
+    let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
+    let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
+    let runtime = CarryRuntime::new_composite_sister_target(
+        &ctx,
+        P as i128,
+        [TRAY_FACTOR, 2],
+        8,
+    );
+    let values = [0i128, OFFSET_BOUND as i128, OFFSET_MAX as i128];
+    let mut rows: Vec<_> = values
+        .iter()
+        .map(|&remainder| Row {
+            remainder,
+            winding: 0,
+            selector: None,
+            bound: runtime.noise.projected,
+        })
+        .collect();
+
+    for selected in 0..values.len() {
+        for (index, row) in rows.iter_mut().enumerate() {
+            row.selector = Some(if index == selected {
+                selected_one.clone()
+            } else {
+                selected_zero.clone()
+            });
+        }
+        let state = State {
+            rows: rows.clone(),
+            family: runtime.family,
+            source_q: P as i128,
+            coefficients: vec![0],
+        };
+        let root = Root211::new(&runtime, &state).unwrap();
+        let tray = root
+            .attach(&[TRAY_FACTOR, M1, P_J_TRAY])
+            .unwrap();
+        let bounded_offset = root
+            .project_bounded_remainder(&tray, TRAY_FACTOR, OFFSET_MAX, P_J_TRAY)
+            .unwrap();
+        let decoded = decode_at(
+            &ctx,
+            &bounded_offset.ciphertext,
+            &keys.secret_key,
+            bounded_offset.bound,
+            0..ctx.n,
+        );
+        assert_eq!(decoded[0], values[selected] as u64);
+        assert!(decoded[1..].iter().all(|&value| value == 0));
+    }
+}
+
+#[test]
+fn one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t() {
+    const P: u64 = 65_537;
+    const WINDING_PERIOD: u64 = P + 1;
+    const WINDING_BOUND: u64 = 16_386;
+    const HIGH_T: u64 = 145_531_445_121_188_874;
+    const WINDINGS: [i128; 5] = [
+        -(WINDING_BOUND as i128),
+        -147,
+        0,
+        147,
+        WINDING_BOUND as i128,
+    ];
+
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 32;
+    config.primes = vec![
+        288_230_376_152_137_729,
+        288_230_376_152_727_553,
+    ];
+    config.q = config.primes[0];
+    config.security_bits = 0;
+    config.t = HIGH_T;
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    assert!(WINDING_PERIOD > 2 * WINDING_BOUND);
+    let mut rng = ShadowHarvester::with_seed(0x504a_4556_454e_3131);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let mut one_message = vec![0i8; ctx.n];
+    one_message[0] = 1;
+    let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
+    let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
+    let runtime = CarryRuntime::new_composite_sister_target(
+        &ctx,
+        P as i128,
+        [517, 2],
+        8,
+    );
+    let mut rows: Vec<_> = WINDINGS
+        .iter()
+        .map(|&winding| Row {
+            remainder: winding,
+            winding: 0,
+            selector: None,
+            bound: runtime.noise.projected,
+        })
+        .collect();
+
+    for (selected, &winding) in WINDINGS.iter().enumerate() {
+        for (index, row) in rows.iter_mut().enumerate() {
+            row.selector = Some(if index == selected {
+                selected_one.clone()
+            } else {
+                selected_zero.clone()
+            });
+        }
+        let state = State {
+            rows: rows.clone(),
+            family: runtime.family,
+            source_q: P as i128,
+            coefficients: vec![0],
+        };
+        let root = Root211::new(&runtime, &state).unwrap();
+        let tray = root.attach(&[WINDING_PERIOD]).unwrap();
+        let p_winding = root
+            .project_bounded_scaled_remainder(
+                &tray,
+                WINDING_PERIOD,
+                WINDING_BOUND,
+                P as i64,
+                HIGH_T,
+            )
+            .unwrap();
+        let decoded = decode_at(
+            &ctx,
+            &p_winding.ciphertext,
+            &keys.secret_key,
+            p_winding.bound,
+            0..ctx.n,
+        );
+        assert_eq!(
+            decoded[0],
+            (P as i128 * winding).rem_euclid(HIGH_T as i128) as u64,
+            "the root must emit signed pJ directly in the high encoding"
+        );
+        assert!(decoded[1..].iter().all(|&value| value == 0));
     }
 }
 

@@ -81,6 +81,12 @@ pub(super) struct Noise {
 
 impl Noise {
     pub(super) fn new(config: &FHEConfig) -> Self {
+        Self::new_with_indexed_selector(config, true)
+    }
+    fn new_for_composite_sister_target(config: &FHEConfig) -> Self {
+        Self::new_with_indexed_selector(config, false)
+    }
+    fn new_with_indexed_selector(config: &FHEConfig, indexed_selector: bool) -> Self {
         let arithmetic = ExactMulPlan::new(&config.primes, config.n, config.t).unwrap();
         let c = arithmetic.certificate();
         let n = config.n as u128;
@@ -90,9 +96,12 @@ impl Noise {
                 * ((1u128 << c.base_bits) - 1)
                 * c.digits_per_lane.iter().sum::<usize>() as u128,
         );
-        // Directly preconditioned selector polynomials encode -8*delta;
-        // N*(-8)=1 mod 65537. No ciphertext post-scaling is assumed free.
-        assert_eq!(config.n as u64 * 8 + 1, config.t);
+        // The legacy indexed-selector fixture uses -8*delta and requires
+        // N*(-8)=1 mod 8N+1. A direct one-hot projection into a composite
+        // sister target does not use that indexing identity.
+        if indexed_selector {
+            assert_eq!(config.n as u64 * 8 + 1, config.t);
+        }
         let input = U512::from_u128(config.eta as u128 * (2 * n + 1) + 8);
         let projected = input.mul_u128(n).add(switch.mul_u128(n - 1));
         let key_words = (config.n.ilog2() as u128 + 1)
@@ -201,11 +210,40 @@ struct CarryRuntime<'a> {
 
 impl<'a> CarryRuntime<'a> {
     fn new(ctx: &'a RNSFHEContext, source_q: i128, family: [u64; 2], max_states: usize) -> Self {
+        Self::new_with_noise(
+            ctx,
+            source_q,
+            family,
+            max_states,
+            Noise::new(&ctx.config),
+        )
+    }
+    fn new_composite_sister_target(
+        ctx: &'a RNSFHEContext,
+        source_q: i128,
+        family: [u64; 2],
+        max_states: usize,
+    ) -> Self {
+        Self::new_with_noise(
+            ctx,
+            source_q,
+            family,
+            max_states,
+            Noise::new_for_composite_sister_target(&ctx.config),
+        )
+    }
+    fn new_with_noise(
+        ctx: &'a RNSFHEContext,
+        source_q: i128,
+        family: [u64; 2],
+        max_states: usize,
+        noise: Noise,
+    ) -> Self {
         assert!(source_q >= 3 && source_q % 2 == 1);
         Self {
             ctx,
             exact: ctx.try_exact_evaluator().unwrap(),
-            noise: Noise::new(&ctx.config),
+            noise,
             source_q,
             family,
             max_states,

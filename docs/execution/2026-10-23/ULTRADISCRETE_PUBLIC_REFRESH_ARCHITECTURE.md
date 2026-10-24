@@ -24,9 +24,9 @@ refresh.
 | `r_p` | Same-history p-encoded sister-tray residue for K-Elimination | Native consumer test uses `M*=2^16=p-1`; `L=2` scales `99*Z99`, and `K=-(X_p-r_p)`; returned phase is 51 bits at N8192 and survives two products | Produce/authenticate `r_p` through the one-root Safe-Basis 2/11 phase lock; current tray is a client oracle |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
-| `K_T` / `K_p` | K-Elimination carry in a high or common p encoding | High-encoding oracle consumer remains measured; the power-tray route returns `K_p` with inverse `-1`; the wide p-locked test now extracts the quotient winding `J mod (p+1)` from same-history p/M views without clear `e` or `J` in the extraction operations | Bind the pL, p, and M sibling views to one capability; certify the worst-case `J` bound; lift bounded `J` back to T and certify the corrected carry |
+| `K_T` / `K_p` | K-Elimination carry in a high or common p encoding | Same-history p/(p+1) views extract `J`; the centered quotient gives the experiment-side bound `|J|<=n_out/2+1=8,193`, inside the p+1 tray radius. A tuned `A=16,390` composite tray has full-bound `pJ` capacity; the medium consumer/product case passes | Bind pL, p, and p+1 views to one capability; replace clear support rows with live history-bound projection and certify its native noise; finish the native consumer, return to the work key, and admit repeat refresh |
 | `R_T=x_T-A*K_T` | T-encoded chart residual | Oracle-injected K-Elimination subtraction removes `r/A` from the p-view return | Bind the residual to the same chart capability and include both chart and carry errors in its certificate |
-| `V_out` | Error after residual correction and return | Power-tray oracle route: observed 47 bits at N512 and 51 bits at native N8192; square and next product exact at both sizes. Wide scale-Jacobian route recovers `J mod (p+1)` at all native coefficients; its final Phase 1 correction still uses clear `J`, with square and cube checks passing after that control | Safe-Basis lift of the encrypted bounded `J` to T, immutable noise certificate, return to work key, a second admitted refresh, and repeat-cycle admission remain open |
+| `V_out` | Error after residual correction and return | Power-tray oracle route: observed 47 bits at N512 and 51 bits at native N8192; square and next product exact. Composite pJ route: 62-bit corrected residual and 116-bit carry/Phase 1 at native N8192; square and following product exact, with `e+B` still supplied by a test oracle | Live Safe-Basis offset projection, immutable noise certificate, return to work key, a second admitted refresh, and repeat-cycle admission remain open |
 
 ## New p-locked winding result
 
@@ -40,13 +40,79 @@ ciphertext for `J mod M`. The extraction operations do not use clear `e` or
 `J`.
 
 At N=8192/H=96, all 16,384 doubled-ring coefficients pass, with observed
-`max |J|=115` inside M's centered radius 32,768. The same-history sibling
+`max |J|=115` inside M's centered radius 32,768. A conservative bound follows
+from the quotient construction: each centered component quotient is bounded
+by `Q/(2L)+1/2`, and convolution with the ternary output secret adds at most
+`n_out` terms. Under `Q>=L*(n_out+1)`, `B<p`, and
+`T>2*p*(n_out/2+1)`, the decoded winding satisfies
+`|J|<=n_out/2+1=8,193`. Since `p+1=65,538>2*8,193`, the same-history
+`J mod (p+1)` view sign-lifts the entire declared range. This bound assumes
+the key's ternary domain and the
+exact active Q/L/T tuple; those properties are not yet issued as a production
+certificate. The same-history sibling
 error is 153 bits and the ciphertext-only J output error is 165 bits, both
 under the 174-bit `Q/2` limit; the tuple passes the 128-bit parameter screen.
-The current final Phase 1 correction still uses clear J as a diagnostic
-control. A certified worst-case bound for J and a Safe-Basis lift of the
-encrypted J into the T encoding are the next gates; work-key return and
-repeat-refresh admission remain open.
+The final Phase 1 correction in this J-only control still uses clear J. The
+composite pJ route below avoids that operation for its observed values but
+currently uses a test-oracle `Enc_M_pJ(e+B)`. A symbolic Safe-Basis fixture
+also projects `pJ` from the p+1 winding tray directly into T at the full bound;
+the live ciphertext-to-root binding, native projection certificate, work-key
+return, and repeat-refresh admission remain open.
+
+## Composite `pJ` tray result
+
+The winding can be carried and lifted as `pJ` directly, avoiding multiplication
+by `p` after lifting `J`. With `A=517=11*47`, `M1=p+1`,
+`M_pJ=A*M1=33,883,146`, and `T=p^2*M_pJ=145,531,445,121,188,874`, the tray
+radius is 16,941,572. The native N8192/H96 run observes `max |J|=147`, so
+`p|J|=9,633,939` fits. The full-bound value
+`p*8,193=536,944,641` does not fit; this composite tray is an observed
+consumer diagnostic, not the worst-case route.
+
+The same-history `M_pJ` view of `e+pJ+B`, minus a test-oracle encoding of the
+bounded `e+B`, gives `pJ mod M_pJ`. K-Elimination division by `p^2` lifts the
+centered signed `pJ` exactly into T across all 16,384 coefficients. Subtracting
+it from the same-history high residual gives `Enc_T(e)` with 62-bit measured
+error. The p-view carry and corrected Phase 1 each measure 116 bits; their
+square and next product both decode exactly. The N512 run gives the same
+correctness result at 115 bits.
+
+This isolates the last producer needed by this route. Direct componentwise
+conversion of the existing `p+1` offset view to `M_pJ` is wrong in 16,197 of
+16,384 native slots. The one-root symbolic fixture projects offsets 0, 129, and
+258 into `M_pJ`, but it is not yet attached to the live Jacobian
+source/history. Thus this is a native consumer/product result, not an admitted
+public refresh.
+
+The direct-root alternative uses the existing p+1 view: its centered radius
+32,768 contains the tighter bound 8,193. A symbolic one-root fixture receives
+`J mod (p+1)` and directly projects `pJ` into T at `J=+-16,386`, `+-147`, and
+zero; the endpoint test deliberately stresses above the new bound. This avoids
+the smaller observed-value tray, but the input winding is still supplied as a
+clear support row. The missing producer must bind the live p+1 ciphertext,
+Safe-Basis root, output key, and history together and certify the projection
+noise.
+
+## Full-bound composite `pJ` tray
+
+The full bound fits a larger tray that retains the 11 anchor:
+`A=16,390=2*5*11*149`, `M_pJ=A*(p+1)=1,074,167,820`,
+`L=p*M_pJ=70,397,736,419,340`, and
+`T=p^2*M_pJ=4,613,656,451,714,285,580`. The radius is 537,083,909; it holds
+`p*8,193=536,944,641` plus the native offset span `2B=258`. The three
+63-bit NTT-prime chain has 189-bit Q and passes the in-tree 128-bit screen.
+The N512 and N8192 full-bound consumer/product runs pass, including the
+dependent square and next product. At N8192, `max |J|=132`; the corrected
+residual error is 66 bits and carry/Phase 1 error is 123 bits, with zero
+K-Elimination mismatches. The raw same-history offset conversion still fails
+in 16,183 of 16,384 slots, so this consumer result uses a test-oracle offset.
+
+The one-root offset fixture now projects `e+B` into this larger composite
+tray at offsets 0, 129, and 258. The fixture still uses clear symbolic support
+rows, and the consumer currently receives the offset from a test oracle. The
+remaining bridge is the live same-history Safe-Basis producer plus its native
+noise certificate, followed by return-key switching and second-refresh
+admission.
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the

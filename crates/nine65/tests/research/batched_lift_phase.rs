@@ -1205,6 +1205,18 @@ const WIDE_P_LOCKED_JACOBIAN_PRIMES: [u64; 3] = [
     288_230_376_152_727_553,
     288_230_376_154_267_649,
 ];
+// A larger 11-anchored sister tray carries the full bounded pJ correction.
+// Its 63-bit NTT primes keep T below every lane while preserving the native
+// 128-bit security screen at n_out=16,384.
+const FULL_BOUND_PJ_FACTOR: u64 = 16_390; // 2*5*11*149
+const FULL_BOUND_PJ_TRAY: u64 = FULL_BOUND_PJ_FACTOR * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+const FULL_BOUND_PJ_STEP: u64 = PHASE_P * FULL_BOUND_PJ_TRAY;
+const FULL_BOUND_PJ_SCALE_T: u64 = PHASE_P * FULL_BOUND_PJ_STEP;
+const FULL_BOUND_PJ_PRIMES: [u64; 3] = [
+    9_223_372_036_853_661_697,
+    9_223_372_036_853_235_713,
+    9_223_372_036_852_744_193,
+];
 
 fn observe_polynomial_wide(
     ctx: &RNSFHEContext,
@@ -1331,10 +1343,10 @@ fn build_differential_view(
     (ciphertext, bound, encrypted_source)
 }
 
-fn centered_residual_from_composite(odd: u64, odd_tray: u64, bound: u64) -> i64 {
-    assert_eq!(odd_tray % 2, 1);
-    let r = odd % odd_tray;
-    let candidates = [r as i64, r as i64 - odd_tray as i64];
+fn centered_residual_from_composite(residue: u64, period: u64, bound: u64) -> i64 {
+    assert!(u128::from(period) > 2 * u128::from(bound));
+    let r = residue % period;
+    let candidates = [r as i64, r as i64 - period as i64];
     let matches: Vec<_> = candidates
         .into_iter()
         .filter(|&candidate| candidate.unsigned_abs() <= bound)
@@ -1807,12 +1819,36 @@ fn check_scale_jacobian_lift_with(
                     high_e_mismatches += usize::from(actual != expected as u64);
                     windings.push(centered_winding);
                 }
+                // Each exact component quotient is centered before division
+                // by L, so a coefficient is bounded by Q/(2L)+1/2. The
+                // output key is ternary, hence its coefficient l1 norm is at
+                // most high.n; decryption adds at most high.n terms from c1
+                // and one from c0. Scaling that phase by T/Q, with T=p*L
+                // and Q>=L*(high.n+1), bounds the rounded plaintext by
+                // p*(high.n+2)/2. Removing |e|<=B then gives
+                // |J|<high.n/2+2, so the integer bound is high.n/2+1 when
+                // high.n is even and B<p. The T and p+1 checks below ensure
+                // neither the decoded representative nor signed J wraps.
+                assert!(residual_bound + 1 < PHASE_P);
+                assert_eq!(high.n % 2, 0);
+                let public_winding_bound = (high.n / 2 + 1) as u64;
+                assert!(
+                    words(U512::product_u64s(&high.config.primes))
+                        >= words(U512::from_u64(step).mul_u128(high.n as u128 + 1))
+                );
+                assert!(scale_t > 2 * PHASE_P * public_winding_bound);
+                assert!(
+                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY > 2 * public_winding_bound,
+                    "the p+1 tray must uniquely sign-lift the public output-key winding bound"
+                );
+                assert!(max_winding <= public_winding_bound);
                 eprintln!(
-                    "K-Elimination centered-tray lift: p-view residual V={}, high-view mismatches={}/{}, max centered winding |J|={}, 211 tray radius105, composite tray radius{}",
+                    "K-Elimination centered-tray lift: p-view residual V={}, high-view mismatches={}/{}, max centered winding |J|={} within public degree bound {}, 211 tray radius105, composite tray radius{}",
                     bits_u512(lifted_e_p),
                     high_e_mismatches,
                     lifted_e_high.len(),
                     max_winding,
+                    public_winding_bound,
                     (WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY - 1) / 2,
                 );
 
@@ -2012,6 +2048,398 @@ fn check_scale_jacobian_lift_with(
                     windings.len(),
                 );
 
+                // First test the missing M->T encoding conversion on the
+                // already encrypted bounded winding. T is an exact multiple
+                // of M, so componentwise K-Elimination division by T/M gives
+                // the right scale without a fresh encryption. Any residual
+                // plaintext offset is the hidden component-scale winding we
+                // must remove before this can feed the carry correction.
+                assert_eq!(scale_t % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY, 0);
+                let expected_e_t: Vec<_> = expected_e
+                    .iter()
+                    .map(|&e| (e as i128).rem_euclid(scale_t as i128) as u64)
+                    .collect();
+                let winding_to_high_divisor =
+                    scale_t / WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+                let lifted_winding_high = exact_centered_quotient(
+                    &offset_modulus_tray,
+                    &winding_ciphertext,
+                    winding_to_high_divisor,
+                );
+                let expected_winding_high: Vec<_> = windings
+                    .iter()
+                    .map(|&winding| winding.rem_euclid(scale_t as i128) as u64)
+                    .collect();
+                let converted_winding_plain =
+                    decrypt_coefficients(&high, &lifted_winding_high, &high_keys);
+                let mut conversion_mismatches = 0usize;
+                let mut max_conversion_offset = 0u64;
+                for (&actual, &expected) in converted_winding_plain
+                    .iter()
+                    .zip(&expected_winding_high)
+                {
+                    let difference = (actual as i128 - expected as i128)
+                        .rem_euclid(scale_t as i128);
+                    let centered = if difference > scale_t as i128 / 2 {
+                        difference - scale_t as i128
+                    } else {
+                        difference
+                    };
+                    max_conversion_offset =
+                        max_conversion_offset.max(centered.unsigned_abs() as u64);
+                    conversion_mismatches += usize::from(centered != 0);
+                }
+                let converted_winding_error = observe_polynomial_wide(
+                    &high,
+                    &lifted_winding_high,
+                    &high_keys,
+                    &expected_winding_high,
+                );
+                eprintln!(
+                    "K-Elimination M->T winding conversion: divisor=T/M={}, encrypted J plaintext mismatches={}/{}, max centered conversion offset={}, error={} bits",
+                    winding_to_high_divisor,
+                    conversion_mismatches,
+                    converted_winding_plain.len(),
+                    max_conversion_offset,
+                    bits_u512(converted_winding_error),
+                );
+                let encrypted_p_winding_high =
+                    signed_scale(&high, &lifted_winding_high, PHASE_P as i64);
+                let encrypted_corrected_e = add(
+                    &high,
+                    &lifted_e,
+                    &signed_scale(&high, &encrypted_p_winding_high, -1),
+                );
+                let encrypted_corrected_e_plain =
+                    decrypt_coefficients(&high, &encrypted_corrected_e, &high_keys);
+                let encrypted_correction_mismatches = encrypted_corrected_e_plain
+                    .iter()
+                    .zip(&expected_e_t)
+                    .filter(|(actual, expected)| actual != expected)
+                    .count();
+                eprintln!(
+                    "ciphertext-only pJ correction after M->T lift: plaintext mismatches={}/{}, scalar p={} noise amplification is now exposed",
+                    encrypted_correction_mismatches,
+                    encrypted_corrected_e_plain.len(),
+                    PHASE_P,
+                );
+
+                // A larger composite tray can carry pJ itself as a bounded
+                // integer, avoiding the noisy multiplication by p after J is
+                // lifted. Here M_pj=A*(p+1) divides T and T/M_pj=p^2 when
+                // step=p*A*(p+1). The e input below is deliberately a clear
+                // test oracle: this isolates the pJ tray/lift consumer while
+                // the authenticated Safe-Basis producer of Enc_Mpj(e+B)
+                // remains the production gap.
+                let p_winding_tray_modulus =
+                    odd_tray_modulus * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+                let observed_p_winding_bound =
+                    u128::from(PHASE_P) * u128::from(max_winding);
+                let certified_p_winding_bound =
+                    u128::from(PHASE_P) * u128::from(public_winding_bound);
+                let p_winding_tray_radius = (p_winding_tray_modulus - 1) / 2;
+                let offset_span = u128::from(2 * residual_bound);
+                let full_bound_pj_fits = u128::from(p_winding_tray_radius)
+                    >= certified_p_winding_bound + offset_span;
+                if step % p_winding_tray_modulus == 0
+                    && u128::from(p_winding_tray_radius)
+                        >= observed_p_winding_bound + offset_span
+                {
+                    let p_winding_tray = context_for(p_winding_tray_modulus);
+                    let p_winding_scale = scale_t / p_winding_tray_modulus;
+                    let p_winding_view = signed_scale(
+                        &high,
+                        &offset_candidate,
+                        p_winding_scale as i64,
+                    );
+                    let expected_offset_mpj: Vec<_> = expected_e
+                        .iter()
+                        .zip(&offset_plain)
+                        .map(|(&e, &offset)| e + offset)
+                        .collect();
+                    let expected_pj_mpj: Vec<_> = windings
+                        .iter()
+                        .map(|&winding| {
+                            (i128::from(PHASE_P) * winding)
+                                .rem_euclid(p_winding_tray_modulus as i128)
+                                as u64
+                        })
+                        .collect();
+                    assert_eq!(expected_pj_mpj.len(), high.n);
+                    let p_winding_ciphertext = add(
+                        &p_winding_tray,
+                        &p_winding_view,
+                        &signed_scale(
+                            &p_winding_tray,
+                            &public_plain(&p_winding_tray, &expected_offset_mpj),
+                            -1,
+                        ),
+                    );
+                    assert_eq!(
+                        decrypt_coefficients(
+                            &p_winding_tray,
+                            &p_winding_ciphertext,
+                            &high_keys,
+                        ),
+                        expected_pj_mpj,
+                        "the composite tray must retain the bounded pJ representative"
+                    );
+                    let lifted_p_winding = exact_centered_quotient(
+                        &p_winding_tray,
+                        &p_winding_ciphertext,
+                        p_winding_scale,
+                    );
+                    // Lift the centered signed representative, not the
+                    // nonnegative residue in [0, M_pJ). For negative pJ,
+                    // those differ by exactly M_pJ.
+                    let expected_pj_high: Vec<_> = windings
+                        .iter()
+                        .map(|&winding| {
+                            (i128::from(PHASE_P) * winding)
+                                .rem_euclid(scale_t as i128)
+                                as u64
+                        })
+                        .collect();
+                    let lifted_pj_plain =
+                        decrypt_coefficients(&high, &lifted_p_winding, &high_keys);
+                    let mut p_j_lift_mismatches = 0usize;
+                    let mut p_j_mod_p_mismatches = 0usize;
+                    let mut max_p_j_lift_offset = 0u64;
+                    for (&actual, &expected) in
+                        lifted_pj_plain.iter().zip(&expected_pj_high)
+                    {
+                        let difference = (actual as i128 - expected as i128)
+                            .rem_euclid(scale_t as i128);
+                        let centered = if difference > scale_t as i128 / 2 {
+                            difference - scale_t as i128
+                        } else {
+                            difference
+                        };
+                        max_p_j_lift_offset =
+                            max_p_j_lift_offset.max(centered.unsigned_abs() as u64);
+                        p_j_lift_mismatches += usize::from(centered != 0);
+                        p_j_mod_p_mismatches += usize::from(
+                            actual % PHASE_P != expected % PHASE_P,
+                        );
+                    }
+                    eprintln!(
+                        "composite pJ sister tray: M_pJ={} (=A*(p+1)), radius={}, observed p*|J|={}, full derived pJ bound={} fits={}, T/M_pJ={}, tray plaintext exact; centered K-Elimination lift mismatches={}/{}, max centered offset={}, mod-p mismatches={}",
+                        p_winding_tray_modulus,
+                        (p_winding_tray_modulus - 1) / 2,
+                        observed_p_winding_bound,
+                        certified_p_winding_bound,
+                        full_bound_pj_fits,
+                        p_winding_scale,
+                        p_j_lift_mismatches,
+                        high.n,
+                        max_p_j_lift_offset,
+                        p_j_mod_p_mismatches,
+                    );
+                    assert_eq!(
+                        p_j_lift_mismatches, 0,
+                        "bounded centered pJ must lift exactly from M_pJ into T"
+                    );
+                    let corrected_e_from_tray = add(
+                        &high,
+                        &lifted_e,
+                        &signed_scale(&high, &lifted_p_winding, -1),
+                    );
+                    let corrected_tray_plain =
+                        decrypt_coefficients(&high, &corrected_e_from_tray, &high_keys);
+                    let corrected_tray_mismatches = corrected_tray_plain
+                        .iter()
+                        .zip(&expected_e_t)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    eprintln!(
+                        "using the uncorrected pJ scale conversion gives corrected-e mismatches={}/{}; e tray input remains test-oracle supplied",
+                        corrected_tray_mismatches,
+                        high.n,
+                    );
+                    if corrected_tray_mismatches == 0 {
+                        let corrected_tray_error = observe_polynomial_wide(
+                            &high,
+                            &corrected_e_from_tray,
+                            &high_keys,
+                            &expected_e_t,
+                        );
+                        eprintln!(
+                            "composite pJ tray corrected-residual error={} bits",
+                            bits_u512(corrected_tray_error),
+                        );
+                        if check_dependent_product {
+                            let composite_tray_carry = add(
+                                &high,
+                                &high_delta,
+                                &signed_scale(&high, &corrected_e_from_tray, -1),
+                            );
+                            let composite_tray_carry_error = observe_polynomial_wide(
+                                &common_p,
+                                &composite_tray_carry,
+                                &high_keys,
+                                &expected_k,
+                            );
+                            let composite_tray_phase =
+                                add(&common_p, &affine, &composite_tray_carry);
+                            let composite_tray_phase_error = observe_polynomial_wide(
+                                &common_p,
+                                &composite_tray_phase,
+                                &high_keys,
+                                &expected_message,
+                            );
+                            let exact = common_p.try_exact_evaluator().unwrap();
+                            let relin = exact.generate_hybrid_gadget_key_with_rng(
+                                &high_keys.secret_key,
+                                &mut rng_for_view,
+                            );
+                            let composite_tray_square = exact
+                                .try_mul_exact(
+                                    &composite_tray_phase,
+                                    &composite_tray_phase,
+                                    &relin,
+                                )
+                                .unwrap();
+                            let composite_tray_square_plain = decrypt_coefficients(
+                                &common_p,
+                                &composite_tray_square,
+                                &high_keys,
+                            );
+                            let expected_square = square_plain(&expected_message, PHASE_P);
+                            let composite_tray_square_mismatches = composite_tray_square_plain
+                                .iter()
+                                .zip(&expected_square)
+                                .filter(|(actual, expected)| actual != expected)
+                                .count();
+                            let composite_tray_cube = exact
+                                .try_mul_exact(
+                                    &composite_tray_square,
+                                    &composite_tray_phase,
+                                    &relin,
+                                )
+                                .unwrap();
+                            let composite_tray_cube_plain =
+                                decrypt_coefficients(&common_p, &composite_tray_cube, &high_keys);
+                            let expected_cube = negacyclic_plain_multiply(
+                                &expected_square,
+                                &expected_message,
+                                PHASE_P,
+                            );
+                            let composite_tray_cube_mismatches = composite_tray_cube_plain
+                                .iter()
+                                .zip(&expected_cube)
+                                .filter(|(actual, expected)| actual != expected)
+                                .count();
+                            eprintln!(
+                                "composite pJ same-history products: carry error={} bits, corrected phase error={} bits, square mismatches={}/{}, cube mismatches={}/{}",
+                                bits_u512(composite_tray_carry_error),
+                                bits_u512(composite_tray_phase_error),
+                                composite_tray_square_mismatches,
+                                composite_tray_square_plain.len(),
+                                composite_tray_cube_mismatches,
+                                composite_tray_cube_plain.len(),
+                            );
+                        }
+                    }
+
+                    // Remove the clear-e oracle next. The existing p+1
+                    // sister view already carries Enc_(p+1)(e+B) from this
+                    // exact source history. Its scale differs from the M_pJ
+                    // target by A; K-Elimination division tests whether that
+                    // correlated view can supply the offset for the pJ tray.
+                    let same_history_offset_mpj = exact_centered_quotient(
+                        &offset_modulus_tray,
+                        &offset_p_view,
+                        odd_tray_modulus,
+                    );
+                    let expected_offset_mpj_residues: Vec<_> = expected_offset_mpj
+                        .iter()
+                        .map(|&value| {
+                            (value as i128)
+                                .rem_euclid(p_winding_tray_modulus as i128)
+                                as u64
+                        })
+                        .collect();
+                    let same_history_offset_plain =
+                        decrypt_coefficients(&p_winding_tray, &same_history_offset_mpj, &high_keys);
+                    let offset_mpj_mismatches = same_history_offset_plain
+                        .iter()
+                        .zip(&expected_offset_mpj_residues)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    let p_winding_same_history = add(
+                        &p_winding_tray,
+                        &p_winding_view,
+                        &signed_scale(&p_winding_tray, &same_history_offset_mpj, -1),
+                    );
+                    let p_winding_same_history_plain = decrypt_coefficients(
+                        &p_winding_tray,
+                        &p_winding_same_history,
+                        &high_keys,
+                    );
+                    let same_history_pj_mismatches = p_winding_same_history_plain
+                        .iter()
+                        .zip(&expected_pj_mpj)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    let lifted_same_history_pj = exact_centered_quotient(
+                        &p_winding_tray,
+                        &p_winding_same_history,
+                        p_winding_scale,
+                    );
+                    let corrected_e_same_history = add(
+                        &high,
+                        &lifted_e,
+                        &signed_scale(&high, &lifted_same_history_pj, -1),
+                    );
+                    let corrected_e_same_history_plain =
+                        decrypt_coefficients(&high, &corrected_e_same_history, &high_keys);
+                    let same_history_corrected_mismatches = corrected_e_same_history_plain
+                        .iter()
+                        .zip(&expected_e_t)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    eprintln!(
+                        "same-history e+B offset via M1->M_pJ K-Elimination: offset mismatches={}/{}, pJ-tray mismatches={}/{}, final corrected-e mismatches={}/{}",
+                        offset_mpj_mismatches,
+                        high.n,
+                        same_history_pj_mismatches,
+                        high.n,
+                        same_history_corrected_mismatches,
+                        high.n,
+                    );
+                    if same_history_corrected_mismatches == 0 {
+                        let same_history_corrected_error = observe_polynomial_wide(
+                            &high,
+                            &corrected_e_same_history,
+                            &high_keys,
+                            &expected_e_t,
+                        );
+                        eprintln!(
+                            "same-history composite-tray corrected residual error={} bits",
+                            bits_u512(same_history_corrected_error),
+                        );
+                    }
+                } else {
+                    eprintln!(
+                        "composite pJ sister tray skipped: M_pJ={} cannot uniquely represent observed p*|J|={} plus offset span={} or does not divide T",
+                        p_winding_tray_modulus,
+                        observed_p_winding_bound,
+                        offset_span,
+                    );
+                }
+                if encrypted_correction_mismatches == 0 {
+                    let encrypted_correction_error = observe_polynomial_wide(
+                        &high,
+                        &encrypted_corrected_e,
+                        &high_keys,
+                        &expected_e_t,
+                    );
+                    eprintln!(
+                        "ciphertext-only corrected residual error={} bits",
+                        bits_u512(encrypted_correction_error),
+                    );
+                }
+
                 // Clear J enters only this final correction control. The
                 // encrypted winding above is not yet lifted to the T scale.
                 let winding_correction: Vec<_> = windings
@@ -2190,6 +2618,91 @@ fn wide_p_locked_scale_jacobian_tests_larger_step_and_dependent_square() {
 }
 
 #[test]
+fn wide_p_locked_scale_jacobian_stresses_dense_medium_support() {
+    check_scale_jacobian_lift_with(
+        512,
+        96,
+        1 << 41,
+        WIDE_P_LOCKED_JACOBIAN_STEP,
+        211,
+        WIDE_P_LOCKED_JACOBIAN_SCALE_T,
+        &WIDE_P_LOCKED_JACOBIAN_PRIMES,
+        true,
+    );
+}
+
+#[test]
+fn wide_p_locked_scale_jacobian_lifts_p_winding_through_composite_tray() {
+    // 517=11*47 keeps the observed-winding consumer tray anchored to the
+    // retained 11-root. It is too small for the full n_out/2+1 winding bound;
+    // this test isolates the pJ consumer, not the bounded production lift.
+    let tray_factor = 517;
+    let step = PHASE_P * tray_factor * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+    check_scale_jacobian_lift_with(
+        512,
+        96,
+        1 << 41,
+        step,
+        tray_factor,
+        PHASE_P * step,
+        &WIDE_P_LOCKED_JACOBIAN_PRIMES,
+        true,
+    );
+}
+
+#[test]
+fn wide_p_locked_scale_jacobian_full_bound_pj_tray_carries_the_certified_range() {
+    let j_bound = 512 + 1; // n_out/2 + 1 for the N512 source.
+    let residual_bound = FULL_BOUND_PJ_STEP.div_ceil(1 << 41) + 96;
+    assert!(FULL_BOUND_PJ_TRAY > 2 * (PHASE_P * j_bound + 2 * residual_bound));
+    check_scale_jacobian_lift_with(
+        512,
+        96,
+        1 << 41,
+        FULL_BOUND_PJ_STEP,
+        FULL_BOUND_PJ_FACTOR,
+        FULL_BOUND_PJ_SCALE_T,
+        &FULL_BOUND_PJ_PRIMES,
+        true,
+    );
+}
+
+#[test]
+#[ignore = "opt-in native full-bound composite pJ tray and dependent products"]
+fn wide_p_locked_scale_jacobian_native_full_bound_pj_tray() {
+    let j_bound = 8192 + 1; // n_out/2 + 1 for the N8192 source.
+    let residual_bound = FULL_BOUND_PJ_STEP.div_ceil(1 << 41) + 96;
+    assert!(FULL_BOUND_PJ_TRAY > 2 * (PHASE_P * j_bound + 2 * residual_bound));
+    check_scale_jacobian_lift_with(
+        8192,
+        96,
+        1 << 41,
+        FULL_BOUND_PJ_STEP,
+        FULL_BOUND_PJ_FACTOR,
+        FULL_BOUND_PJ_SCALE_T,
+        &FULL_BOUND_PJ_PRIMES,
+        true,
+    );
+}
+
+#[test]
+#[ignore = "opt-in native composite pJ tray, bounded lift, and dependent products"]
+fn wide_p_locked_scale_jacobian_native_pj_tray_bounded_lift_and_products() {
+    let tray_factor = 517;
+    let step = PHASE_P * tray_factor * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+    check_scale_jacobian_lift_with(
+        8192,
+        96,
+        1 << 41,
+        step,
+        tray_factor,
+        PHASE_P * step,
+        &WIDE_P_LOCKED_JACOBIAN_PRIMES,
+        true,
+    );
+}
+
+#[test]
 #[ignore = "opt-in native wide-step p-locked carry, corrected Phase 1, and dependent square"]
 fn wide_p_locked_scale_jacobian_native_correction_survives_dependent_square() {
     check_scale_jacobian_lift_with(
@@ -2215,6 +2728,16 @@ fn wide_p_locked_scale_jacobian_native_tuple_passes_128_bit_screen() {
     )
     .expect("wide p-locked native output tuple must pass all security models");
     assert!(screened.is_production_safe_under_all_models());
+
+    let full_bound = SecureConfig::custom_screened(
+        16_384,
+        FULL_BOUND_PJ_PRIMES.to_vec(),
+        FULL_BOUND_PJ_SCALE_T,
+        3,
+        128,
+    )
+    .expect("full-bound composite pJ tuple must pass all security models");
+    assert!(full_bound.is_production_safe_under_all_models());
 }
 
 #[test]
