@@ -76,18 +76,17 @@ fail-closed until the complete acceptance ladder passes.
   raw-remainder bound at N=4; N=8 needs 160 bits against radius 126 and
   refuses. Both source-driven tests pass with this mismatch as an explicit
   negative control.
-- A parallel Q-phase sister tree now supplies the missing normalization at
-  N=4 and N=8. It uses public candidate Q-phase coordinates and the same
-  encrypted pair masks to construct a true `(K,J_q)` root. At coefficient
-  zero its C matches the actual quotient ciphertext, its residual is K-J_q,
-  and its corrected K is exact. Exact component identities retain the
-  correlated-factor noise bound. The full high output is admitted at N=4
-  (111/126 bits); N=8 is sampled exact but refused (160/126 bits). The new
-  tree retains 81/6,561 candidate rows and adds 81/6,723 selector products.
-  It is an exhaustive small-degree producer, with a 10,000-candidate preflight
-  cap, rather than a native implementation.
+- The live Q-phase normalizer now computes the actual component-quotient
+  phase for each candidate secret. Per Q lane it forms
+  `q=(c0+c1*s-r0-r1*s)/p`, where `r0,r1` are the public centered residues,
+  then rounds `q` at p² to recover `C=K+pJ`. This retains the Q-wrap sheet
+  missed by the small residue sum alone: at N=8 coefficient 2 has `J=1`,
+  while the raw-residue-only candidate gave zero. The selected `(K,J)` and
+  exact Q-lane identities `C-r=(p+1)J` and `C-pJ=K` now pass for every
+  coefficient at N=4 and N=8. The support remains exhaustive: 81/6,561 rows
+  and 81/6,723 selector products.
 - The selector-encoding follow-up confirms the capacity and scale tradeoff.
-  Encoding selectors at `p` cuts the N=8 normalized root bounds to 99/98/82/98
+  Encoding selectors at `p` cuts the N=8 normalized root bounds to 99/98/83/98
   bits for C/r/J/K, and the natural `p*M_pJ` output is admitted at 128/142
   bits. Reusing that ciphertext at the original `p^2*M_pJ` target needs
   144/126 bits and is refused. The `p` context also correctly refuses an
@@ -100,40 +99,49 @@ fail-closed until the complete acceptance ladder passes.
   `gcd(T_s,p+1)=1`. The live Q-phase normalizer passes at N=4 and N=8 with
   respectively 81/81 and 6,561/6,723 rows/products. N=4 C/r/J/K bounds are
   94/93/78/93 bits; the K output is admitted at 93/144 bits and the tray view
-  at 94/144. N=8 bounds are 127/126/110/126 bits; K is admitted at 126/144
-  and the tray view at 127/144. Both tested coefficient-zero outputs and
-  `K-J mod (p+1)` tray residues are exact. This target emits `d*K`, not the
-  existing `M_pJ*K`, and still enumerates `3^N` candidate words. It is a
-  selector/encoding-budget result, not the missing native CRAM producer.
+  at 94/144. N=8 bounds are 127/126/111/126 bits; K is admitted at 126/144
+  and the tray view at 127/144. `K`, `J`, residual, tray residue, and exact
+  factor cancellation pass for all 4/8 coefficients. This target emits `d*K`,
+  not the existing `M_pJ*K`, and still enumerates `3^N` candidate words. It is
+  an all-coefficient small-degree source producer and selector/encoding-budget
+  result, not a native CRAM implementation.
 
 ## Gap analysis
 
-The new quotient pair provides a non-enumerative route to the first winding:
-same-history p and p+1 residues give J by adjacent K-Elimination, and the
-quotient Jacobian D identifies its nearest-integer cell. This replaces the
-pair-word search for this lift variable. The raw component lift merely
-reproduces `K+pJ`. The inverse-residual formula reduces the missing output to
-one same-history, bounded common-T `Enc_T(K-J)` sister view. The same-root
-tray control shows how to emit it once the state already contains `(K,J)`:
-attach the arbitrary M sister and project the signed affine sheet directly
-under T. M-only-to-T raw quotients and adjacent Richardson cancellation fail.
-The remaining producer work is scalable construction and certification of `(K,J)`
-from the actual CRAM source ciphertext and precharged ternary history, while
-preserving the 2/11 lock across coefficients. The tuned composite target
-demonstrates a clean representation choice for the M=`p+1` sister: the
-selector plaintext modulus must exceed the largest tray residue, and the
-target scale must be phase-aligned with that modulus. This removes the
-small-p tray-capacity failure while keeping the tested K correction inside
-the N=8 modeled noise radius. It does not resolve the central producer gap.
-The live pair tree still has `3^N` candidate words, only coefficient zero is
-observed, the output scale `d` is not yet aligned with the existing
-`M_pJ*K_lift` sibling, and native all-coefficient error is unproved. Scalable
-construction and certification of `(K,J)` from the actual CRAM ciphertext and
-precharged ternary history remain required. The raw component remainder is a
-different coordinate from BFV-decoded K; the parallel Q-phase tree supplies
-that normalization only on small enumerated histories. The terminal test's
-supplied support rows are not a live producer. No consumer result or tray
-budget experiment closes public refresh.
+The adjacent p/(p+1) identity is algebraically non-enumerative once its
+phase-locked residue views are available: it determines bounded J by
+K-Elimination, and the quotient Jacobian identifies the nearest-integer cell.
+The native-degree probe verifies those views with a client-side decryption
+observer; it does not emit `Enc(J)` or `Enc(K-J)`. Separately, the live
+small-degree Q-phase normalizer emits the corrected state from the actual
+ciphertext, but does so by enumerating `3^N` candidate secret words. These are
+complementary results, not a scalable encrypted producer. The raw component
+lift alone reproduces `K+pJ`. The inverse-residual formula reduces the
+consumer to one same-history common-T `Enc_T(K-J)` sister view. The same-root
+tray control shows how to emit that view after `(K,J)` already exists: attach
+the arbitrary M sister and project the signed affine sheet directly under T.
+M-only-to-T raw quotients and adjacent Richardson cancellation fail.
+
+The next producer should start from the actual quotient phase
+`q_j=(S_j-R_j)*p^(-1) mod Q`, then realize
+`C_j=round(p^2*q_j/Q)=K_j+p*J_j` as a radix carry transducer. Its encrypted
+state should retain only the current bounded digit carry and the phase-locked
+p and p+1 sister residues. At each digit, combine the three possible ternary
+transitions and merge equal states; do not retain complete secret histories.
+The transducer must preserve the Q-wrap sheet and signed endpoints, keep the
+single 2/11 root, and emit common-T `Enc_T(K-J)` directly. Its state count and
+noise must be certified before key generation; if it still grows
+exponentially, it is not a solution.
+
+The tuned composite target demonstrates a useful representation choice for
+M=`p+1`: the selector plaintext modulus must exceed the largest tray residue,
+and the output scale must be phase-aligned with that modulus. The exact
+quotient-phase formula and composite tray pass every coefficient at N=4 and
+N=8, including nonzero second windings, and keep the tested K correction
+inside the N=8 modeled noise radius. The central gaps are the scalable
+encrypted producer, alignment with the actual `M_pJ*K_lift` sibling, and
+native endpoint, independent-key, and production-security bounds. No result
+closes public refresh.
 
 The synced remote branch `research/phase1-carry-transducer` (head
 `93d6257`) has a useful 49/2 residue identity for a carry bounded by 48:
@@ -149,9 +157,9 @@ composite-tray design, not an encrypted refresh implementation.
    replacing the `3^N` support enumeration with a compressed same-history
    producer. Measure support growth before any key generation and refuse if
    the state is not polynomially bounded.
-2. Extend the `t_s,d,T_s` branch to all output coefficients, both signs,
-   signed endpoints, all RNS lanes, and wrong-history/corrupted-root negatives.
-   Prove its noise model beyond the deterministic N=4/8 samples and choose a
+2. Extend the `t_s,d,T_s` branch beyond the all-coefficient N=4/8 checks to
+   signed endpoints, wrong-history/corrupted-root negatives, independent keys,
+   and production-security parameters. Prove its noise model and choose a
    scale that can be shared with the actual `K_lift mod p` sibling.
 3. Connect the live producer to that same-history sibling. Remove the clear
    correction from the medium and native consumers and rerun residual, carry,

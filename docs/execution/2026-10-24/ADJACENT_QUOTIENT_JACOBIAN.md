@@ -187,38 +187,58 @@ lib-test filter and `allow_insecure,exact_transcendentals_backend`. Both pass.
 
 ## Parallel Q-phase sister normalization
 
-A subsequent evaluator probe carries a Q-phase sister coordinate alongside
-the raw p-coordinate. Each public candidate pair label contributes both its
-raw p-residue sum and its three main-Q phase residues. The encrypted pair
-selectors come from the same precharged masks used by the winding tree.
-Balanced selector products propagate both coordinates together. The public
-`CanonicalScaleRound` map computes the BFV K for every candidate Q-phase;
-the evaluator never learns which candidate is selected. The resulting root
-rows contain `(remainder=K,winding=J_q)` rather than the raw remainder.
+A Q-phase coordinate beside the raw component residues fixes the live tree's
+wrong-remainder problem. For each candidate ternary secret and coefficient,
+let `S=c0+c1*s mod Q` be the original ciphertext phase and
+`R=r0+r1*s mod Q` the public centered component residues combined with that
+candidate. Exact component division by p gives the quotient phase
 
-At the selected coefficient, the normalized C projection matches the actual
-component-quotient ciphertext, the direct residual is `K-J_q`, and the
-corrected K is 23. Component equality proves both
-`C-r=(p+1)*Enc(J_q)` and `C-p*Enc(J_q)=Enc(K)` across all Q lanes.
-The normalizer uses public ciphertext data, public candidate labels, encrypted
-selectors, and evaluation keys; the test secret is used only in key-holder
-precharge and in the independent output observer.
+```text
+q = (S - R) * p^(-1) mod Q
+C = round(p^2*q/Q) mod p^2
+K = centered(C mod p)
+J = centered((C-K)/p mod p)
+```
 
-| Degree | normalized rows / extra products | C/r/J/K bound bits | high modeled / measured bits | radius bits | high admitted |
-|---:|---:|---:|---:|---:|:---:|
-| 4 | 81 / 81 | 82/81/66/81 | 111/80 | 126 | yes |
-| 8 | 6,561 / 6,723 | 131/130/114/130 | 160/117 | 126 | no |
+The inverse of p is applied independently in each public Q lane. Rounding the
+quotient phase at p² retains the Q-sheet wrap that the small integer `R` sum
+alone misses. That was the all-coefficient mismatch: at N=8 coefficient 2
+had actual `J=1`, while the raw-residue-only path reported zero. The encrypted
+pair selectors still hide which candidate is active; the evaluator processes
+public Q residues and candidate labels and does not receive the secret.
 
-Both normalized high outputs match `M_pJ*K` in the sample. Only degree 4
-clears the modeled high bound. This supplies a live small-degree normalized
-root and residual, while preserving the native gate: the parallel tree still
-retains `3^N` candidate words, and the probe refuses more than 10,000
-candidates before creating contexts or keys. It tests coefficient zero in a
-circular, `security_bits=0` fixture. Full-polynomial production parameters,
-a scalable selector representation, work-key return, and repeat refresh are
-not established. The next budget experiment is to construct the selector
-tree at the smaller p encoding and prove its composite output scale before
-joining it to the original high consumer.
+For the selected candidate, the normalized state now satisfies `C=K+pJ`
+modulo p² and emits residual `r=K-J`. Same-history projections prove
+`C-r=(p+1)*Enc(J)` and `C-p*Enc(J)=Enc(K)` in every ciphertext component and
+Q lane. An inverse of p+1 in each Q lane cancels the first known factor and
+returns the direct J ciphertext exactly. The all-coefficient follow-up checks
+the selected K/J, bounded residual tray, both ciphertext identities, and
+factor cancellation for every coefficient at N=4 and N=8.
+
+The composite selector branch uses `t_s=65,545`, just above
+`M=p+1=65,538`, and output scale `d=268,574,725=4,098*M+1`. The common target
+is `T_s=t_s*d=17,603,730,350,125`. Since d is 1 modulo M, 2, and 11, the same
+Safe-Basis root attaches `[M,2,11]` and preserves those residues. The p
+selector control remains below tray capacity (`M>p`); the composite selector
+fits the tray and admits all tested K corrections. Its output is `d*K`, not
+the existing `M_pJ*K_lift`, and this remains an exhaustive `3^N` support
+search.
+
+| Selector / output | Degree | rows / products | C/r/J/K bounds | K bound / measured / radius | tray bound / measured | all coefficients |
+|---|---:|---:|---:|---:|---:|:---:|
+| p² / p²M_pJ | 4 | 81 / 81 | 82/81/66/81 | 111/80/126 | — | coefficient 0 |
+| p² / p²M_pJ | 8 | 6,561 / 6,723 | 131/130/115/130 | 160/117/126, refused | — | coefficient 0 |
+| p / pM_pJ | 4 | 81 / 81 | 66/65/50/65 | 95/47/142 | p+1 refused by capacity | coefficient 0 |
+| p / pM_pJ | 8 | 6,561 / 6,723 | 99/98/83/98 | 128/72/142 | p+1 refused by capacity | coefficient 0 |
+| 65,545 / T_s | 4 | 81 / 81 | 94/93/78/93 | 93/46/144 | 94/49 | all 4 |
+| 65,545 / T_s | 8 | 6,561 / 6,723 | 127/126/111/126 | 126/71/144 | 127/71 | all 8 |
+
+This improves the exact small-degree producer and selector budget, but does
+not close public refresh. The candidate state still grows as `3^N`; the
+tested ring degrees use `security_bits=0`; signed endpoint, wrong-history,
+independent-key, and production-security cases are not covered. Scale d is
+not yet joined to the actual `K_lift mod p` sibling, and work-key return,
+repeat refresh, and the Issue #95 acceptance ladder remain unimplemented.
 
 ## Evidence
 

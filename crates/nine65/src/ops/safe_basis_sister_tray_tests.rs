@@ -1419,6 +1419,20 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
     let expected_quotient_winding = centered_delta / P as i128;
     assert_eq!(expected_quotient_winding, expected_from_remainders);
     assert_ne!(expected_quotient_winding, 0);
+    let expected_quotient_windings: Vec<_> = (0..degree)
+        .map(|coefficient| {
+            let source = (input[coefficient] as i128).rem_euclid(P2 as i128);
+            let delta = (lifted_plain[coefficient] as i128 - source).rem_euclid(P2 as i128);
+            let centered = if delta > P2 as i128 / 2 {
+                delta - P2 as i128
+            } else {
+                delta
+            };
+            assert_eq!(centered % P as i128, 0);
+            centered / P as i128
+        })
+        .collect();
+    assert_eq!(expected_quotient_windings[0], expected_quotient_winding);
 
     let native_secret = RNSSecretKey {
         s: RNSPolynomial {
@@ -1915,8 +1929,8 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
         // secret or decrypted phase is used to construct these coordinates.
         #[derive(Clone)]
         struct PhaseCandidate {
-            raw_sum: i128,
-            phase: Vec<u64>,
+            component_residue_sums: Vec<i128>,
+            phases: Vec<Vec<u64>>,
             selector: RNSCiphertext,
             bound: U512,
         }
@@ -1939,23 +1953,31 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
                 (0..9)
                     .map(|label| {
                         let trits = [(label / 3) as i128 - 1, (label % 3) as i128 - 1];
-                        let mut raw_sum = 0;
-                        let mut phase = vec![0; PRIMES.len()];
-                        for offset in 0..2 {
-                            let key_index = start + offset;
-                            let index = (degree - key_index) % degree;
-                            let sign = if key_index == 0 { 1i128 } else { -1i128 };
-                            raw_sum += sign * r1[index] as i128 * trits[offset];
-                            for (lane, &prime) in PRIMES.iter().enumerate() {
-                                phase[lane] = (phase[lane] as i128
-                                    + sign * source1[lane][index] as i128 * trits[offset])
-                                    .rem_euclid(prime as i128)
-                                    as u64;
+                        let mut component_residue_sums = vec![0; degree];
+                        let mut phases = vec![vec![0; PRIMES.len()]; degree];
+                        for output_coefficient in 0..degree {
+                            for offset in 0..2 {
+                                let key_index = start + offset;
+                                let index = (output_coefficient + degree - key_index) % degree;
+                                let sign = if output_coefficient < key_index {
+                                    -1i128
+                                } else {
+                                    1i128
+                                };
+                                component_residue_sums[output_coefficient] +=
+                                    sign * r1[index] as i128 * trits[offset];
+                                for (lane, &prime) in PRIMES.iter().enumerate() {
+                                    phases[output_coefficient][lane] =
+                                        (phases[output_coefficient][lane] as i128
+                                            + sign * source1[lane][index] as i128 * trits[offset])
+                                            .rem_euclid(prime as i128)
+                                            as u64;
+                                }
                             }
                         }
                         PhaseCandidate {
-                            raw_sum,
-                            phase,
+                            component_residue_sums,
+                            phases,
                             selector: match branch {
                                 0 => project_pair_selector(label, start),
                                 1 => low_pairs[start / 2][label].clone(),
@@ -1988,13 +2010,26 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
                             .unwrap();
                         sister_products += 1;
                         joined.push(PhaseCandidate {
-                            raw_sum: left.raw_sum + right.raw_sum,
-                            phase: PRIMES
+                            component_residue_sums: left
+                                .component_residue_sums
                                 .iter()
-                                .enumerate()
-                                .map(|(lane, &prime)| {
-                                    ((left.phase[lane] as u128 + right.phase[lane] as u128)
-                                        % prime as u128) as u64
+                                .zip(&right.component_residue_sums)
+                                .map(|(left, right)| left + right)
+                                .collect(),
+                            phases: left
+                                .phases
+                                .iter()
+                                .zip(&right.phases)
+                                .map(|(left, right)| {
+                                    PRIMES
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(lane, &prime)| {
+                                            ((left[lane] as u128 + right[lane] as u128)
+                                                % prime as u128)
+                                                as u64
+                                        })
+                                        .collect()
                                 })
                                 .collect(),
                             selector,
@@ -2006,32 +2041,52 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
             }
             sheets = next;
         }
-        let scaler = CanonicalScaleRound::new(&PRIMES, P).unwrap();
-        let normalized_rows = sheets
-            .pop()
-            .unwrap()
-            .into_iter()
+        // A component quotient has phase (c0+c1*s - r0-r1*s)/p in each Q
+        // lane, where r0/r1 are the public centered component residues. The
+        // original Q phase alone yields K but misses the Q-sheet winding J.
+        // Round this exact quotient phase at p^2 to obtain the canonical
+        // (K,J) coordinates for every hypothetical ternary key word.
+        let quotient_scaler = CanonicalScaleRound::new(&PRIMES, P2).unwrap();
+        let quotient_p_inverses: Vec<_> = PRIMES
+            .iter()
+            .map(|&prime| inverse(P % prime, prime))
+            .collect();
+        let candidates = sheets.pop().unwrap();
+        let normalized_rows = candidates
+            .iter()
             .map(|candidate| {
-                let phase: Vec<_> = PRIMES
+                let quotient_phase: Vec<_> = PRIMES
                     .iter()
                     .enumerate()
                     .map(|(lane, &prime)| {
-                        ((candidate.phase[lane] as u128 + source0[lane][0] as u128) % prime as u128)
-                            as u64
+                        let source_phase = (candidate.phases[0][lane] as u128
+                            + source0[lane][0] as u128)
+                            % prime as u128;
+                        let component_residue =
+                            (candidate.component_residue_sums[0] + r0[0] as i128)
+                                .rem_euclid(prime as i128) as u128;
+                        ((source_phase + prime as u128 - component_residue)
+                            * quotient_p_inverses[lane] as u128
+                            % prime as u128) as u64
                     })
                     .collect();
-                let k = scaler.scale_round(&phase).unwrap() % P;
-                let k = if k > P / 2 {
-                    k as i128 - P as i128
+                let c = quotient_scaler.scale_round(&quotient_phase).unwrap() % P2;
+                let k_unsigned = c % P;
+                let k = if k_unsigned > P / 2 {
+                    k_unsigned as i128 - P as i128
                 } else {
-                    k as i128
+                    k_unsigned as i128
                 };
-                let raw_sum = candidate.raw_sum + r0[0] as i128;
-                let j = (raw_sum + P as i128 / 2).div_euclid(P as i128);
+                let j_unsigned = (c as i128 - k).rem_euclid(P2 as i128).div_euclid(P as i128);
+                let j = if j_unsigned > P as i128 / 2 {
+                    j_unsigned - P as i128
+                } else {
+                    j_unsigned
+                };
                 Row {
                     remainder: k,
                     winding: i64::try_from(j).unwrap(),
-                    selector: Some(candidate.selector),
+                    selector: Some(candidate.selector.clone()),
                     bound: candidate.bound,
                 }
             })
@@ -2190,6 +2245,138 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
             );
             assert_eq!(tray_plain[0], expected_tray);
             assert_eq!(tray_plain[0] % (P + 1), expected_residual);
+
+            for coefficient in 1..degree {
+                let rows: Vec<_> = candidates
+                    .iter()
+                    .map(|candidate| {
+                        let quotient_phase: Vec<_> = PRIMES
+                            .iter()
+                            .enumerate()
+                            .map(|(lane, &prime)| {
+                                let source_phase = (candidate.phases[coefficient][lane] as u128
+                                    + source0[lane][coefficient] as u128)
+                                    % prime as u128;
+                                let component_residue = (candidate.component_residue_sums
+                                    [coefficient]
+                                    + r0[coefficient] as i128)
+                                    .rem_euclid(prime as i128)
+                                    as u128;
+                                ((source_phase + prime as u128 - component_residue)
+                                    * quotient_p_inverses[lane] as u128
+                                    % prime as u128) as u64
+                            })
+                            .collect();
+                        let c = quotient_scaler.scale_round(&quotient_phase).unwrap() % P2;
+                        let k_unsigned = c % P;
+                        let k = if k_unsigned > P / 2 {
+                            k_unsigned as i128 - P as i128
+                        } else {
+                            k_unsigned as i128
+                        };
+                        let j_unsigned =
+                            (c as i128 - k).rem_euclid(P2 as i128).div_euclid(P as i128);
+                        let j = if j_unsigned > P as i128 / 2 {
+                            j_unsigned - P as i128
+                        } else {
+                            j_unsigned
+                        };
+                        Row {
+                            remainder: k,
+                            winding: i64::try_from(j).unwrap(),
+                            selector: Some(candidate.selector.clone()),
+                            bound: candidate.bound.mul_u128(TRAY_OUTPUT_SCALE as u128),
+                        }
+                    })
+                    .collect();
+                let state = State {
+                    rows,
+                    family: selector_runtime.family,
+                    source_q: P as i128,
+                    coefficients: vec![coefficient],
+                };
+                let root = Root211::new(root_runtime, &state).unwrap();
+                let tray = root.attach(&[P + 1, 2, 11]).unwrap();
+                let c = root_runtime.project(&state, |row| {
+                    i64::try_from(row.remainder + P as i128 * row.winding as i128).unwrap()
+                });
+                let r = root_runtime.project(&state, |row| {
+                    i64::try_from(row.remainder - row.winding as i128).unwrap()
+                });
+                let j = root_runtime.project(&state, |row| row.winding);
+                let k = root_runtime.project(&state, |row| row.remainder as i64);
+                assert!(words(k.bound) < words(normalized_high_radius));
+
+                let c_plain = decode_at(output_ctx, &c.ciphertext, &keys.secret_key, c.bound, [0]);
+                let r_plain = decode_at(output_ctx, &r.ciphertext, &keys.secret_key, r.bound, [0]);
+                let j_plain = decode_at(output_ctx, &j.ciphertext, &keys.secret_key, j.bound, [0]);
+                let k_plain = decode_at(output_ctx, &k.ciphertext, &keys.secret_key, k.bound, [0]);
+                let expected_k = input[coefficient] as i128;
+                let expected_j = expected_quotient_windings[coefficient];
+                assert_eq!(
+                    c_plain[0],
+                    (TRAY_OUTPUT_SCALE as i128 * (expected_k + P as i128 * expected_j))
+                        .rem_euclid(TRAY_OUTPUT_T as i128) as u64
+                );
+                assert_eq!(
+                    r_plain[0],
+                    (TRAY_OUTPUT_SCALE as i128 * (expected_k - expected_j))
+                        .rem_euclid(TRAY_OUTPUT_T as i128) as u64
+                );
+                assert_eq!(
+                    j_plain[0],
+                    (TRAY_OUTPUT_SCALE as i128 * expected_j).rem_euclid(TRAY_OUTPUT_T as i128)
+                        as u64
+                );
+                assert_eq!(
+                    k_plain[0],
+                    (TRAY_OUTPUT_SCALE as i128 * expected_k).rem_euclid(TRAY_OUTPUT_T as i128)
+                        as u64
+                );
+
+                let mut difference = c.ciphertext.clone();
+                add_scaled(root_runtime.ctx, &mut difference, &r.ciphertext, -1);
+                let mut factor = zero(root_runtime.ctx);
+                add_scaled(root_runtime.ctx, &mut factor, &j.ciphertext, (P + 1) as i64);
+                assert_eq!(difference.c0.limbs, factor.c0.limbs);
+                assert_eq!(difference.c1.limbs, factor.c1.limbs);
+                for poly in [&mut difference.c0, &mut difference.c1] {
+                    for (lane, &prime) in PRIMES.iter().enumerate() {
+                        let inverse_factor = inverse((P + 1) % prime, prime);
+                        for value in &mut poly.limbs[lane] {
+                            *value =
+                                (*value as u128 * inverse_factor as u128 % prime as u128) as u64;
+                        }
+                    }
+                }
+                assert_eq!(difference.c0.limbs, j.ciphertext.c0.limbs);
+                assert_eq!(difference.c1.limbs, j.ciphertext.c1.limbs);
+                let mut corrected = c.ciphertext.clone();
+                add_scaled(root_runtime.ctx, &mut corrected, &difference, -(P as i64));
+                assert_eq!(corrected.c0.limbs, k.ciphertext.c0.limbs);
+                assert_eq!(corrected.c1.limbs, k.ciphertext.c1.limbs);
+
+                let expected_residual =
+                    (expected_k - expected_j).rem_euclid((P + 1) as i128) as u64;
+                let (tray_plain, tray_measured) = decode_at_with_error(
+                    output_ctx,
+                    &tray.views[0].ciphertext,
+                    &keys.secret_key,
+                    [0],
+                );
+                assert!(words(tray.views[0].bound) >= words(tray_measured));
+                assert_eq!(
+                    tray_plain[0],
+                    (TRAY_OUTPUT_SCALE as u128 * expected_residual as u128)
+                        .rem_euclid(TRAY_OUTPUT_T as u128) as u64
+                );
+                assert_eq!(tray_plain[0] % (P + 1), expected_residual);
+            }
+            eprintln!(
+                "composite K-Elimination all coefficients: N={}, checked={}, exact residue/K/correction and Q-lane factor cancellation",
+                degree,
+                degree
+            );
         }
         if branch == 1 {
             // The smaller encoding naturally targets p*M_pJ. Reusing its
