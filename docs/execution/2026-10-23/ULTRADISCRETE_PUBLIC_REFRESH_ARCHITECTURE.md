@@ -65,6 +65,17 @@ without that selector root. `D` and `E_chart` are chart residual coordinates;
 they are not automatically the centered source phase `g` or the return
 residual `e99`.
 
+The tropical finite difference supplies a more specific lift target. If
+`D_theta=T_Q(S+1)-T_Q(S)=-2K-b`, the 2-view gives `b=D_theta mod 2`, and each
+odd composite tray gives `K mod m=-(D_theta+b)/2 mod m`. The new clear
+native-corridor check uses the one-root sisters 49, 121 and 25: their period
+148225 uniquely lifts every `K` in `[-4096,4096]`. This supports the owner's
+arbitrary composite-tray approach without adding a root. It does not produce
+`D_theta` from the live encrypted chart or make the CRT result a common-p
+ciphertext. The next encrypted gate is that same-history derivative producer,
+its 2/11 boundary phase and tray error certificate, followed by a certified
+common-p lift and the corrected return.
+
 The new exact oracle
 [`phase1_tropical_k_elimination.py`](../../../scripts/phase1_tropical_k_elimination.py)
 uses the N32 research parameters `Q=5,000,003`, `t=65,537`. Across 40 full

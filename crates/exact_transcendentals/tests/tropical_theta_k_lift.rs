@@ -110,6 +110,57 @@ fn theta_difference_exposes_the_two_eleven_phase_relation_at_cell_walls() {
 }
 
 #[test]
+fn composite_sister_differences_lift_every_native_sheet() {
+    // One Safe-Basis root supplies the 2 and 11 phases. Its prime-power
+    // sisters 7^2, 11^2, and 5^2 then provide enough odd CRT period to lift
+    // the native |K| <= 4096 corridor without another root.
+    let trays = [49i128, 121, 25];
+    let mut period = 1i128;
+    for tray in trays {
+        assert_eq!(gcd(period, tray), 1);
+        period *= tray;
+    }
+    assert_eq!(period, 148_225);
+    assert!(2 * 4096 < period);
+
+    for k in -4096i128..=4096 {
+        for boundary in [0i128, 1] {
+            // The tropical finite difference is D=-2K-b. Its 2-tray view
+            // returns the wall bit, which makes (D+b) exactly even.
+            let difference = -2 * k - boundary;
+            let recovered_boundary = modd(difference, 2);
+            assert_eq!(recovered_boundary, boundary);
+
+            // Divide only after the phase lock has supplied b. In each odd
+            // sister tray, multiplication by 2^-1 is exactly K mod tray.
+            let residues: Vec<_> = trays
+                .iter()
+                .map(|&tray| {
+                    let inverse_two = mod_inv(2, tray).unwrap();
+                    modd(-(difference + recovered_boundary) * inverse_two, tray)
+                })
+                .collect();
+
+            // K-Elimination/CRT combines the arbitrary sister views into the
+            // unique signed sheet in the certified corridor.
+            let mut value = 0i128;
+            let mut accumulated = 1i128;
+            for (&residue, &tray) in residues.iter().zip(&trays) {
+                let delta = modd(residue - modd(value, tray), tray);
+                let correction = mulmod(delta, mod_inv(accumulated, tray).unwrap(), tray);
+                value += accumulated * correction;
+                accumulated *= tray;
+            }
+            assert_eq!(accumulated, period);
+            assert_eq!(signed_corridor(value, period, 4096), Some(k));
+        }
+    }
+
+    // The 2/11 pair alone cannot distinguish sheets separated by 22.
+    assert_eq!((modd(7, 2), modd(7, 11)), (modd(29, 2), modd(29, 11)));
+}
+
+#[test]
 fn native_q_and_one_safe_root_resolve_the_full_bounded_sheet_corridor() {
     let q = 348_959_453_350_711_275_087_786_864_768_188_417i128;
     let a: i128 = S8_BASIS.iter().product();

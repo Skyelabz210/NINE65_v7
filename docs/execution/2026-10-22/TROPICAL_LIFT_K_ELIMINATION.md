@@ -92,6 +92,29 @@ an encrypted K; the identity identifies what a tropical state producer would
 need to supply. The test includes the wall event, rather than assuming a
 derivative remains constant across it.
 
+### Arbitrary composite sister trays lift the bounded sheet
+
+The same relation works in every odd sister modulus `m`, including composite
+moduli. Once the 2-view supplies `b=D mod 2`, `D+b` is exactly even and
+
+```text
+K mod m = -(D+b) * 2^-1 mod m.
+```
+
+For the native `|K|<=4096` corridor, the single-root prime-power sisters
+`49=7^2`, `121=11^2`, and `25=5^2` have pairwise-coprime product 148225,
+which exceeds `2*4096`. Their residues therefore determine one signed K in
+the whole corridor; no second Safe-Basis root is needed. The exhaustive clear
+check covers both boundary states and all 8193 native K values. The 2/11 pair
+alone still aliases sheets separated by 22.
+
+This closes the residue arithmetic for a bounded tropical lift, not its
+encrypted producer. The live evaluator still needs same-history ciphertext
+views for D and b, a bound for their errors after each composite projection,
+and a certified lift from those sister residues into the return's common
+plaintext encoding. The test does not treat CRT residues as an already
+canonical `Enc_p(K)`.
+
 ## Conditional encrypted lift kernel
 
 The new `encrypted_tropical_lift_consumes_paired_coordinates_without_slot_transforms`
