@@ -399,6 +399,23 @@ does not yet produce the tray publicly: the missing item is the authenticated
 same-history p-encoded `r_p` view, attached to the live `2^16` tray by the
 existing one-root Safe-Basis capability.
 
+### Same-history chart versus common-p encoding
+
+The follow-up now builds the `2^16` chart from the live source ciphertext and
+same evaluation key. It proves `x=2^16*K+e`, constructs the encrypted residue
+without a client tray, decodes the signed `e` at `p=65537`, and recovers `K`
+exactly at every checked coefficient. This is a same-history low-tray producer,
+but its raw ciphertext is still encoded at `2^16`.
+
+For tray error `V_t`, its p-view error satisfies
+`V_p <= (Q*|e| + p*V_t)/2^16`. At N512 the run measured 43-bit tray error and
+121-bit p-view/carry/return error; at native N8192 it measured 47 and 121 bits.
+Both returned plaintexts were correct, but their squares and following products
+failed. The p-encoded oracle tray still measures 47/51 bits and passes both
+products. The unresolved operation is conversion into the common p encoding
+with the secret-dependent component-scale winding corrected. A raw modulus
+reinterpretation does not perform that conversion.
+
 ## Remaining encrypted obligations
 
 The power-tray experiment closes the encrypted K-Elimination consumer and
@@ -406,7 +423,7 @@ return under its sparse-source, basis, level, and error contract, and its
 oracle-tray output survives two products. Production still needs a typed
 capability that binds the chart and dependent `2^16` tray to the source
 key/history and active level and issues their phase/noise certificates. The
-same-history p-encoded tray producer, work-key return, second refresh, and
+common-p encoding with corrected winding, work-key return, second refresh, and
 repeat-cycle admission remain open. A failed phase, history, capacity,
 security, or return certificate must refuse before output. Issue #95 remains
 open and production refresh remains fail-closed.

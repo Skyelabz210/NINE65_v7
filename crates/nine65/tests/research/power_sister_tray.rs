@@ -2,9 +2,9 @@
 //!
 //! Scaling the existing 2*N chart by L=65536/(2*N) changes its dependent tray
 //! to 2^16. Since p=65537, the tray inverse is -1 in the common p encoding.
-//! The tray is client-oracle encrypted in this experiment; this isolates the
-//! consumer and its return budget from the still-missing same-history tray
-//! producer.
+//! The original p-tray path remains as a consumer oracle. A second path builds
+//! the low-tray chart from the same source ciphertext and checks its adjacent
+//! modulus phase lock into p.
 
 use super::*;
 
@@ -207,7 +207,78 @@ fn check_power_tray_return(n: usize, weight: usize, phase_denominator: u128) {
     let x_observed = observe_polynomial(&outer, &x, &outer_keys, &x_expected);
     assert!(x_observed <= x_bound);
 
-    // Oracle producer for the one missing item: Enc_p((x+2^15) mod 2^16).
+    // Same-history low-tray producer. Its plaintext is x mod 2^16; because
+    // x=2^16*K+e with |e|<2^15, decoding that same RNS ciphertext at p=2^16+1
+    // returns the signed residual e. The carry then follows from e-x=K mod p.
+    let tray_period = 1u64 << 16;
+    let sister_config = nine65::params::FHEConfig {
+        t: tray_period,
+        ..outer.config.clone()
+    };
+    let sister = RNSFHEContext::try_new(&sister_config).unwrap();
+    let sister_source = encrypt_polynomial(
+        &sister,
+        &outer_keys,
+        &embedded(
+            &trits
+                .iter()
+                .map(|&s| (s as i64).rem_euclid(tray_period as i64) as u64)
+                .collect::<Vec<_>>(),
+        ),
+        &mut rng,
+    );
+    let sister_precharge_v =
+        tray_period as u128 * (2 * sister.n + 1) as u128 * sister.config.eta as u128
+            + (q_outer.mod_u64(tray_period) as u128) * (tray_period - 1) as u128;
+    let sister_producer = BatchedPhase {
+        source: &source,
+        outer: &sister,
+        encrypted_source: sister_source,
+        precharge_v: sister_precharge_v,
+        source_norm: weight,
+        coordinate: 99,
+        phase_cap: source_q / phase_denominator,
+    };
+    let sister_chart = sister_producer.apply(&input, input_v);
+    let sister_x = signed_scale(&sister, &sister_chart.ciphertext, (99 * chart_scale) as i64);
+    let sister_x_bound = sister_chart.bound * 99 * chart_scale as u128;
+    let mut residual_mod_tray = vec![0; outer.n];
+    let mut residual_mod_p = vec![0; outer.n];
+    let mut max_residual = 0u128;
+    for j in 0..n {
+        let e = x_integer[2 * j] - tray_period as i128 * phase1[j].0;
+        assert!(e.unsigned_abs() < (tray_period / 2) as u128);
+        max_residual = max_residual.max(e.unsigned_abs());
+        residual_mod_tray[2 * j] = e.rem_euclid(tray_period as i128) as u64;
+        residual_mod_p[2 * j] = e.rem_euclid(PHASE_P as i128) as u64;
+    }
+    let sister_x_observed = observe_polynomial(&sister, &sister_x, &outer_keys, &residual_mod_tray);
+    assert!(sister_x_observed <= sister_x_bound);
+    let phase_locked_observed = observe_polynomial(&outer, &sister_x, &outer_keys, &residual_mod_p);
+    let phase_lock_bound = q_outer
+        .mul_u128(max_residual)
+        .add(U512::from_u128(sister_x_observed).mul_u128(PHASE_P as u128))
+        .div_u64(tray_period);
+    assert_eq!(
+        (
+            phase_lock_bound.d3,
+            phase_lock_bound.d2,
+            phase_lock_bound.d1
+        ),
+        (0, 0, 0)
+    );
+    assert!(phase_locked_observed <= phase_lock_bound.d0);
+    let public_carry = add(&outer, &sister_x, &signed_scale(&outer, &x, -1));
+    assert_eq!(
+        decrypt_coefficients(&outer, &public_carry, &outer_keys),
+        expected_carry,
+        "same-history sister tray must recover K without an oracle tray"
+    );
+    let public_carry_observed =
+        observe_polynomial(&outer, &public_carry, &outer_keys, &expected_carry);
+    assert!(public_carry_observed <= phase_lock_bound.d0 + x_observed);
+
+    // Oracle p-tray remains a reference consumer ablation.
     // Its root relation is x+2^15 = 2^16*K+r, with |r-2^15|<2^15.
     let half_tray = (tray_period / 2) as i128;
     let tray_plain: Vec<_> = x_integer
@@ -266,6 +337,15 @@ fn check_power_tray_return(n: usize, weight: usize, phase_denominator: u128) {
     let return_observed = observe_polynomial(&outer, &returned, &outer_keys, &expected_return);
     assert!(return_observed <= return_bound);
 
+    let public_return = add(&outer, &affine, &public_carry);
+    assert_eq!(
+        decrypt_coefficients(&outer, &public_return, &outer_keys),
+        expected_return
+    );
+    let public_return_observed =
+        observe_polynomial(&outer, &public_return, &outer_keys, &expected_return);
+    assert!(public_return_observed <= phase_lock_bound.d0 + x_observed + affine_observed);
+
     let exact = outer.try_exact_evaluator().unwrap();
     let relin = exact.generate_hybrid_gadget_key_with_rng(&outer_keys.secret_key, &mut rng);
     let square = exact.try_mul_exact(&returned, &returned, &relin).unwrap();
@@ -290,7 +370,17 @@ fn check_power_tray_return(n: usize, weight: usize, phase_denominator: u128) {
         cube_matches,
         "the K-Elimination return must support the next product at this fixture"
     );
-    eprintln!("power-tray K-Elimination: sourceN{n}/outerN{}, L={chart_scale}, tray=2^16=p-1, inverse={tray_inverse}, K range={:?}, chart/carry/affine/return V bits={}/{}/{}/{}, square exact, next product exact={cube_matches}; low-tray ciphertext is client-oracle supplied; same-history tray producer remains open",outer.n,phase1.iter().map(|(k,_)| *k).min().zip(phase1.iter().map(|(k,_)| *k).max()).unwrap(),bits(z_observed),bits(carry_observed),bits(affine_observed),bits(return_observed));
+    let public_square = exact
+        .try_mul_exact(&public_return, &public_return, &relin)
+        .unwrap();
+    let public_square_matches =
+        decrypt_coefficients(&outer, &public_square, &outer_keys) == square_expected;
+    let public_cube = exact
+        .try_mul_exact(&public_square, &public_return, &relin)
+        .unwrap();
+    let public_cube_matches =
+        decrypt_coefficients(&outer, &public_cube, &outer_keys) == cube_expected;
+    eprintln!("power-tray K-Elimination: sourceN{n}/outerN{}, L={chart_scale}, tray=2^16=p-1, inverse={tray_inverse}, K range={:?}, p-chart/carry/affine/oracle-return V bits={}/{}/{}/{}, low-tray t/p/carry/return V bits={}/{}/{}/{}, oracle square/cube exact={}/{}, same-history square/cube exact={}/{}, residual max={}",outer.n,phase1.iter().map(|(k,_)| *k).min().zip(phase1.iter().map(|(k,_)| *k).max()).unwrap(),bits(z_observed),bits(carry_observed),bits(affine_observed),bits(return_observed),bits(sister_x_observed),bits(phase_locked_observed),bits(public_carry_observed),bits(public_return_observed),cube_matches, decrypt_coefficients(&outer, &cube, &outer_keys) == cube_expected, public_square_matches, public_cube_matches, max_residual);
 }
 
 #[test]

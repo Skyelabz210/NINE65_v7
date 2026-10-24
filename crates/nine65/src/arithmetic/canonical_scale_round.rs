@@ -1,5 +1,5 @@
-//! Exact scale-and-round of a canonical main-basis coefficient into an odd
-//! target modulus. This is the public preprocessing step of expanded BFV
+//! Exact scale-and-round of a canonical main-basis coefficient into a target
+//! modulus coprime to the odd main basis. This is the public preprocessing step of expanded BFV
 //! Phase 1; it does not evaluate the encrypted digit-removal circuit.
 //!
 //! For `0 <= X < Q`, put `Z = target*X + floor(Q/2)` and `r = Z mod Q`.
@@ -78,10 +78,9 @@ impl CanonicalScaleRound {
         if main.is_empty() {
             return Err(CanonicalScaleRoundError::EmptyMainBasis);
         }
-        // Odd target makes `(Q-1)/2 mod target` derivable from `Q mod target`.
-        // The upper bound keeps the signed inverse in range and the base
-        // extender's `s + target - sub` correction from overflowing u64.
-        if target < 3 || target % 2 == 0 || target > i64::MAX as u64 {
+        // The upper bound keeps the signed inverse in range, and ensures
+        // `2*target` fits u64 for deriving floor(Q/2) modulo any target.
+        if target < 3 || target > i64::MAX as u64 {
             return Err(CanonicalScaleRoundError::InvalidTarget { target });
         }
         for &prime in main {
@@ -96,13 +95,15 @@ impl CanonicalScaleRound {
             }
         }
         let projector = MainOnlyBaseExt::new(main, &[target])?;
-        let q_mod_target = main.iter().fold(1u64, |acc, &prime| {
-            ((acc as u128 * (prime % target) as u128) % target as u128) as u64
+        let twice_target = 2 * target;
+        let q_mod_twice_target = main.iter().fold(1u64, |acc, &prime| {
+            ((acc as u128 * (prime % twice_target) as u128) % twice_target as u128) as u64
         });
-        let inverse_two = (target + 1) / 2;
-        let half_q_mod_target = (((q_mod_target as u128 + target as u128 - 1)
-            * inverse_two as u128)
-            % target as u128) as u64;
+        // Q is odd, so Q mod 2t is odd and (Q mod 2t - 1)/2 equals
+        // floor(Q/2) mod t. This also works when t itself is even.
+        debug_assert_eq!(q_mod_twice_target % 2, 1);
+        let half_q_mod_target = (q_mod_twice_target - 1) / 2;
+        let q_mod_target = q_mod_twice_target % target;
 
         Ok(Self {
             main: main.to_vec(),
@@ -147,5 +148,24 @@ impl CanonicalScaleRound {
             - remainder_target[0] as u128)
             % self.target as u128;
         Ok(((difference * self.q_inverse_mod_target as u128) % self.target as u128) as u64)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn even_target_matches_integer_rounding() {
+        let main = [17u64, 13];
+        let q = 17 * 13u64;
+        let target = 1u64 << 16;
+        let scale = CanonicalScaleRound::new(&main, target).unwrap();
+        for x in 0..q {
+            let residues = main.map(|prime| x % prime);
+            let expected =
+                ((x as u128 * target as u128 + q as u128 / 2) / q as u128) % target as u128;
+            assert_eq!(scale.scale_round(&residues).unwrap(), expected as u64);
+        }
     }
 }

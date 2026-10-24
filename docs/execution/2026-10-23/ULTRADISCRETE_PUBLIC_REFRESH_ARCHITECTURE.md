@@ -271,8 +271,36 @@ its chart residual. The power-of-two sister-tray K-Elimination control gives
 a stronger return: with `M*=2^16=p-1`, chart multiplier `L=2` at N8192, and
 an oracle-supplied same-key tray, it cancels the chart ciphertext exactly and
 returns with 51-bit observed p-view error. Its square and following product
-are exact. The unresolved producer is the same-history `r_p` view; the
-client-oracle tray does not establish that gate.
+are exact.
+
+### Same-history low tray and adjacent-scale winding
+
+A new producer now builds the `2^16` chart from the live source ciphertext
+and same evaluation key. It constructs `x mod 2^16` without a tray oracle.
+Since `x=2^16*K+e` and `|e|<2^15`, reading that ciphertext at `p=65537`
+returns the correct signed `e`; subtracting `x` recovers `K` exactly. The
+integer producer and carry-decode checks pass at N512 and native N8192.
+
+That adjacent-scale read does not give a low-noise `Enc_p(e)`. If `V_t` is
+the measured tray error, the p-view phase error obeys
+
+```text
+V_p <= (Q*|e| + p*V_t) / 2^16.
+```
+
+The `Q*|e|/2^16` term dominates. N512 observed 43-bit tray noise but 121-bit
+p-view, carry, and return noise; native N8192 observed 47-bit tray noise and
+the same 121-bit p-view, carry, and return noise. Carry decoding is exact,
+but the same-history return fails its square and following product. The
+p-encoded oracle-tray control returns at 47/51 bits and passes both products.
+So cross-modulus decoding closes the integer lift check, not the public
+refresh gate.
+
+The RNS component K-Elimination scale converter can divide each component
+exactly, but separate component conversion leaves a secret-dependent winding.
+The remaining producer must correct that winding through the same source
+history and one Safe-Basis root, then pass the carry, return, square, and
+next-product checks. Production remains fail-closed.
 
 ## Required implementation order
 
@@ -286,12 +314,13 @@ client-oracle tray does not establish that gate.
    production path. Extend its checked envelope to both signs, chart-cell
    boundaries, nonzero source error, every RNS lane, and odd zero coefficients
    against the client oracle.
-4. Produce/authenticate the same-history p-encoded residue of
-   `X=(2^16/32768)*99*Z99+2^15` using the existing Safe-Basis root and its
-   dependent `2^16` tray, phase-locked through the existing 2/11 roles. Apply
-   `K=-(X_p-r_p)`, subtract `x-K` from `affine+x`, and issue an immutable
-   error certificate. The exact CRT oracle and independent tray ciphertext
-   are not encrypted tray producers.
+4. The live chart now produces `x mod 2^16` and recovers `K`, but the
+   adjacent-modulus read leaves a 121-bit p-view error. Produce the common-p
+   encoding by correcting the component-scale winding through the existing
+   Safe-Basis root and its 2/11 phase roles. Then apply `K=-(X_p-r_p)`,
+   subtract `x-K` from `affine+x`, and issue an immutable error certificate.
+   The raw sibling ciphertext and exact CRT oracle do not meet this encoding
+   gate.
 5. Return the corrected ciphertext to the work key and execute the next
    multiply, second refresh and repeat multiply with that producer-issued
    certificate. The oracle-tray consumer now passes two products at native

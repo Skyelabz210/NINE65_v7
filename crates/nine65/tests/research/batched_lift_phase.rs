@@ -169,7 +169,9 @@ impl BatchedPhase<'_> {
     // Evaluator: no source support, phase measurement, clock sheet or key.
     fn apply(&self, input: &RNSCiphertext, input_v: u128) -> BatchedPhaseOutput {
         assert_eq!(self.outer.n, 2 * self.source.n);
-        assert_eq!(self.outer.t % self.source.t, 0);
+        // The bounded integer chart can target an independent tray modulus.
+        // Consumers that rely on a particular scale ratio must certify that
+        // ratio themselves; it is not a producer precondition.
         assert_eq!(input.num_primes, self.source.config.primes.len());
         assert_eq!(
             self.encrypted_source.num_primes,

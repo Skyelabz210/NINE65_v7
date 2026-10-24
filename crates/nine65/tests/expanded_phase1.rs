@@ -63,7 +63,7 @@ fn reference_reconstruct_u128(residues: &[u64], primes: &[u64]) -> u128 {
 fn exhaustive_small_basis_matches_integer_rounding() {
     let main = [17u64, 13];
     let q = 17 * 13u64;
-    for target in [3, 5, 125, 625, i64::MAX as u64] {
+    for target in [3, 4, 5, 125, 625, i64::MAX as u64] {
         let scale = CanonicalScaleRound::new(&main, target).unwrap();
         for x in 0..q {
             let residues = main.map(|prime| x % prime);
@@ -140,7 +140,7 @@ fn arithmetic_refuses_invalid_shapes_moduli_and_capacity() {
         CanonicalScaleRound::new(&[], 125),
         Err(CanonicalScaleRoundError::EmptyMainBasis)
     ));
-    for target in [0, 1, 2, 4, u64::MAX] {
+    for target in [0, 1, 2, u64::MAX] {
         assert!(matches!(
             CanonicalScaleRound::new(&[17, 13], target),
             Err(CanonicalScaleRoundError::InvalidTarget { .. })
