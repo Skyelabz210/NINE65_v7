@@ -10,7 +10,7 @@ use nine65::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use nine65::arithmetic::main_only_base_ext::MainOnlyBaseExt;
 use nine65::arithmetic::rns::{RNSPolynomial, U512};
 use nine65::entropy::ShadowHarvester;
-use nine65::ops::rns_fhe::{RNSCiphertext, RNSFHEContext, RNSSecretKey};
+use nine65::ops::rns_fhe::{RNSCiphertext, RNSFHEContext, RNSPublicKey, RNSSecretKey};
 use nine65::params::primes::extended_gcd;
 use nine65::params::secure_configs::SecureConfig;
 
@@ -348,6 +348,234 @@ fn encode_centered_polynomial(ctx: &RNSFHEContext, values: &[i64]) -> RNSPolynom
     montgomery(ctx, limbs)
 }
 
+/// Exercise the adjacent K-Elimination consumer when the p+1 sister tray is
+/// available as a common-target ciphertext. The tray value itself is supplied
+/// by a client-side control here; this does not implement the live Safe-Basis
+/// producer.
+fn run_inverse_residual_control(
+    input_ctx: &RNSFHEContext,
+    encrypted_k: &RNSCiphertext,
+    public_key: &RNSPublicKey,
+    secret_key: &RNSSecretKey,
+    plaintext: &[i64],
+) {
+    let m = P + 1;
+    let scale_factor = FULL_BOUND_PJ_TRAY;
+    let required_t = 2 * scale_factor as u128 * K_BOUND as u128 + 1;
+    let min_divisor = required_t.div_ceil(P as u128);
+    // Choosing the high target as T=p*s with s == 1 mod (p+1) makes
+    // T == -1 mod (p+1), hence (p+1)^-1 mod T is exactly (T+1)/(p+1).
+    // The congruence lets the composite modulus be budgeted without making
+    // p+1 a factor of the output plaintext modulus.
+    let divisor_step = (min_divisor - 1).div_ceil(m as u128);
+    let divisor = (divisor_step * m as u128 + 1) as u64;
+    let target_t = P * divisor;
+    let inverse_m = (target_t + 1) / m;
+    assert_eq!(target_t % m, m - 1);
+    assert_eq!((m as u128 * inverse_m as u128) % target_t as u128, 1);
+    assert!(2 * scale_factor as u128 * (K_BOUND as u128) < target_t as u128);
+
+    let mut high_config = input_ctx.config.clone();
+    high_config.t = target_t;
+    high_config.name = "UNADMITTED adjacent inverse-residual control";
+    let high_ctx = RNSFHEContext::try_new(&high_config).unwrap();
+    let lifted = centered_component_quotient(input_ctx, encrypted_k, divisor);
+    let lifted_values = decrypt_coefficients(&high_ctx, &lifted, secret_key);
+
+    let mut winding = Vec::with_capacity(input_ctx.n);
+    let mut residual = Vec::with_capacity(input_ctx.n);
+    let mut max_abs_winding = 0i128;
+    for (coefficient, (&lifted_value, &k)) in lifted_values.iter().zip(plaintext).enumerate() {
+        let difference = centered(lifted_value - k as i128, target_t);
+        assert_eq!(
+            difference % P as i128,
+            0,
+            "p-winding at coefficient {coefficient}"
+        );
+        let j = difference / P as i128;
+        assert!(j.unsigned_abs() <= (input_ctx.n / 2 + 1) as u128);
+        // The M-residue is a same-history sister view. Reducing the centered
+        // T representative would be invalid because gcd(T,M)=1 and that
+        // representative can differ from the lifted integer by a T winding.
+        let r = centered(k as i128 - j, m);
+        assert!(r.unsigned_abs() <= K_BOUND as u128 + (input_ctx.n / 2 + 1) as u128);
+        max_abs_winding = max_abs_winding.max(j.abs());
+        winding.push(j as i64);
+        residual.push(r as i64);
+    }
+    let scaled_expected: Vec<i64> = plaintext.iter().map(|&k| k * scale_factor as i64).collect();
+
+    // Adjacent-scale tray: because T+1=M*u, u*Delta_T is within one
+    // rounding cell of Delta_M. Reinterpreting u*C under M should expose the
+    // same-history residual r without a separate encryption.
+    let mut residual_config = input_ctx.config.clone();
+    residual_config.t = m;
+    residual_config.name = "UNADMITTED adjacent p+1 sister view";
+    let residual_ctx = RNSFHEContext::try_new(&residual_config).unwrap();
+    let residual_view = scale(&high_ctx, &lifted, inverse_m);
+    let residual_view_values =
+        decrypt_coefficients_any_t(&residual_ctx, &residual_view, secret_key);
+    let residual_view_mismatches = residual_view_values
+        .iter()
+        .zip(&residual)
+        .filter(|(actual, expected)| centered(**actual, m) != **expected as i128)
+        .count();
+
+    // The reverse component quotient is deliberately retained as a separate
+    // K-Elimination probe: it may reintroduce an M-multiple winding.
+    let lifted_residual_view =
+        centered_component_quotient(&residual_ctx, &residual_view, inverse_m);
+    let lifted_residual_values = decrypt_coefficients(&high_ctx, &lifted_residual_view, secret_key);
+    let mut lifted_residual_mismatches = 0usize;
+    let mut lifted_residual_nonmultiples = 0usize;
+    let mut max_lifted_residual_winding = 0i128;
+    for (&actual, &expected) in lifted_residual_values.iter().zip(&residual) {
+        let delta = centered(actual - expected as i128, target_t);
+        lifted_residual_mismatches += usize::from(delta != 0);
+        lifted_residual_nonmultiples += usize::from(delta % m as i128 != 0);
+        if delta % m as i128 == 0 {
+            max_lifted_residual_winding =
+                max_lifted_residual_winding.max((delta / m as i128).abs());
+        }
+    }
+
+    // Test-only root output: a real Safe-Basis producer must emit this
+    // same-history r=C mod(p+1) view at the common T encoding.
+    let mut residual_rng = ShadowHarvester::with_seed(0x5245_5349_4455_414c);
+    let mut encrypted_residual = high_ctx.encrypt_with_rng(0, public_key, &mut residual_rng);
+    encrypted_residual.c0 = encrypted_residual.c0.add(
+        &encode_centered_polynomial(&high_ctx, &residual),
+        &high_ctx.rns,
+    );
+
+    // A second control keeps the sister tray at its own plaintext M. Align
+    // both BFV scales to Q, subtract the same-history values, then divide the
+    // resulting Q*M*J phase by T*M. This tests whether one M-tray root can
+    // feed the common-T correction without first lifting r to T.
+    let mut residual_m_rng = ShadowHarvester::with_seed(0x4d5f_524f_4f54_0001);
+    let mut encrypted_residual_m =
+        residual_ctx.encrypt_with_rng(0, public_key, &mut residual_m_rng);
+    encrypted_residual_m.c0 = encrypted_residual_m.c0.add(
+        &encode_centered_polynomial(&residual_ctx, &residual),
+        &residual_ctx.rns,
+    );
+    let aligned_numerator = high_ctx.sub(
+        &scale(&high_ctx, &lifted, target_t),
+        &scale(&residual_ctx, &encrypted_residual_m, m),
+    );
+    let common_t_j = centered_component_quotient(&high_ctx, &aligned_numerator, target_t * m);
+    let common_t_j_values = decrypt_coefficients(&high_ctx, &common_t_j, secret_key);
+    let common_t_j_mismatches = common_t_j_values
+        .iter()
+        .zip(&winding)
+        .filter(|(actual, expected)| centered(**actual, target_t) != **expected as i128)
+        .count();
+    let common_t_corrected = high_ctx.sub(&lifted, &scale(&high_ctx, &common_t_j, P));
+    let common_t_corrected_values =
+        decrypt_coefficients(&high_ctx, &common_t_corrected, secret_key);
+    let common_t_k_mismatches = common_t_corrected_values
+        .iter()
+        .zip(plaintext)
+        .filter(|(actual, expected)| centered(**actual, target_t) != **expected as i128)
+        .count();
+    let common_t_scaled = scale(&high_ctx, &common_t_corrected, scale_factor);
+    let common_t_scaled_values = decrypt_coefficients(&high_ctx, &common_t_scaled, secret_key);
+    let common_t_scaled_mismatches = common_t_scaled_values
+        .iter()
+        .zip(&scaled_expected)
+        .filter(|(actual, expected)| centered(**actual, target_t) != **expected as i128)
+        .count();
+    let common_t_j_error = phase_error_bound(&high_ctx, &common_t_j, secret_key, &winding);
+    let common_t_k_error = phase_error_bound(&high_ctx, &common_t_corrected, secret_key, plaintext);
+    let common_t_scaled_error =
+        phase_error_bound(&high_ctx, &common_t_scaled, secret_key, &scaled_expected);
+
+    let difference = high_ctx.sub(&lifted, &encrypted_residual);
+    let encrypted_j = scale(&high_ctx, &difference, inverse_m);
+    let j_values = decrypt_coefficients(&high_ctx, &encrypted_j, secret_key);
+    let j_mismatches = j_values
+        .iter()
+        .zip(&winding)
+        .filter(|(actual, expected)| centered(**actual, target_t) != **expected as i128)
+        .count();
+
+    // Because p=(p+1)-1, C-pJ = r+J. Both forms should agree; the first is
+    // the existing consumer equation, while the second exposes the small
+    // adjacent Jacobian directly.
+    let correction = scale(&high_ctx, &encrypted_j, P);
+    let corrected = high_ctx.sub(&lifted, &correction);
+    let corrected_values = decrypt_coefficients(&high_ctx, &corrected, secret_key);
+    let corrected_mismatches = corrected_values
+        .iter()
+        .zip(plaintext)
+        .filter(|(actual, expected)| centered(**actual, target_t) != **expected as i128)
+        .count();
+    let sum_form = high_ctx.add(&encrypted_j, &encrypted_residual);
+    let sum_values = decrypt_coefficients(&high_ctx, &sum_form, secret_key);
+    let sum_mismatches = sum_values
+        .iter()
+        .zip(plaintext)
+        .filter(|(actual, expected)| centered(**actual, target_t) != **expected as i128)
+        .count();
+
+    let scaled = scale(&high_ctx, &corrected, scale_factor);
+    let scaled_values = decrypt_coefficients(&high_ctx, &scaled, secret_key);
+    let scaled_mismatches = scaled_values
+        .iter()
+        .zip(&scaled_expected)
+        .filter(|(actual, expected)| centered(**actual, target_t) != **expected as i128)
+        .count();
+    let q = U512::product_u64s(&high_config.primes);
+    let j_error = phase_error_bound(&high_ctx, &encrypted_j, secret_key, &winding);
+    let corrected_error = phase_error_bound(&high_ctx, &corrected, secret_key, plaintext);
+    let scaled_error = phase_error_bound(&high_ctx, &scaled, secret_key, &scaled_expected);
+
+    println!(
+        "inverse-residual K-Elimination: T=p*s={}, s={}, M=p+1={}, M^-1 mod T={}, inverse bits={}, max |J|={}, adjacent r-view mismatches={}/{}, raw r-to-T mismatches={}/{}, nonmultiples={}, raw winding max={}, J mismatches={}/{}, K correction mismatches={}/{}, r+J mismatches={}/{}, full M_pJ*K mismatches={}/{}, phase-error bits J->K->scaled={}/{}/{}, Q={}, live r-root producer present=false",
+        target_t,
+        divisor,
+        m,
+        inverse_m,
+        64 - inverse_m.leading_zeros(),
+        max_abs_winding,
+        residual_view_mismatches,
+        input_ctx.n,
+        lifted_residual_mismatches,
+        input_ctx.n,
+        lifted_residual_nonmultiples,
+        max_lifted_residual_winding,
+        j_mismatches,
+        input_ctx.n,
+        corrected_mismatches,
+        input_ctx.n,
+        sum_mismatches,
+        input_ctx.n,
+        scaled_mismatches,
+        input_ctx.n,
+        bits(j_error),
+        bits(corrected_error),
+        bits(scaled_error),
+        bits(q),
+    );
+    println!(
+        "M-tray to common-T Jacobian: J mismatches={}/{}, K mismatches={}/{}, full M_pJ*K mismatches={}/{}, phase-error bits J->K->scaled={}/{}/{}, divisor=T*M={}, residual root input is M-encoded=true",
+        common_t_j_mismatches,
+        input_ctx.n,
+        common_t_k_mismatches,
+        input_ctx.n,
+        common_t_scaled_mismatches,
+        input_ctx.n,
+        bits(common_t_j_error),
+        bits(common_t_k_error),
+        bits(common_t_scaled_error),
+        target_t * m,
+    );
+    assert_eq!(j_mismatches, 0);
+    assert_eq!(corrected_mismatches, 0);
+    assert_eq!(sum_mismatches, 0);
+    assert_eq!(scaled_mismatches, 0);
+}
+
 fn main() {
     let n = std::env::args()
         .nth(1)
@@ -671,6 +899,76 @@ fn main() {
         bits(q)
     );
 
+    // First-order Richardson/K-Elimination control. If adjacent quotients
+    // expose D_m=J+r/m and D_(m+1)=J+r/(m+1), then
+    // (m+1)D_(m+1)-mD_m cancels the shared residual fraction exactly.
+    let lifted_at_p2 = centered_component_quotient(&input_ctx, &encrypted_k, (P + 2) * j_modulus);
+    let second_difference = high_ctx.sub(&lifted_at_p1, &lifted_at_p2);
+    let second_difference_values =
+        decrypt_coefficients(&high_ctx, &second_difference, &keys.secret_key);
+    let second_difference_mismatches = second_difference_values
+        .iter()
+        .zip(&clean_j)
+        .filter(|(actual, expected)| centered(**actual, high_t) != **expected as i128)
+        .count();
+    let jacobian_cancellation = high_ctx.sub(
+        &scale(&high_ctx, &second_difference, P + 2),
+        &scale(&high_ctx, &difference, P + 1),
+    );
+    let jacobian_cancellation_values =
+        decrypt_coefficients(&high_ctx, &jacobian_cancellation, &keys.secret_key);
+    let jacobian_cancellation_mismatches = jacobian_cancellation_values
+        .iter()
+        .zip(&clean_j)
+        .filter(|(actual, expected)| centered(**actual, high_t) != **expected as i128)
+        .count();
+    let jacobian_corrected =
+        high_ctx.sub(&lifted_at_p, &scale(&high_ctx, &jacobian_cancellation, P));
+    let jacobian_corrected_values =
+        decrypt_coefficients(&high_ctx, &jacobian_corrected, &keys.secret_key);
+    let jacobian_corrected_mismatches = jacobian_corrected_values
+        .iter()
+        .zip(&plaintext)
+        .filter(|(actual, expected)| centered(**actual, high_t) != **expected as i128)
+        .count();
+    let jacobian_scaled = scale(&high_ctx, &jacobian_corrected, FULL_BOUND_PJ_TRAY);
+    let jacobian_scaled_values =
+        decrypt_coefficients(&high_ctx, &jacobian_scaled, &keys.secret_key);
+    let jacobian_scaled_mismatches = jacobian_scaled_values
+        .iter()
+        .zip(&scaled_expected)
+        .filter(|(actual, expected)| centered(**actual, high_t) != **expected as i128)
+        .count();
+    let jacobian_error = phase_error_bound(
+        &high_ctx,
+        &jacobian_cancellation,
+        &keys.secret_key,
+        &clean_j,
+    );
+    let jacobian_corrected_error =
+        phase_error_bound(&high_ctx, &jacobian_corrected, &keys.secret_key, &plaintext);
+    let jacobian_scaled_error = phase_error_bound(
+        &high_ctx,
+        &jacobian_scaled,
+        &keys.secret_key,
+        &scaled_expected,
+    );
+
+    println!(
+        "adjacent Richardson K-Elimination: second difference mismatches={}/{}, Jacobian cancellation J mismatches={}/{}, corrected K mismatches={}/{}, full M_pJ*K mismatches={}/{}, phase-error bits J->K->scaled={}/{}/{}",
+        second_difference_mismatches,
+        input_ctx.n,
+        jacobian_cancellation_mismatches,
+        input_ctx.n,
+        jacobian_corrected_mismatches,
+        input_ctx.n,
+        jacobian_scaled_mismatches,
+        input_ctx.n,
+        bits(jacobian_error),
+        bits(jacobian_corrected_error),
+        bits(jacobian_scaled_error),
+    );
+
     println!(
         "N={}, public |J| bound={}, |K-J| bound={}, M={}, T=p^2*M={}, K range=[{},{}], max |J|={}; adjacent Jacobian mismatches={}/{}; p/p+1 residue-view mismatches={}/{}; adjacent K-Elimination mismatches={}/{}; raw p+1-to-T lift mismatches={}/{}, winding max={}=(p+1)*{}, nonmultiples={}; scale-wrap cocycle mismatch={}/{}, max |wrap polynomial|={}; p-view Jq mismatches={}/{}, p+1-view residual mismatches={}/{}; Jq-oracle correction mismatches={}/{}; adjacent-divisor mismatches={}/{}, winding max={}, equal to raw={}; naive correction mismatches={}/{}; single-J-root oracle correction mismatches={}/{}; corrupted-root mismatches={}/{}; M_pJ*K mismatches={}/{}; phase-error bits={} -> scaled={}, Q={}",
         input_ctx.n,
@@ -734,4 +1032,12 @@ fn main() {
     assert_eq!(corrected_mismatches, 0);
     assert_eq!(wrong_root_mismatches, input_ctx.n);
     assert_eq!(scaled_mismatches, 0);
+
+    run_inverse_residual_control(
+        &input_ctx,
+        &encrypted_k,
+        &keys.public_key,
+        &keys.secret_key,
+        &plaintext,
+    );
 }

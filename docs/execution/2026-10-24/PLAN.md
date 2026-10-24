@@ -45,18 +45,29 @@ fail-closed until the complete acceptance ladder passes.
   oracle corrects K at all tested coefficients and survives the full `M_pJ`
   scale with measured 108/138-bit phase error against Q=189 bits. The live
   common-T root producer remains absent.
+- The inverse-residual consumer is cleaner: with `T=p*s`, `s=1 mod (p+1)`,
+  `u=(T+1)/(p+1)`, a common-T same-history residual `r=K-J` gives
+  `J=u*(C-r) mod T` and `K=r+J`. A test-only `Enc_T(r)` root control passes
+  N=512, 8,192, and 16,384, including full `M_pJ*K` scaling (116/132/162-bit
+  sampled phase error against Q=189). The adjacent p+1 residue itself is
+  available with zero mismatch, but converting its M-only ciphertext to
+  common T recreates J or fails the noise budget; common-T r production
+  remains the gate.
 
 ## Gap analysis
 
 The new quotient pair provides a non-enumerative route to the first winding:
 same-history p and p+1 residues give J by adjacent K-Elimination, and the
 quotient Jacobian D identifies its nearest-integer cell. This replaces the
-pair-word search for this lift variable. It does not yet create `Enc_T(J)`;
-the raw component lift merely reproduces `K+pJ`. The remaining task is a
-one-root, phase-locked K-Elimination producer that turns the encrypted p/p+1
-residue views into a bounded common-T J view, with the 2/11 Safe-Basis lock
-and arbitrary composite sister trays. The oracle correction is evidence for
-the consumer equation, not a public refresh.
+pair-word search for this lift variable. The raw component lift merely
+reproduces `K+pJ`. The inverse-residual formula reduces the missing output to
+one same-history, bounded common-T `Enc_T(K-J)` sister view. The remaining
+task is a one-root, phase-locked K-Elimination producer for that view, with
+the 2/11 Safe-Basis lock and arbitrary composite sister trays. M-only-to-T
+raw quotients and adjacent Richardson cancellation both fail; the common-T
+tray must be emitted from the same root/history with a certified noise bound.
+The oracle correction is evidence for the consumer equation, not a public
+refresh.
 
 The synced remote branch `research/phase1-carry-transducer` (head
 `93d6257`) has a useful 49/2 residue identity for a carry bounded by 48:
@@ -68,10 +79,11 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Implement the one-root adjacent K-Elimination producer from `K mod p` and
-   `(K-J) mod (p+1)`. Use the 2/11 Safe-Basis phase lock and composite sister
-   trays to materialize a common-T J view without enumerating all signed J
-   values. Certify root history, scale, and noise before emitting it.
+1. Implement the one-root adjacent K-Elimination producer for the
+   same-history `(K-J) mod (p+1)` residual. Use the 2/11 Safe-Basis phase lock
+   and composite sister trays to emit common-T `Enc_T(K-J)` without
+   enumerating all signed J values. Apply `J=(T+1)/(p+1)*(C-r) mod T`, then
+   certify root history, scale, and noise before correction.
 2. Test the producer at increasing degrees and both signs, including full
    signed boundaries, every output coefficient, every RNS lane, and
    wrong-history/corrupted-root negatives. Require p² correction and full-T

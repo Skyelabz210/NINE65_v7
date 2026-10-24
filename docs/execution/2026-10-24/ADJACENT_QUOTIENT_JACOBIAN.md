@@ -46,18 +46,61 @@ the p+1 view by `p^2` returns `K+p*J`; its residual from `K-J` is exactly
 second winding is the original J, not an independently corrected value. This
 rules out treating a raw component quotient as a canonical lift.
 
-If one live root emits a clean `Enc_T(J)`, the high correction is only
+As a baseline consumer control, if a test supplies a clean `Enc_T(J)`, the
+high correction is only
 
 ```text
 K = C - p*J mod T.
 ```
 
-The research example supplies that single view through a key-holder oracle.
-It recovers every coefficient, rejects a corrupted root view, and remains
-exact after the full `M_pJ=16,390*(p+1)` scale. The measured phase-error size
-is 108 bits before scaling and 138 bits after scaling against a 189-bit Q
-product. This confirms the correction arithmetic and its sampled noise
-margin; it does not implement the root producer or certify a worst-case bound.
+The first control supplies that single view through a key-holder oracle. It
+recovers every coefficient, rejects a corrupted root view, and remains exact
+after the full `M_pJ=16,390*(p+1)` scale. The measured phase-error size is 108
+bits before scaling and 138 bits after scaling against a 189-bit Q product.
+This confirms the correction arithmetic and its sampled noise margin; it does
+not implement the root producer or certify a worst-case bound.
+
+## Inverse-residual K-Elimination
+
+The correction does not need a root-produced `Enc_T(J)` if the one Safe-Basis
+root can emit the same-history residual `r=K-J` as a common-T sister view.
+Choose a composite output target `T=p*s`, where `s == 1 mod M`. Then
+`T == -1 mod M` and
+
+```text
+u = (T+1)/M
+M*u == 1 mod T
+C-r = (K+pJ)-(K-J) = M*J
+J = u*(C-r) mod T
+K = C-pJ = r+J mod T.
+```
+
+This is a linear K-Elimination consumer once the root supplies `Enc_T(r)`.
+For the full `M_pJ` downstream scale, the probe chooses
+`s=268,574,725=4,098*M+1`, `T=17,601,581,752,325`, and
+`u=268,570,627` (29 bits). The plaintext target is just large enough that
+`2*M_pJ*8,193<T`; `gcd(T,M)=1`. The residual tray stays the single arbitrary
+composite sister `M=p+1`; it does not become another Safe Basis.
+
+At N=512, 8,192, and 16,384, a test-only root oracle supplies `Enc_T(r)` from
+the observed same-history `K-J`. The modular inverse recovers every J, the K
+correction and `r+J` agree at every coefficient, and the full `M_pJ*K` scale
+has zero mismatches. Sampled phase-error sizes are 116, 132, and 162 bits for
+J, corrected K, and scaled K against the 189-bit Q product. These are observed
+noise results, not a worst-case certificate.
+
+The adjacent scale also exposes an encrypted M-tray view without an oracle:
+scaling `Enc_T(C)` by `u` and decoding it under M has zero residue mismatches
+at all three degrees. Two attempts to turn that M-encoded ciphertext into
+common-T `Enc_T(r)` fail. A raw component quotient by `u` returns C and
+reintroduces exactly the first J winding (469/512, 8,033/8,192, and
+16,167/16,384 mismatches). Aligning an independently encrypted M view to Q
+and dividing by `T*M` has 194–196-bit J error and fails broadly. A two-step
+Richardson/K-Elimination combination cancels the ideal fractional term
+algebraically, but its noisy quotient views produce 195–197-bit J error and
+fail the K/full-scale checks. The one-root producer must therefore emit the
+bounded M-residue directly at common T, preserving the source history and its
+noise certificate; an M-only residue or arithmetic relabel is insufficient.
 
 ## Evidence
 
@@ -93,9 +136,9 @@ cargo run -p nine65 --example adjacent_quotient_jacobian -- 16384
 
 The carry algebra now has a compact input: same-history `K mod p` and
 `(K-J) mod (p+1)` yield bounded J through one adjacent K-Elimination step.
-The missing operation is a live Safe-Basis producer that consumes those
-phase-locked residues and emits `Enc_T(J)` with a certified error bound.
-Its tray path must preserve the 2/11 Safe-Basis phase lock while allowing the
+The inverse-residual consumer needs the root to emit `Enc_T(K-J)` directly
+from the same phase-locked history, with a certified error bound. Its tray
+path must preserve the 2/11 Safe-Basis phase lock while allowing the
 subsequent composite sister moduli. It must not rely on the key-holder
 observer or enumerate all signed J values.
 
