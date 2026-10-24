@@ -292,6 +292,47 @@ impl<'a> Root211<'a> {
         Ok(projection)
     }
 
+    // Project a bounded affine expression of the root's centered remainder
+    // and winding into the common plaintext encoding. The tray period proves
+    // that this expression is the same signed residue as the attached view.
+    fn project_bounded_affine_sheet(
+        &self,
+        tray: &SisterTray<'_, '_>,
+        period: u64,
+        bound: u64,
+        remainder_scale: i64,
+        winding_scale: i64,
+        target: u64,
+    ) -> Result<Projection, TrayRefusal> {
+        self.validate(tray)?;
+        let value = |row: &Row| {
+            row.remainder
+                .checked_mul(remainder_scale as i128)?
+                .checked_add((row.winding as i128).checked_mul(winding_scale as i128)?)
+        };
+        if period < 3
+            || (period as u128) <= 2 * bound as u128
+            || (remainder_scale == 0 && winding_scale == 0)
+            || target != self.runtime.ctx.t
+            || !tray.moduli.contains(&period)
+            || self.state.rows.iter().any(|row| {
+                value(row).map_or(true, |value| {
+                    value.unsigned_abs() > bound as u128
+                        || i64::try_from(value).is_err()
+                        || self.runtime.root_value(row, period)
+                            != value.rem_euclid(period as i128) as i64
+                })
+            })
+        {
+            return Err(TrayRefusal::InvalidLiftBound);
+        }
+        let projection = self
+            .runtime
+            .project(self.state, |row| value(row).unwrap() as i64);
+        self.evaluated_views.set(self.evaluated_views.get() + 1);
+        Ok(projection)
+    }
+
     fn validate(&self, tray: &SisterTray<'_, '_>) -> Result<(), TrayRefusal> {
         if !std::ptr::eq(self, tray.root) {
             return Err(TrayRefusal::ForeignRoot);
@@ -1635,13 +1676,16 @@ fn one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t() {
     let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
     let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
     let runtime = CarryRuntime::new_composite_sister_target(&ctx, P as i128, [517, 2], 8);
+    let selector_error = U512::from_u64(config.eta as u64);
     let mut rows: Vec<_> = WINDINGS
         .iter()
         .map(|&winding| Row {
             remainder: winding,
             winding: 0,
             selector: None,
-            bound: runtime.noise.projected,
+            // Each row is a direct key-holder precharge. No composition or
+            // projection has yet expanded its exact eta phase error.
+            bound: selector_error,
         })
         .collect();
 
@@ -1684,6 +1728,207 @@ fn one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t() {
         );
         assert!(decoded[1..].iter().all(|&value| value == 0));
     }
+}
+
+#[test]
+fn one_root_emits_adjacent_residual_at_common_composite_t_and_k_eliminates() {
+    const P: u64 = 65_537;
+    const M: u64 = P + 1;
+    const SCALE_FACTOR: u64 = 16_390 * M;
+    const HIGH_T: u64 = 17_601_581_752_325;
+    const K_BOUND: i128 = 8_193;
+    const J_BOUND: i128 = 8_193;
+    const RESIDUAL_BOUND: u64 = 16_386;
+    const CASES: [(i128, i128); 5] = [
+        (-K_BOUND, -J_BOUND),
+        (-K_BOUND, J_BOUND),
+        (0, 0),
+        (K_BOUND, -J_BOUND),
+        (K_BOUND, J_BOUND),
+    ];
+
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 32;
+    config.primes = vec![
+        9_223_372_036_853_661_697,
+        9_223_372_036_853_235_713,
+        9_223_372_036_852_744_193,
+    ];
+    config.q = config.primes[0];
+    config.security_bits = 0;
+    config.t = HIGH_T;
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    assert_eq!(M * ((HIGH_T + 1) / M), HIGH_T + 1);
+    assert_eq!(HIGH_T % M, M - 1);
+    assert!(2 * SCALE_FACTOR as u128 * (K_BOUND as u128) < HIGH_T as u128);
+    assert!(M > 2 * RESIDUAL_BOUND);
+
+    let mut rng = ShadowHarvester::with_seed(0x494e_5652_4553_5441);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let mut one_message = vec![0i8; ctx.n];
+    one_message[0] = 1;
+    let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
+    let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
+    let runtime = CarryRuntime::new_composite_sister_target(&ctx, P as i128, [16_390, 2], 8);
+    let selector_error = U512::from_u64(config.eta as u64);
+    let mut rows: Vec<_> = CASES
+        .iter()
+        .map(|&(k, j)| Row {
+            remainder: k,
+            winding: j as i64,
+            selector: None,
+            // These are direct key-holder precharges, so use their exact eta
+            // phase-error contract rather than the post-transform envelope.
+            bound: selector_error,
+        })
+        .collect();
+    let mut max_residual_bits = 0;
+    let mut max_j_bits = 0;
+    let mut max_k_bits = 0;
+    let mut max_scaled_k_bits = 0;
+
+    for (selected, &(k, j)) in CASES.iter().enumerate() {
+        for (index, row) in rows.iter_mut().enumerate() {
+            row.selector = Some(if index == selected {
+                selected_one.clone()
+            } else {
+                selected_zero.clone()
+            });
+        }
+        let state = State {
+            rows: rows.clone(),
+            family: runtime.family,
+            source_q: P as i128,
+            coefficients: vec![0],
+        };
+        let root = Root211::new(&runtime, &state).unwrap();
+        let tray = root.attach(&[P, M, HIGH_T]).unwrap();
+        root.validate(&tray).unwrap();
+        if selected == 0 {
+            let foreign_state = runtime.initial(0).unwrap();
+            let foreign_root = Root211::new(&runtime, &foreign_state).unwrap();
+            assert!(matches!(
+                foreign_root.project_bounded_affine_sheet(&tray, M, RESIDUAL_BOUND, 1, -1, HIGH_T,),
+                Err(TrayRefusal::ForeignRoot)
+            ));
+            assert!(matches!(
+                root.project_bounded_affine_sheet(&tray, M, RESIDUAL_BOUND - 1, 1, -1, HIGH_T,),
+                Err(TrayRefusal::InvalidLiftBound)
+            ));
+        }
+
+        // The attached M view and the bounded affine sheet view are derived
+        // from this same root/history. The latter is already Enc_T(K-J),
+        // rather than an Enc_M residue relabelled after projection.
+        let residual = root
+            .project_bounded_affine_sheet(&tray, M, RESIDUAL_BOUND, 1, -1, HIGH_T)
+            .unwrap();
+        let c_bound = tray.views[2].bound;
+        let mut c_minus_r = zero(&ctx);
+        add_scaled(&ctx, &mut c_minus_r, &tray.views[2].ciphertext, 1);
+        add_scaled(&ctx, &mut c_minus_r, &residual.ciphertext, -1);
+        let inverse_m = (HIGH_T + 1) / M;
+        let j_view_bound = c_bound.add(residual.bound).mul_u128(inverse_m as u128);
+        runtime
+            .noise
+            .admit(j_view_bound, "inverse-residual J")
+            .unwrap();
+        let mut j_view = zero(&ctx);
+        add_scaled(&ctx, &mut j_view, &c_minus_r, inverse_m as i64);
+
+        let mut corrected = zero(&ctx);
+        add_scaled(&ctx, &mut corrected, &tray.views[2].ciphertext, 1);
+        add_scaled(&ctx, &mut corrected, &j_view, -(P as i64));
+        let corrected_bound = c_bound.add(j_view_bound.mul_u128(P as u128));
+        runtime
+            .noise
+            .admit(corrected_bound, "inverse-residual K correction")
+            .unwrap();
+
+        let mut sum_form = zero(&ctx);
+        add_scaled(&ctx, &mut sum_form, &residual.ciphertext, 1);
+        add_scaled(&ctx, &mut sum_form, &j_view, 1);
+        let sum_bound = residual.bound.add(j_view_bound);
+        runtime.noise.admit(sum_bound, "r+J K correction").unwrap();
+
+        let scaled_bound = corrected_bound.mul_u128(SCALE_FACTOR as u128);
+        runtime
+            .noise
+            .admit(scaled_bound, "full M_pJ K scale")
+            .unwrap();
+        max_residual_bits = max_residual_bits.max(bits(residual.bound));
+        max_j_bits = max_j_bits.max(bits(j_view_bound));
+        max_k_bits = max_k_bits.max(bits(corrected_bound));
+        max_scaled_k_bits = max_scaled_k_bits.max(bits(scaled_bound));
+        let mut scaled = zero(&ctx);
+        add_scaled(&ctx, &mut scaled, &corrected, SCALE_FACTOR as i64);
+
+        let decoded_c = decode_at(
+            &ctx,
+            &tray.views[2].ciphertext,
+            &keys.secret_key,
+            c_bound,
+            0..ctx.n,
+        );
+        let decoded_m = decode_at(
+            &ctx,
+            &tray.views[1].ciphertext,
+            &keys.secret_key,
+            tray.views[1].bound,
+            0..ctx.n,
+        );
+        let decoded_r = decode_at(
+            &ctx,
+            &residual.ciphertext,
+            &keys.secret_key,
+            residual.bound,
+            0..ctx.n,
+        );
+        let decoded_j = decode_at(&ctx, &j_view, &keys.secret_key, j_view_bound, 0..ctx.n);
+        let decoded_k = decode_at(
+            &ctx,
+            &corrected,
+            &keys.secret_key,
+            corrected_bound,
+            0..ctx.n,
+        );
+        let decoded_sum = decode_at(&ctx, &sum_form, &keys.secret_key, sum_bound, 0..ctx.n);
+        let decoded_scaled = decode_at(&ctx, &scaled, &keys.secret_key, scaled_bound, 0..ctx.n);
+
+        let expected_c = k + P as i128 * j;
+        let expected_r = k - j;
+        let expected_scaled_k = SCALE_FACTOR as i128 * k;
+        assert_eq!(decoded_c[0], expected_c.rem_euclid(HIGH_T as i128) as u64);
+        assert_eq!(decoded_m[0] % M, expected_r.rem_euclid(M as i128) as u64);
+        assert_eq!(decoded_r[0], expected_r.rem_euclid(HIGH_T as i128) as u64);
+        assert_eq!(decoded_j[0], j.rem_euclid(HIGH_T as i128) as u64);
+        assert_eq!(decoded_k[0], k.rem_euclid(HIGH_T as i128) as u64);
+        assert_eq!(decoded_sum[0], k.rem_euclid(HIGH_T as i128) as u64);
+        assert_eq!(
+            decoded_scaled[0],
+            expected_scaled_k.rem_euclid(HIGH_T as i128) as u64
+        );
+        for decoded in [
+            decoded_c,
+            decoded_m,
+            decoded_r,
+            decoded_j,
+            decoded_k,
+            decoded_sum,
+            decoded_scaled,
+        ] {
+            assert!(decoded[1..].iter().all(|&value| value == 0));
+        }
+    }
+    eprintln!(
+        "same-root common-T residual: cases={}, certified error bits r/J/K/full-scale={}/{}/{}/{}, half-Delta={} bits; wrong-root and insufficient-bound refusals checked",
+        CASES.len(),
+        max_residual_bits,
+        max_j_bits,
+        max_k_bits,
+        max_scaled_k_bits,
+        bits(runtime.noise.half()),
+    );
 }
 
 fn relin_key(

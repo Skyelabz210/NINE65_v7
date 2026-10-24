@@ -53,6 +53,19 @@ fail-closed until the complete acceptance ladder passes.
   available with zero mismatch, but converting its M-only ciphertext to
   common T recreates J or fails the noise budget; common-T r production
   remains the gate.
+- A same-root tray control narrows that gate: if the Safe-Basis state
+  represents `C=K+pJ` as `(remainder=K,winding=J)`, the one 2/11 root can
+  project its arbitrary `p+1` sister directly as signed `K-J` under common T.
+  At N=32, five precharged support rows cover all four `|K|=|J|=8,193`
+  endpoint pairs plus zero. The inverse recovers J, both K forms and the full
+  `M_pJ*K` output exactly; modeled eta-based errors fit the Q=189 half-Delta.
+  The measured modeled bounds are 17/75/91/121 bits against a 144-bit
+  half-Delta, and wrong-root and too-small-bound cases refuse. All six
+  `one_root` tests pass, including paired-chart and symbolic Jacobian
+  follow-ups. The neighboring pJ control now uses the exact eta bound for its
+  direct precharges rather than a post-transform envelope. The rows are still
+  supplied by the fixture, so this verifies the terminal tray and consumer,
+  not production construction of `(K,J)` from the source.
 
 ## Gap analysis
 
@@ -61,13 +74,15 @@ same-history p and p+1 residues give J by adjacent K-Elimination, and the
 quotient Jacobian D identifies its nearest-integer cell. This replaces the
 pair-word search for this lift variable. The raw component lift merely
 reproduces `K+pJ`. The inverse-residual formula reduces the missing output to
-one same-history, bounded common-T `Enc_T(K-J)` sister view. The remaining
-task is a one-root, phase-locked K-Elimination producer for that view, with
-the 2/11 Safe-Basis lock and arbitrary composite sister trays. M-only-to-T
-raw quotients and adjacent Richardson cancellation both fail; the common-T
-tray must be emitted from the same root/history with a certified noise bound.
-The oracle correction is evidence for the consumer equation, not a public
-refresh.
+one same-history, bounded common-T `Enc_T(K-J)` sister view. The same-root
+tray control shows how to emit it once the state already contains `(K,J)`:
+attach the arbitrary M sister and project the signed affine sheet directly
+under T. M-only-to-T raw quotients and adjacent Richardson cancellation fail.
+The remaining producer is the live construction and certification of `(K,J)`
+from the actual CRAM source ciphertext and precharged ternary history, while
+preserving the 2/11 lock across coefficients. The test's supplied support
+rows are not that construction. The consumer result is one step of the public
+refresh, not a completed refresh.
 
 The synced remote branch `research/phase1-carry-transducer` (head
 `93d6257`) has a useful 49/2 residue identity for a carry bounded by 48:
@@ -79,11 +94,13 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Implement the one-root adjacent K-Elimination producer for the
-   same-history `(K-J) mod (p+1)` residual. Use the 2/11 Safe-Basis phase lock
-   and composite sister trays to emit common-T `Enc_T(K-J)` without
-   enumerating all signed J values. Apply `J=(T+1)/(p+1)*(C-r) mod T`, then
-   certify root history, scale, and noise before correction.
+1. Build the live root state `(K,J)` from the same source ciphertext's
+   component history and key-holder-precharged ternary selectors. Project its
+   bounded `K-J` affine sheet from the one 2/11 root directly under common T
+   through the `p+1` composite sister tray. Apply
+   `J=(T+1)/(p+1)*(C-r) mod T`, then certify root history, scale, and noise
+   before correction. Do not substitute the fixture's supplied support rows
+   for this construction.
 2. Test the producer at increasing degrees and both signs, including full
    signed boundaries, every output coefficient, every RNS lane, and
    wrong-history/corrupted-root negatives. Require p² correction and full-T

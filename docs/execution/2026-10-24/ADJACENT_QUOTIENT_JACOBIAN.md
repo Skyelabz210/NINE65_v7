@@ -98,9 +98,42 @@ reintroduces exactly the first J winding (469/512, 8,033/8,192, and
 and dividing by `T*M` has 194–196-bit J error and fails broadly. A two-step
 Richardson/K-Elimination combination cancels the ideal fractional term
 algebraically, but its noisy quotient views produce 195–197-bit J error and
-fail the K/full-scale checks. The one-root producer must therefore emit the
-bounded M-residue directly at common T, preserving the source history and its
-noise certificate; an M-only residue or arithmetic relabel is insufficient.
+fail the K/full-scale checks.
+
+## Same-root direct common-T sister tray
+
+The M-only lift failure does not rule out a Safe-Basis tray. If the root's
+phase-locked state already represents `C=K+pJ` as remainder/winding `(K,J)`,
+then one root can attach `[p,M,T]` and directly project the bounded affine
+sheet `K-J` under its common-T encoding. This view is `Enc_T(K-J)` at
+emission; it is not an `Enc_M` ciphertext numerically relabelled as `Enc_T`
+afterward. The same-root M tray checks the residue identity, while
+the T tray supplies C for the inverse-residual consumer.
+
+The focused `one_root_emits_adjacent_residual_at_common_composite_t_and_k_eliminates`
+probe uses `N=32`, `p=65,537`, `M=65,538`,
+`T=17,601,581,752,325`, and the full `M_pJ` scale. It checks five signed
+support cases, including all four `(K,J)` endpoint pairs at `|K|=|J|=8,193`.
+The same-root affine projection, modular inverse, both K forms, and full-scale
+output decode exactly. The fixture's eta-based noise bounds admit each linear
+stage at 17/75/91/121 bits against the 144-bit half-Delta. Wrong-root reuse
+and an insufficient residue bound refuse before projection. The full six-test
+`one_root` filter passes, including the adjacent-view, paired-chart, and
+symbolic scale-Jacobian follow-ups (243.90 seconds).
+
+That follow-up exposed and fixed an unrelated fixture-bound mismatch in the
+existing `pJ` projection test: it had assigned the post-transform projected
+error envelope to selectors that were direct key-holder precharges. Using
+their exact `eta` precharge bound restores a sound projection estimate; the
+output remains secret-holder decoded and within the same modeled budget.
+
+This is a terminal-producer integration control, not the live source producer:
+the test supplies the possible `(K,J)` support rows and key-holder-precharged
+one-hot selectors. It proves that one 2/11 Safe-Basis root and an arbitrary M
+sister can feed the common-T consumer. The remaining producer gap is to
+derive that phase-locked `(K,J)` state from the actual CRAM ciphertext and
+precharged ternary history, then certify the resulting all-coefficient noise
+bound. It does not close public refresh.
 
 ## Evidence
 
