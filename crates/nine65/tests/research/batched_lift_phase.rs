@@ -159,6 +159,9 @@ const PHASE_P: u64 = 65_537;
 const COMPOSITE_CHART_T: u64 = PHASE_P * 32_769;
 const COMPOSITE_CHART_PRIMES: [u64; 4] =
     [2_148_728_833, 2_148_794_369, 2_149_810_177, 2_150_072_321];
+// 2N-compatible at outer N=16,384; each is 1 mod p*(2*2^21+1).
+// The resulting Q is 1 mod T, which limits precharge error for the dense chart.
+const DENSE_CHART_PRIMES: [u64; 2] = [9_079_397_551_940_567_041, 8_863_221_419_751_505_921];
 
 fn centered_component_residual(
     ctx: &RNSFHEContext,
@@ -210,6 +213,7 @@ fn phase1_tropical_carry(
 struct BatchedPhase<'a> {
     source: &'a RNSFHEContext,
     outer: &'a RNSFHEContext,
+    clock_n: usize,
     // KEY HOLDER setup encrypts s_source(Y^2), then retains the secrets.
     encrypted_source: RNSCiphertext,
     precharge_v: u128,
@@ -247,15 +251,15 @@ impl BatchedPhase<'_> {
             .product();
         assert!(
             phase_window2_for_q(
-                self.outer.n,
+                self.clock_n,
                 self.source_norm,
                 self.coordinate,
                 self.phase_cap,
                 q
-            ) < self.outer.n as u128
+            ) < self.clock_n as u128
         );
-        let public0 = preprocess_for_clock(self.source, &input.c0, self.coordinate, self.outer.n);
-        let public1 = preprocess_for_clock(self.source, &input.c1, self.coordinate, self.outer.n);
+        let public0 = preprocess_for_clock(self.source, &input.c0, self.coordinate, self.clock_n);
+        let public1 = preprocess_for_clock(self.source, &input.c1, self.coordinate, self.clock_n);
         let maximum = public0
             .clock
             .iter()
@@ -263,7 +267,7 @@ impl BatchedPhase<'_> {
             .map(|b| b.unsigned_abs() as u128)
             .max()
             .unwrap();
-        assert!(maximum <= (self.outer.n as u128).div_ceil(self.coordinate as u128));
+        assert!(maximum <= (self.clock_n as u128).div_ceil(self.coordinate as u128));
         let integer_limit = (self.source_norm + 1) as u128 * maximum;
         assert!(
             2 * integer_limit < self.outer.t as u128,
@@ -303,7 +307,28 @@ fn check_batched_phase(
     phase_denominator: u128,
     chart_t: u64,
 ) {
+    check_batched_phase_with_clock_and_primes(
+        n,
+        weight,
+        coordinate,
+        phase_denominator,
+        chart_t,
+        2 * n,
+        &COMPOSITE_CHART_PRIMES,
+    );
+}
+
+fn check_batched_phase_with_clock_and_primes(
+    n: usize,
+    weight: usize,
+    coordinate: usize,
+    phase_denominator: u128,
+    chart_t: u64,
+    clock_n: usize,
+    chart_primes: &[u64],
+) {
     use std::time::Instant;
+    assert!(clock_n >= 2 * n && clock_n.is_power_of_two());
     let mut config = SecureConfig::secure_128().into_config();
     config.n = n;
     config.security_bits = 0;
@@ -313,7 +338,7 @@ fn check_batched_phase(
     let source = RNSFHEContext::try_new(&source_config).unwrap();
     let mut outer_config = config;
     outer_config.n = 2 * n;
-    outer_config.primes = COMPOSITE_CHART_PRIMES.to_vec();
+    outer_config.primes = chart_primes.to_vec();
     outer_config.t = chart_t;
     let outer = RNSFHEContext::try_new(&outer_config).unwrap();
     let source_q: u128 = source.config.primes.iter().map(|&q| q as u128).product();
@@ -387,6 +412,7 @@ fn check_batched_phase(
     let mut evaluator = BatchedPhase {
         source: &source,
         outer: &outer,
+        clock_n,
         encrypted_source,
         precharge_v,
         source_norm: weight,
@@ -401,8 +427,8 @@ fn check_batched_phase(
         let output = evaluator.apply(&input, input_v);
         let seconds = start.elapsed().as_secs_f64();
         // Independent CLIENT oracle. The clear weighted sums are only assertions.
-        let public0 = preprocess_for_clock(&source, &input.c0, coordinate, outer.n);
-        let public1 = preprocess_for_clock(&source, &input.c1, coordinate, outer.n);
+        let public0 = preprocess_for_clock(&source, &input.c0, coordinate, clock_n);
+        let public1 = preprocess_for_clock(&source, &input.c1, coordinate, clock_n);
         let support: Vec<_> = trits.iter().enumerate().filter(|(_, s)| **s != 0).collect();
         let mut expected = vec![0; outer.n];
         let mut sheets = BTreeSet::new();
@@ -427,7 +453,7 @@ fn check_batched_phase(
             };
             assert!(sheet.unsigned_abs() <= weight.div_ceil(2) as u128);
             assert_eq!(
-                (coordinate as i128 * z + outer.n as i128).div_euclid((2 * outer.n) as i128),
+                (coordinate as i128 * z + clock_n as i128).div_euclid((2 * clock_n) as i128),
                 sheet
             );
             expected[2 * j] = z.rem_euclid(outer.t as i128) as u64;
@@ -452,7 +478,7 @@ fn check_batched_phase(
                     chart_z_residue
                 };
                 let chart_carry =
-                    (99 * chart_z + outer.n as i128).div_euclid((2 * outer.n) as i128);
+                    (99 * chart_z + clock_n as i128).div_euclid((2 * clock_n) as i128);
                 let (phase_carry, centered_phase) = phase1[j];
                 assert_eq!(chart_carry, phase_carry, "K99 / K_phase at j={j}");
                 assert!(centered_phase.unsigned_abs() <= (source_q / 2) as u128);
@@ -462,7 +488,7 @@ fn check_batched_phase(
             eprintln!("tropical chart bridge: sourceN{n}, H={weight}, all {chart_checked} coefficients satisfy K99=round((R0+R1*s)/Q)=K_phase; |K|<={carry_radius}, g=center_Q(S); same live source ciphertext and residual history");
 
             if chart_t != source.t {
-                let quotient_scale = 2 * outer.n as u64 + 1;
+                let quotient_scale = 2 * clock_n as u64 + 1;
                 assert_eq!(chart_t, PHASE_P * quotient_scale);
                 let reader_config = nine65::params::FHEConfig {
                     t: source.t,
@@ -566,7 +592,7 @@ fn check_batched_phase(
                 assert_eq!(corrected_p, expected_corrected);
                 let corrected_p_noise =
                     observe_polynomial(&reader, &corrected, &outer_keys, &expected_corrected);
-                let chart_modulus = (2 * outer.n) as u128;
+                let chart_modulus = (2 * clock_n) as u128;
                 let twice_chart_residual_bound = coordinate as u128 * (weight as u128 + 1)
                     + 2 * chart_modulus / phase_denominator;
                 let chart_residual_bound = (twice_chart_residual_bound - 1) / 2;
@@ -596,7 +622,7 @@ fn check_batched_phase(
                 // g mod T; the evaluator uses the actual K-elimination kernel
                 // to produce K mod T. This tests the consumer/noise path, but
                 // the encrypted centered-g producer is still a client oracle.
-                if n <= 1024 {
+                if clock_n == outer.n && n <= 1024 {
                     let mut expected_source_t = vec![0; outer.n];
                     let mut expected_centered_t = vec![0; outer.n];
                     let mut expected_carry_t = vec![0; outer.n];
@@ -856,7 +882,7 @@ fn check_batched_phase(
                 // limited to the small fixtures; this branch tests whether
                 // the same live-chart K-Elimination arithmetic and bound
                 // survive the admitted native source envelope.
-                if n == 8192 {
+                if clock_n == outer.n && n == 8192 {
                     let low_modulus = 2 * outer.n as u64;
                     let half = outer.n as u64;
                     let mut expected_x_t = expected_scaled.clone();
@@ -1093,7 +1119,7 @@ fn check_batched_phase(
         } else {
             z
         };
-        let k = (coordinates[0] as i128 * z + outer.n as i128).div_euclid((2 * outer.n) as i128);
+        let k = (coordinates[0] as i128 * z + clock_n as i128).div_euclid((2 * clock_n) as i128);
         if let Some(previous) = residual_sheets.insert(expected[2 * j], k) {
             collisions += usize::from(previous != k);
         }
@@ -1203,7 +1229,10 @@ const WIDE_P_LOCKED_JACOBIAN_PRIMES: [u64; 3] = [
 // A larger 11-anchored sister tray carries the full bounded pJ correction.
 // Its 63-bit NTT primes keep T below every lane while preserving the native
 // 128-bit security screen at n_out=16,384.
-const FULL_BOUND_PJ_FACTOR: u64 = 16_390; // 2*5*11*149
+// 3*A=p+1, so the p-view recovery of the high-lift carry multiplies by
+// only 3. The composite tray still contains the 2/11 phase anchors and the
+// full certified pJ range; its high target stays below every active Q lane.
+const FULL_BOUND_PJ_FACTOR: u64 = 21_846; // 2*3*11*331
 const FULL_BOUND_PJ_TRAY: u64 = FULL_BOUND_PJ_FACTOR * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
 const FULL_BOUND_PJ_STEP: u64 = PHASE_P * FULL_BOUND_PJ_TRAY;
 const FULL_BOUND_PJ_SCALE_T: u64 = PHASE_P * FULL_BOUND_PJ_STEP;
@@ -2341,11 +2370,90 @@ fn check_scale_jacobian_lift_with(
                         encrypted_carry_mismatches, 0,
                         "the p-locked sibling must encode the K-Elimination carry"
                     );
+                    let carry_p_error = observe_polynomial_wide(
+                        &common_p,
+                        &encrypted_lift_carry_p,
+                        &high_keys,
+                        &expected_lift_carry_plain,
+                    );
+                    let high_q = U512::product_u64s(&high.config.primes);
                     eprintln!(
-                        "same-history p carry view: A*K and A^-1 recovery mismatches={}/{}, centered |K|<= {}",
+                        "same-history p carry view: A*K and A^-1 recovery mismatches={}/{}, centered |K|<= {}, A^-1 mod p={}, carry V bits={}, Q bits={}, Q/16 chart input cap={}",
                         carry_view_mismatches + encrypted_carry_mismatches,
                         high.n,
                         max_lift_carry,
+                        inverse_factor,
+                        bits_u512(carry_p_error),
+                        bits_u512(high_q),
+                        words(carry_p_error.mul_u128(16)) < words(high_q),
+                    );
+                    // Test whether the remaining high-lift carry can simply
+                    // be tolerated in the p view. Its contribution is K/p
+                    // of a plaintext step, so the message may decode while
+                    // the phase budget still fails dependent products.
+                    let uncorrected_e = add(
+                        &high,
+                        &lifted_e,
+                        &signed_scale(&high, &direct_lifted_p_winding, -1),
+                    );
+                    let uncorrected_carry = add(
+                        &common_p,
+                        &high_delta,
+                        &signed_scale(&common_p, &uncorrected_e, -1),
+                    );
+                    let uncorrected_phase = add(&common_p, &affine, &uncorrected_carry);
+                    let uncorrected_plain =
+                        decrypt_coefficients(&common_p, &uncorrected_phase, &high_keys);
+                    let uncorrected_mismatches = uncorrected_plain
+                        .iter()
+                        .zip(&expected_message)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    let mut uncorrected_phase_bits = None;
+                    let mut uncorrected_square_mismatches = None;
+                    let mut uncorrected_cube_mismatches = None;
+                    if uncorrected_mismatches == 0 {
+                        uncorrected_phase_bits = Some(bits_u512(observe_polynomial_wide(
+                            &common_p,
+                            &uncorrected_phase,
+                            &high_keys,
+                            &expected_message,
+                        )));
+                        let expected_square = square_plain(&expected_message, PHASE_P);
+                        let uncorrected_square = exact
+                            .try_mul_exact(&uncorrected_phase, &uncorrected_phase, &relin)
+                            .unwrap();
+                        let uncorrected_square_plain =
+                            decrypt_coefficients(&common_p, &uncorrected_square, &high_keys);
+                        let square_mismatches = uncorrected_square_plain
+                            .iter()
+                            .zip(&expected_square)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        uncorrected_square_mismatches = Some(square_mismatches);
+                        if square_mismatches == 0 {
+                            let expected_cube = negacyclic_plain_multiply(
+                                &expected_square,
+                                &expected_message,
+                                PHASE_P,
+                            );
+                            let uncorrected_cube = exact
+                                .try_mul_exact(&uncorrected_square, &uncorrected_phase, &relin)
+                                .unwrap();
+                            let uncorrected_cube_plain =
+                                decrypt_coefficients(&common_p, &uncorrected_cube, &high_keys);
+                            uncorrected_cube_mismatches = Some(
+                                uncorrected_cube_plain
+                                    .iter()
+                                    .zip(&expected_cube)
+                                    .filter(|(actual, expected)| actual != expected)
+                                    .count(),
+                            );
+                        }
+                    }
+                    eprintln!(
+                        "uncorrected pJ lift follow-up: plaintext mismatches={uncorrected_mismatches}/{}, phase V bits={uncorrected_phase_bits:?}, square mismatches={uncorrected_square_mismatches:?}, cube mismatches={uncorrected_cube_mismatches:?}; high-lift carry still present",
+                        high.n,
                     );
                     // Probe the next K-Elimination layer: lifting Enc_p(K)
                     // to T divides the component coefficients by T/p. The
@@ -2723,6 +2831,47 @@ fn composite_scale_locked_tropical_chart_decodes_the_encrypted_carry() {
 #[test]
 fn composite_scale_locked_residual_correction_survives_a_larger_carry_corridor() {
     check_batched_phase(1024, 8, 99, 16, PHASE_P * (4 * 1024 + 1));
+}
+
+#[test]
+fn virtual_clock_chart_recovers_a_dense_source_carry() {
+    let clock_n = 1 << 17;
+    check_batched_phase_with_clock_and_primes(
+        512,
+        512,
+        99,
+        16,
+        PHASE_P * (2 * clock_n + 1),
+        clock_n as usize,
+        &DENSE_CHART_PRIMES,
+    );
+}
+
+#[test]
+#[ignore = "opt-in native dense source carry readout; full source-to-work return remains open"]
+fn virtual_clock_chart_recovers_a_native_dense_source_carry() {
+    let clock_n = 1 << 21;
+    let chart_t = PHASE_P * (2 * clock_n + 1);
+    let chart_q = (DENSE_CHART_PRIMES[0] as u128) * DENSE_CHART_PRIMES[1] as u128;
+    assert_eq!(chart_q % chart_t as u128, 1);
+    check_batched_phase_with_clock_and_primes(
+        8192,
+        8192,
+        99,
+        16,
+        chart_t,
+        clock_n as usize,
+        &DENSE_CHART_PRIMES,
+    );
+}
+
+#[test]
+fn virtual_clock_dense_chart_outer_chain_passes_the_128_bit_screen() {
+    let chart_t = PHASE_P * (2 * (1 << 21) + 1);
+    let screened =
+        SecureConfig::custom_screened(16_384, DENSE_CHART_PRIMES.to_vec(), chart_t, 3, 128)
+            .expect("dense virtual-clock chart requires a screened 128-bit outer chain");
+    assert!(screened.is_production_safe_under_all_models());
 }
 
 #[test]

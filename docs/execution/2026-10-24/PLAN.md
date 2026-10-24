@@ -6,6 +6,30 @@ fail-closed until the complete acceptance ladder passes.
 
 ## Verified state
 
+- A virtual 99/121 chart clock can exceed the ciphertext ring dimension without
+  increasing that ring. With source N=8,192, dense ternary support H=8,192,
+  outer N=16,384, and numeric clock 2^21, one encrypted source-key precharge
+  yields the exact first Phase 1 carry in all 8,192 even slots, with all odd
+  slots zero. No support words are enumerated. The two-prime Q=126-bit outer
+  tuple passes the in-tree 128-bit screen. The p-view is *correct* but has
+  122-bit observed phase error, so this chart alone is not a refresh or
+  noise reset. The same construction passes the dense N=512 control.
+- The full-bound pJ tray now uses `A=(p+1)/3=21,846`, retaining factors 2 and
+  11. Its modulus `M_pJ=A*(p+1)=1,431,743,148` has centered radius
+  715,871,573, above the native certified `pJ` bound 536,944,641. The common
+  target `T=p^2*M_pJ=6,149,477,659,801,725,612` fits the existing three
+  prime Q=189-bit tuple, which still passes the in-tree 128-bit screen.
+  Because `A^-1 mod p=3`, the same-history ciphertext-only p-view recovers
+  the high-lift carry in all 1,024 medium and 16,384 native slots with
+  observed phase errors of 72 and 73 bits respectively. Both meet the Q/16
+  input cap for a follow-up chart.
+- The lift's remaining carry is functionally necessary. Leaving it in place
+  still decodes the Phase 1 plaintext, but the medium/native phase errors are
+  178/180 bits and the first dependent square fails in 1,024/1,024 and
+  16,384/16,384 slots. A clear test correction restores the correct high
+  residual and gives zero square and cube mismatches at both sizes. This
+  isolates high-scale encrypted carry correction, rather than pJ tray width
+  or plaintext decoding, as the present blocker.
 - The same-history `high_delta` directly supplies the bounded `e+B` composite
   view because `M_pJ` divides the Jacobian step. The pJ tray recovers `pJ`;
   the high K-Elimination lift exposes `M_pJ*K_lift`, and the p view plus
@@ -108,6 +132,17 @@ fail-closed until the complete acceptance ladder passes.
 
 ## Gap analysis
 
+The dense virtual clock removes the `3^N` support enumeration for the *first*
+carry readout under the two-prime source test. It does not produce the clean
+high-encoding carry needed by the Q=189-bit pJ lift, and its own 122/126-bit
+p-view noise cannot support a useful returned product. The full-bound pJ
+sister and low-noise p-view `K_lift` are now source-bound, but their direct
+p-to-T quotient adds `p*J_q`. Any purported solution must remove that second
+winding under the same key and history; merely observing a correct plaintext
+is insufficient, as the all-slot square failure demonstrates. The one 2/11
+Safe-Basis root and phase-locked composite sisters remain the intended
+representation. Production remains fail-closed.
+
 The adjacent p/(p+1) identity is algebraically non-enumerative once its
 phase-locked residue views are available: it determines bounded J by
 K-Elimination, and the quotient Jacobian identifies the nearest-integer cell.
@@ -153,21 +188,22 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Preserve the tested `(K,J)` and exact-factor-cancellation invariants while
-   replacing the `3^N` support enumeration with a compressed same-history
-   producer. Measure support growth before any key generation and refuse if
-   the state is not polynomially bounded.
-2. Extend the `t_s,d,T_s` branch beyond the all-coefficient N=4/8 checks to
-   signed endpoints, wrong-history/corrupted-root negatives, independent keys,
-   and production-security parameters. Prove its noise model and choose a
-   scale that can be shared with the actual `K_lift mod p` sibling.
-3. Connect the live producer to that same-history sibling. Remove the clear
-   correction from the medium and native consumers and rerun residual, carry,
-   Phase 1, square, next product, return-to-work-key, second-refresh, and
-   repeat-product checks.
-4. Bind source key, RNS level, scale tuple, history, ternary-key domain, carry
-   bound, and propagated noise into a typed producer certificate. Re-run the
-   R00-R03 admission checks and complete Issue #95's acceptance ladder.
+1. Use the virtual-clock chart to probe the actual Q=189-bit p-view lift-carry
+   ciphertext. Widen its source-Q and phase-cap arithmetic to U512; test
+   whether the chart's integer carry is the measured second winding `J_q`
+   under the same ciphertext/key history. A mismatch is a counterexample to
+   this route, not a reason to insert an oracle.
+2. If that identity holds, emit the bounded `J_q` or `K_lift-J_q` directly in
+   the common high encoding from the one 2/11 root and its phase-locked
+   sister. Prove the component Q-wrap identity, centered endpoint margins,
+   support-independent runtime, and a noise bound that survives full
+   `M_pJ*K_lift` scaling. Refuse any `3^N` selector or p-to-T quotient that
+   recreates a hidden winding.
+3. Replace the clear carry correction in the medium and native pJ consumers;
+   rerun plaintext, phase error, square, cube, work-key return, second refresh,
+   and repeat-product checks. Bind source key, RNS level, scale, history,
+   carry bound, and noise to the typed producer certificate before Issue #95
+   acceptance and production admission.
 
 Issue #95 remains open and production refresh remains fail-closed. The linked
 scale-Jacobian and ultradiscrete architecture notes contain the derivation and

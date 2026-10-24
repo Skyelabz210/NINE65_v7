@@ -279,6 +279,7 @@ fn check_chart(n: usize, h: usize, denominator: u128, spec: ChartSpec) {
     let mut phase = BatchedPhase {
         source: &source,
         outer: &outer,
+        clock_n: outer.n,
         encrypted_source,
         precharge_v,
         source_norm: h,

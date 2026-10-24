@@ -114,6 +114,7 @@ fn check_power_tray_return(n: usize, weight: usize, phase_denominator: u128) {
     let producer = BatchedPhase {
         source: &source,
         outer: &outer,
+        clock_n: outer.n,
         encrypted_source,
         precharge_v,
         source_norm: weight,
@@ -233,6 +234,7 @@ fn check_power_tray_return(n: usize, weight: usize, phase_denominator: u128) {
     let sister_producer = BatchedPhase {
         source: &source,
         outer: &sister,
+        clock_n: sister.n,
         encrypted_source: sister_source,
         precharge_v: sister_precharge_v,
         source_norm: weight,
