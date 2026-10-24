@@ -33,16 +33,30 @@ fail-closed until the complete acceptance ladder passes.
   Its corrected residual, carry, Phase 1, square, and next product pass, but
   the raw ciphertext-only high lift fails broadly. Work-key return, a second
   refresh, and repeat-cycle admission remain unimplemented.
+- A new adjacent-quotient probe at N=512, 8,192, and 16,384 recovers the
+  first hidden winding `J` with zero coefficient mismatches. The same-history
+  p and p+1 views give `C mod p=K`, `C mod (p+1)=K-J`, so the adjacent
+  K-Elimination residue `(C mod p)-(C mod (p+1)) mod p` sign-lifts J under
+  the public `|J|<=8,193<p/2` bound. The maximum observed `|J|` is 121.
+- The quotient-pair residual satisfies `D=J+(K-J)/(p+1)` with a public
+  nearest-integer margin of at least 0.249 at native degree. A raw component
+  quotient from the p+1 residual tray back to T returns `K+pJ`, not `K-J`;
+  the p²+1 divisor control is identical. A single clean high-T `Enc(J)` root
+  oracle corrects K at all tested coefficients and survives the full `M_pJ`
+  scale with measured 108/138-bit phase error against Q=189 bits. The live
+  common-T root producer remains absent.
 
 ## Gap analysis
 
-The algebraic carry identity and an isolated encrypted correction now pass
-at very small degree. The implementation does not scale: the pair-word DP
-already has 6,549 rows and 6,723 exact selector products at N=8, while its
-high-T admission bound is refused. Directly extending this support enumeration
-to N=1,024 or N=16,384 is not viable. The remaining architecture task is a
-bounded, phase-locked carry projection using the composite sister trays and
-Jacobian/ultradiscrete structure without enumerating all ternary words.
+The new quotient pair provides a non-enumerative route to the first winding:
+same-history p and p+1 residues give J by adjacent K-Elimination, and the
+quotient Jacobian D identifies its nearest-integer cell. This replaces the
+pair-word search for this lift variable. It does not yet create `Enc_T(J)`;
+the raw component lift merely reproduces `K+pJ`. The remaining task is a
+one-root, phase-locked K-Elimination producer that turns the encrypted p/p+1
+residue views into a bounded common-T J view, with the 2/11 Safe-Basis lock
+and arbitrary composite sister trays. The oracle correction is evidence for
+the consumer equation, not a public refresh.
 
 The synced remote branch `research/phase1-carry-transducer` (head
 `93d6257`) has a useful 49/2 residue identity for a carry bounded by 48:
@@ -54,15 +68,15 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Replace or compress the pair-word support enumeration. Derive a bounded
-   carry representation whose state and multiplication counts fit the
-   composite noise budget as degree grows. Keep admission tied to a proven
-   worst-case bound; measured secret-holder error is diagnostic only.
-2. Test the carry producer at increasing degrees and both signs, including
-   full signed boundaries, every output coefficient, every RNS lane, and
+1. Implement the one-root adjacent K-Elimination producer from `K mod p` and
+   `(K-J) mod (p+1)`. Use the 2/11 Safe-Basis phase lock and composite sister
+   trays to materialize a common-T J view without enumerating all signed J
+   values. Certify root history, scale, and noise before emitting it.
+2. Test the producer at increasing degrees and both signs, including full
+   signed boundaries, every output coefficient, every RNS lane, and
    wrong-history/corrupted-root negatives. Require p² correction and full-T
    admission before joining it to the consumer.
-3. Connect the scalable producer to the actual same-history
+3. Connect the live producer to the actual same-history
    `K_lift mod p` sibling. Remove the clear correction from the medium and
    native consumers and rerun the dependent residual, carry, Phase 1, square,
    next product, and return-to-work-key checks.
