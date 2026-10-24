@@ -135,6 +135,56 @@ derive that phase-locked `(K,J)` state from the actual CRAM ciphertext and
 precharged ternary history, then certify the resulting all-coefficient noise
 bound. It does not close public refresh.
 
+## Live pair-tree coordinate and exact factor cancellation
+
+The live second-quotient pair tree does not yet supply the `(K,J_q)` state
+assumed above. It sums the public centered component residues modulo p with
+encrypted output-key pair selectors. Its selected state is
+`S_raw=R_raw+p*J_q`. The winding is the correct `J_q`, but `R_raw` differs
+from the BFV-decoded K. The same deterministic ciphertexts give:
+
+| Degree | support rows / products | K | raw remainder | raw-minus-K |
+|---:|---:|---:|---:|---:|
+| 4 | 81 / 81 | 23 | 15,773 | 15,750 |
+| 8 | 6,549 / 6,723 | 23 | 13,066 | 13,043 |
+
+The tests independently sum the public component residues with the test
+secret, check the root output against that integer sum, and require its
+disagreement with the actual BFV quotient ciphertext. Thus directly feeding
+this root's `remainder-winding` sheet to the K consumer would correct to the
+wrong coordinate. The BFV encoding/phase transition must first be bound to
+the same selector history; winding agreement alone is insufficient.
+
+There is an exact budget improvement once two projections share that history.
+With **unreduced integer row coefficients**, define
+`C_raw=project(R_raw+p*J_q)` and `r_raw=project(R_raw-J_q)`. Then
+
+```text
+C_raw-r_raw = (p+1)*project(J_q)
+```
+
+holds in every ciphertext component and RNS lane. The tests check this
+equality publicly before cancelling `(p+1)` by its inverse modulo each Q
+prime. The resulting ciphertext is byte-for-byte equal to the direct winding
+projection. Subtracting `p*project(J_q)` is likewise componentwise equal to
+the direct raw-remainder projection. The resulting noise bound is that of
+the direct projection; treating the inputs as independent and multiplying by
+a plaintext modular inverse had needlessly inflated the estimate.
+
+The adjacent high-scale control uses
+`S=M_pJ-1=1,074,167,819=79*1481*9181` and
+`T_adj=p^2*S=4,613,656,447,419,187,211`, so `T_adj=-1 mod (p+1)`.
+At degree 4 the residual/winding/remainder bounds are 81/66/81 bits, and
+the high bound/measured error is 111/80 bits within the 126-bit radius.
+At degree 8 they are 130/114/130 bits and 160/117 high bits; the high
+output is refused by the modeled bound. Both sampled high outputs decode the
+raw remainder exactly, and both disagree with the desired BFV value. This
+control isolates exact factor cancellation, coordinate normalization, and
+remaining support/noise growth; it is not public-bootstrap admission.
+
+Reproduce both degree tests with the `safe_basis_root_projects_second_k_elimination_quotient_winding`
+lib-test filter and `allow_insecure,exact_transcendentals_backend`. Both pass.
+
 ## Evidence
 
 `crates/nine65/examples/adjacent_quotient_jacobian.rs` uses three 63-bit RNS

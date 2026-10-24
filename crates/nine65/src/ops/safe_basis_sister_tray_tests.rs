@@ -1259,6 +1259,8 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
     const FACTOR: u64 = 16_390;
     const M_PJ: u64 = FACTOR * (P + 1);
     const FULL_T: u64 = M_PJ * P2;
+    const ADJACENT_SCALE: u64 = M_PJ - 1;
+    const ADJACENT_T: u64 = ADJACENT_SCALE * P2;
     const PRIMES: [u64; 3] = [
         9_223_372_036_853_661_697,
         9_223_372_036_853_235_713,
@@ -1276,6 +1278,10 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
     let p_ctx = RNSFHEContext::try_new(&config).unwrap();
     config.t = FULL_T;
     let full_ctx = RNSFHEContext::try_new(&config).unwrap();
+    config.t = ADJACENT_T;
+    let adjacent_ctx = RNSFHEContext::try_new(&config).unwrap();
+    assert_eq!(ADJACENT_T % (P + 1), P);
+    assert_eq!((ADJACENT_T + 1) % (P + 1), 0);
 
     let runtime = CarryRuntime::new_composite_sister_target(&p2_ctx, P as i128, [211, 3], 10_000);
     let mut rng = ShadowHarvester::with_seed(0x4b45_4c49_4654_4a51);
@@ -1546,6 +1552,7 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
     let paired_sum = pair_states.pop().unwrap();
     let initial = runtime.initial(r0[0] as i128).unwrap();
     let state = runtime.compose(&initial, &paired_sum, &relin).unwrap();
+    let q = U512::product_u64s(&PRIMES);
     eprintln!(
         "quotient-carry tree cost: N={}, states={}, exact selector products={}",
         p2_ctx.n,
@@ -1585,9 +1592,136 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
         "the one-root selector must recover the component quotient winding"
     );
 
+    // This root tracks the sum of raw centered component residues, not the
+    // BFV-decoded message. Verify the distinction against an independent
+    // integer sum before trying to use its affine sister sheet.
+    let mut raw_sum = r0[0] as i128;
+    for key_coefficient in 0..degree {
+        let index = (degree - key_coefficient) % degree;
+        let term = if key_coefficient == 0 {
+            r1[index]
+        } else {
+            -r1[index]
+        };
+        raw_sum += term as i128 * secret[key_coefficient] as i128;
+    }
+    let raw_remainder = raw_sum - P as i128 * expected_quotient_winding;
+    assert!(raw_remainder.abs() <= P as i128 / 2);
+    let tray = root.attach(&[P, P + 1, P2]).unwrap();
+    root.validate(&tray).unwrap();
+    // Keep C's coefficients unreduced. Reducing each support row modulo p^2
+    // would introduce row-dependent p^2 multiples and destroy exact factor
+    // cancellation in the ciphertext components.
+    let source_c = runtime.project(&state, |row| {
+        i64::try_from(row.remainder + P as i128 * row.winding as i128).unwrap()
+    });
+    let source_c_plain = decode_at(
+        &p2_ctx,
+        &source_c.ciphertext,
+        &keys.secret_key,
+        source_c.bound,
+        [0],
+    );
+    assert_eq!(source_c_plain[0], raw_sum.rem_euclid(P2 as i128) as u64);
+    assert_ne!(
+        source_c_plain[0], lifted_plain[0],
+        "the raw component sum must not masquerade as BFV-decoded K+pJ_q"
+    );
+    let raw_residual = runtime.project(&state, |row| {
+        i64::try_from(row.remainder - row.winding as i128).unwrap()
+    });
+    let residual_plain = decode_at(
+        &p2_ctx,
+        &raw_residual.ciphertext,
+        &keys.secret_key,
+        raw_residual.bound,
+        [0],
+    );
+    assert_eq!(
+        residual_plain[0],
+        (raw_remainder - expected_quotient_winding).rem_euclid(P2 as i128) as u64
+    );
+    let m_plain = decode_at(
+        &p2_ctx,
+        &tray.views[1].ciphertext,
+        &keys.secret_key,
+        tray.views[1].bound,
+        [0],
+    );
+    assert_eq!(
+        m_plain[0],
+        (raw_remainder - expected_quotient_winding).rem_euclid((P + 1) as i128) as u64
+    );
+
+    // The same selector history certifies C-r=(p+1)*Enc(J_q) in every
+    // ciphertext component, not merely after decryption. Cancel that known
+    // public factor modulo each Q prime; this is not a general BFV division.
+    let mut difference = zero(&p2_ctx);
+    add_scaled(&p2_ctx, &mut difference, &source_c.ciphertext, 1);
+    add_scaled(&p2_ctx, &mut difference, &raw_residual.ciphertext, -1);
+    let mut expected_difference = zero(&p2_ctx);
+    add_scaled(
+        &p2_ctx,
+        &mut expected_difference,
+        &winding_plaintext,
+        (P + 1) as i64,
+    );
+    assert_eq!(difference.c0.limbs, expected_difference.c0.limbs);
+    assert_eq!(difference.c1.limbs, expected_difference.c1.limbs);
+    for poly in [&mut difference.c0, &mut difference.c1] {
+        for (lane, &prime) in PRIMES.iter().enumerate() {
+            let inverse_factor = inverse((P + 1) % prime, prime);
+            for coefficient in &mut poly.limbs[lane] {
+                *coefficient =
+                    (*coefficient as u128 * inverse_factor as u128 % prime as u128) as u64;
+            }
+        }
+    }
+    assert_eq!(difference.c0.limbs, winding_plaintext.c0.limbs);
+    assert_eq!(difference.c1.limbs, winding_plaintext.c1.limbs);
+
+    let mut raw_corrected = source_c.ciphertext.clone();
+    add_scaled(&p2_ctx, &mut raw_corrected, &difference, -(P as i64));
+    let direct_remainder = runtime.project(&state, |row| row.remainder as i64);
+    assert_eq!(raw_corrected.c0.limbs, direct_remainder.ciphertext.c0.limbs);
+    assert_eq!(raw_corrected.c1.limbs, direct_remainder.ciphertext.c1.limbs);
+    let remainder_plain = decode_at(
+        &p2_ctx,
+        &raw_corrected,
+        &keys.secret_key,
+        direct_remainder.bound,
+        [0],
+    );
+    assert_eq!(
+        remainder_plain[0],
+        raw_remainder.rem_euclid(P2 as i128) as u64
+    );
+    assert_ne!(remainder_plain[0], residue_k0);
+
+    let adjacent_bound = direct_remainder.bound.mul_u128(ADJACENT_SCALE as u128);
+    let adjacent_radius = Noise::new_for_composite_sister_target(&adjacent_ctx.config).half();
+    let adjacent_admitted = words(adjacent_bound) < words(adjacent_radius);
+    let (adjacent_plain, measured_adjacent) =
+        decode_at_with_error(&adjacent_ctx, &raw_corrected, &keys.secret_key, [0]);
+    let expected_adjacent =
+        (ADJACENT_SCALE as i128 * raw_remainder).rem_euclid(ADJACENT_T as i128) as u64;
+    eprintln!(
+        "same-root factor cancellation: N={}, raw remainder={}, BFV K={}, offset={}; componentwise J ciphertext equality exact; residual/J/remainder bounds={}/{}/{} bits; adjacent high bound/measured={}/{} bits, radius={}, admitted={}, raw exact={}",
+        degree, raw_remainder, input[0], raw_remainder - input[0] as i128,
+        bits(raw_residual.bound), bits(winding_bound), bits(direct_remainder.bound),
+        bits(adjacent_bound), bits(measured_adjacent), bits(adjacent_radius),
+        adjacent_admitted, adjacent_plain[0] == expected_adjacent,
+    );
+    if adjacent_admitted {
+        assert_eq!(adjacent_plain[0], expected_adjacent);
+        assert_ne!(
+            adjacent_plain[0],
+            (ADJACENT_SCALE as i128 * input[0] as i128).rem_euclid(ADJACENT_T as i128) as u64
+        );
+    }
+
     let mut corrected_k = lifted_k.clone();
     add_scaled(&p2_ctx, &mut corrected_k, &winding_plaintext, -(P as i64));
-    let q = U512::product_u64s(&PRIMES);
     let scaled_correction_bound = winding_bound.mul_u128(P as u128);
     let correction_admitted = words(scaled_correction_bound.mul_u128(2 * P2 as u128)) < words(q);
     let corrected_k_plain = decode_at(

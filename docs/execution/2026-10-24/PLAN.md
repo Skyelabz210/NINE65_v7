@@ -66,6 +66,16 @@ fail-closed until the complete acceptance ladder passes.
   direct precharges rather than a post-transform envelope. The rows are still
   supplied by the fixture, so this verifies the terminal tray and consumer,
   not production construction of `(K,J)` from the source.
+- The live second-quotient root has now been checked against the actual
+  BFV quotient ciphertext. Its winding is correct, but its raw remainder is
+  15,773/13,066 at N=4/8 while decoded K is 23. It cannot be identified with
+  the `(K,J_q)` state needed by the adjacent consumer. Exact same-selector
+  factor cancellation does work in every ciphertext component: unreduced
+  `C_raw-r_raw=(p+1)*Enc(J_q)` divides back to the direct winding ciphertext.
+  The adjacent composite target `T_adj=p^2*(M_pJ-1)` has a 111-bit admitted
+  raw-remainder bound at N=4; N=8 needs 160 bits against radius 126 and
+  refuses. Both source-driven tests pass with this mismatch as an explicit
+  negative control. No BFV normalization producer has been supplied.
 
 ## Gap analysis
 
@@ -80,7 +90,10 @@ attach the arbitrary M sister and project the signed affine sheet directly
 under T. M-only-to-T raw quotients and adjacent Richardson cancellation fail.
 The remaining producer is the live construction and certification of `(K,J)`
 from the actual CRAM source ciphertext and precharged ternary history, while
-preserving the 2/11 lock across coefficients. The test's supplied support
+preserving the 2/11 lock across coefficients. In particular, the current
+live quotient tree's raw component remainder is a different coordinate from
+BFV-decoded K, despite its correct winding. The producer needs the Q-phase
+and plaintext-scale transition tied to the same selector history. The test's supplied support
 rows are not that construction. The consumer result is one step of the public
 refresh, not a completed refresh.
 
@@ -94,8 +107,11 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Build the live root state `(K,J)` from the same source ciphertext's
-   component history and key-holder-precharged ternary selectors. Project its
+1. Refine the live root with a parallel Q-phase sister coordinate and the
+   BFV scale transition, using the same precharged selectors and products as
+   the p-remainder/winding coordinate. Verify that its normalized state is
+   `(K,J)` against the actual quotient ciphertext; raw remainders must not be
+   substituted for K. Project its
    bounded `K-J` affine sheet from the one 2/11 root directly under common T
    through the `p+1` composite sister tray. Apply
    `J=(T+1)/(p+1)*(C-r) mod T`, then certify root history, scale, and noise
