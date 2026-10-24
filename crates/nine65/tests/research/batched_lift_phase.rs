@@ -106,15 +106,12 @@ fn centered_component_residual(
     coefficient: usize,
     source_q: u128,
 ) -> i128 {
-    assert_eq!(ctx.config.primes.len(), 2);
+    assert_eq!(component.len(), ctx.config.primes.len());
     assert!(source_q < i128::MAX as u128);
-    let p0 = ctx.config.primes[0];
-    let p1 = ctx.config.primes[1];
-    let r0 = component[0][coefficient];
-    let r1 = component[1][coefficient];
-    let delta = (r1 + p1 - r0 % p1) % p1;
-    let correction = (delta as u128 * inverse(p0 % p1, p1) as u128 % p1 as u128) as u64;
-    let canonical = r0 as u128 + p0 as u128 * correction as u128;
+    let residues: Vec<_> = component.iter().map(|lane| lane[coefficient]).collect();
+    let canonical_wide = client_crt(ctx, &residues);
+    assert_eq!((canonical_wide.d3, canonical_wide.d2, canonical_wide.d1), (0, 0, 0));
+    let canonical = canonical_wide.d0;
     assert!(canonical < source_q);
 
     // R_i = center(t*c_i mod Q). This equals t*c_i-Q*round(t*c_i/Q)
@@ -1113,6 +1110,493 @@ fn check_batched_phase(
     eprintln!("encrypted unimodular lift chart: sourceN{n}, U={u0}*Z0+{u1}*Z1, D={a}*Z0-{b}*Z1, determinant=-1; BOTH original ciphertexts recovered BIT-IDENTICALLY, no division or extra Safe Basis; U ideal scale M/{}, |U| observed/bound={u_max}/{u_limit}, U weight l1={u_l1}, V observed/bound={}/{}, direct U evaluator time={u_seconds:.6}s; two signed public polynomial products construct (U,D), corrected return and native repeated refresh remain OPEN",gcd*a as usize*b as usize,bits(u_observed),bits(u_bound));
 }
 
+// A scale-direction finite difference of the public component-rounding map.
+// L=3*5*11^3 is both the Jacobian step and a dependent composite tray, so
+// delta mod L is the bounded residual while the p view carries L*K+e.
+const JACOBIAN_STEP: u64 = 19_965;
+const JACOBIAN_ODD_TRAY: u64 = JACOBIAN_STEP;
+const JACOBIAN_SCALE_T: u64 = PHASE_P * JACOBIAN_STEP;
+// A p-locked step makes the bounded residual itself available in common p:
+// T=p*L, L=4,999p, and L*Enc_T(Delta) decodes to Delta mod p=e.
+const P_LOCKED_JACOBIAN_STEP: u64 = 4_999 * PHASE_P;
+const P_LOCKED_JACOBIAN_SCALE_T: u64 = PHASE_P * P_LOCKED_JACOBIAN_STEP;
+const P_LOCKED_JACOBIAN_PRIMES: [u64; 4] = [
+    35_184_371_138_561,
+    35_184_370_941_953,
+    35_184_370_352_129,
+    35_184_370_155_521,
+];
+
+fn observe_polynomial_wide(
+    ctx: &RNSFHEContext,
+    ct: &RNSCiphertext,
+    keys: &RNSKeySet,
+    message: &[u64],
+) -> U512 {
+    assert_eq!(message.len(), ctx.n);
+    assert_eq!(decrypt_coefficients(ctx, ct, keys), message);
+    let phases = decrypted_phase_residues(ctx, ct, keys);
+    let q = U512::product_u64s(&ctx.config.primes);
+    let period = q.mul_u128(ctx.t as u128);
+    let mut maximum = U512::zero();
+    for j in 0..ctx.n {
+        let residues: Vec<_> = phases.iter().map(|lane| lane[j]).collect();
+        let difference = abs_diff(
+            client_crt(ctx, &residues).mul_u128(ctx.t as u128),
+            q.mul_u128(message[j] as u128),
+        );
+        let difference = if words(difference) > words(period.div_u64(2)) {
+            period.sub(difference)
+        } else {
+            difference
+        };
+        assert!(words(difference.mul_u128(2)) < words(q));
+        if words(difference) > words(maximum) {
+            maximum = difference;
+        }
+    }
+    maximum
+}
+
+fn bits_u512(value: U512) -> u32 {
+    for (limb, offset) in [(value.d3, 384), (value.d2, 256), (value.d1, 128), (value.d0, 0)] {
+        if limb != 0 {
+            return offset + 128 - limb.leading_zeros();
+        }
+    }
+    0
+}
+
+// Public residue-only calculation of round(scale * R / Q), where
+// R=center_Q(t*C). This keeps the source coefficient in its RNS lanes.
+fn residual_scale_weights(ctx: &RNSFHEContext, component: &RNSPolynomial, scale: u64) -> Vec<i64> {
+    let coarse = CanonicalScaleRound::new(&ctx.config.primes, ctx.t).unwrap();
+    let fine = CanonicalScaleRound::new(
+        &ctx.config.primes,
+        ctx.t.checked_mul(scale).expect("preprocessing scale fits"),
+    )
+    .unwrap();
+    let residues = ordinary(ctx, component);
+    (0..ctx.n)
+        .map(|j| {
+            let coefficient: Vec<_> = residues.iter().map(|lane| lane[j]).collect();
+            let centered_component = coarse.scale_round(&coefficient).unwrap() as i128;
+            let scaled = fine.scale_round(&coefficient).unwrap() as i128;
+            let residue = (scaled - scale as i128 * centered_component)
+                .rem_euclid(scale as i128);
+            let centered = if residue > scale as i128 / 2 {
+                residue - scale as i128
+            } else {
+                residue
+            };
+            centered as i64
+        })
+        .collect()
+}
+
+fn differential_precharge_bound(ctx: &RNSFHEContext) -> u128 {
+    let q = U512::product_u64s(&ctx.config.primes);
+    ctx.t as u128 * (2 * ctx.n as u128 + 1) * ctx.config.eta as u128
+        + q.mod_u64(ctx.t) as u128 * (ctx.t as u128 - 1)
+}
+
+fn build_differential_view(
+    ctx: &RNSFHEContext,
+    keys: &RNSKeySet,
+    trits: &[i8],
+    constant_weights: &[i64],
+    source_weights: &[i64],
+    rng: &mut ShadowHarvester,
+) -> (RNSCiphertext, u128, RNSCiphertext) {
+    assert_eq!(ctx.n, 2 * trits.len());
+    assert_eq!(constant_weights.len(), trits.len());
+    assert_eq!(source_weights.len(), trits.len());
+    let source_plain: Vec<_> = trits
+        .iter()
+        .map(|&s| (s as i64).rem_euclid(ctx.t as i64) as u64)
+        .collect();
+    let encrypted_source = encrypt_polynomial(ctx, keys, &embedded(&source_plain), rng);
+    let centered_tray_weight = |weight: i64| {
+        let residue = (weight as i128).rem_euclid(ctx.t as i128);
+        if residue > ctx.t as i128 / 2 {
+            (residue - ctx.t as i128) as i64
+        } else {
+            residue as i64
+        }
+    };
+    let mut b0 = vec![0; ctx.n];
+    let mut b1 = vec![0; ctx.n];
+    for j in 0..trits.len() {
+        b0[2 * j] = centered_tray_weight(constant_weights[j]);
+        b1[2 * j] = centered_tray_weight(source_weights[j]);
+    }
+    let ciphertext = add(
+        ctx,
+        &multiply_signed_plain(ctx, &encrypted_source, &b1),
+        &public_plain(ctx, &b0),
+    );
+    let source_l1 = b1.iter().map(|x| x.unsigned_abs() as u128).sum::<u128>();
+    let constant_max = b0.iter().map(|x| x.unsigned_abs() as u128).max().unwrap_or(0);
+    let bound = differential_precharge_bound(ctx) * source_l1
+        + U512::product_u64s(&ctx.config.primes).mod_u64(ctx.t) as u128 * constant_max;
+    assert!(
+        words(U512::from_u128(bound).mul_u128(2))
+            < words(U512::product_u64s(&ctx.config.primes)),
+        "scale-Jacobian producer must preflight its full public error bound"
+    );
+    (ciphertext, bound, encrypted_source)
+}
+
+fn centered_residual_from_composite(odd: u64, odd_tray: u64, bound: u64) -> i64 {
+    assert_eq!(odd_tray % 2, 1);
+    let r = odd % odd_tray;
+    let candidates = [r as i64, r as i64 - odd_tray as i64];
+    let matches: Vec<_> = candidates
+        .into_iter()
+        .filter(|&candidate| candidate.unsigned_abs() <= bound)
+        .collect();
+    assert_eq!(matches.len(), 1, "composite-tray signed lift must be unique");
+    matches[0]
+}
+
+fn check_scale_jacobian_lift(n: usize, weight: usize, phase_denominator: u128) {
+    check_scale_jacobian_lift_with(
+        n,
+        weight,
+        phase_denominator,
+        JACOBIAN_STEP,
+        JACOBIAN_ODD_TRAY,
+        JACOBIAN_SCALE_T,
+        &COMPOSITE_CHART_PRIMES,
+    );
+}
+
+fn check_p_locked_scale_jacobian_lift(n: usize, weight: usize, phase_denominator: u128) {
+    check_scale_jacobian_lift_with(
+        n,
+        weight,
+        phase_denominator,
+        P_LOCKED_JACOBIAN_STEP,
+        P_LOCKED_JACOBIAN_STEP,
+        P_LOCKED_JACOBIAN_SCALE_T,
+        &P_LOCKED_JACOBIAN_PRIMES,
+    );
+}
+
+fn check_scale_jacobian_lift_with(
+    n: usize,
+    weight: usize,
+    phase_denominator: u128,
+    step: u64,
+    odd_tray_modulus: u64,
+    scale_t: u64,
+    outer_primes: &[u64],
+) {
+    assert_eq!(step % odd_tray_modulus, 0);
+    assert_eq!(scale_t, PHASE_P * step);
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = n;
+    config.security_bits = 0;
+    config.name = "UNADMITTED scale-Jacobian tropical carry experiment";
+    let mut source_config = config.clone();
+    source_config
+        .primes
+        .truncate(if step % PHASE_P == 0 { 3 } else { 2 });
+    source_config.t = PHASE_P;
+    let source = RNSFHEContext::try_new(&source_config).unwrap();
+    let mut outer_config = config;
+    outer_config.n = 2 * n;
+    outer_config.primes = outer_primes.to_vec();
+    outer_config.t = scale_t;
+    let high = RNSFHEContext::try_new(&outer_config).unwrap();
+    let context_for = |t| {
+        let mut c = outer_config.clone();
+        c.t = t;
+        RNSFHEContext::try_new(&c).unwrap()
+    };
+    let common_p = context_for(PHASE_P);
+    let odd_tray = context_for(odd_tray_modulus);
+    let source_q = source.config.primes.iter().map(|&q| q as u128).product::<u128>();
+    let mut rng = ShadowHarvester::with_seed(0x4a41_434f_4249_414e + n as u64);
+    let trits = balanced_source(n, weight, &mut rng);
+    let source_keys = sparse_keys(&source, &trits, &mut rng);
+    // The RNS key and ring are the same in all four output views; only the
+    // plaintext sister tray changes.
+    let high_keys = high.generate_keys(&mut rng);
+    let message: Vec<_> = (0..n)
+        .map(|j| if j % 2 == 0 { 1 } else { PHASE_P - 1 })
+        .collect();
+    let mut input = encrypt_polynomial(&source, &source_keys, &message, &mut rng);
+    // The p-locked lane is wider, but its source input phase still needs
+    // slack for the key-dependent rounding terms. Reserve half the public
+    // phase budget for those terms instead of loading almost all of Q/D.
+    let phase_slack = if step % PHASE_P == 0 {
+        phase_denominator
+    } else {
+        4
+    };
+    let load = source_q / ((phase_denominator + phase_slack) * PHASE_P as u128);
+    let extra = montgomery(
+        &source,
+        source
+            .config
+            .primes
+            .iter()
+            .map(|&q| {
+                let v = (load % q as u128) as u64;
+                (0..n)
+                    .map(|j| if j % 2 == 0 || v == 0 { v } else { q - v })
+                    .collect()
+            })
+            .collect(),
+    );
+    input.c0 = input.c0.add(&extra, &source.rns);
+    let input_v = PHASE_P as u128 * (2 * n as u128 + 1) * source.config.eta as u128
+        + (source_q % PHASE_P as u128) * (PHASE_P as u128 - 1)
+        + load * PHASE_P as u128;
+    assert!(input_v <= source_q / phase_denominator);
+
+    let components = [ordinary(&source, &input.c0), ordinary(&source, &input.c1)];
+    let residual0: Vec<_> = (0..n)
+        .map(|j| centered_component_residual(&source, &components[0], j, source_q))
+        .collect();
+    let residual1: Vec<_> = (0..n)
+        .map(|j| centered_component_residual(&source, &components[1], j, source_q))
+        .collect();
+    let carries: Vec<_> = (0..n)
+        .map(|j| phase1_tropical_carry(&residual0, &residual1, &trits, source_q, j))
+        .collect();
+    assert!(carries.iter().all(|(k, g)| {
+        k.unsigned_abs() <= (weight / 2) as u128 && g.unsigned_abs() <= source_q / phase_denominator
+    }));
+
+    let low_weights0 = residual_scale_weights(&source, &input.c0, PHASE_P);
+    let high_weights0 = residual_scale_weights(&source, &input.c0, PHASE_P + step);
+    let low_weights1 = residual_scale_weights(&source, &input.c1, PHASE_P);
+    let high_weights1 = residual_scale_weights(&source, &input.c1, PHASE_P + step);
+    let d0: Vec<_> = high_weights0
+        .iter()
+        .zip(&low_weights0)
+        .map(|(&high, &low)| high - low)
+        .collect();
+    let d1: Vec<_> = high_weights1
+        .iter()
+        .zip(&low_weights1)
+        .map(|(&high, &low)| high - low)
+        .collect();
+
+    let residual_bound = step.div_ceil(phase_denominator as u64) + weight as u64;
+    assert!(2 * residual_bound < odd_tray_modulus);
+    let mut delta = vec![0i128; 2 * n];
+    let mut expected_k = vec![0u64; 2 * n];
+    let mut expected_e = vec![0i64; 2 * n];
+    let mut max_e = 0u64;
+    for j in 0..n {
+        let mut value = d0[j] as i128;
+        for (i, &s) in trits.iter().enumerate() {
+            let k = (j + n - i) % n;
+            value += (if i > j { -1 } else { 1 }) * d1[k] as i128 * s as i128;
+        }
+        let carry = carries[j].0;
+        let e = value - step as i128 * carry;
+        assert!(e.unsigned_abs() <= residual_bound as u128);
+        assert!(e.unsigned_abs() < (odd_tray_modulus / 2) as u128);
+        delta[2 * j] = value;
+        expected_k[2 * j] = carry.rem_euclid(PHASE_P as i128) as u64;
+        expected_e[2 * j] = e as i64;
+        max_e = max_e.max(e.unsigned_abs() as u64);
+    }
+    assert_eq!(max_e, expected_e.iter().map(|e| e.unsigned_abs()).max().unwrap());
+
+    let mut rng_for_view = rng;
+    let (high_delta, high_bound, _) =
+        build_differential_view(&high, &high_keys, &trits, &d0, &d1, &mut rng_for_view);
+    let (p_delta, p_bound, p_source) =
+        build_differential_view(&common_p, &high_keys, &trits, &d0, &d1, &mut rng_for_view);
+    let (odd_delta, odd_bound, _) =
+        build_differential_view(&odd_tray, &high_keys, &trits, &d0, &d1, &mut rng_for_view);
+    let as_plain = |modulus: u64| {
+        delta
+            .iter()
+            .map(|&x| x.rem_euclid(modulus as i128) as u64)
+            .collect::<Vec<_>>()
+    };
+    let high_expected = as_plain(scale_t);
+    let p_expected = as_plain(PHASE_P);
+    let odd_expected = as_plain(odd_tray_modulus);
+    assert!(observe_polynomial(&high, &high_delta, &high_keys, &high_expected) <= high_bound);
+    assert!(observe_polynomial(&common_p, &p_delta, &high_keys, &p_expected) <= p_bound);
+    assert!(observe_polynomial(&odd_tray, &odd_delta, &high_keys, &odd_expected) <= odd_bound);
+
+    // The same T=p*L ciphertext yields K on the p view. Its error certificate
+    // retains the residual term; this is only a correctness reference.
+    let q_outer = U512::product_u64s(&high.config.primes);
+    let carry_bound = q_outer
+        .mul_u128(residual_bound as u128)
+        .add(U512::from_u128(high_bound))
+        .add(U512::from_u64(step - 1))
+        .div_u64(step);
+    assert!(words(carry_bound.mul_u128(2)) < words(q_outer));
+    let observed_carry = if step % PHASE_P == 0 {
+        observe_polynomial_wide(&common_p, &high_delta, &high_keys, &expected_k)
+    } else {
+        U512::from_u128(observe_polynomial(
+            &common_p,
+            &high_delta,
+            &high_keys,
+            &expected_k,
+        ))
+    };
+    assert!(words(observed_carry) <= words(carry_bound));
+
+    // K-Elimination over the dependent composite tray lifts the bounded
+    // residual; this clear step is the exact integer contract the production
+    // root must implement without a client representative.
+    for j in 0..n {
+        let r_odd = odd_expected[2 * j];
+        let lifted = centered_residual_from_composite(r_odd, odd_tray_modulus, residual_bound);
+        assert_eq!(lifted, expected_e[2 * j]);
+        if step % PHASE_P != 0 {
+            let k_from_p = ((p_expected[2 * j] as i128 - lifted as i128)
+                * inverse(step % PHASE_P, PHASE_P) as i128)
+                .rem_euclid(PHASE_P as i128) as u64;
+            assert_eq!(k_from_p, expected_k[2 * j]);
+        }
+    }
+
+    let e_plain: Vec<_> = expected_e
+        .iter()
+        .map(|&e| e.rem_euclid(PHASE_P as i64) as u64)
+        .collect();
+    let (carry_ciphertext, k_bound, same_history_e_observed) = if step % PHASE_P == 0 {
+        // Same-history p-locked extraction: high_delta encrypts Delta under
+        // T=p*L. Its p view rounds Delta/L to K; multiplying this exact
+        // ciphertext by L before the p view yields Delta mod p=e because
+        // L=0 mod p. The residual is never supplied by a client.
+        let same_history_e = signed_scale(&high, &high_delta, step as i64);
+        let e_observed = observe_polynomial(&common_p, &same_history_e, &high_keys, &e_plain);
+        assert!(e_observed <= high_bound);
+        (high_delta.clone(), carry_bound, Some(e_observed))
+    } else {
+        // Diagnostic fallback for an invertible step: the previous
+        // K-Elimination experiment still needs an oracle Enc_p(e). Keep it
+        // separate from the p-locked same-history construction above.
+        let e_oracle = encrypt_polynomial(&common_p, &high_keys, &e_plain, &mut rng_for_view);
+        let e_oracle_bound = differential_precharge_bound(&common_p);
+        let mut delta_minus_e =
+            add(&common_p, &p_delta, &signed_scale(&common_p, &e_oracle, -1));
+        let inverse_step = inverse(step % PHASE_P, PHASE_P);
+        let inverse_step_centered = if inverse_step > PHASE_P / 2 {
+            inverse_step as i64 - PHASE_P as i64
+        } else {
+            inverse_step as i64
+        };
+        delta_minus_e = signed_scale(&common_p, &delta_minus_e, inverse_step_centered);
+        let k_bound = (p_bound + e_oracle_bound)
+            * inverse_step_centered.unsigned_abs() as u128;
+        assert!(
+            words(U512::from_u128(k_bound).mul_u128(2)) < words(q_outer),
+            "K-Elimination consumer must preflight inverse-step noise amplification"
+        );
+        let k_observed = observe_polynomial(&common_p, &delta_minus_e, &high_keys, &expected_k);
+        assert!(k_observed <= k_bound);
+        (delta_minus_e, U512::from_u128(k_bound), None)
+    };
+
+    // The resulting carry corrects the actual affine Phase 1 term. This
+    // checks the full coefficient set before any returned-product claim.
+    let affine0 = preprocess_for_clock(&source, &input.c0, 99, high.n);
+    let affine1 = preprocess_for_clock(&source, &input.c1, 99, high.n);
+    let mut affine_constant = vec![0; high.n];
+    let mut affine_weights = vec![0; high.n];
+    let center_p = |value: u64| {
+        if value > PHASE_P / 2 {
+            value as i64 - PHASE_P as i64
+        } else {
+            value as i64
+        }
+    };
+    for j in 0..n {
+        affine_constant[2 * j] = center_p(affine0.a[j]);
+        affine_weights[2 * j] = center_p(affine1.a[j]);
+    }
+    let affine = add(
+        &common_p,
+        &multiply_signed_plain(&common_p, &p_source, &affine_weights),
+        &public_plain(&common_p, &affine_constant),
+    );
+    let affine_l1 = affine_weights.iter().map(|x| x.unsigned_abs() as u128).sum::<u128>();
+    let affine_max = affine_constant
+        .iter()
+        .map(|x| x.unsigned_abs() as u128)
+        .max()
+        .unwrap_or(0);
+    let affine_bound = differential_precharge_bound(&common_p) * affine_l1
+        + U512::product_u64s(&common_p.config.primes).mod_u64(PHASE_P) as u128 * affine_max;
+    let corrected = add(&common_p, &affine, &carry_ciphertext);
+    let mut expected_message = vec![0; 2 * n];
+    for j in 0..n {
+        expected_message[2 * j] = message[j];
+    }
+    let corrected_bound = U512::from_u128(affine_bound).add(k_bound);
+    assert!(
+        words(corrected_bound.mul_u128(2)) < words(q_outer)
+    );
+    let corrected_observed = observe_polynomial_wide(
+        &common_p,
+        &corrected,
+        &high_keys,
+        &expected_message,
+    );
+    assert!(words(corrected_observed) <= words(corrected_bound));
+    if step % PHASE_P == 0 {
+        eprintln!(
+            "p-locked pre-product ledger: Q={} bits, residual={} bits (bound {}), carry={} bits (bound {}), corrected={} bits (bound {})",
+            bits_u512(q_outer),
+            bits_u512(U512::from_u64(max_e)),
+            bits_u512(U512::from_u64(residual_bound)),
+            bits_u512(observed_carry),
+            bits_u512(carry_bound),
+            bits_u512(corrected_observed),
+            bits_u512(corrected_bound),
+        );
+    }
+
+    // Follow both successful test dimensions through a real dependent square.
+    // The native opt-in remains a full-coefficient refresh-carry check only;
+    // its quadratic product is intentionally not benchmarked here.
+    if n <= 512 {
+        let exact = common_p.try_exact_evaluator().unwrap();
+        let relin = exact.generate_hybrid_gadget_key_with_rng(&high_keys.secret_key, &mut rng_for_view);
+        let fresh = encrypt_polynomial(
+            &common_p,
+            &high_keys,
+            &expected_message,
+            &mut rng_for_view,
+        );
+        let fresh_square = exact.try_mul_exact(&fresh, &fresh, &relin).unwrap();
+        let expected_square = square_plain(&expected_message, PHASE_P);
+        let _fresh_square_observed =
+            observe_polynomial_wide(&common_p, &fresh_square, &high_keys, &expected_square);
+        let square = exact.try_mul_exact(&corrected, &corrected, &relin).unwrap();
+        let _square_observed =
+            observe_polynomial_wide(&common_p, &square, &high_keys, &expected_square);
+    }
+
+    let residual_mode = if let Some(e_observed) = same_history_e_observed {
+        format!("same-history p-locked Enc_p(e) error {}/{} bits", bits(e_observed), bits(high_bound))
+    } else {
+        "invertible-step K-Elimination still uses the diagnostic oracle Enc_p(e)".to_string()
+    };
+    eprintln!(
+        "scale-Jacobian tropical lift: sourceN{n}, H={weight}, L={step}, T={scale_t} fits the outer lanes; |e|<=public {residual_bound} (observed {max_e}); {residual_mode}; p-view carry error {}/{} bits, corrected Phase 1 {}/{} bits; work-key return remains open",
+        bits_u512(observed_carry),
+        bits_u512(carry_bound),
+        bits_u512(corrected_observed),
+        bits_u512(corrected_bound)
+    );
+}
+
 #[test]
 fn batched_lift_phase_is_negacyclic_and_has_an_unambiguous_integer_domain() {
     check_batched_phase(16, 2, 9, 128, PHASE_P);
@@ -1139,6 +1623,33 @@ fn composite_chart_outer_chain_passes_the_128_bit_screen() {
     )
     .expect("composite chart scale must retain a screened 128-bit outer chain");
     assert!(screened.is_production_safe_under_all_models());
+}
+
+#[test]
+fn scale_jacobian_sister_trays_recover_the_small_phase_residual() {
+    check_scale_jacobian_lift(512, 2, 64);
+}
+
+#[test]
+#[ignore = "opt-in native scale-Jacobian sister-tray carry producer; p lift remains a client diagnostic"]
+fn scale_jacobian_sister_trays_recover_native_phase_residuals() {
+    check_scale_jacobian_lift(8192, 96, 64);
+}
+
+#[test]
+fn p_locked_scale_jacobian_extracts_carry_and_residual_from_one_history() {
+    check_p_locked_scale_jacobian_lift(16, 2, 1 << 31);
+}
+
+#[test]
+fn p_locked_scale_jacobian_corrects_the_medium_phase_without_oracle_residual() {
+    check_p_locked_scale_jacobian_lift(512, 2, 1 << 31);
+}
+
+#[test]
+#[ignore = "opt-in native p-locked scale-Jacobian same-history carry and residual producer"]
+fn p_locked_scale_jacobian_extracts_native_carry_and_residual() {
+    check_p_locked_scale_jacobian_lift(8192, 96, 1 << 31);
 }
 
 #[test]

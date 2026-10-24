@@ -16,6 +16,7 @@ enum TrayRefusal {
     PhaseTransition,
     InvalidCompositeBudget,
     NoCompositeFits,
+    InvalidLiftBound,
 }
 
 // A per-output error cap, NOT a pool of BFV headroom and not a new Q lane.
@@ -240,6 +241,39 @@ impl<'a> Root211<'a> {
             views,
             period,
         })
+    }
+
+    // Research bounded lift: the tray must be attached to this exact root,
+    // its odd period must identify the centered remainder, and the root
+    // projects that remainder into the common plaintext encoding. Production
+    // history/certificate binding is deliberately outside this test module.
+    fn project_bounded_remainder(
+        &self,
+        tray: &SisterTray<'_, '_>,
+        odd_period: u64,
+        bound: u64,
+        target: u64,
+    ) -> Result<Projection, TrayRefusal> {
+        self.validate(tray)?;
+        if odd_period < 3
+            || odd_period % 2 == 0
+            || (odd_period as u128) <= 2 * bound as u128
+            || target == 0
+            || target > self.runtime.ctx.t
+            || !tray.moduli.contains(&odd_period)
+            || self.state.rows.iter().any(|row| {
+                row.remainder.unsigned_abs() > bound as u128
+                    || self.runtime.root_value(row, odd_period)
+                        != row.remainder.rem_euclid(odd_period as i128) as i64
+            })
+        {
+            return Err(TrayRefusal::InvalidLiftBound);
+        }
+        let projection = self
+            .runtime
+            .project(self.state, |row| row.remainder as i64);
+        self.evaluated_views.set(self.evaluated_views.get() + 1);
+        Ok(projection)
     }
 
     fn validate(&self, tray: &SisterTray<'_, '_>) -> Result<(), TrayRefusal> {
@@ -781,6 +815,145 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
         eprintln!(
             "paired chart K-Elimination: selected K={selected_k}, e99={expected_residual}, one root, 2^15/98/32769/65537 trays in common plaintext; composite-98 residue checked; dense chart producer remains separate"
         );
+    }
+}
+
+#[test]
+fn symbolic_scale_jacobian_residual_lifts_through_one_root_into_common_p() {
+    const P: u64 = 65_537;
+    const STEP: i128 = 19_965; // 3 * 5 * 11^3; odd composite lift period.
+    const ODD_TRAY: u64 = STEP as u64;
+    const RESIDUAL_BOUND: u64 = 408;
+    const CASES: [(i128, i128); 5] = [(-48, -408), (-1, -1), (0, 0), (1, 1), (48, 408)];
+
+    let ctx = RNSFHEContext::try_new(&config_with(6)).unwrap();
+    assert_eq!(ctx.t, P);
+    let mut rng = ShadowHarvester::with_seed(0x4a41_434f_4249_414e);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let runtime = CarryRuntime::new(&ctx, STEP, [211, 2], 27);
+    let one_message = {
+        let mut message = vec![0i8; ctx.n];
+        message[0] = 1;
+        message
+    };
+    let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
+    let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
+    let relin = relin_key(&runtime, &keys, &mut rng);
+    let family = runtime.family;
+    let mut rows: Vec<_> = CASES
+        .iter()
+        .map(|&(k, e)| Row {
+            remainder: e,
+            winding: k as i64,
+            selector: None,
+            bound: runtime.noise.projected,
+        })
+        .collect();
+
+    for selected in 0..CASES.len() {
+        for (index, row) in rows.iter_mut().enumerate() {
+            row.selector = Some(if index == selected {
+                selected_one.clone()
+            } else {
+                selected_zero.clone()
+            });
+        }
+        let state = State {
+            rows: rows.clone(),
+            family,
+            source_q: STEP,
+            coefficients: vec![0],
+        };
+        let root = Root211::new(&runtime, &state).unwrap();
+        let tray = root.attach(&[ODD_TRAY, P]).unwrap();
+        root.validate(&tray).unwrap();
+        let e_common = root
+            .project_bounded_remainder(&tray, ODD_TRAY, RESIDUAL_BOUND, P)
+            .unwrap();
+
+        let k_expected = CASES[selected].0.rem_euclid(P as i128) as u64;
+        let e_expected = CASES[selected].1.rem_euclid(P as i128) as u64;
+        let delta_expected = (STEP * CASES[selected].0 + CASES[selected].1)
+            .rem_euclid(P as i128) as u64;
+        let odd_expected = CASES[selected].1.rem_euclid(ODD_TRAY as i128) as u64;
+        let decoded_odd = decode_at(
+            &ctx,
+            &tray.views[0].ciphertext,
+            &keys.secret_key,
+            tray.views[0].bound,
+            0..ctx.n,
+        );
+        assert_eq!(decoded_odd[0], odd_expected);
+        assert!(decoded_odd[1..].iter().all(|&value| value == 0));
+        let decoded_e = decode_at(
+            &ctx,
+            &e_common.ciphertext,
+            &keys.secret_key,
+            e_common.bound,
+            0..ctx.n,
+        );
+        assert_eq!(decoded_e[0], e_expected);
+        assert!(decoded_e[1..].iter().all(|&value| value == 0));
+
+        // Δ_p=L*K+e and e_p share the exact same root/history. K-Elimination
+        // now needs only a public modular inverse and no oracle residual.
+        let inverse_step = inverse(STEP.rem_euclid(P as i128) as u64, P) as i64;
+        let mut carry = zero(&ctx);
+        add_scaled(&ctx, &mut carry, &tray.views[1].ciphertext, inverse_step);
+        add_scaled(&ctx, &mut carry, &e_common.ciphertext, -inverse_step);
+        let carry_bound = tray.views[1]
+            .bound
+            .add(e_common.bound)
+            .mul_u128(inverse_step.unsigned_abs() as u128);
+        runtime.noise.admit(carry_bound, "scale-Jacobian K-Elimination").unwrap();
+        let decoded_carry = decode_at(
+            &ctx,
+            &carry,
+            &keys.secret_key,
+            carry_bound,
+            0..ctx.n,
+        );
+        assert_eq!(decoded_carry[0], k_expected);
+        assert!(decoded_carry[1..].iter().all(|&value| value == 0));
+
+        let delta = &tray.views[1];
+        let decoded_delta = decode_at(
+            &ctx,
+            &delta.ciphertext,
+            &keys.secret_key,
+            delta.bound,
+            0..ctx.n,
+        );
+        assert_eq!(decoded_delta[0], delta_expected);
+        assert!(decoded_delta[1..].iter().all(|&value| value == 0));
+
+        // Root rebinding and a period too small to sign-lift are both refused
+        // before another projection is emitted.
+        if selected == 0 {
+            let other_state = runtime.initial(0).unwrap();
+            let other_root = Root211::new(&runtime, &other_state).unwrap();
+            assert!(matches!(
+                other_root.project_bounded_remainder(&tray, ODD_TRAY, RESIDUAL_BOUND, P),
+                Err(TrayRefusal::ForeignRoot)
+            ));
+            assert!(matches!(
+                root.project_bounded_remainder(&tray, ODD_TRAY, ODD_TRAY / 2 + 1, P),
+                Err(TrayRefusal::InvalidLiftBound)
+            ));
+        }
+
+        // A dependent square follows the recovered carry at every boundary.
+        let square_bound = runtime.noise.multiply(carry_bound, carry_bound).unwrap();
+        let square = runtime.exact.try_mul_exact(&carry, &carry, &relin).unwrap();
+        let decoded_square = decode_at(
+            &ctx,
+            &square,
+            &keys.secret_key,
+            square_bound,
+            0..ctx.n,
+        );
+        assert_eq!(decoded_square[0], (k_expected as u128 * k_expected as u128 % P as u128) as u64);
+        assert!(decoded_square[1..].iter().all(|&value| value == 0));
     }
 }
 
