@@ -6,6 +6,26 @@ fail-closed until the complete acceptance ladder passes.
 
 ## Verified state
 
+- The second quotient winding now has a live non-enumerative producer under
+  its p view. Exact U512 centered CRT arithmetic proves that `J_q` is the
+  Q-wrap of the same p-view carry ciphertext in all 1,024 medium slots. The
+  old coarse 99 chart loses that wrap (970/1,024 mismatches); a centered
+  component chart retains it (zero mismatches). One encrypted high-key
+  precharge then recovers `J_q` in all 2,048 medium and 32,768 native outer
+  slots. At native size the virtual clock is 2^24, the two-prime Q is 126
+  bits, and the observed p-view error is 117 bits. The doubled N=32,768
+  ring uses a new ten-prime NTT-compatible anchor set; both its nominal ring
+  and the effective N=16,384 embedded-key dimension pass the in-tree 128-bit
+  parameter screen.
+- The centered chart can use an even embedding of the original high secret
+  on two Q lanes shared with the high ciphertext. Splitting its even
+  coefficients returns `J_q` under that original secret with zero mismatches
+  at medium (1,024) and native (16,384) size. This avoids a separate key
+  switch for the p-view experiment. It does not supply a common-high-T
+  ciphertext: the returned medium p-view has 119-bit phase error in Q=126
+  bits and its first dependent square fails in 1,024/1,024 slots. The
+  embedded-key precharge also needs a reviewed key-dependent-message
+  security argument before production use.
 - A virtual 99/121 chart clock can exceed the ciphertext ring dimension without
   increasing that ring. With source N=8,192, dense ternary support H=8,192,
   outer N=16,384, and numeric clock 2^21, one encrypted source-key precharge
@@ -35,8 +55,8 @@ fail-closed until the complete acceptance ladder passes.
   the high K-Elimination lift exposes `M_pJ*K_lift`, and the p view plus
   public `A^-1 mod p` recovers every tested `K_lift mod p` coefficient.
 - The componentwise p-to-p² quotient is not a direct lift of `K_lift`: it
-  returns `K_lift+p*J_q`. The medium N=1,024 experiment preserves all p
-  residues and observes `max |J_q|=22` under the public degree bound 513.
+  returns `K_lift+p*J_q`. Medium N=1,024 and native N=16,384 preserve all p
+  residues and observe `max |J_q|=26/116`, under public bounds 513/8,193.
 - A research-only live selector/root test corrects a nonzero `J_q` from the
   same ciphertext's component remainders. At N=4, nine precharged two-trit
   words recover `J_q=1`; the modeled/measured winding errors are 66/65 bits,
@@ -132,49 +152,46 @@ fail-closed until the complete acceptance ladder passes.
 
 ## Gap analysis
 
-The dense virtual clock removes the `3^N` support enumeration for the *first*
-carry readout under the two-prime source test. It does not produce the clean
-high-encoding carry needed by the Q=189-bit pJ lift, and its own 122/126-bit
-p-view noise cannot support a useful returned product. The full-bound pJ
-sister and low-noise p-view `K_lift` are now source-bound, but their direct
-p-to-T quotient adds `p*J_q`. Any purported solution must remove that second
-winding under the same key and history; merely observing a correct plaintext
-is insufficient, as the all-slot square failure demonstrates. The one 2/11
-Safe-Basis root and phase-locked composite sisters remain the intended
-representation. Production remains fail-closed.
+The dense virtual clock removes `3^N` support enumeration for both the first
+carry readout and the live second winding's p-view. The second chart even
+returns under the original secret on two common Q lanes. The remaining
+operation is a low-noise, same-history **common-T signed lift** of `J_q` (or
+`K_lift-J_q`) that corrects `M_pJ*K_lift` without introducing another hidden
+winding. Raw p-to-T quotients produce `K_lift+p*J_q`; the medium returned
+p-view square fails in every slot. A decoded carry is therefore insufficient.
+The one 2/11 Safe-Basis root and phase-locked composite sisters remain the
+intended representation. Production remains fail-closed.
 
 The adjacent p/(p+1) identity is algebraically non-enumerative once its
 phase-locked residue views are available: it determines bounded J by
 K-Elimination, and the quotient Jacobian identifies the nearest-integer cell.
-The native-degree probe verifies those views with a client-side decryption
-observer; it does not emit `Enc(J)` or `Enc(K-J)`. Separately, the live
-small-degree Q-phase normalizer emits the corrected state from the actual
-ciphertext, but does so by enumerating `3^N` candidate secret words. These are
-complementary results, not a scalable encrypted producer. The raw component
-lift alone reproduces `K+pJ`. The inverse-residual formula reduces the
-consumer to one same-history common-T `Enc_T(K-J)` sister view. The same-root
-tray control shows how to emit that view after `(K,J)` already exists: attach
-the arbitrary M sister and project the signed affine sheet directly under T.
-M-only-to-T raw quotients and adjacent Richardson cancellation fail.
+The native-degree adjacent probe verifies those residue views with a client
+observer. The centered chart now emits a scalable encrypted **p-view** of
+`J_q`, but not common-T `Enc_T(J_q)` or `Enc_T(K-J_q)`. The small-degree
+Q-phase normalizer emits the complete corrected state from the actual
+ciphertext only by enumerating `3^N` candidate secret words. The raw
+component lift still reproduces `K+pJ`. The inverse-residual formula reduces
+the consumer to one same-history common-T `Enc_T(K-J)` sister view. The
+same-root tray control shows how to emit that view after `(K,J)` already
+exists: attach the arbitrary M sister and project the signed affine sheet
+directly under T. M-only-to-T raw quotients and adjacent Richardson
+cancellation fail.
 
-The next producer should start from the actual quotient phase
-`q_j=(S_j-R_j)*p^(-1) mod Q`, then realize
-`C_j=round(p^2*q_j/Q)=K_j+p*J_j` as a radix carry transducer. Its encrypted
-state should retain only the current bounded digit carry and the phase-locked
-p and p+1 sister residues. At each digit, combine the three possible ternary
-transitions and merge equal states; do not retain complete secret histories.
-The transducer must preserve the Q-wrap sheet and signed endpoints, keep the
-single 2/11 root, and emit common-T `Enc_T(K-J)` directly. Its state count and
-noise must be certified before key generation; if it still grows
-exponentially, it is not a solution.
+The centered chart proves the Q-wrap `J_q` can be read from the actual live
+ciphertext without a ternary support tree. The high-encoding conversion is
+the next radix carry operation: attach a phase-locked `p+1` sister to the
+single 2/11 root and emit the bounded signed `K_lift-J_q` directly under T.
+It must preserve the Q-wrap sheet and signed endpoints, and its state/noise
+certificate must precede key generation. The N=4/8 selector normalizer
+still enumerates complete secret histories and is not a native solution.
 
 The tuned composite target demonstrates a useful representation choice for
 M=`p+1`: the selector plaintext modulus must exceed the largest tray residue,
 and the output scale must be phase-aligned with that modulus. The exact
 quotient-phase formula and composite tray pass every coefficient at N=4 and
 N=8, including nonzero second windings, and keep the tested K correction
-inside the N=8 modeled noise radius. The central gaps are the scalable
-encrypted producer, alignment with the actual `M_pJ*K_lift` sibling, and
+inside the N=8 modeled noise radius. The central gaps are the common-T
+signed-lift producer, alignment with the actual `M_pJ*K_lift` sibling, and
 native endpoint, independent-key, and production-security bounds. No result
 closes public refresh.
 
@@ -188,22 +205,18 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Use the virtual-clock chart to probe the actual Q=189-bit p-view lift-carry
-   ciphertext. Widen its source-Q and phase-cap arithmetic to U512; test
-   whether the chart's integer carry is the measured second winding `J_q`
-   under the same ciphertext/key history. A mismatch is a counterexample to
-   this route, not a reason to insert an oracle.
-2. If that identity holds, emit the bounded `J_q` or `K_lift-J_q` directly in
-   the common high encoding from the one 2/11 root and its phase-locked
-   sister. Prove the component Q-wrap identity, centered endpoint margins,
-   support-independent runtime, and a noise bound that survives full
-   `M_pJ*K_lift` scaling. Refuse any `3^N` selector or p-to-T quotient that
-   recreates a hidden winding.
+1. Consume the source-bound centered `J_q` chart from the original high key.
+   Build the single-root `p+1` sister so it emits signed `K_lift-J_q` directly
+   in common T; measure exact factor cancellation and refuse any quotient
+   that creates a new winding. Prove the full `M_pJ*K_lift` noise bound and
+   test signed endpoint and wrong-history controls.
+2. Resolve the embedded-key precharge's key-dependent-message assumption or
+   supply a certified independent-key return. Bind source key, RNS level,
+   scale, history, support bound, and noise to a typed producer certificate.
 3. Replace the clear carry correction in the medium and native pJ consumers;
    rerun plaintext, phase error, square, cube, work-key return, second refresh,
-   and repeat-product checks. Bind source key, RNS level, scale, history,
-   carry bound, and noise to the typed producer certificate before Issue #95
-   acceptance and production admission.
+   and repeat-product checks before Issue #95 acceptance and production
+   admission.
 
 Issue #95 remains open and production refresh remains fail-closed. The linked
 scale-Jacobian and ultradiscrete architecture notes contain the derivation and

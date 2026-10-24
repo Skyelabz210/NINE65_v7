@@ -210,6 +210,94 @@ fn phase1_tropical_carry(
     (carry, source - carry * q)
 }
 
+// CLIENT oracle for the Q-wrap of an actual ciphertext. This keeps the full
+// Q=189-bit centered component representatives, including the negacyclic
+// signs, instead of approximating the phase with floating point arithmetic.
+fn exact_source_q_wrap(ctx: &RNSFHEContext, input: &RNSCiphertext, secret: &[i8]) -> Vec<i128> {
+    assert_eq!(secret.len(), ctx.n);
+    let q = U512::product_u64s(&ctx.config.primes);
+    let q_half = q.div_u64(2);
+    let centered = |component: &RNSPolynomial| {
+        let lanes = ordinary(ctx, component);
+        (0..ctx.n)
+            .map(|index| {
+                let residues: Vec<_> = lanes.iter().map(|lane| lane[index]).collect();
+                let canonical = client_crt(ctx, &residues);
+                if words(canonical) > words(q_half) {
+                    (true, q.sub(canonical))
+                } else {
+                    (false, canonical)
+                }
+            })
+            .collect::<Vec<_>>()
+    };
+    let c0 = centered(&input.c0);
+    let c1 = centered(&input.c1);
+    (0..ctx.n)
+        .map(|j| {
+            let (mut positive, mut negative) = (U512::zero(), U512::zero());
+            let (negative_term, magnitude) = c0[j];
+            if negative_term {
+                negative = negative.add(magnitude);
+            } else {
+                positive = positive.add(magnitude);
+            }
+            for (i, &digit) in secret.iter().enumerate() {
+                if digit == 0 {
+                    continue;
+                }
+                let index = (j + ctx.n - i) % ctx.n;
+                let (component_negative, magnitude) = c1[index];
+                let term_negative = component_negative ^ (digit < 0) ^ (i > j);
+                if term_negative {
+                    negative = negative.add(magnitude);
+                } else {
+                    positive = positive.add(magnitude);
+                }
+            }
+            let is_negative = words(negative) > words(positive);
+            let magnitude = if is_negative {
+                negative.sub(positive)
+            } else {
+                positive.sub(negative)
+            };
+            let rounded = floor_ratio(magnitude.add(q_half), q, (ctx.n + 2) as u64) as i128;
+            if is_negative {
+                -rounded
+            } else {
+                rounded
+            }
+        })
+        .collect()
+}
+
+fn preprocess_centered_for_clock(
+    ctx: &RNSFHEContext,
+    component: &RNSPolynomial,
+    coordinate: usize,
+    clock_n: usize,
+) -> Components {
+    assert!(coordinate >= 3 && coordinate % 2 == 1 && clock_n.is_power_of_two());
+    let size = 2 * clock_n as u64;
+    let projection = RoundProjection::new(&ctx.config.primes, size);
+    let center = MainOnlyBaseExt::new(&ctx.config.primes, &[size]).unwrap();
+    let lanes = ordinary(ctx, component);
+    let mut clock = Vec::with_capacity(ctx.n);
+    for j in 0..ctx.n {
+        let residues: Vec<_> = lanes.iter().map(|lane| lane[j]).collect();
+        let mut unused_remainder = [0];
+        let (_, upper) = center
+            .project_centered(&residues, &mut unused_remainder)
+            .unwrap();
+        let fine = projection.round(&residues) as i64 - if upper { size as i64 } else { 0 };
+        clock.push((fine + coordinate as i64 / 2).div_euclid(coordinate as i64));
+    }
+    Components {
+        a: vec![0; ctx.n],
+        clock,
+    }
+}
+
 struct BatchedPhase<'a> {
     source: &'a RNSFHEContext,
     outer: &'a RNSFHEContext,
@@ -229,9 +317,58 @@ struct BatchedPhaseOutput {
     public_polynomial_l1: u128,
 }
 
+fn phase_window2_for_wide_q(
+    clock_n: usize,
+    source_norm: usize,
+    coordinate: usize,
+    cap: U512,
+    q: U512,
+) -> u128 {
+    assert!(words(cap) < words(q));
+    let numerator = cap
+        .mul_u128(4 * clock_n as u128)
+        .add(q.sub(U512::from_u64(1)));
+    floor_ratio(numerator, q, 4 * clock_n as u64) as u128
+        + coordinate as u128 * (source_norm + 1) as u128
+}
+
 impl BatchedPhase<'_> {
     // Evaluator: no source support, phase measurement, clock sheet or key.
     fn apply(&self, input: &RNSCiphertext, input_v: u128) -> BatchedPhaseOutput {
+        self.apply_wide(
+            input,
+            U512::from_u128(input_v),
+            U512::from_u128(self.phase_cap),
+        )
+    }
+
+    // The same public producer with a Q=189-bit source and wide certified
+    // input cap. The output chart still fits a two-prime u128 outer Q.
+    fn apply_wide(
+        &self,
+        input: &RNSCiphertext,
+        input_v: U512,
+        phase_cap: U512,
+    ) -> BatchedPhaseOutput {
+        self.apply_wide_with_mode(input, input_v, phase_cap, false)
+    }
+
+    fn apply_centered_wide(
+        &self,
+        input: &RNSCiphertext,
+        centered_phase_bound: U512,
+        phase_cap: U512,
+    ) -> BatchedPhaseOutput {
+        self.apply_wide_with_mode(input, centered_phase_bound, phase_cap, true)
+    }
+
+    fn apply_wide_with_mode(
+        &self,
+        input: &RNSCiphertext,
+        input_v: U512,
+        phase_cap: U512,
+        centered: bool,
+    ) -> BatchedPhaseOutput {
         assert_eq!(self.outer.n, 2 * self.source.n);
         // The bounded integer chart can target an independent tray modulus.
         // Consumers that rely on a particular scale ratio must certify that
@@ -241,25 +378,26 @@ impl BatchedPhase<'_> {
             self.encrypted_source.num_primes,
             self.outer.config.primes.len()
         );
-        assert!(self.source_norm <= self.source.n && input_v <= self.phase_cap);
-        let q: u128 = self
-            .source
-            .config
-            .primes
-            .iter()
-            .map(|&q| q as u128)
-            .product();
+        assert!(self.source_norm <= self.source.n && words(input_v) <= words(phase_cap));
+        let q = U512::product_u64s(&self.source.config.primes);
         assert!(
-            phase_window2_for_q(
+            phase_window2_for_wide_q(
                 self.clock_n,
                 self.source_norm,
                 self.coordinate,
-                self.phase_cap,
+                phase_cap,
                 q
             ) < self.clock_n as u128
         );
-        let public0 = preprocess_for_clock(self.source, &input.c0, self.coordinate, self.clock_n);
-        let public1 = preprocess_for_clock(self.source, &input.c1, self.coordinate, self.clock_n);
+        let preprocess = |component: &RNSPolynomial| {
+            if centered {
+                preprocess_centered_for_clock(self.source, component, self.coordinate, self.clock_n)
+            } else {
+                preprocess_for_clock(self.source, component, self.coordinate, self.clock_n)
+            }
+        };
+        let public0 = preprocess(&input.c0);
+        let public1 = preprocess(&input.c1);
         let maximum = public0
             .clock
             .iter()
@@ -1241,6 +1379,8 @@ const FULL_BOUND_PJ_PRIMES: [u64; 3] = [
     9_223_372_036_853_235_713,
     9_223_372_036_852_744_193,
 ];
+// These two existing high lanes also admit the doubled native ring.
+const SECOND_WINDING_OUTER_PRIMES: [u64; 2] = [FULL_BOUND_PJ_PRIMES[0], FULL_BOUND_PJ_PRIMES[2]];
 
 fn observe_polynomial_wide(
     ctx: &RNSFHEContext,
@@ -2475,6 +2615,7 @@ fn check_scale_jacobian_lift_with(
                     let lifted_lift_carry_plain =
                         decrypt_coefficients(&high, &lifted_lift_carry_high, &high_keys);
                     let mut max_quotient_winding = 0u64;
+                    let mut quotient_windings = Vec::with_capacity(high.n);
                     for (&actual, &expected) in lifted_lift_carry_plain
                         .iter()
                         .zip(&expected_lift_carry_high)
@@ -2490,6 +2631,7 @@ fn check_scale_jacobian_lift_with(
                         let winding = centered / PHASE_P as i128;
                         max_quotient_winding =
                             max_quotient_winding.max(winding.unsigned_abs() as u64);
+                        quotient_windings.push(winding);
                     }
                     assert!(max_quotient_winding <= (high.n / 2 + 1) as u64);
                     assert!(lifted_lift_carry_plain
@@ -2503,6 +2645,416 @@ fn check_scale_jacobian_lift_with(
                         max_quotient_winding,
                         high.n / 2 + 1,
                     );
+                    if n <= 512 {
+                        let first_lane = ordinary(&common_p, &high_keys.secret_key.s)
+                            .into_iter()
+                            .next()
+                            .unwrap();
+                        let prime = common_p.config.primes[0];
+                        let high_secret: Vec<i8> = first_lane
+                            .into_iter()
+                            .map(|digit| match digit {
+                                0 => 0,
+                                1 => 1,
+                                value if value == prime - 1 => -1,
+                                _ => panic!("unexpected high-key secret coefficient"),
+                            })
+                            .collect();
+                        let q_wrap =
+                            exact_source_q_wrap(&common_p, &encrypted_lift_carry_p, &high_secret);
+                        let q_wrap_mismatches = q_wrap
+                            .iter()
+                            .zip(&quotient_windings)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        eprintln!(
+                            "second-winding Q-wrap oracle: exact centered Q source wrap differs from J_q in {q_wrap_mismatches}/{} coefficients; high-key support={} of {}",
+                            high.n,
+                            high_secret.iter().filter(|&&digit| digit != 0).count(),
+                            high.n,
+                        );
+                        assert_eq!(q_wrap_mismatches, 0);
+
+                        let clock_n = 1usize << 18;
+                        let chart_t = PHASE_P * (2 * clock_n as u64 + 1);
+                        let mut chart_config = high.config.clone();
+                        chart_config.n = 2 * high.n;
+                        chart_config.t = chart_t;
+                        chart_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
+                        chart_config.name = "UNADMITTED Q189 second-winding chart";
+                        let chart_context = RNSFHEContext::try_new(&chart_config).unwrap();
+                        let mut embedded_secret = vec![0i8; chart_context.n];
+                        for (j, &digit) in high_secret.iter().enumerate() {
+                            embedded_secret[2 * j] = digit;
+                        }
+                        let chart_keys =
+                            sparse_keys(&chart_context, &embedded_secret, &mut rng_for_view);
+                        let encrypted_high_secret = encrypt_polynomial(
+                            &chart_context,
+                            &chart_keys,
+                            &embedded(
+                                &high_secret
+                                    .iter()
+                                    .map(|&digit| (digit as i64).rem_euclid(chart_t as i64) as u64)
+                                    .collect::<Vec<_>>(),
+                            ),
+                            &mut rng_for_view,
+                        );
+                        let chart_q = U512::product_u64s(&chart_context.config.primes);
+                        let chart_precharge_v = chart_t as u128
+                            * (2 * chart_context.n + 1) as u128
+                            * chart_context.config.eta as u128
+                            + chart_q.mod_u64(chart_t) as u128 * (chart_t - 1) as u128;
+                        let producer = BatchedPhase {
+                            source: &common_p,
+                            outer: &chart_context,
+                            clock_n,
+                            encrypted_source: encrypted_high_secret,
+                            precharge_v: chart_precharge_v,
+                            source_norm: high.n,
+                            coordinate: 99,
+                            phase_cap: 0, // The centered wide producer supplies its cap explicitly.
+                        };
+                        let carry_error_cap = high_q.div_u64(16);
+                        assert!(words(carry_p_error) <= words(carry_error_cap));
+                        let centered_phase_bound = high_q
+                            .div_u64(PHASE_P)
+                            .mul_u128((high.n / 2 + 1) as u128)
+                            .add(carry_error_cap);
+                        let chart_cap = high_q.div_u64(8);
+                        assert!(words(centered_phase_bound) < words(chart_cap));
+                        let chart = producer.apply_centered_wide(
+                            &encrypted_lift_carry_p,
+                            centered_phase_bound,
+                            chart_cap,
+                        );
+                        let public0 = preprocess_centered_for_clock(
+                            &common_p,
+                            &encrypted_lift_carry_p.c0,
+                            99,
+                            clock_n,
+                        );
+                        let public1 = preprocess_centered_for_clock(
+                            &common_p,
+                            &encrypted_lift_carry_p.c1,
+                            99,
+                            clock_n,
+                        );
+                        let coarse0 = preprocess_for_clock(
+                            &common_p,
+                            &encrypted_lift_carry_p.c0,
+                            99,
+                            clock_n,
+                        );
+                        let coarse1 = preprocess_for_clock(
+                            &common_p,
+                            &encrypted_lift_carry_p.c1,
+                            99,
+                            clock_n,
+                        );
+                        let mut expected_chart = vec![0; chart_context.n];
+                        let mut expected_winding = vec![0; chart_context.n];
+                        let mut clear_chart_mismatches = 0usize;
+                        let mut coarse_chart_mismatches = 0usize;
+                        let mut max_chart_residual = 0u128;
+                        for j in 0..high.n {
+                            let mut z = public0.clock[j] as i128;
+                            let mut coarse_z = coarse0.clock[j] as i128;
+                            for (i, &digit) in high_secret.iter().enumerate() {
+                                let index = (j + high.n - i) % high.n;
+                                let sign = if i > j { -1i128 } else { 1i128 };
+                                z += sign * digit as i128 * public1.clock[index] as i128;
+                                coarse_z += sign * digit as i128 * coarse1.clock[index] as i128;
+                            }
+                            let winding =
+                                (99 * z + clock_n as i128).div_euclid((2 * clock_n) as i128);
+                            let coarse_winding =
+                                (99 * coarse_z + clock_n as i128).div_euclid((2 * clock_n) as i128);
+                            clear_chart_mismatches += usize::from(winding != q_wrap[j]);
+                            coarse_chart_mismatches += usize::from(coarse_winding != q_wrap[j]);
+                            max_chart_residual = max_chart_residual.max(
+                                (99 * z - (2 * clock_n as i128 + 1) * q_wrap[j]).unsigned_abs(),
+                            );
+                            expected_chart[2 * j] = z.rem_euclid(chart_t as i128) as u64;
+                            expected_winding[2 * j] = q_wrap[j].rem_euclid(PHASE_P as i128) as u64;
+                        }
+                        assert_eq!(clear_chart_mismatches, 0);
+                        assert!(coarse_chart_mismatches > 0);
+                        let chart_observed = observe_polynomial(
+                            &chart_context,
+                            &chart.ciphertext,
+                            &chart_keys,
+                            &expected_chart,
+                        );
+                        assert!(chart_observed <= chart.bound);
+                        let scaled = signed_scale(&chart_context, &chart.ciphertext, 99);
+                        let scaled_bound = chart.bound * 99;
+                        let scaled_admitted =
+                            words(U512::from_u128(scaled_bound).mul_u128(2)) < words(chart_q);
+                        let chart_reader_config = nine65::params::FHEConfig {
+                            t: PHASE_P,
+                            ..chart_context.config.clone()
+                        };
+                        let chart_reader = RNSFHEContext::try_new(&chart_reader_config).unwrap();
+                        let decoded_winding =
+                            decrypt_coefficients(&chart_reader, &scaled, &chart_keys);
+                        let winding_mismatches = decoded_winding
+                            .iter()
+                            .zip(&expected_winding)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        eprintln!(
+                            "live Q189 tropical second-winding chart: centered 99-clock/J_q mismatches={clear_chart_mismatches}/{}, coarse-control mismatches={coarse_chart_mismatches}/{}, encrypted p-view mismatches={winding_mismatches}/{}, outer Q={} bits, chart V observed/bound={}/{}, scaled bound admitted={scaled_admitted}, max |99Z-AJ_q|={max_chart_residual}, source H public bound={}",
+                            high.n,
+                            high.n,
+                            chart_context.n,
+                            bits_u512(chart_q),
+                            bits(chart_observed),
+                            bits(chart.bound),
+                            high.n,
+                        );
+                        if scaled_admitted {
+                            assert_eq!(winding_mismatches, 0);
+                        }
+                        let mut returned_config = common_p.config.clone();
+                        returned_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
+                        returned_config.name = "UNADMITTED same-key Q126 winding return";
+                        let returned_context = RNSFHEContext::try_new(&returned_config).unwrap();
+                        let returned_keys =
+                            sparse_keys(&returned_context, &high_secret, &mut rng_for_view);
+                        let even = |poly: &RNSPolynomial| RNSPolynomial {
+                            n: returned_context.n,
+                            limbs: poly
+                                .limbs
+                                .iter()
+                                .map(|lane| lane.iter().step_by(2).copied().collect())
+                                .collect(),
+                        };
+                        let returned = RNSCiphertext {
+                            c0: even(&scaled.c0),
+                            c1: even(&scaled.c1),
+                            num_primes: SECOND_WINDING_OUTER_PRIMES.len(),
+                        };
+                        let expected_returned: Vec<_> = q_wrap
+                            .iter()
+                            .map(|&winding| winding.rem_euclid(PHASE_P as i128) as u64)
+                            .collect();
+                        let returned_mismatches =
+                            decrypt_coefficients(&returned_context, &returned, &returned_keys)
+                                .iter()
+                                .zip(&expected_returned)
+                                .filter(|(actual, expected)| actual != expected)
+                                .count();
+                        eprintln!(
+                            "same-key even ring return of J_q: mismatches={returned_mismatches}/{}, original high secret retained on two common Q lanes; high-T encoding still open",
+                            high.n,
+                        );
+                        assert_eq!(returned_mismatches, 0);
+                        assert!(expected_returned.iter().any(|&winding| winding != 0));
+                        let returned_observed = observe_polynomial(
+                            &returned_context,
+                            &returned,
+                            &returned_keys,
+                            &expected_returned,
+                        );
+                        let exact_returned = returned_context.try_exact_evaluator().unwrap();
+                        let returned_relin = exact_returned.generate_hybrid_gadget_key_with_rng(
+                            &returned_keys.secret_key,
+                            &mut rng_for_view,
+                        );
+                        let returned_square_result =
+                            exact_returned.try_mul_exact(&returned, &returned, &returned_relin);
+                        let returned_square_status = match returned_square_result {
+                            Ok(returned_square) => {
+                                let expected_returned_square =
+                                    square_plain(&expected_returned, PHASE_P);
+                                let returned_square_plain = decrypt_coefficients(
+                                    &returned_context,
+                                    &returned_square,
+                                    &returned_keys,
+                                );
+                                let mismatches = returned_square_plain
+                                    .iter()
+                                    .zip(&expected_returned_square)
+                                    .filter(|(actual, expected)| actual != expected)
+                                    .count();
+                                format!("{mismatches}/{} mismatches", high.n)
+                            }
+                            Err(error) => format!("refused: {error}"),
+                        };
+                        eprintln!(
+                            "same-key winding follow-up: returned p-view V={} bits against Q={} bits; first dependent square {returned_square_status}",
+                            bits(returned_observed),
+                            bits(U512::product_u64s(&returned_context.config.primes).d0),
+                        );
+                    }
+                    if n == 8192 {
+                        let first_lane = ordinary(&common_p, &high_keys.secret_key.s)
+                            .into_iter()
+                            .next()
+                            .unwrap();
+                        let prime = common_p.config.primes[0];
+                        let high_secret: Vec<i8> = first_lane
+                            .into_iter()
+                            .map(|digit| match digit {
+                                0 => 0,
+                                1 => 1,
+                                value if value == prime - 1 => -1,
+                                _ => panic!("unexpected native high-key secret coefficient"),
+                            })
+                            .collect();
+                        let clock_n = 1usize << 24;
+                        let chart_t = PHASE_P * (2 * clock_n as u64 + 1);
+                        let screened = SecureConfig::custom_screened(
+                            2 * high.n,
+                            SECOND_WINDING_OUTER_PRIMES.to_vec(),
+                            chart_t,
+                            high.config.eta,
+                            128,
+                        )
+                        .expect("native Q189 second-winding chart must clear the security screen");
+                        assert!(screened.is_production_safe_under_all_models());
+                        let effective_secret_screen = SecureConfig::custom_screened(
+                            high.n,
+                            SECOND_WINDING_OUTER_PRIMES.to_vec(),
+                            chart_t,
+                            high.config.eta,
+                            128,
+                        )
+                        .expect("embedded high key must also clear the source-dimension screen");
+                        assert!(effective_secret_screen.is_production_safe_under_all_models());
+                        let mut chart_config = screened.into_config();
+                        chart_config.name = "UNADMITTED native Q189 second-winding chart";
+                        let chart_context = RNSFHEContext::try_new(&chart_config).unwrap();
+                        let mut embedded_secret = vec![0i8; chart_context.n];
+                        for (j, &digit) in high_secret.iter().enumerate() {
+                            embedded_secret[2 * j] = digit;
+                        }
+                        let chart_keys =
+                            sparse_keys(&chart_context, &embedded_secret, &mut rng_for_view);
+                        let encrypted_high_secret = encrypt_polynomial(
+                            &chart_context,
+                            &chart_keys,
+                            &embedded(
+                                &high_secret
+                                    .iter()
+                                    .map(|&digit| (digit as i64).rem_euclid(chart_t as i64) as u64)
+                                    .collect::<Vec<_>>(),
+                            ),
+                            &mut rng_for_view,
+                        );
+                        let chart_q = U512::product_u64s(&chart_context.config.primes);
+                        let chart_precharge_v = chart_t as u128
+                            * (2 * chart_context.n + 1) as u128
+                            * chart_context.config.eta as u128
+                            + chart_q.mod_u64(chart_t) as u128 * (chart_t - 1) as u128;
+                        let producer = BatchedPhase {
+                            source: &common_p,
+                            outer: &chart_context,
+                            clock_n,
+                            encrypted_source: encrypted_high_secret,
+                            precharge_v: chart_precharge_v,
+                            source_norm: high.n,
+                            coordinate: 99,
+                            phase_cap: 0,
+                        };
+                        let carry_error_cap = high_q.div_u64(16);
+                        assert!(words(carry_p_error) <= words(carry_error_cap));
+                        let centered_phase_bound = high_q
+                            .div_u64(PHASE_P)
+                            .mul_u128((high.n / 2 + 1) as u128)
+                            .add(carry_error_cap);
+                        let chart_cap = high_q.div_u64(5);
+                        assert!(words(centered_phase_bound) < words(chart_cap));
+                        let chart = producer.apply_centered_wide(
+                            &encrypted_lift_carry_p,
+                            centered_phase_bound,
+                            chart_cap,
+                        );
+                        let scaled = signed_scale(&chart_context, &chart.ciphertext, 99);
+                        let scaled_bound = chart.bound * 99;
+                        let scaled_admitted =
+                            words(U512::from_u128(scaled_bound).mul_u128(2)) < words(chart_q);
+                        let reader_config = nine65::params::FHEConfig {
+                            t: PHASE_P,
+                            ..chart_context.config.clone()
+                        };
+                        let reader = RNSFHEContext::try_new(&reader_config).unwrap();
+                        let mut expected_winding = vec![0; chart_context.n];
+                        for (j, &winding) in quotient_windings.iter().enumerate() {
+                            expected_winding[2 * j] = winding.rem_euclid(PHASE_P as i128) as u64;
+                        }
+                        let decoded_winding = decrypt_coefficients(&reader, &scaled, &chart_keys);
+                        let winding_mismatches = decoded_winding
+                            .iter()
+                            .zip(&expected_winding)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        let observed_bits = if winding_mismatches == 0 {
+                            Some(bits(observe_polynomial(
+                                &reader,
+                                &scaled,
+                                &chart_keys,
+                                &expected_winding,
+                            )))
+                        } else {
+                            None
+                        };
+                        eprintln!(
+                            "native Q189 tropical second-winding chart: sourceN{}, outerN{}, clock={clock_n}, screened 128-bit tuple, ciphertext p-view/J_q mismatches={winding_mismatches}/{}, outer Q={} bits, p-view V observed bits={observed_bits:?}, scaled bound bits={}, admitted={scaled_admitted}; work-key and common-T return remain open",
+                            high.n,
+                            chart_context.n,
+                            chart_context.n,
+                            bits_u512(chart_q),
+                            bits(scaled_bound),
+                        );
+                        assert!(scaled_admitted);
+                        assert_eq!(winding_mismatches, 0);
+                        let mut returned_config = common_p.config.clone();
+                        returned_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
+                        returned_config.name = "UNADMITTED native same-key winding return";
+                        let returned_context = RNSFHEContext::try_new(&returned_config).unwrap();
+                        let returned_keys =
+                            sparse_keys(&returned_context, &high_secret, &mut rng_for_view);
+                        let even = |poly: &RNSPolynomial| RNSPolynomial {
+                            n: returned_context.n,
+                            limbs: poly
+                                .limbs
+                                .iter()
+                                .map(|lane| lane.iter().step_by(2).copied().collect())
+                                .collect(),
+                        };
+                        let returned = RNSCiphertext {
+                            c0: even(&scaled.c0),
+                            c1: even(&scaled.c1),
+                            num_primes: SECOND_WINDING_OUTER_PRIMES.len(),
+                        };
+                        let expected_returned: Vec<_> = quotient_windings
+                            .iter()
+                            .map(|&winding| winding.rem_euclid(PHASE_P as i128) as u64)
+                            .collect();
+                        let returned_mismatches =
+                            decrypt_coefficients(&returned_context, &returned, &returned_keys)
+                                .iter()
+                                .zip(&expected_returned)
+                                .filter(|(actual, expected)| actual != expected)
+                                .count();
+                        let returned_observed_bits = if returned_mismatches == 0 {
+                            Some(bits(observe_polynomial(
+                                &returned_context,
+                                &returned,
+                                &returned_keys,
+                                &expected_returned,
+                            )))
+                        } else {
+                            None
+                        };
+                        eprintln!(
+                            "native same-key even ring return of J_q: mismatches={returned_mismatches}/{}, p-view V bits={returned_observed_bits:?}, two common Q lanes; high-T encoding still open",
+                            high.n,
+                        );
+                        assert_eq!(returned_mismatches, 0);
+                    }
                     // Oracle control preserves the prior successful pJ
                     // consumer result and isolates the missing encrypted
                     // correction: replacing Enc_MpJ(e+B) by a fresh public

@@ -1597,8 +1597,8 @@ impl DualRNSContext {
     /// > 2×10^9 (above max rescaled coefficient ~1.3×10^9).
     pub fn canonical_anchor_primes_for_n(n: usize) -> Vec<u64> {
         // NTT-compatible anchor primes for Q²×N capacity (ct×ct multiplication)
-        // All satisfy: (p-1) % 2n == 0 for NTT compatibility (2^15 | p-1, so
-        // every supported ring dimension up to n = 16384 is covered)
+        // All satisfy: (p-1) % 2n == 0 for NTT compatibility. The base list
+        // covers n <= 16384; the n = 32768 branch substitutes 2^16 lanes.
         // All > 2×10^9 (above max rescaled coefficient ~1.3×10^9)
         //
         // n <= 8192 (secure_128, secure_128_deep, hardware_opt): 7 primes,
@@ -1673,7 +1673,19 @@ impl DualRNSContext {
             3221422081, // EXPERIMENT: 7th anchor test
             3222306817, // EXPERIMENT: 7th anchor test
         ];
-        if n >= 16384 {
+        if n == 32768 {
+            // The doubled native chart needs 2^16 | (p-1). Keep the six
+            // compatible anchors above and replace the four 2^15-only lanes
+            // with independently prime-tested 2^16 lanes. The first three
+            // still exceed max(main q) * n for the 63-bit chart primes.
+            primes.truncate(6);
+            primes.extend_from_slice(&[
+                3223453697, // 49186 × 2^16 + 1
+                3224371201, // 49200 × 2^16 + 1
+                3225026561, // 49210 × 2^16 + 1
+                3225747457, // 49221 × 2^16 + 1
+            ]);
+        } else if n >= 16384 {
             primes.extend_from_slice(&[
                 3222372353, // 98339 × 2^15 + 1 (~32 bits)
                 3222568961, // 98345 × 2^15 + 1 (~32 bits)
@@ -1693,8 +1705,8 @@ impl DualRNSContext {
     /// `extract_k_rns_level` so an over-capacity k fails loudly instead of
     /// silently wrapping.
     ///
-    /// For 5-anchor bases (n <= 8192) this returns 5: reconstruction uses
-    /// the full basis exactly as before, and no witness check runs.
+    /// Seven-anchor bases (n <= 8192) use every anchor for reconstruction;
+    /// ten-anchor bases use the first eight and check the remaining witnesses.
     pub(crate) fn k_reconstruction_anchor_count(&self) -> usize {
         const K_RECONSTRUCTION_MAX_ANCHORS: usize = 8;
         self.anchor.primes.len().min(K_RECONSTRUCTION_MAX_ANCHORS)
@@ -1703,8 +1715,8 @@ impl DualRNSContext {
     /// Create optimized dual-RNS for FHE with full ct×ct capacity
     ///
     /// Uses NTT-compatible anchor primes selected by ring dimension
-    /// (see `canonical_anchor_primes_for_n`): 5 primes (A ≈ 157 bits) for
-    /// n <= 8192, 10 primes (A ≈ 315 bits) for n = 16384, sufficient for
+    /// (see `canonical_anchor_primes_for_n`): 7 primes (A ≈ 220 bits) for
+    /// n <= 8192, 10 primes (A ≈ 315 bits) for n = 16384 and 32768, sufficient for
     /// ct×ct tensor products at every secure tier including secure_256
     /// (N×Q² ≈ 364 bits < M×A ≈ 490 bits, 74% utilization).
     ///
@@ -2879,6 +2891,16 @@ mod tests {
 
     // For basic RNS integer tests, we don't need NTT.
     // Create a simpler context that skips NTT for non-polynomial tests.
+
+    #[test]
+    fn doubled_native_fhe_anchor_basis_constructs_with_63_bit_main_lanes() {
+        let main = [9_223_372_036_853_661_697, 9_223_372_036_852_744_193];
+        let dual = DualRNSContext::for_fhe(&main, 32_768);
+        assert_eq!(dual.anchor.primes.len(), 10);
+        assert!(dual.anchor.primes.iter().all(|&q| (q - 1) % 65_536 == 0));
+        let first_three: u128 = dual.anchor.primes[..3].iter().map(|&q| q as u128).product();
+        assert!(first_three > main[0] as u128 * 32_768);
+    }
 
     #[test]
     fn test_rns_roundtrip() {
