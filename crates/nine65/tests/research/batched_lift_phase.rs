@@ -68,6 +68,73 @@ fn signed_scale(ctx: &RNSFHEContext, input: &RNSCiphertext, factor: i64) -> RNSC
     }
 }
 
+// K-Elimination quotient of each centered ciphertext-component coefficient.
+// MainOnlyBaseExt supplies x mod d and the centered-Q decision. For every
+// main lane q_i, (x_i-r)*d^-1 mod q_i is the exact residue of (x-r)/d.
+fn exact_centered_quotient(
+    ctx: &RNSFHEContext,
+    input: &RNSCiphertext,
+    divisor: u64,
+) -> RNSCiphertext {
+    assert_eq!(input.num_primes, ctx.config.primes.len());
+    let projector = MainOnlyBaseExt::new(&ctx.config.primes, &[divisor]).unwrap();
+    let divide = |poly: &RNSPolynomial| {
+        let source = ordinary(ctx, poly);
+        let inverses: Vec<_> = ctx
+            .config
+            .primes
+            .iter()
+            .map(|&q| inverse(divisor % q, q))
+            .collect();
+        let mut output = vec![vec![0; ctx.n]; ctx.config.primes.len()];
+        for coefficient in 0..ctx.n {
+            let residues: Vec<_> = source.iter().map(|lane| lane[coefficient]).collect();
+            let mut remainder = [0];
+            let _ = projector
+                .project_centered(&residues, &mut remainder)
+                .unwrap();
+            let centered_remainder = if remainder[0] > divisor / 2 {
+                remainder[0] as i128 - divisor as i128
+            } else {
+                remainder[0] as i128
+            };
+            for (lane, (&q, &inv)) in ctx
+                .config
+                .primes
+                .iter()
+                .zip(&inverses)
+                .enumerate()
+            {
+                let numerator = (residues[lane] as i128 - centered_remainder)
+                    .rem_euclid(q as i128) as u128;
+                output[lane][coefficient] =
+                    (numerator * inv as u128 % q as u128) as u64;
+            }
+        }
+        montgomery(ctx, output)
+    };
+    RNSCiphertext {
+        c0: divide(&input.c0),
+        c1: divide(&input.c1),
+        num_primes: input.num_primes,
+    }
+}
+
+fn negacyclic_plain_multiply(left: &[u64], right: &[u64], modulus: u64) -> Vec<u64> {
+    assert_eq!(left.len(), right.len());
+    let n = left.len();
+    let mut out = vec![0i128; n];
+    for (i, &a) in left.iter().enumerate() {
+        for (j, &b) in right.iter().enumerate() {
+            let sign = if i + j < n { 1 } else { -1 };
+            out[(i + j) % n] += sign * a as i128 * b as i128;
+        }
+    }
+    out.into_iter()
+        .map(|value| value.rem_euclid(modulus as i128) as u64)
+        .collect()
+}
+
 fn add_mod_u128(left: u128, right: u128, modulus: u128) -> u128 {
     debug_assert!(left < modulus && right < modulus);
     if left >= modulus - right {
@@ -1126,6 +1193,18 @@ const P_LOCKED_JACOBIAN_PRIMES: [u64; 4] = [
     35_184_370_352_129,
     35_184_370_155_521,
 ];
+// Wider output lanes let the p-locked finite-difference step grow while
+// keeping T=p*L below every lane. This is a native-ring budget candidate;
+// it is not admitted until the same tuple passes the production screen.
+const WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY: u64 = PHASE_P + 1;
+const WIDE_P_LOCKED_JACOBIAN_STEP: u64 =
+    PHASE_P * 211 * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+const WIDE_P_LOCKED_JACOBIAN_SCALE_T: u64 = PHASE_P * WIDE_P_LOCKED_JACOBIAN_STEP;
+const WIDE_P_LOCKED_JACOBIAN_PRIMES: [u64; 3] = [
+    288_230_376_152_137_729,
+    288_230_376_152_727_553,
+    288_230_376_154_267_649,
+];
 
 fn observe_polynomial_wide(
     ctx: &RNSFHEContext,
@@ -1194,10 +1273,12 @@ fn residual_scale_weights(ctx: &RNSFHEContext, component: &RNSPolynomial, scale:
         .collect()
 }
 
-fn differential_precharge_bound(ctx: &RNSFHEContext) -> u128 {
+fn differential_precharge_bound(ctx: &RNSFHEContext) -> U512 {
     let q = U512::product_u64s(&ctx.config.primes);
-    ctx.t as u128 * (2 * ctx.n as u128 + 1) * ctx.config.eta as u128
-        + q.mod_u64(ctx.t) as u128 * (ctx.t as u128 - 1)
+    U512::from_u128(
+        ctx.t as u128 * (2 * ctx.n as u128 + 1) * ctx.config.eta as u128
+            + q.mod_u64(ctx.t) as u128 * (ctx.t as u128 - 1),
+    )
 }
 
 fn build_differential_view(
@@ -1207,7 +1288,7 @@ fn build_differential_view(
     constant_weights: &[i64],
     source_weights: &[i64],
     rng: &mut ShadowHarvester,
-) -> (RNSCiphertext, u128, RNSCiphertext) {
+) -> (RNSCiphertext, U512, RNSCiphertext) {
     assert_eq!(ctx.n, 2 * trits.len());
     assert_eq!(constant_weights.len(), trits.len());
     assert_eq!(source_weights.len(), trits.len());
@@ -1237,11 +1318,14 @@ fn build_differential_view(
     );
     let source_l1 = b1.iter().map(|x| x.unsigned_abs() as u128).sum::<u128>();
     let constant_max = b0.iter().map(|x| x.unsigned_abs() as u128).max().unwrap_or(0);
-    let bound = differential_precharge_bound(ctx) * source_l1
-        + U512::product_u64s(&ctx.config.primes).mod_u64(ctx.t) as u128 * constant_max;
+    let bound = differential_precharge_bound(ctx)
+        .mul_u128(source_l1)
+        .add(
+            U512::from_u64(U512::product_u64s(&ctx.config.primes).mod_u64(ctx.t))
+                .mul_u128(constant_max),
+        );
     assert!(
-        words(U512::from_u128(bound).mul_u128(2))
-            < words(U512::product_u64s(&ctx.config.primes)),
+        words(bound.mul_u128(2)) < words(U512::product_u64s(&ctx.config.primes)),
         "scale-Jacobian producer must preflight its full public error bound"
     );
     (ciphertext, bound, encrypted_source)
@@ -1268,6 +1352,7 @@ fn check_scale_jacobian_lift(n: usize, weight: usize, phase_denominator: u128) {
         JACOBIAN_ODD_TRAY,
         JACOBIAN_SCALE_T,
         &COMPOSITE_CHART_PRIMES,
+        n <= 512,
     );
 }
 
@@ -1280,6 +1365,7 @@ fn check_p_locked_scale_jacobian_lift(n: usize, weight: usize, phase_denominator
         P_LOCKED_JACOBIAN_STEP,
         P_LOCKED_JACOBIAN_SCALE_T,
         &P_LOCKED_JACOBIAN_PRIMES,
+        n <= 512,
     );
 }
 
@@ -1291,6 +1377,7 @@ fn check_scale_jacobian_lift_with(
     odd_tray_modulus: u64,
     scale_t: u64,
     outer_primes: &[u64],
+    check_dependent_product: bool,
 ) {
     assert_eq!(step % odd_tray_modulus, 0);
     assert_eq!(scale_t, PHASE_P * step);
@@ -1316,6 +1403,7 @@ fn check_scale_jacobian_lift_with(
     };
     let common_p = context_for(PHASE_P);
     let odd_tray = context_for(odd_tray_modulus);
+    let winding_tray = context_for(PHASE_P * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY);
     let source_q = source.config.primes.iter().map(|&q| q as u128).product::<u128>();
     let mut rng = ShadowHarvester::with_seed(0x4a41_434f_4249_414e + n as u64);
     let trits = balanced_source(n, weight, &mut rng);
@@ -1424,16 +1512,19 @@ fn check_scale_jacobian_lift_with(
     let high_expected = as_plain(scale_t);
     let p_expected = as_plain(PHASE_P);
     let odd_expected = as_plain(odd_tray_modulus);
-    assert!(observe_polynomial(&high, &high_delta, &high_keys, &high_expected) <= high_bound);
-    assert!(observe_polynomial(&common_p, &p_delta, &high_keys, &p_expected) <= p_bound);
-    assert!(observe_polynomial(&odd_tray, &odd_delta, &high_keys, &odd_expected) <= odd_bound);
+    assert!(words(observe_polynomial_wide(&high, &high_delta, &high_keys, &high_expected))
+        <= words(high_bound));
+    assert!(words(observe_polynomial_wide(&common_p, &p_delta, &high_keys, &p_expected))
+        <= words(p_bound));
+    assert!(words(observe_polynomial_wide(&odd_tray, &odd_delta, &high_keys, &odd_expected))
+        <= words(odd_bound));
 
     // The same T=p*L ciphertext yields K on the p view. Its error certificate
     // retains the residual term; this is only a correctness reference.
     let q_outer = U512::product_u64s(&high.config.primes);
     let carry_bound = q_outer
         .mul_u128(residual_bound as u128)
-        .add(U512::from_u128(high_bound))
+        .add(high_bound)
         .add(U512::from_u64(step - 1))
         .div_u64(step);
     assert!(words(carry_bound.mul_u128(2)) < words(q_outer));
@@ -1474,8 +1565,9 @@ fn check_scale_jacobian_lift_with(
         // ciphertext by L before the p view yields Delta mod p=e because
         // L=0 mod p. The residual is never supplied by a client.
         let same_history_e = signed_scale(&high, &high_delta, step as i64);
-        let e_observed = observe_polynomial(&common_p, &same_history_e, &high_keys, &e_plain);
-        assert!(e_observed <= high_bound);
+        let e_observed =
+            observe_polynomial_wide(&common_p, &same_history_e, &high_keys, &e_plain);
+        assert!(words(e_observed) <= words(high_bound));
         (high_delta.clone(), carry_bound, Some(e_observed))
     } else {
         // Diagnostic fallback for an invertible step: the previous
@@ -1492,15 +1584,16 @@ fn check_scale_jacobian_lift_with(
             inverse_step as i64
         };
         delta_minus_e = signed_scale(&common_p, &delta_minus_e, inverse_step_centered);
-        let k_bound = (p_bound + e_oracle_bound)
-            * inverse_step_centered.unsigned_abs() as u128;
+        let k_bound = p_bound
+            .add(e_oracle_bound)
+            .mul_u128(inverse_step_centered.unsigned_abs() as u128);
         assert!(
-            words(U512::from_u128(k_bound).mul_u128(2)) < words(q_outer),
+            words(k_bound.mul_u128(2)) < words(q_outer),
             "K-Elimination consumer must preflight inverse-step noise amplification"
         );
-        let k_observed = observe_polynomial(&common_p, &delta_minus_e, &high_keys, &expected_k);
-        assert!(k_observed <= k_bound);
-        (delta_minus_e, U512::from_u128(k_bound), None)
+        let k_observed = observe_polynomial_wide(&common_p, &delta_minus_e, &high_keys, &expected_k);
+        assert!(words(k_observed) <= words(k_bound));
+        (delta_minus_e, k_bound, None)
     };
 
     // The resulting carry corrects the actual affine Phase 1 term. This
@@ -1531,14 +1624,20 @@ fn check_scale_jacobian_lift_with(
         .map(|x| x.unsigned_abs() as u128)
         .max()
         .unwrap_or(0);
-    let affine_bound = differential_precharge_bound(&common_p) * affine_l1
-        + U512::product_u64s(&common_p.config.primes).mod_u64(PHASE_P) as u128 * affine_max;
+    let affine_bound = differential_precharge_bound(&common_p)
+        .mul_u128(affine_l1)
+        .add(
+            U512::from_u64(
+                U512::product_u64s(&common_p.config.primes).mod_u64(PHASE_P),
+            )
+            .mul_u128(affine_max),
+        );
     let corrected = add(&common_p, &affine, &carry_ciphertext);
     let mut expected_message = vec![0; 2 * n];
     for j in 0..n {
         expected_message[2 * j] = message[j];
     }
-    let corrected_bound = U512::from_u128(affine_bound).add(k_bound);
+    let corrected_bound = affine_bound.add(k_bound);
     assert!(
         words(corrected_bound.mul_u128(2)) < words(q_outer)
     );
@@ -1551,7 +1650,7 @@ fn check_scale_jacobian_lift_with(
     assert!(words(corrected_observed) <= words(corrected_bound));
     if step % PHASE_P == 0 {
         eprintln!(
-            "p-locked pre-product ledger: Q={} bits, residual={} bits (bound {}), carry={} bits (bound {}), corrected={} bits (bound {})",
+            "p-locked pre-product ledger: Q={} bits, residual={} bits (bound {}), carry={} bits (bound {}), corrected={} bits (bound {}), affine bound={} bits",
             bits_u512(q_outer),
             bits_u512(U512::from_u64(max_e)),
             bits_u512(U512::from_u64(residual_bound)),
@@ -1559,32 +1658,462 @@ fn check_scale_jacobian_lift_with(
             bits_u512(carry_bound),
             bits_u512(corrected_observed),
             bits_u512(corrected_bound),
+            bits_u512(affine_bound),
         );
     }
 
-    // Follow both successful test dimensions through a real dependent square.
-    // The native opt-in remains a full-coefficient refresh-carry check only;
-    // its quadratic product is intentionally not benchmarked here.
-    if n <= 512 {
+    // Follow the carry and corrected-phase outputs through full dependent
+    // square and cube correctness checks. The native case is intentionally
+    // opt-in because these products cover all 16,384 doubled-ring slots.
+    if check_dependent_product {
         let exact = common_p.try_exact_evaluator().unwrap();
         let relin = exact.generate_hybrid_gadget_key_with_rng(&high_keys.secret_key, &mut rng_for_view);
-        let fresh = encrypt_polynomial(
-            &common_p,
-            &high_keys,
-            &expected_message,
-            &mut rng_for_view,
-        );
-        let fresh_square = exact.try_mul_exact(&fresh, &fresh, &relin).unwrap();
         let expected_square = square_plain(&expected_message, PHASE_P);
-        let _fresh_square_observed =
-            observe_polynomial_wide(&common_p, &fresh_square, &high_keys, &expected_square);
+        if n <= 512 {
+            let fresh = encrypt_polynomial(
+                &common_p,
+                &high_keys,
+                &expected_message,
+                &mut rng_for_view,
+            );
+            let fresh_square = exact.try_mul_exact(&fresh, &fresh, &relin).unwrap();
+            let _fresh_square_observed =
+                observe_polynomial_wide(&common_p, &fresh_square, &high_keys, &expected_square);
+        }
         let square = exact.try_mul_exact(&corrected, &corrected, &relin).unwrap();
-        let _square_observed =
+        let square_observed =
             observe_polynomial_wide(&common_p, &square, &high_keys, &expected_square);
+        let cube = exact.try_mul_exact(&square, &corrected, &relin).unwrap();
+        let expected_cube =
+            negacyclic_plain_multiply(&expected_square, &expected_message, PHASE_P);
+        let cube_decoded = decrypt_coefficients(&common_p, &cube, &high_keys);
+        let cube_mismatches = cube_decoded
+            .iter()
+            .zip(&expected_cube)
+            .filter(|(actual, expected)| actual != expected)
+            .count();
+        eprintln!(
+            "p-locked dependent products: corrected V={}, square V={}, cube mismatches={}/{}, Q={} bits, decoder limit <Q/2",
+            bits_u512(corrected_observed),
+            bits_u512(square_observed),
+            cube_mismatches,
+            cube_decoded.len(),
+            bits_u512(q_outer),
+        );
+
+        // Diagnostic only: test whether an authenticated same-history lift
+        // of e into T would remove the source-residual term from the carry
+        // error. This freshly encrypted e_T is a deliberate oracle control,
+        // not part of the public producer.
+        if (n <= 512 || n == 8192) && step % PHASE_P == 0 {
+            let expected_e_t: Vec<_> = expected_e
+                .iter()
+                .map(|&e| (e as i128).rem_euclid(scale_t as i128) as u64)
+                .collect();
+            if n <= 512 {
+            let mut expected_lk = vec![0; high.n];
+            for j in 0..n {
+                expected_lk[2 * j] =
+                    (step as u128 * expected_k[2 * j] as u128 % scale_t as u128) as u64;
+            }
+            let encrypted_e_t =
+                encrypt_polynomial(&high, &high_keys, &expected_e_t, &mut rng_for_view);
+            let lifted_carry = add(
+                &high,
+                &high_delta,
+                &signed_scale(&high, &encrypted_e_t, -1),
+            );
+            let high_error_bound = high_bound.add(differential_precharge_bound(&high));
+            assert!(words(high_error_bound.mul_u128(2)) < words(q_outer));
+            assert!(words(observe_polynomial_wide(
+                &high,
+                &lifted_carry,
+                &high_keys,
+                &expected_lk,
+            )) <= words(high_error_bound));
+            let oracle_carry_bound = high_error_bound
+                .add(U512::from_u64(step - 1))
+                .div_u64(step);
+            assert!(words(oracle_carry_bound.mul_u128(2)) < words(q_outer));
+            let oracle_carry_observed =
+                observe_polynomial_wide(&common_p, &lifted_carry, &high_keys, &expected_k);
+            assert!(words(oracle_carry_observed) <= words(oracle_carry_bound));
+            let oracle_corrected = add(&common_p, &affine, &lifted_carry);
+            let oracle_corrected_bound = affine_bound.add(oracle_carry_bound);
+            let oracle_corrected_observed = observe_polynomial_wide(
+                &common_p,
+                &oracle_corrected,
+                &high_keys,
+                &expected_message,
+            );
+            assert!(words(oracle_corrected_observed) <= words(oracle_corrected_bound));
+            let oracle_square = exact
+                .try_mul_exact(&oracle_corrected, &oracle_corrected, &relin)
+                .unwrap();
+            let oracle_square_observed = observe_polynomial_wide(
+                &common_p,
+                &oracle_square,
+                &high_keys,
+                &expected_square,
+            );
+            let oracle_cube = exact
+                .try_mul_exact(&oracle_square, &oracle_corrected, &relin)
+                .unwrap();
+            let oracle_cube_decoded = decrypt_coefficients(&common_p, &oracle_cube, &high_keys);
+            let oracle_cube_mismatches = oracle_cube_decoded
+                .iter()
+                .zip(&expected_cube)
+                .filter(|(actual, expected)| actual != expected)
+                .count();
+            eprintln!(
+                "Enc_T(e) diagnostic oracle: corrected V={}/{}, square V={}, cube mismatches={}/{}, same-history production lift remains the missing operation",
+                bits_u512(oracle_corrected_observed),
+                bits_u512(oracle_corrected_bound),
+                bits_u512(oracle_square_observed),
+                oracle_cube_mismatches,
+                oracle_cube_decoded.len(),
+            );
+            }
+
+            if n <= 8192 {
+                // Attempt the missing high-encoding lift without a fresh
+                // encryption: divide the p-locked residual view by L using
+                // its exact centered L-tray remainder. The result may retain
+                // a p-multiple winding; measure it before applying any root.
+                let same_history_e = signed_scale(&high, &high_delta, step as i64);
+                let lifted_e = exact_centered_quotient(&high, &same_history_e, step);
+                let lifted_e_p = observe_polynomial_wide(
+                    &common_p,
+                    &signed_scale(&high, &lifted_e, step as i64),
+                    &high_keys,
+                    &e_plain,
+                );
+                let lifted_e_high = decrypt_coefficients(&high, &lifted_e, &high_keys);
+                let mut max_winding = 0u64;
+                let mut high_e_mismatches = 0;
+                let mut windings = Vec::with_capacity(lifted_e_high.len());
+                for (j, &actual) in lifted_e_high.iter().enumerate() {
+                    let expected = (expected_e[j] as i128).rem_euclid(scale_t as i128);
+                    let winding_residue =
+                        (actual as i128 - expected).rem_euclid(scale_t as i128);
+                    assert_eq!(winding_residue % PHASE_P as i128, 0);
+                    let winding = winding_residue / PHASE_P as i128;
+                    let centered_winding = if winding > step as i128 / 2 {
+                        winding - step as i128
+                    } else {
+                        winding
+                    };
+                    max_winding = max_winding.max(centered_winding.unsigned_abs() as u64);
+                    high_e_mismatches += usize::from(actual != expected as u64);
+                    windings.push(centered_winding);
+                }
+                eprintln!(
+                    "K-Elimination centered-tray lift: p-view residual V={}, high-view mismatches={}/{}, max centered winding |J|={}, 211 tray radius105, composite tray radius{}",
+                    bits_u512(lifted_e_p),
+                    high_e_mismatches,
+                    lifted_e_high.len(),
+                    max_winding,
+                    (WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY - 1) / 2,
+                );
+
+                // The high ciphertext has plaintext e+pJ modulo T=pL.
+                // Since this composite tray M divides L, multiplying its raw
+                // components by L/M changes the BFV encoding scale and gives
+                // a same-history sister view modulo p*M. Pair it with the
+                // p-view of e to check whether the tray uniquely recovers J.
+                let sister_scale = step / WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+                assert_eq!(step % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY, 0);
+                let winding_view = signed_scale(&high, &lifted_e, sister_scale as i64);
+                let winding_view_plain =
+                    decrypt_coefficients(&winding_tray, &winding_view, &high_keys);
+                let e_p_view = decrypt_coefficients(
+                    &common_p,
+                    &signed_scale(&high, &lifted_e, step as i64),
+                    &high_keys,
+                );
+                let p_inverse_mod_winding = inverse(
+                    PHASE_P % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                );
+                let expected_winding_view: Vec<_> = expected_e
+                    .iter()
+                    .zip(&windings)
+                    .map(|(&e, &winding)| {
+                        (e as i128 + PHASE_P as i128 * winding)
+                            .rem_euclid(winding_tray.t as i128) as u64
+                    })
+                    .collect();
+                let winding_view_error = observe_polynomial_wide(
+                    &winding_tray,
+                    &winding_view,
+                    &high_keys,
+                    &expected_winding_view,
+                );
+                let winding_view_capacity = q_outer.div_u64(2);
+                assert!(words(winding_view_error) < words(winding_view_capacity));
+                let winding_view_mismatches = winding_view_plain
+                    .iter()
+                    .zip(&expected_winding_view)
+                    .filter(|(actual, expected)| actual != expected)
+                    .count();
+                eprintln!(
+                    "sister-view decode diagnostic: error={} bits, capacity={} bits, plaintext mismatches={}/{}",
+                    bits_u512(winding_view_error),
+                    bits_u512(winding_view_capacity),
+                    winding_view_mismatches,
+                    winding_view_plain.len(),
+                );
+                assert_eq!(winding_view_mismatches, 0);
+                let mut recovered_winding_mismatches = 0;
+                for (index, &winding) in windings.iter().enumerate() {
+                    let p_residue = e_p_view[index] as i128;
+                    assert_eq!(
+                        p_residue,
+                        expected_e[index].rem_euclid(PHASE_P as i64) as i128,
+                        "the same-history p view must agree on the centered e residue"
+                    );
+                    let centered_e = if p_residue > PHASE_P as i128 / 2 {
+                        p_residue - PHASE_P as i128
+                    } else {
+                        p_residue
+                    };
+                    let observed_winding = ((winding_view_plain[index] as i128 - centered_e)
+                        * p_inverse_mod_winding as i128)
+                        .rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128);
+                    let expected_winding = winding.rem_euclid(
+                        WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128,
+                    );
+                    recovered_winding_mismatches +=
+                        usize::from(observed_winding != expected_winding);
+                }
+                eprintln!(
+                    "same-history p*M sister view: M={}, scale=L/M={}, view-error={} bits, winding-residue mismatches={}/{}, centered radius={}, observed max |J|={}",
+                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                    sister_scale,
+                    bits_u512(winding_view_error),
+                    recovered_winding_mismatches,
+                    windings.len(),
+                    (WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY - 1) / 2,
+                    max_winding,
+                );
+                assert_eq!(recovered_winding_mismatches, 0);
+
+                // Turn the residue reference above into a ciphertext-only
+                // winding extraction. Offset e by its public bound so every
+                // phase representative is nonnegative and below p/2. Since
+                // M=p+1, the same p-encoded offset view also decodes under M
+                // with <1/2 unit of scale mismatch. The M-view of e+pJ minus
+                // that offset view is pJ; p is a unit modulo M, so one public
+                // scalar operation yields J mod M from this exact history.
+                let mut offset_plain = vec![0i64; high.n];
+                for j in 0..n {
+                    offset_plain[2 * j] = residual_bound as i64;
+                }
+                let offset_candidate = add(
+                    &high,
+                    &lifted_e,
+                    &public_plain(&high, &offset_plain),
+                );
+                let offset_p_view = signed_scale(&high, &offset_candidate, step as i64);
+                let offset_modulus_tray = context_for(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY);
+                let offset_e_plain: Vec<_> = expected_e
+                    .iter()
+                    .zip(&offset_plain)
+                    .map(|(&e, &offset)| {
+                        (e as i128 + offset as i128)
+                            .rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128)
+                            as u64
+                    })
+                    .collect();
+                assert_eq!(
+                    decrypt_coefficients(&common_p, &offset_p_view, &high_keys),
+                    offset_e_plain
+                        .iter()
+                        .map(|&e| e % PHASE_P)
+                        .collect::<Vec<_>>(),
+                    "publicly offset residual must remain in the centered p chart"
+                );
+                assert_eq!(
+                    decrypt_coefficients(&offset_modulus_tray, &offset_p_view, &high_keys),
+                    offset_e_plain,
+                    "p-to-(p+1) phase lock must preserve the bounded offset residual"
+                );
+                let offset_with_winding =
+                    signed_scale(&high, &offset_candidate, (scale_t / offset_modulus_tray.t) as i64);
+                let expected_offset_with_winding: Vec<_> = expected_e
+                    .iter()
+                    .zip(&offset_plain)
+                    .zip(&windings)
+                    .map(|((&e, &offset), &winding)| {
+                        (e as i128
+                            + offset as i128
+                            + PHASE_P as i128 * winding)
+                            .rem_euclid(offset_modulus_tray.t as i128) as u64
+                    })
+                    .collect();
+                assert_eq!(
+                    decrypt_coefficients(
+                        &offset_modulus_tray,
+                        &offset_with_winding,
+                        &high_keys
+                    ),
+                    expected_offset_with_winding
+                );
+                let p_winding = add(
+                    &offset_modulus_tray,
+                    &offset_with_winding,
+                    &signed_scale(&offset_modulus_tray, &offset_p_view, -1),
+                );
+                let expected_p_winding: Vec<_> = windings
+                    .iter()
+                    .map(|&winding| {
+                        (PHASE_P as i128 * winding)
+                            .rem_euclid(offset_modulus_tray.t as i128) as u64
+                    })
+                    .collect();
+                assert_eq!(
+                    decrypt_coefficients(&offset_modulus_tray, &p_winding, &high_keys),
+                    expected_p_winding
+                );
+                let p_inverse_residue = inverse(
+                    PHASE_P % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                );
+                let p_inverse_centered = if p_inverse_residue
+                    > WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY / 2
+                {
+                    p_inverse_residue as i64 - WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i64
+                } else {
+                    p_inverse_residue as i64
+                };
+                let winding_ciphertext = signed_scale(
+                    &offset_modulus_tray,
+                    &p_winding,
+                    p_inverse_centered,
+                );
+                let expected_winding_plain: Vec<_> = windings
+                    .iter()
+                    .map(|&winding| {
+                        winding.rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128) as u64
+                    })
+                    .collect();
+                let winding_ciphertext_error = observe_polynomial_wide(
+                    &offset_modulus_tray,
+                    &winding_ciphertext,
+                    &high_keys,
+                    &expected_winding_plain,
+                );
+                eprintln!(
+                    "same-history ciphertext-only winding extraction: M=p+1={}, offset={}, view-error={} bits, p-to-M recovered e, pJ subtraction and p^-1 recovered J for {}/{} coefficients",
+                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                    residual_bound,
+                    bits_u512(winding_ciphertext_error),
+                    windings.len(),
+                    windings.len(),
+                );
+
+                // Clear J enters only this final correction control. The
+                // encrypted winding above is not yet lifted to the T scale.
+                let winding_correction: Vec<_> = windings
+                    .iter()
+                    .map(|&winding| {
+                        let residue = (PHASE_P as i128 * winding)
+                            .rem_euclid(scale_t as i128);
+                        let centered = if residue > scale_t as i128 / 2 {
+                            residue - scale_t as i128
+                        } else {
+                            residue
+                        };
+                        -(centered as i64)
+                    })
+                    .collect();
+                let lifted_e_corrected = add(
+                    &high,
+                    &lifted_e,
+                    &public_plain(&high, &winding_correction),
+                );
+                assert_eq!(
+                    decrypt_coefficients(&high, &lifted_e_corrected, &high_keys),
+                    expected_e_t,
+                    "bounded p-winding correction must produce Enc_T(e)"
+                );
+                let lift_noise_bound = high_bound.add(U512::from_u128(
+                    scale_t as u128 * (high.n as u128 + 1) / 2,
+                ));
+                let lift_noise_observed = observe_polynomial_wide(
+                    &high,
+                    &lifted_e_corrected,
+                    &high_keys,
+                    &expected_e_t,
+                );
+                assert!(words(lift_noise_observed) <= words(lift_noise_bound));
+                let lifted_carry = add(
+                    &high,
+                    &high_delta,
+                    &signed_scale(&high, &lifted_e_corrected, -1),
+                );
+                let lifted_carry_bound = high_bound
+                    .add(lift_noise_bound)
+                    .add(U512::from_u64(step - 1))
+                    .div_u64(step);
+                assert!(words(lifted_carry_bound.mul_u128(2)) < words(q_outer));
+                let lifted_carry_observed = observe_polynomial_wide(
+                    &common_p,
+                    &lifted_carry,
+                    &high_keys,
+                    &expected_k,
+                );
+                assert!(words(lifted_carry_observed) <= words(lifted_carry_bound));
+                let lifted_corrected = add(&common_p, &affine, &lifted_carry);
+                let lifted_corrected_bound = affine_bound.add(lifted_carry_bound);
+                let lifted_corrected_observed = observe_polynomial_wide(
+                    &common_p,
+                    &lifted_corrected,
+                    &high_keys,
+                    &expected_message,
+                );
+                assert!(words(lifted_corrected_observed) <= words(lifted_corrected_bound));
+                let lifted_square = exact
+                    .try_mul_exact(&lifted_corrected, &lifted_corrected, &relin)
+                    .unwrap();
+                let lifted_square_observed = observe_polynomial_wide(
+                    &common_p,
+                    &lifted_square,
+                    &high_keys,
+                    &expected_square,
+                );
+                let lifted_cube = exact
+                    .try_mul_exact(&lifted_square, &lifted_corrected, &relin)
+                    .unwrap();
+                let lifted_cube_decoded = decrypt_coefficients(&common_p, &lifted_cube, &high_keys);
+                let lifted_cube_mismatches = lifted_cube_decoded
+                    .iter()
+                    .zip(&expected_cube)
+                    .filter(|(actual, expected)| actual != expected)
+                    .count();
+                eprintln!(
+                    "K-Elimination + bounded-winding control: lift V={}/{}, carry V={}/{}, corrected V={}/{}, square V={}, cube mismatches={}/{}, max |J|={} vs tray radius105",
+                    bits_u512(lift_noise_observed),
+                    bits_u512(lift_noise_bound),
+                    bits_u512(lifted_carry_observed),
+                    bits_u512(lifted_carry_bound),
+                    bits_u512(lifted_corrected_observed),
+                    bits_u512(lifted_corrected_bound),
+                    bits_u512(lifted_square_observed),
+                    lifted_cube_mismatches,
+                    lifted_cube_decoded.len(),
+                    max_winding,
+                );
+            }
+        }
     }
 
     let residual_mode = if let Some(e_observed) = same_history_e_observed {
-        format!("same-history p-locked Enc_p(e) error {}/{} bits", bits(e_observed), bits(high_bound))
+        format!(
+            "same-history p-locked Enc_p(e) error {}/{} bits",
+            bits_u512(e_observed),
+            bits_u512(high_bound)
+        )
     } else {
         "invertible-step K-Elimination still uses the diagnostic oracle Enc_p(e)".to_string()
     };
@@ -1644,6 +2173,48 @@ fn p_locked_scale_jacobian_extracts_carry_and_residual_from_one_history() {
 #[test]
 fn p_locked_scale_jacobian_corrects_the_medium_phase_without_oracle_residual() {
     check_p_locked_scale_jacobian_lift(512, 2, 1 << 31);
+}
+
+#[test]
+fn wide_p_locked_scale_jacobian_tests_larger_step_and_dependent_square() {
+    check_scale_jacobian_lift_with(
+        512,
+        2,
+        1 << 41,
+        WIDE_P_LOCKED_JACOBIAN_STEP,
+        211,
+        WIDE_P_LOCKED_JACOBIAN_SCALE_T,
+        &WIDE_P_LOCKED_JACOBIAN_PRIMES,
+        true,
+    );
+}
+
+#[test]
+#[ignore = "opt-in native wide-step p-locked carry, corrected Phase 1, and dependent square"]
+fn wide_p_locked_scale_jacobian_native_correction_survives_dependent_square() {
+    check_scale_jacobian_lift_with(
+        8192,
+        96,
+        1 << 41,
+        WIDE_P_LOCKED_JACOBIAN_STEP,
+        211,
+        WIDE_P_LOCKED_JACOBIAN_SCALE_T,
+        &WIDE_P_LOCKED_JACOBIAN_PRIMES,
+        true,
+    );
+}
+
+#[test]
+fn wide_p_locked_scale_jacobian_native_tuple_passes_128_bit_screen() {
+    let screened = SecureConfig::custom_screened(
+        16_384,
+        WIDE_P_LOCKED_JACOBIAN_PRIMES.to_vec(),
+        WIDE_P_LOCKED_JACOBIAN_SCALE_T,
+        3,
+        128,
+    )
+    .expect("wide p-locked native output tuple must pass all security models");
+    assert!(screened.is_production_safe_under_all_models());
 }
 
 #[test]

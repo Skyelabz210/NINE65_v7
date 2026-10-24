@@ -24,9 +24,29 @@ refresh.
 | `r_p` | Same-history p-encoded sister-tray residue for K-Elimination | Native consumer test uses `M*=2^16=p-1`; `L=2` scales `99*Z99`, and `K=-(X_p-r_p)`; returned phase is 51 bits at N8192 and survives two products | Produce/authenticate `r_p` through the one-root Safe-Basis 2/11 phase lock; current tray is a client oracle |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
-| `K_T` / `K_p` | K-Elimination carry in a high or common p encoding | High-encoding oracle consumer remains measured; the power-tray route returns `K_p` with inverse `-1`, using only the 2^16 sister tray and existing root roles | Produce the same-history residue, bind chart and tray to one capability, and certify carry error |
+| `K_T` / `K_p` | K-Elimination carry in a high or common p encoding | High-encoding oracle consumer remains measured; the power-tray route returns `K_p` with inverse `-1`; the wide p-locked test now extracts the quotient winding `J mod (p+1)` from same-history p/M views without clear `e` or `J` in the extraction operations | Bind the pL, p, and M sibling views to one capability; certify the worst-case `J` bound; lift bounded `J` back to T and certify the corrected carry |
 | `R_T=x_T-A*K_T` | T-encoded chart residual | Oracle-injected K-Elimination subtraction removes `r/A` from the p-view return | Bind the residual to the same chart capability and include both chart and carry errors in its certificate |
-| `V_out` | Error after residual correction and return | Power-tray oracle route: observed 47 bits at N512 and 51 bits at native N8192; square and next product exact at both sizes. Older `T=pA` low-tray control observed 96/104 bits and missed 69/16384 coefficients on its first square | Public same-history p-encoded tray, immutable noise certificate, return to work key, a second admitted refresh, and repeat-cycle admission remain open |
+| `V_out` | Error after residual correction and return | Power-tray oracle route: observed 47 bits at N512 and 51 bits at native N8192; square and next product exact at both sizes. Wide scale-Jacobian route recovers `J mod (p+1)` at all native coefficients; its final Phase 1 correction still uses clear `J`, with square and cube checks passing after that control | Safe-Basis lift of the encrypted bounded `J` to T, immutable noise certificate, return to work key, a second admitted refresh, and repeat-cycle admission remain open |
+
+## New p-locked winding result
+
+The wide-step experiment now isolates the winding left by the exact centered
+`L`-tray quotient. With `p=65,537`, `M=p+1=65,538`, `L=211*p*M`, and
+`T=pL`, it builds same-history p and M ciphertext views. A public offset equal
+to the residual bound keeps `e+B` nonnegative. In the M view, the difference
+between the high residual candidate and the p-view residual is `pJ mod M`;
+because `p=-1 mod M`, multiplying by the centered inverse `-1` yields a
+ciphertext for `J mod M`. The extraction operations do not use clear `e` or
+`J`.
+
+At N=8192/H=96, all 16,384 doubled-ring coefficients pass, with observed
+`max |J|=115` inside M's centered radius 32,768. The same-history sibling
+error is 153 bits and the ciphertext-only J output error is 165 bits, both
+under the 174-bit `Q/2` limit; the tuple passes the 128-bit parameter screen.
+The current final Phase 1 correction still uses clear J as a diagnostic
+control. A certified worst-case bound for J and a Safe-Basis lift of the
+encrypted J into the T encoding are the next gates; work-key return and
+repeat-refresh admission remain open.
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the
