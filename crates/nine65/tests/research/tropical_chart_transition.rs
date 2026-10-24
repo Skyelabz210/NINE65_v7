@@ -70,7 +70,7 @@ impl LocalChart {
         LocalChart::new(self.period + 2, modulus)?;
         let m = modulus as u128;
         let c = self.inverse_factorial as u128;
-        let upper = (self.period + 1) / 2;
+        let upper = self.period.div_ceil(2);
         let a = (m - self.period as u128 * c % m)
             * inverse((self.period + 1) * (self.period + 2) % modulus, modulus) as u128
             % m;

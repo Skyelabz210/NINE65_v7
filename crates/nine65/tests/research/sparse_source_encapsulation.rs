@@ -152,6 +152,7 @@ fn sparse_source_sampler_and_actual_source_period_are_explicit() {
 
 // Independent CLIENT geometry oracle. It deliberately owns the source
 // secret and clear clock sums; none of those values feed the public path.
+#[allow(clippy::too_many_arguments)]
 fn client_check_source_clock(
     source: &RNSFHEContext,
     outer: &RNSFHEContext,

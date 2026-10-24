@@ -10,9 +10,26 @@ name: CRAM-public gates
 # builds, so this correctness suite runs in the debug profile. Release-mode
 # checks remain responsible for exercising only the production entropy path.
 
-# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'crates/nine65/src/ops/cram_public.rs'
+      - 'crates/nine65/src/ops/rns_fhe.rs'
+      - 'crates/nine65/src/arithmetic/unified_rescale.rs'
+      - 'crates/nine65/src/arithmetic/rns.rs'
+      - 'crates/nine65/src/params/manufactured.rs'
+      - 'crates/nine65/src/params/mod.rs'
+      - 'crates/nine65/tests/cram_public_mode.rs'
+      - 'crates/nine65/tests/cram_public_guardrails.rs'
+      - 'crates/nine65/tests/cram_public_timings.rs'
+      - 'crates/nine65/tests/m2b_manufactured_rescale.rs'
+      - 'crates/nine65/tests/residue_space_ciphertext.rs'
+      - 'crates/nine65/Cargo.toml'
+      - '.github/workflows/cram_public_gates.yml'
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read

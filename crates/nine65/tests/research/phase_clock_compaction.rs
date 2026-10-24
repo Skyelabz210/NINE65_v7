@@ -391,10 +391,12 @@ impl<'a> Engine<'a> {
                 for (lane, &q) in key.primes.iter().enumerate() {
                     assert!(q <= 1u64 << 31);
                     let transformed = forward(self.ctx, lane, &digit);
-                    for k in 0..self.ctx.n {
+                    for (k, &transformed_coefficient) in transformed.iter().enumerate() {
                         // Canonical inputs and q<=2^31 give q^2-q<2^62.
-                        out0[lane][k] = (out0[lane][k] + transformed[k] * row.c0[lane][k]) % q;
-                        out1[lane][k] = (out1[lane][k] + transformed[k] * row.c1[lane][k]) % q;
+                        out0[lane][k] =
+                            (out0[lane][k] + transformed_coefficient * row.c0[lane][k]) % q;
+                        out1[lane][k] =
+                            (out1[lane][k] + transformed_coefficient * row.c1[lane][k]) % q;
                     }
                 }
             }
@@ -652,6 +654,7 @@ fn finish_column(engine: &Engine<'_>, packed: &Packed, scalar: &[RNSCiphertext])
 // Batch expansion shares each public Galois step between the even and odd
 // children. It is O(G) switches per packed column, not G*log2(G). Traversal
 // order is fixed by public indices; encrypted zero controls are not skipped.
+#[allow(clippy::too_many_arguments)]
 fn visit_expanded(
     engine: &Engine<'_>,
     packed: &Packed,

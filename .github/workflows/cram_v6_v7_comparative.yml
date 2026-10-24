@@ -1,7 +1,23 @@
 name: NINE65 v6 v7 comparative harness
 
-# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
+  pull_request:
+    paths:
+      - 'crates/nine65/src/bin/cram_comparative_probe.rs'
+      - 'crates/nine65/Cargo.toml'
+      - 'scripts/run_nine65_v6_v7_compare.py'
+      - 'scripts/cram_compare_results.py'
+      - 'scripts/test_cram_compare_results.py'
+      - 'scripts/analyze_cram_fhe_hypotheses.py'
+      - 'benchmarks/comparative/nine65_v6_v7_contract.json'
+      - 'docs/NINE65_V6_V7_COMPARATIVE_HARNESS.md'
+      - 'docs/NINE65_CROSS_REPO_RUNNER_SETUP.md'
+      - '.github/workflows/cram_v6_v7_comparative.yml'
+  push:
+    # Re-pointed 2026-08-12: was 'cram/exploratory-comparative-v2', a branch
+    # that no longer exists, so this push trigger was dead. Trunk is `main`.
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       repetitions:
@@ -48,7 +64,6 @@ jobs:
           python3 scripts/test_benchmark_contract.py
           python3 scripts/test_analyze_cram_fhe_hypotheses.py
       - name: Parse and normalize new Rust probe
-        if: ${{ false }}
         run: rustfmt --edition 2021 crates/nine65/src/bin/cram_comparative_probe.rs
       - name: Reject floating point in comparative path
         run: |

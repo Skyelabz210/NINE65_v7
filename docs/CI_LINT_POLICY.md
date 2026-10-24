@@ -1,21 +1,18 @@
 # CI lint policy
 
-Clippy and formatting steps are disabled by default across every workflow in
-this repository. Each such step runs only when the GitHub Actions repository
-variable `ENABLE_LINT` is exactly `true`. An absent variable, `false`, or any
-other value skips linting. To keep lint off, leave the variable unset.
+Clippy and formatting steps are active, unconditional gates in every workflow
+that declares them. The primary `fast-gate` installs `clippy` and `rustfmt`,
+runs `cargo fmt --all -- --check`, runs workspace Clippy with warnings denied,
+and then performs dependency license/advisory checks.
 
-The `fast-gate` job still runs dependency license/advisory checks. Its job ID
-and display name are retained for existing check references, and `full-test`
-still depends on it. Skipping a lint step does not skip the full test suite.
-Builds, correctness tests, fuzzing, architecture checks, and cryptographic
-admission remain enforced whenever their workflow runs.
+Push, pull-request, and scheduled triggers are active again. Path-filtered
+specialized workflows retain their original scopes, and manual dispatch remains
+available. Builds, correctness tests, fuzzing, architecture checks, and
+cryptographic admission remain enforced alongside linting.
 
-The existing manual-only workflow triggers (the CI cost pause) are unchanged.
-A local Git commit does not run GitHub Actions. The workflow change takes
-effect on GitHub after the containing branch is pushed and that revision runs;
-old red runs keep their original result. Other repositories need the same
-workflow configuration; this file does not change a GitHub account-wide setting.
+A local Git commit does not run GitHub Actions. Workflow changes take effect
+after the containing revision is pushed; old runs retain their original result.
+This is repository-specific configuration, not a GitHub account-wide setting.
 
 ## Observed CI failure
 

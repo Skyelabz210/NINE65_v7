@@ -523,7 +523,7 @@ fn plan_three_pair_phase211(
     let phase = states
         .iter()
         .map(|state| {
-            runtime.project(*state, |row| {
+            runtime.project(state, |row| {
                 let signed =
                     sign as i128 * (row.remainder + runtime.source_q * row.winding as i128);
                 signed.div_euclid(2).rem_euclid(11) as i64
@@ -532,7 +532,7 @@ fn plan_three_pair_phase211(
         .collect::<Vec<_>>();
     let parity = states
         .iter()
-        .map(|state| runtime.project(*state, |row| runtime.root_value(row, 2)))
+        .map(|state| runtime.project(state, |row| runtime.root_value(row, 2)))
         .collect::<Vec<_>>();
     let pair_bounds = [
         runtime.noise.multiply(parity[0].bound, parity[1].bound),

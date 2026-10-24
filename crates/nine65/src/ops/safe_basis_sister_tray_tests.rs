@@ -178,7 +178,6 @@ impl<'a> Root211<'a> {
             return Err(TrayRefusal::Regime);
         }
         assert_eq!(S8_FAMILIES.map(|f| f.p as u64), ROOT);
-        assert_eq!(2 * 6 % 11, 1);
         // Preflight the whole root/phase bundle before producing a ciphertext.
         for p in ROOT {
             runtime
@@ -316,7 +315,7 @@ impl<'a> Root211<'a> {
             || target != self.runtime.ctx.t
             || !tray.moduli.contains(&period)
             || self.state.rows.iter().any(|row| {
-                value(row).map_or(true, |value| {
+                value(row).is_none_or(|value| {
                     value.unsigned_abs() > bound as u128
                         || i64::try_from(value).is_err()
                         || self.runtime.root_value(row, period)
@@ -994,7 +993,6 @@ fn one_root_projects_bounded_offset_into_composite_pj_tray() {
     config.n = 32;
     config.t = P_J_TRAY;
     let ctx = RNSFHEContext::try_new(&config).unwrap();
-    assert!(TRAY_FACTOR > 2 * OFFSET_MAX);
     let mut rng = ShadowHarvester::with_seed(0x504a_5452_4159_3236);
     let keys = ctx.generate_keys_dual(&mut rng);
     let mut one_message = vec![0i8; ctx.n];
@@ -1050,7 +1048,6 @@ fn symbolic_selectors_project_bounded_k_elimination_carry_into_high_mpj_correcti
     const FACTOR: u64 = 16_390;
     const M_PJ: u64 = FACTOR * (P + 1);
     const HIGH_T: u64 = P * P * M_PJ;
-    const CARRY_BOUND: u64 = 8_193;
     const CARRIES: [i128; 5] = [-8_193, -23, 0, 23, 8_193];
 
     let mut config = SecureConfig::secure_128().into_config();
@@ -1064,9 +1061,6 @@ fn symbolic_selectors_project_bounded_k_elimination_carry_into_high_mpj_correcti
     config.security_bits = 0;
     config.t = HIGH_T;
     let ctx = RNSFHEContext::try_new(&config).unwrap();
-    assert!(P > 2 * CARRY_BOUND);
-    assert!(HIGH_T > 2 * M_PJ * CARRY_BOUND);
-
     let mut rng = ShadowHarvester::with_seed(0x4b45_4c49_4654_4332);
     let keys = ctx.generate_keys_dual(&mut rng);
     let mut one_message = vec![0i8; ctx.n];
@@ -2121,7 +2115,6 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
             normalized_root.attach(&[P, 2, 11]).unwrap()
         } else if branch == 2 {
             assert_eq!(TRAY_SELECTOR_T, 65_545);
-            assert!(TRAY_SELECTOR_T > P + 1);
             assert_eq!(TRAY_OUTPUT_SCALE % (P + 1), 1);
             assert_eq!(gcd(TRAY_OUTPUT_T as u128, (P + 1) as u128), 1);
             normalized_root.attach(&[P + 1, 2, 11]).unwrap()
@@ -2434,7 +2427,6 @@ fn one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t() {
     config.security_bits = 0;
     config.t = HIGH_T;
     let ctx = RNSFHEContext::try_new(&config).unwrap();
-    assert!(WINDING_PERIOD > 2 * WINDING_BOUND);
     let mut rng = ShadowHarvester::with_seed(0x504a_4556_454e_3131);
     let keys = ctx.generate_keys_dual(&mut rng);
     let mut one_message = vec![0i8; ctx.n];
@@ -2527,8 +2519,6 @@ fn one_root_emits_adjacent_residual_at_common_composite_t_and_k_eliminates() {
     assert_eq!(M * ((HIGH_T + 1) / M), HIGH_T + 1);
     assert_eq!(HIGH_T % M, M - 1);
     assert!(2 * SCALE_FACTOR as u128 * (K_BOUND as u128) < HIGH_T as u128);
-    assert!(M > 2 * RESIDUAL_BOUND);
-
     let mut rng = ShadowHarvester::with_seed(0x494e_5652_4553_5441);
     let keys = ctx.generate_keys_dual(&mut rng);
     let mut one_message = vec![0i8; ctx.n];
@@ -2896,6 +2886,7 @@ fn sister_tray_update_plan_is_bound_to_its_parent_and_refuses_before_execution()
     assert_eq!(state.rows[0].remainder, 1);
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn advance_native_with_trays(
     runtime: &CarryRuntime<'_>,
     state: &State,

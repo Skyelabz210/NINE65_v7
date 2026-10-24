@@ -520,7 +520,6 @@ fn check_batched_phase_with_clock_and_primes(
     // Independent clear oracle for the exact Phase 1 residual polynomial.
     // Keep the same source ciphertext, secret history, component-rounding
     // residuals and Q that feed the encrypted chart producer below.
-    let source_q = source_q as u128;
     let source_components = [ordinary(&source, &input.c0), ordinary(&source, &input.c1)];
     let residual0: Vec<_> = (0..n)
         .map(|j| centered_component_residual(&source, &source_components[0], j, source_q))
@@ -619,7 +618,7 @@ fn check_batched_phase_with_clock_and_primes(
                     (99 * chart_z + clock_n as i128).div_euclid((2 * clock_n) as i128);
                 let (phase_carry, centered_phase) = phase1[j];
                 assert_eq!(chart_carry, phase_carry, "K99 / K_phase at j={j}");
-                assert!(centered_phase.unsigned_abs() <= (source_q / 2) as u128);
+                assert!(centered_phase.unsigned_abs() <= source_q / 2);
                 chart_checked += 1;
             }
             assert_eq!(chart_checked, n);
@@ -739,8 +738,8 @@ fn check_batched_phase_with_clock_and_primes(
                 let corrected_p_noise_bound = q_outer
                     .mul_u128(corrected_residual_bound)
                     .add(U512::from_u128(corrected_bound))
-                    .add(U512::from_u64(quotient_scale as u64 - 1))
-                    .div_u64(quotient_scale as u64);
+                    .add(U512::from_u64(quotient_scale - 1))
+                    .div_u64(quotient_scale);
                 assert_eq!(
                     (
                         corrected_p_noise_bound.d3,
@@ -1555,6 +1554,7 @@ fn check_p_locked_scale_jacobian_lift(n: usize, weight: usize, phase_denominator
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn check_scale_jacobian_lift_with(
     n: usize,
     weight: usize,

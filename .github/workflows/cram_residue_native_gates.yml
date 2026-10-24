@@ -10,9 +10,19 @@ name: CRAM residue-native gates
 # could never match. The floating-point scan below already guards each root
 # with `[[ -d "$path" ]]`, so it keeps working unchanged.
 
-# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'crates/cram-core/**'
+      - 'crates/nine65/src/cram_ct_wrap.rs'
+      - 'crates/nine65/src/ops/rns_fhe.rs'
+      - 'scripts/check_residue_native_architecture.py'
+      - 'scripts/cram_correctness_harness.py'
+      - '.github/workflows/cram_residue_native_gates.yml'
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -48,15 +58,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: rustfmt, clippy
       - name: Format check
-        if: ${{ false }}
         run: cargo fmt --all -- --check
       - name: Compile CRAM core
         run: cargo check -p cram-core --all-targets
       - name: Test CRAM core
         run: cargo test -p cram-core --all-targets
       - name: Clippy exactness gate
-        if: ${{ false }}
         run: cargo clippy -p cram-core --all-targets -- -D warnings
 
   oracle-scale:

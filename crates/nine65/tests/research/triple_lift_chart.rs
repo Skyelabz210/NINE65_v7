@@ -30,8 +30,7 @@ impl ChartSpec {
     }
     fn validate(&self) -> Result<(), &'static str> {
         let size = self.coordinates.len();
-        if size < 2
-            || size > 3
+        if !(2..=3).contains(&size)
             || self.matrix.len() != size
             || self.inverse.len() != size
             || self

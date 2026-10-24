@@ -141,8 +141,8 @@ fn decrypt_coefficients(
     for lane in 0..ctx.config.primes.len() {
         let product = ctx.ntt_engines[lane].multiply(&c1[lane], &secret[lane]);
         let q = ctx.config.primes[lane];
-        for coefficient in 0..ctx.n {
-            phase[lane][coefficient] = (c0[lane][coefficient] + product[coefficient]) % q;
+        for (coefficient, &product_coefficient) in product.iter().enumerate() {
+            phase[lane][coefficient] = (c0[lane][coefficient] + product_coefficient) % q;
         }
     }
     let decoder = CanonicalScaleRound::new(&ctx.config.primes, ctx.t).unwrap();
@@ -275,8 +275,8 @@ fn decrypt_coefficients_any_t(
     for lane in 0..ctx.config.primes.len() {
         let product = ctx.ntt_engines[lane].multiply(&c1[lane], &secret[lane]);
         let q = ctx.config.primes[lane];
-        for coefficient in 0..ctx.n {
-            phase[lane][coefficient] = (c0[lane][coefficient] + product[coefficient]) % q;
+        for (coefficient, &product_coefficient) in product.iter().enumerate() {
+            phase[lane][coefficient] = (c0[lane][coefficient] + product_coefficient) % q;
         }
     }
     let q = U512::product_u64s(&ctx.config.primes);
@@ -305,8 +305,8 @@ fn phase_error_bound(
     for lane in 0..ctx.config.primes.len() {
         let product = ctx.ntt_engines[lane].multiply(&c1[lane], &secret[lane]);
         let q = ctx.config.primes[lane];
-        for coefficient in 0..ctx.n {
-            phases[lane][coefficient] = (c0[lane][coefficient] + product[coefficient]) % q;
+        for (coefficient, &product_coefficient) in product.iter().enumerate() {
+            phases[lane][coefficient] = (c0[lane][coefficient] + product_coefficient) % q;
         }
     }
     let q = U512::product_u64s(&ctx.config.primes);

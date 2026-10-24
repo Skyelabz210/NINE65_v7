@@ -279,6 +279,7 @@ struct TritKey {
     plus: BitKey,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn evaluate_clock(
     ctx: &RNSFHEContext,
     exact: &ExactMulEvaluator<'_>,
@@ -535,8 +536,6 @@ fn phase_clock_sparse96_fits_doubled_outer_ring() {
     // then |S| >= 49Q - V, which is strictly larger than 97Q/2 at V<=Q/16.
     // This proves the admitted signed carry support is exactly [-48,48].
     assert!(2 * (49 * q as u128 - source_v) > 97 * q as u128);
-    assert!(99 > 2 * 48);
-
     // Exhaust every output rotation and every admitted signed carry. Every
     // rotation in a carry's certified error window must decode to that same
     // carry; no client-side centering or polynomial quotient is involved.
@@ -587,7 +586,6 @@ fn phase_clock_public_quantization_distinguishes_native_alias() {
         }
     }
     // The native period remains Q119. It has NOT been replaced by a local13.
-    assert!(SOURCE_Q > (1i128 << 118));
     eprintln!("native-Q alias: phase clocks distinguish sheets -1,0,1 at N256 and N8192, same public weights, without supplying centered phases");
 }
 

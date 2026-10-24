@@ -13,9 +13,9 @@ NINE65 is a Rust workspace for exact integer/residue arithmetic, CRAM/CRT operat
 - Do not treat files in `artifacts/` or archived reports as fresh benchmark results. Evidence must be reproducible against the reviewed commit.
 
 ## Efficient repository entry points
-Lint and formatting gates are disabled by default in CI. All workflows use
-`vars.ENABLE_LINT == 'true'` to opt into those steps. Do not run linters unless
-the user explicitly requests them. See `docs/CI_LINT_POLICY.md`.
+Lint and formatting gates are active in CI and block on failures. Run them
+when changing lint configuration or when explicitly requested. See
+`docs/CI_LINT_POLICY.md`.
 
 - `cargo test -p exact_transcendentals --lib`
 - `cargo test -p exact_transcendentals --no-default-features --lib`

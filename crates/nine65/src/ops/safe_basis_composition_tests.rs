@@ -793,7 +793,7 @@ fn distinct_weight_carry_support_hits_state_cap_before_ciphertext_work() {
     let ctx = RNSFHEContext::try_new(&config).unwrap();
     let work = SecureConfig::secure_128().into_config();
     let source_q = work.primes.iter().map(|&p| p as u128).product::<u128>() as i128;
-    let family = [0x5355_5050_4f52_54, 1];
+    let family = [0x0053_5550_504f_5254, 1];
     let runtime = CarryRuntime::new(&ctx, source_q, family, 27);
     let mut state = runtime.initial(0).unwrap();
 
@@ -887,9 +887,9 @@ fn precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder(
             .meets_claim_under_both
     );
     let ctx = RNSFHEContext::try_new(&config).unwrap();
-    let family = [0x434f_4d50_4f53_45, 1];
+    let family = [0x0043_4f4d_504f_5345, 1];
     let runtime = CarryRuntime::new(&ctx, source_q, family, 27);
-    let mut rng = ShadowHarvester::with_seed(0x434f_4d50_4f53_45);
+    let mut rng = ShadowHarvester::with_seed(0x0043_4f4d_504f_5345);
     let keys = ctx.generate_keys_dual(&mut rng);
     let native = RNSSecretKey {
         s: RNSPolynomial {

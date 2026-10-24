@@ -195,7 +195,9 @@ fn certified_main_refresh_radius_tracks_live_history_and_transport() {
         if increased {
             break;
         }
-        let next = eval.add(&current, &current).expect("radius boundary precedes decoding exhaustion");
+        let next = eval
+            .add(&current, &current)
+            .expect("radius boundary precedes decoding exhaustion");
         assert!(next.prime_square_residual_radius() >= current.prime_square_residual_radius());
         increased = next.prime_square_residual_radius() > original;
         current = next;

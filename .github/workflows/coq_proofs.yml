@@ -6,8 +6,17 @@ name: Coq Proofs (legacy)
 # Three files are known-broken / ill-formed and are skipped; do not treat the
 # Coq tree as machine-checked verification.
 
-# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'proofs/coq/**'
+      - 'verified-innovations/proofs/coq/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'proofs/coq/**'
+      - 'verified-innovations/proofs/coq/**'
   workflow_dispatch:
 jobs:
   verify:

@@ -121,7 +121,7 @@ fn local_carry_coefficients(source_q: i64, r0: i64, r1: i64, plaintext: u64) -> 
     };
     let minus = nearest(r0 - r1);
     let plus = nearest(r0 + r1);
-    let inverse_two = ((plaintext + 1) / 2) as i64;
+    let inverse_two = plaintext.div_ceil(2) as i64;
     (
         center((plus + minus) * inverse_two),
         center((plus - minus) * inverse_two),
@@ -171,6 +171,7 @@ fn required_galois_exponents(baby: &[u64], giant: &[u64]) -> Vec<u64> {
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn linear_map_from_slots_bsgs(
     ctx: &RNSFHEContext,
     input: &RNSCiphertext,
@@ -211,7 +212,7 @@ fn linear_map_from_slots_bsgs(
                 reindexed_diagonal[source_slot(giant_exponent, slot)] = diagonal[slot];
             }
             let polynomial = inverse_ntt(&reindexed_diagonal, roots, ctx.t);
-            let term = multiply_plain(&ctx, &baby_inputs[&baby_exponent], &polynomial);
+            let term = multiply_plain(ctx, &baby_inputs[&baby_exponent], &polynomial);
             giant_sum = Some(match giant_sum {
                 None => term,
                 Some(previous) => add(ctx, &previous, &term),

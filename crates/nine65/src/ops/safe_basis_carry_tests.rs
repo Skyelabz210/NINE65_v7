@@ -973,7 +973,7 @@ fn precharged_local_ternary_carry_gate_removes_residual_at_native_ring_size() {
             .meets_claim_under_both
     );
     let ctx = RNSFHEContext::try_new(&config).unwrap();
-    let mut rng = ShadowHarvester::with_seed(0x5445_524e_4152_59);
+    let mut rng = ShadowHarvester::with_seed(0x0054_4552_4e41_5259);
     let keys = ctx.generate_keys_dual(&mut rng);
     let native_secret = RNSSecretKey {
         s: RNSPolynomial {

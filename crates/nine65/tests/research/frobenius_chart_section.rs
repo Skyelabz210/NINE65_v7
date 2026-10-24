@@ -226,6 +226,7 @@ impl<'a> FrobeniusSection<'a> {
 // Coherent low-plaintext RESIDUE view, not an integer representative. It is
 // independently produced from the same public source components and source
 // precharge; no conversion from a p65537 ciphertext is asserted.
+#[allow(clippy::too_many_arguments)]
 fn public_residue_linear(
     source: &RNSFHEContext,
     low: &RNSFHEContext,

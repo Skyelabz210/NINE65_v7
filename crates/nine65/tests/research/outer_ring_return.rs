@@ -56,6 +56,7 @@ fn times_x(ctx: &RNSFHEContext, p: &RNSPolynomial) -> RNSPolynomial {
 
 // Process one polarity at a time to halve the expansion stack. Traversal
 // and output batching use public indices, never private zero support.
+#[allow(clippy::too_many_arguments)]
 fn visit_column(
     engine: &Engine<'_>,
     packed: &Packed,

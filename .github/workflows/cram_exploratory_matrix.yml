@@ -1,7 +1,23 @@
 name: CRAM exploratory FHE matrix
 
-# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
+  pull_request:
+    paths:
+      - 'crates/nine65/src/bin/cram_exploratory_probe.rs'
+      - 'crates/nine65/src/bin/cram_modulus_probe.rs'
+      - 'crates/nine65/Cargo.toml'
+      - 'scripts/cram_claim_inventory.py'
+      - 'scripts/run_cram_exploratory_matrix.py'
+      - 'scripts/cram_compare_results.py'
+      - 'scripts/normalize_nine65_bench.py'
+      - 'benchmarks/comparative/**'
+      - 'docs/CRAM_FHE_EXPLORATORY_HARNESS_PLAN.md'
+      - '.github/workflows/cram_exploratory_matrix.yml'
+  push:
+    # Re-pointed 2026-08-12: was 'cram/residue-native-scale-dag', a branch that
+    # no longer exists, so this push trigger was dead. Trunk is `main`.
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       profile:
@@ -78,7 +94,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
       - name: Format gate
-        if: ${{ false }}
         run: cargo fmt --all -- --check
       - name: Compile exploratory probes
         run: |

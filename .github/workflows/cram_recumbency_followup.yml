@@ -7,8 +7,37 @@ name: CRAM Recumbency Follow-up Gate
 # at the real trunk, matching the fix already applied to
 # app_platform_gates.yml and the other cram_*.yml workflows on 2026-08-12.
 
-# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "crates/nine65/src/arithmetic/k_elimination.rs"
+      - "crates/nine65/src/arithmetic/residue_division.rs"
+      - "crates/nine65/src/arithmetic/mod.rs"
+      - "crates/nine65/src/arithmetic/rns.rs"
+      - "crates/nine65/src/bin/nine65_bench.rs"
+      - "crates/nine65/src/noise/budget.rs"
+      - "crates/nine65/src/ops/auto_bootstrap.rs"
+      - "crates/nine65/src/ops/bootstrap.rs"
+      - "crates/nine65/src/ops/rns_fhe.rs"
+      - "crates/nine65/src/ops/sbni.rs"
+      - "crates/nine65/src/params/mod.rs"
+      - "crates/nine65/src/params/secure_configs.rs"
+      - "crates/nine65/tests/bootstrap_residue_shape_regression.rs"
+      - "crates/nine65/tests/dual_rns_context_metadata_regression.rs"
+      - "crates/nine65/tests/k_elimination_basis_regression.rs"
+      - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - "crates/nine65/tests/rns_context_metadata_regression.rs"
+      - ".github/scripts/apply_issue29_rns_metadata_patch.py"
+      - ".github/scripts/check_cram_recumbency.py"
+      - "docs/CRAM_RESIDUE_NATIVE_BOOTSTRAP_SPEC.md"
+      - "docs/AUDIT_REMEDIATION_2026-07-13.md"
+      - ".github/workflows/cram_recumbency_followup.yml"
   workflow_dispatch:
 permissions:
   contents: read
@@ -23,6 +52,8 @@ jobs:
           submodules: false
 
       - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: rustfmt
 
       - name: Enforce CRAM recumbency contract
         run: python3 .github/scripts/check_cram_recumbency.py
@@ -84,7 +115,6 @@ jobs:
           python3 tools/audit_modulus_evidence.py
 
       - name: Rust formatting
-        if: ${{ false }}
         run: cargo fmt --all -- --check
 
       - name: Compile audit benchmark

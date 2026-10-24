@@ -6,8 +6,35 @@ name: Application Platform Gates
 # dead. Re-pointed at the real trunk. The pull_request half was already live
 # against `main` and is unchanged.
 
-# Temporary CI cost pause while ciphertext correctness is repaired.
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'crates/fhe-service/**'
+      - 'crates/nine65-wasm/**'
+      - 'crates/private-feedback-core/**'
+      - 'crates/private-feedback-nine65/**'
+      - 'docs/SECURITY_MODE_MATRIX.md'
+      - 'docs/ENTROPY_MODEL.md'
+      - 'docs/CRAM_INTEGRATION_CONTRACT.md'
+      - 'docs/CLAIM_REGISTRY.csv'
+      - 'scripts/external_fhe_matrix.py'
+      - 'scripts/private_feedback_correctness_harness.py'
+      - 'artifacts/app_platform/**'
+      - '.github/workflows/app_platform_gates.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'crates/fhe-service/**'
+      - 'crates/nine65-wasm/**'
+      - 'crates/private-feedback-core/**'
+      - 'crates/private-feedback-nine65/**'
+      - 'docs/**'
+      - 'scripts/external_fhe_matrix.py'
+      - 'scripts/private_feedback_correctness_harness.py'
+      - 'artifacts/app_platform/**'
+      - '.github/workflows/app_platform_gates.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,15 +46,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: clippy, rustfmt
       - name: Format
-        if: ${{ false }}
         run: cargo fmt --all -- --check
       - name: Test residue-native domain core
         run: cargo test -p private-feedback-core --release
       - name: Test live DualRNS adapter
         run: cargo test -p private-feedback-nine65 --release
       - name: Clippy application stack
-        if: ${{ false }}
         run: |
           cargo clippy -p private-feedback-core --all-targets -- -D warnings
           cargo clippy -p private-feedback-nine65 --all-targets -- -D warnings
@@ -58,10 +85,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: clippy, rustfmt
       - name: Test service
         run: cargo test -p fhe-service --release
       - name: Clippy production service targets
-        if: ${{ false }}
         run: cargo clippy -p fhe-service --bins -- -D warnings
       - name: Assert base authentication and tenant isolation
         run: |
