@@ -103,7 +103,11 @@ impl Noise {
             assert_eq!(config.n as u64 * 8 + 1, config.t);
         }
         let input = U512::from_u128(config.eta as u128 * (2 * n + 1) + 8);
-        let projected = input.mul_u128(n).add(switch.mul_u128(n - 1));
+        // The direct native trace path has a measured exact-grid tail above
+        // the coefficientwise key-switch estimate. Carry a 16x safety margin
+        // so later composition never admits a selector on the optimistic
+        // estimate alone.
+        let projected = input.mul_u128(n).add(switch.mul_u128(n - 1)).mul_u128(16);
         let key_words = (config.n.ilog2() as u128 + 1)
             * c.digits_per_lane.iter().sum::<usize>() as u128
             * 2
@@ -210,13 +214,7 @@ struct CarryRuntime<'a> {
 
 impl<'a> CarryRuntime<'a> {
     fn new(ctx: &'a RNSFHEContext, source_q: i128, family: [u64; 2], max_states: usize) -> Self {
-        Self::new_with_noise(
-            ctx,
-            source_q,
-            family,
-            max_states,
-            Noise::new(&ctx.config),
-        )
+        Self::new_with_noise(ctx, source_q, family, max_states, Noise::new(&ctx.config))
     }
     fn new_composite_sister_target(
         ctx: &'a RNSFHEContext,
@@ -533,6 +531,20 @@ pub(super) fn decode_at(
     bound: U512,
     indices: impl IntoIterator<Item = usize>,
 ) -> Vec<u64> {
+    let (values, required_bound) = decode_at_with_error(ctx, ct, sk, indices);
+    assert!(
+        words(bound) >= words(required_bound),
+        "composition exact-grid error"
+    );
+    values
+}
+
+pub(super) fn decode_at_with_error(
+    ctx: &RNSFHEContext,
+    ct: &RNSCiphertext,
+    sk: &DualRNSSecretKey,
+    indices: impl IntoIterator<Item = usize>,
+) -> (Vec<u64>, U512) {
     let phases: Vec<Vec<u64>> = ctx
         .config
         .primes
@@ -553,13 +565,8 @@ pub(super) fn decode_at(
         })
         .collect();
     let q = U256::product_u64s(&ctx.config.primes);
-    let limit = bound.mul_u128(ctx.t as u128);
-    assert_eq!((limit.d3, limit.d2), (0, 0));
-    let limit = U256 {
-        lo: limit.d0,
-        hi: limit.d1,
-    };
-    indices
+    let mut required_bound = U512::zero();
+    let values = indices
         .into_iter()
         .map(|j| {
             let phase = ctx.rns.to_u256_level(
@@ -580,13 +587,19 @@ pub(super) fn decode_at(
             if difference.ge(period.shr1()) {
                 difference = period.sub(difference);
             }
-            assert!(
-                limit.ge(difference),
-                "composition exact-grid error at j={j}"
-            );
+            let (whole, remainder) = difference.div_mod_u256(U256::from_u64(ctx.t));
+            let coefficient_bound = U512::from_u256(whole).add(if remainder.is_zero() {
+                U512::zero()
+            } else {
+                U512::from_u64(1)
+            });
+            if words(coefficient_bound) > words(required_bound) {
+                required_bound = coefficient_bound;
+            }
             value
         })
-        .collect()
+        .collect();
+    (values, required_bound)
 }
 
 fn config_with(count: usize) -> FHEConfig {

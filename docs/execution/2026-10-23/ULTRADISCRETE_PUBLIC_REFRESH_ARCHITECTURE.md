@@ -6,6 +6,55 @@ candidate K-Elimination consumer. It keeps the CRAM-native route in scope.
 The linked experiments are research evidence; none currently admits public
 refresh.
 
+## Current execution checkpoint — 2026-10-24
+
+Issue #95 remains open and public Phase 1 remains fail-closed. The full-bound
+native experiment now verifies the second K-Elimination carry introduced by
+the high lift. Direct scaling of the original `high_delta` supplies the
+same-history `e+B` composite view, so the earlier offset-producer gap is
+closed for this experiment. The unresolved join is specifically the live
+Safe-Basis selector/root producer for `M_pJ*K_lift`, starting from the
+encrypted `K_lift mod p` view.
+
+The medium N512 and native N8192 carry-corrected consumer tests pass. Native
+results: `max |K_lift|=127` against the derived 8,193 bound; zero mismatches
+when recovering `K_lift mod p` through the `A^-1` p-view; 169-bit corrected
+residual error; 49-bit carry error; 52-bit Phase 1 error; and exact square
+and following product. The correction in those integrated tests is still a
+clear test oracle. A separate symbolic weighted-selector projection passes
+at `K_lift=+-8,193` and the observed `+-23`, but it does not derive selectors
+from the live encrypted carry. Full-T exact multiplication now initializes
+at native N=16,384: 9 transient auxiliary lanes provide 283 bits for the
+266-bit requirement, and native `CarryRuntime`/root preflight passes. A
+separate live N=4 encrypted-trit projection normalizes its `-32` trace scale
+modulo `p^2` and emits `M_pJ` with 83-bit measured error; it does not yet
+consume `K_lift`.
+
+A medium follow-up now carries the same-history `K_lift mod p` through a
+componentwise K-Elimination lift toward `T`. It preserves all p residues but
+returns `K_lift+p*J_q`, a second hidden quotient winding; the observed maximum
+is 22 at output degree 1,024, below the 513 degree bound. The next
+Safe-Basis job is to scale the live correction beyond the small-ring fixture.
+
+An isolated one-root path now computes `J_q` from the same quotient
+remainders using nine precharged two-trit words. At N=4, `J_q=1` is recovered;
+the modeled/measured error is 66/65 bits, the p-scaled correction bound is 82
+bits, and the full-T bound is 112 bits, admitted. At N=8, `J_q=1` is also
+recovered and the p² correction is admitted at 130 bits, but the support tree
+has 6,549 rows and 6,723 exact selector products. Its 160-bit full-T bound is
+refused against a 126-bit radius even though the secret-holder fixture
+measures 112-bit error and decrypts exactly. This exposes a real scaling and
+budget gap; the measured value does not replace admission. The producer is
+still a private research test and is not joined to the medium consumer.
+
+The medium dependent-product test still uses a clear carry correction. Issue
+#95 remains open, and this evidence is not a public refresh or production
+certificate.
+
+At the remote check for this checkpoint, `main` was `6c6a305`, issue #95 was
+open, no CI statuses were attached to that commit, and the only open PR was
+#187 on a separate automated issue-resolution branch.
+
 ## Variable map
 
 | Symbol | Meaning in the refresh path | Current representation and evidence | Open condition |
@@ -24,9 +73,10 @@ refresh.
 | `r_p` | Same-history p-encoded sister-tray residue for K-Elimination | Native consumer test uses `M*=2^16=p-1`; `L=2` scales `99*Z99`, and `K=-(X_p-r_p)`; returned phase is 51 bits at N8192 and survives two products | Produce/authenticate `r_p` through the one-root Safe-Basis 2/11 phase lock; current tray is a client oracle |
 | `X_p=X mod p` | High residue of the same integer `X` | Linear from `Z99` in the public chart encoding | Must share the exact source/history binding of `r` or `a` |
 | `e99=99*Z99-M*K99` | Centered chart remainder; equivalently `r-M/2` or `a+K99-M/2` | Exact zero sheet derivative; live `Q/16` source-correlated bound is 6849 | Establish a correction consumer and a full error/reset certificate |
-| `K_T` / `K_p` | K-Elimination carry in a high or common p encoding | Same-history p/(p+1) views extract `J`; the centered quotient gives the experiment-side bound `|J|<=n_out/2+1=8,193`, inside the p+1 tray radius. A tuned `A=16,390` composite tray has full-bound `pJ` capacity; the medium consumer/product case passes | Bind pL, p, and p+1 views to one capability; replace clear support rows with live history-bound projection and certify its native noise; finish the native consumer, return to the work key, and admit repeat refresh |
-| `R_T=x_T-A*K_T` | T-encoded chart residual | Oracle-injected K-Elimination subtraction removes `r/A` from the p-view return | Bind the residual to the same chart capability and include both chart and carry errors in its certificate |
-| `V_out` | Error after residual correction and return | Power-tray oracle route: observed 47 bits at N512 and 51 bits at native N8192; square and next product exact. Composite pJ route: 62-bit corrected residual and 116-bit carry/Phase 1 at native N8192; square and following product exact, with `e+B` still supplied by a test oracle | Live Safe-Basis offset projection, immutable noise certificate, return to work key, a second admitted refresh, and repeat-cycle admission remain open |
+| `K_T` / `K_p` | K-Elimination carry left by the high lift, read in the common p tray | Full-bound same-history lift returns `pJ+M_pJ*K_lift`; its p view is `A*K_lift mod p`, and multiplication by `A^-1` recovers every native `K_lift mod p` coefficient. The centered component/ternary-key bound is `|K_lift|<=8,193<p/2`; native observed maximum is 127 | Replace the clear test correction with live selectors/root projection from the encrypted p residue into `Enc_T(M_pJ*K_lift)`, bound its native noise, and bind it to the high-lift history |
+| `J_q` | Second quotient winding from componentwise `Enc_p(K_lift)` to `Enc_(p^2)(K_lift+p*J_q)` | Same-remainder one-root correction recovers a nonzero carry at N=4 and N=8; N=8 has 6,549 support rows, 6,723 products, and a refused full-T error bound | Replace ternary-word enumeration with a scalable composite-basis carry projection; join it to the medium/native sibling and bind its history/noise |
+| `R_T=x_T-A*K_T` | T-encoded chart residual after K-Elimination correction | Direct same-history offset construction now yields exact `pJ mod M_pJ`; correcting the high lift by clear test-oracle `M_pJ*K_lift` gives zero plaintext mismatches | Make the bounded selector/root correction live; issue a history-bound residual/noise certificate; return to the work key |
+| `V_out` | Error after residual correction and return | Full-bound native test: corrected residual error 169 bits, carry/Phase 1 errors 49/52 bits, square and following product exact. The `e+B` offset comes from the original `high_delta`; only `K_lift` correction remains a clear test oracle | Live K selector/root producer, certificate propagation, work-key return, second refresh, and repeat-cycle admission remain open |
 
 ## New p-locked winding result
 
@@ -69,13 +119,11 @@ radius is 16,941,572. The native N8192/H96 run observes `max |J|=147`, so
 `p*8,193=536,944,641` does not fit; this composite tray is an observed
 consumer diagnostic, not the worst-case route.
 
-The same-history `M_pJ` view of `e+pJ+B`, minus a test-oracle encoding of the
-bounded `e+B`, gives `pJ mod M_pJ`. K-Elimination division by `p^2` lifts the
-centered signed `pJ` exactly into T across all 16,384 coefficients. Subtracting
-it from the same-history high residual gives `Enc_T(e)` with 62-bit measured
-error. The p-view carry and corrected Phase 1 each measure 116 bits; their
-square and next product both decode exactly. The N512 run gives the same
-correctness result at 115 bits.
+The earlier same-history `M_pJ` consumer used a test-oracle encoding of the
+bounded `e+B`, yielding a 62-bit corrected residual and 116-bit carry/Phase 1
+errors. The revised full-bound test forms `e+B` directly from the original
+`high_delta`, because `M_pJ` divides the Jacobian step. The remaining oracle
+is the second high-lift carry `K_lift`, described below.
 
 This isolates the last producer needed by this route. Direct componentwise
 conversion of the existing `p+1` offset view to `M_pJ` is wrong in 16,197 of
@@ -101,18 +149,25 @@ The full bound fits a larger tray that retains the 11 anchor:
 `T=p^2*M_pJ=4,613,656,451,714,285,580`. The radius is 537,083,909; it holds
 `p*8,193=536,944,641` plus the native offset span `2B=258`. The three
 63-bit NTT-prime chain has 189-bit Q and passes the in-tree 128-bit screen.
-The N512 and N8192 full-bound consumer/product runs pass, including the
-dependent square and next product. At N8192, `max |J|=132`; the corrected
-residual error is 66 bits and carry/Phase 1 error is 123 bits, with zero
-K-Elimination mismatches. The raw same-history offset conversion still fails
-in 16,183 of 16,384 slots, so this consumer result uses a test-oracle offset.
+At N8192, `max |J|=132`; direct scaling of the original same-history
+`high_delta` gives `e+B` at `M_pJ` because `M_pJ` divides the scale step. The
+resulting `pJ` residue has zero plaintext mismatches and 69-bit measured
+error. The raw K-Elimination lift carries an additional `M_pJ*K_lift` in
+16,156 of 16,384 coefficients, with observed `max |K_lift|=127`. Its p view
+recovers `A*K_lift`, and `A^-1 mod p` recovers the full encrypted p residue
+exactly. Applying the clear test correction produces a 169-bit residual,
+49-bit carry and 52-bit Phase 1; the dependent square and following product
+decode exactly. The raw `p+1`-to-`M_pJ` conversion remains a negative control
+and fails in 16,183 of 16,384 coefficients.
 
-The one-root offset fixture now projects `e+B` into this larger composite
-tray at offsets 0, 129, and 258. The fixture still uses clear symbolic support
-rows, and the consumer currently receives the offset from a test oracle. The
-remaining bridge is the live same-history Safe-Basis producer plus its native
-noise certificate, followed by return-key switching and second-refresh
-admission.
+The symbolic linear selector projection covers the full signed bound
+`+-8,193`, but its one-hot rows are clear support. The live bridge still needs
+to derive those selectors from the encrypted `K_lift mod p` residue and bind
+them to the high-lift history. A direct component quotient from p to T keeps
+the p residue but adds the second winding `p*J_q`; removing it is the next
+isolated gate. Full-T planning and native-degree root initialization now
+pass with the widened multiplier and U512 main-only fallback. Work-key
+return, second refresh, and admission are subsequent gates.
 
 When `S` is the exact component-rounding residual polynomial
 `R0+R1*s` and `Q_s` is the active `Q_level`, `K_phase,j` and `K_s` are the
@@ -401,31 +456,28 @@ next-product checks. Production remains fail-closed.
 
 ## Required implementation order
 
-1. Bind the composite-scale precharge and batched 99/121 chart output to the
-   actual source key, history, phase cap, and active RNS level. Keep 121 as
-   the paired chart check; reject caller-supplied phase snapshots.
-2. The scale-locked carry readout passes in the research producer. Turn its
-   T-scale error bound and same-key phase relation into a typed production
-   certificate; refuse if the scale, support, or noise inequality does not fit.
-3. Preserve the tested affine-plus-carry Phase 1 consumer in the typed
-   production path. Extend its checked envelope to both signs, chart-cell
-   boundaries, nonzero source error, every RNS lane, and odd zero coefficients
-   against the client oracle.
-4. The live chart now produces `x mod 2^16` and recovers `K`, but the
-   adjacent-modulus read leaves a 121-bit p-view error. Produce the common-p
-   encoding by correcting the component-scale winding through the existing
-   Safe-Basis root and its 2/11 phase roles. Then apply `K=-(X_p-r_p)`,
-   subtract `x-K` from `affine+x`, and issue an immutable error certificate.
-   The raw sibling ciphertext and exact CRT oracle do not meet this encoding
-   gate.
-5. Return the corrected ciphertext to the work key and execute the next
-   multiply, second refresh and repeat multiply with that producer-issued
-   certificate. The oracle-tray consumer now passes two products at native
-   N8192; production history binding, corrupted-root negatives and the exact
-   security/admission checks remain outstanding.
+1. Replace the N=4/N=8 ternary-word support enumeration with a bounded,
+   phase-locked carry projection using the composite sister trays and
+   Jacobian/ultradiscrete structure. The new state/multiplication counts and
+   high-T admission must fit before any native integration.
+2. Connect the scalable producer to the actual same-history
+   `K_lift mod p` sibling, remove the clear correction, and join it to the
+   tested same-history consumer. Require
+   exact `pJ` recovery, zero `K_lift` correction mismatches, the native
+   residual/carry/Phase 1 error bounds, and dependent square plus following
+   product. Keep raw p+1-to-composite conversion as a negative control.
+3. Bind the batched 99/121 chart and direct `high_delta` offset construction
+   to typed source key, history, phase cap, and active RNS level. Preserve the
+   scale-difference and offset noise bounds as producer-issued certificates;
+   reject caller-supplied phase snapshots.
+4. Return the corrected ciphertext to the work key and run the exact refresh
+   acceptance ladder, including a second refresh and repeat product, under
+   admitted parameters. Add corrupted-root, wrong-history, boundary, both
+   sign, all-lane, and odd-zero negatives. Production remains fail-closed
+   until these gates and the R00-R03 admission checks pass.
 
-Until all five gates pass, issue #95 remains open, production refresh remains
-fail-closed, and the execution plan's R00--R03 admission gates remain active.
+Until all five gates pass, issue #95 remains open and production refresh
+remains fail-closed.
 
 Related evidence: [tropical lift and K-Elimination](../2026-10-22/TROPICAL_LIFT_K_ELIMINATION.md),
 [paired chart K-Elimination](PAIRED_CHART_K_ELIMINATION.md),

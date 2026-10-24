@@ -2,6 +2,7 @@
 //! relation. Private research capability; not a production phase authenticator.
 
 use super::*;
+use crate::arithmetic::main_only_base_ext::MainOnlyBaseExt;
 use exact_transcendentals::chimera::{chimera_by_name, S8_FAMILIES};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -284,9 +285,9 @@ impl<'a> Root211<'a> {
         {
             return Err(TrayRefusal::InvalidLiftBound);
         }
-        let projection = self.runtime.project(self.state, |row| {
-            (row.remainder * scale as i128) as i64
-        });
+        let projection = self
+            .runtime
+            .project(self.state, |row| (row.remainder * scale as i128) as i64);
         self.evaluated_views.set(self.evaluated_views.get() + 1);
         Ok(projection)
     }
@@ -641,21 +642,15 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
         let mut k_ciphertext = zero(&ctx);
         add_scaled(&ctx, &mut k_ciphertext, &tray.views[0].ciphertext, 2);
         add_scaled(&ctx, &mut k_ciphertext, &tray.views[1].ciphertext, -2);
-        let k_bound = tray.views[0]
-            .bound
-            .add(tray.views[1].bound)
-            .mul_u128(2);
-        runtime.noise.admit(k_bound, "paired-chart K-Elimination").unwrap();
+        let k_bound = tray.views[0].bound.add(tray.views[1].bound).mul_u128(2);
+        runtime
+            .noise
+            .admit(k_bound, "paired-chart K-Elimination")
+            .unwrap();
 
         let selected_k = CARRIES[selected_index];
         let chart_residual = 99 * Z99_VALUES[selected_index] - M * selected_k;
-        let actual_k = decode_at(
-            &ctx,
-            &k_ciphertext,
-            &keys.secret_key,
-            k_bound,
-            0..ctx.n,
-        );
+        let actual_k = decode_at(&ctx, &k_ciphertext, &keys.secret_key, k_bound, 0..ctx.n);
         assert_eq!(actual_k[0] as i128, selected_k.rem_euclid(ctx.t as i128));
         assert!(actual_k[1..].iter().all(|&value| value == 0));
 
@@ -726,22 +721,14 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
         let mut residual = zero(&ctx);
         add_scaled(&ctx, &mut residual, &z99_view.ciphertext, 99);
         add_scaled(&ctx, &mut residual, &k_ciphertext, -(M as i64));
-        let residual_bound = z99_view
-            .bound
-            .mul_u128(99)
-            .add(k_bound.mul_u128(M as u128));
+        let residual_bound = z99_view.bound.mul_u128(99).add(k_bound.mul_u128(M as u128));
         runtime
             .noise
             .admit(residual_bound, "paired-chart centered residual")
             .unwrap();
         let expected_residual = 99 * Z99_VALUES[selected_index] - M * selected_k;
-        let actual_residual = decode_at(
-            &ctx,
-            &residual,
-            &keys.secret_key,
-            residual_bound,
-            0..ctx.n,
-        );
+        let actual_residual =
+            decode_at(&ctx, &residual, &keys.secret_key, residual_bound, 0..ctx.n);
         assert_eq!(
             actual_residual[0] as i128,
             expected_residual.rem_euclid(ctx.t as i128)
@@ -752,9 +739,7 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
         // Both residues below come from the same root-bound selector state.
         // The common-p ciphertext retains the small linear representative
         // 47*(Y_98-w_98), which is congruent to K modulo 98.
-        let y_mod_98 = runtime.project(&state, |row| {
-            (2 * row.remainder - M).rem_euclid(98) as i64
-        });
+        let y_mod_98 = runtime.project(&state, |row| (2 * row.remainder - M).rem_euclid(98) as i64);
         let centered_y_mod_p_mod_98 = runtime.project(&state, |row| {
             let y = 2 * row.remainder - M;
             let residue = y.rem_euclid(ctx.t as i128);
@@ -781,13 +766,8 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
             .noise
             .admit(k_mod_98_bound, "composite-98 K-Elimination")
             .unwrap();
-        let decoded_k_mod_98 = decode_at(
-            &ctx,
-            &k_mod_98,
-            &keys.secret_key,
-            k_mod_98_bound,
-            0..ctx.n,
-        );
+        let decoded_k_mod_98 =
+            decode_at(&ctx, &k_mod_98, &keys.secret_key, k_mod_98_bound, 0..ctx.n);
         let signed_residue = if decoded_k_mod_98[0] as i128 > ctx.t as i128 / 2 {
             decoded_k_mod_98[0] as i128 - ctx.t as i128
         } else {
@@ -811,13 +791,7 @@ fn paired_chart_k_elimination_uses_one_root_and_common_encoding() {
                     .exact
                     .try_mul_exact(&k_ciphertext, &k_ciphertext, &relin)
                     .unwrap();
-                let decoded = decode_at(
-                    &ctx,
-                    &square,
-                    &keys.secret_key,
-                    square_bound,
-                    0..ctx.n,
-                );
+                let decoded = decode_at(&ctx, &square, &keys.secret_key, square_bound, 0..ctx.n);
                 assert_eq!(
                     decoded[0] as i128,
                     (selected_k * selected_k).rem_euclid(ctx.t as i128)
@@ -888,8 +862,8 @@ fn symbolic_scale_jacobian_residual_lifts_through_one_root_into_common_p() {
 
         let k_expected = CASES[selected].0.rem_euclid(P as i128) as u64;
         let e_expected = CASES[selected].1.rem_euclid(P as i128) as u64;
-        let delta_expected = (STEP * CASES[selected].0 + CASES[selected].1)
-            .rem_euclid(P as i128) as u64;
+        let delta_expected =
+            (STEP * CASES[selected].0 + CASES[selected].1).rem_euclid(P as i128) as u64;
         let odd_expected = CASES[selected].1.rem_euclid(ODD_TRAY as i128) as u64;
         let decoded_odd = decode_at(
             &ctx,
@@ -920,14 +894,11 @@ fn symbolic_scale_jacobian_residual_lifts_through_one_root_into_common_p() {
             .bound
             .add(e_common.bound)
             .mul_u128(inverse_step.unsigned_abs() as u128);
-        runtime.noise.admit(carry_bound, "scale-Jacobian K-Elimination").unwrap();
-        let decoded_carry = decode_at(
-            &ctx,
-            &carry,
-            &keys.secret_key,
-            carry_bound,
-            0..ctx.n,
-        );
+        runtime
+            .noise
+            .admit(carry_bound, "scale-Jacobian K-Elimination")
+            .unwrap();
+        let decoded_carry = decode_at(&ctx, &carry, &keys.secret_key, carry_bound, 0..ctx.n);
         assert_eq!(decoded_carry[0], k_expected);
         assert!(decoded_carry[1..].iter().all(|&value| value == 0));
 
@@ -960,14 +931,11 @@ fn symbolic_scale_jacobian_residual_lifts_through_one_root_into_common_p() {
         // A dependent square follows the recovered carry at every boundary.
         let square_bound = runtime.noise.multiply(carry_bound, carry_bound).unwrap();
         let square = runtime.exact.try_mul_exact(&carry, &carry, &relin).unwrap();
-        let decoded_square = decode_at(
-            &ctx,
-            &square,
-            &keys.secret_key,
-            square_bound,
-            0..ctx.n,
+        let decoded_square = decode_at(&ctx, &square, &keys.secret_key, square_bound, 0..ctx.n);
+        assert_eq!(
+            decoded_square[0],
+            (k_expected as u128 * k_expected as u128 % P as u128) as u64
         );
-        assert_eq!(decoded_square[0], (k_expected as u128 * k_expected as u128 % P as u128) as u64);
         assert!(decoded_square[1..].iter().all(|&value| value == 0));
     }
 }
@@ -992,12 +960,7 @@ fn one_root_projects_bounded_offset_into_composite_pj_tray() {
     one_message[0] = 1;
     let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
     let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
-    let runtime = CarryRuntime::new_composite_sister_target(
-        &ctx,
-        P as i128,
-        [TRAY_FACTOR, 2],
-        8,
-    );
+    let runtime = CarryRuntime::new_composite_sister_target(&ctx, P as i128, [TRAY_FACTOR, 2], 8);
     let values = [0i128, OFFSET_BOUND as i128, OFFSET_MAX as i128];
     let mut rows: Vec<_> = values
         .iter()
@@ -1024,9 +987,7 @@ fn one_root_projects_bounded_offset_into_composite_pj_tray() {
             coefficients: vec![0],
         };
         let root = Root211::new(&runtime, &state).unwrap();
-        let tray = root
-            .attach(&[TRAY_FACTOR, M1, P_J_TRAY])
-            .unwrap();
+        let tray = root.attach(&[TRAY_FACTOR, M1, P_J_TRAY]).unwrap();
         let bounded_offset = root
             .project_bounded_remainder(&tray, TRAY_FACTOR, OFFSET_MAX, P_J_TRAY)
             .unwrap();
@@ -1040,6 +1001,609 @@ fn one_root_projects_bounded_offset_into_composite_pj_tray() {
         assert_eq!(decoded[0], values[selected] as u64);
         assert!(decoded[1..].iter().all(|&value| value == 0));
     }
+}
+
+#[test]
+fn symbolic_selectors_project_bounded_k_elimination_carry_into_high_mpj_correction() {
+    const P: u64 = 65_537;
+    const FACTOR: u64 = 16_390;
+    const M_PJ: u64 = FACTOR * (P + 1);
+    const HIGH_T: u64 = P * P * M_PJ;
+    const CARRY_BOUND: u64 = 8_193;
+    const CARRIES: [i128; 5] = [-8_193, -23, 0, 23, 8_193];
+
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 4;
+    config.primes = vec![
+        9_223_372_036_853_661_697,
+        9_223_372_036_853_235_713,
+        9_223_372_036_852_744_193,
+    ];
+    config.q = config.primes[0];
+    config.security_bits = 0;
+    config.t = HIGH_T;
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    assert!(P > 2 * CARRY_BOUND);
+    assert!(HIGH_T > 2 * M_PJ * CARRY_BOUND);
+
+    let mut rng = ShadowHarvester::with_seed(0x4b45_4c49_4654_4332);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let mut one_message = vec![0i8; ctx.n];
+    one_message[0] = 1;
+    let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
+    let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
+    let q = U512::product_u64s(&config.primes);
+
+    for (selected, &carry) in CARRIES.iter().enumerate() {
+        let mut correction = zero(&ctx);
+        let mut error_bound = U512::zero();
+        for (index, &support_carry) in CARRIES.iter().enumerate() {
+            let selector = if index == selected {
+                selected_one.clone()
+            } else {
+                selected_zero.clone()
+            };
+            let coefficient = (M_PJ as i128 * support_carry) as i64;
+            add_scaled(&ctx, &mut correction, &selector, coefficient);
+            error_bound = error_bound.add(U512::from_u128(
+                (config.eta as u128) * coefficient.unsigned_abs() as u128,
+            ));
+        }
+        assert!(words(error_bound.mul_u128(HIGH_T as u128 * 2)) < words(q));
+        let decoded = decode_at(&ctx, &correction, &keys.secret_key, error_bound, 0..ctx.n);
+        assert_eq!(
+            decoded[0],
+            (M_PJ as i128 * carry).rem_euclid(HIGH_T as i128) as u64,
+            "the root must emit the bounded M_pJ*K correction in T"
+        );
+        assert!(decoded[1..].iter().all(|&value| value == 0));
+    }
+}
+
+#[test]
+fn full_bound_sister_runtime_initializes_at_native_degree() {
+    const HIGH_T: u64 = 4_613_656_451_714_285_580;
+    const PRIMES: [u64; 3] = [
+        9_223_372_036_853_661_697,
+        9_223_372_036_853_235_713,
+        9_223_372_036_852_744_193,
+    ];
+
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 16_384;
+    config.primes = PRIMES.to_vec();
+    config.q = PRIMES[0];
+    config.security_bits = 0;
+    config.t = HIGH_T;
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    let runtime = CarryRuntime::new_composite_sister_target(&ctx, 5_000_003, [211, 3], 27);
+    let state = runtime.initial(0).unwrap();
+    let root = Root211::new(&runtime, &state).unwrap();
+
+    assert_eq!(root.evaluated_views.get(), 9);
+    assert!(runtime.exact.plan().certificate().shift_multiplier > u64::MAX as u128);
+    assert!(
+        runtime.exact.plan().certificate().aux_bits
+            > runtime.exact.plan().certificate().required_bits
+    );
+}
+
+#[test]
+fn full_bound_root_unscales_encrypted_selector_mod_quotient_period() {
+    const P: u64 = 65_537;
+    const FACTOR: u64 = 16_390;
+    const M_PJ: u64 = FACTOR * (P + 1);
+    const HIGH_T: u64 = P * P * M_PJ;
+    const PRIMES: [u64; 3] = [
+        9_223_372_036_853_661_697,
+        9_223_372_036_853_235_713,
+        9_223_372_036_852_744_193,
+    ];
+
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 4;
+    config.primes = PRIMES.to_vec();
+    config.q = PRIMES[0];
+    config.security_bits = 0;
+    config.t = HIGH_T;
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    let runtime = CarryRuntime::new_composite_sister_target(&ctx, 5_000_003, [211, 3], 27);
+    let mut rng = ShadowHarvester::with_seed(0x4b45_4c49_4654_4c56);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let native_secret = RNSSecretKey {
+        s: RNSPolynomial {
+            n: ctx.n,
+            limbs: ctx
+                .rns
+                .mont_contexts
+                .iter()
+                .zip(&keys.secret_key.s.main)
+                .map(|(mont, lane)| {
+                    lane.iter()
+                        .map(|&value| mont.to_montgomery(value))
+                        .collect()
+                })
+                .collect(),
+        },
+    };
+
+    let galois = RNSGaloisEvaluator::new(&ctx).unwrap();
+    let mut trace = Vec::new();
+    let mut stride = ctx.n;
+    while stride > 1 {
+        trace.push(
+            galois
+                .generate_key_with_rng(&native_secret, stride as u64 + 1, &mut rng)
+                .unwrap(),
+        );
+        stride /= 2;
+    }
+    let relin = relin_key(&runtime, &keys, &mut rng);
+
+    // One encrypted ternary key coefficient is projected into three encrypted
+    // one-hot selectors. No selector outcome is supplied to the evaluator.
+    let mut source = vec![0i8; ctx.n];
+    source[0] = 1;
+    source[1] = -1;
+    let packed = core::array::from_fn(|label| {
+        let values: Vec<i8> = source
+            .iter()
+            .map(|&value| if value == label as i8 - 1 { -8 } else { 0 })
+            .collect();
+        precharge(&ctx, &keys, &values, &mut rng)
+    });
+    let trit = project_trit(
+        &ctx,
+        &packed,
+        &trace,
+        0,
+        runtime.family,
+        runtime.noise.projected,
+    );
+    let state = runtime
+        .advance(&runtime.initial(0).unwrap(), 1, &trit, &relin)
+        .unwrap();
+    let root = Root211::new(&runtime, &state).unwrap();
+    let tray = root.attach(&[2, 11, 22]).unwrap();
+    let raw_correction = root
+        .project_bounded_scaled_remainder(&tray, 22, 1, M_PJ as i64, HIGH_T)
+        .unwrap();
+    let raw_decoded = decode_at(
+        &ctx,
+        &raw_correction.ciphertext,
+        &keys.secret_key,
+        raw_correction.bound,
+        0..ctx.n,
+    );
+    assert_eq!(raw_decoded[0], (HIGH_T as u128 - 32 * M_PJ as u128) as u64);
+    assert!(raw_decoded[1..].iter().all(|&value| value == 0));
+
+    // `project_trit`'s trace leaves each selected branch scaled by -8*N=-32.
+    // Since T=p^2*M_pJ, correct that known factor modulo the quotient period
+    // p^2; it is invertible there even though it is not invertible modulo T.
+    // Multiplying the full-T ciphertext by this public scalar emits M_pJ*K.
+    let quotient_period = P * P;
+    let correction_scale = -(inverse(32, quotient_period) as i64);
+    let mut corrected = zero(&ctx);
+    add_scaled(
+        &ctx,
+        &mut corrected,
+        &raw_correction.ciphertext,
+        correction_scale,
+    );
+    let corrected_bound = raw_correction
+        .bound
+        .mul_u128(correction_scale.unsigned_abs() as u128);
+    let q = U512::product_u64s(&config.primes);
+    assert!(words(corrected_bound.mul_u128(2)) < words(q));
+    let decoded = decode_at(
+        &ctx,
+        &corrected,
+        &keys.secret_key,
+        corrected_bound,
+        0..ctx.n,
+    );
+    assert_eq!(decoded[0], M_PJ);
+    assert!(decoded[1..].iter().all(|&value| value == 0));
+    eprintln!(
+        "encrypted selector scale-lock: N={}, raw selector scale=-32, correction inverse modulo p^2, output error bound={} bits; hidden source trit +1 maps to M_pJ in T",
+        ctx.n,
+        bits(corrected_bound),
+    );
+}
+
+fn run_second_k_elimination_quotient_winding(degree: usize) {
+    const P: u64 = 65_537;
+    const P2: u64 = P * P;
+    const FACTOR: u64 = 16_390;
+    const M_PJ: u64 = FACTOR * (P + 1);
+    const FULL_T: u64 = M_PJ * P2;
+    const PRIMES: [u64; 3] = [
+        9_223_372_036_853_661_697,
+        9_223_372_036_853_235_713,
+        9_223_372_036_852_744_193,
+    ];
+
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = degree;
+    config.primes = PRIMES.to_vec();
+    config.q = PRIMES[0];
+    config.security_bits = 0;
+    config.t = P2;
+    let p2_ctx = RNSFHEContext::try_new(&config).unwrap();
+    config.t = P;
+    let p_ctx = RNSFHEContext::try_new(&config).unwrap();
+    config.t = FULL_T;
+    let full_ctx = RNSFHEContext::try_new(&config).unwrap();
+
+    let runtime = CarryRuntime::new_composite_sister_target(&p2_ctx, P as i128, [211, 3], 10_000);
+    let mut rng = ShadowHarvester::with_seed(0x4b45_4c49_4654_4a51);
+    let keys = p2_ctx.generate_keys_dual(&mut rng);
+    let mut input = vec![0i8; degree];
+    input[0] = 23;
+    input[1] = -17;
+    let secret =
+        super::super::safe_basis_precharge_tests::signed_secret(&keys.secret_key, PRIMES[0]);
+    // Apply the same exact componentwise K-Elimination quotient used by the
+    // pJ tray: dividing an Enc_p ciphertext by p changes its BFV scale to
+    // Enc_(p^2), while exposing a second hidden p-multiple winding.
+    let projector = MainOnlyBaseExt::new(&PRIMES, &[P]).unwrap();
+    let component_remainders = |poly: &RNSPolynomial| {
+        let ordinary: Vec<Vec<u64>> = poly
+            .limbs
+            .iter()
+            .zip(&p_ctx.rns.mont_contexts)
+            .map(|(lane, mont)| {
+                lane.iter()
+                    .map(|&value| mont.from_montgomery(value))
+                    .collect()
+            })
+            .collect();
+        (0..p2_ctx.n)
+            .map(|coefficient| {
+                let residues: Vec<_> = ordinary.iter().map(|lane| lane[coefficient]).collect();
+                let mut remainder = [0];
+                projector
+                    .project_centered(&residues, &mut remainder)
+                    .unwrap();
+                if remainder[0] > P / 2 {
+                    remainder[0] as i64 - P as i64
+                } else {
+                    remainder[0] as i64
+                }
+            })
+            .collect::<Vec<_>>()
+    };
+    let (encrypted_k_p, r0, r1, expected_from_remainders) = (0..128)
+        .find_map(|trial| {
+            let mut trial_rng = ShadowHarvester::with_seed(0x4b45_4c49_0000_0000 + trial);
+            let ciphertext = precharge(&p_ctx, &keys, &input, &mut trial_rng);
+            let r0 = component_remainders(&ciphertext.c0);
+            let r1 = component_remainders(&ciphertext.c1);
+            let mut phase_remainder = r0[0] as i128;
+            for key_coefficient in 0..p2_ctx.n {
+                let index = (p2_ctx.n - key_coefficient) % p2_ctx.n;
+                let term = if key_coefficient == 0 {
+                    r1[index]
+                } else {
+                    -r1[index]
+                };
+                phase_remainder += term as i128 * secret[key_coefficient] as i128;
+            }
+            let winding = (phase_remainder + P as i128 / 2).div_euclid(P as i128);
+            (winding != 0).then_some((ciphertext, r0, r1, winding))
+        })
+        .expect("deterministic search should produce a nonzero quotient carry");
+    let divide_component = |poly: &RNSPolynomial| {
+        let ordinary: Vec<Vec<u64>> = poly
+            .limbs
+            .iter()
+            .zip(&p_ctx.rns.mont_contexts)
+            .map(|(lane, mont)| {
+                lane.iter()
+                    .map(|&value| mont.from_montgomery(value))
+                    .collect()
+            })
+            .collect();
+        let inverses: Vec<_> = PRIMES.iter().map(|&q| inverse(P % q, q)).collect();
+        let mut divided = vec![vec![0; p2_ctx.n]; PRIMES.len()];
+        for coefficient in 0..p2_ctx.n {
+            let residues: Vec<_> = ordinary.iter().map(|lane| lane[coefficient]).collect();
+            let mut remainder = [0];
+            projector
+                .project_centered(&residues, &mut remainder)
+                .unwrap();
+            let centered = if remainder[0] > P / 2 {
+                remainder[0] as i128 - P as i128
+            } else {
+                remainder[0] as i128
+            };
+            for lane in 0..PRIMES.len() {
+                let numerator =
+                    (residues[lane] as i128 - centered).rem_euclid(PRIMES[lane] as i128) as u128;
+                divided[lane][coefficient] =
+                    (numerator * inverses[lane] as u128 % PRIMES[lane] as u128) as u64;
+            }
+        }
+        RNSPolynomial {
+            n: p2_ctx.n,
+            limbs: divided
+                .iter()
+                .zip(&p2_ctx.rns.mont_contexts)
+                .map(|(lane, mont)| {
+                    lane.iter()
+                        .map(|&value| mont.to_montgomery(value))
+                        .collect()
+                })
+                .collect(),
+        }
+    };
+    let lifted_k = RNSCiphertext {
+        c0: divide_component(&encrypted_k_p.c0),
+        c1: divide_component(&encrypted_k_p.c1),
+        num_primes: PRIMES.len(),
+    };
+    let lifted_plain = decode_at(
+        &p2_ctx,
+        &lifted_k,
+        &keys.secret_key,
+        U512::from_u64(1_000_000),
+        0..p2_ctx.n,
+    );
+    let residue_k0 = (input[0] as i128).rem_euclid(P2 as i128) as u64;
+    let delta = (lifted_plain[0] as i128 - residue_k0 as i128).rem_euclid(P2 as i128);
+    let centered_delta = if delta > P2 as i128 / 2 {
+        delta - P2 as i128
+    } else {
+        delta
+    };
+    assert_eq!(centered_delta % P as i128, 0);
+    let expected_quotient_winding = centered_delta / P as i128;
+    assert_eq!(expected_quotient_winding, expected_from_remainders);
+    assert_ne!(expected_quotient_winding, 0);
+
+    let native_secret = RNSSecretKey {
+        s: RNSPolynomial {
+            n: p2_ctx.n,
+            limbs: p2_ctx
+                .rns
+                .mont_contexts
+                .iter()
+                .zip(&keys.secret_key.s.main)
+                .map(|(mont, lane)| {
+                    lane.iter()
+                        .map(|&value| mont.to_montgomery(value))
+                        .collect()
+                })
+                .collect(),
+        },
+    };
+    let galois = RNSGaloisEvaluator::new(&p2_ctx).unwrap();
+    let mut trace = Vec::new();
+    let mut stride = p2_ctx.n;
+    while stride > 1 {
+        trace.push(
+            galois
+                .generate_key_with_rng(&native_secret, stride as u64 + 1, &mut rng)
+                .unwrap(),
+        );
+        stride /= 2;
+    }
+    let relin = relin_key(&runtime, &keys, &mut rng);
+    let inverse_trace_size = inverse(p2_ctx.n as u64, P2);
+    let trace_unit = if inverse_trace_size > P2 / 2 {
+        inverse_trace_size as i64 - P2 as i64
+    } else {
+        inverse_trace_size as i64
+    };
+    // Precharge the nine possible two-trit words for each pair. The two
+    // words are selected by separate coefficient traces from the same nine
+    // ciphertexts, so the encrypted carry tree starts at pair granularity.
+    let packed_pairs: [RNSCiphertext; 9] = core::array::from_fn(|label| {
+        let first = (label / 3) as i8 - 1;
+        let second = (label % 3) as i8 - 1;
+        let mut indicators = vec![0i64; p2_ctx.n];
+        for start in (0..p2_ctx.n).step_by(2) {
+            if secret[start] == first && secret[start + 1] == second {
+                indicators[start] = trace_unit;
+            }
+        }
+        crate::ops::rns_fhe::cram_precharge::precharge_centered_polynomial_with_rng(
+            &p2_ctx,
+            &indicators,
+            &native_secret,
+            &mut rng,
+        )
+        .unwrap()
+    });
+
+    let project_pair_selector = |label: usize, coefficient: usize| {
+        let mut output = zero(&p2_ctx);
+        let mut selected = shift(
+            &p2_ctx,
+            &packed_pairs[label],
+            if coefficient == 0 {
+                0
+            } else {
+                2 * p2_ctx.n - coefficient
+            },
+        );
+        for key in &trace {
+            selected = p2_ctx.add(&selected, &galois.apply(&selected, key).unwrap());
+        }
+        add_scaled(&p2_ctx, &mut output, &selected, 1);
+        output
+    };
+    let pair_state = |start: usize, terms: [i64; 2]| {
+        let mut destinations = BTreeMap::new();
+        let mut rows: Vec<Row> = Vec::new();
+        for left_label in -1i64..=1 {
+            for right_label in -1i64..=1 {
+                let total =
+                    terms[0] as i128 * left_label as i128 + terms[1] as i128 * right_label as i128;
+                let winding = (total + P as i128 / 2).div_euclid(P as i128);
+                let destination = (total - P as i128 * winding, winding as i64);
+                let label = ((left_label + 1) * 3 + right_label + 1) as usize;
+                let selector = project_pair_selector(label, start);
+                runtime
+                    .noise
+                    .admit(runtime.noise.projected, "pair selector")
+                    .unwrap();
+                let index = if let Some(&index) = destinations.get(&destination) {
+                    index
+                } else {
+                    let index = rows.len();
+                    destinations.insert(destination, index);
+                    rows.push(Row {
+                        remainder: destination.0,
+                        winding: destination.1,
+                        selector: None,
+                        bound: U512::zero(),
+                    });
+                    index
+                };
+                rows[index].bound = rows[index].bound.add(runtime.noise.projected);
+                runtime
+                    .noise
+                    .admit(rows[index].bound, "merged pair selector")
+                    .unwrap();
+                rows[index].selector = Some(match rows[index].selector.take() {
+                    None => selector,
+                    Some(previous) => p2_ctx.add(&previous, &selector),
+                });
+            }
+        }
+        State {
+            rows,
+            family: runtime.family,
+            source_q: P as i128,
+            coefficients: vec![start, start + 1],
+        }
+    };
+    let mut pair_states: Vec<_> = (0..p2_ctx.n)
+        .step_by(2)
+        .map(|start| {
+            let terms = if start == 0 {
+                [r1[0], -r1[p2_ctx.n - 1]]
+            } else {
+                [-r1[p2_ctx.n - start], -r1[p2_ctx.n - start - 1]]
+            };
+            pair_state(start, terms)
+        })
+        .collect();
+    while pair_states.len() > 1 {
+        let mut next_level = Vec::with_capacity(pair_states.len().div_ceil(2));
+        for pair in pair_states.chunks(2) {
+            next_level.push(if pair.len() == 2 {
+                runtime.compose(&pair[0], &pair[1], &relin).unwrap()
+            } else {
+                pair[0].clone()
+            });
+        }
+        pair_states = next_level;
+    }
+    let paired_sum = pair_states.pop().unwrap();
+    let initial = runtime.initial(r0[0] as i128).unwrap();
+    let state = runtime.compose(&initial, &paired_sum, &relin).unwrap();
+    eprintln!(
+        "quotient-carry tree cost: N={}, states={}, exact selector products={}",
+        p2_ctx.n,
+        state.rows.len(),
+        runtime.multiplications.get(),
+    );
+    let root = Root211::new(&runtime, &state).unwrap();
+    let winding = runtime.project(root.state, |row| row.winding);
+    // Precharge each pair indicator by N^-1 mod p^2. Multiplication by
+    // X^(2N-k) moves coefficient k to the constant term without a sign,
+    // because X^(2N)=1. The native Galois trace emits a unit selector.
+    assert_eq!(
+        (p2_ctx.n as u128 * trace_unit.rem_euclid(P2 as i64) as u128) % P2 as u128,
+        1
+    );
+    let winding_plaintext = winding.ciphertext;
+    let winding_bound = winding.bound;
+    let (projected_winding, measured_winding_bound) =
+        decode_at_with_error(&p2_ctx, &winding_plaintext, &keys.secret_key, [0]);
+    eprintln!(
+        "one-root quotient winding: modeled bound={} bits, measured error={} bits, p^2 decoding radius={} bits",
+        bits(winding_bound),
+        bits(measured_winding_bound),
+        bits(runtime.noise.half()),
+    );
+    assert!(words(winding_bound) >= words(measured_winding_bound));
+    decode_at(
+        &p2_ctx,
+        &winding_plaintext,
+        &keys.secret_key,
+        winding_bound,
+        [0],
+    );
+    assert_eq!(
+        projected_winding[0],
+        expected_quotient_winding.rem_euclid(P2 as i128) as u64,
+        "the one-root selector must recover the component quotient winding"
+    );
+
+    let mut corrected_k = lifted_k.clone();
+    add_scaled(&p2_ctx, &mut corrected_k, &winding_plaintext, -(P as i64));
+    let q = U512::product_u64s(&PRIMES);
+    let scaled_correction_bound = winding_bound.mul_u128(P as u128);
+    let correction_admitted = words(scaled_correction_bound.mul_u128(2 * P2 as u128)) < words(q);
+    let corrected_k_plain = decode_at(
+        &p2_ctx,
+        &corrected_k,
+        &keys.secret_key,
+        scaled_correction_bound.add(U512::from_u64(1_000_000)),
+        [0],
+    );
+    let corrected_matches = corrected_k_plain[0] == residue_k0;
+    eprintln!(
+        "second quotient carry: Enc_p(K)->Enc_(p^2)(K+p*J_q), J_q={} recovered by the live unit-scale one-root trit path; multiply-by-p correction bound={} bits, admitted={}, corrected coefficient exact={}",
+        expected_quotient_winding.unsigned_abs(),
+        bits(scaled_correction_bound),
+        correction_admitted,
+        corrected_matches,
+    );
+    if correction_admitted {
+        assert!(
+            corrected_matches,
+            "admitted quotient correction must decode exactly"
+        );
+        // An Enc_(p^2)(K) ciphertext is the same RNS object as
+        // Enc_T(M_pJ*K), because T=M_pJ*p^2.
+        let expected_high_correction =
+            (M_PJ as i128 * input[0] as i128).rem_euclid(FULL_T as i128) as u64;
+        let high_scale_bound = scaled_correction_bound.mul_u128(M_PJ as u128);
+        let high_admitted = words(high_scale_bound.mul_u128(2 * FULL_T as u128)) < words(q);
+        let (high_plain, measured_high_bound) =
+            decode_at_with_error(&full_ctx, &corrected_k, &keys.secret_key, [0]);
+        let high_exact = high_plain[0] == expected_high_correction;
+        let high_t_radius = Noise::new_for_composite_sister_target(&full_ctx.config).half();
+        eprintln!(
+            "p^2-to-full-T scale: modeled error={} bits, measured error={} bits, high-T radius={} bits; admitted={}, exact high correction={}",
+            bits(high_scale_bound),
+            bits(measured_high_bound),
+            bits(high_t_radius),
+            high_admitted,
+            high_exact,
+        );
+        if high_admitted {
+            assert!(
+                high_exact,
+                "an admitted high correction must decode exactly"
+            );
+        }
+    }
+}
+
+#[test]
+fn safe_basis_root_projects_second_k_elimination_quotient_winding() {
+    run_second_k_elimination_quotient_winding(4);
+}
+
+#[test]
+fn safe_basis_root_projects_second_k_elimination_quotient_winding_at_degree_eight() {
+    run_second_k_elimination_quotient_winding(8);
 }
 
 #[test]
@@ -1058,10 +1622,7 @@ fn one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t() {
 
     let mut config = SecureConfig::secure_128().into_config();
     config.n = 32;
-    config.primes = vec![
-        288_230_376_152_137_729,
-        288_230_376_152_727_553,
-    ];
+    config.primes = vec![288_230_376_152_137_729, 288_230_376_152_727_553];
     config.q = config.primes[0];
     config.security_bits = 0;
     config.t = HIGH_T;
@@ -1073,12 +1634,7 @@ fn one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t() {
     one_message[0] = 1;
     let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
     let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
-    let runtime = CarryRuntime::new_composite_sister_target(
-        &ctx,
-        P as i128,
-        [517, 2],
-        8,
-    );
+    let runtime = CarryRuntime::new_composite_sister_target(&ctx, P as i128, [517, 2], 8);
     let mut rows: Vec<_> = WINDINGS
         .iter()
         .map(|&winding| Row {
@@ -1144,7 +1700,11 @@ fn relin_key(
                 .mont_contexts
                 .iter()
                 .zip(&keys.secret_key.s.main)
-                .map(|(mont, lane)| lane.iter().map(|&value| mont.to_montgomery(value)).collect())
+                .map(|(mont, lane)| {
+                    lane.iter()
+                        .map(|&value| mont.to_montgomery(value))
+                        .collect()
+                })
                 .collect(),
         },
     };

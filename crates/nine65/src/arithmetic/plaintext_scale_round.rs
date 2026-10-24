@@ -22,10 +22,22 @@ use super::main_only_base_ext::{MainOnlyBaseExt, MainOnlyBaseExtError};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PlaintextScaleRoundError {
     EmptyMainBasis,
-    InvalidPlaintextModulus { modulus: u64 },
-    NonCoprimeOutput { main: u64, output: u64 },
-    InputShapeMismatch { got: usize, expected: usize },
-    NonCanonicalResidue { lane: usize, residue: u64, modulus: u64 },
+    InvalidPlaintextModulus {
+        modulus: u64,
+    },
+    NonCoprimeOutput {
+        main: u64,
+        output: u64,
+    },
+    InputShapeMismatch {
+        got: usize,
+        expected: usize,
+    },
+    NonCanonicalResidue {
+        lane: usize,
+        residue: u64,
+        modulus: u64,
+    },
     Projection(MainOnlyBaseExtError),
 }
 
@@ -69,11 +81,7 @@ impl RnsComponentScaleRound {
     ///
     /// The main lanes must be pairwise coprime and below `2^63`. `output`
     /// must be coprime to every main lane so exact division is defined.
-    pub fn new(
-        main: &[u64],
-        input: u64,
-        output: u64,
-    ) -> Result<Self, PlaintextScaleRoundError> {
+    pub fn new(main: &[u64], input: u64, output: u64) -> Result<Self, PlaintextScaleRoundError> {
         if main.is_empty() {
             return Err(PlaintextScaleRoundError::EmptyMainBasis);
         }
@@ -144,12 +152,11 @@ impl RnsComponentScaleRound {
             .zip(&self.main)
             .zip(&self.output_inverse)
             .map(|((&residue, &modulus), &inverse)| {
-                let numerator = (self.input as u128 * residue as u128
-                    + self.half_output as u128)
+                let numerator = (self.input as u128 * residue as u128 + self.half_output as u128)
                     % modulus as u128;
                 let remainder_mod_main = remainder as u128 % modulus as u128;
-                let difference = (numerator + modulus as u128 - remainder_mod_main)
-                    % modulus as u128;
+                let difference =
+                    (numerator + modulus as u128 - remainder_mod_main) % modulus as u128;
                 (difference * inverse as u128 % modulus as u128) as u64
             })
             .collect())
@@ -173,11 +180,10 @@ mod tests {
         let mut value = U512::zero();
         let mut prefix = U512::from_u64(1);
         for (&residue, &modulus) in residues.iter().zip(main) {
-            let delta = (residue as u128 + modulus as u128
-                - value.mod_u64(modulus) as u128)
+            let delta = (residue as u128 + modulus as u128 - value.mod_u64(modulus) as u128)
                 % modulus as u128;
-            let digit = delta * inverse_mod(prefix.mod_u64(modulus), modulus) as u128
-                % modulus as u128;
+            let digit =
+                delta * inverse_mod(prefix.mod_u64(modulus), modulus) as u128 % modulus as u128;
             value = value.add(prefix.mul_u128(digit));
             prefix = prefix.mul_u128(modulus as u128);
         }
@@ -219,15 +225,26 @@ mod tests {
                     .iter()
                     .map(|&modulus| x.rem_euclid(modulus as i64) as u64)
                     .collect();
-                assert_eq!(scale.scale_round(&residues).unwrap(), oracle(&main, &residues, input, output));
+                assert_eq!(
+                    scale.scale_round(&residues).unwrap(),
+                    oracle(&main, &residues, input, output)
+                );
             }
         }
     }
 
     #[test]
     fn scale_conversion_is_k_elimination_not_full_crt_reconstruction() {
-        let main = [998_244_353, 985_661_441, 754_974_721, 469_762_049,
-                    1_811_939_329, 2_113_926_217, 2_130_706_433, 1_107_296_257];
+        let main = [
+            998_244_353,
+            985_661_441,
+            754_974_721,
+            469_762_049,
+            1_811_939_329,
+            2_113_926_217,
+            2_130_706_433,
+            1_107_296_257,
+        ];
         let scale = RnsComponentScaleRound::new(&main, 120, 121).unwrap();
         for x in [-100i128, -1, 0, 1, 100] {
             let input: Vec<_> = main
@@ -248,7 +265,10 @@ mod tests {
         let result = RnsComponentScaleRound::new(&[17, 19], 120, 17);
         assert!(matches!(
             result,
-            Err(PlaintextScaleRoundError::NonCoprimeOutput { main: 17, output: 17 })
+            Err(PlaintextScaleRoundError::NonCoprimeOutput {
+                main: 17,
+                output: 17
+            })
         ));
     }
 }

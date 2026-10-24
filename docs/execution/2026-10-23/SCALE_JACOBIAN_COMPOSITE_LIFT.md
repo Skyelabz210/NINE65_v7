@@ -1,14 +1,14 @@
 # Scale-Jacobian p-locked lift
 
-This research path now recovers the p-locked carry, bounded residual, and a
-same-history ciphertext for the quotient winding. A native composite-`pJ`
-tray consumer also corrects the residual and survives two dependent products,
-but its bounded offset is still supplied by a test oracle. It is not a public
-refresh: the live Safe-Basis root has not been joined to the Jacobian history,
-and the returned ciphertext is not switched back to the work key. A worst-case
-winding bound is now derived for the current ternary output-key and RNS-scale
-contract; this is an experiment-side bound, not yet an authenticated production
-certificate.
+This research path now recovers the p-locked carry and bounded residual,
+produces a same-history composite `pJ` residue, and isolates a second hidden
+K-Elimination carry in the high lift. The bounded offset is formed directly
+from the original `high_delta` components; a test oracle is still used for the
+bounded carry correction. This is not a public refresh: live Safe-Basis
+selection for that correction is not connected to the Jacobian history, and
+the returned ciphertext is not switched back to the work key. The winding and
+carry bounds are experiment-side derivations, not authenticated production
+certificates.
 
 ## Tropical scale derivative
 
@@ -128,18 +128,55 @@ the ciphertext history and key certificate.
 
 ## Remaining architecture gap
 
-The one-root Safe Basis exercise in
-`crates/nine65/src/ops/safe_basis_sister_tray_tests.rs` still uses symbolic
-support rows and a projector that reads their clear remainders. It does not
-attach the live `T=pL` scale-difference ciphertext and p-locked views to one
-authenticated Root211 history. That integration needs a root capable of
-binding the `pL`, `p`, and `M=p+1` views to the identical ciphertext, key, RNS
-chain, input commitment, and history, with public certificates for both
-`|e|` and the derived `|J|` bound. Then the root must lift `J mod M` into the
-`T` encoding so the carry consumer can subtract `pJ` without a clear
-representative. A symbolic endpoint fixture now exercises that scaled
-projection, but it still receives clear support rows and is not the live
-history-bound producer.
+The full-bound composite route forms `Enc_M_pJ(e+B)` from the original
+same-history `high_delta`: `e=Delta-step*K` and `M_pJ` divides `step`, so
+`Delta+B` is `e+B mod M_pJ`. Subtracting this sibling yields the correct
+`pJ mod M_pJ` residue with 69-bit measured error at native N8192. The raw
+K-Elimination lift does not yet return `pJ` directly. It returns
+`pJ+M_pJ*K_lift`, where the native observed `max |K_lift|=127`.
+
+The same quotient ciphertext exposes `A*K_lift mod p` after rescaling its
+high encoding to the p tray, because `pJ=0 mod p` and
+`M_pJ=A*(p+1)`. Multiplying by the public `A^-1 mod p` recovers the encrypted
+`K_lift mod p` with zero mismatches over all 16,384 native coefficients. The
+centered component bound and ternary output key give
+`|K_lift|<=n_out/2+1=8,193`, below `p/2`, so this p residue sign-lifts
+uniquely.
+
+A symbolic weighted-selector projection emits `M_pJ*K_lift` in `T` at
+`K_lift=+-8,193` and the observed `+-23`; its explicit error bound clears
+`Q/(2T)`. The integrated medium and native controls subtract a clear test
+correction `M_pJ*K_lift`: the native corrected residual measures 169 bits,
+carry and Phase 1 measure 49 and 52 bits, and the square and following product
+decode exactly. The full-T multiplication planner now carries its shift
+multiplier in `u128`, and the main-only rank fallback uses a certified `U512`
+bound. Its full-bound native plan selects 9 transient auxiliary lanes (283
+bits available, 266 required); the native-degree `CarryRuntime` and root
+initialize successfully. A live encrypted ternary-selector/root test also
+passes at N=4 with the same full-T tuple: the trace produces a raw `-32`
+selector scale, and multiplication by `-32^-1 mod p^2` turns the weighted
+output into `M_pJ*K` in `T` with an 83-bit measured error bound. This confirms
+the selector scale can be normalized modulo the quotient period `p^2`, since
+`T=p^2*M_pJ`, without requiring an inverse of 32 modulo `T`.
+
+The medium lift exposes `K_lift+p*J_q`; `J_q` is a second hidden quotient
+winding from the component remainders. A one-root test now computes and removes
+nonzero `J_q` from the same quotient and output-key trits. At N=4 the p²
+correction bound is 82 bits and the full-T bound is 112 bits; both are
+admitted. At N=8 the p² correction bound is 130 bits and is admitted, but the
+full-T bound grows to 160 bits and is refused against the 126-bit radius.
+The N=8 path uses 6,549 support rows and 6,723 exact selector products. Its
+secret-holder diagnostic measures 112-bit high-T error and decodes the tested
+coefficient exactly, but this does not override the refused admission bound.
+
+This experimental pair-word tree therefore establishes the quotient-carry
+identity and a small-degree correction, while exposing the missing scale
+step: the state enumeration and error growth do not yet support the medium or
+native degree. The native-degree full-T runtime still initializes with 9
+transient auxiliary lanes (283 available bits for 266 required), but no
+scalable quotient-carry producer is connected to the medium consumer.
+Work-key return, native dependent products, second refresh, and admission
+remain open.
 
 After that join, the corrected phase still must return to the work key, pass
 the native dependent-product/noise check, and survive a second refresh. Until
@@ -172,22 +209,11 @@ directly at `M_pJ`. Subtraction then gives the bounded centered `pJ` residue.
 Since `|pJ|<M_pJ/2`, K-Elimination division by `p^2` lifts the centered signed
 integer into `T` exactly. The high correction is `X_T - lift_T(pJ)`.
 
-The medium and native consumer tests currently supply `e+B` with a clear
-test oracle to isolate this arithmetic. At N=512 and N=8192, respectively,
-the centered `pJ` lift has zero mismatches over 1,024 and 16,384 coefficients.
-The corrected residual has 62-bit measured error at both sizes. Its p-view
-carry and corrected Phase 1 each have 115-bit and 116-bit measured error;
-the dependent square and following product decode exactly at both sizes.
-The direct scalar-p control fails in half the slots, demonstrating why the
-tray must encode `pJ` before the high lift.
-
-The attempted conversion of `Enc_(p+1)(e+B)` to `M_pJ` with raw
-componentwise division fails in 963/1,024 medium slots and
-16,197/16,384 native slots. That is the isolated producer gap: the existing
-one-root bounded projector can emit `Enc_M_pJ(e+B)` from symbolic support,
-and its new composite-target fixture passes at offsets 0, 129, and 258, but
-the projector is not yet bound to the live Jacobian ciphertext, its p/p+1/
-composite views, or a certified `|J|` envelope.
+The earlier consumer controls supplied `e+B` in clear to isolate the `pJ`
+tray arithmetic. The revised test forms the offset directly from the original
+same-history `high_delta`; only the high-lift correction `K_lift` remains a
+test oracle. The raw `Enc_(p+1)(e+B)` to `M_pJ` conversion remains a negative
+control and fails in 969/1,024 medium slots and 16,183/16,384 native slots.
 
 ## Direct-root alternative
 
@@ -201,12 +227,11 @@ centered `J` and projects `pJ` directly into `T`. Its endpoint checks cover
 the derived bound and still sign-lifts within the p+1 tray.
 
 The fixture remains symbolic: its support rows contain the clear winding, and
-the root projector uses those rows to form the result. The next implementation
-step is to connect the live same-history `J mod (p+1)` ciphertext to that
-bounded projection without exposing or supplying `J`, certify projection
-noise under the native output chain, and subtract the resulting `Enc_T(pJ)`
-from the same-history high ciphertext. Then verify the p-view carry, work-key
-return, dependent products, and second refresh through the actual producer.
+the root projector uses those rows to form the result. For this J-only
+alternative, the next implementation step is to connect the live same-history
+`J mod (p+1)` ciphertext to that bounded projection. The full-bound composite
+route instead needs live selectors for the `K_lift` correction described
+below.
 
 ## Full-bound composite `pJ` tray
 
@@ -216,16 +241,18 @@ The tighter bound supports a larger 11-anchored composite tray:
 `T=p^2*M_pJ=4,613,656,451,714,285,580`. The centered radius is 537,083,909,
 which covers `p*8,193=536,944,641` plus the native offset span `2B=258`.
 Three 63-bit NTT primes give a 189-bit Q chain; the tuple passes the
-repository's 128-bit screen. The N512 and N8192 full-bound consumer/product
-tests pass. At native N8192, `max |J|=132`; the full tray has zero K-Elimination
-mismatches, corrected residual error is 66 bits, and carry/Phase 1 error is
-123 bits. The square and following product both decode exactly. The raw
-same-history offset conversion still fails in 16,183 of 16,384 slots, so the
-consumer receives `e+B` from a test oracle.
+repository's 128-bit screen. At native N8192, `max |J|=132`; the direct offset
+sibling has 69-bit measured error and the pJ residue has zero plaintext
+mismatches. Raw K-Elimination adds `M_pJ*K_lift` in 16,156 of 16,384 slots,
+with `max |K_lift|=127`; the p view recovers `A*K_lift`, and `A^-1` recovers
+every K residue exactly. With a clear test correction for this K only, the
+native corrected residual error is 169 bits, carry/Phase 1 errors are 49/52
+bits, and square plus following product both decode exactly.
 
-This composite route projects `e+B` into `M_pJ` and subtracts it from the
-same-history `e+B+pJ` view before K-Elimination lifting by `p^2`. The offset
-projection fixture passes at 0, 129, and 258, but still uses clear symbolic
-support rows; the consumer experiment still uses a test oracle for the live
-offset. The remaining implementation gate is binding the actual Jacobian
-history to that one-root projection with a native noise certificate.
+The raw same-history conversion from the p+1 offset view to `M_pJ` remains a
+negative control. Direct scaling of `high_delta` produces `e+B` at `M_pJ`
+because `M_pJ | step`; this avoids a fresh offset ciphertext and preserves
+the shared RNS component history. The remaining gate is projecting the live
+bounded K residue into the high encoding. The symbolic linear projection
+passes at `K=+-8,193`, but its selectors are still clear support rows.
+Work-key return, a second refresh, and admission remain open.

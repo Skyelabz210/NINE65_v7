@@ -1,0 +1,76 @@
+# Issue #95 public-refresh execution plan
+
+Date: 2026-10-24. Scope: close the public CRAM refresh gap through the
+scale-Jacobian and ultradiscrete lift path. Production Phase 1 remains
+fail-closed until the complete acceptance ladder passes.
+
+## Verified state
+
+- The same-history `high_delta` directly supplies the bounded `e+B` composite
+  view because `M_pJ` divides the Jacobian step. The pJ tray recovers `pJ`;
+  the high K-Elimination lift exposes `M_pJ*K_lift`, and the p view plus
+  public `A^-1 mod p` recovers every tested `K_lift mod p` coefficient.
+- The componentwise p-to-p² quotient is not a direct lift of `K_lift`: it
+  returns `K_lift+p*J_q`. The medium N=1,024 experiment preserves all p
+  residues and observes `max |J_q|=22` under the public degree bound 513.
+- A research-only live selector/root test corrects a nonzero `J_q` from the
+  same ciphertext's component remainders. At N=4, nine precharged two-trit
+  words recover `J_q=1`; the modeled/measured winding errors are 66/65 bits,
+  the p-scaled correction bound is 82 bits, and the full-T bound is 112 bits.
+  Both correction bounds are admitted and the tested coefficient is exact.
+- At N=8, the same balanced pair tree recovers `J_q=1`. It produces 6,549
+  support rows and performs 6,723 exact selector products. The p² winding
+  bound is 114 bits (96 measured); the p-scaled correction bound is 130 bits
+  and admitted. Multiplication by `M_pJ` gives a 160-bit bound, above the
+  126-bit high-T radius, so admission refuses it. The secret-holder test
+  observes 112-bit error and an exact high-T coefficient, but that sample
+  does not override the refused bound.
+- The research selector projection model now applies a 16x margin to the
+  projected selector error. Native N=16,384 `CarryRuntime` and root preflight
+  still initialize. Exact multiplication plans at native degree with 9
+  transient auxiliary lanes: 283 available bits for 266 required.
+- The medium full-bound consumer test still uses a clear carry correction.
+  Its corrected residual, carry, Phase 1, square, and next product pass, but
+  the raw ciphertext-only high lift fails broadly. Work-key return, a second
+  refresh, and repeat-cycle admission remain unimplemented.
+
+## Gap analysis
+
+The algebraic carry identity and an isolated encrypted correction now pass
+at very small degree. The implementation does not scale: the pair-word DP
+already has 6,549 rows and 6,723 exact selector products at N=8, while its
+high-T admission bound is refused. Directly extending this support enumeration
+to N=1,024 or N=16,384 is not viable. The remaining architecture task is a
+bounded, phase-locked carry projection using the composite sister trays and
+Jacobian/ultradiscrete structure without enumerating all ternary words.
+
+The synced remote branch `research/phase1-carry-transducer` (head
+`93d6257`) has a useful 49/2 residue identity for a carry bounded by 48:
+`k49=((Y49-w49)*47) mod 49`, `k2=(Y2-w2) mod 2`, and
+`K=k49-49*((k49-k2) mod 2)`. Its boundary checks are exact, but the script is
+explicitly a clear integer oracle: it does not produce those dense residues
+from the same encrypted source history. It is a candidate for the CRAM
+composite-tray design, not an encrypted refresh implementation.
+
+## Next steps
+
+1. Replace or compress the pair-word support enumeration. Derive a bounded
+   carry representation whose state and multiplication counts fit the
+   composite noise budget as degree grows. Keep admission tied to a proven
+   worst-case bound; measured secret-holder error is diagnostic only.
+2. Test the carry producer at increasing degrees and both signs, including
+   full signed boundaries, every output coefficient, every RNS lane, and
+   wrong-history/corrupted-root negatives. Require p² correction and full-T
+   admission before joining it to the consumer.
+3. Connect the scalable producer to the actual same-history
+   `K_lift mod p` sibling. Remove the clear correction from the medium and
+   native consumers and rerun the dependent residual, carry, Phase 1, square,
+   next product, and return-to-work-key checks.
+4. Bind source key, RNS level, scale tuple, history, ternary-key domain, carry
+   bound, and propagated noise into a typed producer certificate. Re-run the
+   R00-R03 admission checks, second refresh, and repeat product.
+
+Issue #95 remains open and production refresh remains fail-closed. The linked
+scale-Jacobian and ultradiscrete architecture notes contain the derivation and
+variable map; this plan records current experimental evidence, not a closure
+claim.

@@ -95,13 +95,13 @@ pub enum ExactScaleRoundError {
     DegenerateT { t: u64 },
     /// Declared operand bound of zero: nothing would be representable.
     ZeroOperandBound,
-    /// `s_mult = x_bound_over_q_sq * t + 1` overflowed `u64`.
+    /// `s_mult = x_bound_over_q_sq * t + 1` overflowed `u128`.
     ShiftMultiplierOverflow { x_bound_over_q_sq: u64, t: u64 },
     /// The auxiliary base cannot hold `Y+`: needs `A > 2 * s_mult * Q`.
     InsufficientAuxCapacity {
         aux_bits: u32,
         required_bits: u32,
-        s_mult: u64,
+        s_mult: u128,
     },
     /// A supplied main residue was not canonical.
     NonCanonicalMainResidue {
@@ -186,7 +186,7 @@ pub struct ExactScaleRound {
     aux: Vec<u64>,
     t: u64,
     /// `s_mult` where the output shift is `S = s_mult * Q`.
-    s_mult: u64,
+    s_mult: u128,
     /// Base extension main -> aux, used for `w = Z mod Q`.
     main_to_aux: MainOnlyBaseExt,
     /// Base extension aux -> main, used for `Y+`.
@@ -258,8 +258,8 @@ impl ExactScaleRound {
         let main_to_aux = MainOnlyBaseExt::new(main, aux)?;
         let aux_to_main = MainOnlyBaseExt::new(aux, main)?;
 
-        let s_mult = x_bound_over_q_sq
-            .checked_mul(t)
+        let s_mult = (x_bound_over_q_sq as u128)
+            .checked_mul(t as u128)
             .and_then(|v| v.checked_add(1))
             .ok_or(ExactScaleRoundError::ShiftMultiplierOverflow {
                 x_bound_over_q_sq,
@@ -269,7 +269,8 @@ impl ExactScaleRound {
         // Capacity certificate: A > 2 * s_mult * Q.
         let q_wide = product_u512(main);
         let a_wide = product_u512(aux);
-        let required = q_wide.mul_u128(2u128 * s_mult as u128);
+        let shifted_q = q_wide.mul_u128(s_mult);
+        let required = shifted_q.add(shifted_q);
         if !u512_gt(a_wide, required) {
             return Err(ExactScaleRoundError::InsufficientAuxCapacity {
                 aux_bits: u512_bits(a_wide),
@@ -314,7 +315,7 @@ impl ExactScaleRound {
         let shift_mod_aux: Vec<u64> = aux
             .iter()
             .enumerate()
-            .map(|(j, &a)| (((s_mult % a) as u128 * q_mod_aux[j] as u128) % a as u128) as u64)
+            .map(|(j, &a)| (((s_mult % a as u128) * q_mod_aux[j] as u128) % a as u128) as u64)
             .collect();
 
         Ok(Self {
@@ -346,7 +347,7 @@ impl ExactScaleRound {
     }
 
     /// The shift multiplier `s_mult`, where `S = s_mult * Q`.
-    pub fn shift_multiplier(&self) -> u64 {
+    pub fn shift_multiplier(&self) -> u128 {
         self.s_mult
     }
 

@@ -585,11 +585,29 @@ fn insufficient_auxiliary_capacity_is_a_typed_refusal() {
         other => panic!("expected AuxiliaryBasisUnavailable, got {other:?}"),
     }
 
-    // An operand bound that cannot even be expressed is its own typed refusal.
-    match ExactMulPlan::with_operand_bound(&cfg.primes, cfg.n, cfg.t, u64::MAX) {
-        Err(ExactMulError::OperandBoundOverflow { .. }) => {}
-        other => panic!("expected OperandBoundOverflow, got {other:?}"),
-    }
+    // The full-bound CRAM high tray needs a shift multiplier wider than u64.
+    // Its certified product still fits the native-degree transient pool.
+    let high_t = 4_613_656_451_714_285_580;
+    let high_primes = [
+        9_223_372_036_853_661_697,
+        9_223_372_036_853_235_713,
+        9_223_372_036_852_744_193,
+    ];
+    let high_t_plan = ExactMulPlan::new(&high_primes, 16_384, high_t)
+        .expect("native full-bound tray exact-multiply plan");
+    let high_t_certificate = high_t_plan.certificate();
+    assert!(high_t_certificate.shift_multiplier > u64::MAX as u128);
+    assert!(high_t_certificate.aux_bits > high_t_certificate.required_bits);
+    assert_eq!(high_t_certificate.ring_degree, 16_384);
+    println!(
+        "full-bound native plan: N={}, high_t={}, shift_bits={}, aux_lanes={}, aux_bits={}, required_bits={}",
+        high_t_certificate.ring_degree,
+        high_t_certificate.t,
+        128 - high_t_certificate.shift_multiplier.leading_zeros(),
+        high_t_certificate.aux_lanes,
+        high_t_certificate.aux_bits,
+        high_t_certificate.required_bits,
+    );
 }
 
 // ===========================================================================

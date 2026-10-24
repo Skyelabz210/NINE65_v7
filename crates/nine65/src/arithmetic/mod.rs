@@ -21,7 +21,6 @@ pub mod barrett;
 pub mod base_ext; // SHENOY-KUMARESAN BASE EXTENSION (kernel only, not wired in — see module docs)
 pub mod boundary; // CAPACITY PROXIMITY CHECKS (80%/90%/post-switch margins)
 pub mod canonical_scale_round; // CANONICAL RNS -> ODD TARGET SCALE-AND-ROUND
-pub mod plaintext_scale_round; // EXACT RNS COMPONENT SCALE-ROUND VIA K-ELIMINATION
 pub mod compare_bit; // HALF-MODULUS COMPARISON BIT (fixed-work D2 decrypt integration)
 #[cfg(test)]
 mod compare_bit_vectors; // external (Python) oracle vectors for compare_bit
@@ -45,6 +44,7 @@ pub mod ntt_fft; // V2: O(N log N) FFT-based NTT (500-2000× faster)
 pub mod order_finding; // NON-CIRCULAR BSGS (Shor's classical reduction)
 pub mod pade_engine; // INTEGER TRANSCENDENTALS (exp/sin/cos/sigmoid)
 pub mod persistent_montgomery; // MONTGOMERY FORM
+pub mod plaintext_scale_round; // EXACT RNS COMPONENT SCALE-ROUND VIA K-ELIMINATION
 pub mod residue_division; // PROOF-CARRYING BOUNDED QUOTIENT PROJECTION
 pub mod rns;
 pub mod transcendental_backend; // FEATURE-GATED EXACT TRANSCENDENTAL ADAPTER

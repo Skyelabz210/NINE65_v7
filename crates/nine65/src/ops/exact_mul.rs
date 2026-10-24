@@ -248,7 +248,7 @@ pub struct ExactMulCertificate {
     /// Declared operand bound: `|Xc| <= x_bound_over_q_sq * Q^2`.
     pub x_bound_over_q_sq: u64,
     /// `s_mult = x_bound_over_q_sq * t + 1`; the output shift is `s_mult * Q`.
-    pub shift_multiplier: u64,
+    pub shift_multiplier: u128,
     /// Exact bit length of `Q`.
     pub q_bits: u32,
     /// Exact bit length of the selected `A`.
@@ -328,8 +328,8 @@ impl ExactMulPlan {
         t: u64,
         x_bound_over_q_sq: u64,
     ) -> Result<Self, ExactMulError> {
-        let s_mult = x_bound_over_q_sq
-            .checked_mul(t)
+        let s_mult = (x_bound_over_q_sq as u128)
+            .checked_mul(t as u128)
             .and_then(|v| v.checked_add(1))
             .ok_or(ExactMulError::OperandBoundOverflow {
                 x_bound_over_q_sq,
@@ -337,12 +337,17 @@ impl ExactMulPlan {
             })?;
 
         let q_wide = U512::product_u64s(main);
-        let required = q_wide.mul_u128(2u128 * s_mult as u128);
+        let shifted_q = q_wide.mul_u128(s_mult);
+        let required = shifted_q.add(shifted_q);
 
         // §B1 candidate pool: the deterministic NTT-compatible catalog, used
         // NUMERICALLY ONLY. No `DualRNSContext` is constructed from it and
         // these primes never touch ciphertext state.
-        let pool = DualRNSContext::canonical_anchor_primes_for_n(n);
+        // The 16,384-degree catalog is NTT-compatible for every supported
+        // smaller degree as well. Use it as the numeric scratch candidate
+        // pool so unusually large plaintext scales can select more transient
+        // lanes without adding primes to the ciphertext's published Q basis.
+        let pool = DualRNSContext::canonical_anchor_primes_for_n(16_384);
         let two_n = 2u64 * n as u64;
         for &a in &pool {
             for &q in main {
@@ -783,14 +788,12 @@ impl<'a> ExactMulEvaluator<'a> {
         let d0 = self
             .ctx
             .convert_from_montgomery_form(&self.ctx.rns_poly_mul(&a.c0, &b.c0));
-        let d1 = self
-            .ctx
-            .convert_from_montgomery_form(
-                &self
-                    .ctx
-                    .rns_poly_mul(&a.c0, &b.c1)
-                    .add(&self.ctx.rns_poly_mul(&a.c1, &b.c0), &self.ctx.rns),
-            );
+        let d1 = self.ctx.convert_from_montgomery_form(
+            &self
+                .ctx
+                .rns_poly_mul(&a.c0, &b.c1)
+                .add(&self.ctx.rns_poly_mul(&a.c1, &b.c0), &self.ctx.rns),
+        );
         let d2 = self
             .ctx
             .convert_from_montgomery_form(&self.ctx.rns_poly_mul(&a.c1, &b.c1));
