@@ -1254,6 +1254,14 @@ fn full_bound_root_unscales_encrypted_selector_mod_quotient_period() {
 }
 
 fn run_second_k_elimination_quotient_winding(degree: usize) {
+    assert!(degree >= 2 && degree.is_power_of_two());
+    // This research normalizer retains one candidate per ternary word.
+    // Refuse an oversized probe before contexts, keys, or selector products.
+    let candidate_count = 3usize.checked_pow(degree as u32).unwrap();
+    assert!(
+        candidate_count <= 10_000,
+        "parallel Q-phase candidate limit"
+    );
     const P: u64 = 65_537;
     const P2: u64 = P * P;
     const FACTOR: u64 = 16_390;
@@ -1768,6 +1776,218 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
                 "an admitted high correction must decode exactly"
             );
         }
+    }
+
+    // Parallel Q-phase sister tree. Candidate trits are public labels; only
+    // the precharged pair selectors hide which label is active. No source
+    // secret or decrypted phase is used to construct these coordinates.
+    #[derive(Clone)]
+    struct PhaseCandidate {
+        raw_sum: i128,
+        phase: Vec<u64>,
+        selector: RNSCiphertext,
+        bound: U512,
+    }
+    let ordinary_component = |poly: &RNSPolynomial| {
+        poly.limbs
+            .iter()
+            .zip(&p_ctx.rns.mont_contexts)
+            .map(|(lane, mont)| {
+                lane.iter()
+                    .map(|&v| mont.from_montgomery(v))
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>()
+    };
+    let source0 = ordinary_component(&encrypted_k_p.c0);
+    let source1 = ordinary_component(&encrypted_k_p.c1);
+    let mut sheets: Vec<Vec<PhaseCandidate>> = (0..degree)
+        .step_by(2)
+        .map(|start| {
+            (0..9)
+                .map(|label| {
+                    let trits = [(label / 3) as i128 - 1, (label % 3) as i128 - 1];
+                    let mut raw_sum = 0;
+                    let mut phase = vec![0; PRIMES.len()];
+                    for offset in 0..2 {
+                        let key_index = start + offset;
+                        let index = (degree - key_index) % degree;
+                        let sign = if key_index == 0 { 1i128 } else { -1i128 };
+                        raw_sum += sign * r1[index] as i128 * trits[offset];
+                        for (lane, &prime) in PRIMES.iter().enumerate() {
+                            phase[lane] = (phase[lane] as i128
+                                + sign * source1[lane][index] as i128 * trits[offset])
+                                .rem_euclid(prime as i128)
+                                as u64;
+                        }
+                    }
+                    PhaseCandidate {
+                        raw_sum,
+                        phase,
+                        selector: project_pair_selector(label, start),
+                        bound: runtime.noise.projected,
+                    }
+                })
+                .collect()
+        })
+        .collect();
+    let mut sister_products = 0usize;
+    while sheets.len() > 1 {
+        let mut next = Vec::new();
+        for pair in sheets.chunks(2) {
+            if pair.len() == 1 {
+                next.push(pair[0].clone());
+                continue;
+            }
+            let mut joined = Vec::with_capacity(pair[0].len() * pair[1].len());
+            for left in &pair[0] {
+                for right in &pair[1] {
+                    let bound = runtime.noise.multiply(left.bound, right.bound).unwrap();
+                    let selector = runtime
+                        .exact
+                        .try_mul_exact(&left.selector, &right.selector, &relin)
+                        .unwrap();
+                    sister_products += 1;
+                    joined.push(PhaseCandidate {
+                        raw_sum: left.raw_sum + right.raw_sum,
+                        phase: PRIMES
+                            .iter()
+                            .enumerate()
+                            .map(|(lane, &prime)| {
+                                ((left.phase[lane] as u128 + right.phase[lane] as u128)
+                                    % prime as u128) as u64
+                            })
+                            .collect(),
+                        selector,
+                        bound,
+                    });
+                }
+            }
+            next.push(joined);
+        }
+        sheets = next;
+    }
+    let scaler = CanonicalScaleRound::new(&PRIMES, P).unwrap();
+    let normalized_rows = sheets
+        .pop()
+        .unwrap()
+        .into_iter()
+        .map(|candidate| {
+            let phase: Vec<_> = PRIMES
+                .iter()
+                .enumerate()
+                .map(|(lane, &prime)| {
+                    ((candidate.phase[lane] as u128 + source0[lane][0] as u128) % prime as u128)
+                        as u64
+                })
+                .collect();
+            let k = scaler.scale_round(&phase).unwrap() % P;
+            let k = if k > P / 2 {
+                k as i128 - P as i128
+            } else {
+                k as i128
+            };
+            let raw_sum = candidate.raw_sum + r0[0] as i128;
+            let j = (raw_sum + P as i128 / 2).div_euclid(P as i128);
+            Row {
+                remainder: k,
+                winding: i64::try_from(j).unwrap(),
+                selector: Some(candidate.selector),
+                bound: candidate.bound,
+            }
+        })
+        .collect();
+    let normalized_state = State {
+        rows: normalized_rows,
+        family: runtime.family,
+        source_q: P as i128,
+        coefficients: (0..degree).collect(),
+    };
+    let normalized_root = Root211::new(&runtime, &normalized_state).unwrap();
+    let normalized_tray = normalized_root.attach(&[P, P + 1]).unwrap();
+    normalized_root.validate(&normalized_tray).unwrap();
+    let normalized_c = runtime.project(&normalized_state, |row| {
+        i64::try_from(row.remainder + P as i128 * row.winding as i128).unwrap()
+    });
+    let normalized_r = runtime.project(&normalized_state, |row| {
+        i64::try_from(row.remainder - row.winding as i128).unwrap()
+    });
+    let normalized_j = runtime.project(&normalized_state, |row| row.winding);
+    let normalized_k = runtime.project(&normalized_state, |row| row.remainder as i64);
+    let c_plain = decode_at(
+        &p2_ctx,
+        &normalized_c.ciphertext,
+        &keys.secret_key,
+        normalized_c.bound,
+        [0],
+    );
+    let r_plain = decode_at(
+        &p2_ctx,
+        &normalized_r.ciphertext,
+        &keys.secret_key,
+        normalized_r.bound,
+        [0],
+    );
+    let k_plain = decode_at(
+        &p2_ctx,
+        &normalized_k.ciphertext,
+        &keys.secret_key,
+        normalized_k.bound,
+        [0],
+    );
+    assert_eq!(c_plain[0], lifted_plain[0]);
+    assert_eq!(
+        r_plain[0],
+        (input[0] as i128 - expected_quotient_winding).rem_euclid(P2 as i128) as u64
+    );
+    assert_eq!(k_plain[0], residue_k0);
+    let mut normalized_difference = normalized_c.ciphertext.clone();
+    add_scaled(
+        &p2_ctx,
+        &mut normalized_difference,
+        &normalized_r.ciphertext,
+        -1,
+    );
+    let mut expected_factor = zero(&p2_ctx);
+    add_scaled(
+        &p2_ctx,
+        &mut expected_factor,
+        &normalized_j.ciphertext,
+        (P + 1) as i64,
+    );
+    assert_eq!(normalized_difference.c0.limbs, expected_factor.c0.limbs);
+    assert_eq!(normalized_difference.c1.limbs, expected_factor.c1.limbs);
+    let mut normalized_corrected = normalized_c.ciphertext.clone();
+    add_scaled(
+        &p2_ctx,
+        &mut normalized_corrected,
+        &normalized_j.ciphertext,
+        -(P as i64),
+    );
+    assert_eq!(
+        normalized_corrected.c0.limbs,
+        normalized_k.ciphertext.c0.limbs
+    );
+    assert_eq!(
+        normalized_corrected.c1.limbs,
+        normalized_k.ciphertext.c1.limbs
+    );
+    let normalized_high_bound = normalized_k.bound.mul_u128(M_PJ as u128);
+    let normalized_high_radius = Noise::new_for_composite_sister_target(&full_ctx.config).half();
+    let normalized_high_admitted = words(normalized_high_bound) < words(normalized_high_radius);
+    let (normalized_high, normalized_high_measured) =
+        decode_at_with_error(&full_ctx, &normalized_corrected, &keys.secret_key, [0]);
+    let normalized_high_exact =
+        normalized_high[0] == (M_PJ as i128 * input[0] as i128).rem_euclid(FULL_T as i128) as u64;
+    eprintln!(
+        "parallel Q-phase normalization: N={}, rows={}, extra products={}, C/r/K exact; bounds C/r/J/K={}/{}/{}/{} bits, high modeled/measured={}/{} vs radius={}, admitted={}, exact={}",
+        degree, normalized_state.rows.len(), sister_products,
+        bits(normalized_c.bound), bits(normalized_r.bound), bits(normalized_j.bound), bits(normalized_k.bound),
+        bits(normalized_high_bound), bits(normalized_high_measured), bits(normalized_high_radius),
+        normalized_high_admitted, normalized_high_exact,
+    );
+    if normalized_high_admitted {
+        assert!(normalized_high_exact);
     }
 }
 

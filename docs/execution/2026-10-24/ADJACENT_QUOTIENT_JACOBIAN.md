@@ -185,6 +185,41 @@ remaining support/noise growth; it is not public-bootstrap admission.
 Reproduce both degree tests with the `safe_basis_root_projects_second_k_elimination_quotient_winding`
 lib-test filter and `allow_insecure,exact_transcendentals_backend`. Both pass.
 
+## Parallel Q-phase sister normalization
+
+A subsequent evaluator probe carries a Q-phase sister coordinate alongside
+the raw p-coordinate. Each public candidate pair label contributes both its
+raw p-residue sum and its three main-Q phase residues. The encrypted pair
+selectors come from the same precharged masks used by the winding tree.
+Balanced selector products propagate both coordinates together. The public
+`CanonicalScaleRound` map computes the BFV K for every candidate Q-phase;
+the evaluator never learns which candidate is selected. The resulting root
+rows contain `(remainder=K,winding=J_q)` rather than the raw remainder.
+
+At the selected coefficient, the normalized C projection matches the actual
+component-quotient ciphertext, the direct residual is `K-J_q`, and the
+corrected K is 23. Component equality proves both
+`C-r=(p+1)*Enc(J_q)` and `C-p*Enc(J_q)=Enc(K)` across all Q lanes.
+The normalizer uses public ciphertext data, public candidate labels, encrypted
+selectors, and evaluation keys; the test secret is used only in key-holder
+precharge and in the independent output observer.
+
+| Degree | normalized rows / extra products | C/r/J/K bound bits | high modeled / measured bits | radius bits | high admitted |
+|---:|---:|---:|---:|---:|:---:|
+| 4 | 81 / 81 | 82/81/66/81 | 111/80 | 126 | yes |
+| 8 | 6,561 / 6,723 | 131/130/114/130 | 160/117 | 126 | no |
+
+Both normalized high outputs match `M_pJ*K` in the sample. Only degree 4
+clears the modeled high bound. This supplies a live small-degree normalized
+root and residual, while preserving the native gate: the parallel tree still
+retains `3^N` candidate words, and the probe refuses more than 10,000
+candidates before creating contexts or keys. It tests coefficient zero in a
+circular, `security_bits=0` fixture. Full-polynomial production parameters,
+a scalable selector representation, work-key return, and repeat refresh are
+not established. The next budget experiment is to construct the selector
+tree at the smaller p encoding and prove its composite output scale before
+joining it to the original high consumer.
+
 ## Evidence
 
 `crates/nine65/examples/adjacent_quotient_jacobian.rs` uses three 63-bit RNS

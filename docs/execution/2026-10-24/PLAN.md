@@ -75,7 +75,17 @@ fail-closed until the complete acceptance ladder passes.
   The adjacent composite target `T_adj=p^2*(M_pJ-1)` has a 111-bit admitted
   raw-remainder bound at N=4; N=8 needs 160 bits against radius 126 and
   refuses. Both source-driven tests pass with this mismatch as an explicit
-  negative control. No BFV normalization producer has been supplied.
+  negative control.
+- A parallel Q-phase sister tree now supplies the missing normalization at
+  N=4 and N=8. It uses public candidate Q-phase coordinates and the same
+  encrypted pair masks to construct a true `(K,J_q)` root. At coefficient
+  zero its C matches the actual quotient ciphertext, its residual is K-J_q,
+  and its corrected K is exact. Exact component identities retain the
+  correlated-factor noise bound. The full high output is admitted at N=4
+  (111/126 bits); N=8 is sampled exact but refused (160/126 bits). The new
+  tree retains 81/6,561 candidate rows and adds 81/6,723 selector products.
+  It is an exhaustive small-degree producer, with a 10,000-candidate preflight
+  cap, rather than a native implementation.
 
 ## Gap analysis
 
@@ -88,12 +98,13 @@ one same-history, bounded common-T `Enc_T(K-J)` sister view. The same-root
 tray control shows how to emit it once the state already contains `(K,J)`:
 attach the arbitrary M sister and project the signed affine sheet directly
 under T. M-only-to-T raw quotients and adjacent Richardson cancellation fail.
-The remaining producer is the live construction and certification of `(K,J)`
+The remaining producer work is scalable construction and certification of `(K,J)`
 from the actual CRAM source ciphertext and precharged ternary history, while
 preserving the 2/11 lock across coefficients. In particular, the current
 live quotient tree's raw component remainder is a different coordinate from
-BFV-decoded K, despite its correct winding. The producer needs the Q-phase
-and plaintext-scale transition tied to the same selector history. The test's supplied support
+BFV-decoded K, despite its correct winding. The parallel Q-phase tree now
+supplies this transition on live N=4/8 histories, but its exhaustive support
+and high-scale noise do not support native degree. The terminal test's supplied support
 rows are not that construction. The consumer result is one step of the public
 refresh, not a completed refresh.
 
@@ -107,16 +118,17 @@ composite-tray design, not an encrypted refresh implementation.
 
 ## Next steps
 
-1. Refine the live root with a parallel Q-phase sister coordinate and the
-   BFV scale transition, using the same precharged selectors and products as
-   the p-remainder/winding coordinate. Verify that its normalized state is
-   `(K,J)` against the actual quotient ciphertext; raw remainders must not be
-   substituted for K. Project its
-   bounded `K-J` affine sheet from the one 2/11 root directly under common T
-   through the `p+1` composite sister tray. Apply
-   `J=(T+1)/(p+1)*(C-r) mod T`, then certify root history, scale, and noise
-   before correction. Do not substitute the fixture's supplied support rows
-   for this construction.
+1. Replace the parallel Q-phase normalizer's exhaustive ternary-word support
+   with a compressed same-history state. First test the smaller p selector
+   encoding and its exact composite output-scale relation to isolate the
+   current p^2 selector budget cost. Preserve the normalized `(K,J)` relation
+   against the actual quotient ciphertext; raw remainders must not be
+   substituted for K. Project the bounded `K-J` sheet from the one 2/11 root
+   directly under common T through the `p+1` composite sister tray. Preserve
+   the unreduced row coefficients and certify `C-r=(p+1)*Enc(J)` in every
+   ciphertext component before cancelling the known factor in Q. Bind root
+   history, scale, and noise before correction. Do not substitute the
+   terminal fixture's supplied support rows for this construction.
 2. Test the producer at increasing degrees and both signs, including full
    signed boundaries, every output coefficient, every RNS lane, and
    wrong-history/corrupted-root negatives. Require p² correction and full-T
