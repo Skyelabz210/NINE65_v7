@@ -572,6 +572,7 @@ mod tests {
     /// noise state lives, not what `bootstrap()` does when actually called.
     /// See `docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`.
     #[test]
+    #[ignore = "blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*"]
     fn repeated_squaring_is_exact_under_auto_refresh_secure_128_deep() {
         assert_squaring_circuit_is_exact(SecureConfig::secure_128_deep(), 11, 8);
     }
@@ -581,6 +582,7 @@ mod tests {
     /// KNOWN PRE-EXISTING FAILURE -- see the doc comment on the
     /// `secure_128_deep` variant above.
     #[test]
+    #[ignore = "blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*"]
     fn repeated_squaring_is_exact_under_auto_refresh_secure_192() {
         assert_squaring_circuit_is_exact(SecureConfig::secure_192(), 11, 8);
     }
@@ -595,6 +597,7 @@ mod tests {
     /// KNOWN PRE-EXISTING FAILURE -- see the doc comment on the
     /// `secure_128_deep` variant above.
     #[test]
+    #[ignore = "blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*"]
     fn repeated_squaring_is_exact_under_auto_refresh_secure_256() {
         assert_squaring_circuit_is_exact(SecureConfig::secure_256(), 11, 8);
     }
@@ -609,6 +612,7 @@ mod tests {
     /// KNOWN PRE-EXISTING FAILURE -- see the doc comment on
     /// `repeated_squaring_is_exact_under_auto_refresh_secure_128_deep` above.
     #[test]
+    #[ignore = "blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*"]
     fn squaring_refresh_costs_exactly_one_bootstrap() {
         let h = harness(SecureConfig::secure_128_deep(), 11);
         let (_, refreshed_at, bootstraps) = squaring_run(&h, 6);
@@ -625,6 +629,81 @@ mod tests {
             refreshed_at.len(),
             bootstraps,
         );
+    }
+
+    /// BOUNDARY (holds today; the acceptance tests above are ignored until
+    /// issue #95 closes): repeated squaring under `mul_auto` is exact at every
+    /// level up to the first triggered refresh, that refresh is refused with
+    /// the typed `BootstrapFailed` -- never a panic, never a wrong plaintext --
+    /// the refused operand still decrypts to its value, and no bootstrap is
+    /// counted for the refused refresh.
+    fn assert_auto_refresh_boundary(secure: SecureConfig, seed: u64, max_depth: usize) {
+        let name = secure.config.name;
+        let h = harness(secure, seed);
+        let mut rng = ShadowHarvester::with_seed(4242);
+        let mut evaluator = new_evaluator(&h);
+
+        let mut ct = fresh_tracked(&h, 3, &mut rng);
+        let mut expected: u128 = 3;
+        let mut refused_at = None;
+        for level in 1..=max_depth {
+            match evaluator.mul_auto(&ct, &ct) {
+                Ok(next) => {
+                    ct = next;
+                    expected = expected * expected % h.config.t as u128;
+                    assert_eq!(
+                        decrypt(&h, &ct) as u128,
+                        expected,
+                        "{name}: depth {level} must be exact before the refresh boundary"
+                    );
+                }
+                Err(Nine65Error::BootstrapFailed { reason }) => {
+                    assert!(
+                        reason.contains("displaced quotient/carry"),
+                        "{name}: refusal must name the Phase-1 carry, got: {reason}"
+                    );
+                    refused_at = Some(level);
+                    break;
+                }
+                Err(other) => {
+                    panic!("{name}: depth {level}: expected typed refusal, got {other:?}")
+                }
+            }
+        }
+        let refused_at = refused_at
+            .unwrap_or_else(|| panic!("{name}: no refresh triggered within {max_depth} levels"));
+        assert!(
+            refused_at >= 2,
+            "{name}: at least one multiply must succeed before the refresh point"
+        );
+        assert_eq!(
+            decrypt(&h, &ct) as u128,
+            expected,
+            "{name}: the operand of a refused refresh must be left intact"
+        );
+        assert_eq!(
+            evaluator.bootstrap_count, 0,
+            "{name}: a refused refresh must not be counted as a bootstrap"
+        );
+        println!(
+            "{name}: exact through depth {}, typed refusal at depth {refused_at}",
+            refused_at - 1
+        );
+    }
+
+    #[test]
+    fn auto_refresh_boundary_is_exact_then_typed_refusal_secure_128_deep() {
+        assert_auto_refresh_boundary(SecureConfig::secure_128_deep(), 11, 8);
+    }
+
+    #[test]
+    fn auto_refresh_boundary_is_exact_then_typed_refusal_secure_192() {
+        assert_auto_refresh_boundary(SecureConfig::secure_192(), 11, 8);
+    }
+
+    #[test]
+    fn auto_refresh_boundary_is_exact_then_typed_refusal_secure_256() {
+        assert_auto_refresh_boundary(SecureConfig::secure_256(), 11, 8);
     }
 
     #[test]

@@ -148,6 +148,15 @@ observed failure; issue #95 tracks the missing exact encrypted Phase-1
 transition. The symmetric secret-key refresh
 (`SymmetricBootstrap::bootstrap`) is a separate path.
 
+**Where the refresh error comes from (measured 2026-10-24):** with the gates
+bypassed, `decrypt(refresh(ct)) == (m - K_0) mod t` exactly, `K_0` being the
+displaced Phase-1 carry (`diag_refresh_error_is_exactly_the_displaced_phase1_carry`).
+The four `auto_bootstrap` squaring acceptance tests are `#[ignore]`d until
+issue #95 closes; `auto_refresh_boundary_is_exact_then_typed_refusal_*` pins
+the behavior that holds today. The remaining red lib tests
+(`gso_fhe::depth_benchmarks::*`, a symmetric depth-4 plaintext mismatch) are a
+separate defect from public refresh.
+
 ## Security Configs
 Screened 2026-08-22 by `params::secure_configs::tests::screened_levels_for_named_configs`
 against the tuples actually in `secure_configs.rs`. `log2(q)` is the exact bit
