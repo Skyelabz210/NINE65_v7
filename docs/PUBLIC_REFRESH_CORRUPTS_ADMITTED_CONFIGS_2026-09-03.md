@@ -8,6 +8,27 @@
 > gates bypassed and checks that a corrupting result is never admitted. The
 > exact encrypted Phase-1 construction remains open in issue #95.
 
+> **Localization and boundary (2026-10-24):** the first divergence is now
+> pinned to one place by
+> `ops::bootstrap::tests::diag_refresh_error_is_exactly_the_displaced_phase1_carry`.
+> With both gates bypassed, on `secure_128`, `secure_128_deep` and
+> `secure_192`, `decrypt(refresh(ct)) == (m - K_0) mod t` **exactly**, where
+> `K_0` is the displaced Phase-1 carry computed by a secret-key oracle
+> (measured `K_0 = -18, -18, 12`, inside the sharp `N/2` radius). Phases 2 and
+> 3 are exact; the whole error is the missing carry. The absolute numbers in
+> the table below depend on the seed (`65536`/`40` at the original seed;
+> `25`/`65532` at the 2026-10-24 seed); the identity does not.
+> The four `auto_bootstrap` acceptance tests are `#[ignore]`d with reason
+> "blocked on issue #95"; `auto_refresh_boundary_is_exact_then_typed_refusal_*`
+> pins what holds today: every multiply before the first triggered refresh is
+> exact (depth 1 on `secure_128_deep`/`secure_192`, depth 2 on `secure_256`),
+> the refresh is refused with typed `BootstrapFailed`, the operand is left
+> intact, and no bootstrap is counted. Exact accounting for the route that
+> remains (bounded-radius digit polynomial) is
+> `python3 scripts/refresh_radius_accounting.py`: a uniform ternary secret
+> needs 11+ levels even under a statistical radius, a weight-32 sparse
+> secret needs 7.
+
 ## Status: pre-existing, confirmed by bisection to predate PR #107/#99/#103. Not fixed here.
 
 ## What this is not

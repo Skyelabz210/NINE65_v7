@@ -1824,6 +1824,121 @@ mod tests {
         }
     }
 
+    /// First-divergence localization for the legacy public refresh.
+    ///
+    /// Claim under test: with both support gates bypassed, Phases 2 and 3 are
+    /// exact and the entire plaintext error of `refresh(m)` is the displaced
+    /// Phase-1 carry `K`, i.e.
+    ///
+    /// `decrypt(refresh(ct))[0] == (m - K_0) mod t`,
+    ///
+    /// where `K_0 = decode(full phase) - decode(component phase)` is computed
+    /// here with the secret key as an oracle (the secret never enters the
+    /// refresh itself). Equivalently `refresh(m)` decrypts to the component
+    /// phase `a0 + a1*s mod t`, which is what an affine Phase 2 can deliver
+    /// and nothing more (`phase2_affine_inner_product_cannot_supply_missing_carry`).
+    ///
+    /// Test-only oracle: it never reaches a production path.
+    #[test]
+    fn diag_refresh_error_is_exactly_the_displaced_phase1_carry() {
+        use crate::params::SecureConfig;
+
+        let cases = [
+            ("secure_128", SecureConfig::secure_128().into_config()),
+            (
+                "secure_128_deep",
+                SecureConfig::secure_128_deep().into_config(),
+            ),
+            ("secure_192", SecureConfig::secure_192().into_config()),
+        ];
+        let message = 7u64;
+
+        println!(
+            "\n=== first divergence: refresh error vs displaced Phase-1 carry ===\n\
+             {:<16} {:>10} {:>10} {:>10} {:>12} {:>10}",
+            "config", "refresh", "m-K mod t", "K_0", "|K|<=N/2", "match"
+        );
+        for (name, config) in &cases {
+            let ctx = RNSFHEContext::try_new(config).expect("context");
+            let mut rng = ShadowHarvester::with_seed(20_261_024);
+            let keys = ctx.generate_keys_dual_full(&mut rng);
+            let boot = ClockworkBootstrap::new(config).expect("bootstrap context");
+            let boot_keys = boot
+                .generate_keys(&keys.secret_key, &mut rng)
+                .expect("bootstrap keygen");
+            let ct = ctx.encrypt_dual(message, &keys.public_key, &mut rng);
+            assert_eq!(ctx.decrypt_dual(&ct, &keys.secret_key), message);
+
+            // Observed: what the three legacy phases return.
+            let refreshed = refresh_bypassing_the_gate(&boot, &ct, &boot_keys.bsk)
+                .expect("legacy phases run with gates bypassed");
+            let observed = ctx.decrypt_dual(&refreshed, &keys.secret_key);
+
+            // Oracle: component phase vs full phase, coefficient 0.
+            let first_prime = config.primes[0];
+            let signed_secret: Vec<i128> = keys.secret_key.s.main[0]
+                .iter()
+                .map(|&x| match x {
+                    0 => 0,
+                    1 => 1,
+                    x if x == first_prime - 1 => -1,
+                    _ => panic!("secret key is not ternary"),
+                })
+                .collect();
+            let (c0_small, c1_small) = boot.modswitch_to_t(&ct).expect("component switch");
+            let t = config.t as i128;
+            let mut component_phase = c0_small[0] as i128 + c1_small[0] as i128 * signed_secret[0];
+            for j in 1..config.n {
+                component_phase -= c1_small[j] as i128 * signed_secret[config.n - j];
+            }
+            let component_decoded = component_phase.rem_euclid(t);
+
+            let mut phase_ct = ct.clone();
+            for (i, &p) in config.primes.iter().enumerate() {
+                let product =
+                    ctx.ntt_engines[i].multiply(&ct.c1.main[i], &keys.secret_key.s.main[i]);
+                for (j, &term) in product.iter().enumerate() {
+                    phase_ct.c0.main[i][j] =
+                        ((ct.c0.main[i][j] as u128 + term as u128) % p as u128) as u64;
+                }
+            }
+            let (combined_small, _) = boot.modswitch_to_t(&phase_ct).expect("combined switch");
+            assert_eq!(
+                combined_small[0], message,
+                "{name}: full phase decodes to m"
+            );
+
+            let k_mod_t = (combined_small[0] as i128 - component_decoded).rem_euclid(t);
+            let k0 = if k_mod_t > t / 2 {
+                k_mod_t - t
+            } else {
+                k_mod_t
+            };
+            let predicted = (message as i128 - k0).rem_euclid(t) as u64;
+            let in_radius = k0.abs() <= (config.n / 2) as i128;
+
+            println!(
+                "{:<16} {:>10} {:>10} {:>10} {:>12} {:>10}",
+                name,
+                observed,
+                predicted,
+                k0,
+                in_radius,
+                observed == predicted
+            );
+            assert!(in_radius, "{name}: carry exceeds the sharp N/2 radius");
+            assert_eq!(
+                observed, component_decoded as u64,
+                "{name}: refresh must decrypt to the component phase (Phases 2/3 exact)"
+            );
+            assert_eq!(
+                observed, predicted,
+                "{name}: refresh error must equal the displaced Phase-1 carry"
+            );
+        }
+        println!("=== end first divergence ===\n");
+    }
+
     // =====================================================================
     // EXISTING TESTS (Category 2 overlap)
     // =====================================================================
