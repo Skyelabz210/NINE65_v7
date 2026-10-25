@@ -325,15 +325,16 @@ fn auxiliary_native_raw_switch_matches_all_main_prime_components() {
     for _ in 0..3 {
         let start = Instant::now();
         let expected = engine.switch(&component, &reference);
-        reference_times.push(start.elapsed().as_secs_f64());
+        reference_times.push(start.elapsed());
         let start = Instant::now();
         let actual = engine.switch(&component, &accelerated);
-        accelerated_times.push(start.elapsed().as_secs_f64());
+        accelerated_times.push(start.elapsed());
         assert_eq!(actual.c0.limbs, expected.c0.limbs);
         assert_eq!(actual.c1.limbs, expected.c1.limbs);
     }
-    reference_times.sort_by(f64::total_cmp);
-    accelerated_times.sort_by(f64::total_cmp);
+    reference_times.sort_unstable();
+    accelerated_times.sort_unstable();
     let digits: usize = shape.digits.iter().sum();
-    eprintln!("native raw-switch exact comparison: N={}, lanes={}, rows={digits}, integer bound={}, coefficient words/key={}, all components bit-identical; main-prime transforms={}, auxiliary transforms={}, main median={:.6}s, auxiliary median={:.6}s, ratio={:.3}; three repetitions, public random rows only, NOT encrypted bootstrap timing",ctx.n,config.primes.len(),integer_bound(ctx.n,shape.digit_sum,&config.primes).unwrap(),2*ctx.n*config.primes.len()*digits,(digits+2)*config.primes.len(),digits+2*config.primes.len(),reference_times[1],accelerated_times[1],reference_times[1]/accelerated_times[1]);
+    let ratio_milli = reference_times[1].as_nanos() * 1000 / accelerated_times[1].as_nanos().max(1);
+    eprintln!("native raw-switch exact comparison: N={}, lanes={}, rows={digits}, integer bound={}, coefficient words/key={}, all components bit-identical; main-prime transforms={}, auxiliary transforms={}, main median={:?}, auxiliary median={:?}, ratio={}.{:03}x; three repetitions, public random rows only, NOT encrypted bootstrap timing",ctx.n,config.primes.len(),integer_bound(ctx.n,shape.digit_sum,&config.primes).unwrap(),2*ctx.n*config.primes.len()*digits,(digits+2)*config.primes.len(),digits+2*config.primes.len(),reference_times[1],accelerated_times[1],ratio_milli/1000,ratio_milli%1000);
 }

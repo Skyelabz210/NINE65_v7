@@ -569,25 +569,28 @@ fn bsgs_native_slot_bridge_cost_is_explicitly_too_large() {
         .expect("key size fits usize");
     let direct_key_count = config.n - 1;
     let direct_bytes = words_per_key as u128 * direct_key_count as u128 * 8;
-    let direct_gib = direct_bytes as f64 / (1024.0_f64.powi(3));
+    const GIB: u128 = 1024 * 1024 * 1024;
+    let direct_gib_hundredths = direct_bytes * 100 / GIB;
     let (baby, giant) = automorphism_factor_sets(config.n);
     let key_count = required_galois_exponents(&baby, &giant).len();
     let total_bytes = words_per_key as u128 * key_count as u128 * 8;
-    let total_gib = total_bytes as f64 / (1024.0_f64.powi(3));
+    let total_gib_hundredths = total_bytes * 100 / GIB;
     eprintln!(
-        "N={} coefficient/slot transform: direct={} Galois keys ({:.2} GiB); BSGS baby={} giant={} keys={} ({:.2} GiB); {} gadget digits/lane-set; diagonal multiply/add count remains N per transform; estimates exclude metadata",
+        "N={} coefficient/slot transform: direct={} Galois keys ({}.{:02} GiB); BSGS baby={} giant={} keys={} ({}.{:02} GiB); {} gadget digits/lane-set; diagonal multiply/add count remains N per transform; estimates exclude metadata",
         config.n,
         direct_key_count,
-        direct_gib,
+        direct_gib_hundredths / 100,
+        direct_gib_hundredths % 100,
         baby.len(),
         giant.len(),
         key_count,
-        total_gib,
+        total_gib_hundredths / 100,
+        total_gib_hundredths % 100,
         digit_count,
     );
     assert_eq!(key_count, 190);
-    assert!(total_gib > 1.0, "the BSGS transform remains too large");
-    assert!(total_gib < direct_gib / 32.0);
+    assert!(total_bytes > GIB, "the BSGS transform remains too large");
+    assert!(total_bytes * 32 < direct_bytes);
 }
 
 #[test]
