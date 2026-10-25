@@ -12,7 +12,7 @@ scaling and a secret s of Hamming weight h. This script reports, using only
 integers and exact rationals (no floating point):
 
   worst-case radius   B_worst = floor((h+1)/2)            (adversarial R1)
-  statistical radius  smallest B with Hoeffding failure
+  statistical radius  smallest B with sub-Gaussian failure
                       probability <= 2^-k over N coefficients, assuming the
                       rounding residues are independent of s (an ASSUMPTION
                       about evaluator inputs, not a proof).
