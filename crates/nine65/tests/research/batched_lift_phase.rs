@@ -3608,3 +3608,188 @@ fn p_locked_scale_jacobian_extracts_native_carry_and_residual() {
 fn batched_lift_phase_native_constructs_all_source_coefficients_together() {
     check_batched_phase(8192, 96, 99, 16, COMPOSITE_CHART_T);
 }
+
+// Public component weights are rounded on one large plaintext grid before
+// they meet the precharged source secret. The final p-view rounds the combined
+// encrypted phase, so its carry is not a sum of separately rounded trits.
+// This preserves input phase error and does not itself reset ciphertext noise.
+fn check_direct_normalized_carry(n: usize, weight: usize, perturb_input: bool) {
+    const SCALE: u64 = 1 << 46;
+    const TARGET: u64 = PHASE_P * SCALE;
+    let mut source_config = SecureConfig::secure_128().into_config();
+    source_config.n = n;
+    source_config.security_bits = 0;
+    source_config.primes.truncate(3);
+    source_config.t = PHASE_P;
+    let source = RNSFHEContext::try_new(&source_config).unwrap();
+    let source_q = source_config
+        .primes
+        .iter()
+        .map(|&q| q as u128)
+        .product::<u128>();
+
+    let mut outer_config = source_config.clone();
+    outer_config.n = 2 * n;
+    outer_config.primes = FULL_BOUND_PJ_PRIMES.to_vec();
+    outer_config.q = FULL_BOUND_PJ_PRIMES[0];
+    outer_config.t = TARGET;
+    let high = RNSFHEContext::try_new(&outer_config).unwrap();
+    outer_config.t = PHASE_P;
+    let low = RNSFHEContext::try_new(&outer_config).unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x4e4f_524d_4341_5252 + n as u64);
+    let trits = balanced_source(n, weight, &mut rng);
+    let source_keys = sparse_keys(&source, &trits, &mut rng);
+    let high_keys = high.generate_keys(&mut rng);
+    let message: Vec<_> = (0..n)
+        .map(|j| if j % 2 == 0 { 1 } else { PHASE_P - 1 })
+        .collect();
+    let mut input = encrypt_polynomial(&source, &source_keys, &message, &mut rng);
+    if perturb_input {
+        // The message is unchanged, but its scaled BFV phase error is about
+        // Q/8. This checks whether the public carry path actually resets it.
+        let offset = source_q / (8 * PHASE_P as u128);
+        let mut ordinary_offset = vec![vec![0u64; n]; source_config.primes.len()];
+        for (lane, &q) in source_config.primes.iter().enumerate() {
+            ordinary_offset[lane][0] = (offset % q as u128) as u64;
+        }
+        input.c0 = input
+            .c0
+            .add(&montgomery(&source, ordinary_offset), &source.rns);
+    }
+    let components = [ordinary(&source, &input.c0), ordinary(&source, &input.c1)];
+    let residuals: [Vec<_>; 2] = core::array::from_fn(|part| {
+        (0..n)
+            .map(|j| centered_component_residual(&source, &components[part], j, source_q))
+            .collect()
+    });
+    let scaler = CanonicalScaleRound::new(&source_config.primes, SCALE).unwrap();
+    let weights: [Vec<i64>; 2] = core::array::from_fn(|part| {
+        (0..n)
+            .map(|j| {
+                let residues: Vec<_> = source_config
+                    .primes
+                    .iter()
+                    .enumerate()
+                    .map(|(lane, &q)| {
+                        (components[part][lane][j] as u128 * PHASE_P as u128 % q as u128) as u64
+                    })
+                    .collect();
+                let rounded = scaler.scale_round(&residues).unwrap();
+                if rounded > SCALE / 2 {
+                    rounded as i64 - SCALE as i64
+                } else {
+                    rounded as i64
+                }
+            })
+            .collect()
+    });
+    let mut embedded_trits = vec![0i8; 2 * n];
+    let mut constant = vec![0i64; 2 * n];
+    let mut secret_weights = vec![0i64; 2 * n];
+    let mut expected_k = vec![0u64; 2 * n];
+    let mut max_round_error = 0u128;
+    for j in 0..n {
+        embedded_trits[2 * j] = trits[j];
+        constant[2 * j] = weights[0][j];
+        secret_weights[2 * j] = weights[1][j];
+        let (k, g) = phase1_tropical_carry(&residuals[0], &residuals[1], &trits, source_q, j);
+        assert!(4 * g.unsigned_abs() < source_q);
+        expected_k[2 * j] = k.rem_euclid(PHASE_P as i128) as u64;
+        let mut normalized = weights[0][j] as i128;
+        for (i, &secret) in trits.iter().enumerate() {
+            let index = (j + n - i) % n;
+            normalized += (if i > j { -1 } else { 1 }) * weights[1][index] as i128 * secret as i128;
+        }
+        max_round_error = max_round_error.max((normalized - SCALE as i128 * k).unsigned_abs());
+    }
+    assert!(max_round_error < SCALE as u128 / 4);
+    let high_secret =
+        nine65::ops::rns_fhe::cram_precharge::CramPrechargedSecret::generate_with_rng(
+            &high,
+            &embedded_trits,
+            &high_keys.secret_key,
+            &mut rng,
+        )
+        .unwrap();
+    let encrypted_carry = add(
+        &high,
+        &multiply_signed_plain(&high, high_secret.encrypted_secret(), &secret_weights),
+        &public_plain(&high, &constant),
+    );
+    assert_eq!(
+        decrypt_coefficients(&low, &encrypted_carry, &high_keys),
+        expected_k
+    );
+    let carry_v = observe_polynomial_wide(&low, &encrypted_carry, &high_keys, &expected_k);
+
+    let affine0 = preprocess_for_clock(&source, &input.c0, 99, high.n);
+    let affine1 = preprocess_for_clock(&source, &input.c1, 99, high.n);
+    let low_secret = nine65::ops::rns_fhe::cram_precharge::CramPrechargedSecret::generate_with_rng(
+        &low,
+        &embedded_trits,
+        &high_keys.secret_key,
+        &mut rng,
+    )
+    .unwrap();
+    let center_p = |value: u64| {
+        if value > PHASE_P / 2 {
+            value as i64 - PHASE_P as i64
+        } else {
+            value as i64
+        }
+    };
+    let mut affine_constant = vec![0i64; 2 * n];
+    let mut affine_weights = vec![0i64; 2 * n];
+    for j in 0..n {
+        affine_constant[2 * j] = center_p(affine0.a[j]);
+        affine_weights[2 * j] = center_p(affine1.a[j]);
+    }
+    let affine = add(
+        &low,
+        &multiply_signed_plain(&low, low_secret.encrypted_secret(), &affine_weights),
+        &public_plain(&low, &affine_constant),
+    );
+    let corrected = add(&low, &affine, &encrypted_carry);
+    let mut expected_message = vec![0u64; 2 * n];
+    for j in 0..n {
+        expected_message[2 * j] = message[j];
+    }
+    assert_eq!(
+        decrypt_coefficients(&low, &corrected, &high_keys),
+        expected_message
+    );
+    let corrected_v = observe_polynomial_wide(&low, &corrected, &high_keys, &expected_message);
+    let exact = low.try_exact_evaluator().unwrap();
+    let relin = exact.generate_hybrid_gadget_key_with_rng(&high_keys.secret_key, &mut rng);
+    let square = exact.try_mul_exact(&corrected, &corrected, &relin).unwrap();
+    let expected_square = square_plain(&expected_message, PHASE_P);
+    let square_plaintext = decrypt_coefficients(&low, &square, &high_keys);
+    let square_mismatches = square_plaintext
+        .iter()
+        .zip(&expected_square)
+        .filter(|(actual, expected)| actual != expected)
+        .count();
+    eprintln!(
+        "direct normalized carry: N={n}, H={weight}, T={TARGET}, max |Y-LK|={max_round_error}, carry/corrected V={}/{} bits, first-square mismatches={square_mismatches}/{}, Q={} bits",
+        bits_u512(carry_v),
+        bits_u512(corrected_v),
+        expected_square.len(),
+        bits_u512(U512::product_u64s(&outer_config.primes)),
+    );
+    if perturb_input {
+        let q_bits = bits_u512(U512::product_u64s(&outer_config.primes));
+        assert!(bits_u512(corrected_v) >= q_bits - 4);
+    } else {
+        assert_eq!(square_mismatches, 0);
+    }
+}
+
+#[test]
+fn direct_normalized_carry_survives_a_medium_square() {
+    check_direct_normalized_carry(512, 96, false);
+}
+
+#[test]
+fn direct_normalized_carry_preserves_input_phase_error() {
+    check_direct_normalized_carry(32, 8, true);
+}
