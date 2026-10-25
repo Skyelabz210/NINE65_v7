@@ -2687,6 +2687,281 @@ fn one_root_emits_adjacent_residual_at_common_composite_t_and_k_eliminates() {
     );
 }
 
+#[test]
+fn one_root_recovers_ultradiscrete_carry_in_small_phase_locked_composite_t() {
+    const P: u64 = 65_537;
+    const M: u64 = P + 1;
+    // T + 1 = (p + 1)^2, so the adjacent-tray inverse is exactly p + 1.
+    // The target remains phase locked: T = p(p+2) = -1 (mod p+1),
+    // and p+2 = 1 (mod p+1), 2, and 11.
+    const T: u64 = P * (P + 2);
+    const U: u64 = P + 1;
+    const K_BOUND: i128 = 8_193;
+    const J_BOUND: i128 = 8_193;
+    const RESIDUAL_BOUND: u64 = 16_386;
+    const CASES: [(i128, i128); 5] = [
+        (-K_BOUND, -J_BOUND),
+        (-K_BOUND, J_BOUND),
+        (0, 0),
+        (K_BOUND, -J_BOUND),
+        (K_BOUND, J_BOUND),
+    ];
+
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = 32;
+    config.primes = vec![
+        9_223_372_036_853_661_697,
+        9_223_372_036_853_235_713,
+        9_223_372_036_852_744_193,
+    ];
+    config.q = config.primes[0];
+    config.security_bits = 0;
+    config.t = T;
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    assert_eq!(T + 1, M * U);
+    assert_eq!(T % M, M - 1);
+    assert_eq!((P + 2) % M, 1);
+    assert_eq!((P + 2) % 2, 1);
+    assert_eq!((P + 2) % 11, 1);
+    assert!(K_BOUND + P as i128 * J_BOUND < T as i128 / 2);
+
+    let mut rng = ShadowHarvester::with_seed(0x554c_5452_4144_4953);
+    let keys = ctx.generate_keys_dual(&mut rng);
+    let mut one_message = vec![0i8; ctx.n];
+    one_message[0] = 1;
+    let selected_one = precharge(&ctx, &keys, &one_message, &mut rng);
+    let selected_zero = precharge(&ctx, &keys, &vec![0i8; ctx.n], &mut rng);
+    let runtime = CarryRuntime::new_composite_sister_target(&ctx, P as i128, [16_390, 2], 8);
+    let relin = relin_key(&runtime, &keys, &mut rng);
+    let selector_error = U512::from_u64(config.eta as u64);
+    let mut rows: Vec<_> = CASES
+        .iter()
+        .map(|&(k, j)| Row {
+            remainder: k,
+            winding: j as i64,
+            selector: None,
+            bound: selector_error,
+        })
+        .collect();
+    let mut max_r_bits = 0;
+    let mut max_j_bits = 0;
+    let mut max_k_bits = 0;
+    let mut max_pj_bits = 0;
+    let mut max_return_bits = 0;
+    let mut work_half_delta_bits = 0;
+
+    for (selected, &(k, j)) in CASES.iter().enumerate() {
+        for (index, row) in rows.iter_mut().enumerate() {
+            row.selector = Some(if index == selected {
+                selected_one.clone()
+            } else {
+                selected_zero.clone()
+            });
+        }
+        let state = State {
+            rows: rows.clone(),
+            family: runtime.family,
+            source_q: P as i128,
+            coefficients: vec![0],
+        };
+        let root = Root211::new(&runtime, &state).unwrap();
+        let tray = root.attach(&[P, M, T]).unwrap();
+        root.validate(&tray).unwrap();
+        let residual = root
+            .project_bounded_affine_sheet(&tray, M, RESIDUAL_BOUND, 1, -1, T)
+            .unwrap();
+
+        let c_bound = tray.views[2].bound;
+        let r_bound = residual.bound;
+        let j_bound = c_bound.add(r_bound).mul_u128(U as u128);
+        let k_bound = r_bound.add(j_bound);
+        let pj_bound = j_bound.mul_u128(P as u128);
+        runtime
+            .noise
+            .admit(r_bound, "small-T K-J residual")
+            .unwrap();
+        runtime.noise.admit(j_bound, "small-T recovered J").unwrap();
+        runtime.noise.admit(k_bound, "small-T recovered K").unwrap();
+        runtime
+            .noise
+            .admit(pj_bound, "small-T pJ correction")
+            .unwrap();
+
+        let mut c_minus_r = zero(&ctx);
+        add_scaled(&ctx, &mut c_minus_r, &tray.views[2].ciphertext, 1);
+        add_scaled(&ctx, &mut c_minus_r, &residual.ciphertext, -1);
+        let mut j_view = zero(&ctx);
+        add_scaled(&ctx, &mut j_view, &c_minus_r, U as i64);
+        let mut k_view = zero(&ctx);
+        add_scaled(&ctx, &mut k_view, &residual.ciphertext, 1);
+        add_scaled(&ctx, &mut k_view, &j_view, 1);
+        let mut pj_view = zero(&ctx);
+        add_scaled(&ctx, &mut pj_view, &j_view, P as i64);
+
+        let decode = |ct, bound| decode_at(&ctx, ct, &keys.secret_key, bound, 0..ctx.n);
+        let c_plain = decode(&tray.views[2].ciphertext, c_bound);
+        let r_plain = decode(&residual.ciphertext, r_bound);
+        let j_plain = decode(&j_view, j_bound);
+        let k_plain = decode(&k_view, k_bound);
+        let pj_plain = decode(&pj_view, pj_bound);
+        let expected_c = k + P as i128 * j;
+        assert_eq!(c_plain[0], expected_c.rem_euclid(T as i128) as u64);
+        assert_eq!(r_plain[0], (k - j).rem_euclid(T as i128) as u64);
+        assert_eq!(j_plain[0], j.rem_euclid(T as i128) as u64);
+        assert_eq!(k_plain[0], k.rem_euclid(T as i128) as u64);
+        assert_eq!(pj_plain[0], (P as i128 * j).rem_euclid(T as i128) as u64);
+        for decoded in [c_plain, r_plain, j_plain, k_plain, pj_plain] {
+            assert!(decoded[1..].iter().all(|&value| value == 0));
+        }
+
+        // The recovered carry must remain useful to the next homomorphic
+        // operation, not merely pass a terminal decryption check.
+        let k_square_bound = runtime.noise.multiply(k_bound, k_bound).unwrap();
+        runtime
+            .noise
+            .admit(k_square_bound, "small-T recovered K square")
+            .unwrap();
+        let k_square = runtime
+            .exact
+            .try_mul_exact(&k_view, &k_view, &relin)
+            .unwrap();
+        let k_square_plain = decode_at(&ctx, &k_square, &keys.secret_key, k_square_bound, 0..ctx.n);
+        assert_eq!(k_square_plain[0], (k * k).rem_euclid(T as i128) as u64);
+        assert!(k_square_plain[1..].iter().all(|&value| value == 0));
+
+        // A separately encrypted affine phase m+K must return to m after
+        // subtracting this root's K, then remain usable by one exact product.
+        const MESSAGE: i128 = 7;
+        let affine_plain = (MESSAGE + k).rem_euclid(T as i128) as u64;
+        let affine_dual = ctx.encrypt_dual(affine_plain, &keys.public_key, &mut rng);
+        let affine = RNSCiphertext {
+            c0: RNSPolynomial {
+                limbs: affine_dual
+                    .c0
+                    .main
+                    .iter()
+                    .zip(&ctx.rns.mont_contexts)
+                    .map(|(limb, mont)| {
+                        limb.iter()
+                            .map(|&value| mont.to_montgomery(value))
+                            .collect()
+                    })
+                    .collect(),
+                n: ctx.n,
+            },
+            c1: RNSPolynomial {
+                limbs: affine_dual
+                    .c1
+                    .main
+                    .iter()
+                    .zip(&ctx.rns.mont_contexts)
+                    .map(|(limb, mont)| {
+                        limb.iter()
+                            .map(|&value| mont.to_montgomery(value))
+                            .collect()
+                    })
+                    .collect(),
+                n: ctx.n,
+            },
+            num_primes: config.primes.len(),
+        };
+        let mut corrected_message = zero(&ctx);
+        add_scaled(&ctx, &mut corrected_message, &affine, 1);
+        add_scaled(&ctx, &mut corrected_message, &k_view, -1);
+        let fresh_error_bound = U512::from_u128((2 * ctx.n as u128 + 1) * config.eta as u128);
+        let corrected_message_bound = fresh_error_bound.add(k_bound);
+        runtime
+            .noise
+            .admit(corrected_message_bound, "small-T corrected affine message")
+            .unwrap();
+        let (corrected_plain, observed_message_error) =
+            decode_at_with_error(&ctx, &corrected_message, &keys.secret_key, 0..ctx.n);
+        assert!(
+            words(corrected_message_bound) >= words(observed_message_error),
+            "message error bound {} bits is below observed {} bits",
+            bits(corrected_message_bound),
+            bits(observed_message_error),
+        );
+        assert_eq!(corrected_plain[0], MESSAGE as u64);
+        assert!(corrected_plain[1..].iter().all(|&value| value == 0));
+        let message_square_bound = runtime
+            .noise
+            .multiply(corrected_message_bound, corrected_message_bound)
+            .unwrap();
+        let message_square = runtime
+            .exact
+            .try_mul_exact(&corrected_message, &corrected_message, &relin)
+            .unwrap();
+        let message_square_plain = decode_at(
+            &ctx,
+            &message_square,
+            &keys.secret_key,
+            message_square_bound,
+            0..ctx.n,
+        );
+        assert_eq!(message_square_plain[0], 49);
+        assert!(message_square_plain[1..].iter().all(|&value| value == 0));
+
+        // Return from the composite encoding T=p(p+2) to the work encoding p
+        // by multiplying the ciphertext by p+2. The scale-floor discrepancy
+        // is bounded by T; certify that term before checking a work-modulus
+        // product.
+        let mut work_config = config.clone();
+        work_config.t = P;
+        let work_ctx = RNSFHEContext::try_new(&work_config).unwrap();
+        let work_runtime =
+            CarryRuntime::new_composite_sister_target(&work_ctx, P as i128, [16_390, 2], 8);
+        work_half_delta_bits = work_half_delta_bits.max(bits(work_runtime.noise.half()));
+        let return_bound = corrected_message_bound
+            .mul_u128((P + 2) as u128)
+            .add(U512::from_u64(T));
+        max_return_bits = max_return_bits.max(bits(return_bound));
+        work_runtime
+            .noise
+            .admit(return_bound, "small-T to work-t return")
+            .unwrap();
+        let mut returned = zero(&work_ctx);
+        add_scaled(&work_ctx, &mut returned, &corrected_message, (P + 2) as i64);
+        let returned_plain = decode_at(
+            &work_ctx,
+            &returned,
+            &keys.secret_key,
+            return_bound,
+            0..work_ctx.n,
+        );
+        assert_eq!(returned_plain[0], MESSAGE as u64);
+        assert!(returned_plain[1..].iter().all(|&value| value == 0));
+        let work_relin = relin_key(&work_runtime, &keys, &mut rng);
+        let returned_square_bound = work_runtime
+            .noise
+            .multiply(return_bound, return_bound)
+            .unwrap();
+        let returned_square = work_runtime
+            .exact
+            .try_mul_exact(&returned, &returned, &work_relin)
+            .unwrap();
+        let returned_square_plain = decode_at(
+            &work_ctx,
+            &returned_square,
+            &keys.secret_key,
+            returned_square_bound,
+            0..work_ctx.n,
+        );
+        assert_eq!(returned_square_plain[0], 49);
+        assert!(returned_square_plain[1..].iter().all(|&value| value == 0));
+        max_r_bits = max_r_bits.max(bits(r_bound));
+        max_j_bits = max_j_bits.max(bits(j_bound));
+        max_k_bits = max_k_bits.max(bits(k_bound));
+        max_pj_bits = max_pj_bits.max(bits(pj_bound));
+    }
+
+    eprintln!(
+        "small phase-locked T={T}: exact C/r/J/K/pJ at signed endpoints; error bits r/J/K/pJ={max_r_bits}/{max_j_bits}/{max_k_bits}/{max_pj_bits}, half-Delta_T={} bits; return-to-p bound={max_return_bits} bits, half-Delta_p={} bits; corrected square passes at T and p",
+        bits(runtime.noise.half()),
+        work_half_delta_bits,
+    );
+}
+
 fn relin_key(
     runtime: &CarryRuntime<'_>,
     keys: &DualRNSKeySet,
