@@ -704,17 +704,19 @@ fn phase_clock_encrypted_native_q_without_chart_or_winding_oracle() {
     encrypted_probe(256, &[-1, 0, 1]);
 }
 
-fn phase_clock_many_term_probe(trits: &[i8]) {
+fn phase_clock_many_term_probe(trits: &[i8], max_source_weight: usize) {
     use crate::arithmetic::rns::U512;
 
     const N: usize = 1024;
-    assert!(trits.iter().all(|&trit| trit == 1 || trit == -1));
+    assert!(trits.iter().all(|&trit| (-1..=1).contains(&trit)));
+    assert!(trits.iter().filter(|&&trit| trit != 0).count() <= max_source_weight);
+    assert!(max_source_weight <= trits.len());
     let mut config = SecureConfig::secure_128().into_config();
     config.n = N;
     config.primes = BOOT.to_vec();
     config.t = 65_537;
     config.security_bits = 0;
-    config.name = "INSECURE eight-term phase-clock research fixture";
+    config.name = "INSECURE multi-term phase-clock research fixture";
     let ctx = RNSFHEContext::try_new(&config).unwrap();
     let exact = ctx.try_exact_evaluator().unwrap();
     let mut rng = ShadowHarvester::with_seed(0x5048_4153_4538_5452);
@@ -741,7 +743,7 @@ fn phase_clock_many_term_probe(trits: &[i8]) {
     let weights = vec![weight; trits.len()];
     let (c0, a0) = component_with_residual(r0, SOURCE_Q, ctx.t);
     let (c1, a1) = component_with_residual(weight, SOURCE_Q, ctx.t);
-    let plan = ClockPlan::new(N, 33, SOURCE_Q, SOURCE_Q as u128 / 16, trits.len()).unwrap();
+    let plan = ClockPlan::new(N, 33, SOURCE_Q, SOURCE_Q as u128 / 16, max_source_weight).unwrap();
     let (carry, carry_v) = evaluate_clock(
         &ctx, &exact, &plan, SOURCE_Q, r0, &weights, &selectors, &trace,
     );
@@ -788,8 +790,8 @@ fn phase_clock_many_term_probe(trits: &[i8]) {
         (message * message).rem_euclid(ctx.t as i64),
     );
     eprintln!(
-        "many-term public clock: N={N}, H={}, K={k}, selector keys={}, source V={} bits, refreshed V={} bits (bound {}), dependent square exact",
-        trits.len(),
+        "many-term public clock: N={N}, H<={}, K={k}, selector keys={}, source V={} bits, refreshed V={} bits (bound {}), dependent square exact",
+        max_source_weight,
         selectors.len(),
         128 - input_v.lo.leading_zeros(),
         128 - output_v.leading_zeros(),
@@ -799,12 +801,188 @@ fn phase_clock_many_term_probe(trits: &[i8]) {
 
 #[test]
 fn phase_clock_resets_eight_term_source_without_word_enumeration() {
-    phase_clock_many_term_probe(&[-1, -1, -1, -1, -1, -1, 1, 1]);
+    phase_clock_many_term_probe(&[-1, -1, -1, -1, -1, -1, 1, 1], 8);
 }
 
 #[test]
 fn phase_clock_resets_sixteen_term_source_without_word_enumeration() {
-    phase_clock_many_term_probe(&[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1]);
+    phase_clock_many_term_probe(&[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1], 16);
+}
+
+#[test]
+fn phase_clock_decoy_cover_preserves_sparse_window_and_resets_noise() {
+    phase_clock_many_term_probe(&[0, -1, 0, -1, -1, 1, -1, 0, -1, 1, 0, -1], 8);
+}
+
+#[test]
+fn phase_clock_refreshes_two_coefficients_of_a_live_sparse_source() {
+    use crate::arithmetic::rns::U512;
+
+    const N: usize = 512;
+    const COVER: [usize; 12] = [0, 17, 23, 45, 88, 103, 211, 250, 300, 377, 400, 511];
+    const TRITS: [i8; 12] = [-1, -1, 0, -1, 0, -1, -1, 0, -1, 0, 1, 1];
+    let mut source_config = SecureConfig::secure_128().into_config();
+    source_config.n = N;
+    source_config.security_bits = 0;
+    source_config.name = "INSECURE live sparse-source research fixture";
+    let source = RNSFHEContext::try_new(&source_config).unwrap();
+    let mut boot_config = source_config.clone();
+    boot_config.primes = BOOT.to_vec();
+    let boot = RNSFHEContext::try_new(&boot_config).unwrap();
+    let exact = boot.try_exact_evaluator().unwrap();
+    let p = source.t;
+    let source_q = U256::product_u64s(&source_config.primes);
+    assert_eq!(source_q, U256::from_u128(SOURCE_Q as u128));
+    let boot_q = U256::product_u64s(&boot_config.primes);
+    let mut rng = ShadowHarvester::with_seed(0x4c49_5645_434c_4f43);
+    let mut secret_limbs = vec![vec![0u64; N]; source_config.primes.len()];
+    for (lane, &prime) in source_config.primes.iter().enumerate() {
+        for (&position, &trit) in COVER.iter().zip(&TRITS) {
+            secret_limbs[lane][position] = match trit {
+                -1 => prime - 1,
+                0 => 0,
+                1 => 1,
+                _ => unreachable!(),
+            };
+        }
+    }
+    let source_sk = RNSSecretKey {
+        s: source.to_montgomery_form(&RNSPolynomial {
+            limbs: secret_limbs,
+            n: N,
+        }),
+    };
+    let a = source.to_montgomery_form(&source.sample_uniform_main_poly(&mut rng));
+    let as_product = source.rns_poly_mul(&a, &source_sk.s);
+    let stress = SOURCE_Q / (128 * p as i128);
+    let mut added_limbs = vec![vec![0u64; N]; source_config.primes.len()];
+    for (lane, &prime) in source_config.primes.iter().enumerate() {
+        for (position, message, error) in [(0, 7i128, stress), (N - 1, -3, -stress)] {
+            let value = message * source.delta_rns[lane] as i128 + error;
+            added_limbs[lane][position] = value.rem_euclid(prime as i128) as u64;
+        }
+    }
+    let added = source.to_montgomery_form(&RNSPolynomial {
+        limbs: added_limbs,
+        n: N,
+    });
+    let input = RNSCiphertext {
+        c0: added.sub(&as_product, &source.rns),
+        c1: a,
+        num_primes: source_config.primes.len(),
+    };
+    let source_phase = standard(
+        &source,
+        &source
+            .rns_poly_mul(&input.c1, &source_sk.s)
+            .add(&input.c0, &source.rns),
+    );
+    let decoder = CanonicalScaleRound::new(&source_config.primes, p).unwrap();
+    for j in 0..N {
+        let residues: Vec<_> = source_phase.limbs.iter().map(|lane| lane[j]).collect();
+        let expected = match j {
+            0 => 7,
+            k if k == N - 1 => p - 3,
+            _ => 0,
+        };
+        assert_eq!(
+            decoder.scale_round(&residues).unwrap(),
+            expected,
+            "source slot {j}"
+        );
+    }
+
+    // These quotients and residuals depend only on public source components.
+    let split = |poly: &RNSPolynomial| -> Vec<(u64, i128)> {
+        let poly = standard(&source, poly);
+        (0..N)
+            .map(|j| {
+                let residues: Vec<_> = poly.limbs.iter().map(|lane| lane[j]).collect();
+                let scaled = source
+                    .rns
+                    .to_u256_level(&residues, residues.len())
+                    .mul_u64(p);
+                let (whole, remainder) = scaled.div_mod_u256(source_q);
+                assert_eq!(whole.hi, 0);
+                assert_eq!(remainder.hi, 0);
+                if remainder.gt(source_q.shr1()) {
+                    (whole.lo as u64 + 1, remainder.lo as i128 - SOURCE_Q)
+                } else {
+                    (whole.lo as u64, remainder.lo as i128)
+                }
+            })
+            .collect()
+    };
+    let c0 = split(&input.c0);
+    let c1 = split(&input.c1);
+
+    let outer = boot.generate_keys(&mut rng);
+    let relin = exact.generate_hybrid_gadget_key_with_rng(&outer.secret_key, &mut rng);
+    let selectors: Vec<_> = TRITS
+        .iter()
+        .map(|&trit| TritKey {
+            minus: precharge_bit(&exact, &boot, &outer.secret_key, trit == -1, &mut rng),
+            plus: precharge_bit(&exact, &boot, &outer.secret_key, trit == 1, &mut rng),
+        })
+        .collect();
+    let galois = RNSGaloisEvaluator::new(&boot).unwrap();
+    let trace: Vec<_> = (0..N.ilog2())
+        .map(|j| {
+            galois
+                .generate_key_with_rng(&outer.secret_key, (N >> j) as u64 + 1, &mut rng)
+                .unwrap()
+        })
+        .collect();
+    let plan = ClockPlan::new(N, 33, SOURCE_Q, SOURCE_Q as u128 / 16, 8).unwrap();
+    let mut nonzero_carries = 0;
+    for j in [0, N - 1] {
+        let mut weights = Vec::with_capacity(COVER.len());
+        let mut affine = Vec::with_capacity(COVER.len());
+        for &position in &COVER {
+            let (index, sign) = if position <= j {
+                (j - position, 1i128)
+            } else {
+                (N + j - position, -1i128)
+            };
+            weights.push(sign * c1[index].1);
+            affine.push((sign * c1[index].0 as i128).rem_euclid(p as i128) as u64);
+        }
+        let source_sum = c0[j].1
+            + weights
+                .iter()
+                .zip(&TRITS)
+                .map(|(&weight, &trit)| weight * trit as i128)
+                .sum::<i128>();
+        let k = (source_sum + SOURCE_Q / 2).div_euclid(SOURCE_Q);
+        let input_v = (source_sum - SOURCE_Q * k).unsigned_abs();
+        assert!(input_v <= SOURCE_Q as u128 / 16);
+        nonzero_carries += usize::from(k != 0);
+        let (carry, carry_v) = evaluate_clock(
+            &boot, &exact, &plan, SOURCE_Q, c0[j].1, &weights, &selectors, &trace,
+        );
+        assert!(U256::from_u128(carry_v).mul_u64(2).lt(boot_q));
+        assert!(observe(&boot, &carry, &outer.secret_key, k as i64) <= carry_v);
+        let (affine_ct, affine_v) = affine_message(&boot, &exact, c0[j].0, &affine, &selectors);
+        let refreshed = boot.add(&affine_ct, &carry);
+        let expected = if j == 0 { 7 } else { p as i64 - 3 };
+        let output_v = observe(&boot, &refreshed, &outer.secret_key, expected);
+        let bound = affine_v + carry_v;
+        assert!(output_v <= bound);
+        let before = U512::from_u256(boot_q).mul_u128(input_v);
+        let after = U512::from_u128(bound).mul_u128(SOURCE_Q as u128);
+        assert!(
+            (after.d3, after.d2, after.d1, after.d0) < (before.d3, before.d2, before.d1, before.d0)
+        );
+        let square = exact.try_mul_exact(&refreshed, &refreshed, &relin).unwrap();
+        observe(
+            &boot,
+            &square,
+            &outer.secret_key,
+            expected * expected % p as i64,
+        );
+        eprintln!("live sparse-source slot {j}: K={k}, source Vbits={}, refreshed Vbits={}, bound Vbits={}, square exact", 128-input_v.leading_zeros(), 128-output_v.leading_zeros(), 128-bound.leading_zeros());
+    }
+    assert!(nonzero_carries > 0);
 }
 
 #[test]
