@@ -704,6 +704,109 @@ fn phase_clock_encrypted_native_q_without_chart_or_winding_oracle() {
     encrypted_probe(256, &[-1, 0, 1]);
 }
 
+fn phase_clock_many_term_probe(trits: &[i8]) {
+    use crate::arithmetic::rns::U512;
+
+    const N: usize = 1024;
+    assert!(trits.iter().all(|&trit| trit == 1 || trit == -1));
+    let mut config = SecureConfig::secure_128().into_config();
+    config.n = N;
+    config.primes = BOOT.to_vec();
+    config.t = 65_537;
+    config.security_bits = 0;
+    config.name = "INSECURE eight-term phase-clock research fixture";
+    let ctx = RNSFHEContext::try_new(&config).unwrap();
+    let exact = ctx.try_exact_evaluator().unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x5048_4153_4538_5452);
+    let outer = ctx.generate_keys(&mut rng);
+    let relin = exact.generate_hybrid_gadget_key_with_rng(&outer.secret_key, &mut rng);
+    let galois = RNSGaloisEvaluator::new(&ctx).unwrap();
+    let trace: Vec<_> = (0..N.ilog2())
+        .map(|j| {
+            galois
+                .generate_key_with_rng(&outer.secret_key, (N >> j) as u64 + 1, &mut rng)
+                .unwrap()
+        })
+        .collect();
+    let selectors: Vec<_> = trits
+        .iter()
+        .map(|&trit| TritKey {
+            minus: precharge_bit(&exact, &ctx, &outer.secret_key, trit == -1, &mut rng),
+            plus: precharge_bit(&exact, &ctx, &outer.secret_key, trit == 1, &mut rng),
+        })
+        .collect();
+    let step = SOURCE_Q / (13 * ROOT_PRODUCT) * (13 * ROOT_PRODUCT);
+    let weight = step / 2;
+    let r0 = SOURCE_Q / 128;
+    let weights = vec![weight; trits.len()];
+    let (c0, a0) = component_with_residual(r0, SOURCE_Q, ctx.t);
+    let (c1, a1) = component_with_residual(weight, SOURCE_Q, ctx.t);
+    let plan = ClockPlan::new(N, 33, SOURCE_Q, SOURCE_Q as u128 / 16, trits.len()).unwrap();
+    let (carry, carry_v) = evaluate_clock(
+        &ctx, &exact, &plan, SOURCE_Q, r0, &weights, &selectors, &trace,
+    );
+    let q_boot = U256::product_u64s(&config.primes);
+    assert!(U256::from_u128(carry_v).mul_u64(2).lt(q_boot));
+    // Test observer only. The public evaluator above receives neither trits
+    // nor this quotient; it sees public residuals and opaque selector keys.
+    let trit_sum: i128 = trits.iter().map(|&trit| trit as i128).sum();
+    let source_sum = r0 + weight * trit_sum;
+    let k = (source_sum + SOURCE_Q / 2).div_euclid(SOURCE_Q);
+    let carry_measured = observe(&ctx, &carry, &outer.secret_key, k as i64);
+    assert!(carry_measured <= carry_v);
+    let (affine, affine_v) = affine_message(&ctx, &exact, a0, &vec![a1; trits.len()], &selectors);
+    let refreshed = ctx.add(&affine, &carry);
+    let phase = (c0 as i128 + c1 as i128 * trit_sum).rem_euclid(SOURCE_Q) as u128;
+    let q_source = U256::from_u128(SOURCE_Q as u128);
+    let scaled = U256::from_u128(phase).mul_u64(ctx.t);
+    let message = scaled
+        .add(q_source.shr1())
+        .div_mod_u256(q_source)
+        .0
+        .mod_u64(ctx.t) as i64;
+    let residual = scaled.rem_u256(q_source);
+    let input_v = if residual.gt(q_source.shr1()) {
+        q_source.sub(residual)
+    } else {
+        residual
+    };
+    assert_eq!(input_v.hi, 0);
+    assert!(input_v.lo <= SOURCE_Q as u128 / 16);
+    let output_v = observe(&ctx, &refreshed, &outer.secret_key, message);
+    let bound = affine_v + carry_v;
+    assert!(output_v <= bound);
+    let before = U512::from_u256(q_boot).mul_u128(input_v.lo);
+    let after = U512::from_u128(bound).mul_u128(SOURCE_Q as u128);
+    assert!(
+        (after.d3, after.d2, after.d1, after.d0) < (before.d3, before.d2, before.d1, before.d0)
+    );
+    let square = exact.try_mul_exact(&refreshed, &refreshed, &relin).unwrap();
+    observe(
+        &ctx,
+        &square,
+        &outer.secret_key,
+        (message * message).rem_euclid(ctx.t as i64),
+    );
+    eprintln!(
+        "many-term public clock: N={N}, H={}, K={k}, selector keys={}, source V={} bits, refreshed V={} bits (bound {}), dependent square exact",
+        trits.len(),
+        selectors.len(),
+        128 - input_v.lo.leading_zeros(),
+        128 - output_v.leading_zeros(),
+        128 - bound.leading_zeros(),
+    );
+}
+
+#[test]
+fn phase_clock_resets_eight_term_source_without_word_enumeration() {
+    phase_clock_many_term_probe(&[-1, -1, -1, -1, -1, -1, 1, 1]);
+}
+
+#[test]
+fn phase_clock_resets_sixteen_term_source_without_word_enumeration() {
+    phase_clock_many_term_probe(&[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1]);
+}
+
 #[test]
 #[ignore = "opt-in native N8192 two-term source probe; not full dense-source refresh"]
 fn phase_clock_native_8192_alias_and_dependent_squares() {
