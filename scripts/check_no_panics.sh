@@ -137,10 +137,12 @@ FNR == 1 { skip = 0; pending = 0; depth = 0; started = 0 }
 AWK
 
 # bin/ holds benchmark and demo binaries, not library code — the same exemption
-# scripts/check_no_floats_runtime.sh documents and applies.
+# scripts/check_no_floats_runtime.sh documents and applies. Files ending in
+# _tests.rs are separate test-only modules loaded from cfg(test) parents; scan
+# them through CI tests, not as production panic sites.
 production_lines() {
     local dir="$1"
-    find "$dir" -name '*.rs' -type f -not -path '*/bin/*' -print0 \
+    find "$dir" -name '*.rs' -type f -not -path '*/bin/*' -not -name '*_tests.rs' -print0 \
         | xargs -0 -r awk "$PROD_AWK"
 }
 
