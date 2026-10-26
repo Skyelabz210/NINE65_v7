@@ -481,12 +481,12 @@ fn division_router_selects_kelim_and_fpd_without_touching_the_basis() {
             "d={d} was expected coprime to the S8 basis"
         );
         assert_eq!(plan.primary, ChimeraLane::ModularInverse, "d={d}");
-        assert_eq!(plan.primary_status, DivStatus::ModularInverseExact, "d={d}");
-        assert!(plan.primary_status.is_exact_quotient(), "d={d}");
+        assert_eq!(plan.primary_status, DivStatus::ModularSolve, "d={d}");
+        assert!(!plan.primary_status.is_exact_quotient(), "d={d}");
     }
 
-    // Sharing a factor with S8 → Fused Piggyback.
-    for (d, expected_gcd) in [(6i128, 6u64), (10, 10), (210, 210), (4, 2), (9, 3)] {
+    // A squarefree divisor fully witnessed by distinct S8 lanes can use FPD.
+    for (d, expected_gcd) in [(6i128, 6u64), (10, 10), (210, 210)] {
         let plan = select_division_lane(d, basis);
         assert_eq!(plan.gcd_with_basis, expected_gcd, "d={d}");
         assert_eq!(
@@ -498,6 +498,16 @@ fn division_router_selects_kelim_and_fpd_without_touching_the_basis() {
             plan.evaluable.fused_piggyback,
             "d={d}: FPD lane must be evaluable"
         );
+    }
+
+    // S8 contains only one lane for each prime. Prime powers need D2's scalar
+    // exactness witness until a p-adic FPD lane is supplied.
+    for (d, expected_gcd) in [(4i128, 2u64), (9, 3)] {
+        let plan = select_division_lane(d, basis);
+        assert_eq!(plan.gcd_with_basis, expected_gcd, "d={d}");
+        assert_eq!(plan.primary, ChimeraLane::DivExact, "d={d}");
+        assert!(plan.evaluable.div_exact, "d={d}");
+        assert!(!plan.evaluable.fused_piggyback, "d={d}");
     }
 
     assert_eq!(
