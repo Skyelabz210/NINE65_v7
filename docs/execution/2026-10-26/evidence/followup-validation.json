@@ -1,0 +1,126 @@
+{
+  "code_commit": "5d359218c96c3bcf392c9ed538154a4afd066084",
+  "toolchain": "rustc 1.89.0",
+  "checks": [
+    {
+      "name": "exact-transcendentals-debug",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "exact_transcendentals",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "test_results": {
+        "passed": 667,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log_artifact": "followup-exact-debug.log.gz",
+      "log_sha256": "09f3de8a491f6089f3947bd62bf050824870454b2781ad499dc95fb0f6080083"
+    },
+    {
+      "name": "exact-transcendentals-release",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "exact_transcendentals",
+        "--lib",
+        "--tests",
+        "--release"
+      ],
+      "exit_code": 0,
+      "test_results": {
+        "passed": 667,
+        "failed": 0,
+        "ignored": 0
+      },
+      "log_artifact": "followup-exact-release.log.gz",
+      "log_sha256": "44344009045e9208c8c802ecac52d0994cf81c742bc8edf4534d6ac568968417"
+    },
+    {
+      "name": "nine65-router-integration",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure",
+        "--test",
+        "basis_invariance",
+        "division_router_selects_kelim_and_fpd_without_touching_the_basis"
+      ],
+      "exit_code": 0,
+      "test_results": {
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "filtered_out": 11
+      },
+      "log_artifact": "followup-basis-router.log.gz",
+      "log_sha256": "44949fd5c1fd0938ff0a7d2a8c4e0692f5b9c60c09a259490fbae271e8b01652"
+    },
+    {
+      "name": "exact-transcendentals-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "exact_transcendentals",
+        "--lib",
+        "--tests",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "log_artifact": "followup-exact-clippy.log.gz",
+      "log_sha256": "fb133a6c214d2c85b212b4d5d2cf13703292be42c626cd305177ddfa78ac1b1e"
+    },
+    {
+      "name": "followup-contract-witnesses",
+      "command": [
+        "python3",
+        "docs/execution/2026-10-26/reproduce/test_followup_contracts.py"
+      ],
+      "exit_code": 0,
+      "test_results": {
+        "passed": 17,
+        "failed": 0
+      },
+      "log_artifact": "followup-contract-tests.log",
+      "log_sha256": "9b1b89f3b32a955a6221c9fc47b05bb6738a1f5a782062d28230421823d9700a"
+    },
+    {
+      "name": "uploaded-a2-suite",
+      "commands": [
+        ["python3", "scripts/a2_suite.py", "--self-test"],
+        ["python3", "scripts/a2_suite.py", "--reference"]
+      ],
+      "exit_code": 0,
+      "reported_result": "7/7 self-tests and reference commands complete; review found circular and unused-step gates",
+      "log_artifact": "followup-attachment-a2-suite.log.gz",
+      "log_sha256": "caa0d30600e01720b6c1c0dedc2bf52cdd22a122eb2c465e7761b1e2258876f5"
+    },
+    {
+      "name": "uploaded-safe-basis-suite",
+      "command": [
+        "python3",
+        "recombinant_maya_crt_tests.py"
+      ],
+      "exit_code": 0,
+      "reported_result": "35/36 checks passed; script labels the remaining check an expected failure",
+      "log_artifact": "followup-attachment-safe-basis.log.gz",
+      "log_sha256": "29feae9ed201c5bf4363f1feb20ecfe47e9b6dfdbac25c9d2133bb4e33ff843f"
+    }
+  ],
+  "scope_note": "The pre-existing workspace release baseline remains 1,986 passed, 31 failed, and 223 ignored. These focused green checks do not reclassify those baseline failures or enable public refresh."
+}

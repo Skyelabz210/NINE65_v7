@@ -1,0 +1,22 @@
+test_adding_a_coprime_auxiliary_does_not_fix_shared_factor (__main__.FollowupContractTests.test_adding_a_coprime_auxiliary_does_not_fix_shared_factor) ... ok
+test_closed_shell_formula_needs_final_reduction (__main__.FollowupContractTests.test_closed_shell_formula_needs_final_reduction) ... ok
+test_div3_census_reproduces_supplied_counts (__main__.FollowupContractTests.test_div3_census_reproduces_supplied_counts) ... ok
+test_euler_energy_update_needs_the_quadratic_term (__main__.FollowupContractTests.test_euler_energy_update_needs_the_quadratic_term) ... ok
+test_fifth_operator_field_division_is_not_integer_quotient (__main__.FollowupContractTests.test_fifth_operator_field_division_is_not_integer_quotient) ... ok
+test_finite_anchor_capacity_has_an_alias_boundary (__main__.FollowupContractTests.test_finite_anchor_capacity_has_an_alias_boundary) ... ok
+test_independent_rounding_drops_the_secret_dependent_carry (__main__.FollowupContractTests.test_independent_rounding_drops_the_secret_dependent_carry) ... ok
+test_lexicographic_residue_tuples_are_not_integer_order (__main__.FollowupContractTests.test_lexicographic_residue_tuples_are_not_integer_order) ... ok
+test_modular_division_is_not_floor_division (__main__.FollowupContractTests.test_modular_division_is_not_floor_division) ... ok
+test_one_auxiliary_cannot_recover_a_shared_quotient_lane (__main__.FollowupContractTests.test_one_auxiliary_cannot_recover_a_shared_quotient_lane) ... ok
+test_p_adic_nonexpansion_does_not_imply_bounded_integer_orbit (__main__.FollowupContractTests.test_p_adic_nonexpansion_does_not_imply_bounded_integer_orbit) ... ok
+test_safe_basis_cross_scale_example_names_neither_value (__main__.FollowupContractTests.test_safe_basis_cross_scale_example_names_neither_value) ... ok
+test_safe_basis_saturation_ratio_is_not_1_point_4 (__main__.FollowupContractTests.test_safe_basis_saturation_ratio_is_not_1_point_4) ... ok
+test_same_basis_residues_do_not_determine_absolute_quotient (__main__.FollowupContractTests.test_same_basis_residues_do_not_determine_absolute_quotient) ... ok
+test_shadow_fingerprint_and_product (__main__.FollowupContractTests.test_shadow_fingerprint_and_product) ... ok
+test_single_lane_sign_proxy_aliases_opposite_half_sheets (__main__.FollowupContractTests.test_single_lane_sign_proxy_aliases_opposite_half_sheets) ... ok
+test_winding_need_not_be_nondecreasing (__main__.FollowupContractTests.test_winding_need_not_be_nondecreasing) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.080s
+
+OK

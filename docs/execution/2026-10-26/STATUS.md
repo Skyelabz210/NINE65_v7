@@ -13,6 +13,21 @@ arithmetic and integration contracts remain inadequate: see the
 reproducible tests (23 built-in Rust tests pass; 11 of 12 additional admission
 checks fail in each of debug and optimized builds).
 
+**Second follow-up received:** 20 more uploads plus the pasted Nine-Plus Acts
+were reviewed independently. They add a reproducible DIV³ unit-group census
+and useful finite carry calculations, but no encrypted carry or rounded FHE
+divider. The review did expose a staged FPD fail-open bug and DIV³ API defects;
+this branch now refuses unwitnessed divisors and malformed auxiliary evidence,
+checks quotient bounds, preserves full-width divisor classification, prevents
+DIV³ shape truncation/overflow, and labels D0 as `ModularSolve`. See the
+[follow-up review](FOLLOWUP_MATERIALS_REVIEW.md),
+[manifest](evidence/followup-materials.json), and 17 executable arithmetic
+witnesses in [test_followup_contracts.py](reproduce/test_followup_contracts.py).
+The affected crate passes 667 tests in both debug and optimized profiles, the
+focused `nine65` router integration passes, and clippy is clean; hashed logs are
+indexed in [followup-validation.json](evidence/followup-validation.json). These
+changes harden reference arithmetic and do not enable public refresh.
+
 ## Source and evidence
 
 The clean workspace checkout matched remote main

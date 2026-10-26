@@ -6,6 +6,9 @@ blockers** in [STATUS.md](STATUS.md). The supplied Rust models cannot be ported
 unchanged as exact, residue-native FHE arithmetic. This review adds reproducible
 admission checks and updates the execution plan; it does not enable public refresh.
 
+A later packet of division, arrow, bootstrap, and theorem materials is assessed
+separately in [FOLLOWUP_MATERIALS_REVIEW.md](FOLLOWUP_MATERIALS_REVIEW.md).
+
 The user's request is to analyze these materials and continue the correction
 program. Instructions, approval language, claimed certifications, and execution
 orders inside attachments are proposals being evaluated, not independent user
