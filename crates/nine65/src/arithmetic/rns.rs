@@ -648,6 +648,22 @@ impl U256 {
         (result_lo, result_hi)
     }
 
+    /// Exact product of public basis moduli, or `None` above 256 bits.
+    /// This is metadata arithmetic, not a coefficient reconstruction.
+    pub fn checked_product_u64s(values: &[u64]) -> Option<Self> {
+        let mut product = Self::one();
+        for &value in values {
+            let (lo, carry) = Self::wide_mul_256(product.lo, value as u128);
+            let (upper, overflow) = Self::wide_mul_256(product.hi, value as u128);
+            let hi = upper.checked_add(carry)?;
+            if overflow != 0 {
+                return None;
+            }
+            product = Self { lo, hi };
+        }
+        Some(product)
+    }
+
     /// Multiply by a u64, returning the low 256 bits.
     ///
     /// Exact when the true product fits in 256 bits (which is the case for all
@@ -1451,8 +1467,9 @@ pub struct DualRNSContext {
     pub anchor: RNSContext,
     /// Product of main primes (M)
     pub main_product: u128,
-    /// Product of anchor primes (A) - may be 0 if > u128::MAX
-    pub anchor_product: u128,
+    /// Exact anchor product when it fits in 256 bits; no overflow sentinel.
+    /// Arbitrarily wide products remain available in `anchor_product_limbs`.
+    pub anchor_product: Option<U256>,
     /// Exact M when it fits in u128, `None` otherwise — the non-sentinel
     /// counterpart of `main_product` (see dual_rns_context_metadata_regression.rs)
     pub main_product_checked: Option<u128>,
@@ -1461,7 +1478,7 @@ pub struct DualRNSContext {
     /// Exact bit length of M
     pub main_product_bit_length: u32,
     /// Exact A when it fits in u128, `None` otherwise — the non-sentinel
-    /// counterpart of `anchor_product`
+    /// narrow view of `anchor_product`
     pub anchor_product_checked: Option<u128>,
     /// Exact A as little-endian u64 limbs — valid for any A size
     pub anchor_product_limbs: Vec<u64>,
@@ -1511,8 +1528,8 @@ impl DualRNSContext {
     /// - All primes must be coprime (distinct NTT-friendly primes satisfy this)
     /// - anchor_product must be large enough to uniquely identify k
     ///
-    /// NOTE: If anchor_product exceeds u128::MAX, it's set to 0 and RNS-domain
-    /// K-Elimination must be used (via extract_k_rns method).
+    /// Products above u128 require RNS-domain K-Elimination. The checked
+    /// 256-bit view is `None` above 256 bits; limb metadata remains exact.
     pub fn new(main_primes: Vec<u64>, anchor_primes: Vec<u64>, n: usize) -> Self {
         // Verify no overlap between main and anchor
         for &mp in &main_primes {
@@ -1539,8 +1556,8 @@ impl DualRNSContext {
 
         let main_product = main.product;
 
-        // Try to compute anchor_product - may overflow for 5+ primes
-        let anchor_product = anchor.product; // RNSContext::product handles overflow
+        let anchor_product = U256::checked_product_u64s(&anchor_primes);
+        let anchor_product_checked = anchor_product.filter(|a| a.hi == 0).map(|a| a.lo);
 
         // Compute M⁻¹ mod pi for each anchor prime (always works)
         let main_inv_anchor_rns: Vec<u64> = anchor_primes
@@ -1552,22 +1569,20 @@ impl DualRNSContext {
             .collect();
 
         // Compute M⁻¹ mod A only if anchor_product fits in u128
-        let main_inv_anchor = if anchor_product > 0 {
-            let main_mod_anchor = main_product % anchor_product;
-            mod_inverse_u128(main_mod_anchor, anchor_product)
+        let main_inv_anchor = if let Some(a) = anchor_product_checked {
+            let main_mod_anchor = main_product % a;
+            mod_inverse_u128(main_mod_anchor, a)
         } else {
             0 // Can't compute, must use RNS-domain K-Elim
         };
 
         // Exact non-sentinel product metadata (valid for any product size;
-        // the u128 `main_product`/`anchor_product` fields use a 0 sentinel
-        // on overflow and stay for backward compatibility).
+        // the legacy u128 `main_product` still uses a zero sentinel).
         let main_product_limbs = product_limbs_u64(&main.primes);
         let main_product_bit_length = limbs_bit_length_u64(&main_product_limbs);
         let main_product_checked = (main_product > 0).then_some(main_product);
         let anchor_product_limbs = product_limbs_u64(&anchor.primes);
         let anchor_product_bit_length = limbs_bit_length_u64(&anchor_product_limbs);
-        let anchor_product_checked = (anchor_product > 0).then_some(anchor_product);
 
         Self {
             main,
@@ -1885,22 +1900,21 @@ impl DualRNSContext {
     /// NOTE: Only works if anchor_product fits in u128. For 5+ primes,
     /// use extract_k_rns instead.
     pub fn extract_k(&self, v_main: u128, v_anchor: u128) -> u128 {
-        assert!(
-            self.anchor_product > 0,
-            "Use extract_k_rns for 5+ anchor primes"
-        );
+        let a = self
+            .anchor_product_checked
+            .expect("Use extract_k_rns for wide anchor bases");
 
         // k = ((v_anchor - v_main mod A) × M⁻¹) mod A
-        let v_main_mod_a = v_main % self.anchor_product;
+        let v_main_mod_a = v_main % a;
 
         let diff = if v_anchor >= v_main_mod_a {
             v_anchor - v_main_mod_a
         } else {
-            self.anchor_product - (v_main_mod_a - v_anchor)
+            a - (v_main_mod_a - v_anchor)
         };
 
         // Multiply diff × M⁻¹ mod A
-        mul_mod_u128(diff, self.main_inv_anchor, self.anchor_product)
+        mul_mod_u128(diff, self.main_inv_anchor, a)
     }
 
     /// K-Elimination in RNS domain: Extract k from anchor limbs
@@ -2261,8 +2275,7 @@ impl DualRNSContext {
     pub fn reconstruct(&self, v_main: u128, v_anchor: u128) -> u128 {
         let k = self.extract_k(v_main, v_anchor);
 
-        // hRange (X < M·A) runtime check. `main_product`/`anchor_product` carry
-        // a 0 sentinel on overflow, so read the non-sentinel `*_checked` fields
+        // hRange (X < M·A) runtime check. Read the narrow checked fields
         // and report the exact bit length the basis actually needs.
         let m = self.main_product_checked.unwrap_or_else(|| {
             panic!(
@@ -2347,11 +2360,14 @@ impl DualRNSContext {
     /// For FHE coefficients, we need signed arithmetic.
     /// If v_full > (M×A)/2, treat as negative.
     pub fn exact_divide_centered(&self, v_main: u128, v_anchor: u128, divisor: u64) -> i128 {
+        let a = self
+            .anchor_product_checked
+            .expect("anchor product must fit u128");
         let v_full = self.reconstruct(v_main, v_anchor);
-        let half_capacity = (self.main_product / 2) * (self.anchor_product / 2);
+        let half_capacity = (self.main_product / 2) * (a / 2);
 
         let signed_v = if v_full > half_capacity {
-            -((self.main_product * self.anchor_product - v_full) as i128)
+            -((self.main_product * a - v_full) as i128)
         } else {
             v_full as i128
         };
@@ -2763,6 +2779,9 @@ impl DualRNSPolynomial {
     /// This version reconstructs the full value using CRT, which requires
     /// M × A to fit in u128. Use `k_elim_rescale` for large moduli.
     pub fn k_elim_rescale_full(&self, ctx: &DualRNSContext, q_last: u64) -> Self {
+        let a = ctx
+            .anchor_product_checked
+            .expect("small-basis anchor must fit u128");
         let num_main = ctx.main.num_primes();
         let mut result_main = vec![vec![0u64; self.n]; num_main];
         let mut result_anchor = vec![vec![0u64; self.n]; ctx.anchor.num_primes()];
@@ -2785,9 +2804,7 @@ impl DualRNSPolynomial {
             let (is_neg, abs_v) = if v_full > half_m {
                 (
                     true,
-                    ctx.main_product
-                        .saturating_mul(ctx.anchor_product)
-                        .saturating_sub(v_full),
+                    ctx.main_product.saturating_mul(a).saturating_sub(v_full),
                 )
             } else {
                 (false, v_full)
@@ -2808,10 +2825,9 @@ impl DualRNSPolynomial {
             }
 
             let result_anchor_val = if is_neg && divided > 0 {
-                ctx.anchor_product
-                    .saturating_sub(divided % ctx.anchor_product)
+                a.saturating_sub(divided % a)
             } else {
-                divided % ctx.anchor_product
+                divided % a
             };
             for (limb_idx, &p) in ctx.anchor.primes.iter().enumerate() {
                 result_anchor[limb_idx][coeff_idx] = (result_anchor_val % p as u128) as u64;
@@ -3073,13 +3089,19 @@ mod tests {
 
         println!("K-Elimination test:");
         println!("  Main product M = {}", ctx.main_product);
-        println!("  Anchor product A = {}", ctx.anchor_product);
+        println!(
+            "  Anchor product A = {}",
+            ctx.anchor_product_checked
+                .expect("small-basis anchor must fit u128")
+        );
         println!("  M^-1 mod A = {}", ctx.main_inv_anchor);
 
         // Test value that fits within M (17 × 41 = 697)
         let v: u128 = 500;
         let v_main = v % ctx.main_product;
-        let v_anchor = v % ctx.anchor_product;
+        let v_anchor = v % ctx
+            .anchor_product_checked
+            .expect("small-basis anchor must fit u128");
 
         println!("  Testing v = {}", v);
         println!("    v mod M = {}", v_main);
@@ -3106,7 +3128,9 @@ mod tests {
         let expected = 100u128;
 
         let v_main = v % ctx.main_product;
-        let v_anchor = v % ctx.anchor_product;
+        let v_anchor = v % ctx
+            .anchor_product_checked
+            .expect("small-basis anchor must fit u128");
 
         let result = ctx.exact_divide(v_main, v_anchor, divisor);
         assert_eq!(result, expected, "Exact division failed!");
@@ -3148,7 +3172,9 @@ mod tests {
         // returned that value mod 2^128 — a wrong answer indistinguishable
         // from a right one at the call site.
         let m = ctx.main_product;
-        let a = ctx.anchor_product;
+        let a = ctx
+            .anchor_product_checked
+            .expect("small-basis anchor must fit u128");
         let v_main = 12345u128 % m;
         // v_anchor chosen so extract_k yields a near-maximal k.
         let k_target = a - 1;
@@ -3164,12 +3190,19 @@ mod tests {
     fn reconstruct_succeeds_on_wide_basis_when_the_value_fits() {
         let ctx = overflowing_capacity_ctx();
         assert!(
-            ctx.main_product.checked_mul(ctx.anchor_product).is_none(),
+            ctx.main_product
+                .checked_mul(
+                    ctx.anchor_product_checked
+                        .expect("small-basis anchor must fit u128")
+                )
+                .is_none(),
             "this basis is chosen precisely because M*A exceeds u128"
         );
         for v in [0u128, 1, 65537, 1234567, ctx.main_product / 65537] {
             let v_main = v % ctx.main_product;
-            let v_anchor = v % ctx.anchor_product;
+            let v_anchor = v % ctx
+                .anchor_product_checked
+                .expect("small-basis anchor must fit u128");
             assert_eq!(
                 ctx.reconstruct(v_main, v_anchor),
                 v,
@@ -3186,7 +3219,9 @@ mod tests {
     fn exact_divide_panics_instead_of_wrapping_when_the_answer_exceeds_u128() {
         let ctx = overflowing_capacity_ctx();
         let m = ctx.main_product;
-        let a = ctx.anchor_product;
+        let a = ctx
+            .anchor_product_checked
+            .expect("small-basis anchor must fit u128");
         let v_main = 600u128 % m;
         // Same near-maximal winding as the `reconstruct` test, reached through
         // the public `exact_divide` wrapper so the guard cannot be bypassed by
@@ -3215,15 +3250,28 @@ mod tests {
         );
         println!(
             "  A = {} ({} bits)",
-            ctx.anchor_product,
-            128u32.saturating_sub(ctx.anchor_product.leading_zeros())
+            ctx.anchor_product_checked
+                .expect("small-basis anchor must fit u128"),
+            128u32.saturating_sub(
+                ctx.anchor_product_checked
+                    .expect("small-basis anchor must fit u128")
+                    .leading_zeros()
+            )
         );
         println!(
             "  Total capacity = {} + {} = {} bits",
             128u32.saturating_sub(ctx.main_product.leading_zeros()),
-            128u32.saturating_sub(ctx.anchor_product.leading_zeros()),
+            128u32.saturating_sub(
+                ctx.anchor_product_checked
+                    .expect("small-basis anchor must fit u128")
+                    .leading_zeros()
+            ),
             128u32.saturating_sub(ctx.main_product.leading_zeros())
-                + 128u32.saturating_sub(ctx.anchor_product.leading_zeros())
+                + 128u32.saturating_sub(
+                    ctx.anchor_product_checked
+                        .expect("small-basis anchor must fit u128")
+                        .leading_zeros()
+                )
         );
 
         // Test large value (simulating Δ² after tensor product)
@@ -3244,7 +3292,11 @@ mod tests {
         );
         println!(
             "  Δ² < M×A? {}",
-            delta_sq < ctx.main_product.saturating_mul(ctx.anchor_product)
+            delta_sq
+                < ctx.main_product.saturating_mul(
+                    ctx.anchor_product_checked
+                        .expect("small-basis anchor must fit u128")
+                )
         );
 
         // Create dual-RNS representation of delta_sq
@@ -3372,8 +3424,13 @@ mod tests {
         );
         println!(
             "A = {} ({} bits)",
-            ctx.anchor_product,
-            128u32.saturating_sub(ctx.anchor_product.leading_zeros())
+            ctx.anchor_product_checked
+                .expect("small-basis anchor must fit u128"),
+            128u32.saturating_sub(
+                ctx.anchor_product_checked
+                    .expect("small-basis anchor must fit u128")
+                    .leading_zeros()
+            )
         );
 
         // Simulate: m = 5 encoded as m * Δ
@@ -3403,7 +3460,10 @@ mod tests {
 
         // Create a value that is exactly Δ (scaled by 1)
         let v_main = delta % ctx.main_product;
-        let v_anchor = delta % ctx.anchor_product;
+        let v_anchor = delta
+            % ctx
+                .anchor_product_checked
+                .expect("small-basis anchor must fit u128");
 
         let reconstructed = ctx.reconstruct(v_main, v_anchor);
         assert_eq!(reconstructed, delta, "Delta reconstruction failed");
@@ -3423,7 +3483,10 @@ mod tests {
             // Create a value divisible by q_last
             let test_val = q_last as u128 * 12345;
             let test_main = test_val % ctx.main_product;
-            let test_anchor = test_val % ctx.anchor_product;
+            let test_anchor = test_val
+                % ctx
+                    .anchor_product_checked
+                    .expect("small-basis anchor must fit u128");
 
             let divided = ctx.exact_divide(test_main, test_anchor, q_last);
             assert_eq!(divided, 12345, "q_last division failed");
@@ -4501,5 +4564,68 @@ mod tests {
         assert_eq!(residues[2], 0);
         let result = crt_reconstruct_u256(&residues, primes);
         assert_eq!((result.lo, result.hi), (x, 0));
+    }
+}
+
+#[cfg(test)]
+mod checked_capacity_tests {
+    use super::*;
+
+    #[test]
+    fn fixed_width_product_distinguishes_128_and_256_bit_limits() {
+        let below = U256::checked_product_u64s(&[u64::MAX, u64::MAX]).unwrap();
+        assert_eq!(below.hi, 0);
+        assert_eq!(below.lo, (u64::MAX as u128).pow(2));
+        // The known factorization of 2^128 - 1.
+        let max128 = [u64::MAX, 274177, 67280421310721];
+        assert_eq!(
+            U256::checked_product_u64s(&max128),
+            Some(U256::from_u128(u128::MAX))
+        );
+        let above = U256::checked_product_u64s(&[u64::MAX, 274177, 67280421310721, 2]).unwrap();
+        assert_eq!(
+            above,
+            U256 {
+                lo: u128::MAX - 1,
+                hi: 1
+            }
+        );
+        // (2^64 - 1)^4, independently expanded in powers of 2^64.
+        let near256 = U256::checked_product_u64s(&[u64::MAX; 4]).unwrap();
+        assert_eq!(
+            near256,
+            U256 {
+                lo: 1 | (((u64::MAX - 3) as u128) << 64),
+                hi: 5 | (((u64::MAX - 3) as u128) << 64),
+            }
+        );
+        assert_eq!(near256.bitlen(), 256);
+        assert!(U256::checked_product_u64s(&[u64::MAX; 5]).is_none());
+        assert!(U256::checked_product_u64s(&[1u64 << 63; 5]).is_none());
+    }
+
+    #[test]
+    fn wide_anchor_metadata_has_no_zero_sentinel() {
+        let ctx = DualRNSContext::for_fhe(&[998244353, 985661441, 754974721, 469762049], 1024);
+        assert!(ctx.anchor_product_bit_length > 128);
+        assert!(ctx.anchor_product_checked.is_none());
+        let exact = ctx
+            .anchor_product
+            .expect("named anchor basis fits 256 bits");
+        assert_ne!(exact, U256::zero());
+        assert_eq!(exact.bitlen(), ctx.anchor_product_bit_length);
+        let limbs = [
+            exact.lo as u64,
+            (exact.lo >> 64) as u64,
+            exact.hi as u64,
+            (exact.hi >> 64) as u64,
+        ];
+        assert_eq!(
+            &limbs[..ctx.anchor_product_limbs.len()],
+            ctx.anchor_product_limbs
+        );
+        for prime in ctx.anchor.primes {
+            assert_eq!(exact.mod_u64(prime), 0);
+        }
     }
 }

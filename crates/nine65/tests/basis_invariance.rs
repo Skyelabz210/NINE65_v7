@@ -123,7 +123,9 @@ fn basis_bytes(ctx: &RNSFHEContext, ct: &DualRNSCiphertext) -> Vec<u8> {
     out.extend_from_slice(&ctx.q_product.to_le_bytes());
     out.extend_from_slice(&(ctx.q_bits as u64).to_le_bytes());
     out.extend_from_slice(&ctx.dual_rns.main_product.to_le_bytes());
-    out.extend_from_slice(&ctx.dual_rns.anchor_product.to_le_bytes());
+    for limb in &ctx.dual_rns.anchor_product_limbs {
+        out.extend_from_slice(&limb.to_le_bytes());
+    }
 
     // (C) The ciphertext's occupancy of the chain. THIS is what a classical
     //     rescale decrements, and what `mod_switch_ct_down` decrements today.

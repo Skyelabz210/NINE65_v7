@@ -106,10 +106,11 @@ pub enum CramLiftError {
 
 /// True iff centered coefficients for this context fit the `i128` witness API.
 ///
-/// `q_product == 0` is this codebase's sentinel for "Q did not fit u128"
-/// (see `RNSFHEContext::try_new`), so it is disqualifying on its own.
+/// Missing checked metadata is a refusal; the legacy scalar sentinel is not
+/// used as capacity evidence. The existing strict 127-bit corridor is preserved.
 pub fn cram_witness_capacity_ok(ctx: &RNSFHEContext) -> bool {
-    ctx.q_product != 0 && ctx.q_product < (1u128 << 127)
+    ctx.q_product_checked
+        .is_some_and(|q| q > 0 && q < (1u128 << 127))
 }
 
 /// Project `c0` to centered integer coefficients in `[-Q/2, Q/2)`.
@@ -444,5 +445,25 @@ mod tests {
                 "every retained aux prime must be coprime to the divisor"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod checked_witness_tests {
+    use super::*;
+    use crate::params::SecureConfig;
+
+    #[test]
+    fn witness_admission_reads_checked_metadata() {
+        let mut ctx = RNSFHEContext::new(&SecureConfig::secure_128().config);
+        assert!(cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = None;
+        assert!(!cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = Some(0);
+        assert!(!cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = Some(1u128 << 127);
+        assert!(!cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = Some((1u128 << 127) - 1);
+        assert!(cram_witness_capacity_ok(&ctx));
     }
 }
