@@ -1,13 +1,21 @@
 # NINE65
-## Exact-Integer DualRNS Privacy Substrate with Low-Depth Refresh
+## Exact-Integer BFV/DualRNS Prototype
 
 NINE65 is a Rust BFV/DualRNS computation substrate for exact modular privacy-preserving workloads across public-evaluator, KSK-separated, symmetric protected, service-operator, browser, edge, and accelerator deployments.
+
+**Current correction status:** public refresh is disabled on every named profile.
+The K-Elimination substrate and finite-depth evaluator have measured tests; the
+recumbent FHE port and encrypted carry transition remain open. `secure_256` is a
+target label with a 240-bit in-tree MATZOV screen, not an independently certified
+256-bit profile. There is no claim of unlimited depth, bootstrap-free FHE,
+library-wide constant time, or production readiness. The supplied correction
+packet has been [reconciled against the current code and arithmetic prerequisites](docs/execution/2026-10-26/STATUS.md).
 
 The repository has moved beyond the historical “v7 Bootstrap Complete” snapshot. The current integration line combines:
 
 - public DualRNS evaluation and relinearization;
-- circular and KSK-separated Clockwork bootstrap paths;
-- automatic pre-operation refresh;
+- gated, currently disabled circular and KSK-separated Clockwork bootstrap paths;
+- automatic pre-operation refresh requests with typed refusal at the public gate;
 - symmetric protected decrypt→re-encrypt refresh;
 - K-Elimination rescaling with explicit anchor/range state;
 - exact large-modulus and noise-budget accounting;

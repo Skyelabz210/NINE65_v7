@@ -599,3 +599,17 @@ All five annotated integration targets compile
 Pre-existing and untouched: `tests/rns_context_metadata_regression.rs` fails to
 compile with `E0609: no field q_product_checked / q_product_limbs on type
 RNSFHEContext`. That target was not modified in this phase.
+
+
+## 2026-10-26 correction packet reconciliation
+
+The public claims “unlimited depth”, “bootstrap-free FHE”, “256-bit secure” for
+all models, and library-wide “constant-time” remain retired/unestablished.
+K-Elimination is a classical mixed-radix identity; architectural inversion of
+Garner is an architecture description, not a solution to a new “60-year problem”.
+Blanket centering is not reinstated by the correction program.
+
+The attached packet's signed certificate `|K| < A` is insufficient: `K=-1` and
+`K=A-1` alias. Likewise its `p-1,p+1` anchors share factor two for every odd prime.
+These are construction blockers, not permissions to bypass validation. See
+[the execution status](execution/2026-10-26/STATUS.md) and its exact counterexamples.
