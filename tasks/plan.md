@@ -20,7 +20,10 @@ execution, and does not close or replace the release issues.
    Keep refresh disabled until all specified acceptance tests pass.
 
 ## Blocking findings
-- The named ns_v5 source, blueprint, rejected patch and witness logs are absent.
+- Follow-up attachments now supply recumbent source and a bootstrap blueprint.
+  The Rust models fail range/sign/division admission checks; the blueprint's core
+  divider remains todo!(). Rejected patch and specifically named witness logs
+  remain unavailable. See docs/execution/2026-10-26/SUPPLIED_MATERIALS_REVIEW.md.
 - For odd prime p, gcd(p-1,p+1)=2; the proposed pairs are not a coprime anchor
   family. For p=2 the shadow modulus is 1, also invalid. Composite adjacency
   anchors also cannot be substituted into the existing prime NTT contexts.
@@ -28,7 +31,8 @@ execution, and does not close or replace the release issues.
   collide. A signed interval of width at most A, or a bound such as 2B<A,
   must be specified and propagated rather than inferred from residues.
 - The existing BoundedResidueDivider implementation reconstructs X; the packet
-  provides no concrete four-step replacement for general rounded division.
+  and follow-up blueprint provide no executable replacement for general rounded
+  division. Exact modular division examples do not fill that contract.
 - Public encrypted carry (#95) remains open independently of scalar division.
 - The proposed parity implication with coprime moduli reduces to 1 | (X-Y),
   so it is not itself an error-detection proof.

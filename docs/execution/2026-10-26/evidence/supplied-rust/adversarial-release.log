@@ -1,0 +1,105 @@
+
+running 12 tests
+test audit_checked_conversion_rejects_2pow128 ... FAILED
+test audit_checked_division_refuses_shared_factor_without_panicking ... FAILED
+test audit_controls_bounded_exact_division ... ok
+test audit_exact_division_rejects_nondivisibility ... FAILED
+test audit_i64_roundtrip_at_first_modulus ... FAILED
+test audit_minimum_i64_roundtrip ... FAILED
+test audit_mixed_sign_does_not_erase_high_bits ... FAILED
+test audit_shift_preserves_2pow128 ... FAILED
+test audit_weights_mixed_sign ... FAILED
+test audit_weights_reject_zero_divisor ... FAILED
+test audit_weights_shared_factor_is_not_inverse_one ... FAILED
+test audit_wide_order_is_numeric ... FAILED
+
+failures:
+
+---- audit_checked_conversion_rejects_2pow128 stdout ----
+
+thread 'audit_checked_conversion_rejects_2pow128' panicked at adversarial.rs:18:5:
+assertion `left == right` failed
+  left: Some(0)
+ right: None
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- audit_checked_division_refuses_shared_factor_without_panicking stdout ----
+
+thread 'audit_checked_division_refuses_shared_factor_without_panicking' panicked at recumbent_crt_bigint.rs:124:5:
+assertion `left == right` failed: mod_inverse: gcd(0,9223372036854775783) ≠ 1
+  left: 9223372036854775783
+ right: 1
+
+thread 'audit_checked_division_refuses_shared_factor_without_panicking' panicked at adversarial.rs:43:5:
+checked API panicked
+
+---- audit_exact_division_rejects_nondivisibility stdout ----
+
+thread 'audit_exact_division_rejects_nondivisibility' panicked at adversarial.rs:37:5:
+assertion failed: R::from_i64(7).checked_div(&R::from_i64(2)).is_none()
+
+---- audit_i64_roundtrip_at_first_modulus stdout ----
+
+thread 'audit_i64_roundtrip_at_first_modulus' panicked at adversarial.rs:30:5:
+assertion `left == right` failed
+  left: 0
+ right: 9223372036854775783
+
+---- audit_minimum_i64_roundtrip stdout ----
+
+thread 'audit_minimum_i64_roundtrip' panicked at adversarial.rs:54:5:
+assertion `left == right` failed
+  left: -25
+ right: -9223372036854775808
+
+---- audit_mixed_sign_does_not_erase_high_bits stdout ----
+
+thread 'audit_mixed_sign_does_not_erase_high_bits' panicked at adversarial.rs:26:5:
+assertion failed: !two128().add(&R::one()).sub(&R::one()).is_zero()
+
+---- audit_shift_preserves_2pow128 stdout ----
+
+thread 'audit_shift_preserves_2pow128' panicked at adversarial.rs:50:5:
+assertion `left == right` failed
+  left: [0, 0, 0, 0, 0, 0, 0, 0]
+ right: [2500, 108900, 268324, 887364, 3348900, 4937284, 6200100, 7584516]
+
+---- audit_weights_mixed_sign stdout ----
+
+thread 'audit_weights_mixed_sign' panicked at adversarial.rs:58:5:
+assertion `left == right` failed
+  left: 4611686018427387891
+ right: -1
+
+---- audit_weights_reject_zero_divisor stdout ----
+
+thread 'audit_weights_reject_zero_divisor' panicked at adversarial.rs:62:5:
+assertion failed: std::panic::catch_unwind(|| k_eliminate_divide(&W::from_i64(9), 0)).is_err()
+
+---- audit_weights_shared_factor_is_not_inverse_one stdout ----
+
+thread 'audit_weights_shared_factor_is_not_inverse_one' panicked at adversarial.rs:70:9:
+assertion `left == right` failed
+  left: [0, 1, 1, 1, 1, 1, 1, 1]
+ right: [1, 1, 1, 1, 1, 1, 1, 1]
+
+---- audit_wide_order_is_numeric stdout ----
+
+thread 'audit_wide_order_is_numeric' panicked at adversarial.rs:22:5:
+assertion failed: two128() > R::one()
+
+
+failures:
+    audit_checked_conversion_rejects_2pow128
+    audit_checked_division_refuses_shared_factor_without_panicking
+    audit_exact_division_rejects_nondivisibility
+    audit_i64_roundtrip_at_first_modulus
+    audit_minimum_i64_roundtrip
+    audit_mixed_sign_does_not_erase_high_bits
+    audit_shift_preserves_2pow128
+    audit_weights_mixed_sign
+    audit_weights_reject_zero_divisor
+    audit_weights_shared_factor_is_not_inverse_one
+    audit_wide_order_is_numeric
+
+test result: FAILED. 1 passed; 11 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s

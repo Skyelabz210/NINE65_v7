@@ -5,6 +5,14 @@ preserves its evidence, completes independent capacity/governance corrections,
 and records the prerequisites that block the FHE port. Public refresh remains
 disabled. No depth, security, constant-time or performance capability is added.
 
+**Follow-up materials received:** the user subsequently supplied 16 attachments,
+including `recumbent.rs` and the bootstrap blueprint. The source-availability
+blocker below is historical and is now resolved for those two items. Their
+arithmetic and integration contracts remain inadequate: see the
+[supplied-materials review](SUPPLIED_MATERIALS_REVIEW.md), source hashes, and
+reproducible tests (23 built-in Rust tests pass; 11 of 12 additional admission
+checks fail in each of debug and optimized builds).
+
 ## Source and evidence
 
 The clean workspace checkout matched remote main
@@ -69,11 +77,11 @@ coprimality checks, or declaring disabled refresh profiles admitted.
 | Packet tasks | Status and evidence |
 | --- | --- |
 | T0.1 | Audited/current hashes recorded. Expected audit report hashes unavailable. |
-| T0.2 | Supplied packet preserved. Five named artifacts missing; immutable external storage not supplied. |
+| T0.2 | Packet preserved; follow-up source/blueprint and 14 other attachments inventoried. Other specifically named witness/rejected-patch artifacts remain unavailable; immutable external storage not supplied. |
 | T0.3 | README introduction corrected; registry links this report; retired claims retained. |
 | T0.4 | Release baseline and target inventory recorded in validation artifacts. The packet's 24 ignored failures have no supplied name manifest and cannot be equated to today's ignored set. |
-| T1.1 | Blocked port source and signed-lift invariant. No speculative carrier is presented as a port. |
-| T1.2 | Existing divider inventoried; residue-native replacement blocked by missing algorithm/certificate. |
+| T1.1 | Source now supplied and reviewed. Its scalar reconstruction and failed model admission checks prevent direct port; signed-lift invariant still required. |
+| T1.2 | Existing divider inventoried; supplied blueprint still leaves the core divider as todo!(). General rounded division and authentic output anchors remain unresolved. |
 | T1.3 | New source gate implemented and injection-tested. Existing production reconstruction remains; hiding live symbols with cfg(test) would break production. Gate remains red. |
 | T1.4 | Depends on signed representative/epoch contract. Reconstructing only the main residue would wrongly reject authentic noncanonical quotient anchors. |
 | T2.1–T2.2 | Blocked by T1 and encrypted carry; current fail-closed refresh gate preserved. |
@@ -135,6 +143,8 @@ must never be cited as a pass for zero reconstruction.
 
 **Release blocked.** No last-green Phase-2/3 commit has been established, so there
 is no basis to claim the packet's release or rollback criteria have been met.
-To resume the critical path, supply the named source/evidence and a corrected
-signed-lift, general-division, and compatible anchor contract; then implement
-and prove the encrypted public carry before enabling refresh.
+To resume the critical implementation path, resolve the source defects and
+correct the signed-lift, general-division, and compatible anchor contracts
+identified in the follow-up review; then implement and prove the encrypted
+public carry before enabling refresh. Missing witness artifacts remain evidence
+gaps, but source availability is no longer the primary blocker.

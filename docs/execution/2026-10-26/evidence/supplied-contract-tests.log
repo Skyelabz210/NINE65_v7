@@ -1,0 +1,15 @@
+test_adding_a_lane_does_not_remove_shared_factors (__main__.MaterialContracts.test_adding_a_lane_does_not_remove_shared_factors) ... ok
+test_blueprint_inverse_and_modswitch_counterexamples (__main__.MaterialContracts.test_blueprint_inverse_and_modswitch_counterexamples) ... ok
+test_bounded_carry_and_signed_congruence (__main__.MaterialContracts.test_bounded_carry_and_signed_congruence) ... ok
+test_bridge_capacity_claim (__main__.MaterialContracts.test_bridge_capacity_claim) ... ok
+test_frozen_quantization_is_not_frozen_output_error (__main__.MaterialContracts.test_frozen_quantization_is_not_frozen_output_error) ... ok
+test_hidden_carry_boundary_claims (__main__.MaterialContracts.test_hidden_carry_boundary_claims) ... ok
+test_main_lanes_do_not_identify_absolute_winding (__main__.MaterialContracts.test_main_lanes_do_not_identify_absolute_winding) ... ok
+test_non_coprime_resolution (__main__.MaterialContracts.test_non_coprime_resolution) ... ok
+test_reported_carry_fluxes (__main__.MaterialContracts.test_reported_carry_fluxes) ... ok
+test_signed_alias_requires_independent_bound (__main__.MaterialContracts.test_signed_alias_requires_independent_bound) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.042s
+
+OK
