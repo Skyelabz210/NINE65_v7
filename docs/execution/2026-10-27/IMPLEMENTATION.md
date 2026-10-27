@@ -63,6 +63,29 @@ Current metadata endpoints fit `i128`, and general divisors fit `u64`. The
 production BFV Delta is wider, and no raw DualRNS import is admitted by merely
 asserting an interval.
 
+Existing CRAM D1/D2 and Agreement-lock reads now use direct weighted CRT rather
+than Garner/MRC. Subset lifts remain nonnegative until the complete lift is
+centered; the full-S8 midpoint keeps its existing positive-tie convention.
+Reconstruction counters report those reads separately from Garner calls.
+The FPD direct sum now uses overflow-safe modular products and addition, since
+a valid 123-bit fusion product could previously produce a 130-bit intermediate.
+Full-width D1/router divisor checks and D2's `i128::MIN` remainder handling also
+preserve typed results. Failing-before regressions and independent D1/D2/FPD
+oracles cover these changes. The complete `exact_transcendentals` suite now
+passes 685 tests in each profile, including ten new CRAM regressions. Independent
+review checks 5,226 additional public-API cases in each profile and the corrected
+wide-divisor router witness. The no_std library check also passes.
+
+`DualRNSContext` inverse metadata now uses the true main prime-factor product,
+including when its legacy scalar snapshot is zero. Scalar K extraction consumes
+`main_inv_anchor_checked`; the old scalar field remains an explicitly unavailable
+snapshot when the checked field is `None`. Unsigned Euclidean inversion and
+overflow-safe modular multiplication cover the complete `u128` range. Anchor,
+prefix and combined capacity diagnostics use exact product bit lengths, and
+setup bounds refuse overflow instead of saturating. Exact accounting can tighten
+existing FHE preflight gates. Nine focused metadata regressions pass in both
+profiles, alongside the 47 existing RNS unit tests.
+
 ## Driving-digit IID, carry reversibility and arrow diagnostics
 
 The user clarified IID further through the Holte carry process: its driving
@@ -141,9 +164,17 @@ python3 scripts/check_recumbent_arrow.py /tmp/recumbent-arrow
 python3 scripts/test_a2_arrow_suite.py
 python3 scripts/test_emission_policy_alignment.py
 cargo test -p exact_transcendentals --test holte_reversibility
+cargo test -p nine65 --test dual_rns_context_metadata_regression
 python3 scripts/check_holte_reversibility.py
 python3 scripts/check_centered_chart_order.py --output /tmp/chart-order.json
 ```
+
+The Exactness Focused workflow permanently runs the new arithmetic, metadata,
+Holte and bootstrap witnesses in debug and release. Independent Python jobs run
+the source-policy, arrow, Holte and centered-chart checks. The actual Rust arrow
+trace and reports are uploaded from the release job. These jobs do not depend
+on the broader architecture job passing. The arrow wrapper and architecture
+scanner share their Garner/MRC patterns, including suffixed spellings.
 
 ## Bootstrap regression and remaining integration
 
@@ -168,10 +199,12 @@ The four failure names match the original library baseline: the triple-precharge
 preflight and three symmetric-depth/zero-noise controls. The current live
 depth-four path still fails. No 100-step acceptance claim is made.
 
-The architecture gate remains red for three existing Garner constructs, and
-the capacity contract remains red for six existing sentinel/metadata classes.
+The architecture gate now passes across 14 configured production files,
+including the RNS kernels used by live rescale. This scoped lexical result is
+not a universal implementation or reversibility proof. The capacity contract
+remains red for two legacy `q_product` sentinel patterns in `rns_fhe.rs`.
 The broader emission/product source scan and the checked-product-only gate pass.
-Fourteen scanner regressions also pass, including rejection of real calls and
+Seventeen scanner regressions also pass, including rejection of real calls and
 acceptance of permitted reconstruction or a diagnostic string naming Garner.
 The production rescale/bootstrap path and parameter families are unchanged.
 

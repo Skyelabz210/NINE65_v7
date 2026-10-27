@@ -15,9 +15,10 @@ Holte detailed balance.
 exact-integer checks. The all-arity Holte argument is written in
 [`HOLTE_REVERSIBILITY.md`](../HOLTE_REVERSIBILITY.md).
 
-The three existing Garner architecture findings, six capacity-contract finding
-classes, and four affected release-library failures remain visible. These
-artifacts do not admit production refresh.
+The latest architecture scan passes its 14 configured files after the direct
+CRT repairs. Two legacy capacity-contract sentinel patterns and the affected
+release-library failures remain visible. Earlier failing source scans are kept
+as historical evidence. These artifacts do not admit production refresh.
 
 `review/` preserves the independent probes and their transcript-copied aggregate
 results. Those records explicitly say they were captured from the completed

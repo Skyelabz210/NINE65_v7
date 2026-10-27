@@ -1,5 +1,5 @@
 {
-  "code_commit": "f1ff962554662deede20dd9c99a413bd2f447b6c",
+  "code_commit": "54fd033f43b670bc0b92abb2e4134c69e2402753",
   "base_commit": "bbfa754f9db2e9a7b69fca6c468e0f601a2cf123",
   "toolchain": "Rust 1.89.0",
   "substrate": {
@@ -26,55 +26,58 @@
     "failed": 4,
     "ignored": 138,
     "failure_names_match_prior_library_baseline": true,
-    "command": "cargo test -p nine65 --lib --release"
+    "command": "cargo test -p nine65 --lib --release",
+    "log": "nine65-lib-release-after-crt-metadata.log.gz",
+    "scope_note": "Includes the stable RNS metadata/direct CRT repairs. The final router-prefilter correction has no nine65 callers and is covered by the final exact-crate suite and independent router witness."
   },
   "workspace_clippy": {
     "status": "pass",
-    "command": "cargo clippy --workspace --all-targets -- -D warnings"
+    "command": "cargo clippy --workspace --all-targets -- -D warnings",
+    "log": "workspace-clippy-final-head.log.gz"
   },
   "policy": "Reconstruction permitted; Garner/mixed-radix synthetic emissions prohibited. IID refers to declared driving variables; Holte reversibility is detailed balance. Whole-output joint uniformity is a distinct diagnostic.",
   "gates": [
     {
-      "name": "source-architecture",
-      "command": "python3 scripts/check_residue_native_architecture.py",
-      "exit_code": 1,
-      "log": "source-architecture.log"
-    },
-    {
-      "name": "source-emissions",
-      "command": "python3 scripts/check_recumbency.py",
+      "name": "source-unit",
+      "command": "python3 scripts/test_check_recumbency.py",
       "exit_code": 0,
-      "log": "source-emissions.log"
-    },
-    {
-      "name": "source-capacity-contract",
-      "command": "python3 .github/scripts/check_cram_recumbency.py",
-      "exit_code": 1,
-      "log": "source-capacity-contract.log"
-    },
-    {
-      "name": "source-products",
-      "command": "python3 scripts/check_recumbency.py --products-only",
-      "exit_code": 0,
-      "log": "source-products.log"
-    },
-    {
-      "name": "arrow-unit",
-      "command": "python3 scripts/test_a2_arrow_suite.py",
-      "exit_code": 0,
-      "log": "arrow-unit.log"
+      "log": "source-unit-final.log"
     },
     {
       "name": "policy-unit",
       "command": "python3 scripts/test_emission_policy_alignment.py",
       "exit_code": 0,
-      "log": "policy-unit.log"
+      "log": "policy-unit-final.log"
     },
     {
-      "name": "source-unit",
-      "command": "python3 scripts/test_check_recumbency.py",
+      "name": "arrow-unit",
+      "command": "python3 scripts/test_a2_arrow_suite.py",
       "exit_code": 0,
-      "log": "source-unit.log"
+      "log": "arrow-unit-final.log"
+    },
+    {
+      "name": "source-architecture",
+      "command": "python3 scripts/check_residue_native_architecture.py",
+      "exit_code": 0,
+      "log": "source-architecture-final.log"
+    },
+    {
+      "name": "source-capacity-contract",
+      "command": "python3 .github/scripts/check_cram_recumbency.py",
+      "exit_code": 1,
+      "log": "source-capacity-contract-final.log"
+    },
+    {
+      "name": "source-emissions",
+      "command": "python3 scripts/check_recumbency.py",
+      "exit_code": 0,
+      "log": "source-emissions-final.log"
+    },
+    {
+      "name": "source-products",
+      "command": "python3 scripts/check_recumbency.py --products-only",
+      "exit_code": 0,
+      "log": "source-products-final.log"
     }
   ],
   "source_sha256": {
@@ -86,12 +89,18 @@
     "crates/nine65/examples/recumbent_arrow_trace.rs": "557d2e8205258a7fa02d0f91b34ac11cac1b425dd6732838dc5572eeb203a0a8",
     "crates/exact_transcendentals/tests/holte_reversibility.rs": "aeb82d99a55da0efd04d62d2fd2cfba4c3b28f9c516079411229015a16366705",
     "scripts/a2_arrow_suite.py": "12616f9df1f8d679b89c1e8169f8d3e69f49a45cba945dc5b981b469adb132f5",
-    "scripts/check_recumbent_arrow.py": "60e6393a1ee4e4ba90fbe02ec786f0d8f78de1fd1172f852eaaef5209b2fa363",
+    "scripts/check_recumbent_arrow.py": "4c85345a03ed26d2c9abf6f2a0073298a95c97cf548e56aebfe37339d7b6551e",
     "scripts/check_holte_reversibility.py": "bacbebd7b125898508ba749ca1e2bcbb7254ab84c6ca76b3a4eabcb5b6cb156d",
     "scripts/check_centered_chart_order.py": "c4f0b09c94ede314cbf3cf48b666a13c75d9656e7877ecb467202229d735eb46",
     "scripts/check_recumbency.py": "65537a7778a04620e7fae1c827c220a61b953cc6c178ae28c45ecca2f719337d",
-    "scripts/check_residue_native_architecture.py": "5cbd5faf248ce73f0209647240f135f987a04da06f7e5fe59ca48e4a28e631ab",
-    ".github/scripts/check_cram_recumbency.py": "b48320b3fb45e2f26bc191635683582e98c2ae7be58650a4ddd8098ffcda226a"
+    "scripts/check_residue_native_architecture.py": "f4eb17201fb2e1cca9e9f68311d35026d5c950b0730f858c7e055d473337a10d",
+    ".github/scripts/check_cram_recumbency.py": "b48320b3fb45e2f26bc191635683582e98c2ae7be58650a4ddd8098ffcda226a",
+    "crates/exact_transcendentals/src/cram_ct.rs": "b2e58684f712245af3f03e96ee427321a67ce0a21f36100309437447862eb1dc",
+    "crates/nine65/src/arithmetic/rns.rs": "e58cb63506c6e8682266201b168d3ad17ab5d98f16fd802793fcef1ceb87eabf",
+    "crates/nine65/tests/dual_rns_context_metadata_regression.rs": "80598742ab3d03e3764ba271e59fe789aaa627ffb59af48159659acb1bd092d6",
+    "scripts/test_emission_policy_alignment.py": "817c6a5f9dd9645428a05d69c4ae0924afe992d7e9a0bb82dfd0c7f65ca99990",
+    ".github/workflows/exactness_focused.yml": "fa5b0a1747080218d463748e7f850f4dc3828384eede94d068dbed35c663831f",
+    ".github/workflows/cram_residue_native_gates.yml": "faeb7f31f9a2a516f259ce43e425465a773549ba519319b5b47f0907da375af7"
   },
   "archived_logs": [
     {
@@ -203,6 +212,86 @@
       "path": "docs/execution/2026-10-27/evidence/policy-tests.log.gz",
       "sha256": "857d5d141491f991f4b14a4a0d963aa504ca576ff76f860ab2735fa7c6c81282",
       "uncompressed_sha256": "21c7e48d0b1ec908feef784bbce1fa55f2c9a7acf76382fa7578754a78bd1ed8"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/direct-crt-red.log.gz",
+      "sha256": "1b3a4106a4b624c43c54305dd6f602f67c038e35f4611c3295a57dcf1cd18e73",
+      "uncompressed_sha256": "a5165481762f21e71df2e7b8bc85f52ac2abdbdbe9367411487caaa032afa836"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/direct-crt-full-width-red.log.gz",
+      "sha256": "ed004f1ef4a8005ff367ef1675166cbbdc0cbb2945c7d250b4e3ac276491ba68",
+      "uncompressed_sha256": "20c7e90a73806fa28c1f93c19c07af50cb054099d62ab97e2716e52fe9fbb220"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/direct-crt-router-red.log.gz",
+      "sha256": "e6b26c026f9766eea26d953d9ea3963890d993d4717a020464b0a7db53678a0b",
+      "uncompressed_sha256": "54ad36673e6d04678e0b92f0b31af58c71a7ad0f47221be6a9d5851ddbc76eda"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/direct-crt-debug.log.gz",
+      "sha256": "43552149a48a4d1ec55ab446250658f8ac1a75fee614b263bf89daa50d7003ad",
+      "uncompressed_sha256": "b81d5a159871938b32daacdcd229d060861afac8c44a4122e2a2b34bf374164d"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/direct-crt-release.log.gz",
+      "sha256": "e24d95a4efae1d1f2830ae623bb5f288511c8c0107e0636d8ef883eba10ab33b",
+      "uncompressed_sha256": "ddae9e2337083d40e6e2848f26755828e72a8157c59ffb98cf220f44f312ff81"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/direct-crt-clippy.log.gz",
+      "sha256": "a98d3b2d2a99418dfff44aea33c7cf357092be5ad3eabd59f7682b9b208c0ed0",
+      "uncompressed_sha256": "e336e22a5d76ff20aaf1de872e833eaa814367c61668f54a8e7f8a5f906cda92"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/direct-crt-no-std.log.gz",
+      "sha256": "bda0d407f0a82635a3a58cd0c5e053c1c1801d8eb933053256ae59e9ec68db23",
+      "uncompressed_sha256": "e14aff947198536bda22ebe8f8e4ffa8e064d8e209c2eae67311fe13d2f25cfe"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/dual-metadata-red.log.gz",
+      "sha256": "cc276246e6fb3cff2e9560a23d96686f339a783e833842c7d086340c34f78bc8",
+      "uncompressed_sha256": "bd2382d27d46a8a29ad0c85ea6f3b024aa35c86e03fa7ad50600822abfeaeb22"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/dual-metadata-debug.log.gz",
+      "sha256": "7beb797bf05901cce1bd344de2f90b0425e3b1d5cac8fc2b1f0dcede3d3bfcf3",
+      "uncompressed_sha256": "74809e71d8628d01c34d052afe918fa144c6aa030dd77db9fe612b9cdfba4013"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/dual-metadata-release.log.gz",
+      "sha256": "0a41ae27c670b76cd6347da8032f13c062af90ce458ee64a7acd108ded935ced",
+      "uncompressed_sha256": "4a6e0a6b5a3bf11dfe80ab855e6d9811140362e8c8cdac04735209396967afb0"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/dual-metadata-rns-debug.log.gz",
+      "sha256": "ac6586a97931606e90a3a4fe3a54becfcc869f5c59b22c50e4dab121a3fac1f1",
+      "uncompressed_sha256": "a3a2441137e7f2a309a064c91361bbdd9cf34e05d3081d497617cde466b858fe"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/dual-metadata-clippy.log.gz",
+      "sha256": "227843c332e64d6870dbd9444b730ee763d2984d183e749065444dbab07498df",
+      "uncompressed_sha256": "83ec1b44d201acda892560a405ad90ca68cf739fb7b07b59c1ea87bb1ee58b1a"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/arrow-g5-red.log.gz",
+      "sha256": "af5615a1cce61bd8df700ff94eaf842aa30e5938698982a11cdb8e23983367d6",
+      "uncompressed_sha256": "9dd30f7d021be75a0e6d14489ff6b885569a004214f7e88e02f1ff342a808e69"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/arrow-g5-green.log.gz",
+      "sha256": "3f516046ef13c6135c83fb235091943f0b83c930f8ad4cc9649582edbe830c4b",
+      "uncompressed_sha256": "2ce946a061fe42ec53d4734272249163b77a3377e85ea8546f17bc9a3ff9c52c"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/workspace-clippy-final-head.log.gz",
+      "sha256": "e12f74bb7f9cd83917bb2c1525067673e6bd731a55ee7c60cb2c875c2be7b736",
+      "uncompressed_sha256": "1df897d36f1a9ab5aeb331650ebe030cca90c8a48a303db54098873c06d1cf26"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/nine65-lib-release-after-crt-metadata.log.gz",
+      "sha256": "d915444aeb85015c510f7c80648644e63d5375b962eaed3b80781798fb1350b7",
+      "uncompressed_sha256": "123296ee545012d824fc509dd8386603bc24960f35349f84d370f7fe15f37d90"
     }
   ],
   "missing_optional_log_paths": [],
@@ -212,6 +301,26 @@
     "Current recumbent interval endpoints fit i128 and general divisors fit u64.",
     "Known-fixture arrow lineage is not authenticated ciphertext custody.",
     "Whole-output rank diagnostic is not the user Holte driving-digit IID acceptance criterion.",
-    "Three existing Garner architecture constructs and six existing capacity-contract classes remain."
-  ]
+    "Two legacy q_product overflow-sentinel patterns remain in the live RNS FHE source contract."
+  ],
+  "prior_validation": "validation-initial.json",
+  "followup": {
+    "exact_crate_debug_passed": 685,
+    "exact_crate_release_passed": 685,
+    "exact_crate_no_std": "pass",
+    "new_cram_regressions": 10,
+    "direct_crt_independent_cases_per_profile": 5226,
+    "direct_crt_independent_router_witness": "post-correction pass",
+    "metadata_debug_passed": 9,
+    "metadata_release_passed": 9,
+    "existing_rns_unit_passed": 47,
+    "metadata_initial_failures": 5,
+    "scanner_regressions_passed": 17,
+    "arrow_regressions_passed": 16,
+    "architecture_files_scanned": 14,
+    "architecture_status": "pass",
+    "remaining_capacity_finding_classes": 2,
+    "ci_registration": "independent carry models and debug/release arithmetic; release actual-operation traces retained"
+  },
+  "arrow_trace_scope": "Original Rust fixture traces exercise unchanged recumbent/rank sources; reports replayed with the final shared G5 emission patterns. This is not an encrypted carry acceptance trace."
 }

@@ -21,8 +21,10 @@
       checked wide capacity, and independent signed/wide arithmetic oracles.
 - [x] Task B first slice: immutable coefficient state, signed interval admission,
       checked event depth, native observed-lane division, authentic quotient anchors.
-- [ ] Task B general divider: validate exact quotient arithmetic, declared-domain
-      independence/reversibility, and forbidden-emission policy before acceptance.
+- [x] Task B bounded general divider: exact rank quotient arithmetic, retained
+      remainder/input recovery, and independently labelled output diagnostics.
+- [ ] Task B FHE admission: full-width intervals/divisors, trusted live lift
+      ingestion and the integrated driving-variable/carry model.
 - [x] Task C regression: permanent zero-noise carry witnesses, including the
       actual secure-128 component-switch/decrypt path.
 - [ ] Task C integration: wide certified lifts, rescale, encrypted carry and
@@ -34,3 +36,10 @@
       full-basis quotient's joint-output diagnostic as a separate negative control.
 - [x] Holte regressions: IID driving digits, Eulerian stationarity, detailed
       balance, and independent general-arity corner proof under the stated model.
+- [x] Replace existing D1/D2 and Agreement Garner mechanisms with direct CRT;
+      repair FPD intermediate overflow and full-width divisor checks.
+- [x] Derive DualRNS inverses from exact factors and use checked scalar metadata;
+      report exact product capacities and reject setup-bound overflow.
+- [x] Register arithmetic, metadata, carry and actual-operation arrow regressions
+      as independent CI jobs with retained evidence.
+- [ ] Migrate remaining live `q_product` overflow-sentinel state.

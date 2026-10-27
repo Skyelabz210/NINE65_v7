@@ -1,0 +1,217 @@
+{
+  "code_commit": "f1ff962554662deede20dd9c99a413bd2f447b6c",
+  "base_commit": "bbfa754f9db2e9a7b69fca6c468e0f601a2cf123",
+  "toolchain": "Rust 1.89.0",
+  "substrate": {
+    "debug_passed": 35,
+    "release_passed": 35,
+    "initial_signed_failures": 4,
+    "initial_wide_failure": 1
+  },
+  "new_coefficient_suite": {
+    "debug_passed": 24,
+    "release_passed": 23,
+    "debug_only_test_compiled_out_in_release": 1,
+    "observed_lane_oracles": 10000,
+    "rank_kernel_oracles": 10000,
+    "rank_wrapper_oracles": 10000
+  },
+  "holte_rust": {
+    "debug_passed": 8,
+    "release_passed": 8,
+    "scope": "finite regression grid; see analytic all-arity proof separately"
+  },
+  "nine65_lib_release": {
+    "passed": 1013,
+    "failed": 4,
+    "ignored": 138,
+    "failure_names_match_prior_library_baseline": true,
+    "command": "cargo test -p nine65 --lib --release"
+  },
+  "workspace_clippy": {
+    "status": "pass",
+    "command": "cargo clippy --workspace --all-targets -- -D warnings"
+  },
+  "policy": "Reconstruction permitted; Garner/mixed-radix synthetic emissions prohibited. IID refers to declared driving variables; Holte reversibility is detailed balance. Whole-output joint uniformity is a distinct diagnostic.",
+  "gates": [
+    {
+      "name": "source-architecture",
+      "command": "python3 scripts/check_residue_native_architecture.py",
+      "exit_code": 1,
+      "log": "source-architecture.log"
+    },
+    {
+      "name": "source-emissions",
+      "command": "python3 scripts/check_recumbency.py",
+      "exit_code": 0,
+      "log": "source-emissions.log"
+    },
+    {
+      "name": "source-capacity-contract",
+      "command": "python3 .github/scripts/check_cram_recumbency.py",
+      "exit_code": 1,
+      "log": "source-capacity-contract.log"
+    },
+    {
+      "name": "source-products",
+      "command": "python3 scripts/check_recumbency.py --products-only",
+      "exit_code": 0,
+      "log": "source-products.log"
+    },
+    {
+      "name": "arrow-unit",
+      "command": "python3 scripts/test_a2_arrow_suite.py",
+      "exit_code": 0,
+      "log": "arrow-unit.log"
+    },
+    {
+      "name": "policy-unit",
+      "command": "python3 scripts/test_emission_policy_alignment.py",
+      "exit_code": 0,
+      "log": "policy-unit.log"
+    },
+    {
+      "name": "source-unit",
+      "command": "python3 scripts/test_check_recumbency.py",
+      "exit_code": 0,
+      "log": "source-unit.log"
+    }
+  ],
+  "source_sha256": {
+    "crates/qmnf-crtbigint/src/lib.rs": "093235ece03cfd315f45f732db8feecc711cbb4188eb7547ab522a2ddb9c3481",
+    "crates/qmnf-crtbigint/tests/signed_regressions.rs": "3bb5754c1ada37f691619f5bf7375211fc6f3a24ebf87eecf18695ae602f3080",
+    "crates/nine65/src/arithmetic/recumbent.rs": "f5ef292ff438157dcc6668691f968d6fa96db45f7a8b4b448a126edd0dd31078",
+    "crates/nine65/src/arithmetic/rank_residue_divider.rs": "cd08cde88c834e102290db2402832a772ff0b3658de1879cf9eb8101ce09ce37",
+    "crates/nine65/src/ops/bootstrap.rs": "de4ec7c810082af68c1601b140110581a88032aad46a2b97232b45bb852e80d4",
+    "crates/nine65/examples/recumbent_arrow_trace.rs": "557d2e8205258a7fa02d0f91b34ac11cac1b425dd6732838dc5572eeb203a0a8",
+    "crates/exact_transcendentals/tests/holte_reversibility.rs": "aeb82d99a55da0efd04d62d2fd2cfba4c3b28f9c516079411229015a16366705",
+    "scripts/a2_arrow_suite.py": "12616f9df1f8d679b89c1e8169f8d3e69f49a45cba945dc5b981b469adb132f5",
+    "scripts/check_recumbent_arrow.py": "60e6393a1ee4e4ba90fbe02ec786f0d8f78de1fd1172f852eaaef5209b2fa363",
+    "scripts/check_holte_reversibility.py": "bacbebd7b125898508ba749ca1e2bcbb7254ab84c6ca76b3a4eabcb5b6cb156d",
+    "scripts/check_centered_chart_order.py": "c4f0b09c94ede314cbf3cf48b666a13c75d9656e7877ecb467202229d735eb46",
+    "scripts/check_recumbency.py": "65537a7778a04620e7fae1c827c220a61b953cc6c178ae28c45ecca2f719337d",
+    "scripts/check_residue_native_architecture.py": "5cbd5faf248ce73f0209647240f135f987a04da06f7e5fe59ca48e4a28e631ab",
+    ".github/scripts/check_cram_recumbency.py": "b48320b3fb45e2f26bc191635683582e98c2ae7be58650a4ddd8098ffcda226a"
+  },
+  "archived_logs": [
+    {
+      "path": "docs/execution/2026-10-27/evidence/substrate-red.log.gz",
+      "sha256": "6d8adc4684c993e6eef83736dc1431447f9e0faf1b1a56770c653e80d17669c4",
+      "uncompressed_sha256": "4a169d8957ec61fbc0668787a94bb7bafa67c50379b7cb388358c321227ab812"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/substrate-wide-red.log.gz",
+      "sha256": "e817b751d998aee853849d5e264c58ffbab2b21d9d2820b95e3c6e35add37286",
+      "uncompressed_sha256": "643b1ecad9f0df3d1a68b9e26462a2c6cc22543573c0dc7da0b7533b0596f653"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/substrate-debug.log.gz",
+      "sha256": "5e05c23ee10f351d64cbf5ff3ca3505cf9cb676f50aac877336b9b5ce3b7c490",
+      "uncompressed_sha256": "cb0ddadef37bd8ecce77f6608410c484bb30c1cdff7326cce95524fe86105b64"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/substrate-release.log.gz",
+      "sha256": "cf70e86984c97323e0d33d7021cd82239f5bf78edad86d0af4aee88de6a24ffc",
+      "uncompressed_sha256": "023d020baec52ccbf37a8804b55769cb557d6e25312ee860bf290f3fa2e758a2"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/substrate-clippy.log.gz",
+      "sha256": "dff73aa616f3b523edcf549d7be1ccb21e7df782f576db486e46c9f3d70fcf63",
+      "uncompressed_sha256": "7237121ebe83e4edfd20bf3f4b1769a0ee77a38a520f8f6b2499e6ab83006370"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/recumbent-red.log.gz",
+      "sha256": "f9475baecf919c588971658d157d6febfbe22730b90db487b87caf2076f24533",
+      "uncompressed_sha256": "6562ab08b4da9cde958fcac24a18fc7ce1d8a733d5c15725f73ce13dfc8bf5e4"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/recumbent-rank-red.log.gz",
+      "sha256": "27d2827fa94a440559d79bc8fa49c626c483d3368deae0fe4ccc90d8510d8bf7",
+      "uncompressed_sha256": "47d57e18d16349eed83fffbb540dcf3243eb4da608f1ed76d478825a43c5947f"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/recumbent-debug.log.gz",
+      "sha256": "2c6c7bb27c00ba2eb28bb6ae9157d7fd473d18dbbf0baadaec2acd31e5c3551a",
+      "uncompressed_sha256": "8d8b33b50f3bc6d9d309597de26f1dd44eb3b2a4a298abd5a577533277839a84"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/recumbent-combined-debug.log.gz",
+      "sha256": "2470dc81e899e2666a3b64fb696ff69eae70cad09408c9eabf7366e67a2fa109",
+      "uncompressed_sha256": "0f8cdf00f0bab33196059a3d73e0fd4915be079327fcab76bf95c18bfbe60379"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/recumbent-combined-release.log.gz",
+      "sha256": "77950d2e6f3ddc1f78810df6ed8faf3df30fc5e10099eafdef7f1739b2f9785e",
+      "uncompressed_sha256": "06acb50106812e36bf67d29ee6a838efda246b6d09c65c4360b7461621e1c4b0"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/rank-red.log.gz",
+      "sha256": "7c68fc47dda9f0221fb27c30d0a7e08e744967b4654529661c143305d6edd1db",
+      "uncompressed_sha256": "b87b97636b97f5dc9c8f3a68672aca24c7be8a081e5ad40c2a4b1f03be8fda06"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/rank-debug.log.gz",
+      "sha256": "7588936014feb0e391c0a1dff668f4738eec4291a13b96037695537292c35e2c",
+      "uncompressed_sha256": "7e0209902d2d8f1e52529ae1d022549eb630de5b623308904fc27991bfd5f846"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/rank-release.log.gz",
+      "sha256": "967531a79802723b6b7bc50f8cc14abfcd415b765ca33bf0423dd4f7b067062d",
+      "uncompressed_sha256": "dc0f9d9e36b6c7eef691ec0a87afab930f129e873d6af3f84a4a57a042c8f9cf"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/workspace-clippy.log.gz",
+      "sha256": "4fa6e71a5d5c05945e4db367d0cac00c02ba89eb7d67bd9459f880be7215566e",
+      "uncompressed_sha256": "e476f91b3ff16f39a209c9e24950384e8c624691dab8920be85cabd110204758"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/nine65-lib-release.log.gz",
+      "sha256": "8ffe6797d2307a6580685143f0f86fa357eeb6a2adc5ae9616772cf98ff5df48",
+      "uncompressed_sha256": "9dbdd12b3b8f0985e88ed704d773f0ecf00bd8247fe9c7c175cc693bce32188b"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/holte-debug.log.gz",
+      "sha256": "ad704f1bcbbf8b11c0135586ae251ba2ee59f59c63bf85cbd4915fb0d22aec06",
+      "uncompressed_sha256": "35090fb09fe6f6d3deeee225697e61348b872f3345e0b7bc4b7b6e5452e982b7"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/holte-release.log.gz",
+      "sha256": "f014391e7e92c0a0da763f25816bf4055ef66cfc6a9f2174270af072e2ba2303",
+      "uncompressed_sha256": "e827fdf39637f01236db1c83841a9eb96e46c2113fa80f1e34b34d081f71b9fa"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/holte-clippy.log.gz",
+      "sha256": "bbc4063ca2c067abc3d819665a78148c97902bfeb775964bf2ee6bee712a88d8",
+      "uncompressed_sha256": "bc5b656b37709656b5e7b285f2efc410681f86b848ed50c34d75ad0773313d83"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/arrow-red.log.gz",
+      "sha256": "38f2eb69c142cd388b5abd0eb644a080b26b30e6522f9ad0e84eda9ada1604ed",
+      "uncompressed_sha256": "224a969d238a4f98474541c4a934b2cca81565b57131275096ca794c3616f498"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/arrow-tests.log.gz",
+      "sha256": "4998f296c1ed076e3dbe42b75d4163ee88b966e9a557c0dc89b0b1227165c7a7",
+      "uncompressed_sha256": "f70474bb9d3d4b78369d133e47904bb1ef43bd0a69dec6649003a49c7b092484"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/policy-red.log.gz",
+      "sha256": "f1b9539e90d31c8f1bb7f49512f5272613e32d8512a9cffc993ebf4c4892560b",
+      "uncompressed_sha256": "7df7dbde028412ed86db34b712d0ff6eba884e882715c766a8ff453be91366c8"
+    },
+    {
+      "path": "docs/execution/2026-10-27/evidence/policy-tests.log.gz",
+      "sha256": "857d5d141491f991f4b14a4a0d963aa504ca576ff76f860ab2735fa7c6c81282",
+      "uncompressed_sha256": "21c7e48d0b1ec908feef784bbce1fa55f2c9a7acf76382fa7578754a78bd1ed8"
+    }
+  ],
+  "missing_optional_log_paths": [],
+  "release_admission": false,
+  "limitations": [
+    "No production BFV rescale/bootstrap wiring, encrypted nonlinear carry, or full-width Delta adapter added.",
+    "Current recumbent interval endpoints fit i128 and general divisors fit u64.",
+    "Known-fixture arrow lineage is not authenticated ciphertext custody.",
+    "Whole-output rank diagnostic is not the user Holte driving-digit IID acceptance criterion.",
+    "Three existing Garner architecture constructs and six existing capacity-contract classes remain."
+  ]
+}

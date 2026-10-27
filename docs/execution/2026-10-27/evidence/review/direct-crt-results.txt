@@ -1,0 +1,32 @@
+Captured stdout from independently executed public-API probes in this review session (not rerun to create this record).
+
+Debug:
+Independent Python oracle passed 5226 direct-CRT public-API arithmetic/error/counter cases.
+Optimized release:
+Independent Python oracle passed 5226 direct-CRT public-API arithmetic/error/counter cases.
+
+Arithmetic probe includes fixed-S8 D1 and D2 signed extrema/midpoints, full-width divisors, typed refusal, large-auxiliary-product FPD, all quotient S8/aux residues, and per-operation Garner/reconstruction counter deltas. It does not exercise the router.
+
+Separately reproduced router finding before correction:
+d=18446744073709551619; direct D1 success=true; router kelim=false
+
+Source SHA-256 at initial final-diff review before router correction:
+31aadc1780bed9469096657a195e65a62b0f0466a56e72c73b23027c64ffa26c  crates/exact_transcendentals/src/cram_ct.rs
+
+Probe commands:
+python /tmp/direct_crt_review_probe/oracle.py
+python /tmp/direct_crt_review_probe/oracle.py /tmp/direct_crt_review_probe/probe-release
+/tmp/direct_crt_review_probe/router-witness
+
+Build toolchain:
+/workspace/work/nine65/rustup/toolchains/1.89.0-x86_64-unknown-linux-gnu/bin/rustc
+
+The arithmetic library and probe were compiled independently with rustc, once without optimization and once with -O, using --cfg 'feature="std"'. No repository file was edited by this reviewer.
+
+Router correction independently verified after rebuilding the library:
+d=18446744073709551619; direct D1 success=true; router kelim=true
+
+Corrected source SHA-256:
+b2e58684f712245af3f03e96ee427321a67ce0a21f36100309437447862eb1dc  crates/exact_transcendentals/src/cram_ct.rs
+
+Correction changes the router gcd prefilter from truncated u64 to full u128; the owner also added a valid-wide-divisor successful-lane-mask regression. The prior arithmetic probes were not needlessly rerun because the changed prefilter is covered by the targeted router witness and does not alter the direct D1/D2/FPD paths those probes exercise.

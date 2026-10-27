@@ -28,6 +28,22 @@
     "recumbent-results.txt": {
       "bytes": 979,
       "sha256": "bf8f3a4051682547a483e47478664574bba4a033caeee79e76c738275c155d4c"
+    },
+    "direct-crt-oracle.py.txt": {
+      "bytes": 2169,
+      "sha256": "047da74806c243ac1b8b2bc1da40a7bf7a57e788b9948fb8a5d273ddb03fcb5b"
+    },
+    "direct-crt-router_witness.rs.txt": {
+      "bytes": 400,
+      "sha256": "e5b9fcbce988a6d0cbd09a883d1efe2078fc793037d9381dbe7ad9084bc0c58b"
+    },
+    "direct-crt-main.rs.txt": {
+      "bytes": 1184,
+      "sha256": "d2ffe931642d97fd973ef3b3aabff813894c9e5ea5324107036e6ee8576f3503"
+    },
+    "direct-crt-results.txt": {
+      "bytes": 2007,
+      "sha256": "f2814ca1d9ba80966982ec59fa2a5f86b8a8f0df697e1d924c8de255e22b53b8"
     }
   }
 }
