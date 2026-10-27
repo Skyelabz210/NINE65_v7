@@ -36,13 +36,14 @@ use crate::Vec;
 // real crate would mean editing Cargo.toml, which is outside this fix's
 // permitted file set. These counters mirror cram-core's field names
 // (`garner_calls`, `crt_reconstructions`) so a later rename to the shared
-// type is mechanical. They are incremented at every Garner-style
-// reconstruction call site this file (and `composite_division.rs`, which
-// reuses this static) actually owns: D1's `garner_reconstruct_subset`, D2's
-// `garner_reconstruct`, and D3's `crt_fuse_pairs`.
+// type is mechanical. Direct weighted CRT reads in D1, D2 and D3 increment
+// `crt_reconstructions`. The legacy Garner slot remains for API compatibility;
+// it must not be incremented for an operation that uses no mixed-radix walk.
 #[derive(Default)]
 pub struct CramDivisionCounters {
+    /// Legacy slot, retained for callers of the existing snapshot API.
     pub garner_calls: AtomicU64,
+    /// Direct weighted CRT reads performed by the division paths.
     pub crt_reconstructions: AtomicU64,
 }
 
@@ -62,8 +63,7 @@ impl CramDivisionCounters {
     }
 }
 
-/// Process-wide counters for every Garner-style reconstruction call in the
-/// D1/D2/D3 division lanes this crate implements.
+/// Process-wide reconstruction counters for the D1/D2/D3 division lanes.
 pub static CRAM_DIVISION_COUNTERS: CramDivisionCounters = CramDivisionCounters::new();
 
 // ─── Safe Basis ───────────────────────────────────────────────────────────
@@ -482,13 +482,16 @@ fn signature_lane_hash(sig: &PolynomialS8Signature, op_counter: i128) -> u32 {
     (h % 19) as u32
 }
 
-/// CRT joint residue of (r_a mod p, r_b mod q) into Z/(p*q)Z, computed via
-/// Garner's two-step formula. `p` and `q` must be coprime.
-fn crt_pair(r_a: u32, p: u32, r_b: u32, q: u32) -> u32 {
-    let inv = mod_inv_u32(p % q, q).expect("S8 primes are pairwise coprime");
-    let diff = (r_b as i64 - r_a as i64).rem_euclid(q as i64) as u32;
-    let k = ((diff as u64) * (inv as u64) % q as u64) as u32;
-    (r_a as u64 + (k as u64) * (p as u64)) as u32
+/// Joint residue in `[0,p*q)` from two independent CRT weights. `p` and `q`
+/// must be coprime. u128 intermediates support the complete u32 modulus range,
+/// and the canonical result fits u64 without truncation.
+fn crt_pair(r_a: u32, p: u32, r_b: u32, q: u32) -> u64 {
+    let inverse_q = mod_inv_u32(q % p, p).expect("lane moduli must be pairwise coprime");
+    let inverse_p = mod_inv_u32(p % q, q).expect("lane moduli must be pairwise coprime");
+    let product = p as u128 * q as u128;
+    let left = r_a as u128 * q as u128 * inverse_q as u128;
+    let right = r_b as u128 * p as u128 * inverse_p as u128;
+    ((left + right) % product) as u64
 }
 
 /// K-Elim winding `k = (r_target - r_source) * source^-1 mod target` for one
@@ -536,7 +539,8 @@ impl LockWitnessSet {
                         .map(|s| {
                             let r_s = s.residue_mod(lock.source).unwrap();
                             let r_t = s.residue_mod(lock.target).unwrap();
-                            crt_pair(r_s, lock.source, r_t, lock.target)
+                            u32::try_from(crt_pair(r_s, lock.source, r_t, lock.target))
+                                .expect("S8 agreement modulus fits u32")
                         })
                         .collect();
                     LockEvidence::Agreement { expected_joint }
@@ -635,7 +639,8 @@ fn verify_one(
             for (i, s) in sig.signatures.iter().enumerate() {
                 let r_s = s.residue_mod(lock.source).unwrap();
                 let r_t = s.residue_mod(lock.target).unwrap();
-                let actual = crt_pair(r_s, lock.source, r_t, lock.target);
+                let actual = u32::try_from(crt_pair(r_s, lock.source, r_t, lock.target))
+                    .expect("S8 agreement modulus fits u32");
                 if actual != expected_joint[i] {
                     return Err(LockFailure::AgreementDivergence {
                         source: lock.source,
@@ -808,7 +813,21 @@ impl<C> CramCiphertext<C> {
     /// Reconstruct c0's coefficients (mod S8_PRODUCT) from the witness.
     /// This is a roundtrip check, not the security-bearing decryption.
     pub fn reconstruct_c0_coeffs_signed(&self) -> Vec<i32> {
-        self.witness.c0_signature.reconstruct_signed()
+        self.witness
+            .c0_signature
+            .signatures
+            .iter()
+            .map(|signature| {
+                let (unsigned, product) =
+                    crt_weighted_sum_subset(signature, &[0, 1, 2, 3, 4, 5, 6, 7]);
+                let signed = if unsigned > product / 2 {
+                    unsigned - product
+                } else {
+                    unsigned
+                };
+                signed as i32
+            })
+            .collect()
     }
 }
 
@@ -1502,21 +1521,13 @@ impl AuxResidueSet {
     }
 }
 
-/// Incremental Garner CRT fusion of (modulus, residue) pairs into the
-/// unique integer `Q` in `[0, ∏ moduli)`. Moduli must be pairwise coprime.
-/// Recover the integer pinned by a set of `(modulus, residue)` pairs on a
-/// pairwise-coprime basis, via a single CRT anchor read (K-Elimination ladder).
-///
-/// A2: this replaces the former Garner mixed-radix fusion. Mixed radix emits a
-/// sequential chain of positional digits — synthetic emission that breaks the
-/// i.i.d. structure of residue space and opens a side-channel surface. The CRT
-/// read below forms the value directly from the coprime basis (each lane's
-/// contribution is `r_i · (M/m_i) · (M/m_i)^{-1} mod m_i`), leaving the lane
-/// residues untouched and introducing no positional digit sequence. The
-/// returned value is identical to the retired mixed-radix result.
+/// Direct weighted CRT fusion into `[0, product(moduli))`. The caller verifies
+/// canonical pairwise-coprime lanes and that the product fits positive i128.
+/// This reconstructs an integer explicitly; it performs no Garner/MRC digit
+/// walk and makes no claim about independence of an output distribution.
 fn crt_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
     CRAM_DIVISION_COUNTERS
-        .garner_calls
+        .crt_reconstructions
         .fetch_add(1, Ordering::Relaxed);
     // Basis product M = ∏ m_i.
     let mut modulus: i128 = 1;
@@ -1531,8 +1542,17 @@ fn crt_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
         let cofactor_mod = cofactor.rem_euclid(m_i) as u32;
         let inv = mod_inv_u32(cofactor_mod, m).expect("FPD: lane moduli must be pairwise coprime")
             as i128;
-        let term = (r as i128) * cofactor % modulus * inv % modulus;
-        value = (value + term).rem_euclid(modulus);
+        // Even when M fits i128, the unreduced weighted term need not fit.
+        let term = crate::k_elim::mulmod(
+            crate::k_elim::mulmod(r as i128, cofactor, modulus),
+            inv,
+            modulus,
+        );
+        value = if value >= modulus - term {
+            value - (modulus - term)
+        } else {
+            value + term
+        };
     }
     value
 }
@@ -1646,7 +1666,7 @@ fn fpd_one_coefficient(
     // coefficient's original residue on each such lane; a mismatch proves
     // the numerator was never evenly divisible by `d`.
     for &(i, p) in &bad_lanes {
-        let predicted = (q_signed * divisor).rem_euclid(p as i128) as u32;
+        let predicted = crate::k_elim::mulmod(q_signed, divisor, p as i128) as u32;
         if predicted != s8_residues[i] {
             return Err(FpdError::BadLaneDisagreement {
                 coeff_index,
@@ -1868,7 +1888,7 @@ pub enum DivExactError {
 }
 
 impl<C> CramCiphertext<C> {
-    /// Phase-4 D2 rescale: DIV_EXACT through Garner-lift + exact integer
+    /// Phase-4 D2 rescale: DIV_EXACT through direct weighted CRT + integer
     /// division. Valid only when:
     ///
     ///   * `divisor` is basis-smooth (every prime factor lies in the
@@ -1902,24 +1922,28 @@ impl<C> CramCiphertext<C> {
             ));
         }
 
-        // Garner-lift each coefficient to a signed integer, divide
+        // Read each coefficient through direct CRT as a signed integer, divide
         // exactly, and re-project onto S8.
         let n = self.witness.c0_signature.signatures.len();
         let mut new_signatures = Vec::with_capacity(n);
         for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
             CRAM_DIVISION_COUNTERS
-                .garner_calls
+                .crt_reconstructions
                 .fetch_add(1, Ordering::Relaxed);
-            let unsigned = crate::lane_projector::garner_reconstruct(sig);
+            let (unsigned, _) = crt_weighted_sum_subset(sig, &[0, 1, 2, 3, 4, 5, 6, 7]);
             let half = (crate::triad::S8_PRODUCT / 2) as i128;
-            let signed = if (unsigned as i128) > half {
-                unsigned as i128 - crate::triad::S8_PRODUCT as i128
+            let signed = if unsigned > half {
+                unsigned - crate::triad::S8_PRODUCT as i128
             } else {
-                unsigned as i128
+                unsigned
             };
             let r = signed.rem_euclid(divisor);
-            let remainder = if r > divisor.abs() / 2 {
-                r - divisor.abs()
+            let remainder = if r as u128 > abs_d / 2 {
+                if divisor < 0 {
+                    r + divisor
+                } else {
+                    r - divisor
+                }
             } else {
                 r
             };
@@ -2032,8 +2056,8 @@ impl<C> CramCiphertext<C> {
         // Try D1 (K-Elim) with anchor = 17 (the largest S8 prime that
         // is not the signature lane), if the divisor is coprime to
         // M_main = S8_PRODUCT / 17.
-        let m_main_default: u64 = crate::triad::S8_PRODUCT as u64 / 17;
-        if gcd_u64(divisor.unsigned_abs() as u64, m_main_default) == 1 && divisor != 0 {
+        let m_main_default = crate::triad::S8_PRODUCT as u128 / 17;
+        if gcd_u128(divisor.unsigned_abs(), m_main_default) == 1 && divisor != 0 {
             if let Ok((result_ct, _)) =
                 self.clone()
                     .cram_rescale_by_scalar_kelim(divisor, 17, &rescale_base)
@@ -2111,25 +2135,25 @@ pub enum KElimError {
     DivisorIncompatibleWithMain { divisor: i128 },
 }
 
-/// Garner reconstruction over a chosen subset of S8 lanes (the "main"
-/// reconstruction basis). Returns `(x_main, M_main)` where `x_main` is
-/// the unique non-negative integer in `[0, M_main)` matching the lane
-/// residues.
-fn garner_reconstruct_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
-    let mut x: i128 = sig.residues[main_indices[0]] as i128;
-    let mut radix: i128 = crate::triad::S8[main_indices[0]] as i128;
-    for &idx in &main_indices[1..] {
+/// Direct weighted CRT over a nonempty, distinct subset of S8 indices.
+/// Returns the canonical nonnegative `(x_main, M_main)`; centering happens
+/// only after the caller's full lift. With M_main <=9,699,690 and u32 input
+/// residues, every weighted term and their sum fit i128 by a wide margin.
+fn crt_weighted_sum_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
+    assert!(!main_indices.is_empty(), "CRT subset must be nonempty");
+    let modulus: i128 = main_indices
+        .iter()
+        .map(|&index| crate::triad::S8[index] as i128)
+        .product();
+    let mut sum = 0i128;
+    for &idx in main_indices {
         let m_i = crate::triad::S8[idx] as i128;
-        let a_i = sig.residues[idx] as i128;
-        let x_mod_mi = x.rem_euclid(m_i);
-        let diff = (a_i - x_mod_mi).rem_euclid(m_i);
-        let radix_mod_mi = radix.rem_euclid(m_i) as u32;
-        let inv = mod_inv_u32(radix_mod_mi, m_i as u32).expect("S8 lanes are pairwise coprime");
-        let v = (diff * inv as i128).rem_euclid(m_i);
-        x += v * radix;
-        radix *= m_i;
+        let cofactor = modulus / m_i;
+        let inv = mod_inv_u32(cofactor.rem_euclid(m_i) as u32, m_i as u32)
+            .expect("S8 subset moduli must be pairwise coprime");
+        sum += sig.residues[idx] as i128 * cofactor * inv as i128;
     }
-    (x, radix)
+    (sum.rem_euclid(modulus), modulus)
 }
 
 /// Recover the K-Elim winding `κ ≡ (r_anchor − x_main) · M_main⁻¹
@@ -2154,7 +2178,7 @@ impl<C> CramCiphertext<C> {
     /// Splits S8 into a main reconstruction basis `S8 \ {anchor}` and
     /// an anchor lane `m_anchor`. For each coefficient:
     ///
-    ///   1. Reconstruct `x_main` from the 7 main lanes (smaller Garner).
+    ///   1. Read `x_main` from the 7 main lanes with direct weighted CRT.
     ///   2. Recover the winding `κ ≡ (r_anchor − x_main) · M_main⁻¹
     ///      (mod m_anchor)`, recentred into `(-m_anchor/2, m_anchor/2]`.
     ///   3. Verify the corridor `|κ| < m_anchor / 2`.
@@ -2201,8 +2225,8 @@ impl<C> CramCiphertext<C> {
 
         // gcd(divisor, M_main) must be 1 for the lane-side division to
         // be well-defined.
-        let abs_d = divisor.unsigned_abs() as i128;
-        if gcd_u64(abs_d as u64, m_main as u64) != 1 {
+        let abs_d = divisor.unsigned_abs();
+        if gcd_u128(abs_d, m_main as u128) != 1 {
             return Err(CramOpError::KElim(
                 KElimError::DivisorIncompatibleWithMain { divisor },
             ));
@@ -2217,10 +2241,10 @@ impl<C> CramCiphertext<C> {
         let mut new_signatures = Vec::with_capacity(n);
         for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
             CRAM_DIVISION_COUNTERS
-                .garner_calls
+                .crt_reconstructions
                 .fetch_add(1, Ordering::Relaxed);
             // Main reconstruction.
-            let (x_main, m_main_actual) = garner_reconstruct_subset(sig, &main_indices);
+            let (x_main, m_main_actual) = crt_weighted_sum_subset(sig, &main_indices);
             debug_assert_eq!(m_main_actual, m_main);
 
             // K-Elim winding.
@@ -2238,7 +2262,7 @@ impl<C> CramCiphertext<C> {
 
             // Lift to certified integer.
             let a_certified = x_main + (kappa as i128) * m_main;
-            // Recentre to signed if Garner returned a value > S8_PRODUCT/2.
+            // Recentre the full lifted representative above S8_PRODUCT/2.
             let half = (crate::triad::S8_PRODUCT / 2) as i128;
             let a_signed = if a_certified > half {
                 a_certified - crate::triad::S8_PRODUCT as i128
@@ -2248,8 +2272,12 @@ impl<C> CramCiphertext<C> {
 
             // Exact division.
             let r = a_signed.rem_euclid(divisor);
-            let remainder = if r > divisor.abs() / 2 {
-                r - divisor.abs()
+            let remainder = if r as u128 > abs_d / 2 {
+                if divisor < 0 {
+                    r + divisor
+                } else {
+                    r - divisor
+                }
             } else {
                 r
             };
@@ -2826,9 +2854,9 @@ mod tests {
                 for r_a in 0..p {
                     for r_b in 0..q {
                         let joint = crt_pair(r_a, p, r_b, q);
-                        assert!(joint < p * q);
-                        assert_eq!(joint % p, r_a);
-                        assert_eq!(joint % q, r_b);
+                        assert!(joint < p as u64 * q as u64);
+                        assert_eq!(joint % p as u64, r_a as u64);
+                        assert_eq!(joint % q as u64, r_b as u64);
                     }
                 }
             }
@@ -3534,6 +3562,226 @@ mod tests {
         assert_eq!(q, 42);
     }
 
+    #[test]
+    fn direct_crt_pair_preserves_full_u32_prime_pair_residues() {
+        let p = 4_294_967_291u32;
+        let q = 4_294_967_279u32;
+        let product = p as u64 * q as u64;
+        for expected in [0, 1, product / 2, product - 2, product - 1] {
+            let r_p = (expected % p as u64) as u32;
+            let r_q = (expected % q as u64) as u32;
+            let joint = crt_pair(r_p, p, r_q, q);
+            assert_eq!(joint, expected);
+            assert_eq!(crt_pair(r_q, q, r_p, p), expected);
+        }
+    }
+
+    #[test]
+    fn direct_crt_subsets_preserve_nonnegative_lifts_and_lane_order() {
+        for mask in 1u16..256 {
+            let indices: Vec<usize> = (0..8).filter(|&i| mask & (1 << i) != 0).collect();
+            let product: i128 = indices
+                .iter()
+                .map(|&i| crate::triad::S8[i] as i128)
+                .product();
+            let mut reordered = indices.clone();
+            reordered.reverse();
+            for x in [
+                -2 * product - 1,
+                -product,
+                -product / 2 - 1,
+                -1,
+                0,
+                1,
+                product / 2,
+                product - 1,
+                product,
+                2 * product + 1,
+            ] {
+                let signature = S8Signature::project(x);
+                assert_eq!(
+                    crt_weighted_sum_subset(&signature, &indices),
+                    (x.rem_euclid(product), product)
+                );
+                assert_eq!(
+                    crt_weighted_sum_subset(&signature, &reordered),
+                    (x.rem_euclid(product), product)
+                );
+            }
+            if product <= 1001 {
+                for x in 0..product {
+                    assert_eq!(
+                        crt_weighted_sum_subset(&S8Signature::project(x), &indices),
+                        (x, product)
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn direct_crt_d2_keeps_full_s8_centering_boundary_convention() {
+        let product = crate::triad::S8_PRODUCT as i128;
+        let half = product / 2;
+        let coefficients = [
+            -product - 1,
+            -product,
+            -half - 1,
+            -half,
+            -half + 1,
+            -1,
+            0,
+            1,
+            half - 1,
+            half,
+            half + 1,
+            product - 1,
+            product,
+            product + 1,
+        ];
+        let input = CramCiphertext::wrap_default((), &coefficients, None);
+        let (output, _) = input
+            .cram_rescale_by_scalar_div_exact(1, |_, _| ())
+            .unwrap();
+        for (signature, x) in output
+            .witness
+            .c0_signature
+            .signatures
+            .iter()
+            .zip(coefficients)
+        {
+            let unsigned = x.rem_euclid(product);
+            let centered = if unsigned > half {
+                unsigned - product
+            } else {
+                unsigned
+            };
+            assert_eq!(signature.residues, S8Signature::project(centered).residues);
+        }
+        assert_eq!(output.reconstruct_c0_coeffs_signed()[3], half as i32);
+        assert_eq!(output.reconstruct_c0_coeffs_signed()[9], half as i32);
+    }
+
+    #[test]
+    fn direct_crt_d1_preserves_signed_exact_quotients_for_every_anchor() {
+        let half = crate::triad::S8_PRODUCT as i128 / 2;
+        let limit = half / 23;
+        let quotients = [-limit, -limit + 1, -1, 0, 1, limit - 1, limit];
+        let coefficients: Vec<i128> = quotients.iter().map(|&q| 23 * q).collect();
+        for anchor in crate::triad::S8 {
+            for divisor in [-23i128, 23] {
+                let input = CramCiphertext::wrap_default((), &coefficients, None);
+                let (output, _) = input
+                    .cram_rescale_by_scalar_kelim(divisor, anchor, |_, _| ())
+                    .unwrap();
+                for (signature, &value) in output
+                    .witness
+                    .c0_signature
+                    .signatures
+                    .iter()
+                    .zip(&coefficients)
+                {
+                    assert_eq!(
+                        signature.residues,
+                        S8Signature::project(value / divisor).residues
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn direct_crt_fpd_large_fusion_product_has_no_intermediate_overflow() {
+        let auxiliary = [1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061];
+        let input = CramCiphertext::wrap_with_fpd_aux((), &[-2], None, &auxiliary);
+        let (output, _) = input.cram_rescale_by_scalar_fpd(2, 1, |_, _| ()).unwrap();
+        assert_eq!(
+            output.witness.c0_signature.signatures[0].residues,
+            S8Signature::project(-1).residues
+        );
+        let auxiliary = output.witness.c0_aux.as_ref().unwrap();
+        for (residues, &prime) in auxiliary.residues[0].iter().zip(&auxiliary.primes) {
+            assert_eq!(*residues, prime - 1);
+        }
+    }
+
+    #[test]
+    fn direct_crt_fpd_refuses_a_fusion_product_outside_i128() {
+        let auxiliary = [
+            1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061, 1063,
+        ];
+        let input = CramCiphertext::wrap_with_fpd_aux((), &[-2], None, &auxiliary);
+        assert!(matches!(
+            input.cram_rescale_by_scalar_fpd(2, 1, |_, _| ()),
+            Err(CramOpError::OpCounterOverflow)
+        ));
+    }
+
+    #[test]
+    fn direct_crt_division_accounting_records_reads_without_mixed_radix_calls() {
+        let before = CRAM_DIVISION_COUNTERS.snapshot();
+        CramCiphertext::wrap_default((), &[23], None)
+            .cram_rescale_by_scalar_kelim(23, 17, |_, _| ())
+            .unwrap();
+        CramCiphertext::wrap_default((), &[6], None)
+            .cram_rescale_by_scalar_div_exact(6, |_, _| ())
+            .unwrap();
+        CramCiphertext::wrap_with_fpd_aux((), &[-2], None, &[23])
+            .cram_rescale_by_scalar_fpd(2, 1, |_, _| ())
+            .unwrap();
+        let after = CRAM_DIVISION_COUNTERS.snapshot();
+        assert_eq!(after.0, before.0);
+        // Other tests can add reconstruction reads concurrently.
+        assert!(after.1 >= before.1 + 3);
+    }
+
+    #[test]
+    fn direct_crt_d2_minimum_signed_divisor_is_exact_or_typed_nonexact() {
+        for value in [-1i128, 1, crate::triad::S8_PRODUCT as i128 / 2] {
+            let input = CramCiphertext::wrap_default((), &[value], None);
+            assert!(matches!(
+                input.cram_rescale_by_scalar_div_exact(i128::MIN, |_, _| ()),
+                Err(CramOpError::DivExact(DivExactError::NonExactRemainder {
+                    coefficient,
+                    divisor: i128::MIN,
+                    ..
+                })) if coefficient == value
+            ));
+        }
+        let zero = CramCiphertext::wrap_default((), &[0], None);
+        let (output, _) = zero
+            .cram_rescale_by_scalar_div_exact(i128::MIN, |_, _| ())
+            .unwrap();
+        assert_eq!(output.witness.c0_signature.signatures[0].residues, [0; 8]);
+    }
+
+    #[test]
+    fn direct_crt_d1_checks_full_width_divisor_compatibility() {
+        // The full divisor has factor3; its low u64 limb23 does not.
+        let divisor = (1i128 << 64) + 23;
+        assert_eq!(divisor % 3, 0);
+        let input = CramCiphertext::wrap_default((), &[0], None);
+        assert!(matches!(
+            input.cram_rescale_by_scalar_kelim(divisor, 17, |_, _| ()),
+            Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain { divisor: actual }))
+                if actual == divisor
+        ));
+    }
+
+    #[test]
+    fn direct_crt_router_keeps_a_valid_full_width_kelim_lane() {
+        // Full gcd is1, while truncating this divisor to its low limb3
+        // incorrectly removes D1 from the successful lane mask.
+        let divisor = (1i128 << 64) + 3;
+        assert_eq!(gcd_u128(divisor as u128, 570_570), 1);
+        let input = CramCiphertext::wrap_default((), &[0], None);
+        let (output, _, lanes) = input
+            .cram_rescale_with_chimera_router(divisor, 1, |_, _| ())
+            .unwrap();
+        assert!(lanes.kelim);
+        assert_eq!(output.witness.c0_signature.signatures[0].residues, [0; 8]);
+    }
+
     // ---- Phase-4 D2 — DIV_EXACT (absorbent quotient-basis division) -----
 
     #[test]
@@ -3751,7 +3999,7 @@ mod tests {
             let main_indices: Vec<usize> = (0..crate::triad::S8.len())
                 .filter(|&i| crate::triad::S8[i] != 17)
                 .collect();
-            let (x_main, m_main) = garner_reconstruct_subset(&sig, &main_indices);
+            let (x_main, m_main) = crt_weighted_sum_subset(&sig, &main_indices);
             let r_anchor = sig.residue_mod(17).unwrap();
             let kappa = k_elim_winding(x_main, m_main, r_anchor, 17);
             let lifted = x_main + (kappa as i128) * m_main;
