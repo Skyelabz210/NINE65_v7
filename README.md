@@ -10,6 +10,9 @@ target label with a 240-bit in-tree MATZOV screen, not an independently certifie
 256-bit profile. There is no claim of unlimited depth, bootstrap-free FHE,
 library-wide constant time, or production readiness. The supplied correction
 packet has been [reconciled against the current code and arithmetic prerequisites](docs/execution/2026-10-26/STATUS.md).
+The [implementation continuation](docs/execution/2026-10-27/IMPLEMENTATION.md)
+adds the repaired signed substrate, bounded recumbent coefficients, and actual-operation
+arrow checks under the clarified synthetic-emission policy.
 
 The repository has moved beyond the historical “v7 Bootstrap Complete” snapshot. The current integration line combines:
 
@@ -304,16 +307,22 @@ source-level constant-time paths do not close hardware channels; see
 NINE65 applications follow the Recumbent CRAM rule:
 
 ```text
-ingest once -> remain in residue/ciphertext state -> project only at authorized I/O
+ingest once -> declared residue operations and lift contracts -> authorized output
 ```
 
-Production hot paths prohibit:
+Production residue compute prohibits:
 
-- internal number-line reconstruction;
-- Garner reconstruction;
-- mixed-radix conversion;
-- hidden scalar materialization;
+- synthetic emissions from Garner or mixed-radix conversions;
+- discarding information required by the declared reversible operation;
 - floating-point arithmetic.
+
+Reconstruction itself is permitted. Its use must preserve the operation's
+declared semantics, provenance and independence/reversibility contract. IID
+refers to the declared driving variables; carry-process reversibility uses
+detailed balance when the Holte model applies. Arrow checks evaluate the actual
+operation on a stated domain; structural emission
+checks remain separate because reversible uniform maps can still use a forbidden
+conversion algorithm.
 
 K-Elimination is used only under its coprimality, exact-divisibility, anchor-capacity, and uniqueness-range preconditions. Shared-factor exact division is rejected until the Fused Piggyback Division production adapter is enabled.
 

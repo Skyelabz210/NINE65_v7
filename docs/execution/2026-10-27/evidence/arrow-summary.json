@@ -1,0 +1,8 @@
+{
+  "native_drop": "PASS_FINITE_DOMAIN",
+  "redundant_full_basis_rank": "FAIL",
+  "expected_joint_output_diagnostic_failure": true,
+  "rank_policy_admission": "Not decided by the stronger joint-output diagnostic; use the declared driving-variable/carry model.",
+  "acceptance": "PASS_FINITE_FIXTURE",
+  "scope": "210 states; six lane orders; quotient+remainder. Joint-output diagnostic only; not the Holte carry-process acceptance criterion."
+}

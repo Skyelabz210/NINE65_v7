@@ -9,6 +9,13 @@ It provides finite leveled computation plus low-depth refresh paths. **It is not
 
 ## Open Work — read this first
 
+`docs/execution/2026-10-27/IMPLEMENTATION.md` records the current commissioned
+recumbent work and the user's emission-policy clarification. Reconstruction is
+permitted; Garner/mixed-radix synthetic emissions remain forbidden in residue
+compute. Use actual-operation arrow checks for the stated independence and
+reversibility domain, separately from structural source checks. Earlier blanket
+reconstruction bans do not supersede this clarification.
+
 `docs/REPOSITION_EXECUTION_2026-09-24.md` reconciles the September branch
 inventory and completion plan with the current main tree. Read its verified
 state changes, transduction-capacity finding, dependency gates, and benchmark

@@ -1,0 +1,33 @@
+{
+  "scope": "Independent probe sources and transcript-copied aggregate results, not freshly rerun during archiving. Adjust absolute paths to reproduce.",
+  "files": {
+    "substrate-Cargo.toml.txt": {
+      "bytes": 172,
+      "sha256": "aa6caa41d4978c97afd3b06a787a5b5df34de827749cdb0048801d3ba0e99ccc"
+    },
+    "substrate-main.rs.txt": {
+      "bytes": 1174,
+      "sha256": "5bb2c3b1c6c69ae6dba45730304e4265dd5f42b2947cae3e2abfc9cac471d83e"
+    },
+    "substrate-oracle.py.txt": {
+      "bytes": 1863,
+      "sha256": "cccafeab7f288086ecca4226b6905447499eda90445f2099a3af3a0fc8a3e33f"
+    },
+    "substrate-results.txt": {
+      "bytes": 537,
+      "sha256": "f8ddc22a8b323ccc745cb86c6107387f71f16032351b729144ff7d9c8dd540da"
+    },
+    "recumbent-main.rs.txt": {
+      "bytes": 2029,
+      "sha256": "294d9548606eaf16ea47bdc5f38ddbb1614136587c920b8ee32e032dc02e183f"
+    },
+    "recumbent-oracle.py.txt": {
+      "bytes": 3440,
+      "sha256": "be63955c3518822350a34e43922681a3690d91cbf60db4e9e8e187bc00786311"
+    },
+    "recumbent-results.txt": {
+      "bytes": 979,
+      "sha256": "bf8f3a4051682547a483e47478664574bba4a033caeee79e76c738275c155d4c"
+    }
+  }
+}

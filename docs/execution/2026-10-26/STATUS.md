@@ -1,5 +1,12 @@
 # Correction program execution — 2026-10-26
 
+**Implementation continuation:** see [2026-10-27](../2026-10-27/IMPLEMENTATION.md)
+for the signed-substrate repair, new coefficient operations and actual-operation
+arrow audit. The user clarified that reconstruction is permitted; the ban is
+synthetic emissions such as Garner/mixed-radix conversions. The blanket
+reconstruction rejection and source inventory below record the earlier
+interpretation and are not the current acceptance criterion.
+
 The attached plan is **not executable to release as written**. This execution
 preserves its evidence, completes independent capacity/governance corrections,
 and records the prerequisites that block the FHE port. Public refresh remains

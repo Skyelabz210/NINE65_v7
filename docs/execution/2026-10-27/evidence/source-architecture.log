@@ -1,0 +1,5 @@
+Residue-native architecture gate FAILED
+3 prohibited construct(s) in 13 scanned file(s):
+crates/exact_transcendentals/src/cram_ct.rs:1913: garner_call: let unsigned = crate::lane_projector::garner_reconstruct(sig);
+crates/exact_transcendentals/src/cram_ct.rs:2118: garner_call: fn garner_reconstruct_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
+crates/exact_transcendentals/src/cram_ct.rs:2223: garner_call: let (x_main, m_main_actual) = garner_reconstruct_subset(sig, &main_indices);

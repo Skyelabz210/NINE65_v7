@@ -1,0 +1,14 @@
+Captured stdout from independent probe run in this review session (not rerun):
+debug: 5505 independent Python integer/interval checks passed in 0.498s
+release: 5505 independent Python integer/interval checks passed in 0.086s
+
+Reviewed source SHA-256:
+30fb5abad6ea1bdb8b8a99931b75ae6006d7d5072e1003d79b6d0fb9cc70a635  /workspace/NINE65_v7/crates/nine65/src/arithmetic/recumbent.rs
+0f6ad925218db7de3e8cbcfdcfab0e25b3bfb393a7ab9c0192714ae5ae7f6c39  /workspace/NINE65_v7/crates/nine65/src/arithmetic/rank_residue_divider.rs
+
+Probe command:
+python /tmp/recumbent_review_probe/oracle.py
+
+Build commands:
+/workspace/work/nine65/rustup/toolchains/1.89.0-x86_64-unknown-linux-gnu/bin/rustc --edition=2021 -Awarnings /tmp/recumbent_review_probe/main.rs -o /tmp/recumbent_review_probe/probe-debug
+/workspace/work/nine65/rustup/toolchains/1.89.0-x86_64-unknown-linux-gnu/bin/rustc --edition=2021 -Awarnings -O /tmp/recumbent_review_probe/main.rs -o /tmp/recumbent_review_probe/probe-release

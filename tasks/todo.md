@@ -14,3 +14,23 @@
 - [ ] T5 optional tightening: not applicable before T2/T3 pass.
 - [ ] T6 proofs/stress/external artifacts: blocked on construction and artifacts.
 - [ ] Release: all packet gates green on one commit (currently blocked).
+
+## Commissioned build continuation — 2026-10-27
+
+- [x] Task A: repair signed CRT substrate with failing-before/fixed-after evidence,
+      checked wide capacity, and independent signed/wide arithmetic oracles.
+- [x] Task B first slice: immutable coefficient state, signed interval admission,
+      checked event depth, native observed-lane division, authentic quotient anchors.
+- [ ] Task B general divider: validate exact quotient arithmetic, declared-domain
+      independence/reversibility, and forbidden-emission policy before acceptance.
+- [x] Task C regression: permanent zero-noise carry witnesses, including the
+      actual secure-128 component-switch/decrypt path.
+- [ ] Task C integration: wide certified lifts, rescale, encrypted carry and
+      key-domain return; then the original depth/chain/cross-profile gates.
+- [ ] Task D: compatible main/anchor/shadow/parity construction and ten invariants.
+- [x] Clarified emission policy: permit reconstruction; reject Garner/mixed-radix
+      emissions; retain the historical reconstruction audit as an optional mode.
+- [x] Arrow diagnostics: execute actual Rust operations and inverses; retain the
+      full-basis quotient's joint-output diagnostic as a separate negative control.
+- [x] Holte regressions: IID driving digits, Eulerian stationarity, detailed
+      balance, and independent general-arity corner proof under the stated model.
