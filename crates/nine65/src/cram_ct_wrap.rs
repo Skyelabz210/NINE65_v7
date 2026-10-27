@@ -365,10 +365,7 @@ mod tests {
         assert_eq!(centered[0], -1, "Q_level - 1 must center to -1");
         let wrapped = wrap_dual_rns_fpd(&ctx, ct, &[23]).expect("FPD witness must fit");
         assert_eq!(
-            wrapped
-                .witness
-                .c0_aux()
-                .and_then(|set| set.residue(0, 0)),
+            wrapped.witness.c0_aux().and_then(|set| set.residue(0, 0)),
             Some(22)
         );
     }
