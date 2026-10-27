@@ -364,7 +364,13 @@ mod tests {
         let centered = c0_centered_i128(&ctx, &ct).expect("active level fits i128");
         assert_eq!(centered[0], -1, "Q_level - 1 must center to -1");
         let wrapped = wrap_dual_rns_fpd(&ctx, ct, &[23]).expect("FPD witness must fit");
-        assert_eq!(wrapped.witness.c0_aux.unwrap().residues[0][0], 22);
+        assert_eq!(
+            wrapped
+                .witness
+                .c0_aux()
+                .and_then(|set| set.residue(0, 0)),
+            Some(22)
+        );
     }
 
     /// The seam that matters: `wrap_dual_rns_fpd` populates `c0_aux`, and
@@ -379,7 +385,7 @@ mod tests {
 
         let plain = wrap_dual_rns(ct.clone());
         assert!(
-            plain.witness.c0_aux.is_none(),
+            plain.witness.c0_aux().is_none(),
             "control: the default wrap must NOT carry an aux lane — if this \
              ever becomes Some, this test no longer distinguishes the two paths"
         );
@@ -388,11 +394,10 @@ mod tests {
         let lifted = wrap_dual_rns_fpd(&ctx, ct, &aux).expect("secure_128 must lift");
         let set = lifted
             .witness
-            .c0_aux
-            .as_ref()
+            .c0_aux()
             .expect("FPD wrap must carry the aux lane");
         assert_eq!(
-            set.residues.len(),
+            set.coefficient_count(),
             lifted.witness.poly_len(),
             "one aux residue vector per tracked coefficient"
         );

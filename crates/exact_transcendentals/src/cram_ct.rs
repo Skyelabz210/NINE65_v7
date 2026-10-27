@@ -741,6 +741,14 @@ impl CramWitnessState {
     pub fn poly_len(&self) -> usize {
         self.c0_signature.len()
     }
+
+    /// Return the read-only auxiliary residue witness used by the FPD lane.
+    ///
+    /// Mutation stays private so callers cannot replace or alter residues
+    /// after the construction snapshots and S8 binding have been captured.
+    pub fn c0_aux(&self) -> Option<&AuxResidueSet> {
+        self.c0_aux.as_ref()
+    }
 }
 
 /// Phase-1 CRAM ciphertext: a base ciphertext `C` (the security-bearing
@@ -1411,6 +1419,19 @@ impl AuxResidueSet {
             sealed_primes: primes_vec,
             sealed_residues: residues,
         }
+    }
+
+    /// Number of polynomial coefficients represented by this witness.
+    pub fn coefficient_count(&self) -> usize {
+        self.residues.len()
+    }
+
+    /// Read one canonical auxiliary residue without exposing mutable storage.
+    pub fn residue(&self, coefficient_index: usize, prime_index: usize) -> Option<u32> {
+        self.residues
+            .get(coefficient_index)
+            .and_then(|row| row.get(prime_index))
+            .copied()
     }
 
     /// Validate shape, CRT compatibility, canonical residues, and binding to
