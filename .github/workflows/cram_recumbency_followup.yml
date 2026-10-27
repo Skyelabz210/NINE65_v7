@@ -25,7 +25,6 @@ on:
       - "crates/nine65/src/ops/auto_bootstrap.rs"
       - "crates/nine65/src/ops/bootstrap.rs"
       - "crates/nine65/src/ops/rns_fhe.rs"
-      - "crates/nine65/src/ops/sbni.rs"
       - "crates/nine65/src/params/mod.rs"
       - "crates/nine65/src/params/secure_configs.rs"
       - "crates/nine65/tests/bootstrap_residue_shape_regression.rs"
@@ -70,7 +69,6 @@ jobs:
             crates/nine65/src/bin/nine65_bench.rs
             crates/nine65/src/noise/budget.rs
             crates/nine65/src/ops/auto_bootstrap.rs
-            crates/nine65/src/ops/sbni.rs
             crates/nine65/src/params/mod.rs
             crates/nine65/src/params/secure_configs.rs
             crates/nine65/tests/bootstrap_residue_shape_regression.rs
@@ -84,24 +82,34 @@ jobs:
             exit 1
           fi
 
-      - name: Verify statistical gate controls exit status
+      - name: Verify current benchmark correctness contract
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'let overall_correct = depth_correct && statistical_correct;' \
+          grep -F 'eprintln!("Statistical correctness failed: {successes}/100");' \
             crates/nine65/src/bin/nine65_bench.rs
-          grep -F 'if !overall_correct {' crates/nine65/src/bin/nine65_bench.rs
-
-      - name: Verify exact noise accounting
-        shell: bash
+          grep -F 'std::process::exit(1);' crates/nine65/src/bin/nine65_bench.rs
+          grep -F 'let achieved_chain_correct = decrypted == plaintext;' \
+            crates/nine65/src/bin/nine65_bench.rs
+          grep -F '"achieved_chain_correct": achieved_chain_correct,' \
+            crates/nine65/src/bin/nine65_bench.rs      - name: Verify exact noise accounting
         run: |
           set -euo pipefail
-          grep -F 'let delta_bits = exact_delta_bit_length(config);' \
-            crates/nine65/src/noise/budget.rs
-          ! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \
-            crates/nine65/src/noise/budget.rs
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, ".github/scripts")
+          from check_cram_recumbency import production_view
 
-      - name: Verify audited secure-128 dimension
+          source = production_view("crates/nine65/src/noise/budget.rs")
+          required = "let delta_bits = exact_delta_bit_length(config);"
+          legacy = ".map(|&p| (64 - p.leading_zeros()) as i64)"
+
+          if required not in source:
+              raise SystemExit("exact delta-bit initialization is missing from executable code")
+          if legacy in source:
+              raise SystemExit("legacy summed-prime-bit-width calculation remains in executable code")
+          print("Noise budget source contract passed (comments and strings excluded).")
+          PY      - name: Verify audited secure-128 dimension
         shell: bash
         run: |
           set -euo pipefail
@@ -150,9 +158,9 @@ jobs:
       - name: NTT roundtrip regression
         run: cargo test -p nine65 --release --test ntt_roundtrip_prime_regression -- --nocapture
 
-      - name: SBNI invariant tests
-        run: cargo test -p nine65 --lib --release ops::sbni -- --nocapture
-
+      # SBNI is not exported by the current ops module, so an ops::sbni
+      # test filter matched zero tests and gave a false-green signal. Its
+      # source was removed from the active test surface; do not claim coverage.
       - name: Auto-bootstrap unit tests
         run: cargo test -p nine65 --lib --release ops::auto_bootstrap -- --nocapture
 
@@ -163,38 +171,77 @@ jobs:
         run: cargo test -p nine65 --release --test bootstrap_residue_shape_regression -- --nocapture
 
       - name: DualRNS leveled smoke test
+        # Deterministic correctness evidence runs in debug; release builds
+        # intentionally reject the benchmark's test RNG.
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          set -euo pipefail
+          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --output /tmp/nine65-leveled.json
           python3 - <<'PY'
           import json
           from pathlib import Path
 
           report = json.loads(Path('/tmp/nine65-leveled.json').read_text())
-          assert report['metadata']['integer_only_reporting'] is True
-          assert report['metadata']['simulated_refreshes'] == 0
-          assert report['operations']['path'] == 'DualRNS + K-Elimination'
-          assert report['depth_chain']['correct'] is True
-          assert report['overall_correct'] is True
-          PY
 
-      - name: DualRNS automatic-refresh statistical smoke test
+          def assert_integral(node, path='$'):
+              if isinstance(node, bool):
+                  return
+              if isinstance(node, float):
+                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
+              if isinstance(node, dict):
+                  for key, value in node.items():
+                      assert_integral(value, f'{path}.{key}')
+              elif isinstance(node, list):
+                  for index, value in enumerate(node):
+                      assert_integral(value, f'{path}[{index}]')
+
+          assert_integral(report)
+          assert report['metadata']['bootstrap_mode'] == 'disabled'
+          assert report['statistical_test']['enabled'] is False
+          for name, scale in report['scale_tests'].items():
+              assert scale['simulated_refreshes'] == 0, name
+          chain = report['operation_chain']
+          assert chain['achieved_chain_correct'] is True
+          assert chain['completed_requested'] is True
+          assert chain['real_refreshes'] == 0
+          PY      - name: DualRNS automatic-refresh statistical smoke test
+        # Force the threshold so the evidence gate proves that real refresh
+        # code ran rather than inferring it from a completed operation count.
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
-            --config secure_128_deep --max-depth 3 --auto-bootstrap \
-            --statistical-test --output /tmp/nine65-auto.json
+          set -euo pipefail
+          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
+            --config secure_128_deep --max-depth 1 --auto-bootstrap \
+            --trigger-pct 100 --statistical-test \
+            --output /tmp/nine65-auto.json
           python3 - <<'PY'
           import json
           from pathlib import Path
 
           report = json.loads(Path('/tmp/nine65-auto.json').read_text())
-          assert report['metadata']['simulated_refreshes'] == 0
-          assert report['depth_chain']['correct'] is True
-          assert report['depth_chain']['total_bootstrap_calls'] > 0
-          assert report['depth_chain']['exercised_real_refresh'] is True
-          assert report['statistical_test']['correct'] is True
-          assert report['statistical_test']['failures'] == 0
-          assert report['statistical_test']['total_bootstrap_calls'] > 0
-          assert report['statistical_test']['exercised_real_refresh'] is True
-          assert report['overall_correct'] is True
+
+          def assert_integral(node, path='$'):
+              if isinstance(node, bool):
+                  return
+              if isinstance(node, float):
+                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
+              if isinstance(node, dict):
+                  for key, value in node.items():
+                      assert_integral(value, f'{path}.{key}')
+              elif isinstance(node, list):
+                  for index, value in enumerate(node):
+                      assert_integral(value, f'{path}[{index}]')
+
+          assert_integral(report)
+          assert report['metadata']['bootstrap_mode'] == 'real'
+          for name, scale in report['scale_tests'].items():
+              assert scale['simulated_refreshes'] == 0, name
+          chain = report['operation_chain']
+          assert chain['completed_requested'] is True
+          assert chain['achieved_chain_correct'] is True
+          assert chain['real_refreshes'] > 0
+          statistical = report['statistical_test']
+          assert statistical['enabled'] is True
+          assert statistical['trials'] == 100
+          assert statistical['successes'] == statistical['trials']
+          assert statistical['real_refreshes'] > 0
           PY
