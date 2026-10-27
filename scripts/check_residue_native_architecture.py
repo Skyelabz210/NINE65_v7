@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
-"""Fail closed when prohibited mechanisms enter residue-native production paths."""
+"""Reject synthetic-emission mechanisms in residue-compute production paths.
+
+Reconstruction and wide integer types are not prohibited in themselves under
+the user's clarified policy. The default check still rejects Garner/mixed-radix
+calls and floating-point types. This is lexical evidence, not proof of reversible
+or independent computation. The former reconstruction inventory is available
+only through --legacy-reconstruction-audit.
+"""
 
 from __future__ import annotations
 
+import argparse
 import pathlib
 import re
 import sys
@@ -34,6 +42,8 @@ PRODUCTION_TARGETS = (
     # Track 2 promotes CompareBit from an unwired kernel to a D2 decrypt
     # primitive. Keep the production scanner aligned with that call graph.
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "compare_bit.rs",
+    ROOT / "crates" / "nine65" / "src" / "arithmetic" / "recumbent.rs",
+    ROOT / "crates" / "nine65" / "src" / "arithmetic" / "rank_residue_divider.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
     # rns_mul.rs removed (G19): legacy duplicate of rns_fhe.rs's RNS multiply
     # stack, superseded and deleted rather than gated -- see ops/mod.rs.
@@ -57,17 +67,23 @@ PROHIBITED = {
         r"\b" + "gar" + "ner" + r"[A-Za-z0-9_]*\s*(?:::|\()", re.IGNORECASE
     ),
     "mixed_radix_call": re.compile(
-        r"\bmixed[_ -]?" + "radix" + r"\s*(?:::|\()", re.IGNORECASE
+        r"\bmixed[_ -]?" + "radix" + r"[A-Za-z0-9_]*\s*(?:::|\()", re.IGNORECASE
     ),
+    "floating_type": re.compile(r"\bf(?:32|64)\b|\bas\s+f(?:32|64)\b"),
+}
+
+# Historical inventory only. A symbol name is not sufficient evidence that an
+# operation synthesizes residue emissions or destroys information.
+LEGACY_RECONSTRUCTION = {
     "crt_reconstruct": re.compile(
         r"\bcrt_" + r"reconstruct(?:_[A-Za-z0-9]+)?\s*\(", re.IGNORECASE
     ),
     "hidden_big_integer": re.compile(r"\b(Big" + r"Int|BigUint)\b"),
-    "floating_type": re.compile(r"\bf(?:32|64)\b|\bas\s+f(?:32|64)\b"),
 }
 
 ALLOWED_PATH_PARTS = {"tests", "test_oracle", "oracle", "legacy", "archive", "docs"}
 COMMENT_PREFIXES = ("//", "//!", "///", "#")
+NORMAL_STRING = re.compile(r'"(?:\\.|[^"\\])*"')
 
 
 def is_allowed(path: pathlib.Path) -> bool:
@@ -75,10 +91,17 @@ def is_allowed(path: pathlib.Path) -> bool:
 
 
 def executable_fragment(line: str) -> str:
+    """Blank ordinary string literals before recognizing line comments.
+
+    Printed algorithm names are data, not calls. In particular, a URL or `//`
+    inside a string must not hide executable calls that follow that string.
+    This helper remains a line-oriented lexical check, not a Rust parser.
+    """
     stripped = line.lstrip()
     if stripped.startswith(COMMENT_PREFIXES):
         return ""
-    return line.split("//", 1)[0]
+    code = NORMAL_STRING.sub(lambda match: " " * len(match.group()), line)
+    return code.split("//", 1)[0]
 
 
 TEST_GATE = re.compile(r"^\s*#\[(?:cfg\(test\)|cfg\(all\(test\s*,|test)\]?")
@@ -158,7 +181,7 @@ def production_lines(text: str) -> list[tuple[int, str]]:
     return kept
 
 
-def scan_file(path: pathlib.Path) -> list[str]:
+def scan_file(path: pathlib.Path, legacy_reconstruction_audit: bool = False) -> list[str]:
     if is_allowed(path):
         return []
     try:
@@ -166,11 +189,17 @@ def scan_file(path: pathlib.Path) -> list[str]:
     except UnicodeDecodeError:
         return []
     failures: list[str] = []
+    patterns = dict(PROHIBITED)
+    if legacy_reconstruction_audit:
+        patterns.update({
+            f"legacy_{name}": pattern
+            for name, pattern in LEGACY_RECONSTRUCTION.items()
+        })
     for line_number, line in production_lines(text):
         fragment = executable_fragment(line)
         if not fragment:
             continue
-        for name, pattern in PROHIBITED.items():
+        for name, pattern in patterns.items():
             if pattern.search(fragment):
                 failures.append(
                     f"{path.relative_to(ROOT)}:{line_number}: {name}: {line.strip()}"
@@ -188,6 +217,12 @@ def iter_files(target: pathlib.Path):
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--legacy-reconstruction-audit", action="store_true",
+        help="also inventory generic reconstruction and wide integer names",
+    )
+    args = parser.parse_args()
     failures: list[str] = []
     missing: list[str] = []
     scanned = 0
@@ -201,7 +236,7 @@ def main() -> int:
             continue
         for path in iter_files(target):
             scanned += 1
-            failures.extend(scan_file(path))
+            failures.extend(scan_file(path, args.legacy_reconstruction_audit))
 
     if missing:
         print("Residue-native architecture gate FAILED", file=sys.stderr)
