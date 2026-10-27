@@ -45,6 +45,8 @@ pub mod order_finding; // NON-CIRCULAR BSGS (Shor's classical reduction)
 pub mod pade_engine; // INTEGER TRANSCENDENTALS (exp/sin/cos/sigmoid)
 pub mod persistent_montgomery; // MONTGOMERY FORM
 pub mod plaintext_scale_round; // EXACT RNS COMPONENT SCALE-ROUND VIA K-ELIMINATION
+pub(crate) mod rank_residue_divider; // EXPERIMENTAL GLOBAL-RANK QUOTIENT PROJECTION
+pub mod recumbent; // BOUNDED COEFFICIENT LIFTS AND PROVISIONED-LANE DIVISION
 pub mod residue_division; // PROOF-CARRYING BOUNDED QUOTIENT PROJECTION
 pub mod rns;
 pub mod transcendental_backend; // FEATURE-GATED EXACT TRANSCENDENTAL ADAPTER
