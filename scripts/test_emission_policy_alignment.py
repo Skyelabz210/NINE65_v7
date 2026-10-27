@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synthetic-emission policy regressions across the three lexical scanners."""
+"""Synthetic-emission policy regressions across scanners and the arrow wrapper."""
 
 import importlib.util
 import contextlib
@@ -11,6 +11,8 @@ import unittest
 from unittest.mock import patch
 
 import check_residue_native_architecture as architecture
+import check_recumbent_arrow as arrow
+from a2_arrow_suite import audit_trace
 
 
 def load_contract():
@@ -125,6 +127,49 @@ class EmissionPolicyTests(unittest.TestCase):
         self.assertEqual(self.run_contract(
             "fn probe() {}", "fn bad() { if q_product == 0 {} }"
         ), 1)
+
+
+class ArrowEmissionPolicyTests(unittest.TestCase):
+    def source_gate(self, code):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "probe.rs").write_text(code)
+            with patch.object(arrow, "ROOT", root), patch.object(arrow, "SOURCE_FILES", ("probe.rs",)):
+                policy = arrow.inspect_sources()
+        report = audit_trace(dict(
+            name="source-policy probe", input_moduli=[2], output_moduli=[2],
+            exhaustive_product=True,
+            rows=[dict(input=[i], output=[i], expected=[i], restored=[i],
+                       order_outputs=[[i]]) for i in range(2)],
+            source_policy=policy,
+        ))
+        return next(gate["verdict"] for gate in report["gates"] if gate["gate"] == "G5")
+
+    def test_arrow_g5_rejects_all_emission_call_spellings(self):
+        for call in ("garner(x)", "GarnerLift::new(x)",
+                     "mixed_radix(x)", "mixed_radix_project(x)",
+                     "mixedradix(x)", "mixedradix_project(x)",
+                     "MixedRadixLift::new(x)"):
+            with self.subTest(call=call):
+                self.assertEqual(self.source_gate(f"fn probe() {{ {call}; }}"), "FAIL")
+
+    def test_arrow_g5_excludes_diagnostic_strings_and_comments(self):
+        for code in (
+            'fn probe() { println!("garner(x); mixed_radix(x); mixedradix_project(x)"); }',
+            'fn probe() { println!("escaped \\"mixedradix(x)\\" diagnostic"); }',
+            '// mixedradix_project(x)\nfn probe() { checked_emit(x); }',
+            '#[cfg(test)]\nmod tests { fn probe() { mixedradix_project(x); } }',
+        ):
+            with self.subTest(code=code):
+                self.assertEqual(self.source_gate(code), "PASS")
+
+    def test_arrow_g5_keeps_real_calls_after_diagnostic_strings_visible(self):
+        for text in ("https://example.invalid", "// marker"):
+            for call in ("garner_reconstruct(x)", "mixed_radix_project(x)", "mixedradix_project(x)"):
+                with self.subTest(text=text, call=call):
+                    self.assertEqual(self.source_gate(
+                        f'fn probe() {{ println!("{text}"); {call}; }}'
+                    ), "FAIL")
 
 
 if __name__ == "__main__":

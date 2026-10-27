@@ -13,13 +13,14 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import re
 
 from a2_arrow_suite import audit_trace
-from check_residue_native_architecture import executable_fragment, production_lines
+from check_residue_native_architecture import PROHIBITED, executable_fragment, production_lines
 
 ROOT = Path(__file__).resolve().parents[1]
-FORBIDDEN = re.compile(r"\b(?:garner\w*|mixed_radix\w*)\s*(?:::|\()", re.I)
+# Share emission spellings with the architecture gate without importing its
+# unrelated floating-type rule into the arrow source-policy evidence.
+EMISSION_PATTERNS = (PROHIBITED["garner_call"], PROHIBITED["mixed_radix_call"])
 SOURCE_FILES = (
     "crates/nine65/src/arithmetic/recumbent.rs",
     "crates/nine65/src/arithmetic/rank_residue_divider.rs",
@@ -38,8 +39,10 @@ def inspect_sources():
         text = path.read_text()
         hashes[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
         for number, line in production_lines(text):
-            for hit in FORBIDDEN.finditer(executable_fragment(line)):
-                findings.append(f"{relative}:{number}:{hit.group()}")
+            fragment = executable_fragment(line)
+            for pattern in EMISSION_PATTERNS:
+                for hit in pattern.finditer(fragment):
+                    findings.append(f"{relative}:{number}:{hit.group()}")
     return dict(
         observed_emissions=findings,
         allowed_emissions=[],

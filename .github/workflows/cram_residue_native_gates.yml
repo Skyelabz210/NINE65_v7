@@ -15,6 +15,10 @@ on:
   pull_request:
     paths:
       - 'crates/cram-core/**'
+      - 'crates/exact_transcendentals/src/cram_ct.rs'
+      - 'crates/nine65/src/arithmetic/rns.rs'
+      - 'crates/nine65/src/arithmetic/recumbent.rs'
+      - 'crates/nine65/src/arithmetic/rank_residue_divider.rs'
       - 'crates/nine65/src/cram_ct_wrap.rs'
       - 'crates/nine65/src/ops/rns_fhe.rs'
       - 'scripts/check_residue_native_architecture.py'

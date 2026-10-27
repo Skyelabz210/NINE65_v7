@@ -42,6 +42,8 @@ PRODUCTION_TARGETS = (
     # Track 2 promotes CompareBit from an unwired kernel to a D2 decrypt
     # primitive. Keep the production scanner aligned with that call graph.
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "compare_bit.rs",
+    # Live rescale and gadget paths delegate their CRT/K kernels here.
+    ROOT / "crates" / "nine65" / "src" / "arithmetic" / "rns.rs",
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "recumbent.rs",
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "rank_residue_divider.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
