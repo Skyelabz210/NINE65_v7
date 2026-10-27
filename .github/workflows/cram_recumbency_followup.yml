@@ -204,7 +204,9 @@ jobs:
           assert chain['achieved_chain_correct'] is True
           assert chain['completed_requested'] is True
           assert chain['real_refreshes'] == 0
-          PY      - name: DualRNS automatic-refresh statistical smoke test
+          PY
+
+      - name: DualRNS automatic-refresh statistical smoke test
         # Force the threshold so the evidence gate proves that real refresh
         # code ran rather than inferring it from a completed operation count.
         run: |
