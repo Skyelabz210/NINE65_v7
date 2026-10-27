@@ -93,8 +93,12 @@ impl RankResidueDivider {
         for &modulus in moduli {
             multiply_public_product(&mut product, modulus);
         }
-        let product_bits =
-            (product.len() - 1) * 64 + (64 - product.last().unwrap().leading_zeros()) as usize;
+        let product_bits = product
+            .iter()
+            .rposition(|&word| word != 0)
+            .map_or(0, |index| {
+                index * 64 + (64 - product[index].leading_zeros()) as usize
+            });
         let lane_bits = (usize::BITS - moduli.len().leading_zeros()) as usize;
         // Rounding the precision upward preserves the strict S > k*P bound.
         let fractional_words = (product_bits + lane_bits + 1).div_ceil(64);

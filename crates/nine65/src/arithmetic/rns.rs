@@ -1777,17 +1777,19 @@ impl DualRNSContext {
         // Product of first 3 canonical anchors ≈ 1.14×10^28, k_max ≈ 10^21 for
         // secure_128. We verify at startup so misconfigured anchor sets fail loudly.
         if let Some(&q_max) = main_primes.iter().max() {
-            let k_max_bound = (q_max as u128)
-                .checked_mul(n as u128)
-                .expect("FHE winding bound max_prime*N must fit u128");
-            let anchor3_product: u128 = anchor_primes[..3]
-                .iter()
-                .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
-                .expect("First-three-anchor startup capacity must fit u128");
+            // Rust targets have at most 64-bit usize; retain this as a
+            // compile-time requirement rather than a fallible setup cast.
+            const { assert!(usize::BITS <= u64::BITS) };
+            let k_max_bound = product_limbs_u64(&[q_max, n as u64]);
+            let anchor3_product = product_limbs_u64(&anchor_primes[..3]);
+            let capacity_order = anchor3_product
+                .len()
+                .cmp(&k_max_bound.len())
+                .then_with(|| anchor3_product.iter().rev().cmp(k_max_bound.iter().rev()));
             assert!(
-                anchor3_product > k_max_bound,
+                capacity_order == core::cmp::Ordering::Greater,
                 "Anchor capacity insufficient for config n={}, max_prime={}: \
-                 first-3-anchor product ({}) must exceed k_max bound ({}). \
+                 first-3-anchor product limbs ({:?}) must exceed k_max bound limbs ({:?}). \
                  Increase anchor prime count or use larger anchors.",
                 n,
                 q_max,
@@ -1870,7 +1872,8 @@ impl DualRNSContext {
         let Some(&q_max) = self.main.primes.iter().max() else {
             return 0;
         };
-        let degree = u64::try_from(self.n).expect("Polynomial degree must fit u64");
+        const { assert!(usize::BITS <= u64::BITS) };
+        let degree = self.n as u64;
         limbs_bit_length_u64(&product_limbs_u64(&[degree, q_max, q_max]))
     }
 
@@ -1906,12 +1909,10 @@ impl DualRNSContext {
     /// NOTE: Only works if anchor_product fits in u128. For 5+ primes,
     /// use extract_k_rns instead.
     pub fn extract_k(&self, v_main: u128, v_anchor: u128) -> u128 {
-        let a = self
+        let (a, inverse) = self
             .anchor_product_checked
-            .expect("Use extract_k_rns for wide anchor bases");
-        let inverse = self
-            .main_inv_anchor_checked
-            .expect("Scalar K-Elimination requires an invertible main product modulo A");
+            .zip(self.main_inv_anchor_checked)
+            .expect("Scalar K-Elimination requires a narrow anchor and an invertible main product; use extract_k_rns for wide anchors");
 
         // k = ((v_anchor - v_main mod A) × M⁻¹) mod A
         let v_main_mod_a = v_main % a;
