@@ -59,7 +59,10 @@ jobs:
             scripts/cram_compare_results.py \
             scripts/test_cram_compare_results.py \
             scripts/analyze_cram_fhe_hypotheses.py \
-            scripts/test_analyze_cram_fhe_hypotheses.py
+            scripts/test_analyze_cram_fhe_hypotheses.py \
+            scripts/validate_cram_comparative_smoke.py \
+            scripts/test_validate_cram_comparative_smoke.py
+          python3 scripts/test_validate_cram_comparative_smoke.py
           python3 scripts/test_cram_compare_results.py
           python3 scripts/test_benchmark_contract.py
           python3 scripts/test_analyze_cram_fhe_hypotheses.py
@@ -95,6 +98,10 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p artifacts/v6_v7_compare/smoke
+          # The probe returns 1 for the deliberate legacy mul_ct refusal (#135).
+          # Capture that exit separately so the validator can enforce every
+          # supported arithmetic oracle and requested dual-RNS depth.
+          set +e
           target/debug/cram_comparative_probe \
             --config v6_compat_4096 \
             --iterations 2 \
@@ -106,19 +113,12 @@ jobs:
             --output artifacts/v6_v7_compare/smoke/result.json \
             > artifacts/v6_v7_compare/smoke/stdout.log \
             2> artifacts/v6_v7_compare/smoke/stderr.log
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          path = Path('artifacts/v6_v7_compare/smoke/result.json')
-          payload = json.loads(path.read_text(encoding='utf-8'))
-          assert payload['schema'] == 'nine65-comparative-probe-v1'
-          assert payload['status'] == 'PASS'
-          depth = payload['ct_mul_depth']
-          assert depth['completed'] == depth['requested']
-          assert depth['all_completed_entries_correct'] is True
-          assert depth['first_error'] is None
-          PY
+          probe_exit=$?
+          set -e
+          python3 scripts/validate_cram_comparative_smoke.py \
+            --input artifacts/v6_v7_compare/smoke/result.json \
+            --output artifacts/v6_v7_compare/smoke/classification.json \
+            --probe-exit "$probe_exit"
           python3 scripts/analyze_cram_fhe_hypotheses.py \
             artifacts/v6_v7_compare/smoke/result.json \
             --output artifacts/v6_v7_compare/smoke/hypothesis_analysis.json \
