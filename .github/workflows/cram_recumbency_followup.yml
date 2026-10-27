@@ -101,11 +101,11 @@ jobs:
           from check_cram_recumbency import production_view
 
           source = production_view("crates/nine65/src/noise/budget.rs")
-          required = "let delta_bits = exact_delta_bit_length(config);"
+          required = "fn exact_delta_bit_length(config: &FHEConfig) -> i64"
           legacy = ".map(|&p| (64 - p.leading_zeros()) as i64)"
 
           if required not in source:
-              raise SystemExit("exact delta-bit initialization is missing from executable code")
+              raise SystemExit("exact multi-limb delta bit-length helper is missing from executable code")
           if legacy in source:
               raise SystemExit("legacy summed-prime-bit-width calculation remains in executable code")
           print("Noise budget source contract passed (comments and strings excluded).")
