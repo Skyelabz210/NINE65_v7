@@ -8,6 +8,8 @@ on:
       - 'scripts/run_nine65_v6_v7_compare.py'
       - 'scripts/cram_compare_results.py'
       - 'scripts/test_cram_compare_results.py'
+      - 'scripts/validate_cram_comparative_smoke.py'
+      - 'scripts/test_validate_cram_comparative_smoke.py'
       - 'scripts/analyze_cram_fhe_hypotheses.py'
       - 'benchmarks/comparative/nine65_v6_v7_contract.json'
       - 'docs/NINE65_V6_V7_COMPARATIVE_HARNESS.md'
