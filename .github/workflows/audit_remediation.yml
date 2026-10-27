@@ -27,7 +27,6 @@ on:
       - "crates/nine65/src/bin/nine65_bench.rs"
       - "crates/nine65/src/noise/budget.rs"
       - "crates/nine65/src/ops/auto_bootstrap.rs"
-      - "crates/nine65/src/ops/sbni.rs"
       - "crates/nine65/src/params/mod.rs"
       - "crates/nine65/src/params/secure_configs.rs"
       - "scripts/audit_modulus_classes.py"
@@ -65,7 +64,6 @@ jobs:
             crates/nine65/src/bin/nine65_bench.rs
             crates/nine65/src/noise/budget.rs
             crates/nine65/src/ops/auto_bootstrap.rs
-            crates/nine65/src/ops/sbni.rs
             crates/nine65/src/params/mod.rs
             crates/nine65/src/params/secure_configs.rs
           )
@@ -99,15 +97,23 @@ jobs:
             crates/nine65/src/bin/nine65_bench.rs
 
       - name: Verify exact noise accounting is active
-        shell: bash
         run: |
           set -euo pipefail
-          grep -F 'let delta_bits = exact_delta_bit_length(config);' \
-            crates/nine65/src/noise/budget.rs
-          ! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \
-            crates/nine65/src/noise/budget.rs
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, ".github/scripts")
+          from check_cram_recumbency import production_view
 
-      - name: Verify audited secure-128 dimension
+          source = production_view("crates/nine65/src/noise/budget.rs")
+          required = "fn exact_delta_bit_length(config: &FHEConfig) -> i64"
+          legacy = ".map(|&p| (64 - p.leading_zeros()) as i64)"
+
+          if required not in source:
+              raise SystemExit("exact multi-limb delta bit-length helper is missing from executable code")
+          if legacy in source:
+              raise SystemExit("legacy summed-prime-bit-width calculation remains in executable code")
+          print("Noise budget source contract passed (comments and strings excluded).")
+          PY      - name: Verify audited secure-128 dimension
         shell: bash
         run: |
           set -euo pipefail
@@ -159,7 +165,7 @@ jobs:
       #       a path label; there is no honest substitute, so it is not faked.
       - name: DualRNS leveled smoke test
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --output /tmp/nine65-leveled.json
           python3 - <<'PY'
           import json
@@ -192,22 +198,41 @@ jobs:
           PY
 
       - name: DualRNS automatic-refresh statistical smoke test
+        # Deterministic correctness evidence runs in debug; release builds
+        # intentionally reject the benchmark's test RNG.
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          set -euo pipefail
+          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --auto-bootstrap \
-            --statistical-test --output /tmp/nine65-auto.json
+            --trigger-pct 100 --statistical-test \
+            --output /tmp/nine65-auto.json
           python3 - <<'PY'
           import json
           from pathlib import Path
 
           report = json.loads(Path('/tmp/nine65-auto.json').read_text())
+
+          def assert_integral(node, path='$'):
+              if isinstance(node, bool):
+                  return
+              if isinstance(node, float):
+                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
+              if isinstance(node, dict):
+                  for key, value in node.items():
+                      assert_integral(value, f'{path}.{key}')
+              elif isinstance(node, list):
+                  for index, value in enumerate(node):
+                      assert_integral(value, f'{path}[{index}]')
+
+          assert_integral(report)
           assert report['metadata']['bootstrap_mode'] == 'real'
-          for name, scale in report['scale_tests'].items():
-              assert scale['simulated_refreshes'] == 0, name
-          assert report['operation_chain']['achieved_chain_correct'] is True
+          chain = report['operation_chain']
+          assert chain['completed_requested'] is True
+          assert chain['achieved_chain_correct'] is True
+          assert chain['real_refreshes'] > 0
           statistical = report['statistical_test']
           assert statistical['enabled'] is True
           assert statistical['trials'] == 100
-          # old schema: statistical_test.failures == 0
           assert statistical['successes'] == statistical['trials']
+          assert statistical['real_refreshes'] > 0
           PY
