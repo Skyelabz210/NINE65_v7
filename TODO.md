@@ -1,5 +1,7 @@
 # NINE65 execution TODO
 
+**Public-refresh checkpoint (2026-10-28):** [Verified repairs and remaining admission gates](docs/execution/2026-10-28/PUBLIC_REFRESH_STATUS.md) records the current research regression fixes, complete small-ring repeat coverage, and the native construction/security work that still blocks public refresh. It does not accept R03/B00–B09 or reopen the production gate.
+
 **Current-head audit addendum (2026-10-17):** [October gate reconciliation and expansion](docs/execution/2026-10-17/GATE_RECONCILIATION_AND_EXPANSION.md) crosswalks this existing 43-card plan to `main@89d641b`, the October 14 hosted red gates, arithmetic provenance, WIRE-Q and public refresh. The 43-card task contracts remain authoritative for acceptance.
 
 Updated 2026-10-13 from the repository review. This checklist follows the

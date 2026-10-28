@@ -12,30 +12,85 @@ on:
     branches:
       - main
     paths:
-      - "crates/nine65/src/bin/nine65_bench.rs"
-      - "crates/nine65/src/noise/budget.rs"
-      - "crates/nine65/src/ops/auto_bootstrap.rs"
-      - "crates/nine65/src/ops/bootstrap.rs"
-      - "crates/nine65/src/ops/rns_fhe.rs"
-      - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - "crates/**"
+      - "scripts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
       - ".github/workflows/cram_real_refresh_evidence.yml"
   pull_request:
     branches:
       - main
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
-      - "crates/nine65/src/bin/nine65_bench.rs"
-      - "crates/nine65/src/noise/budget.rs"
-      - "crates/nine65/src/ops/auto_bootstrap.rs"
-      - "crates/nine65/src/ops/bootstrap.rs"
-      - "crates/nine65/src/ops/rns_fhe.rs"
-      - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - "crates/**"
+      - "scripts/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
       - ".github/workflows/cram_real_refresh_evidence.yml"
   workflow_dispatch:
 permissions:
   contents: read
 
 jobs:
+  public-refresh-research:
+    name: "Research only · public refresh/return/repeat + production refusal"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: dtolnay/rust-toolchain@1.89.0
+
+      - name: Verify exact-test runner and public integer bounds
+        env:
+          PYTHONPATH: scripts
+        run: >-
+          python3 -m unittest -v
+          test_run_public_refresh_research_gates
+          test_public_refresh_architecture
+          test_compact_phase_clock_budget
+          test_outer_ring_return_budget
+          test_source_encapsulation_budget
+
+      - name: Require production public refresh to remain typed fail-closed
+        run: >-
+          python3 scripts/run_public_refresh_research_gates.py
+          --suite production-boundary
+          --log-dir work/public-refresh-gates/production-boundary
+
+      # Explicitly opt in only to small-ring complete research probes. Their
+      # public evaluators receive no decryption oracle; a client checks every
+      # output coefficient, return to the work key and two dependent cycles.
+      # These tests do not admit native refresh or replace the blocker below.
+      - name: Check small-ring public refresh and plaintext-scale boundaries
+        run: >-
+          python3 scripts/run_public_refresh_research_gates.py
+          --suite research
+          --log-dir work/public-refresh-gates/research
+
+      # The full-Q square checks all 16384 coefficients against an independent
+      # schoolbook oracle; the nonlinear section still runs at its Q211 level.
+      # Neither result is a native refresh/return/repeat acceptance claim.
+      - name: Check native wide arithmetic and Frobenius section only
+        run: >-
+          python3 scripts/run_public_refresh_research_gates.py
+          --suite native-arithmetic
+          --log-dir work/public-refresh-gates/native-arithmetic
+
+      - name: Preserve focused evidence including failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-refresh-research-${{ github.sha }}
+          path: work/public-refresh-gates/
+          if-no-files-found: warn
+
+  # Keep the original real automatic-refresh acceptance gate. Passing the
+  # separate research/refusal regressions above cannot turn it green.
   forced-real-refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 60
