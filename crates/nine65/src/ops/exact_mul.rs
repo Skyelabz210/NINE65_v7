@@ -68,12 +68,12 @@
 //!
 //! ## `with_operand_bound` is not part of the public API (WR-1 F2)
 //!
-//! [`ExactMulPlan::with_operand_bound`] performs no lower-bound check tying
+//! `ExactMulPlan::with_operand_bound` performs no lower-bound check tying
 //! its `x_bound_over_q_sq` argument back to `n`; a caller who under-declares
 //! it (e.g. `N/4` instead of the required `N/2`, see above) gets back
 //! `Ok(plan)`, and that plan later emits a silently wrong coefficient. It is
-//! `pub(crate)`, not reachable outside `nine65` — only [`ExactMulPlan::new`],
-//! which pins `N/2` unconditionally, is public:
+//! test-only and not reachable outside `nine65`. Both public constructors
+//! pin `N/2` unconditionally:
 //!
 //! ```compile_fail
 //! // `ExactMulPlan::with_operand_bound` is `pub(crate)`: a caller outside
@@ -93,7 +93,7 @@
 //! `extract_k_rns_level*`, `extract_digit_dual`, `k_elim_rescale_dual*`,
 //! `decompose_rns_poly`, `BaseExt::project`, `CompareBit::decide_ct`, or
 //! `RNSFHEContext::exact_rescale`, and it constructs no `DualRNSContext`. The
-//! only wide-integer work is the bounded `U256` rank/half fallback inside
+//! only wide-integer work is the bounded `U1024` rank/half fallback inside
 //! [`MainOnlyBaseExt`], which compares against multiples of `M` and never
 //! materializes a coefficient. `scripts/check_wr1_exact_route_denylist.py`
 //! enforces this over the whole reachable source set.
@@ -105,12 +105,36 @@ use super::{
 };
 use crate::arithmetic::exact_scale_round::{ExactScaleRound, ExactScaleRoundError};
 use crate::arithmetic::main_only_base_ext::{MainOnlyBaseExt, MainOnlyBaseExtError, RankPath};
-use crate::arithmetic::rns::U512;
+use crate::arithmetic::wide::U1024;
 use crate::arithmetic::{DualRNSContext, NTTEngine, RNSPolynomial};
 use crate::entropy::FheRng;
 
 /// Gadget base exponent for the hybrid relinearization (WR-1 §D).
 pub const HYBRID_BASE_BITS: u32 = 10;
+
+/// Wide transient scratch catalog. Each lane is a deterministically prime-tested
+/// 61-bit prime congruent to 1 modulo 65536, supporting N up to 32768.
+/// The 16-lane product is 976 bits; its rank accumulator still fits U1024.
+/// These lanes never enter ciphertexts or keys. Existing tuples retain their
+/// smaller auxiliary prefix whenever it meets the exact capacity inequality.
+const WIDE_AUXILIARY_PRIMES: [u64; 16] = [
+    2305843009211662337,
+    2305843009211596801,
+    2305843009211400193,
+    2305843009210023937,
+    2305843009208713217,
+    2305843009208123393,
+    2305843009207468033,
+    2305843009202159617,
+    2305843009201242113,
+    2305843009200586753,
+    2305843009197506561,
+    2305843009196916737,
+    2305843009195868161,
+    2305843009195671553,
+    2305843009195343873,
+    2305843009191936001,
+];
 
 // ===========================================================================
 // Typed failures (WR-1 invariant 8)
@@ -121,6 +145,12 @@ pub const HYBRID_BASE_BITS: u32 = 10;
 /// approximate rescale.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExactMulError {
+    /// The degree must be a power of two at least 2, with 2N fitting u64.
+    InvalidRingDegree { n: usize },
+    /// Explicit hybrid gadget radices are bounded before shifts or allocation.
+    InvalidGadgetBaseBits { base_bits: u32 },
+    /// A public setup product exceeds the checked 1024-bit capacity.
+    AccumulatorOverCapacity { stage: &'static str },
     /// No prefix of the deterministic NTT-compatible candidate pool reaches the
     /// capacity certificate `A > 2 * s_mult * Q` for this configuration.
     AuxiliaryBasisUnavailable {
@@ -133,7 +163,7 @@ pub enum ExactMulError {
     /// An auxiliary lane shares a factor with a main lane, so `Q` would not be
     /// invertible modulo it.
     MainAuxShareFactor { main: u64, aux: u64, gcd: u64 },
-    /// `s_mult = x_bound_over_q_sq * t + 1` does not fit `u64`.
+    /// `s_mult = x_bound_over_q_sq * t + 1` does not fit `u128`.
     OperandBoundOverflow { x_bound_over_q_sq: u64, t: u64 },
     /// The auxiliary NTT engine could not be built for this lane.
     AuxiliaryNttUnavailable { aux: u64, n: usize, message: String },
@@ -210,33 +240,6 @@ fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
     a
 }
 
-/// Strict greater-than on [`U512`], most significant limb first.
-fn u512_gt(a: U512, b: U512) -> bool {
-    if a.d3 != b.d3 {
-        return a.d3 > b.d3;
-    }
-    if a.d2 != b.d2 {
-        return a.d2 > b.d2;
-    }
-    if a.d1 != b.d1 {
-        return a.d1 > b.d1;
-    }
-    a.d0 > b.d0
-}
-
-fn u512_bits(x: U512) -> u32 {
-    if x.d3 != 0 {
-        return 384 + (128 - x.d3.leading_zeros());
-    }
-    if x.d2 != 0 {
-        return 256 + (128 - x.d2.leading_zeros());
-    }
-    if x.d1 != 0 {
-        return 128 + (128 - x.d1.leading_zeros());
-    }
-    128 - x.d0.leading_zeros()
-}
-
 /// Certificates the plan proved at construction, exposed so tests and the §H
 /// evidence section can print the integers rather than assert on prose.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -301,13 +304,24 @@ impl ExactMulPlan {
     pub fn new(main: &[u64], n: usize, t: u64) -> Result<Self, ExactMulError> {
         // Operand bound. `N/2` covers `d1` (the sum of two negacyclic
         // products); see the module header for why `N/4` is one bit short.
-        let x_bound_over_q_sq = (n as u64) / 2;
-        Self::with_operand_bound(main, n, t, x_bound_over_q_sq)
+        Self::new_with_gadget_base_bits(main, n, t, HYBRID_BASE_BITS)
+    }
+
+    /// Build the same exact route with an explicit gadget radix. Radix affects
+    /// key storage and key-switch noise; it does not change the tensor bound.
+    /// Every generated/consumed key is bound to this radix by shape checks.
+    pub fn new_with_gadget_base_bits(
+        main: &[u64],
+        n: usize,
+        t: u64,
+        base_bits: u32,
+    ) -> Result<Self, ExactMulError> {
+        Self::with_operand_bound_and_gadget_base_bits(main, n, t, (n as u64) / 2, base_bits)
     }
 
     /// As [`Self::new`], with an explicitly declared operand bound.
     ///
-    /// `pub(crate)`, not `pub` (WR-1 F2): this constructor performs no
+    /// Test-only, not `pub` (WR-1 F2): this constructor performs no
     /// lower-bound check relating `x_bound_over_q_sq` to `n`. A bound below
     /// `N/2` still satisfies every capacity certificate below (`A >
     /// 2*s_mult*Q` holds trivially for the resulting smaller `s_mult`), so a
@@ -315,19 +329,46 @@ impl ExactMulPlan {
     /// emits a silently wrong `e1` coefficient whenever a real `d1` exceeds
     /// the under-declared bound (see the module-level "Operand bound"
     /// section above, and `n_over_4_operand_bound_is_load_bearing_for_d1` in
-    /// `exact_mul_tests.rs`). [`Self::new`] is the only sound public
-    /// constructor — it pins `x_bound_over_q_sq = N/2` unconditionally, the
+    /// `exact_mul_tests.rs`). Both public constructors pin `x_bound_over_q_sq = N/2` unconditionally, the
     /// bound every reachable production caller
     /// (`RNSFHEContext::try_exact_evaluator` -> `ExactMulEvaluator::new`)
-    /// gets — so this stays crate-visible only for the differential test
+    /// gets — so this stays test-only for the differential test
     /// above, which deliberately misconstructs the historical `N/4` plan to
-    /// prove it wrong on purpose.
+    /// prove it wrong on purpose. The explicit-radix public constructor also
+    /// pins the same operand bound.
+    #[cfg(test)]
     pub(crate) fn with_operand_bound(
         main: &[u64],
         n: usize,
         t: u64,
         x_bound_over_q_sq: u64,
     ) -> Result<Self, ExactMulError> {
+        Self::with_operand_bound_and_gadget_base_bits(
+            main,
+            n,
+            t,
+            x_bound_over_q_sq,
+            HYBRID_BASE_BITS,
+        )
+    }
+
+    fn with_operand_bound_and_gadget_base_bits(
+        main: &[u64],
+        n: usize,
+        t: u64,
+        x_bound_over_q_sq: u64,
+        base_bits: u32,
+    ) -> Result<Self, ExactMulError> {
+        if n < 2 || !n.is_power_of_two() {
+            return Err(ExactMulError::InvalidRingDegree { n });
+        }
+        let two_n = u64::try_from(n)
+            .ok()
+            .and_then(|v| v.checked_mul(2))
+            .ok_or(ExactMulError::InvalidRingDegree { n })?;
+        if !(1..=30).contains(&base_bits) {
+            return Err(ExactMulError::InvalidGadgetBaseBits { base_bits });
+        }
         let s_mult = (x_bound_over_q_sq as u128)
             .checked_mul(t as u128)
             .and_then(|v| v.checked_add(1))
@@ -336,46 +377,63 @@ impl ExactMulPlan {
                 t,
             })?;
 
-        let q_wide = U512::product_u64s(main);
-        let shifted_q = q_wide.mul_u128(s_mult);
-        let required = shifted_q.add(shifted_q);
+        let capacity_error = |stage| ExactMulError::AccumulatorOverCapacity { stage };
+        let q_wide =
+            U1024::checked_product_u64s(main).ok_or_else(|| capacity_error("main product"))?;
+        let shifted_q = q_wide
+            .checked_mul_u128(s_mult)
+            .ok_or_else(|| capacity_error("shifted main product"))?;
+        let required = shifted_q
+            .checked_add(shifted_q)
+            .ok_or_else(|| capacity_error("doubled shifted main product"))?;
 
-        // §B1 candidate pool: the deterministic NTT-compatible catalog, used
-        // NUMERICALLY ONLY. No `DualRNSContext` is constructed from it and
-        // these primes never touch ciphertext state.
-        // The 16,384-degree catalog is NTT-compatible for every supported
-        // smaller degree as well. Use it as the numeric scratch candidate
-        // pool so unusually large plaintext scales can select more transient
-        // lanes without adding primes to the ciphertext's published Q basis.
-        let pool = DualRNSContext::canonical_anchor_primes_for_n(16_384);
-        let two_n = 2u64 * n as u64;
-        for &a in &pool {
-            for &q in main {
-                let g = gcd_u64(q, a);
-                if g != 1 {
-                    return Err(ExactMulError::MainAuxShareFactor {
-                        main: q,
-                        aux: a,
-                        gcd: g,
-                    });
+        let check_pool = |pool: &[u64]| -> Result<(), ExactMulError> {
+            for &a in pool {
+                for &q in main {
+                    let g = gcd_u64(q, a);
+                    if g != 1 {
+                        return Err(ExactMulError::MainAuxShareFactor {
+                            main: q,
+                            aux: a,
+                            gcd: g,
+                        });
+                    }
+                }
+                if (a - 1) % two_n != 0 {
+                    return Err(ExactMulError::AuxiliaryLaneNotNttCompatible { aux: a, two_n });
                 }
             }
-            if (a - 1) % two_n != 0 {
-                return Err(ExactMulError::AuxiliaryLaneNotNttCompatible { aux: a, two_n });
-            }
-        }
-
-        // Shortest prefix satisfying the capacity certificate A > 2*s_mult*Q.
-        let mut selected: Option<usize> = None;
-        for lanes in 1..=pool.len() {
-            if u512_gt(U512::product_u64s(&pool[..lanes]), required) {
-                selected = Some(lanes);
+            Ok(())
+        };
+        // Preserve the existing small-chain certificate and allocation sizes.
+        // N32768 uses its own compatible catalog, rather than the N16384 lanes.
+        let narrow_pool =
+            DualRNSContext::canonical_anchor_primes_for_n(if n == 32768 { 32768 } else { 16384 });
+        check_pool(&narrow_pool)?;
+        let narrow_product = U1024::checked_product_u64s(&narrow_pool)
+            .ok_or_else(|| capacity_error("narrow auxiliary product"))?;
+        let pool = if narrow_product > required {
+            narrow_pool
+        } else {
+            WIDE_AUXILIARY_PRIMES.to_vec()
+        };
+        check_pool(&pool)?;
+        let pool_product = U1024::checked_product_u64s(&pool)
+            .ok_or_else(|| capacity_error("auxiliary pool product"))?;
+        let mut prefix_product = U1024::ONE;
+        let mut selected = None;
+        for (index, &prime) in pool.iter().enumerate() {
+            prefix_product = prefix_product
+                .checked_mul_u64(prime)
+                .ok_or_else(|| capacity_error("auxiliary prefix product"))?;
+            if prefix_product > required {
+                selected = Some(index + 1);
                 break;
             }
         }
-        let lanes = selected.ok_or_else(|| ExactMulError::AuxiliaryBasisUnavailable {
-            required_bits: u512_bits(required),
-            pool_bits: u512_bits(U512::product_u64s(&pool)),
+        let lanes = selected.ok_or(ExactMulError::AuxiliaryBasisUnavailable {
+            required_bits: required.bit_length(),
+            pool_bits: pool_product.bit_length(),
             pool_lanes: pool.len(),
         })?;
         let aux = pool[..lanes].to_vec();
@@ -395,7 +453,6 @@ impl ExactMulPlan {
         }
 
         // §D gadget shape: enough base-2^b digits to span every main lane.
-        let base_bits = HYBRID_BASE_BITS;
         let digits_per_lane: Vec<usize> = main
             .iter()
             .map(|&q| {
@@ -418,15 +475,15 @@ impl ExactMulPlan {
             );
         }
 
-        let aux_wide = U512::product_u64s(&aux);
+        let aux_wide = prefix_product;
         let certificate = ExactMulCertificate {
             ring_degree: n,
             t,
             x_bound_over_q_sq,
             shift_multiplier: s_mult,
-            q_bits: u512_bits(q_wide),
-            aux_bits: u512_bits(aux_wide),
-            required_bits: u512_bits(required),
+            q_bits: q_wide.bit_length(),
+            aux_bits: aux_wide.bit_length(),
+            required_bits: required.bit_length(),
             aux_lanes: lanes,
             base_bits,
             digits_per_lane: digits_per_lane.clone(),
@@ -596,7 +653,16 @@ impl<'a> ExactMulEvaluator<'a> {
     /// certificate. Fails closed with a typed error when any of them does not
     /// hold.
     pub fn new(ctx: &'a RNSFHEContext) -> Result<Self, ExactMulError> {
-        let plan = ExactMulPlan::new(&ctx.config.primes, ctx.n, ctx.t)?;
+        Self::new_with_gadget_base_bits(ctx, HYBRID_BASE_BITS)
+    }
+
+    /// Select a bounded gadget radix while binding the plan to this context.
+    pub fn new_with_gadget_base_bits(
+        ctx: &'a RNSFHEContext,
+        base_bits: u32,
+    ) -> Result<Self, ExactMulError> {
+        let plan =
+            ExactMulPlan::new_with_gadget_base_bits(&ctx.config.primes, ctx.n, ctx.t, base_bits)?;
         Ok(Self { ctx, plan })
     }
 
@@ -1153,10 +1219,18 @@ impl<'a> ExactMulEvaluator<'a> {
         for i in 0..lanes {
             for j in 0..self.plan.digits_per_lane[i] {
                 let shift = (j as u32) * self.plan.base_bits;
-                // The digit value is < 2^base_bits, so the SAME small integer
-                // is a canonical residue in every main lane: broadcast it.
-                let digit_limbs: Vec<Vec<u64>> = (0..lanes)
-                    .map(|_| e2.limbs[i].iter().map(|&c| (c >> shift) & mask).collect())
+                // Broadcast the same integer digit, reducing in each lane.
+                // An admitted larger radix can exceed a smaller main prime.
+                let digit_limbs: Vec<Vec<u64>> = self
+                    .plan
+                    .main
+                    .iter()
+                    .map(|&q| {
+                        e2.limbs[i]
+                            .iter()
+                            .map(|&c| ((c >> shift) & mask) % q)
+                            .collect()
+                    })
                     .collect();
                 let digit = ctx.to_montgomery_form(&RNSPolynomial {
                     limbs: digit_limbs,

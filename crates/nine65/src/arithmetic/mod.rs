@@ -50,6 +50,7 @@ pub mod rns;
 pub mod transcendental_backend; // FEATURE-GATED EXACT TRANSCENDENTAL ADAPTER
 pub mod unified_rescale; // EXACT-Δ UNIFIED RESCALE (manufactured chains, two exits)
 pub mod valuation; // INTEGER UTILITIES (log2, sqrt, format, trig LUT)
+pub mod wide; // CHECKED FIXED-WIDTH PUBLIC CAPACITY ARITHMETIC
 
 pub use barrett::{BarrettContext, HybridModContext};
 pub use boundary::{

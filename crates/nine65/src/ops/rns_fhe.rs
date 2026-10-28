@@ -1064,11 +1064,40 @@ pub struct RNSFHEContext {
     pub delta_rns: Vec<u64>,
     /// Fixed-work D2 half-modulus decision kernels, indexed by `level - 2`.
     /// Every supported ciphertext level retains at least two main primes.
-    compare_bits_by_level: Vec<CompareBit>,
+    compare_bits_by_level: Vec<DecryptCompareBit>,
     /// Config reference
     pub config: FHEConfig,
     /// Deep diagnostics mode enabled
     pub diagnostics_enabled: bool,
+}
+
+enum DecryptCompareBit {
+    Narrow(CompareBit),
+    Wide(crate::arithmetic::compare_bit::WideCompareBit),
+}
+
+impl DecryptCompareBit {
+    fn new(primes: &[u64]) -> Nine65Result<Self> {
+        // The conservative public width also avoids evaluating a wrapped
+        // U256 product in the legacy constructor.
+        let width: u32 = primes.iter().map(|q| 64 - q.leading_zeros()).sum();
+        if width + 8 <= 256 {
+            Ok(Self::Narrow(CompareBit::new(primes)))
+        } else {
+            crate::arithmetic::compare_bit::WideCompareBit::new(primes)
+                .map(Self::Wide)
+                .ok_or_else(|| Nine65Error::ConfigError {
+                    message: "RNS basis exceeds checked decryption-centering capacity".into(),
+                })
+        }
+    }
+
+    fn decide_ct(&self, residues: &[u64]) -> bool {
+        match self {
+            Self::Narrow(kernel) => kernel.decide_ct(residues),
+            Self::Wide(kernel) => kernel.decide_ct(residues),
+        }
+    }
 }
 
 impl RNSFHEContext {
@@ -1155,9 +1184,9 @@ impl RNSFHEContext {
         // Centering decisions are basis-dependent. Build one immutable kernel
         // for every supported main-prime prefix so decryption never performs
         // variable-time basis setup on secret-dependent data.
-        let compare_bits_by_level: Vec<CompareBit> = (2..=config.primes.len())
-            .map(|level| CompareBit::new(&config.primes[..level]))
-            .collect();
+        let compare_bits_by_level = (2..=config.primes.len())
+            .map(|level| DecryptCompareBit::new(&config.primes[..level]))
+            .collect::<Nine65Result<Vec<_>>>()?;
 
         Ok(Self {
             dual_rns,
@@ -1265,6 +1294,14 @@ impl RNSFHEContext {
         rng: &mut R,
         main_primes: &[u64],
     ) -> DualRNSPoly {
+        // This legacy sampler must represent the same canonical integer in
+        // both bases. Reject unsupported widths before the U256 product can
+        // wrap; the independent-lane main sampler has no such width limit.
+        let sum_bits: u32 = main_primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        assert!(
+            sum_bits <= 256,
+            "sample_uniform_dual_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
+        );
         let modulus = U256::product_u64s(main_primes);
         let bits = modulus.bitlen();
         let anchor_primes = &self.dual_rns.anchor.primes;
@@ -1319,8 +1356,9 @@ impl RNSFHEContext {
     }
 
     /// Single-RNS counterpart of [`Self::sample_uniform_dual_poly`]: a
-    /// polynomial whose every coefficient is drawn **uniformly over `[0, Q)`**
-    /// and then reduced into each main lane independently.
+    /// polynomial drawn uniformly over the main residue ring. Independent
+    /// uniform residues correspond bijectively to uniform integers in `[0,Q)`
+    /// by CRT, because the validated main primes are pairwise coprime.
     ///
     /// Returns standard-domain (non-Montgomery) residues.
     ///
@@ -1336,51 +1374,17 @@ impl RNSFHEContext {
     /// `docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md` "Security
     /// prerequisites" and in WR-1's own prerequisite list.
     ///
-    /// Rejection sampling gives exact uniformity with no modulo bias; every
-    /// lane is an independent reduction of ONE sampled value, so the lanes
-    /// describe a single integer by construction. Lane-independent
-    /// (`output[i] = f_i(input)`), and not a mixed-radix cascade: no lane reads
-    /// another.
+    /// Each lane uses the RNG's unbiased bounded sampler. No fixed-width
+    /// product or integer reconstruction is needed, so wide refresh moduli
+    /// retain full-width masks. This does not construct an anchor track;
+    /// the dual sampler must additionally preserve canonical winding.
     pub(crate) fn sample_uniform_main_poly<R: FheRng>(&self, rng: &mut R) -> RNSPolynomial {
-        let primes = &self.config.primes;
-        // `U256::product_u64s` wraps silently past 256 bits, and a wrapped
-        // modulus would make the rejection bound meaningless. The sum of the
-        // lanes' bit lengths is an exact upper bound on `bitlen(Q)` computed in
-        // plain integers, so this check cannot itself overflow. Every shipped
-        // chain is at most 175 bits; this is a once-per-keygen guard against a
-        // future chain silently outgrowing the accumulator.
-        let sum_bits: u32 = primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
-        assert!(
-            sum_bits <= 256,
-            "sample_uniform_main_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
-        );
-        let modulus = U256::product_u64s(primes);
-        let bits = modulus.bitlen();
-
-        let mut limbs: Vec<Vec<u64>> = primes.iter().map(|_| Vec::with_capacity(self.n)).collect();
-        for _ in 0..self.n {
-            let value = loop {
-                let mut lo = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
-                let mut hi: u128 = 0;
-                if bits > 128 {
-                    hi = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
-                    let high_bits = bits - 128;
-                    if high_bits < 128 {
-                        hi &= (1u128 << high_bits) - 1;
-                    }
-                } else if bits < 128 {
-                    lo &= (1u128 << bits) - 1;
-                }
-                let candidate = U256 { lo, hi };
-                if candidate.lt(modulus) {
-                    break candidate;
-                }
-            };
-            for (lane, &prime) in limbs.iter_mut().zip(primes.iter()) {
-                lane.push(value.mod_u64(prime));
-            }
-        }
-
+        let limbs = self
+            .config
+            .primes
+            .iter()
+            .map(|&prime| rng.uniform_vector(self.n, prime))
+            .collect();
         RNSPolynomial { limbs, n: self.n }
     }
 
@@ -6649,6 +6653,69 @@ const _: () = {
 #[allow(deprecated)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wide_main_masks_cover_more_than_512_bits() {
+        use crate::arithmetic::wide::U1024;
+        let primes = vec![
+            998244353,
+            985661441,
+            754974721,
+            469762049,
+            576460752301785089,
+            576460752301391873,
+            576460752300015617,
+            576460752298835969,
+            576460752298180609,
+            576460752293134337,
+            576460752291954689,
+            576460752290775041,
+            575870995836829697,
+        ];
+        let config = FHEConfig {
+            n: 64,
+            q: primes[0],
+            primes,
+            t: 65537,
+            eta: 3,
+            security_bits: 0,
+            name: "wide uniform mask regression",
+        };
+        assert_eq!(config.rns_product_bit_length(), 650);
+        let ctx = RNSFHEContext::new(&config);
+        let mut rng = crate::entropy::ShadowHarvester::with_seed(0x5749_4445);
+        let mask = ctx.sample_uniform_main_poly(&mut rng);
+        let q = U1024::checked_product_u64s(&config.primes).unwrap();
+        let cofactors: Vec<_> = config
+            .primes
+            .iter()
+            .map(|&p| {
+                let cofactor = q.div_mod_u64(p).unwrap().0;
+                let inverse = crate::arithmetic::rns::mod_inverse(cofactor.mod_u64(p).unwrap(), p);
+                (cofactor, inverse)
+            })
+            .collect();
+        for index in 0..config.n {
+            let mut reconstructed = U1024::ZERO;
+            for (lane, (&prime, &(cofactor, inverse))) in
+                config.primes.iter().zip(&cofactors).enumerate()
+            {
+                let residue = mask.limbs[lane][index];
+                assert!(residue < prime);
+                let coefficient = (residue as u128 * inverse as u128 % prime as u128) as u64;
+                reconstructed = reconstructed
+                    .checked_add(cofactor.checked_mul_u64(coefficient).unwrap())
+                    .unwrap();
+            }
+            while reconstructed >= q {
+                reconstructed = reconstructed.checked_sub(q).unwrap();
+            }
+            assert!(
+                reconstructed.bit_length() > 512,
+                "mask coefficient {index} is restricted to the former accumulator width"
+            );
+        }
+    }
 
     #[test]
     fn decrypt_centering_fixed_work_bit_is_exact_at_every_supported_small_value() {

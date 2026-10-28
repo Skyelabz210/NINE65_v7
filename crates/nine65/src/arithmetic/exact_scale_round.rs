@@ -78,7 +78,9 @@
 //! existing production path.
 
 use super::main_only_base_ext::{MainOnlyBaseExt, MainOnlyBaseExtError, RankPath};
+#[cfg(test)]
 use super::rns::U512;
+use super::wide::U1024;
 
 /// Typed failures. Every one is a refused proof obligation.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -91,12 +93,17 @@ pub enum ExactScaleRoundError {
     /// A main modulus is even, so `Q` is even and `floor(Q/2)` has no per-lane
     /// form via the inverse of 2.
     EvenMainModulus { modulus: u64 },
+    /// An auxiliary modulus is even, so the per-lane inverse of 2 used to
+    /// derive `floor(Q/2)` does not exist.
+    EvenAuxModulus { modulus: u64 },
     /// Plaintext modulus below 2.
     DegenerateT { t: u64 },
     /// Declared operand bound of zero: nothing would be representable.
     ZeroOperandBound,
     /// `s_mult = x_bound_over_q_sq * t + 1` overflowed `u128`.
     ShiftMultiplierOverflow { x_bound_over_q_sq: u64, t: u64 },
+    /// A setup product or shifted bound exceeds the checked 1024-bit accumulator.
+    AccumulatorOverCapacity { stage: &'static str },
     /// The auxiliary base cannot hold `Y+`: needs `A > 2 * s_mult * Q`.
     InsufficientAuxCapacity {
         aux_bits: u32,
@@ -144,6 +151,7 @@ fn inv_mod(a: u64, m: u64) -> u64 {
 }
 
 /// Strict greater-than on [`U512`], most significant limb first.
+#[cfg(test)]
 fn u512_gt(a: U512, b: U512) -> bool {
     if a.d3 != b.d3 {
         return a.d3 > b.d3;
@@ -157,6 +165,7 @@ fn u512_gt(a: U512, b: U512) -> bool {
     a.d0 > b.d0
 }
 
+#[cfg(test)]
 fn u512_bits(x: U512) -> u32 {
     if x.d3 != 0 {
         return 384 + (128 - x.d3.leading_zeros());
@@ -170,6 +179,7 @@ fn u512_bits(x: U512) -> u32 {
     128 - x.d0.leading_zeros()
 }
 
+#[cfg(test)]
 fn product_u512(m: &[u64]) -> U512 {
     let mut acc = U512::from_u64(1);
     for &p in m {
@@ -240,6 +250,11 @@ impl ExactScaleRound {
                 return Err(ExactScaleRoundError::EvenMainModulus { modulus: q });
             }
         }
+        for &a in aux {
+            if a % 2 == 0 {
+                return Err(ExactScaleRoundError::EvenAuxModulus { modulus: a });
+            }
+        }
         // Q must be invertible modulo every auxiliary lane.
         for &q in main {
             for &a in aux {
@@ -267,14 +282,21 @@ impl ExactScaleRound {
             })?;
 
         // Capacity certificate: A > 2 * s_mult * Q.
-        let q_wide = product_u512(main);
-        let a_wide = product_u512(aux);
-        let shifted_q = q_wide.mul_u128(s_mult);
-        let required = shifted_q.add(shifted_q);
-        if !u512_gt(a_wide, required) {
+        let capacity_error = |stage| ExactScaleRoundError::AccumulatorOverCapacity { stage };
+        let q_wide =
+            U1024::checked_product_u64s(main).ok_or_else(|| capacity_error("main product"))?;
+        let a_wide =
+            U1024::checked_product_u64s(aux).ok_or_else(|| capacity_error("auxiliary product"))?;
+        let shifted_q = q_wide
+            .checked_mul_u128(s_mult)
+            .ok_or_else(|| capacity_error("shifted main product"))?;
+        let required = shifted_q
+            .checked_add(shifted_q)
+            .ok_or_else(|| capacity_error("doubled shifted main product"))?;
+        if a_wide <= required {
             return Err(ExactScaleRoundError::InsufficientAuxCapacity {
-                aux_bits: u512_bits(a_wide),
-                required_bits: u512_bits(required),
+                aux_bits: a_wide.bit_length(),
+                required_bits: required.bit_length(),
                 s_mult,
             });
         }
@@ -301,8 +323,8 @@ impl ExactScaleRound {
             .iter()
             .enumerate()
             .map(|(j, &a)| {
-                let qm1 = (q_mod_aux[j] + a - 1) % a;
-                ((qm1 as u128 * inv_mod(2, a) as u128) % a as u128) as u64
+                let qm1 = (q_mod_aux[j] as u128 + a as u128 - 1) % a as u128;
+                ((qm1 * inv_mod(2, a) as u128) % a as u128) as u64
             })
             .collect();
 
@@ -414,9 +436,9 @@ impl ExactScaleRound {
         let mut yplus_aux = vec![0u64; self.aux.len()];
         for j in 0..self.aux.len() {
             let a = self.aux[j];
-            let diff = (z_aux[j] + a - w_aux[j]) % a;
-            let y = ((diff as u128 * self.q_inv_mod_aux[j] as u128) % a as u128) as u64;
-            yplus_aux[j] = (y + self.shift_mod_aux[j]) % a;
+            let diff = (z_aux[j] as u128 + a as u128 - w_aux[j] as u128) % a as u128;
+            let y = (diff * self.q_inv_mod_aux[j] as u128) % a as u128;
+            yplus_aux[j] = ((y + self.shift_mod_aux[j] as u128) % a as u128) as u64;
         }
 
         // Back to the main base. Y+ is canonical in [0, A) by the capacity
@@ -744,6 +766,68 @@ mod tests {
         assert!(
             widest > 230,
             "operands never approached the declared bound (widest {widest} bits)"
+        );
+    }
+
+    /// All three auxiliary additions can exceed u64 even though their
+    /// canonical residues fit. The independent i128 oracle covers signed
+    /// endpoints and both sides of rounding boundaries with a full-width lane.
+    #[test]
+    fn full_u64_auxiliary_lane_matches_signed_integer_oracle() {
+        let main = [65_537, 65_539];
+        let aux = [18_446_744_073_709_551_557];
+        let q = product_i128(&main);
+        let a = aux[0] as i128;
+        let t = 2;
+        let kernel = ExactScaleRound::new(&main, &aux, t, 1).unwrap();
+        assert!(q + a - 1 > u64::MAX as i128);
+        let mut saw_difference_overflow = false;
+        let mut saw_shift_overflow = false;
+        let mut out = [0; 2];
+        for xc in [
+            -q * q,
+            -q * q + 1,
+            -q - 1,
+            -q,
+            -q / 2 - 1,
+            -q / 2,
+            -1,
+            0,
+            1,
+            q / 2,
+            q / 2 + 1,
+            q,
+            q + 1,
+            q * q - 1,
+            q * q,
+        ] {
+            kernel
+                .scale_round(
+                    &residues_i128(xc, &main),
+                    &residues_i128(xc, &aux),
+                    &mut out,
+                )
+                .unwrap();
+            assert_eq!(out.as_slice(), reference_main(xc, t, q, &main), "xc={xc}");
+
+            let z = xc * t as i128 + q / 2;
+            let y = z.div_euclid(q);
+            saw_difference_overflow |= z.rem_euclid(a) + a > u64::MAX as i128;
+            saw_shift_overflow |= y.rem_euclid(a)
+                + (kernel.shift_multiplier() as i128 * q).rem_euclid(a)
+                > u64::MAX as i128;
+        }
+        assert!(saw_difference_overflow);
+        assert!(saw_shift_overflow);
+    }
+
+    #[test]
+    fn even_auxiliary_lane_is_refused_before_modular_halving() {
+        // This base is coprime to Q and has ample capacity. Only the absent
+        // inverse of 2 makes it invalid for this kernel.
+        assert_eq!(
+            ExactScaleRound::new(&[3, 5], &[128], 2, 1).unwrap_err(),
+            ExactScaleRoundError::EvenAuxModulus { modulus: 128 }
         );
     }
 

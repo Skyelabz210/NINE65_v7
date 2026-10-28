@@ -35,7 +35,7 @@ pub use validation::{assert_params_valid, validate_params, ParameterValidator, V
 ///
 /// The vector grows as required, so no saturation, wrapping, fixed product cap,
 /// Garner reconstruction, or mixed-radix conversion is involved.
-fn exact_product_limbs(factors: &[u64]) -> Vec<u64> {
+pub(crate) fn exact_product_limbs(factors: &[u64]) -> Vec<u64> {
     let mut limbs = vec![1u64];
 
     for &factor in factors {
@@ -67,7 +67,7 @@ fn limbs_bit_length(limbs: &[u64]) -> u32 {
 }
 
 /// Exact division of a little-endian multi-limb integer by one nonzero `u64`.
-fn divide_limbs_by_u64(limbs: &[u64], divisor: u64) -> Vec<u64> {
+pub(crate) fn divide_limbs_by_u64(limbs: &[u64], divisor: u64) -> Vec<u64> {
     assert!(divisor != 0, "multi-limb divisor must be nonzero");
     let mut quotient = vec![0u64; limbs.len()];
     let mut remainder = 0u128;

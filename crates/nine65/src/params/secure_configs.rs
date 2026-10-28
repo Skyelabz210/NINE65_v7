@@ -80,29 +80,7 @@ use crate::noise::budget::NoiseBudget;
 
 /// Exact bit length of the product of the supplied RNS primes.
 fn exact_product_bit_length(primes: &[u64]) -> u32 {
-    let mut limbs = [0_u64; 8];
-    limbs[0] = 1;
-
-    for &factor in primes {
-        let mut carry = 0_u128;
-        for limb in &mut limbs {
-            let product = *limb as u128 * factor as u128 + carry;
-            *limb = product as u64;
-            carry = product >> 64;
-        }
-        assert_eq!(
-            carry, 0,
-            "RNS product exceeds the 512-bit security-accounting capacity"
-        );
-    }
-
-    for index in (0..limbs.len()).rev() {
-        let limb = limbs[index];
-        if limb != 0 {
-            return index as u32 * 64 + (64 - limb.leading_zeros());
-        }
-    }
-    0
+    super::limbs_bit_length(&super::exact_product_limbs(primes))
 }
 
 // =============================================================================
@@ -1885,6 +1863,20 @@ mod tests {
                 998244353, 985661441, 754974721, 469762049, 167772161, 595591169,
             ]) > 128
         );
+    }
+
+    #[test]
+    fn security_product_width_is_exact_beyond_512_bits() {
+        // Powers of two provide exact expectations independent of the limb
+        // multiplication implementation and straddle its former fixed cap.
+        for count in [0usize, 8, 9, 11, 17] {
+            assert_eq!(
+                exact_product_bit_length(&vec![1u64 << 60; count]),
+                60 * count as u32 + 1
+            );
+        }
+        assert_eq!(exact_product_bit_length(&[u64::MAX; 9]), 576);
+        assert_eq!(exact_product_bit_length(&[u64::MAX, 0]), 0);
     }
 
     #[test]

@@ -37,9 +37,9 @@
 //! changed; only the name has.
 //!
 //! `rho` is computed by a certified fixed-point common path with an exact
-//! `U512` fallback at integer boundaries. No canonical `X` is ever
+//! `U1024` fallback at integer boundaries. No canonical `X` is ever
 //! materialized in the common path; the fallback compares `sum_i c_i * M_i`
-//! (a bounded `U512`) against multiples of `M` and is fixed-work.
+//! (a bounded `U1024`) against multiples of `M` and is fixed-work.
 //!
 //! ## Centered projection (WR-1 §A)
 //!
@@ -56,7 +56,7 @@
 //!
 //! without ever forming `X = N - rho*M` as a canonical object.
 
-use super::rns::U512;
+use super::wide::U1024;
 
 /// Guard-bit precision for the fixed-point rank common path.
 const RANK_FRAC_BITS: u32 = 64;
@@ -67,7 +67,7 @@ const RANK_FRAC_BITS: u32 = 64;
 pub enum RankPath {
     /// Fixed-point interval was decisive; no big-integer work.
     CertifiedFixedPoint,
-    /// Fixed-point interval met a boundary; resolved by exact `U512` compare.
+    /// Fixed-point interval met a boundary; resolved by exact `U1024` compare.
     ExactFallback,
 }
 
@@ -91,13 +91,13 @@ pub enum MainOnlyBaseExtError {
     DegenerateModulus { modulus: u64 },
     /// WR-1 finding F5. The exact rank fallback accumulates
     /// `N = sum_i c_i * M_i` and walks up to `(k+1) * M` while resolving
-    /// `rho`, all in a fixed-width `U512`. `MAX_LANES` is a shape bound, not a
-    /// numeric capacity certificate, so the bound is proved here in `U512`
+    /// `rho`, all in a fixed-width `U1024`. `MAX_LANES` is a shape bound, not a
+    /// numeric capacity certificate, so the bound is proved here in `U1024`
     /// (which cannot itself overflow at these widths) and refused when it does
     /// not hold.
     FallbackAccumulatorOverCapacity {
         lanes: usize,
-        /// Conservative bit bound for `(k + 1) * M`, which must fit in 512.
+        /// Conservative bit bound for `(k + 1) * M`, which must fit in 1024.
         required_bits: u32,
     },
 }
@@ -125,35 +125,6 @@ fn inv_mod(a: u64, m: u64) -> u64 {
     ((t % m as i128 + m as i128) % m as i128) as u64
 }
 
-/// Bit length of a `U512`, most significant limb first.
-fn u512_bits(x: U512) -> u32 {
-    if x.d3 != 0 {
-        return 384 + (128 - x.d3.leading_zeros());
-    }
-    if x.d2 != 0 {
-        return 256 + (128 - x.d2.leading_zeros());
-    }
-    if x.d1 != 0 {
-        return 128 + (128 - x.d1.leading_zeros());
-    }
-    128 - x.d0.leading_zeros()
-}
-
-#[inline]
-fn u512_ge(a: U512, b: U512) -> bool {
-    (a.d3, a.d2, a.d1, a.d0) >= (b.d3, b.d2, b.d1, b.d0)
-}
-
-#[inline]
-fn u512_shr1(x: U512) -> U512 {
-    U512 {
-        d0: (x.d0 >> 1) | (x.d1 << 127),
-        d1: (x.d1 >> 1) | (x.d2 << 127),
-        d2: (x.d2 >> 1) | (x.d3 << 127),
-        d3: x.d3 >> 1,
-    }
-}
-
 /// Precomputed constants for one (main basis, auxiliary basis) pair.
 /// Build once per config; [`Self::project`] is the per-coefficient hot path.
 pub struct MainOnlyBaseExt {
@@ -166,13 +137,13 @@ pub struct MainOnlyBaseExt {
     /// `m_mod[j] = M mod aux[j]`.
     m_mod: Vec<u64>,
     /// `M_i = M/m_i` as a full-width integer, for the exact fallback.
-    mi_u512: Vec<U512>,
+    mi_u1024: Vec<U1024>,
     /// `M` as a full-width integer, for the exact fallback.
-    m_u512: U512,
+    m_u1024: U1024,
     /// `ceil(M/2) = (M+1)/2` (`M` is odd whenever every lane is odd; for an
     /// even `M` this is still the correct upper-half threshold), for the exact
     /// half decision in [`Self::project_centered`].
-    half_up_u512: U512,
+    half_up_u1024: U1024,
 }
 
 impl MainOnlyBaseExt {
@@ -188,6 +159,9 @@ impl MainOnlyBaseExt {
         }
         if aux.is_empty() {
             return Err(MainOnlyBaseExtError::EmptyAuxiliaryBasis);
+        }
+        if aux.contains(&0) {
+            return Err(MainOnlyBaseExtError::DegenerateModulus { modulus: 0 });
         }
         for &m in main {
             if m < 2 {
@@ -209,33 +183,33 @@ impl MainOnlyBaseExt {
 
         // WR-1 F5: prove the exact-fallback accumulator cannot overflow before
         // any caller can reach it — and before this constructor itself forms
-        // any `U512` product. `rank`'s fallback forms `N = sum_i c_i*M_i`
+        // any `U1024` product. `rank`'s fallback forms `N = sum_i c_i*M_i`
         // (< k*M) and walks `r*M` for `r = 1 ..= k+1`, so the widest value is
         // bounded by `(k+1)*M`. `MAX_LANES = 16` is a shape bound, not a
         // numeric capacity certificate.
         //
         // `sum_bits` bounds `bitlen(M)` from above. Multiplying by `(k+1)`
         // adds fewer than `bitlen(k+1)` bits. Refuse if that conservative
-        // bound exceeds U512; otherwise the exact product and fallback below
+        // bound exceeds U1024; otherwise the exact product and fallback below
         // cannot wrap.
         let sum_bits: u32 = main.iter().map(|&p| 64 - p.leading_zeros()).sum();
         let rank_factor = k as u128 + 1;
         let rank_factor_bits = 128 - rank_factor.leading_zeros();
         let fallback_bound_bits = sum_bits + rank_factor_bits;
-        if fallback_bound_bits > 512 {
+        if fallback_bound_bits > 1024 {
             return Err(MainOnlyBaseExtError::FallbackAccumulatorOverCapacity {
                 lanes: k,
                 required_bits: fallback_bound_bits,
             });
         }
-        let fallback_peak = U512::product_u64s(main).mul_u128(rank_factor);
-        let required_bits = u512_bits(fallback_peak);
-        if required_bits > 512 {
-            return Err(MainOnlyBaseExtError::FallbackAccumulatorOverCapacity {
-                lanes: k,
-                required_bits,
-            });
-        }
+        let capacity_error = || MainOnlyBaseExtError::FallbackAccumulatorOverCapacity {
+            lanes: k,
+            required_bits: fallback_bound_bits.max(1025),
+        };
+        let m_u1024 = U1024::checked_product_u64s(main).ok_or_else(capacity_error)?;
+        m_u1024
+            .checked_mul_u128(rank_factor)
+            .ok_or_else(capacity_error)?;
 
         // (M/m_i) mod m_i = product of other lanes mod m_i; invert.
         let xi: Vec<u64> = (0..k)
@@ -266,14 +240,16 @@ impl MainOnlyBaseExt {
         let coef: Vec<Vec<u64>> = aux.iter().map(|&a| build(a)).collect();
         let m_mod: Vec<u64> = aux
             .iter()
-            .map(|&a| U512::product_u64s(main).mod_u64(a))
+            .map(|&a| m_u1024.mod_u64(a).expect("positive auxiliary modulus"))
             .collect();
 
-        let m_u512 = U512::product_u64s(main);
         // `ceil(M/2)` = `(M+1) >> 1` for both parities. `M + 1` cannot wrap
-        // because the F5 gate above proved `(k+1)*M < 2^512` with `k >= 1`.
-        let half_up_u512 = u512_shr1(m_u512.add(U512::from_u64(1)));
-        let mi_u512: Vec<U512> = (0..k)
+        // because the F5 gate above proved `(k+1)*M < 2^1024` with `k >= 1`.
+        let half_up_u1024 = m_u1024
+            .checked_add(U1024::ONE)
+            .ok_or_else(capacity_error)?
+            .shr1();
+        let mi_u1024: Vec<U1024> = (0..k)
             .map(|i| {
                 let others: Vec<u64> = main
                     .iter()
@@ -281,7 +257,7 @@ impl MainOnlyBaseExt {
                     .filter(|&(j, _)| j != i)
                     .map(|(_, &m)| m)
                     .collect();
-                U512::product_u64s(&others)
+                U1024::checked_product_u64s(&others).expect("subproduct fits certified accumulator")
             })
             .collect();
 
@@ -291,9 +267,9 @@ impl MainOnlyBaseExt {
             xi,
             coef,
             m_mod,
-            mi_u512,
-            m_u512,
-            half_up_u512,
+            mi_u1024,
+            m_u1024,
+            half_up_u1024,
         })
     }
 
@@ -338,7 +314,7 @@ impl MainOnlyBaseExt {
     ///
     /// Both decisions must hold to take the common path. Otherwise §A2's exact
     /// fallback forms the bounded parallel idempotent sum `N = sum_i c_i * M_i`
-    /// in `U512` (F5-certified at construction) and compares it against
+    /// in `U1024` (F5-certified at construction) and compares it against
     /// `rho*M` and `rho*M + ceil(M/2)`. `X = N - rho*M` is never materialized
     /// as a canonical coefficient object; only the two comparisons are made.
     #[inline]
@@ -370,25 +346,36 @@ impl MainOnlyBaseExt {
             }
         }
         // Exact fallback: N = sum_i c_i * M_i; rho = floor(N / M), N < k*M.
-        let mut n = U512::zero();
+        let mut n = U1024::ZERO;
         for i in 0..k {
-            n = n.add(self.mi_u512[i].mul_u128(c[i] as u128));
+            n = n
+                .checked_add(
+                    self.mi_u1024[i]
+                        .checked_mul_u64(c[i])
+                        .expect("certified CRT term"),
+                )
+                .expect("certified rank numerator");
         }
         let mut rho: u64 = 0;
-        let mut rho_mul = U512::zero(); // rho * M, tracked alongside rho
-        let mut r_mul = self.m_u512; // 1 * M
+        let mut rho_mul = U1024::ZERO; // rho * M, tracked alongside rho
+        let mut r_mul = self.m_u1024; // 1 * M
         let mut r: u64 = 1;
         while (r as usize) <= k {
-            if u512_ge(n, r_mul) {
+            if n >= r_mul {
                 rho = r;
                 rho_mul = r_mul;
             }
-            r_mul = r_mul.add(self.m_u512);
+            r_mul = r_mul
+                .checked_add(self.m_u1024)
+                .expect("certified rank walk");
             r += 1;
         }
         // Upper half iff N >= rho*M + ceil(M/2). `rho*M + ceil(M/2) <= k*M`,
-        // which the F5 construction gate proved fits `U512`.
-        let upper = need_half && u512_ge(n, rho_mul.add(self.half_up_u512));
+        // which the F5 construction gate proved fits `U1024`.
+        let upper = need_half
+            && n >= rho_mul
+                .checked_add(self.half_up_u1024)
+                .expect("certified half threshold");
         (rho, upper, RankPath::ExactFallback)
     }
 
@@ -457,7 +444,7 @@ impl MainOnlyBaseExt {
             }
             let s = (s % a as u128) as u64;
             let sub = ((correction as u128 * self.m_mod[j] as u128) % a as u128) as u64;
-            out[j] = (s + a - sub) % a;
+            out[j] = ((s as u128 + a as u128 - sub as u128) % a as u128) as u64;
         }
         Ok((path, upper))
     }
@@ -467,6 +454,54 @@ impl MainOnlyBaseExt {
 mod tests {
     use super::*;
     use crate::arithmetic::rns::U512;
+
+    include!("../../tests/fixtures/main_only_q650_vectors.rs");
+
+    /// These expected residues come from Python integers, independently of
+    /// both fixed-width Rust accumulators and CRT reconstruction. They cover
+    /// the expanded Q650 candidate, every endpoint, and seeded interior draws.
+    #[test]
+    fn q650_projection_matches_independent_python_integer_vectors() {
+        let ext = MainOnlyBaseExt::new(&Q650_MAIN, &Q650_AUX).unwrap();
+        let mut canonical_out = [0; Q650_AUX.len()];
+        let mut centered_out = [0; Q650_AUX.len()];
+        let mut canonical_fallbacks = 0;
+        let mut centered_fallbacks = 0;
+        for &(label, residues, canonical, centered, expected_upper) in Q650_VECTORS {
+            let canonical_path = ext.project(&residues, &mut canonical_out).unwrap();
+            let (centered_path, upper) =
+                ext.project_centered(&residues, &mut centered_out).unwrap();
+            assert_eq!(canonical_out, canonical, "canonical {label}");
+            assert_eq!(centered_out, centered, "centered {label}");
+            assert_eq!(upper, expected_upper, "half decision {label}");
+            canonical_fallbacks += usize::from(canonical_path == RankPath::ExactFallback);
+            centered_fallbacks += usize::from(centered_path == RankPath::ExactFallback);
+        }
+        assert!(
+            canonical_fallbacks > 0,
+            "canonical fallback was not exercised"
+        );
+        assert!(
+            centered_fallbacks > 0,
+            "centered fallback was not exercised"
+        );
+        assert!(canonical_fallbacks < Q650_VECTORS.len());
+        assert!(centered_fallbacks < Q650_VECTORS.len());
+    }
+
+    /// Bit length of a `U512`, most significant limb first.
+    fn u512_bits(x: U512) -> u32 {
+        if x.d3 != 0 {
+            return 384 + (128 - x.d3.leading_zeros());
+        }
+        if x.d2 != 0 {
+            return 256 + (128 - x.d2.leading_zeros());
+        }
+        if x.d1 != 0 {
+            return 128 + (128 - x.d1.leading_zeros());
+        }
+        128 - x.d0.leading_zeros()
+    }
 
     /// Ground-truth `X mod a` for a `u128`-range `X` (works for main products
     /// up to 128 bits, i.e. the 4-lane production prefix and all small bases).
@@ -681,10 +716,10 @@ mod tests {
     // WR-1 §A / G2 — centered projection
     // ===================================================================
 
-    /// WR-1 F5. Nine lanes need the widened U512 exact-fallback accumulator;
-    /// a basis whose proven fallback bound exceeds U512 is still refused.
+    /// WR-1 F5. Nine lanes exceed U256; a basis whose proven fallback bound exceeds
+    /// U1024 is still refused.
     #[test]
-    fn fallback_accumulator_supports_over_256_bits_and_refuses_over_512() {
+    fn fallback_accumulator_supports_over_256_bits_and_refuses_over_1024() {
         // Nine pairwise-coprime ~31/32-bit lanes: M is about 284 bits. Exercise
         // both the common path and exact fallback against a U512 oracle.
         let wider_than_u256: Vec<u64> = vec![
@@ -711,7 +746,7 @@ mod tests {
                 required_bits,
             }) => {
                 assert_eq!(lanes, MAX_LANES);
-                assert!(required_bits > 512);
+                assert!(required_bits > 1024);
             }
             Err(other) => panic!("expected FallbackAccumulatorOverCapacity, got {other:?}"),
             Ok(_) => panic!("expected FallbackAccumulatorOverCapacity, got Ok"),

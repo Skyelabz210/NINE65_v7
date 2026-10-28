@@ -834,9 +834,19 @@ impl U256 {
 /// Compute Δ = floor(Q/t) in RNS form without relying on u128-sized Q.
 pub(crate) fn compute_delta_rns_overflow_safe(primes: &[u64], t: u64) -> Vec<u64> {
     assert!(t != 0, "Plaintext modulus t must be > 0");
-    let q = U256::product_u64s(primes);
-    let (delta, _) = q.div_mod_u64(t);
-    primes.iter().map(|&p| delta.mod_u64(p)).collect()
+    // Public setup arithmetic, shared with exact parameter accounting. The
+    // dynamic limbs avoid silently narrowing a wide refresh modulus and also
+    // support manufactured chains where t shares a factor with Q.
+    let q = crate::params::exact_product_limbs(primes);
+    let delta = crate::params::divide_limbs_by_u64(&q, t);
+    primes
+        .iter()
+        .map(|&p| {
+            delta.iter().rev().fold(0u128, |remainder, &limb| {
+                ((remainder << 64) | limb as u128) % p as u128
+            }) as u64
+        })
+        .collect()
 }
 
 /// RNS Context for managing multiple prime moduli
