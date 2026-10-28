@@ -159,12 +159,19 @@ def parse_anchors(source: str) -> dict[str, list[int]]:
         raise AssertionError("unable to locate canonical anchor vec! literal")
     base = parse_integer_list(balanced_block(body, body.index("[", base_at), "[", "]"))
 
-    extended: list[int] = []
-    for match in re.finditer(r"extend_from_slice\s*\(\s*&", body):
-        bracket = body.find("[", match.end())
-        if bracket < 0:
-            raise AssertionError("unable to parse anchor extension slice")
-        extended.extend(parse_integer_list(balanced_block(body, bracket, "[", "]")))
+    # The n == 32768 branch substitutes a different set of anchors. It is
+    # mutually exclusive with the n >= 16384 branch audited here.
+    branch_match = re.search(rf"\belse\s+if\s+n\s*>=\s*{ANCHOR_EXTENSION_N}\s*\{{", body)
+    if branch_match is None:
+        raise AssertionError("unable to locate n >= 16384 anchor extension")
+    branch = balanced_block(body, body.index("{", branch_match.start()), "{", "}")
+    extensions = list(re.finditer(r"extend_from_slice\s*\(\s*&", branch))
+    if len(extensions) != 1:
+        raise AssertionError(f"expected one n >= 16384 anchor extension, found {len(extensions)}")
+    bracket = branch.find("[", extensions[0].end())
+    if bracket < 0:
+        raise AssertionError("unable to parse anchor extension slice")
+    extended = parse_integer_list(balanced_block(branch, bracket, "[", "]"))
 
     if not base or not extended:
         raise AssertionError(
