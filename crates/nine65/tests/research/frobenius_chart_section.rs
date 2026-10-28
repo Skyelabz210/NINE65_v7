@@ -384,11 +384,16 @@ fn check_section(source_n: usize, h: usize) {
         [9, -11],
     );
     let (precharge, precharge_v, d, d_bound) = if source_n == 8192 {
-        let refusal = match full_high.try_exact_evaluator() {
-            Err(error) => error,
-            Ok(_) => panic!("Q241 should retain its exact rank-capacity refusal"),
-        };
-        assert!(format!("{refusal:?}").contains("FallbackAccumulatorOverCapacity"));
+        // The rank fallback was widened to U512. This native tuple now
+        // fits; retaining the former U256 refusal would reject a supported
+        // exact plan before checking any encrypted section arithmetic.
+        let exact = full_high.try_exact_evaluator().unwrap();
+        let certificate = exact.plan().certificate();
+        assert_eq!(certificate.q_bits, 241);
+        assert!(certificate.aux_bits > 256);
+        assert!(certificate.aux_bits >= certificate.required_bits);
+        // Keep the reduced-Q experiment and its independently charged
+        // rounding error. A supported full-Q plan does not reset noise.
         let special = *full_high.config.primes.last().unwrap();
         let precharge = drop_special(&high, &full_high, &full_precharge);
         let precharge_v = narrow(drop_view_bound(
@@ -399,10 +404,15 @@ fn check_section(source_n: usize, h: usize) {
         ));
         let d = drop_special(&high, &full_high, &full_d);
         let d_bound = drop_view_bound(full_d_bound, special, high.t, high.n);
-        eprintln!("native section capacity: Q241 exact plan retains typed refusal {refusal:?}; PUBLIC same-key modulus drop to Q{} reduces D certificate bits {}->{}, existing rank/auxiliary guards unchanged",wide_bits(U512::product_u64s(&high.config.primes)),wide_bits(full_d_bound),wide_bits(d_bound));
+        eprintln!("native section capacity: Q241 exact plan uses {} auxiliary bits for {} required with the U512 rank fallback; PUBLIC same-key modulus drop to Q{} reduces D certificate bits {}->{}, existing rank/auxiliary guards unchanged",certificate.aux_bits,certificate.required_bits,wide_bits(U512::product_u64s(&high.config.primes)),wide_bits(full_d_bound),wide_bits(d_bound));
         (precharge, precharge_v, d, d_bound)
     } else {
-        (full_precharge, full_precharge_v, full_d, full_d_bound)
+        (
+            full_precharge,
+            full_precharge_v,
+            full_d.clone(),
+            full_d_bound,
+        )
     };
     let remainder = U512::product_u64s(&high.config.primes).mod_u64(high.t) as u128;
     let d_plain = decrypt_coefficients(&high, &d, &boot_keys);
@@ -436,6 +446,26 @@ fn check_section(source_n: usize, h: usize) {
         expected_u11[stride * j] = (-4 * z[0] + 5 * z[1]).rem_euclid(LOW_BASE as i128) as u64;
     }
     assert_eq!(d_plain, expected_d);
+    if source_n == 8192 {
+        // Exercise the formerly refused capacity, rather than checking only
+        // constructor success. The expected polynomial comes from the
+        // independent source/trit chart above; its square uses schoolbook
+        // convolution, not the ciphertext evaluator's NTT kernels.
+        let full_observed = observe_wide(&full_high, &full_d, &full_boot_keys, &expected_d);
+        assert!(words(full_observed) <= words(full_d_bound));
+        let exact = full_high.try_exact_evaluator().unwrap();
+        let mut capacity_rng = ShadowHarvester::with_seed(0x4652_4f42_5143_4150);
+        let relin = exact
+            .generate_hybrid_gadget_key_with_rng(&full_boot_keys.secret_key, &mut capacity_rng);
+        let square = exact.try_mul_exact(&full_d, &full_d, &relin).unwrap();
+        let square_observed = observe_wide(
+            &full_high,
+            &square,
+            &full_boot_keys,
+            &square_plain(&expected_d, HIGH_PLAIN),
+        );
+        eprintln!("native Q241 capacity oracle: all{outer_n} encrypted-square coefficients match independent schoolbook convolution; observed error={} bits, no production refresh admission",wide_bits(square_observed));
+    }
     let perturb: Vec<_> = (0..outer_n)
         .map(|i| 11 * ((i * 7 + 3) % 11) as i64)
         .collect();
