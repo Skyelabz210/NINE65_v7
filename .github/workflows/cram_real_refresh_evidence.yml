@@ -69,9 +69,11 @@ jobs:
         run: python3 scripts/test_real_refresh_evidence.py
 
       - name: Force and prove real automatic refresh
+        # Deterministic correctness evidence uses debug because release
+        # builds intentionally reject this benchmark's seeded test RNG.
         run: |
           set -euo pipefail
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --auto-bootstrap \
             --trigger-pct 100 --statistical-test \
             --output /tmp/nine65-forced-refresh.json 2>&1 | tee /tmp/nine65-forced-refresh.log
