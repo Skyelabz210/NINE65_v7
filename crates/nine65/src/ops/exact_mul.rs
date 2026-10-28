@@ -190,6 +190,8 @@ pub enum ExactMulError {
         got: usize,
         expected: usize,
     },
+    /// A prepared key belongs to another ring, main basis, or gadget radix.
+    PreparedGadgetPlanMismatch { what: &'static str },
     /// A belt-and-suspenders cross-lane consistency check on the
     /// scale-and-round kernel's own output, not a noise-budget gate. For any
     /// ciphertext with canonical main residues — the only kind
@@ -566,6 +568,84 @@ impl std::fmt::Debug for RNSHybridGadgetKey {
             .field("base_bits", &self.base_bits)
             .field("digits_per_lane", &self.digits_per_lane)
             .finish()
+    }
+}
+
+/// An explicitly owned transform cache for a validated hybrid gadget key.
+///
+/// Key polynomials remain in the main basis, in twisted Montgomery NTT form.
+/// All fields are private: preparation validates every shape and residue, and
+/// reuse checks the ring, main basis and radix before touching the cache.
+/// The plaintext modulus is deliberately absent: the gadget encrypts a target
+/// secret polynomial and is valid across plaintext trays over the same ring.
+/// There is no process-global cache. Dropping the contained polynomials clears
+/// their storage through `RNSPolynomial`'s existing zeroization contract.
+pub struct PreparedHybridGadgetKey {
+    n: usize,
+    main: Vec<u64>,
+    base_bits: u32,
+    digits_per_lane: Vec<usize>,
+    key_ntt: Vec<Vec<(RNSPolynomial, RNSPolynomial)>>,
+    twist_mont: Vec<Vec<u64>>,
+    untwist_mont: Vec<Vec<u64>>,
+    workers: usize,
+}
+
+impl std::fmt::Debug for PreparedHybridGadgetKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PreparedHybridGadgetKey")
+            .field("ring_degree", &self.n)
+            .field("main_lanes", &self.main.len())
+            .field("base_bits", &self.base_bits)
+            .field("digits_per_lane", &self.digits_per_lane)
+            .field("workers", &self.workers)
+            .finish()
+    }
+}
+
+impl PreparedHybridGadgetKey {
+    /// Payload bytes held by the transformed key and its two twist tables.
+    pub fn coefficient_storage_bytes(&self) -> usize {
+        let terms: usize = self.digits_per_lane.iter().sum();
+        (2 * terms + 2) * self.main.len() * self.n * std::mem::size_of::<u64>()
+    }
+}
+
+/// Both engines expose the same Montgomery-domain transform to this cache.
+/// The reference engine adapter is only for reduced-ring differential tests.
+fn forward_mont(engine: &NTTEngine, values: &mut [u64]) {
+    #[cfg(not(feature = "reference_ntt"))]
+    engine.ntt_inplace(values);
+    #[cfg(feature = "reference_ntt")]
+    {
+        let plain: Zeroizing<Vec<u64>> = Zeroizing::new(
+            values
+                .iter()
+                .map(|&v| engine.mont.from_montgomery(v))
+                .collect(),
+        );
+        let transformed = Zeroizing::new(engine.ntt(&plain));
+        for (out, &value) in values.iter_mut().zip(transformed.iter()) {
+            *out = engine.mont.to_montgomery(value);
+        }
+    }
+}
+
+fn inverse_mont(engine: &NTTEngine, values: &mut [u64]) {
+    #[cfg(not(feature = "reference_ntt"))]
+    engine.intt_inplace(values);
+    #[cfg(feature = "reference_ntt")]
+    {
+        let plain: Zeroizing<Vec<u64>> = Zeroizing::new(
+            values
+                .iter()
+                .map(|&v| engine.mont.from_montgomery(v))
+                .collect(),
+        );
+        let transformed = Zeroizing::new(engine.intt(&plain));
+        for (out, &value) in values.iter_mut().zip(transformed.iter()) {
+            *out = engine.mont.to_montgomery(value);
+        }
     }
 }
 
@@ -1116,10 +1196,212 @@ impl<'a> ExactMulEvaluator<'a> {
                             expected: self.plan.n,
                         });
                     }
+                    for limb in &poly.limbs {
+                        if limb.len() != self.plan.n {
+                            return Err(ExactMulError::GadgetKeyShape {
+                                what: "key limb length",
+                                got: limb.len(),
+                                expected: self.plan.n,
+                            });
+                        }
+                    }
+                    self.check_canonical(poly)?;
                 }
             }
         }
         Ok(())
+    }
+
+    /// Validate a public hybrid key once and prepare its reusable transforms.
+    /// The caller can drop the raw key after this succeeds to avoid retaining
+    /// two copies. The returned cache also works across plaintext moduli when
+    /// the ring, ordered main basis, and gadget radix are identical.
+    pub fn prepare_hybrid_gadget_key(
+        &self,
+        key: &RNSHybridGadgetKey,
+    ) -> Result<PreparedHybridGadgetKey, ExactMulError> {
+        self.check_gadget_key(key)?;
+        let twist_mont: Vec<Vec<u64>> = self
+            .ctx
+            .ntt_engines
+            .iter()
+            .map(|engine| {
+                engine
+                    .psi_powers
+                    .iter()
+                    .map(|&v| engine.mont.to_montgomery(v))
+                    .collect()
+            })
+            .collect();
+        let untwist_mont: Vec<Vec<u64>> = self
+            .ctx
+            .ntt_engines
+            .iter()
+            .map(|engine| {
+                engine
+                    .psi_inv_powers
+                    .iter()
+                    .map(|&v| engine.mont.to_montgomery(v))
+                    .collect()
+            })
+            .collect();
+        let prepare_poly = |poly: &RNSPolynomial| {
+            let limbs = poly
+                .limbs
+                .iter()
+                .enumerate()
+                .map(|(lane, input)| {
+                    let engine = &self.ctx.ntt_engines[lane];
+                    let mut values: Vec<u64> = input
+                        .iter()
+                        .zip(&twist_mont[lane])
+                        .map(|(&v, &psi)| engine.mont.montgomery_mul(v, psi))
+                        .collect();
+                    forward_mont(engine, &mut values);
+                    values
+                })
+                .collect();
+            RNSPolynomial {
+                limbs,
+                n: self.plan.n,
+            }
+        };
+        let key_ntt = key
+            .rlk
+            .iter()
+            .map(|digits| {
+                digits
+                    .iter()
+                    .map(|(k0, k1)| (prepare_poly(k0), prepare_poly(k1)))
+                    .collect()
+            })
+            .collect();
+        Ok(PreparedHybridGadgetKey {
+            n: self.plan.n,
+            main: self.plan.main.clone(),
+            base_bits: self.plan.base_bits,
+            digits_per_lane: self.plan.digits_per_lane.clone(),
+            key_ntt,
+            twist_mont,
+            untwist_mont,
+            // Small rings keep the sequential path. Native rings use at most
+            // four workers, bounded by the OS quota/affinity and lane count.
+            workers: if self.plan.n < 1024 {
+                1
+            } else {
+                std::thread::available_parallelism()
+                    .map_or(1, usize::from)
+                    .min(4)
+                    .min(self.plan.main.len())
+            },
+        })
+    }
+
+    fn check_prepared_gadget_key(
+        &self,
+        key: &PreparedHybridGadgetKey,
+    ) -> Result<(), ExactMulError> {
+        for (valid, what) in [
+            (key.n == self.plan.n, "ring degree"),
+            (key.main == self.plan.main, "main basis"),
+            (key.base_bits == self.plan.base_bits, "base_bits"),
+            (
+                key.digits_per_lane == self.plan.digits_per_lane,
+                "digits_per_lane",
+            ),
+        ] {
+            if !valid {
+                return Err(ExactMulError::PreparedGadgetPlanMismatch { what });
+            }
+        }
+        Ok(())
+    }
+
+    fn hybrid_relinearize_prepared(
+        &self,
+        e2: &RNSPolynomial,
+        key: &PreparedHybridGadgetKey,
+    ) -> (RNSPolynomial, RNSPolynomial) {
+        self.hybrid_relinearize_prepared_with_workers(e2, key, key.workers)
+    }
+
+    fn hybrid_relinearize_prepared_with_workers(
+        &self,
+        e2: &RNSPolynomial,
+        key: &PreparedHybridGadgetKey,
+        workers: usize,
+    ) -> (RNSPolynomial, RNSPolynomial) {
+        let mut r0 = RNSPolynomial::zero(&self.ctx.rns);
+        let mut r1 = RNSPolynomial::zero(&self.ctx.rns);
+        let workers = workers.clamp(1, 4).min(self.plan.main.len());
+        if workers == 1 {
+            self.hybrid_relinearize_prepared_lanes(e2, key, 0, &mut r0.limbs, &mut r1.limbs);
+        } else {
+            let chunk_size = self.plan.main.len().div_ceil(workers);
+            std::thread::scope(|scope| {
+                for (chunk, (out0, out1)) in r0
+                    .limbs
+                    .chunks_mut(chunk_size)
+                    .zip(r1.limbs.chunks_mut(chunk_size))
+                    .enumerate()
+                {
+                    scope.spawn(move || {
+                        self.hybrid_relinearize_prepared_lanes(
+                            e2,
+                            key,
+                            chunk * chunk_size,
+                            out0,
+                            out1,
+                        );
+                    });
+                }
+            });
+        }
+        (r0, r1)
+    }
+
+    // Every worker owns disjoint output lanes. The operation order within a
+    // lane is unchanged, and no reduction or rounding crosses worker bounds.
+    fn hybrid_relinearize_prepared_lanes(
+        &self,
+        e2: &RNSPolynomial,
+        key: &PreparedHybridGadgetKey,
+        first_lane: usize,
+        out0: &mut [Vec<u64>],
+        out1: &mut [Vec<u64>],
+    ) {
+        let mask = (1u64 << self.plan.base_bits) - 1;
+        let mut digit = Zeroizing::new(vec![0u64; self.plan.n]);
+        for (offset, (r0, r1)) in out0.iter_mut().zip(out1.iter_mut()).enumerate() {
+            let lane = first_lane + offset;
+            let q = self.plan.main[lane];
+            let engine = &self.ctx.ntt_engines[lane];
+            let mont = &engine.mont;
+            for (source, &digits) in self.plan.digits_per_lane.iter().enumerate() {
+                for digit_index in 0..digits {
+                    let shift = digit_index as u32 * self.plan.base_bits;
+                    for (k, value) in digit.iter_mut().enumerate() {
+                        let v = ((e2.limbs[source][k] >> shift) & mask) % q;
+                        *value =
+                            mont.montgomery_mul(mont.to_montgomery(v), key.twist_mont[lane][k]);
+                    }
+                    forward_mont(engine, &mut digit);
+                    let (k0, k1) = &key.key_ntt[source][digit_index];
+                    for (k, &value) in digit.iter().enumerate() {
+                        r0[k] = mont
+                            .montgomery_add(r0[k], mont.montgomery_mul(value, k0.limbs[lane][k]));
+                        r1[k] = mont
+                            .montgomery_add(r1[k], mont.montgomery_mul(value, k1.limbs[lane][k]));
+                    }
+                }
+            }
+            inverse_mont(engine, r0);
+            inverse_mont(engine, r1);
+            for k in 0..self.plan.n {
+                r0[k] = mont.montgomery_mul(r0[k], key.untwist_mont[lane][k]);
+                r1[k] = mont.montgomery_mul(r1[k], key.untwist_mont[lane][k]);
+            }
+        }
     }
 
     /// Shape and canonical-residue validation for a caller-supplied
@@ -1262,6 +1544,41 @@ impl<'a> ExactMulEvaluator<'a> {
         self.check_gadget_key(key)?;
         let tensor = self.try_mul_no_relin_exact(a, b)?;
         self.relinearize_tensor(&tensor, key)
+    }
+
+    /// Exact multiplication using a previously validated, prepared gadget key.
+    pub fn try_mul_exact_prepared(
+        &self,
+        a: &RNSCiphertext,
+        b: &RNSCiphertext,
+        key: &PreparedHybridGadgetKey,
+    ) -> Result<RNSCiphertext, ExactMulError> {
+        self.check_prepared_gadget_key(key)?;
+        let tensor = self.try_mul_no_relin_exact(a, b)?;
+        self.relinearize_tensor_prepared(&tensor, key)
+    }
+
+    /// Fold an exact tensor with one digit transform shared by both output
+    /// components and one final inverse transform per output component/lane.
+    pub fn relinearize_tensor_prepared(
+        &self,
+        tensor: &ExactTensor3,
+        key: &PreparedHybridGadgetKey,
+    ) -> Result<RNSCiphertext, ExactMulError> {
+        self.check_prepared_gadget_key(key)?;
+        self.check_tensor(tensor)?;
+        let (r0, r1) = self.hybrid_relinearize_prepared(&tensor.e2, key);
+        Ok(RNSCiphertext {
+            c0: self
+                .ctx
+                .to_montgomery_form(&tensor.e0)
+                .add(&r0, &self.ctx.rns),
+            c1: self
+                .ctx
+                .to_montgomery_form(&tensor.e1)
+                .add(&r1, &self.ctx.rns),
+            num_primes: self.plan.main.len(),
+        })
     }
 
     /// Fold an already-computed exact tensor into a degree-1 ciphertext.

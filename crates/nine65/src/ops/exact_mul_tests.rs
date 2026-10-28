@@ -752,6 +752,183 @@ fn explicit_gadget_radices_bind_keys_and_keep_exact_multiplication() {
 }
 
 #[test]
+fn prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays() {
+    let cfg = small_ring_config(WIDE_TEST_MAIN.to_vec(), 8);
+    let ctx = RNSFHEContext::new(&cfg);
+    let mut high_cfg = cfg.clone();
+    high_cfg.t = 4295098369;
+    let high = RNSFHEContext::new(&high_cfg);
+    let mut rng = ShadowHarvester::with_seed(0xCAC4_E650);
+    let keys = ctx.generate_keys(&mut rng);
+    let mut lcg = Lcg(0xB453_2130);
+    for bits in [2, 10, 30] {
+        let ev = ExactMulEvaluator::new_with_gadget_base_bits(&ctx, bits).unwrap();
+        let raw = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+        let prepared = ev.prepare_hybrid_gadget_key(&raw).unwrap();
+        let terms: usize = raw.digits_per_lane.iter().sum();
+        assert_eq!(
+            prepared.coefficient_storage_bytes(),
+            (2 * terms + 2) * cfg.primes.len() * cfg.n * 8
+        );
+        for corner in 0..4 {
+            let mut poly = || RNSPolynomial {
+                limbs: cfg
+                    .primes
+                    .iter()
+                    .map(|&q| {
+                        (0..cfg.n)
+                            .map(|_| match corner {
+                                0 => 0,
+                                1 => q - 1,
+                                2 => q / 2,
+                                _ => lcg.next() % q,
+                            })
+                            .collect()
+                    })
+                    .collect(),
+                n: cfg.n,
+            };
+            let tensor = ExactTensor3 {
+                e0: poly(),
+                e1: poly(),
+                e2: poly(),
+                num_primes: cfg.primes.len(),
+            };
+            let expected = ev.relinearize_tensor(&tensor, &raw).unwrap();
+            let actual = ev.relinearize_tensor_prepared(&tensor, &prepared).unwrap();
+            // Force both schedules even on the reduced ring, where the
+            // public prepared path intentionally defaults to one worker.
+            let serial = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 1);
+            let parallel = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 4);
+            assert_eq!(serial.0.limbs, parallel.0.limbs);
+            assert_eq!(serial.1.limbs, parallel.1.limbs);
+            assert_eq!(
+                actual.c0.limbs, expected.c0.limbs,
+                "radix={bits}, corner={corner}"
+            );
+            assert_eq!(
+                actual.c1.limbs, expected.c1.limbs,
+                "radix={bits}, corner={corner}"
+            );
+        }
+        for view in [&ctx, &high] {
+            let ev = ExactMulEvaluator::new_with_gadget_base_bits(view, bits).unwrap();
+            let a = view.encrypt(7, &keys.public_key, &mut rng);
+            let b = view.encrypt(11, &keys.public_key, &mut rng);
+            let expected = ev.try_mul_exact(&a, &b, &raw).unwrap();
+            let actual = ev.try_mul_exact_prepared(&a, &b, &prepared).unwrap();
+            assert_eq!(actual.c0.limbs, expected.c0.limbs);
+            assert_eq!(actual.c1.limbs, expected.c1.limbs);
+            assert_eq!(ev.try_decrypt_exact(&actual, &keys.secret_key).unwrap(), 77);
+        }
+    }
+}
+
+#[test]
+fn prepared_hybrid_key_refuses_malformed_input_and_foreign_plans() {
+    let cfg = small_ring_config(vec![998244353, 985661441, 754974721, 469762049], 8);
+    let ctx = RNSFHEContext::new(&cfg);
+    let ev = ctx.try_exact_evaluator().unwrap();
+    let mut rng = ShadowHarvester::with_seed(0xCAC4_E000);
+    let keys = ctx.generate_keys(&mut rng);
+    let good = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    let mut malformed = good.clone();
+    malformed.rlk[0][0].0.limbs[0].pop();
+    assert!(matches!(
+        ev.prepare_hybrid_gadget_key(&malformed),
+        Err(ExactMulError::GadgetKeyShape {
+            what: "key limb length",
+            ..
+        })
+    ));
+    let mut malformed = good.clone();
+    malformed.rlk[0][0].1.limbs[0][0] = cfg.primes[0];
+    assert!(matches!(
+        ev.prepare_hybrid_gadget_key(&malformed),
+        Err(ExactMulError::NonCanonicalMainResidue { .. })
+    ));
+    let prepared = ev.prepare_hybrid_gadget_key(&good).unwrap();
+    let tensor = ExactTensor3 {
+        e0: RNSPolynomial::zero(&ctx.rns),
+        e1: RNSPolynomial::zero(&ctx.rns),
+        e2: RNSPolynomial::zero(&ctx.rns),
+        num_primes: cfg.primes.len(),
+    };
+    let radix = ExactMulEvaluator::new_with_gadget_base_bits(&ctx, 2).unwrap();
+    assert!(matches!(
+        radix.relinearize_tensor_prepared(&tensor, &prepared),
+        Err(ExactMulError::PreparedGadgetPlanMismatch { what: "base_bits" })
+    ));
+    for (mut foreign, expected) in [(cfg.clone(), "main basis"), (cfg.clone(), "ring degree")] {
+        if expected == "main basis" {
+            foreign.primes.swap(0, 1);
+            foreign.q = foreign.primes[0];
+        } else {
+            foreign.n *= 2;
+        }
+        let other = RNSFHEContext::new(&foreign);
+        assert!(
+            matches!(other.try_exact_evaluator().unwrap().relinearize_tensor_prepared(&tensor, &prepared),
+            Err(ExactMulError::PreparedGadgetPlanMismatch { what }) if what == expected)
+        );
+    }
+    let mut malformed = tensor;
+    malformed.e2.limbs[0][0] = cfg.primes[0];
+    assert!(matches!(
+        ev.relinearize_tensor_prepared(&malformed, &prepared),
+        Err(ExactMulError::NonCanonicalMainResidue { .. })
+    ));
+}
+
+#[test]
+#[ignore = "native N32768 Q650 transform-cache measurement; run explicitly"]
+fn prepared_hybrid_native_timing_and_exact_equality() {
+    let cfg = small_ring_config(WIDE_TEST_MAIN.to_vec(), 32768);
+    let ctx = RNSFHEContext::new(&cfg);
+    let ev = ctx.try_exact_evaluator().unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x00CA_C4E3_2768);
+    let keys = ctx.generate_keys(&mut rng);
+    let start = std::time::Instant::now();
+    let raw = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    println!(
+        "native hybrid raw key generated: {} ns",
+        start.elapsed().as_nanos()
+    );
+    let start = std::time::Instant::now();
+    let prepared = ev.prepare_hybrid_gadget_key(&raw).unwrap();
+    let prepare_ns = start.elapsed().as_nanos();
+    println!("native hybrid prepared: {prepare_ns} ns");
+    let mut lcg = Lcg(0x000C_AC4E);
+    let tensor = ExactTensor3 {
+        e0: RNSPolynomial::zero(&ctx.rns),
+        e1: RNSPolynomial::zero(&ctx.rns),
+        e2: RNSPolynomial {
+            limbs: cfg
+                .primes
+                .iter()
+                .map(|&q| (0..cfg.n).map(|_| lcg.next() % q).collect())
+                .collect(),
+            n: cfg.n,
+        },
+        num_primes: cfg.primes.len(),
+    };
+    let start = std::time::Instant::now();
+    let expected = ev.relinearize_tensor(&tensor, &raw).unwrap();
+    let raw_ns = start.elapsed().as_nanos();
+    let start = std::time::Instant::now();
+    let serial = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 1);
+    let serial_ns = start.elapsed().as_nanos();
+    let start = std::time::Instant::now();
+    let actual = ev.relinearize_tensor_prepared(&tensor, &prepared).unwrap();
+    let prepared_ns = start.elapsed().as_nanos();
+    assert_eq!(actual.c0.limbs, expected.c0.limbs);
+    assert_eq!(actual.c1.limbs, expected.c1.limbs);
+    assert_eq!(actual.c0.limbs, serial.0.limbs);
+    assert_eq!(actual.c1.limbs, serial.1.limbs);
+    println!("prepared hybrid N32768/Q650/base10: workers={} key_bytes={} prepare_ns={prepare_ns} raw_ns={raw_ns} serial_ns={serial_ns} prepared_ns={prepared_ns}", prepared.workers, prepared.coefficient_storage_bytes());
+}
+
+#[test]
 fn wide_exact_tensor_matches_independent_unbounded_integer_oracle() {
     let n = 8;
     for t in [65537, 4295098369] {

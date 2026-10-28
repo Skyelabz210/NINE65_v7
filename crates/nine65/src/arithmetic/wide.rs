@@ -163,11 +163,11 @@ impl U1024 {
     }
 
     pub fn shr1(self) -> Self {
-        self.shr(1)
+        self.shift_right(1)
     }
 
     /// Logical right shift; shifting by 1024 or more produces zero.
-    pub fn shr(self, shift: u32) -> Self {
+    pub fn shift_right(self, shift: u32) -> Self {
         if shift >= 1024 {
             return Self::ZERO;
         }
@@ -207,6 +207,14 @@ impl Ord for U1024 {
 impl PartialOrd for U1024 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl core::ops::Shr<u32> for U1024 {
+    type Output = Self;
+
+    fn shr(self, shift: u32) -> Self::Output {
+        U1024::shift_right(self, shift)
     }
 }
 
@@ -264,16 +272,16 @@ mod tests {
             limbs[bit / 64] = 1 << (bit % 64);
             let value = U1024::from_limbs(limbs);
             assert_eq!(value.bit_length(), bit as u32 + 1);
-            assert_eq!(value.shr(bit as u32), U1024::ONE);
-            assert_eq!(value.shr(bit as u32 + 1), U1024::ZERO);
+            assert_eq!(value.shift_right(bit as u32), U1024::ONE);
+            assert_eq!(value.shift_right(bit as u32 + 1), U1024::ZERO);
             let below = value.checked_sub(U1024::ONE).unwrap();
             assert!(below < value);
             assert!(value > below);
             assert_eq!(value.cmp(&value), Ordering::Equal);
             assert_eq!(below.checked_add(U1024::ONE), Some(value));
         }
-        assert_eq!(U1024::MAX.shr(1024), U1024::ZERO);
-        assert_eq!(U1024::MAX.shr(u32::MAX), U1024::ZERO);
+        assert_eq!(U1024::MAX.shift_right(1024), U1024::ZERO);
+        assert_eq!(U1024::MAX.shift_right(u32::MAX), U1024::ZERO);
         assert_eq!(U1024::MAX.shr1().limbs[15], u64::MAX >> 1);
     }
 
