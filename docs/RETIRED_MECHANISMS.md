@@ -1,6 +1,18 @@
 # Retired Mechanisms: Modulus Switching, the Noise Budget, and Bootstrap
 
-**Status:** authoritative. **Date:** 2026-08-09. **Scope:** `crates/nine65` test suite.
+**Status:** historical quarantine rationale, not the current capability contract.
+**Original date:** 2026-08-09. **Scope:** `crates/nine65` test suite.
+
+**Correction, 2026-10-28:** the unbounded-depth and zero-noise-cost conclusions
+below have not been established for the live encrypted evaluator. Exact integer
+coefficient division does not by itself prove preservation of the secret-dependent
+BFV phase or eliminate encryption noise. Current executable paths enforce finite
+capacity; public refresh remains disabled at its Phase-1 soundness gate. The
+fixed-basis CRAM objective remains the intended engineering direction.
+See the [system analysis and remediation](execution/2026-10-28/SYSTEM_ANALYSIS.md)
+and [current capability statement](../README.md). Preserve the historical test
+inventory below as evidence; its quarantine labels are not evidence of passing
+end-to-end acceptance tests.
 
 - **Part I** (§1–§6) — modulus switching and the noise budget.
 - **Part II** (§7–§12) — bootstrap, including the production call-site map.

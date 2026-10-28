@@ -95,6 +95,9 @@ impl<'a> BFVEvaluator<'a> {
     ///
     /// Note: `m` is used as a raw scalar multiplier, not encoded via Δ.
     /// Values >= t are valid here (they scale coefficients mod q).
+    /// This unchecked operation also multiplies encryption and encoding error
+    /// by `m`; modular plaintext correctness requires enough remaining noise
+    /// margin. Use `TrackedEvaluator::try_mul_plain` for budget admission.
     pub fn mul_plain(&self, ct: &Ciphertext, m: u64) -> Ciphertext {
         Ciphertext {
             c0: ct.c0.scalar_mul(m, self.ntt),
@@ -277,11 +280,13 @@ pub struct TrackedEvaluator<'a> {
 }
 
 impl<'a> TrackedEvaluator<'a> {
-    /// Create tracked evaluator with automatic budget from config
+    /// Create a single-modulus evaluator budget from `config.q`.
+    /// The config must match the encoder/NTT and the ciphertext's encryption
+    /// parameters. Extra RNS primes do not fund this evaluator.
     pub fn new(evaluator: BFVEvaluator<'a>, config: &'a FHEConfig) -> Self {
         Self {
             evaluator,
-            budget: NoiseBudget::from_config(config),
+            budget: NoiseBudget::from_single_modulus(config),
             config,
         }
     }
@@ -319,27 +324,27 @@ impl<'a> TrackedEvaluator<'a> {
         self.budget.can_perform(NoiseBudget::add_cost())
     }
 
-    /// Check if plaintext multiplication can be performed
+    /// Check whether every canonical plaintext scalar (`m < t`) is affordable.
+    /// Use `can_mul_plain_scalar` for an exact scalar, including raw `m >= t`.
     pub fn can_mul_plain(&self) -> bool {
-        // Use a conservative scalar (3) for pre-flight check.
-        //
-        // `mul_plain_scalar_cost`, not `mul_plain_cost`: `BFVEvaluator::mul_plain`
-        // is `scalar_mul`, a coefficient-wise multiply by a constant, so the
-        // `n` ring-expansion factor in `mul_plain_cost` does not apply. See
-        // `NoiseBudget::mul_plain_scalar_cost` for the derivation.
+        self.can_mul_plain_scalar(self.evaluator.t.saturating_sub(1))
+    }
+
+    /// Check the same scalar cost that `try_mul_plain` will charge.
+    pub fn can_mul_plain_scalar(&self, scalar: u64) -> bool {
         self.budget
-            .can_perform(NoiseBudget::mul_plain_scalar_cost(3))
+            .can_perform(NoiseBudget::mul_plain_scalar_cost(scalar))
     }
 
     /// Check if ciphertext multiplication can be performed
     pub fn can_mul(&self) -> bool {
-        let cost = NoiseBudget::mul_ct_cost(self.config) + NoiseBudget::relin_cost(self.config);
-        self.budget.can_perform(cost)
+        // `try_mul` is retired regardless of available budget (#135).
+        false
     }
 
     /// Remaining multiplication depth
     pub fn remaining_depth(&self) -> usize {
-        self.budget.remaining_multiplications(self.config)
+        0
     }
 
     // =========================================================================
@@ -1288,29 +1293,9 @@ mod tests {
         // while budget remains and that it debits the ledger. It is not a
         // claim that `test_fast_insecure` can fund an add.
         //
-        // It cannot, and the reason is arithmetic the ledger performs in whole
-        // bits — not a real-number headroom argument. For `test_fast_insecure`
-        // (n=1024, one 30-bit prime, t=65537, eta=2):
-        //
-        //   Delta          = floor(998244353 / 65537) = 15231  -> delta_bits 14
-        //   capacity       = delta_bits - 1                    = 13 bits
-        //   fresh noise    = n_bits(10) + eta_bits(2) + 2      = 14 bits
-        //   effective start= max(fresh 14, t_bits 17) + 1      = 18 bits
-        //   budget         = max(capacity - effective_start, 0) = 0 millibits
-        //
-        // So the config is already five bits underwater at encryption time,
-        // dominated by the `t_bits` floor that `effective_start_bits` applies
-        // to absorb the tensor deposit `F` once per chain. It is not the add
-        // that crosses the line, and the fail-closed ledger is right to refuse.
-        //
-        // Deriving the budget from this config would therefore test the
-        // config's headroom, not the ledger. Seeding it explicitly keeps the
-        // subject of the test intact without weakening the bound.
-        //
-        // `TrackedEvaluator::new` is NOT left uncovered by that choice: see
-        // `tracked_evaluator_new_derives_its_budget_from_the_config_ledger`
-        // below, which exercises both of its branches (a config the ledger
-        // funds, and a config it refuses) against `NoiseBudget::from_config`.
+        // Its conservative single-q fresh-noise bound exceeds q/(2t).
+        // This explicit budget tests ledger mechanics only. The constructor
+        // is covered separately below with funded and unfunded configurations.
         let mut tracked = super::TrackedEvaluator::with_budget(evaluator, &config, 64);
 
         let ct_a = encryptor.encrypt(100, &mut harvester);
@@ -1325,37 +1310,20 @@ mod tests {
         assert!(tracked.budget().remaining_millibits() < tracked.budget().initial_millibits());
     }
 
-    /// `TrackedEvaluator::new` must derive its budget from the config ledger,
-    /// on BOTH sides of the line.
-    ///
-    /// This is the coverage that `test_tracked_evaluator_add` gives up by
-    /// seeding an explicit budget. Without it `TrackedEvaluator::new` — the
-    /// constructor every production caller uses — has no test anywhere in the
-    /// workspace, and a regression that silently zeroed or inflated the
-    /// derived budget would be invisible.
-    ///
-    /// Two branches, both asserted against `NoiseBudget::from_config` so the
-    /// test pins the wiring rather than restating a constant:
-    ///
-    /// * `test_medium_insecure` (n=2048, two 30-bit primes, t=65537): the
-    ///   ledger funds work, so `new` must produce a positive budget, the add
-    ///   must succeed, decrypt correctly, and debit the ledger.
-    /// * `test_fast_insecure` (n=1024, one 30-bit prime, t=65537): the ledger
-    ///   is underwater before the first operation (derivation in
-    ///   `test_tracked_evaluator_add` above), so `new` must produce a zero
-    ///   budget and `try_add` must REFUSE. A fail-closed ledger refusing is
-    ///   the correct behaviour; asserting it is what stops the refusal from
-    ///   being quietly traded away for a green test.
+    /// Constructor coverage on both sides of the single-q admission bound.
+    /// A smaller plaintext modulus funds the positive branch; adding unused
+    /// RNS primes is deliberately insufficient to create that headroom.
     #[test]
     fn tracked_evaluator_new_derives_its_budget_from_the_config_ledger() {
         // --- Branch 1: a config the ledger funds. ------------------------
-        let funded = SecureConfig::test_medium_insecure().into_config();
+        let mut funded = SecureConfig::test_medium_insecure().into_config();
+        funded.t = 257;
         let ntt = NTTEngine::new(funded.q, funded.n);
         let mut harvester = ShadowHarvester::with_seed(42);
         let keys = KeySet::generate(&funded, &ntt, &mut harvester);
         let encoder = BFVEncoder::new(&funded);
 
-        let expected_mb = NoiseBudget::from_config(&funded).remaining_millibits();
+        let expected_mb = NoiseBudget::from_single_modulus(&funded).remaining_millibits();
         assert!(
             expected_mb > 0,
             "{}: the ledger must fund this config for the positive branch to \
@@ -1372,7 +1340,7 @@ mod tests {
         assert_eq!(
             tracked.budget().remaining_millibits(),
             expected_mb,
-            "{}: TrackedEvaluator::new must seed exactly NoiseBudget::from_config",
+            "{}: TrackedEvaluator::new must seed the single-modulus budget",
             funded.name
         );
 
@@ -1391,7 +1359,7 @@ mod tests {
         // --- Branch 2: a config the ledger refuses. ----------------------
         let (starved, ntt2, keys2, mut harvester2, encoder2) = setup();
         assert_eq!(
-            NoiseBudget::from_config(&starved).remaining_millibits(),
+            NoiseBudget::from_single_modulus(&starved).remaining_millibits(),
             0,
             "{}: derivation in test_tracked_evaluator_add says this config is \
              underwater before the first operation; if that changed, update \
@@ -1489,11 +1457,10 @@ mod tests {
             depth
         );
 
-        // Should have some depth with 100-bit budget
-        assert!(
-            depth > 0,
-            "Should have positive multiplication depth with 100-bit budget"
-        );
+        // The single-modulus ct×ct implementation is retired (#135), even
+        // with an explicitly inflated test budget.
+        assert_eq!(depth, 0);
+        assert!(!tracked.can_mul());
     }
 
     #[test]
@@ -1513,7 +1480,6 @@ mod tests {
             "Should be able to mul_plain with 50-bit budget"
         );
 
-        // With 50-bit budget, mul should also be possible
-        println!("can_mul: {}", tracked.can_mul());
+        assert!(!tracked.can_mul());
     }
 }

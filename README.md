@@ -13,6 +13,9 @@ packet has been [reconciled against the current code and arithmetic prerequisite
 The [implementation continuation](docs/execution/2026-10-27/IMPLEMENTATION.md)
 adds the repaired signed substrate, bounded recumbent coefficients, and actual-operation
 arrow checks under the clarified synthetic-emission policy.
+The [system analysis and remediation](docs/execution/2026-10-28/SYSTEM_ANALYSIS.md)
+maps the fixed-basis CRAM goal to the active evaluator paths and records corrections
+to single-modulus admission and decryption-capacity accounting.
 
 The repository has moved beyond the historical “v7 Bootstrap Complete” snapshot. The current integration line combines:
 
