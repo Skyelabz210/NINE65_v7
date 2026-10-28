@@ -10,9 +10,13 @@ field-backed polynomial convolution plus CLASS-R K-Elimination extraction.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import math
 import re
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,17 +30,8 @@ PROFILE_NAMES = (
     "secure_192",
     "secure_256",
 )
-SUPPORTED_N = (1024, 2048, 8192, 16384)
+SUPPORTED_N = (1024, 2048, 8192, 16384, 32768)
 MR_BASES = (2, 325, 9375, 28178, 450775, 9780504, 1795265022)
-
-# Shape of `DualRNSContext::canonical_anchor_primes_for_n`
-# (crates/nine65/src/arithmetic/rns.rs): 7 anchors for n <= 8192, plus 3 more
-# for n >= 16384. Asserted during parsing so a regex regression fails loudly
-# instead of silently auditing the wrong set.
-ANCHOR_EXTENSION_N = 16384
-EXPECTED_BASE_ANCHORS = 7
-EXPECTED_EXTENDED_ANCHORS = 10
-
 
 def is_prime(value: int) -> bool:
     if value < 2:
@@ -134,6 +129,16 @@ def balanced_block(text: str, open_index: int, opener: str, closer: str) -> str:
 
 
 def anchor_function_body(source: str) -> str:
+    # Reuse the source-contract lexer so a commented-out example cannot be
+    # mistaken for the published function. It also handles block
+    # comments and comment markers inside strings.
+    spec = importlib.util.spec_from_file_location(
+        "nine65_anchor_audit_lexer", ROOT / ".github/scripts/check_cram_recumbency.py"
+    )
+    assert spec is not None and spec.loader is not None
+    lexer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lexer)
+    source = lexer.executable_view(source)
     marker = "pub fn canonical_anchor_primes_for_n"
     start = source.find(marker)
     if start < 0:
@@ -144,53 +149,146 @@ def anchor_function_body(source: str) -> str:
     return balanced_block(source, brace, "{", "}")
 
 
-def parse_anchors(source: str) -> dict[str, list[int]]:
-    """Parse the base and n >= 16384 extension anchor sets.
+def parse_anchors(source: str) -> dict:
+    """Read the complete supported numeric Vec/conditional grammar.
 
-    Mirrors `DualRNSContext::canonical_anchor_primes_for_n`: a `vec![...]`
-    literal holding the base anchors for n <= 8192, then an
-    `extend_from_slice(&[...])` inside `if n >= 16384` adding the rest.
+    Every token is consumed. Unknown Rust operations fail closed rather than
+    silently appending slices from mutually exclusive branches. Execution is
+    independently compared with the actual compiled Rust body below.
     """
+    body = anchor_function_body(source)
+    token = re.compile(r"\s*(==|>=|<=|!=|[<>]|[A-Za-z_][A-Za-z_0-9]*|[0-9][0-9_]*|[{}\[\]();,.!&=])")
+    tokens = []
+    position = 0
+    while position < len(body):
+        match = token.match(body, position)
+        if match is None:
+            if body[position:].strip():
+                raise AssertionError(f"unsupported anchor Rust near {body[position:position+40]!r}")
+            break
+        tokens.append(match.group(1))
+        position = match.end()
+    index = 0
 
-    body = strip_line_comments(anchor_function_body(source))
+    def peek():
+        return tokens[index] if index < len(tokens) else None
 
-    base_at = body.find("vec![")
-    if base_at < 0:
-        raise AssertionError("unable to locate canonical anchor vec! literal")
-    base = parse_integer_list(balanced_block(body, body.index("[", base_at), "[", "]"))
+    def take(expected=None):
+        nonlocal index
+        value = peek()
+        if value is None or (expected is not None and value != expected):
+            raise AssertionError(f"anchor grammar expected {expected!r}, got {value!r}")
+        index += 1
+        return value
 
-    extended: list[int] = []
-    for match in re.finditer(r"extend_from_slice\s*\(\s*&", body):
-        bracket = body.find("[", match.end())
-        if bracket < 0:
-            raise AssertionError("unable to parse anchor extension slice")
-        extended.extend(parse_integer_list(balanced_block(body, bracket, "[", "]")))
+    def number():
+        value = take()
+        if re.fullmatch(r"[0-9][0-9_]*", value) is None:
+            raise AssertionError(f"anchor grammar expected integer, got {value!r}")
+        return int(value.replace("_", ""))
 
-    if not base or not extended:
-        raise AssertionError(
-            f"anchor parse produced base={len(base)} extended={len(extended)}; "
-            "canonical_anchor_primes_for_n shape drifted"
-        )
+    def literal():
+        take("[")
+        values = []
+        while peek() != "]":
+            values.append(number())
+            if peek() != "]":
+                take(",")
+        take("]")
+        return values
 
-    # The Rust source documents 7 anchors for n <= 8192 and 10 for n >= 16384.
-    # Assert the parse matches so a silent regex regression cannot pass again.
-    if len(base) != EXPECTED_BASE_ANCHORS:
-        raise AssertionError(
-            f"expected {EXPECTED_BASE_ANCHORS} base anchors, parsed {len(base)}: {base}"
-        )
-    if len(base) + len(extended) != EXPECTED_EXTENDED_ANCHORS:
-        raise AssertionError(
-            f"expected {EXPECTED_EXTENDED_ANCHORS} anchors for n >= "
-            f"{ANCHOR_EXTENSION_N}, parsed {len(base) + len(extended)}"
-        )
+    def operations():
+        take("{")
+        result = []
+        while peek() != "}":
+            take("primes"); take(".")
+            method = take(); take("(")
+            if method == "truncate":
+                value = number()
+            elif method == "extend_from_slice":
+                take("&"); value = literal()
+            else:
+                raise AssertionError(f"unsupported anchor Vec method {method!r}")
+            take(")"); take(";")
+            result.append((method, value))
+        take("}")
+        return result
 
-    return {"base": base, "extended": extended}
+    for expected in ("let", "mut", "primes", "=", "vec", "!"):
+        take(expected)
+    base = literal(); take(";")
+    if not base:
+        raise AssertionError("canonical anchor base must be nonempty")
+    branches = []
+    if peek() == "if":
+        while True:
+            take("if"); take("n")
+            comparison = take()
+            if comparison not in ("==", ">=", "<=", "!=", ">", "<"):
+                raise AssertionError("unsupported anchor dimension comparison")
+            bound = number()
+            branches.append(((comparison, bound), operations()))
+            if peek() != "else":
+                break
+            take("else")
+            if peek() != "if":
+                branches.append((None, operations()))
+                break
+    take("primes")
+    if peek() is not None:
+        raise AssertionError(f"unconsumed anchor Rust token {peek()!r}")
+    return {"base": base, "branches": branches}
 
 
-def anchors_for_n(anchors: dict[str, list[int]], n: int) -> list[int]:
-    if n >= ANCHOR_EXTENSION_N:
-        return anchors["base"] + anchors["extended"]
-    return list(anchors["base"])
+def anchors_for_n(anchors: dict, n: int) -> list[int]:
+    result = list(anchors["base"])
+    for condition, operations in anchors["branches"]:
+        if condition is not None:
+            comparison, value = condition
+            applies = {"==": n == value, ">=": n >= value, "<=": n <= value,
+                       "!=": n != value, ">": n > value, "<": n < value}[comparison]
+            if not applies:
+                continue
+        for method, value in operations:
+            if method == "truncate":
+                del result[value:]
+            else:
+                result.extend(value)
+        break
+    return result
+
+
+def verify_runtime_catalogue(source: str, catalogue: dict, dimensions) -> dict[str, list[int]]:
+    """Compile only the parsed, side-effect-free Vec body, not the crate.
+
+    parse_anchors must have accepted every token before Rust execution. This
+    restricted body can only manipulate the numeric vector using n. rustc
+    and its output executable are invoked with argument lists, never a shell.
+    """
+    parse_anchors(source)
+    rustc = shutil.which("rustc")
+    if rustc is None:
+        raise AssertionError("rustc is required for the runtime anchor catalogue cross-check")
+    dimensions = list(dimensions)
+    assert dimensions and all(type(n) is int and 0 < n < 1 << 64 for n in dimensions)
+    program = ("fn anchors(n: usize) -> Vec<u64> {" + anchor_function_body(source)
+               + "}\nfn main() { for n in " + repr(dimensions)
+               + ' { println!("{}:{:?}", n, anchors(n)); } }\n')
+    with tempfile.TemporaryDirectory(prefix="nine65-anchor-audit-") as directory:
+        code = Path(directory) / "catalogue.rs"
+        binary = Path(directory) / "catalogue"
+        code.write_text(program)
+        subprocess.run([rustc, "--edition=2021", str(code), "-o", str(binary)],
+                       check=True, capture_output=True, text=True)
+        output = subprocess.run([str(binary)], check=True, capture_output=True, text=True).stdout
+    runtime = {n: json.loads(values) for n, values in
+               (line.split(":", 1) for line in output.splitlines())}
+    if any(not basis or len(basis) != len(set(basis)) for basis in runtime.values()):
+        raise AssertionError("runtime anchor bases must be nonempty and contain distinct lanes")
+    expected = {str(n): anchors_for_n(catalogue, n) for n in dimensions}
+    if runtime != expected:
+        raise AssertionError(f"Rust/Python anchor catalogue disagreement: {runtime!r} != {expected!r}")
+    return runtime
 
 
 def pairwise_coprime(values: list[int]) -> bool:
@@ -207,12 +305,10 @@ def main() -> int:
 
     profiles = {name: parse_profile(secure_source, name) for name in PROFILE_NAMES}
     anchor_sets = parse_anchors(rns_source)
-    # The n >= 16384 basis is a strict superset of the n <= 8192 basis, so the
-    # full set is what primality/coprimality must hold over.
-    anchors = anchors_for_n(anchor_sets, ANCHOR_EXTENSION_N)
-    canonical_anchors_by_n = {
-        str(n): anchors_for_n(anchor_sets, n) for n in SUPPORTED_N
-    }
+    canonical_anchors_by_n = verify_runtime_catalogue(rns_source, anchor_sets, SUPPORTED_N)
+    # This is a catalogue UNION, not one runtime basis. N=32768 substitutes
+    # lanes rather than extending the N=16384 list.
+    anchors = list(dict.fromkeys(p for basis in canonical_anchors_by_n.values() for p in basis))
 
     all_main = [
         prime
@@ -265,7 +361,7 @@ def main() -> int:
         raise AssertionError("one or more modulus-class checks failed")
 
     result: dict[str, object] = {
-        "schema": 1,
+        "schema": 2,
         "status": "PASS",
         "arithmetic": "exact_integer_only",
         "main_lane_class": "CLASS-F",
@@ -276,7 +372,13 @@ def main() -> int:
         "canonical_anchors": anchors,
         "canonical_anchors_by_n": canonical_anchors_by_n,
         "canonical_anchor_base_count": len(anchor_sets["base"]),
-        "canonical_anchor_extended_count": len(anchors),
+        "canonical_anchor_extended_count": max(map(len, canonical_anchors_by_n.values())),
+        "canonical_anchor_union_count": len(anchors),
+        "canonical_anchor_counts_by_n": {n: len(basis) for n, basis in canonical_anchors_by_n.items()},
+        "canonical_anchors_scope": "union_of_dimension_specific_runtime_bases",
+        "runtime_anchor_catalogue_verified": True,
+        "source_sha256": {"secure_configs.rs": hashlib.sha256(secure_source.encode()).hexdigest(),
+                          "rns.rs": hashlib.sha256(rns_source.encode()).hexdigest()},
         "all_main_prime": all_main_prime,
         "all_main_ntt_compatible": all_main_ntt_compatible,
         "all_profile_lanes_pairwise_coprime": all_profile_lanes_pairwise_coprime,
