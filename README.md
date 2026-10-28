@@ -19,6 +19,9 @@ to single-modulus admission and decryption-capacity accounting.
 The [public refresh continuation](docs/execution/2026-10-28/PUBLIC_REFRESH_PROGRESS.md)
 adds an encrypted phase-clock producer with stressed-input contraction tests;
 named-profile public refresh remains gated on native integration and admission.
+The [typed roundtrip continuation](docs/execution/2026-10-28/PUBLIC_REFRESH_ROUNDTRIP.md)
+adds full-polynomial assembly, work-key return, and sealed history admission
+for the conditional small-degree construction.
 
 The repository has moved beyond the historical “v7 Bootstrap Complete” snapshot. The current integration line combines:
 

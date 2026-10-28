@@ -15,6 +15,9 @@ use std::sync::Arc;
 #[path = "wire_q.rs"]
 pub mod wire_q;
 
+#[path = "cram_main_phase_clock.rs"]
+pub mod phase_clock;
+
 #[derive(Debug, thiserror::Error)]
 pub enum CramMainError {
     #[error("invalid main-Q parameters: {0}")]

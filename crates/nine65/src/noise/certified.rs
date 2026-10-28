@@ -136,7 +136,7 @@ impl ScalarNoiseModel {
         })
     }
 
-    fn admit(&self, scaled_error: U512) -> Result<CertifiedNoiseBound, &'static str> {
+    pub(crate) fn admit(&self, scaled_error: U512) -> Result<CertifiedNoiseBound, &'static str> {
         if words(scaled_error.mul_u128(2)) >= words(self.q) {
             return Err("certified phase bound exhausted before operation");
         }

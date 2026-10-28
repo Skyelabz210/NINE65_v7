@@ -1,9 +1,10 @@
 //! Encrypted phase-clock lookup using opaque ternary selector precharges.
 //!
 //! This kernel evaluates an anti-periodic LUT of public integer rotations.
-//! It does not certify that those rotations describe an admitted work phase,
-//! return to the work key, or authorize public refresh. Source-history ingress
-//! and the complete carry composition remain separate obligations.
+//! Full-polynomial assembly and a bound-carrying work-key return compose this
+//! conditional kernel. The main-Q child adapter supplies immutable scalar
+//! input history and registered source/target key domains. This construction
+//! does not authorize named-profile public refresh or establish native security.
 
 use crate::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use crate::arithmetic::phase_clock_plan::PhaseClockPlan;
@@ -12,6 +13,9 @@ use crate::arithmetic::RNSPolynomial;
 use crate::entropy::FheRng;
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::ops::exact_mul::{ExactMulEvaluator, ExactTensor3, RNSHybridGadgetKey};
+use crate::ops::phase_clock_return::{
+    PhaseClockReturnEvaluator, PhaseClockReturnKey, PhaseClockReturnedCiphertext,
+};
 use crate::ops::rns_fhe::{
     DualRNSCiphertext, DualRNSSecretKey, RNSCiphertext, RNSFHEContext, RNSSecretKey,
 };
@@ -47,6 +51,21 @@ pub struct PublicPhaseClockKey {
     source_primes: Vec<u64>,
     source_weight_bound: usize,
     eta: usize,
+    source_domain: Option<([u8; 32], [u8; 32])>,
+    boot_family: [u8; 32],
+}
+
+impl PublicPhaseClockKey {
+    #[cfg(test)]
+    pub(crate) fn same_boot_family(&self, other: &Self) -> bool {
+        self.boot_family == other.boot_family
+    }
+    pub(crate) fn bind_source_domain(&mut self, context: [u8; 32], key: [u8; 32]) {
+        self.source_domain = Some((context, key));
+    }
+    pub(crate) fn matches_source_domain(&self, context: &[u8; 32], key: &[u8; 32]) -> bool {
+        self.source_domain == Some((*context, *key))
+    }
 }
 
 /// Main-basis ciphertext under the boot key. Its error bound is in ideal-grid
@@ -54,13 +73,57 @@ pub struct PublicPhaseClockKey {
 pub struct PublicPhaseClockOutput {
     ciphertext: RNSCiphertext,
     error_bound: U512,
+    pub(crate) n: usize,
+    pub(crate) t: u64,
+    pub(crate) primes: Vec<u64>,
+    pub(crate) eta: usize,
+    pub(crate) boot_family: [u8; 32],
+    pub(crate) embedded_degree: Option<usize>,
+    pub(crate) admitted_source: Option<([u8; 32], [u8; 32])>,
 }
 impl PublicPhaseClockOutput {
+    pub(crate) fn mark_admitted_source(
+        &mut self,
+        context: [u8; 32],
+        key: [u8; 32],
+    ) -> Nine65Result<()> {
+        if self
+            .admitted_source
+            .is_some_and(|prior| prior != (context, key))
+        {
+            return Err(failure("cannot retag an admitted phase-clock source"));
+        }
+        self.admitted_source = Some((context, key));
+        Ok(())
+    }
     pub fn ciphertext(&self) -> &RNSCiphertext {
         &self.ciphertext
     }
     pub fn error_bound(&self) -> U512 {
         self.error_bound
+    }
+}
+
+/// Common setup binds carry precharge and return switch to one boot family.
+pub struct PublicPhaseClockRefreshKey {
+    clock: PublicPhaseClockKey,
+    returning: PhaseClockReturnKey,
+}
+impl PublicPhaseClockRefreshKey {
+    pub(crate) fn bind_source_domain(
+        &mut self,
+        context: [u8; 32],
+        key: [u8; 32],
+    ) -> Nine65Result<()> {
+        self.returning.bind_target_source_domain(context, key)?;
+        self.clock.bind_source_domain(context, key);
+        Ok(())
+    }
+    pub fn clock_key(&self) -> &PublicPhaseClockKey {
+        &self.clock
+    }
+    pub fn return_key(&self) -> &PhaseClockReturnKey {
+        &self.returning
     }
 }
 
@@ -73,9 +136,208 @@ pub struct PublicPhaseClockEvaluator<'a> {
 }
 
 impl<'a> PublicPhaseClockEvaluator<'a> {
+    /// Client-only setup of the carry and return columns. Evaluation receives
+    /// this bundle and public contexts, with neither clear secret.
+    pub fn generate_refresh_key_with_rng<R: FheRng>(
+        &self,
+        work: &RNSFHEContext,
+        work_secret: &RNSSecretKey,
+        boot_secret: &RNSSecretKey,
+        rng: &mut R,
+    ) -> Nine65Result<PublicPhaseClockRefreshKey> {
+        if work.n != self.plan.source_n()
+            || work.t != self.plan.source_plaintext()
+            || work.config.primes != self.plan.source_primes()
+        {
+            return Err(failure("refresh bundle source context mismatch"));
+        }
+        let returning = PhaseClockReturnEvaluator::new(self.ctx, work)?;
+        crate::ops::rns_galois::validate_ternary_secret(work, work_secret)?;
+        crate::ops::rns_galois::validate_ternary_secret(self.ctx, boot_secret)?;
+        // Refuse all direct-key storage before consuming setup randomness.
+        if self
+            .estimated_key_bytes()
+            .checked_add(returning.estimated_key_bytes())
+            .is_none_or(|bytes| bytes > 512 * 1024 * 1024)
+        {
+            return Err(failure(
+                "refresh bundle exceeds direct precharge storage limit",
+            ));
+        }
+        let source = DualRNSSecretKey {
+            s: crate::ops::rns_fhe::DualRNSPoly {
+                n: work.n,
+                anchor: vec![],
+                main: work_secret
+                    .s
+                    .limbs
+                    .iter()
+                    .enumerate()
+                    .map(|(i, lane)| {
+                        lane.iter()
+                            .map(|&v| work.rns.mont_contexts[i].from_montgomery(v))
+                            .collect()
+                    })
+                    .collect(),
+            },
+        };
+        let clock = self.generate_key_with_rng(boot_secret, &source, rng)?;
+        let mut return_key = returning.generate_key_with_rng(work_secret, boot_secret, rng)?;
+        return_key.bind_boot_family(clock.boot_family)?;
+        Ok(PublicPhaseClockRefreshKey {
+            clock,
+            returning: return_key,
+        })
+    }
+
+    /// Conditional full-polynomial transduction and return. The raw source
+    /// must satisfy the plan's phase allowance; this does not issue fresh
+    /// operation history for an externally supplied ciphertext.
+    pub fn refresh_main_polynomial(
+        &self,
+        work: &RNSFHEContext,
+        source: &RNSCiphertext,
+        key: &PublicPhaseClockRefreshKey,
+    ) -> Nine65Result<PhaseClockReturnedCiphertext> {
+        let outer = self.transduce_main_polynomial(work, source, &key.clock)?;
+        self.return_to_work(&outer, work, key)
+    }
+
+    pub fn return_to_work(
+        &self,
+        outer: &PublicPhaseClockOutput,
+        work: &RNSFHEContext,
+        key: &PublicPhaseClockRefreshKey,
+    ) -> Nine65Result<PhaseClockReturnedCiphertext> {
+        PhaseClockReturnEvaluator::new(self.ctx, work)?.apply(outer, &key.returning)
+    }
+
+    /// Reuse the same precharge on its own prior returned ciphertext. A
+    /// different bundle, or a returned error outside the plan, is refused.
+    pub fn refresh_returned(
+        &self,
+        work: &RNSFHEContext,
+        source: &PhaseClockReturnedCiphertext,
+        key: &PublicPhaseClockRefreshKey,
+    ) -> Nine65Result<PhaseClockReturnedCiphertext> {
+        if !source.matches_work_family(key.clock.boot_family)
+            || words(source.error_bound()) > words(self.plan.source_error_bound())
+        {
+            return Err(failure(
+                "returned ciphertext does not belong to this admitted refresh family",
+            ));
+        }
+        let domain = source.admitted_source();
+        if let Some((context, source_key)) = domain {
+            if !key.clock.matches_source_domain(&context, &source_key) {
+                return Err(failure(
+                    "admitted return belongs to another registered source domain",
+                ));
+            }
+        }
+        let mut outer = self.transduce_main_polynomial(work, source.ciphertext(), &key.clock)?;
+        if let Some((context, source_key)) = domain {
+            outer.mark_admitted_source(context, source_key)?;
+        }
+        self.return_to_work(&outer, work, key)
+    }
+    pub(crate) fn source_plan(&self) -> &PhaseClockPlan {
+        self.plan
+    }
+
+    fn output(
+        &self,
+        ciphertext: RNSCiphertext,
+        error_bound: U512,
+        key: &PublicPhaseClockKey,
+        embedded_degree: Option<usize>,
+    ) -> PublicPhaseClockOutput {
+        PublicPhaseClockOutput {
+            ciphertext,
+            error_bound,
+            n: self.ctx.n,
+            t: self.ctx.t,
+            primes: self.ctx.config.primes.clone(),
+            eta: self.ctx.config.eta,
+            boot_family: key.boot_family,
+            embedded_degree,
+            admitted_source: None,
+        }
+    }
+
+    /// Embed all source coefficients with X_work = X_boot^(N_boot/N_work).
+    /// Charges the sum of complete per-coefficient error bounds; errors occupy
+    /// the entire boot polynomial and cannot be treated as disjoint supports.
+    pub fn transduce_polynomial(
+        &self,
+        source: &DualRNSCiphertext,
+        key: &PublicPhaseClockKey,
+    ) -> Nine65Result<PublicPhaseClockOutput> {
+        let n = self.plan.source_n();
+        if self.ctx.n < n || self.ctx.n % n != 0 {
+            return Err(failure("phase clock output ring cannot embed source ring"));
+        }
+        let mut ct = self.constant(0);
+        let mut bound = U512::zero();
+        let q = U512::product_u64s(&self.ctx.config.primes);
+        for j in 0..n {
+            let coefficient = self.transduce_coefficient(source, j, key)?;
+            // Each admitted term is <Q/2 and partial sum <Q/2. With Q<=256
+            // bits, the addition cannot overflow U512 before this check.
+            bound = bound.add(coefficient.error_bound);
+            if words(bound.mul_u128(2)) >= words(q) {
+                return Err(failure(
+                    "phase clock full-polynomial assembly exceeds phase bound",
+                ));
+            }
+            ct = self.ctx.add(
+                &ct,
+                &shift(self.ctx, &coefficient.ciphertext, j * (self.ctx.n / n)),
+            );
+        }
+        Ok(self.output(ct, bound, key, Some(n)))
+    }
+
+    /// Explicit main-only ingress. Source polynomial limbs are Montgomery;
+    /// conversion preserves the represented components and invents no anchors.
+    pub fn transduce_main_polynomial(
+        &self,
+        work: &RNSFHEContext,
+        source: &RNSCiphertext,
+        key: &PublicPhaseClockKey,
+    ) -> Nine65Result<PublicPhaseClockOutput> {
+        if work.n != self.plan.source_n()
+            || work.t != self.plan.source_plaintext()
+            || work.config.primes != self.plan.source_primes()
+        {
+            return Err(failure("phase clock main-only source context mismatch"));
+        }
+        crate::ops::rns_galois::validate_main(work, source)?;
+        let ordinary = |p: &RNSPolynomial| crate::ops::rns_fhe::DualRNSPoly {
+            n: work.n,
+            anchor: vec![],
+            main: p
+                .limbs
+                .iter()
+                .enumerate()
+                .map(|(i, lane)| {
+                    lane.iter()
+                        .map(|&v| work.rns.mont_contexts[i].from_montgomery(v))
+                        .collect()
+                })
+                .collect(),
+        };
+        let view = DualRNSCiphertext {
+            c0: ordinary(&source.c0),
+            c1: ordinary(&source.c1),
+            level: self.plan.source_level(),
+        };
+        self.transduce_polynomial(&view, key)
+    }
+
     /// Public phase transduction of one coefficient under the independent
     /// boot key. The chart must represent the complete carry. Source-history
-    /// admission and work-key return are separate, unimplemented stages.
+    /// admission and work-key return are separate typed stages.
     pub fn transduce_coefficient(
         &self,
         source: &DualRNSCiphertext,
@@ -129,10 +391,7 @@ impl<'a> PublicPhaseClockEvaluator<'a> {
         if words(bound.mul_u128(2)) >= words(q) {
             return Err(failure("phase affine correction lacks output headroom"));
         }
-        Ok(PublicPhaseClockOutput {
-            ciphertext: self.ctx.add(&affine, &carry.ciphertext),
-            error_bound: bound,
-        })
+        Ok(self.output(self.ctx.add(&affine, &carry.ciphertext), bound, key, None))
     }
 
     fn constant(&self, value: i64) -> RNSCiphertext {
@@ -222,6 +481,11 @@ impl<'a> PublicPhaseClockEvaluator<'a> {
     pub fn new(ctx: &'a RNSFHEContext, plan: &'a PhaseClockPlan) -> Nine65Result<Self> {
         if ctx.n != plan.clock_n() || ctx.t < 3 || ctx.t > i64::MAX as u64 {
             return Err(failure("phase clock ring or plaintext mismatch"));
+        }
+        if crate::arithmetic::rns::product_limbs_u64(&ctx.config.primes).len() > 4 {
+            return Err(failure(
+                "phase clock boot main product exceeds 256-bit capacity",
+            ));
         }
         let exact = ctx
             .try_exact_evaluator()
@@ -397,6 +661,10 @@ impl<'a> PublicPhaseClockEvaluator<'a> {
                 minus: bit(v == -1, rng),
             })
             .collect();
+        let mut boot_family = [0; 32];
+        for bytes in boot_family.chunks_mut(8) {
+            bytes.copy_from_slice(&rng.next_u64().to_le_bytes());
+        }
         Ok(PublicPhaseClockKey {
             controls,
             trace,
@@ -406,6 +674,8 @@ impl<'a> PublicPhaseClockEvaluator<'a> {
             source_primes: primes.to_vec(),
             source_weight_bound: self.plan.source_weight_bound(),
             eta: self.ctx.config.eta,
+            source_domain: None,
+            boot_family,
         })
     }
 
@@ -457,10 +727,7 @@ impl<'a> PublicPhaseClockEvaluator<'a> {
         for trace in &key.trace {
             acc = self.ctx.add(&acc, &galois.apply(&acc, trace)?);
         }
-        Ok(PublicPhaseClockOutput {
-            ciphertext: acc,
-            error_bound: self.error_bound,
-        })
+        Ok(self.output(acc, self.error_bound, key, None))
     }
 
     fn cmux(&self, ct: &RNSCiphertext, amount: usize, key: &BitKey) -> Nine65Result<RNSCiphertext> {
@@ -847,5 +1114,125 @@ mod tests {
         assert!(PublicPhaseClockEvaluator::new(&ctx, &plan).is_err());
         ctx.delta_rns.clear();
         assert!(PublicPhaseClockEvaluator::new(&ctx, &plan).is_err());
+        ctx.config.primes = vec![998244353; 9];
+        let error = PublicPhaseClockEvaluator::new(&ctx, &plan).err().unwrap();
+        assert!(error.to_string().contains("256-bit capacity"));
+    }
+
+    #[test]
+    fn full_polynomial_returns_to_work_key_and_repeats_after_products() {
+        let c = config();
+        let work = RNSFHEContext::try_new(&c).unwrap();
+        let q = U512::product_u64s(&c.primes);
+        let plan = PhaseClockPlan::new(&c, c.primes.len(), 256, 17, q.div_u64(128), c.n).unwrap();
+        let mut outer = c.clone();
+        outer.n = 256;
+        let boot = RNSFHEContext::try_new(&outer).unwrap();
+        let clock = PublicPhaseClockEvaluator::new(&boot, &plan).unwrap();
+        let mut rng = ShadowHarvester::with_seed(0x524550454154);
+        let work_keys = work.generate_keys(&mut rng);
+        let boot_keys = boot.generate_keys(&mut rng);
+        let mut key = clock
+            .generate_refresh_key_with_rng(
+                &work,
+                &work_keys.secret_key,
+                &boot_keys.secret_key,
+                &mut rng,
+            )
+            .unwrap();
+        let exact = work.try_exact_evaluator().unwrap();
+        let relin = exact.generate_hybrid_gadget_key_with_rng(&work_keys.secret_key, &mut rng);
+        let mut message = vec![3, 1, c.t - 2, 0, 1, 2, c.t - 1, 1];
+        let mut input = work.encrypt_with_rng(0, &work_keys.public_key, &mut rng);
+        let load = q.d0 / (512 * c.t as u128);
+        // Encrypt a nonconstant polynomial with public signed phase stress.
+        for (i, &p) in c.primes.iter().enumerate() {
+            for (j, &m) in message.iter().enumerate() {
+                let signed = if m > c.t / 2 {
+                    m as i128 - c.t as i128
+                } else {
+                    m as i128
+                };
+                let stress = if j % 2 == 0 {
+                    load as i128
+                } else {
+                    -(load as i128)
+                };
+                let addition =
+                    (signed * work.delta_rns[i] as i128 + stress).rem_euclid(p as i128) as u64;
+                let addition = work.rns.mont_contexts[i].to_montgomery(addition);
+                input.c0.limbs[i][j] =
+                    ((input.c0.limbs[i][j] as u128 + addition as u128) % p as u128) as u64;
+            }
+        }
+        let square_plain = |values: &[u64]| -> Vec<u64> {
+            let mut sums = vec![0i128; c.n];
+            for (i, &a) in values.iter().enumerate() {
+                for (j, &b) in values.iter().enumerate() {
+                    let value = a as i128 * b as i128;
+                    sums[(i + j) % c.n] += if i + j >= c.n { -value } else { value };
+                }
+            }
+            sums.iter()
+                .map(|&v| v.rem_euclid(c.t as i128) as u64)
+                .collect()
+        };
+        for cycle in 0..2 {
+            assert_eq!(decode_all(&work, &input, &work_keys.secret_key), message);
+            let incoming = observed_scaled_error(&work, &input, &work_keys.secret_key, &message);
+            assert!(words(U512::from_u128(incoming)) <= words(plan.source_error_bound()));
+            let returned = clock.refresh_main_polynomial(&work, &input, &key).unwrap();
+            assert_eq!(
+                decode_all(&work, returned.ciphertext(), &work_keys.secret_key),
+                message
+            );
+            let error = observed_scaled_error(
+                &work,
+                returned.ciphertext(),
+                &work_keys.secret_key,
+                &message,
+            );
+            assert!(words(U512::from_u128(error)) <= words(returned.error_bound()));
+            if cycle == 0 {
+                assert!(
+                    words(U512::from_u128(incoming)) > words(returned.error_bound().mul_u128(2)),
+                    "public return must contract the stressed input error"
+                );
+                // An unrelated refresh family cannot consume this output.
+                key.clock.boot_family[0] ^= 1;
+                assert!(clock.refresh_returned(&work, &returned, &key).is_err());
+                key.clock.boot_family[0] ^= 1;
+            }
+            let cert = exact.plan().certificate();
+            let switch = U512::from_u128(c.n as u128 * c.eta as u128)
+                .mul_u128((1u128 << cert.base_bits) - 1)
+                .mul_u128(cert.digits_per_lane.iter().sum::<usize>() as u128);
+            // General ring tensor envelope; no scalar-only certificate is
+            // issued for this nonconstant plaintext fixture.
+            let bound = returned
+                .error_bound()
+                .mul_u128(8 * c.n as u128 * c.n as u128 * c.t as u128)
+                .add(
+                    U512::from_u128(4 * c.n as u128 * c.n as u128)
+                        .mul_u128(c.t as u128)
+                        .mul_u128(c.t as u128)
+                        .mul_u128(c.t as u128),
+                )
+                .add(switch.mul_u128(c.t as u128));
+            assert!(words(bound) <= words(plan.source_error_bound()));
+            input = exact
+                .try_mul_exact(returned.ciphertext(), returned.ciphertext(), &relin)
+                .unwrap();
+            message = square_plain(&message);
+            assert_eq!(decode_all(&work, &input, &work_keys.secret_key), message);
+            assert!(
+                words(U512::from_u128(observed_scaled_error(
+                    &work,
+                    &input,
+                    &work_keys.secret_key,
+                    &message
+                ))) <= words(bound)
+            );
+        }
     }
 }

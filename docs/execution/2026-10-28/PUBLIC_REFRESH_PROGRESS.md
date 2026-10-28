@@ -1,5 +1,9 @@
 # Public refresh implementation progress
 
+Follow-up: [the typed roundtrip continuation](PUBLIC_REFRESH_ROUNDTRIP.md)
+adds polynomial assembly, work-key return and sealed history readmission.
+The native admission conditions below still apply.
+
 The named-profile public refresh gate remains closed. The forced
 `secure_128_deep` benchmark still fails at the original Phase-1 soundness
 gate. This continuation implements a conditional encrypted phase producer

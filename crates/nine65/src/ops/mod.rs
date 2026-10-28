@@ -35,6 +35,7 @@ pub mod gso_fhe;
 pub mod homomorphic;
 pub mod neural;
 pub mod parallel;
+pub mod phase_clock_return;
 pub mod prime_power_phase;
 pub mod public_phase_clock;
 pub mod rns_fhe;
