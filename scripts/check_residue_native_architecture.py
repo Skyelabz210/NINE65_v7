@@ -46,6 +46,9 @@ PRODUCTION_TARGETS = (
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "rns.rs",
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "recumbent.rs",
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "rank_residue_divider.rs",
+    ROOT / "crates" / "nine65" / "src" / "arithmetic" / "canonical_scale_round.rs",
+    ROOT / "crates" / "nine65" / "src" / "arithmetic" / "phase_clock_plan.rs",
+    ROOT / "crates" / "nine65" / "src" / "ops" / "public_phase_clock.rs",
     ROOT / "crates" / "nine65" / "src" / "ops" / "rns_fhe.rs",
     # rns_mul.rs removed (G19): legacy duplicate of rns_fhe.rs's RNS multiply
     # stack, superseded and deleted rather than gated -- see ops/mod.rs.

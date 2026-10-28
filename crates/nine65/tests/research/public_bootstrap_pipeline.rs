@@ -2,6 +2,7 @@
 //! Evaluation owns public contexts and precharged ciphertexts, never either key.
 
 use super::*;
+use nine65::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use nine65::arithmetic::main_only_base_ext::MainOnlyBaseExt;
 use nine65::ops::rns_fhe::{RNSEvalKey, RNSPublicKey, RNSSecretKey};
 
@@ -10,59 +11,23 @@ mod outer_ring_return;
 
 const SPECIAL: u64 = 1_811_939_329;
 
-// Unlike CanonicalScaleRound, this local prototype supports an EVEN target.
-// Q is odd, so floor(Q/2) mod T = ((Q mod 2T)-1)/2. No inverse of 2
-// modulo T is used. Only the public rank projector's bounded comparisons
-// are needed; a canonical wide ciphertext coefficient is never materialized.
+// Research callers use the checked production arithmetic, including even
+// targets and the upper endpoint T. No private duplicate rounding algorithm.
 struct RoundProjection {
-    main: Vec<u64>,
-    target: u64,
-    projector: MainOnlyBaseExt,
-    half: u64,
-    q_inverse: u64,
+    checked: CanonicalScaleRound,
 }
 
 impl RoundProjection {
     fn new(main: &[u64], target: u64) -> Self {
-        assert!(target >= 2 && target <= i64::MAX as u64 / 2);
-        assert!(main.iter().all(|q| q % 2 == 1));
-        let twice = 2 * target;
-        let q_mod = main
-            .iter()
-            .fold(1u64, |a, &q| (a as u128 * q as u128 % twice as u128) as u64);
         Self {
-            main: main.to_vec(),
-            target,
-            projector: MainOnlyBaseExt::new(main, &[target]).unwrap(),
-            half: (q_mod - 1) / 2,
-            q_inverse: inverse(q_mod % target, target),
+            checked: CanonicalScaleRound::new(main, target).unwrap(),
         }
     }
 
     // Unwrap the endpoint T, which is otherwise returned as zero. Its
     // ambiguity is resolved by the PUBLIC canonical coefficient's half.
     fn round(&self, input: &[u64]) -> u64 {
-        assert_eq!(input.len(), self.main.len());
-        let remainder: Vec<_> = input
-            .iter()
-            .zip(&self.main)
-            .map(|(&x, &q)| {
-                assert!(x < q);
-                ((x as u128 * self.target as u128 + (q - 1) as u128 / 2) % q as u128) as u64
-            })
-            .collect();
-        let mut out = [0];
-        self.projector.project(&remainder, &mut out).unwrap();
-        let y = ((self.half as u128 + self.target as u128 - out[0] as u128)
-            * self.q_inverse as u128
-            % self.target as u128) as u64;
-        if y == 0 {
-            let (_, upper) = self.projector.project_centered(input, &mut out).unwrap();
-            if upper {
-                return self.target;
-            }
-        }
-        y
+        self.checked.scale_round_unreduced(input).unwrap().value()
     }
 }
 

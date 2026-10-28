@@ -36,6 +36,7 @@ pub mod homomorphic;
 pub mod neural;
 pub mod parallel;
 pub mod prime_power_phase;
+pub mod public_phase_clock;
 pub mod rns_fhe;
 pub mod rns_galois;
 // REMOVED (G19, legacy duplicate stack): `pub mod rns_mul;` used to define a

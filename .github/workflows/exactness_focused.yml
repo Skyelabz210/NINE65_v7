@@ -54,6 +54,7 @@ jobs:
           python3 scripts/test_check_recumbency.py
           python3 scripts/test_emission_policy_alignment.py
           python3 scripts/test_a2_arrow_suite.py
+          python3 scripts/test_real_refresh_evidence.py
       - name: Exact Holte and centered-chart models
         run: |
           mkdir -p "${RUNNER_TEMP}/carry-models"
@@ -106,8 +107,15 @@ jobs:
           cargo test -p nine65 "${cargo_profile[@]}" --test single_modulus_admission
           cargo test -p nine65 --lib "${cargo_profile[@]}" noise::budget::
           cargo test -p nine65 --lib "${cargo_profile[@]}" ops::homomorphic::tests::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" arithmetic::canonical_scale_round::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" arithmetic::phase_clock_plan::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" ops::public_phase_clock::
+          cargo test -p nine65 "${cargo_profile[@]}" --test refresh_preflight_regression
           cargo test -p nine65 --lib "${cargo_profile[@]}" zero_noise_phase1_carry_witness
           cargo test -p exact_transcendentals "${cargo_profile[@]}" --test holte_reversibility
+      - name: Expanded phase preprocessing integration
+        if: matrix.profile == 'debug'
+        run: cargo test -p nine65 --features allow_insecure --test expanded_phase1
       - name: Audit actual Rust operation traces
         if: matrix.profile == 'release'
         shell: bash
