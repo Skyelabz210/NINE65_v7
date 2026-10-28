@@ -1,0 +1,29 @@
+{
+  "scope": "User clarified ban is synthetic emission mechanisms, not reconstruction per se. Lexical gates cannot establish iid or reversibility.",
+  "red": {
+    "recumbency_policy_failures": 5,
+    "architecture_policy_failures": 3
+  },
+  "green": {
+    "recumbency_tests": 7,
+    "policy_alignment_tests": 7
+  },
+  "actual_tree": {
+    "default_architecture": "FAIL: 3 Garner references in exact_transcendentals/cram_ct",
+    "default_recumbency": "PASS: 0 emission/product source gate findings; prior printed Garner name was a lexical false positive",
+    "capacity_contract": "FAIL: 6 preexisting sentinel/metadata classes",
+    "products_only": "PASS"
+  },
+  "legacy_mode": "--legacy-reconstruction-audit remains available on all three scanners",
+  "hashes": {
+    "scripts/check_recumbency.py": "65537a7778a04620e7fae1c827c220a61b953cc6c178ae28c45ecca2f719337d",
+    "scripts/test_check_recumbency.py": "3835ac816cc68f5e0cb7e90bc28aa22f66e2203014fd5f764e1cb81aceadb915",
+    "scripts/check_residue_native_architecture.py": "5cbd5faf248ce73f0209647240f135f987a04da06f7e5fe59ca48e4a28e631ab",
+    ".github/scripts/check_cram_recumbency.py": "b48320b3fb45e2f26bc191635683582e98c2ae7be58650a4ddd8098ffcda226a",
+    "scripts/test_emission_policy_alignment.py": "7101d513128273d63722cb07489de4e30b39098f508bcff29f963717ba8a59da"
+  },
+  "string_literal_regression_red": {
+    "recumbency_subcase_failures": 5,
+    "architecture_test_failures": 1
+  }
+}

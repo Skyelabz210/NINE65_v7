@@ -1,0 +1,257 @@
+{
+  "base_commit": "ca49839cb38e34271dce74b57dbdb3cc4743e37f",
+  "generated_utc": "2026-10-28T00:45:38.609562+00:00",
+  "source_sha256": {
+    "crates/nine65/src/arithmetic/canonical_scale_round.rs": "0606b4f6f5f7aca8768f35735df7e9d709144790dff8b75bd406e1be50227dd1",
+    "crates/nine65/src/arithmetic/phase_clock_plan.rs": "7a2ea30a13c4510279317a384e33e9f9bd3d7e649f8a0494561d96de585e253f",
+    "crates/nine65/src/ops/public_phase_clock.rs": "42bb72d51ea6790b0d190caea12794eb0c55d168a154ac06e8ac4f72e4ae4408",
+    "crates/nine65/src/bin/nine65_bench.rs": "576a47871345db3c807c2435ef4bacf88bcfaff5eb2ebbb2f1e2a79605743140",
+    "crates/nine65/tests/refresh_preflight_regression.rs": "c73ada913bb15ead7b5944891d5fc933f34dcec07e49c6f5e7bb05f350386295",
+    "crates/nine65/tests/research/public_bootstrap_pipeline.rs": "c9058d4888144b95424495ea4f1753ae462a93ea21713191cc542d95bd6f8f89",
+    "scripts/check_real_refresh_evidence.py": "e085610cadb5cdf28303cd566a2fb9129860627155830933b4085074e403b64e",
+    "scripts/test_real_refresh_evidence.py": "1192c6da88bb5a00b4345cff3c6f521c6e766257054c0d4e67e464d3ec5ea0cc",
+    "scripts/check_residue_native_architecture.py": "ee6a479caf286e437d84b2cd5814d236c73afeae4218d018d44ebe8df9dd177b",
+    ".github/workflows/cram_real_refresh_evidence.yml": "ebad1040a970035c1be04503a7fa07276925c978c5e1ed7516e67928280d2812",
+    ".github/workflows/exactness_focused.yml": "5ff75ff32a633d5521ac95971b4bcbb2815e9838fdb8c1b4ff1307c9eabea372",
+    "crates/nine65/tests/expanded_phase1.rs": "aa7a2134e3ba7490308c0785ddadf02b07651fc0e13052812fe29cff7988584d"
+  },
+  "logs": [
+    {
+      "file": "refresh-projection-before.log.gz",
+      "sha256": "93b26047ca15cc1d3da082ab9ed94370f3162aadb79f8f2e1a37a7da58b07429",
+      "uncompressed_sha256": "1c48ef0833688f7ead5b8834e723664766c7c710fca750748c37740c69f7a0a7",
+      "summaries": [
+        "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1157 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "file": "refresh-projection-debug.log.gz",
+      "sha256": "31df772b0fd6217431b7bd94308c4c78a2cb3ae2ee8ec2c88a7333d4c0b95339",
+      "uncompressed_sha256": "3ed0130abd7d731df09ab7a7a6de141714846850a2f418f0360294e347aa350e",
+      "summaries": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1162 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "file": "refresh-projection-release.log.gz",
+      "sha256": "846d9c25045701e7eac0f7056bfae490120f82832f9e72a6b9d82e86f5f577b8",
+      "uncompressed_sha256": "5380c8dfa9b26574d4bf543f22277be36d0ac0a1d3bcdc60750a1e94ee63f257",
+      "summaries": [
+        "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1161 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "file": "refresh-projection-live-preprocess.log.gz",
+      "sha256": "f90c85bbf2e5df68dc58e6b5d22bb382ff4658ecfcf3a7322b7cdccbe9e6d9c9",
+      "uncompressed_sha256": "ec69f18bcfc7896a4cbb6c9dffb85c62a3fbd2231c8df82357ad454051a79193",
+      "summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 59 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "file": "phase-clock-plan-debug-final.log.gz",
+      "sha256": "8c91db90b304da931c326a9bc14478c865a88e22f1c3dd70606690173252afa1",
+      "uncompressed_sha256": "14948b0cc7fedd9759f7d26c091b47b7b8261daf51b722349fb8915eebc19393",
+      "summaries": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1161 filtered out; finished in 0.06s"
+      ]
+    },
+    {
+      "file": "phase-clock-plan-release-final.log.gz",
+      "sha256": "8d558b8fc7b434b743e8a28e34f0f800f15d3adeba79013fb6e4173149e2f2e4",
+      "uncompressed_sha256": "f136dd054e8c206d449c73ea5a095576a63a7aafc6914fe59595d11c59037b26",
+      "summaries": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1163 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "file": "public-phase-clock-test-final.log.gz",
+      "sha256": "2e53125d7daee463faa3ce8cdee7fde1d21d9ded8d3d68c335e22027e824a1e0",
+      "uncompressed_sha256": "8693f4ce13ec568e9bb25832018eab930b37d1deeb72a6c70133408ab1a1c439",
+      "summaries": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1166 filtered out; finished in 13.90s"
+      ]
+    },
+    {
+      "file": "public-phase-clock-release-final.log.gz",
+      "sha256": "db1ad0a959d8ff66a76ae227d7f4ba53e71c1f1eeaeb095ae1b6e65aad2184cb",
+      "uncompressed_sha256": "355aa8d8c7c35b8684e170639c74799ac7db96247f6dcd133386870fa546d59a",
+      "summaries": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1165 filtered out; finished in 0.79s"
+      ]
+    },
+    {
+      "file": "refresh-preflight-debug.log.gz",
+      "sha256": "ac0b711653065371c8e059ea715029093141076bf3f4c20b50c3ebf74a60508f",
+      "uncompressed_sha256": "db620c2d3d3a999766662f1e7d782d37cd03e4a6fd9de8cc87f77dd0ef50f897",
+      "summaries": [
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "file": "refresh-preflight-release.log.gz",
+      "sha256": "ee0408c018e953b048d27405511c9990e55042f5039097b811619a0c002457ab",
+      "uncompressed_sha256": "db9054413a2adf113664fa74c263236f3010725db2ad2452d43cd93b9d533518",
+      "summaries": [
+        "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "file": "refresh-evidence-controls-final.log.gz",
+      "sha256": "9a8aa401f291202799f83cff3b633204e6bd2e530018baf076095c64236ed397",
+      "uncompressed_sha256": "d41f3c846ddc49b0edee5f0cc7d1f92afb009ffd88a2bdac06fe9b8c1e024766",
+      "summaries": []
+    },
+    {
+      "file": "refresh-clippy-final.log.gz",
+      "sha256": "3364aff827d25384b64f166d1d3f204a08035124cffe614b7de831ab5588ead1",
+      "uncompressed_sha256": "aa6455d001a649d4bfc37e4073cc3fd85e3ef43e14bec36a92f87d34bdd38cab",
+      "summaries": []
+    },
+    {
+      "file": "refresh-benchmark-check.log.gz",
+      "sha256": "cf0d0918d411e7728ba6ab1235d6c5a5a4a260d052ddf4525b60d57f112b46a5",
+      "uncompressed_sha256": "cfe95ee1a6a000e052ef02f8a5377e1f383412bfaa103943c7d1b049830b542c",
+      "summaries": []
+    },
+    {
+      "file": "refresh-benchmark-clippy.log.gz",
+      "sha256": "a4f72286aa65e87d621e8423be332861c669ab5b4bf185f4cfd2dfb478087396",
+      "uncompressed_sha256": "199e271cec168a63f2f5e0670aa0a2026e02f8a20adcc310735d7adbb3fbccd4",
+      "summaries": []
+    },
+    {
+      "file": "refresh-no-bootstrap.log.gz",
+      "sha256": "d5900eae6134d8527c67e00599b8316204c6443609ecf8f4d56b44996a620a62",
+      "uncompressed_sha256": "bad6f15abc27df37685105ea5213b8ea524d22e60cfc98ba644e7b1ac185438f",
+      "summaries": []
+    },
+    {
+      "file": "refresh-no-bootstrap-validation.log.gz",
+      "sha256": "5c21c7cb2f70f69dcface9acd74545a67d37e059f9c1a295470b0760d62d9d32",
+      "uncompressed_sha256": "f747dbba47953c583db82c9228e4e5914f44a369c0183d27cc2c511057fdbd35",
+      "summaries": []
+    },
+    {
+      "file": "refresh-forced-blocked.log.gz",
+      "sha256": "00905da48b8c44954dbdd0baa0935260732d755ff2865da963215f328b3394e0",
+      "uncompressed_sha256": "33a4ec7d4c0a4e4adbde971e861a64d95a50ecb70be65dbdef3fbf249b72fcbb",
+      "summaries": []
+    },
+    {
+      "file": "refresh-panic-ratchet-final.log.gz",
+      "sha256": "8b4f301beadee3e2f7145be0762a76a00840a4a25c4ad2137e555ec67e230d91",
+      "uncompressed_sha256": "acadf4b594c2636a04102366241ce690c436decc9eb1562be96d72655c0c7edd",
+      "summaries": []
+    },
+    {
+      "file": "refresh-architecture-final.log.gz",
+      "sha256": "d44478fe4e92617d3fb438405a6b4467434168625d3c61289cab76655eabd7ef",
+      "uncompressed_sha256": "0fb43977845d96a9eb5e8dcc92f5ad16e55bde48560599489fbbab7a1182f11f",
+      "summaries": []
+    },
+    {
+      "file": "refresh-observer-tests.log.gz",
+      "sha256": "63f59d7afb9dfd22dd640c2018b27a506794a438d03d814a74669f1c360e6c60",
+      "uncompressed_sha256": "3069c483ba3da43f09e4052d4a4c8f75e236a12d6bddd05040a41d5b7101d07d",
+      "summaries": [
+        "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "file": "refresh-forced-validation.log.gz",
+      "sha256": "3a843de78e88e7f950d377492668bec445516aac89eb49d8cc48af04dda3add9",
+      "uncompressed_sha256": "f07982c9b18fb8c91a06ecb1d30373b9fa97469262189bb778f117b54470b2d0",
+      "summaries": []
+    },
+    {
+      "file": "refresh-expanded-phase1-integration.log.gz",
+      "sha256": "b04473b588ed35a53956ecfc9f61f8eb66d3c25bfec8ca87466bfa6f5e0acd96",
+      "uncompressed_sha256": "6e724b7fb8ee887487b46dea76922c2d891f88e87ada3037498d28ebba029cc0",
+      "summaries": [
+        "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.40s"
+      ]
+    },
+    {
+      "file": "refresh-forced-blocked.json.gz",
+      "sha256": "3df31a72e9e47238734dd338ff30380b6ed39b96112546b9f6df1d962049c0d7",
+      "uncompressed_sha256": "e3b2a490742e66673b1aa8c87fbfa8e2638819422b1419576ae089835f808af0",
+      "summaries": []
+    },
+    {
+      "file": "refresh-no-bootstrap.json.gz",
+      "sha256": "1197dfd1a5010f90a2c56c94baa8d6ceb67c87acdc955076aa6145b79fa98788",
+      "uncompressed_sha256": "5fde5d29d21daad7e3738b72b8f285e36ebb19120cec9683ec9019800cfc4a12",
+      "summaries": []
+    },
+    {
+      "file": "refresh-workspace-clippy-final.log.gz",
+      "sha256": "86d4d56834541a78c4291685b7bd5191211076cfff226df554e9e4d93ee8a8fc",
+      "uncompressed_sha256": "044c6a8130b925c4c339e5019878d422ee31c8b79518af00a14f8d1dff6ad0c9"
+    }
+  ],
+  "results": {
+    "projection_tests": {
+      "debug": 6,
+      "release": 6,
+      "exhaustive_cases": 7510,
+      "wide_vectors": 42
+    },
+    "geometry_tests": {
+      "debug": 4,
+      "release": 4,
+      "signed_tuple_cases": 31212
+    },
+    "encrypted_kernel_tests": {
+      "debug": 4,
+      "release": 4,
+      "source_degree": 8,
+      "boot_degree": 256,
+      "source_q_bits": 119,
+      "plaintext": 65537,
+      "source_stress": "floor(Q/(512*t))",
+      "source_error_allowance": "Q/128",
+      "output_bound_below": "Q/1024",
+      "all_source_coefficients": 8,
+      "dependent_ciphertext_square": true
+    },
+    "preflight_tests": {
+      "debug": 2,
+      "release": 2,
+      "ignored": 0
+    },
+    "python_evidence_negative_controls": 14,
+    "architecture_files_scanned": 17,
+    "clippy": "workspace/all-targets pass; benchmark serde clippy also passes",
+    "panic_ratchet": "pass",
+    "renewal_observer_tests": 4,
+    "expanded_phase1_integration_debug": 7
+  },
+  "expected_failures": {
+    "forced_named_profile_refresh": "Admitted stressed witness reaches Phase1 production refusal; exit1, JSON retained.",
+    "no_bootstrap_report": "strict checker rejects missing real refreshes; exit1"
+  },
+  "scope_limits": [
+    "Named-profile public refresh remains disabled and red.",
+    "Conditional producer does not authenticate source history.",
+    "No full polynomial assembly/work-key return/repeated refresh in the new producer.",
+    "No native execution or joint-key security admission.",
+    "Full library/workspace suite not rerun in this continuation."
+  ],
+  "named_profile_renewal_witness": {
+    "declared_refresh_noise_mb": 47000,
+    "enabled": true,
+    "expected": 7,
+    "injected_error": "81247214398642174358071790",
+    "input_admitted": true,
+    "input_coefficients_checked": 8192,
+    "input_decrypted": 7,
+    "input_error_scaled": "5324698690043812180904942124699",
+    "input_reserve_scaled": "21298794760175248723619803757824",
+    "modulus_q": "348959453350711275087786864768188417",
+    "passed": false,
+    "real_refreshes": 0,
+    "reason": "bootstrap failed: public BFV refresh disabled: Phase 1 does not yet propagate the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state",
+    "refresh_error_bound_scaled": "9223512779175174146"
+  }
+}

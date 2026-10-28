@@ -1,0 +1,38 @@
+{
+  "parent_commit": "a0bb7dcd66164ef84998ad729ddf820ca1474c93",
+  "baseline_changed": false,
+  "debug_tests": {
+    "metadata": 9,
+    "recumbent": 16,
+    "rank": 8
+  },
+  "clippy": "pass",
+  "panic_ratchet": "pass",
+  "release_rerun": false,
+  "source_sha256": {
+    "crates/nine65/src/arithmetic/rns.rs": "4580a638e57b355881d34978dced5c2f2f6307d517262518f5b531790e7c3da5",
+    "crates/nine65/src/arithmetic/rank_residue_divider.rs": "30d7b05fb285d94a53717ceb0d8677d36939b368eddfcc06146d2e923bd88603"
+  },
+  "logs": {
+    "panic-ratchet-followup.log.gz": {
+      "sha256": "d72da47ed03440ac0807c83e745fe4c2689e667dec05f2fe070e0d8565108c82",
+      "raw_sha256": "bd5ba4d9b4771229194cfbe968bbd88f53e41173c107b59c1b949df9f21c55da"
+    },
+    "panic-followup-metadata.log.gz": {
+      "sha256": "4942eae0fd8915ce7113deeb51351125c9b3dfb429f9514f0c8091837b551ed8",
+      "raw_sha256": "bd81a3ce30740cdbd756579485ecfd62f26f5a188b6356f306ae083bf778000d"
+    },
+    "panic-followup-recumbent.log.gz": {
+      "sha256": "d72731ea430caca6a8d3845f12a6660c0299b30954d0470201b9d25c2f481724",
+      "raw_sha256": "3cab073b7d1c7913bf8e68c3b7793ae3c196a39406c9a8773ed08fc48ff071f8"
+    },
+    "panic-followup-rank.log.gz": {
+      "sha256": "5e1e78f75be243b097628cad84d8d70d07ced959398c305a66080ec01661724f",
+      "raw_sha256": "67f8137bc67d7a1d028da97e2eeb91c52c170ab834f631de5a73a4957416d3c1"
+    },
+    "panic-followup-clippy.log.gz": {
+      "sha256": "9b7bf7e3138225ae4c5bc98ecfe1016a40113ba27309d8d8d08ac6ca35be6976",
+      "raw_sha256": "d4052db692f2cd551237ef327966104eb51a4778ed3a4cabcf1b28cf8838eddd"
+    }
+  }
+}

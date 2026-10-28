@@ -8225,7 +8225,7 @@ mod tests {
         // M×A capacity comparison using log2 to avoid overflow
         // log2(M×A) = log2(M) + log2(A)
         let log2_m = ilog2_u128(ctx.dual_rns.main_product);
-        let log2_a = ilog2_u128(ctx.dual_rns.anchor_product);
+        let log2_a = ctx.dual_rns.anchor_product_bit_length.saturating_sub(1);
         let log2_ma = log2_m + log2_a;
 
         // log2(Q²×N) = 2×log2(Q) + log2(N)
@@ -8750,8 +8750,8 @@ mod tests {
 
         // Verify it fits in capacity (use log2 comparison to avoid overflow)
         let log2_product = ilog2_u128(product);
-        let log2_capacity =
-            ilog2_u128(ctx.dual_rns.main_product) + ilog2_u128(ctx.dual_rns.anchor_product);
+        let log2_capacity = ilog2_u128(ctx.dual_rns.main_product)
+            + ctx.dual_rns.anchor_product_bit_length.saturating_sub(1);
         let fits = log2_product < log2_capacity;
         println!(
             "Product fits in M×A: 2^{} < 2^{} = {}",
@@ -9308,7 +9308,7 @@ mod tests {
         println!("N = {}", ctx.n);
         println!("Main primes: {:?}", ctx.config.primes);
         println!("M = {}", sci_notation_u128(ctx.q_product));
-        println!("A = {}", ctx.dual_rns.anchor_product);
+        println!("A = {:?}", ctx.dual_rns.anchor_product);
 
         // Create a simple consistent polynomial: p(X) = 1 + X + X^2
         // This has small coefficients that will fit in any modulus
@@ -11368,7 +11368,7 @@ mod tests {
 
         println!("=== Anchor NTT Multiplication Correctness Test ===");
         println!("M (main product) = {}", sci_notation_u128(ctx.q_product));
-        println!("A (anchor product) = {}", ctx.dual_rns.anchor_product);
+        println!("A (anchor product) = {:?}", ctx.dual_rns.anchor_product);
 
         let n = ctx.n;
 

@@ -1,13 +1,33 @@
 # NINE65
-## Exact-Integer DualRNS Privacy Substrate with Low-Depth Refresh
+## Exact-Integer BFV/DualRNS Prototype
 
 NINE65 is a Rust BFV/DualRNS computation substrate for exact modular privacy-preserving workloads across public-evaluator, KSK-separated, symmetric protected, service-operator, browser, edge, and accelerator deployments.
+
+**Current correction status:** public refresh is disabled on every named profile.
+The K-Elimination substrate and finite-depth evaluator have measured tests; the
+recumbent FHE port and encrypted carry transition remain open. `secure_256` is a
+target label with a 240-bit in-tree MATZOV screen, not an independently certified
+256-bit profile. There is no claim of unlimited depth, bootstrap-free FHE,
+library-wide constant time, or production readiness. The supplied correction
+packet has been [reconciled against the current code and arithmetic prerequisites](docs/execution/2026-10-26/STATUS.md).
+The [implementation continuation](docs/execution/2026-10-27/IMPLEMENTATION.md)
+adds the repaired signed substrate, bounded recumbent coefficients, and actual-operation
+arrow checks under the clarified synthetic-emission policy.
+The [system analysis and remediation](docs/execution/2026-10-28/SYSTEM_ANALYSIS.md)
+maps the fixed-basis CRAM goal to the active evaluator paths and records corrections
+to single-modulus admission and decryption-capacity accounting.
+The [public refresh continuation](docs/execution/2026-10-28/PUBLIC_REFRESH_PROGRESS.md)
+adds an encrypted phase-clock producer with stressed-input contraction tests;
+named-profile public refresh remains gated on native integration and admission.
+The [typed roundtrip continuation](docs/execution/2026-10-28/PUBLIC_REFRESH_ROUNDTRIP.md)
+adds full-polynomial assembly, work-key return, and sealed history admission
+for the conditional small-degree construction.
 
 The repository has moved beyond the historical “v7 Bootstrap Complete” snapshot. The current integration line combines:
 
 - public DualRNS evaluation and relinearization;
-- circular and KSK-separated Clockwork bootstrap paths;
-- automatic pre-operation refresh;
+- gated, currently disabled circular and KSK-separated Clockwork bootstrap paths;
+- automatic pre-operation refresh requests with typed refusal at the public gate;
 - symmetric protected decrypt→re-encrypt refresh;
 - K-Elimination rescaling with explicit anchor/range state;
 - exact large-modulus and noise-budget accounting;
@@ -296,16 +316,22 @@ source-level constant-time paths do not close hardware channels; see
 NINE65 applications follow the Recumbent CRAM rule:
 
 ```text
-ingest once -> remain in residue/ciphertext state -> project only at authorized I/O
+ingest once -> declared residue operations and lift contracts -> authorized output
 ```
 
-Production hot paths prohibit:
+Production residue compute prohibits:
 
-- internal number-line reconstruction;
-- Garner reconstruction;
-- mixed-radix conversion;
-- hidden scalar materialization;
+- synthetic emissions from Garner or mixed-radix conversions;
+- discarding information required by the declared reversible operation;
 - floating-point arithmetic.
+
+Reconstruction itself is permitted. Its use must preserve the operation's
+declared semantics, provenance and independence/reversibility contract. IID
+refers to the declared driving variables; carry-process reversibility uses
+detailed balance when the Holte model applies. Arrow checks evaluate the actual
+operation on a stated domain; structural emission
+checks remain separate because reversible uniform maps can still use a forbidden
+conversion algorithm.
 
 K-Elimination is used only under its coprimality, exact-divisibility, anchor-capacity, and uniqueness-range preconditions. Shared-factor exact division is rejected until the Fused Piggyback Division production adapter is enabled.
 

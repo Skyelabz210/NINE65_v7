@@ -1,0 +1,92 @@
+{
+  "base_commit": "6883834e536cbee2235e009bb0f2ed13d74bc107",
+  "generated_utc": "2026-10-28T01:55:41.905550+00:00",
+  "source_sha256": {
+    "crates/nine65/src/ops/public_phase_clock.rs": "fcdfbb97ce17ea938a6af41613c136007f75768ae5069373620ae15141ce09d1",
+    "crates/nine65/src/ops/phase_clock_return.rs": "7fb0e1d22ce8a1c40a324aeb108339e7faad24f544029b1b3624230947fab1f8",
+    "crates/nine65/src/ops/cram_main_phase_clock.rs": "c14f65eb885b55b6b4aa139883969742b069d5b04eef1657a0d2ad9db669e960",
+    "crates/nine65/src/ops/cram_main.rs": "13884ba106396f0df3ed133c707b032baf2d191ce0577e30211113cc288ed8ea",
+    "crates/nine65/src/noise/certified.rs": "6d67d65fe1b66cdb7527e5e2e8274c6a2a3bf10004d7b42d33565e8145b2465a",
+    "crates/nine65/src/ops/mod.rs": "7a5592234904c1e749e4641d769e6af9db87c8cd3b4a200e64d8a79b209a404d",
+    "scripts/check_residue_native_architecture.py": "955ceeeecef4df7191bbcebf0b9f04c313639865979650eb870674fbe2dcd164",
+    ".github/workflows/exactness_focused.yml": "3b37daeb939e710f92f3b1b2baed833aca94367333bff79c3367e6dcd83e4811",
+    ".github/workflows/audit_remediation.yml": "81e18578e939cbe1c432edc3d421834e042cfaff49a337736433797234f85af1",
+    ".github/workflows/cram_recumbency_followup.yml": "d93b6fd5f3630b0f375899bf47b4a1787a336506c5f994cbb3b3e5399bbbd930",
+    ".github/workflows/cram_real_refresh_evidence.yml": "5e485b2131434a564fa72420c34732b2b95f3989af16249d233ffff39d13492a"
+  },
+  "results": {
+    "focused_debug": {
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0,
+      "registered_roundtrip_cycles": 2
+    },
+    "focused_release": {
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0,
+      "registered_roundtrip_cycles": 100,
+      "precharge_reused": true,
+      "varying_offset_each_cycle": true
+    },
+    "conditional_full_polynomial_cycles": 2,
+    "source_degree": 8,
+    "boot_degree": 256,
+    "main_modulus_bits": 119,
+    "plaintext_modulus": 65537,
+    "work_and_boot_keys": "independent",
+    "same_ordered_main_basis": true,
+    "source_history": "immutable main-Q scalar producer bound",
+    "roundtrip_receipt": "source and target issuance domains checked; raw paths remain unadmitted",
+    "clippy": "workspace/all-targets pass",
+    "panic_ratchet": "pass",
+    "architecture_scan": {
+      "files": 19,
+      "status": "pass"
+    },
+    "workflow_yaml": "four affected workflows parsed"
+  },
+  "logs": [
+    {
+      "log": "phase-clock-roundtrip-accepted-debug.log.gz",
+      "sha256": "a223ba1658545b7490f5e600e12a66a099dad4a1af5df096a784207347b92938",
+      "uncompressed_sha256": "79bc1c21486c1403044df4f80af76444d3c2ab4beb8bafc85d0ae63d0f304d9b",
+      "summaries": [
+        "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 1162 filtered out; finished in 63.31s"
+      ]
+    },
+    {
+      "log": "phase-clock-roundtrip-accepted-release.log.gz",
+      "sha256": "1fd75a30cbf0e6d7d5e5a7b6c55e54b99c53eb9e119eb7a1ac97d41698e9b7d4",
+      "uncompressed_sha256": "7b115747ff0fdcce9f081eb811471a6c5a7e56a7ec00676fa8d961b1e3018895",
+      "summaries": [
+        "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 1161 filtered out; finished in 46.61s"
+      ]
+    },
+    {
+      "log": "phase-clock-roundtrip-clippy-accepted.log.gz",
+      "sha256": "0dc92dc13c9f79ae1a5053c99ad9d07a5df878d1575d0f87dee19c7eb78d749a",
+      "uncompressed_sha256": "4ba9974abd460deb3106b550ea921d20b2092f857854aa5fc97ad154454fde00",
+      "summaries": []
+    },
+    {
+      "log": "phase-clock-return-panic.log.gz",
+      "sha256": "78929fef70a3ce0912101738afb179d70f80bdd1d6ddb163754776fd8e8342d5",
+      "uncompressed_sha256": "65e270a172d0926965691ed55e3e871ae5111a1d1963dfcfa72fe1667f289094",
+      "summaries": []
+    },
+    {
+      "log": "phase-clock-roundtrip-architecture.log.gz",
+      "sha256": "24c085a3700ca7d5df977f5e14d56c57a65d73b000c4c49cc9fa49e51703f566",
+      "uncompressed_sha256": "c924d890aa04a59075a3be4211f52dc79d14b75ed38cae2fd4f8523f2be1ba61",
+      "summaries": []
+    }
+  ],
+  "limitations": [
+    "No named-profile public Clockwork refresh admission.",
+    "No independent native lattice/joint-key security certification.",
+    "Trusted arithmetic contexts and client setup required.",
+    "Registered CramMain history remains scalar-only; nonconstant polynomial fixture is conditional.",
+    "Full workspace/library tests not rerun in this continuation."
+  ]
+}

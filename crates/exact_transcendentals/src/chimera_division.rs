@@ -32,6 +32,11 @@ pub enum DivisionIntent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DivStatus {
+    /// A lane-wise modular equation `d*q = a (mod M)` was solved. No exact
+    /// integer quotient or remainder claim is attached.
+    ModularSolve,
+    /// Modular inversion accompanied by an independent exact-integer
+    /// quotient certificate. The current D0 router does not emit this status.
     ModularInverseExact,
     KElimExact,
     KElimTrunc,
@@ -236,6 +241,12 @@ mod tests {
             assert!(s.is_exact_quotient(), "{:?} should be exact", s);
             assert!(!s.is_failure());
         }
+    }
+
+    #[test]
+    fn modular_solve_is_not_an_exact_integer_quotient() {
+        assert!(!DivStatus::ModularSolve.is_exact_quotient());
+        assert!(!DivStatus::ModularSolve.is_failure());
     }
 
     #[test]

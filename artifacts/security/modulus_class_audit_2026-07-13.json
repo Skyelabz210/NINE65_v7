@@ -8,12 +8,21 @@
     "1024": true,
     "16384": true,
     "2048": true,
+    "32768": true,
     "8192": true
   },
   "anchors_pairwise_coprime": true,
   "arithmetic": "exact_integer_only",
   "canonical_anchor_base_count": 7,
+  "canonical_anchor_counts_by_n": {
+    "1024": 7,
+    "16384": 10,
+    "2048": 7,
+    "32768": 10,
+    "8192": 7
+  },
   "canonical_anchor_extended_count": 10,
+  "canonical_anchor_union_count": 14,
   "canonical_anchors": [
     2013265921,
     2281701377,
@@ -24,7 +33,11 @@
     3222306817,
     3222372353,
     3222568961,
-    3222962177
+    3222962177,
+    3223453697,
+    3224371201,
+    3225026561,
+    3225747457
   ],
   "canonical_anchors_by_n": {
     "1024": [
@@ -57,6 +70,18 @@
       3221422081,
       3222306817
     ],
+    "32768": [
+      2013265921,
+      2281701377,
+      2483027969,
+      2885681153,
+      3221225473,
+      3221422081,
+      3223453697,
+      3224371201,
+      3225026561,
+      3225747457
+    ],
     "8192": [
       2013265921,
       2281701377,
@@ -67,8 +92,9 @@
       3222306817
     ]
   },
+  "canonical_anchors_scope": "union_of_dimension_specific_runtime_bases",
   "current_anchor_execution_class": "CLASS-A_FIELD_BACKED_NTT_PLUS_CLASS-R_K-ELIM",
-  "evidence_sha256": "5d57d0f94398b4d649b4814aea07ceec0fe0634a6abe822148cabd5d6befeb66",
+  "evidence_sha256": "7f8480cd1055ce45c4fb04a6c61cb19327c24f22ccf296985754a0cc22c80c56",
   "main_anchor_disjoint_and_coprime": true,
   "main_lane_class": "CLASS-F",
   "profiles": {
@@ -117,6 +143,11 @@
     }
   },
   "ring_only_composite_anchor_fast_path_available": false,
-  "schema": 1,
+  "runtime_anchor_catalogue_verified": true,
+  "schema": 2,
+  "source_sha256": {
+    "rns.rs": "4580a638e57b355881d34978dced5c2f2f6307d517262518f5b531790e7c3da5",
+    "secure_configs.rs": "4e9d66f459bb9ec745dd29b51a0d680782b36153a2c31e33726dd95fb37c0210"
+  },
   "status": "PASS"
 }

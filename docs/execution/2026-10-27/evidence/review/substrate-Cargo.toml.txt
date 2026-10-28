@@ -1,0 +1,7 @@
+[package]
+name = "qmnf_review_probe"
+version = "0.0.0"
+edition = "2021"
+[workspace]
+[dependencies]
+qmnf_crtbigint = { path = "/workspace/NINE65_v7/crates/qmnf-crtbigint" }

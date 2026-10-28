@@ -1,0 +1,66 @@
+{
+  "adjacency_pairs": [
+    {
+      "p": 3,
+      "anchors": [
+        2,
+        4
+      ],
+      "gcd": 2,
+      "resolution_lcm": 4
+    },
+    {
+      "p": 5,
+      "anchors": [
+        4,
+        6
+      ],
+      "gcd": 2,
+      "resolution_lcm": 12
+    },
+    {
+      "p": 17,
+      "anchors": [
+        16,
+        18
+      ],
+      "gcd": 2,
+      "resolution_lcm": 144
+    },
+    {
+      "p": 37,
+      "anchors": [
+        36,
+        38
+      ],
+      "gcd": 2,
+      "resolution_lcm": 684
+    }
+  ],
+  "signed_lift_alias": {
+    "M": 17,
+    "A": 19,
+    "r_M": 3,
+    "K": [
+      -1,
+      18
+    ],
+    "X": [
+      -14,
+      309
+    ],
+    "r_A": [
+      5,
+      5
+    ],
+    "both_abs_K_less_than_A": true
+  },
+  "parity_implication": {
+    "main": 17,
+    "witness": 19,
+    "gcd": 1,
+    "conclusion": "1 divides X-Y for every X,Y; no detection guarantee follows"
+  },
+  "bound_correction": "Signed recovery needs a specified interval of width <= A; symmetric |K| <= B requires 2B < A.",
+  "public_refresh": "No public encrypted secret-dependent carry construction is established by these scalar identities."
+}

@@ -1,0 +1,20 @@
+mod arithmetic {
+#[path="/workspace/NINE65_v7/crates/nine65/src/arithmetic/recumbent.rs"]
+pub mod recumbent;
+#[path="/workspace/NINE65_v7/crates/nine65/src/arithmetic/rank_residue_divider.rs"]
+pub mod rank_residue_divider;
+}
+use arithmetic::recumbent;
+use arithmetic::rank_residue_divider as rank;
+use std::io::{self,BufRead};
+use recumbent::{RecumbentBasis, RecumbentCoefficient, SignedInterval,Rounding};
+fn nums(s:&str)->Vec<u64>{s.split(',').map(|v|v.parse().unwrap()).collect()}
+fn n(s:&str)->i128{s.parse().unwrap()}
+fn output(x:RecumbentCoefficient){for r in x.primary().residues().iter().chain(x.overflow().residues()){print!("{r},");}print!(" {} {} {}",x.interval().lower(),x.interval().upper(),x.division_event_depth());}
+fn main(){for line in io::stdin().lock().lines(){let line=line.unwrap();let v:Vec<_>=line.split_whitespace().collect();
+ if v[0]=="R" {let ms=nums(v[1]);let d=v[2].parse().unwrap();let x=n(v[3]);let p=rank::RankResidueDivider::new(&ms,d).unwrap();let rs:Vec<_>=ms.iter().map(|&m|x.rem_euclid(m as i128) as u64).collect();match p.divide_floor(&rs,n(v[4]),n(v[5])){Ok(r)=>{for q in r.quotient{print!("{q},");}println!(" {}",r.remainder)},Err(e)=>println!("E {e:?}")}}
+ else {let b=RecumbentBasis::new(nums(v[1]),nums(v[2])).unwrap();let a=RecumbentCoefficient::from_coefficient(n(v[3]),b.clone(),SignedInterval::new(n(v[4]),n(v[5])).unwrap());match a{Err(e)=>println!("E {e:?}"),Ok(a)=>{
+  if v[0]=="D" || v[0]=="Q" {let rnd=match v[7]{"F"=>Rounding::Floor,"N"=>Rounding::NearestTiesPositive,_=>Rounding::Exact};let result=if v[0]=="D"{a.drop_main(v[6].parse().unwrap(),rnd)}else{a.divide_with_rank_projection(v[6].parse().unwrap(),rnd)};match result{Ok(o)=>{output(o.coefficient);println!(" {}",o.remainder)},Err(e)=>println!("E {e:?}")}}
+  else{let b=RecumbentCoefficient::from_coefficient(n(v[6]),b,SignedInterval::new(n(v[7]),n(v[8])).unwrap()).unwrap();let out=match v[0]{"A"=>a.add(&b),"S"=>a.sub(&b),_=>a.mul(&b)};match out{Ok(o)=>{output(o);println!()},Err(e)=>println!("E {e:?}")}}
+ }}}
+}}

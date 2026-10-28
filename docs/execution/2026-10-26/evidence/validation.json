@@ -1,0 +1,350 @@
+{
+  "code_commit": "dd3d5e74ba3dfa0e412cd7d78b4c634d80387fbb",
+  "toolchain": "rustc 1.89.0",
+  "baseline_results": "baseline-results.json",
+  "checks": [
+    {
+      "name": "wide-capacity-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--lib",
+        "wide_capacity_tests"
+      ],
+      "exit_code": 0,
+      "log_sha256": "376d04a44e322386a5ef6d801419aae0a3deb0d9e0f7264b350c4d3b3e60ec0b",
+      "log_artifact": "wide-capacity-tests.log.gz",
+      "test_results": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "rns-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--lib",
+        "arithmetic::rns::"
+      ],
+      "exit_code": 0,
+      "log_sha256": "1cea6e73c8be9e6291315c966ccbc6566ce30a8ad6fb05ec0be5ea4a14f8088f",
+      "log_artifact": "rns-tests.log.gz",
+      "test_results": [
+        {
+          "passed": 49,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "params-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--lib",
+        "params::tests::"
+      ],
+      "exit_code": 0,
+      "log_sha256": "b455c5e2cc294b7d437730598a80423d74a8576d2d715dc9dfb2aa19c585c65a",
+      "log_artifact": "params-tests.log.gz",
+      "test_results": [
+        {
+          "passed": 13,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "cram-wrapper-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--lib",
+        "cram_ct_wrap::"
+      ],
+      "exit_code": 0,
+      "log_sha256": "55491f08c73134325b2e5ee4276b812f7d45266c7158dd93186213bda17afb67",
+      "log_artifact": "cram-wrapper-tests.log.gz",
+      "test_results": [
+        {
+          "passed": 11,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "nine65",
+        "--lib",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "log_sha256": "41cda875f80a82a90f6ef6baff304c766d13b3c39980fc04f52050475a962c26",
+      "log_artifact": "clippy.log.gz"
+    },
+    {
+      "name": "release-wide-capacity",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--lib",
+        "--release",
+        "wide_capacity_tests"
+      ],
+      "exit_code": 0,
+      "log_sha256": "7ebc5b0c9b6158403665349224bbf1dd1f84557ab670de5da077716eed424b2d",
+      "log_artifact": "release-wide-capacity.log.gz",
+      "test_results": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "basis-fingerprint",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--release",
+        "--features",
+        "allow_insecure",
+        "--test",
+        "basis_invariance",
+        "basis_is_byte_identical_before_and_after_exact_division"
+      ],
+      "exit_code": 101,
+      "log_sha256": "9f1f17c5c3aad8fa43cbe4843ebaa65a0031af793f510eca39b355632c3091d3",
+      "log_artifact": "basis-fingerprint.log.gz",
+      "status": "release test command rejected by intended allow_insecure build guard; debug replacement passed"
+    },
+    {
+      "name": "ciphertext-fingerprint",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--release",
+        "--features",
+        "allow_insecure",
+        "--test",
+        "residue_space_ciphertext",
+        "full_chain_encrypt_mul_divide_decrypt_leaves_the_basis_byte_identical"
+      ],
+      "exit_code": 101,
+      "log_sha256": "566d3a19a032b285fa8ee91dbdedb9366c132963780af6cd8469ad39b7ea2db2",
+      "log_artifact": "ciphertext-fingerprint.log.gz",
+      "status": "release test command rejected by intended allow_insecure build guard; debug replacement passed"
+    },
+    {
+      "name": "basis_invariance-debug",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure",
+        "--test",
+        "basis_invariance",
+        "basis_is_byte_identical_before_and_after_exact_division"
+      ],
+      "exit_code": 0,
+      "log_sha256": "c5bafe1ad29431575868068528ae4761ff09f9bcab82b633ee164b7b08ca954f",
+      "log_artifact": "basis_invariance-debug.log.gz",
+      "test_results": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "residue_space_ciphertext-debug",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--features",
+        "allow_insecure",
+        "--test",
+        "residue_space_ciphertext",
+        "full_chain_encrypt_mul_divide_decrypt_leaves_the_basis_byte_identical"
+      ],
+      "exit_code": 0,
+      "log_sha256": "d0f23918bb05c5b94ff4b7a7a892dc94977130abe16faaa3a5bd70b9410b0d1d",
+      "log_artifact": "residue_space_ciphertext-debug.log.gz",
+      "test_results": [
+        {
+          "passed": 1,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "checked-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--lib",
+        "checked_",
+        "-j",
+        "2"
+      ],
+      "exit_code": 0,
+      "log_sha256": "42fd9f3ae506380dc75165a7b5a4676d12a7d861705a866b2a7d419dc6b5f47e",
+      "log_artifact": "checked-tests.log.gz",
+      "test_results": [
+        {
+          "passed": 14,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "release-checked-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "nine65",
+        "--lib",
+        "--release",
+        "checked_",
+        "-j",
+        "2"
+      ],
+      "exit_code": 0,
+      "log_sha256": "ff163042dca4a79d712fee95ff5244c4021bb382dc6b535f984f72bd44fe1739",
+      "log_artifact": "release-checked-tests.log.gz",
+      "test_results": [
+        {
+          "passed": 14,
+          "failed": 0,
+          "ignored": 0
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "nine65",
+        "--tests",
+        "--features",
+        "allow_insecure",
+        "-j",
+        "2"
+      ],
+      "exit_code": 0,
+      "log_sha256": "63162c5b4e65cac778f5796f3c7f75b46b855deba40124711689f0ac9d31d267",
+      "log_artifact": "check.log.gz"
+    },
+    {
+      "name": "workspace-check",
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--tests",
+        "--features",
+        "allow_insecure",
+        "-j",
+        "2"
+      ],
+      "exit_code": 0,
+      "log_sha256": "e98293a5b383a3685a3fec46b05c0fa2c8eeec0f53b3a6cbf0fd3dd31240e737",
+      "log_artifact": "workspace-check.log.gz"
+    },
+    {
+      "name": "source-gate-tests",
+      "command": [
+        "python3",
+        "scripts/test_check_recumbency.py"
+      ],
+      "exit_code": 0,
+      "passed": 4
+    },
+    {
+      "name": "product-source-gate",
+      "command": [
+        "bash",
+        "scripts/check_recumbency.sh",
+        "--products-only"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "recumbency-gate",
+      "command": [
+        "bash",
+        "scripts/check_recumbency.sh"
+      ],
+      "exit_code": 1,
+      "violations": 57,
+      "status": "blocked: existing production reconstruction"
+    },
+    {
+      "name": "claims",
+      "command": [
+        "bash",
+        "scripts/check_claim_registry.sh"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "stale-claims",
+      "command": [
+        "bash",
+        "scripts/check_stale_claims.sh"
+      ],
+      "exit_code": 0,
+      "log_sha256": "fd76f90b6af787553d6fdfcd5fc1d6c371892767854e8c3903b6a482cf8f2e06",
+      "log_artifact": "stale-claims.log.gz"
+    },
+    {
+      "name": "fmt",
+      "command": "rustfmt --check --edition 2021 --config skip_children=true <seven changed Rust files>",
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log_artifact": "fmt.log.gz"
+    }
+  ],
+  "full_changed_workspace_runtime_suite": "not rerun; changed arithmetic, wrappers and fingerprints tested; full workspace/test targets compile",
+  "release_candidate": false
+}

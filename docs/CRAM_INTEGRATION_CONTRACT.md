@@ -4,18 +4,29 @@
 
 ## 1. Canonical execution rule
 
-Application values enter the CRAM/NINE65 substrate once, remain in residue coordinates throughout internal computation, and project to the number line only at an explicit I/O boundary.
+Application values enter the CRAM/NINE65 substrate once and retain an explicit
+residue state and operation contract. Under the user's 2026-10-27 clarification,
+reconstruction is permitted; synthetic emissions such as Garner and mixed-radix
+digit conversions remain prohibited in residue compute.
 
 Production hot paths must report zero activity for:
 
-- CRT reconstruction;
-- Garner reconstruction;
-- mixed-radix conversion;
-- hidden scalar materialization;
-- internal number-line projection;
+- synthetic emissions from Garner or mixed-radix conversions;
+- information loss that violates the declared reversible operation;
 - floating-point arithmetic.
 
-A diagnostic or test oracle may reconstruct outside the production path only when the boundary is explicit and the production architecture counters remain unchanged.
+Reconstruction and projection counters must accurately report their activity;
+their nonzero values are not automatic policy failures. The user's IID model
+concerns independently sampled driving digits and reversibility of the induced
+carry process. When the Holte model applies, statistical reversibility means
+Eulerian-weighted detailed balance; the carry sequence need not itself be IID.
+Logical operation reversal is a separate property. Division retains its
+remainder and required state when that reversible operation is claimed. Joint
+output-coordinate uniformity is an additional diagnostic only when its product
+domain is explicitly part of the contract. Structural emission checks remain
+separate: reversibility and uniformity alone do not exclude Garner or
+mixed-radix algorithms. Finite tests certify only their stated domain.
+A diagnostic oracle cannot be substituted for the production algorithm.
 
 ## 2. Safe basis and role coverage
 
@@ -72,7 +83,8 @@ K-Elimination operates from residue and anchor phase information and returns a r
 
 Shared-factor divisors route to Fused Piggyback Division when that production path is enabled. The auxiliary modulus must be coprime to both the primary basis product and the divisor. The auxiliary lane is ephemeral, participates only for the division, and is discarded after residue-native quotient projection.
 
-Until the FPD FHE path is implemented and gated, an application must reject shared-factor exact division rather than silently route through reconstruction.
+Until a shared-factor FHE divider is implemented and gated, an application must
+reject that division rather than silently use an unvalidated quotient path.
 
 ## 5. Winding, anchor, and shadow state
 
@@ -98,7 +110,8 @@ Per-lane heterogeneous operators are permitted when declared by a validated topo
 - architecture-counter assertion;
 - inverse or recovery rule when reversibility is claimed.
 
-A topology must not smuggle an integer reconstruction through a helper function.
+A topology must not conceal a forbidden synthetic emission, change its lift
+without provenance, or omit a required recovery rule through a helper function.
 
 ## 7. Application acceptance tests
 

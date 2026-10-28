@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Fail closed when production CRAM paths leave residue space.
+"""Fail closed on synthetic emissions and invalid production capacity metadata.
 
 This source-contract gate complements, but never replaces, Rust arithmetic and
-runtime tests. It rejects internal coefficient reconstruction, ambiguous product
-sentinels, approximate/saturated capacity decisions, and forbidden conversion
-algorithms in active FHE paths.
+runtime tests. It rejects Garner/mixed-radix emissions, ambiguous product sentinels,
+and approximate/saturated capacity decisions in active FHE paths. Reconstruction
+alone is permitted under the user's clarified policy; the earlier blanket name
+inventory remains available through --legacy-reconstruction-audit.
 
 Pure `#[cfg(test)]` items are removed before inspection. This permits the
 public-vector reconstruction oracle required by the formal specification while
@@ -13,6 +14,7 @@ keeping every feature-enabled and production item in scope.
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
 import re
 import sys
@@ -267,6 +269,12 @@ def require_present(relative: str, patterns: list[tuple[str, str]]) -> list[str]
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--legacy-reconstruction-audit", action="store_true",
+        help="also inventory generic coefficient reconstruction under the old policy",
+    )
+    args = parser.parse_args()
     failures: list[str] = []
 
     # REPAIRED 2026-08-19 (NINE65_v7_DEEP_ANALYSIS_20260817.md G9): every
@@ -284,10 +292,8 @@ def main() -> int:
     failures += require_absent(
         "crates/nine65/src/ops/bootstrap.rs",
         [
-            (r"\bcrt_reconstruct_n\s*\(", "number-line CRT reconstruction in bootstrap"),
-            (r"\bcrt_reconstruct_u256\s*\(", "U256 number-line reconstruction in bootstrap"),
             (r"\bGarner[A-Za-z0-9_]*", "Garner language in active bootstrap"),
-            (r"mixed[- ]radix", "mixed-radix language in active bootstrap"),
+            (r"\bmixed[_ -]?radix[A-Za-z0-9_]*\s*(?:::|\()", "mixed-radix call in active bootstrap"),
         ],
     )
 
@@ -305,7 +311,7 @@ def main() -> int:
                 "summed lane widths used instead of exact product bit length",
             ),
             (r"\bGarner[A-Za-z0-9_]*", "Garner language in active RNS FHE path"),
-            (r"mixed[- ]radix", "mixed-radix language in active RNS FHE path"),
+            (r"\bmixed[_ -]?radix[A-Za-z0-9_]*\s*(?:::|\()", "mixed-radix call in active RNS FHE path"),
         ],
     )
 
@@ -320,12 +326,8 @@ def main() -> int:
                 r"fn\s+anchor(?:3)?_capacity_bits.*?map\s*\(\s*\|&p\|\s*64\s*-\s*p\.leading_zeros\(\)\s*\).*?sum",
                 "summed lane widths used as exact anchor capacity",
             ),
-            (
-                r"fn\s+extract_k_rns(?:_level)?\b.*?(?:crt_reconstruct_n|crt_reconstruct_u256)\s*\(",
-                "bounded k extraction reconstructs a number-line representative",
-            ),
             (r"\bGarner[A-Za-z0-9_]*", "Garner language in active DualRNS arithmetic"),
-            (r"mixed[- ]radix", "mixed-radix language in active DualRNS arithmetic"),
+            (r"\bmixed[_ -]?radix[A-Za-z0-9_]*\s*(?:::|\()", "mixed-radix call in active DualRNS arithmetic"),
         ],
     )
 
@@ -337,9 +339,27 @@ def main() -> int:
                 "saturating scalar capacity accessor",
             ),
             (r"\bGarner[A-Za-z0-9_]*", "Garner language in active K-Elimination module"),
-            (r"mixed[- ]radix", "mixed-radix language in active K-Elimination module"),
+            (r"\bmixed[_ -]?radix[A-Za-z0-9_]*\s*(?:::|\()", "mixed-radix call in active K-Elimination module"),
         ],
     )
+
+    if args.legacy_reconstruction_audit:
+        failures += require_absent(
+            "crates/nine65/src/ops/bootstrap.rs",
+            [
+                (r"\bcrt_reconstruct_n\s*\(", "legacy audit: scalar CRT reconstruction"),
+                (r"\bcrt_reconstruct_u256\s*\(", "legacy audit: wide CRT reconstruction"),
+            ],
+        )
+        failures += require_absent(
+            "crates/nine65/src/arithmetic/rns.rs",
+            [
+                (
+                    r"fn\s+extract_k_rns(?:_level)?\b.*?(?:crt_reconstruct_n|crt_reconstruct_u256)\s*\(",
+                    "legacy audit: bounded k extraction uses a scalar representative",
+                ),
+            ],
+        )
 
     failures += require_present(
         "crates/nine65/src/ops/rns_fhe.rs",

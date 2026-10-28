@@ -1492,6 +1492,95 @@ mod tests {
         assert!(c0.abs() <= q / 2 && c1.abs() <= q / 2);
     }
 
+    /// Two valid RNS primes and zero encryption noise do not make rounding
+    /// distributive. This preserves the small Q=65 witness independently of
+    /// the larger, randomly generated ciphertext diagnostics below.
+    #[test]
+    fn zero_noise_phase1_carry_witness_two_prime() {
+        let (q, t, c0, c1, s, message) = (65i128, 3i128, 10i128, 32i128, 1i128, 2i128);
+        let delta = q / t;
+        assert_eq!(q, 5 * 13);
+        assert_eq!(c0 + c1 * s, delta * message, "fixture has zero noise");
+
+        let a0 = round_ratio_nearest(t * c0, q);
+        let a1 = round_ratio_nearest(t * c1, q);
+        let component_phase = (a0 + a1 * s).rem_euclid(t);
+        let decoded = round_ratio_nearest(t * (c0 + c1 * s), q).rem_euclid(t);
+        let r0 = t * c0 - q * a0;
+        let r1 = t * c1 - q * a1;
+        let carry = round_ratio_nearest(r0 + r1 * s, q);
+
+        assert_eq!((a0, a1), (0, 1));
+        assert_eq!(component_phase, 1);
+        assert_eq!(decoded, message);
+        assert_eq!(carry, 1);
+        assert_eq!((component_phase + carry).rem_euclid(t), decoded);
+    }
+
+    /// Exercise the legacy production component switch and the real BFV
+    /// decryptor at the shipped secure_128 modulus. The manufactured phase
+    /// has exactly zero noise, so this failure cannot be repaired by a lower
+    /// noise budget. The scalar secret and carry remain test-only oracles.
+    #[test]
+    fn zero_noise_phase1_carry_witness_secure128() {
+        use crate::params::SecureConfig;
+
+        let config = SecureConfig::secure_128().into_config();
+        let ctx = RNSFHEContext::try_new(&config).expect("work context");
+        let boot = ClockworkBootstrap::new(&config).expect("bootstrap context");
+        let q = config.try_rns_product().expect("secure_128 Q fits u128");
+        let t = config.t;
+        let delta = q / t as u128;
+        let message = 2u64;
+        let c0 = delta / 2;
+        let c1 = delta * message as u128 - c0;
+        assert_eq!(c0 + c1, delta * message as u128);
+
+        let constant_poly = |value: u128| {
+            let project = |moduli: &[u64]| {
+                moduli
+                    .iter()
+                    .map(|&p| {
+                        let mut coefficients = vec![0u64; config.n];
+                        coefficients[0] = (value % p as u128) as u64;
+                        coefficients
+                    })
+                    .collect()
+            };
+            DualRNSPoly {
+                main: project(&config.primes),
+                anchor: project(&ctx.dual_rns.anchor.primes),
+                n: config.n,
+            }
+        };
+        let ct = DualRNSCiphertext {
+            c0: constant_poly(c0),
+            c1: constant_poly(c1),
+            level: config.primes.len(),
+        };
+        let secret = DualRNSSecretKey {
+            s: constant_poly(1),
+        };
+        let decoded = ctx.decrypt_dual(&ct, &secret);
+        assert_eq!(decoded, message, "the full zero-noise phase decodes to m");
+
+        let (a0, a1) = boot.modswitch_to_t(&ct).expect("component switch");
+        assert_eq!((a0[0], a1[0]), (0, 1));
+        let component_phase = (a0[0] + a1[0]) % t;
+        assert_eq!(component_phase, 1);
+        assert_ne!(component_phase, decoded);
+        assert!(a0[1..].iter().chain(&a1[1..]).all(|&x| x == 0));
+
+        let r0 = t as i128 * c0 as i128 - q as i128 * a0[0] as i128;
+        let r1 = t as i128 * c1 as i128 - q as i128 * a1[0] as i128;
+        let carry = round_ratio_nearest(r0 + r1, q as i128);
+        assert_eq!(carry, 1);
+        assert_eq!(
+            (component_phase as i128 + carry).rem_euclid(t as i128) as u64,
+            decoded
+        );
+    }
+
     /// The current Phase 2 decrypts to an affine function A0 + A1*s in Z_t.
     /// No choice of public A0,A1 can implement BFV's rounded phase for even
     /// this one-coefficient ternary-secret case.

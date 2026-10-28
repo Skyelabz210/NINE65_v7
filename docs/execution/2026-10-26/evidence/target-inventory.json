@@ -1,0 +1,342 @@
+{
+  "counts": {
+    "declared_integration_targets": 46,
+    "packages": 12,
+    "targets": 99
+  },
+  "integration_targets": [
+    {
+      "package": "cram-core",
+      "name": "workload_scales",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "a2_residue_native",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "arrow_emission_joint_property",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "arrow_emission_reversibility",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "composite_operator_domains",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "cram_gates",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "lifted_transduction_module",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "safe_basis_lifted_transduction",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "transduction_boundaries",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "exact_transcendentals",
+      "name": "tropical_theta_k_lift",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "anchor_drift_diagnostics",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "arrow_emission_fhe_gate_matrix",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "audit_regressions",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "basis_invariance",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "bootstrap_integration",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "bootstrap_parameter_exploration",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "bootstrap_residue_shape_regression",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "clockwork_cross_validation",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "coefficient_slot_gate",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "cram_public_guardrails",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "cram_public_mode",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "cram_public_timings",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "depth2_full_matrix_issue81",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "depth2_isolation",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "depth2_python_oracle_vectors_issue81",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "depth_and_noise",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "error_variant_coverage",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "expanded_bootstrap",
+      "required_features": [
+        "allow_insecure",
+        "exact_transcendentals_backend"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "expanded_phase1",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "formalization_invariants",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "full_system_exercise",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "k_elimination_basis_regression",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "m2b_manufactured_rescale",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "noise_profile",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "noise_tracking_perf_issue93",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "ntt_encoder_caching",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "op_timings",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "prime_power_phase",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "random_encrypt",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "rational_bridge_proptest",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "refresh_preflight_regression",
+      "required_features": [],
+      "executed_in_baseline": true
+    },
+    {
+      "package": "nine65",
+      "name": "residue_space_ciphertext",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "security_integration",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "test_192_256_bootstrap",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65",
+      "name": "time_crystal_verification",
+      "required_features": [
+        "allow_insecure"
+      ],
+      "executed_in_baseline": false
+    },
+    {
+      "package": "nine65-extreme-tests",
+      "name": "full_system_measurement",
+      "required_features": [
+        "extreme-tests"
+      ],
+      "executed_in_baseline": false
+    }
+  ]
+}

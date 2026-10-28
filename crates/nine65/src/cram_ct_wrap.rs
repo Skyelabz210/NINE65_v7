@@ -106,10 +106,11 @@ pub enum CramLiftError {
 
 /// True iff centered coefficients for this context fit the `i128` witness API.
 ///
-/// `q_product == 0` is this codebase's sentinel for "Q did not fit u128"
-/// (see `RNSFHEContext::try_new`), so it is disqualifying on its own.
+/// Missing checked metadata is a refusal; the legacy scalar sentinel is not
+/// used as capacity evidence. The existing strict 127-bit corridor is preserved.
 pub fn cram_witness_capacity_ok(ctx: &RNSFHEContext) -> bool {
-    ctx.q_product != 0 && ctx.q_product < (1u128 << 127)
+    ctx.q_product_checked
+        .is_some_and(|q| q > 0 && q < (1u128 << 127))
 }
 
 /// Project `c0` to centered integer coefficients in `[-Q/2, Q/2)`.
@@ -363,7 +364,10 @@ mod tests {
         let centered = c0_centered_i128(&ctx, &ct).expect("active level fits i128");
         assert_eq!(centered[0], -1, "Q_level - 1 must center to -1");
         let wrapped = wrap_dual_rns_fpd(&ctx, ct, &[23]).expect("FPD witness must fit");
-        assert_eq!(wrapped.witness.c0_aux.unwrap().residues[0][0], 22);
+        assert_eq!(
+            wrapped.witness.c0_aux().and_then(|set| set.residue(0, 0)),
+            Some(22)
+        );
     }
 
     /// The seam that matters: `wrap_dual_rns_fpd` populates `c0_aux`, and
@@ -378,7 +382,7 @@ mod tests {
 
         let plain = wrap_dual_rns(ct.clone());
         assert!(
-            plain.witness.c0_aux.is_none(),
+            plain.witness.c0_aux().is_none(),
             "control: the default wrap must NOT carry an aux lane — if this \
              ever becomes Some, this test no longer distinguishes the two paths"
         );
@@ -387,11 +391,10 @@ mod tests {
         let lifted = wrap_dual_rns_fpd(&ctx, ct, &aux).expect("secure_128 must lift");
         let set = lifted
             .witness
-            .c0_aux
-            .as_ref()
+            .c0_aux()
             .expect("FPD wrap must carry the aux lane");
         assert_eq!(
-            set.residues.len(),
+            set.coefficient_count(),
             lifted.witness.poly_len(),
             "one aux residue vector per tracked coefficient"
         );
@@ -444,5 +447,25 @@ mod tests {
                 "every retained aux prime must be coprime to the divisor"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod checked_witness_tests {
+    use super::*;
+    use crate::params::SecureConfig;
+
+    #[test]
+    fn witness_admission_reads_checked_metadata() {
+        let mut ctx = RNSFHEContext::new(&SecureConfig::secure_128().config);
+        assert!(cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = None;
+        assert!(!cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = Some(0);
+        assert!(!cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = Some(1u128 << 127);
+        assert!(!cram_witness_capacity_ok(&ctx));
+        ctx.q_product_checked = Some((1u128 << 127) - 1);
+        assert!(cram_witness_capacity_ok(&ctx));
     }
 }

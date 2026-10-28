@@ -17,7 +17,12 @@ on:
       - "crates/nine65/src/ops/auto_bootstrap.rs"
       - "crates/nine65/src/ops/bootstrap.rs"
       - "crates/nine65/src/ops/rns_fhe.rs"
+      - "crates/nine65/src/ops/public_phase_clock.rs"
+      - "crates/nine65/src/arithmetic/phase_clock_plan.rs"
+      - "crates/nine65/src/arithmetic/canonical_scale_round.rs"
       - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - "scripts/check_real_refresh_evidence.py"
+      - "scripts/test_real_refresh_evidence.py"
       - ".github/workflows/cram_real_refresh_evidence.yml"
   pull_request:
     branches:
@@ -29,7 +34,12 @@ on:
       - "crates/nine65/src/ops/auto_bootstrap.rs"
       - "crates/nine65/src/ops/bootstrap.rs"
       - "crates/nine65/src/ops/rns_fhe.rs"
+      - "crates/nine65/src/ops/public_phase_clock.rs"
+      - "crates/nine65/src/arithmetic/phase_clock_plan.rs"
+      - "crates/nine65/src/arithmetic/canonical_scale_round.rs"
       - "crates/nine65/tests/refresh_preflight_regression.rs"
+      - "scripts/check_real_refresh_evidence.py"
+      - "scripts/test_real_refresh_evidence.py"
       - ".github/workflows/cram_real_refresh_evidence.yml"
   workflow_dispatch:
 permissions:
@@ -49,47 +59,31 @@ jobs:
       - name: Compile exact benchmark
         run: cargo check -p nine65 --bin nine65_bench --features serde
 
+      - name: Exact renewal-observer regressions
+        run: cargo test -p nine65 --bin nine65_bench --features serde
+
       - name: Exact refresh-preflight regression
         run: cargo test -p nine65 --release --test refresh_preflight_regression -- --nocapture
 
+      - name: Real-refresh evidence negative controls
+        run: python3 scripts/test_real_refresh_evidence.py
+
       - name: Force and prove real automatic refresh
-        # This is a deterministic correctness/evidence run, not a performance
-        # benchmark. The RNG guard intentionally allows seeded RNG in debug
-        # builds and forbids it in release builds.
+        # Deterministic correctness evidence uses debug because release
+        # builds intentionally reject this benchmark's seeded test RNG.
         run: |
           set -euo pipefail
           cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --auto-bootstrap \
             --trigger-pct 100 --statistical-test \
-            --output /tmp/nine65-forced-refresh.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
+            --output /tmp/nine65-forced-refresh.json 2>&1 | tee /tmp/nine65-forced-refresh.log
+          python3 scripts/check_real_refresh_evidence.py /tmp/nine65-forced-refresh.json \
+            --config secure_128_deep --requested-operations 1
 
-          report = json.loads(Path('/tmp/nine65-forced-refresh.json').read_text())
-
-          def assert_integral(node, path='$'):
-              if isinstance(node, bool):
-                  return
-              if isinstance(node, float):
-                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
-              if isinstance(node, dict):
-                  for key, value in node.items():
-                      assert_integral(value, f'{path}.{key}')
-              elif isinstance(node, list):
-                  for index, value in enumerate(node):
-                      assert_integral(value, f'{path}[{index}]')
-
-          assert_integral(report)
-          assert report['metadata']['bootstrap_mode'] == 'real'
-          chain = report['operation_chain']
-          assert chain['requested_operations'] == 1
-          assert chain['completed_requested'] is True
-          assert chain['achieved_chain_correct'] is True
-          assert chain['real_refreshes'] > 0
-          statistical = report['statistical_test']
-          assert statistical['enabled'] is True
-          assert statistical['trials'] == 100
-          assert statistical['successes'] == statistical['trials']
-          assert statistical['real_refreshes'] > 0
-          PY
+      - name: Preserve real-refresh evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: forced-public-refresh
+          path: /tmp/nine65-forced-refresh.*
+          if-no-files-found: warn

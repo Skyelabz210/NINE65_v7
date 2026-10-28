@@ -1,0 +1,104 @@
+{
+  "rustc": "rustc 1.89.0 (29483883e 2025-08-04)",
+  "sources": {
+    "recumbent_crt_bigint.rs": "f10f49b95a4b36e6588ee1a0debb154918229a6f174f10582cc52527a336ff74",
+    "recumbent_weights.rs": "fbb3106c48bd0911f0c0ae10ec4a46eb5e6ede073ea17658406c6bd3e902e167"
+  },
+  "runs": [
+    {
+      "label": "recumbent_crt_bigint-compile",
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "--test",
+        "-Awarnings",
+        "recumbent_crt_bigint.rs",
+        "-o",
+        "recumbent_crt_bigint"
+      ],
+      "exit_code": 0,
+      "summary": null
+    },
+    {
+      "label": "recumbent_crt_bigint-tests",
+      "command": [
+        "./recumbent_crt_bigint",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "summary": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s"
+    },
+    {
+      "label": "recumbent_weights-compile",
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "--test",
+        "-Awarnings",
+        "recumbent_weights.rs",
+        "-o",
+        "recumbent_weights"
+      ],
+      "exit_code": 0,
+      "summary": null
+    },
+    {
+      "label": "recumbent_weights-tests",
+      "command": [
+        "./recumbent_weights",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "summary": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+    },
+    {
+      "label": "adversarial-debug-compile",
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "--test",
+        "-Awarnings",
+        "adversarial.rs",
+        "-o",
+        "adversarial-debug"
+      ],
+      "exit_code": 0,
+      "summary": null
+    },
+    {
+      "label": "adversarial-debug",
+      "command": [
+        "./adversarial-debug",
+        "audit_",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "summary": "test result: FAILED. 1 passed; 11 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s"
+    },
+    {
+      "label": "adversarial-release-compile",
+      "command": [
+        "rustc",
+        "--edition=2021",
+        "--test",
+        "-Awarnings",
+        "-O",
+        "adversarial.rs",
+        "-o",
+        "adversarial-release"
+      ],
+      "exit_code": 0,
+      "summary": null
+    },
+    {
+      "label": "adversarial-release",
+      "command": [
+        "./adversarial-release",
+        "audit_",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "summary": "test result: FAILED. 1 passed; 11 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s"
+    }
+  ]
+}

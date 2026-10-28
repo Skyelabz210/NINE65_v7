@@ -1,0 +1,64 @@
+import random, math, subprocess, time
+rng=random.Random(0x504ab)
+MIN=-(1<<127);MAX=(1<<127)-1;U=(1<<64)-1
+bases=[[4,9,25],[3,5,7,11,13],[2,3,5,7,11,13],[U,U-2,U-4],[U-58,U-82,U-94],[998244353,985661441,754974721,469762049]]
+for b in bases:
+    assert all(math.gcd(x,y)==1 for i,x in enumerate(b) for y in b[:i])
+primes=[]
+for x in range(2,400):
+    if all(x%p for p in primes if p*p<=x):primes.append(x)
+    if len(primes)==64:break
+bases.append(primes)
+cases=[]
+def fields(ms):return ','.join(map(str,ms))
+def project(x,ms):return [x%m for m in ms]
+def interval(x,P):
+    if P>1<<128 and rng.randrange(3)==0:return MIN,MAX
+    width=rng.randrange(min(P,1<<128))
+    below=rng.randrange(width+1)
+    lower=max(MIN,x-below);upper=min(MAX,x+(width-below))
+    assert lower<=x<=upper and upper-lower<P
+    return lower,upper
+def randx():return rng.randrange(MIN,MAX+1)
+def choosex(P):return rng.choice([MIN,MAX,-1,0,1,randx()])
+def rounded(x,d,r):
+    q,rem=divmod(x,d)
+    return q+(r=='N' and 2*rem>=d)
+for i in range(900):
+    ms=bases[i%(len(bases)-1)];P=math.prod(ms);x=choosex(P);lo,hi=interval(x,P)
+    d=rng.choice([1,2,3,4,9,U,U-1,ms[rng.randrange(len(ms))],rng.randrange(1,U+1)])
+    cases.append((f'R {fields(ms)} {d} {x} {lo} {hi}',(project(x//d,ms),x%d)))
+for ms in [primes]:
+    for x in [MIN,MAX,-1,0,1]:
+        cases.append((f'R {fields(ms)} {U} {x} {MIN} {MAX}',(project(x//U,ms),x%U)))
+for i in range(1400):
+    ms=bases[i%(len(bases)-1)];main,anchor=ms[:2],ms[2:];P=math.prod(ms);x=choosex(P);lo,hi=interval(x,P)
+    for op in ['D','Q']:
+        idx=rng.randrange(len(main));d=main[idx] if op=='D' else rng.choice([1,2,3,4,9,U,U-1,ms[rng.randrange(len(ms))],rng.randrange(1,U+1)])
+        r=rng.choice('FNE');inputline=f'{op} {fields(main)} {fields(anchor)} {x} {lo} {hi} {idx if op=="D" else d} {r}'
+        if r=='E' and x%d:expected='NonExact'
+        else:
+            q=rounded(x,d,r);low=rounded(lo,d,r);high=rounded(hi,d,r);newms=main[:idx]+main[idx+1:]+anchor if op=='D' else ms
+            expected='IntervalAliased' if high-low>=math.prod(newms) else (project(q,newms),low,high,1,x-d*q)
+        cases.append((inputline,expected))
+for i in range(600):
+    ms=bases[i%(len(bases)-1)];main,anchor=ms[:2],ms[2:];P=math.prod(ms)
+    a=choosex(P);b=choosex(P);l,u=interval(a,P);ll,uu=interval(b,P)
+    for op in 'ASM':
+        inputline=f'{op} {fields(main)} {fields(anchor)} {a} {l} {u} {b} {ll} {uu}'
+        if op=='A':x=a+b;lo=l+ll;hi=u+uu
+        elif op=='S':x=a-b;lo=l-uu;hi=u-ll
+        else:x=a*b;ps=[t*v for t in (l,u) for v in (ll,uu)];lo=min(ps);hi=max(ps)
+        if lo<MIN or hi>MAX:expected='BoundOverflow'
+        elif hi-lo>=P:expected='IntervalAliased'
+        else:expected=(project(x,ms),lo,hi,0)
+        cases.append((inputline,expected))
+for variant in ['debug','release']:
+    t=time.monotonic()
+    p=subprocess.run([f'/tmp/recumbent_review_probe/probe-{variant}'],input='\n'.join(s for s,_ in cases)+'\n',text=True,capture_output=True,check=True)
+    actual=p.stdout.splitlines();assert len(actual)==len(cases),(len(actual),len(cases))
+    for (s,e),v in zip(cases,actual):
+        if isinstance(e,str):assert v=='E '+e,(variant,s,e,v)
+        else:
+            vs=v.split();got=([int(t) for t in vs[0].split(',')[:-1]],)+tuple(map(int,vs[1:]));assert got==e,(variant,s,e,got)
+    print(f'{variant}: {len(cases)} independent Python integer/interval checks passed in {time.monotonic()-t:.3f}s')

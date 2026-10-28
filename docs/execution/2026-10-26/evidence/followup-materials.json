@@ -1,0 +1,139 @@
+{
+  "received": "2026-10-26",
+  "files": [
+    {
+      "name": "Clocking_Boots.pdf",
+      "bytes": 95979,
+      "sha256": "15e750823e2ff658b384d3806f9daf05f2f0bc8a1a0e91f4a8d575afe01664b8",
+      "pages": 4
+    },
+    {
+      "name": "a2-arrow-emission-suite.skill",
+      "bytes": 13915,
+      "sha256": "c23a5c5883f41d85b45281d0cc9c5bd4e522f7712c5f1a784a8498aa5bff9f32",
+      "members": [
+        "a2-arrow-emission-suite/SKILL.md",
+        "a2-arrow-emission-suite/references/gates.md",
+        "a2-arrow-emission-suite/scripts/a2_suite.py"
+      ]
+    },
+    {
+      "name": "DIV3_independent_validation_2026-10-14.json",
+      "bytes": 257,
+      "sha256": "3608bf7a6d5c10a73c2213b6c795dddf264263d8f6933db814c52e57e81df8f3",
+      "text_lines": 13
+    },
+    {
+      "name": "Arrow of Time CRAM.docx",
+      "bytes": 22593,
+      "sha256": "b2be34aa7618e2296a129f088ae6426ae0c2fc54e2f3eebe0738108af65fe624"
+    },
+    {
+      "name": "Divs.md",
+      "bytes": 8923,
+      "sha256": "588794ed2687b618f1e19538889e4ab41f5d2ff8a3bb51b162252b0c6967123a",
+      "text_lines": 164
+    },
+    {
+      "name": "08_fused_piggyback_division 2.md",
+      "bytes": 13931,
+      "sha256": "dc523720327ba38d8fea322132c44438bda833d976ba134ff46923befa27797d",
+      "text_lines": 243
+    },
+    {
+      "name": "Div4 and some .md",
+      "bytes": 17838,
+      "sha256": "9fa224bda76bd764f2cc9ea94a988a1e4652966a484e1e090581346e81af8107",
+      "text_lines": 57
+    },
+    {
+      "name": "5th Operator.md",
+      "bytes": 27744,
+      "sha256": "7e6050a5e9e5772e09e4be048ceb1a2e1bb5a6c40ce94f75ba83096260cae425",
+      "text_lines": 2232
+    },
+    {
+      "name": "CHECK AGAIN MACHINE LENS.md",
+      "bytes": 5906,
+      "sha256": "4280bcebffad4add886b1724f27ce3158dedaee854b2c5295f58f7afa3c4e660",
+      "text_lines": 86
+    },
+    {
+      "name": "D OD01 D024 THEOREM STACK.pdf",
+      "bytes": 176247,
+      "sha256": "02129a71ba37bfcfde56c8a5643f63e29e82025d47b1e3cbe41ecfc68b62b975",
+      "pages": 12
+    },
+    {
+      "name": "D030_RECUMBENT_RESTATEMENT.md",
+      "bytes": 13591,
+      "sha256": "8669f5006a0bcd9e37ad08dd2ef65b34d610a3a875b559b1c8f62aaeb1b0f49c",
+      "text_lines": 330
+    },
+    {
+      "name": "A-16_beltrami_decomposition.md",
+      "bytes": 9300,
+      "sha256": "215c0159500b4eca4ae9528d78fee35083f6a04cc0621179b50d7289360092b1",
+      "text_lines": 167
+    },
+    {
+      "name": "09_shadow_disambiguator.md",
+      "bytes": 13739,
+      "sha256": "38b291458e0115f119ee87ced392603cf1fdeaff7ffde5115d5ad6000aae178c",
+      "text_lines": 203
+    },
+    {
+      "name": "15_dkam_subcriticality.md",
+      "bytes": 15221,
+      "sha256": "727311d317019a8d786229bdcf0ffa0044899ecbb56fb1d80ce24a0120d1701f",
+      "text_lines": 224
+    },
+    {
+      "name": "01 safe basis extension.tar",
+      "bytes": 10903,
+      "sha256": "4a4bf722d88737b047f15ecc8e7cb1a4669914abb984de4c57199011c0de816c",
+      "members": [
+        "01_safe_basis_extension/TECHNICAL_DOCUMENT.md",
+        "01_safe_basis_extension/recombinant_maya_crt_tests.py",
+        "01_safe_basis_extension/test_output.txt"
+      ]
+    },
+    {
+      "name": "5e352759-fdce-4e6e-9821-02dc4b82840b.md",
+      "bytes": 12653,
+      "sha256": "ff7a2f4231bc1a014defb53da216ed18583c4489a499115a260d8a7b412e9397",
+      "text_lines": 141
+    },
+    {
+      "name": "DIV3_Noise_Free_Multiplication_White_Paper_2026-10-14.docx",
+      "bytes": 26226,
+      "sha256": "608611ebf0951dbecbfff793edb2ef74654be9f880d5f966339f272bf95020a8"
+    },
+    {
+      "name": "06_k_elimination_theorem.md",
+      "bytes": 14208,
+      "sha256": "66e4d7b83f254cb54c330193a182f16726124d06ee7bd339b4314bf50051f648",
+      "text_lines": 206
+    },
+    {
+      "name": "07_recombinant_crt_winding 2.md",
+      "bytes": 14464,
+      "sha256": "7f6f93061e7202be535861e257a0dad3ac77df3a83c605e276a85abda5e74ed2",
+      "text_lines": 220
+    },
+    {
+      "name": "Adelic landouer principal .txt",
+      "bytes": 30971,
+      "sha256": "d7b8de84d9703e01a974cae20fbec7cde120a47af99c717d961a9cf281728836",
+      "text_lines": 225,
+      "duplicate_of_previous_batch": true
+    },
+    {
+      "name": "Pasted text.txt",
+      "bytes": 11281,
+      "sha256": "0aa316ecdd5336e1614d578795c90dc90b4d252d39fec0b772bdbf2cad0a2900",
+      "text_lines": 230,
+      "role": "user-supplied Nine-Plus Acts text"
+    }
+  ]
+}

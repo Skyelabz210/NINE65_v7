@@ -9,6 +9,13 @@ It provides finite leveled computation plus low-depth refresh paths. **It is not
 
 ## Open Work — read this first
 
+`docs/execution/2026-10-27/IMPLEMENTATION.md` records the current commissioned
+recumbent work and the user's emission-policy clarification. Reconstruction is
+permitted; Garner/mixed-radix synthetic emissions remain forbidden in residue
+compute. Use actual-operation arrow checks for the stated independence and
+reversibility domain, separately from structural source checks. Earlier blanket
+reconstruction bans do not supersede this clarification.
+
 `docs/REPOSITION_EXECUTION_2026-09-24.md` reconciles the September branch
 inventory and completion plan with the current main tree. Read its verified
 state changes, transduction-capacity finding, dependency gates, and benchmark
@@ -92,14 +99,17 @@ Core FHE tests only:
 
 Bootstrap-specific tests:
   cargo test -p nine65 --lib --release -- bootstrap
-  cargo test -p nine65 --test bootstrap_integration --release --features allow_insecure
-  cargo test -p nine65 --test bootstrap_parameter_exploration --release --features allow_insecure
+  cargo test -p nine65 --test bootstrap_integration --features allow_insecure
+  cargo test -p nine65 --test bootstrap_parameter_exploration --features allow_insecure
 
-(Standalone `-p nine65` runs of integration-test and bench targets need
-`--features allow_insecure`: those targets link the library without cfg(test),
-so the release-mode secure-RNG gate would otherwise reject their seeded
-ShadowHarvester. The workspace-wide command above needs nothing extra. Each
-affected target declares this via required-features in crates/nine65/Cargo.toml.)
+(Feature-gated integration targets with seeded test RNGs require
+`--features allow_insecure` and a **debug** build. `src/lib.rs` deliberately
+rejects `allow_insecure` in a release library build, even when Cargo is building
+an integration test. The default workspace release command therefore skips
+those feature-gated targets; it is not evidence that every integration target
+ran. Record executed targets separately from `cargo metadata` discovery.
+See `docs/execution/2026-10-26/STATUS.md` for the measured inventory and the
+reproduced release-feature refusal.)
 
 Security tests:
   cargo test -p nine65 security::tests -- --nocapture

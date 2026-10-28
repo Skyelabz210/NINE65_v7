@@ -1,0 +1,3 @@
+extern crate exact_transcendentals;
+use exact_transcendentals::cram_ct::CramCiphertext;
+fn main(){let d=(1i128<<64)+3;let input=CramCiphertext::wrap_default((),&[0],None);let direct=input.clone().cram_rescale_by_scalar_kelim(d,17,|_,_|());let routed=input.cram_rescale_with_chimera_router(d,0,|_,_|());println!("d={d}; direct D1 success={}; router kelim={}",direct.is_ok(),routed.unwrap().2.kelim);}
