@@ -109,6 +109,20 @@ Workspace/all-targets clippy, formatting, the panic ratchet, all four affected
 workflow parses, and the expanded 19-file architecture scan pass.
 Source hashes and accepted logs are in `roundtrip-evidence/validation.json`.
 
+Hosted CI at 2eafc90 also passes all Exactness Focused jobs, including the
+optimized registered roundtrip, the exact crate/no_std build, carry models,
+and basis controls. Fuzz Smoke and residue-native gates pass. The named-profile
+renewal job passes its observer/preflight controls and then fails at the native
+refresh witness as expected. Other repository gates remain unresolved.
+
+Restoring CI also exposed an audit parser that combined mutually exclusive
+anchor-extension branches into a 14-element union. The runtime function emits
+7 anchors at the smaller audited degrees and 10 at both 16,384 and 32,768.
+The follow-up parser evaluates the restricted branch grammar, cross-checks the
+actual Rust function, and preserves the old audit artifact in the history
+directory. Eight regression/runtime checks validate the correction; prime,
+NTT, distinctness and coprimality checks remain enforced.
+
 Reproduce the focused acceptance run with:
 
 ```sh
