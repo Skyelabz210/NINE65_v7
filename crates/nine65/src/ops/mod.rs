@@ -21,6 +21,18 @@ pub mod arrow_emission_gate;
 pub mod auto_bootstrap;
 pub mod batch;
 pub mod bootstrap;
+#[cfg(any(test, feature = "allow_insecure"))]
+pub(crate) mod bounded_digit_circuit;
+#[cfg(any(test, feature = "allow_insecure"))]
+pub(crate) mod direct_slot_phase;
+#[cfg(any(test, feature = "allow_insecure"))]
+pub mod public_refresh_circuit;
+#[cfg(test)]
+mod public_refresh_native;
+#[cfg(any(test, feature = "allow_insecure"))]
+pub(crate) mod public_refresh_return;
+#[cfg(any(test, feature = "allow_insecure"))]
+pub(crate) mod public_refresh_slots;
 // RETIRED: `pub mod sbni;` — shadow-butterfly noise injection, dropped per
 // author decision. `src/ops/sbni.rs` was removed entirely (issue #68
 // completed the retirement); it was never part of the module tree and never
@@ -36,6 +48,8 @@ pub mod homomorphic;
 pub mod neural;
 pub mod parallel;
 pub mod prime_power_phase;
+#[cfg(any(test, feature = "allow_insecure"))]
+pub mod public_refresh_source;
 pub mod rns_fhe;
 pub mod rns_galois;
 // REMOVED (G19, legacy duplicate stack): `pub mod rns_mul;` used to define a
@@ -70,5 +84,5 @@ pub use rns_fhe::cram_main;
 pub use rns_fhe::exact_mul;
 pub use rns_fhe::exact_mul::{
     ExactMulCertificate, ExactMulError, ExactMulEvaluator, ExactMulPlan, ExactTensor3,
-    RNSHybridGadgetKey,
+    PreparedHybridGadgetKey, RNSHybridGadgetKey,
 };

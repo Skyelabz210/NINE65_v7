@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run named public-refresh regressions; research passes do not admit refresh.
 
-The small-ring probes are intentionally ignored by the general test sweep.
+Some research probes are intentionally ignored by the general test sweep.
 Use exact names here so a module filter cannot start expensive native probes.
 Cargo's successful zero-test exit is not accepted as evidence.
 """
@@ -17,12 +17,18 @@ import sys
 
 PIPELINE = "phase_clock_compaction::public_bootstrap_pipeline"
 BATCHED = f"{PIPELINE}::outer_ring_return::sparse_source_encapsulation::batched_lift_phase"
+SOURCE = "ops::public_refresh_source::tests"
+CIRCUIT = "ops::public_refresh_circuit::tests"
 SUITES = {
     "production-boundary": (
         ("--lib", None, "params::secure_configs::tests::public_refresh_support_requires_sound_phase1", False),
         ("--lib", None, "ops::bootstrap::tests::public_phase1_is_typed_fail_closed", False),
     ),
     "research": (
+        ("--lib", None, "ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles", False),
+        ("--lib", None, f"{CIRCUIT}::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds", False),
+        ("--lib", None, f"{CIRCUIT}::public_refresh_refuses_wrong_families_and_exhausted_history_without_counting", False),
+        ("--lib", None, f"{CIRCUIT}::public_refresh_plan_refuses_invalid_geometry_scale_support_basis_and_resources", False),
         ("--test", "coefficient_slot_gate", "tropical_cocycle_state::encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots", False),
         ("--test", "coefficient_slot_gate", f"{PIPELINE}::phase_clock_full_polynomial_public_return_and_two_dependent_refresh_cycles", True),
         ("--test", "coefficient_slot_gate", f"{PIPELINE}::outer_ring_return::sparse_source_encapsulation::sparse_source_public_transform_closes_two_dense_work_refresh_cycles", True),
@@ -33,6 +39,19 @@ SUITES = {
     ),
     "native-arithmetic": (
         ("--test", "coefficient_slot_gate", f"{BATCHED}::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_native_contracts_coherent_residue_and_tracks_quotient", True),
+    ),
+    "source-preparation": (
+        ("--lib", None, f"{SOURCE}::source_preparation_tracks_full_polynomial_history_and_ring_embedding", False),
+        ("--lib", None, f"{SOURCE}::source_preparation_rejects_wrong_families_and_invalid_parameters", False),
+        ("--lib", None, f"{SOURCE}::source_preparation_refuses_exhausted_switch_margin_without_resetting_input", False),
+        ("--lib", None, f"{SOURCE}::source_preparation_native_same_ring_h96_checks_all_coefficients", False),
+        ("--lib", None, f"{SOURCE}::source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros", False),
+    ),
+    "return-boundary": (
+        ("--lib", None, "ops::public_refresh_return::tests::public_return_noise_plan_is_key_free_and_checks_geometry", False),
+        ("--lib", None, "ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history", False),
+        ("--lib", None, "ops::public_refresh_return::tests::public_return_rejects_foreign_family_and_stale_source_lineage", False),
+        ("--lib", None, "ops::public_refresh_return::tests::public_return_rejects_malformed_outputs_and_exhausted_bounds", False),
     ),
 }
 SUMMARY = re.compile(

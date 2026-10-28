@@ -404,7 +404,7 @@ fn check_section(source_n: usize, h: usize) {
         ));
         let d = drop_special(&high, &full_high, &full_d);
         let d_bound = drop_view_bound(full_d_bound, special, high.t, high.n);
-        eprintln!("native section capacity: Q241 exact plan uses {} auxiliary bits for {} required with the U512 rank fallback; PUBLIC same-key modulus drop to Q{} reduces D certificate bits {}->{}, existing rank/auxiliary guards unchanged",certificate.aux_bits,certificate.required_bits,wide_bits(U512::product_u64s(&high.config.primes)),wide_bits(full_d_bound),wide_bits(d_bound));
+        eprintln!("native section capacity: Q241 exact plan uses {} auxiliary bits for {} required with the checked U1024 rank fallback; PUBLIC same-key modulus drop to Q{} reduces D certificate bits {}->{}, rank/auxiliary guards enforced",certificate.aux_bits,certificate.required_bits,wide_bits(U512::product_u64s(&high.config.primes)),wide_bits(full_d_bound),wide_bits(d_bound));
         (precharge, precharge_v, d, d_bound)
     } else {
         (

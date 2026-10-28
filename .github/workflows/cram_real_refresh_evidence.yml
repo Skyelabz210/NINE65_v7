@@ -16,6 +16,7 @@ on:
       - "scripts/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - ".cargo/**"
       - "rust-toolchain.toml"
       - ".github/workflows/cram_real_refresh_evidence.yml"
   pull_request:
@@ -27,6 +28,7 @@ on:
       - "scripts/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - ".cargo/**"
       - "rust-toolchain.toml"
       - ".github/workflows/cram_real_refresh_evidence.yml"
   workflow_dispatch:
@@ -62,11 +64,12 @@ jobs:
           --suite production-boundary
           --log-dir work/public-refresh-gates/production-boundary
 
-      # Explicitly opt in only to small-ring complete research probes. Their
-      # public evaluators receive no decryption oracle; a client checks every
-      # output coefficient, return to the work key and two dependent cycles.
+      # Explicitly run the small-ring complete refresh/return/repeat probes.
+      # Their public evaluators receive no decryption oracle; a client checks
+      # every output coefficient through the dependent cycles. The other
+      # selected scale-boundary diagnostics retain labeled oracle controls.
       # These tests do not admit native refresh or replace the blocker below.
-      - name: Check small-ring public refresh and plaintext-scale boundaries
+      - name: Check public API histories, refresh cycles and plaintext boundaries
         run: >-
           python3 scripts/run_public_refresh_research_gates.py
           --suite research
@@ -80,6 +83,21 @@ jobs:
           python3 scripts/run_public_refresh_research_gates.py
           --suite native-arithmetic
           --log-dir work/public-refresh-gates/native-arithmetic
+
+      # Native dense work is publicly converted to an independent sparse
+      # source with immutable full-polynomial history and checked bounds.
+      # This stage alone does not admit complete native or secure refresh.
+      - name: Check native public source preparation and history boundaries
+        run: >-
+          python3 scripts/run_public_refresh_research_gates.py
+          --suite source-preparation
+          --log-dir work/public-refresh-gates/source-preparation
+
+      - name: Check public return arithmetic and malformed proof boundaries
+        run: >-
+          python3 scripts/run_public_refresh_research_gates.py
+          --suite return-boundary
+          --log-dir work/public-refresh-gates/return-boundary
 
       - name: Preserve focused evidence including failures
         if: always()

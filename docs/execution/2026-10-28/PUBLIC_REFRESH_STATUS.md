@@ -1,5 +1,11 @@
 # Public refresh: verified repairs and remaining admission gates
 
+Continuation: [the complete encrypted research circuit](PUBLIC_REFRESH_CIRCUIT.md)
+now supplies a bounded carry DAG, wide exact arithmetic, a streamed inverse,
+original-key return, and an explicit public API. That report distinguishes
+functional execution from the unresolved CRAM root and security admission.
+The historical repairs and gate results below describe the earlier increment.
+
 Baseline: `091c4ff` (2026-10-28). This checkpoint distinguishes regression
 repairs from enabling public refresh. Issue #95 remains open. Issue #117 is
 closed on GitHub; that closure does not establish a correct native refresh.
