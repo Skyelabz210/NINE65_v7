@@ -339,8 +339,8 @@ The fixed S8 path permits the even payload product; it requires coprimality
 with 11, not with 22. Payload equality includes the root2 check.
 
 For the native signed carry corridor `-49 <= d <= 49`, the owner selected a
-local 36/37 StarLift frame in place of a running epoch quotient. Shift the
-carry into a nonnegative interval and keep both residues:
+local 36/37 StarLift derivation in place of a running epoch quotient. Shift the
+carry into a nonnegative interval and derive both residues on demand:
 
 ```text
 y = d + 49                                # 0..98
@@ -350,13 +350,15 @@ K = ((s37-r36)*inverse(36,37)) mod 37
 d = 36*K + r36 - 49
 ```
 
-`StarLiftCarry36x37` checks exact recovery and rejects residues outside the
-native corridor. Here 36 is the local carry shell and 37 its adjacent star
-anchor; neither changes the S8 payload product `881790` or makes the shadow
-prime 11 an anchor for the entire signed carry. The two clear residues jointly
-identify `d`, so a public evaluator must obtain and retain them only through
-an admitted protected circuit. Dropping the arithmetic epoch quotient does
-not drop the source/value epoch needed to bind a transition to its producer.
+`derive_native_starlift_views` and `recover_native_carry_from_starlift` are
+clear reference functions that check exact recovery and reject residues
+outside the native corridor. They return no persistent carry frame. Here 36
+is the local carry shell and 37 its adjacent star anchor; neither changes the
+S8 payload product `881790` or makes shadow 11 an anchor for the full signed
+carry. The two residues jointly identify `d`. A live evaluator must derive
+them under protection, consume them inside the refresh operation, and discard
+the temporary views before publishing the returned ciphertext. Dropping the
+arithmetic epoch quotient does not drop source/value epoch provenance.
 
 The `acts.md` attachment supplies the two-coordinate K-elimination formula and
 the independent-anchor interpretation. Its unqualified equality to the full

@@ -152,16 +152,16 @@ it would require a proved narrower increment bound or additional independent
 anchor information, such as a protected anchor tower. The present mod11 checker
 therefore cannot be attached to the native circuit as a production proof.
 
-The owner selected a 36/37 StarLift frame for the native carry instead of an
-arithmetic epoch quotient. For each signed digit `d in [-49,49]`, set `y=d+49`
-and keep `(y mod36,y mod37)`. K-elimination against the adjacent 37 anchor
-recovers `floor(y/36)` in `0..2`, hence the exact digit. `StarLiftCarry36x37`
-checks the full99-digit interval and refuses noncanonical or out-of-corridor
-coordinates. This is an arithmetic reference implementation; the public
-refresh evaluator does not currently produce the corresponding protected
-per-slot coordinates from its encrypted carry. Publishing the clear pair would
-reveal the carry. The source/value epoch for provenance still has to be bound
-to the returned ciphertext even though no arithmetic epoch quotient is used.
+The owner selected a 36/37 StarLift derivation for the native carry instead of
+an arithmetic epoch quotient. For each signed digit `d in [-49,49]`, set
+`y=d+49` and derive `(y mod36,y mod37)` inside the operation. K-elimination
+against the adjacent 37 anchor recovers `floor(y/36)` in `0..2`, hence the exact
+digit. The pure reference functions check the full99-digit interval and refuse
+noncanonical or out-of-corridor coordinates; they retain no carry frame. The
+public refresh evaluator does not currently derive these views under encryption
+from its protected carry. A live implementation must consume temporary
+protected views during the refresh and discard them before returning the
+ciphertext. The source/value epoch for provenance remains bound to that return.
 
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.
