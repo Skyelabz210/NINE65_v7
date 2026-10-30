@@ -242,6 +242,12 @@ mod tests {
             plan.verify_successor(&a, sa, &a, sa, source, 11),
             Err(PhaseLockError::AmbiguousIncrement)
         );
+        // The native refresh carry radius is 49; a lone shadow-11 reading
+        // cannot uniquely encode that range.
+        assert_eq!(
+            plan.verify_successor(&a, sa, &a, sa, source, 49),
+            Err(PhaseLockError::AmbiguousIncrement)
+        );
         assert_eq!(
             plan.verify_successor(&a, sa, &b, sb, 7 * m, 4),
             Err(PhaseLockError::SuccessorExceedsCapacity)

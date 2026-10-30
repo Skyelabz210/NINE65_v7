@@ -141,5 +141,16 @@ commit the returned root and work state atomically. The architecture permits
 expanded digit arithmetic as an internal kernel, not a substitute for those
 contracts. Production and legacy gates therefore remain closed.
 
+The selected shadow-prime arithmetic now derives a bounded winding increment
+from the difference between two 11-lane views while checking unchanged S8
+payload lanes. That checker is not called by this encrypted refresh circuit:
+its inputs are protected phase coordinates, whereas the circuit's public
+source and return certificates expose lineage and bounds but no authenticated
+shadow view of that phase. Also, the native circuit allows signed carry values
+through radius49. A single mod11 reading cannot uniquely name that full range;
+it would require a proved narrower increment bound or additional independent
+anchor information, such as a protected anchor tower. The present mod11 checker
+therefore cannot be attached to the native circuit as a production proof.
+
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.
