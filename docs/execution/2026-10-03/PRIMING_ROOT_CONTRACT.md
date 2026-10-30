@@ -1,7 +1,8 @@
 # S00 draft: intact priming root and bounded phase coordinates
 
-Status: **reference-contract draft; S00 is not accepted**. The owner's live
-2/11 phase construction remains unresolved. The reference profiles below do
+Status: **reference-contract draft; S00 is not accepted**. On 2026-10-30, the
+owner selected the winding-successor direction for the live 2/11 sister-tray
+relation. The remaining live profile bindings remain unresolved. The reference profiles below do
 not substitute for it and do not authorize dependent production integration.
 S02-A's independently reproduced composite-inverse correction does not depend
 on choosing that live phase construction.
@@ -313,14 +314,33 @@ their separate observer/source contracts.
 ## 7. Unresolved live 2/11 contract
 
 Profile `OWNER-LIVE2-11` is `unresolved`. Dependent integration must not silently
-select a reference profile as its replacement. The remaining equations are:
+select a reference profile as its replacement. The owner has selected the
+**winding-successor** interpretation: tray B represents a successor of tray A,
+not another encoding of the same quantity. For a declared payload modulus M,
+main residue `g_A = X_A mod M`, and a 2/11 anchor that represents `X_A mod 22`,
+the checked arithmetic relation is:
+
+```text
+r22_A = r11_A + 11*((r2_A-r11_A) mod 2)
+K_A = ((r22_A-(g_A mod 22))*inv(M,22)) mod 22
+r22_B = (r22_A + (M mod 22)*K_A) mod 22
+```
+
+This relation has a standalone exact residue check in
+`cram-core/src/phase_lock.rs`. It does not establish that the trays were
+produced by the same source or permitted operation, that `K_A` is unique rather
+than merely a residue modulo 22, or that tray B is an admitted output state.
+The five-cycle encrypted public refresh test evaluated a separate BFV research
+circuit; it did not evaluate this 2/11 relation.
+
+The remaining decisions and equations are:
 
 1. Exact payload factors/powers M and whether2 is payload, anchor or both by
    separate roles; the monograph already places11 outside its anchor's payload.
 2. `coordinate2 = f2(quantity, state)` and `coordinate11 = f11(quantity, state)`:
    which quantity, quotient, phase or higher-power value does each encode?
-3. The actual cross-tray phase relation and provider equation deriving the
-   requested lift from those coordinates, including auxiliary inputs.
+3. The producer equation and auxiliary inputs that establish this selected
+   successor relation for real sister trays, rather than caller-supplied residues.
 4. Its uniqueness interval and the information distinguishing identical partial
    2/11 observations; its extension and alias-refusal conditions.
 5. Coordinate update equations for each permitted homogeneous/heterogeneous
