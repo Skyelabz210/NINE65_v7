@@ -146,22 +146,17 @@ from the difference between two 11-lane views while checking unchanged S8
 payload lanes. That checker is not called by this encrypted refresh circuit:
 its inputs are protected phase coordinates, whereas the circuit's public
 source and return certificates expose lineage and bounds but no authenticated
-shadow view of that phase. Also, the native circuit allows signed carry values
-through radius49. A single mod11 reading cannot uniquely name that full range;
-it would require a proved narrower increment bound or additional independent
-anchor information, such as a protected anchor tower. The present mod11 checker
-therefore cannot be attached to the native circuit as a production proof.
-
-The owner selected a 36/37 StarLift derivation for the native carry instead of
-an arithmetic epoch quotient. For each signed digit `d in [-49,49]`, set
-`y=d+49` and derive `(y mod36,y mod37)` inside the operation. K-elimination
-against the adjacent 37 anchor recovers `floor(y/36)` in `0..2`, hence the exact
-digit. The pure reference functions check the full99-digit interval and refuse
-noncanonical or out-of-corridor coordinates; they retain no carry frame. The
-public refresh evaluator does not currently derive these views under encryption
-from its protected carry. A live implementation must consume temporary
-protected views during the refresh and discard them before returning the
-ciphertext. The source/value epoch for provenance remains bound to that return.
+shadow view of that phase. The earlier suggestion to StarLift a signed
+`[-49,49]` carry confused two variables: radius49 bounds the **residual** `r`
+in `x=r+p*K`. The encrypted output of `SplitDigitEvaluator` is `K mod65537`;
+it does not have a proved `[-49,49]` range. A 36/37 frame of `r+49` would only
+recover `r`, and its period1332 cannot uniquely represent every possible
+canonical `K` in `0..65536`. The proposed clear carry helper was removed. The
+current circuit derives `K` under encryption and consumes it without storing
+StarLift coordinates. Any additional StarLift applied to `K` needs its own
+protected coordinate producer and certified range; none is required for the
+already passing research refresh. Source/value epoch provenance stays bound
+to the returned ciphertext.
 
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.

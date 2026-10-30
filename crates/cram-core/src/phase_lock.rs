@@ -108,38 +108,6 @@ pub enum PhaseLockError {
     InvalidSourceBound,
     SuccessorExceedsCapacity,
     SuccessorMismatch,
-    RawCarryOutOfRange,
-    InvalidStarLiftResidue,
-    StarLiftOutsideNativeCorridor,
-}
-
-/// Derive temporary 36/37 views of a native carry for a reference or
-/// authorized calculation. Secret-dependent views must be evaluated under
-/// protection and discarded in the same operation, never added to ciphertext
-/// state or published as clear residues.
-pub fn derive_native_starlift_views(raw: i16) -> Result<(u8, u8), PhaseLockError> {
-    if !(-49..=49).contains(&raw) {
-        return Err(PhaseLockError::RawCarryOutOfRange);
-    }
-    let shifted = (raw + 49) as u16;
-    Ok(((shifted % 36) as u8, (shifted % 37) as u8))
-}
-
-/// Consume temporary views using K-elimination against the adjacent 37
-/// anchor. The native interval forces `K = (shell-anchor) mod 37` into 0..=2.
-/// This clear reference read is not a public evaluator operation.
-pub fn recover_native_carry_from_starlift(shell: u8, anchor: u8) -> Result<i16, PhaseLockError> {
-    if shell >= 36 || anchor >= 37 {
-        return Err(PhaseLockError::InvalidStarLiftResidue);
-    }
-    let winding = recover_winding(shell as u64, anchor as u64, 36, 37)
-        .map_err(|_| PhaseLockError::InvalidStarLiftResidue)?
-        .winding_mod_anchor;
-    let shifted = 36 * winding + shell as u64;
-    if shifted > 98 {
-        return Err(PhaseLockError::StarLiftOutsideNativeCorridor);
-    }
-    Ok(shifted as i16 - 49)
 }
 
 impl PhaseLock22 {
@@ -203,36 +171,6 @@ impl PhaseLock22 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn star_lift_recovers_every_native_carry_without_epoch_state() {
-        for raw in -49i16..=49 {
-            let (shell, anchor) = derive_native_starlift_views(raw).unwrap();
-            assert_eq!(recover_native_carry_from_starlift(shell, anchor), Ok(raw));
-        }
-        assert_eq!(derive_native_starlift_views(-49), Ok((0, 0)));
-        assert_eq!(derive_native_starlift_views(49), Ok((26, 24)));
-        assert_eq!(
-            recover_native_carry_from_starlift(36, 0),
-            Err(PhaseLockError::InvalidStarLiftResidue)
-        );
-        assert_eq!(
-            recover_native_carry_from_starlift(0, 37),
-            Err(PhaseLockError::InvalidStarLiftResidue)
-        );
-        assert_eq!(
-            recover_native_carry_from_starlift(27, 25),
-            Err(PhaseLockError::StarLiftOutsideNativeCorridor)
-        );
-        assert_eq!(
-            derive_native_starlift_views(-50),
-            Err(PhaseLockError::RawCarryOutOfRange)
-        );
-        assert_eq!(
-            derive_native_starlift_views(50),
-            Err(PhaseLockError::RawCarryOutOfRange)
-        );
-    }
 
     #[test]
     fn shadow_elimination_matches_independent_integer_successors() {

@@ -338,34 +338,24 @@ It accepts no caller-supplied scalar increment and stores no winding ledger.
 The fixed S8 path permits the even payload product; it requires coprimality
 with 11, not with 22. Payload equality includes the root2 check.
 
-For the native signed carry corridor `-49 <= d <= 49`, the owner selected a
-local 36/37 StarLift derivation in place of a running epoch quotient. Shift the
-carry into a nonnegative interval and derive both residues on demand:
-
-```text
-y = d + 49                                # 0..98
-r36 = y mod 36; s37 = y mod 37
-K = ((s37-r36)*inverse(36,37)) mod 37
-  = (r36-s37) mod 37                      # 0..2 under this bound
-d = 36*K + r36 - 49
-```
-
-`derive_native_starlift_views` and `recover_native_carry_from_starlift` are
-clear reference functions that check exact recovery and reject residues
-outside the native corridor. They return no persistent carry frame. Here 36
-is the local carry shell and 37 its adjacent star anchor; neither changes the
-S8 payload product `881790` or makes shadow 11 an anchor for the full signed
-carry. The two residues jointly identify `d`. A live evaluator must derive
-them under protection, consume them inside the refresh operation, and discard
-the temporary views before publishing the returned ciphertext. Dropping the
-arithmetic epoch quotient does not drop source/value epoch provenance.
+The native public refresh circuit has a different bound: in `x=r+p*K`, its
+certificate proves `|r| <= 49`; `SplitDigitEvaluator` extracts `K mod p`, with
+`p=65537`. The proposed 36/37 derivation on `r+49` would recover the residual
+`r`, not the quotient `K`. A single 36/37 frame has period `36*37=1332`, below
+the full canonical `K` range `0..65536`. Thus no 36/37 carry frame or epoch
+quotient has been added to the live state. A possible StarLift of `K` needs a
+certified interval and enough independent anchors; for example the period
+`36*37*73=97236` exceeds 65536, but its protected coordinate producer has not
+been designed or admitted. The current circuit already evaluates `K` under
+encryption and uses it immediately. Source/value epoch provenance remains
+necessary even without an arithmetic epoch quotient.
 
 The `acts.md` attachment supplies the two-coordinate K-elimination formula and
 the independent-anchor interpretation. Its unqualified equality to the full
 quotient requires the range bound above; without that bound the reading is
 only a residue modulo 11. The attached `main.pdf` is background, not an
 instruction to change the runtime or evidence of production authentication.
-No full integer is assembled by this checker. Input production, protected
+No full integer is assembled by the shadow checker. Input production, protected
 phase evaluation, and source/value-epoch binding remain required for refresh integration.
 
 ### Earlier joint-anchor relation and remaining integration
