@@ -313,6 +313,41 @@ their separate observer/source contracts.
 
 ## 7. Unresolved live 2/11 contract
 
+### Owner-selected shadow-prime K-elimination (2026-10-30)
+
+The owner requested K-elimination against the shadow prime. The concrete S8
+arithmetic route uses 11 as anchor outside the primary payload, while retaining
+all eight logical root roles. The payload is `[2,3,5,7,13,17,19]`, giving
+`M=881790`, `M mod 11=8`, and `inverse(M,11)=7`. For a winding-successor
+transition of the internal sheet coordinate, use:
+
+```text
+payload_B[p] = payload_A[p] for every payload lane p
+d11 = (shadow_B-shadow_A) mod 11
+DeltaK11 = d11 * inverse(M,11) mod 11
+0 <= DeltaK <= delta_upper < 11
+0 <= X_A <= source_upper
+source_upper + M*delta_upper < M*11
+```
+
+Under the producer-established interval and same-source hypotheses, this
+recovers the unique increment. `Shadow11Plan::verify_successor` consumes both
+payload views, derives the transient increment using the existing
+`anchor::recover_winding` implementation, checks its bound, and discards it.
+It accepts no caller-supplied scalar increment and stores no winding ledger.
+The fixed S8 path permits the even payload product; it requires coprimality
+with 11, not with 22. Payload equality includes the root2 check.
+
+The `acts.md` attachment supplies the two-coordinate K-elimination formula and
+the independent-anchor interpretation. Its unqualified equality to the full
+quotient requires the range bound above; without that bound the reading is
+only a residue modulo 11. The attached `main.pdf` is background, not an
+instruction to change the runtime or evidence of production authentication.
+No full integer is assembled by this checker. Input production, protected
+phase evaluation, and key/epoch binding remain required for refresh integration.
+
+### Earlier joint-anchor relation and remaining integration
+
 Profile `OWNER-LIVE2-11` is `unresolved`. Dependent integration must not silently
 select a reference profile as its replacement. The owner has selected the
 **winding-successor** interpretation for an internal noise/scale sheet coordinate.

@@ -4,9 +4,88 @@
 //! establish that both trays came from the same source and valid epochs, and
 //! that their public intervals stay below `main_modulus * 22`.
 
+use crate::anchor::recover_winding;
 use crate::gcd;
 
 const ANCHOR: u64 = 22;
+
+/// Bounded successor check with 11 outside the payload basis. Root roles are
+/// retained; a producer must bind the supplied views and bounds to its source.
+#[derive(Clone, Debug)]
+pub struct Shadow11Plan {
+    payload: crate::BasisFrame,
+    modulus: u64,
+}
+
+impl Shadow11Plan {
+    pub fn new(payload_moduli: Vec<u64>) -> Result<Self, PhaseLockError> {
+        let payload = crate::BasisFrame::try_new(payload_moduli)
+            .map_err(|_| PhaseLockError::InvalidPayloadBasis)?;
+        let mut modulus = 1u64;
+        for &lane in payload.moduli() {
+            if gcd(lane, 11) != 1 {
+                return Err(PhaseLockError::NonCoprimeMainModulus);
+            }
+            modulus = modulus
+                .checked_mul(lane)
+                .filter(|&value| value <= i64::MAX as u64)
+                .ok_or(PhaseLockError::InvalidMainModulus)?;
+        }
+        Ok(Self { payload, modulus })
+    }
+
+    pub fn s8() -> Self {
+        Self::new(vec![2, 3, 5, 7, 13, 17, 19]).expect("fixed S8 shadow split")
+    }
+
+    /// Verify unchanged payload views and derive the transient increment as
+    /// `(shadow_b-shadow_a) * M^-1 mod 11`. With a producer-established
+    /// nonnegative increment bound below 11, this residue uniquely names DeltaK.
+    /// This checks arithmetic only, without authenticating caller-supplied views.
+    pub fn verify_successor(
+        &self,
+        payload_a: &[u64],
+        shadow_a: u8,
+        payload_b: &[u64],
+        shadow_b: u8,
+        source_upper: u64,
+        delta_upper: u8,
+    ) -> Result<(), PhaseLockError> {
+        if shadow_a >= 11 || shadow_b >= 11 {
+            return Err(PhaseLockError::InvalidResidue11);
+        }
+        if delta_upper >= 11 {
+            return Err(PhaseLockError::AmbiguousIncrement);
+        }
+        let capacity = self.modulus as u128 * 11;
+        if source_upper as u128 >= capacity {
+            return Err(PhaseLockError::InvalidSourceBound);
+        }
+        if source_upper as u128 + self.modulus as u128 * delta_upper as u128 >= capacity {
+            return Err(PhaseLockError::SuccessorExceedsCapacity);
+        }
+        if payload_a.len() != self.payload.moduli().len() || payload_b.len() != payload_a.len() {
+            return Err(PhaseLockError::InvalidPayloadShape);
+        }
+        for ((&a, &b), &modulus) in payload_a.iter().zip(payload_b).zip(self.payload.moduli()) {
+            if a >= modulus || b >= modulus {
+                return Err(PhaseLockError::InvalidPayloadResidue);
+            }
+            if a != b {
+                return Err(PhaseLockError::PayloadChanged);
+            }
+        }
+        // The difference is M*DeltaK: its main residue is zero and its
+        // independently supplied shadow residue is the modular difference.
+        let difference = (shadow_b as i16 - shadow_a as i16).rem_euclid(11) as u64;
+        let winding = recover_winding(0, difference, self.modulus, 11)
+            .map_err(|_| PhaseLockError::InvalidMainModulus)?;
+        if winding.winding_mod_anchor > delta_upper as u64 {
+            return Err(PhaseLockError::IncrementExceedsBound);
+        }
+        Ok(())
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct PhaseLock22 {
@@ -16,6 +95,12 @@ pub struct PhaseLock22 {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PhaseLockError {
+    InvalidPayloadBasis,
+    InvalidPayloadShape,
+    InvalidPayloadResidue,
+    PayloadChanged,
+    AmbiguousIncrement,
+    IncrementExceedsBound,
     InvalidResidue2,
     InvalidResidue11,
     InvalidMainModulus,
@@ -86,6 +171,100 @@ impl PhaseLock22 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shadow_elimination_matches_independent_integer_successors() {
+        for moduli in [vec![2, 3, 5], vec![7, 13]] {
+            let plan = Shadow11Plan::new(moduli.clone()).unwrap();
+            let m: u64 = moduli.iter().product();
+            for delta in 0..11u8 {
+                for source in 0..m * (11 - delta as u64) {
+                    let successor = source + m * delta as u64;
+                    let a: Vec<_> = moduli.iter().map(|p| source % p).collect();
+                    let b: Vec<_> = moduli.iter().map(|p| successor % p).collect();
+                    assert_eq!(
+                        plan.verify_successor(
+                            &a,
+                            (source % 11) as u8,
+                            &b,
+                            (successor % 11) as u8,
+                            source,
+                            delta
+                        ),
+                        Ok(())
+                    );
+                    if delta > 0 {
+                        assert_eq!(
+                            plan.verify_successor(
+                                &a,
+                                (source % 11) as u8,
+                                &b,
+                                (successor % 11) as u8,
+                                source,
+                                delta - 1
+                            ),
+                            Err(PhaseLockError::IncrementExceedsBound)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn s8_shadow_elimination_refuses_changed_payload_and_aliases() {
+        let plan = Shadow11Plan::s8();
+        let m = 881_790u64;
+        assert_eq!(plan.modulus, m);
+        let source = m + 123;
+        let successor = source + 4 * m;
+        let a: Vec<_> = plan.payload.moduli().iter().map(|p| source % p).collect();
+        let b: Vec<_> = plan
+            .payload
+            .moduli()
+            .iter()
+            .map(|p| successor % p)
+            .collect();
+        let sa = (source % 11) as u8;
+        let sb = (successor % 11) as u8;
+        assert_eq!(plan.verify_successor(&a, sa, &b, sb, source, 4), Ok(()));
+        let mut changed = b.clone();
+        changed[0] ^= 1;
+        assert_eq!(
+            plan.verify_successor(&a, sa, &changed, sb, source, 4),
+            Err(PhaseLockError::PayloadChanged)
+        );
+        assert_eq!(
+            plan.verify_successor(&a, sa, &b, sb, source, 3),
+            Err(PhaseLockError::IncrementExceedsBound)
+        );
+        assert_eq!(
+            plan.verify_successor(&a, sa, &a, sa, source, 11),
+            Err(PhaseLockError::AmbiguousIncrement)
+        );
+        assert_eq!(
+            plan.verify_successor(&a, sa, &b, sb, 7 * m, 4),
+            Err(PhaseLockError::SuccessorExceedsCapacity)
+        );
+        assert_eq!(
+            plan.verify_successor(&a, sa, &b[..6], sb, source, 4),
+            Err(PhaseLockError::InvalidPayloadShape)
+        );
+        assert_eq!(
+            plan.verify_successor(&a, sa, &b, 11, source, 4),
+            Err(PhaseLockError::InvalidResidue11)
+        );
+        let mut noncanonical = b.clone();
+        noncanonical[0] = 2;
+        assert_eq!(
+            plan.verify_successor(&a, sa, &noncanonical, sb, source, 4),
+            Err(PhaseLockError::InvalidPayloadResidue)
+        );
+        assert_eq!(
+            Shadow11Plan::new(vec![2, 11]).unwrap_err(),
+            PhaseLockError::NonCoprimeMainModulus
+        );
+    }
 
     fn tray(value: u64) -> PhaseLock22 {
         PhaseLock22::new((value % 2) as u8, (value % 11) as u8).unwrap()
