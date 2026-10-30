@@ -88,15 +88,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'let overall_correct = depth_correct && statistical_correct;' \
+          grep -F 'eprintln!("Statistical correctness failed: {successes}/100");' \
             crates/nine65/src/bin/nine65_bench.rs
-          grep -F 'if !overall_correct {' crates/nine65/src/bin/nine65_bench.rs
+          grep -F 'std::process::exit(1);' crates/nine65/src/bin/nine65_bench.rs
+          grep -F 'let achieved_chain_correct = decrypted == plaintext;' \
+            crates/nine65/src/bin/nine65_bench.rs
 
       - name: Verify exact noise accounting
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'let delta_bits = exact_delta_bit_length(config);' \
+          grep -F '(exact_delta_bit_length(config) - 1).max(0)' \
             crates/nine65/src/noise/budget.rs
           ! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \
             crates/nine65/src/noise/budget.rs
@@ -164,7 +166,7 @@ jobs:
 
       - name: DualRNS leveled smoke test
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          cargo run -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --output /tmp/nine65-leveled.json
           python3 - <<'PY'
           import json
@@ -180,7 +182,7 @@ jobs:
 
       - name: DualRNS automatic-refresh statistical smoke test
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          cargo run -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 3 --auto-bootstrap \
             --statistical-test --output /tmp/nine65-auto.json
           python3 - <<'PY'

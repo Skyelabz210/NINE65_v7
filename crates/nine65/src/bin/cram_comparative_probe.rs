@@ -236,7 +236,9 @@ fn main() {
         "negate_ct": decryptor.decrypt(&evaluator.negate(&legacy_a)) == (config.t - a) % config.t,
         "add_plain": decryptor.decrypt(&evaluator.add_plain(&legacy_a, b)) == (a + b) % config.t,
         "mul_plain": decryptor.decrypt(&evaluator.mul_plain(&legacy_a, b)) == (a * b) % config.t,
-        "mul_ct": false,
+        // Legacy ct x ct is refused by design (#135); "correct" means it IS refused.
+        // An unexpected ciphertext makes this false and fails the run.
+        "mul_ct": legacy_mul_refused,
         "mul_ct_status": if legacy_mul_refused { "refused-#135" } else { "unexpected-ciphertext" },
     });
 
@@ -329,11 +331,14 @@ fn main() {
         }
     }
 
+    // `mul_ct_status` is a descriptive string, not a verdict; every other field
+    // is a boolean that must be true.
     let legacy_all_correct = legacy_correctness
         .as_object()
         .into_iter()
-        .flat_map(|object| object.values())
-        .all(|value| value.as_bool() == Some(true));
+        .flat_map(|object| object.iter())
+        .filter(|(key, _)| key.as_str() != "mul_ct_status")
+        .all(|(_, value)| value.as_bool() == Some(true));
     let dual_all_correct = dual_correctness
         .as_object()
         .into_iter()

@@ -22,7 +22,9 @@ from itertools import product
 from typing import Iterable
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-PROBE = ROOT / "target" / "release" / "cram_exploratory_probe"
+# Debug build on purpose: the probe seeds a deterministic RNG, which the library
+# rejects in release builds (require_secure_rng). Correctness only, no timing claims.
+PROBE = ROOT / "target" / "debug" / "cram_exploratory_probe"
 
 
 @dataclass(frozen=True)
@@ -205,7 +207,6 @@ def build_probe() -> dict[str, object]:
     command = [
         "cargo",
         "build",
-        "--release",
         "-p",
         "nine65",
         "--bin",

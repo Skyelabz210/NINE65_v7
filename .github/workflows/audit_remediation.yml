@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -F 'let delta_bits = exact_delta_bit_length(config);' \
+          grep -F '(exact_delta_bit_length(config) - 1).max(0)' \
             crates/nine65/src/noise/budget.rs
           ! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \
             crates/nine65/src/noise/budget.rs
@@ -159,7 +159,7 @@ jobs:
       #       a path label; there is no honest substitute, so it is not faked.
       - name: DualRNS leveled smoke test
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          cargo run -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --output /tmp/nine65-leveled.json
           python3 - <<'PY'
           import json
@@ -191,23 +191,35 @@ jobs:
           assert chain['real_refreshes'] == 0
           PY
 
-      - name: DualRNS automatic-refresh statistical smoke test
+      # Public refresh is fail-closed (issue #95): the displaced Phase-1 carry
+      # is secret-dependent and not yet propagated, so an automatic refresh
+      # returns a typed BootstrapFailed. This step pins that boundary instead
+      # of asserting a capability that does not exist: the run must stop with
+      # the typed refusal and must not emit a report claiming success.
+      # The capability itself is asserted, red until #95 closes, by
+      # cram_real_refresh_evidence.yml. If refresh starts working this step
+      # fails on purpose: re-derive the refusal, then retire this step.
+      - name: Automatic refresh is refused with the typed error (fail-closed)
+        shell: bash
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          set -uo pipefail
+          rm -f /tmp/nine65-auto.json
+          # Debug build: the seeded harness RNG is rejected in release builds.
+          out=$(cargo run -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --auto-bootstrap \
-            --statistical-test --output /tmp/nine65-auto.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          report = json.loads(Path('/tmp/nine65-auto.json').read_text())
-          assert report['metadata']['bootstrap_mode'] == 'real'
-          for name, scale in report['scale_tests'].items():
-              assert scale['simulated_refreshes'] == 0, name
-          assert report['operation_chain']['achieved_chain_correct'] is True
-          statistical = report['statistical_test']
-          assert statistical['enabled'] is True
-          assert statistical['trials'] == 100
-          # old schema: statistical_test.failures == 0
-          assert statistical['successes'] == statistical['trials']
-          PY
+            --statistical-test --output /tmp/nine65-auto.json 2>&1)
+          rc=$?
+          printf '%s\n' "$out" | tail -n 15
+          if [ "$rc" -eq 0 ]; then
+            echo "::error::automatic refresh now succeeds; the fail-closed boundary no longer reproduces."
+            echo "::error::Re-derive the refusal (docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md) before retiring this step."
+            exit 1
+          fi
+          if ! printf '%s' "$out" | grep -qF 'public BFV refresh disabled'; then
+            echo "::error::the run failed, but not with the typed public-refresh refusal."
+            exit 1
+          fi
+          if [ -s /tmp/nine65-auto.json ]; then
+            echo "::error::a report was written although the refresh was refused."
+            exit 1
+          fi

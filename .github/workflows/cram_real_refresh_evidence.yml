@@ -54,7 +54,7 @@ jobs:
 
       - name: Force and prove real automatic refresh
         run: |
-          cargo run --release -p nine65 --bin nine65_bench --features serde -- \
+          cargo run -p nine65 --bin nine65_bench --features serde -- \
             --config secure_128_deep --max-depth 1 --auto-bootstrap \
             --trigger-pct 100 --statistical-test \
             --output /tmp/nine65-forced-refresh.json
