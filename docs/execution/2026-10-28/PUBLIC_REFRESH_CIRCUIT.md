@@ -158,5 +158,10 @@ protected coordinate producer and certified range; none is required for the
 already passing research refresh. Source/value epoch provenance stays bound
 to the returned ciphertext.
 
+The [StarLift capacity proof](../2026-10-30/PUBLIC_REFRESH_STARLIFT_PROOF.md)
+separates the recoverable canonical `K mod65537` from unbounded historical
+`K`. It gives the explicit 36/37 collision, proves that 36/37/73 has enough
+capacity for the canonical value, and records the protected-producer obligation.
+
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.
