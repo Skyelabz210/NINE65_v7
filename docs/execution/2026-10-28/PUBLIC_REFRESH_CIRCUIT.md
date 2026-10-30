@@ -160,6 +160,10 @@ protected producer supplies and binds both parts. The public refresh evaluator
 does not currently produce an encrypted shadow view or an epoch transition
 certificate from its protected carry; calling the clear reference helper on
 that carry would disclose it. Producer integration remains unimplemented.
+The native phase is a polynomial of slot digits: its epoch quotients can differ
+by slot. One scalar public epoch counter cannot encode those quotients. A live
+transition needs a protected per-slot epoch view (or a proved aggregation rule)
+before a single `Q_next = Q_current + c` update can be asserted.
 
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.
