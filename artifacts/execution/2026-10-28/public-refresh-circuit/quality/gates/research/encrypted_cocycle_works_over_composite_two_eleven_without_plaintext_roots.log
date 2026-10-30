@@ -1,0 +1,13 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 07s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test tropical_cocycle_state::encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots ... composite 2/11: both encrypted collision histories and dependent squares pass at t=22, without plaintext roots or factorial inverses
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.01s
+

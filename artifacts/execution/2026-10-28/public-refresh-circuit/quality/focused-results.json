@@ -1,0 +1,270 @@
+{
+  "metadata": {
+    "binary_sha256": "4ba3944fb7187355f48a7ec54c32d3641c3393edb3327828120c0dc54fdb97f4",
+    "head": "7f5743a102c2cf58872c0b28bde333723e99a4f6"
+  },
+  "results": [
+    {
+      "name": "ops::rns_fhe::cram_precharge::tests::wide_cram_precharge_matches_independent_full_polynomial_phase",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.011569895999855362,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::rns_fhe::cram_precharge::tests::wide_cram_precharge_matches_independent_full_polynomial_phase",
+        "--nocapture",
+        "--test-threads=1",
+        "--exact"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-wide_cram_precharge_matches_independent_full_polynomial_phase.log"
+    },
+    {
+      "name": "ops::rns_fhe::cram_precharge::tests::wide_cram_precharge_keeps_shape_secret_and_message_refusals",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.0036072049997528666,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::rns_fhe::cram_precharge::tests::wide_cram_precharge_keeps_shape_secret_and_message_refusals",
+        "--nocapture",
+        "--test-threads=1",
+        "--exact"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-wide_cram_precharge_keeps_shape_secret_and_message_refusals.log"
+    },
+    {
+      "name": "ops::rns_fhe::exact_mul::tests::prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.11773042200002237,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::rns_fhe::exact_mul::tests::prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays",
+        "--nocapture",
+        "--test-threads=1",
+        "--exact"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays.log"
+    },
+    {
+      "name": "ops::rns_fhe::exact_mul::tests::prepared_hybrid_key_refuses_malformed_input_and_foreign_plans",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.007979717999660352,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::rns_fhe::exact_mul::tests::prepared_hybrid_key_refuses_malformed_input_and_foreign_plans",
+        "--nocapture",
+        "--test-threads=1",
+        "--exact"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-prepared_hybrid_key_refuses_malformed_input_and_foreign_plans.log"
+    },
+    {
+      "name": "ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.008373537999432301,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays",
+        "--nocapture",
+        "--test-threads=1",
+        "--exact"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays.log"
+    },
+    {
+      "name": "ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.16753034200064576,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles",
+        "--nocapture",
+        "--test-threads=1",
+        "--exact"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-complete_public_refresh_returns_original_key_for_three_cycles.log"
+    },
+    {
+      "name": "arithmetic::compare_bit::tests::external_wide_vectors::wide_centering_matches_independent_python_integers",
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.0037279759999364614,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "arithmetic::compare_bit::tests::external_wide_vectors::wide_centering_matches_independent_python_integers",
+        "--nocapture",
+        "--test-threads=1",
+        "--exact"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-wide_centering_matches_independent_python_integers.log"
+    },
+    {
+      "name": "arithmetic::wide::",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.007970612999997684,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "arithmetic::wide::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-wide.log"
+    },
+    {
+      "name": "arithmetic::main_only_base_ext::",
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.8713164959999631,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "arithmetic::main_only_base_ext::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-main_only_base_ext.log"
+    },
+    {
+      "name": "arithmetic::exact_scale_round::",
+      "exit_code": 0,
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.06474357999923086,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "arithmetic::exact_scale_round::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-exact_scale_round.log"
+    },
+    {
+      "name": "ops::public_refresh_circuit::",
+      "exit_code": 0,
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 1.0198720769994907,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::public_refresh_circuit::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-public_refresh_circuit.log"
+    },
+    {
+      "name": "ops::direct_slot_phase::",
+      "exit_code": 0,
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.47025515399946016,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::direct_slot_phase::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-direct_slot_phase.log"
+    },
+    {
+      "name": "ops::bounded_digit_circuit::",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 3.532932383000116,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::bounded_digit_circuit::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-bounded_digit_circuit.log"
+    },
+    {
+      "name": "ops::public_refresh_source::",
+      "exit_code": 0,
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 4.6326173499992365,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::public_refresh_source::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-public_refresh_source.log"
+    },
+    {
+      "name": "ops::public_refresh_return::",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.21469497199996113,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::public_refresh_return::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-public_refresh_return.log"
+    },
+    {
+      "name": "ops::public_refresh_slots::",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 0.11454580800000258,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::public_refresh_slots::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-public_refresh_slots.log"
+    },
+    {
+      "name": "ops::rns_fhe::exact_mul::",
+      "exit_code": 0,
+      "passed": 32,
+      "failed": 0,
+      "ignored": 3,
+      "seconds": 21.26318965900009,
+      "command": [
+        "/workspace/work/public-refresh/quality/pinned-quality",
+        "ops::rns_fhe::exact_mul::",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/quality/quality-exact_mul.log"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+
+running 4 tests
+test ops::bounded_digit_circuit::tests::split_digit_encrypted_slots_recover_signed_quotients_with_independent_oracle ... ok
+test ops::bounded_digit_circuit::tests::split_digit_exact_identity_covers_every_small_domain_value ... ok
+test ops::bounded_digit_circuit::tests::split_digit_native_schedule_has_checked_identity_and_68_products ... ok
+test ops::bounded_digit_circuit::tests::split_digit_native_width_noise_ledger_matches_integer_oracle ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1170 filtered out; finished in 3.52s
+

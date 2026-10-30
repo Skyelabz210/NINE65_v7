@@ -1,0 +1,45 @@
+
+running 1 test
+test ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles ... public-refresh N=8 certificate=PublicRefreshCircuitCertificate { ring_degree: 32, work_degree: 8, carry_radius: 3, ciphertext_products: 9, inverse_ciphertext_babies: 8, inverse_plaintext_diagonals: 32, inverse_galois_calls: 10, phase_error_bound: U1024 { limbs: [7530305, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, carry_error_bound: U1024 { limbs: [16996638155652337202, 7974051860901440217, 67808196343329, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, restored_error_bound: U1024 { limbs: [12932932012933166528, 15463994795526439008, 6315992178621240075, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, returned_scaled_error_bound: U512 { d0: 1762715922, d1: 0, d2: 0, d3: 0 }, next_square_source_radius: 2 }
+public-refresh N=8 key generation started
+public-refresh N=8 key generation complete elapsed=36.659957ms
+public-refresh N=8 cycle=0 high carry phase 2/2 elapsed=37.497885ms
+public-refresh N=8 cycle=0 low carry phase 2/2 elapsed=38.992959ms
+public-refresh N=8 cycle=0 affine phase 2/2 elapsed=40.438028ms
+public-refresh N=8 cycle=0 high digit product 0/4 elapsed=42.216968ms
+public-refresh N=8 cycle=0 high digit product 4/4 elapsed=49.558788ms
+public-refresh N=8 cycle=0 low correction polynomial 0/4 elapsed=49.598527ms
+public-refresh N=8 cycle=0 low correction polynomial 4/4 elapsed=56.535811ms
+public-refresh N=8 cycle=0 quotient product 0/1 elapsed=56.63513ms
+public-refresh N=8 cycle=0 quotient product 1/1 elapsed=58.363394ms
+public-refresh N=8 cycle=0 inverse babies 8/8 elapsed=66.887989ms
+public-refresh N=8 cycle=0 inverse giants 4/4 elapsed=70.984307ms
+public-refresh N=8 cycle=0 all coefficients and dependent square passed elapsed=72.626462ms
+public-refresh N=8 cycle=1 high carry phase 2/2 elapsed=73.130819ms
+public-refresh N=8 cycle=1 low carry phase 2/2 elapsed=74.61707ms
+public-refresh N=8 cycle=1 affine phase 2/2 elapsed=76.014317ms
+public-refresh N=8 cycle=1 high digit product 0/4 elapsed=77.820949ms
+public-refresh N=8 cycle=1 high digit product 4/4 elapsed=82.430177ms
+public-refresh N=8 cycle=1 low correction polynomial 0/4 elapsed=82.45198ms
+public-refresh N=8 cycle=1 low correction polynomial 4/4 elapsed=86.524263ms
+public-refresh N=8 cycle=1 quotient product 0/1 elapsed=86.569951ms
+public-refresh N=8 cycle=1 quotient product 1/1 elapsed=87.700789ms
+public-refresh N=8 cycle=1 inverse babies 8/8 elapsed=92.450668ms
+public-refresh N=8 cycle=1 inverse giants 4/4 elapsed=94.691471ms
+public-refresh N=8 cycle=1 all coefficients and dependent square passed elapsed=95.775078ms
+public-refresh N=8 cycle=2 high carry phase 2/2 elapsed=96.203581ms
+public-refresh N=8 cycle=2 low carry phase 2/2 elapsed=97.220798ms
+public-refresh N=8 cycle=2 affine phase 2/2 elapsed=98.06165ms
+public-refresh N=8 cycle=2 high digit product 0/4 elapsed=99.262703ms
+public-refresh N=8 cycle=2 high digit product 4/4 elapsed=103.279572ms
+public-refresh N=8 cycle=2 low correction polynomial 0/4 elapsed=103.314325ms
+public-refresh N=8 cycle=2 low correction polynomial 4/4 elapsed=107.552296ms
+public-refresh N=8 cycle=2 quotient product 0/1 elapsed=107.598395ms
+public-refresh N=8 cycle=2 quotient product 1/1 elapsed=108.530944ms
+public-refresh N=8 cycle=2 inverse babies 8/8 elapsed=114.101445ms
+public-refresh N=8 cycle=2 inverse giants 4/4 elapsed=116.850252ms
+public-refresh N=8 cycle=2 all coefficients and dependent square passed elapsed=117.804925ms
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.12s
+

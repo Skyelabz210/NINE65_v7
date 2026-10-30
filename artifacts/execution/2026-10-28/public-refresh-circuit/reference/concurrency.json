@@ -1,0 +1,12 @@
+{
+  "observed_running_utc": "2026-10-28T12:23:15.704619+00:00",
+  "cargo_process_start": "29629 Wed Oct 28 12:22:22 2026",
+  "cargo_build_jobs": 2,
+  "features": [
+    "allow_insecure",
+    "reference_ntt"
+  ],
+  "native_binary_sha256": "4aa97059f58ee847396dd593a9a6bf6aacde447edc4a87ee049133d12513d067",
+  "note": "Reference-feature compilation ran concurrently during native key generation; native full-run wall time is not an exclusive-hardware benchmark.",
+  "completed_utc": "2026-10-28T12:24:22.538148+00:00"
+}

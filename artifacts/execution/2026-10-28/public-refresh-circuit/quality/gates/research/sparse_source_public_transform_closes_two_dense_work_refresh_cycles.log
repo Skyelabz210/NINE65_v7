@@ -1,0 +1,14 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::sparse_source_public_transform_closes_two_dense_work_refresh_cycles ... dense-work source encapsulation: cycle=0, INSECURE workN16/outerN32, workQ119/sourceQ60/outerQ241, actual original key norm=11, source norm2; incoming Vbits=110, prepared source observed/bound=51/51, returned observed/bound=32/37, all16 coefficients correct, no source-key samples at Q119
+dense-work source encapsulation: cycle=1, INSECURE workN16/outerN32, workQ119/sourceQ60/outerQ241, actual original key norm=11, source norm2; incoming Vbits=110, prepared source observed/bound=51/51, returned observed/bound=31/37, all16 coefficients correct, no source-key samples at Q119
+dense-work source encapsulation: same complete precharge reused for two cycles and final square; carry omission corrupts 12 coefficients; source security/native bootstrap admission remain FALSE
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 2.57s
+

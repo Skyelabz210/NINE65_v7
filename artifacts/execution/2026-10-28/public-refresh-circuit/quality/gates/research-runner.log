@@ -1,0 +1,229 @@
+Running ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles
+Log: /workspace/work/public-refresh/quality/gates/research/complete_public_refresh_returns_original_key_for_three_cycles.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles ... public-refresh N=8 certificate=PublicRefreshCircuitCertificate { ring_degree: 32, work_degree: 8, carry_radius: 3, ciphertext_products: 9, inverse_ciphertext_babies: 8, inverse_plaintext_diagonals: 32, inverse_galois_calls: 10, phase_error_bound: U1024 { limbs: [7530305, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, carry_error_bound: U1024 { limbs: [16996638155652337202, 7974051860901440217, 67808196343329, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, restored_error_bound: U1024 { limbs: [12932932012933166528, 15463994795526439008, 6315992178621240075, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, returned_scaled_error_bound: U512 { d0: 1762715922, d1: 0, d2: 0, d3: 0 }, next_square_source_radius: 2 }
+public-refresh N=8 key generation started
+public-refresh N=8 key generation complete elapsed=27.391981ms
+public-refresh N=8 cycle=0 high carry phase 2/2 elapsed=28.251241ms
+public-refresh N=8 cycle=0 low carry phase 2/2 elapsed=29.173435ms
+public-refresh N=8 cycle=0 affine phase 2/2 elapsed=30.249911ms
+public-refresh N=8 cycle=0 high digit product 0/4 elapsed=31.746608ms
+public-refresh N=8 cycle=0 high digit product 4/4 elapsed=36.365522ms
+public-refresh N=8 cycle=0 low correction polynomial 0/4 elapsed=36.385843ms
+public-refresh N=8 cycle=0 low correction polynomial 4/4 elapsed=40.745507ms
+public-refresh N=8 cycle=0 quotient product 0/1 elapsed=40.788442ms
+public-refresh N=8 cycle=0 quotient product 1/1 elapsed=41.811648ms
+public-refresh N=8 cycle=0 inverse babies 8/8 elapsed=48.257805ms
+public-refresh N=8 cycle=0 inverse giants 4/4 elapsed=51.062846ms
+public-refresh N=8 cycle=0 all coefficients and dependent square passed elapsed=52.065251ms
+public-refresh N=8 cycle=1 high carry phase 2/2 elapsed=52.511771ms
+public-refresh N=8 cycle=1 low carry phase 2/2 elapsed=53.389298ms
+public-refresh N=8 cycle=1 affine phase 2/2 elapsed=54.275779ms
+public-refresh N=8 cycle=1 high digit product 0/4 elapsed=55.379126ms
+public-refresh N=8 cycle=1 high digit product 4/4 elapsed=59.69203ms
+public-refresh N=8 cycle=1 low correction polynomial 0/4 elapsed=59.710057ms
+public-refresh N=8 cycle=1 low correction polynomial 4/4 elapsed=64.097694ms
+public-refresh N=8 cycle=1 quotient product 0/1 elapsed=64.192806ms
+public-refresh N=8 cycle=1 quotient product 1/1 elapsed=65.452868ms
+public-refresh N=8 cycle=1 inverse babies 8/8 elapsed=71.014547ms
+public-refresh N=8 cycle=1 inverse giants 4/4 elapsed=73.552397ms
+public-refresh N=8 cycle=1 all coefficients and dependent square passed elapsed=74.682293ms
+public-refresh N=8 cycle=2 high carry phase 2/2 elapsed=75.339129ms
+public-refresh N=8 cycle=2 low carry phase 2/2 elapsed=76.313462ms
+public-refresh N=8 cycle=2 affine phase 2/2 elapsed=77.446112ms
+public-refresh N=8 cycle=2 high digit product 0/4 elapsed=78.721087ms
+public-refresh N=8 cycle=2 high digit product 4/4 elapsed=83.768073ms
+public-refresh N=8 cycle=2 low correction polynomial 0/4 elapsed=83.790146ms
+public-refresh N=8 cycle=2 low correction polynomial 4/4 elapsed=87.984528ms
+public-refresh N=8 cycle=2 quotient product 0/1 elapsed=88.032781ms
+public-refresh N=8 cycle=2 quotient product 1/1 elapsed=89.140714ms
+public-refresh N=8 cycle=2 inverse babies 8/8 elapsed=94.931257ms
+public-refresh N=8 cycle=2 inverse giants 4/4 elapsed=97.718061ms
+public-refresh N=8 cycle=2 all coefficients and dependent square passed elapsed=98.865673ms
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.10s
+
+Running ops::public_refresh_circuit::tests::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds
+Log: /workspace/work/public-refresh/quality/gates/research/public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_circuit::tests::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 1.03s
+
+Running ops::public_refresh_circuit::tests::public_refresh_refuses_wrong_families_and_exhausted_history_without_counting
+Log: /workspace/work/public-refresh/quality/gates/research/public_refresh_refuses_wrong_families_and_exhausted_history_without_counting.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_circuit::tests::public_refresh_refuses_wrong_families_and_exhausted_history_without_counting ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.08s
+
+Running ops::public_refresh_circuit::tests::public_refresh_plan_refuses_invalid_geometry_scale_support_basis_and_resources
+Log: /workspace/work/public-refresh/quality/gates/research/public_refresh_plan_refuses_invalid_geometry_scale_support_basis_and_resources.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_circuit::tests::public_refresh_plan_refuses_invalid_geometry_scale_support_basis_and_resources ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.01s
+
+Running tropical_cocycle_state::encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots
+Log: /workspace/work/public-refresh/quality/gates/research/encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 07s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test tropical_cocycle_state::encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots ... composite 2/11: both encrypted collision histories and dependent squares pass at t=22, without plaintext roots or factorial inverses
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.01s
+
+Running phase_clock_compaction::public_bootstrap_pipeline::phase_clock_full_polynomial_public_return_and_two_dependent_refresh_cycles
+Log: /workspace/work/public-refresh/quality/gates/research/phase_clock_full_polynomial_public_return_and_two_dependent_refresh_cycles.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::phase_clock_full_polynomial_public_return_and_two_dependent_refresh_cycles ... full polynomial pipeline: cycle=0, N=32 INSECURE, all32 coefficients/all32 hidden selector positions, incoming Vbits=110, outer observed/bound=47/68, returned observed/bound=17/37, following product observed/bound=37/63, source-key return and polynomial square correct
+full polynomial pipeline: cycle=1, N=32 INSECURE, all32 coefficients/all32 hidden selector positions, incoming Vbits=110, outer observed/bound=47/68, returned observed/bound=17/37, following product observed/bound=35/63, source-key return and polynomial square correct
+full polynomial pipeline: same precharge reused for 2 dependent cycles, carry omission corrupts 12 coefficients, wrong-key return refused by client, 44674 raw switches; native public refresh admission remains FALSE
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 7.44s
+
+Running phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::sparse_source_public_transform_closes_two_dense_work_refresh_cycles
+Log: /workspace/work/public-refresh/quality/gates/research/sparse_source_public_transform_closes_two_dense_work_refresh_cycles.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::sparse_source_public_transform_closes_two_dense_work_refresh_cycles ... dense-work source encapsulation: cycle=0, INSECURE workN16/outerN32, workQ119/sourceQ60/outerQ241, actual original key norm=11, source norm2; incoming Vbits=110, prepared source observed/bound=51/51, returned observed/bound=32/37, all16 coefficients correct, no source-key samples at Q119
+dense-work source encapsulation: cycle=1, INSECURE workN16/outerN32, workQ119/sourceQ60/outerQ241, actual original key norm=11, source norm2; incoming Vbits=110, prepared source observed/bound=51/51, returned observed/bound=31/37, all16 coefficients correct, no source-key samples at Q119
+dense-work source encapsulation: same complete precharge reused for two cycles and final square; carry omission corrupts 12 coefficients; source security/native bootstrap admission remain FALSE
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 2.57s
+
+Running phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_sister_scale_requires_exact_divisibility
+Log: /workspace/work/public-refresh/quality/gates/research/p_locked_sister_scale_requires_exact_divisibility.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_sister_scale_requires_exact_divisibility ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.00s
+
+Running phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_scale_jacobian_extracts_carry_and_residual_from_one_history
+Log: /workspace/work/public-refresh/quality/gates/research/p_locked_scale_jacobian_extracts_carry_and_residual_from_one_history.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_scale_jacobian_extracts_carry_and_residual_from_one_history ... p-locked pre-product ledger: Q=180 bits, residual=1 bits (bound 2), carry=152 bits (bound 154), corrected=152 bits (bound 154), affine bound=49 bits
+p-locked dependent products: corrected V=152, square V=171, cube mismatches=32/32, Q=180 bits, decoder limit <Q/2
+Enc_T(e) diagnostic oracle: corrected V=85/88, square V=105, cube mismatches=0/32, same-history production lift remains the missing operation
+K-Elimination centered-tray lift: p-view residual V=113, high-view mismatches=21/32, max centered winding |J|=2 within public degree bound 17, 211 tray radius105, composite tray radius32768
+p+1 sister encoding refused: Err(NonDivisiblePlaintextScale { high: 21471196746631, sister: 4295163906 })
+K-Elimination + bounded-winding control: lift V=113/116, carry V=31/89, corrected V=46/89, square V=65, cube mismatches=0/32, max |J|=2 vs tray radius105
+scale-Jacobian tropical lift: sourceN16, H=2, L=327619463, T=21471196746631 fits the outer lanes; |e|<=public 3 (observed 1); same-history p-locked Enc_p(e) error 113/116 bits; p-view carry error 152/154 bits, corrected Phase 1 152/154 bits; work-key return remains open
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.01s
+
+Running phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_scale_jacobian_corrects_the_medium_phase_without_oracle_residual
+Log: /workspace/work/public-refresh/quality/gates/research/p_locked_scale_jacobian_corrects_the_medium_phase_without_oracle_residual.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_scale_jacobian_corrects_the_medium_phase_without_oracle_residual ... p-locked pre-product ledger: Q=180 bits, residual=2 bits (bound 2), carry=153 bits (bound 154), corrected=153 bits (bound 154), affine bound=55 bits
+p-locked dependent products: corrected V=153, square V=178, cube mismatches=1024/1024, Q=180 bits, decoder limit <Q/2
+Enc_T(e) diagnostic oracle: corrected V=85/93, square V=111, cube mismatches=0/1024, same-history production lift remains the missing operation
+K-Elimination centered-tray lift: p-view residual V=114, high-view mismatches=976/1024, max centered winding |J|=25 within public degree bound 513, 211 tray radius105, composite tray radius32768
+p+1 sister encoding refused: Err(NonDivisiblePlaintextScale { high: 21471196746631, sister: 4295163906 })
+K-Elimination + bounded-winding control: lift V=114/122, carry V=34/94, corrected V=46/94, square V=72, cube mismatches=0/1024, max |J|=25 vs tray radius105
+scale-Jacobian tropical lift: sourceN512, H=2, L=327619463, T=21471196746631 fits the outer lanes; |e|<=public 3 (observed 2); same-history p-locked Enc_p(e) error 114/122 bits; p-view carry error 153/154 bits, corrected Phase 1 153/154 bits; work-key return remains open
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.52s
+
+Running phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::wide_p_locked_scale_jacobian_tests_larger_step_and_dependent_square
+Log: /workspace/work/public-refresh/quality/gates/research/wide_p_locked_scale_jacobian_tests_larger_step_and_dependent_square.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::wide_p_locked_scale_jacobian_tests_larger_step_and_dependent_square ... p-locked pre-product ledger: Q=175 bits, residual=2 bits (bound 2), carry=136 bits (bound 136), corrected=136 bits (bound 136), affine bound=55 bits
+p-locked dependent products: corrected V=136, square V=161, cube mismatches=1024/1024, Q=175 bits, decoder limit <Q/2
+Enc_T(e) diagnostic oracle: corrected V=109/117, square V=134, cube mismatches=0/1024, same-history production lift remains the missing operation
+K-Elimination centered-tray lift: p-view residual V=149, high-view mismatches=956/1024, max centered winding |J|=33 within public degree bound 513, 211 tray radius105, composite tray radius32768
+sister-view decode diagnostic: error=149 bits, capacity=174 bits, plaintext mismatches=0/1024
+same-history p*M sister view: M=65538, scale=L/M=13828307, view-error=149 bits, winding-residue mismatches=0/1024, centered radius=32768, observed max |J|=33
+same-history ciphertext-only winding extraction: M=p+1=65538, offset=3, view-error=161 bits, p-to-M recovered e, pJ subtraction and p^-1 recovered J for 1024/1024 coefficients
+K-Elimination M->T winding conversion: divisor=T/M=906265755859, encrypted J plaintext mismatches=0/1024, max centered conversion offset=0, error=161 bits
+ciphertext-only pJ correction after M->T lift: plaintext mismatches=512/1024, scalar p=65537 noise amplification is now exposed
+same-history composite offset producer: direct Delta+B sibling error=149 bits, pJ difference error=61 bits, sum of measured input errors=150 bits
+composite pJ sister tray: M_pJ=13828518 (=A*(p+1)), radius=6914258, observed p*|J|=2162721, full derived pJ bound=33620481 fits=false, T/M_pJ=4295098369, tray plaintext exact; raw K-Elimination adds a hidden M_pJ carry in 964/1024 slots (max |carry|=27), max lift offset=373369986, mod-p mismatches=964
+same-history p carry view: A*K and A^-1 recovery mismatches=0/1024, centered |K|<= 27, A^-1 mod p=31992, carry V bits=76, Q bits=175, Q/16 chart input cap=true
+uncorrected pJ lift follow-up: plaintext mismatches=0/1024, phase V bits=Some(163), square mismatches=Some(1024), cube mismatches=None; high-lift carry still present
+second K-Elimination winding: divisor=T/p=906279584166, Enc_p(K)->Enc_T(K+p*J_q) preserves all 1024 p residues; max |J_q|=23 within degree bound 513; this new p-multiple carry still needs live Safe-Basis correction
+second-winding Q-wrap oracle: exact centered Q source wrap differs from J_q in 0/1024 coefficients; high-key support=663 of 1024
+live Q189 tropical second-winding chart: centered 99-clock/J_q mismatches=0/1024, coarse-control mismatches=974/1024, encrypted p-view mismatches=0/2048, outer Q=126 bits, chart V observed/bound=87/91, scaled bound admitted=true, max |99Z-AJ_q|=2202, source H public bound=1024
+same-key even ring return of J_q: mismatches=0/1024, original high secret retained on two common Q lanes; high-T encoding still open
+same-key winding follow-up: returned p-view V=119 bits against Q=126 bits; first dependent square 1024/1024 mismatches
+bounded K-oracle correction gives corrected-e mismatches=0/1024; its high lift matches the clear-offset consumer control
+composite pJ tray corrected-residual error=149 bits
+composite pJ same-history products: carry error=43 bits, corrected phase error=47 bits, square mismatches=0/1024, cube mismatches=0/1024
+same-history e+B offset via M1->M_pJ K-Elimination: offset mismatches=956/1024, pJ-tray mismatches=956/1024, final corrected-e mismatches=956/1024
+K-Elimination + bounded-winding control: lift V=149/157, carry V=36/118, corrected V=47/118, square V=72, cube mismatches=0/1024, max |J|=33 vs tray radius105
+scale-Jacobian tropical lift: sourceN512, H=2, L=906279584166, T=59394845107487142 fits the outer lanes; |e|<=public 3 (observed 2); same-history p-locked Enc_p(e) error 149/157 bits; p-view carry error 136/136 bits, corrected Phase 1 136/136 bits; work-key return remains open
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.67s
+
+research: 11 exact regressions passed; no production refresh admission

@@ -1,0 +1,18 @@
+{
+  "utc": "2026-10-28T12:16:55.073321+00:00",
+  "binary": "/workspace/work/public-refresh/native/pinned-parallel",
+  "binary_sha256": "747a26ec0d941335569dbdab6ec37aaa7d751870cfd659dd1d2d498f8b027c5e",
+  "head": "7f5743a102c2cf58872c0b28bde333723e99a4f6",
+  "command": [
+    "/workspace/work/public-refresh/native/pinned-parallel",
+    "ops::rns_fhe::exact_mul::tests::prepared_hybrid_native_timing_and_exact_equality",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "test_only_change_after_build": "public_refresh_circuit_tests.rs negative exhausted-history fixture; no evaluator behavior changed",
+  "exit_code": 0,
+  "elapsed_seconds": 16.269041202999688,
+  "peak_rss_kib": 1346728
+}

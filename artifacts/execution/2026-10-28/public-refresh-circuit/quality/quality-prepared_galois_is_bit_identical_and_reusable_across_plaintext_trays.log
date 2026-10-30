@@ -1,0 +1,6 @@
+
+running 1 test
+test ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.00s
+

@@ -1,0 +1,60 @@
+
+running 35 tests
+test ops::rns_fhe::exact_mul::tests::aux_lane_counts_match_the_integer_oracle ... secure_128: N=8192 mainlanes=4 log2(Q)=119 auxlanes=5 log2(A)=157 required=148 s_mult=268439553 base_bits=10 digits=[3, 3, 3, 3]
+secure_128_deep: N=8192 mainlanes=4 log2(Q)=119 auxlanes=5 log2(A)=157 required=148 s_mult=268439553 base_bits=10 digits=[3, 3, 3, 3]
+secure_192: N=16384 mainlanes=5 log2(Q)=146 auxlanes=6 log2(A)=188 required=176 s_mult=536879105 base_bits=10 digits=[3, 3, 3, 3, 3]
+secure_256: N=16384 mainlanes=6 log2(Q)=175 auxlanes=7 log2(A)=220 required=205 s_mult=536879105 base_bits=10 digits=[3, 3, 3, 3, 3, 3]
+ok
+test ops::rns_fhe::exact_mul::tests::auxiliary_basis_certificates_hold_for_named_configs ... ok
+test ops::rns_fhe::exact_mul::tests::end_to_end_centered_plaintexts_secure_128 ... ok
+test ops::rns_fhe::exact_mul::tests::end_to_end_seeded_random_pairs_secure_128 ... ok
+test ops::rns_fhe::exact_mul::tests::exact_decrypt_agrees_with_production_decrypt ... ok
+test ops::rns_fhe::exact_mul::tests::exact_rounding_ties_follow_the_bfv_half_up_rule ... G3 ties: 39 tie/neighbour points exact on a 4-lane chain
+G3 ties: 39 tie/neighbour points exact on a 6-lane chain
+ok
+test ops::rns_fhe::exact_mul::tests::exact_route_is_never_auto_selected ... ok
+test ops::rns_fhe::exact_mul::tests::exact_route_stage_timings_integer_nanoseconds ... ignored, DIAGNOSTIC: prints raw integer stage timings for the WR-1 evidence section
+test ops::rns_fhe::exact_mul::tests::exact_tensor_is_bit_identical_to_the_bigint_oracle ... G3: 8640 exact coefficient/lane checks; rank paths certified=22605 fallback=6195
+ok
+test ops::rns_fhe::exact_mul::tests::exact_vs_dual_public_repeated_square_depth ... ignored, DIAGNOSTIC: prints a depth comparison for the WR-1 evidence section; asserts nothing about the dual-RNS route
+test ops::rns_fhe::exact_mul::tests::explicit_gadget_radices_bind_keys_and_keep_exact_multiplication ... ok
+test ops::rns_fhe::exact_mul::tests::hybrid_gadget_key_messages_are_the_crt_idempotent_images ... ok
+test ops::rns_fhe::exact_mul::tests::hybrid_relinearization_matches_the_bigint_oracle ... ok
+test ops::rns_fhe::exact_mul::tests::insufficient_auxiliary_capacity_is_a_typed_refusal ... full-bound native plan: N=16384, high_t=4613656451714285580, shift_bits=76, aux_lanes=9, aux_bits=283, required_bits=266
+ok
+test ops::rns_fhe::exact_mul::tests::legacy_mul_guard_is_still_fail_closed - should panic ... 
+thread 'ops::rns_fhe::exact_mul::tests::legacy_mul_guard_is_still_fail_closed' panicked at crates/nine65/src/ops/rns_fhe.rs:2028:9:
+RNSFHEContext::mul is unavailable when the configuration requires K-Elimination/dual rescaling; use mul_auto with matching auto keys
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+ok
+test ops::rns_fhe::exact_mul::tests::malformed_ciphertext_shapes_are_refused ... ok
+test ops::rns_fhe::exact_mul::tests::malformed_gadget_key_shapes_are_refused ... ok
+test ops::rns_fhe::exact_mul::tests::malformed_tensor_shapes_are_refused ... ok
+test ops::rns_fhe::exact_mul::tests::n_over_4_operand_bound_is_load_bearing_for_d1 ... n_over_4_operand_bound_is_load_bearing_for_d1: max|d1|=239 bits, N*Q^2/4=238 bits, N*Q^2/2=239 bits
+ok
+test ops::rns_fhe::exact_mul::tests::named_exact_mul_door_small_ring ... ok
+test ops::rns_fhe::exact_mul::tests::oracle_rejects_the_wrapped_tensor_shortcut ... ok
+test ops::rns_fhe::exact_mul::tests::prepared_hybrid_key_refuses_malformed_input_and_foreign_plans ... ok
+test ops::rns_fhe::exact_mul::tests::prepared_hybrid_native_timing_and_exact_equality ... ignored, native N32768 Q650 transform-cache measurement; run explicitly
+test ops::rns_fhe::exact_mul::tests::prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_128 ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_128_deep ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_192 ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_256 ... ok
+test ops::rns_fhe::exact_mul::tests::repeated_squaring_depth_is_measured_not_assumed ... G6 secure_128: exact repeated-square depth without refresh = 3 (wrong plaintext (noise limit))
+G6 secure_192: exact repeated-square depth without refresh = 4 (wrong plaintext (noise limit))
+G6 secure_256: exact repeated-square depth without refresh = 5 (wrong plaintext (noise limit))
+ok
+test ops::rns_fhe::exact_mul::tests::single_rns_uniform_sampler_covers_the_whole_main_modulus ... ok
+test ops::rns_fhe::exact_mul::tests::wide_auxiliary_catalog_ntt_matches_schoolbook_in_every_lane ... ok
+test ops::rns_fhe::exact_mul::tests::wide_exact_tensor_matches_independent_unbounded_integer_oracle ... Q650 exact tensor: t=65537, checks=144, tensor coefficients above 1024 bits=131
+Q650 exact tensor: t=4295098369, checks=144, tensor coefficients above 1024 bits=131
+ok
+test ops::rns_fhe::exact_mul::tests::wide_native_plans_prove_exact_capacity_for_both_plaintext_trays ... wide native exact plan: ExactMulCertificate { ring_degree: 32768, t: 65537, x_bound_over_q_sq: 16384, shift_multiplier: 1073758209, q_bits: 650, aux_bits: 732, required_bits: 681, aux_lanes: 12, base_bits: 30, digits_per_lane: [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2] }
+wide native exact plan: ExactMulCertificate { ring_degree: 32768, t: 4295098369, x_bound_over_q_sq: 16384, shift_multiplier: 70370891677697, q_bits: 650, aux_bits: 732, required_bits: 697, aux_lanes: 12, base_bits: 30, digits_per_lane: [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2] }
+ok
+test ops::rns_fhe::exact_mul::tests::wire_q_gadget_key_carries_only_main_lanes ... ok
+test ops::rns_fhe::exact_mul::tests::wire_q_output_shape_is_identical_to_a_fresh_ciphertext ... ok
+
+test result: ok. 32 passed; 0 failed; 3 ignored; 0 measured; 1139 filtered out; finished in 21.23s
+

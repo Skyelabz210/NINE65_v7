@@ -1,0 +1,2 @@
+{"model":"CoreSVP","screened":true,"n":32768,"q_bits":650,"lanes":13,"widest_lane_bits":59,"classical_bits":169,"hybrid_bits":143,"quantum_heuristic_bits":95,"effective_bits":143,"meets_128_classical_hybrid":true,"bkz_block_size":578}
+{"model":"MATZOV","screened":true,"n":32768,"q_bits":650,"lanes":13,"widest_lane_bits":59,"classical_bits":152,"hybrid_bits":129,"quantum_heuristic_bits":86,"effective_bits":129,"meets_128_classical_hybrid":true,"bkz_block_size":520}

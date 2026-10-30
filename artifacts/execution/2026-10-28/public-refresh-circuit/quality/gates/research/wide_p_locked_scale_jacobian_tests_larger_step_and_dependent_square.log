@@ -1,0 +1,35 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::wide_p_locked_scale_jacobian_tests_larger_step_and_dependent_square ... p-locked pre-product ledger: Q=175 bits, residual=2 bits (bound 2), carry=136 bits (bound 136), corrected=136 bits (bound 136), affine bound=55 bits
+p-locked dependent products: corrected V=136, square V=161, cube mismatches=1024/1024, Q=175 bits, decoder limit <Q/2
+Enc_T(e) diagnostic oracle: corrected V=109/117, square V=134, cube mismatches=0/1024, same-history production lift remains the missing operation
+K-Elimination centered-tray lift: p-view residual V=149, high-view mismatches=956/1024, max centered winding |J|=33 within public degree bound 513, 211 tray radius105, composite tray radius32768
+sister-view decode diagnostic: error=149 bits, capacity=174 bits, plaintext mismatches=0/1024
+same-history p*M sister view: M=65538, scale=L/M=13828307, view-error=149 bits, winding-residue mismatches=0/1024, centered radius=32768, observed max |J|=33
+same-history ciphertext-only winding extraction: M=p+1=65538, offset=3, view-error=161 bits, p-to-M recovered e, pJ subtraction and p^-1 recovered J for 1024/1024 coefficients
+K-Elimination M->T winding conversion: divisor=T/M=906265755859, encrypted J plaintext mismatches=0/1024, max centered conversion offset=0, error=161 bits
+ciphertext-only pJ correction after M->T lift: plaintext mismatches=512/1024, scalar p=65537 noise amplification is now exposed
+same-history composite offset producer: direct Delta+B sibling error=149 bits, pJ difference error=61 bits, sum of measured input errors=150 bits
+composite pJ sister tray: M_pJ=13828518 (=A*(p+1)), radius=6914258, observed p*|J|=2162721, full derived pJ bound=33620481 fits=false, T/M_pJ=4295098369, tray plaintext exact; raw K-Elimination adds a hidden M_pJ carry in 964/1024 slots (max |carry|=27), max lift offset=373369986, mod-p mismatches=964
+same-history p carry view: A*K and A^-1 recovery mismatches=0/1024, centered |K|<= 27, A^-1 mod p=31992, carry V bits=76, Q bits=175, Q/16 chart input cap=true
+uncorrected pJ lift follow-up: plaintext mismatches=0/1024, phase V bits=Some(163), square mismatches=Some(1024), cube mismatches=None; high-lift carry still present
+second K-Elimination winding: divisor=T/p=906279584166, Enc_p(K)->Enc_T(K+p*J_q) preserves all 1024 p residues; max |J_q|=23 within degree bound 513; this new p-multiple carry still needs live Safe-Basis correction
+second-winding Q-wrap oracle: exact centered Q source wrap differs from J_q in 0/1024 coefficients; high-key support=663 of 1024
+live Q189 tropical second-winding chart: centered 99-clock/J_q mismatches=0/1024, coarse-control mismatches=974/1024, encrypted p-view mismatches=0/2048, outer Q=126 bits, chart V observed/bound=87/91, scaled bound admitted=true, max |99Z-AJ_q|=2202, source H public bound=1024
+same-key even ring return of J_q: mismatches=0/1024, original high secret retained on two common Q lanes; high-T encoding still open
+same-key winding follow-up: returned p-view V=119 bits against Q=126 bits; first dependent square 1024/1024 mismatches
+bounded K-oracle correction gives corrected-e mismatches=0/1024; its high lift matches the clear-offset consumer control
+composite pJ tray corrected-residual error=149 bits
+composite pJ same-history products: carry error=43 bits, corrected phase error=47 bits, square mismatches=0/1024, cube mismatches=0/1024
+same-history e+B offset via M1->M_pJ K-Elimination: offset mismatches=956/1024, pJ-tray mismatches=956/1024, final corrected-e mismatches=956/1024
+K-Elimination + bounded-winding control: lift V=149/157, carry V=36/118, corrected V=47/118, square V=72, cube mismatches=0/1024, max |J|=33 vs tray radius105
+scale-Jacobian tropical lift: sourceN512, H=2, L=906279584166, T=59394845107487142 fits the outer lanes; |e|<=public 3 (observed 2); same-history p-locked Enc_p(e) error 149/157 bits; p-view carry error 136/136 bits, corrected Phase 1 136/136 bits; work-key return remains open
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.67s
+

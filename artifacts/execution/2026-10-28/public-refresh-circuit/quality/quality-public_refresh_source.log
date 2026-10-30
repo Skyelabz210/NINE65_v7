@@ -1,0 +1,12 @@
+
+running 5 tests
+test ops::public_refresh_source::tests::source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros ... public source preparation: denseN8192 -> sparseN32768/H32, base_bits=2, all 32768 coefficients and actual expanded radii checked; certified radius=16; security/refresh admission remains false
+ok
+test ops::public_refresh_source::tests::source_preparation_native_same_ring_h96_checks_all_coefficients ... public source preparation: denseN8192 -> sparseN8192/H96, base_bits=3, all 8192 coefficients and actual expanded radii checked; certified radius=48; security/refresh admission remains false
+ok
+test ops::public_refresh_source::tests::source_preparation_refuses_exhausted_switch_margin_without_resetting_input ... ok
+test ops::public_refresh_source::tests::source_preparation_rejects_wrong_families_and_invalid_parameters ... ok
+test ops::public_refresh_source::tests::source_preparation_tracks_full_polynomial_history_and_ring_embedding ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 1169 filtered out; finished in 4.60s
+

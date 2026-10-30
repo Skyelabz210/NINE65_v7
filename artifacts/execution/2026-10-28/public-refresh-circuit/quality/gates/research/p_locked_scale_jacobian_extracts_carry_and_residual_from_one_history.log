@@ -1,0 +1,18 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_scale_jacobian_extracts_carry_and_residual_from_one_history ... p-locked pre-product ledger: Q=180 bits, residual=1 bits (bound 2), carry=152 bits (bound 154), corrected=152 bits (bound 154), affine bound=49 bits
+p-locked dependent products: corrected V=152, square V=171, cube mismatches=32/32, Q=180 bits, decoder limit <Q/2
+Enc_T(e) diagnostic oracle: corrected V=85/88, square V=105, cube mismatches=0/32, same-history production lift remains the missing operation
+K-Elimination centered-tray lift: p-view residual V=113, high-view mismatches=21/32, max centered winding |J|=2 within public degree bound 17, 211 tray radius105, composite tray radius32768
+p+1 sister encoding refused: Err(NonDivisiblePlaintextScale { high: 21471196746631, sister: 4295163906 })
+K-Elimination + bounded-winding control: lift V=113/116, carry V=31/89, corrected V=46/89, square V=65, cube mismatches=0/32, max |J|=2 vs tray radius105
+scale-Jacobian tropical lift: sourceN16, H=2, L=327619463, T=21471196746631 fits the outer lanes; |e|<=public 3 (observed 1); same-history p-locked Enc_p(e) error 113/116 bits; p-view carry error 152/154 bits, corrected Phase 1 152/154 bits; work-key return remains open
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.01s
+

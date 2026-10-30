@@ -1,0 +1,8 @@
+
+running 3 tests
+test ops::public_refresh_circuit::tests::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds ... ok
+test ops::public_refresh_circuit::tests::public_refresh_plan_refuses_invalid_geometry_scale_support_basis_and_resources ... ok
+test ops::public_refresh_circuit::tests::public_refresh_refuses_wrong_families_and_exhausted_history_without_counting ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1171 filtered out; finished in 0.97s
+

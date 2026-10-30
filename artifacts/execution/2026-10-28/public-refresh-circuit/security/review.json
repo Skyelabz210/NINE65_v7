@@ -1,0 +1,76 @@
+{
+  "status": "arithmetic_screen_passes_production_admission_unresolved",
+  "head_at_review": "7f5743a102c2cf58872c0b28bde333723e99a4f6",
+  "screen": [
+    {
+      "model": "CoreSVP",
+      "screened": true,
+      "n": 32768,
+      "q_bits": 650,
+      "lanes": 13,
+      "widest_lane_bits": 59,
+      "classical_bits": 169,
+      "hybrid_bits": 143,
+      "quantum_heuristic_bits": 95,
+      "effective_bits": 143,
+      "meets_128_classical_hybrid": true,
+      "bkz_block_size": 578
+    },
+    {
+      "model": "MATZOV",
+      "screened": true,
+      "n": 32768,
+      "q_bits": 650,
+      "lanes": 13,
+      "widest_lane_bits": 59,
+      "classical_bits": 152,
+      "hybrid_bits": 129,
+      "quantum_heuristic_bits": 86,
+      "effective_bits": 129,
+      "meets_128_classical_hybrid": true,
+      "bkz_block_size": 520
+    }
+  ],
+  "screen_command": "rustc --edition 2021 -A dead_code work/public-refresh/security/screen.rs; ./screen",
+  "screen_exit_code": 0,
+  "screen_scope": "Exact current factorization-aware deterministic engineering screen; not an external lattice estimator and not a 128-bit quantum claim",
+  "sparse_report_sha256": "65fc15bc1f77504b2c15550a5db8658ebbd6db29731cc82c7d65c638ea21b5cb",
+  "sparse_results": 24,
+  "sparse_all_finite": true,
+  "sparse_minimum_bits": 161.33894242424722,
+  "sparse_unresolved_flags": {
+    "quantum_hybrid_coverage_complete": false,
+    "concurrent_hou_jiang_2026_366_covered": false,
+    "joint_key_security_proven": false,
+    "production_admitted": false
+  },
+  "independently_read_upstream": {
+    "pinned_revision": "aa2c40d4eee4551e6fba06c55d7432f6918e1597",
+    "current_readme_blob": "f22867fced9c3832668d9515f357ac77c6f23b3f",
+    "current_and_pinned_content_equal": true,
+    "confirmed_statement": "Hou/Jiang2026/366 has not been integrated here"
+  },
+  "production_requirements": [
+    "Exact external estimator inputs and results for work and Q650 outer domains, source attack-model coverage, and specialist disposition for complete evaluation-key graph (V00/R03).",
+    "Actual same-source/epoch/semantic/range-bound S8/Root211 provider and consumed root-preserving transitions; an unused fingerprint cannot authorize CRAM integration (S00-S05).",
+    "Integrate the new backend into certified main-Q operations with key/epoch/level/history validation and all admitted full-polynomial cases; keep legacy Phase1 gate closed (B07/C02).",
+    "Native all-coefficient repeated execution and useful next operations supplement, not replace, these certificates (B09)."
+  ],
+  "circular_assumption_status": "Can be explicitly documented as a conditional research assumption, but no current accepted production disposition or matching cryptographic proof was found. V00 explicitly calls for specialist review.",
+  "cycle_avoidance_note": "Rotating only the returned work key breaks the W-S-B-W cycle but leaves work/outer self relinearization and Galois relations. A fully acyclic plan needs forward fresh key domains for dependent levels/automorphisms and corresponding DAG/domain certificates; this is a new construction, not a label change.",
+  "formal_index_misreference": "FORMALIZATION_INDEX.md labels CircularSecurity as ClockworkFormalSpec D13-D16, but D13-D15 actually define GRO gates/coincidence windows; circular there means folded phase distance, not KDM security.",
+  "hashes": {
+    "crates/nine65/src/params/security_estimator.rs": "c3496170516e9281107bd5ecfbf6f55ef63fedbfd484634ef1f5a056ae47e6f9",
+    "docs/execution/2026-10-03/tasks/V00.md": "c3318cf66c8adce8d723fc07921c0b1223966461ed7d420c24d38496890adbfa",
+    "docs/execution/2026-10-03/tasks/B07.md": "73e77e6f715a5857cbbca196681d56e55be9d2b0bff1020df523c5cf4240fbdf",
+    "docs/execution/2026-10-21/PUBLIC_REFRESH_ARCHITECTURE.md": "cdfdab70cb6b1fea3e4e964666c1f82d7fe2a3bc020d46fc397ffeb011a9d2ba"
+  },
+  "artifacts": {
+    "screen.rs": "103fe80cfc9f4168c5ae17ce22c963e0f2e1926ebb855a058334ecb7330e2805",
+    "screen": "327847c6ce7f4ec266f9fceb9093f4556d2024f3a9c3bac12674bbc70a04d84e",
+    "boot-q650-screen.jsonl": "deee6ddc3b040599f180a1378fe9f3d4d3d4ad07f7f42ee805aa582a75cb2b78",
+    "instances.json": "7e96a2e1becc80ec85661161fc68898cc3aef7ecc00835a34bde8bdb280220d4",
+    "sparse-estimator-pinned-readme.md": "edcae7ebd4e5172505e25a63225cd5ec420cc8f2c8a1b526c7c49e179f947c69",
+    "sparse-estimator-current-readme.md": "edcae7ebd4e5172505e25a63225cd5ec420cc8f2c8a1b526c7c49e179f947c69"
+  }
+}

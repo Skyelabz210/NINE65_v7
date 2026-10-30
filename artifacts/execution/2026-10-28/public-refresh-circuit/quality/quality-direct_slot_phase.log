@@ -1,0 +1,11 @@
+
+running 6 tests
+test ops::direct_slot_phase::tests::antiperiodic_baby_horner_is_full_negacyclic_convolution ... ok
+test ops::direct_slot_phase::tests::batched_signed_weights_match_per_term_modular_oracle_on_wide_lanes ... ok
+test ops::direct_slot_phase::tests::coherent_source_phases_extract_all_carries_and_restore_affine_message ... ok
+test ops::direct_slot_phase::tests::native_plaintext_fast_transform_matches_direct_root_evaluation ... ok
+test ops::direct_slot_phase::tests::native_weighted_bank_parallel_matches_sequential_reference_exactly ... ok
+test ops::direct_slot_phase::tests::slot_encoding_roundtrips_prime_and_square_and_negacyclic_product ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1168 filtered out; finished in 0.46s
+

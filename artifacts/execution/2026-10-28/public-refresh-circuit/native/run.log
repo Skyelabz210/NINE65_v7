@@ -1,0 +1,270 @@
+
+running 1 test
+test ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_three_cycles ... public-refresh N=8192 certificate=PublicRefreshCircuitCertificate { ring_degree: 32768, work_degree: 8192, carry_radius: 49, ciphertext_products: 68, phase_error_bound: U1024 { limbs: [419222978561, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, carry_error_bound: U1024 { limbs: [10288826999292248065, 4233175997998657258, 11246017930726316007, 13219449154835207781, 13151372483853239890, 13370698935693203871, 13382494680177885386, 8829335756134111920, 27, 0, 0, 0, 0, 0, 0, 0] }, restored_error_bound: U1024 { limbs: [14411590019265527808, 7916573713113908044, 12897437797629331981, 5389880225993010003, 7550943308082507529, 18101082702189103901, 15571573057938712981, 16957766971993113233, 966818667881568, 0, 0, 0, 0, 0, 0, 0] }, returned_scaled_error_bound: U512 { d0: 122782933364666, d1: 0, d2: 0, d3: 0 }, next_square_source_radius: 48 }
+public-refresh N=8192 key generation started
+public-refresh N=8192 key generation complete elapsed=57.657669304s
+public-refresh N=8192 cycle=0 high carry phase 8/64 elapsed=64.489550843s
+public-refresh N=8192 cycle=0 high carry phase 16/64 elapsed=72.491622496s
+public-refresh N=8192 cycle=0 high carry phase 24/64 elapsed=81.646978405s
+public-refresh N=8192 cycle=0 high carry phase 32/64 elapsed=89.820654559s
+public-refresh N=8192 cycle=0 high carry phase 40/64 elapsed=99.109869907s
+public-refresh N=8192 cycle=0 high carry phase 48/64 elapsed=107.904474574s
+public-refresh N=8192 cycle=0 high carry phase 56/64 elapsed=116.347851314s
+public-refresh N=8192 cycle=0 high carry phase 64/64 elapsed=122.829626888s
+public-refresh N=8192 cycle=0 low carry phase 8/64 elapsed=128.19431767s
+public-refresh N=8192 cycle=0 low carry phase 16/64 elapsed=134.01672258s
+public-refresh N=8192 cycle=0 low carry phase 24/64 elapsed=139.381003604s
+public-refresh N=8192 cycle=0 low carry phase 32/64 elapsed=144.822373681s
+public-refresh N=8192 cycle=0 low carry phase 40/64 elapsed=150.25822973s
+public-refresh N=8192 cycle=0 low carry phase 48/64 elapsed=156.165670461s
+public-refresh N=8192 cycle=0 low carry phase 56/64 elapsed=161.885863928s
+public-refresh N=8192 cycle=0 low carry phase 64/64 elapsed=167.791463719s
+public-refresh N=8192 cycle=0 affine phase 8/64 elapsed=173.291629553s
+public-refresh N=8192 cycle=0 affine phase 16/64 elapsed=179.477258258s
+public-refresh N=8192 cycle=0 affine phase 24/64 elapsed=185.577620154s
+public-refresh N=8192 cycle=0 affine phase 32/64 elapsed=191.313332088s
+public-refresh N=8192 cycle=0 affine phase 40/64 elapsed=197.231248455s
+public-refresh N=8192 cycle=0 affine phase 48/64 elapsed=204.192079918s
+public-refresh N=8192 cycle=0 affine phase 56/64 elapsed=209.545855922s
+public-refresh N=8192 cycle=0 affine phase 64/64 elapsed=214.930258842s
+public-refresh N=8192 cycle=0 high digit product 0/50 elapsed=216.049185657s
+public-refresh N=8192 cycle=0 high digit product 8/50 elapsed=224.883394534s
+public-refresh N=8192 cycle=0 high digit product 16/50 elapsed=233.710394586s
+public-refresh N=8192 cycle=0 high digit product 24/50 elapsed=242.39197053s
+public-refresh N=8192 cycle=0 high digit product 32/50 elapsed=250.940598803s
+public-refresh N=8192 cycle=0 high digit product 40/50 elapsed=259.727226155s
+public-refresh N=8192 cycle=0 high digit product 48/50 elapsed=268.42862491s
+public-refresh N=8192 cycle=0 high digit product 50/50 elapsed=270.632812717s
+public-refresh N=8192 cycle=0 low correction polynomial 0/17 elapsed=270.635809596s
+public-refresh N=8192 cycle=0 low correction polynomial 8/17 elapsed=279.455643424s
+public-refresh N=8192 cycle=0 low correction polynomial 16/17 elapsed=288.916185124s
+public-refresh N=8192 cycle=0 low correction polynomial 17/17 elapsed=289.990283325s
+public-refresh N=8192 cycle=0 quotient product 0/1 elapsed=290.009802417s
+public-refresh N=8192 cycle=0 quotient product 1/1 elapsed=291.160160474s
+public-refresh N=8192 cycle=0 inverse babies 8/256 elapsed=296.632064207s
+public-refresh N=8192 cycle=0 inverse babies 16/256 elapsed=302.077220047s
+public-refresh N=8192 cycle=0 inverse babies 24/256 elapsed=306.724720019s
+public-refresh N=8192 cycle=0 inverse babies 32/256 elapsed=311.720183437s
+public-refresh N=8192 cycle=0 inverse babies 40/256 elapsed=316.370060662s
+public-refresh N=8192 cycle=0 inverse babies 48/256 elapsed=321.060564657s
+public-refresh N=8192 cycle=0 inverse babies 56/256 elapsed=326.169045249s
+public-refresh N=8192 cycle=0 inverse babies 64/256 elapsed=331.379289131s
+public-refresh N=8192 cycle=0 inverse babies 72/256 elapsed=336.329455897s
+public-refresh N=8192 cycle=0 inverse babies 80/256 elapsed=341.014189323s
+public-refresh N=8192 cycle=0 inverse babies 88/256 elapsed=345.992446284s
+public-refresh N=8192 cycle=0 inverse babies 96/256 elapsed=350.645833161s
+public-refresh N=8192 cycle=0 inverse babies 104/256 elapsed=355.635420632s
+public-refresh N=8192 cycle=0 inverse babies 112/256 elapsed=361.082768255s
+public-refresh N=8192 cycle=0 inverse babies 120/256 elapsed=366.497493965s
+public-refresh N=8192 cycle=0 inverse babies 128/256 elapsed=371.784665401s
+public-refresh N=8192 cycle=0 inverse babies 136/256 elapsed=377.326664937s
+public-refresh N=8192 cycle=0 inverse babies 144/256 elapsed=382.881709012s
+public-refresh N=8192 cycle=0 inverse babies 152/256 elapsed=387.484080609s
+public-refresh N=8192 cycle=0 inverse babies 160/256 elapsed=392.599550464s
+public-refresh N=8192 cycle=0 inverse babies 168/256 elapsed=397.481169408s
+public-refresh N=8192 cycle=0 inverse babies 176/256 elapsed=402.01756855s
+public-refresh N=8192 cycle=0 inverse babies 184/256 elapsed=406.789284227s
+public-refresh N=8192 cycle=0 inverse babies 192/256 elapsed=411.792702771s
+public-refresh N=8192 cycle=0 inverse babies 200/256 elapsed=416.57590253s
+public-refresh N=8192 cycle=0 inverse babies 208/256 elapsed=421.583611269s
+public-refresh N=8192 cycle=0 inverse babies 216/256 elapsed=426.186085568s
+public-refresh N=8192 cycle=0 inverse babies 224/256 elapsed=431.069691819s
+public-refresh N=8192 cycle=0 inverse babies 232/256 elapsed=435.785693961s
+public-refresh N=8192 cycle=0 inverse babies 240/256 elapsed=440.094695626s
+public-refresh N=8192 cycle=0 inverse babies 248/256 elapsed=444.792311337s
+public-refresh N=8192 cycle=0 inverse babies 256/256 elapsed=449.391100652s
+public-refresh N=8192 cycle=0 inverse giants 8/128 elapsed=467.805172298s
+public-refresh N=8192 cycle=0 inverse giants 16/128 elapsed=488.609360941s
+public-refresh N=8192 cycle=0 inverse giants 24/128 elapsed=507.573777582s
+public-refresh N=8192 cycle=0 inverse giants 32/128 elapsed=525.611001754s
+public-refresh N=8192 cycle=0 inverse giants 40/128 elapsed=543.895900598s
+public-refresh N=8192 cycle=0 inverse giants 48/128 elapsed=561.446645357s
+public-refresh N=8192 cycle=0 inverse giants 56/128 elapsed=578.533561571s
+public-refresh N=8192 cycle=0 inverse giants 64/128 elapsed=594.951870217s
+public-refresh N=8192 cycle=0 inverse giants 72/128 elapsed=612.853392018s
+public-refresh N=8192 cycle=0 inverse giants 80/128 elapsed=630.624110704s
+public-refresh N=8192 cycle=0 inverse giants 88/128 elapsed=648.140683005s
+public-refresh N=8192 cycle=0 inverse giants 96/128 elapsed=664.96501308s
+public-refresh N=8192 cycle=0 inverse giants 104/128 elapsed=682.917093476s
+public-refresh N=8192 cycle=0 inverse giants 112/128 elapsed=699.701460055s
+public-refresh N=8192 cycle=0 inverse giants 120/128 elapsed=717.089574529s
+public-refresh N=8192 cycle=0 inverse giants 128/128 elapsed=736.813964492s
+public-refresh N=8192 cycle=0 all coefficients and dependent square passed elapsed=738.915917036s
+public-refresh N=8192 cycle=1 high carry phase 8/64 elapsed=744.519955666s
+public-refresh N=8192 cycle=1 high carry phase 16/64 elapsed=750.639652215s
+public-refresh N=8192 cycle=1 high carry phase 24/64 elapsed=756.312643702s
+public-refresh N=8192 cycle=1 high carry phase 32/64 elapsed=762.042859723s
+public-refresh N=8192 cycle=1 high carry phase 40/64 elapsed=768.596784076s
+public-refresh N=8192 cycle=1 high carry phase 48/64 elapsed=774.963372169s
+public-refresh N=8192 cycle=1 high carry phase 56/64 elapsed=781.186942479s
+public-refresh N=8192 cycle=1 high carry phase 64/64 elapsed=787.368687919s
+public-refresh N=8192 cycle=1 low carry phase 8/64 elapsed=793.652715921s
+public-refresh N=8192 cycle=1 low carry phase 16/64 elapsed=799.440494236s
+public-refresh N=8192 cycle=1 low carry phase 24/64 elapsed=805.449736904s
+public-refresh N=8192 cycle=1 low carry phase 32/64 elapsed=811.501226682s
+public-refresh N=8192 cycle=1 low carry phase 40/64 elapsed=817.330429612s
+public-refresh N=8192 cycle=1 low carry phase 48/64 elapsed=822.847528747s
+public-refresh N=8192 cycle=1 low carry phase 56/64 elapsed=829.178219712s
+public-refresh N=8192 cycle=1 low carry phase 64/64 elapsed=835.063117852s
+public-refresh N=8192 cycle=1 affine phase 8/64 elapsed=840.786295873s
+public-refresh N=8192 cycle=1 affine phase 16/64 elapsed=846.965925473s
+public-refresh N=8192 cycle=1 affine phase 24/64 elapsed=852.794111666s
+public-refresh N=8192 cycle=1 affine phase 32/64 elapsed=858.479828904s
+public-refresh N=8192 cycle=1 affine phase 40/64 elapsed=864.362812466s
+public-refresh N=8192 cycle=1 affine phase 48/64 elapsed=869.984209128s
+public-refresh N=8192 cycle=1 affine phase 56/64 elapsed=876.043701547s
+public-refresh N=8192 cycle=1 affine phase 64/64 elapsed=881.820792068s
+public-refresh N=8192 cycle=1 high digit product 0/50 elapsed=883.068490469s
+public-refresh N=8192 cycle=1 high digit product 8/50 elapsed=891.645248039s
+public-refresh N=8192 cycle=1 high digit product 16/50 elapsed=900.718591024s
+public-refresh N=8192 cycle=1 high digit product 24/50 elapsed=909.716714533s
+public-refresh N=8192 cycle=1 high digit product 32/50 elapsed=918.51005189s
+public-refresh N=8192 cycle=1 high digit product 40/50 elapsed=927.104221971s
+public-refresh N=8192 cycle=1 high digit product 48/50 elapsed=936.445673512s
+public-refresh N=8192 cycle=1 high digit product 50/50 elapsed=938.766679229s
+public-refresh N=8192 cycle=1 low correction polynomial 0/17 elapsed=938.770464689s
+public-refresh N=8192 cycle=1 low correction polynomial 8/17 elapsed=948.467637397s
+public-refresh N=8192 cycle=1 low correction polynomial 16/17 elapsed=958.036837336s
+public-refresh N=8192 cycle=1 low correction polynomial 17/17 elapsed=959.202742877s
+public-refresh N=8192 cycle=1 quotient product 0/1 elapsed=959.224104773s
+public-refresh N=8192 cycle=1 quotient product 1/1 elapsed=960.52099282s
+public-refresh N=8192 cycle=1 inverse babies 8/256 elapsed=966.437414424s
+public-refresh N=8192 cycle=1 inverse babies 16/256 elapsed=971.192069717s
+public-refresh N=8192 cycle=1 inverse babies 24/256 elapsed=975.689999501s
+public-refresh N=8192 cycle=1 inverse babies 32/256 elapsed=980.110097854s
+public-refresh N=8192 cycle=1 inverse babies 40/256 elapsed=985.120408611s
+public-refresh N=8192 cycle=1 inverse babies 48/256 elapsed=990.165785205s
+public-refresh N=8192 cycle=1 inverse babies 56/256 elapsed=995.122693078s
+public-refresh N=8192 cycle=1 inverse babies 64/256 elapsed=999.42032033s
+public-refresh N=8192 cycle=1 inverse babies 72/256 elapsed=1004.41124464s
+public-refresh N=8192 cycle=1 inverse babies 80/256 elapsed=1009.596786128s
+public-refresh N=8192 cycle=1 inverse babies 88/256 elapsed=1014.79661209s
+public-refresh N=8192 cycle=1 inverse babies 96/256 elapsed=1020.019298776s
+public-refresh N=8192 cycle=1 inverse babies 104/256 elapsed=1025.931203346s
+public-refresh N=8192 cycle=1 inverse babies 112/256 elapsed=1030.938466065s
+public-refresh N=8192 cycle=1 inverse babies 120/256 elapsed=1035.655889538s
+public-refresh N=8192 cycle=1 inverse babies 128/256 elapsed=1040.162101832s
+public-refresh N=8192 cycle=1 inverse babies 136/256 elapsed=1044.680864631s
+public-refresh N=8192 cycle=1 inverse babies 144/256 elapsed=1049.3358887s
+public-refresh N=8192 cycle=1 inverse babies 152/256 elapsed=1054.32688536s
+public-refresh N=8192 cycle=1 inverse babies 160/256 elapsed=1059.226164093s
+public-refresh N=8192 cycle=1 inverse babies 168/256 elapsed=1064.442278962s
+public-refresh N=8192 cycle=1 inverse babies 176/256 elapsed=1069.388458013s
+public-refresh N=8192 cycle=1 inverse babies 184/256 elapsed=1074.395283273s
+public-refresh N=8192 cycle=1 inverse babies 192/256 elapsed=1078.823371845s
+public-refresh N=8192 cycle=1 inverse babies 200/256 elapsed=1083.83726297s
+public-refresh N=8192 cycle=1 inverse babies 208/256 elapsed=1088.877069452s
+public-refresh N=8192 cycle=1 inverse babies 216/256 elapsed=1093.857291164s
+public-refresh N=8192 cycle=1 inverse babies 224/256 elapsed=1099.475920386s
+public-refresh N=8192 cycle=1 inverse babies 232/256 elapsed=1104.704273439s
+public-refresh N=8192 cycle=1 inverse babies 240/256 elapsed=1109.309233953s
+public-refresh N=8192 cycle=1 inverse babies 248/256 elapsed=1114.220956365s
+public-refresh N=8192 cycle=1 inverse babies 256/256 elapsed=1118.747489573s
+public-refresh N=8192 cycle=1 inverse giants 8/128 elapsed=1136.244596156s
+public-refresh N=8192 cycle=1 inverse giants 16/128 elapsed=1154.733138073s
+public-refresh N=8192 cycle=1 inverse giants 24/128 elapsed=1172.562682263s
+public-refresh N=8192 cycle=1 inverse giants 32/128 elapsed=1190.131275766s
+public-refresh N=8192 cycle=1 inverse giants 40/128 elapsed=1208.873112359s
+public-refresh N=8192 cycle=1 inverse giants 48/128 elapsed=1229.621072771s
+public-refresh N=8192 cycle=1 inverse giants 56/128 elapsed=1251.633087755s
+public-refresh N=8192 cycle=1 inverse giants 64/128 elapsed=1272.31820196s
+public-refresh N=8192 cycle=1 inverse giants 72/128 elapsed=1289.61816908s
+public-refresh N=8192 cycle=1 inverse giants 80/128 elapsed=1306.656483282s
+public-refresh N=8192 cycle=1 inverse giants 88/128 elapsed=1324.673068551s
+public-refresh N=8192 cycle=1 inverse giants 96/128 elapsed=1342.764817464s
+public-refresh N=8192 cycle=1 inverse giants 104/128 elapsed=1362.274485676s
+public-refresh N=8192 cycle=1 inverse giants 112/128 elapsed=1381.47968156s
+public-refresh N=8192 cycle=1 inverse giants 120/128 elapsed=1402.376977111s
+public-refresh N=8192 cycle=1 inverse giants 128/128 elapsed=1419.5474233s
+public-refresh N=8192 cycle=1 all coefficients and dependent square passed elapsed=1421.09094591s
+public-refresh N=8192 cycle=2 high carry phase 8/64 elapsed=1426.20778071s
+public-refresh N=8192 cycle=2 high carry phase 16/64 elapsed=1431.813707534s
+public-refresh N=8192 cycle=2 high carry phase 24/64 elapsed=1438.559447047s
+public-refresh N=8192 cycle=2 high carry phase 32/64 elapsed=1444.804281932s
+public-refresh N=8192 cycle=2 high carry phase 40/64 elapsed=1450.824103394s
+public-refresh N=8192 cycle=2 high carry phase 48/64 elapsed=1457.151186282s
+public-refresh N=8192 cycle=2 high carry phase 56/64 elapsed=1463.414604259s
+public-refresh N=8192 cycle=2 high carry phase 64/64 elapsed=1470.51644805s
+public-refresh N=8192 cycle=2 low carry phase 8/64 elapsed=1477.104079159s
+public-refresh N=8192 cycle=2 low carry phase 16/64 elapsed=1483.341256056s
+public-refresh N=8192 cycle=2 low carry phase 24/64 elapsed=1489.646329503s
+public-refresh N=8192 cycle=2 low carry phase 32/64 elapsed=1496.023694882s
+public-refresh N=8192 cycle=2 low carry phase 40/64 elapsed=1501.864236521s
+public-refresh N=8192 cycle=2 low carry phase 48/64 elapsed=1507.557656184s
+public-refresh N=8192 cycle=2 low carry phase 56/64 elapsed=1513.763139211s
+public-refresh N=8192 cycle=2 low carry phase 64/64 elapsed=1520.801293362s
+public-refresh N=8192 cycle=2 affine phase 8/64 elapsed=1527.327927184s
+public-refresh N=8192 cycle=2 affine phase 16/64 elapsed=1535.405957831s
+public-refresh N=8192 cycle=2 affine phase 24/64 elapsed=1544.484719739s
+public-refresh N=8192 cycle=2 affine phase 32/64 elapsed=1553.607879924s
+public-refresh N=8192 cycle=2 affine phase 40/64 elapsed=1562.019438135s
+public-refresh N=8192 cycle=2 affine phase 48/64 elapsed=1569.707786876s
+public-refresh N=8192 cycle=2 affine phase 56/64 elapsed=1578.187365459s
+public-refresh N=8192 cycle=2 affine phase 64/64 elapsed=1586.633716825s
+public-refresh N=8192 cycle=2 high digit product 0/50 elapsed=1588.045163228s
+public-refresh N=8192 cycle=2 high digit product 8/50 elapsed=1597.850484641s
+public-refresh N=8192 cycle=2 high digit product 16/50 elapsed=1607.150061546s
+public-refresh N=8192 cycle=2 high digit product 24/50 elapsed=1616.778621844s
+public-refresh N=8192 cycle=2 high digit product 32/50 elapsed=1626.584281965s
+public-refresh N=8192 cycle=2 high digit product 40/50 elapsed=1635.774790535s
+public-refresh N=8192 cycle=2 high digit product 48/50 elapsed=1644.485318114s
+public-refresh N=8192 cycle=2 high digit product 50/50 elapsed=1646.729824593s
+public-refresh N=8192 cycle=2 low correction polynomial 0/17 elapsed=1646.733050606s
+public-refresh N=8192 cycle=2 low correction polynomial 8/17 elapsed=1654.902831027s
+public-refresh N=8192 cycle=2 low correction polynomial 16/17 elapsed=1663.620633949s
+public-refresh N=8192 cycle=2 low correction polynomial 17/17 elapsed=1664.675177346s
+public-refresh N=8192 cycle=2 quotient product 0/1 elapsed=1664.694147863s
+public-refresh N=8192 cycle=2 quotient product 1/1 elapsed=1665.724335703s
+public-refresh N=8192 cycle=2 inverse babies 8/256 elapsed=1670.894480575s
+public-refresh N=8192 cycle=2 inverse babies 16/256 elapsed=1675.749266106s
+public-refresh N=8192 cycle=2 inverse babies 24/256 elapsed=1680.999564646s
+public-refresh N=8192 cycle=2 inverse babies 32/256 elapsed=1686.260888539s
+public-refresh N=8192 cycle=2 inverse babies 40/256 elapsed=1691.968858328s
+public-refresh N=8192 cycle=2 inverse babies 48/256 elapsed=1697.069242376s
+public-refresh N=8192 cycle=2 inverse babies 56/256 elapsed=1701.770059251s
+public-refresh N=8192 cycle=2 inverse babies 64/256 elapsed=1706.680534013s
+public-refresh N=8192 cycle=2 inverse babies 72/256 elapsed=1713.091338526s
+public-refresh N=8192 cycle=2 inverse babies 80/256 elapsed=1718.498301458s
+public-refresh N=8192 cycle=2 inverse babies 88/256 elapsed=1724.392614404s
+public-refresh N=8192 cycle=2 inverse babies 96/256 elapsed=1729.813931945s
+public-refresh N=8192 cycle=2 inverse babies 104/256 elapsed=1734.969873839s
+public-refresh N=8192 cycle=2 inverse babies 112/256 elapsed=1739.97198027s
+public-refresh N=8192 cycle=2 inverse babies 120/256 elapsed=1745.410971742s
+public-refresh N=8192 cycle=2 inverse babies 128/256 elapsed=1750.23564096s
+public-refresh N=8192 cycle=2 inverse babies 136/256 elapsed=1756.294403341s
+public-refresh N=8192 cycle=2 inverse babies 144/256 elapsed=1762.172118705s
+public-refresh N=8192 cycle=2 inverse babies 152/256 elapsed=1768.838298154s
+public-refresh N=8192 cycle=2 inverse babies 160/256 elapsed=1774.564452963s
+public-refresh N=8192 cycle=2 inverse babies 168/256 elapsed=1779.538422939s
+public-refresh N=8192 cycle=2 inverse babies 176/256 elapsed=1784.618584868s
+public-refresh N=8192 cycle=2 inverse babies 184/256 elapsed=1789.475909489s
+public-refresh N=8192 cycle=2 inverse babies 192/256 elapsed=1794.593812216s
+public-refresh N=8192 cycle=2 inverse babies 200/256 elapsed=1799.244877933s
+public-refresh N=8192 cycle=2 inverse babies 208/256 elapsed=1803.937767413s
+public-refresh N=8192 cycle=2 inverse babies 216/256 elapsed=1809.716584778s
+public-refresh N=8192 cycle=2 inverse babies 224/256 elapsed=1815.21611053s
+public-refresh N=8192 cycle=2 inverse babies 232/256 elapsed=1820.155639493s
+public-refresh N=8192 cycle=2 inverse babies 240/256 elapsed=1826.179338129s
+public-refresh N=8192 cycle=2 inverse babies 248/256 elapsed=1831.695125904s
+public-refresh N=8192 cycle=2 inverse babies 256/256 elapsed=1836.804426315s
+public-refresh N=8192 cycle=2 inverse giants 8/128 elapsed=1853.947548832s
+public-refresh N=8192 cycle=2 inverse giants 16/128 elapsed=1871.977453526s
+public-refresh N=8192 cycle=2 inverse giants 24/128 elapsed=1888.791542727s
+public-refresh N=8192 cycle=2 inverse giants 32/128 elapsed=1906.829933451s
+public-refresh N=8192 cycle=2 inverse giants 40/128 elapsed=1925.859166766s
+public-refresh N=8192 cycle=2 inverse giants 48/128 elapsed=1943.915893258s
+public-refresh N=8192 cycle=2 inverse giants 56/128 elapsed=1961.498900372s
+public-refresh N=8192 cycle=2 inverse giants 64/128 elapsed=1978.649291893s
+public-refresh N=8192 cycle=2 inverse giants 72/128 elapsed=1996.963899657s
+public-refresh N=8192 cycle=2 inverse giants 80/128 elapsed=2015.745749945s
+public-refresh N=8192 cycle=2 inverse giants 88/128 elapsed=2034.243866644s
+public-refresh N=8192 cycle=2 inverse giants 96/128 elapsed=2051.392255595s
+public-refresh N=8192 cycle=2 inverse giants 104/128 elapsed=2069.253261997s
+public-refresh N=8192 cycle=2 inverse giants 112/128 elapsed=2086.288674458s
+public-refresh N=8192 cycle=2 inverse giants 120/128 elapsed=2102.740255682s
+public-refresh N=8192 cycle=2 inverse giants 128/128 elapsed=2119.528815603s
+public-refresh N=8192 cycle=2 all coefficients and dependent square passed elapsed=2121.267436148s
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1171 filtered out; finished in 2122.81s
+
