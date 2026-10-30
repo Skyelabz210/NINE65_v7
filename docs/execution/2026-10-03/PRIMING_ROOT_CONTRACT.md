@@ -338,24 +338,25 @@ It accepts no caller-supplied scalar increment and stores no winding ledger.
 The fixed S8 path permits the even payload product; it requires coprimality
 with 11, not with 22. Payload equality includes the root2 check.
 
-For the native signed carry corridor `-49 <= d <= 49`, the owner selected an
-exact Euclidean split before applying the shadow reading:
+For the native signed carry corridor `-49 <= d <= 49`, the owner selected a
+local 36/37 StarLift frame in place of a running epoch quotient. Shift the
+carry into a nonnegative interval and keep both residues:
 
 ```text
-sheet_inc = d rem_euclid 11                # 0..10
-epoch_carry = (d-sheet_inc)/11             # -5..4
-d = 11*epoch_carry + sheet_inc
+y = d + 49                                # 0..98
+r36 = y mod 36; s37 = y mod 37
+K = ((s37-r36)*inverse(36,37)) mod 37
+  = (r36-s37) mod 37                      # 0..2 under this bound
+d = 36*K + r36 - 49
 ```
 
-`verify_refresh_carry_step` checks this arithmetic for the native corridor.
-The split resolves the mod11 alias only when the epoch quotient is retained
-and bound to the same transition. Its clear input/output API is a reference
-primitive, not a public observation of the protected circuit carry. A live
-producer must evaluate the split under encryption or another admitted
-protected mechanism and commit the epoch and sheet together.
-If `epoch_carry` depends on secret phase data, a public epoch counter would
-disclose information; the protected epoch state and its allowed observation
-must be specified before wiring `Q_next = Q_current + epoch_carry`.
+`StarLiftCarry36x37` checks exact recovery and rejects residues outside the
+native corridor. Here 36 is the local carry shell and 37 its adjacent star
+anchor; neither changes the S8 payload product `881790` or makes the shadow
+prime 11 an anchor for the entire signed carry. The two clear residues jointly
+identify `d`, so a public evaluator must obtain and retain them only through
+an admitted protected circuit. Dropping the arithmetic epoch quotient does
+not drop the source/value epoch needed to bind a transition to its producer.
 
 The `acts.md` attachment supplies the two-coordinate K-elimination formula and
 the independent-anchor interpretation. Its unqualified equality to the full
@@ -363,7 +364,7 @@ quotient requires the range bound above; without that bound the reading is
 only a residue modulo 11. The attached `main.pdf` is background, not an
 instruction to change the runtime or evidence of production authentication.
 No full integer is assembled by this checker. Input production, protected
-phase evaluation, and key/epoch binding remain required for refresh integration.
+phase evaluation, and source/value-epoch binding remain required for refresh integration.
 
 ### Earlier joint-anchor relation and remaining integration
 

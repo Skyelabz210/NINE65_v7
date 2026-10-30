@@ -4,6 +4,21 @@
   "status": "reference_contract_draft",
   "s00_accepted": false,
   "dependent_integration_authorized": false,
+  "native_carry_starlift": {
+    "status": "bounded_arithmetic_implemented_protected_producer_pending",
+    "signed_carry_interval": [-49, 49],
+    "shift": 49,
+    "shell": 36,
+    "star_anchor": 37,
+    "capacity_exclusive": 1332,
+    "shifted_carry_interval": [0, 98],
+    "winding_equation": "K = (r36 - s37) mod 37, with K in [0,2]",
+    "implementation": "cram-core::phase_lock::StarLiftCarry36x37",
+    "arithmetic_epoch_quotient_required": false,
+    "source_value_epoch_binding_required": true,
+    "protected_per_slot_producer_established": false,
+    "clear_coordinates_publishable": false
+  },
   "owner_live_shadow_successor": {
     "status": "arithmetic_implemented_producer_binding_pending",
     "payload_moduli": [2, 3, 5, 7, 13, 17, 19],

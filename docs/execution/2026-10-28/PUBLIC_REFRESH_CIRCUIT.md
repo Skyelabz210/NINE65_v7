@@ -152,18 +152,16 @@ it would require a proved narrower increment bound or additional independent
 anchor information, such as a protected anchor tower. The present mod11 checker
 therefore cannot be attached to the native circuit as a production proof.
 
-The owner selected the exact Euclidean split `d=11*c+sheet_inc` for native
-signed carry `d in [-49,49]`, with `sheet_inc in [0,10]` and `c in [-5,4]`.
-`cram-core::phase_lock::verify_refresh_carry_step` now checks that split for
-all99 allowed digits. This resolves the arithmetic width mismatch if a
-protected producer supplies and binds both parts. The public refresh evaluator
-does not currently produce an encrypted shadow view or an epoch transition
-certificate from its protected carry; calling the clear reference helper on
-that carry would disclose it. Producer integration remains unimplemented.
-The native phase is a polynomial of slot digits: its epoch quotients can differ
-by slot. One scalar public epoch counter cannot encode those quotients. A live
-transition needs a protected per-slot epoch view (or a proved aggregation rule)
-before a single `Q_next = Q_current + c` update can be asserted.
+The owner selected a 36/37 StarLift frame for the native carry instead of an
+arithmetic epoch quotient. For each signed digit `d in [-49,49]`, set `y=d+49`
+and keep `(y mod36,y mod37)`. K-elimination against the adjacent 37 anchor
+recovers `floor(y/36)` in `0..2`, hence the exact digit. `StarLiftCarry36x37`
+checks the full99-digit interval and refuses noncanonical or out-of-corridor
+coordinates. This is an arithmetic reference implementation; the public
+refresh evaluator does not currently produce the corresponding protected
+per-slot coordinates from its encrypted carry. Publishing the clear pair would
+reveal the carry. The source/value epoch for provenance still has to be bound
+to the returned ciphertext even though no arithmetic epoch quotient is used.
 
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.
