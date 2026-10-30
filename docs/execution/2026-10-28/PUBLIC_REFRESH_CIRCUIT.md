@@ -152,5 +152,14 @@ it would require a proved narrower increment bound or additional independent
 anchor information, such as a protected anchor tower. The present mod11 checker
 therefore cannot be attached to the native circuit as a production proof.
 
+The owner selected the exact Euclidean split `d=11*c+sheet_inc` for native
+signed carry `d in [-49,49]`, with `sheet_inc in [0,10]` and `c in [-5,4]`.
+`cram-core::phase_lock::verify_refresh_carry_step` now checks that split for
+all99 allowed digits. This resolves the arithmetic width mismatch if a
+protected producer supplies and binds both parts. The public refresh evaluator
+does not currently produce an encrypted shadow view or an epoch transition
+certificate from its protected carry; calling the clear reference helper on
+that carry would disclose it. Producer integration remains unimplemented.
+
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.

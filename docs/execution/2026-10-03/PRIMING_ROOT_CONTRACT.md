@@ -338,6 +338,25 @@ It accepts no caller-supplied scalar increment and stores no winding ledger.
 The fixed S8 path permits the even payload product; it requires coprimality
 with 11, not with 22. Payload equality includes the root2 check.
 
+For the native signed carry corridor `-49 <= d <= 49`, the owner selected an
+exact Euclidean split before applying the shadow reading:
+
+```text
+sheet_inc = d rem_euclid 11                # 0..10
+epoch_carry = (d-sheet_inc)/11             # -5..4
+d = 11*epoch_carry + sheet_inc
+```
+
+`verify_refresh_carry_step` checks this arithmetic for the native corridor.
+The split resolves the mod11 alias only when the epoch quotient is retained
+and bound to the same transition. Its clear input/output API is a reference
+primitive, not a public observation of the protected circuit carry. A live
+producer must evaluate the split under encryption or another admitted
+protected mechanism and commit the epoch and sheet together.
+If `epoch_carry` depends on secret phase data, a public epoch counter would
+disclose information; the protected epoch state and its allowed observation
+must be specified before wiring `Q_next = Q_current + epoch_carry`.
+
 The `acts.md` attachment supplies the two-coordinate K-elimination formula and
 the independent-anchor interpretation. Its unqualified equality to the full
 quotient requires the range bound above; without that bound the reading is

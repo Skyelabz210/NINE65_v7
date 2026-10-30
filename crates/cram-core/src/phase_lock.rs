@@ -108,6 +108,21 @@ pub enum PhaseLockError {
     InvalidSourceBound,
     SuccessorExceedsCapacity,
     SuccessorMismatch,
+    RawCarryOutOfRange,
+}
+
+/// Exact Euclidean split of a native refresh carry into one shadow-11 sheet
+/// digit and its higher epoch quotient. This is an arithmetic primitive for
+/// protected state; returning these clear values does not authorize a public
+/// evaluator to observe a secret-dependent carry.
+pub fn verify_refresh_carry_step(raw_carry_digit: i16) -> Result<(u8, i16), PhaseLockError> {
+    if !(-49..=49).contains(&raw_carry_digit) {
+        return Err(PhaseLockError::RawCarryOutOfRange);
+    }
+    let sheet_inc = raw_carry_digit.rem_euclid(11) as u8;
+    let epoch_carry = (raw_carry_digit - sheet_inc as i16) / 11;
+    debug_assert_eq!(raw_carry_digit, 11 * epoch_carry + sheet_inc as i16);
+    Ok((sheet_inc, epoch_carry))
 }
 
 impl PhaseLock22 {
@@ -171,6 +186,28 @@ impl PhaseLock22 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn all_native_signed_carries_split_exactly_without_mod11_aliasing() {
+        for raw in -49i16..=49 {
+            let (sheet, epoch) = verify_refresh_carry_step(raw).unwrap();
+            assert!(sheet < 11);
+            assert!((-5..=4).contains(&epoch));
+            assert_eq!(raw, 11 * epoch + sheet as i16);
+        }
+        assert_eq!(verify_refresh_carry_step(-49), Ok((6, -5)));
+        assert_eq!(verify_refresh_carry_step(49), Ok((5, 4)));
+        assert_eq!(verify_refresh_carry_step(5), Ok((5, 0)));
+        assert_eq!(verify_refresh_carry_step(16), Ok((5, 1)));
+        assert_eq!(
+            verify_refresh_carry_step(-50),
+            Err(PhaseLockError::RawCarryOutOfRange)
+        );
+        assert_eq!(
+            verify_refresh_carry_step(50),
+            Err(PhaseLockError::RawCarryOutOfRange)
+        );
+    }
 
     #[test]
     fn shadow_elimination_matches_independent_integer_successors() {
