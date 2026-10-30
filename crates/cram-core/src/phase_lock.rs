@@ -4,7 +4,7 @@
 //! establish that both trays came from the same source and valid epochs, and
 //! that their public intervals stay below `main_modulus * 22`.
 
-use crate::anchor::{recover_winding, AnchorError};
+use crate::gcd;
 
 const ANCHOR: u64 = 22;
 
@@ -19,7 +19,6 @@ pub enum PhaseLockError {
     InvalidResidue2,
     InvalidResidue11,
     InvalidMainModulus,
-    InvalidMainResidue,
     NonCoprimeMainModulus,
     InvalidSourceBound,
     SuccessorExceedsCapacity,
@@ -46,8 +45,8 @@ impl PhaseLock22 {
         self.residue11 + 11 * parity
     }
 
-    /// Checks `B ≡ A + M*K_A (mod 22)`, where
-    /// `K_A = ((A - (g mod 22)) * M^-1) mod 22` and `g = X_A mod M`.
+    /// Checks `B ≡ A + M*delta_winding (mod 22)`. The increment is supplied
+    /// by the refresh producer; it need not equal the source winding.
     ///
     /// The caller supplies a public upper bound for the source value. This
     /// checks the entire successor interval before using the residue relation.
@@ -56,33 +55,26 @@ impl PhaseLock22 {
     pub fn verify_residue_successor(
         self,
         successor: Self,
-        main_residue: u64,
         main_modulus: u64,
+        delta_winding: u64,
         source_upper: u64,
     ) -> Result<(), PhaseLockError> {
         if main_modulus < 2 || main_modulus > i64::MAX as u64 {
             return Err(PhaseLockError::InvalidMainModulus);
         }
-        if main_residue >= main_modulus {
-            return Err(PhaseLockError::InvalidMainResidue);
+        if gcd(main_modulus, ANCHOR) != 1 {
+            return Err(PhaseLockError::NonCoprimeMainModulus);
         }
         let capacity = main_modulus as u128 * ANCHOR as u128;
-        if source_upper < main_residue || source_upper as u128 >= capacity {
+        if source_upper as u128 >= capacity {
             return Err(PhaseLockError::InvalidSourceBound);
         }
-        let largest_successor =
-            source_upper as u128 + main_modulus as u128 * (source_upper / main_modulus) as u128;
+        let largest_successor = source_upper as u128 + main_modulus as u128 * delta_winding as u128;
         if largest_successor >= capacity {
             return Err(PhaseLockError::SuccessorExceedsCapacity);
         }
-        let witness = recover_winding(main_residue, self.residue22() as u64, main_modulus, ANCHOR)
-            .map_err(|error| match error {
-                AnchorError::NonCoprimeModuli => PhaseLockError::NonCoprimeMainModulus,
-                AnchorError::NonCanonicalMainResidue => PhaseLockError::InvalidMainResidue,
-                _ => PhaseLockError::InvalidMainModulus,
-            })?;
         let expected = ((self.residue22() as u64
-            + (main_modulus % ANCHOR) * witness.winding_mod_anchor)
+            + (main_modulus % ANCHOR) * (delta_winding % ANCHOR))
             % ANCHOR) as u8;
         if successor.residue22() != expected {
             return Err(PhaseLockError::SuccessorMismatch);
@@ -112,21 +104,21 @@ mod tests {
     }
 
     #[test]
-    fn nonzero_winding_successor_uses_real_source_values() {
+    fn nonzero_refresh_increment_is_independent_of_source_winding() {
         // M=35 has M mod 22 = 13 and inverse 17. Both values are inside M*22.
         let main_modulus = 35;
         let source = 159;
-        let winding = source / main_modulus;
-        assert_eq!(winding, 4);
-        let successor = source + main_modulus * winding;
-        assert_eq!(successor, 299);
+        assert_eq!(source / main_modulus, 4);
+        let delta_winding = 2;
+        let successor = source + main_modulus * delta_winding;
+        assert_eq!(successor, 229);
         assert_eq!(tray(source).residue22(), 5);
-        assert_eq!(tray(successor).residue22(), 13);
+        assert_eq!(tray(successor).residue22(), 9);
         assert_eq!(
             tray(source).verify_residue_successor(
                 tray(successor),
-                source % main_modulus,
                 main_modulus,
+                delta_winding,
                 source
             ),
             Ok(())
@@ -134,8 +126,8 @@ mod tests {
         assert_eq!(
             tray(source).verify_residue_successor(
                 tray(source),
-                source % main_modulus,
                 main_modulus,
+                delta_winding,
                 source
             ),
             Err(PhaseLockError::SuccessorMismatch)
@@ -143,8 +135,8 @@ mod tests {
         assert_eq!(
             tray(source).verify_residue_successor(
                 tray(successor + 1),
-                source % main_modulus,
                 main_modulus,
+                delta_winding,
                 source
             ),
             Err(PhaseLockError::SuccessorMismatch)
@@ -160,31 +152,27 @@ mod tests {
         assert_eq!(tray(source).residue22(), 13);
         assert_eq!(tray(successor).residue22(), 7);
         assert_eq!(
-            tray(source).verify_residue_successor(tray(successor), 19, main_modulus, source),
+            tray(source).verify_residue_successor(tray(successor), main_modulus, 4, source),
             Ok(())
+        );
+        assert_eq!(
+            tray(source).verify_residue_successor(tray(successor), 11, 4, 1),
+            Err(PhaseLockError::NonCoprimeMainModulus)
         );
         assert_eq!(
             tray(source).verify_residue_successor(
                 tray(successor),
                 main_modulus,
-                main_modulus,
-                source
+                4,
+                22 * main_modulus
             ),
-            Err(PhaseLockError::InvalidMainResidue)
-        );
-        assert_eq!(
-            tray(source).verify_residue_successor(tray(successor), 1, 11, 1),
-            Err(PhaseLockError::NonCoprimeMainModulus)
-        );
-        assert_eq!(
-            tray(source).verify_residue_successor(tray(successor), 19, main_modulus, 18),
             Err(PhaseLockError::InvalidSourceBound)
         );
         assert_eq!(
             tray(source).verify_residue_successor(
                 tray(successor),
-                19,
                 main_modulus,
+                4,
                 21 * main_modulus
             ),
             Err(PhaseLockError::SuccessorExceedsCapacity)

@@ -315,21 +315,29 @@ their separate observer/source contracts.
 
 Profile `OWNER-LIVE2-11` is `unresolved`. Dependent integration must not silently
 select a reference profile as its replacement. The owner has selected the
-**winding-successor** interpretation: tray B represents a successor of tray A,
-not another encoding of the same quantity. For a declared payload modulus M,
-main residue `g_A = X_A mod M`, and a 2/11 anchor that represents `X_A mod 22`,
-the checked arithmetic relation is:
+**winding-successor** interpretation for an internal noise/scale sheet coordinate.
+The plaintext must remain invariant across public refresh. Tray B advances by
+a refresh-produced increment `DeltaK`, which need not equal the source winding
+`K_A`. For a declared payload modulus M and 2/11 coordinates of that internal
+quantity, the checked residue relation is:
 
 ```text
-r22_A = r11_A + 11*((r2_A-r11_A) mod 2)
-K_A = ((r22_A-(g_A mod 22))*inv(M,22)) mod 22
-r22_B = (r22_A + (M mod 22)*K_A) mod 22
+r22_i = r11_i + 11*((r2_i-r11_i) mod 2), for i in {A,B}
+D22 = (r22_B-r22_A-(M mod 22)*(DeltaK mod 22)) mod 22
+admit arithmetic relation only when D22 = 0
 ```
 
 This relation has a standalone exact residue check in
-`cram-core/src/phase_lock.rs`. It does not establish that the trays were
-produced by the same source or permitted operation, that `K_A` is unique rather
-than merely a residue modulo 22, or that tray B is an admitted output state.
+`cram-core/src/phase_lock.rs`, with a caller-supplied public source bound and
+checked successor capacity. It does not establish that the trays were produced
+by the same source or permitted operation, or that the supplied `DeltaK` is the
+actual refresh increment. A zero defect is an arithmetic check, not a
+cryptographic authentication or proof of unchanged plaintext: an arbitrary
+party can choose matching public residues and increment. A lineage tag and
+epoch counter identify claims but do not authenticate them without a binding
+mechanism. The proposed `K=Q*C_s+Khat` decomposition still needs typed domains,
+an exact producer equation, and a proof that no persistent scalar winding is
+introduced into the live state.
 The five-cycle encrypted public refresh test evaluated a separate BFV research
 circuit; it did not evaluate this 2/11 relation.
 
