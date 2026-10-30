@@ -54,30 +54,31 @@ key generation; actual inputs are checked again at refresh time.
 
 ## Measured native result
 
-The complete native test passed all three refresh/return/square cycles.
+The expanded native test passed all five refresh/return/square cycles.
 All8192 coefficients matched the independent plaintext oracle after every
-refresh and every following multiplication:49,152 coefficient comparisons.
+refresh and every following multiplication:81,920 coefficient comparisons.
 The first refresh consumed an already-squared full polynomial.
 
 | Measurement | Result |
 | --- | --- |
-| Real encrypted refreshes | 3 |
-| Following full-polynomial squares | 3 |
-| Total wall time, including key setup | 2122.96seconds (35.4minutes) |
-| Peak process resident memory | 9,125,484KiB (8.70GiB) |
+| Real encrypted refreshes | 5 |
+| Following full-polynomial squares | 5 |
+| Total wall time, including key setup | 3393.19seconds (56.6minutes) |
+| Peak process resident memory | 9,125,340KiB (8.70GiB) |
 | Host resource limits | 4CPU quota cores,16GiB RAM |
 
-This is one functional run, not an isolated latency benchmark: reference and
-quality compilations overlapped parts of execution. The test used seeded
+This is a functional run, not an isolated latency benchmark. The earlier
+three-cycle run took2122.96seconds and remains in the evidence manifest;
+reference and quality compilations overlapped parts of that run. The test used seeded
 research randomness, optimized test code, overflow checks, and debug
 assertions. The executable example uses OS randomness instead.
 
 The [evidence manifest](../../../artifacts/execution/2026-10-28/public-refresh-circuit/manifest.json)
-links the successful transcript, exact binary/source hashes, stage timings,
-and resource report. Native and subsequent quality builds have separate
-manifests. Later changes are lint/metadata/resource-preflight cleanup and the
-independent shared CRAM precharge width fix; the evaluated native arithmetic
-and tuple are unchanged.
+links both successful transcripts, exact binary/source hashes, stage timings,
+and resource report. The first native run and subsequent quality build have
+separate source manifests. The five-cycle test was rebuilt after the quality
+cleanup; its only later source edit changed the example's cycle count. The
+evaluated native arithmetic and tuple are unchanged.
 
 The completed local verification also includes134 distinct default Rust
 tests,23 exact CI selections (overlapping those tests), three reference-NTT
@@ -100,11 +101,11 @@ payload, not total resident memory. The inverse cache alone is4.375GiB.
 
 The separate native test uses dense, sparse, zero, one, negative, and centered
 boundary coefficients in one full polynomial, squares before its first
-refresh, then checks three refresh/return/square cycles against independent
+refresh, then checks five refresh/return/square cycles against independent
 schoolbook plaintext arithmetic. Its name is:
 
 ```text
-ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_three_cycles
+ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_five_cycles
 ```
 
 Reduced-ring API tests additionally cover three keys,27 refreshes, varied

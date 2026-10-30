@@ -127,3 +127,9 @@ fn complete_public_refresh_returns_original_key_for_three_cycles() {
 fn native_public_refresh_returns_all_8192_coefficients_for_three_cycles() {
     run_public_api(8192, 96, 128, 49, 3);
 }
+
+#[test]
+#[ignore = "native encrypted refresh, explicit resource and duration evidence run"]
+fn native_public_refresh_returns_all_8192_coefficients_for_five_cycles() {
+    run_public_api(8192, 96, 128, 49, 5);
+}

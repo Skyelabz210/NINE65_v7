@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut expected = vec![0u64; evaluator.certificate().work_degree];
     expected[0] = 7;
     let mut ciphertext = evaluator.encrypt(&expected)?;
-    for cycle in 0..3 {
+    for cycle in 0..5 {
         ciphertext = evaluator.refresh_with_progress(&ciphertext, &mut |stage, done, total| {
             if done == total || done % 8 == 0 {
                 println!("cycle {cycle}: {stage} {done}/{total}");
