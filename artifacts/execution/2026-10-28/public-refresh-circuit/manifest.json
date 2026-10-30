@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-28T13:01:35.009773+00:00",
+  "generated_utc": "2026-10-30T18:23:51.070869+00:00",
   "native_complete": true,
   "production_cram_admitted": false,
   "work_degree": 8192,
@@ -105,12 +105,35 @@
     "security/boot-q650-screen.jsonl": "deee6ddc3b040599f180a1378fe9f3d4d3d4ad07f7f42ee805aa582a75cb2b78",
     "security/instances.json": "7e96a2e1becc80ec85661161fc68898cc3aef7ecc00835a34bde8bdb280220d4",
     "security/review.json": "73098a4c9756c5116401f3785b43610fd3fe417f345fcc93c4b7ff09261fa2f9",
-    "security/screen.rs": "103fe80cfc9f4168c5ae17ce22c963e0f2e1926ebb855a058334ecb7330e2805"
+    "security/screen.rs": "103fe80cfc9f4168c5ae17ce22c963e0f2e1926ebb855a058334ecb7330e2805",
+    "native/five-cycle-run.log": "2b9de931d4cb2fe481e15370691d3e1c72835a07d9b9c838c31ed5624e4c7c7b",
+    "native/five-cycle-result.json": "90196f35ec5d678a9d1c9286a79c2d071f2e04e4a82699b2034747a8a86d1794"
   },
   "source_commit": "d9af3f6d2de1730e82c899188c22225bf1ffd216",
   "example_typecheck_exit_code": 0,
   "post_quality_build_source_differences": {
     "crates/nine65/tests/research/frobenius_chart_section.rs": "380e2dc200aefd9b192c14a010728e89d5fbdc6ac625503e886100f66821259e"
   },
-  "post_quality_build_source_note": "Only the Frobenius diagnostic text was updated from U512 to checked U1024; no assertions or arithmetic changed."
+  "post_quality_build_source_note": "Only the Frobenius diagnostic text was updated from U512 to checked U1024; no assertions or arithmetic changed.",
+  "extended_native_run": {
+    "source_commit": "612a426fc3b3cbe1f9a9d827cda251cc2fc04fdd",
+    "source_note": "The test source was committed unchanged after binary build. The example cycle count and documentation were edited after binary build; neither is compiled into this lib test binary.",
+    "binary_sha256": "0caa6267bf99498ca76a6a76f3e9696be11a95126ef76ebf4c63121c5d8b3282",
+    "cycles": 5,
+    "coefficients_verified_after_refresh_and_next_multiplication": 81920,
+    "cycle_completion_seconds": [
+      714.99650725,
+      1368.19413527,
+      2029.695403596,
+      2702.437037616,
+      3392.180162977
+    ],
+    "wall_seconds": 3393.1872575390003,
+    "peak_rss_kib": 9125340,
+    "user_seconds": 8012.614788,
+    "system_seconds": 20.587858,
+    "test_result": "1 passed; 0 failed",
+    "log": "native/five-cycle-run.log",
+    "process": "native/five-cycle-result.json"
+  }
 }
