@@ -249,8 +249,7 @@ fn test_custom_config_validation() {
     // Testing that it at least doesn't panic:
     let result = FHEConfig::custom(1024, vec![998244353], 998244354, 2);
     println!("t >= q accepted (known gap): {:?}", result.is_ok());
-    if result.is_ok() {
-        let cfg = result.unwrap();
+    if let Ok(cfg) = result {
         println!(
             "  delta = {} (should be 0, which breaks encryption)",
             cfg.delta()
@@ -485,7 +484,7 @@ fn test_dual_public_mode_roundtrip() {
     ];
 
     for (name, cfg) in &configs {
-        let ctx = match RNSFHEContext::try_new(&cfg) {
+        let ctx = match RNSFHEContext::try_new(cfg) {
             Ok(c) => c,
             Err(e) => {
                 println!("[SKIP] {}: {}", name, e);
@@ -535,7 +534,7 @@ fn test_auto_mode_roundtrip() {
     ];
 
     for (name, cfg) in &configs {
-        let ctx = match RNSFHEContext::try_new(&cfg) {
+        let ctx = match RNSFHEContext::try_new(cfg) {
             Ok(c) => c,
             Err(e) => {
                 println!("[SKIP] {}: {}", name, e);
@@ -1152,7 +1151,7 @@ fn test_mod_switch_down() {
             println!("  Decrypted after switch: {}", dec);
             println!("  Correct: {}", dec == m);
             // Mod switch may introduce small error — allow tolerance
-            let error = if dec > m { dec - m } else { m - dec };
+            let error = dec.abs_diff(m);
             assert!(
                 error <= 1,
                 "Mod switch error too large: {} (expected {}, got {})",
@@ -1245,11 +1244,7 @@ fn test_gso_fhe_mul_symmetric() {
     println!("  Mul depth: {}", ct_prod.noise.mul_depth);
 
     // Allow small error for GSO mul
-    let error = if dec > expected {
-        dec - expected
-    } else {
-        expected - dec
-    };
+    let error = dec.abs_diff(expected);
     println!("  Error: {}", error);
     assert!(error <= 2, "GSO mul error too large: {}", error);
 

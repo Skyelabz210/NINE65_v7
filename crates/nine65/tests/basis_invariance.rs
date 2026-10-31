@@ -263,7 +263,7 @@ fn basis_is_byte_identical_before_and_after_exact_division() {
         let (ctx, keys) = ctx_and_keys(&cfg);
         for (i, &d) in DIVISORS.iter().enumerate() {
             let m = (ctx.t - 1) / d;
-            let m = m.min(7).max(1);
+            let m = m.clamp(1, 7);
             let (ct, _big) = encrypt_divisible(&ctx, &keys, 1000 + i as u64, m, d);
 
             let before_bytes = basis_bytes(&ctx, &ct);
@@ -334,7 +334,7 @@ fn exact_division_recovers_the_quotient_on_every_parameter_set() {
     for (name, cfg) in parameter_sets() {
         let (ctx, keys) = ctx_and_keys(&cfg);
         for (i, &d) in DIVISORS.iter().enumerate() {
-            let m = ((ctx.t - 1) / d).min(7).max(1);
+            let m = ((ctx.t - 1) / d).clamp(1, 7);
             let (ct_big, big) = encrypt_divisible(&ctx, &keys, 2000 + i as u64, m, d);
             assert_eq!(big % d, 0, "test setup: d must divide M");
 

@@ -953,7 +953,7 @@ mod tests {
         cfg.security_bits = 0;
         cfg.name = "INSECURE coherent direct-slot end-to-end arithmetic fixture";
         let plan = PublicRefreshSourcePlan::new(&cfg, 8, 2, 4, 2).unwrap();
-        let mut rng = ShadowHarvester::with_seed(0x4453_5048_4153_45);
+        let mut rng = ShadowHarvester::with_seed(0x0044_5350_4841_5345);
         let (client, source_eval) = plan.generate_with_rng(&mut rng, 1 << 24).unwrap();
         cfg.n = 32;
         cfg.primes.push(957745601);

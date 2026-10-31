@@ -21,7 +21,7 @@ use nine65::params::secure_configs::SecureConfig;
 fn fault_coords(seed: u64, n_lanes: usize, n_coeffs: usize) -> (usize, usize, u64) {
     let lane = (seed.wrapping_mul(2654435761) as usize) % n_lanes;
     let coeff = (seed.wrapping_mul(40503).wrapping_add(7) as usize) % n_coeffs;
-    let bit = (seed.wrapping_mul(48271) % 30) as u64; // low 30 bits: always lane-legal
+    let bit = seed.wrapping_mul(48271) % 30; // low 30 bits: always lane-legal
     (lane, coeff, 1u64 << bit)
 }
 

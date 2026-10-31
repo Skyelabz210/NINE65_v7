@@ -269,23 +269,23 @@ fn dump_depth2_oracle_vectors_and_verify_rust_ground_truth() {
     // ---- assemble JSON fixture ----
     let mut json = String::new();
     json.push_str("{\n");
-    write!(json, "  \"n\": {},\n", ctx.n).unwrap();
-    write!(json, "  \"t\": {},\n", ctx.t).unwrap();
-    write!(
+    writeln!(json, "  \"n\": {},", ctx.n).unwrap();
+    writeln!(json, "  \"t\": {},", ctx.t).unwrap();
+    writeln!(
         json,
-        "  \"main_primes\": {},\n",
+        "  \"main_primes\": {},",
         json_u64_array(&ctx.config.primes)
     )
     .unwrap();
-    write!(
+    writeln!(
         json,
-        "  \"anchor_primes\": {},\n",
+        "  \"anchor_primes\": {},",
         json_u64_array(&ctx.dual_rns.anchor.primes)
     )
     .unwrap();
-    write!(
+    writeln!(
         json,
-        "  \"k_reconstruction_anchor_count\": {},\n",
+        "  \"k_reconstruction_anchor_count\": {},",
         ctx.dual_rns.anchor.primes.len().min(8)
     )
     .unwrap();

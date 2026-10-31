@@ -42,7 +42,7 @@ fn test_secure_256_mul_succeeds_with_10_anchor_basis() {
 fn test_five_anchor_basis_would_still_be_insufficient_for_secure_256() {
     let sc = SecureConfig::secure_256();
     let n = sc.config.n;
-    let log2_n = (usize::BITS - n.leading_zeros() - 1) as u32;
+    let log2_n = usize::BITS - n.leading_zeros() - 1;
     let q_bits = rns_product_bit_length(&sc.config.primes);
     let required_bits = log2_n + 2 * q_bits;
 
