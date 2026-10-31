@@ -41,13 +41,57 @@ class PublicRefreshLiftRefinementTests(unittest.TestCase):
                 count += 1
         self.assertEqual(count, 9603)
 
-    def test_direct_anchor_lookups_require_degree_96(self):
-        for target in (11, 36, 37):
+    def test_direct_and_factorized_anchor_lookups_require_degree_96(self):
+        for target in (4, 9, 11, 36, 37):
             values = tuple(y % target for y in range(97))
             polynomial = interpolation_values(values, 65537)
             self.assertEqual(len(polynomial) - 1, 96)
             for y, expected in enumerate(values):
                 self.assertEqual(polynomial_value(polynomial, y, 65537), expected)
+
+    def test_native_adjacency_difference_has_five_values_and_degree_four_correction(self):
+        p = 65537
+        left = 37 * pow(-36 * -37 * -38, -1, p) % p
+        right = 37 * pow(-35 * -36 * -37, -1, p) % p
+        alpha = (right - left) % p
+        beta = (left + 36 * alpha) % p
+        self.assertEqual((alpha, beta), (12783, 19490))
+        differences = set()
+        for y in range(97):
+            d = y % 36 - y % 37
+            differences.add(d)
+            corrected = (d + d * (d - 1) * (d - 2) * (alpha * d + beta)) % p
+            self.assertEqual(corrected, y // 36)
+        self.assertEqual(differences, {-36, -35, 0, 1, 2})
+        # This is a domain-specific consumer, not a generic modulo-37 map.
+        d = 3
+        self.assertNotEqual((d + d * (d - 1) * (d - 2) * (alpha * d + beta)) % p, d % 37)
+
+    def test_factorized_crt_still_needs_canonical_reduction_in_native_field(self):
+        unreduced_mismatches = []
+        for y in range(97):
+            r4, r9 = y % 4, y % 9
+            mixed = 9 * r4 + 4 * ((r9 * 7) % 9)
+            self.assertEqual(mixed % 36, y % 36)
+            if mixed % 65537 != y % 36:
+                unreduced_mismatches.append(y)
+        self.assertIn(2, unreduced_mismatches)  # 18+20=38; canonical r36=2.
+
+    def test_zero_defect_and_worker_reduction_do_not_create_plaintext_views(self):
+        # Authentic individual views from DIFFERENT Y values can satisfy a
+        # derived zero defect and the numerical interval simultaneously.
+        g, a = 4 % 36, 3 % 37
+        sheet = (g - a) % 37
+        self.assertEqual((a - g - 36 * sheet) % 37, 0)
+        self.assertEqual(project_lift(g, a, 36, 37, 96, 65537), 40)
+        # Equivalent Q-ciphertexts need not have equivalent projections at 37.
+        q, t, secret = 101, 7, 1
+        ciphertexts = ((42, 0), (43, 100))
+        phases = [(c0 + c1 * secret) % q for c0, c1 in ciphertexts]
+        self.assertEqual(phases, [42, 42])
+        self.assertEqual([(v * t + q // 2) // q % t for v in phases], [3, 3])
+        self.assertEqual([(c0 % 37 + c1 % 37 * secret) % 37
+                          for c0, c1 in ciphertexts], [5, 32])
 
     def test_general_conservative_flows_admit_exact_continuum_lift(self):
         cases = 0

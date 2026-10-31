@@ -160,6 +160,13 @@ the current ledger; it does not prove every alternate protected-view
 construction impossible. The field interpolation and this native preflight
 are executable regression checks.
 
+The [review of the linear, factorized, and defect paths](PROTECTED_VIEW_ADJACENCY_REVIEW.md)
+separates view production from consumption. With authentic views already
+available, it supplies a degree-4 native-field adjacency consumer using
+three products over two levels: its conditional bound is 622 bits. The
+existing slot return would raise that to 667 bits. Neither the conditional
+consumer nor a zero phase defect produces the missing protected views.
+
 The useful direction is therefore to retain the already-derived encrypted
 bounded lift and design a source-bound view producer/consumer with its own
 noise budget, or a jointly evaluated alternative. A clear box-ball oracle

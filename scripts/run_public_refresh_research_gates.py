@@ -19,12 +19,17 @@ PIPELINE = "phase_clock_compaction::public_bootstrap_pipeline"
 BATCHED = f"{PIPELINE}::outer_ring_return::sparse_source_encapsulation::batched_lift_phase"
 SOURCE = "ops::public_refresh_source::tests"
 CIRCUIT = "ops::public_refresh_circuit::tests"
+VIEWS = "ops::bounded_digit_circuit::protected_adjacent_view_tests"
 SUITES = {
     "production-boundary": (
         ("--lib", None, "params::secure_configs::tests::public_refresh_support_requires_sound_phase1", False),
         ("--lib", None, "ops::bootstrap::tests::public_phase1_is_typed_fail_closed", False),
     ),
     "research": (
+        ("--lib", None, f"{VIEWS}::linear_adjacency_consumes_compatible_views_but_cannot_change_plaintext_modulus", False),
+        ("--lib", None, f"{VIEWS}::derived_defect_is_tautological_and_zero_plaintext_need_not_have_zero_error", False),
+        ("--lib", None, f"{VIEWS}::bounded_adjacency_correction_evaluates_under_encryption_on_all_97_values", False),
+        ("--lib", None, f"{VIEWS}::native_adjacency_consumer_budget_is_conditional_and_does_not_fund_slot_return", False),
         ("--lib", None, f"{CIRCUIT}::native_plan_certifies_signed_carry_separately_from_residual_support", False),
         ("--lib", None, "ops::direct_slot_phase::tests::coherent_source_phases_extract_all_carries_and_restore_affine_message", False),
         ("--lib", None, "ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles", False),

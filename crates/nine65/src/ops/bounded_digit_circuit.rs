@@ -27,6 +27,10 @@ use crate::ops::rns_fhe::{RNSCiphertext, RNSFHEContext};
 use crate::ops::rns_galois::validate_main;
 use crate::params::is_prime;
 
+#[cfg(test)]
+#[path = "protected_adjacent_view_tests.rs"]
+mod protected_adjacent_view_tests;
+
 fn refused(reason: impl Into<String>) -> Nine65Error {
     Nine65Error::BootstrapFailed {
         reason: reason.into(),
