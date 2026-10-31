@@ -1,0 +1,110 @@
+{
+  "scope": "pinned authors' implementation; optimized primal Babai, no MITM",
+  "parameters": {
+    "n": 8192,
+    "positive": 48,
+    "negative": 48,
+    "primes": [
+      998244353,
+      985661441
+    ],
+    "purpose": "internal source candidate",
+    "q": 983930967448092673,
+    "error": {
+      "distribution": "CenteredBinomial",
+      "eta": 3
+    },
+    "samples": "infinity (conservative)",
+    "source_support_public": false,
+    "production_admitted": false
+  },
+  "source_lock": {
+    "repository": "https://github.com/identitymapping/enhanced_hybrid_attack",
+    "revision": "d60cac04dea5a397b8489cce7171f3fe38b277d8",
+    "files": {
+      "lattice-estimator/estimator/__init__.py": "e002e825d7245ce39c9a388456b9ffb2a3ec326d39c14c4efb8f964843907cdd",
+      "lattice-estimator/estimator/conf.py": "d326ee57db121ab64b44508a20a7176e56f9ec1b6c56c6d8a0666632e2a30f5f",
+      "lattice-estimator/estimator/cost.py": "2604c5a7f08e8898839d58a12f5a4efe3dd6480cefe8a871572e86bd301d3970",
+      "lattice-estimator/estimator/errors.py": "6ffd53eb82f27233c0dd3612b3b6139da28b48e5c128885cf1211e16154086f5",
+      "lattice-estimator/estimator/gb.py": "d785ee73ad40a470422d1ddc21d76e9f32b8ab1d85d88ae2539590b32bbd7edc",
+      "lattice-estimator/estimator/io.py": "316d7ec3c0371ebf4f83d301030a935e7b89774cf7366bc7d5237348124a057e",
+      "lattice-estimator/estimator/lwe.py": "2475fe006ad9961dc076dda91e85720ff87a0c05319097ae26e15e3f60fe0d4c",
+      "lattice-estimator/estimator/lwe_bkw.py": "6caf4a9a1301a173a3c28863c39535d13c4927d7e870f37d68ad4b09e894a9f2",
+      "lattice-estimator/estimator/lwe_dual.py": "872a8ebd1377ca64592e06032286283c3a24e1abd9a36a37e0fc64d252be1f74",
+      "lattice-estimator/estimator/lwe_guess.py": "c6668c45b75887c55cd4595681586a01de706031a30ce2a98f09114ee0d945dc",
+      "lattice-estimator/estimator/lwe_parameters.py": "72bde0ae3bdd89a4de02b249a1da144256b8d84d009b28b59bde6364b0bc8ecc",
+      "lattice-estimator/estimator/lwe_primal.py": "14bd0e68796a56bc8da574221d1756650a1d0a45d4c4f7b3f853a10b3f453a3f",
+      "lattice-estimator/estimator/nd.py": "bb14c12043be7311d9e777eb34945516e22f853bcf23d633f65f57193fdf1c2c",
+      "lattice-estimator/estimator/ntru.py": "1b3b6441ca96d9bd3938db57f76002d548dea836572dac1a463b7287201650d4",
+      "lattice-estimator/estimator/ntru_parameters.py": "4d4964ccaad895e5387606f8e7d6d069347736a39b432ffd88bdbee503764011",
+      "lattice-estimator/estimator/ntru_primal.py": "6abc65c706011d229aa108dfd9e805a49fe5686501b41074ea9c2572d0f6b0e5",
+      "lattice-estimator/estimator/prob.py": "75abb2c4a8cd197f9479510808913c4adc4a4306d023719458470b8501c26a84",
+      "lattice-estimator/estimator/reduction.py": "093a066e48ff52463b015fc8edf859fed797abb4d2926731ada66466c7fa3f20",
+      "lattice-estimator/estimator/schemes.py": "e0a50aee0d9da7cdbf526fb990e5e5d7e2bbd85041262e496b9c90529a5c50e2",
+      "lattice-estimator/estimator/simulator.py": "92973eb91856cb93851de3de016fc34c0be0f9d647ec04026f581203c8432213",
+      "lattice-estimator/estimator/sis.py": "6d162840e0b62d46612774945e9e7ad6c2bb5a2e8d1666468738374428e357ba",
+      "lattice-estimator/estimator/sis_lattice.py": "2581c71cd82f776b23601977c243e62f96b789a51da03c9dacfa306b13061d02",
+      "lattice-estimator/estimator/sis_parameters.py": "726ae10ed711cf8f9a42efa07b6d7ed00c67dbb28f0f4f97bbac3bb7c8d59b4c",
+      "lattice-estimator/estimator/util.py": "0da1e981bc56db2a008e46709d50b9b326673e04aecf406cb180fe18b437af01"
+    }
+  },
+  "driver_sha256": "08c0e45cfb1e08dc2c74e9f0afaa38de64a21a616b6b79f88146a9bac04ba914",
+  "profile_driver_sha256": "fa170d5c3d4ddd5f345b04288526f9d22c9e1483d97a93723eb34d081f72d593",
+  "required_tasks": [
+    [
+      "matzov_classical",
+      "baseline"
+    ],
+    [
+      "matzov_classical",
+      "enhanced"
+    ],
+    [
+      "adps16_quantum_lattice",
+      "baseline"
+    ],
+    [
+      "adps16_quantum_lattice",
+      "enhanced"
+    ]
+  ],
+  "results": [
+    {
+      "status": "error",
+      "exit_code": 1,
+      "transcript": "Timeout (0:01:00)!\nThread 0x00007f801766db80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007f801766db80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007f801766db80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 587 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTraceback (most recent call last):\n  File \"/driver/cram_hou_jiang_screen.py\", line 150, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/driver/cram_hou_jiang_screen.py\", line 115, in main\n    worker(args, lock)\n  File \"/driver/cram_hou_jiang_screen.py\", line 60, in worker\n    cost = LWE.primal_hybrid(params, babai=True, mitm=False, deg_ring=spec[\"n\"],\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 766, in __call__\n    _ = save_and_plot_profile(\n        ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 303, in save_and_plot_profile\n    os.makedirs(outdir, exist_ok=True)\n  File \"<frozen os>\", line 225, in makedirs\nOSError: [Errno 30] Read-only file system: 'saved_profiles'\n",
+      "model": "matzov_classical",
+      "variant": "baseline",
+      "elapsed_seconds": 239.8326971380011
+    },
+    {
+      "status": "error",
+      "exit_code": 1,
+      "transcript": "Timeout (0:01:00)!\nThread 0x00007f7b4615bb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 117 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007f7b4615bb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 587 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007f7b4615bb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 498 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTraceback (most recent call last):\n  File \"/driver/cram_hou_jiang_screen.py\", line 150, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/driver/cram_hou_jiang_screen.py\", line 115, in main\n    worker(args, lock)\n  File \"/driver/cram_hou_jiang_screen.py\", line 60, in worker\n    cost = LWE.primal_hybrid(params, babai=True, mitm=False, deg_ring=spec[\"n\"],\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 766, in __call__\n    _ = save_and_plot_profile(\n        ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 303, in save_and_plot_profile\n    os.makedirs(outdir, exist_ok=True)\n  File \"<frozen os>\", line 225, in makedirs\nOSError: [Errno 30] Read-only file system: 'saved_profiles'\n",
+      "model": "matzov_classical",
+      "variant": "enhanced",
+      "elapsed_seconds": 240.0387081650042
+    },
+    {
+      "status": "error",
+      "exit_code": 1,
+      "transcript": "Timeout (0:01:00)!\nThread 0x00007fc36ba70b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007fc36ba70b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 510 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007fc36ba70b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 510 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTraceback (most recent call last):\n  File \"/driver/cram_hou_jiang_screen.py\", line 150, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/driver/cram_hou_jiang_screen.py\", line 115, in main\n    worker(args, lock)\n  File \"/driver/cram_hou_jiang_screen.py\", line 60, in worker\n    cost = LWE.primal_hybrid(params, babai=True, mitm=False, deg_ring=spec[\"n\"],\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 766, in __call__\n    _ = save_and_plot_profile(\n        ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 303, in save_and_plot_profile\n    os.makedirs(outdir, exist_ok=True)\n  File \"<frozen os>\", line 225, in makedirs\nOSError: [Errno 30] Read-only file system: 'saved_profiles'\n",
+      "model": "adps16_quantum_lattice",
+      "variant": "enhanced",
+      "elapsed_seconds": 233.56051172500156
+    },
+    {
+      "status": "error",
+      "exit_code": 1,
+      "transcript": "Timeout (0:01:00)!\nThread 0x00007f2325fdbb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 117 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007f2325fdbb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 510 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTimeout (0:01:00)!\nThread 0x00007f2325fdbb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 60 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 115 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 150 in <module>\nTraceback (most recent call last):\n  File \"/driver/cram_hou_jiang_screen.py\", line 150, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"/driver/cram_hou_jiang_screen.py\", line 115, in main\n    worker(args, lock)\n  File \"/driver/cram_hou_jiang_screen.py\", line 60, in worker\n    cost = LWE.primal_hybrid(params, babai=True, mitm=False, deg_ring=spec[\"n\"],\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 766, in __call__\n    _ = save_and_plot_profile(\n        ^^^^^^^^^^^^^^^^^^^^^^\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 303, in save_and_plot_profile\n    os.makedirs(outdir, exist_ok=True)\n  File \"<frozen os>\", line 225, in makedirs\nOSError: [Errno 30] Read-only file system: 'saved_profiles'\n",
+      "model": "adps16_quantum_lattice",
+      "variant": "baseline",
+      "elapsed_seconds": 237.31425276999653
+    }
+  ],
+  "pinned_implementation_run_complete": false,
+  "corrected_theorem_3_1_validated": false,
+  "quantum_hybrid_coverage_complete": false,
+  "joint_key_security_proven": false,
+  "production_admitted": false
+}

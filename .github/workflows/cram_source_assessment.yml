@@ -1,7 +1,7 @@
 name: CRAM source attack assessment
 
-# One bounded research assessment when its driver changes. The wider CI
-# cost pause and all production correctness/security gates are unchanged.
+# Bounded research assessments. The authors' full native search is manual;
+# the wider CI cost pause and production correctness/security gates are unchanged.
 on:
   workflow_dispatch:
   push:
@@ -9,6 +9,8 @@ on:
     paths:
       - scripts/cram_sparse_source_screen.py
       - scripts/cram_gb_series.py
+      - scripts/cram_hou_jiang_screen.py
+      - scripts/security/hou_jiang_source_lock.json
       - .github/workflows/cram_source_assessment.yml
 
 permissions:
@@ -19,6 +21,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  hou-jiang-authors-implementation:
+    # Native full search is explicitly dispatched; fast driver checks remain
+    # in the normal refresh research workflow.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Fetch pinned authors' estimator
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: identitymapping/enhanced_hybrid_attack
+          ref: d60cac04dea5a397b8489cce7171f3fe38b277d8
+          path: research-hou-jiang
+          persist-credentials: false
+      - name: Verify revision and prepare evidence
+        env:
+          ASSESSMENT_DIR: ${{ runner.temp }}/cram-hou-jiang-results
+        run: |
+          test "$(git -C research-hou-jiang rev-parse HEAD)" = d60cac04dea5a397b8489cce7171f3fe38b277d8
+          mkdir -p "$ASSESSMENT_DIR"
+          chmod 777 "$ASSESSMENT_DIR"
+      - name: Compare baseline and enhanced authors' searches on the exact source
+        env:
+          ASSESSMENT_DIR: ${{ runner.temp }}/cram-hou-jiang-results
+        run: |
+          docker run --rm --network none --read-only --cap-drop ALL \
+            --security-opt no-new-privileges --pids-limit 128 --memory 6g --cpus 2 \
+            --tmpfs /tmp:rw,size=1g \
+            --tmpfs /home/sage/.sage:rw,uid=1000,gid=1000,size=128m \
+            -e OPENBLAS_NUM_THREADS=1 -e OMP_NUM_THREADS=1 \
+            -v "$PWD:/repo:ro" -v "$ASSESSMENT_DIR:/results:rw" \
+            sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb \
+            sage -python /repo/scripts/cram_hou_jiang_screen.py \
+              --source /repo/research-hou-jiang --output /results/assessment.json \
+              --timeout 1800 --jobs 2
+      - name: Retain complete or partial authors' implementation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: cram-hou-jiang-authors-implementation
+          path: ${{ runner.temp }}/cram-hou-jiang-results/*.json
+          if-no-files-found: warn
+          retention-days: 14
   attack-costs:
     runs-on: ubuntu-24.04
     timeout-minutes: 35

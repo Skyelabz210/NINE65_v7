@@ -1,0 +1,30 @@
+{
+  "repository": "https://github.com/identitymapping/enhanced_hybrid_attack",
+  "revision": "d60cac04dea5a397b8489cce7171f3fe38b277d8",
+  "files": {
+    "lattice-estimator/estimator/__init__.py": "e002e825d7245ce39c9a388456b9ffb2a3ec326d39c14c4efb8f964843907cdd",
+    "lattice-estimator/estimator/conf.py": "d326ee57db121ab64b44508a20a7176e56f9ec1b6c56c6d8a0666632e2a30f5f",
+    "lattice-estimator/estimator/cost.py": "2604c5a7f08e8898839d58a12f5a4efe3dd6480cefe8a871572e86bd301d3970",
+    "lattice-estimator/estimator/errors.py": "6ffd53eb82f27233c0dd3612b3b6139da28b48e5c128885cf1211e16154086f5",
+    "lattice-estimator/estimator/gb.py": "d785ee73ad40a470422d1ddc21d76e9f32b8ab1d85d88ae2539590b32bbd7edc",
+    "lattice-estimator/estimator/io.py": "316d7ec3c0371ebf4f83d301030a935e7b89774cf7366bc7d5237348124a057e",
+    "lattice-estimator/estimator/lwe.py": "2475fe006ad9961dc076dda91e85720ff87a0c05319097ae26e15e3f60fe0d4c",
+    "lattice-estimator/estimator/lwe_bkw.py": "6caf4a9a1301a173a3c28863c39535d13c4927d7e870f37d68ad4b09e894a9f2",
+    "lattice-estimator/estimator/lwe_dual.py": "872a8ebd1377ca64592e06032286283c3a24e1abd9a36a37e0fc64d252be1f74",
+    "lattice-estimator/estimator/lwe_guess.py": "c6668c45b75887c55cd4595681586a01de706031a30ce2a98f09114ee0d945dc",
+    "lattice-estimator/estimator/lwe_parameters.py": "72bde0ae3bdd89a4de02b249a1da144256b8d84d009b28b59bde6364b0bc8ecc",
+    "lattice-estimator/estimator/lwe_primal.py": "14bd0e68796a56bc8da574221d1756650a1d0a45d4c4f7b3f853a10b3f453a3f",
+    "lattice-estimator/estimator/nd.py": "bb14c12043be7311d9e777eb34945516e22f853bcf23d633f65f57193fdf1c2c",
+    "lattice-estimator/estimator/ntru.py": "1b3b6441ca96d9bd3938db57f76002d548dea836572dac1a463b7287201650d4",
+    "lattice-estimator/estimator/ntru_parameters.py": "4d4964ccaad895e5387606f8e7d6d069347736a39b432ffd88bdbee503764011",
+    "lattice-estimator/estimator/ntru_primal.py": "6abc65c706011d229aa108dfd9e805a49fe5686501b41074ea9c2572d0f6b0e5",
+    "lattice-estimator/estimator/prob.py": "75abb2c4a8cd197f9479510808913c4adc4a4306d023719458470b8501c26a84",
+    "lattice-estimator/estimator/reduction.py": "093a066e48ff52463b015fc8edf859fed797abb4d2926731ada66466c7fa3f20",
+    "lattice-estimator/estimator/schemes.py": "e0a50aee0d9da7cdbf526fb990e5e5d7e2bbd85041262e496b9c90529a5c50e2",
+    "lattice-estimator/estimator/simulator.py": "92973eb91856cb93851de3de016fc34c0be0f9d647ec04026f581203c8432213",
+    "lattice-estimator/estimator/sis.py": "6d162840e0b62d46612774945e9e7ad6c2bb5a2e8d1666468738374428e357ba",
+    "lattice-estimator/estimator/sis_lattice.py": "2581c71cd82f776b23601977c243e62f96b789a51da03c9dacfa306b13061d02",
+    "lattice-estimator/estimator/sis_parameters.py": "726ae10ed711cf8f9a42efa07b6d7ed00c67dbb28f0f4f97bbac3bb7c8d59b4c",
+    "lattice-estimator/estimator/util.py": "0da1e981bc56db2a008e46709d50b9b326673e04aecf406cb180fe18b437af01"
+  }
+}

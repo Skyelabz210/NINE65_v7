@@ -80,9 +80,14 @@ setup. These tests are registered in the refresh research gate runner.
 The previous external sparse-source results and deterministic Q650 screen
 remain evidence for their stated attack models. They are not joint/KDM
 reductions for this graph. The new inventory grants no production security
-status, makes no quantum-security claim, and cannot fill missing Hou/Jiang
-attack coverage. No specialist acceptance or new external-estimator run is
-claimed here. The current environment has no cached Sage estimator image.
+status and makes no quantum-security claim. A
+[follow-up assessment](HOU_JIANG_ASSESSMENT.md) now runs the newly located
+authors' implementation on the exact source under classical and quantum-
+lattice cost models, with all four results archived. Conformity to the
+corrected theorem and complete quantum-hybrid coverage remain unestablished.
+The [public-evaluation reduction](PUBLIC_REFRESH_SECURITY_REDUCTION.md)
+identifies the separate joint-setup premise; no specialist acceptance or
+proof of that premise is claimed.
 
 The owner selected canonical plaintext m as the native root quantity. The
 [implemented canonical-root binding](CANONICAL_PLAINTEXT_ROOT.md) uses the

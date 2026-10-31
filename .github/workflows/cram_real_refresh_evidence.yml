@@ -58,6 +58,7 @@ jobs:
           test_compact_phase_clock_budget
           test_outer_ring_return_budget
           test_source_encapsulation_budget
+          test_cram_hou_jiang_screen
 
       - name: Require production public refresh to remain typed fail-closed
         run: >-
