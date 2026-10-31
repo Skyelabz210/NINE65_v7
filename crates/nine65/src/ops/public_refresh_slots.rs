@@ -51,6 +51,14 @@ pub(crate) struct SlotReturnKeys {
     conjugate: PreparedRNSGaloisKey,
 }
 
+impl SlotReturnKeys {
+    pub(crate) fn published_ciphertexts(&self) -> usize {
+        self.baby_step.published_ciphertexts()
+            + self.giant_step.published_ciphertexts()
+            + self.conjugate.published_ciphertexts()
+    }
+}
+
 // Values are cyclic-NTT transformed, psi-twisted, MONTGOMERY residues.
 // Plaintext NTT diagonals are standard; their Montgomery product is standard.
 struct CachedBaby {

@@ -177,8 +177,10 @@ restoration query. The linked review records the proof and regression checks.
 The useful direction is therefore to retain the already-derived encrypted
 bounded lift and design a source-bound view producer/consumer with its own
 noise budget, or a jointly evaluated alternative. A clear box-ball oracle
-cannot fill that role. The CRAM root's full state is also distinct from K;
-its approved source relation must be proved before attaching root authority.
+cannot fill that role. The owner-selected canonical plaintext root is distinct
+from K. Its [implemented producer binding](CANONICAL_PLAINTEXT_ROOT.md) now
+preserves the same root capability through refresh; independent protected
+residue emission remains a separate operation.
 The sparse/joint-key security admission remains a separate obligation.
 
 ## Verification

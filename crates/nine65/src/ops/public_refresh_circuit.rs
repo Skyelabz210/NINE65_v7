@@ -19,6 +19,9 @@ use crate::entropy::{FheRng, SecureRng};
 use crate::errors::{Nine65Error, Nine65Result};
 use crate::params::FHEConfig;
 
+#[path = "public_refresh_key_graph.rs"]
+pub mod key_graph;
+
 fn refused(reason: impl Into<String>) -> Nine65Error {
     Nine65Error::BootstrapFailed {
         reason: reason.into(),
@@ -28,6 +31,7 @@ fn refused(reason: impl Into<String>) -> Nine65Error {
 /// Deterministic bounds computed before any key material is allocated.
 #[derive(Clone, Debug)]
 pub struct PublicRefreshCircuitCertificate {
+    pub key_graph: key_graph::KeyGraphCertificate,
     pub ring_degree: usize,
     pub work_degree: usize,
     /// Residual rho support used by G/H, not the quotient K radius.
@@ -260,6 +264,7 @@ impl PublicRefreshCircuitPlan {
             ));
         }
         let certificate = PublicRefreshCircuitCertificate {
+            key_graph: key_graph::KeyGraphCertificate::new(&source, &high, baby),
             ring_degree: high.n,
             work_degree: source.work_config().n,
             carry_radius: radius,
@@ -346,6 +351,17 @@ impl PublicRefreshCircuitPlan {
         let inverse = PublicSlotReturn::new(&low, self.source.source_config().n)?
             .generate_keys(&secret, rng)?;
         let return_key = PublicRefreshReturn::generate_with_rng(&client, &low, &secret, 3, rng)?;
+        let [public, work_relin, source_switch] = source.published_ciphertexts();
+        let (phase_bank, phase_galois) = phase.published_ciphertexts();
+        self.certificate.key_graph.verify_generated_counts([
+            public,
+            work_relin,
+            source_switch,
+            phase_bank,
+            relin.published_ciphertexts(),
+            phase_galois + inverse.published_ciphertexts(),
+            return_key.published_ciphertexts(),
+        ])?;
         drop(secret);
         let evaluator = PublicRefreshCircuit {
             plan: self,

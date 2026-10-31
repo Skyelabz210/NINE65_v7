@@ -88,6 +88,32 @@ struct Family {
     id: [u8; 32],
 }
 
+/// Ciphertext-backed authority for the canonical plaintext polynomial.
+/// Each coefficient m_j is in [0,t); S8 roles denote m_j modulo their lane.
+/// Only the sealed ciphertext producers can mint this capability. It is not
+/// a plaintext digest, a set of exposed residues, or a legacy phase Root211.
+/// Independent protected residue emission is a separate operation.
+#[derive(Debug)]
+pub struct CanonicalPlaintextRoot {
+    identity: [u8; 32],
+    plaintext_modulus: u64,
+}
+
+impl CanonicalPlaintextRoot {
+    pub fn identity(&self) -> &[u8; 32] {
+        &self.identity
+    }
+    pub fn logical_moduli(&self) -> &'static [u64; 8] {
+        &[2, 3, 5, 7, 11, 13, 17, 19]
+    }
+    pub fn plaintext_modulus(&self) -> u64 {
+        self.plaintext_modulus
+    }
+    pub fn coefficient_upper_bound(&self) -> u64 {
+        self.plaintext_modulus - 1
+    }
+}
+
 /// Full-polynomial working ciphertext with immutable producer-issued history.
 /// No API wraps caller-provided ciphertexts or bounds as trusted inputs.
 ///
@@ -101,9 +127,13 @@ pub struct SourceWorkCiphertext {
     bound: U512,
     family: Arc<Family>,
     lineage: [u8; 32],
+    root: Arc<CanonicalPlaintextRoot>,
 }
 
 impl SourceWorkCiphertext {
+    pub fn root(&self) -> &CanonicalPlaintextRoot {
+        &self.root
+    }
     pub fn scaled_error_bound(&self) -> U512 {
         self.bound
     }
@@ -115,6 +145,7 @@ impl SourceWorkCiphertext {
 /// Proof record produced alongside the exact immutable source ciphertext.
 #[derive(Clone)]
 pub struct SourceCertificate {
+    root: Arc<CanonicalPlaintextRoot>,
     input_lineage: [u8; 32],
     lineage: [u8; 32],
     family_id: [u8; 32],
@@ -128,6 +159,12 @@ pub struct SourceCertificate {
 }
 
 impl SourceCertificate {
+    pub fn root(&self) -> &CanonicalPlaintextRoot {
+        &self.root
+    }
+    pub(crate) fn root_capability(&self) -> Arc<CanonicalPlaintextRoot> {
+        self.root.clone()
+    }
     pub fn input_lineage(&self) -> &[u8; 32] {
         &self.input_lineage
     }
@@ -265,6 +302,14 @@ impl PublicRefreshSourcePlan {
 }
 
 impl PublicRefreshSourceEvaluator {
+    pub(crate) fn published_ciphertexts(&self) -> [usize; 3] {
+        [
+            1,
+            self.relin.rlk.iter().map(Vec::len).sum(),
+            self.source_switch.rlk.iter().map(Vec::len).sum(),
+        ]
+    }
+
     pub fn plan(&self) -> &PublicRefreshSourcePlan {
         &self.family.plan
     }
@@ -303,11 +348,21 @@ impl PublicRefreshSourceEvaluator {
         parents: &[[u8; 32]],
     ) -> SourceWorkCiphertext {
         let lineage = digest(&self.family.id, operation, parents, &raw, bound);
+        // Identity binds a producer-issued value occurrence, not the clear
+        // plaintext. Equal messages encrypted twice need not share identity.
+        let mut root_hash = Sha256::new();
+        root_hash.update(b"NINE65-canonical-plaintext-root-v1");
+        root_hash.update(lineage);
+        let root = Arc::new(CanonicalPlaintextRoot {
+            identity: root_hash.finalize().into(),
+            plaintext_modulus: self.family.work.t,
+        });
         SourceWorkCiphertext {
             raw,
             bound,
             family: self.family.clone(),
             lineage,
+            root,
         }
     }
 
@@ -374,6 +429,7 @@ impl PublicRefreshSourceEvaluator {
             source_bound,
         );
         let certificate = SourceCertificate {
+            root: input.root.clone(),
             input_lineage: input.lineage,
             lineage,
             family_id: self.family.id,
@@ -403,13 +459,18 @@ impl PublicRefreshSourceEvaluator {
         if !Arc::ptr_eq(&self.family, &source.family)
             || proof.family_id() != &self.family.id
             || proof.source_lineage() != source.certificate.lineage()
+            || !std::ptr::eq(proof.root(), source.certificate.root())
         {
             return Err(SourceError::DomainMismatch);
         }
         let (raw, bound) = proof.into_parts();
         self.plan().work_noise.admit(bound)?;
         crate::ops::rns_galois::validate_main(&self.family.work, &raw)?;
-        Ok(self.output(raw, bound, b"refresh-return", &[source.certificate.lineage]))
+        let mut output = self.output(raw, bound, b"refresh-return", &[source.certificate.lineage]);
+        // Commit the new representation and the SAME value authority together.
+        // No caller can observe the temporary object before this assignment.
+        output.root = source.certificate.root.clone();
+        Ok(output)
     }
 }
 

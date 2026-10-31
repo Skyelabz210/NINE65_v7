@@ -138,6 +138,37 @@ fn setup(
     let (client, evaluator) = plan().generate_with_rng(&mut rng).unwrap();
     (client, evaluator, rng)
 }
+
+#[test]
+fn public_refresh_preserves_plaintext_root_across_representation_changes_and_forks() {
+    let (client, mut evaluator, mut rng) = setup(0x524f_4f54_4341_4e4f);
+    let a = evaluator.encrypt_with_rng(&[7; 8], &mut rng).unwrap();
+    let b = evaluator.encrypt_with_rng(&[7; 8], &mut rng).unwrap();
+    assert_ne!(a.root().identity(), b.root().identity());
+    let sum = evaluator.add(&a, &b).unwrap();
+    assert_ne!(sum.root().identity(), a.root().identity());
+    let identity = *sum.root().identity();
+    let before = *sum.lineage();
+    let next = evaluator.refresh(&sum).unwrap();
+    assert_eq!(next.root().identity(), &identity);
+    assert!(std::ptr::eq(next.root(), sum.root()));
+    assert_ne!(next.lineage(), &before);
+    assert_eq!(client.decrypt_work(&next).unwrap(), vec![14; 8]);
+    let fork = evaluator.refresh(&sum).unwrap();
+    assert!(std::ptr::eq(fork.root(), sum.root()));
+    let successor = evaluator.refresh(&next).unwrap();
+    assert_eq!(successor.root().identity(), &identity);
+    assert_eq!(client.decrypt_work(&successor).unwrap(), vec![14; 8]);
+    let product = evaluator.multiply(&successor, &fork).unwrap();
+    assert_ne!(product.root().identity(), &identity);
+    assert_eq!(product.root().plaintext_modulus(), P);
+    assert_eq!(
+        product.root().logical_moduli(),
+        &[2, 3, 5, 7, 11, 13, 17, 19]
+    );
+    assert_eq!(product.root().coefficient_upper_bound(), P - 1);
+    assert_eq!(evaluator.real_refreshes(), 3);
+}
 // Plaintext oracle uses independent schoolbook negacyclic arithmetic.
 fn multiply(a: &[u64], b: &[u64]) -> Vec<u64> {
     assert_eq!(a.len(), b.len());

@@ -130,7 +130,14 @@ self-relinearization and Galois keys. Neither the parameter screen nor the
 native execution is a proof of their joint/KDM security. Merely rotating the
 final work key would not remove the self-key relationships.
 
-The owner-required CRAM integration also remains distinct. Section7 of the
+Update 2026-10-31: the owner selected canonical plaintext m as the native
+authoritative root. The [implemented canonical-root provider](../2026-10-31/CANONICAL_PLAINTEXT_ROOT.md)
+now binds the actual encrypted carrier to an immutable logical S8 root and
+preserves that capability atomically with the returned work state. This closes
+the native canonical-value binding within the research API. Independent
+protected remainder emission and legacy phase-integer Root211 remain separate.
+
+The legacy phase-root CRAM integration remains distinct. Section7 of the
 [root contract](../2026-10-03/PRIMING_ROOT_CONTRACT.md) leaves
 `OWNER-LIVE2-11` unresolved and forbids silently substituting a reference
 profile. Existing test-only Root211 denotes the full integer `S=g+q*K`, not

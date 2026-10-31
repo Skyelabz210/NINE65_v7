@@ -27,6 +27,7 @@ fn checked(value: Option<U1024>) -> Nine65Result<U1024> {
 
 /// Only the checked public return evaluator constructs this capability.
 pub(crate) struct ReturnedWorkProof {
+    root: std::sync::Arc<super::public_refresh_source::CanonicalPlaintextRoot>,
     raw: RNSCiphertext,
     bound: U512,
     family: [u8; 32],
@@ -34,6 +35,9 @@ pub(crate) struct ReturnedWorkProof {
 }
 
 impl ReturnedWorkProof {
+    pub(crate) fn root(&self) -> &super::public_refresh_source::CanonicalPlaintextRoot {
+        &self.root
+    }
     pub(crate) fn family_id(&self) -> &[u8; 32] {
         &self.family
     }
@@ -53,6 +57,10 @@ pub(crate) struct PublicRefreshReturn {
 }
 
 impl PublicRefreshReturn {
+    pub(crate) fn published_ciphertexts(&self) -> usize {
+        self.switch.rlk.iter().map(Vec::len).sum()
+    }
+
     /// Key-holder setup. The public object retains neither input secret.
     pub(crate) fn generate_with_rng<R: FheRng>(
         client: &PublicRefreshSourceClient,
@@ -145,6 +153,7 @@ impl PublicRefreshReturn {
                 .collect(),
         };
         Ok(ReturnedWorkProof {
+            root: source.certificate().root_capability(),
             raw: RNSCiphertext {
                 c0: project(switched.c0),
                 c1: project(switched.c1),

@@ -1,5 +1,13 @@
 # S00 draft: intact priming root and bounded phase coordinates
 
+Native refresh update, 2026-10-31: the owner selected **canonical plaintext m**
+as the authoritative root quantity; noise/sheet coordinates are dependent
+representation state. The [native implementation and producer relation](../2026-10-31/CANONICAL_PLAINTEXT_ROOT.md)
+bind that root to the actual encrypted carrier and preserve it through refresh.
+This supplies a specific native canonical-value profile. The legacy phase-
+integer `Root211` and protected residue-emission APIs below remain separate;
+they are not silently relabeled by this update.
+
 Status: **reference-contract draft; S00 is not accepted**. On 2026-10-30, the
 owner selected the winding-successor direction for the live 2/11 sister-tray
 relation. The remaining live profile bindings remain unresolved. The reference profiles below do

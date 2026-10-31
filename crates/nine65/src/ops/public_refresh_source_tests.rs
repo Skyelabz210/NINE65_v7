@@ -140,6 +140,7 @@ fn source_preparation_tracks_full_polynomial_history_and_ring_embedding() {
         let prepared = evaluator.prepare(input).unwrap();
         observe_source(&client, &prepared, &embedded(expected, 32));
         assert_eq!(prepared.certificate.input_lineage(), input.lineage());
+        assert!(std::ptr::eq(prepared.certificate().root(), input.root()));
         assert_eq!(prepared.certificate.input_bound(), input.bound);
         assert_eq!(prepared.certificate.embedding_stride(), 4);
         assert_eq!(prepared.certificate.modulus_drop_bounds().len(), 2);

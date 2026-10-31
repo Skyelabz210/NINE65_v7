@@ -604,6 +604,12 @@ impl std::fmt::Debug for PreparedHybridGadgetKey {
 }
 
 impl PreparedHybridGadgetKey {
+    /// Number of public RLWE samples; transformed caches add no new samples.
+    #[cfg(any(test, feature = "allow_insecure"))]
+    pub(crate) fn published_ciphertexts(&self) -> usize {
+        self.key_ntt.iter().map(Vec::len).sum()
+    }
+
     /// Payload bytes held by the transformed key and its two twist tables.
     pub fn coefficient_storage_bytes(&self) -> usize {
         let terms: usize = self.digits_per_lane.iter().sum();

@@ -20,12 +20,17 @@ BATCHED = f"{PIPELINE}::outer_ring_return::sparse_source_encapsulation::batched_
 SOURCE = "ops::public_refresh_source::tests"
 CIRCUIT = "ops::public_refresh_circuit::tests"
 VIEWS = "ops::bounded_digit_circuit::protected_adjacent_view_tests"
+KEY_GRAPH = "ops::public_refresh_circuit::key_graph::tests"
 SUITES = {
     "production-boundary": (
         ("--lib", None, "params::secure_configs::tests::public_refresh_support_requires_sound_phase1", False),
         ("--lib", None, "ops::bootstrap::tests::public_phase1_is_typed_fail_closed", False),
     ),
     "research": (
+        ("--lib", None, f"{CIRCUIT}::public_refresh_preserves_plaintext_root_across_representation_changes_and_forks", False),
+        ("--lib", None, f"{KEY_GRAPH}::native_inventory_is_exact_and_requires_joint_key_review", False),
+        ("--lib", None, f"{KEY_GRAPH}::publication_fingerprint_binds_order_and_key_schedule", False),
+        ("--lib", None, f"{KEY_GRAPH}::breaking_return_cycle_still_leaves_self_key_dependencies", False),
         ("--lib", None, f"{CIRCUIT}::fused_adjacent_restore_covers_every_native_lift_and_rejects_aliases", False),
         ("--lib", None, f"{CIRCUIT}::fused_native_lift_query_funds_slot_return_and_next_refresh", False),
         ("--lib", None, f"{VIEWS}::linear_adjacency_consumes_compatible_views_but_cannot_change_plaintext_modulus", False),

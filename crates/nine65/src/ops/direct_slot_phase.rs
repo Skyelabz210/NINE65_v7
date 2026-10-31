@@ -432,6 +432,15 @@ impl DirectSlotPhases {
 }
 
 impl DirectSlotPhaseKey {
+    pub(crate) fn published_ciphertexts(&self) -> (usize, usize) {
+        (
+            self.high.len() + self.low.len(),
+            self.giant
+                .as_ref()
+                .map_or(0, PreparedRNSGaloisKey::published_ciphertexts),
+        )
+    }
+
     pub(crate) fn generate_with_rng<R: FheRng>(
         client: &PublicRefreshSourceClient,
         high: &RNSFHEContext,

@@ -221,6 +221,16 @@ fn public_return_rejects_foreign_family_and_stale_source_lineage() {
         .encrypt_with_rng(&fixture.expected, &mut fixture.rng)
         .unwrap();
     let second_source = fixture.evaluator.prepare(&second_work).unwrap();
+    let mut false_root = fixture.proof();
+    false_root.root = second_source.certificate().root_capability();
+    // Family and representation lineage still match the original source.
+    // A root from another value occurrence must not authorize this return.
+    assert!(matches!(
+        fixture
+            .evaluator
+            .accept_refresh(&fixture.source, false_root),
+        Err(SourceError::DomainMismatch)
+    ));
     assert!(matches!(
         fixture
             .evaluator

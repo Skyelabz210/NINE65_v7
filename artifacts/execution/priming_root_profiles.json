@@ -4,6 +4,21 @@
   "status": "reference_contract_draft",
   "s00_accepted": false,
   "dependent_integration_authorized": false,
+  "owner_live_canonical_plaintext_root": {
+    "status": "implemented_local_producer_binding_research_only",
+    "owner_selected_quantity": "canonical coefficientwise plaintext m in [0,65536]",
+    "logical_moduli": [2, 3, 5, 7, 11, 13, 17, 19],
+    "plaintext_modulus": 65537,
+    "coefficient_upper_bound": 65536,
+    "refresh_relation": "m_B=m_A; identical immutable root capability; new ciphertext lineage",
+    "producer": "nine65::ops::public_refresh_source::CanonicalPlaintextRoot",
+    "binding_consumed_at": "source preparation, return proof, refresh acceptance",
+    "independent_encrypted_remainder_outputs": false,
+    "legacy_phase_root211_produced": false,
+    "arithmetic_epoch_or_K_retained": false,
+    "production_security_admitted": false,
+    "proof": "docs/execution/2026-10-31/CANONICAL_PLAINTEXT_ROOT.md"
+  },
   "native_carry_starlift_review": {
     "status": "native_signed_support_proved_protected_views_pending",
     "certified_residual_interval": [-49, 49],

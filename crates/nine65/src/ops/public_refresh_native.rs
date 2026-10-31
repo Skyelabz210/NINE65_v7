@@ -91,6 +91,8 @@ fn run_public_api(work_n: usize, weight: usize, baby: usize, radius: usize, cycl
     input = evaluator.multiply(&input, &input).unwrap();
     expected = square(&expected, 65537);
     for cycle in 0..cycles {
+        let value_identity = *input.root().identity();
+        let representation_lineage = *input.lineage();
         input = evaluator.refresh_with_progress(&input, &mut |stage, done, total| {
             if done == total || done % 8 == 0 {
                 eprintln!("public-refresh N={work_n} cycle={cycle} {stage} {done}/{total} elapsed={:?}", start.elapsed());
@@ -101,12 +103,17 @@ fn run_public_api(work_n: usize, weight: usize, baby: usize, radius: usize, cycl
             expected,
             "refresh cycle {cycle}"
         );
+        assert_eq!(input.root().identity(), &value_identity);
+        assert_ne!(input.lineage(), &representation_lineage);
+        assert_eq!(input.root().logical_moduli(), &[2, 3, 5, 7, 11, 13, 17, 19]);
+        assert_eq!(input.root().coefficient_upper_bound(), 65536);
         assert_eq!(
             input.scaled_error_bound(),
             evaluator.certificate().returned_scaled_error_bound
         );
         assert_eq!(evaluator.real_refreshes(), cycle as u64 + 1);
         input = evaluator.multiply(&input, &input).unwrap();
+        assert_ne!(input.root().identity(), &value_identity);
         expected = square(&expected, 65537);
         assert_eq!(
             client.decrypt_work(&input).unwrap(),

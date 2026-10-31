@@ -35,6 +35,11 @@ pub struct PreparedRNSGaloisKey {
 }
 
 impl PreparedRNSGaloisKey {
+    #[cfg(any(test, feature = "allow_insecure"))]
+    pub(crate) fn published_ciphertexts(&self) -> usize {
+        self.switch.published_ciphertexts()
+    }
+
     pub fn coefficient_storage_bytes(&self) -> usize {
         self.switch.coefficient_storage_bytes()
     }
