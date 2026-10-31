@@ -39,6 +39,64 @@ fn plan() -> PublicRefreshCircuitPlan {
 }
 
 #[test]
+fn fused_adjacent_restore_covers_every_native_lift_and_rejects_aliases() {
+    let cert =
+        AdjacentLiftRestorationCertificate::new(P, 48, U1024::from_u64(7), U1024::from_u64(11))
+            .unwrap();
+    assert_eq!(cert.output_error_bound, U1024::from_u64(18));
+    let ctx = RNSFHEContext::try_new(&config(8, &WORK[..2], P)).unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x4655_5345_444c_4946);
+    let keys = ctx.generate_keys(&mut rng);
+    for k in -48i64..=48 {
+        let y = (k + 48) as u64;
+        let g = y % 36;
+        let a = y % 37;
+        let sheet = (g + 37 - a) % 37;
+        assert_eq!(g + 36 * sheet, y);
+        let carry = ctx.encrypt_with_rng(k.rem_euclid(P as i64) as u64, &keys.public_key, &mut rng);
+        for m in [0, 1, P / 2, P - 1] {
+            let affine_value = (m as i64 - k).rem_euclid(P as i64) as u64;
+            let affine = ctx.encrypt_with_rng(affine_value, &keys.public_key, &mut rng);
+            let output = cert.apply(&ctx, &affine, &carry);
+            assert_eq!(ctx.decrypt(&output, &keys.secret_key), m);
+        }
+    }
+    // The optimizer must prove the declared StarLift interval before using
+    // that identity, even though native field addition would still execute.
+    assert!(AdjacentLiftRestorationCertificate::new(P, 666, U1024::ZERO, U1024::ZERO).is_err());
+    assert!(AdjacentLiftRestorationCertificate::new(97, 49, U1024::ZERO, U1024::ZERO).is_err());
+    assert!(
+        AdjacentLiftRestorationCertificate::new(P, u64::MAX, U1024::ZERO, U1024::ZERO).is_err()
+    );
+}
+
+#[test]
+fn fused_native_lift_query_funds_slot_return_and_next_refresh() {
+    let native = PublicRefreshCircuitPlan::native_research(4 << 30).unwrap();
+    let cert = native.certificate();
+    assert_eq!(cert.lift_restoration.shift, 48);
+    assert_eq!(cert.lift_restoration.shifted_upper_bound, 96);
+    assert_eq!(cert.lift_restoration.capacity, 1332);
+    assert_eq!(cert.lift_restoration.additional_ciphertext_products, 0);
+    let half = U1024::checked_product_u64s(&BOOT)
+        .unwrap()
+        .div_mod_u64(P)
+        .unwrap()
+        .0
+        .shr1();
+    assert!(cert.lift_restoration.output_error_bound < half);
+    assert!(cert.restored_error_bound < half);
+    assert!(cert.next_square_source_radius <= 49);
+    eprintln!(
+        "fused lift: {} bits; after slot return: {} bits; half-Delta: {}; next-square radius: {}",
+        cert.lift_restoration.output_error_bound.bit_length(),
+        cert.restored_error_bound.bit_length(),
+        half.bit_length(),
+        cert.next_square_source_radius
+    );
+}
+
+#[test]
 fn native_plan_certifies_signed_carry_separately_from_residual_support() {
     let native = PublicRefreshCircuitPlan::native_research(4 << 30).unwrap();
     assert_eq!(native.certificate().carry_radius, 49);

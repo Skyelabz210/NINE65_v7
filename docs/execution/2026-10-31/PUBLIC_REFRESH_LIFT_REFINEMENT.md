@@ -167,6 +167,13 @@ three products over two levels: its conditional bound is 622 bits. The
 existing slot return would raise that to 667 bits. Neither the conditional
 consumer nor a zero phase defect produces the missing protected views.
 
+For message restoration alone, the implemented plan now eliminates the
+complete round-trip `g+36*kappa-48=K` and consumes the already-derived K.
+Its explicit certificate charges 517 bits before slot return and 562 after,
+below 633, and certifies radius 48 for the next square/refresh. Independent
+remainder outputs remain a separate operation; they are not needed by this
+restoration query. The linked review records the proof and regression checks.
+
 The useful direction is therefore to retain the already-derived encrypted
 bounded lift and design a source-bound view producer/consumer with its own
 noise budget, or a jointly evaluated alternative. A clear box-ball oracle

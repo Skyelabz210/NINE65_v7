@@ -26,6 +26,8 @@ SUITES = {
         ("--lib", None, "ops::bootstrap::tests::public_phase1_is_typed_fail_closed", False),
     ),
     "research": (
+        ("--lib", None, f"{CIRCUIT}::fused_adjacent_restore_covers_every_native_lift_and_rejects_aliases", False),
+        ("--lib", None, f"{CIRCUIT}::fused_native_lift_query_funds_slot_return_and_next_refresh", False),
         ("--lib", None, f"{VIEWS}::linear_adjacency_consumes_compatible_views_but_cannot_change_plaintext_modulus", False),
         ("--lib", None, f"{VIEWS}::derived_defect_is_tautological_and_zero_plaintext_need_not_have_zero_error", False),
         ("--lib", None, f"{VIEWS}::bounded_adjacency_correction_evaluates_under_encryption_on_all_97_values", False),

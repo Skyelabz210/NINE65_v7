@@ -41,9 +41,58 @@ pub struct PublicRefreshCircuitCertificate {
     pub inverse_galois_calls: usize,
     pub phase_error_bound: U1024,
     pub carry_error_bound: U1024,
+    /// Fused 36/37 lift round-trip, before slot return. No remainder LUTs.
+    pub lift_restoration: AdjacentLiftRestorationCertificate,
     pub restored_error_bound: U1024,
     pub returned_scaled_error_bound: U512,
     pub next_square_source_radius: u64,
+}
+
+/// Certificate for the specific query affine + (g + 36*kappa - shift).
+/// Given same-source views of Y=K+shift, the parenthesis is exactly K.
+/// The compiler consumes the already-derived encrypted K directly. This
+/// certificate does not provide independent encrypted g, a, or kappa queries.
+#[derive(Clone, Debug)]
+pub struct AdjacentLiftRestorationCertificate {
+    pub shift: u64,
+    pub shifted_upper_bound: u64,
+    pub capacity: u64,
+    pub additional_ciphertext_products: usize,
+    pub output_error_bound: U1024,
+}
+
+impl AdjacentLiftRestorationCertificate {
+    fn new(p: u64, radius: u64, affine: U1024, carry: U1024) -> Nine65Result<Self> {
+        let span = radius
+            .checked_mul(2)
+            .ok_or_else(|| refused("adjacent lift interval overflow"))?;
+        if span >= 36 * 37 || span >= p {
+            return Err(refused(
+                "adjacent lift query lacks a unique signed interval",
+            ));
+        }
+        Ok(Self {
+            shift: radius,
+            shifted_upper_bound: span,
+            capacity: 36 * 37,
+            additional_ciphertext_products: 0,
+            output_error_bound: affine
+                .checked_add(carry)
+                .ok_or_else(|| refused("adjacent lift restoration error overflow"))?,
+        })
+    }
+
+    fn apply(
+        &self,
+        ctx: &RNSFHEContext,
+        affine: &super::RNSCiphertext,
+        carry: &super::RNSCiphertext,
+    ) -> super::RNSCiphertext {
+        // Eliminate the entire round-trip before execution:
+        // g+36*((g-a) mod37)=Y, then Y-shift=K in F_p.
+        // No ciphertext for either remainder or the shifted Y is allocated.
+        ctx.add(affine, carry)
+    }
 }
 
 /// Immutable arithmetic plan for an explicitly unadmitted research backend.
@@ -184,9 +233,15 @@ impl PublicRefreshCircuitPlan {
         }
         let slots = PublicSlotReturn::new(&low_ctx, source_config.n)?;
         let carry_error = digit.certificate().output_error;
-        let restored_error = carry_error
-            .checked_add(phase_error)
-            .and_then(|v| v.checked_mul_u128(slots.certificate().input_error_factor))
+        let lift_restoration = AdjacentLiftRestorationCertificate::new(
+            source_config.t,
+            signed_carry_radius,
+            phase_error,
+            carry_error,
+        )?;
+        let restored_error = lift_restoration
+            .output_error_bound
+            .checked_mul_u128(slots.certificate().input_error_factor)
             .and_then(|v| v.checked_add(U1024::from_u128(slots.certificate().added_error)))
             .ok_or_else(|| refused("research refresh error certificate overflow"))?;
         let return_plan = ReturnNoisePlan::new(source.work_config(), &low_config, 3)?;
@@ -216,6 +271,7 @@ impl PublicRefreshCircuitPlan {
             inverse_galois_calls: slots.certificate().galois_calls,
             phase_error_bound: phase_error,
             carry_error_bound: carry_error,
+            lift_restoration,
             restored_error_bound: restored_error,
             returned_scaled_error_bound: returned,
             next_square_source_radius,
@@ -405,7 +461,11 @@ impl PublicRefreshCircuit {
             &self.relin,
             progress,
         )?;
-        let message = self.low.add(phases.affine(), &carry);
+        let message =
+            self.plan
+                .certificate
+                .lift_restoration
+                .apply(&self.low, phases.affine(), &carry);
         let restored = PublicSlotReturn::new(&self.low, self.plan.source.source_config().n)?
             .apply_with_progress(&message, &self.inverse, progress)?;
         let proof = self.return_key.evaluate(

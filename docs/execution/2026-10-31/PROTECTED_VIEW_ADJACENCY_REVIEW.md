@@ -1,5 +1,45 @@
 # Protected 36/37 views: production versus adjacency consumption
 
+## Implemented restoration query
+
+`PublicRefreshCircuitPlan` now compiles the complete restoration query, with
+an explicit `AdjacentLiftRestorationCertificate`. For the certified interval,
+
+```text
+Y=K+48, g=Y mod36, a=Y mod37, kappa=(g-a) mod37,
+affine + g + 36*kappa - 48 = affine + K = m mod65537.
+```
+
+The compiler eliminates the entire remainder round-trip. Runtime consumes the
+encrypted K already derived by the source-bound G/H circuit and performs one
+addition. It allocates no remainder ciphertexts, shifted-Y ciphertext, or
+epoch state. The certificate rejects an aliased 36/37 interval or a signed
+interval that is ambiguous in the native field, and charges the sum of the
+affine and carry error bounds. Existing source lineage, phase coherence, and
+return acceptance checks still surround this operation.
+
+The native plan has **517 error bits before the inverse slot transform and
+562 after it, below the 633-bit half-Delta**. Its returned work bound funds
+the next square and refresh with residual radius 48, within support 49. Thus
+the 667-bit separate sheet-consumer failure below is not a necessary cost of
+message restoration. The original encrypted refresh already used direct
+`affine+K`; this change makes the query elimination and its capacity/noise
+certificate explicit rather than introducing a new bootstrap algorithm.
+
+The new encrypted regression checks all 97 K values against four message
+boundaries (388 restorations). All six public circuit tests and the separate
+three-cycle encrypted refresh test pass; those executions use small research
+fixtures. The native bound is a key-free preflight. The previous full native
+execution is not repeated or claimed as new evidence here. The 41 Python
+checks and strict library/test Clippy also pass.
+
+This resolves the noise objection for this complete restoration query. An API
+that independently returns g, a, or kappa still needs a protected producer;
+query fusion does not provide those outputs. CRAM root integration and
+joint-key security admission are separate from this algebraic elimination.
+
+## Independent residue queries
+
 The adjacency equation is exact, and compatible encrypted views can be
 subtracted cheaply. The proposed replacement does not yet provide the inputs
 needed to use it in native public refresh. This review tests the three paths
