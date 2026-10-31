@@ -2,6 +2,40 @@ use super::*;
 use crate::entropy::ShadowHarvester;
 use crate::params::SecureConfig;
 
+#[test]
+fn direct_phase_quotient_bound_covers_signed_lifts_and_native_endpoints() {
+    for p in [3, 17, 257] {
+        for weight in [2, 4, 16, 96] {
+            let value_bound = direct_phase_value_bound(p, weight);
+            for residual_radius in [0, 1, p / 2] {
+                let bound = direct_phase_quotient_radius(p, weight, residual_radius);
+                let mut maximum = 0;
+                for x in -(value_bound as i64)..=value_bound as i64 {
+                    let residue = x.rem_euclid(p as i64);
+                    let rho = if residue <= p as i64 / 2 {
+                        residue
+                    } else {
+                        residue - p as i64
+                    };
+                    if rho.unsigned_abs() <= residual_radius {
+                        let quotient = (x - rho) / p as i64;
+                        assert!(quotient.unsigned_abs() <= bound);
+                        maximum = maximum.max(quotient.unsigned_abs());
+                    }
+                }
+                assert_eq!(maximum, bound);
+            }
+        }
+    }
+    let p = 65537;
+    let phase_bound = direct_phase_value_bound(p, 96);
+    assert_eq!(phase_bound, 3_178_496);
+    assert_eq!(direct_phase_quotient_radius(p, 96, 49), 48);
+    // Ninety-six maximal signed terms plus d0=48 attain K=48, rho=0.
+    assert_eq!(96 * (p / 2) + 48, 48 * p);
+    assert!(49 * p - 49 > phase_bound);
+}
+
 fn config(n: usize) -> FHEConfig {
     let mut config = SecureConfig::secure_128().into_config();
     config.n = n;

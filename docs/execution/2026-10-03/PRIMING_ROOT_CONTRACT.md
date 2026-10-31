@@ -338,17 +338,17 @@ It accepts no caller-supplied scalar increment and stores no winding ledger.
 The fixed S8 path permits the even payload product; it requires coprimality
 with 11, not with 22. Payload equality includes the root2 check.
 
-The native public refresh circuit has a different bound: in `x=r+p*K`, its
-certificate proves `|r| <= 49`; `SplitDigitEvaluator` extracts `K mod p`, with
-`p=65537`. The proposed 36/37 derivation on `r+49` would recover the residual
-`r`, not the quotient `K`. A single 36/37 frame has period `36*37=1332`, below
-the full canonical `K` range `0..65536`. Thus no 36/37 carry frame or epoch
-quotient has been added to the live state. A possible StarLift of `K` needs a
-certified interval and enough independent anchors; for example the period
-`36*37*73=97236` exceeds 65536, but its protected coordinate producer has not
-been designed or admitted. The current circuit already evaluates `K` under
-encryption and uses it immediately. Source/value epoch provenance remains
-necessary even without an arithmetic epoch quotient.
+The native public refresh circuit proves two separate bounds in `x=r+p*K`:
+`|r| <= 49` from the source error certificate, and `|K| <= 48` from the
+H96 source norm and centered public weights. The latter was established on
+2026-10-31; see the [lift refinement](../2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md).
+It corrects the previous inference from the unrestricted digit primitive's
+full `K mod65537` domain. A 36/37 frame of `Y=K+48` in `[0,96]` has enough
+capacity, while a frame of `r+49` would still recover the residual.
+No persistent carry frame or arithmetic epoch quotient is needed. The current
+circuit evaluates K under encryption and uses it immediately. Producing
+protected 36/37 views and binding them to the approved root remains separate;
+source/value provenance is still necessary without an arithmetic epoch ledger.
 
 The `acts.md` attachment supplies the two-coordinate K-elimination formula and
 the independent-anchor interpretation. Its unqualified equality to the full

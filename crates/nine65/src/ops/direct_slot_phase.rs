@@ -5,6 +5,8 @@
 //! d_i=round(p*R_i/Q) satisfy d0+d1*s=p*K+rho, where the authenticated
 //! source certificate bounds every rho. The separate affine view a0+a1*s
 //! must be added to the extracted K to recover the original message.
+//! Independently of the residual radius, |d0+d1*s| <= (H+1)*floor(p/2)
+//! for source norm H. This also certifies the produced integer K's radius.
 
 use crate::arithmetic::canonical_scale_round::CanonicalScaleRound;
 use crate::arithmetic::wide::U1024;
@@ -397,6 +399,8 @@ pub(crate) struct DirectSlotPhases {
     low: RNSCiphertext,
     affine: RNSCiphertext,
     radius: u64,
+    value_bound: u64,
+    quotient_radius: u64,
     error_bound: U1024,
     lineage: [u8; 32],
 }
@@ -412,6 +416,12 @@ impl DirectSlotPhases {
     }
     pub(crate) fn radius(&self) -> u64 {
         self.radius
+    }
+    pub(crate) fn value_bound(&self) -> u64 {
+        self.value_bound
+    }
+    pub(crate) fn quotient_radius(&self) -> u64 {
+        self.quotient_radius
     }
     pub(crate) fn error_bound(&self) -> U1024 {
         self.error_bound
@@ -490,6 +500,11 @@ impl DirectSlotPhaseKey {
                 })
                 .collect::<Vec<_>>(),
         );
+        if source_signed.iter().map(|v| v.unsigned_abs()).sum::<u64>()
+            != client.plan().source_weight() as u64
+        {
+            return Err(failure("direct phase source norm differs from its plan"));
+        }
         let mut bank_high = Vec::with_capacity(baby);
         let mut bank_low = Vec::with_capacity(baby);
         for b in 0..baby {
@@ -712,6 +727,8 @@ impl DirectSlotPhaseKey {
                 progress,
             )?,
             radius,
+            value_bound: source.certificate().direct_phase_value_bound(),
+            quotient_radius: source.certificate().signed_quotient_radius(),
             error_bound: self.error_bound,
             lineage: *source.certificate().lineage(),
         })
@@ -972,6 +989,11 @@ mod tests {
             for (&a, &b) in high_values.iter().zip(&low_values) {
                 assert_eq!(a % 257, b);
                 assert!(signed(b, 257).unsigned_abs() <= phases.radius());
+                let x = signed(a, 257 * 257);
+                let rho = signed(b, 257);
+                assert!(x.unsigned_abs() <= phases.value_bound());
+                assert_eq!((x - rho) % 257, 0);
+                assert!(((x - rho) / 257).unsigned_abs() <= phases.quotient_radius());
             }
             let circuit = SplitDigitEvaluator::new(
                 &high,
@@ -984,6 +1006,14 @@ mod tests {
             let carry = circuit
                 .evaluate(phases.high(), phases.low(), &relin)
                 .unwrap();
+            let observed_carry = observe_slots(&low, &carry, &keys.secret_key);
+            for ((&x, &rho), &k) in high_values.iter().zip(&low_values).zip(&observed_carry) {
+                assert_eq!(
+                    signed(k, 257),
+                    (signed(x, 257 * 257) - signed(rho, 257)) / 257
+                );
+                assert!(signed(k, 257).unsigned_abs() <= phases.quotient_radius());
+            }
             let corrected = low.add(&carry, phases.affine());
             let result = observe_slots(&low, &corrected, &keys.secret_key);
             assert_eq!(

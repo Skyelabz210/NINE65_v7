@@ -30,7 +30,11 @@ fn refused(reason: impl Into<String>) -> Nine65Error {
 pub struct PublicRefreshCircuitCertificate {
     pub ring_degree: usize,
     pub work_degree: usize,
+    /// Residual rho support used by G/H, not the quotient K radius.
     pub carry_radius: usize,
+    pub phase_value_bound: u64,
+    /// Signed integer K support certified from the source norm and rho bound.
+    pub signed_carry_radius: u64,
     pub ciphertext_products: usize,
     pub inverse_ciphertext_babies: usize,
     pub inverse_plaintext_diagonals: usize,
@@ -164,6 +168,20 @@ impl PublicRefreshCircuitPlan {
         }
         let digit =
             SplitDigitEvaluator::new(&high_ctx, &low_ctx, radius, phase_error, phase_error)?;
+        let phase_value_bound = super::public_refresh_source::direct_phase_value_bound(
+            source_config.t,
+            source.source_weight(),
+        );
+        let signed_carry_radius = super::public_refresh_source::direct_phase_quotient_radius(
+            source_config.t,
+            source.source_weight(),
+            radius as u64,
+        );
+        if 2 * phase_value_bound as u128 >= high.t as u128
+            || 2 * signed_carry_radius >= source_config.t
+        {
+            return Err(refused("direct phase lacks a unique signed quotient lift"));
+        }
         let slots = PublicSlotReturn::new(&low_ctx, source_config.n)?;
         let carry_error = digit.certificate().output_error;
         let restored_error = carry_error
@@ -190,6 +208,8 @@ impl PublicRefreshCircuitPlan {
             ring_degree: high.n,
             work_degree: source.work_config().n,
             carry_radius: radius,
+            phase_value_bound,
+            signed_carry_radius,
             ciphertext_products: digit.certificate().ciphertext_products,
             inverse_ciphertext_babies: slots.certificate().ciphertext_babies,
             inverse_plaintext_diagonals: slots.certificate().plaintext_diagonals,
@@ -364,6 +384,8 @@ impl PublicRefreshCircuit {
             .evaluate_with_progress(&source, &self.high, &self.low, progress)?;
         if phases.lineage() != source.certificate().lineage()
             || phases.radius() > self.plan.radius as u64
+            || phases.value_bound() != self.plan.certificate.phase_value_bound
+            || phases.quotient_radius() > self.plan.certificate.signed_carry_radius
             || phases.error_bound() != self.plan.certificate.phase_error_bound
         {
             return Err(refused(

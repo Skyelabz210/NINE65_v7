@@ -146,22 +146,24 @@ from the difference between two 11-lane views while checking unchanged S8
 payload lanes. That checker is not called by this encrypted refresh circuit:
 its inputs are protected phase coordinates, whereas the circuit's public
 source and return certificates expose lineage and bounds but no authenticated
-shadow view of that phase. The earlier suggestion to StarLift a signed
-`[-49,49]` carry confused two variables: radius49 bounds the **residual** `r`
-in `x=r+p*K`. The encrypted output of `SplitDigitEvaluator` is `K mod65537`;
-it does not have a proved `[-49,49]` range. A 36/37 frame of `r+49` would only
-recover `r`, and its period1332 cannot uniquely represent every possible
-canonical `K` in `0..65536`. The proposed clear carry helper was removed. The
-current circuit derives `K` under encryption and consumes it without storing
-StarLift coordinates. Any additional StarLift applied to `K` needs its own
-protected coordinate producer and certified range; none is required for the
-already passing research refresh. Source/value epoch provenance stays bound
-to the returned ciphertext.
+shadow view of that phase. The residual radius49 in `x=r+p*K` must be
+distinguished from the quotient radius. The 2026-10-31 producer audit proves
+`|x| <= (96+1)*32768 = 3178496`, hence `|K| <= 48` when `|r| <= 49`.
+This bound is now issued by the source certificate, propagated by the private
+phase producer, and checked against the circuit plan. The earlier inference
+that the native K needed the whole `0..65536` range was too broad: that range
+belongs to the unrestricted digit primitive. A 36/37 frame of `Y=K+48` now
+has sufficient capacity for this producer, whereas a frame of `r+49` still
+represents the residual. The current circuit derives K under encryption and
+consumes it without storing StarLift coordinates. Additional protected
+remainder views require their own circuit and noise admission. Source/value
+epoch provenance stays bound to the returned ciphertext.
 
 The [StarLift capacity proof](../2026-10-30/PUBLIC_REFRESH_STARLIFT_PROOF.md)
 separates the recoverable canonical `K mod65537` from unbounded historical
-`K`. It gives the explicit 36/37 collision, proves that 36/37/73 has enough
-capacity for the canonical value, and records the protected-producer obligation.
+`K`. Its unrestricted-domain collision remains valid; the
+[refinement and source-norm proof](../2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md)
+establish the native signed support and the remaining view-producer obligation.
 
 The native pass establishes this research backend's functional repeated
 refresh. It does not establish the separate production admission above.

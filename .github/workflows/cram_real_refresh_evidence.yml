@@ -54,6 +54,7 @@ jobs:
           python3 -m unittest -v
           test_run_public_refresh_research_gates
           test_public_refresh_architecture
+          test_public_refresh_lift_refinement
           test_compact_phase_clock_budget
           test_outer_ring_return_budget
           test_source_encapsulation_budget

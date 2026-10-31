@@ -25,6 +25,8 @@ SUITES = {
         ("--lib", None, "ops::bootstrap::tests::public_phase1_is_typed_fail_closed", False),
     ),
     "research": (
+        ("--lib", None, f"{CIRCUIT}::native_plan_certifies_signed_carry_separately_from_residual_support", False),
+        ("--lib", None, "ops::direct_slot_phase::tests::coherent_source_phases_extract_all_carries_and_restore_affine_message", False),
         ("--lib", None, "ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles", False),
         ("--lib", None, f"{CIRCUIT}::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds", False),
         ("--lib", None, f"{CIRCUIT}::public_refresh_refuses_wrong_families_and_exhausted_history_without_counting", False),
@@ -41,6 +43,7 @@ SUITES = {
         ("--test", "coefficient_slot_gate", f"{BATCHED}::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_native_contracts_coherent_residue_and_tracks_quotient", True),
     ),
     "source-preparation": (
+        ("--lib", None, f"{SOURCE}::direct_phase_quotient_bound_covers_signed_lifts_and_native_endpoints", False),
         ("--lib", None, f"{SOURCE}::source_preparation_tracks_full_polynomial_history_and_ring_embedding", False),
         ("--lib", None, f"{SOURCE}::source_preparation_rejects_wrong_families_and_invalid_parameters", False),
         ("--lib", None, f"{SOURCE}::source_preparation_refuses_exhausted_switch_margin_without_resetting_input", False),

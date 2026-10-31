@@ -1,6 +1,7 @@
-"""Exact-integer oracle for the public-refresh digit/StarLift proof.
+"""Exact-integer oracle for the unrestricted digit/StarLift proof.
 
 Read-only proof regression; no production coordinate or CRT reconstruction.
+The native producer's narrower signed support is checked in the refinement.
 """
 
 import json
@@ -80,6 +81,7 @@ def verify_starlift_capacity() -> int:
 
 def main() -> None:
     print(json.dumps({
+        "scope": "unrestricted_digit_primitive",
         "polynomial_point_checks": verify_digit_identity(),
         "canonical_k_values_checked": verify_starlift_capacity(),
         "pair_period": 1332,

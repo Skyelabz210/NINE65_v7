@@ -1,6 +1,6 @@
 # Public refresh: digit extraction and StarLift capacity proof
 
-This proof concerns the native research circuit's plaintext arithmetic and the
+This proof concerns the digit primitive's plaintext arithmetic and the
 capacity of proposed StarLift coordinates. It does not certify a protected
 coordinate producer, CRAM root binding, or production security. The circuit
 uses the plaintext rings `Z/p²Z` and `F_p` with `p = 65537`; its certified
@@ -10,9 +10,14 @@ residual support is `-49 <= r <= 49`. Write a slot as
 x = r + p K    (mod p²).
 ```
 
-Here `K` is an integer lift used in the proof. The circuit can recover only
+Here `K` is an integer lift used in the proof. The primitive recovers
 `k = K mod p`, canonically represented by `0 <= k <= 65536`. The radius 49
-applies to `r`, not to `K` or `k`.
+applies to `r`. **Correction, 2026-10-31:** the native producer also supplies
+the independent source-norm bound `|K| <= 48`, proved and wired in the
+[lift refinement](../2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md). Thus the
+unrestricted primitive's 65,537-state capacity requirement does not apply to
+the native producer's 97-state signed support. The earlier inference that
+36/37 was insufficient for this producer was too broad.
 
 ## 1. The circuit's extracted quantity
 
@@ -47,9 +52,9 @@ unbounded integer `K` or an epoch counting these lost multiples of `p`.
 This is independent of which StarLift moduli are later chosen. It does not
 prevent recovery of the canonical `k = K mod p`. Indeed, `K=0` and `K=p`
 would demand different direct StarLift residues for the integer `K`:
-`p mod (36,37,73) = (17,10,56)`, versus `(0,0,0)` for zero. StarLift
-therefore needs the canonical `k` as its stated input, not an unspecified
-integer lift of the quotient.
+`p mod (36,37,73) = (17,10,56)`, versus `(0,0,0)` for zero. StarLift must
+specify its representative and interval: canonical k for the unrestricted
+primitive, or the separately certified signed K for the native producer.
 
 ## 2. Exact capacity of 36/37 and 36/37/73
 
@@ -62,7 +67,7 @@ than `p` and cannot differ by a nonzero multiple of `L`.
 
 For the shell 36 and first star anchor 37, `L = 36*37 = 1332 < 65537`.
 The explicit collision is `V(0)=V(1332)=(0,0)`. Thus this pair cannot be a
-complete coordinate system for the circuit's canonical extracted `k`.
+complete coordinate system for an arbitrary canonical field value `k`.
 If instead the pair encodes `r+49` in `[0,98]`, it identifies that residual,
 but every value of `K` with the same `r` still has that same residual view.
 
@@ -93,26 +98,24 @@ reconstruction to the runtime graph.
 
 For the 36/37 pair alone, only `q mod 37` is available. Both `k=0` and
 `k=1332` have `g=0` and `q mod 37=0`, while their exact `q` values are
-`0` and `37`. No per-refresh assumption in the native certificate bounds
-this `q` below 37.
+`0` and `37`. This example concerns arbitrary `k`. For the newly certified
+native support, use `Y=K+48` in `[0,96]`; then `floor(Y/36) <= 2 < 37`.
 
 ## 4. Consequence for wiring
 
 The existing circuit obtains and consumes encrypted `k` without maintaining
-a StarLift coordinate. A valid 36/37/73 integration would need a protected
-producer for three same-value views of the *canonical* `k`, a certified
-interval and source/epoch relation, and an admitted encrypted consumer. None
-of those follows from the capacity theorem. In particular, canonical reduction
-from `F_p` to a 36-lane is not a linear residue projection: `65536+1=0`
-in `F_p`, while `(65536 mod 36)+1=17` modulo 36. The three views still could not
-derive the historical integer `K` lost modulo `p` in Section 1. Therefore a
-36/37 pair cannot replace epoch tracking for this circuit, and a larger
-ladder can replace it only after a separate invariant proves that the state
-being tracked is exactly canonical `k` rather than unbounded history.
-Congruent coordinates alone also do not authenticate a producer or its epoch.
-An independently produced sheet step with a proved interval shorter than 1332
-could use the 36/37 pair; the native radius-49 residual certificate is not
-such a proof for the quotient or for a refresh-to-refresh step.
+a StarLift coordinate. Its newly certified signed support makes 36/37
+arithmetically sufficient for `Y=K+48`. A protected producer for both views
+of that same shifted quantity, with a source binding and an encrypted
+consumer, is still necessary. The capacity theorem does not supply it.
+Canonical remainder maps are generally nonlinear: `65536+1=0` in `F_p`,
+while `(65536 mod 36)+1=17` modulo 36. The bounded-domain projection cost
+is evaluated separately in the refinement.
+
+The native producer bound also excludes the `K` versus `K+p` ambiguity in
+Section 1 for its per-refresh correction. It does not encode an unbounded
+historical winding or make a phase-defect congruence an authentication proof.
+Source lineage remains distinct from an arithmetic winding ledger.
 
 Run `python3 scripts/verify_public_refresh_starlift_proof.py` for an
 independent exact-integer check of the polynomial identity at all 99 support

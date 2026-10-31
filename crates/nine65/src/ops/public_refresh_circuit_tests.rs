@@ -37,6 +37,38 @@ fn source_plan() -> PublicRefreshSourcePlan {
 fn plan() -> PublicRefreshCircuitPlan {
     PublicRefreshCircuitPlan::new(source_plan(), config(32, &BOOT, P * P), 4, 3, 16 << 20).unwrap()
 }
+
+#[test]
+fn native_plan_certifies_signed_carry_separately_from_residual_support() {
+    let native = PublicRefreshCircuitPlan::native_research(4 << 30).unwrap();
+    assert_eq!(native.certificate().carry_radius, 49);
+    assert_eq!(native.certificate().phase_value_bound, 3_178_496);
+    assert_eq!(native.certificate().signed_carry_radius, 48);
+    // Each direct Y mod {11,36,37} lookup on 0..96 has interpolation degree
+    // 96 (independent Python proof oracle). Its >=7 product levels cannot be
+    // appended to K under the current Noise::multiply ledger and native Q.
+    let n = native.certificate().ring_degree as u128;
+    let factor = n * ((P - 1) / 2) as u128 + n * P as u128 * (n / 2 + 1);
+    let mut lookup_error_floor = native.certificate().carry_error_bound;
+    for _ in 0..7 {
+        lookup_error_floor = lookup_error_floor.checked_mul_u128(factor).unwrap();
+    }
+    let half_delta = U1024::checked_product_u64s(&BOOT)
+        .unwrap()
+        .div_mod_u64(P)
+        .unwrap()
+        .0
+        .shr1();
+    assert!(lookup_error_floor >= half_delta);
+    eprintln!(
+        "signed carry radius=48; direct lookup error floor={} bits; half-Delta={} bits",
+        lookup_error_floor.bit_length(),
+        half_delta.bit_length()
+    );
+    let reduced = plan();
+    assert_eq!(reduced.certificate().carry_radius, 3);
+    assert_eq!(reduced.certificate().signed_carry_radius, 2);
+}
 fn setup(
     seed: u64,
 ) -> (

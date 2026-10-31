@@ -66,6 +66,20 @@ fn source_residual_radius(bound: U512, q: U512, t: u64, weight: usize) -> u64 {
     lo
 }
 
+/// Public signed digit weights lie in [-floor(p/2), floor(p/2)]. The
+/// negacyclic phase d0+d1*s has at most weight+1 such terms per coefficient.
+/// Source-plan limits p<=u32::MAX and weight<=65536 keep this product in u64.
+pub(crate) fn direct_phase_value_bound(p: u64, weight: usize) -> u64 {
+    (weight as u64 + 1) * (p / 2)
+}
+
+/// If x=p*K+rho and |rho|<=radius, then p*|K|<=|x|+radius. This is a
+/// bound on the integer quotient of the produced phase, not on an arbitrary
+/// input to the standalone digit-extraction primitive.
+pub(crate) fn direct_phase_quotient_radius(p: u64, weight: usize, radius: u64) -> u64 {
+    (direct_phase_value_bound(p, weight) + radius) / p
+}
+
 struct Family {
     plan: PublicRefreshSourcePlan,
     work: RNSFHEContext,
@@ -143,6 +157,21 @@ impl SourceCertificate {
     /// Uses the actual switched history and the key-holder-generated norm.
     pub fn prime_square_residual_radius(&self) -> u64 {
         source_residual_radius(self.source_bound, self.q, self.t, self.source_weight)
+    }
+
+    /// Absolute bound on each integer phase before its p² encoding.
+    pub fn direct_phase_value_bound(&self) -> u64 {
+        direct_phase_value_bound(self.t, self.source_weight)
+    }
+
+    /// Integer K radius for x=p*K+rho in this producer's direct phase.
+    /// Interpreting K mod p as that signed integer additionally needs 2R<p.
+    pub fn signed_quotient_radius(&self) -> u64 {
+        direct_phase_quotient_radius(
+            self.t,
+            self.source_weight,
+            self.prime_square_residual_radius(),
+        )
     }
 }
 
