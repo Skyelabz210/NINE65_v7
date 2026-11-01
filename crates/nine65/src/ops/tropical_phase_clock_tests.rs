@@ -20,15 +20,6 @@ enum Refusal {
     NonCentered,
 }
 
-fn ceil_div(a: U256, b: U256) -> U256 {
-    let (q, r) = a.div_mod_u256(b);
-    if r.is_zero() {
-        q
-    } else {
-        q.add(U256::from_u64(1))
-    }
-}
-
 // PUBLIC source-component quantization. The native-width product is formed
 // only from a public centered residual and a public clock size, never S or g.
 fn quantize(residual: i128, q: i128, coordinate: usize, size: usize) -> Result<i64, Refusal> {

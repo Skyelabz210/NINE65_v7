@@ -285,7 +285,23 @@ fn triple_precharge_terminal_plan_preflights_all_views_and_limits() {
         .max()
         .unwrap();
     assert!(carry_bits.iter().all(|&b| b < 100), "{carry_bits:?}");
-    assert!(max_view_bits < 110, "{max_view_bits}");
+    // Current four-prime source: the maximum ledger is the public base
+    // 62,416 plus linear 106,273,260,499,080,314,880 plus mixed
+    // 6,080,302,758,162,287,378,160,772,365,681,280. Pin the exact
+    // total as well as the bit width; the planner still checks every output
+    // against its actual decoding radius.
+    let max_bound = plan
+        .frames
+        .iter()
+        .flat_map(|f| f.outputs.iter())
+        .map(|o| words(o.bound))
+        .max()
+        .unwrap();
+    assert_eq!(
+        max_bound,
+        (0, 0, 0, 6_080_302_758_162_393_651_421_271_446_058_576)
+    );
+    assert_eq!(max_view_bits, 113);
     let boot_q = U512::product_u64s(&ctx.config.primes);
     let n = ctx.n as u128;
     let remainder = boot_q.mod_u64(ctx.t) as u128;
@@ -303,22 +319,17 @@ fn triple_precharge_terminal_plan_preflights_all_views_and_limits() {
             "bounded coefficient refresh",
         )
         .unwrap();
-    let square_bound = runtime
-        .noise
-        .multiply(refreshed_bound, refreshed_bound)
-        .unwrap();
-    assert_eq!(bits(square_bound), 134);
-    match runtime.noise.multiply(square_bound, square_bound) {
+    match runtime.noise.multiply(refreshed_bound, refreshed_bound) {
         Err(Refusal::Noise {
             stage,
             error_bits,
             half_bits,
         }) => {
             assert_eq!(stage, "selector multiply");
-            assert_eq!(error_bits, 176);
+            assert_eq!(error_bits, 138);
             assert_eq!(half_bits, 137);
         }
-        other => panic!("second square must preflight-refuse, got {other:?}"),
+        other => panic!("first square must preflight-refuse, got {other:?}"),
     }
     drop(plan);
     assert!(matches!(
@@ -344,7 +355,7 @@ fn triple_precharge_terminal_plan_preflights_all_views_and_limits() {
         Err(TerminalRefusal::Regime)
     ));
     assert_eq!(runtime.multiplications.get(), 0);
-    eprintln!("triple precharge preflight: carry bits={carry_bits:?}, maximum view bits={max_view_bits}, products=676, outputs=84; one square admitted at 134 bits, next square refused at 176/137 bits; 675-product and 83-output plans refused before multiplication");
+    eprintln!("triple precharge preflight: carry bits={carry_bits:?}, maximum view bits={max_view_bits}, products=676, outputs=84; first square refused at 138/137 bits; 675-product and 83-output plans refused before multiplication");
 }
 
 #[test]

@@ -24,11 +24,11 @@ Cargo's own existing target/feature boundaries:
 
 - FAST is `--lib`, which Cargo already treats as a distinct target from every
   `tests/*.rs` integration binary.
-- MEDIUM is exactly what `cargo test --workspace --verbose --exclude
-  nine65-python --exclude nine65-wasm` already ran in `ci.yml`'s `full-test`
-  job before this change — a byte-for-byte wrapper, not a new invocation, so
-  nothing that passed before stops running and nothing that failed before
-  starts being silently skipped.
+- MEDIUM runs the complete default-feature workspace suite with
+  `--no-fail-fast`. Since 2026-11-01 it adds
+  `--config profile.test.package.nine65.opt-level=2` for polynomial arithmetic;
+  assertions and overflow checks retain test-profile defaults. No target or
+  test filter is removed. The local integration run uses this same profile.
 - SLOW composes three flags that already existed for a different reason
   (long runtime, not correctness) before issue #78: nine65's `slow_tests`
   Cargo feature (`ops/rns_fhe.rs`), the `#[ignore]`d `op_timings` suite
@@ -191,7 +191,11 @@ kind of gap — but a dozen-plus other integration targets have no such
 individual step and are silently unreached whenever nine65's `--lib` fails
 first.
 
-This is **pre-existing behavior**, not introduced by this categorization
+The following paragraph describes the historical measurement. Current MEDIUM
+uses `--no-fail-fast`, so an earlier target failure does not stop downstream
+targets. The original categorization was a byte-for-byte wrapper.
+
+This was **pre-existing behavior**, not introduced by this categorization
 change — `scripts/run_tests_medium.sh` is a byte-for-byte wrapper of the
 exact command `ci.yml`'s `full-test` job already ran, so this gap has been
 present in CI (when CI last ran, pre-2026-02-27) exactly as it is here. It

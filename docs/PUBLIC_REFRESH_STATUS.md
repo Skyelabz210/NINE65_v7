@@ -50,7 +50,14 @@ canonical-lift LUT cost is a universal impossibility result for the bounded
 native producer. The 832-bit post-extraction remainder-lookup objection and
 667-bit separate sheet-consumer return do not describe the fused 562-bit
 message-restoration path. Independent protected remainder emission and legacy
-phase-integer Root211 APIs are still separate constructions.
+phase-integer Root211 APIs are still separate constructions. The older sister-tray
+prototype's raw remainder winding is not its lifted plaintext quotient without
+binding the source phase, encoding-scale residue and any source Q-winding.
+Executed counterexamples now pin the exact phase identity and refuse the
+unbound correction; they do not negate
+the separately implemented G/H refresh producer. The old triple-precharge
+fixture also refuses its first following square at 138 error bits versus a
+137-bit limit; its former resource assumptions were stale.
 
 ## Evidence and navigation rules
 

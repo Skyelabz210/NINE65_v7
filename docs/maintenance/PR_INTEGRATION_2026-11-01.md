@@ -1,0 +1,37 @@
+# PR integration and corrected gates — 2026-11-01
+
+PRs [#197](https://github.com/Skyelabz210/NINE65_v7/pull/197) and
+[#198](https://github.com/Skyelabz210/NINE65_v7/pull/198) merged independently.
+[#201](https://github.com/Skyelabz210/NINE65_v7/pull/201) reconciles their
+changes, the recumbent work in #195 and the older conflicting branch #187.
+See [current refresh status](../PUBLIC_REFRESH_STATUS.md) for capability and
+production-security scope. The original native refresh evidence is unchanged.
+
+| Finding | Repair and enforced behavior |
+| --- | --- |
+| #187 malformed target modulus | Preserve later typed target validation; reference NTT construction now rejects zero, one, even moduli and overflowing root orders before arithmetic |
+| #187 generated files and release probe | Preserve generated-output ignores; seeded exploratory runner accepts debug only; recorded probe profile reaches comparison normalization |
+| Overflow metadata and obsolete issue-29 patch | Use checked/exact modulus metadata for runtime decisions; retain scalar field only for compatibility; negative controls reject its production use |
+| New research unwrap/expect sites | Propagate typed errors, validate DAG dependencies, and name the separate native test file as a test module; panic baseline unchanged |
+| Symmetric multiplication boundary | Center input lifts, evaluate exact BFV tensor scale, then relinearize with the secret square; test nonconstant coefficients and the minus-one boundary |
+| GSO metadata-only collapse | Private local bounds admit checked multiplication before evaluation; every admitted result is checked; exhausted or unknown provenance refuses |
+| Unfunded chain fixtures | Six-prime test fixture proves three worst-case layers with the existing scalar noise model; original plaintext oracles remain |
+| Unbound sister-tray claim | Execute encrypted counterexamples and exact phase/scale/error identities; refuse missing source-phase binding; retain historical attempt as explicitly opt-in known failure |
+| Stale triple-precharge resource assertion | Pin exact 113-bit ledger; first square refuses at 138 error bits against a 137-bit limit; no admission threshold raised |
+| Float grep matched prose/version strings | Use the existing tested Rust token scanner on the same paths; missing files still fail |
+| Modulus audit compared with dated evidence | Keep dated snapshot unchanged; regenerate and check `modulus_class_audit_current.json` |
+| Full-suite execution time | Optimize nine65 test arithmetic at level 2; default targets, assertions, overflow checks and `--no-fail-fast` remain enabled |
+
+The GSO field privacy change affects a deprecated experimental API. Use
+`inner()` for read-only access and `try_mul_symmetric` for bounded operations.
+The local bound assumes well-formed matching keys; it is not a malicious-key
+proof or production-security certificate. Public GSO multiplication refuses
+until its arithmetic and complete error bound are admitted.
+
+Focused verification includes 15 GSO tests, five benchmark tests, two optional
+GSO integration tests, both sister-tray counterexamples, the triple-precharge
+preflight, all 20 reference NTT tests, ten main-only base-extension tests,
+metadata negative controls, and the relevant feature compile check. Full
+workspace execution reached every target; the service socket tests were rerun
+with socket access (28 passed). The nine65 library target is being rerun after
+the integration repairs; final results belong to PR #201's checked head.

@@ -1197,7 +1197,7 @@ fn test_gso_fhe_roundtrip() {
     let mut all_ok = true;
     for &m in &values {
         let ct = ctx.encrypt(m, &keys.public_key, &mut rng);
-        let noise = ct.noise.distance;
+        let noise = ct.noise_distance();
         let dec = ctx.decrypt(&ct, &keys.secret_key);
         let ok = dec == m;
         if !ok {
@@ -1224,7 +1224,7 @@ fn test_gso_fhe_mul_symmetric() {
 
     use nine65::ops::gso_fhe::GSOFHEContext;
 
-    let cfg = FHEConfig::light_rns_exact_insecure();
+    let cfg = SecureConfig::secure_128().into_config();
     let inner = RNSFHEContext::new(&cfg);
     let mut ctx = GSOFHEContext::new(inner);
     let mut rng = ShadowHarvester::with_seed(1100);
@@ -1240,13 +1240,10 @@ fn test_gso_fhe_mul_symmetric() {
     let expected = (a * b) % cfg.t;
 
     println!("  {} * {} = {} (expected {})", a, b, dec, expected);
-    println!("  Noise after mul: {}", ct_prod.noise.distance);
-    println!("  Mul depth: {}", ct_prod.noise.mul_depth);
+    println!("  Noise after mul: {}", ct_prod.noise_distance());
+    println!("  Mul depth: {}", ct_prod.depth());
 
-    // Allow small error for GSO mul
-    let error = dec.abs_diff(expected);
-    println!("  Error: {}", error);
-    assert!(error <= 2, "GSO mul error too large: {}", error);
+    assert_eq!(dec, expected, "GSO product must match the plaintext oracle");
 
     println!("\nGSO-FHE mul: VERIFIED.");
 }

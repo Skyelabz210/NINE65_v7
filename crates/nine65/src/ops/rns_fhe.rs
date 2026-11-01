@@ -8126,11 +8126,30 @@ mod tests {
         assert_eq!(result, expected, "QMNF exact multiplication failed!");
     }
 
+    // These chains require three admitted layers. The old two-prime light
+    // fixture does not fund centered BFV tensor noise; extra CRT anchors cannot
+    // supply missing main-modulus noise capacity.
+    fn funded_symmetric_chain_config() -> FHEConfig {
+        let mut config = FHEConfig::light_rns_exact_insecure();
+        config
+            .primes
+            .extend([754_974_721, 469_762_049, 167_772_161, 595_591_169]);
+        config.name = "funded_symmetric_chain_insecure";
+        config.security_bits = 0;
+        let model = crate::noise::certified::ScalarNoiseModel::new(&config, 0, 0).unwrap();
+        let mut bound = model.fresh().unwrap();
+        for _ in 0..3 {
+            let sum = model.add(&bound, &bound).unwrap();
+            bound = model.multiply(&sum, &sum).unwrap();
+        }
+        config
+    }
+
     #[test]
     fn test_rns_exact_multiplication_chain() {
         // Test multiplication chain with light_rns_exact using DUAL-RNS K-Elimination
         // (not single-RNS Bajard which fails when Δ² >> Q)
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -10717,7 +10736,7 @@ mod tests {
     #[test]
     fn test_random_expressions_depth3() {
         // Deeper expression: ((a * b) + c) * d
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(123);
@@ -10768,7 +10787,7 @@ mod tests {
     #[test]
     fn test_chain_via_auto() {
         // Mirror the working chain test but via auto interface
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config); // Use new() like the working test
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -10805,7 +10824,7 @@ mod tests {
     fn test_result_times_fresh() {
         // Verify that (result × fresh) works correctly - SAME fresh each time
         // This matches the pattern in test_chain_via_auto which passes
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -10841,7 +10860,7 @@ mod tests {
     fn test_result_times_different_fresh() {
         // Test with different fresh values each time
         // This may have different noise characteristics
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);

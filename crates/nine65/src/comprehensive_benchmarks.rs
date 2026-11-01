@@ -33,33 +33,24 @@ pub mod comprehensive_benchmarks {
     /// Benchmark noise growth over multiple operations
     #[test]
     fn benchmark_noise_growth_secure_128() {
-        println!("\n┌────────────────────────────────────────────────────────────┐");
-        println!("│  NOISE GROWTH ANALYSIS - secure_128                        │");
-        println!("└────────────────────────────────────────────────────────────┘");
-
         let (mut ctx, keys) = create_bench_context("secure_128");
         let mut rng = ShadowHarvester::new();
-
         let mut ct = ctx.encrypt(2, &keys.public_key, &mut rng);
-
-        println!("Operation | Noise Dist | Collapses | Time (ms)");
-        println!("----------|-------------|-----------|----------");
-
-        for i in 1..=20 {
-            let start = Instant::now();
-            let ct_clone = ct.clone();
-            ct = ctx.mul_public(&ct, &ct_clone, &keys.eval_key).unwrap();
-            let elapsed_ms = start.elapsed().as_micros() as f64 / 1000.0;
-
-            let stats = ctx.noise_stats(&ct);
-            println!(
-                "{:9} | {:11} | {:9} | {:7.2}",
-                format!("Mul #{}", i),
-                stats.distance,
-                stats.collapses,
-                elapsed_ms
-            );
+        let mut expected = 2_u64;
+        let t = ctx.inner().t;
+        let mut admitted = 0;
+        for _ in 0..20 {
+            match ctx.try_mul_symmetric(&ct, &ct, &keys.secret_key) {
+                Ok(next) => {
+                    expected = ((expected as u128 * expected as u128) % t as u128) as u64;
+                    assert_eq!(ctx.decrypt(&next, &keys.secret_key), expected);
+                    ct = next;
+                    admitted += 1;
+                }
+                Err(_) => break,
+            }
         }
+        assert!(admitted > 0 && admitted < 20);
     }
 
     /// Benchmark batch operations to identify potential DoS vectors
@@ -103,100 +94,57 @@ pub mod comprehensive_benchmarks {
     /// Benchmark depth-specific operations to identify degradation patterns
     #[test]
     fn benchmark_depth_specific_operations_secure_128() {
-        println!("\n┌────────────────────────────────────────────────────────────┐");
-        println!("│  DEPTH-SPECIFIC ANALYSIS - secure_128                      │");
-        println!("└────────────────────────────────────────────────────────────┘");
-
         let (mut ctx, keys) = create_bench_context("secure_128");
         let mut rng = ShadowHarvester::new();
-
         let mut ct = ctx.encrypt(2, &keys.public_key, &mut rng);
-
-        println!("Depth | Operation Type | Time (ms) | Noise Dist  | Collapses");
-        println!("------|---------------|-----------|-------------|----------");
-
+        let mut expected = 2_u64;
+        let t = ctx.inner().t;
+        let mut refused = false;
+        let mut admitted = 0;
         for depth in 1..=25 {
-            let start = Instant::now();
-
-            // Alternate between add and mul to simulate realistic usage
             if depth % 2 == 0 {
-                let ct_clone = ct.clone();
-                ct = ctx.add(&ct, &ct_clone);
-                let elapsed_ms = start.elapsed().as_micros() as f64 / 1000.0;
-                let stats = ctx.noise_stats(&ct);
-                println!(
-                    "{:5} | {:13} | {:9.2} | {:11} | {:9}",
-                    depth, "ADD", elapsed_ms, stats.distance, stats.collapses
-                );
+                ct = ctx.add(&ct, &ct);
+                expected = ((expected as u128 * 2) % t as u128) as u64;
             } else {
-                let ct_clone = ct.clone();
-                ct = ctx.mul_public(&ct, &ct_clone, &keys.eval_key).unwrap();
-                let elapsed_ms = start.elapsed().as_micros() as f64 / 1000.0;
-                let stats = ctx.noise_stats(&ct);
-                println!(
-                    "{:5} | {:13} | {:9.2} | {:11} | {:9}",
-                    depth, "MUL", elapsed_ms, stats.distance, stats.collapses
-                );
+                ct = match ctx.try_mul_symmetric(&ct, &ct, &keys.secret_key) {
+                    Ok(next) => next,
+                    Err(_) => {
+                        refused = true;
+                        break;
+                    }
+                };
+                expected = ((expected as u128 * expected as u128) % t as u128) as u64;
+                admitted += 1;
             }
+            assert_eq!(ctx.decrypt(&ct, &keys.secret_key), expected);
         }
+        assert!(admitted > 0 && refused);
     }
 
     /// Benchmark noise budget tracking against observed GSO noise distance.
     #[test]
     fn benchmark_noise_budget_accuracy() {
-        println!("\n┌────────────────────────────────────────────────────────────┐");
-        println!("│  NOISE BUDGET ACCURACY ANALYSIS                            │");
-        println!("└────────────────────────────────────────────────────────────┘");
-
         let (mut ctx, keys) = create_bench_context("secure_128");
         let mut rng = ShadowHarvester::new();
-        let mut budget = NoiseBudget::from_config(&ctx.inner().config);
-
         let mut ct = ctx.encrypt(2, &keys.public_key, &mut rng);
-
-        println!("Operation | Budget(bits) | Noise Dist  | Collapses");
-        println!("----------|--------------|-------------|----------");
-
-        for i in 1..=10 {
-            let ct_clone = ct.clone();
-            ct = ctx.mul_public(&ct, &ct_clone, &keys.eval_key).unwrap();
-
-            let budget_result = budget
-                .consume(
-                    NoiseOpType::MulCt,
-                    NoiseBudget::mul_ct_cost(&ctx.inner().config),
-                )
-                .and_then(|_| {
-                    budget.consume(
-                        NoiseOpType::Relin,
-                        NoiseBudget::relin_cost(&ctx.inner().config),
-                    )
-                })
-                .and_then(|_| {
-                    budget.consume(
-                        NoiseOpType::Rescale,
-                        NoiseBudget::rescale_cost(&ctx.inner().config),
-                    )
-                });
-
-            let stats = ctx.noise_stats(&ct);
-            println!(
-                "{:9} | {:12.2} | {:11} | {:9}{}",
-                format!("Mul #{}", i),
-                budget.remaining_millibits() as f64 / 1000.0,
-                stats.distance,
-                stats.collapses,
-                if budget_result.is_err() {
-                    " (budget exhausted)"
-                } else {
-                    ""
-                }
+        let mut budget = NoiseBudget::from_config(&ctx.inner().config);
+        let mut expected = 2_u64;
+        let t = ctx.inner().t;
+        let mut admitted = 0;
+        for _ in 0..10 {
+            ct = match ctx.try_mul_symmetric(&ct, &ct, &keys.secret_key) {
+                Ok(next) => next,
+                Err(_) => break,
+            };
+            expected = ((expected as u128 * expected as u128) % t as u128) as u64;
+            assert_eq!(ctx.decrypt(&ct, &keys.secret_key), expected);
+            admitted += 1;
+            let _ = budget.consume(
+                NoiseOpType::MulCt,
+                NoiseBudget::mul_ct_cost(&ctx.inner().config),
             );
-
-            if budget_result.is_err() {
-                break;
-            }
         }
+        assert!(admitted > 0 && admitted < 10);
     }
 
     /// Benchmark memory usage patterns during operations

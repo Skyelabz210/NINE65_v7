@@ -586,7 +586,6 @@ impl std::fmt::Display for NoiseStats {
 #[allow(deprecated)]
 mod tests {
     use super::*;
-    use crate::params::FHEConfig;
 
     fn test_ctx() -> GSOFHEContext {
         let config = crate::params::secure_configs::SecureConfig::secure_128().into_config();
@@ -605,7 +604,7 @@ mod tests {
         let result = ctx.decrypt(&ct, &keys.secret_key);
 
         assert_eq!(result, m);
-        assert_eq!(ct.noise.distance, 0); // Fresh ciphertext has no noise
+        assert_eq!(ct.noise.distance, 0); // The heuristic starts at zero.
         assert_eq!(ct.noise.basin_id, m as u32 % ctx.basins.len() as u32);
     }
 
@@ -820,27 +819,40 @@ mod depth_benchmarks {
         let main = &ctx.inner.config.primes;
         let anchor = &ctx.inner.dual_rns.anchor.primes;
         let make = |coeffs: [u64; 2]| {
-            let make_limbs = |primes: &[u64]| {
+            let make_limbs = |primes: &[u64], secret: &[Vec<u64>]| {
                 primes
                     .iter()
-                    .map(|&p| {
+                    .enumerate()
+                    .map(|(j, &p)| {
                         let mut limb = vec![0; n];
                         for (i, &m) in coeffs.iter().enumerate() {
                             limb[i] = (delta * m as u128 % p as u128) as u64;
                         }
+                        for (value, &s) in limb.iter_mut().zip(&secret[j]) {
+                            *value = (*value + p - s) % p;
+                        }
+                        limb
+                    })
+                    .collect()
+            };
+            let ones = |count| {
+                (0..count)
+                    .map(|_| {
+                        let mut limb = vec![0; n];
+                        limb[0] = 1;
                         limb
                     })
                     .collect()
             };
             DualRNSCiphertext {
                 c0: DualRNSPoly {
-                    main: make_limbs(main),
-                    anchor: make_limbs(anchor),
+                    main: make_limbs(main, &keys.secret_key.s.main),
+                    anchor: make_limbs(anchor, &keys.secret_key.s.anchor),
                     n,
                 },
                 c1: DualRNSPoly {
-                    main: vec![vec![0; n]; main.len()],
-                    anchor: vec![vec![0; n]; anchor.len()],
+                    main: ones(main.len()),
+                    anchor: ones(anchor.len()),
                     n,
                 },
                 level: main.len(),
@@ -850,8 +862,24 @@ mod depth_benchmarks {
             .inner
             .try_mul_dual_symmetric(&make([1, 2]), &make([3, 4]), &keys.secret_key)
             .unwrap();
+        let phase: Vec<Vec<u64>> = product
+            .c1
+            .main
+            .iter()
+            .zip(&keys.secret_key.s.main)
+            .zip(&ctx.inner.ntt_engines)
+            .zip(main)
+            .zip(&product.c0.main)
+            .map(|((((c1, sk), ntt), &p), c0)| {
+                ntt.multiply(c1, sk)
+                    .iter()
+                    .zip(c0)
+                    .map(|(&x, &y)| (x + y) % p)
+                    .collect()
+            })
+            .collect();
         for (i, expected) in [3_u64, 10, 8, 0].into_iter().enumerate() {
-            let residues: Vec<_> = product.c0.main.iter().map(|limb| limb[i]).collect();
+            let residues: Vec<_> = phase.iter().map(|limb| limb[i]).collect();
             let value = ctx.inner.rns.to_int_level(&residues, main.len());
             let decoded = ((value * ctx.inner.t as u128 + q / 2) / q % ctx.inner.t as u128) as u64;
             assert_eq!(decoded, expected, "coefficient {i}");
@@ -865,7 +893,7 @@ mod depth_benchmarks {
     fn diagnostic_zero_noise_constant_self_square_secure_128() {
         use crate::ops::rns_fhe::DualRNSPoly;
 
-        let mut ctx = bench_ctx(SecureConfig::secure_128().into_config());
+        let ctx = bench_ctx(SecureConfig::secure_128().into_config());
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
         let q = ctx.inner.q_product_checked.expect("secure_128 Q fits u128");
@@ -1147,9 +1175,17 @@ mod depth_benchmarks {
 
         let start = Instant::now();
 
+        let mut expected = 3_u64;
         for i in 1..=20 {
-            // FHE multiply
-            ct = ctx.mul_symmetric(&ct, &ct_const, &keys.secret_key);
+            ct = match ctx.try_mul_symmetric(&ct, &ct_const, &keys.secret_key) {
+                Ok(next) => next,
+                Err(error) => {
+                    println!("FHE multiply refused: {error}");
+                    break;
+                }
+            };
+            expected = ((expected as u128 * 2) % ctx.inner.t as u128) as u64;
+            assert_eq!(ctx.decrypt(&ct, &keys.secret_key), expected);
 
             // Harvest entropy from shadow operations
             let a = shadow_rns.from_int(i as u64 * 1000000);
@@ -1448,10 +1484,20 @@ mod arithmetic_benchmarks {
         }
         let fhe_add_time = start.elapsed();
 
-        // FHE MUL (symmetric)
+        // FHE MUL (symmetric); an unsupported bound is a refusal, not a timing sample.
         let start = Instant::now();
+        let mut mul_count = 0;
         for _ in 0..fhe_ops {
-            let _ = fhe_ctx.mul_symmetric(&ct1, &ct2, &keys.secret_key);
+            match fhe_ctx.try_mul_symmetric(&ct1, &ct2, &keys.secret_key) {
+                Ok(product) => {
+                    assert_eq!(fhe_ctx.decrypt(&product, &keys.secret_key), 200);
+                    mul_count += 1;
+                }
+                Err(error) => {
+                    println!("FHE multiply refused: {error}");
+                    break;
+                }
+            }
         }
         let fhe_mul_time = start.elapsed();
 
@@ -1466,7 +1512,11 @@ mod arithmetic_benchmarks {
         println!("  ───────────────┼─────────────┼─────────────┼────────");
         print_ms_row("FHE_ENCRYPT", &fhe_enc_time, fhe_ops);
         print_ms_row("FHE_ADD", &fhe_add_time, fhe_ops);
-        print_ms_row("FHE_MUL", &fhe_mul_time, fhe_ops);
+        if mul_count > 0 {
+            print_ms_row("FHE_MUL", &fhe_mul_time, mul_count);
+        } else {
+            println!("  FHE_MUL unavailable: noise bound refused");
+        }
         print_ms_row("FHE_DECRYPT", &fhe_dec_time, fhe_ops);
 
         // ====================================================================
@@ -1502,7 +1552,7 @@ mod arithmetic_benchmarks {
         println!("║  FHE Operations:                                             ║");
         let (enc_w, enc_f) = ms_per_op(&fhe_enc_time, fhe_ops);
         let (add_w, add_f) = ms_per_op(&fhe_add_time, fhe_ops);
-        let (mul_w, mul_f) = ms_per_op(&fhe_mul_time, fhe_ops);
+        let (mul_w, mul_f) = ms_per_op(&fhe_mul_time, mul_count);
         let (dec_w, dec_f) = ms_per_op(&fhe_dec_time, fhe_ops);
         println!(
             "║    ENCRYPT:    {:>5}.{:02} ms                                    ║",
@@ -1512,10 +1562,14 @@ mod arithmetic_benchmarks {
             "║    ADD:        {:>5}.{:02} ms                                    ║",
             add_w, add_f
         );
-        println!(
-            "║    MUL:        {:>5}.{:02} ms                                    ║",
-            mul_w, mul_f
-        );
+        if mul_count > 0 {
+            println!(
+                "║    MUL:        {:>5}.{:02} ms                                    ║",
+                mul_w, mul_f
+            );
+        } else {
+            println!("║    MUL:        unavailable (noise bound refused)             ║");
+        }
         println!(
             "║    DECRYPT:    {:>5}.{:02} ms                                    ║",
             dec_w, dec_f
@@ -1550,10 +1604,20 @@ mod arithmetic_benchmarks {
         }
         let fhe_add_time = start.elapsed();
 
-        // FHE MUL (symmetric)
+        // FHE MUL (symmetric); an unsupported bound is a refusal, not a timing sample.
         let start = Instant::now();
+        let mut mul_count = 0;
         for _ in 0..fhe_ops {
-            let _ = fhe_ctx.mul_symmetric(&ct1, &ct2, &keys.secret_key);
+            match fhe_ctx.try_mul_symmetric(&ct1, &ct2, &keys.secret_key) {
+                Ok(product) => {
+                    assert_eq!(fhe_ctx.decrypt(&product, &keys.secret_key), 200);
+                    mul_count += 1;
+                }
+                Err(error) => {
+                    println!("FHE multiply refused: {error}");
+                    break;
+                }
+            }
         }
         let fhe_mul_time = start.elapsed();
 
@@ -1568,7 +1632,11 @@ mod arithmetic_benchmarks {
         println!("  ───────────────┼─────────────┼─────────────┼────────");
         print_ms_row("FHE_ENCRYPT", &fhe_enc_time, fhe_ops);
         print_ms_row("FHE_ADD", &fhe_add_time, fhe_ops);
-        print_ms_row("FHE_MUL", &fhe_mul_time, fhe_ops);
+        if mul_count > 0 {
+            print_ms_row("FHE_MUL", &fhe_mul_time, mul_count);
+        } else {
+            println!("  FHE_MUL unavailable: noise bound refused");
+        }
         print_ms_row("FHE_DECRYPT", &fhe_dec_time, fhe_ops);
     }
 

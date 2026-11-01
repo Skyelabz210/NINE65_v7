@@ -22,7 +22,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SECURE_CONFIGS = ROOT / "crates/nine65/src/params/secure_configs.rs"
 RNS = ROOT / "crates/nine65/src/arithmetic/rns.rs"
-OUTPUT = ROOT / "artifacts/security/modulus_class_audit_2026-07-13.json"
+# Historical audit snapshots stay immutable; this is the regenerable current ledger.
+OUTPUT = ROOT / "artifacts/security/modulus_class_audit_current.json"
 
 PROFILE_NAMES = (
     "secure_128",

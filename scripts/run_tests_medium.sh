@@ -15,22 +15,10 @@
 #   failing tests." Nothing is filtered out here relative to what ci.yml's
 #   T2 "Full Test Suite" job already runs today.
 #
-#   Deliberately mirrors ci.yml's `full-test` job command exactly (same
-#   flags, same package excludes, same lack of `--release`) so this script
-#   is a drop-in replacement with zero behavior change — see docs/TEST_TIERS.md
-#   "CI wiring" for why `--release` is NOT added here even though the
-#   CLAUDE.md "Run all tests" line documents a --release invocation: that is
-#   a separate, pre-existing (not introduced by this change) discrepancy
-#   between the documented local command and ci.yml's actual command, and
-#   this categorization effort does not silently resolve it by picking one
-#   side inside a script CI would then run unreviewed.
-#
-#   Carries `--no-fail-fast` (issue #64) to match ci.yml's full-test step:
-#   without it, plain `cargo test --workspace` stops at the first package
-#   with a failing test and silently never builds or runs anything after
-#   it. This script wraps the exact command the ci.yml step runs, so it
-#   must carry the same flag for the "zero-behavior-change substitution"
-#   claim above to hold.
+#   The nine65 test package uses opt-level=2 for polynomial arithmetic, matching
+#   the validated local full-suite profile. Test assertions, overflow checks,
+#   default features and target selection remain enabled. This is not release.
+#   --no-fail-fast ensures every target runs even when an earlier target fails.
 #
 # WHEN TO USE
 #   Every PR, every push to main, `[full-ci]` commits, manual dispatch — the
@@ -46,6 +34,7 @@ cd "$PROJECT_ROOT"
 
 echo "=== Test Tier: MEDIUM (cargo test --workspace, full default-feature suite) ==="
 cargo test --workspace --verbose \
+  --config profile.test.package.nine65.opt-level=2 \
   --exclude nine65-python --exclude nine65-wasm \
   --no-fail-fast \
   "$@"
