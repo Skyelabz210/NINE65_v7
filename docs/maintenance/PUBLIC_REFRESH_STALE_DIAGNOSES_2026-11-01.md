@@ -48,5 +48,16 @@ still separate from message restoration and canonical-root preservation.
   diagnostic scope and unchanged production-support behavior.
 * All 44 Python refresh checks, Rust formatting and diff whitespace checks pass.
 
-Publication and GitHub tracking are recorded after the local correction is
-committed. No claim is made that publishing the branch updates main.
+## Publication and tracking
+
+The correction commit `dde9762` and its preceding research implementation are
+published on `fix/public-refresh-research-gates`.
+
+* [Filed issue #200](https://github.com/Skyelabz210/NINE65_v7/issues/200)
+  records the verified ref mismatch and individual correction categories.
+* [Draft PR #201](https://github.com/Skyelabz210/NINE65_v7/pull/201)
+  publishes the complete research branch and the documentation corrections
+  for review against main.
+
+Neither publication merges the changes into main nor grants production
+security admission. The issue remains open pending reviewed integration.

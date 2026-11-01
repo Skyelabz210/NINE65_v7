@@ -7,6 +7,8 @@ handoffs, issue descriptions, parameter predicates or failure artifacts.
 At this audit, GitHub `main` was `091c4ff` and did not contain the new backend
 or README update. Always identify the branch/commit being analyzed. Publishing
 a review branch does not merge it into `main` or admit production security.
+The published work is tracked in [issue #200](https://github.com/Skyelabz210/NINE65_v7/issues/200)
+and [draft PR #201](https://github.com/Skyelabz210/NINE65_v7/pull/201).
 
 | Scope | Current result | Implementation / evidence |
 | --- | --- | --- |
