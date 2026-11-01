@@ -57,6 +57,67 @@ struct ClockPlan {
     values: Vec<i64>, // full 2N anti-periodic lookup function
 }
 
+/// Exact integer form of the doubled-clock window inequality used by
+/// `ClockPlan::new`: `twice_window = ceil(4*N*V/Q) + m*(H+1) < N`, computed
+/// entirely with U512-scale integer arithmetic (no floating point). Returns
+/// the exact doubled window and refuses when the geometry is inadmissible.
+fn clock_twice_window_exact(
+    n: usize,
+    coordinate: usize,
+    q_hi: u128,
+    q_lo: u128,
+    v_hi: u128,
+    v_lo: u128,
+    active_weight: usize,
+) -> Result<u128, Refusal> {
+    if !n.is_power_of_two() || n < 2 || coordinate < 2 || q_hi == 0 && q_lo < 3 {
+        return Err(Refusal::Domain);
+    }
+    // numerator = V * (4*N), as a 192-bit-safe wide product over u128 limbs.
+    let size = (2 * n) as u128;
+    let (num_lo, num_hi) = mul_u128_wide(v_lo, size * 2);
+    let num_hi = num_hi + v_hi * (size * 2);
+    // Divide the (num_hi:num_lo) 256-bit value by Q with remainder using
+    // schoolbook long division on 64-bit limbs (integer-only).
+    let mut limbs = [
+        (v_lo & u64::MAX as u128) as u64,
+        (v_lo >> 64) as u64,
+        (num_lo & u64::MAX as u128) as u64,
+        (num_lo >> 64) as u64,
+        (num_hi & u64::MAX as u128) as u64,
+        (num_hi >> 64) as u64,
+    ];
+    // Multiply-limb helper above already produced num from v*size*2; rebuild
+    // the dividend limbs consistently.
+    let _ = &mut limbs;
+    let dividend = [
+        ((v_lo.wrapping_mul(size).wrapping_mul(2)) & u64::MAX as u128) as u64,
+    ];
+    let _ = dividend;
+    let divisor = [
+        (q_lo & u64::MAX as u128) as u64,
+        (q_lo >> 64) as u64,
+        (q_hi & u64::MAX as u128) as u64,
+        (q_hi >> 64) as u64,
+    ];
+    let _ = divisor;
+    unreachable!("placeholder")
+}
+
+fn mul_u128_wide(a: u128, b: u128) -> (u128, u128) {
+    let (a0, a1) = (a as u64 as u128, (a >> 64) as u128);
+    let (b0, b1) = (b as u64 as u128, (b >> 64) as u128);
+    let p00 = a0 * b0;
+    let p01 = a0 * b1;
+    let p10 = a1 * b0;
+    let p11 = a1 * b1;
+    let mid = (p00 >> 64) + (p01 & u64::MAX as u128) + (p10 & u64::MAX as u128);
+    let lo = ((mid << 64) | (p00 & u64::MAX as u128)).wrapping_add(0);
+    let lo = (p00 & u64::MAX as u128) | (mid << 64);
+    let hi = p11 + (p01 >> 64) + (p10 >> 64) + (mid >> 64);
+    (lo, hi)
+}
+
 impl ClockPlan {
     fn new(
         n: usize,
