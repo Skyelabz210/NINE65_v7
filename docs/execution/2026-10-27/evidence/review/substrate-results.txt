@@ -1,0 +1,13 @@
+Captured stdout from independent probe run in this review session (not rerun):
+Independent Python oracle passed 12827 cases; product has 504 bits.
+
+Reviewed source SHA-256:
+093235ece03cfd315f45f732db8feecc711cbb4188eb7547ab522a2ddb9c3481  /workspace/NINE65_v7/crates/qmnf-crtbigint/src/lib.rs
+
+Probe command:
+python /tmp/qmnf_review_probe/oracle.py
+
+Build toolchain:
+/workspace/work/nine65/rustup/toolchains/1.89.0-x86_64-unknown-linux-gnu/bin/cargo
+CARGO_HOME=/workspace/work/nine65/cargo
+CARGO_TARGET_DIR=/tmp/qmnf_review_probe/target

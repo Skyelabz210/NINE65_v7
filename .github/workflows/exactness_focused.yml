@@ -43,6 +43,99 @@ jobs:
       - name: Compile exact_transcendentals no_std library
         run: cargo check -p exact_transcendentals --no-default-features --lib
 
+  carry-policy-models:
+    name: "Carry models · emission policy and arrow controls"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source-policy and actual-operation harness regressions
+        run: |
+          python3 scripts/test_check_recumbency.py
+          python3 scripts/test_emission_policy_alignment.py
+          python3 scripts/test_a2_arrow_suite.py
+          python3 scripts/test_real_refresh_evidence.py
+      - name: Exact Holte and centered-chart models
+        run: |
+          mkdir -p "${RUNNER_TEMP}/carry-models"
+          python3 scripts/check_holte_reversibility.py > "${RUNNER_TEMP}/carry-models/holte.json"
+          python3 scripts/check_centered_chart_order.py --output "${RUNNER_TEMP}/carry-models/centered-chart.json"
+      - name: Upload exact model results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact-carry-models
+          path: ${{ runner.temp }}/carry-models/
+          if-no-files-found: error
+          retention-days: 30
+
+  recumbent-arithmetic:
+    name: "Recumbent arithmetic · ${{ matrix.profile }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [debug, release]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust 1.89.0
+        uses: dtolnay/rust-toolchain@1.89.0
+      - name: Cache dependency crates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-exactness-crates-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-exactness-crates-
+      - name: Checked arithmetic, metadata, carry and bootstrap regressions
+        shell: bash
+        env:
+          RECUMBENT_TEST_PROFILE: ${{ matrix.profile }}
+        run: |
+          set -euo pipefail
+          cargo_profile=()
+          if [[ "$RECUMBENT_TEST_PROFILE" == release ]]; then
+            cargo_profile=(--release)
+          fi
+          cargo test -p qmnf_crtbigint "${cargo_profile[@]}"
+          cargo test -p nine65 --lib "${cargo_profile[@]}" arithmetic::recumbent::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" arithmetic::rank_residue_divider::
+          cargo test -p nine65 "${cargo_profile[@]}" --test dual_rns_context_metadata_regression
+          cargo test -p nine65 "${cargo_profile[@]}" --test single_modulus_admission
+          cargo test -p nine65 --lib "${cargo_profile[@]}" noise::budget::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" ops::homomorphic::tests::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" arithmetic::canonical_scale_round::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" arithmetic::phase_clock_plan::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" ops::public_phase_clock::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" ops::phase_clock_return::
+          cargo test -p nine65 --lib "${cargo_profile[@]}" ops::rns_fhe::cram_main::phase_clock::
+          cargo test -p nine65 "${cargo_profile[@]}" --test refresh_preflight_regression
+          cargo test -p nine65 --lib "${cargo_profile[@]}" zero_noise_phase1_carry_witness
+          cargo test -p exact_transcendentals "${cargo_profile[@]}" --test holte_reversibility
+      - name: Expanded phase preprocessing integration
+        if: matrix.profile == 'debug'
+        run: cargo test -p nine65 --features allow_insecure --test expanded_phase1
+      - name: Audit actual Rust operation traces
+        if: matrix.profile == 'release'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/recumbent-arrow"
+          cargo run -p nine65 --release --example recumbent_arrow_trace -- drop > "${RUNNER_TEMP}/recumbent-arrow/drop-trace.json"
+          cargo run -p nine65 --release --example recumbent_arrow_trace -- rank > "${RUNNER_TEMP}/recumbent-arrow/rank-trace.json"
+          python3 scripts/check_recumbent_arrow.py "${RUNNER_TEMP}/recumbent-arrow"
+      - name: Upload actual-operation arrow evidence
+        if: always() && matrix.profile == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: recumbent-actual-operation-arrow
+          path: ${{ runner.temp }}/recumbent-arrow/
+          if-no-files-found: error
+          retention-days: 30
+
   basis-contract-diagnostic:
     name: "K-Elimination · generic CRT basis regression"
     runs-on: ubuntu-latest

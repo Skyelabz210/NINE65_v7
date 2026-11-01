@@ -17,3 +17,4 @@ params.public_refresh_admissibility,public,secure,docs/CLAIM_SURFACE_AND_LIMITS_
 params.screened_security_disclosure,internal,exploratory,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
 refresh.research_native_correctness,internal,exploratory,docs/PUBLIC_REFRESH_STATUS.md
 refresh.joint_key_security_admission,internal,exploratory,docs/PUBLIC_REFRESH_STATUS.md
+correction.packet_reconciliation_2026_10_26,internal,exploratory,docs/execution/2026-10-26/STATUS.md

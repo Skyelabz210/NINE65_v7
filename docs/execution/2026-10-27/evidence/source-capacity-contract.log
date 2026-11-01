@@ -1,0 +1,7 @@
+CRAM recumbency contract failed:
+  - crates/nine65/src/ops/rns_fhe.rs: zero sentinel used as modulus-overflow state [q_product\s*==\s*0] at line(s) 1072, 1333, 1351, 2820, 2961, 4503, 5175
+  - crates/nine65/src/ops/rns_fhe.rs: zero overflow sentinel construction [unwrap_or\s*\(\s*0\s*\)] at line(s) 1068, 3947
+  - crates/nine65/src/arithmetic/rns.rs: u128::MAX fallback in capacity decision [unwrap_or\s*\(\s*u128::MAX\s*\)] at line(s) 1691
+  - crates/nine65/src/arithmetic/rns.rs: saturated k bound [k_max_bound\s*=\s*q_max\.saturating_mul] at line(s) 1687
+  - crates/nine65/src/arithmetic/rns.rs: summed lane widths used as exact anchor capacity [fn\s+anchor(?:3)?_capacity_bits.*?map\s*\(\s*\|&p\|\s*64\s*-\s*p\.leading_zeros\(\)\s*\).*?sum] at line(s) 1716, 1729
+  - crates/nine65/src/arithmetic/rns.rs: missing checked scalar main inverse metadata [main_inv_anchor_checked\s*:\s*Option<u128>]

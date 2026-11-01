@@ -402,6 +402,16 @@ impl KElimination {
         self.alpha_cap.checked_mul(self.beta_cap)
     }
 
+    /// Exact fixed-width capacity; two u128 factors always fit in U256.
+    /// Keep the existing narrow checked view for scalar consumers.
+    pub fn try_capacity_u256(&self) -> Option<crate::arithmetic::rns::U256> {
+        let limbs = multiply_u128(self.alpha_cap, self.beta_cap);
+        Some(crate::arithmetic::rns::U256 {
+            lo: limbs[0] as u128 | ((limbs[1] as u128) << 64),
+            hi: limbs[2] as u128 | ((limbs[3] as u128) << 64),
+        })
+    }
+
     #[deprecated(
         since = "8.1.0",
         note = "Use try_capacity(), capacity_limbs(), or capacity_bit_length()"
@@ -1776,5 +1786,21 @@ mod adjacency_tests {
         // Bit-length, i.e. ilog2 + 1: adjacency 96 bits, general 110 bits.
         assert_eq!(adj_cap.ilog2() + 1, 96);
         assert_eq!(general_cap.ilog2() + 1, 110);
+    }
+}
+
+#[cfg(test)]
+mod wide_capacity_tests {
+    use super::*;
+
+    #[test]
+    fn extended_capacity_has_exact_wide_view() {
+        let ke = KElimination::from_config(KElimConfig::Extended);
+        assert!(ke.try_capacity().is_none());
+        let wide = ke.try_capacity_u256().unwrap();
+        let limbs = ke.capacity_limbs();
+        assert_eq!(wide.bitlen(), ke.capacity_bit_length());
+        assert_eq!(wide.lo, limbs[0] as u128 | ((limbs[1] as u128) << 64));
+        assert_eq!(wide.hi, limbs[2] as u128);
     }
 }

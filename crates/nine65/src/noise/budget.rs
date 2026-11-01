@@ -24,7 +24,8 @@
 //! * The CBD_eta error distribution is supported on `[-eta, eta]`, so every
 //!   error polynomial has `||e||_inf <= eta`.
 //! * `Delta = floor(Q / t)`; a ciphertext decrypts correctly while its noise
-//!   satisfies `||e||_inf < Delta / 2`, i.e. while `noise_bits <= delta_bits - 1`.
+//!   satisfies `||e||_inf < Delta / 2`. For a strict bound `||e|| < 2^b`,
+//!   the capacity is `b <= bit_length(Delta) - 2`, rounding capacity down.
 //!
 //! ## Terms
 //!
@@ -332,7 +333,33 @@ fn effective_start_bits(start_noise_bits: i64, config: &FHEConfig) -> i64 {
 
 /// Bits of noise a ciphertext may carry and still decrypt: `||e|| < Delta/2`.
 fn decryption_capacity_bits(config: &FHEConfig) -> i64 {
-    (exact_delta_bit_length(config) - 1).max(0)
+    (exact_delta_bit_length(config) - 2).max(0)
+}
+
+#[cfg(test)]
+mod capacity_regression {
+    use super::*;
+
+    #[test]
+    fn decryption_capacity_rounds_down_to_half_delta() {
+        let mut config = FHEConfig::for_depth(1, 1024, 0).unwrap();
+        for q in 5..128u64 {
+            for t in 2..q {
+                let delta = q / t;
+                if delta < 2 {
+                    continue;
+                }
+                config.q = q;
+                config.primes = vec![q];
+                config.t = t;
+                let capacity = decryption_capacity_bits(&config);
+                assert!(
+                    (2u128 << capacity) <= delta as u128,
+                    "q={q}, t={t}: budget capacity exceeds Delta/2"
+                );
+            }
+        }
+    }
 }
 
 /// Budget, in millibits, that must remain unspent for the ciphertext to still
@@ -364,6 +391,24 @@ pub fn refresh_output_noise_millibits(config: &FHEConfig) -> i64 {
 }
 
 impl NoiseBudget {
+    /// Conservative headroom for the single-modulus BFV evaluator.
+    ///
+    /// Only `config.q` is represented by its ciphertext; unused entries in
+    /// `config.primes` cannot contribute capacity. With nearest-rational
+    /// encoding the initial phase error is at most `e_fresh + 1/2`.
+    /// One extra bit bounds that sum. `bit_length(floor(q/t)) - 2` is a
+    /// lower bound on log2(q/(2*t)), so capacity is rounded DOWN. This
+    /// constructor supports addition and scalar operations, not ct×ct or
+    /// refresh. The RNS evaluator continues to use `from_config`.
+    pub fn from_single_modulus(config: &FHEConfig) -> Self {
+        if config.t < 2 || config.q <= config.t || !config.n.is_power_of_two() {
+            return Self::with_budget_bits(0);
+        }
+        let capacity_bits = scalar_bit_length(config.q / config.t) - 2;
+        let start_bits = fresh_noise_bit_bound(config) + 1;
+        Self::with_budget_bits((capacity_bits - start_bits).max(0))
+    }
+
     /// Construct a budget from exact RNS quotient size.
     ///
     /// `capacity - effective_start_bits(fresh)`: the decryption capacity
@@ -1113,7 +1158,7 @@ mod tests {
         );
     }
 
-    #[ignore = "VESTIGIAL: asserts NoiseBudget::reset_after_bootstrap raises remaining_millibits above its pre-reset value and appends a NoiseOpType::Bootstrap entry. A reset only means something against a budget that depletes per multiply. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+    // Ledger behavior remains live even while public refresh is refused.
     #[test]
     fn bootstrap_reset_uses_exact_delta_size() {
         let config = SecureConfig::secure_128_deep().into_config();
@@ -1129,7 +1174,6 @@ mod tests {
         );
     }
 
-    #[ignore = "VESTIGIAL: asserts should_bootstrap(250) is inclusive at exactly 75000 millibits consumed and false one millibit below — the auto-refresh trigger boundary. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     fn threshold_boundary_is_inclusive() {
         let mut budget = NoiseBudget::with_budget_bits(100);
@@ -1141,7 +1185,6 @@ mod tests {
         assert!(!above.should_bootstrap(250));
     }
 
-    #[ignore = "VESTIGIAL: asserts should_bootstrap(1001) panics — argument validation on the auto-refresh trigger threshold. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
     #[test]
     #[should_panic(expected = "threshold must be in 0..=1000")]
     fn invalid_threshold_panics() {

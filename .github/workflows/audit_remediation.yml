@@ -113,7 +113,9 @@ jobs:
           if legacy in source:
               raise SystemExit("legacy summed-prime-bit-width calculation remains in executable code")
           print("Noise budget source contract passed (comments and strings excluded).")
-          PY      - name: Verify audited secure-128 dimension
+          PY
+
+      - name: Verify audited secure-128 dimension
         shell: bash
         run: |
           set -euo pipefail
@@ -122,6 +124,7 @@ jobs:
 
       - name: Reproduce modulus-class evidence
         run: |
+          python3 scripts/test_audit_modulus_classes.py
           python3 scripts/audit_modulus_classes.py
           git diff --exit-code -- artifacts/security/modulus_class_audit_2026-07-13.json
 

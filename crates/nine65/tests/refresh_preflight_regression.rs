@@ -64,18 +64,23 @@ fn exact_delta_bit_length(config: &FHEConfig) -> i64 {
 
 fn expected_fresh_budget(config: &FHEConfig) -> i64 {
     let eta_bits = scalar_bit_length(config.eta as u64).max(1);
-    let root_n_bits = (config.n.trailing_zeros() / 2) as i64;
-    (exact_delta_bit_length(config) - eta_bits - root_n_bits - 3).max(0) * 1000
+    let n_bits = config.n.trailing_zeros() as i64;
+    let fresh_bound_bits = n_bits + eta_bits + 2;
+    let start_bits = fresh_bound_bits.max(scalar_bit_length(config.t)) + 1;
+    (exact_delta_bit_length(config) - 2 - start_bits).max(0) * 1000
 }
 
 fn expected_post_bootstrap_budget(config: &FHEConfig) -> i64 {
     let t_bits = scalar_bit_length(config.t);
     let eta_bits = scalar_bit_length(config.eta as u64).max(1);
-    let root_n_bits = (config.n.trailing_zeros() / 2) as i64;
-    (exact_delta_bit_length(config) - t_bits - eta_bits - root_n_bits).max(0) * 1000
+    let n_bits = config.n.trailing_zeros() as i64;
+    let refresh_bound_bits = t_bits + 2 * n_bits + eta_bits + 2;
+    let start_bits = refresh_bound_bits.max(t_bits) + 1;
+    (exact_delta_bit_length(config) - 2 - start_bits).max(0) * 1000
 }
 
-#[ignore = "VESTIGIAL: loops multiplies while !budget.should_bootstrap(250), then asserts reset_after_bootstrap lands on expected_post_bootstrap_budget. UN-QUARANTINE CANDIDATE: its first half — initial_millibits() equalling an independent exact-limb Delta oracle — is substrate-independent and should come back as its own test once split from the refresh tail. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+// These are tests of live ledger behavior, not evidence that the public
+// Phase-1 circuit is implemented. The deterministic bound uses n, not sqrt(n).
 #[test]
 fn secure_128_deep_budget_matches_independent_exact_limb_oracle() {
     let config = SecureConfig::secure_128_deep().into_config();
@@ -112,7 +117,6 @@ fn secure_128_deep_budget_matches_independent_exact_limb_oracle() {
     assert!(budget.can_perform(operation_cost));
 }
 
-#[ignore = "VESTIGIAL: asserts should_bootstrap(1000) is true before the first operation, i.e. that a 100 percent trigger selects a refresh immediately. It is entirely a statement about the refresh trigger. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
 #[test]
 fn full_threshold_requires_refresh_before_first_operation() {
     let config = SecureConfig::secure_128_deep().into_config();

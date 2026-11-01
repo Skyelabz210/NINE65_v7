@@ -1,0 +1,8 @@
+[package]
+name = "qmnf_crtbigint"
+version = "3.1.1"
+edition = "2021"
+license.workspace = true
+authors = ["Anthony Diaz (Acid) <acid@hackfate.us>"]
+description = "Checked signed CRT reference arithmetic with exact eight-lane capacity"
+

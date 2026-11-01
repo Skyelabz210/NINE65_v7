@@ -1,0 +1,55 @@
+{
+  "audited_commit": "4bc1f0f42ea7127f67f6fe1f921c7c9db1d50a06",
+  "implementation_base": "bbfa754f9db2e9a7b69fca6c468e0f601a2cf123",
+  "expected_audit_hashes": "not supplied; hashes below are independently computed, not a verified match",
+  "packet_sha256": "d4ea3dac2f9ecd0abe44ad882967c14caba0424f0a974c262448a4c54a9cfc2a",
+  "files": [
+    {
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "audited_sha256": "178457501cdb524122b6c905ead4aed7570427bb9637b8d58444e9b63def12bd",
+      "current_sha256": "ef2b5f487745cef6da4ef1efefc72c3821620c5f662e4309389e03cd85403800"
+    },
+    {
+      "path": "crates/nine65/src/ops/bootstrap.rs",
+      "audited_sha256": "74ff760246a4280e47415e76c1a725c2587afdfdbb79d780139c5e574b92f76d",
+      "current_sha256": "1230abe894e1af8942a9af7c5387e30e32f9c50af6fb1a0b5336566a293b80a6"
+    },
+    {
+      "path": "crates/nine65/src/params/secure_configs.rs",
+      "audited_sha256": "4e9d66f459bb9ec745dd29b51a0d680782b36153a2c31e33726dd95fb37c0210",
+      "current_sha256": "4e9d66f459bb9ec745dd29b51a0d680782b36153a2c31e33726dd95fb37c0210"
+    }
+  ],
+  "missing_evidence": [
+    {
+      "path": "logs/phase_round_trace_centered_lift.log",
+      "at_audited_commit": false,
+      "at_current_commit": false
+    },
+    {
+      "path": "centered_lift_candidate.patch",
+      "at_audited_commit": false,
+      "at_current_commit": false
+    },
+    {
+      "path": "centered_lift_candidate_test_results.md",
+      "at_audited_commit": false,
+      "at_current_commit": false
+    },
+    {
+      "path": "Experimental v7 Independent Nontrivial 100-Step Chain.md",
+      "at_audited_commit": false,
+      "at_current_commit": false
+    },
+    {
+      "path": "Recumbent bootstrap .txt",
+      "at_audited_commit": false,
+      "at_current_commit": false
+    },
+    {
+      "path": "crates/ns_v5/recumbent.rs",
+      "at_audited_commit": false,
+      "at_current_commit": false
+    }
+  ]
+}

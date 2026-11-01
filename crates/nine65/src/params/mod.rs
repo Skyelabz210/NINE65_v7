@@ -248,6 +248,12 @@ impl FHEConfig {
             .try_fold(1u128, |acc, &prime| acc.checked_mul(prime as u128))
     }
 
+    /// Exact fixed-width view for consumers with a 256-bit capacity limit.
+    /// Wider configurations retain their exact `rns_product_limbs` metadata.
+    pub fn try_rns_product_u256(&self) -> Option<crate::arithmetic::rns::U256> {
+        crate::arithmetic::rns::U256::checked_product_u64s(&self.primes)
+    }
+
     /// Return the exact modulus product as little-endian 64-bit limbs.
     pub fn rns_product_limbs(&self) -> Vec<u64> {
         exact_product_limbs(&self.primes)
@@ -916,5 +922,21 @@ mod tests {
         let light = FHEConfig::standard_128_insecure();
         let deep = FHEConfig::deep_128_insecure();
         assert!(deep.estimated_depth() >= light.estimated_depth());
+    }
+}
+
+#[cfg(test)]
+mod wide_product_tests {
+    use super::*;
+
+    #[test]
+    fn checked_fixed_width_view_matches_named_and_overwide_configs() {
+        let mut config = SecureConfig::secure_256().config;
+        assert!(config.try_rns_product().is_none());
+        let exact = config.try_rns_product_u256().unwrap();
+        assert_eq!(exact.bitlen(), config.rns_product_bit_length());
+        config.primes = vec![u64::MAX; 5];
+        assert!(config.try_rns_product_u256().is_none());
+        assert!(config.rns_product_bit_length() > 256);
     }
 }

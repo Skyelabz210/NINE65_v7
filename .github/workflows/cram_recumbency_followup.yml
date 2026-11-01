@@ -92,7 +92,9 @@ jobs:
           grep -F 'let achieved_chain_correct = decrypted == plaintext;' \
             crates/nine65/src/bin/nine65_bench.rs
           grep -F '"achieved_chain_correct": achieved_chain_correct,' \
-            crates/nine65/src/bin/nine65_bench.rs      - name: Verify exact noise accounting
+            crates/nine65/src/bin/nine65_bench.rs
+
+      - name: Verify exact noise accounting
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -109,7 +111,9 @@ jobs:
           if legacy in source:
               raise SystemExit("legacy summed-prime-bit-width calculation remains in executable code")
           print("Noise budget source contract passed (comments and strings excluded).")
-          PY      - name: Verify audited secure-128 dimension
+          PY
+
+      - name: Verify audited secure-128 dimension
         shell: bash
         run: |
           set -euo pipefail

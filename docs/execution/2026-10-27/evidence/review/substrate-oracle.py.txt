@@ -1,0 +1,38 @@
+import random, subprocess, math
+mods=[9223372036854775783,9223372036854775643,9223372036854775549,9223372036854775507,9223372036854775337,9223372036854775291,9223372036854775279,9223372036854775207]
+M=math.prod(mods)
+rng=random.Random(0x264504)
+cases=[]
+def add(op,a,b=None):
+    s=f'{op} {a:x}'
+    if b is not None:s+=f' {b if op=="p" else format(b,"x")}'
+    if op=='a':expected=a+b
+    elif op=='s':expected=a-b
+    elif op=='m':expected=a*b
+    elif op=='p':expected=pow(abs(a),b,M)*(-1 if a<0 and b%2 else 1)
+    elif op=='i':expected=None if math.gcd(a,M)!=1 else pow(abs(a),-1,M)*(-1 if a<0 else 1)
+    else:expected=a
+    cases.append((s,expected))
+for _ in range(1200):
+    a=rng.randrange(M)*rng.choice((-1,1));b=rng.randrange(M)*rng.choice((-1,1))
+    for op in 'asmr':add(op,a,b if op!='r' else None)
+for _ in range(1200):
+    n=rng.randrange(505);m=rng.randrange(505-n)
+    a=rng.getrandbits(n)*rng.choice((-1,1));b=rng.getrandbits(m)*rng.choice((-1,1))
+    for op in 'asm':add(op,a,b)
+for bits in range(1,504):
+    a=(1<<bits)-1;b=(1<<(504-bits))-1
+    add('m',a,b);add('m',-a,b)
+for a in [0,1,-1,M-1,1-M,M-2,2-M,1<<503,-(1<<503),1<<128,-(1<<128)]+[rng.randrange(M)*rng.choice((-1,1)) for _ in range(300)]:
+    add('r',a);add('i',a)
+    for e in [0,1,2,3,4,63,64,65,2**64-1]:add('p',a,e)
+proc=subprocess.run(['/tmp/qmnf_review_probe/target/debug/qmnf_review_probe'],input='\n'.join(s for s,_ in cases)+'\n',text=True,capture_output=True,check=True)
+actual=proc.stdout.splitlines()
+assert len(actual)==len(cases),(len(actual),len(cases))
+for (s,e),v in zip(cases,actual):
+    if e is None:assert v=='N',(s,e,v)
+    elif abs(e)>=M:assert v=='E MagnitudeOverflow',(s,e,v)
+    else:
+        sg,h=v.split();n=int(sg)*int(h,16)
+        assert n==e,(s,e,n)
+print(f'Independent Python oracle passed {len(cases)} cases; product has {M.bit_length()} bits.')

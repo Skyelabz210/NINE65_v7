@@ -1,0 +1,1820 @@
+{
+  "summary": {
+    "splits_checked": 62,
+    "states_checked": 1861860,
+    "adjacent_order_checks": 1861798,
+    "bounded_sheet_recoveries": 1861860,
+    "published_rows_checked": 6,
+    "published_row_corrections": [
+      {
+        "Q": 143,
+        "R": 210,
+        "supplied": "389465819/81981900000",
+        "computed": "714011/150300150",
+        "matches": false,
+        "supplied_minus_computed": "8287/128828700000"
+      }
+    ]
+  },
+  "basis": [
+    2,
+    3,
+    5,
+    7,
+    11,
+    13
+  ],
+  "window": {
+    "lower_inclusive": -15015,
+    "upper_inclusive": 15014
+  },
+  "scope": "Finite clear arithmetic with preexisting authentic chart and anchor inputs; no encrypted extraction or FHE ordering construction.",
+  "splits": [
+    {
+      "Q": 2,
+      "R": 15015,
+      "main_primes": [
+        2
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -7507,
+          "last": 7507,
+          "count": 2
+        }
+      ],
+      "pair_tie_numerator": 60060,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/15015",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 3,
+      "R": 10010,
+      "main_primes": [
+        3
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -5005,
+          "last": -5005,
+          "count": 2
+        },
+        {
+          "first": -5004,
+          "last": 5004,
+          "count": 3
+        },
+        {
+          "first": 5005,
+          "last": 5005,
+          "count": 1
+        }
+      ],
+      "pair_tie_numerator": 90086,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "45043/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 5,
+      "R": 6006,
+      "main_primes": [
+        5
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -3003,
+          "last": -3003,
+          "count": 3
+        },
+        {
+          "first": -3002,
+          "last": 3002,
+          "count": 5
+        },
+        {
+          "first": 3003,
+          "last": 3003,
+          "count": 2
+        }
+      ],
+      "pair_tie_numerator": 150138,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "8341/50100050",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 7,
+      "R": 4290,
+      "main_primes": [
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -2145,
+          "last": -2145,
+          "count": 4
+        },
+        {
+          "first": -2144,
+          "last": 2144,
+          "count": 7
+        },
+        {
+          "first": 2145,
+          "last": 2145,
+          "count": 3
+        }
+      ],
+      "pair_tie_numerator": 210186,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "11677/50100050",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 11,
+      "R": 2730,
+      "main_primes": [
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -1365,
+          "last": -1365,
+          "count": 6
+        },
+        {
+          "first": -1364,
+          "last": 1364,
+          "count": 11
+        },
+        {
+          "first": 1365,
+          "last": 1365,
+          "count": 5
+        }
+      ],
+      "pair_tie_numerator": 330270,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "11009/30060030",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 13,
+      "R": 2310,
+      "main_primes": [
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -1155,
+          "last": -1155,
+          "count": 7
+        },
+        {
+          "first": -1154,
+          "last": 1154,
+          "count": 13
+        },
+        {
+          "first": 1155,
+          "last": 1155,
+          "count": 6
+        }
+      ],
+      "pair_tie_numerator": 390306,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "9293/21471450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 6,
+      "R": 5005,
+      "main_primes": [
+        2,
+        3
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -2502,
+          "last": 2502,
+          "count": 6
+        }
+      ],
+      "pair_tie_numerator": 180180,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/5005",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 10,
+      "R": 3003,
+      "main_primes": [
+        2,
+        5
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -1501,
+          "last": 1501,
+          "count": 10
+        }
+      ],
+      "pair_tie_numerator": 300300,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/3003",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 14,
+      "R": 2145,
+      "main_primes": [
+        2,
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -1072,
+          "last": 1072,
+          "count": 14
+        }
+      ],
+      "pair_tie_numerator": 420420,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/2145",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 22,
+      "R": 1365,
+      "main_primes": [
+        2,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -682,
+          "last": 682,
+          "count": 22
+        }
+      ],
+      "pair_tie_numerator": 660660,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/1365",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 26,
+      "R": 1155,
+      "main_primes": [
+        2,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -577,
+          "last": 577,
+          "count": 26
+        }
+      ],
+      "pair_tie_numerator": 780780,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/1155",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 15,
+      "R": 2002,
+      "main_primes": [
+        3,
+        5
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -1001,
+          "last": -1001,
+          "count": 8
+        },
+        {
+          "first": -1000,
+          "last": 1000,
+          "count": 15
+        },
+        {
+          "first": 1001,
+          "last": 1001,
+          "count": 7
+        }
+      ],
+      "pair_tie_numerator": 450338,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "32167/64414350",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 21,
+      "R": 1430,
+      "main_primes": [
+        3,
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -715,
+          "last": -715,
+          "count": 11
+        },
+        {
+          "first": -714,
+          "last": 714,
+          "count": 21
+        },
+        {
+          "first": 715,
+          "last": 715,
+          "count": 10
+        }
+      ],
+      "pair_tie_numerator": 630410,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "521/745290",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 33,
+      "R": 910,
+      "main_primes": [
+        3,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -455,
+          "last": -455,
+          "count": 17
+        },
+        {
+          "first": -454,
+          "last": 454,
+          "count": 33
+        },
+        {
+          "first": 455,
+          "last": 455,
+          "count": 16
+        }
+      ],
+      "pair_tie_numerator": 990446,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "495223/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 39,
+      "R": 770,
+      "main_primes": [
+        3,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -385,
+          "last": -385,
+          "count": 20
+        },
+        {
+          "first": -384,
+          "last": 384,
+          "count": 39
+        },
+        {
+          "first": 385,
+          "last": 385,
+          "count": 19
+        }
+      ],
+      "pair_tie_numerator": 1170410,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "117041/90180090",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 35,
+      "R": 858,
+      "main_primes": [
+        5,
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -429,
+          "last": -429,
+          "count": 18
+        },
+        {
+          "first": -428,
+          "last": 428,
+          "count": 35
+        },
+        {
+          "first": 429,
+          "last": 429,
+          "count": 17
+        }
+      ],
+      "pair_tie_numerator": 1050438,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "175073/150300150",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 55,
+      "R": 546,
+      "main_primes": [
+        5,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -273,
+          "last": -273,
+          "count": 28
+        },
+        {
+          "first": -272,
+          "last": 272,
+          "count": 55
+        },
+        {
+          "first": 273,
+          "last": 273,
+          "count": 27
+        }
+      ],
+      "pair_tie_numerator": 1650138,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "39289/21471450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 65,
+      "R": 462,
+      "main_primes": [
+        5,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -231,
+          "last": -231,
+          "count": 33
+        },
+        {
+          "first": -230,
+          "last": 230,
+          "count": 65
+        },
+        {
+          "first": 231,
+          "last": 231,
+          "count": 32
+        }
+      ],
+      "pair_tie_numerator": 1949838,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "29543/13663650",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 77,
+      "R": 390,
+      "main_primes": [
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -195,
+          "last": -195,
+          "count": 39
+        },
+        {
+          "first": -194,
+          "last": 194,
+          "count": 77
+        },
+        {
+          "first": 195,
+          "last": 195,
+          "count": 38
+        }
+      ],
+      "pair_tie_numerator": 2309346,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "9869/3853850",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 91,
+      "R": 330,
+      "main_primes": [
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -165,
+          "last": -165,
+          "count": 46
+        },
+        {
+          "first": -164,
+          "last": 164,
+          "count": 91
+        },
+        {
+          "first": 165,
+          "last": 165,
+          "count": 45
+        }
+      ],
+      "pair_tie_numerator": 2728590,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "90953/30060030",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 143,
+      "R": 210,
+      "main_primes": [
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -105,
+          "last": -105,
+          "count": 72
+        },
+        {
+          "first": -104,
+          "last": 104,
+          "count": 143
+        },
+        {
+          "first": 105,
+          "last": 105,
+          "count": 71
+        }
+      ],
+      "pair_tie_numerator": 4284066,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "714011/150300150",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 30,
+      "R": 1001,
+      "main_primes": [
+        2,
+        3,
+        5
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -500,
+          "last": 500,
+          "count": 30
+        }
+      ],
+      "pair_tie_numerator": 900900,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/1001",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 42,
+      "R": 715,
+      "main_primes": [
+        2,
+        3,
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -357,
+          "last": 357,
+          "count": 42
+        }
+      ],
+      "pair_tie_numerator": 1261260,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/715",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 66,
+      "R": 455,
+      "main_primes": [
+        2,
+        3,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -227,
+          "last": 227,
+          "count": 66
+        }
+      ],
+      "pair_tie_numerator": 1981980,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/455",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 78,
+      "R": 385,
+      "main_primes": [
+        2,
+        3,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -192,
+          "last": 192,
+          "count": 78
+        }
+      ],
+      "pair_tie_numerator": 2342340,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/385",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 70,
+      "R": 429,
+      "main_primes": [
+        2,
+        5,
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -214,
+          "last": 214,
+          "count": 70
+        }
+      ],
+      "pair_tie_numerator": 2102100,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/429",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 110,
+      "R": 273,
+      "main_primes": [
+        2,
+        5,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -136,
+          "last": 136,
+          "count": 110
+        }
+      ],
+      "pair_tie_numerator": 3303300,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/273",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 130,
+      "R": 231,
+      "main_primes": [
+        2,
+        5,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -115,
+          "last": 115,
+          "count": 130
+        }
+      ],
+      "pair_tie_numerator": 3903900,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/231",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 154,
+      "R": 195,
+      "main_primes": [
+        2,
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -97,
+          "last": 97,
+          "count": 154
+        }
+      ],
+      "pair_tie_numerator": 4624620,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/195",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 182,
+      "R": 165,
+      "main_primes": [
+        2,
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -82,
+          "last": 82,
+          "count": 182
+        }
+      ],
+      "pair_tie_numerator": 5465460,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/165",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 286,
+      "R": 105,
+      "main_primes": [
+        2,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -52,
+          "last": 52,
+          "count": 286
+        }
+      ],
+      "pair_tie_numerator": 8588580,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/105",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 105,
+      "R": 286,
+      "main_primes": [
+        3,
+        5,
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -143,
+          "last": -143,
+          "count": 53
+        },
+        {
+          "first": -142,
+          "last": 142,
+          "count": 105
+        },
+        {
+          "first": 143,
+          "last": 143,
+          "count": 52
+        }
+      ],
+      "pair_tie_numerator": 3147638,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "121063/34684650",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 165,
+      "R": 182,
+      "main_primes": [
+        3,
+        5,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -91,
+          "last": -91,
+          "count": 83
+        },
+        {
+          "first": -90,
+          "last": 90,
+          "count": 165
+        },
+        {
+          "first": 91,
+          "last": 91,
+          "count": 82
+        }
+      ],
+      "pair_tie_numerator": 4941338,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "2470669/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 195,
+      "R": 154,
+      "main_primes": [
+        3,
+        5,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -77,
+          "last": -77,
+          "count": 98
+        },
+        {
+          "first": -76,
+          "last": 76,
+          "count": 195
+        },
+        {
+          "first": 77,
+          "last": 77,
+          "count": 97
+        }
+      ],
+      "pair_tie_numerator": 5836838,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "416917/64414350",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 231,
+      "R": 130,
+      "main_primes": [
+        3,
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -65,
+          "last": -65,
+          "count": 116
+        },
+        {
+          "first": -64,
+          "last": 64,
+          "count": 231
+        },
+        {
+          "first": 65,
+          "last": 65,
+          "count": 115
+        }
+      ],
+      "pair_tie_numerator": 6910250,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "138205/18036018",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 273,
+      "R": 110,
+      "main_primes": [
+        3,
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -55,
+          "last": -55,
+          "count": 137
+        },
+        {
+          "first": -54,
+          "last": 54,
+          "count": 273
+        },
+        {
+          "first": 55,
+          "last": 55,
+          "count": 136
+        }
+      ],
+      "pair_tie_numerator": 8160926,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "4080463/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 429,
+      "R": 70,
+      "main_primes": [
+        3,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -35,
+          "last": -35,
+          "count": 215
+        },
+        {
+          "first": -34,
+          "last": 34,
+          "count": 429
+        },
+        {
+          "first": 35,
+          "last": 35,
+          "count": 214
+        }
+      ],
+      "pair_tie_numerator": 12790850,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "255817/18036018",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 385,
+      "R": 78,
+      "main_primes": [
+        5,
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -39,
+          "last": -39,
+          "count": 193
+        },
+        {
+          "first": -38,
+          "last": 38,
+          "count": 385
+        },
+        {
+          "first": 39,
+          "last": 39,
+          "count": 192
+        }
+      ],
+      "pair_tie_numerator": 11487438,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "638191/50100050",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 455,
+      "R": 66,
+      "main_primes": [
+        5,
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -33,
+          "last": -33,
+          "count": 228
+        },
+        {
+          "first": -32,
+          "last": 32,
+          "count": 455
+        },
+        {
+          "first": 33,
+          "last": 33,
+          "count": 227
+        }
+      ],
+      "pair_tie_numerator": 13560138,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "753341/50100050",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 715,
+      "R": 42,
+      "main_primes": [
+        5,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -21,
+          "last": -21,
+          "count": 358
+        },
+        {
+          "first": -20,
+          "last": 20,
+          "count": 715
+        },
+        {
+          "first": 21,
+          "last": 21,
+          "count": 357
+        }
+      ],
+      "pair_tie_numerator": 21215838,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "505139/21471450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 1001,
+      "R": 30,
+      "main_primes": [
+        7,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -15,
+          "last": -15,
+          "count": 501
+        },
+        {
+          "first": -14,
+          "last": 14,
+          "count": 1001
+        },
+        {
+          "first": 15,
+          "last": 15,
+          "count": 500
+        }
+      ],
+      "pair_tie_numerator": 29559030,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "985301/30060030",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 210,
+      "R": 143,
+      "main_primes": [
+        2,
+        3,
+        5,
+        7
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -71,
+          "last": 71,
+          "count": 210
+        }
+      ],
+      "pair_tie_numerator": 6306300,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/143",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 330,
+      "R": 91,
+      "main_primes": [
+        2,
+        3,
+        5,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -45,
+          "last": 45,
+          "count": 330
+        }
+      ],
+      "pair_tie_numerator": 9909900,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/91",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 390,
+      "R": 77,
+      "main_primes": [
+        2,
+        3,
+        5,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -38,
+          "last": 38,
+          "count": 390
+        }
+      ],
+      "pair_tie_numerator": 11711700,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/77",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 462,
+      "R": 65,
+      "main_primes": [
+        2,
+        3,
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -32,
+          "last": 32,
+          "count": 462
+        }
+      ],
+      "pair_tie_numerator": 13873860,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/65",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 546,
+      "R": 55,
+      "main_primes": [
+        2,
+        3,
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -27,
+          "last": 27,
+          "count": 546
+        }
+      ],
+      "pair_tie_numerator": 16396380,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/55",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 858,
+      "R": 35,
+      "main_primes": [
+        2,
+        3,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -17,
+          "last": 17,
+          "count": 858
+        }
+      ],
+      "pair_tie_numerator": 25765740,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/35",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 770,
+      "R": 39,
+      "main_primes": [
+        2,
+        5,
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -19,
+          "last": 19,
+          "count": 770
+        }
+      ],
+      "pair_tie_numerator": 23123100,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/39",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 910,
+      "R": 33,
+      "main_primes": [
+        2,
+        5,
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -16,
+          "last": 16,
+          "count": 910
+        }
+      ],
+      "pair_tie_numerator": 27327300,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/33",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 1430,
+      "R": 21,
+      "main_primes": [
+        2,
+        5,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -10,
+          "last": 10,
+          "count": 1430
+        }
+      ],
+      "pair_tie_numerator": 42942900,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/21",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 2002,
+      "R": 15,
+      "main_primes": [
+        2,
+        7,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -7,
+          "last": 7,
+          "count": 2002
+        }
+      ],
+      "pair_tie_numerator": 60120060,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/15",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 1155,
+      "R": 26,
+      "main_primes": [
+        3,
+        5,
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -13,
+          "last": -13,
+          "count": 578
+        },
+        {
+          "first": -12,
+          "last": 12,
+          "count": 1155
+        },
+        {
+          "first": 13,
+          "last": 13,
+          "count": 577
+        }
+      ],
+      "pair_tie_numerator": 34017638,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "17008819/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 1365,
+      "R": 22,
+      "main_primes": [
+        3,
+        5,
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -11,
+          "last": -11,
+          "count": 683
+        },
+        {
+          "first": -10,
+          "last": 10,
+          "count": 1365
+        },
+        {
+          "first": 11,
+          "last": 11,
+          "count": 682
+        }
+      ],
+      "pair_tie_numerator": 40059338,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1820879/40990950",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 2145,
+      "R": 14,
+      "main_primes": [
+        3,
+        5,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -7,
+          "last": -7,
+          "count": 1073
+        },
+        {
+          "first": -6,
+          "last": 6,
+          "count": 2145
+        },
+        {
+          "first": 7,
+          "last": 7,
+          "count": 1072
+        }
+      ],
+      "pair_tie_numerator": 62113838,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "31056919/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 3003,
+      "R": 10,
+      "main_primes": [
+        3,
+        7,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -5,
+          "last": -5,
+          "count": 1502
+        },
+        {
+          "first": -4,
+          "last": 4,
+          "count": 3003
+        },
+        {
+          "first": 5,
+          "last": 5,
+          "count": 1501
+        }
+      ],
+      "pair_tie_numerator": 85671086,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "42835543/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 5005,
+      "R": 6,
+      "main_primes": [
+        5,
+        7,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -3,
+          "last": -3,
+          "count": 2503
+        },
+        {
+          "first": -2,
+          "last": 2,
+          "count": 5005
+        },
+        {
+          "first": 3,
+          "last": 3,
+          "count": 2502
+        }
+      ],
+      "pair_tie_numerator": 137775138,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "22962523/150300150",
+      "occupancy_formula": "two_partial_end_sheets"
+    },
+    {
+      "Q": 2310,
+      "R": 13,
+      "main_primes": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -6,
+          "last": 6,
+          "count": 2310
+        }
+      ],
+      "pair_tie_numerator": 69369300,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/13",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 2730,
+      "R": 11,
+      "main_primes": [
+        2,
+        3,
+        5,
+        7,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -5,
+          "last": 5,
+          "count": 2730
+        }
+      ],
+      "pair_tie_numerator": 81981900,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/11",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 4290,
+      "R": 7,
+      "main_primes": [
+        2,
+        3,
+        5,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -3,
+          "last": 3,
+          "count": 4290
+        }
+      ],
+      "pair_tie_numerator": 128828700,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/7",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 6006,
+      "R": 5,
+      "main_primes": [
+        2,
+        3,
+        7,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -2,
+          "last": 2,
+          "count": 6006
+        }
+      ],
+      "pair_tie_numerator": 180360180,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/5",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 10010,
+      "R": 3,
+      "main_primes": [
+        2,
+        5,
+        7,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -1,
+          "last": 1,
+          "count": 10010
+        }
+      ],
+      "pair_tie_numerator": 300600300,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "1/3",
+      "occupancy_formula": "uniform"
+    },
+    {
+      "Q": 15015,
+      "R": 2,
+      "main_primes": [
+        3,
+        5,
+        7,
+        11,
+        13
+      ],
+      "states_checked": 30030,
+      "adjacent_order_checks": 30029,
+      "bounded_sheet_recoveries": 30030,
+      "sheet_occupancy_runs": [
+        {
+          "first": -1,
+          "last": -1,
+          "count": 7508
+        },
+        {
+          "first": 0,
+          "last": 0,
+          "count": 15015
+        },
+        {
+          "first": 1,
+          "last": 1,
+          "count": 7507
+        }
+      ],
+      "pair_tie_numerator": 338175338,
+      "pair_tie_denominator": 901800900,
+      "pair_tie_probability": "169087669/450900450",
+      "occupancy_formula": "two_partial_end_sheets"
+    }
+  ],
+  "published_rows": [
+    {
+      "Q": 15015,
+      "R": 2,
+      "supplied": "169087669/450900450",
+      "computed": "169087669/450900450",
+      "matches": true,
+      "supplied_minus_computed": "0"
+    },
+    {
+      "Q": 10010,
+      "R": 3,
+      "supplied": "1/3",
+      "computed": "1/3",
+      "matches": true,
+      "supplied_minus_computed": "0"
+    },
+    {
+      "Q": 6006,
+      "R": 5,
+      "supplied": "1/5",
+      "computed": "1/5",
+      "matches": true,
+      "supplied_minus_computed": "0"
+    },
+    {
+      "Q": 5005,
+      "R": 6,
+      "supplied": "22962523/150300150",
+      "computed": "22962523/150300150",
+      "matches": true,
+      "supplied_minus_computed": "0"
+    },
+    {
+      "Q": 210,
+      "R": 143,
+      "supplied": "1/143",
+      "computed": "1/143",
+      "matches": true,
+      "supplied_minus_computed": "0"
+    },
+    {
+      "Q": 143,
+      "R": 210,
+      "supplied": "389465819/81981900000",
+      "computed": "714011/150300150",
+      "matches": false,
+      "supplied_minus_computed": "8287/128828700000"
+    }
+  ]
+}

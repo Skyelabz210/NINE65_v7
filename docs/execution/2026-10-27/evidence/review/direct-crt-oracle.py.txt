@@ -1,0 +1,35 @@
+import random,math,subprocess,sys
+R=random.Random(0xd1d2d3);mods=[2,3,5,7,11,13,17,19];M=math.prod(mods);H=M//2;MIN=-(1<<127);MAX=(1<<127)-1
+cases=[]
+def proj(q,ms):return [q%m for m in ms]
+def center(x):
+ u=x%M
+ return u-M if u>H else u
+def record(s,q=None,counter=1,aux=()):cases.append((s,q,counter,aux))
+for i in range(1600):
+ x=R.choice([MIN,MAX,-H-1,-H,-H+1,H-1,H,H+1,-1,0,1,R.randrange(MIN,MAX+1)])
+ d=R.choice([1,-1,2,-2,6,-6,30,-30,1<<100,-(1<<100),MIN,0])
+ c=center(x)
+ record(f'D {x} {d}',c//d if d and c%d==0 else None,0 if d==0 else 1)
+for i in range(1800):
+ anchor=R.choice(mods);d=R.choice([1,-1,23,-23,2,-2,3,5,MIN,MAX,(1<<64)+23,0,R.randrange(MIN,MAX+1)])
+ x=R.choice([MIN,MAX,-H-1,-H,-H+1,H-1,H,H+1,-1,0,1,R.randrange(MIN,MAX+1)])
+ c=center(x);compatible=d!=0 and math.gcd(abs(d),M//anchor)==1
+ record(f'K {x} {d} {anchor}',c//d if compatible and c%d==0 else None,1 if compatible else 0)
+auxsets=[[23],[1009,1013,1019,1021,1031,1033,1039,1049,1051,1061],[4294967291,4294967279,4294967231]]
+for i in range(1000):
+ aux=R.choice(auxsets);d=R.choice([1,-1,2,-2,3,-3,6,-6,30,-30,M,-M]);P=math.prod([m for m in mods if math.gcd(m,d)==1]+aux)
+ limit=min((P-1)//2,MAX//abs(d));q=R.choice([-limit,limit,-1,0,1,R.randrange(-limit,limit+1)]);x=q*d;bound=abs(q)
+ record(f'F {x} {d} {",".join(map(str,aux))} {bound}',q,1,aux)
+ if abs(d)>1 and MIN<=x+1<=MAX:
+  record(f'F {x+1} {d} {",".join(map(str,aux))} {bound}',None,1,aux)
+p=subprocess.run([sys.argv[1] if len(sys.argv)>1 else '/tmp/direct_crt_review_probe/probe'],input='\n'.join(s for s,*_ in cases)+'\n',text=True,capture_output=True,check=True)
+lines=p.stdout.splitlines();assert len(lines)==len(cases),(len(lines),len(cases))
+for (s,q,count,aux),line in zip(cases,lines):
+ parts=line.split();assert parts[:2]==['0',str(count)],(s,parts[:2],count)
+ if q is None:assert parts[2]=='E',(s,q,line)
+ else:
+  assert parts[2]=='OK',(s,q,line)
+  assert [int(n) for n in parts[3].split(',')[:-1]]==proj(q,mods),(s,q,line)
+  if aux:assert [int(n) for n in parts[4].split(',')[:-1]]==proj(q,aux),(s,q,line)
+print(f'Independent Python oracle passed {len(cases)} direct-CRT public-API arithmetic/error/counter cases.')

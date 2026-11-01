@@ -1,0 +1,45 @@
+{
+  "validation": "Final source tested as actual workspace package qmnf_crtbigint on pinned Rust1.89: debug, release, clippy all-targets warnings denied. std::sync::LazyLock removes added lazy_static dependency.",
+  "red_original_tests": {
+    "passed": 23,
+    "failed": 0
+  },
+  "red_signed_regressions": {
+    "passed": 1,
+    "failed": 4
+  },
+  "red_wide_regressions": {
+    "passed": 0,
+    "failed": 1
+  },
+  "green_debug": {
+    "original": 23,
+    "regressions": 12
+  },
+  "green_release": {
+    "original": 23,
+    "regressions": 12
+  },
+  "oracle_pairs": {
+    "signed_i64": 10000,
+    "signed_small_exhaustive": 4225,
+    "python_245_bit": 24
+  },
+  "clippy": "all targets warnings denied: pass",
+  "format": "rustfmt check: pass",
+  "source_sha256": {
+    "src/lib.rs": "093235ece03cfd315f45f732db8feecc711cbb4188eb7547ab522a2ddb9c3481",
+    "tests/signed_regressions.rs": "3bb5754c1ada37f691619f5bf7375211fc6f3a24ebf87eecf18695ae602f3080",
+    "tests/wide_oracle_vectors.tsv": "2da6ecfce687f11a13f7f6874053e55f4e94002c64ac90f4967eb9c9d14f5597"
+  },
+  "limits": [
+    "Reference/boundary package; signed ops reconstruct magnitude and must not be described as a production residue-native BFV divider.",
+    "Original exploratory auxiliary types remain unverified.",
+    "Raw CRTBigInt fields become getters and checked constructors."
+  ],
+  "final_workspace_logs": [
+    "workspace-debug.log",
+    "workspace-release.log",
+    "workspace-clippy.log"
+  ]
+}

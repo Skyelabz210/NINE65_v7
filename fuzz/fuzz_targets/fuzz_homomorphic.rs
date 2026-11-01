@@ -18,7 +18,20 @@ struct HomomorphicInput {
 // - sub(E(a), E(b)) decrypts to (a - b) mod t
 // - mul_plain(E(a), c) decrypts to (a * c) mod t
 fuzz_target!(|input: HomomorphicInput| {
-    let config = FHEConfig::for_depth(1, 4096, 0).expect("depth-one fuzz configuration");
+    // This is the single-modulus API: a depth-sized RNS vector cannot fund
+    // arithmetic performed only modulo its first prime. Use an NTT prime
+    // whose actual q covers all plaintext scalars and worst-case fresh noise.
+    // This is an arithmetic fixture, not a security claim.
+    let q = 1_152_921_504_606_830_593; // prime 2^60 - 2^14 + 1
+    let config = FHEConfig {
+        n: 4096,
+        primes: vec![q],
+        q,
+        t: 65_537,
+        eta: 3,
+        security_bits: 0,
+        name: "single_modulus_fuzz",
+    };
     let t = config.t;
 
     // Bound inputs to valid range
@@ -35,6 +48,12 @@ fuzz_target!(|input: HomomorphicInput| {
     let encryptor = BFVEncryptor::new(&keys.public_key, &encoder, &ntt, config.eta);
     let decryptor = BFVDecryptor::new(&keys.secret_key, &encoder, &ntt);
     let evaluator = BFVEvaluator::new(&ntt, &encoder, Some(&keys.eval_key));
+    let tracked =
+        nine65::ops::TrackedEvaluator::new(BFVEvaluator::new(&ntt, &encoder, None), &config);
+    assert!(
+        tracked.can_mul_plain(),
+        "fixture must fund every scalar below t"
+    );
 
     let ct_a = encryptor.encrypt(a, &mut rng);
     let ct_b = encryptor.encrypt(b, &mut rng);

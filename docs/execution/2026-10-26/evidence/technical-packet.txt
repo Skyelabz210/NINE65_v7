@@ -1,0 +1,538 @@
+NINE65 v7 — Technical Packet and Execution Plan
+
+Status: Ground truth for the correction program. Not a security certification. Not a performance claim. All arithmetic is exact-integer; all measured claims are tied to named audit artifacts.
+
+Anchors:
+
+· Audited commit: 4bc1f0f42ea7127f67f6fe1f921c7c9db1d50a06 (2026-10-18)
+· Depth-4 witness: logs/phase_round_trace_centered_lift.log
+· 100-step chain: Experimental v7 Independent Nontrivial 100-Step Chain.md
+· Recumbent blueprint: Recumbent bootstrap .txt
+· Source substrate for the port: crates/ns_v5/recumbent.rs
+
+---
+
+PART A — TECHNICAL PACKET
+
+1. Scope and conventions
+
+1.1 Exact domains. Trusted computations are over \mathbb Z, \mathbb Z/M\mathbb Z for M\ge 2, and normalized rationals. No IEEE-754 value is a trusted transition. Display rounding happens once, at egress, with the discarded remainder recorded.
+
+1.2 Vocabulary.
+
+Term Meaning
+residue r_M(X) X \bmod M, the coordinate in the fundamental domain
+lift K_M(X) \lfloor X/M\rfloor, the sheet coordinate
+anchor observation \kappa_A = (r_A - r_M)M^{-1} \bmod A = K_M \bmod A
+capacity certificate a proof that 0 \le K < A (single anchor) or K = Q C_s + \hat K with epoch Q retained
+resolver status K_RESIDUE_ONLY | K_EXACT_BOUNDED | K_EPOCH_QUALIFIED | K_INVALID
+certified bound the analytic maximum of \lvert K\rvert for a given parameter tuple and operation
+
+1.3 Claim register. Every statement carries one of: PROVEN (exact identity or Lean-discharged), MEASURED (exact-integer test, range stated), CONDITIONAL (true under stated hypotheses), OPEN, RETIRED.
+
+2. The load-bearing core
+
+2.1 Capacity-alias theorem — PROVEN (elementary)
+
+For every integer X = r_M + M K and every anchor A with \gcd(M,A)=1,
+X' = X + MA = r_M + M(K+A)
+satisfies r_M(X') = r_M(X) and r_A(X') = r_A(X).
+
+Corollary 2.1.1. Any method using only (r_M, r_A) returns identical output for K and K+A. It determines at most K \bmod A.
+
+Corollary 2.1.2. Dropping K_j without a certificate is the representative choice K_j = 0. It is exact only when K_j is proven zero.
+
+This is the whole of the arithmetic argument. Every subsequent failure in the corpus is an instance of Corollary 2.1.2.
+
+2.2 K-Elimination soundness — PROVEN (Lean 4, 0 sorry on core path)
+
+For \gcd(M,A)=1 and 0 \le X < MA:
+\kappa_A = (r_A - r_M)\,M^{-1} \bmod A = K_M(X).
+
+On the "60-year problem" framing — RETIRED. The formula is one Garner mixed-radix digit. The architectural value is that each anchor read is lane-independent and fixed-work; the mathematical content is classical. Claim surfaces must say "architectural inversion of Garner" not "solution to the 60-year problem."
+
+2.3 The q_{\text{small}} = t identity — PROVEN
+
+When the modulus-switch target is the plaintext modulus t, the switch step is identical to BFV decryption rounding. The polynomial-evaluation stage of classical bootstrapping is eliminated.
+
+This establishes: the depth-1 refresh shape is correct.
+This does not establish: the carry K_j is correctly propagated. See §3.
+
+2.4 The 4-prime re-cut — MEASURED
+
+Profile Old headroom New headroom Required Outcome
+secure_128 (3→4 primes) 42 bits 71 bits 47 bits simple refresh preserved; first post-refresh multiply correct
+
+This is the proof that the capacity discipline pays. Headroom is necessary, not sufficient. The 4-prime fix removes one failure mode; it does not make public refresh correct.
+
+2.5 The Hidden Carry identity — PROVEN
+
+For N = MK + r with M \equiv -1 \pmod A:
+v_A := N \bmod A = (r - K) \bmod A.
+
+Verified exactly for all N \in [0, 5000) — zero mismatches. Closed-shell descent reads v_{37} = 36, 35, 34, 33 at N = 36, 72, 108, 144.
+
+This is the identity that explains the failures. A dropped K is invisible in the residue r and visible as a sign flip in the anchor.
+
+3. The diagnosed failure modes
+
+3.1 The depth-4 witness — MEASURED
+
+Parameters: secure_128-shaped, N=8192, t=65537, deterministic fixture c_1 = 1, c_0 = 2\Delta - s, seed 42.
+
+Depth Expected Live Centered-input shadow
+1 4 4 4
+2 16 16 16
+3 256 256 256
+4 65,536 65,532 65,536
+
+Controls that localize the failure:
+
+· Independent schoolbook negacyclic product matches dual_poly_mul coefficient-for-coefficient in all four main-Q lanes.
+· Full-lift oracle matches round(X/Δ) coefficient-for-coefficient for the selected lift.
+· Separate-component rounding does not explain the discrepancy: the combined phase differs by ≤ 82; the post-rescale error is ≈ 3.701Δ with 8,000 nonconstant coefficients above Δ/8.
+· Fold-before-rescale does not fix it.
+
+Diagnosis. The rescale kernel is exact for the lift it receives. The main-ring product is exact. The error is generated because the anchor lanes carry the unsigned representative of the phase, so K_Q is set to 0 where the true lift is nonzero. The \pm 4 is a hidden-carry displacement, not noise.
+
+3.2 The 100-step chain — MEASURED
+
+Parameters: secure_256 at commit 9c76db9, N=16384, six main primes, mul_dual_symmetric with fresh nontrivial factors 3..102.
+
+Metric Result
+Successful steps 31
+First failure 32
+Failing factor 34
+Expected 22,330
+Decrypted 22,328
+Error −2 mod 65,537
+RNS level 6 throughout
+
+The exact −2 is the same phenomenon as the depth-4 −4. It is not accumulated noise, not a level drop, and not a broken ring. The anchor provenance is corrupted after step 31 because the rescale output carries the uncentered lift.
+
+3.3 Blanket centering — REJECTED by measurement
+
+A production candidate that centers ciphertext coefficients into [-\tfrac{Q}{2}, \tfrac{Q}{2}] before tensor multiplication at both symmetric and public multiply boundaries was tested:
+
+· Fixed the deterministic depth-4 witness (65{,}536 returned).
+· Regressed 13 optimized tests: secure_128 repeated-square failed at depth 3 (250 vs 256); secure_192 failed at depth 4 (64,505 vs 65,536); public/symmetric identity checks failed.
+· Rolled back. Patch preserved in centered_lift_candidate.patch.
+
+Why it fails as a general fix. Centering selects K_Q \in \{0, -1\} by the sign of the residue. That is a data-dependent section, not a certificate. It cannot recover a lift the pipeline never observed. The shadow path worked because its inputs were reconstructed from the main CRT basis (the correct ciphertext state), not from the pipeline's corrupted intermediate.
+
+This is a permanent rejection. Do not merge.
+
+3.4 The "valid prior implementation" — IDENTIFIED
+
+The working carry-handling logic lives in crates/ns_v5/recumbent.rs, developed for the Navier–Stokes solver. The FHE port (NINE65_v7) reinvented the logic via to_int / extract_k_rns / canonicalize_dual_anchor and lost the structural invariant that made the ns_v5 version correct. The Recumbent bootstrap .txt blueprint ports it back.
+
+4. The lift contract
+
+A correct public refresh requires a per-operation lift contract: for every coefficient entering the tensor product and every coefficient exiting the rescale, which representative is used, under what certificate.
+
+4.1 Fresh-encryption lift. Phase is \Delta m + e with \lVert e\rVert bounded by parameters. The lift is bounded by a parameter property, not a per-ciphertext measurement. Certificate: EXACT_BOUNDED with the parameter bound.
+
+4.2 Multiply-generated lift. After tensor and rescale, the lift is the sum of contributions from operands and secret-polynomial convolution. Magnitude is not bounded by encryption parameters. Certificate: either an epoch (carried) or an EXACT_BOUNDED reconstructed from the anchor at the multiply boundary.
+
+4.3 The prohibited move. Centering intermediate tensor terms after their main-Q product has wrapped is a section that ignores provenance. Prohibited regardless of whether it fixes a witness.
+
+4.4 The required move. Reconstruct K_Q from the anchor at every multiply input, verify 0 \le \lvert K_Q\rvert < A, reconstruct the centered representative from (r_Q, K_Q), and re-encode the authentic residues of the quotient into the anchor lanes at the rescale output. This is the recumbent port's BoundedResidueDivider::divide.
+
+5. The Safe Basis construction
+
+The current anchor track has no parity witness, no shadow anchor, and no phase lock. Commit 76435a4 flagged this. The blueprint's §6 constructs the missing structure.
+
+5.1 Main lanes (star-family, free inverse)
+
+Each q_i = c_i t + 1. Properties: q_i \equiv 1 \pmod t (message-transparent); t^{-1} \bmod q_i = q_i - c_i (construction-read; no extended GCD at runtime).
+
+5.2 Primary anchor (adjacency, free inverse)
+
+Each a_j = p_j + 1 with p_j prime. Properties: p_j^2 \equiv 1 \pmod{a_j}; p_j^{-1} \equiv p_j \pmod{a_j}. K-Elimination for divisor p_j is one modular subtraction.
+
+5.3 Shadow anchor (paired, cross-check)
+
+Each a'_j = p_j - 1. Combined with a_j: the pair (r_{a'_j}, r_{a_j}) encodes (\gamma + K, \gamma - K) and cross-checks K.
+
+5.4 Parity witness (syndrome)
+
+One additional prime w coprime to all main and anchor moduli. Forward-direction syndrome detection (Theorem T5, forward only): if X \equiv Y \pmod{m_i} and X \equiv Y \pmod w, then \gcd(m_i, w) \mid (X-Y).
+
+5.5 What this buys
+
+Property Without Safe Basis With Safe Basis
+derive_winding cost one ext-GCD per anchor lane per coefficient zero (construction-read)
+Message-transparent switch requires scaling factor free (q_i \equiv 1 \bmod t)
+Shadow cross-check none paired anchors
+Syndrome detection none parity witness
+
+Phase 3 of the execution plan is not optional. It is the construction that makes Phase 2 fast and correct.
+
+6. The rejection list
+
+The following are rejected by measurement or by category error. Do not retry without new evidence.
+
+Rejection Reason
+Blanket centering 13-test regression; fails to recover a lift it never observed
+"60-year problem solved" framing Math is Garner's; the architectural inversion is real, the framing is not
+"Unlimited depth" Public refresh returns BootstrapFailed on every profile; automatic nonlinear refresh corrupts on secure_128_deep and secure_192
+"Bootstrap-free FHE" The 4-prime fix proves the capacity discipline pays; it does not eliminate the bootstrap need
+secure_256 as 256-bit MATZOV screen reports 240; production gate reports 227
+try_decrypt_dual as a correctness check Returns Ok on wrong plaintexts at failing depths; it is a nearest-encoding diagnostic
+Shadow entropy as general entropy Valid for FHE inputs (random by construction); invalid for structured inputs
+Symmetric bootstrap as public FHE It takes the secret key and decrypts; it is a trusted-boundary refresh, not evaluator-only
+Consciousness / phi / Maya / phase-locking prose Not mathematical claims; must not appear in the claim registry
+FPD on a dynamically-injected auxiliary lane \gcd(b, M p_{\text{aux}}) \ge \gcd(b, M) > 1; requires static preprovisioning and separate proof
+Ignored tests as "clean" 24 failures among 226 ignored; twelve stale bootstrap tests + twelve technical failures
+
+7. Open problems
+
+ID Problem Route
+O1 Encrypted carry E encrypting \Delta K from public (C_0, C_1) Route B or recumbent epoch
+O2 Key domain and return: encrypted s-product and return switch Separate construction
+O3 Outer-key norm at rounding site (W_2 figures imply nonzero secret norm) Noise analysis
+O4 Second winding of the encrypted carry ciphertext Distinct from public residual
+O5 Authenticated history and epoch binding Independent review
+O6 Security (IND-CPA, circular, KDM) Independent of arithmetic
+O7 2NQ vs 4NQ bound (inverted basis) Phase 5 tightening
+O8 FPD recumbent adaptation for shared-factor divisors Phase 2 investigation
+
+8. Claim surface
+
+What can be said publicly today:
+
+NINE65 v7 is an exact-integer BFV/DualRNS prototype with a working K-Elimination substrate, a fail-closed public-refresh gate, and a measured depth-4 carry-displacement bug localized to the unsigned auxiliary anchor lift. A recumbent port from the ns_v5 solver is the specified fix. Public refresh is disabled on all profiles until the recumbent rescale and bootstrap pass their gates. secure_256 is a target label with a 240-bit MATZOV binding, not a certified 256-bit profile.
+
+What cannot be said:
+
+· Unlimited depth
+· Bootstrap-free
+· Production-ready
+· 256-bit secure under all models
+· Constant-time across the library
+· "One subtraction reconstructs every integer"
+· "Residue-native everywhere" (bootstrap paths still reconstruct)
+
+---
+
+PART B — EXECUTION PLAN
+
+9. Phase overview
+
+```
+Phase 0 (1w)    Baseline lock, evidence freeze, claim surface reset
+    │
+    ├── Phase 1 (2w)    Recumbent types + BoundedResidueDivider
+    │       │
+    │       ├── Phase 2 (2w)    Recumbent rescale + bootstrap
+    │       │       │
+    │       │       └── Phase 3 (2w)    Safe Basis integration
+    │       │               │
+    │       │               └── Phase 5 (2w, optional)    Inverted-basis tightening
+    │       │
+    │       └── Phase 4 (1w)    Fail-closed RNS products + source gate
+    │
+    └── Phase 6 (4w)    Coq/Lean proofs, stress tests, external artifacts
+```
+
+Critical path: 0 → 1 → 2 → 3.
+Governance: 4.
+Tightening: 5.
+Certification: 6.
+
+Total to release-candidate: 7 weeks on critical path, 9 weeks with Phase 6.
+
+10. Phase 0 — Baseline lock (1 week)
+
+T0.1 Pin the audited commit
+
+Capture 4bc1f0f42ea7127f67f6fe1f921c7c9db1d50a06 as the base. Record SHA-256 of every file in crates/nine65/src/ops/rns_fhe.rs, crates/nine65/src/ops/bootstrap.rs, crates/nine65/src/params/secure_configs.rs.
+
+Gate: all SHAs match the audit report.
+
+T0.2 Freeze the evidence bundle
+
+Copy to an immutable location:
+
+· logs/phase_round_trace_centered_lift.log
+· centered_lift_candidate.patch
+· centered_lift_candidate_test_results.md
+· Experimental v7 Independent Nontrivial 100-Step Chain.md
+· Recumbent bootstrap .txt
+
+Gate: files exist, hashes recorded, write-once.
+
+T0.3 Claim surface reset
+
+Update README.md, docs/CLAIM_REGISTRY.csv, and docs/RETIRED_MECHANISMS.md to match §8. Explicitly retire:
+
+· "unlimited depth"
+· "bootstrap-free"
+· "256-bit secure"
+· "constant-time" (library-wide)
+
+Add the current precise statement.
+
+Gate: claim registry entries all map to a theorem, a test, or a measured artifact; no orphan claims.
+
+T0.4 Test inventory
+
+Run cargo test --workspace --release --no-fail-fast and produce a manifest with per-target counts. Classify each of the 24 ignored-failures as: code defect, stale expectation, unsupported legacy, environment limit, or duplicate.
+
+Gate: manifest exists; every ignored test classified; no unclassified "ignored."
+
+11. Phase 1 — Recumbent types and BoundedResidueDivider (2 weeks)
+
+T1.1 Recumbent module
+
+Create crates/nine65/src/arithmetic/recumbent.rs with:
+
+· PrimaryLane (main residues, exact Q as U256, exact bit length)
+· OverflowLane (anchor residues, exact A as U256, elimination constants)
+· HotLane (gated; reserve for future depth chains)
+· RecumbentCoefficient (overflow_steps monotone; only mutation path is += 1)
+· RecumbentAssignResult (Demotion, Overflow, Promotion, CapacityExceeded)
+
+Gate: monotonicity test passes; grep shows no -= or = 0 on overflow_steps.
+
+T1.2 BoundedResidueDivider
+
+Create crates/nine65/src/arithmetic/residue_division.rs:
+
+· KElimTable (divisor inverses, main inverse mod anchor, pairwise corrections, reference lane)
+· BoundedResidueDivider::try_new — precompute constants; fail closed if gcd(b,M) != 1 and no FPD path
+· BoundedResidueDivider::divide — four-step K-Elimination, output quotient_main + quotient_anchor
+· BoundedResidueDivider::check_capacity — lane-wise, no reconstruction
+
+Critical: divide must not call to_int, extract_k_rns, crt_reconstruct_n, crt_reconstruct_u256, Garner, or mixed-radix.
+
+Gate: equivalence oracle passes on 10k random inputs; capacity exhaustion fails closed; source-level check confirms no forbidden symbols.
+
+T1.3 Gate reconstruction symbols behind #[cfg(test)]
+
+Move to_int, extract_k_rns, crt_reconstruct_n, crt_reconstruct_u256 behind #[cfg(test)] in rns.rs. Add scripts/check_recumbency.sh that greps production modules for these symbols and exits non-zero on hit.
+
+Gate: script exits 0 on the new tree; adding a production call to to_int makes it exit non-zero.
+
+T1.4 Debug-only anchor provenance check
+
+Add under #[cfg(debug_assertions)]:
+
+```rust
+fn verify_anchor_provenance(q_main, q_anchor, ctx) -> Result<(), ProvenanceError>
+```
+
+Reconstructs q via the oracle, computes q \bmod a_j, compares with q_anchor[j]. Catches provenance corruption during Phase 2 development.
+
+Gate: fires on a deliberately corrupted anchor; silent on valid output.
+
+12. Phase 2 — Recumbent rescale and bootstrap (2 weeks)
+
+T2.1 Recumbent rescale
+
+Replace rns_mul.rs::k_elim_rescale with k_elim_rescale_recumbent:
+
+· Capacity check via check_capacity (typed refusal on overflow).
+· Lane-wise divide.
+· Update overflow_steps.
+
+Critical: the rescale output's anchor lanes must be the authentic residues of the quotient, not canonicalize_dual_anchor's unsigned representative.
+
+Gate: depth-4 witness passes (4, 16, 256, 65536); seed-2 and seed-4 controls pass; 100-step chain at secure_256 passes step 32.
+
+T2.2 Recumbent bootstrap
+
+Replace bootstrap.rs::modswitch_to_t with modswitch_to_t_recumbent:
+
+· Lane-wise division by t (star-family free inverse).
+· Exact q_{\text{bits}} from U256 product, not sum of widths.
+· Fail-closed capacity via try_capacity.
+· Manual recovery rechecks overflow_steps against max_depth before retry.
+
+Gate: refresh preserves plaintext on all four profiles; simple post-refresh multiply correct; try_decrypt_dual does not accept the step-32 wrong value.
+
+T2.3 Fail-closed try_capacity
+
+Replace KElimination::capacity() (panics on u128 overflow) with:
+
+· try_capacity() -> Option<U256>
+· capacity_bit_length() -> u32
+· capacity_limbs() -> Option<[u64;4]>
+
+Gate: no caller of capacity() remains; all capacity decisions use the checked API.
+
+T2.4 Re-enable ignored bootstrap tests
+
+The twelve stale bootstrap tests (expecting a secure_128 refresh the code correctly refuses) must be:
+
+· Reparameterized to secure_128_deep or secure_192 (admitted), OR
+· Rewritten to assert the typed refusal (where refusal is the correct behavior).
+
+Gate: zero #[ignore] on bootstrap correctness tests; all pass.
+
+T2.5 Cross-profile acceptance
+
+Run the depth-1 multiply matrix and the depth boundary on all four profiles:
+
+Profile Public depth-1 Public depth boundary Symmetric depth boundary
+secure_128 required measured measured
+secure_128_deep required measured measured
+secure_192 required measured measured
+secure_256 required measured measured
+
+Gate: depth-1 passes everywhere; boundaries measured and recorded; no wrong plaintext accepted by try_decrypt_dual at the recorded boundary.
+
+13. Phase 3 — Safe Basis integration (2 weeks)
+
+T3.1 Safe Basis config
+
+Create crates/nine65/src/params/safe_basis.rs:
+
+· SafeBasisConfig with star-family main primes, adjacency anchor pairs, shadow anchor pairs, parity witness.
+· for_secure_128(t), for_secure_192(t), for_secure_256(t).
+· verify() — ten invariants (star-family, t-transparency, adjacency, p_j^2 \equiv 1, shadow, coprime, total bit length).
+· certified_bound(n) -> U256 — the exact 4NQt bound.
+
+Gate: verify() passes for all three profiles; certified_bound matches the analytic value.
+
+T3.2 Wire Safe Basis into OverflowLane
+
+Replace the current anchor basis with SafeBasisConfig's anchors. The elim_constants are now construction-read (t^{-1} = q_i - c_i, p_j^{-1} = p_j).
+
+Gate: derive_winding no longer calls extended GCD; source gate confirms.
+
+T3.3 Phase-lock test
+
+Verify that the paired anchors (\gamma + K, \gamma - K) cross-check K. Construct a ciphertext with known K; corrupt one anchor; confirm detection.
+
+Gate: cross-check fires; valid pairs pass.
+
+T3.4 Re-run Phase 2 acceptance on Safe Basis
+
+The depth-4 witness, the 100-step chain, and the cross-profile matrix must all still pass on the Safe Basis construction.
+
+Gate: all Phase 2 gates green on Safe Basis; no regression.
+
+14. Phase 4 — Fail-closed RNS products (1 week)
+
+T4.1 Checked RNS product
+
+Add to FHEConfig:
+
+· try_rns_product() -> Option<U256>
+· rns_product_bit_length() -> u32
+· validate_custom_t(t) — rejects t < 2 and t \ge q_i for any field lane.
+
+Gate: products below/equal/above u128::MAX; t = q_i rejected; t = q_i - 1 accepted.
+
+T4.2 Audit all rns_product() callers
+
+Replace every production call with try_rns_product() or rns_product_bit_length(). Test-only callers stay.
+
+Gate: source gate confirms no production caller of rns_product().
+
+T4.3 Remove zero-sentinel for anchor_product
+
+Replace anchor_product: u128 (with 0 = overflow sentinel) with Option<U256>.
+
+Gate: the CRAM wrapper's capacity check reads Option; refusal path tested.
+
+15. Phase 5 — Inverted-basis tightening (2 weeks, optional)
+
+Only if Phase 3 leaves insufficient headroom under a future depth requirement.
+
+T5.1 Canonical assignment
+
+In RecumbentCoefficient::assign_residues, canonicalize on assignment: if the value fits in [0, Q), store the canonical representative.
+
+Gate: every coefficient entering a tensor product is canonical (verified by test-only oracle).
+
+T5.2 Capacity-gated multiplication
+
+Before a tensor product, check both operands' capacity. Fail closed on insufficient capacity, do not silently produce a wrong plaintext.
+
+Gate: capacity exhaustion returns CapacityExceeded; no wrong plaintexts.
+
+T5.3 Bound collapse
+
+Verify the measured bound collapses from 2NQ to 4NQ with canonical operands.
+
+Gate: measured winding \le 4NQt with canonical operands.
+
+16. Phase 6 — Formal verification and stress tests (4 weeks)
+
+T6.1 Coq proofs
+
+· Recumbent K-Elimination rescale correctness.
+· Recumbent bootstrap roundtrip.
+· overflow_steps monotonicity (structural; can be Lean 4).
+
+Gate: coqchk clean; Lean 4 lake build 0 sorry on new files.
+
+T6.2 Stress tests
+
+· Max-noise ciphertexts.
+· Depth > 100.
+· Error recovery post-bootstrap with insufficient budget (must refuse).
+· Fixed ciphertext operands vs fresh operands.
+
+Gate: no wrong plaintext at any stress point; refusals typed.
+
+T6.3 External artifacts
+
+· External lattice estimator run on all four profiles; raw input/output archived.
+· secure_256 renamed to secure_240 OR re-parameterized and re-measured.
+· Benchmark table vs SEAL with matched semantics; both per-ciphertext and per-slot.
+
+Gate: artifacts present; secure_256 disposition recorded; benchmark table reproducible.
+
+17. Release gates
+
+A release candidate is admissible only when all of the following are green on the exact commit:
+
+Gate Evidence
+Depth-4 witness passes logs/phase_round_trace_centered_lift.log reproduced
+100-step chain passes step 32 new artifact, secure_256
+Independent schoolbook matches all four lanes
+Full-lift oracle matches coefficient-for-coefficient
+Cross-profile depth-1 all four profiles
+Cross-profile depth boundary measured and recorded
+try_decrypt_dual does not accept wrong plaintext at boundary negative test
+Capacity certificate typed refusal CapacityExceeded on constructed overflow
+Zero production reconstruction scripts/check_recumbency.sh exit 0
+Zero #[ignore] on bootstrap correctness tests manifest
+Zero production rns_product() source gate
+Safe Basis verify() all ten invariants
+secure_256 disposition renamed or re-measured
+External lattice estimator artifact archived
+Benchmark table reproducible, both latency and throughput
+Claim registry matches §8 automated check
+
+18. Rollback criteria
+
+Any of the following triggers rollback to the last green commit:
+
+· Any wrong plaintext accepted by try_decrypt_dual at a declared depth boundary.
+· Any ignored bootstrap correctness test still ignored.
+· Any production module referencing to_int, extract_k_rns, crt_reconstruct_n, crt_reconstruct_u256, Garner, or mixed-radix.
+· The depth-4 witness fails after any Phase 2, 3, or 5 task.
+· The 100-step chain fails after any Phase 2, 3, or 5 task.
+· overflow_steps decreases in any test.
+· A capacity overflow returns a wrong plaintext instead of CapacityExceeded.
+
+Rollback is to the last commit where all Phase 2 gates are green. Do not "fix forward" past a rollback without a new theory of the failure.
+
+19. What is explicitly out of scope
+
+These are separate programs and must not be bundled into this execution plan:
+
+· Security attestation. Lattice estimator, IND-CPA analysis, circular/KDM review. Separate workstream. The arithmetic obligations above are independent.
+· Performance optimization. Batching, SIMD, GPU. Separate workstream. The current 21×/175,000× gap to SEAL is an engineering gap, not a theorem gap.
+· Constant-time closure. F-2 (mod_switch_down_dual 2.96× variance) and F-3 (extract_k 0.60%) are separate findings. Source-level branch freedom is not hardware-level constant time.
+· Prime Family / Dresden / Maya / WASSAN / consciousness. These belong to a separate number-theory document, not the NINE65 claim registry.
+
+20. The one-paragraph summary
+
+The depth-4 −4 and the step-32 −2 are the same event: a lift K_j chosen without a certificate, then divided exactly by \Delta. The Hidden Carry identity v_A = (r - K) \bmod A is the observation that recovers K_j exactly. The recumbent port from ns_v5/recumbent.rs is the working implementation of that observation, lost in the FHE rewrite. The critical path is: lock the baseline, port the recumbent types and BoundedResidueDivider, replace the rescale and bootstrap with the recumbent versions, install the Safe Basis construction (star-family main + adjacency anchors + shadow + parity witness) so the free inverses are construction-read, and fail closed on RNS products. Blanket centering is rejected by measurement. Route B (exact prime-drop) is a fallback if the recumbent pipeline cannot pass its gates. Public refresh stays disabled until Phase 2 + Phase 3 are green on all four profiles. Everything else — security attestation, performance parity, constant time — is a separate program with its own evidence.
+
+That is the ground truth. It is narrow, it is measurable, and every claim in it maps to a named artifact or a named gate.
