@@ -98,6 +98,22 @@ class BenchmarkContractTests(unittest.TestCase):
         payload["correctness"]["dual_rns"]["mul_ct"] = False
         self.assertEqual(classify_result(payload, 1)[0], "WRONG_PLAINTEXT")
 
+    def test_expected_refusal_is_not_arithmetic_or_process_failure(self):
+        record = dict(status="UNSUPPORTED", returncode=2, parse_error=None,
+                      schema="nine65-comparative-probe-v1", operation_correctness_pass=True,
+                      depth_complete=True)
+        summary = sweep.summarize([record])
+        self.assertEqual(summary["unsupported"], 1)
+        self.assertEqual(summary["operation_correctness_failures"], 0)
+        self.assertEqual(summary["process_failures"], 0)
+        self.assertEqual(summary["nonzero_exits"], 1)
+
+    def test_refusal_evidence_does_not_hide_abnormal_process_exit(self):
+        payload = passing_payload()
+        payload["correctness"]["legacy"] = {"encrypt": True, "mul_ct": False,
+                                              "mul_ct_status": "refused-#135"}
+        self.assertEqual(classify_result(payload, 137)[0], "UNRUN")
+
     def test_typed_operation_refusal_is_unsupported(self):
         payload = passing_payload()
         entry = payload["ct_mul_depth"]["entries"][0]

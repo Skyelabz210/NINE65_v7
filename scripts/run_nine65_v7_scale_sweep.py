@@ -2,7 +2,8 @@
 """Run the exact NINE65 comparative probe across parameter and workload scale.
 
 Depth stops and arithmetic mismatches are preserved per case. The runner fails
-for missing artifacts, process failures, or failed single-operation correctness.
+for missing artifacts, unexpected process failures, arithmetic errors, or
+incomplete capability coverage. Expected refusals are reported separately.
 A depth stop is reported as an observation unless `--require-depth-complete` is
 selected.
 """
@@ -267,7 +268,9 @@ def execute(case: Case, output_dir: pathlib.Path) -> dict[str, object]:
         "reported_status": payload.get("status") if payload else None,
         "tuple_fingerprint": canonical_hash({key: metadata.get(key)
                                               for key in ("n", "rns_primes", "plaintext_modulus", "eta")}) if payload else None,
-        "operation_correctness_pass": payload.get("status") == "PASS" if payload else False,
+        "operation_correctness_pass": status == "PASS" or (
+            status == "UNSUPPORTED" and depth_complete and first_divergence ==
+            {"path": "legacy", "operation": "mul_ct", "reason": "refused-#135"}),
         "depth_complete": depth_complete,
         "depth_completed": depth.get("completed") if isinstance(depth, dict) else None,
         "depth_requested": depth.get("requested") if isinstance(depth, dict) else None,
@@ -279,6 +282,8 @@ def summarize(records: list[dict[str, object]]) -> dict[str, int]:
     summary = {
         "cases": len(records),
         "process_failures": 0,
+        "nonzero_exits": 0,
+        "unverified_operation_evidence": 0,
         "missing_or_invalid_results": 0,
         "operation_correctness_failures": 0,
         "depth_complete": 0,
@@ -295,11 +300,15 @@ def summarize(records: list[dict[str, object]]) -> dict[str, int]:
         elif record["status"] == "UNRUN":
             summary["unrun"] += 1
         if record["returncode"] != 0:
-            summary["process_failures"] += 1
+            summary["nonzero_exits"] += 1
+            if not (record["status"] == "UNSUPPORTED" and record["returncode"] in (1, 2)):
+                summary["process_failures"] += 1
         if record["parse_error"] or record["schema"] != "nine65-comparative-probe-v1":
             summary["missing_or_invalid_results"] += 1
-        if not record["operation_correctness_pass"]:
+        if record["status"] == "WRONG_PLAINTEXT":
             summary["operation_correctness_failures"] += 1
+        elif not record["operation_correctness_pass"]:
+            summary["unverified_operation_evidence"] += 1
         if record["depth_complete"]:
             summary["depth_complete"] += 1
         else:
@@ -385,6 +394,8 @@ def main() -> int:
         summary["process_failures"] > 0
         or summary["missing_or_invalid_results"] > 0
         or summary["operation_correctness_failures"] > 0
+        or summary["unverified_operation_evidence"] > 0
+        or summary["unsupported"] > 0
         or any(record["status"] in ("WRONG_PLAINTEXT", "UNRUN") for record in records)
     )
     if args.require_depth_complete and summary["depth_stops"] > 0:
