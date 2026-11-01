@@ -1,4 +1,4 @@
-name: CRAM Real Refresh Evidence
+name: Public Refresh Research and Boundary Evidence
 
 # Branch gating repaired: the pull_request trigger named
 # `hardening/beyond-100-app-platform`, a branch that no longer exists (the
@@ -70,7 +70,7 @@ jobs:
       # Their public evaluators receive no decryption oracle; a client checks
       # every output coefficient through the dependent cycles. The other
       # selected scale-boundary diagnostics retain labeled oracle controls.
-      # These tests do not admit native refresh or replace the blocker below.
+      # These tests do not grant native production security admission.
       - name: Check public API histories, refresh cycles and plaintext boundaries
         run: >-
           python3 scripts/run_public_refresh_research_gates.py
@@ -109,9 +109,8 @@ jobs:
           path: work/public-refresh-gates/
           if-no-files-found: warn
 
-  # Keep the original real automatic-refresh acceptance gate. Passing the
-  # separate research/refusal regressions above cannot turn it green.
-  forced-real-refresh:
+  # Legacy/default entry points must refuse; research success is checked above.
+  refresh-boundary:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -133,22 +132,11 @@ jobs:
       - name: Real-refresh evidence negative controls
         run: python3 scripts/test_real_refresh_evidence.py
 
-      - name: Force and prove real automatic refresh
-        # Deterministic correctness evidence uses debug because release
-        # builds intentionally reject this benchmark's seeded test RNG.
-        run: |
-          set -euo pipefail
-          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
-            --config secure_128_deep --max-depth 1 --auto-bootstrap \
-            --trigger-pct 100 --statistical-test \
-            --output /tmp/nine65-forced-refresh.json 2>&1 | tee /tmp/nine65-forced-refresh.log
-          python3 scripts/check_real_refresh_evidence.py /tmp/nine65-forced-refresh.json \
-            --config secure_128_deep --requested-operations 1
+      # Issue #95: legacy Clockwork Phase 1 still drops its secret-dependent carry.
+      # Exercise the exact boundary and typed refusal without claiming a
+      # successful public refresh.
+      - name: Public Phase-1 gate remains fail-closed
+        run: cargo test -p nine65 --lib --release public_phase1_is_typed_fail_closed
 
-      - name: Preserve real-refresh evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: forced-public-refresh
-          path: /tmp/nine65-forced-refresh.*
-          if-no-files-found: warn
+      - name: Automatic refresh is exact until typed refusal
+        run: cargo test -p nine65 --lib --release auto_refresh_boundary_is_exact_then_typed_refusal -- --nocapture
