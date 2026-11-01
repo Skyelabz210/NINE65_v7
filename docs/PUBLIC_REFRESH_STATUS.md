@@ -15,6 +15,7 @@ The stale-diagnosis corrections are tracked in
 | --- | --- | --- |
 | Explicit research refresh | Working encrypted correction, message restoration and original-key return | `ops::public_refresh_circuit::PublicRefreshCircuit`; requires `allow_insecure` |
 | Native execution | Five refreshes and five following squares, all 8,192 coefficients checked after each: 81,920 comparisons | [Native evidence manifest](../artifacts/execution/2026-10-28/public-refresh-circuit/manifest.json), `extended_native_run` |
+| Memory-optimized native execution | One N8192 refresh and following square at commit 4fc4328: 16,384 coefficient comparisons, within an 8 GiB environment | [Native memory result](execution/2026-11-01/NATIVE_REFRESH_MEMORY.md) |
 | Current return certificate | 562 error bits after slot return below a 633-bit threshold; next square/source radius 48 within support 49 | [Lift/return proof](execution/2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md) |
 | Canonical plaintext-root binding | Same sealed value-root capability survives refresh; ciphertext lineage advances | [Canonical root](execution/2026-10-31/CANONICAL_PLAINTEXT_ROOT.md) |
 | Legacy/default Clockwork entry points | Still fail closed; their component-rounding path lacks its correction | `ops::bootstrap`; `params::secure_configs` support predicates |
@@ -22,7 +23,9 @@ The stale-diagnosis corrections are tracked in
 
 The native five-cycle snapshot predates the later root/inventory additions.
 Those have separate current regressions; do not claim a new latest-head full
-native run. The measured five-cycle run took 56.6 minutes including setup and
+five-cycle native run. The single-cycle result linked above includes the root
+checks on its own identified memory-optimized snapshot. The measured
+five-cycle run took 56.6 minutes including setup and
 8.70 GiB peak RSS. It is functionality evidence, not low-latency evidence.
 
 The [evidence summary](execution/2026-10-31/PUBLIC_REFRESH_EVIDENCE_SUMMARY.md)

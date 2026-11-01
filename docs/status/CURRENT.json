@@ -16,7 +16,8 @@
       "comparisons": 81920,
       "refresh_cycles": 5,
       "following_squares": 5,
-      "latest_head_rerun": false
+      "latest_head_rerun": false,
+      "scope": "preserved historical five-cycle snapshot"
     },
     "refresh.circuit_correctness_bounded": {
       "status": "deterministic_certificate",
@@ -38,6 +39,16 @@
     },
     "refresh.constant_time_posture": {
       "status": "not_established"
+    }
+  },
+  "additional_correctness_evidence": {
+    "native_single_cycle_bounded_memory": {
+      "manifest": "docs/execution/2026-11-01/native-memory-evidence/manifest.json",
+      "source_commit": "4fc4328d45b3987003b937b322edb8286d4ca682",
+      "refreshes": 1,
+      "following_squares": 1,
+      "comparisons": 16384,
+      "production_admitted": false
     }
   }
 }
