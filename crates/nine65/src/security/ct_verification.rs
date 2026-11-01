@@ -919,9 +919,9 @@ mod constant_time_statistical {
     struct DudectResult {
         /// Welch t between class A and class B — the leak statistic.
         t_signal: f64,
-        /// Welch t between two independent draws of class A — the noise floor.
-        /// Any |t| the machine produces here is achievable with NO class
-        /// difference at all, so it bounds what `t_signal` can mean.
+        /// Welch t between two independent draws of class A. This is a
+        /// reference for same-class variability, not a bound on all noise or
+        /// on effects correlated with measurement context.
         t_control: f64,
         median_a: f64,
         median_b: f64,
@@ -930,7 +930,7 @@ mod constant_time_statistical {
     }
 
     impl DudectResult {
-        /// Three-valued verdict. `None` = inconclusive (noise floor too high).
+        /// Three-valued verdict. `None` = same-class control exceeds threshold.
         fn is_constant_time(&self) -> Option<bool> {
             if self.t_control >= T_TEST_THRESHOLD {
                 None
@@ -954,8 +954,8 @@ mod constant_time_statistical {
             match self.is_constant_time() {
                 None => println!(
                     "  VERDICT: INCONCLUSIVE — control t={:.4} >= {T_TEST_THRESHOLD}; \
-                     this machine's noise floor already exceeds the threshold, so \
-                     t_signal cannot be attributed to the input class.",
+                     the same-class control exceeds the threshold, so this run \
+                     cannot attribute t_signal to the input class.",
                     self.t_control
                 ),
                 Some(true) => println!(
@@ -975,15 +975,10 @@ mod constant_time_statistical {
     /// Build the three measurement pools with INTERLEAVED allocation order
     /// (a[0], a2[0], b[0], a[1], a2[1], b[1], ...).
     ///
-    /// This is not cosmetic. Allocating each class's pool contiguously gives
-    /// the three classes systematically different heap placement — different
-    /// pages, different cache sets, possibly different NUMA/THP behaviour —
-    /// and placement is a per-RUN constant that interleaving the MEASUREMENTS
-    /// cannot cancel. Symptom of getting this wrong: a signal t comfortably
-    /// above threshold whose SIGN flips between runs, which is what an earlier
-    /// revision of these tests produced for `extract_k`. `mk_a` is called twice
-    /// per iteration to give two independent draws of the same class, so the
-    /// control arm sees exactly the placement diversity the signal arm does.
+    /// Interleaving allocations reduces systematic separation of pool entries.
+    /// It does not guarantee equal placement or eliminate class-correlated
+    /// cache, page or measurement-context effects. `mk_a` supplies two draws
+    /// from the same class for the control comparison.
     fn interleaved_pools<I, F, G>(
         count: usize,
         mut mk_a: F,
@@ -1035,7 +1030,7 @@ mod constant_time_statistical {
         let vb = b.iter().map(|&x| (x as f64 - mb).powi(2)).sum::<f64>() / (b.len() - 1) as f64;
         let se = (va / a.len() as f64 + vb / b.len() as f64).sqrt();
         if se == 0.0 {
-            return 0.0;
+            return if ma == mb { 0.0 } else { f64::INFINITY };
         }
         (ma - mb).abs() / se
     }
@@ -1065,6 +1060,29 @@ mod constant_time_statistical {
         })
     }
 
+    /// Precompute the same per-round Fisher–Yates orders and pool draws used
+    /// by the original sampler. Labels are consumed only after measurement.
+    fn dudect_schedule<'a, I>(
+        rng: &mut ShadowHarvester,
+        pools: [&'a [I]; 3],
+        rounds: usize,
+    ) -> Vec<(&'a I, u8)> {
+        let mut schedule = Vec::with_capacity(rounds * 3);
+        for _ in 0..rounds {
+            let mut order = [0u8, 1, 2];
+            for i in (1..3usize).rev() {
+                let j = (rng.next_u64() as usize) % (i + 1);
+                order.swap(i, j);
+            }
+            for which in order {
+                let pool = pools[which as usize];
+                let idx = (rng.next_u64() as usize) % pool.len();
+                schedule.push((&pool[idx], which));
+            }
+        }
+        schedule
+    }
+
     /// Shared sampling and statistics. `measure` may prepare the input before
     /// starting its timer, but must return only the measured elapsed time.
     fn dudect_two_class_measured<I, F>(
@@ -1091,37 +1109,28 @@ mod constant_time_statistical {
             measure(&pool_b[i % pool_b.len()]);
         }
 
-        for _ in 0..rounds {
-            // Fisher-Yates on a 3-element order.
-            let mut order = [0u8, 1, 2];
-            for i in (1..3usize).rev() {
-                let j = (rng.next_u64() as usize) % (i + 1);
-                order.swap(i, j);
-            }
-            for &which in &order {
-                let (pool, sink): (&[I], &mut Vec<u64>) = match which {
-                    0 => (pool_a, &mut sa),
-                    1 => (pool_a2, &mut sa2),
-                    _ => (pool_b, &mut sb),
-                };
-                let idx = (rng.next_u64() as usize) % pool.len();
-                let input = &pool[idx];
-                sink.push(measure(input));
+        // Measurement follows one input-reference stream and writes one
+        // elapsed-time stream. Class dispatch and sink selection happen only
+        // before or after this loop, never between measured invocations.
+        let schedule = dudect_schedule(rng, [pool_a, pool_a2, pool_b], rounds);
+        let mut elapsed = Vec::with_capacity(schedule.len());
+        for &(input, _) in &schedule {
+            elapsed.push(measure(input));
+        }
+        for ((_, label), dt) in schedule.into_iter().zip(elapsed) {
+            match label {
+                0 => sa.push(dt),
+                1 => sa2.push(dt),
+                2 => sb.push(dt),
+                _ => unreachable!("schedule contains only three classes"),
             }
         }
 
         let total = sa.len() + sa2.len() + sb.len();
 
-        // Common crop threshold over the pooled distribution, so the crop
-        // cannot be chosen per class and thereby manufacture a difference.
-        //
-        // Known asymmetry, and it is the safe direction: when the two classes
-        // have very different medians, a pooled percentile lands inside the
-        // SLOWER class, so that class loses part of its tail while the faster
-        // one is untouched. That shrinks the measured gap. A positive finding
-        // from this harness is therefore a lower bound on the real effect, and
-        // the control arm (two streams of the same class) is unaffected because
-        // both its streams sit in the same mode.
+        // Use one pooled percentile for all classes. Cropping can alter class
+        // distributions and effect estimates; it does not guarantee a lower
+        // bound on the uncropped difference.
         let mut pooled: Vec<u64> = Vec::with_capacity(total);
         pooled.extend_from_slice(&sa);
         pooled.extend_from_slice(&sa2);
@@ -1166,6 +1175,88 @@ mod constant_time_statistical {
                 r.t_signal, r.t_control, r.median_a, r.median_b
             );
         }
+    }
+
+    #[test]
+    fn dudect_schedule_preserves_random_draws_and_measured_stream() {
+        let pools: [&[u64]; 3] = [&[10, 11], &[20, 21, 22], &[30, 31, 32, 33]];
+        let mut expected_rng = ShadowHarvester::with_seed(456);
+        let mut expected = Vec::new();
+        for _ in 0..100 {
+            let mut order = [0u8, 1, 2];
+            for i in (1..3usize).rev() {
+                let j = expected_rng.next_u64() as usize % (i + 1);
+                order.swap(i, j);
+            }
+            for label in order {
+                let pool = pools[label as usize];
+                let idx = expected_rng.next_u64() as usize % pool.len();
+                expected.push((pool[idx], label));
+            }
+        }
+        let mut schedule_rng = ShadowHarvester::with_seed(456);
+        let schedule = dudect_schedule(&mut schedule_rng, pools, 100);
+        assert_eq!(
+            schedule
+                .iter()
+                .map(|(v, label)| (**v, *label))
+                .collect::<Vec<_>>(),
+            expected
+        );
+        assert_eq!(schedule_rng.next_u64(), expected_rng.next_u64());
+        for label in 0..3 {
+            assert_eq!(
+                schedule.iter().filter(|(_, value)| *value == label).count(),
+                100
+            );
+        }
+
+        let mut observed = Vec::new();
+        let mut measured_rng = ShadowHarvester::with_seed(456);
+        dudect_two_class_measured(
+            &mut measured_rng,
+            pools[0],
+            pools[1],
+            pools[2],
+            100,
+            |input| {
+                observed.push(*input);
+                *input
+            },
+        );
+        let warmup_count = pools[0].len().max(pools[2].len()) * 3;
+        assert_eq!(
+            &observed[warmup_count..],
+            &expected.iter().map(|(v, _)| *v).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn dudect_shared_sampling_rejects_a_spurious_class_signal() {
+        let mut rng = ShadowHarvester::with_seed(813);
+        let mut noise = 0u64;
+        let result = dudect_two_class_measured(&mut rng, &[0u64], &[0u64], &[1u64], 3000, |_| {
+            noise = noise.wrapping_mul(6364136223846793005).wrapping_add(1);
+            100 + ((noise >> 32) % 20)
+        });
+        assert_eq!(
+            result.is_constant_time(),
+            Some(true),
+            "control={} signal={}",
+            result.t_control,
+            result.t_signal
+        );
+    }
+
+    #[test]
+    fn dudect_detects_noise_free_class_timing_difference() {
+        let mut rng = ShadowHarvester::with_seed(814);
+        let result = dudect_two_class_measured(&mut rng, &[0u64], &[0u64], &[1u64], 100, |class| {
+            100 + class * 50
+        });
+        assert_eq!(result.t_control, 0.0);
+        assert_eq!(result.t_signal, f64::INFINITY);
+        assert_eq!(result.is_constant_time(), Some(false));
     }
 
     #[test]

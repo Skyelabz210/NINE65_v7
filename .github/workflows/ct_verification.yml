@@ -144,10 +144,10 @@ jobs:
   # 3. Every run carries a CONTROL arm: two independent sample streams from the
   #    SAME class. The test can only FAIL when the control t stays below 5 while
   #    the cross-class t does not. On a runner too noisy to measure, the control
-  #    goes above 5 first and the verdict becomes INCONCLUSIVE, which passes.
-  #    A noisy runner therefore costs signal, never a false red. That property
-  #    is what makes a timing test safe to block on, and it is why no threshold
-  #    dilution is needed here: the threshold is the tight documented t < 5.
+  #    may exceed 5 and make the verdict INCONCLUSIVE, which passes with a
+  #    banner. A low control does not rule out class-specific measurement
+  #    context or a statistical false positive. Measured failures remain
+  #    blocking and require investigation; the threshold stays at t < 5.
   #
   # Measured stability of exactly these five on a 4-vCPU shared container,
   # deliberately including runs at load average 20-22 (see the plan doc):

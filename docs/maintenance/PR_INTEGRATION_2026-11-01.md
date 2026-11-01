@@ -124,3 +124,16 @@ polynomials and their U512 precheck. The adjacency region still runs 340 sweeps
 and 8,000 rounds. A standalone subtraction/mask assembly probe has no operand
 branch, but does not identify the hosted association's cause. The unchanged
 control/threshold and injected-signal negative control remain mandatory.
+
+
+With fixed input addresses, all nine other tests passed but Montgomery reduction
+again measured a class association (signal 5.4711, control 0.0699). Fixed inputs
+alone therefore do not resolve the observation. The sampler also dispatched by
+class and wrote different result buffers between measurements. It now builds
+the identical randomized input schedule beforehand, measures through one common
+loop/buffer, and separates classes afterwards. The original RNG sequence, sample
+counts, pooled crop and threshold remain. Schedule/execution equivalence and
+injected noisy/null controls verify this refactor. A zero-standard-error bug
+that accepted different deterministic classes is also fixed and covered by a
+noise-free injected failure. Comments no longer portray a low control as a
+mathematical guarantee against false positives or context bias.
