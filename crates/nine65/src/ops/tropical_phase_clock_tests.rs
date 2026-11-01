@@ -57,10 +57,7 @@ struct ClockPlan {
     values: Vec<i64>, // full 2N anti-periodic lookup function
 }
 
-/// Exact integer form of the doubled-clock window inequality used by
-/// `ClockPlan::new`: `twice_window = ceil(4*N*V/Q) + m*(H+1) < N`, computed
-/// entirely with U512-scale integer arithmetic (no floating point). Returns
-/// the exact doubled window and refuses when the geometry is inadmissible.
+/// Exact doubled-clock window, including moduli wider than u128.
 fn clock_twice_window_exact(
     n: usize,
     coordinate: usize,
@@ -70,50 +67,64 @@ fn clock_twice_window_exact(
     v_lo: u128,
     active_weight: usize,
 ) -> Result<u128, Refusal> {
-    if !n.is_power_of_two() || n < 2 || coordinate < 2 || q_hi == 0 && q_lo < 3 {
+    use crate::arithmetic::wide::U1024;
+    let wide = |hi: u128, lo: u128| {
+        let mut limbs = [0; 16];
+        limbs[..4].copy_from_slice(&[lo as u64, (lo >> 64) as u64, hi as u64, (hi >> 64) as u64]);
+        U1024::from_limbs(limbs)
+    };
+    let q = wide(q_hi, q_lo);
+    let v = wide(v_hi, v_lo);
+    if !n.is_power_of_two()
+        || n < 2
+        || coordinate < 2
+        || q < U1024::from_u64(3)
+        || q_lo % 2 == 0
+        || v > q.shr1()
+    {
         return Err(Refusal::Domain);
     }
-    // numerator = V * (4*N), as a 192-bit-safe wide product over u128 limbs.
-    let size = (2 * n) as u128;
-    let (num_lo, num_hi) = mul_u128_wide(v_lo, size * 2);
-    let num_hi = num_hi + v_hi * (size * 2);
-    // Divide the (num_hi:num_lo) 256-bit value by Q with remainder using
-    // schoolbook long division on 64-bit limbs (integer-only).
-    let mut limbs = [
-        (v_lo & u64::MAX as u128) as u64,
-        (v_lo >> 64) as u64,
-        (num_lo & u64::MAX as u128) as u64,
-        (num_lo >> 64) as u64,
-        (num_hi & u64::MAX as u128) as u64,
-        (num_hi >> 64) as u64,
-    ];
-    // Multiply-limb helper above already produced num from v*size*2; rebuild
-    // the dividend limbs consistently.
-    let _ = &mut limbs;
-    let dividend = [((v_lo.wrapping_mul(size).wrapping_mul(2)) & u64::MAX as u128) as u64];
-    let _ = dividend;
-    let divisor = [
-        (q_lo & u64::MAX as u128) as u64,
-        (q_lo >> 64) as u64,
-        (q_hi & u64::MAX as u128) as u64,
-        (q_hi >> 64) as u64,
-    ];
-    let _ = divisor;
-    unreachable!("placeholder")
+    let fixed = (coordinate as u128)
+        .checked_mul(active_weight as u128 + 1)
+        .ok_or(Refusal::Window)?;
+    let budget = (n as u128).checked_sub(fixed + 1).ok_or(Refusal::Window)?;
+    let numerator = v.checked_mul_u128(4 * n as u128).ok_or(Refusal::Window)?;
+    if numerator > q.checked_mul_u128(budget).ok_or(Refusal::Window)? {
+        return Err(Refusal::Window);
+    }
+    // Find ceil(4*N*V/Q) only inside the admitted window. No truncated
+    // division, wrapping product or reconstruction of ciphertext data.
+    let (mut lower, mut upper) = (0, budget);
+    while lower < upper {
+        let middle = lower + (upper - lower) / 2;
+        if q.checked_mul_u128(middle).ok_or(Refusal::Window)? >= numerator {
+            upper = middle;
+        } else {
+            lower = middle + 1;
+        }
+    }
+    Ok(lower + fixed)
 }
 
-fn mul_u128_wide(a: u128, b: u128) -> (u128, u128) {
-    let (a0, a1) = (a as u64 as u128, (a >> 64) as u128);
-    let (b0, b1) = (b as u64 as u128, (b >> 64) as u128);
-    let p00 = a0 * b0;
-    let p01 = a0 * b1;
-    let p10 = a1 * b0;
-    let p11 = a1 * b1;
-    let mid = (p00 >> 64) + (p01 & u64::MAX as u128) + (p10 & u64::MAX as u128);
-    let lo = ((mid << 64) | (p00 & u64::MAX as u128)).wrapping_add(0);
-    let lo = (p00 & u64::MAX as u128) | (mid << 64);
-    let hi = p11 + (p01 >> 64) + (p10 >> 64) + (mid >> 64);
-    (lo, hi)
+#[test]
+fn exact_clock_window_covers_wide_modulus_and_boundary_refusals() {
+    assert_eq!(
+        clock_twice_window_exact(8192, 33, 1, 1, 0, 1 << 124, 2),
+        Ok(2147)
+    );
+    assert_eq!(clock_twice_window_exact(8, 2, 0, 17, 0, 0, 0), Ok(2));
+    assert_eq!(
+        clock_twice_window_exact(8, 2, 0, 17, 0, 8, 0),
+        Err(Refusal::Window)
+    );
+    assert_eq!(
+        clock_twice_window_exact(8, 2, 0, 16, 0, 0, 0),
+        Err(Refusal::Domain)
+    );
+    assert_eq!(
+        clock_twice_window_exact(8, 2, 0, 17, 0, 9, 0),
+        Err(Refusal::Domain)
+    );
 }
 
 impl ClockPlan {
@@ -138,20 +149,16 @@ impl ClockPlan {
         let size = 2 * n;
         // |2*m*rotation - 2*M*K| <= ceil(2*M*V/Q) + m*(H+1).
         // H is bounded by BOTH source secret weight and public nonzero terms.
-        let phase = ceil_div(
-            U256::from_u128(source_v).mul_u64((2 * size) as u64),
-            U256::from_u128(q as u128),
-        );
-        if phase.hi != 0 || phase.lo > u64::MAX as u128 {
-            return Err(Refusal::Window);
-        }
-        let twice_window = (phase.lo as u64)
-            .checked_add(
-                (coordinate as u64)
-                    .checked_mul(active_weight as u64 + 1)
-                    .ok_or(Refusal::Window)?,
-            )
-            .ok_or(Refusal::Window)?;
+        let twice_window = u64::try_from(clock_twice_window_exact(
+            n,
+            coordinate,
+            0,
+            q as u128,
+            0,
+            source_v,
+            active_weight,
+        )?)
+        .map_err(|_| Refusal::Window)?;
         // For odd coordinates, valid windows and their negacyclic mirrors
         // must be disjoint. This sufficient condition also works for parity.
         if twice_window >= n as u64 {
