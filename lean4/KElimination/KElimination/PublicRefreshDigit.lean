@@ -143,4 +143,34 @@ theorem certified_split_digit (g h : List Int) (r p k : Int) (hp : 0 < p)
   apply split_digit_correct g h r p k hp hroot
   simpa only [derivative_evaluation] using hinverse
 
+
+/-- The attachment's residual-polynomial form F(X)=X-G(X)H(X).
+The same finite root/inverse certificates recover the signed residual modulo
+p², for every signed quotient. This is an integer polynomial identity, not
+an admission certificate for a particular ciphertext/noise implementation. -/
+theorem residual_polynomial_correct (g h : List Int) (r p k : Int) (hp : 0 < p)
+    (hroot : evaluate g r % (p * p) = 0)
+    (hinverse : (evaluate (derivative g) r * evaluate h r) % p = 1 % p) :
+    (r + p * k - evaluate g (r + p * k) * evaluate h (r + p * k)) % (p * p) =
+      r % (p * p) := by
+  obtain ⟨rem, heval⟩ := rooted_taylor_multiple g r p k hroot
+  have hmultiple : p ∣ evaluate g (r + p * k) := ⟨_, heval⟩
+  have hdigit := certified_split_digit g h r p k hp hroot hinverse
+  rw [canonical_p_square_quotient _ p hp hmultiple] at hdigit
+  have hmod : ((evaluate g (r + p * k) / p) * evaluate h (r + p * k)) % p =
+      k % p := by
+    simpa only [Int.mul_emod, Int.emod_emod] using hdigit
+  obtain ⟨d, hd⟩ := Int.dvd_of_emod_eq_zero
+    (Int.emod_eq_emod_iff_emod_sub_eq_zero.mp hmod)
+  have hq : evaluate g (r + p * k) = p * (evaluate g (r + p * k) / p) := by
+    rw [heval, Int.mul_ediv_cancel_left _ (Int.ne_of_gt hp)]
+  have hprod : (evaluate g (r + p * k) / p) * evaluate h (r + p * k) = k + p * d := by
+    omega
+  have heq : r + p * k - evaluate g (r + p * k) * evaluate h (r + p * k) =
+      r - (p * p) * d := by
+    rw [hq, Int.mul_assoc, hprod, Int.mul_add]
+    simp only [← Int.mul_assoc]
+    omega
+  rw [heq, Int.sub_mul_emod_self_left]
+
 end KElimination.PublicRefreshDigit

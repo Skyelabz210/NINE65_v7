@@ -47,7 +47,8 @@ run_cmd do
     `KElimination.PublicRefreshDigit.rooted_quotient_mod,
     `KElimination.PublicRefreshDigit.canonical_p_square_quotient,
     `KElimination.PublicRefreshDigit.split_digit_correct,
-    `KElimination.PublicRefreshDigit.certified_split_digit]
+    `KElimination.PublicRefreshDigit.certified_split_digit,
+    `KElimination.PublicRefreshDigit.residual_polynomial_correct]
   for name in required do
     match env.find? name with
     | some (.thmInfo _) => pure ()
