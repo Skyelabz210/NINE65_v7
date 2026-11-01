@@ -1,0 +1,6 @@
+{
+  "pid": 76038,
+  "max_observed_proc_vmhwm_kib": 6799296,
+  "samples": 494,
+  "method": "/proc/PID/status VmHWM, polled each second; monitoring began after key generation"
+}

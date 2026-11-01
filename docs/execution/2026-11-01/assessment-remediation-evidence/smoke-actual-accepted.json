@@ -1,0 +1,13 @@
+{
+  "status": "UNSUPPORTED",
+  "reason": "Legacy BFV ciphertext multiplication deliberately refused; #135",
+  "first_divergence": {
+    "path": "legacy",
+    "operation": "mul_ct",
+    "reason": "refused-#135"
+  },
+  "supported_operations": "PASS",
+  "dual_rns_depth": "PASS",
+  "checked_depth": 2,
+  "security_equivalent_comparison": false
+}

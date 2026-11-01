@@ -1,5 +1,12 @@
 # Constant-Time Verification — Measured Results and CI Posture
 
+**Current finding, 2026-11-01:** main@924f52e's blocking Montgomery test
+measured control1.4003 and signal8.6550 against threshold5. The
+[assessment remediation](execution/2026-11-01/ASSESSMENT_REMEDIATION.md)
+archives five local repeats (four below threshold, one inconclusive) and
+compiled-loop inspection. The finding remains open; no threshold was changed.
+The older dated measurements below retain their original scope.
+
 **Restoration 2026-10-12:** The October 7 reducer and modulus-switch fixes from
 merged PRs #168/#169 were absent from remote `main`. This restoration preserves
 their final reviewed source from local `main@47fc49c`, including the corrected
