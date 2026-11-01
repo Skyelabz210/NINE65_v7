@@ -22,7 +22,7 @@ production-security scope. The original native refresh evidence is unchanged.
 | Modulus audit compared with dated evidence | Keep dated snapshot unchanged; regenerate and check `modulus_class_audit_current.json` |
 | Full-suite execution time | Optimize nine65 test arithmetic at level 2; default targets, assertions, overflow checks and `--no-fail-fast` remain enabled |
 
-The GSO field privacy change affects a deprecated experimental API. Use
+The GSO field privacy change affects a experimental API. Use
 `inner()` for read-only access and `try_mul_symmetric` for bounded operations.
 The local bound assumes well-formed matching keys; it is not a malicious-key
 proof or production-security certificate. Public GSO multiplication refuses
@@ -33,5 +33,8 @@ GSO integration tests, both sister-tray counterexamples, the triple-precharge
 preflight, all 20 reference NTT tests, ten main-only base-extension tests,
 metadata negative controls, and the relevant feature compile check. Full
 workspace execution reached every target; the service socket tests were rerun
-with socket access (28 passed). The nine65 library target is being rerun after
-the integration repairs; final results belong to PR #201's checked head.
+with socket access (28 passed). The repaired nine65 library target passed
+1,129 tests with zero failures and 139 explicitly ignored tests in 298.23s.
+Workspace/all-target Clippy passed with warnings denied. Hosted results are
+attached to PR #201's exact checked head; the native five-cycle archive is not
+presented as a new run of this integration.
