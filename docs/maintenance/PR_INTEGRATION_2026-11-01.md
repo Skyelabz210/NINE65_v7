@@ -58,3 +58,18 @@ negative control checks the sampler. One local optimized diagnostic was
 inconclusive, so it is not presented as resolution of the hosted observation
 or constant-time admission. The new hosted run must evaluate the repaired
 harness; the circuit's constant-time posture remains unestablished.
+
+
+A subsequent hosted run completed the restored NTT target and reached the
+legacy shape target, revealing its missing `allow_insecure` fixture feature
+and two historical ignored tests. The workflow now enables that fixture
+feature and executes an active test of typed legacy refusal, unchanged
+residue lanes and unchanged plaintext. The old success claims remain marked
+historical, with their misleading unlimited-depth explanations removed.
+
+The same all-measurements timing run exposed a prime-drop class association.
+Both prime-drop contrasts now reuse fixed lane addresses before timing. An
+address/output regression and the independent integer-division oracle pass;
+one local run per contrast was below the existing threshold. Both the hosted
+observation and local diagnostics remain in the observation artifact, without
+claiming the original cause was established or that the circuit is constant-time.

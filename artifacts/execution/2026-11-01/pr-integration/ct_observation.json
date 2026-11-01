@@ -19,5 +19,51 @@
     "median_a_ns": 4957,
     "median_b_ns": 4957
   },
-  "constant_time_admitted": false
+  "constant_time_admitted": false,
+  "prime_drop_observations": [
+    {
+      "observed_head": "f301112",
+      "job_url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41301780223/job/124834061256",
+      "profile": "hosted release",
+      "threshold": 5,
+      "fixed_vs_random": {
+        "t_signal": 12.1251,
+        "t_control": 2.9674,
+        "median_a_ns": 69034,
+        "median_b_ns": 69014,
+        "verdict": "TIMING DEPENDENCE MEASURED"
+      },
+      "small_vs_large": {
+        "t_signal": 3.8701,
+        "t_control": 1.9977,
+        "verdict": "BELOW THRESHOLD"
+      },
+      "interpretation": "Observed input-class association; original input lane addresses were confounded with class. Neither operand dependence nor memory placement as the cause has been established.",
+      "repair": "Copy selected input lane contents into a single fixed-address, preallocated polynomial outside the timed region in both contrasts. Preserve operation, sampling, crop, rounds, control and threshold.",
+      "status": "Unresolved pending a fresh hosted outcome; a local diagnostic is not an admission of constant-time behavior.",
+      "local_diagnostic": {
+        "profile": "test opt-level=2 with debug assertions (not hosted release)",
+        "planned_runs_per_contrast": 1,
+        "fixed_vs_random": {
+          "t_signal": 0.3171,
+          "t_control": 0.3717,
+          "median_a_ns": 95924,
+          "median_b_ns": 95934,
+          "samples_kept": 8101,
+          "samples_total": 9000,
+          "verdict": "BELOW THRESHOLD"
+        },
+        "small_vs_large": {
+          "t_signal": 0.6809,
+          "t_control": 0.7677,
+          "median_a_ns": 95654,
+          "median_b_ns": 95673,
+          "samples_kept": 8101,
+          "samples_total": 9000,
+          "verdict": "BELOW THRESHOLD"
+        },
+        "interpretation": "Local observations only; do not establish a cause for the hosted failure or admit constant-time behavior."
+      }
+    }
+  ]
 }

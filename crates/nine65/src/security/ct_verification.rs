@@ -1194,16 +1194,10 @@ mod constant_time_statistical {
     // Exact prime-drop (ops::rns_fhe::exact_modulus_switch_drop_poly)
     // ========================================================================
     //
-    // This is the exact align-and-drop primitive: for each surviving lane
-    //     x_i' = (x_i - r_k) * q_k^{-1}  (mod q_i)
-    // It is branch-free at the source level, but every one of those steps is a
-    // hardware or software DIVISION on a value derived from the ciphertext:
-    // `dropped[c] % q_i`, `src[c] % q_i`, `(x + q_i - r_k) % q_i`, and
-    // `(diff as u128 * inv as u128) % q_i as u128`. The last one is a 128-bit
-    // remainder by a runtime modulus, which LLVM lowers to `__umodti3` — a
-    // shift/subtract loop whose iteration count depends on the operand's bit
-    // length. That is a data-dependent execution path, which is exactly what
-    // these two tests are for.
+    // Each ciphertext coefficient is processed by the Barrett reduction and
+    // subtraction kernels. Modulus-dependent inverse and gcd setup uses only
+    // public parameters. These tests still measure the complete operation,
+    // including setup and output allocation, for both input contrasts.
 
     /// Dual-basis geometry used by the prime-drop tests. `n` is deliberately
     /// small enough that one call is tens of microseconds — far above timer
@@ -1243,6 +1237,54 @@ mod constant_time_statistical {
         }
     }
 
+    /// Reuse the same lane allocations for every class. Shape checks and copies
+    /// happen before the timer; no input lane is resized or replaced.
+    fn copy_drop_input(scratch: &mut DualRNSPoly, input: &DualRNSPoly) {
+        assert_eq!(scratch.n, input.n);
+        assert_eq!(scratch.main.len(), input.main.len());
+        assert_eq!(scratch.anchor.len(), input.anchor.len());
+        for (dst, src) in scratch
+            .main
+            .iter_mut()
+            .zip(&input.main)
+            .chain(scratch.anchor.iter_mut().zip(&input.anchor))
+        {
+            dst.copy_from_slice(src);
+        }
+    }
+
+    #[test]
+    fn prime_drop_scratch_keeps_lane_addresses_and_results() {
+        let basis = drop_basis();
+        let mut rng = ShadowHarvester::with_seed(151);
+        let zero = drop_poly(&basis, |_| 0);
+        let random = drop_poly(&basis, |p| rng.next_u64() % p);
+        let high = drop_poly(&basis, |p| p - 1);
+        let mut scratch = drop_poly(&basis, |_| 0);
+        let addresses: Vec<_> = scratch
+            .main
+            .iter()
+            .chain(&scratch.anchor)
+            .map(|lane| lane.as_ptr())
+            .collect();
+        for input in [&zero, &random, &high, &zero] {
+            let expected =
+                exact_modulus_switch_drop_poly(input, &basis.main, &basis.anchor, 0).unwrap();
+            copy_drop_input(&mut scratch, input);
+            let actual_addresses: Vec<_> = scratch
+                .main
+                .iter()
+                .chain(&scratch.anchor)
+                .map(|lane| lane.as_ptr())
+                .collect();
+            assert_eq!(actual_addresses, addresses);
+            let actual =
+                exact_modulus_switch_drop_poly(&scratch, &basis.main, &basis.anchor, 0).unwrap();
+            assert_eq!(actual.main, expected.main);
+            assert_eq!(actual.anchor, expected.anchor);
+        }
+    }
+
     #[test]
     #[ignore = "Statistical timing test - run in a controlled environment only. WAS finding F-1, \
 now CLOSED and kept as its regression gate: medians 110,927ns vs 110,977ns (+0.045%), t_signal 0.96 \
@@ -1269,17 +1311,26 @@ section 4.8 for the probe-by-probe localisation."]
 
         let main = basis.main.clone();
         let anchor = basis.anchor.clone();
-        let result = dudect_two_class(
+        let mut scratch = drop_poly(&basis, |_| 0);
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_ROUNDS,
             |poly| {
-                let out =
-                    exact_modulus_switch_drop_poly(std::hint::black_box(poly), &main, &anchor, 0)
-                        .expect("prime drop must succeed on the secure_128 dual basis");
+                copy_drop_input(&mut scratch, poly);
+                let start = Instant::now();
+                let out = exact_modulus_switch_drop_poly(
+                    std::hint::black_box(&scratch),
+                    &main,
+                    &anchor,
+                    0,
+                )
+                .expect("prime drop must succeed on the secure_128 dual basis");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1319,17 +1370,26 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
 
         let main = basis.main.clone();
         let anchor = basis.anchor.clone();
-        let result = dudect_two_class(
+        let mut scratch = drop_poly(&basis, |_| 0);
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_ROUNDS,
             |poly| {
-                let out =
-                    exact_modulus_switch_drop_poly(std::hint::black_box(poly), &main, &anchor, 0)
-                        .expect("prime drop must succeed on the secure_128 dual basis");
+                copy_drop_input(&mut scratch, poly);
+                let start = Instant::now();
+                let out = exact_modulus_switch_drop_poly(
+                    std::hint::black_box(&scratch),
+                    &main,
+                    &anchor,
+                    0,
+                )
+                .expect("prime drop must succeed on the secure_128 dual basis");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 

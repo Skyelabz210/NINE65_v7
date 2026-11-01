@@ -21,7 +21,8 @@
     "docs/security/CT_PUBLIC_REFRESH.md",
     "docs/security/CORRECTNESS_EVIDENCE_PUBLIC_REFRESH.md",
     "docs/status/CURRENT.json",
-    "docs/CLAIM_EVIDENCE_LEDGER.md"
+    "docs/CLAIM_EVIDENCE_LEDGER.md",
+    "crates/nine65/tests/bootstrap_residue_shape_regression.rs"
   ],
   "historical_snapshots": [
     "docs/OPEN_WORK_2026-08-26.md",

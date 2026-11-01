@@ -1,7 +1,5 @@
-//! Runtime contract for a residue-native Clockwork refresh.
-//!
-//! This test does not authorize number-line reconstruction inside bootstrap.
-//! The source recumbency gate independently excludes that implementation.
+//! Legacy Clockwork refusal must preserve its input plaintext and residue shape.
+//! The separate working research backend is described in docs/PUBLIC_REFRESH_STATUS.md.
 
 use nine65::entropy::ShadowHarvester;
 use nine65::ops::bootstrap::ClockworkBootstrap;
@@ -29,7 +27,7 @@ fn assert_ciphertext_shape(
     }
 }
 
-#[ignore = "VESTIGIAL: asserts a circular bootstrap preserves the plaintext and the DualRNS lane shape, including refreshed.level == config.primes.len(). Lane-shape invariance across an operation is already covered without bootstrap by crates/nine65/tests/basis_invariance.rs, which proves the basis does not move across exact division; this test proves it only for the refresh path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+#[ignore = "Historical legacy Clockwork success claim; its component-rounding path remains fail-closed. See docs/PUBLIC_REFRESH_STATUS.md"]
 #[test]
 fn circular_bootstrap_preserves_plaintext_and_dual_rns_shape() {
     let config = SecureConfig::secure_128_deep().into_config();
@@ -57,7 +55,7 @@ fn circular_bootstrap_preserves_plaintext_and_dual_rns_shape() {
     assert_eq!(context.decrypt_dual(&refreshed, &keys.secret_key), message);
 }
 
-#[ignore = "VESTIGIAL: asserts bootstrap roundtrips the boundary plaintexts 0, 1 and t-1. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md"]
+#[ignore = "Historical legacy Clockwork success claim; its component-rounding path remains fail-closed. See docs/PUBLIC_REFRESH_STATUS.md"]
 #[test]
 fn bootstrap_preserves_zero_and_plaintext_boundary_values() {
     let config = SecureConfig::secure_128_deep().into_config();
@@ -76,4 +74,33 @@ fn bootstrap_preserves_zero_and_plaintext_boundary_values() {
             .expect("bootstrap must succeed on public boundary vectors");
         assert_eq!(context.decrypt_dual(&refreshed, &keys.secret_key), message);
     }
+}
+
+#[test]
+fn legacy_refresh_refuses_without_changing_input_plaintext_or_residue_shape() {
+    let config = SecureConfig::secure_128_deep().into_config();
+    let context = RNSFHEContext::try_new(&config).unwrap();
+    let bootstrap = ClockworkBootstrap::new(&config).unwrap();
+    let mut rng = ShadowHarvester::with_seed(0xC12A_0003);
+    let keys = context.generate_keys_dual(&mut rng);
+    let refresh_keys = bootstrap.generate_keys(&keys.secret_key, &mut rng).unwrap();
+    let ciphertext = context.encrypt_dual(37, &keys.public_key, &mut rng);
+    let original = ciphertext.clone();
+    let result = bootstrap.bootstrap(&ciphertext, &refresh_keys.bsk, &refresh_keys.ksk);
+    assert!(matches!(result,
+        Err(nine65::errors::Nine65Error::BootstrapFailed { reason })
+        if reason.contains("legacy Clockwork")
+    ));
+    assert_ciphertext_shape(
+        &ciphertext,
+        config.n,
+        config.primes.len(),
+        context.dual_rns.anchor.primes.len(),
+    );
+    assert_eq!(ciphertext.level, original.level);
+    assert_eq!(ciphertext.c0.main, original.c0.main);
+    assert_eq!(ciphertext.c0.anchor, original.c0.anchor);
+    assert_eq!(ciphertext.c1.main, original.c1.main);
+    assert_eq!(ciphertext.c1.anchor, original.c1.anchor);
+    assert_eq!(context.decrypt_dual(&ciphertext, &keys.secret_key), 37);
 }
