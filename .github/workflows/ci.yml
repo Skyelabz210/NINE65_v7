@@ -164,7 +164,7 @@ jobs:
         run: bash scripts/check_no_panics.sh ratchet
 
       - name: Scan for float usage in runtime paths
-        run: bash scripts/check_no_floats_runtime.sh
+        run: bash scripts/check_no_floats_runtime.sh --self-test
 
       - name: Scan for float usage in benches/tests/audit binaries
         run: python3 scripts/check_no_floats_benches_and_tests.py

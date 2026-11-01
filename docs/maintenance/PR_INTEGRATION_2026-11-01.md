@@ -73,3 +73,12 @@ address/output regression and the independent integer-division oracle pass;
 one local run per contrast was below the existing threshold. Both the hosted
 observation and local diagnostics remain in the observation artifact, without
 claiming the original cause was established or that the circuit is constant-time.
+
+
+The runtime float gate also had a 2,000-line test-code heuristic. Extending the
+timing module made it misclassify two statistical reporting casts as production
+arithmetic. It now reuses balanced test-item detection and Rust comment/string
+stripping. Negative controls reject production code after a long test module,
+feature-enabled floats, scientific notation and suffixed float literals. The
+existing explicit offline exemptions and separate benchmark/test gate remain;
+no runtime floating-point operation was introduced.
