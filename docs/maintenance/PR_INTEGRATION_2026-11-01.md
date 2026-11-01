@@ -95,3 +95,12 @@ README, the example header, its design note and two CLAUDE feature descriptions.
 They now use the supported optimized development profile. Release-only library
 protection remains unchanged. Historical benchmark numbers are not remeasured
 or relabeled by these instruction fixes.
+
+
+Inline review also found three accepted-input boundary errors in the imported
+`qmnf_crtbigint` reference crate. Montgomery reduction now retains the 129th
+sum bit for full-width odd moduli; WASSAN reconstruction uses Horner evaluation
+so the unused final base power cannot overflow; rational ordering compares
+continued fractions instead of overflowing cross-products. The regressions
+first reproduced all three failures. All 26 unit and 12 integration tests,
+26 release unit tests and warnings-denied all-target Clippy pass.

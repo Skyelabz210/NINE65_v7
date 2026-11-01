@@ -83,13 +83,17 @@ impl MontgomeryCtx {
         ((r * r) % n as u128) as u64
     }
 
+    /// Montgomery reduction for `t < modulus * 2^64`.
     #[inline(always)]
     pub fn redc(&self, t: u128) -> u64 {
         let m = (t as u64).wrapping_mul(self.n_inv_neg);
         let mn = (m as u128) * (self.modulus as u128);
-        let u = (t.wrapping_add(mn) >> 64) as u64;
-        if u >= self.modulus {
-            u - self.modulus
+        // The sum can need 129 bits when the modulus uses all 64 bits.
+        // For t < modulus * 2^64, its quotient by 2^64 is below 2*modulus.
+        let (sum, carry) = t.overflowing_add(mn);
+        let u = (sum >> 64) as u64;
+        if carry || u >= self.modulus {
+            u.wrapping_sub(self.modulus)
         } else {
             u
         }
@@ -802,13 +806,9 @@ impl WassanBanded {
     }
 
     pub fn reconstruct_u128(&self) -> u128 {
-        let mut result: u128 = 0;
-        let mut mult: u128 = 1;
-        for &b in &self.bands {
-            result += b as u128 * mult;
-            mult *= self.band_size as u128;
-        }
-        result
+        self.bands.iter().rev().fold(0u128, |value, &band| {
+            value * self.band_size as u128 + band as u128
+        })
     }
 
     pub fn band_mod(&self, p: u64) -> u64 {
@@ -1159,7 +1159,7 @@ pub fn integer_sine(k: usize, n: usize, scale: i64) -> i64 {
 // ============================================================================
 
 /// Exact rational number as (numerator, denominator).
-/// All comparisons are cross-multiplication, no float.
+/// Comparisons use integer quotients and remainders without overflowing.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ExactRational {
     pub num: u128,
@@ -1172,15 +1172,48 @@ impl ExactRational {
         Self { num, den }
     }
 
-    /// self < other ⟺ self.num × other.den < other.num × self.den
+    // Compare continued fractions. Taking reciprocals reverses the ordering;
+    // quotient and remainder operations avoid overflowing cross products.
+    fn compare(&self, other: &Self) -> std::cmp::Ordering {
+        use std::cmp::Ordering;
+        let (mut a, mut b, mut c, mut d) = (self.num, self.den, other.num, other.den);
+        let mut reversed = false;
+        loop {
+            let ordering = (a / b).cmp(&(c / d));
+            if ordering != Ordering::Equal {
+                return if reversed {
+                    ordering.reverse()
+                } else {
+                    ordering
+                };
+            }
+            let (ra, rc) = (a % b, c % d);
+            let ordering = match (ra == 0, rc == 0) {
+                (true, true) => return Ordering::Equal,
+                (true, false) => Ordering::Less,
+                (false, true) => Ordering::Greater,
+                (false, false) => {
+                    (a, b, c, d) = (b, ra, d, rc);
+                    reversed = !reversed;
+                    continue;
+                }
+            };
+            return if reversed {
+                ordering.reverse()
+            } else {
+                ordering
+            };
+        }
+    }
+
+    /// self < other
     pub fn lt(&self, other: &Self) -> bool {
-        // Use checked_mul to avoid overflow; fallback to u128 cross-multiply
-        self.num * other.den < other.num * self.den
+        self.compare(other) == std::cmp::Ordering::Less
     }
 
     /// self ≤ other
     pub fn le(&self, other: &Self) -> bool {
-        self.num * other.den <= other.num * self.den
+        self.compare(other) != std::cmp::Ordering::Greater
     }
 
     /// Multiply two rationals: (a/b) × (c/d) = (a×c)/(b×d)
@@ -1222,6 +1255,84 @@ impl fmt::Display for ExactRational {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn montgomery_full_width_moduli_match_u128_oracle() {
+        for q in [
+            3u64,
+            (1u64 << 63) - 25,
+            (1u64 << 63) + 1,
+            u64::MAX - 58,
+            u64::MAX,
+        ] {
+            let ctx = MontgomeryCtx::new(q);
+            for a in [0, 1, q / 2, q - 2, q - 1] {
+                assert_eq!(ctx.from_mont(ctx.to_mont(a)), a, "roundtrip q={q} a={a}");
+                for b in [0, 1, q / 2, q - 2, q - 1] {
+                    let actual = ctx.from_mont(ctx.mul(ctx.to_mont(a), ctx.to_mont(b)));
+                    let expected = ((a as u128 * b as u128) % q as u128) as u64;
+                    assert_eq!(actual, expected, "q={q} a={a} b={b}");
+                }
+            }
+        }
+        // Deterministic broad coverage of carries and residues for wide moduli.
+        let mut state = 0x8a5c_3d19_62e7_1b41u64;
+        for q in [(1u64 << 63) + 1, u64::MAX - 58, u64::MAX] {
+            let ctx = MontgomeryCtx::new(q);
+            for _ in 0..512 {
+                state ^= state << 13;
+                state ^= state >> 7;
+                state ^= state << 17;
+                let a = state % q;
+                state ^= state << 13;
+                state ^= state >> 7;
+                state ^= state << 17;
+                let b = state % q;
+                let actual = ctx.from_mont(ctx.mul(ctx.to_mont(a), ctx.to_mont(b)));
+                assert_eq!(actual, ((a as u128 * b as u128) % q as u128) as u64);
+            }
+        }
+    }
+
+    #[test]
+    fn wassan_reconstructs_u128_boundaries() {
+        for value in [0, 1, 143, 144, u128::MAX - 1, u128::MAX] {
+            assert_eq!(
+                WassanBanded::from_u128(value, 128).reconstruct_u128(),
+                value
+            );
+        }
+    }
+
+    #[test]
+    fn rational_comparisons_handle_overflow_and_equal_fractions() {
+        let large = ExactRational::new(1u128 << 127, 1);
+        let half = ExactRational::new(1, 2);
+        assert!(half.lt(&large));
+        assert!(!large.lt(&half));
+        assert!(!large.le(&half));
+        let max = u128::MAX;
+        let a = ExactRational::new(max - 1, max);
+        let b = ExactRational::new(max - 2, max - 1);
+        assert!(b.lt(&a));
+        assert!(!a.le(&b));
+        let one = ExactRational::new(max, max);
+        assert!(one.le(&ExactRational::one()));
+        assert!(!one.lt(&ExactRational::one()));
+        assert!(ExactRational::new(0, max).lt(&b));
+        for a in 0..16u128 {
+            for b in 1..16u128 {
+                for c in 0..16u128 {
+                    for d in 1..16u128 {
+                        let left = ExactRational::new(a, b);
+                        let right = ExactRational::new(c, d);
+                        assert_eq!(left.lt(&right), a * d < c * b);
+                        assert_eq!(left.le(&right), a * d <= c * b);
+                    }
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_crt_roundtrip() {
