@@ -189,5 +189,40 @@
         "interpretation": "Local observations only. Do not establish the cause of the hosted association or admit constant-time behavior."
       }
     }
+  ],
+  "fixed_input_followups": [
+    {
+      "observed_head": "1924d643a52d0e8bcd4683883963ec041eb4c9c9",
+      "job_url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41307420014/job/124850554201",
+      "profile": "hosted release",
+      "cpu": "AMD EPYC 7763",
+      "threshold": 5,
+      "montgomery_reduce": {
+        "t_signal": 5.4711,
+        "t_control": 0.0699,
+        "median_a_ns": 5741,
+        "median_b_ns": 5751,
+        "verdict": "TIMING DEPENDENCE MEASURED"
+      },
+      "adjacency_magnitude": {
+        "t_signal": 0.4354,
+        "t_control": 1.4845,
+        "median_a_ns": 3152821,
+        "median_b_ns": 3152881,
+        "verdict": "BELOW THRESHOLD"
+      },
+      "adjacency_order": {
+        "t_signal": 1.7535,
+        "t_control": 1.8966,
+        "median_a_ns": 2592193,
+        "median_b_ns": 2591922,
+        "verdict": "BELOW THRESHOLD"
+      },
+      "other_blocking_tests": "All nine other named tests below threshold on this run.",
+      "interpretation": "Association remained after fixed input preparation. Buffer placement alone does not resolve the observation.",
+      "repair": "Precompute the same random schedule, collect through a single class-independent measurement loop and elapsed buffer, and demultiplex afterwards. Preserve RNG order, counts, crop, control and threshold. Fix the zero-standard-error statistic to reject distinct deterministic timing classes.",
+      "assembly_observation": "Standalone exact-source fixed-q REDC with Rust 1.89 opt3/fat LTO/one codegen unit emits no operand-dependent branch or helper. It is not the hosted binary and does not establish a cause.",
+      "status": "Requires fresh hosted evaluation; no production constant-time admission."
+    }
   ]
 }
