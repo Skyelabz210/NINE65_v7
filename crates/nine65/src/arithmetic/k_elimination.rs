@@ -952,7 +952,14 @@ fn gcd_u128(mut a: u128, mut b: u128) -> u128 {
 
 fn sub_mod_u128_ct(a: u128, b: u128, modulus: u128) -> u128 {
     let difference = a.wrapping_sub(b);
-    let mask = ((a < b) as u128).wrapping_neg();
+    // The top bit of the subtraction borrow expression works across the
+    // entire u128 range, including operands with bit 127 set. Keep both the
+    // expression and its extracted bit opaque so LLVM cannot fold the mask
+    // back into an operand-dependent conditional selection in the hot loop.
+    // black_box is a compiler hint, so inspect the generated code per target.
+    let borrow_bits = std::hint::black_box((!a & b) | (!(a ^ b) & difference));
+    let borrow = std::hint::black_box((borrow_bits >> 127) as u64);
+    let mask = (borrow as u128).wrapping_neg();
     difference.wrapping_add(modulus & mask)
 }
 
@@ -1004,6 +1011,68 @@ pub fn bench_sub_mod_u128_ct(a: u128, b: u128, modulus: u128) -> u128 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sub_mod_u128_matches_full_width_oracle() {
+        let moduli = [
+            1,
+            2,
+            (1u128 << 64) - 1,
+            (1u128 << 64) + 1,
+            (1u128 << 127) - 1,
+            1u128 << 127,
+            (1u128 << 127) + 1,
+            u128::MAX - 1,
+            u128::MAX,
+        ];
+        let boundaries = [
+            0,
+            1,
+            2,
+            (1u128 << 64) - 1,
+            1u128 << 64,
+            (1u128 << 64) + 1,
+            (1u128 << 127) - 1,
+            1u128 << 127,
+            (1u128 << 127) + 1,
+            u128::MAX - 1,
+        ];
+        let oracle = |a: u128, b: u128, m: u128| {
+            if a >= b {
+                a - b
+            } else {
+                m - (b - a)
+            }
+        };
+        let mut state = 0x9e3779b97f4a7c15_d1b54a32d192ed03u128;
+        for m in moduli {
+            for a in boundaries.into_iter().chain([m - 1]) {
+                for b in boundaries.into_iter().chain([m - 1]) {
+                    let (a, b) = (a % m, b % m);
+                    assert_eq!(
+                        sub_mod_u128_ct(a, b, m),
+                        oracle(a, b, m),
+                        "m={m} a={a} b={b}"
+                    );
+                }
+            }
+            for _ in 0..5000 {
+                state ^= state << 23;
+                state ^= state >> 17;
+                state ^= state << 26;
+                let a = state % m;
+                state ^= state << 23;
+                state ^= state >> 17;
+                state ^= state << 26;
+                let b = state % m;
+                assert_eq!(
+                    sub_mod_u128_ct(a, b, m),
+                    oracle(a, b, m),
+                    "m={m} a={a} b={b}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn safe_basis_validation() {

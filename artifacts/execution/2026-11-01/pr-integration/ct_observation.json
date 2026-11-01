@@ -189,5 +189,71 @@
         "interpretation": "Local observations only. Do not establish the cause of the hosted association or admit constant-time behavior."
       }
     }
+  ],
+  "fixed_input_followups": [
+    {
+      "observed_head": "1924d643a52d0e8bcd4683883963ec041eb4c9c9",
+      "job_url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41307420014/job/124850554201",
+      "profile": "hosted release",
+      "cpu": "AMD EPYC 7763",
+      "threshold": 5,
+      "montgomery_reduce": {
+        "t_signal": 5.4711,
+        "t_control": 0.0699,
+        "median_a_ns": 5741,
+        "median_b_ns": 5751,
+        "verdict": "TIMING DEPENDENCE MEASURED"
+      },
+      "adjacency_magnitude": {
+        "t_signal": 0.4354,
+        "t_control": 1.4845,
+        "median_a_ns": 3152821,
+        "median_b_ns": 3152881,
+        "verdict": "BELOW THRESHOLD"
+      },
+      "adjacency_order": {
+        "t_signal": 1.7535,
+        "t_control": 1.8966,
+        "median_a_ns": 2592193,
+        "median_b_ns": 2591922,
+        "verdict": "BELOW THRESHOLD"
+      },
+      "other_blocking_tests": "All nine other named tests below threshold on this run.",
+      "interpretation": "Association remained after fixed input preparation. Buffer placement alone does not resolve the observation.",
+      "repair": "Precompute the same random schedule, collect through a single class-independent measurement loop and elapsed buffer, and demultiplex afterwards. Preserve RNG order, counts, crop, control and threshold. Fix the zero-standard-error statistic to reject distinct deterministic timing classes.",
+      "assembly_observation": "Standalone exact-source fixed-q REDC with Rust 1.89 opt3/fat LTO/one codegen unit emits no operand-dependent branch or helper. It is not the hosted binary and does not establish a cause.",
+      "status": "Requires fresh hosted evaluation; no production constant-time admission."
+    }
+  ],
+  "common_sampler_followups": [
+    {
+      "observed_head": "6c90eee0749bfbfc1fbb96946a8dc46c31cdfcfb",
+      "job_url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41308821631/job/124854724498",
+      "profile": "hosted release",
+      "cpu": "AMD EPYC 9V45",
+      "threshold": 5,
+      "adjacency_order": {
+        "t_signal": 11.1081,
+        "t_control": 0.3769,
+        "median_a_ns": 1289276,
+        "median_b_ns": 1292411,
+        "verdict": "TIMING DEPENDENCE MEASURED"
+      },
+      "montgomery_reduce": {
+        "t_signal": 4.0595,
+        "t_control": 2.7088,
+        "verdict": "BELOW THRESHOLD"
+      },
+      "montgomery_mul": {
+        "t_signal": 12.0882,
+        "t_control": 6.6788,
+        "verdict": "INCONCLUSIVE"
+      },
+      "interpretation": "Association remains in operand-order contrast after common sampler and fixed input preparation. Its cause is not established.",
+      "hardening": "Replace comparison-selected u128 subtraction borrow with exact full-width bitwise borrow and compiler barriers, removing conditional-selection dataflow in optimized probes. No threshold or sampling change.",
+      "verification": "Independent full-width boundaries and 45000 deterministic oracle cases; 36 existing K-elimination/adjacency tests pass, two previously ignored; workspace all-target Clippy passes.",
+      "limits": "Probes are not the hosted binary. More instructions/stack traffic may affect performance. The hosted job will capture named test-function disassembly and binary SHA256 for actual code review.",
+      "status": "Await fresh hosted outcome; no constant-time or production admission."
+    }
   ]
 }
