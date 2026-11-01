@@ -49,6 +49,13 @@
       "following_squares": 1,
       "comparisons": 16384,
       "production_admitted": false
+    },
+    "native_phase_error_witness": {
+      "manifest": "docs/execution/2026-11-01/native-phase-error-evidence/manifest.json",
+      "source_commit": "2352435d625d7f36ffec41d162a8d769b84d6ab7",
+      "coefficient_error_checks": 24576,
+      "refresh_cycles": 1,
+      "production_admitted": false
     }
   }
 }
