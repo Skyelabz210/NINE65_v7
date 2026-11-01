@@ -20,9 +20,11 @@ def require(condition, message):
 
 
 def validate(payload, probe_exit):
-    require(probe_exit == 1, f"expected legacy refusal exit 1, got {probe_exit}")
     require(payload.get("schema") == "nine65-comparative-probe-v1", "unexpected schema")
-    require(payload.get("status") == "FAIL", "raw probe status changed: audit semantics")
+    # Preserve the historical payload contract while accepting the explicit
+    # unsupported-operation status now emitted by the current probe.
+    require((probe_exit, payload.get("status")) in ((1, "FAIL"), (2, "UNSUPPORTED")),
+            "status/exit do not match a recognized legacy refusal contract")
 
     metadata = payload["metadata"]
     require(metadata.get("build_profile") == "debug", "only debug comparisons admitted")
