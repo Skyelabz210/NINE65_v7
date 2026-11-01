@@ -137,3 +137,17 @@ injected noisy/null controls verify this refactor. A zero-standard-error bug
 that accepted different deterministic classes is also fixed and covered by a
 noise-free injected failure. Comments no longer portray a low control as a
 mathematical guarantee against false positives or context bias.
+
+
+PR #201 was merged at `1924d64` while the timing investigation continued; its
+source history also merged #187 and #195. The sampler work continues in #202.
+That common-sampler run found an adjacency operand-order association on AMD
+EPYC 9V45 (signal 11.1081, control 0.3769). The subtraction's comparison-selected
+borrow is now hardened with exact full-width arithmetic borrow logic and opaque
+compiler barriers. Optimized repeated-loop probes have no operand-dependent
+conditional moves or jumps; the cause of the hosted association remains
+unestablished. Forty-five thousand random full-width oracle cases, boundary
+cases and 36 existing K-elimination/adjacency tests pass, with two pre-existing
+ignores. The extra instructions/stack traffic can affect performance. The hosted
+job now captures actual named test-function assembly and the binary hash; its
+collector passed a real local test-binary smoke and refusal controls.

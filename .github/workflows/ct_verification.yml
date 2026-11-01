@@ -175,7 +175,12 @@ jobs:
           rustc --version --verbose >> ct_runner_environment.txt
 
       - name: Build test binary
-        run: cargo test -p nine65 --lib --release --no-run
+        run: |
+          if ! cargo test -p nine65 --lib --release --no-run \
+            --message-format=json > ct_build.jsonl; then
+            cat ct_build.jsonl
+            exit 1
+          fi
 
       # Run one at a time so a failure names the exact operation, and so the
       # measured statistics for every test reach the log even when an earlier
@@ -207,6 +212,12 @@ jobs:
           done
           exit "$failed"
 
+      - name: Capture actual timing-function assembly
+        if: always()
+        run: >-
+          python3 scripts/capture_ct_assembly.py
+          --cargo-json ct_build.jsonl --output ct_kernel_assembly.txt
+
       - name: Upload measurements
         if: always()
         uses: actions/upload-artifact@v4
@@ -216,6 +227,8 @@ jobs:
           path: |
             dudect_blocking_output.txt
             ct_runner_environment.txt
+            ct_build.jsonl
+            ct_kernel_assembly.txt
 
   # ---------------------------------------------------------------------------
   # OPEN FINDINGS — known-red tripwires, scheduled.
