@@ -56,3 +56,22 @@ cargo test --locked --config profile.test.package.nine65.opt-level=2 -j2 \
 This uses the optimized test profile with debug assertions. The release
 `allow_insecure` prohibition is retained. Source hashes and execution logs are
 in `bounded-digit-bridge-evidence` beside this report.
+
+## Exhaustive encrypted coverage and audit-runner follow-up
+
+At commit `0ccdf55`, the default fixture encrypts all 85 distinct residual/
+message pairs in 11 batches using one key setup. Every slot is checked at
+each of the three stages; the last batch wraps three padding slots to known
+pairs. This extends the earlier eight encrypted examples. The clear 85-case
+construction check remains separate. All 43 integration-target tests pass
+with zero failures and 19 existing ignores. Complete-domain B1/B3 probes at
+eight lanes and B2 at six lanes pass; B2 at two lanes fails as expected.
+
+The prior CI failure was a toolchain/network failure before dependency policy
+evaluation. The Docker action's Rust1.85/musl installation did not contain the
+repository Rust1.89/musl override. CI now installs the same current auditor
+version, cargo-deny0.20.2, as a host executable and uses the already-installed
+Rust toolchain. `cargo deny --all-features check` passes locally without
+changing deny.toml or adding exceptions. Hosted acceptance is tracked on the
+PR. Logs and source hashes are in
+[the follow-up manifest](bounded-digit-exhaustive-evidence/manifest.json).
