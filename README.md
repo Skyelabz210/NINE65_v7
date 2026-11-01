@@ -87,10 +87,12 @@ cargo run --locked -p nine65 --features allow_insecure \
   --example public_refresh_circuit -- --describe
 ```
 
-Run the expensive five-cycle encrypted example, using OS randomness:
+Run the expensive five-cycle encrypted example, using OS randomness and an
+optimized development profile. Release library builds reject `allow_insecure`:
 
 ```bash
-cargo run --release --locked -p nine65 --features allow_insecure \
+cargo run --locked --config profile.dev.package.nine65.opt-level=2 \
+  -p nine65 --features allow_insecure \
   --example public_refresh_circuit
 ```
 

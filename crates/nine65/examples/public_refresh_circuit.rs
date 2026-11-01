@@ -1,4 +1,4 @@
-//! Run with `cargo run --release -p nine65 --features allow_insecure
+//! Run with `cargo run --config profile.dev.package.nine65.opt-level=2 -p nine65 --features allow_insecure
 //! --example public_refresh_circuit`. This native research run needs several
 //! GiB of memory and performs expensive encrypted arithmetic. Pass `--describe`
 //! to print the key-free plan and publication inventory without generating keys.

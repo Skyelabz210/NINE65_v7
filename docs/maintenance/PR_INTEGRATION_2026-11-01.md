@@ -88,3 +88,10 @@ The seeded legacy-shape fixture runs in the optimized test profile. The release
 library's `allow_insecure` compile-time prohibition is preserved; adding the
 fixture feature to a release integration invocation correctly fails compilation.
 This fixture's debug-profile command is the one validated locally.
+
+
+The same profile review caught incompatible release/example instructions in
+README, the example header, its design note and two CLAUDE feature descriptions.
+They now use the supported optimized development profile. Release-only library
+protection remains unchanged. Historical benchmark numbers are not remeasured
+or relabeled by these instruction fixes.

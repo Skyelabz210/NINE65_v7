@@ -227,7 +227,7 @@ n=8192/16384. See `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 - ZERO floats in crypto/arithmetic hot paths — no f32/f64 in K-Elimination, Montgomery, NTT, RNS, or any encrypt/decrypt/eval code path, ever. (`compiler.rs::NoiseModel` is a planning-only noise estimator with `pub f64` fields — it never touches ciphertext coefficients — and is the one documented exception; do not extend float usage beyond it.)
 - Integer-only arithmetic throughout (K-Elimination, Montgomery, NTT)
 - Constant-time operations required for all security-sensitive code paths
-- `allow_insecure` explicitly enables unadmitted research, including release-mode examples; it does not grant production-security approval.
+- `allow_insecure` enables unadmitted research in debug library builds and test-only builds. Release library/example builds reject it; it does not grant production-security approval.
 - Deterministic execution — bit-identical results across all platforms required
 - All bootstrap paths must produce exact plaintext recovery
 
@@ -240,7 +240,7 @@ n=8192/16384. See `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 - adaptive-threading: Entropy-based adaptive threads (requires shadow-entropy)
 - accelerated: MANA + UNHAL integration
 - deterministic_rng: Reproducible testing
-- allow_insecure: Explicit opt-in for unadmitted research/test configs, including release-mode examples
+- allow_insecure: Explicit opt-in for unadmitted research/test configs; release library/example builds reject it
 
 ---
 
@@ -286,7 +286,7 @@ decrypts and asserts exactness, so no timing comes from a wrong answer.
 | secure_256 | 22.41ms | 5.943ms | 1017.91ms | 262.96ms | 7.78ms |
 
 Reproduce:
-  cargo test -p nine65 --test op_timings --release --features allow_insecure -- --ignored --nocapture
+  cargo test -p nine65 --test op_timings --config profile.test.package.nine65.opt-level=2 --features allow_insecure -- --ignored --nocapture
 
 On the figures previously recorded here (secure_128 Encrypt 23.56ms | Add 0.83ms
 | Mul 152.13ms | Decrypt 11.06ms): the commit that wrote them, 364bd6a

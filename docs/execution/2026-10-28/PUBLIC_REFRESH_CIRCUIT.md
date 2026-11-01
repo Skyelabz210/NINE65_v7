@@ -91,7 +91,7 @@ The executable example uses OS randomness and checks every coefficient after
 each refresh and following square:
 
 ```sh
-cargo run --release -p nine65 --features allow_insecure \
+cargo run --config profile.dev.package.nine65.opt-level=2 -p nine65 --features allow_insecure \
   --example public_refresh_circuit
 ```
 
