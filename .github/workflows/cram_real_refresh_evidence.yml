@@ -1,4 +1,4 @@
-name: CRAM Real Refresh Evidence
+name: Public Refresh Boundary Evidence
 
 # Branch gating repaired: the pull_request trigger named
 # `hardening/beyond-100-app-platform`, a branch that no longer exists (the
@@ -36,7 +36,7 @@ permissions:
   contents: read
 
 jobs:
-  forced-real-refresh:
+  refresh-boundary:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -52,44 +52,11 @@ jobs:
       - name: Exact refresh-preflight regression
         run: cargo test -p nine65 --release --test refresh_preflight_regression -- --nocapture
 
-      - name: Force and prove real automatic refresh
-        # This is a deterministic correctness/evidence run, not a performance
-        # benchmark. The RNG guard intentionally allows seeded RNG in debug
-        # builds and forbids it in release builds.
-        run: |
-          set -euo pipefail
-          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
-            --config secure_128_deep --max-depth 1 --auto-bootstrap \
-            --trigger-pct 100 --statistical-test \
-            --output /tmp/nine65-forced-refresh.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
+      # Issue #95: public Phase 1 still drops the secret-dependent carry.
+      # Exercise the exact boundary and typed refusal without claiming a
+      # successful public refresh.
+      - name: Public Phase-1 gate remains fail-closed
+        run: cargo test -p nine65 --lib --release public_phase1_is_typed_fail_closed
 
-          report = json.loads(Path('/tmp/nine65-forced-refresh.json').read_text())
-
-          def assert_integral(node, path='$'):
-              if isinstance(node, bool):
-                  return
-              if isinstance(node, float):
-                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
-              if isinstance(node, dict):
-                  for key, value in node.items():
-                      assert_integral(value, f'{path}.{key}')
-              elif isinstance(node, list):
-                  for index, value in enumerate(node):
-                      assert_integral(value, f'{path}[{index}]')
-
-          assert_integral(report)
-          assert report['metadata']['bootstrap_mode'] == 'real'
-          chain = report['operation_chain']
-          assert chain['requested_operations'] == 1
-          assert chain['completed_requested'] is True
-          assert chain['achieved_chain_correct'] is True
-          assert chain['real_refreshes'] > 0
-          statistical = report['statistical_test']
-          assert statistical['enabled'] is True
-          assert statistical['trials'] == 100
-          assert statistical['successes'] == statistical['trials']
-          assert statistical['real_refreshes'] > 0
-          PY
+      - name: Automatic refresh is exact until typed refusal
+        run: cargo test -p nine65 --lib --release auto_refresh_boundary_is_exact_then_typed_refusal -- --nocapture

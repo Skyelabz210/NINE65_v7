@@ -113,7 +113,9 @@ jobs:
           if legacy in source:
               raise SystemExit("legacy summed-prime-bit-width calculation remains in executable code")
           print("Noise budget source contract passed (comments and strings excluded).")
-          PY      - name: Verify audited secure-128 dimension
+          PY
+
+      - name: Verify audited secure-128 dimension
         shell: bash
         run: |
           set -euo pipefail
@@ -197,42 +199,7 @@ jobs:
           assert chain['real_refreshes'] == 0
           PY
 
-      - name: DualRNS automatic-refresh statistical smoke test
-        # Deterministic correctness evidence runs in debug; release builds
-        # intentionally reject the benchmark's test RNG.
-        run: |
-          set -euo pipefail
-          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
-            --config secure_128_deep --max-depth 1 --auto-bootstrap \
-            --trigger-pct 100 --statistical-test \
-            --output /tmp/nine65-auto.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          report = json.loads(Path('/tmp/nine65-auto.json').read_text())
-
-          def assert_integral(node, path='$'):
-              if isinstance(node, bool):
-                  return
-              if isinstance(node, float):
-                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
-              if isinstance(node, dict):
-                  for key, value in node.items():
-                      assert_integral(value, f'{path}.{key}')
-              elif isinstance(node, list):
-                  for index, value in enumerate(node):
-                      assert_integral(value, f'{path}[{index}]')
-
-          assert_integral(report)
-          assert report['metadata']['bootstrap_mode'] == 'real'
-          chain = report['operation_chain']
-          assert chain['completed_requested'] is True
-          assert chain['achieved_chain_correct'] is True
-          assert chain['real_refreshes'] > 0
-          statistical = report['statistical_test']
-          assert statistical['enabled'] is True
-          assert statistical['trials'] == 100
-          assert statistical['successes'] == statistical['trials']
-          assert statistical['real_refreshes'] > 0
-          PY
+      # Issue #95: public refresh remains fail-closed until Phase 1 carries the
+      # secret-dependent displaced quotient/carry exactly.
+      - name: Public refresh boundary and typed refusal
+        run: cargo test -p nine65 --lib --release auto_refresh_boundary_is_exact_then_typed_refusal -- --nocapture

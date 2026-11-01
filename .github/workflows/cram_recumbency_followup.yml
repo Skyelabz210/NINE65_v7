@@ -92,7 +92,9 @@ jobs:
           grep -F 'let achieved_chain_correct = decrypted == plaintext;' \
             crates/nine65/src/bin/nine65_bench.rs
           grep -F '"achieved_chain_correct": achieved_chain_correct,' \
-            crates/nine65/src/bin/nine65_bench.rs      - name: Verify exact noise accounting
+            crates/nine65/src/bin/nine65_bench.rs
+
+      - name: Verify exact noise accounting
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -109,18 +111,19 @@ jobs:
           if legacy in source:
               raise SystemExit("legacy summed-prime-bit-width calculation remains in executable code")
           print("Noise budget source contract passed (comments and strings excluded).")
-          PY      - name: Verify audited secure-128 dimension
+          PY
+
+      - name: Verify audited secure-128 dimension
         shell: bash
         run: |
           set -euo pipefail
           grep -A8 -F 'pub fn secure_128() -> Self {' \
             crates/nine65/src/params/secure_configs.rs | grep -F '8192'
 
-      - name: Verify committed modulus and NTT evidence
+      - name: Verify committed modulus-class evidence
         run: |
-          test -s artifacts/proof_bundle/modulus_validation_report.json
-          test -s artifacts/proof_bundle/ntt_roundtrip_stress.json
-          python3 tools/audit_modulus_evidence.py
+          python3 scripts/audit_modulus_classes.py
+          git diff --exit-code -- artifacts/security/modulus_class_audit_2026-07-13.json
 
       - name: Rust formatting
         run: cargo fmt --all -- --check
@@ -206,44 +209,7 @@ jobs:
           assert chain['real_refreshes'] == 0
           PY
 
-      - name: DualRNS automatic-refresh statistical smoke test
-        # Force the threshold so the evidence gate proves that real refresh
-        # code ran rather than inferring it from a completed operation count.
-        run: |
-          set -euo pipefail
-          cargo run --locked -p nine65 --bin nine65_bench --features serde -- \
-            --config secure_128_deep --max-depth 1 --auto-bootstrap \
-            --trigger-pct 100 --statistical-test \
-            --output /tmp/nine65-auto.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          report = json.loads(Path('/tmp/nine65-auto.json').read_text())
-
-          def assert_integral(node, path='$'):
-              if isinstance(node, bool):
-                  return
-              if isinstance(node, float):
-                  raise AssertionError(f'non-integer number in report at {path}: {node!r}')
-              if isinstance(node, dict):
-                  for key, value in node.items():
-                      assert_integral(value, f'{path}.{key}')
-              elif isinstance(node, list):
-                  for index, value in enumerate(node):
-                      assert_integral(value, f'{path}[{index}]')
-
-          assert_integral(report)
-          assert report['metadata']['bootstrap_mode'] == 'real'
-          for name, scale in report['scale_tests'].items():
-              assert scale['simulated_refreshes'] == 0, name
-          chain = report['operation_chain']
-          assert chain['completed_requested'] is True
-          assert chain['achieved_chain_correct'] is True
-          assert chain['real_refreshes'] > 0
-          statistical = report['statistical_test']
-          assert statistical['enabled'] is True
-          assert statistical['trials'] == 100
-          assert statistical['successes'] == statistical['trials']
-          assert statistical['real_refreshes'] > 0
-          PY
+      # Issue #95: public refresh remains fail-closed until Phase 1 carries the
+      # secret-dependent displaced quotient/carry exactly.
+      - name: Public refresh boundary and typed refusal
+        run: cargo test -p nine65 --lib --release auto_refresh_boundary_is_exact_then_typed_refusal -- --nocapture
