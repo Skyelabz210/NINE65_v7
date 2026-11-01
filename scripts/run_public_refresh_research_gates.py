@@ -27,6 +27,7 @@ SUITES = {
         ("--lib", None, "ops::bootstrap::tests::public_phase1_is_typed_fail_closed", False),
     ),
     "research": (
+        ("--test", "coefficient_slot_gate", "encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_message", False),
         ("--lib", None, f"{CIRCUIT}::public_refresh_preserves_plaintext_root_across_representation_changes_and_forks", False),
         ("--lib", None, f"{KEY_GRAPH}::native_inventory_is_exact_and_requires_joint_key_review", False),
         ("--lib", None, f"{KEY_GRAPH}::publication_fingerprint_binds_order_and_key_schedule", False),

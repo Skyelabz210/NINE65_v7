@@ -1,0 +1,24 @@
+{
+  "scope": "attached bounded F polynomial, coefficient-slot bridge and inverse bridge; not full native refresh admission",
+  "source_parent_commit": "2f42ae14e924e3e0e78cb1502d88be5b9fed98fa",
+  "attachment_sha256": "46937fb9072269f23fdef3e993f67d92f05484c81a2d3535e97adc3e9272f549",
+  "test": "encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_message",
+  "binary_sha256": "0b3b7012eef951aa94db8f4f01df8f501a291c93587d08edff40e12cd20f9666",
+  "full_target": {
+    "passed": 43,
+    "failed": 0,
+    "ignored": 19
+  },
+  "source_sha256": {
+    "crates/nine65/tests/coefficient_slot_gate.rs": "6ba5121b0d203099001e22eaa501bcf20d4c3cbf4253ef1bc7f775a78b80845d",
+    "scripts/run_public_refresh_research_gates.py": "9fd34a7be98fccb4bc38b9278da1ecebeffcda21d8ae311674e8d07b7b33620f",
+    "scripts/bounded_digit_polynomial.py": "d48fde3b4d683ecb0780c871477a0ad8e6299729f90a2f7590b9c15885842137"
+  },
+  "evidence_sha256": {
+    "bounded-digit-bridge-regressions.log.gz": "809f65a1a14bf9375dbd010c7a69b72781c3a82209026c04b2a21d621fa1adc8",
+    "matrix.json.gz": "cd43d8daff60e79c4cedcf15c8c25fc0fed5b2f9843a80ba23a70ec13022db38",
+    "python-oracle.json": "3dcddd5bb71a8dd789e57935da9c5bb4259b06784bc853d4aa554b07fc53ad28",
+    "bounded-digit-final-target.log.gz": "e592cfe95d67f40027758e5fb7257621e37d3d123081eac02cd14f229b643109",
+    "bounded-digit-clippy.log.gz": "72c41d1503d4792518828504421b77eb18d422a722a0439737e108c0359dc230"
+  }
+}
