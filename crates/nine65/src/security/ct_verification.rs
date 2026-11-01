@@ -1451,6 +1451,33 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
         DualRNSPoly { main, anchor, n }
     }
 
+    fn prepare_u512<'a>(scratch: &'a mut U512, input: &U512) -> &'a U512 {
+        *scratch = *input;
+        std::hint::black_box(scratch)
+    }
+
+    #[test]
+    fn u512_scratch_preserves_address_and_reduction() {
+        let inputs = [
+            U512::zero(),
+            U512 {
+                d0: u128::MAX,
+                d1: 42,
+                d2: 0,
+                d3: 0,
+            },
+        ];
+        let mut scratch = U512::zero();
+        let address = &scratch as *const U512;
+        let modulus = U256::from_u64(998244353);
+        for input in [&inputs[0], &inputs[1], &inputs[0]] {
+            let actual = prepare_u512(&mut scratch, input);
+            assert_eq!(actual as *const U512, address);
+            assert_eq!(*actual, *input);
+            assert_eq!(actual.mod_u256(modulus), input.mod_u256(modulus));
+        }
+    }
+
     #[test]
     #[ignore] // Statistical timing test — run in controlled environment only
     fn test_ct_dudect_mod_switch_rescale_sign_classes() {
@@ -1494,8 +1521,9 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
         let (pool_a, pool_a2, pool_b) =
             interleaved_pools(DUDECT_POOL, || one(&mut ra, false), || one(&mut rb, true));
 
+        let mut scratch = pool_a[0].clone();
         let mut rng = ShadowHarvester::with_seed(204);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
@@ -1504,10 +1532,15 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
             // needed to accumulate the same amount of work.
             DUDECT_ROUNDS / 20,
             |poly| {
+                copy_drop_input(&mut scratch, poly);
+                let timed_input = std::hint::black_box(&scratch);
+                let start = Instant::now();
                 let out = ctx
-                    .mod_switch_down_dual(std::hint::black_box(poly))
+                    .mod_switch_down_dual(timed_input)
                     .expect("secure_128 has 3 main primes, so one level drop is available");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1555,15 +1588,19 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
                 d2: 0,
                 d3: 0,
             });
+        let mut reduction_scratch = U512::zero();
         let mut reduction_order_rng = ShadowHarvester::with_seed(304);
-        let reduction_result = dudect_two_class(
+        let reduction_result = dudect_two_class_measured(
             &mut reduction_order_rng,
             &zero_reductions,
             &zero_reductions2,
             &uniform_reductions,
             DUDECT_ROUNDS,
             |dividend| {
-                std::hint::black_box(dividend.mod_u256(modulus));
+                let timed_input = prepare_u512(&mut reduction_scratch, dividend);
+                let start = Instant::now();
+                std::hint::black_box(timed_input.mod_u256(modulus));
+                start.elapsed().as_nanos() as u64
             },
         );
         assert_dudect(
@@ -1585,18 +1622,24 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
             },
         );
 
+        let mut scratch = zero_pool[0].clone();
         let mut rng = ShadowHarvester::with_seed(302);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &zero_pool,
             &zero_pool2,
             &rand_pool,
             DUDECT_ROUNDS / 20,
             |poly| {
+                copy_drop_input(&mut scratch, poly);
+                let timed_input = std::hint::black_box(&scratch);
+                let start = Instant::now();
                 let out = ctx
-                    .mod_switch_down_dual(std::hint::black_box(poly))
+                    .mod_switch_down_dual(timed_input)
                     .expect("secure_128 has 3 main primes, so one level drop is available");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1755,6 +1798,8 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
         }
     }
 
+    // This legacy open-finding test uses separate class-specific allocations;
+    // its historical association is not evidence identifying the root cause.
     #[test]
     #[ignore = "OPEN FINDING, and now measured with enough power to be one: KElimination::extract_k \
 shows a small but reproducible operand-magnitude timing dependence, contradicting its docstring \
@@ -1861,14 +1906,13 @@ See docs/CT_VERIFICATION_PLAN.md."]
     /// Sweeping the same batch `ADJ_REGION_REPEATS` times brings the adjacency
     /// region to the same ~2.4 ms, and the test below runs it at
     /// `DUDECT_EXTRACT_K_ROUNDS` — the same 8,000 rounds as the general test,
-    /// not the 2,000 used elsewhere. Equal region duration, equal round count,
-    /// identical operand classes, identical harness.
+    /// not the 2,000 used elsewhere. Region duration, round count and operand
+    /// classes are comparable; unlike the legacy general-form test, these
+    /// adjacency tests use one fixed-address input batch.
     ///
-    /// That also supplies the positive control the null result needs: the
-    /// general test demonstrates that THIS harness, at THIS region size and
-    /// round count, resolves a 0.63% relative effect (t = 25.6). A t below
-    /// threshold here is therefore a measurement made with proven power, not
-    /// an underpowered shrug.
+    /// The historical general-form positive control used class-specific batch
+    /// allocations. Its measured association cannot isolate operands from
+    /// placement; it does not establish the power of this fixed-address test.
     const ADJ_REGION_REPEATS: usize = 340;
 
     /// The adjacency form under the operand classes that make the general form
@@ -1909,22 +1953,26 @@ See docs/CT_VERIFICATION_PLAN.md."]
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(404);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_EXTRACT_K_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u128;
                 for _ in 0..ADJ_REGION_REPEATS {
-                    for &(a, b) in batch.iter() {
+                    for &(a, b) in timed_input.iter() {
                         acc ^= adj.extract_k(std::hint::black_box(a), std::hint::black_box(b));
                     }
                     std::hint::black_box(&acc);
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -2012,22 +2060,26 @@ See docs/CT_VERIFICATION_PLAN.md."]
             || shuffled_batch(&mut rb),
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(804);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_EXTRACT_K_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u128;
                 for _ in 0..ADJ_REGION_REPEATS {
-                    for &(a, b) in batch.iter() {
+                    for &(a, b) in timed_input.iter() {
                         acc ^= adj.extract_k(std::hint::black_box(a), std::hint::black_box(b));
                     }
                     std::hint::black_box(&acc);
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 

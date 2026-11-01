@@ -132,5 +132,62 @@
         "interpretation": "No causal or constant-time claim; await the repaired hosted measurements."
       }
     }
+  ],
+  "adjacency_observations": [
+    {
+      "observed_head": "962821c3a7ac6d16c9cd8934a3397b7a37979c96",
+      "job_url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41305989960/job/124846354067",
+      "profile": "hosted release",
+      "cpu": "AMD EPYC 7763",
+      "threshold": 5,
+      "magnitude": {
+        "t_signal": 27.173,
+        "t_control": 2.3294,
+        "median_a_ns": 3158152,
+        "median_b_ns": 3156038,
+        "verdict": "TIMING DEPENDENCE MEASURED"
+      },
+      "order": {
+        "t_signal": 19.7166,
+        "t_control": 12.9107,
+        "median_a_ns": 3152411,
+        "median_b_ns": 3153875,
+        "verdict": "INCONCLUSIVE"
+      },
+      "montgomery_mul_followup": {
+        "t_signal": 1.7815,
+        "t_control": 10.0492,
+        "median_a_ns": 7485,
+        "median_b_ns": 7484,
+        "verdict": "INCONCLUSIVE"
+      },
+      "interpretation": "Adjacency still reads class-specific batch allocations. Its association is observed, with no established cause. An inconclusive multiplication followup is not constant-time admission.",
+      "repair": "Reuse fixed scalar buffers for both adjacency contrasts and fixed lane buffers for both remaining modulus-switch contrasts; preserve the U512 precheck on a fixed input address. Retain operation, classes, 340 adjacency repeats, 8000 rounds, crop, controls and threshold.",
+      "assembly_observation": "Standalone Rust 1.89 optimized u128 subtraction/mask emits arithmetic and conditional moves, with no operand-dependent branch. This does not establish the behavior of the hosted inlined call site.",
+      "status": "Requires fresh hosted evaluation; no production constant-time claim.",
+      "local_diagnostics": {
+        "profile": "test opt-level=2 with debug assertions; not hosted release",
+        "planned_runs_per_contrast": 1,
+        "magnitude": {
+          "t_signal": 0.3566,
+          "t_control": 0.9984,
+          "median_a_ns": 2748335,
+          "median_b_ns": 2749346,
+          "samples_kept": 21601,
+          "samples_total": 24000,
+          "verdict": "BELOW THRESHOLD"
+        },
+        "order": {
+          "t_signal": 0.0151,
+          "t_control": 0.1217,
+          "median_a_ns": 2765962,
+          "median_b_ns": 2766021,
+          "samples_kept": 21601,
+          "samples_total": 24000,
+          "verdict": "BELOW THRESHOLD"
+        },
+        "interpretation": "Local observations only. Do not establish the cause of the hosted association or admit constant-time behavior."
+      }
+    }
   ]
 }

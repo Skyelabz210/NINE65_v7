@@ -114,3 +114,13 @@ preparation outside timing. Sampling power and failure criteria remain intact.
 A standalone Rust 1.89 release-style multiplication probe emits straight-line
 arithmetic and conditional moves, but does not establish the behavior of the
 hosted inlined call site or identify the cause of the measurement.
+
+
+The next hosted observation found an adjacency magnitude association (signal
+27.1730, control 2.3294). Multiplication was inconclusive, and is not relabeled
+as established constant-time behavior. All remaining blocking data inputs now
+use fixed-address preparation: both adjacency contrasts, both modulus-switch
+polynomials and their U512 precheck. The adjacency region still runs 340 sweeps
+and 8,000 rounds. A standalone subtraction/mask assembly probe has no operand
+branch, but does not identify the hosted association's cause. The unchanged
+control/threshold and injected-signal negative control remain mandatory.
