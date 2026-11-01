@@ -881,70 +881,88 @@ fn encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_messag
             assert_eq!(centered_mod(v, P * P), r);
         }
     }
-    let messages: Vec<i64> = vec![0, 1, 5, 9, 16, 3, 11, 14];
-    let eps: Vec<i64> = (0..8)
-        .map(|j| (j as i64 % (2 * bound + 1)) - bound)
+    // Encrypt every permitted (residual, message) pair, packed into batches.
+    // Padding wraps to the first cases and is still checked at every slot.
+    let cases: Vec<(i64, i64)> = (-bound..=bound)
+        .flat_map(|residual| (0..P).map(move |message| (residual, message)))
         .collect();
-    let input: Vec<u64> = (0..ctx.n)
-        .map(|j| (P * messages[j] + eps[j]).rem_euclid(P * P) as u64)
-        .collect();
-    let encrypted = encrypt_polynomial(&ctx, &keys, &input, &mut rng);
-    let slots = linear_map_from_slots_bsgs(
-        &ctx,
-        &encrypted,
-        &slot_to_coefficient,
-        &root_values,
-        &galois,
-        &galois_keys,
-        &baby_exponents,
-        &giant_exponents,
+    let batches = cases.len().div_ceil(ctx.n);
+    let mut visited = vec![false; cases.len()];
+    for batch in 0..batches {
+        let indices: Vec<usize> = (0..ctx.n)
+            .map(|j| (batch * ctx.n + j) % cases.len())
+            .collect();
+        let messages: Vec<i64> = indices.iter().map(|&i| cases[i].1).collect();
+        let eps: Vec<i64> = indices.iter().map(|&i| cases[i].0).collect();
+        for &i in &indices {
+            visited[i] = true;
+        }
+        let input: Vec<u64> = (0..ctx.n)
+            .map(|j| (P * messages[j] + eps[j]).rem_euclid(P * P) as u64)
+            .collect();
+        let encrypted = encrypt_polynomial(&ctx, &keys, &input, &mut rng);
+        let slots = linear_map_from_slots_bsgs(
+            &ctx,
+            &encrypted,
+            &slot_to_coefficient,
+            &root_values,
+            &galois,
+            &galois_keys,
+            &baby_exponents,
+            &giant_exponents,
+        );
+        let slot_values = |ct: &RNSCiphertext| -> Vec<u64> {
+            let coeffs = decrypt_coefficients(&ctx, ct, &keys);
+            (0..ctx.n)
+                .map(|slot| {
+                    coeffs.iter().enumerate().fold(0u128, |sum, (c, &v)| {
+                        (sum + v as u128 * mod_pow(root_values[slot], c as u64, ctx.t) as u128)
+                            % ctx.t as u128
+                    }) as u64
+                })
+                .collect()
+        };
+        assert_eq!(
+            slot_values(&slots),
+            input,
+            "stage 1: coefficient->slot bridge"
+        );
+        let digits = evaluate_bounded_digit(&ctx, &slots, &f, &relin);
+        let want_digits: Vec<u64> = eps.iter().map(|e| e.rem_euclid(P * P) as u64).collect();
+        let got_digits = slot_values(&digits);
+        assert_eq!(
+            got_digits, want_digits,
+            "stage 2: bounded residual extraction"
+        );
+        eprintln!("stage 2 digits got {:?} want {:?}", got_digits, want_digits);
+        // p*m = W - F(W) on every slot, then back to coefficient form
+        let p_times_m = {
+            let neg = multiply_plain(&ctx, &digits, &{
+                let mut c = vec![0u64; ctx.n];
+                c[0] = ctx.t - 1;
+                c
+            });
+            add(&ctx, &slots, &neg)
+        };
+        let output = linear_map_from_slots_bsgs(
+            &ctx,
+            &p_times_m,
+            &coefficient_to_slot,
+            &root_values,
+            &galois,
+            &galois_keys,
+            &baby_exponents,
+            &giant_exponents,
+        );
+        let got = decrypt_coefficients(&ctx, &output, &keys);
+        let want: Vec<u64> = messages.iter().map(|&m| (P * m) as u64).collect();
+        assert_eq!(got, want);
+    }
+    assert!(visited.iter().all(|covered| *covered));
+    eprintln!(
+        "encrypted domain coverage: {} unique pairs, {batches} batches, one key setup",
+        cases.len()
     );
-    let slot_values = |ct: &RNSCiphertext| -> Vec<u64> {
-        let coeffs = decrypt_coefficients(&ctx, ct, &keys);
-        (0..ctx.n)
-            .map(|slot| {
-                coeffs.iter().enumerate().fold(0u128, |sum, (c, &v)| {
-                    (sum + v as u128 * mod_pow(root_values[slot], c as u64, ctx.t) as u128)
-                        % ctx.t as u128
-                }) as u64
-            })
-            .collect()
-    };
-    assert_eq!(
-        slot_values(&slots),
-        input,
-        "stage 1: coefficient->slot bridge"
-    );
-    let digits = evaluate_bounded_digit(&ctx, &slots, &f, &relin);
-    let want_digits: Vec<u64> = eps.iter().map(|e| e.rem_euclid(P * P) as u64).collect();
-    let got_digits = slot_values(&digits);
-    assert_eq!(
-        got_digits, want_digits,
-        "stage 2: bounded residual extraction"
-    );
-    eprintln!("stage 2 digits got {:?} want {:?}", got_digits, want_digits);
-    // p*m = W - F(W) on every slot, then back to coefficient form
-    let p_times_m = {
-        let neg = multiply_plain(&ctx, &digits, &{
-            let mut c = vec![0u64; ctx.n];
-            c[0] = ctx.t - 1;
-            c
-        });
-        add(&ctx, &slots, &neg)
-    };
-    let output = linear_map_from_slots_bsgs(
-        &ctx,
-        &p_times_m,
-        &coefficient_to_slot,
-        &root_values,
-        &galois,
-        &galois_keys,
-        &baby_exponents,
-        &giant_exponents,
-    );
-    let got = decrypt_coefficients(&ctx, &output, &keys);
-    let want: Vec<u64> = messages.iter().map(|&m| (P * m) as u64).collect();
-    assert_eq!(got, want);
     eprintln!(
         "bounded digit gate: p={P}, B={bound}, deg F={}, lanes={}, log2 Q ~ {} bits; p*m recovered exactly at all {} coefficients; insecure toy only",
         f.len() - 1, lanes, lanes * 31, ctx.n
