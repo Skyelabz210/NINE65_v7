@@ -43,7 +43,9 @@ presented as a new run of this integration.
 Further hosted checks exposed an absent `ntt_roundtrip_prime_regression` target
 and an old expanded-phase refusal fixture at the former 512-bit boundary.
 The restored target exercises all 37 current main/anchor `(degree, modulus)`
-pairs, including the distinct N32768 anchor basis. The expanded-phase fixture
+pairs, including the distinct N32768 anchor basis. Both fallible backends also
+reject invalid moduli and full-width primes outside the Montgomery range before
+arithmetic. The expanded-phase fixture
 now proves nine squared lanes fit U1024 and that sixteen full-width coprime
 lanes exceed its actual capacity; no capacity threshold changed.
 

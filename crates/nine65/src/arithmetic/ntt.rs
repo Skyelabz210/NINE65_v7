@@ -93,9 +93,9 @@ impl NTTEngine {
     /// let engine = NTTEngine::try_new(998244353, 1024)?;
     /// ```
     pub fn try_new(q: u64, n: usize) -> Nine65Result<Self> {
-        if q <= 2 || q % 2 == 0 {
+        if q <= 2 || q % 2 == 0 || q >= (1u64 << 63) {
             return Err(Nine65Error::NTTConfigError {
-                message: format!("NTT modulus must be odd and greater than 2, got {q}"),
+                message: format!("NTT modulus must be odd and in (2, 2^63), got {q}"),
             });
         }
         if !n.is_power_of_two() {

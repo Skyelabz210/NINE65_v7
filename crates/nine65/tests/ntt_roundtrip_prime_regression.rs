@@ -4,6 +4,16 @@ use nine65::params::secure_configs::SecureConfig;
 use std::collections::BTreeSet;
 
 #[test]
+fn both_fallible_backends_reject_invalid_or_unsupported_modulus_ranges() {
+    // The Goldilocks prime supports a 16th root but exceeds this Montgomery
+    // implementation's range; the fallible constructor must not panic.
+    for prime in [0, 1, 18_446_744_069_414_584_321] {
+        assert!(NTTEngineFFT::try_new(prime, 8).is_err());
+        assert!(nine65::arithmetic::ntt::NTTEngine::try_new(prime, 8).is_err());
+    }
+}
+
+#[test]
 fn named_profile_and_anchor_primes_round_trip_at_their_runtime_degrees() {
     let mut pairs = BTreeSet::new();
     for profile in [
