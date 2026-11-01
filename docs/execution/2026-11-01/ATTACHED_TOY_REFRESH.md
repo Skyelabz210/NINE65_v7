@@ -77,3 +77,19 @@ python3 scripts/test_public_refresh_proofs.py
 
 The standalone manifest keeps the attachment's BigInt dependencies outside
 the production workspace. No production arithmetic or support gate changes.
+
+## Initial input preflight follow-up
+
+`python3 scripts/check_toy_refresh_preflight.py --run --seed 0` verifies the
+original source digest and checks the exact public bound before starting
+the archived program. Its source error bound is the encryptor's 8 plus
+`floor(2^40/(4*97))`. The resulting residual envelope is 2, within radius 3.
+The checker refuses changed source instead of reusing that bound blindly.
+
+Four regression tests cover this fixture, the exact error admission boundary,
+invalid inputs, and 19,200 scalar component-rounding cases. The Lean theorem
+`residual_envelope_admission` checks the exact integer division threshold;
+its numerator's producer derivation remains an explicit separate obligation.
+The arithmetic proof slice now has 52 explicit theorems. This preflight
+certifies only the fixed initial fixture. Subsequent-square histories still
+have observational evidence, not a new producer-issued noise certificate.

@@ -38,6 +38,16 @@ theorem nearest_integer_decode (q m e : Int) (hq : 0 < q) (hodd : q % 2 = 1)
   rw [hnum, Int.add_mul_ediv_right _ _ hqne, Int.ediv_eq_zero_of_lt hnonneg hlt]
   simp
 
+/-- Exact admission boundary for the component-rounding residual envelope.
+The numerator bounds twice Q times the residual magnitude. Its derivation
+from source error and ternary support is a separate producer obligation. -/
+theorem residual_envelope_admission (q numerator radius : Nat) (hq : 0 < q) :
+    numerator / (2 * q) ≤ radius ↔ numerator < 2 * q * (radius + 1) := by
+  have hden : 0 < 2 * q := Nat.mul_pos (by decide) hq
+  have h : numerator / (2 * q) < radius + 1 ↔ numerator < (radius + 1) * (2 * q) := Nat.div_lt_iff_lt_mul hden
+  rw [Nat.mul_comm (radius + 1)] at h
+  omega
+
 /-- The conservative quadratic envelope used by `ScalarNoiseModel::multiply`.
 The even source degree is represented as `2*k`. The inequality is in exact
 integers before division by Q, so no rounding convention is hidden. -/

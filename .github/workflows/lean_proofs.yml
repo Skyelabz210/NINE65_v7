@@ -12,6 +12,8 @@ on:
       - 'lean4/**'
       - 'scripts/check_public_refresh_proofs.py'
       - 'scripts/test_public_refresh_proofs.py'
+      - 'scripts/check_toy_refresh_preflight.py'
+      - 'scripts/test_toy_refresh_preflight.py'
       - '.github/workflows/lean_proofs.yml'
       - 'crates/nine65/src/ops/public_phase_clock.rs'
       - 'crates/nine65/src/ops/phase_clock_return.rs'
@@ -27,6 +29,8 @@ on:
       - 'lean4/**'
       - 'scripts/check_public_refresh_proofs.py'
       - 'scripts/test_public_refresh_proofs.py'
+      - 'scripts/check_toy_refresh_preflight.py'
+      - 'scripts/test_toy_refresh_preflight.py'
       - '.github/workflows/lean_proofs.yml'
       - 'crates/nine65/src/ops/public_phase_clock.rs'
       - 'crates/nine65/src/ops/phase_clock_return.rs'
@@ -53,6 +57,10 @@ jobs:
       # Mathlib build and its existing axiom audit below; neither gate is reset.
       - name: Kernel-check refresh arithmetic and audit every theorem dependency
         run: python3 scripts/check_public_refresh_proofs.py --output artifacts/public-refresh-proofs.json
+      - name: Verify initial toy residual preflight and boundary controls
+        run: |
+          python3 scripts/check_toy_refresh_preflight.py
+          python3 scripts/test_toy_refresh_preflight.py
       - name: Reject missing, broken, assumed, and sorry proofs
         run: python3 scripts/test_public_refresh_proofs.py
       - uses: actions/upload-artifact@v4
