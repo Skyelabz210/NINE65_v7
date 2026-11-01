@@ -172,7 +172,7 @@ jobs:
         run: cargo test -p nine65 --lib --release ops::bootstrap -- --nocapture
 
       - name: Bootstrap residue-shape regression
-        run: cargo test -p nine65 --release --features allow_insecure --test bootstrap_residue_shape_regression -- --nocapture
+        run: cargo test -p nine65 --config profile.test.package.nine65.opt-level=2 --features allow_insecure --test bootstrap_residue_shape_regression -- --nocapture
 
       - name: DualRNS leveled smoke test
         # Deterministic correctness evidence runs in debug; release builds

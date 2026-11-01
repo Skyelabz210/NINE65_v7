@@ -82,3 +82,9 @@ stripping. Negative controls reject production code after a long test module,
 feature-enabled floats, scientific notation and suffixed float literals. The
 existing explicit offline exemptions and separate benchmark/test gate remain;
 no runtime floating-point operation was introduced.
+
+
+The seeded legacy-shape fixture runs in the optimized test profile. The release
+library's `allow_insecure` compile-time prohibition is preserved; adding the
+fixture feature to a release integration invocation correctly fails compilation.
+This fixture's debug-profile command is the one validated locally.
