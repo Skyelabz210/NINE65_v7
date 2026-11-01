@@ -1,5 +1,11 @@
 # Refresh carry: collected equations, evidence, and next construction
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](../../PUBLIC_REFRESH_STATUS.md) first.
+
 Date: 2026-10-19. Source baseline: `4f835d35623f1392b782bb6650a6d2466fe977f9`.
 Scope: research preparation and exact clear-oracle checks. Public refresh is
 still unadmitted. No production evaluator, ciphertext format, or gate changes.

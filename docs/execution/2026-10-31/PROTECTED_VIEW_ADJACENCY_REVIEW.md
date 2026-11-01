@@ -174,10 +174,12 @@ consumer. Neither contract can be constructed merely by assigning the names
 36 and 37 to ciphertext worker limbs.
 
 Therefore this change adds checked research consumers and counterexamples,
-not a misleading public view-generator wrapper. View production, its full
-return/consumption budget, the approved CRAM root relation, and joint-key
-security admission remain outstanding. Passing a linear arithmetic identity
-alone does not establish production admission.
+not a misleading public view-generator wrapper. View production and its full
+return/consumption budget remain outstanding for independently returned
+remainder/sheet ciphertexts. Native canonical-root preservation is now
+[bound to actual producers](CANONICAL_PLAINTEXT_ROOT.md); joint-key security
+admission remains separate. A linear arithmetic identity alone does not
+establish production admission.
 
 ## Reproduction
 

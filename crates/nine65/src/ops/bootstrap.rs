@@ -1,5 +1,10 @@
 //! Clockwork Bootstrap — public (evaluator-side) ciphertext refresh
 //!
+//! Scope: this module is the legacy/default Clockwork route. The separate
+//! `ops::public_refresh_circuit` research backend implements encrypted carry
+//! extraction and repeated native refresh. See docs/PUBLIC_REFRESH_STATUS.md.
+//! Its correctness evidence does not enable this module's production gate.
+//!
 //! The historical Phase 1 component switch is **not** BFV decryption.  BFV
 //! rounds the combined phase `c0 + c1*s`; rounding `c0` and `c1` separately
 //! displaces a secret-dependent quotient/carry term.  The legacy component
@@ -88,7 +93,7 @@ pub struct ClockworkBootstrap {
 /// callers must receive a typed error instead.
 pub(crate) fn public_phase1_soundness_gate() -> Nine65Result<()> {
     Err(Nine65Error::BootstrapFailed {
-        reason: "public BFV refresh disabled: Phase 1 does not yet propagate the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
+        reason: "legacy Clockwork public BFV refresh disabled: Phase 1 does not yet propagate the secret-dependent displaced quotient/carry through the CRAM Safe-Root/Lift state"
             .into(),
     })
 }
@@ -1683,6 +1688,7 @@ mod tests {
         let error = public_phase1_soundness_gate().expect_err("public Phase 1 must be disabled");
         match error {
             Nine65Error::BootstrapFailed { reason } => {
+                assert!(reason.contains("legacy Clockwork"));
                 assert!(reason.contains("displaced quotient/carry"));
                 assert!(reason.contains("CRAM Safe-Root/Lift"));
             }

@@ -87,7 +87,10 @@ fn exact_product_bit_length(primes: &[u64]) -> u32 {
 // PUBLIC-REFRESH ADMISSIBILITY
 // =============================================================================
 //
-// A *public* refresh is `ClockworkBootstrap::bootstrap` /
+// Scope: these predicates govern legacy/default Clockwork entry points, not
+// the separate `ops::public_refresh_circuit` research backend. Read
+// docs/PUBLIC_REFRESH_STATUS.md before interpreting them as global capability.
+// A legacy *public* refresh is `ClockworkBootstrap::bootstrap` /
 // `bootstrap_with_ksk`: the evaluator refreshes a ciphertext using only public
 // bootstrap key material (BSK/KSK) and never touches a secret key. It is the
 // path an untrusted caller reaches. The *symmetric* refresh
@@ -1314,7 +1317,7 @@ mod tests {
 
     /// Capacity clearance must not be mistaken for a correct public refresh.
     /// All named configs clear the circular headroom screen, while the
-    /// secret-dependent Phase-1 carry is still missing on every config.
+    /// legacy Clockwork Phase-1 carry is still missing on every named config.
     #[test]
     fn public_refresh_support_requires_sound_phase1() {
         for secure in [

@@ -207,6 +207,10 @@ echo ""
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
+if ! python3 scripts/check_public_refresh_status.py --self-test; then
+  fail "public-refresh documentation routing or historical evidence check failed"
+fi
+
 if [[ "${errors}" -gt 0 ]]; then
   echo "RESULT: stale claim check FAILED (${errors} error(s))"
   exit 1

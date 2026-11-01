@@ -22,6 +22,9 @@ evaluator, see [the CRAM showcase](docs/CRAM_SHOWCASE.md).
 
 ## Public refresh status
 
+Start with the [current status and notation guide](docs/PUBLIC_REFRESH_STATUS.md)
+when reconciling historical diagnoses with the implemented paths.
+
 **A complete public refresh works in the explicit research backend, with
 substantial correctness evidence. Production security admission for its
 complete related-key setup remains open.**

@@ -16,6 +16,9 @@ This is repository-specific configuration, not a GitHub account-wide setting.
 
 ## Observed CI failure
 
+This is a dated CI observation, not a current-head test census. For the
+separate working research backend, read [current refresh status](PUBLIC_REFRESH_STATUS.md).
+
 The latest primary CI run inspected on 2026-10-19 was
 [39009441823](https://github.com/Skyelabz210/NINE65_v7/actions/runs/39009441823),
 for `6507e8081b10710855723f6f7311e0e48f4678b0`, not the local transport commit.
@@ -23,7 +26,7 @@ Formatting, Clippy, dependency checks, and static analysis passed. The full
 `nine65 --lib` suite reported 944 passed, 7 failed, and 125 ignored:
 
 - Four automatic-refresh tests hit the public Phase 1 refusal because the
-  secret-dependent displaced quotient/carry transition is not implemented.
+  legacy Clockwork secret-dependent carry transition is not implemented there.
 - The `secure_128` symmetric depth test returned 56106 instead of 65536 at
   depth 4; `secure_192` returned 0 instead of 65536 at depth 4.
 - The zero-noise repeated-square diagnostic also failed its exactness controls.

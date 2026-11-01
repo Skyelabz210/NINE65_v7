@@ -15,3 +15,5 @@ docs.claim_evidence_ledger,internal,exploratory,docs/CLAIM_EVIDENCE_LEDGER.md
 readme.verified_capability_2026_08_22,public,secure,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
 params.public_refresh_admissibility,public,secure,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
 params.screened_security_disclosure,internal,exploratory,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
+refresh.research_native_correctness,internal,exploratory,docs/PUBLIC_REFRESH_STATUS.md
+refresh.joint_key_security_admission,internal,exploratory,docs/PUBLIC_REFRESH_STATUS.md

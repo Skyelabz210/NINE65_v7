@@ -142,7 +142,7 @@ C only up to an additive constant. Also, identifying C with the refresh K
 requires a proved source map; a conserved box-ball mass is not automatically
 the native residual radius.
 
-## 5. Protected-view cost and next implementation boundary
+## 5. Independent protected-view queries (not a restoration prerequisite)
 
 The native circuit already obtains a temporary encrypted K. Adding the public
 constant 48 gives encrypted Y in `[0,96]` without a stored frame. However,
@@ -174,7 +174,7 @@ below 633, and certifies radius 48 for the next square/refresh. Independent
 remainder outputs remain a separate operation; they are not needed by this
 restoration query. The linked review records the proof and regression checks.
 
-The useful direction is therefore to retain the already-derived encrypted
+For independent remainder outputs, the direction is to retain the already-derived encrypted
 bounded lift and design a source-bound view producer/consumer with its own
 noise budget, or a jointly evaluated alternative. A clear box-ball oracle
 cannot fill that role. The owner-selected canonical plaintext root is distinct

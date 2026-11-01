@@ -20,7 +20,7 @@
     "proof": "docs/execution/2026-10-31/CANONICAL_PLAINTEXT_ROOT.md"
   },
   "native_carry_starlift_review": {
-    "status": "native_signed_support_proved_protected_views_pending",
+    "status": "native_restore_verified_independent_remainder_outputs_pending",
     "certified_residual_interval": [-49, 49],
     "source_weight": 96,
     "phase_value_bound": 3178496,
@@ -31,7 +31,11 @@
     "single_36_37_period": 1332,
     "two_star_anchor_period_with_shell_36": 97236,
     "persistent_carry_frame": false,
-    "protected_starlift_producer_established": false
+    "protected_starlift_producer_established": false,
+    "independent_view_production_blocks_native_restore": false,
+    "native_restore_post_slot_error_bits": 562,
+    "native_half_delta_bits": 633,
+    "current_status": "docs/PUBLIC_REFRESH_STATUS.md"
   },
   "owner_live_shadow_successor": {
     "status": "arithmetic_implemented_producer_binding_pending",

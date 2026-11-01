@@ -31,6 +31,30 @@ The CSV registry is the machine-enforced index. This ledger supplies the scope a
 
 ## Active claim interpretations
 
+### Public-refresh routing
+
+Read [current status and notation](PUBLIC_REFRESH_STATUS.md). The existing
+`params.public_refresh_admissibility` entry describes the legacy named-profile
+predicates, not absence of the separate working research backend.
+
+### `refresh.research_native_correctness`
+
+- **Status:** `executable_checked` for the identified native snapshot; later
+  root/inventory additions have separate regression coverage.
+- **Mode/profile:** experimental; registry classification is `internal/exploratory`,
+  not a production or externally named security claim.
+- **Artifact:** the current status guide links the hashed five-cycle native
+  transcript, 81,920 coefficient comparisons, and exact return bounds.
+- **Scope:** native tuple and tested histories; no unbounded depth, latest-head
+  full native rerun, independent protected remainder emission or security grant.
+
+### `refresh.joint_key_security_admission`
+
+- **Status:** `open`.
+- **Artifact:** current status guide, exact key graph, and conditional reduction.
+- **Scope:** full related-key setup confidentiality remains unadmitted. This
+  does not retract functional evidence or demonstrate an attack.
+
 ### `readme.current_functionality_scope`
 
 - **Status:** `source_integrated`; combined-head Rust/WASM/Lean execution pending.

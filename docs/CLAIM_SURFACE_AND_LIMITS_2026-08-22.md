@@ -1,5 +1,11 @@
 # Claim Surface and Limits — 2026-08-22
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 Internal companion to `README.md`. The README states scope, verified
 capability, and current limits. This document holds the things that belong
 behind the front door: per-number provenance, the discrepancies between

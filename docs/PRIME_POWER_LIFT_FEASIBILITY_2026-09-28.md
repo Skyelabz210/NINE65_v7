@@ -1,5 +1,11 @@
 # Canonical lift: complete-circuit feasibility
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 Snapshot: 2026-09-28, based on `048f79ac771697801e26ebf77e4ee6df33b48281`.
 The artifacts also hash the working-tree probe and relevant source files.
 
@@ -16,7 +22,7 @@ refresh or a necessary lower bound on actual ciphertext error.
 The next construction needs a different encrypted digit-removal circuit or
 a sharper sound multiplication certificate with enforceable operand
 invariants. Extending the existing prime catalog to eight lanes does not
-admit this polynomial baseline. Public refresh remains disabled.
+admit this polynomial baseline. The legacy/default public refresh at this snapshot remained disabled.
 
 ## Reproducible evidence
 

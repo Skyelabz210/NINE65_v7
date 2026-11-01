@@ -1,5 +1,11 @@
 # Public FHE solution route at plaintext modulus 65537
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 The route is a wider BFV bootstrap with coefficient/slot transforms and
 bounded-error digit removal. The earlier full-domain canonical-lift sweep
 rejected that particular circuit on NINE65's current modulus chains; it did
@@ -8,7 +14,7 @@ not establish that BFV bootstrapping at 65537 is impossible.
 The independent executable in
 [`research/bfv-bootstrap-reference`](../research/bfv-bootstrap-reference/README.md)
 implements the complete public evaluation sequence through the pinned
-Fheanor 0.11.9 reference. Native NINE65 public refresh remains disabled.
+Fheanor 0.11.9 reference. At this September snapshot, native NINE65 public refresh was disabled.
 
 ## Why this construction is different
 

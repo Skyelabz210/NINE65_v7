@@ -1,12 +1,18 @@
 # Clockwork Bootstrap Correctness Contract
 
+> **Current routing:** this contract diagnoses the legacy `ClockworkBootstrap`
+> API. A separate native `PublicRefreshCircuit` now computes its correction
+> under encryption and has repeated native evidence. Read
+> [current status and notation](PUBLIC_REFRESH_STATUS.md) before applying this
+> contract's missing-carry statements outside that legacy API.
+
 > **Current-tree interpretation (2026-10-17):** Sections 1–8 below document the **legacy ClockworkBootstrap dual-RNS implementation and historical structural tests**. In particular, the three-lane `secure_128` / `u128` table and persistent canonical-anchor requirements are historical and must not be promoted as current WIRE-Q-compliant production behavior. Current `secure_128` has four main lanes; D3 derived transient auxiliary state is distinct from publishable mod-Q-only ciphertexts. Both public refresh entry points still fail closed at `public_phase1_soundness_gate`. Treat current tuple/security admission and complete encrypted correction as R00–R03/B00–B09 gates. See [October gate reconciliation](execution/2026-10-17/GATE_RECONCILIATION_AND_EXPANSION.md) and [October execution plan](execution/2026-10-03/PLAN.md).
 
 Revision: 2026-09-27 (public refresh fail-closed; paired views and gated polynomial lift implemented)
 
 ## 0. Public BFV Phase-1 Soundness Gate
 
-**Status:** The circular and non-circular public refresh entry points are
+**Status:** The legacy Clockwork circular and non-circular entry points are
 disabled with a typed `Nine65Error::BootstrapFailed`. The symmetric,
 secret-key refresh is a separate path and is unaffected.
 
@@ -24,7 +30,7 @@ one while component-wise rounding returns zero.
 The exact regression tests establish two separate facts:
 
 1. `K` is a bounded signed value and can be represented in CRAM lift state;
-2. representation alone is insufficient because the public path still lacks
+2. representation alone is insufficient because the legacy public path still lacks
    the encrypted Safe-Root/Lift transduction of the secret-dependent
    convolution and quotient.
 

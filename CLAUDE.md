@@ -9,6 +9,12 @@ It provides finite leveled computation plus low-depth refresh paths. **It is not
 
 ## Open Work — read this first
 
+For public refresh, read [current status and notation](docs/PUBLIC_REFRESH_STATUS.md)
+first. The explicit `ops::public_refresh_circuit` research backend has a real
+encrypted carry producer, original-key return and five-cycle native evidence.
+Legacy `ClockworkBootstrap` entry points remain gated; joint-key production
+security is still unadmitted. Older handoffs below are dated snapshots.
+
 `docs/REPOSITION_EXECUTION_2026-09-24.md` reconciles the September branch
 inventory and completion plan with the current main tree. Read its verified
 state changes, transduction-capacity finding, dependency gates, and benchmark
@@ -116,7 +122,14 @@ full scheme, rationale and measured counts/timings:
 ---
 
 ## Bootstrap Paths
-All three are **public** refresh paths (evaluator-side, public bootstrap key
+
+The working research path is `PublicRefreshCircuit`, opt-in with
+`allow_insecure`; see [current status](docs/PUBLIC_REFRESH_STATUS.md). Its
+native run checked 81,920 coefficient comparisons across five refresh/square
+cycles. Later root/inventory changes have separate regression coverage; do not
+describe that earlier full native snapshot as a latest-head rerun.
+
+The following three are **legacy public** refresh entry points (evaluator-side, public bootstrap key
 material only). None of their roundtrip tests currently runs: the suites in
 `ops/bootstrap.rs`, `tests/bootstrap_integration.rs`,
 `tests/bootstrap_parameter_exploration.rs` and
@@ -127,7 +140,7 @@ VESTIGIAL/RETIRED, so "verified exact" cannot be sourced to the running suite.
 - Non-Circular (KSK): `bootstrap_with_ksk()` — independent boot_sk, gadget key switch
 - Auto-Bootstrap: `AutoBootstrapEvaluator::mul_auto()` — auto trigger on noise threshold
 
-**Public refresh is disabled on every config.** The circular and KSK support
+**Default legacy Clockwork refresh remains disabled on every named config.** The circular and KSK support
 predicates require both enough post-refresh noise headroom and a sound Phase 1.
 The headroom screens clear for the four named configs, but Phase 1 still omits
 a secret-dependent quotient/carry. `ensure_public_refresh_supported` and its
@@ -205,7 +218,7 @@ n=8192/16384. See `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 - ZERO floats in crypto/arithmetic hot paths — no f32/f64 in K-Elimination, Montgomery, NTT, RNS, or any encrypt/decrypt/eval code path, ever. (`compiler.rs::NoiseModel` is a planning-only noise estimator with `pub f64` fields — it never touches ciphertext coefficients — and is the one documented exception; do not extend float usage beyond it.)
 - Integer-only arithmetic throughout (K-Elimination, Montgomery, NTT)
 - Constant-time operations required for all security-sensitive code paths
-- Test configs (allow_insecure) are blocked in release builds — never use in production
+- `allow_insecure` explicitly enables unadmitted research, including release-mode examples; it does not grant production-security approval.
 - Deterministic execution — bit-identical results across all platforms required
 - All bootstrap paths must produce exact plaintext recovery
 
@@ -218,7 +231,7 @@ n=8192/16384. See `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 - adaptive-threading: Entropy-based adaptive threads (requires shadow-entropy)
 - accelerated: MANA + UNHAL integration
 - deterministic_rng: Reproducible testing
-- allow_insecure: Test-only configs (blocked in release)
+- allow_insecure: Explicit opt-in for unadmitted research/test configs, including release-mode examples
 
 ---
 

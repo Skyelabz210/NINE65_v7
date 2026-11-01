@@ -1,5 +1,11 @@
 # NINE65: current-state reposition and execution gates
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 **Snapshot:** `main@a59896d96afecde26747f33cb37837e4ecab2825`, 2026-09-24.  Reconcile with a fresh remote HEAD before execution.  This is a work plan, not a capability or security certification.  [Issue #92](https://github.com/Skyelabz210/NINE65_v7/issues/92) remains the release tracker.
 
 ## Decision

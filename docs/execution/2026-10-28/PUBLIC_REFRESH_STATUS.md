@@ -1,9 +1,17 @@
 # Public refresh: verified repairs and remaining admission gates
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](../../PUBLIC_REFRESH_STATUS.md) first.
+
 Continuation: [the complete encrypted research circuit](PUBLIC_REFRESH_CIRCUIT.md)
 now supplies a bounded carry DAG, wide exact arithmetic, a streamed inverse,
 original-key return, and an explicit public API. That report distinguishes
-functional execution from the unresolved CRAM root and security admission.
+functional execution from production security admission. The subsequent
+canonical-plaintext root binding is documented in the current status guide;
+independent protected residue outputs and legacy phase-root APIs are separate.
 The historical repairs and gate results below describe the earlier increment.
 
 Baseline: `091c4ff` (2026-10-28). This checkpoint distinguishes regression
