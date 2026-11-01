@@ -370,6 +370,18 @@ impl ArchitectureCounters {
         }
     }
 
+    /// The commissioned emission policy permits reconstruction but forbids
+    /// Garner/mixed-radix synthetic emissions. The stricter historical guard
+    /// remains available separately via assert_production_clean.
+    pub fn assert_no_synthetic_emissions(&self) -> Result<(), ArchitectureSnapshot> {
+        let snapshot = self.snapshot();
+        if snapshot.garner_calls == 0 && snapshot.mixed_radix_calls == 0 {
+            Ok(())
+        } else {
+            Err(snapshot)
+        }
+    }
+
     pub fn record_projection(&self, capability: ProjectionCapability) {
         match capability {
             ProjectionCapability::UserOutput | ProjectionCapability::ProtocolOutput => {
@@ -394,6 +406,19 @@ pub const fn gcd(mut left: u64, mut right: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn emission_policy_counts_reconstruction_but_rejects_synthetic_emissions() {
+        let counters = ArchitectureCounters::default();
+        counters.crt_reconstructions.fetch_add(1, Ordering::Relaxed);
+        assert!(counters.assert_no_synthetic_emissions().is_ok());
+        assert!(counters.assert_production_clean().is_err());
+        counters.garner_calls.fetch_add(1, Ordering::Relaxed);
+        assert!(counters.assert_no_synthetic_emissions().is_err());
+        let counters = ArchitectureCounters::default();
+        counters.mixed_radix_calls.fetch_add(1, Ordering::Relaxed);
+        assert!(counters.assert_no_synthetic_emissions().is_err());
+    }
 
     #[test]
     fn basis_rejects_non_coprime_moduli() {

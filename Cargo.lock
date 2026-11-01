@@ -480,6 +480,7 @@ version = "0.1.0"
 dependencies = [
  "bincode 2.0.1",
  "clockwork-core",
+ "cram-core",
  "crc32fast",
  "criterion",
  "exact_transcendentals",
