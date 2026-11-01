@@ -29,6 +29,7 @@ run_cmd do
     `KElimination.PublicRefreshReturn.complementary_term_negacyclic_sign,
     `KElimination.PublicRefreshBounds.odd_half_headroom_iff,
     `KElimination.PublicRefreshBounds.residual_envelope_admission,
+    `KElimination.PublicRefreshBounds.toy_full_polynomial_cycle_budget,
     `KElimination.PublicRefreshBounds.nearest_integer_decode,
     `KElimination.PublicRefreshBounds.quadratic_div_envelope,
     `KElimination.PublicRefreshBounds.assembled_return_envelope,

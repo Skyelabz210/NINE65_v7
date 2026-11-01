@@ -236,4 +236,14 @@ theorem arbitrary_cycles
 
 end Fixture
 
+/-- Concrete closure of the standalone toy ledger: following-square error
+fits the next radius-3 corridor and the source decoding threshold. This checks
+the budget arithmetic; the stage-error derivations require implementation review. -/
+theorem toy_full_polynomial_cycle_budget :
+    (2 * 97 * 97 * 5772257706 + (97 * 2^40) * 5 : Nat) <
+      2 * (97 * 2^40) * (3 + 1) ∧
+    (2 * 5772257706 : Nat) < 2^40 ∧
+    (9 + 16 * 8 * (2^8 - 1) * 6 : Nat) = 195849 := by
+  decide
+
 end KElimination.PublicRefreshBounds

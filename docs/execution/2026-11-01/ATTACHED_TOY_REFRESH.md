@@ -93,3 +93,8 @@ its numerator's producer derivation remains an explicit separate obligation.
 The arithmetic proof slice now has 52 explicit theorems. This preflight
 certifies only the fixed initial fixture. Subsequent-square histories still
 have observational evidence, not a new producer-issued noise certificate.
+
+The [subsequent cycle-ledger implementation](TOY_CYCLE_LEDGER.md) now derives
+fixed return and following-square caps, proves the numerical reentry budget,
+and checks them across all 160 encrypted cycles. It retains the distinction
+between a deterministic bound model and formal implementation refinement.

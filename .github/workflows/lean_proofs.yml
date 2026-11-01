@@ -14,6 +14,10 @@ on:
       - 'scripts/test_public_refresh_proofs.py'
       - 'scripts/check_toy_refresh_preflight.py'
       - 'scripts/test_toy_refresh_preflight.py'
+      - 'scripts/toy_refresh_ledger.py'
+      - 'scripts/test_toy_refresh_ledger.py'
+      - 'scripts/build_toy_cycle_ledger_harness.py'
+      - 'docs/execution/2026-11-01/toy-cycle-ledger/**'
       - '.github/workflows/lean_proofs.yml'
       - 'crates/nine65/src/ops/public_phase_clock.rs'
       - 'crates/nine65/src/ops/phase_clock_return.rs'
@@ -31,6 +35,10 @@ on:
       - 'scripts/test_public_refresh_proofs.py'
       - 'scripts/check_toy_refresh_preflight.py'
       - 'scripts/test_toy_refresh_preflight.py'
+      - 'scripts/toy_refresh_ledger.py'
+      - 'scripts/test_toy_refresh_ledger.py'
+      - 'scripts/build_toy_cycle_ledger_harness.py'
+      - 'docs/execution/2026-11-01/toy-cycle-ledger/**'
       - '.github/workflows/lean_proofs.yml'
       - 'crates/nine65/src/ops/public_phase_clock.rs'
       - 'crates/nine65/src/ops/phase_clock_return.rs'
@@ -61,6 +69,17 @@ jobs:
         run: |
           python3 scripts/check_toy_refresh_preflight.py
           python3 scripts/test_toy_refresh_preflight.py
+          python3 scripts/test_toy_refresh_ledger.py
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - name: Verify encrypted toy cycle caps and understated-bound rejection
+        run: |
+          python3 scripts/build_toy_cycle_ledger_harness.py /tmp/expected-ledger.rs
+          cmp /tmp/expected-ledger.rs docs/execution/2026-11-01/toy-cycle-ledger/harness.rs
+          cargo run --locked --release --manifest-path docs/execution/2026-11-01/toy-cycle-ledger/Cargo.toml -- 0
+          if cargo run --locked --release --manifest-path docs/execution/2026-11-01/toy-cycle-ledger/Cargo.toml -- 0 understate > /tmp/negative-ledger.log 2>&1; then
+            echo "Understated bound unexpectedly accepted"; exit 1
+          fi
+          grep -q 'producer envelope understated' /tmp/negative-ledger.log
       - name: Reject missing, broken, assumed, and sorry proofs
         run: python3 scripts/test_public_refresh_proofs.py
       - uses: actions/upload-artifact@v4
