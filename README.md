@@ -3,7 +3,7 @@
 
 NINE65 is a Rust BFV/DualRNS computation substrate for exact modular privacy-preserving workloads across public-evaluator, KSK-separated, symmetric protected, service-operator, browser, edge, and accelerator deployments.
 
-**Current correction status:** public refresh is disabled on every named profile.
+**Current correction status:** legacy Clockwork public refresh is disabled on every named profile.
 The K-Elimination substrate and finite-depth evaluator have measured tests; the
 recumbent FHE port and encrypted carry transition remain open. `secure_256` is a
 target label with a 240-bit in-tree MATZOV screen, not an independently certified
@@ -72,6 +72,8 @@ setup. A pinned authors' attack implementation has been executed; conformity
 to the corrected theorem and full quantum-hybrid coverage remain unverified.
 See the [attack assessment](docs/execution/2026-10-31/HOU_JIANG_ASSESSMENT.md)
 and [conditional security reduction](docs/execution/2026-10-31/PUBLIC_REFRESH_SECURITY_REDUCTION.md).
+
+The [security pack](docs/security/README.md) states the current non-claims: related-key confidentiality is not established, external attestation is not obtained, and constant-time posture is not established.
 
 This backend requires `allow_insecure`. The default named-profile public
 refresh APIs in the table below remain disabled. Independent encrypted S8

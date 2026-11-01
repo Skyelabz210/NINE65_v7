@@ -59,6 +59,15 @@ the separately implemented G/H refresh producer. The old triple-precharge
 fixture also refuses its first following square at 138 error bits versus a
 137-bit limit; its former resource assumptions were stale.
 
+
+## Security claim surface
+
+The publishable statement, and nothing stronger, is:
+
+> PublicRefreshCircuit is executable under allow_insecure. Correctness was observed on an identified older arithmetic snapshot: five refresh cycles and five following squares, 81,920 coefficient comparisons, not a latest-head rerun. A deterministic noise certificate is published (documented 562-bit return bound against a 633-bit threshold); a probabilistic decryption-failure bound is not derived. Confidentiality of the related-key setup is not established. External parameter attestation is not obtained. Constant-time posture is not established. The circuit is not admitted for production use. Legacy Clockwork bootstrap remains disabled (issues #95 and #117).
+
+The [security pack](security/README.md) is the model, the Route D related-key analysis, the deterministic noise note, and the attestation and constant-time non-claims. [Machine-readable status](status/CURRENT.json) repeats the same flags. CI rejects a registry that promotes any of those rows to `public,secure`, a probabilistic failure bound, a latest-head native rerun, or confidentiality marked established. The conditional lemma is unchanged and still does not prove its joint-setup premise.
+
 ## Evidence and navigation rules
 
 * Identify the module/API, tuple, source commit and whether a statement concerns

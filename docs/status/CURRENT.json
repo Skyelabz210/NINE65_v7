@@ -1,0 +1,43 @@
+{
+  "subject": "PublicRefreshCircuit",
+  "navigation": "docs/PUBLIC_REFRESH_STATUS.md",
+  "as_of": "2026-11-01",
+  "branch": "fix/public-refresh-research-gates",
+  "production_admitted": false,
+  "legacy_clockwork_bootstrap": "disabled",
+  "legacy_issues": [
+    "95",
+    "117"
+  ],
+  "publishable_claim": "PublicRefreshCircuit is executable under allow_insecure. Correctness was observed on an identified older arithmetic snapshot: five refresh cycles and five following squares, 81,920 coefficient comparisons, not a latest-head rerun. A deterministic noise certificate is published (documented 562-bit return bound against a 633-bit threshold); a probabilistic decryption-failure bound is not derived. Confidentiality of the related-key setup is not established. External parameter attestation is not obtained. Constant-time posture is not established. The circuit is not admitted for production use. Legacy Clockwork bootstrap remains disabled (issues #95 and #117).",
+  "claims": {
+    "refresh.circuit_correctness_observed": {
+      "status": "observed_snapshot",
+      "comparisons": 81920,
+      "refresh_cycles": 5,
+      "following_squares": 5,
+      "latest_head_rerun": false
+    },
+    "refresh.circuit_correctness_bounded": {
+      "status": "deterministic_certificate",
+      "probabilistic_failure_bound": null,
+      "documented_return_error_bits": 562,
+      "documented_threshold_bits": 633,
+      "recomputed_in_this_change": false
+    },
+    "refresh.related_key_confidentiality": {
+      "status": "not_established",
+      "route": "D",
+      "completed_routes": []
+    },
+    "refresh.production_security": {
+      "status": "not_established"
+    },
+    "refresh.external_parameter_attestation": {
+      "status": "not_obtained"
+    },
+    "refresh.constant_time_posture": {
+      "status": "not_established"
+    }
+  }
+}
