@@ -114,3 +114,13 @@ returned 403, and the documented alternate lacked the requested cache objects.
 The five new modules need no Mathlib cache and are checked independently.
 Accepted commands, source hashes and executed runtime logs are recorded in
 the adjacent `proof-evidence` directory; historical native logs are untouched.
+
+Accepted local results at proof commit `5d52ca3`: all five proof modules,
+nine proof-gate controls, 1,114 release library tests (zero failures, 139
+previously ignored), and 16 focused debug tests pass. The full release
+library run includes the 100-cycle bound-conformance regression; debug runs
+two cycles. Workspace/all-targets Clippy, formatting, the 20-file architecture
+scan, panic ratchet, and status/security claim checks pass. The full workspace
+test suite was not rerun locally. The source commits and hashes in
+[`validation.json`](proof-evidence/validation.json) distinguish these results
+from the unchanged historical full native execution.
