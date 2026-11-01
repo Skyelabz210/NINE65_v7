@@ -56,6 +56,7 @@ SUITES = {
         ("--test", "coefficient_slot_gate", f"{BATCHED}::triple_lift_chart::frobenius_chart_section::frobenius_chart_section_native_contracts_coherent_residue_and_tracks_quotient", True),
     ),
     "source-preparation": (
+        ("--lib", None, f"{SOURCE}::work_error_observer_detects_understated_bound_before_plaintext_failure", False),
         ("--lib", None, f"{SOURCE}::direct_phase_quotient_bound_covers_signed_lifts_and_native_endpoints", False),
         ("--lib", None, f"{SOURCE}::source_preparation_tracks_full_polynomial_history_and_ring_embedding", False),
         ("--lib", None, f"{SOURCE}::source_preparation_rejects_wrong_families_and_invalid_parameters", False),

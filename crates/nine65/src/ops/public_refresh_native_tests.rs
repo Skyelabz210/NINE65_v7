@@ -91,6 +91,9 @@ fn run_public_api(work_n: usize, weight: usize, baby: usize, radius: usize, cycl
     input = evaluator.multiply(&input, &input).unwrap();
     expected = square(&expected, 65537);
     for cycle in 0..cycles {
+        let incoming_error =
+            super::public_refresh_source::observed_work_error(&client, &input, &expected);
+        assert_error_bound(incoming_error, input.scaled_error_bound());
         let value_identity = *input.root().identity();
         let representation_lineage = *input.lineage();
         input = evaluator.refresh_with_progress(&input, &mut |stage, done, total| {
@@ -103,6 +106,9 @@ fn run_public_api(work_n: usize, weight: usize, baby: usize, radius: usize, cycl
             expected,
             "refresh cycle {cycle}"
         );
+        let returned_error =
+            super::public_refresh_source::observed_work_error(&client, &input, &expected);
+        assert_error_bound(returned_error, input.scaled_error_bound());
         assert_eq!(input.root().identity(), &value_identity);
         assert_ne!(input.lineage(), &representation_lineage);
         assert_eq!(input.root().logical_moduli(), &[2, 3, 5, 7, 11, 13, 17, 19]);
@@ -120,6 +126,10 @@ fn run_public_api(work_n: usize, weight: usize, baby: usize, radius: usize, cycl
             expected,
             "post-refresh square {cycle}"
         );
+        let squared_error =
+            super::public_refresh_source::observed_work_error(&client, &input, &expected);
+        assert_error_bound(squared_error, input.scaled_error_bound());
+        eprintln!("phase-bound observer N={work_n} cycle={cycle}: input={incoming_error:?}; returned={returned_error:?}; square={squared_error:?}; coefficients_per_stage={work_n}");
         eprintln!("public-refresh N={work_n} cycle={cycle} all coefficients and dependent square passed elapsed={:?}", start.elapsed());
     }
 }
@@ -145,4 +155,15 @@ fn native_public_refresh_returns_all_8192_coefficients_for_five_cycles() {
 #[ignore = "native encrypted refresh; explicit memory and execution evidence run"]
 fn native_public_refresh_current_single_cycle_with_dependent_square() {
     run_public_api(8192, 96, 128, 49, 1);
+}
+
+fn assert_error_bound(
+    measured: crate::arithmetic::rns::U512,
+    issued: crate::arithmetic::rns::U512,
+) {
+    let words = |v: crate::arithmetic::rns::U512| (v.d3, v.d2, v.d1, v.d0);
+    assert!(
+        words(measured) <= words(issued),
+        "actual phase error exceeds producer envelope"
+    );
 }
