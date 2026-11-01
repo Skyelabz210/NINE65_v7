@@ -1701,6 +1701,44 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
 
     type OperandPair = (u128, u128);
 
+    /// Prepare one preallocated batch before starting the timer. The black box
+    /// keeps the measured loop reading that same destination for every class.
+    fn prepare_scalar_batch<'a>(
+        scratch: &'a mut [OperandPair],
+        input: &[OperandPair],
+    ) -> &'a [OperandPair] {
+        scratch.copy_from_slice(input);
+        std::hint::black_box(scratch)
+    }
+
+    #[test]
+    fn scalar_batch_preparation_keeps_address_and_results() {
+        let mont = MontgomeryContext::new(998244353);
+        let barrett = BarrettContext::new(998244353);
+        let batches = [
+            [(0u128, 1u128), (12, 17)],
+            [(998244352, u64::MAX as u128), (103, 50)],
+        ];
+        let mut scratch = [(0u128, 0u128); 2];
+        let address = scratch.as_ptr();
+        for input in [&batches[0], &batches[1], &batches[0]] {
+            let actual = prepare_scalar_batch(&mut scratch, input);
+            assert_eq!(actual.as_ptr(), address);
+            assert_eq!(actual, input);
+            for (&(a, b), &(x, y)) in actual.iter().zip(input) {
+                assert_eq!(
+                    mont.montgomery_mul(a as u64, b as u64),
+                    mont.montgomery_mul(x as u64, y as u64)
+                );
+                assert_eq!(
+                    mont.montgomery_pow(a as u64, b as u64),
+                    mont.montgomery_pow(x as u64, y as u64)
+                );
+                assert_eq!(barrett.reduce_ct(a), barrett.reduce_ct(x));
+            }
+        }
+    }
+
     /// Pool count for the batched scalar tests. Each pool entry is a whole
     /// batch, so a handful is plenty.
     const DUDECT_POOLS_BATCHED: usize = 4;
@@ -2202,22 +2240,26 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(604);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(a, b) in batch.iter() {
+                for &(a, b) in timed_input.iter() {
                     acc ^= ctx.montgomery_mul(
                         std::hint::black_box(a as u64),
                         std::hint::black_box(b as u64),
                     );
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -2268,8 +2310,7 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
-                scratch.copy_from_slice(batch);
-                let timed_input = std::hint::black_box(scratch.as_slice());
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
                 let start = Instant::now();
                 let mut acc = 0u64;
                 for &(t, _) in timed_input.iter() {
@@ -2296,6 +2337,8 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
         let ctx = BarrettContext::new(TEST_PRIME);
 
         // Class A: 40-bit dividends. Class B: dividends with bit 127 set.
+        // The latter exceed reduce_ct's documented a < q^2 domain: this is a
+        // timing-only stress contrast, not a correctness test for those inputs.
         let mut ra = ShadowHarvester::with_seed(801);
         let mut rb = ShadowHarvester::with_seed(803);
         let (pool_a, pool_a2, pool_b) = interleaved_pools(
@@ -2312,19 +2355,23 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(804);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(a, _) in batch.iter() {
+                for &(a, _) in timed_input.iter() {
                     acc ^= ctx.reduce_ct(std::hint::black_box(a));
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -2390,22 +2437,26 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH / 8];
         let mut rng = ShadowHarvester::with_seed(904);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(base, exp) in batch.iter() {
+                for &(base, exp) in timed_input.iter() {
                     acc ^= ctx.montgomery_pow(
                         std::hint::black_box(base as u64),
                         std::hint::black_box(exp as u64),
                     );
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 

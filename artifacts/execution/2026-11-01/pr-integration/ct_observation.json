@@ -65,5 +65,72 @@
         "interpretation": "Local observations only; do not establish a cause for the hosted failure or admit constant-time behavior."
       }
     }
+  ],
+  "montgomery_mul_observations": [
+    {
+      "observed_head": "de385f5c4d915dc727f2b855a7b0677fc48cc2d4",
+      "job_url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41304888733/job/124843162516",
+      "profile": "hosted release",
+      "cpu": "AMD EPYC 7763",
+      "threshold": 5,
+      "t_signal": 6.0288,
+      "t_control": 2.0404,
+      "median_a_ns": 7334,
+      "median_b_ns": 7344,
+      "verdict": "TIMING DEPENDENCE MEASURED",
+      "interpretation": "Input class remains associated with distinct batch addresses in this harness. The measured association is preserved; its cause is not established.",
+      "other_measurements": {
+        "montgomery_reduce": {
+          "t_signal": 0.5102,
+          "t_control": 0.1112
+        },
+        "prime_drop_fixed_vs_random": {
+          "t_signal": 0.4646,
+          "t_control": 0.3947
+        },
+        "prime_drop_small_vs_large": {
+          "t_signal": 0.3726,
+          "t_control": 0.5533
+        },
+        "adjacency_magnitude": {
+          "t_signal": 33.5202,
+          "t_control": 36.7084,
+          "verdict": "INCONCLUSIVE"
+        },
+        "adjacency_order": {
+          "t_signal": 32.4291,
+          "t_control": 33.4542,
+          "verdict": "INCONCLUSIVE"
+        }
+      },
+      "repair": "Use one fixed-address scratch batch for all remaining scalar blocking kernels, copied before timing; preserve operation, classes, rounds, crop, control and threshold.",
+      "status": "Requires fresh hosted evaluation. Source and a standalone release-style assembly probe do not establish the behavior of the hosted inlined call site.",
+      "local_diagnostics": {
+        "profile": "test opt-level=2 with debug assertions; not hosted release",
+        "planned_runs_per_kernel": 1,
+        "mul": {
+          "t_signal": 0.0608,
+          "t_control": 13.5867,
+          "median_a_ns": 6170,
+          "median_b_ns": 6170,
+          "verdict": "INCONCLUSIVE"
+        },
+        "barrett": {
+          "t_signal": 0.648,
+          "t_control": 6.4029,
+          "median_a_ns": 14853,
+          "median_b_ns": 14853,
+          "verdict": "INCONCLUSIVE"
+        },
+        "pow": {
+          "t_signal": 0.0685,
+          "t_control": 0.3807,
+          "median_a_ns": 176034,
+          "median_b_ns": 176034,
+          "verdict": "BELOW THRESHOLD"
+        },
+        "interpretation": "No causal or constant-time claim; await the repaired hosted measurements."
+      }
+    }
   ]
 }

@@ -104,3 +104,13 @@ so the unused final base power cannot overflow; rational ordering compares
 continued fractions instead of overflowing cross-products. The regressions
 first reproduced all three failures. All 26 unit and 12 integration tests,
 26 release unit tests and warnings-denied all-target Clippy pass.
+
+
+The final-head timing run subsequently found a Montgomery multiplication class
+association (signal 6.0288, control 2.0404; threshold 5). Its raw statistics are
+retained in the observation artifact. The other scalar blocking harnesses still
+used class-specific batch addresses, so they now receive the same fixed-address
+preparation outside timing. Sampling power and failure criteria remain intact.
+A standalone Rust 1.89 release-style multiplication probe emits straight-line
+arithmetic and conditional moves, but does not establish the behavior of the
+hosted inlined call site or identify the cause of the measurement.
