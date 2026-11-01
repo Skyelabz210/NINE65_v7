@@ -1,0 +1,1497 @@
+probe-smoke	Set up job	﻿2026-10-07T19:45:30.1703794Z Current runner version: '2.337.0'
+probe-smoke	Set up job	2026-10-07T19:45:30.1728273Z ##[group]Runner Image Provisioner
+probe-smoke	Set up job	2026-10-07T19:45:30.1729121Z Hosted Compute Agent
+probe-smoke	Set up job	2026-10-07T19:45:30.1729683Z Version: 20261002.596
+probe-smoke	Set up job	2026-10-07T19:45:30.1730302Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+probe-smoke	Set up job	2026-10-07T19:45:30.1730783Z Build Date: 2026-10-02T22:28:27Z
+probe-smoke	Set up job	2026-10-07T19:45:30.1731264Z Worker ID: {024284b0-5fed-48a1-9f2f-7588ab8c55be}
+probe-smoke	Set up job	2026-10-07T19:45:30.1731709Z Region: westus3
+probe-smoke	Set up job	2026-10-07T19:45:30.1732081Z Cloud: Azure
+probe-smoke	Set up job	2026-10-07T19:45:30.1732452Z ##[endgroup]
+probe-smoke	Set up job	2026-10-07T19:45:30.1733415Z ##[group]Operating System
+probe-smoke	Set up job	2026-10-07T19:45:30.1733782Z Ubuntu
+probe-smoke	Set up job	2026-10-07T19:45:30.1734163Z 24.04.5
+probe-smoke	Set up job	2026-10-07T19:45:30.1734518Z LTS
+probe-smoke	Set up job	2026-10-07T19:45:30.1734865Z ##[endgroup]
+probe-smoke	Set up job	2026-10-07T19:45:30.1735220Z ##[group]Runner Image
+probe-smoke	Set up job	2026-10-07T19:45:30.1735603Z Image: ubuntu-24.04
+probe-smoke	Set up job	2026-10-07T19:45:30.1736005Z Version: 20261004.327.1
+probe-smoke	Set up job	2026-10-07T19:45:30.1736671Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+probe-smoke	Set up job	2026-10-07T19:45:30.1737724Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+probe-smoke	Set up job	2026-10-07T19:45:30.1738302Z ##[endgroup]
+probe-smoke	Set up job	2026-10-07T19:45:30.1739033Z ##[group]GITHUB_TOKEN Permissions
+probe-smoke	Set up job	2026-10-07T19:45:30.1740568Z Contents: read
+probe-smoke	Set up job	2026-10-07T19:45:30.1740997Z Metadata: read
+probe-smoke	Set up job	2026-10-07T19:45:30.1741344Z ##[endgroup]
+probe-smoke	Set up job	2026-10-07T19:45:30.1742956Z Secret source: Actions
+probe-smoke	Set up job	2026-10-07T19:45:30.1743581Z Cache mode: write
+probe-smoke	Set up job	2026-10-07T19:45:30.1744033Z Prepare workflow directory
+probe-smoke	Set up job	2026-10-07T19:45:30.1952150Z Prepare all required actions
+probe-smoke	Set up job	2026-10-07T19:45:30.1984319Z Getting action download info
+probe-smoke	Set up job	2026-10-07T19:45:30.5179577Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+probe-smoke	Set up job	2026-10-07T19:45:30.5880762Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+probe-smoke	Set up job	2026-10-07T19:45:30.8310219Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+probe-smoke	Set up job	2026-10-07T19:45:31.0435458Z Complete job name: probe-smoke
+probe-smoke	Run actions/checkout@v4	﻿2026-10-07T19:45:31.0910582Z ##[group]Run actions/checkout@v4
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0911015Z with:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0911271Z   repository: Skyelabz210/NINE65_v7
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0913666Z   token: ***
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0913908Z   ssh-strict: true
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0914158Z   ssh-user: git
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0914411Z   persist-credentials: true
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0914686Z   clean: true
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0914941Z   sparse-checkout-cone-mode: true
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0915237Z   fetch-depth: 1
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0915485Z   fetch-tags: false
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0915737Z   show-progress: true
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0915995Z   lfs: false
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0916229Z   submodules: false
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0916483Z   set-safe-directory: true
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0916770Z   allow-unsafe-pr-checkout: false
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.0917140Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1599943Z Syncing repository: Skyelabz210/NINE65_v7
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1601407Z ##[group]Getting Git version info
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1601993Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1603013Z [command]/usr/bin/git version
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1699808Z git version 2.55.0
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1713582Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1730410Z Temporarily overriding HOME='/home/runner/work/_temp/741f948b-1596-4c3b-8622-6e4cc031ca31' before making global git config changes
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1740403Z Adding repository directory to the temporary git global config as a safe directory
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1741429Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1775350Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1778553Z ##[group]Initializing the repository
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1781617Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1877652Z hint: Using 'master' as the name for the initial branch. This default branch name
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1878736Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1879536Z hint: to use in all of your new repositories, which will suppress this warning,
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1880158Z hint: call:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1880490Z hint:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1880922Z hint: 	git config --global init.defaultBranch <name>
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1881708Z hint:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1882189Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1883101Z hint: 'development'. The just-created branch can be renamed via this command:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1883719Z hint:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1884059Z hint: 	git branch -m <name>
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1884467Z hint:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1884989Z hint: Disable this message with "git config set advice.defaultBranchName false"
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1885850Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1889328Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1939578Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1940365Z ##[group]Disabling automatic garbage collection
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1941528Z [command]/usr/bin/git config --local gc.auto 0
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1969930Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1970664Z ##[group]Setting up auth
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.1974295Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2001545Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2294669Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2323026Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2501487Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2531525Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2718322Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2753597Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2754337Z ##[group]Fetching the repository
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:31.2761682Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c93a058e2106441029647e69e252d3b410fdeab1:refs/remotes/origin/main
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4242546Z From https://github.com/Skyelabz210/NINE65_v7
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4244813Z  * [new ref]         c93a058e2106441029647e69e252d3b410fdeab1 -> origin/main
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4249002Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4250312Z ##[group]Determining the checkout info
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4251810Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4253823Z [command]/usr/bin/git sparse-checkout disable
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4328934Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4357408Z ##[group]Checking out the ref
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.4360159Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.5186079Z Switched to a new branch 'main'
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.5190608Z branch 'main' set up to track 'origin/main'.
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.5198541Z ##[endgroup]
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.5235307Z [command]/usr/bin/git log -1 --format=%H
+probe-smoke	Run actions/checkout@v4	2026-10-07T19:45:32.5257753Z c93a058e2106441029647e69e252d3b410fdeab1
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	﻿2026-10-07T19:45:32.5759167Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5760042Z with:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5760639Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5823768Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5878616Z ##[group]Run if [[ -z $toolchain ]]; then
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5879498Z [36;1mif [[ -z $toolchain ]]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5880801Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5882212Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5883154Z [36;1m  exit 1[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5884041Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5885136Z [36;1m  if [[ Linux == macOS ]]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5886487Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5887863Z [36;1m  else[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5888911Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5890136Z [36;1m  fi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5890949Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5892331Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5893614Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5894977Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5896283Z [36;1melse[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5896965Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5897778Z [36;1mfi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6132035Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6133104Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6133626Z   toolchain: 1.89.0
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6134188Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6251573Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=42]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6262907Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6339887Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6341426Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6343130Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6344354Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6394696Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6395527Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6396021Z   targets: 
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6396549Z   components: 
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6397074Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6488418Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=22]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6493227Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6524321Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6525543Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6582129Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6583132Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6680231Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=18]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6685323Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6724445Z ##[group]Run if ! command -v rustup &>/dev/null; then
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6725412Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6727388Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6729124Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6730006Z [36;1mfi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6786860Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6787690Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6788224Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6788880Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6873161Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=18]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6877707Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6889474Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6900915Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6929521Z ##[group]Run log=$(mktemp)
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6930157Z [36;1mlog=$(mktemp)[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6930753Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6931435Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6932833Z [36;1m  if rustup toolchain install 1.89.0 --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6934112Z [36;1m    break[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6934642Z [36;1m  else[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6935160Z [36;1m    status=$?[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6935712Z [36;1m  fi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6936466Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6937817Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6938960Z [36;1m    exit "$status"[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6939548Z [36;1m  fi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6940429Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6941469Z [36;1m  sleep 30[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6941998Z [36;1mdone[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6989923Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6990727Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6991220Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6991883Z   RUSTUP_PERMIT_COPY_RENAME: 1
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.6992488Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.7484090Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.8459543Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.8460671Z info: downloading 3 components
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6300793Z 
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6363772Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6365152Z 
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6449775Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=5954]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6456933Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6477163Z ##[group]Run rustup default 1.89.0 --force-non-host
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6477440Z [36;1mrustup default 1.89.0 --force-non-host[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6534949Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6535174Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6535326Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6535500Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6638334Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6644618Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6644795Z 
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6702210Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6702504Z 
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6705156Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6716850Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=25]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6718635Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6737089Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6737604Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6737976Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6738276Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6789537Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6789752Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6789910Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.6790090Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7093871Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=37]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7096193Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7116478Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7117011Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7117477Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7117984Z [36;1mfi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7177108Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7177373Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7177529Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7177705Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7252782Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=15]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7254456Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7270693Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7270949Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7271174Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7271384Z [36;1mfi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7323404Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7323624Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7323776Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7323955Z   CARGO_INCREMENTAL: 0
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7324111Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7394961Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=14]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7396494Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7413580Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7413927Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7414362Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7414795Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7415245Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7415575Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7415883Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7416226Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7416547Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7416773Z [36;1m  fi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7417051Z [36;1mfi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7469353Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7469572Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7469722Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7469901Z   CARGO_INCREMENTAL: 0
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7470169Z   CARGO_TERM_COLOR: always
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7470329Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7730149Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=33]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7732316Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7751323Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7751792Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7752155Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7752455Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7752828Z [36;1mfi[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7807850Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7808071Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7808235Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7808409Z   CARGO_INCREMENTAL: 0
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7808566Z   CARGO_TERM_COLOR: always
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7808723Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7971225Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=23]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7974418Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7991188Z ##[group]Run rustc +1.89.0 --version --verbose
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.7991426Z [36;1mrustc +1.89.0 --version --verbose[0m
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8044131Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8044354Z env:
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8044506Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8044694Z   CARGO_INCREMENTAL: 0
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8044852Z   CARGO_TERM_COLOR: always
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8045014Z ##[endgroup]
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8194190Z rustc 1.89.0 (29483883e 2025-08-04)
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8194781Z binary: rustc
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8195159Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8195680Z commit-date: 2025-08-04
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8195979Z host: x86_64-unknown-linux-gnu
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8196206Z release: 1.89.0
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8196406Z LLVM version: 20.1.7
+probe-smoke	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.8207523Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=23]
+probe-smoke	Format gate	﻿2026-10-07T19:45:38.8254896Z ##[group]Run cargo fmt --all -- --check
+probe-smoke	Format gate	2026-10-07T19:45:38.8255129Z [36;1mcargo fmt --all -- --check[0m
+probe-smoke	Format gate	2026-10-07T19:45:38.8307911Z shell: /usr/bin/bash -e {0}
+probe-smoke	Format gate	2026-10-07T19:45:38.8308085Z env:
+probe-smoke	Format gate	2026-10-07T19:45:38.8308230Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Format gate	2026-10-07T19:45:38.8308402Z   CARGO_INCREMENTAL: 0
+probe-smoke	Format gate	2026-10-07T19:45:38.8308558Z   CARGO_TERM_COLOR: always
+probe-smoke	Format gate	2026-10-07T19:45:38.8308722Z ##[endgroup]
+probe-smoke	Format gate	2026-10-07T19:45:38.8726782Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+probe-smoke	Format gate	2026-10-07T19:45:38.9379331Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+probe-smoke	Format gate	2026-10-07T19:45:38.9478016Z info: downloading 2 components
+probe-smoke	Compile exploratory probes	﻿2026-10-07T19:45:40.3783096Z ##[group]Run cargo check --release -p nine65 \
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3783360Z [36;1mcargo check --release -p nine65 \[0m
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3783536Z [36;1m  --bin cram_exploratory_probe \[0m
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3783699Z [36;1m  --bin cram_modulus_probe \[0m
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3783852Z [36;1m  --features serde[0m
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3837029Z shell: /usr/bin/bash -e {0}
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3837173Z env:
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3837292Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3837442Z   CARGO_INCREMENTAL: 0
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3837570Z   CARGO_TERM_COLOR: always
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.3837704Z ##[endgroup]
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.4144075Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.4144724Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.4145449Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.4293858Z [1m[32m    Updating[0m crates.io index
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8258896Z [1m[32m Downloading[0m crates ...
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8569222Z [1m[32m  Downloaded[0m bincode_derive v2.0.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8583615Z [1m[32m  Downloaded[0m generic-array v0.14.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8595690Z [1m[32m  Downloaded[0m getrandom v0.2.16
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8622904Z [1m[32m  Downloaded[0m serde_derive v1.0.228
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8651085Z [1m[32m  Downloaded[0m zeroize v1.8.2
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8661938Z [1m[32m  Downloaded[0m itoa v1.0.16
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8677568Z [1m[32m  Downloaded[0m thiserror-impl v1.0.69
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8693109Z [1m[32m  Downloaded[0m zeroize_derive v1.4.2
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8700556Z [1m[32m  Downloaded[0m virtue v0.0.18
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8723171Z [1m[32m  Downloaded[0m zmij v0.1.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8737868Z [1m[32m  Downloaded[0m typenum v1.19.0
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8761228Z [1m[32m  Downloaded[0m proc-macro2 v1.0.103
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8784862Z [1m[32m  Downloaded[0m serde v1.0.228
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8812070Z [1m[32m  Downloaded[0m memchr v2.7.6
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8854291Z [1m[32m  Downloaded[0m serde_core v1.0.228
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8876166Z [1m[32m  Downloaded[0m subtle v2.6.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8885585Z [1m[32m  Downloaded[0m serde_json v1.0.147
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8942244Z [1m[32m  Downloaded[0m version_check v0.9.5
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8951616Z [1m[32m  Downloaded[0m unicode-ident v1.0.22
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.8972988Z [1m[32m  Downloaded[0m thiserror v1.0.69
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9016298Z [1m[32m  Downloaded[0m sha2 v0.10.9
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9035873Z [1m[32m  Downloaded[0m quote v1.0.42
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9057764Z [1m[32m  Downloaded[0m unty v0.0.4
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9065319Z [1m[32m  Downloaded[0m cpufeatures v0.2.17
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9079375Z [1m[32m  Downloaded[0m syn v2.0.111
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9157907Z [1m[32m  Downloaded[0m cfg-if v1.0.4
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9171326Z [1m[32m  Downloaded[0m bincode v2.0.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9211137Z [1m[32m  Downloaded[0m digest v0.10.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9224464Z [1m[32m  Downloaded[0m crypto-common v0.1.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9231825Z [1m[32m  Downloaded[0m block-buffer v0.10.4
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9250892Z [1m[32m  Downloaded[0m libc v0.2.178
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9775641Z [1m[32m Downloading[0m crates ...
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9874296Z [1m[32m  Downloaded[0m criterion v0.5.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:40.9945871Z [1m[32m Downloading[0m crates ...
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0030023Z [1m[32m  Downloaded[0m proptest v1.9.0
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0115509Z [1m[32m Downloading[0m crates ...
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0188930Z [1m[32m  Downloaded[0m rand_chacha v0.3.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0209381Z [1m[32m Downloading[0m crates ...
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0290814Z [1m[32m  Downloaded[0m rand_core v0.6.4
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0389723Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0390177Z [1m[32m   Compiling[0m quote v1.0.42
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0390604Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0401499Z [1m[32m   Compiling[0m version_check v0.9.5
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.0814018Z [1m[32m   Compiling[0m typenum v1.19.0
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.1935090Z [1m[32m   Compiling[0m generic-array v0.14.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.1989003Z [1m[32m   Compiling[0m serde_core v1.0.228
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.3135513Z [1m[32m   Compiling[0m libc v0.2.178
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.6423554Z [1m[32m   Compiling[0m syn v2.0.111
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.6765480Z [1m[32m   Compiling[0m thiserror v1.0.69
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.8219588Z [1m[32m   Compiling[0m serde_json v1.0.147
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.9124069Z [1m[32m   Compiling[0m virtue v0.0.18
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:41.9560209Z [1m[32m    Checking[0m crypto-common v0.1.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.0013782Z [1m[32m    Checking[0m block-buffer v0.10.4
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.0534667Z [1m[32m    Checking[0m cfg-if v1.0.4
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.0745375Z [1m[32m   Compiling[0m serde v1.0.228
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.2294088Z [1m[32m    Checking[0m digest v0.10.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.2634041Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.5335908Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.6364022Z [1m[32m    Checking[0m cpufeatures v0.2.17
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.6463960Z [1m[32m    Checking[0m unty v0.0.4
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.6579239Z [1m[32m    Checking[0m zmij v0.1.7
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.6657417Z [1m[32m    Checking[0m itoa v1.0.16
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.7118859Z [1m[32m    Checking[0m memchr v2.7.6
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:42.7243847Z [1m[32m    Checking[0m bincode v2.0.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:43.0014256Z [1m[32m    Checking[0m getrandom v0.2.16
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:43.0723936Z [1m[32m    Checking[0m sha2 v0.10.9
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:43.1334544Z [1m[32m    Checking[0m subtle v2.6.1
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:43.1919155Z [1m[32m    Checking[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:43.9702711Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:43.9723656Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:43.9724124Z [1m[32m   Compiling[0m serde_derive v1.0.228
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:44.3106501Z [1m[32m    Checking[0m zeroize v1.8.2
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:44.3720326Z [1m[32m    Checking[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:44.4729779Z [1m[32m    Checking[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+probe-smoke	Compile exploratory probes	2026-10-07T19:45:47.1192129Z [1m[32m    Finished[0m `release` profile [optimized] target(s) in 6.71s
+probe-smoke	Build exact NTT candidate probe (release)	﻿2026-10-07T19:45:47.1561409Z ##[group]Run cargo build --release -p nine65 \
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1561651Z [36;1mcargo build --release -p nine65 \[0m
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1561816Z [36;1m  --bin cram_modulus_probe \[0m
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1561965Z [36;1m  --features serde[0m
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1613886Z shell: /usr/bin/bash -e {0}
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1614025Z env:
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1614140Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1614284Z   CARGO_INCREMENTAL: 0
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1614408Z   CARGO_TERM_COLOR: always
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.1614540Z ##[endgroup]
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3002285Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3002923Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3003198Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3240514Z [1m[32m   Compiling[0m typenum v1.19.0
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3240982Z [1m[32m   Compiling[0m serde_core v1.0.228
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3259270Z [1m[32m   Compiling[0m zeroize v1.8.2
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3259756Z [1m[32m   Compiling[0m cfg-if v1.0.4
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.3514758Z [1m[32m   Compiling[0m libc v0.2.178
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.4021628Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.7473841Z [1m[32m   Compiling[0m generic-array v0.14.7
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.8294099Z [1m[32m   Compiling[0m memchr v2.7.6
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:47.9863755Z [1m[32m   Compiling[0m zmij v0.1.7
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.0773925Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.0970105Z [1m[32m   Compiling[0m itoa v1.0.16
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.1444241Z [1m[32m   Compiling[0m crypto-common v0.1.7
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.1864027Z [1m[32m   Compiling[0m block-buffer v0.10.4
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.1892137Z [1m[32m   Compiling[0m unty v0.0.4
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.2148169Z [1m[32m   Compiling[0m bincode v2.0.1
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.2453953Z [1m[32m   Compiling[0m digest v0.10.7
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.3443839Z [1m[32m   Compiling[0m sha2 v0.10.9
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.3724158Z [1m[32m   Compiling[0m getrandom v0.2.16
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.4524146Z [1m[32m   Compiling[0m thiserror v1.0.69
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.4849676Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.7564032Z [1m[32m   Compiling[0m serde v1.0.228
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.7944186Z [1m[32m   Compiling[0m serde_json v1.0.147
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.8005383Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:48.8893934Z [1m[32m   Compiling[0m subtle v2.6.1
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:45:49.4506007Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+probe-smoke	Build exact NTT candidate probe (release)	2026-10-07T19:46:04.4068181Z [1m[32m    Finished[0m `release` profile [optimized] target(s) in 17.11s
+probe-smoke	Build seeded FHE exploratory probe (debug)	﻿2026-10-07T19:46:04.4154800Z ##[group]Run cargo build -p nine65 --bin cram_exploratory_probe --features serde
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4155357Z [36;1mcargo build -p nine65 --bin cram_exploratory_probe --features serde[0m
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4208915Z shell: /usr/bin/bash -e {0}
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4209079Z env:
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4209196Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4209342Z   CARGO_INCREMENTAL: 0
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4209470Z   CARGO_TERM_COLOR: always
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4209600Z ##[endgroup]
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4524381Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4524839Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4525123Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4780056Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4780403Z [1m[32m   Compiling[0m quote v1.0.42
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4780742Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.4783130Z [1m[32m   Compiling[0m typenum v1.19.0
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.5235698Z [1m[32m   Compiling[0m version_check v0.9.5
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.6450684Z [1m[32m   Compiling[0m serde_core v1.0.228
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.6795269Z [1m[32m   Compiling[0m generic-array v0.14.7
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:04.8044164Z [1m[32m   Compiling[0m libc v0.2.178
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.1136312Z [1m[32m   Compiling[0m thiserror v1.0.69
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.1773845Z [1m[32m   Compiling[0m syn v2.0.111
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.3159473Z [1m[32m   Compiling[0m serde v1.0.228
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.4131766Z [1m[32m   Compiling[0m block-buffer v0.10.4
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.4583875Z [1m[32m   Compiling[0m crypto-common v0.1.7
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.4763859Z [1m[32m   Compiling[0m virtue v0.0.18
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.4953664Z [1m[32m   Compiling[0m serde_json v1.0.147
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.6134225Z [1m[32m   Compiling[0m cfg-if v1.0.4
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.6354014Z [1m[32m   Compiling[0m digest v0.10.7
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:05.8314723Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.2370165Z [1m[32m   Compiling[0m zmij v0.1.7
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.2524228Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.2855146Z [1m[32m   Compiling[0m unty v0.0.4
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.3088103Z [1m[32m   Compiling[0m itoa v1.0.16
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.3227371Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.3683652Z [1m[32m   Compiling[0m memchr v2.7.6
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.3954625Z [1m[32m   Compiling[0m getrandom v0.2.16
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.4914517Z [1m[32m   Compiling[0m bincode v2.0.1
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.4938153Z [1m[32m   Compiling[0m sha2 v0.10.9
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.8657036Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:06.9884388Z [1m[32m   Compiling[0m subtle v2.6.1
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:07.7967611Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:07.8054032Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:07.8114360Z [1m[32m   Compiling[0m serde_derive v1.0.228
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:08.3029978Z [1m[32m   Compiling[0m zeroize v1.8.2
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:08.3834257Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:08.5024271Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+probe-smoke	Build seeded FHE exploratory probe (debug)	2026-10-07T19:46:13.1167119Z [1m[32m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 8.67s
+probe-smoke	Run exact NTT candidate probe	﻿2026-10-07T19:46:13.1245720Z ##[group]Run mkdir -p artifacts/exploratory/moduli
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1245978Z [36;1mmkdir -p artifacts/exploratory/moduli[0m
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1246158Z [36;1mtarget/release/cram_modulus_probe \[0m
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1246318Z [36;1m  --n 256 \[0m
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1246474Z [36;1m  --moduli 998244353,1006632961,4294967296,4294967295 \[0m
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1246658Z [36;1m  --seed 42 \[0m
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1246827Z [36;1m  --output artifacts/exploratory/moduli/results.json[0m
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1299154Z shell: /usr/bin/bash -e {0}
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1299301Z env:
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1299423Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1299566Z   CARGO_INCREMENTAL: 0
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1299696Z   CARGO_TERM_COLOR: always
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1299828Z ##[endgroup]
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1380761Z {
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1380993Z   "candidate_count": 4,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1381592Z   "interpretation": "Structural congruence is necessary but runtime roundtrip and convolution equality are independently checked. Security is not inferred by this probe.",
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1382221Z   "n": 256,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1382406Z   "passing_candidates": 1,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1382707Z   "results": [
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1382867Z     {
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1383042Z       "convolution_correct": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1383288Z       "engine_constructed": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1383507Z       "first_mismatch": null,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1383718Z       "is_composite": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1383925Z       "is_power_of_two": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1384126Z       "is_prime": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1384257Z       "modulus": 998244353,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1384381Z       "n": 256,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1384497Z       "ntt_multiply_ns": 10476,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1384645Z       "q_minus_one_divisible_by_2n": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1384802Z       "roundtrip_correct": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1384940Z       "roundtrip_ns": 5458,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1385077Z       "schoolbook_reference_ns": 168764,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1385242Z       "status": "PASS"
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1385362Z     },
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1385459Z     {
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1385569Z       "convolution_correct": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1385716Z       "engine_constructed": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1385961Z       "engine_error": "NTT configuration error: CLASS-F NTT modulus must be prime, got 1006632961",
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1386205Z       "is_composite": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1386336Z       "is_power_of_two": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1386470Z       "is_prime": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1386602Z       "modulus": 1006632961,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1386727Z       "n": 256,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1386850Z       "q_minus_one_divisible_by_2n": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1387002Z       "roundtrip_correct": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1387151Z       "status": "REJECTED_CONFIGURATION"
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1387290Z     },
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1387396Z     {
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1387503Z       "convolution_correct": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1387650Z       "engine_constructed": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1387879Z       "engine_error": "NTT configuration error: CLASS-F NTT modulus must be prime, got 4294967296",
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1388121Z       "is_composite": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1388258Z       "is_power_of_two": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1388391Z       "is_prime": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1388517Z       "modulus": 4294967296,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1388640Z       "n": 256,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1388761Z       "q_minus_one_divisible_by_2n": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1388916Z       "roundtrip_correct": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1389222Z       "status": "REJECTED_CONFIGURATION"
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1389361Z     },
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1389458Z     {
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1389565Z       "convolution_correct": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1389708Z       "engine_constructed": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1389938Z       "engine_error": "NTT configuration error: CLASS-F NTT modulus must be prime, got 4294967295",
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1390173Z       "is_composite": true,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1390421Z       "is_power_of_two": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1390554Z       "is_prime": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1390680Z       "modulus": 4294967295,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1390804Z       "n": 256,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1390924Z       "q_minus_one_divisible_by_2n": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1391076Z       "roundtrip_correct": false,
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1391223Z       "status": "REJECTED_CONFIGURATION"
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1391361Z     }
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1391456Z   ],
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1391581Z   "schema": "nine65-cram-modulus-probe-v1",
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1391764Z   "scope": "exploratory_ntt_candidate_validation",
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1391926Z   "seed": 42
+probe-smoke	Run exact NTT candidate probe	2026-10-07T19:46:13.1392028Z }
+probe-smoke	Run quick real-FHE matrix	﻿2026-10-07T19:46:13.1412814Z ##[group]Run python3 scripts/run_cram_exploratory_matrix.py \
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1413087Z [36;1mpython3 scripts/run_cram_exploratory_matrix.py \[0m
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1413282Z [36;1m  --profile quick \[0m
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1413433Z [36;1m  --cargo-profile debug \[0m
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1413584Z [36;1m  --skip-build \[0m
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1413740Z [36;1m  --output-dir artifacts/exploratory/quick[0m
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1457358Z shell: /usr/bin/bash -e {0}
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1457495Z env:
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1457608Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1457755Z   CARGO_INCREMENTAL: 0
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1457882Z   CARGO_TERM_COLOR: always
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:13.1458013Z ##[endgroup]
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4191301Z {
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4191728Z   "manifest": "artifacts/exploratory/quick/manifest.json",
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4192062Z   "summary": {
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4192223Z     "cases": 4,
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4192399Z     "process_zero": 2,
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4192752Z     "reported_pass": 2,
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4193008Z     "reported_fail": 2,
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4193211Z     "missing_result": 0
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4193383Z   }
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4193531Z }
+probe-smoke	Run quick real-FHE matrix	2026-10-07T19:46:21.4276839Z ##[error]Process completed with exit code 1.
+probe-smoke	Produce strict comparison report	﻿2026-10-07T19:46:21.4311249Z ##[group]Run if test -f artifacts/exploratory/quick/manifest.json; then
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4311568Z [36;1mif test -f artifacts/exploratory/quick/manifest.json; then[0m
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4311785Z [36;1m  python3 scripts/cram_compare_results.py \[0m
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4311982Z [36;1m    artifacts/exploratory/quick/manifest.json \[0m
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4312197Z [36;1m    --output artifacts/exploratory/quick/comparison.json[0m
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4312384Z [36;1mfi[0m
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4364269Z shell: /usr/bin/bash -e {0}
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4364429Z env:
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4364548Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4364690Z   CARGO_INCREMENTAL: 0
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4364814Z   CARGO_TERM_COLOR: always
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4364941Z ##[endgroup]
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4681631Z {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4681984Z   "compatibility_rule": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4682231Z     "operation",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4682411Z     "scheme",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4682746Z     "plaintext_semantics",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4683034Z     "target_security_bits",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4683247Z     "security_estimator",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4683438Z     "n",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4683600Z     "log_q_bits",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4683785Z     "plaintext_modulus",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4683978Z     "slots",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4684142Z     "refresh_kind",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4684331Z     "hardware_fingerprint",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4684532Z     "threads",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4684710Z     "build_profile",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4684896Z     "sample_policy"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4685069Z   ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4685460Z   "groups": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4685623Z     {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4685790Z       "comparisons": [],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4685990Z       "compatibility": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4686196Z         "build_profile": "debug",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4686605Z         "hardware_fingerprint": "1ee8372ecf84ebe29a9325e3fd22020de8e1e568f1d711300e3d714715ccf7c9",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4687020Z         "log_q_bits": 119,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4687224Z         "n": 8192,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4687417Z         "plaintext_modulus": 65537,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4687671Z         "plaintext_semantics": "scalar-mod-t",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4687928Z         "refresh_kind": "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4688199Z         "sample_policy": "chain:add_only:refresh=none:timing=pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4688512Z         "scheme": "BFV-DualRNS",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4688746Z         "security_estimator": "config-claim-only",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4688998Z         "slots": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4689184Z         "target_security_bits": 128,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4689405Z         "threads": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4689576Z       },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4689726Z       "entries": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4689885Z         {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4690046Z           "implementation": "NINE65",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4690260Z           "metrics": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4690453Z             "correctness": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4690659Z               "failures": 0,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4690856Z               "trials": 32
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4691042Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4691208Z             "max_ns": 3956804,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4691413Z             "median_ns": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4691618Z               "denominator": 2,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4691835Z               "numerator": 5883223
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4692049Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4692219Z             "min_ns": 2603207,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4692431Z             "p95_ns": 3345715,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4692763Z             "samples": 32
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4692953Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4693127Z           "provenance": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4693327Z             "command": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4693646Z               "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4693998Z               "--config",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4694191Z               "secure_128",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4694391Z               "--workload",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4694594Z               "add_only",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4694983Z               "--depth",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4695168Z               "32",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4695342Z               "--seed",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4695528Z               "42",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4695704Z               "--initial",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4695894Z               "3",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4696065Z               "--rhs",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4696246Z               "2",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4696410Z               "--refresh",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4696597Z               "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4696788Z               "--refresh-timing",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4696994Z               "pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4697187Z               "--trigger-permille",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4697403Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4697588Z               "--candidate-wall",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4697811Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4697978Z               "--output",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4698355Z               "artifacts/exploratory/quick/cases/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.json"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4698764Z             ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4698983Z             "commit": "c93a058e2106441029647e69e252d3b410fdeab1",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4699344Z             "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4699882Z             "raw_artifact": "artifacts/exploratory/quick/cases/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4700409Z             "repository": "https://github.com/Skyelabz210/NINE65_v7"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4700705Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4701219Z           "source_file": "artifacts/exploratory/quick/cases/00000-secure_128-add_only-d32-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4714874Z           "version": "c93a058e2106441029647e69e252d3b410fdeab1"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4715158Z         }
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4715319Z       ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4715490Z       "operation": "add_ct",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4715698Z       "record_count": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4715881Z     },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4716039Z     {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4716205Z       "comparisons": [],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4716418Z       "compatibility": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4716623Z         "build_profile": "debug",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4717008Z         "hardware_fingerprint": "1ee8372ecf84ebe29a9325e3fd22020de8e1e568f1d711300e3d714715ccf7c9",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4717420Z         "log_q_bits": 119,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4717615Z         "n": 8192,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4717795Z         "plaintext_modulus": 65537,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4718045Z         "plaintext_semantics": "scalar-mod-t",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4718307Z         "refresh_kind": "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4718609Z         "sample_policy": "chain:mul_plain_only:refresh=none:timing=pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4718934Z         "scheme": "BFV-DualRNS",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4719173Z         "security_estimator": "config-claim-only",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4719463Z         "slots": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4719644Z         "target_security_bits": 128,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4719852Z         "threads": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4720194Z       },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4720346Z       "entries": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4720507Z         {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4720675Z           "implementation": "NINE65",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4720887Z           "metrics": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4721070Z             "correctness": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4721265Z               "failures": 0,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4721455Z               "trials": 12
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4721639Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4721802Z             "max_ns": 51636714,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4722003Z             "median_ns": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4722203Z               "denominator": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4722411Z               "numerator": 50313758
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4722727Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4722896Z             "min_ns": 49771707,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4723093Z             "p95_ns": 51636714,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4723290Z             "samples": 12
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4723476Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4723641Z           "provenance": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4724013Z             "command": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4724305Z               "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4724641Z               "--config",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4724830Z               "secure_128",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4725022Z               "--workload",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4725219Z               "mul_plain_only",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4725418Z               "--depth",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4725594Z               "12",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4725763Z               "--seed",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4725942Z               "42",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4726117Z               "--initial",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4726308Z               "3",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4726476Z               "--rhs",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4726651Z               "2",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4726821Z               "--refresh",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4727011Z               "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4727202Z               "--refresh-timing",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4727413Z               "pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4727606Z               "--trigger-permille",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4727813Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4727989Z               "--candidate-wall",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4728191Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4728361Z               "--output",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4728742Z               "artifacts/exploratory/quick/cases/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.json"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4729147Z             ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4729359Z             "commit": "c93a058e2106441029647e69e252d3b410fdeab1",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4729820Z             "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4730188Z             "raw_artifact": "artifacts/exploratory/quick/cases/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4730520Z             "repository": "https://github.com/Skyelabz210/NINE65_v7"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4730701Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4730945Z           "source_file": "artifacts/exploratory/quick/cases/00001-secure_128-mul_plain_only-d12-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4731254Z           "version": "c93a058e2106441029647e69e252d3b410fdeab1"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4731419Z         }
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4731517Z       ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4731624Z       "operation": "mul_plain",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4731760Z       "record_count": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4731877Z     },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4732045Z     {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4732328Z       "comparisons": [],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4732521Z       "compatibility": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4732820Z         "build_profile": "debug",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4733188Z         "hardware_fingerprint": "1ee8372ecf84ebe29a9325e3fd22020de8e1e568f1d711300e3d714715ccf7c9",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4733548Z         "log_q_bits": 119,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4733738Z         "n": 8192,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4733914Z         "plaintext_modulus": 65537,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4734150Z         "plaintext_semantics": "scalar-mod-t",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4734317Z         "refresh_kind": "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4734492Z         "sample_policy": "chain:mul_ct_only:refresh=none:timing=pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4734681Z         "scheme": "BFV-DualRNS",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4734832Z         "security_estimator": "config-claim-only",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4734987Z         "slots": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735106Z         "target_security_bits": 128,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735242Z         "threads": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735352Z       },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735456Z       "entries": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735562Z         {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735677Z           "implementation": "NINE65",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735815Z           "metrics": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4735936Z             "correctness": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4736064Z               "failures": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4736188Z               "trials": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4736303Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4736413Z             "max_ns": 1977088458,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4736544Z             "median_ns": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4736778Z               "denominator": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4736913Z               "numerator": 1977088458
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737045Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737154Z             "min_ns": 1977088458,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737284Z             "p95_ns": 1977088458,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737414Z             "samples": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737532Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737639Z           "provenance": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737763Z             "command": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4737954Z               "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4738170Z               "--config",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4738289Z               "secure_128",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4738418Z               "--workload",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4738542Z               "mul_ct_only",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4738668Z               "--depth",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4738781Z               "4",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4738889Z               "--seed",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739005Z               "42",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739116Z               "--initial",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739233Z               "3",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739341Z               "--rhs",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739453Z               "2",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739563Z               "--refresh",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739681Z               "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739805Z               "--refresh-timing",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4739935Z               "pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4740058Z               "--trigger-permille",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4740191Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4740398Z               "--candidate-wall",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4740526Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4740636Z               "--output",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4740864Z               "artifacts/exploratory/quick/cases/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.json"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4741101Z             ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4741235Z             "commit": "c93a058e2106441029647e69e252d3b410fdeab1",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4741459Z             "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4741779Z             "raw_artifact": "artifacts/exploratory/quick/cases/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4742085Z             "repository": "https://github.com/Skyelabz210/NINE65_v7"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4742260Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4742492Z           "source_file": "artifacts/exploratory/quick/cases/00002-secure_128-mul_ct_only-d4-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4742963Z           "version": "c93a058e2106441029647e69e252d3b410fdeab1"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743128Z         }
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743226Z       ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743334Z       "operation": "mul_ct",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743466Z       "record_count": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743581Z     },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743679Z     {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743782Z       "comparisons": [],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4743905Z       "compatibility": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4744029Z         "build_profile": "debug",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4744266Z         "hardware_fingerprint": "1ee8372ecf84ebe29a9325e3fd22020de8e1e568f1d711300e3d714715ccf7c9",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4744506Z         "log_q_bits": 119,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4744625Z         "n": 8192,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4744741Z         "plaintext_modulus": 65537,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4744897Z         "plaintext_semantics": "scalar-mod-t",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4745059Z         "refresh_kind": "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4745231Z         "sample_policy": "chain:interleaved:refresh=none:timing=pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4745420Z         "scheme": "BFV-DualRNS",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4745569Z         "security_estimator": "config-claim-only",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4745725Z         "slots": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4745844Z         "target_security_bits": 128,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4745981Z         "threads": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4746113Z       },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4746216Z       "entries": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4746320Z         {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4746431Z           "implementation": "NINE65",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4746677Z           "metrics": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4746797Z             "correctness": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4746927Z               "failures": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747052Z               "trials": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747172Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747283Z             "max_ns": 1972939285,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747414Z             "median_ns": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747540Z               "denominator": 1,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747676Z               "numerator": 1972939285
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747809Z             },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4747917Z             "min_ns": 1972939285,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4748047Z             "p95_ns": 1972939285,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4748176Z             "samples": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4748293Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4748399Z           "provenance": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4748520Z             "command": [
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4748708Z               "/home/runner/work/NINE65_v7/NINE65_v7/target/debug/cram_exploratory_probe",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4748922Z               "--config",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749041Z               "secure_128",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749168Z               "--workload",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749294Z               "interleaved",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749419Z               "--depth",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749534Z               "8",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749641Z               "--seed",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749754Z               "42",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749864Z               "--initial",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4749980Z               "3",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4750176Z               "--rhs",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4750288Z               "2",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4750395Z               "--refresh",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4750514Z               "none",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4750636Z               "--refresh-timing",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4750764Z               "pre",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4750885Z               "--trigger-permille",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4751016Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4751129Z               "--candidate-wall",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4751256Z               "0",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4751366Z               "--output",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4751597Z               "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4751836Z             ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4751970Z             "commit": "c93a058e2106441029647e69e252d3b410fdeab1",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4752191Z             "matrix_manifest": "artifacts/exploratory/quick/manifest.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4752510Z             "raw_artifact": "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4752958Z             "repository": "https://github.com/Skyelabz210/NINE65_v7"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4753131Z           },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4753364Z           "source_file": "artifacts/exploratory/quick/cases/00003-secure_128-interleaved-d8-s42-none-pre-t0-w0.json",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4753655Z           "version": "c93a058e2106441029647e69e252d3b410fdeab1"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4753818Z         }
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4753916Z       ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754023Z       "operation": "mul_ct",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754152Z       "record_count": 1
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754269Z     }
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754363Z   ],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754478Z   "incompatibility_dimension_counts": {
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754623Z     "operation": 5,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754738Z     "sample_policy": 6
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754850Z   },
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4754951Z   "input_errors": [],
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4755238Z   "ranking_rule": "Records must share every compatibility field and each record must have at least one trial with zero recorded failures.",
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4755547Z   "record_count": 4,
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4755680Z   "schema": "fhe-comparison-analysis-v1"
+probe-smoke	Produce strict comparison report	2026-10-07T19:46:21.4755825Z }
+probe-smoke	Run actions/upload-artifact@v4	﻿2026-10-07T19:46:21.4796225Z ##[group]Run actions/upload-artifact@v4
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4796387Z with:
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4796506Z   name: cram-exploratory-quick
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4796648Z   path: artifacts/exploratory
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4796789Z   if-no-files-found: warn
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4796916Z   compression-level: 6
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4797037Z   overwrite: false
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4797155Z   include-hidden-files: false
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4797283Z env:
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4797391Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4797526Z   CARGO_INCREMENTAL: 0
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4797647Z   CARGO_TERM_COLOR: always
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.4797771Z ##[endgroup]
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.5847919Z (node:4209) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.5848631Z (Use `node --trace-deprecation ...` to show where the warning was created)
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.5933578Z With the provided path, there will be 15 files uploaded
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.5933905Z Artifact name is valid!
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.5934114Z Root directory input is valid!
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.9657347Z Beginning upload of artifact content to blob storage
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:21.9921443Z (node:4209) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:22.2809275Z Uploaded bytes 19099
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:22.3449207Z Finished uploading artifact content to blob storage!
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:22.3449627Z SHA256 digest of uploaded artifact zip is 483da8e49015961a78783699fecb637584046e2e9171feacc3adf58701caa4d3
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:22.3450818Z Finalizing artifact upload
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:22.6348760Z Artifact cram-exploratory-quick.zip successfully finalized. Artifact ID 11506619633
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:22.6349458Z Artifact cram-exploratory-quick has been successfully uploaded! Final size is 19099 bytes. Artifact ID is 11506619633
+probe-smoke	Run actions/upload-artifact@v4	2026-10-07T19:46:22.6354098Z Artifact download URL: https://github.com/Skyelabz210/NINE65_v7/actions/runs/37676889127/artifacts/11506619633
+probe-smoke	Enforce matrix result after artifact capture	﻿2026-10-07T19:46:22.6464957Z ##[group]Run test 'failure' = 'success'
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6465165Z [36;1mtest 'failure' = 'success'[0m
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6518429Z shell: /usr/bin/bash -e {0}
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6518576Z env:
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6518700Z   CARGO_HOME: /home/runner/.cargo
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6518853Z   CARGO_INCREMENTAL: 0
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6518990Z   CARGO_TERM_COLOR: always
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6519131Z ##[endgroup]
+probe-smoke	Enforce matrix result after artifact capture	2026-10-07T19:46:22.6584573Z ##[error]Process completed with exit code 1.
+probe-smoke	Post Run actions/checkout@v4	﻿2026-10-07T19:46:22.6641931Z Post job cleanup.
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7196388Z [command]/usr/bin/git version
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7228437Z git version 2.55.0
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7253196Z Temporarily overriding HOME='/home/runner/work/_temp/06fd6a52-3f87-4c13-800f-9489149bd958' before making global git config changes
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7263429Z Adding repository directory to the temporary git global config as a safe directory
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7264482Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7295981Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7322054Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7520513Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7540382Z http.https://github.com/.extraheader
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7550028Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7580010Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7780804Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe-smoke	Post Run actions/checkout@v4	2026-10-07T19:46:22.7814096Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe-smoke	Complete job	﻿2026-10-07T19:46:22.8118703Z Cleaning up orphan processes
+probe-smoke	Complete job	2026-10-07T19:46:22.8314166Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+source-inventory	Set up job	﻿2026-10-07T19:45:29.8112654Z Current runner version: '2.337.0'
+source-inventory	Set up job	2026-10-07T19:45:29.8130214Z ##[group]Runner Image Provisioner
+source-inventory	Set up job	2026-10-07T19:45:29.8130763Z Hosted Compute Agent
+source-inventory	Set up job	2026-10-07T19:45:29.8131168Z Version: 20260901.588
+source-inventory	Set up job	2026-10-07T19:45:29.8131565Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+source-inventory	Set up job	2026-10-07T19:45:29.8132040Z Build Date: 2026-09-01T19:56:44Z
+source-inventory	Set up job	2026-10-07T19:45:29.8132515Z Worker ID: {6f783ca8-7231-4b0b-b800-c531059b0240}
+source-inventory	Set up job	2026-10-07T19:45:29.8132937Z Azure Region: centralus
+source-inventory	Set up job	2026-10-07T19:45:29.8133322Z ##[endgroup]
+source-inventory	Set up job	2026-10-07T19:45:29.8134149Z ##[group]Operating System
+source-inventory	Set up job	2026-10-07T19:45:29.8134550Z Ubuntu
+source-inventory	Set up job	2026-10-07T19:45:29.8134912Z 24.04.5
+source-inventory	Set up job	2026-10-07T19:45:29.8135228Z LTS
+source-inventory	Set up job	2026-10-07T19:45:29.8135757Z ##[endgroup]
+source-inventory	Set up job	2026-10-07T19:45:29.8136136Z ##[group]Runner Image
+source-inventory	Set up job	2026-10-07T19:45:29.8136536Z Image: ubuntu-24.04
+source-inventory	Set up job	2026-10-07T19:45:29.8136940Z Version: 20260927.320.1
+source-inventory	Set up job	2026-10-07T19:45:29.8137841Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+source-inventory	Set up job	2026-10-07T19:45:29.8138887Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+source-inventory	Set up job	2026-10-07T19:45:29.8139511Z ##[endgroup]
+source-inventory	Set up job	2026-10-07T19:45:29.8140190Z ##[group]GITHUB_TOKEN Permissions
+source-inventory	Set up job	2026-10-07T19:45:29.8141578Z Contents: read
+source-inventory	Set up job	2026-10-07T19:45:29.8141973Z Metadata: read
+source-inventory	Set up job	2026-10-07T19:45:29.8142349Z ##[endgroup]
+source-inventory	Set up job	2026-10-07T19:45:29.8143649Z Secret source: Actions
+source-inventory	Set up job	2026-10-07T19:45:29.8144272Z Cache mode: write
+source-inventory	Set up job	2026-10-07T19:45:29.8144818Z Prepare workflow directory
+source-inventory	Set up job	2026-10-07T19:45:29.8350119Z Prepare all required actions
+source-inventory	Set up job	2026-10-07T19:45:29.8380877Z Getting action download info
+source-inventory	Set up job	2026-10-07T19:45:30.1462532Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+source-inventory	Set up job	2026-10-07T19:45:30.2531216Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+source-inventory	Set up job	2026-10-07T19:45:30.4118023Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+source-inventory	Set up job	2026-10-07T19:45:30.6248373Z Complete job name: source-inventory
+source-inventory	Run actions/checkout@v4	﻿2026-10-07T19:45:30.6700111Z ##[group]Run actions/checkout@v4
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6700540Z with:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6700785Z   repository: Skyelabz210/NINE65_v7
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6702749Z   token: ***
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6702984Z   ssh-strict: true
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6703228Z   ssh-user: git
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6703475Z   persist-credentials: true
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6703743Z   clean: true
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6703984Z   sparse-checkout-cone-mode: true
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6704266Z   fetch-depth: 1
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6704503Z   fetch-tags: false
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6704742Z   show-progress: true
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6704984Z   lfs: false
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6705209Z   submodules: false
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6705451Z   set-safe-directory: true
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6705726Z   allow-unsafe-pr-checkout: false
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.6706071Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7383025Z Syncing repository: Skyelabz210/NINE65_v7
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7384268Z ##[group]Getting Git version info
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7384714Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7385352Z [command]/usr/bin/git version
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7456289Z git version 2.55.0
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7470365Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7481685Z Temporarily overriding HOME='/home/runner/work/_temp/0a1fc581-f5bf-46d5-a403-50cddc3cdfe6' before making global git config changes
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7482992Z Adding repository directory to the temporary git global config as a safe directory
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7486070Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7530013Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7535665Z ##[group]Initializing the repository
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7536459Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7640677Z hint: Using 'master' as the name for the initial branch. This default branch name
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7641893Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7642712Z hint: to use in all of your new repositories, which will suppress this warning,
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7643654Z hint: call:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7644110Z hint:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7644552Z hint: 	git config --global init.defaultBranch <name>
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7645031Z hint:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7645511Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7646106Z hint: 'development'. The just-created branch can be renamed via this command:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7646621Z hint:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7646978Z hint: 	git branch -m <name>
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7647360Z hint:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7647990Z hint: Disable this message with "git config set advice.defaultBranchName false"
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7648606Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7658016Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7706105Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7706580Z ##[group]Disabling automatic garbage collection
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7709334Z [command]/usr/bin/git config --local gc.auto 0
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7737718Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7738143Z ##[group]Setting up auth
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7743706Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.7773239Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8082938Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8112009Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8285552Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8313466Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8493071Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8527339Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8528159Z ##[group]Fetching the repository
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:30.8533958Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c93a058e2106441029647e69e252d3b410fdeab1:refs/remotes/origin/main
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7410365Z From https://github.com/Skyelabz210/NINE65_v7
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7411284Z  * [new ref]         c93a058e2106441029647e69e252d3b410fdeab1 -> origin/main
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7421623Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7422343Z ##[group]Determining the checkout info
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7423123Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7425291Z [command]/usr/bin/git sparse-checkout disable
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7490332Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7518708Z ##[group]Checking out the ref
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.7521769Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.8348992Z Switched to a new branch 'main'
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.8352669Z branch 'main' set up to track 'origin/main'.
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.8361168Z ##[endgroup]
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.8399278Z [command]/usr/bin/git log -1 --format=%H
+source-inventory	Run actions/checkout@v4	2026-10-07T19:45:31.8421234Z c93a058e2106441029647e69e252d3b410fdeab1
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	﻿2026-10-07T19:45:31.8842589Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8843406Z with:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8843971Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8906259Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8958655Z ##[group]Run if [[ -z $toolchain ]]; then
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8959605Z [36;1mif [[ -z $toolchain ]]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8960652Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8961754Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8962437Z [36;1m  exit 1[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8963189Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8964073Z [36;1m  if [[ Linux == macOS ]]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8965128Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8966187Z [36;1m  else[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8967044Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8968231Z [36;1m  fi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8968927Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8970015Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8970972Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8972030Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8973037Z [36;1melse[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8973642Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.8974330Z [36;1mfi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9195997Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9196770Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9197255Z   toolchain: 1.89.0
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9198051Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9307911Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=39]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9317969Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9350038Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9351256Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9352475Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9353467Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9398993Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9399708Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9400176Z   targets: 
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9400665Z   components: 
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9401170Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9479927Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=16]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9483603Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9509330Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9510300Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9556307Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9557023Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9630522Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=14]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9634217Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9694907Z ##[group]Run if ! command -v rustup &>/dev/null; then
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9695688Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9697176Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9698676Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9699419Z [36;1mfi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9744286Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9744985Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9745481Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9746063Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9816742Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=18]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9820721Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9829292Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9838232Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9863465Z ##[group]Run log=$(mktemp)
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9864038Z [36;1mlog=$(mktemp)[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9864640Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9865221Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9866218Z [36;1m  if rustup toolchain install 1.89.0 --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9867200Z [36;1m    break[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9867837Z [36;1m  else[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9868314Z [36;1m    status=$?[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9868817Z [36;1m  fi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9869444Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9870488Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9871390Z [36;1m    exit "$status"[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9871915Z [36;1m  fi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9872657Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9873488Z [36;1m  sleep 30[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9873976Z [36;1mdone[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9920003Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9920684Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9921153Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9921735Z   RUSTUP_PERMIT_COPY_RENAME: 1
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9922277Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0369608Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.2387975Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.2388982Z info: downloading 3 components
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0778807Z 
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0842275Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0842569Z 
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0907628Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=6106]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0914720Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0935259Z ##[group]Run rustup default 1.89.0 --force-non-host
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0935533Z [36;1mrustup default 1.89.0 --force-non-host[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0993032Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0993259Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0993415Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.0993590Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1093868Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1100371Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1100617Z 
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1160641Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1160919Z 
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1161361Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1175161Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=25]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1177026Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1195739Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1196239Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1196634Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1196940Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1248415Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1248635Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1248796Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1248981Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1531945Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=35]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1534150Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1551489Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1551943Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1568877Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1569118Z [36;1mfi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1626346Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1626595Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1626747Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1626921Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1700364Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=16]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1701925Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1718460Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1718719Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1718940Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1719146Z [36;1mfi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1771167Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1771386Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1771535Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1771710Z   CARGO_INCREMENTAL: 0
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1771866Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1842497Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=14]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1844014Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1861101Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1861441Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1861873Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1862307Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1862657Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1862981Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1863282Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1863618Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1863931Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1864152Z [36;1m  fi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1864432Z [36;1mfi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1915412Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1915632Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1915780Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1915960Z   CARGO_INCREMENTAL: 0
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1916117Z   CARGO_TERM_COLOR: always
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.1916386Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2181449Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=33]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2183720Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2210148Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2210697Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2211068Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2211433Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2211649Z [36;1mfi[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2268153Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2268370Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2268524Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2268719Z   CARGO_INCREMENTAL: 0
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2268877Z   CARGO_TERM_COLOR: always
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2269035Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2431339Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=24]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2434399Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2451355Z ##[group]Run rustc +1.89.0 --version --verbose
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2451592Z [36;1mrustc +1.89.0 --version --verbose[0m
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2504526Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2504752Z env:
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2504909Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2505101Z   CARGO_INCREMENTAL: 0
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2505260Z   CARGO_TERM_COLOR: always
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2505421Z ##[endgroup]
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2653336Z rustc 1.89.0 (29483883e 2025-08-04)
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2653752Z binary: rustc
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2654243Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2654468Z commit-date: 2025-08-04
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2654645Z host: x86_64-unknown-linux-gnu
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2654813Z release: 1.89.0
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2654971Z LLVM version: 20.1.7
+source-inventory	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:38.2667917Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=23]
+source-inventory	Validate harness Python syntax	﻿2026-10-07T19:45:38.2715981Z ##[group]Run python3 -m py_compile \
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2716220Z [36;1mpython3 -m py_compile \[0m
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2716413Z [36;1m  scripts/cram_claim_inventory.py \[0m
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2716632Z [36;1m  scripts/run_cram_exploratory_matrix.py \[0m
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2716846Z [36;1m  scripts/cram_compare_results.py \[0m
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2717044Z [36;1m  scripts/normalize_nine65_bench.py[0m
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2770786Z shell: /usr/bin/bash -e {0}
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2770970Z env:
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2771121Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2771314Z   CARGO_INCREMENTAL: 0
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2771474Z   CARGO_TERM_COLOR: always
+source-inventory	Validate harness Python syntax	2026-10-07T19:45:38.2771635Z ##[endgroup]
+source-inventory	Capture structural claim inventory	﻿2026-10-07T19:45:38.3142057Z ##[group]Run mkdir -p artifacts/exploratory/source
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3142331Z [36;1mmkdir -p artifacts/exploratory/source[0m
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3142548Z [36;1mpython3 scripts/cram_claim_inventory.py \[0m
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3142802Z [36;1m  --output artifacts/exploratory/source/claim_inventory.json[0m
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3194136Z shell: /usr/bin/bash -e {0}
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3194306Z env:
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3194453Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3194627Z   CARGO_INCREMENTAL: 0
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3194784Z   CARGO_TERM_COLOR: always
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.3194944Z ##[endgroup]
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4318185Z {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4318515Z   "branch": "main",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4318888Z   "commit": "c93a058e2106441029647e69e252d3b410fdeab1",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4319204Z   "dirty": false,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4319808Z   "interpretation_rule": "Presence or absence is source evidence only. Runtime behavior and mathematical claims require the corresponding execution harness.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4320697Z   "records": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4320931Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4321150Z       "claim_id": "H05",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4321458Z       "evidence_id": "evaluation_key_relinearization_components",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4321805Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4322225Z       "interpretation": "Active evaluation-key type contains public relinearization components.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4322658Z       "matches": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4322872Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4323122Z           "excerpt": "pub rlk: Vec<",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4323388Z           "line": 336
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4323606Z         },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4323779Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4323922Z           "excerpt": "pub rlk: Vec<",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4324095Z           "line": 359
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4324240Z         },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4324379Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4324518Z           "excerpt": "pub rlk: Vec<",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4324689Z           "line": 405
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4324838Z         }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4324967Z       ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4325118Z       "path": "crates/nine65/src/ops/rns_fhe.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4325388Z       "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4325643Z       "status": "PRESENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4325796Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4325929Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4326064Z       "claim_id": "H05",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4326251Z       "evidence_id": "evaluation_key_decomposition_base",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4326458Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4326721Z       "interpretation": "Active evaluation-key type contains an explicit decomposition base.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4326986Z       "matches": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4327123Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4327271Z           "excerpt": "pub decomp_base: u64",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4327643Z           "line": 338
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4327786Z         },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4327917Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4328068Z           "excerpt": "pub decomp_base: u64",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4328243Z           "line": 407
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4328382Z         }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4328508Z       ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4328661Z       "path": "crates/nine65/src/ops/rns_fhe.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4328916Z       "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4329163Z       "status": "PRESENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4329312Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4329440Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4329572Z       "claim_id": "H05",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4329743Z       "evidence_id": "evaluation_key_digit_count",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4329943Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4330218Z       "interpretation": "Active evaluation-key type contains an explicit decomposition digit count.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4330494Z       "matches": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4330639Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4330787Z           "excerpt": "pub num_digits: usize",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4330970Z           "line": 340
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4331270Z         }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4331398Z       ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4331546Z       "path": "crates/nine65/src/ops/rns_fhe.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4331802Z       "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4332048Z       "status": "PRESENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4332196Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4332320Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4332454Z       "claim_id": "H04",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4332623Z       "evidence_id": "simulated_refresh_branch",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4332815Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4333066Z       "interpretation": "Benchmark can report a budget reset that is not a real bootstrap.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4333323Z       "matches": [],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4333493Z       "path": "crates/nine65/src/bin/nine65_bench.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4333847Z       "sha256": "8d181a1938c30af864740f7ee61f248eb8520b3b573db70eee0a48d3816909f8",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4334093Z       "status": "ABSENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4334249Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4334377Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4334508Z       "claim_id": "H04",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4334674Z       "evidence_id": "real_bootstrap_branch",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4334861Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4335099Z       "interpretation": "Benchmark also contains an explicit real-bootstrap path.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4335341Z       "matches": [],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4335509Z       "path": "crates/nine65/src/bin/nine65_bench.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4335767Z       "sha256": "8d181a1938c30af864740f7ee61f248eb8520b3b573db70eee0a48d3816909f8",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4336009Z       "status": "ABSENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4336158Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4336283Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4336415Z       "claim_id": "H01",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4336584Z       "evidence_id": "noise_budget_is_estimator",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4336785Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4337083Z       "interpretation": "Current noise budget is an integer accounting estimator, not yet a verified winding witness.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4337523Z       "matches": [],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4337696Z       "path": "crates/nine65/src/noise/budget.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4337981Z       "sha256": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4338228Z       "status": "ABSENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4338377Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4338502Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4338632Z       "claim_id": "H02",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4338817Z       "evidence_id": "addition_has_nonzero_accounting_cost",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4339025Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4339287Z       "interpretation": "Current accounting model assigns a nonzero cost to ciphertext addition.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4339554Z       "matches": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4339692Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4339857Z           "excerpt": "pub fn add_cost() -> i64 { 1000",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4340048Z           "line": 457
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4340190Z         }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4340324Z       ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4340473Z       "path": "crates/nine65/src/noise/budget.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4340730Z       "sha256": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4340978Z       "status": "PRESENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4341128Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4341252Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4341382Z       "claim_id": "H02",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4341567Z       "evidence_id": "plain_add_has_nonzero_accounting_cost",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4341775Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4342035Z       "interpretation": "Current accounting model assigns a nonzero cost to plaintext addition.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4342302Z       "matches": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4342437Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4342596Z           "excerpt": "pub fn add_plain_cost() -> i64 { 100",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4342795Z           "line": 464
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4342936Z         }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4343063Z       ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4343351Z       "path": "crates/nine65/src/noise/budget.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4343651Z       "sha256": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4343900Z       "status": "PRESENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4344049Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4344173Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4344305Z       "claim_id": "H06",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4344480Z       "evidence_id": "security_estimate_marked_rough",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4344677Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4344956Z       "interpretation": "Repository parameter validator explicitly marks its security estimate as rough.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4345237Z       "matches": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4345377Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4345899Z           "excerpt": "rough, use LWE estimator for precise)\", estimated_security_bits )); // 4. Noise Budget Check let delta = q / t; let noise_bits = 64 - delta.leading_zeros(); if noise_bits < 10 { messages.push(format!( \"WARNING: Noise budget: Delta={} (~{} b",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4346546Z           "line": 95
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4346687Z         }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4346814Z       ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4346984Z       "path": "crates/nine65/src/params/validation.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4347257Z       "sha256": "0078ba7949da07748586eb17e5725b7cffccf41e0ac73ba9ae1e5788e9977eef",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4347702Z       "status": "PRESENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4347852Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4347981Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4348113Z       "claim_id": "H03",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4348285Z       "evidence_id": "benchmark_float_percentage",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4348483Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4348768Z       "interpretation": "Current benchmark derives some display metrics through floating-point conversion.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4349055Z       "matches": [],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4349227Z       "path": "crates/nine65/src/bin/nine65_bench.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4349494Z       "sha256": "8d181a1938c30af864740f7ee61f248eb8520b3b573db70eee0a48d3816909f8",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4349743Z       "status": "ABSENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4349889Z     },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4350013Z     {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4350148Z       "claim_id": "H05",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4350333Z       "evidence_id": "exact_value_reconstruction_language",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4350541Z       "expected_presence": true,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4350913Z       "interpretation": "Active source documentation describes forming an exact value after K-Elimination; runtime reachability requires separate tracing.",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4351285Z       "matches": [
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4351424Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4351579Z           "excerpt": "reconstruct the EXACT value",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4351766Z           "line": 246
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4351908Z         },
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4352037Z         {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4352196Z           "excerpt": "exact_value = v_main + k \u00d7 M",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4352391Z           "line": 248
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4352531Z         }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4352657Z       ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4352811Z       "path": "crates/nine65/src/ops/rns_fhe.rs",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4353064Z       "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4353309Z       "status": "PRESENT"
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4353458Z     }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4353583Z   ],
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4353770Z   "repository": "https://github.com/Skyelabz210/NINE65_v7",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4354004Z   "schema": "nine65-cram-claim-inventory-v1",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4354340Z   "scope": "source_structure_only",
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4354630Z   "summary": {
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4354842Z     "ABSENT": 4,
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4355104Z     "PRESENT": 7
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4355327Z   }
+source-inventory	Capture structural claim inventory	2026-10-07T19:45:38.4355547Z }
+source-inventory	Reject floating point in new probes	﻿2026-10-07T19:45:38.4458705Z ##[group]Run if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4459033Z [36;1mif grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' \[0m
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4459281Z [36;1m  crates/nine65/src/bin/cram_exploratory_probe.rs \[0m
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4459522Z [36;1m  crates/nine65/src/bin/cram_modulus_probe.rs; then[0m
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4459780Z [36;1m  echo 'floating-point token found in exploratory probe' >&2[0m
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4459999Z [36;1m  exit 1[0m
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4460138Z [36;1mfi[0m
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4518622Z shell: /usr/bin/bash -e {0}
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4518793Z env:
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4518937Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4519109Z   CARGO_INCREMENTAL: 0
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4519263Z   CARGO_TERM_COLOR: always
+source-inventory	Reject floating point in new probes	2026-10-07T19:45:38.4519421Z ##[endgroup]
+source-inventory	Run actions/upload-artifact@v4	﻿2026-10-07T19:45:38.4647739Z ##[group]Run actions/upload-artifact@v4
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4647947Z with:
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4648100Z   name: cram-source-claim-inventory
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4648285Z   path: artifacts/exploratory/source
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4648463Z   if-no-files-found: warn
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4648747Z   compression-level: 6
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4648899Z   overwrite: false
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4649049Z   include-hidden-files: false
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4649207Z env:
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4649345Z   CARGO_HOME: /home/runner/.cargo
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4649511Z   CARGO_INCREMENTAL: 0
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4649663Z   CARGO_TERM_COLOR: always
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.4649817Z ##[endgroup]
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.5694041Z (node:2210) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.5694560Z (Use `node --trace-deprecation ...` to show where the warning was created)
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.5735484Z With the provided path, there will be 1 file uploaded
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.5763310Z Artifact name is valid!
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.5763663Z Root directory input is valid!
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.8335963Z Beginning upload of artifact content to blob storage
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.8447368Z (node:2210) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:38.9893214Z Uploaded bytes 1701
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:39.0286488Z Finished uploading artifact content to blob storage!
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:39.0287197Z SHA256 digest of uploaded artifact zip is 8e5b958226009ae2d9941bfe92d5cf8a5f93d84169a4496c786e71227b7a94e1
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:39.0288318Z Finalizing artifact upload
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:39.2684474Z Artifact cram-source-claim-inventory.zip successfully finalized. Artifact ID 11506044759
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:39.2685249Z Artifact cram-source-claim-inventory has been successfully uploaded! Final size is 1701 bytes. Artifact ID is 11506044759
+source-inventory	Run actions/upload-artifact@v4	2026-10-07T19:45:39.2690344Z Artifact download URL: https://github.com/Skyelabz210/NINE65_v7/actions/runs/37676889127/artifacts/11506044759
+source-inventory	Post Run actions/checkout@v4	﻿2026-10-07T19:45:39.2865249Z Post job cleanup.
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3390862Z [command]/usr/bin/git version
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3423500Z git version 2.55.0
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3448197Z Temporarily overriding HOME='/home/runner/work/_temp/2e61e09b-dfc7-4233-9e3c-d60043dab42d' before making global git config changes
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3448719Z Adding repository directory to the temporary git global config as a safe directory
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3451754Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3481639Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3507878Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3715850Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3732827Z http.https://github.com/.extraheader
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3745461Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3778563Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.3981426Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+source-inventory	Post Run actions/checkout@v4	2026-10-07T19:45:39.4011704Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+source-inventory	Complete job	﻿2026-10-07T19:45:39.4288096Z Cleaning up orphan processes
+source-inventory	Complete job	2026-10-07T19:45:39.4492372Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

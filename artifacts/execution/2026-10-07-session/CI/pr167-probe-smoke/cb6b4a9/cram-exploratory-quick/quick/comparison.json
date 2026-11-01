@@ -1,0 +1,24 @@
+{
+  "compatibility_rule": [
+    "operation",
+    "scheme",
+    "plaintext_semantics",
+    "target_security_bits",
+    "security_estimator",
+    "n",
+    "log_q_bits",
+    "plaintext_modulus",
+    "slots",
+    "refresh_kind",
+    "hardware_fingerprint",
+    "threads",
+    "build_profile",
+    "sample_policy"
+  ],
+  "groups": [],
+  "incompatibility_dimension_counts": {},
+  "input_errors": [],
+  "ranking_rule": "Records must share every compatibility field and each record must have at least one trial with zero recorded failures.",
+  "record_count": 0,
+  "schema": "fhe-comparison-analysis-v1"
+}

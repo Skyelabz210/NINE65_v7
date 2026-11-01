@@ -4,8 +4,8 @@
 
 This harness answers two separate questions without conflating them:
 
-1. Did the implementation become faster or slower between NINE65 v6 and v7 under the same arithmetic dimensions?
-2. How much additional cost or benefit is introduced by the v7 DualRNS/CRAM execution path relative to the v7 legacy path under that same tuple?
+1. Did the debug-build implementation become faster or slower between NINE65 v6 and v7 under the same arithmetic dimensions?
+2. How much additional cost or benefit is introduced by the v7 DualRNS/CRAM execution path relative to the v7 legacy path under that same debug tuple?
 
 The comparison is exploratory. It records observations and failures rather than encoding the optimization roadmap as an assumed conclusion.
 
@@ -19,10 +19,10 @@ main moduli        998244353, 985661441, 754974721
 plaintext modulus  65537
 CBD eta            3
 threads            1
-build profile      release
+build profile      debug
 ```
 
-v7 exposes this as `v6_compat_4096`. It is available only when the test-only `allow_insecure` feature is enabled. Its security claim is set to zero because current v7 production `secure_128` uses `N=8192`. The compatibility tuple is for implementation regression analysis, not production use or security ranking.
+v7 exposes this as `v6_compat_4096`. It is available only when the test-only `allow_insecure` feature is enabled, which is rejected in release builds. Both comparison sides therefore run in debug and record that profile. These timings are functional/regression evidence only; they do not represent optimized release performance. The tuple's security claim is set to zero because current v7 production `secure_128` uses `N=8192`. It is for implementation regression analysis, not production use or security ranking.
 
 ## Components
 
@@ -41,7 +41,7 @@ plaintext multiplication
 ciphertext multiplication
 ```
 
-Every reported operation class has an explicit decrypt-and-compare correctness check. The probe also runs a ciphertext-squaring chain and records, per attempted depth:
+Every supported operation has an explicit decrypt-and-compare correctness check. Legacy ciphertext multiplication is deliberately refused by issue #135: the JSON keeps `correctness.legacy.mul_ct` false and reports `mul_ct_status: "refused-#135"`. The smoke gate accepts that exact refusal while requiring every supported legacy check and every DualRNS check to pass. This records a missing capability; it does not claim legacy ciphertext multiplication works. The probe also runs a ciphertext-squaring chain and records, per attempted depth:
 
 ```text
 operation latency
@@ -87,6 +87,8 @@ parameter-contract failures
 ```
 
 It produces normalized `fhe-comparison-record-v1` records and passes them to `cram_compare_results.py`.
+
+The separate v7 scale sweep also uses a debug build because the seeded probe enables the test-only `allow_insecure` feature. Its manifest records `build_profile: "debug"`; its timings are functional/regression evidence, not release performance evidence.
 
 ## Ranking rules
 
@@ -138,11 +140,11 @@ python3 scripts/run_nine65_v6_v7_compare.py \
 For a rapid compile and correctness pass:
 
 ```bash
-cargo build --release -p nine65 \
+cargo build -p nine65 \
   --bin cram_comparative_probe \
   --features serde,allow_insecure
 
-target/release/cram_comparative_probe \
+target/debug/cram_comparative_probe \
   --config v6_compat_4096 \
   --iterations 2 \
   --mul-iterations 1 \

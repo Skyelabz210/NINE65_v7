@@ -1,0 +1,356 @@
+exact-dual-rns-gate	Set up job	﻿2026-10-07T19:45:29.9107152Z Current runner version: '2.337.0'
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9130910Z ##[group]Runner Image Provisioner
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9131863Z Hosted Compute Agent
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9132410Z Version: 20261002.596
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9132979Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9133700Z Build Date: 2026-10-02T22:28:27Z
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9134362Z Worker ID: {e3ca7de8-2b6a-4cb9-b1b4-771fb6153aaf}
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9135189Z Region: centralus
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9135721Z Cloud: Azure
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9136209Z ##[endgroup]
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9137487Z ##[group]Operating System
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9138229Z Ubuntu
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9138754Z 24.04.5
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9139246Z LTS
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9139725Z ##[endgroup]
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9140268Z ##[group]Runner Image
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9140894Z Image: ubuntu-24.04
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9141425Z Version: 20261004.327.1
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9142415Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9144016Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9144931Z ##[endgroup]
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9145942Z ##[group]GITHUB_TOKEN Permissions
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9147857Z Contents: read
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9148622Z Metadata: read
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9149192Z ##[endgroup]
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9151482Z Secret source: Actions
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9152389Z Cache mode: write
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9153026Z Prepare workflow directory
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9473203Z Prepare all required actions
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:29.9522164Z Getting action download info
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:30.2427494Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:30.3385524Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+exact-dual-rns-gate	Set up job	2026-10-07T19:45:30.6361727Z Complete job name: exact-dual-rns-gate
+exact-dual-rns-gate	Run actions/checkout@v4	﻿2026-10-07T19:45:30.7087604Z ##[group]Run actions/checkout@v4
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7088626Z with:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7089197Z   submodules: false
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7089718Z   repository: Skyelabz210/NINE65_v7
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7093739Z   token: ***
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7094212Z   ssh-strict: true
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7094679Z   ssh-user: git
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7095203Z   persist-credentials: true
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7095963Z   clean: true
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7096464Z   sparse-checkout-cone-mode: true
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7097031Z   fetch-depth: 1
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7097503Z   fetch-tags: false
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7098216Z   show-progress: true
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7098736Z   lfs: false
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7099228Z   set-safe-directory: true
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7099778Z   allow-unsafe-pr-checkout: false
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.7100509Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8078623Z Syncing repository: Skyelabz210/NINE65_v7
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8081072Z ##[group]Getting Git version info
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8082125Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8084045Z [command]/usr/bin/git version
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8173441Z git version 2.55.0
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8192066Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8216143Z Temporarily overriding HOME='/home/runner/work/_temp/7edd2ea2-0746-4b3f-8c65-ce0a76d72658' before making global git config changes
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8218367Z Adding repository directory to the temporary git global config as a safe directory
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8221298Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8280491Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8284882Z ##[group]Initializing the repository
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8289299Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8398667Z hint: Using 'master' as the name for the initial branch. This default branch name
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8399927Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8401141Z hint: to use in all of your new repositories, which will suppress this warning,
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8401929Z hint: call:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8402609Z hint:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8403217Z hint: 	git config --global init.defaultBranch <name>
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8403938Z hint:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8404550Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8405472Z hint: 'development'. The just-created branch can be renamed via this command:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8406241Z hint:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8406724Z hint: 	git branch -m <name>
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8407245Z hint:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8407887Z hint: Disable this message with "git config set advice.defaultBranchName false"
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8412756Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8424086Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8477869Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8479122Z ##[group]Disabling automatic garbage collection
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8482664Z [command]/usr/bin/git config --local gc.auto 0
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8514070Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8514938Z ##[group]Setting up auth
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8521784Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8552856Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8932045Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.8966499Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.9177661Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.9212579Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.9420123Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.9495056Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.9496128Z ##[group]Fetching the repository
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:30.9508511Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c93a058e2106441029647e69e252d3b410fdeab1:refs/remotes/origin/main
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1318967Z From https://github.com/Skyelabz210/NINE65_v7
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1321128Z  * [new ref]         c93a058e2106441029647e69e252d3b410fdeab1 -> origin/main
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1332518Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1333909Z ##[group]Determining the checkout info
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1335155Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1338380Z [command]/usr/bin/git sparse-checkout disable
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1403038Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1434665Z ##[group]Checking out the ref
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.1438530Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.2407632Z Switched to a new branch 'main'
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.2415002Z branch 'main' set up to track 'origin/main'.
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.2421598Z ##[endgroup]
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.2462293Z [command]/usr/bin/git log -1 --format=%H
+exact-dual-rns-gate	Run actions/checkout@v4	2026-10-07T19:45:32.2485458Z c93a058e2106441029647e69e252d3b410fdeab1
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	﻿2026-10-07T19:45:32.3034089Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3035486Z with:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3036511Z   components: rustfmt
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3037577Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3137059Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3224548Z ##[group]Run if [[ -z $toolchain ]]; then
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3226256Z [36;1mif [[ -z $toolchain ]]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3228344Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3230310Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3231566Z [36;1m  exit 1[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3232882Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3234412Z [36;1m  if [[ Linux == macOS ]]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3236271Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3238245Z [36;1m  else[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3239792Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3241595Z [36;1m  fi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3242977Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3244915Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3246611Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3248854Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3250646Z [36;1melse[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3251822Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3253088Z [36;1mfi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3475415Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3477597Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3478790Z   toolchain: 1.89.0
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3479921Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3619384Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=47]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3638587Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3694953Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3697108Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3699416Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3701166Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3744080Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3745468Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3746588Z   targets: 
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3747551Z   components: rustfmt
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3748767Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3842522Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=20]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3849319Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3895842Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3897502Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3939332Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.3940660Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4027420Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=17]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4035096Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4091807Z ##[group]Run if ! command -v rustup &>/dev/null; then
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4093400Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4095918Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4098450Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4099769Z [36;1mfi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4137076Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4138526Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4139471Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4140526Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4219673Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=18]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4226435Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4243093Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4259942Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4305716Z ##[group]Run log=$(mktemp)
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4306922Z [36;1mlog=$(mktemp)[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4307932Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4309242Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4311124Z [36;1m  if rustup toolchain install 1.89.0 --component rustfmt --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4313020Z [36;1m    break[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4313905Z [36;1m  else[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4314790Z [36;1m    status=$?[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4315772Z [36;1m  fi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4316880Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4319110Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4321083Z [36;1m    exit "$status"[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4322092Z [36;1m  fi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4323417Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4324890Z [36;1m  sleep 30[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4325829Z [36;1mdone[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4362068Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4363339Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4364272Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4365361Z   RUSTUP_PERMIT_COPY_RENAME: 1
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4366376Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.4902924Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.7003106Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.7004109Z info: downloading 4 components
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.6880166Z 
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.6956650Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.6957535Z 
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7016860Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=9275]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7026970Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7060908Z ##[group]Run rustup default 1.89.0 --force-non-host
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7061444Z [36;1mrustup default 1.89.0 --force-non-host[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7108890Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7109455Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7109933Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7110382Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7223445Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7233951Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7234401Z 
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7305674Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7306382Z 
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7311998Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7323082Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=29]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7326318Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7355732Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7356609Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7357375Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7357930Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7404588Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7405516Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7405875Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7406362Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7731820Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=40]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7735458Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7764406Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7764989Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7765564Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7765995Z [36;1mfi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7812039Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7812555Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7812985Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7813383Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7886217Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=14]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7889927Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7920211Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7920779Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7921208Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7921684Z [36;1mfi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7962761Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7963243Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7963573Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7964025Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.7964368Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8034028Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=14]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8037444Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8066280Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8066934Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8067687Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8068714Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8069395Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8070026Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8070618Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8071298Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8071872Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8072552Z [36;1m  fi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8072870Z [36;1mfi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8112868Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8113461Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8113802Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8114256Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8114675Z   CARGO_TERM_COLOR: always
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8115199Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8419598Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=38]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8423191Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8452178Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8452995Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8453706Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8454301Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8454731Z [36;1mfi[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8497482Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8498356Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8498733Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8499141Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8499519Z   CARGO_TERM_COLOR: always
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8499877Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8679603Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=25]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8684765Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8713400Z ##[group]Run rustc +1.89.0 --version --verbose
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8713925Z [36;1mrustc +1.89.0 --version --verbose[0m
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8755822Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8756468Z env:
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8756818Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8757222Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8757610Z   CARGO_TERM_COLOR: always
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8758095Z ##[endgroup]
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8925367Z rustc 1.89.0 (29483883e 2025-08-04)
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8926546Z binary: rustc
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8927179Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8928439Z commit-date: 2025-08-04
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8928983Z host: x86_64-unknown-linux-gnu
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8929546Z release: 1.89.0
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8930316Z LLVM version: 20.1.7
+exact-dual-rns-gate	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:41.8943808Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=25]
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	﻿2026-10-07T19:45:41.9015649Z ##[group]Run set -euo pipefail
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9016106Z [36;1mset -euo pipefail[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9016544Z [36;1mfiles=([0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9016917Z [36;1m  crates/nine65/src/arithmetic/ntt_fft.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9017381Z [36;1m  crates/nine65/src/arithmetic/montgomery.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9018426Z [36;1m  crates/nine65/src/arithmetic/persistent_montgomery.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9019040Z [36;1m  crates/nine65/src/bin/nine65_bench.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9019496Z [36;1m  crates/nine65/src/noise/budget.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9019949Z [36;1m  crates/nine65/src/ops/auto_bootstrap.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9020378Z [36;1m  crates/nine65/src/ops/sbni.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9020844Z [36;1m  crates/nine65/src/params/mod.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9021271Z [36;1m  crates/nine65/src/params/secure_configs.rs[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9021709Z [36;1m)[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9022110Z [36;1mif grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)' "${files[@]}"; then[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9022800Z [36;1m  echo "floating-point token found in exact-integer audit paths" >&2[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9023273Z [36;1m  exit 1[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9023587Z [36;1mfi[0m
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9066846Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9067380Z env:
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9067719Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9068170Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9068602Z   CARGO_TERM_COLOR: always
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9068950Z ##[endgroup]
+exact-dual-rns-gate	Reject floating-point tokens in remediated paths	2026-10-07T19:45:41.9150158Z grep: crates/nine65/src/ops/sbni.rs: No such file or directory
+exact-dual-rns-gate	Verify statistical gate controls exit status	﻿2026-10-07T19:45:41.9196034Z ##[group]Run set -euo pipefail
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9196570Z [36;1mset -euo pipefail[0m
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9197133Z [36;1mgrep -F 'eprintln!("Statistical correctness failed: {successes}/100");' \[0m
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9197724Z [36;1m  crates/nine65/src/bin/nine65_bench.rs[0m
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9198477Z [36;1mgrep -F 'std::process::exit(1);' crates/nine65/src/bin/nine65_bench.rs[0m
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9199105Z [36;1mgrep -F 'let achieved_chain_correct = decrypted == plaintext;' \[0m
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9199657Z [36;1m  crates/nine65/src/bin/nine65_bench.rs[0m
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9245339Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9245828Z env:
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9246221Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9246654Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9247063Z   CARGO_TERM_COLOR: always
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9247430Z ##[endgroup]
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9322550Z             eprintln!("Statistical correctness failed: {successes}/100");
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9337063Z             std::process::exit(1);
+exact-dual-rns-gate	Verify statistical gate controls exit status	2026-10-07T19:45:41.9342526Z     let achieved_chain_correct = decrypted == plaintext;
+exact-dual-rns-gate	Verify exact noise accounting is active	﻿2026-10-07T19:45:41.9450414Z ##[group]Run set -euo pipefail
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9450853Z [36;1mset -euo pipefail[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9451293Z [36;1mgrep -F 'let delta_bits = exact_delta_bit_length(config);' \[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9451836Z [36;1m  crates/nine65/src/noise/budget.rs[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9452356Z [36;1m! grep -F '.map(|&p| (64 - p.leading_zeros()) as i64)' \[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9452895Z [36;1m  crates/nine65/src/noise/budget.rs[0m
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9495425Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9495937Z env:
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9496372Z   CARGO_HOME: /home/runner/.cargo
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9496845Z   CARGO_INCREMENTAL: 0
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9497254Z   CARGO_TERM_COLOR: always
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9497649Z ##[endgroup]
+exact-dual-rns-gate	Verify exact noise accounting is active	2026-10-07T19:45:41.9581332Z ##[error]Process completed with exit code 1.
+exact-dual-rns-gate	Post Run actions/checkout@v4	﻿2026-10-07T19:45:41.9811745Z Post job cleanup.
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.0640036Z [command]/usr/bin/git version
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.0677374Z git version 2.55.0
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.0714045Z Temporarily overriding HOME='/home/runner/work/_temp/f361f771-193c-42b8-a8b9-883e11d74130' before making global git config changes
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.0715667Z Adding repository directory to the temporary git global config as a safe directory
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.0719457Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.0759455Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.0792012Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.1003615Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.1065048Z http.https://github.com/.extraheader
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.1066802Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.1080768Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.1371554Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+exact-dual-rns-gate	Post Run actions/checkout@v4	2026-10-07T19:45:42.1426870Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+exact-dual-rns-gate	Complete job	﻿2026-10-07T19:45:42.1800986Z Cleaning up orphan processes
+exact-dual-rns-gate	Complete job	2026-10-07T19:45:42.2048593Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

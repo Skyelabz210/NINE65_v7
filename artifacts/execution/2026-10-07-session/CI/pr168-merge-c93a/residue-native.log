@@ -1,0 +1,603 @@
+architecture	Set up job	﻿2026-10-07T19:45:29.7153749Z Current runner version: '2.337.0'
+architecture	Set up job	2026-10-07T19:45:29.7195339Z ##[group]Runner Image Provisioner
+architecture	Set up job	2026-10-07T19:45:29.7196715Z Hosted Compute Agent
+architecture	Set up job	2026-10-07T19:45:29.7197682Z Version: 20261002.596
+architecture	Set up job	2026-10-07T19:45:29.7198629Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+architecture	Set up job	2026-10-07T19:45:29.7199872Z Build Date: 2026-10-02T22:28:27Z
+architecture	Set up job	2026-10-07T19:45:29.7200937Z Worker ID: {4edde04c-6001-4c45-89fc-1e9e6bab1879}
+architecture	Set up job	2026-10-07T19:45:29.7202077Z Region: eastus
+architecture	Set up job	2026-10-07T19:45:29.7202965Z Cloud: Azure
+architecture	Set up job	2026-10-07T19:45:29.7203747Z ##[endgroup]
+architecture	Set up job	2026-10-07T19:45:29.7206677Z ##[group]Operating System
+architecture	Set up job	2026-10-07T19:45:29.7207721Z Ubuntu
+architecture	Set up job	2026-10-07T19:45:29.7208685Z 24.04.5
+architecture	Set up job	2026-10-07T19:45:29.7209606Z LTS
+architecture	Set up job	2026-10-07T19:45:29.7210965Z ##[endgroup]
+architecture	Set up job	2026-10-07T19:45:29.7212008Z ##[group]Runner Image
+architecture	Set up job	2026-10-07T19:45:29.7212963Z Image: ubuntu-24.04
+architecture	Set up job	2026-10-07T19:45:29.7214023Z Version: 20261004.327.1
+architecture	Set up job	2026-10-07T19:45:29.7216248Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+architecture	Set up job	2026-10-07T19:45:29.7219352Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+architecture	Set up job	2026-10-07T19:45:29.7221034Z ##[endgroup]
+architecture	Set up job	2026-10-07T19:45:29.7222831Z ##[group]GITHUB_TOKEN Permissions
+architecture	Set up job	2026-10-07T19:45:29.7226164Z Contents: read
+architecture	Set up job	2026-10-07T19:45:29.7227164Z Metadata: read
+architecture	Set up job	2026-10-07T19:45:29.7228101Z ##[endgroup]
+architecture	Set up job	2026-10-07T19:45:29.7231072Z Secret source: Actions
+architecture	Set up job	2026-10-07T19:45:29.7232549Z Cache mode: write
+architecture	Set up job	2026-10-07T19:45:29.7234009Z Prepare workflow directory
+architecture	Set up job	2026-10-07T19:45:29.7667091Z Prepare all required actions
+architecture	Set up job	2026-10-07T19:45:29.7730632Z Getting action download info
+architecture	Set up job	2026-10-07T19:45:29.9386276Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+architecture	Set up job	2026-10-07T19:45:30.1096673Z Complete job name: architecture
+architecture	Run actions/checkout@v4	﻿2026-10-07T19:45:30.2003388Z ##[group]Run actions/checkout@v4
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2004295Z with:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2004870Z   repository: Skyelabz210/NINE65_v7
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2008746Z   token: ***
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2009195Z   ssh-strict: true
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2009650Z   ssh-user: git
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2010098Z   persist-credentials: true
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2010588Z   clean: true
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2011036Z   sparse-checkout-cone-mode: true
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2011562Z   fetch-depth: 1
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2012122Z   fetch-tags: false
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2012948Z   show-progress: true
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2013714Z   lfs: false
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2014306Z   submodules: false
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2015312Z   set-safe-directory: true
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2016211Z   allow-unsafe-pr-checkout: false
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.2017576Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3043290Z Syncing repository: Skyelabz210/NINE65_v7
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3046301Z ##[group]Getting Git version info
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3047420Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3049151Z [command]/usr/bin/git version
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3122058Z git version 2.55.0
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3147102Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3164611Z Temporarily overriding HOME='/home/runner/work/_temp/4b81ef1f-8005-4feb-aa47-6534f0101214' before making global git config changes
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3167301Z Adding repository directory to the temporary git global config as a safe directory
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3171273Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3229826Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3235567Z ##[group]Initializing the repository
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3240754Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3392993Z hint: Using 'master' as the name for the initial branch. This default branch name
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3395818Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3398317Z hint: to use in all of your new repositories, which will suppress this warning,
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3400749Z hint: call:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3402473Z hint:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3403784Z hint: 	git config --global init.defaultBranch <name>
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3405362Z hint:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3406657Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3408984Z hint: 'development'. The just-created branch can be renamed via this command:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3410630Z hint:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3411829Z hint: 	git branch -m <name>
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3413065Z hint:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3414460Z hint: Disable this message with "git config set advice.defaultBranchName false"
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3421751Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3425208Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3474030Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3475503Z ##[group]Disabling automatic garbage collection
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3480890Z [command]/usr/bin/git config --local gc.auto 0
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3520027Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3521693Z ##[group]Setting up auth
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3529452Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3564909Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3941054Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.3987269Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.4229643Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.4267499Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.4494566Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.4536117Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.4537059Z ##[group]Fetching the repository
+architecture	Run actions/checkout@v4	2026-10-07T19:45:30.4547714Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c93a058e2106441029647e69e252d3b410fdeab1:refs/remotes/origin/main
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2231162Z From https://github.com/Skyelabz210/NINE65_v7
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2232929Z  * [new ref]         c93a058e2106441029647e69e252d3b410fdeab1 -> origin/main
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2237232Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2238733Z ##[group]Determining the checkout info
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2240127Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2244362Z [command]/usr/bin/git sparse-checkout disable
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2298915Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2334379Z ##[group]Checking out the ref
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.2339701Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.3462260Z Switched to a new branch 'main'
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.3466800Z branch 'main' set up to track 'origin/main'.
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.3478280Z ##[endgroup]
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.3528168Z [command]/usr/bin/git log -1 --format=%H
+architecture	Run actions/checkout@v4	2026-10-07T19:45:31.3556607Z c93a058e2106441029647e69e252d3b410fdeab1
+architecture	Reject prohibited production mechanisms	﻿2026-10-07T19:45:31.3833277Z ##[group]Run python3 scripts/check_residue_native_architecture.py
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.3835746Z [36;1mpython3 scripts/check_residue_native_architecture.py[0m
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.4105646Z shell: /usr/bin/bash -e {0}
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.4106915Z ##[endgroup]
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5057969Z Residue-native architecture gate FAILED
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5061222Z 21 prohibited construct(s) in 11 scanned file(s):
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5069788Z crates/exact_transcendentals/src/cram_ct.rs:1757: garner_call: let unsigned = crate::lane_projector::garner_reconstruct(sig);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5074690Z crates/exact_transcendentals/src/cram_ct.rs:1962: garner_call: fn garner_reconstruct_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5079467Z crates/exact_transcendentals/src/cram_ct.rs:2067: garner_call: let (x_main, m_main_actual) = garner_reconstruct_subset(sig, &main_indices);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5082970Z crates/nine65/src/ops/bootstrap.rs:791: crt_reconstruct: let c0_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5085999Z crates/nine65/src/ops/bootstrap.rs:800: crt_reconstruct: let c1_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5089164Z crates/nine65/src/ops/bootstrap.rs:825: crt_reconstruct: let c0_val = crt_reconstruct_u256(&c0_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5092771Z crates/nine65/src/ops/bootstrap.rs:833: crt_reconstruct: let c1_val = crt_reconstruct_u256(&c1_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5095997Z crates/nine65/src/ops/bootstrap.rs:955: crt_reconstruct: let c0_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5098718Z crates/nine65/src/ops/bootstrap.rs:972: crt_reconstruct: let c1_val = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5103590Z crates/nine65/src/ops/bootstrap.rs:1006: crt_reconstruct: let c0_val = crt_reconstruct_u256(&c0_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5108180Z crates/nine65/src/ops/bootstrap.rs:1013: crt_reconstruct: let c1_val = crt_reconstruct_u256(&c1_residues, &primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5111320Z crates/nine65/src/ops/bootstrap.rs:1235: crt_reconstruct: let c0_full = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5114079Z crates/nine65/src/ops/bootstrap.rs:1240: crt_reconstruct: let c1_full = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5117633Z crates/nine65/src/ops/bootstrap.rs:1254: crt_reconstruct: let c0_full = crt_reconstruct_u256(&c0_residues, &work_primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5121362Z crates/nine65/src/ops/bootstrap.rs:1256: crt_reconstruct: let c1_full = crt_reconstruct_u256(&c1_residues, &work_primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5124571Z crates/nine65/src/ops/bootstrap.rs:1338: crt_reconstruct: let c1_full = crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5127972Z crates/nine65/src/ops/bootstrap.rs:1353: crt_reconstruct: let c1_full = crt_reconstruct_u256(&c1_residues, &boot_primes_u64);
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5131999Z crates/nine65/src/ops/bootstrap.rs:1413: crt_reconstruct: pub fn crt_reconstruct_2(r0: u128, r1: u128, p0: u128, p1: u128, _p0_inv_mod_p1: u128) -> u128 {
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5136610Z crates/nine65/src/ops/bootstrap.rs:1415: crt_reconstruct: crt_reconstruct_u256(&[r0 as u64, r1 as u64], &[p0 as u64, p1 as u64]).lo
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5139885Z crates/nine65/src/ops/bootstrap.rs:1438: crt_reconstruct: pub fn crt_reconstruct_n(
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5142785Z crates/nine65/src/ops/bootstrap.rs:1446: crt_reconstruct: crt_reconstruct_u256(&residues_u64, &primes_u64).lo
+architecture	Reject prohibited production mechanisms	2026-10-07T19:45:31.5158568Z ##[error]Process completed with exit code 1.
+architecture	Post Run actions/checkout@v4	﻿2026-10-07T19:45:31.5460435Z Post job cleanup.
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6336294Z [command]/usr/bin/git version
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6380140Z git version 2.55.0
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6423895Z Temporarily overriding HOME='/home/runner/work/_temp/16dc71e0-0c9a-4ca3-a281-53d772e881bb' before making global git config changes
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6429802Z Adding repository directory to the temporary git global config as a safe directory
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6434286Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6471295Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6508543Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6766462Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6797190Z http.https://github.com/.extraheader
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6810739Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.6850958Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.7116765Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+architecture	Post Run actions/checkout@v4	2026-10-07T19:45:31.7156236Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+architecture	Complete job	﻿2026-10-07T19:45:31.7638201Z Cleaning up orphan processes
+architecture	Complete job	2026-10-07T19:45:31.8109608Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+correctness	Set up job	﻿2026-10-07T19:45:30.0019233Z Current runner version: '2.337.0'
+correctness	Set up job	2026-10-07T19:45:30.0045912Z ##[group]Runner Image Provisioner
+correctness	Set up job	2026-10-07T19:45:30.0046839Z Hosted Compute Agent
+correctness	Set up job	2026-10-07T19:45:30.0047468Z Version: 20261002.596
+correctness	Set up job	2026-10-07T19:45:30.0048115Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+correctness	Set up job	2026-10-07T19:45:30.0048969Z Build Date: 2026-10-02T22:28:27Z
+correctness	Set up job	2026-10-07T19:45:30.0049695Z Worker ID: {0fc1d8c5-380b-4685-8240-8660ee016dba}
+correctness	Set up job	2026-10-07T19:45:30.0050440Z Region: eastus2
+correctness	Set up job	2026-10-07T19:45:30.0051071Z Cloud: Azure
+correctness	Set up job	2026-10-07T19:45:30.0051866Z ##[endgroup]
+correctness	Set up job	2026-10-07T19:45:30.0053549Z ##[group]Operating System
+correctness	Set up job	2026-10-07T19:45:30.0054225Z Ubuntu
+correctness	Set up job	2026-10-07T19:45:30.0055264Z 24.04.5
+correctness	Set up job	2026-10-07T19:45:30.0055838Z LTS
+correctness	Set up job	2026-10-07T19:45:30.0056347Z ##[endgroup]
+correctness	Set up job	2026-10-07T19:45:30.0056967Z ##[group]Runner Image
+correctness	Set up job	2026-10-07T19:45:30.0057566Z Image: ubuntu-24.04
+correctness	Set up job	2026-10-07T19:45:30.0058107Z Version: 20261004.327.1
+correctness	Set up job	2026-10-07T19:45:30.0059250Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+correctness	Set up job	2026-10-07T19:45:30.0061187Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+correctness	Set up job	2026-10-07T19:45:30.0062668Z ##[endgroup]
+correctness	Set up job	2026-10-07T19:45:30.0063906Z ##[group]GITHUB_TOKEN Permissions
+correctness	Set up job	2026-10-07T19:45:30.0066058Z Contents: read
+correctness	Set up job	2026-10-07T19:45:30.0066790Z Metadata: read
+correctness	Set up job	2026-10-07T19:45:30.0067358Z ##[endgroup]
+correctness	Set up job	2026-10-07T19:45:30.0069806Z Secret source: Actions
+correctness	Set up job	2026-10-07T19:45:30.0070736Z Cache mode: write
+correctness	Set up job	2026-10-07T19:45:30.0072287Z Prepare workflow directory
+correctness	Set up job	2026-10-07T19:45:30.0413795Z Prepare all required actions
+correctness	Set up job	2026-10-07T19:45:30.0462556Z Getting action download info
+correctness	Set up job	2026-10-07T19:45:30.2246904Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+correctness	Set up job	2026-10-07T19:45:30.3496881Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+correctness	Set up job	2026-10-07T19:45:30.5844580Z Complete job name: correctness
+correctness	Run actions/checkout@v4	﻿2026-10-07T19:45:30.6624056Z ##[group]Run actions/checkout@v4
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6624971Z with:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6625426Z   repository: Skyelabz210/NINE65_v7
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6629236Z   token: ***
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6629676Z   ssh-strict: true
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6630116Z   ssh-user: git
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6630558Z   persist-credentials: true
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6631057Z   clean: true
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6631707Z   sparse-checkout-cone-mode: true
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6632250Z   fetch-depth: 1
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6632680Z   fetch-tags: false
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6633120Z   show-progress: true
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6633568Z   lfs: false
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6633977Z   submodules: false
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6634427Z   set-safe-directory: true
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6634947Z   allow-unsafe-pr-checkout: false
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.6636017Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7651955Z Syncing repository: Skyelabz210/NINE65_v7
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7654434Z ##[group]Getting Git version info
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7655821Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7657222Z [command]/usr/bin/git version
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7766426Z git version 2.55.0
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7793005Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7810008Z Temporarily overriding HOME='/home/runner/work/_temp/df8b50ed-cf5b-4dad-a1c3-e6420ff10922' before making global git config changes
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7811822Z Adding repository directory to the temporary git global config as a safe directory
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7816726Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7873107Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7878322Z ##[group]Initializing the repository
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.7884182Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8009848Z hint: Using 'master' as the name for the initial branch. This default branch name
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8011282Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8013061Z hint: to use in all of your new repositories, which will suppress this warning,
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8013966Z hint: call:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8014699Z hint:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8015711Z hint: 	git config --global init.defaultBranch <name>
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8016853Z hint:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8017923Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8019738Z hint: 'development'. The just-created branch can be renamed via this command:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8021119Z hint:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8022188Z hint: 	git branch -m <name>
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8023100Z hint:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8024335Z hint: Disable this message with "git config set advice.defaultBranchName false"
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8026220Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8033104Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8095911Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8097302Z ##[group]Disabling automatic garbage collection
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8100765Z [command]/usr/bin/git config --local gc.auto 0
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8136855Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8138077Z ##[group]Setting up auth
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8148223Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8184224Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8595184Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8636918Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8870814Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.8909154Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.9143705Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.9186013Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.9186891Z ##[group]Fetching the repository
+correctness	Run actions/checkout@v4	2026-10-07T19:45:30.9197173Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c93a058e2106441029647e69e252d3b410fdeab1:refs/remotes/origin/main
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7792683Z From https://github.com/Skyelabz210/NINE65_v7
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7795308Z  * [new ref]         c93a058e2106441029647e69e252d3b410fdeab1 -> origin/main
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7800263Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7802834Z ##[group]Determining the checkout info
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7805375Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7809195Z [command]/usr/bin/git sparse-checkout disable
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7869150Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7903802Z ##[group]Checking out the ref
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.7908173Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.9023328Z Switched to a new branch 'main'
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.9027464Z branch 'main' set up to track 'origin/main'.
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.9038819Z ##[endgroup]
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.9086531Z [command]/usr/bin/git log -1 --format=%H
+correctness	Run actions/checkout@v4	2026-10-07T19:45:31.9114647Z c93a058e2106441029647e69e252d3b410fdeab1
+correctness	Run dtolnay/rust-toolchain@1.89.0	﻿2026-10-07T19:45:31.9791055Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9792696Z with:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9793688Z   components: rustfmt, clippy
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9794840Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:31.9964462Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0051191Z ##[group]Run if [[ -z $toolchain ]]; then
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0052960Z [36;1mif [[ -z $toolchain ]]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0055283Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0057482Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0058778Z [36;1m  exit 1[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0060173Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0062031Z [36;1m  if [[ Linux == macOS ]]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0064169Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0066299Z [36;1m  else[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0067985Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0069916Z [36;1m  fi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0071208Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0073744Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0075682Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0077823Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0079871Z [36;1melse[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0080947Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0082400Z [36;1mfi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0365255Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0366788Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0367641Z   toolchain: 1.89.0
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0368570Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0532453Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=56]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0551109Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0608122Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0610596Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0613412Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0615400Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0681957Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0683418Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0684287Z   targets: 
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0685188Z   components: rustfmt, clippy
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0686251Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0815605Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=26]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0822944Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0869366Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0871228Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0937302Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.0938706Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1053546Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=22]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1060342Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1116515Z ##[group]Run if ! command -v rustup &>/dev/null; then
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1118182Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1120992Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1125910Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1128272Z [36;1mfi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1193888Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1195275Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1196155Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1197230Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1306387Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=24]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1313870Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1330727Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1348017Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1393516Z ##[group]Run log=$(mktemp)
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1394566Z [36;1mlog=$(mktemp)[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1395545Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1396629Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1399120Z [36;1m  if rustup toolchain install 1.89.0 --component rustfmt --component clippy --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1401736Z [36;1m    break[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1402715Z [36;1m  else[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1403611Z [36;1m    status=$?[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1404535Z [36;1m  fi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1405715Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1407835Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1409684Z [36;1m    exit "$status"[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1410652Z [36;1m  fi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1412399Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1414116Z [36;1m  sleep 30[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1415004Z [36;1mdone[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1479026Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1480370Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1481188Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1482416Z   RUSTUP_PERMIT_COPY_RENAME: 1
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.1483428Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.2606070Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5814681Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:32.5815495Z info: downloading 5 components
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.5993252Z 
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6072325Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6073211Z 
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6150222Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=8480]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6158940Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6187194Z ##[group]Run rustup default 1.89.0 --force-non-host
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6187640Z [36;1mrustup default 1.89.0 --force-non-host[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6253965Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6254374Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6254635Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6254939Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6383563Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6389831Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6390211Z 
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6463016Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6463577Z 
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6466218Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6482032Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=32]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6485148Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6513612Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6514505Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6515199Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6515748Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6581267Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6582040Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6582305Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6582611Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6951209Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=46]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6954848Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6980836Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6981329Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6982030Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.6982374Z [36;1mfi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7053052Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7053510Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7053785Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7054093Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7156479Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=20]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7159376Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7185920Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7186358Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7186767Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7187129Z [36;1mfi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7277458Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7277903Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7278172Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7278499Z   CARGO_INCREMENTAL: 0
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7278788Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7380357Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=22]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7383520Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7412006Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7412653Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7413426Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7414208Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7414844Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7415482Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7416049Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7416689Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7417270Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7417866Z [36;1m  fi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7418114Z [36;1mfi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7487143Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7487565Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7487819Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7488133Z   CARGO_INCREMENTAL: 0
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7488591Z   CARGO_TERM_COLOR: always
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7488874Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7836298Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=45]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7839556Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7866755Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7867609Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7868311Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7868826Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7869197Z [36;1mfi[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7938008Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7938418Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7938677Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7939009Z   CARGO_INCREMENTAL: 0
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7939286Z   CARGO_TERM_COLOR: always
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.7939564Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8199812Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=35]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8204651Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8228633Z ##[group]Run rustc +1.89.0 --version --verbose
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8228999Z [36;1mrustc +1.89.0 --version --verbose[0m
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8296698Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8297104Z env:
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8297311Z   CARGO_HOME: /home/runner/.cargo
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8297585Z   CARGO_INCREMENTAL: 0
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8297817Z   CARGO_TERM_COLOR: always
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8298042Z ##[endgroup]
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8502810Z rustc 1.89.0 (29483883e 2025-08-04)
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8504014Z binary: rustc
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8505233Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8506113Z commit-date: 2025-08-04
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8506828Z host: x86_64-unknown-linux-gnu
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8507559Z release: 1.89.0
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8508332Z LLVM version: 20.1.7
+correctness	Run dtolnay/rust-toolchain@1.89.0	2026-10-07T19:45:40.8525269Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=31]
+correctness	Format check	﻿2026-10-07T19:45:40.8589155Z ##[group]Run cargo fmt --all -- --check
+correctness	Format check	2026-10-07T19:45:40.8589531Z [36;1mcargo fmt --all -- --check[0m
+correctness	Format check	2026-10-07T19:45:40.8657430Z shell: /usr/bin/bash -e {0}
+correctness	Format check	2026-10-07T19:45:40.8657699Z env:
+correctness	Format check	2026-10-07T19:45:40.8657913Z   CARGO_HOME: /home/runner/.cargo
+correctness	Format check	2026-10-07T19:45:40.8658188Z   CARGO_INCREMENTAL: 0
+correctness	Format check	2026-10-07T19:45:40.8658415Z   CARGO_TERM_COLOR: always
+correctness	Format check	2026-10-07T19:45:40.8658644Z ##[endgroup]
+correctness	Compile CRAM core	﻿2026-10-07T19:45:42.1743294Z ##[group]Run cargo check -p cram-core --all-targets
+correctness	Compile CRAM core	2026-10-07T19:45:42.1743731Z [36;1mcargo check -p cram-core --all-targets[0m
+correctness	Compile CRAM core	2026-10-07T19:45:42.1805196Z shell: /usr/bin/bash -e {0}
+correctness	Compile CRAM core	2026-10-07T19:45:42.1805461Z env:
+correctness	Compile CRAM core	2026-10-07T19:45:42.1805671Z   CARGO_HOME: /home/runner/.cargo
+correctness	Compile CRAM core	2026-10-07T19:45:42.1805950Z   CARGO_INCREMENTAL: 0
+correctness	Compile CRAM core	2026-10-07T19:45:42.1806180Z   CARGO_TERM_COLOR: always
+correctness	Compile CRAM core	2026-10-07T19:45:42.1806408Z ##[endgroup]
+correctness	Compile CRAM core	2026-10-07T19:45:42.2258571Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+correctness	Compile CRAM core	2026-10-07T19:45:42.2259819Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+correctness	Compile CRAM core	2026-10-07T19:45:42.2260486Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+correctness	Compile CRAM core	2026-10-07T19:45:42.2459555Z [1m[32m    Updating[0m crates.io index
+correctness	Compile CRAM core	2026-10-07T19:45:42.6970854Z [1m[32m Downloading[0m crates ...
+correctness	Compile CRAM core	2026-10-07T19:45:42.7483747Z [1m[32m  Downloaded[0m bit-vec v0.8.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.7506047Z [1m[32m  Downloaded[0m fastrand v2.3.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.7708588Z [1m[32m  Downloaded[0m regex-syntax v0.8.8
+correctness	Compile CRAM core	2026-10-07T19:45:42.7802591Z [1m[32m  Downloaded[0m unarray v0.1.4
+correctness	Compile CRAM core	2026-10-07T19:45:42.7822788Z [1m[32m  Downloaded[0m rand_core v0.9.3
+correctness	Compile CRAM core	2026-10-07T19:45:42.7838686Z [1m[32m  Downloaded[0m errno v0.3.14
+correctness	Compile CRAM core	2026-10-07T19:45:42.7943705Z [1m[32m  Downloaded[0m fnv v1.0.7
+correctness	Compile CRAM core	2026-10-07T19:45:42.7964183Z [1m[32m  Downloaded[0m rustix v1.1.3
+correctness	Compile CRAM core	2026-10-07T19:45:42.8255439Z [1m[32m  Downloaded[0m rand_chacha v0.9.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.8269214Z [1m[32m  Downloaded[0m getrandom v0.3.4
+correctness	Compile CRAM core	2026-10-07T19:45:42.8306600Z [1m[32m  Downloaded[0m rand v0.9.2
+correctness	Compile CRAM core	2026-10-07T19:45:42.8349359Z [1m[32m  Downloaded[0m zerocopy v0.8.31
+correctness	Compile CRAM core	2026-10-07T19:45:42.8622743Z [1m[32m  Downloaded[0m rusty-fork v0.3.1
+correctness	Compile CRAM core	2026-10-07T19:45:42.8642748Z [1m[32m  Downloaded[0m ppv-lite86 v0.2.21
+correctness	Compile CRAM core	2026-10-07T19:45:42.8660556Z [1m[32m  Downloaded[0m num-traits v0.2.19
+correctness	Compile CRAM core	2026-10-07T19:45:42.8690835Z [1m[32m  Downloaded[0m bitflags v2.10.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.8740334Z [1m[32m  Downloaded[0m autocfg v1.5.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.8925841Z [1m[32m  Downloaded[0m linux-raw-sys v0.11.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.9474572Z [1m[32m  Downloaded[0m tempfile v3.24.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.9500450Z [1m[32m  Downloaded[0m rand_xorshift v0.4.0
+correctness	Compile CRAM core	2026-10-07T19:45:42.9511192Z [1m[32m  Downloaded[0m libc v0.2.178
+correctness	Compile CRAM core	2026-10-07T19:45:42.9897103Z [1m[32m  Downloaded[0m cfg-if v1.0.4
+correctness	Compile CRAM core	2026-10-07T19:45:42.9911826Z [1m[32m  Downloaded[0m proptest v1.9.0
+correctness	Compile CRAM core	2026-10-07T19:45:43.0043968Z [1m[32m  Downloaded[0m wait-timeout v0.2.1
+correctness	Compile CRAM core	2026-10-07T19:45:43.0091288Z [1m[32m  Downloaded[0m bit-set v0.8.0
+correctness	Compile CRAM core	2026-10-07T19:45:43.0106890Z [1m[32m  Downloaded[0m once_cell v1.21.3
+correctness	Compile CRAM core	2026-10-07T19:45:43.0140942Z [1m[32m  Downloaded[0m quick-error v1.2.3
+correctness	Compile CRAM core	2026-10-07T19:45:43.0329607Z [1m[32m   Compiling[0m libc v0.2.178
+correctness	Compile CRAM core	2026-10-07T19:45:43.0330661Z [1m[32m   Compiling[0m getrandom v0.3.4
+correctness	Compile CRAM core	2026-10-07T19:45:43.0332008Z [1m[32m    Checking[0m cfg-if v1.0.4
+correctness	Compile CRAM core	2026-10-07T19:45:43.0332905Z [1m[32m   Compiling[0m rustix v1.1.3
+correctness	Compile CRAM core	2026-10-07T19:45:43.0738210Z [1m[32m   Compiling[0m zerocopy v0.8.31
+correctness	Compile CRAM core	2026-10-07T19:45:43.5157586Z [1m[32m   Compiling[0m autocfg v1.5.0
+correctness	Compile CRAM core	2026-10-07T19:45:43.5303514Z [1m[32m    Checking[0m bitflags v2.10.0
+correctness	Compile CRAM core	2026-10-07T19:45:43.6033208Z [1m[32m    Checking[0m linux-raw-sys v0.11.0
+correctness	Compile CRAM core	2026-10-07T19:45:43.8802690Z [1m[32m   Compiling[0m num-traits v0.2.19
+correctness	Compile CRAM core	2026-10-07T19:45:44.0682957Z [1m[32m    Checking[0m fastrand v2.3.0
+correctness	Compile CRAM core	2026-10-07T19:45:44.1852773Z [1m[32m    Checking[0m once_cell v1.21.3
+correctness	Compile CRAM core	2026-10-07T19:45:44.3734068Z [1m[32m    Checking[0m fnv v1.0.7
+correctness	Compile CRAM core	2026-10-07T19:45:44.4067967Z [1m[32m    Checking[0m quick-error v1.2.3
+correctness	Compile CRAM core	2026-10-07T19:45:44.4442904Z [1m[32m    Checking[0m bit-vec v0.8.0
+correctness	Compile CRAM core	2026-10-07T19:45:44.5767205Z [1m[32m    Checking[0m wait-timeout v0.2.1
+correctness	Compile CRAM core	2026-10-07T19:45:44.6312942Z [1m[32m    Checking[0m bit-set v0.8.0
+correctness	Compile CRAM core	2026-10-07T19:45:44.6553852Z [1m[32m    Checking[0m rand_core v0.9.3
+correctness	Compile CRAM core	2026-10-07T19:45:44.7743217Z [1m[32m    Checking[0m rand v0.9.2
+correctness	Compile CRAM core	2026-10-07T19:45:45.2255318Z [1m[32m    Checking[0m ppv-lite86 v0.2.21
+correctness	Compile CRAM core	2026-10-07T19:45:45.2313262Z [1m[32m    Checking[0m rand_xorshift v0.4.0
+correctness	Compile CRAM core	2026-10-07T19:45:45.2788024Z [1m[32m    Checking[0m regex-syntax v0.8.8
+correctness	Compile CRAM core	2026-10-07T19:45:45.3582264Z [1m[32m    Checking[0m tempfile v3.24.0
+correctness	Compile CRAM core	2026-10-07T19:45:45.3963488Z [1m[32m    Checking[0m unarray v0.1.4
+correctness	Compile CRAM core	2026-10-07T19:45:45.4356884Z [1m[32m    Checking[0m cram-core v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/cram-core)
+correctness	Compile CRAM core	2026-10-07T19:45:45.4982877Z [1m[32m    Checking[0m rusty-fork v0.3.1
+correctness	Compile CRAM core	2026-10-07T19:45:45.5152866Z [1m[32m    Checking[0m rand_chacha v0.9.0
+correctness	Compile CRAM core	2026-10-07T19:45:46.3384593Z [1m[32m    Checking[0m proptest v1.9.0
+correctness	Compile CRAM core	2026-10-07T19:45:47.6093097Z [1m[32m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 5.39s
+correctness	Test CRAM core	﻿2026-10-07T19:45:47.6476494Z ##[group]Run cargo test -p cram-core --all-targets
+correctness	Test CRAM core	2026-10-07T19:45:47.6477204Z [36;1mcargo test -p cram-core --all-targets[0m
+correctness	Test CRAM core	2026-10-07T19:45:47.6538569Z shell: /usr/bin/bash -e {0}
+correctness	Test CRAM core	2026-10-07T19:45:47.6538831Z env:
+correctness	Test CRAM core	2026-10-07T19:45:47.6539036Z   CARGO_HOME: /home/runner/.cargo
+correctness	Test CRAM core	2026-10-07T19:45:47.6539481Z   CARGO_INCREMENTAL: 0
+correctness	Test CRAM core	2026-10-07T19:45:47.6539712Z   CARGO_TERM_COLOR: always
+correctness	Test CRAM core	2026-10-07T19:45:47.6539947Z ##[endgroup]
+correctness	Test CRAM core	2026-10-07T19:45:47.6982757Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+correctness	Test CRAM core	2026-10-07T19:45:47.6984285Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+correctness	Test CRAM core	2026-10-07T19:45:47.6985199Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+correctness	Test CRAM core	2026-10-07T19:45:47.7318996Z [1m[32m   Compiling[0m libc v0.2.178
+correctness	Test CRAM core	2026-10-07T19:45:47.7327046Z [1m[32m   Compiling[0m cfg-if v1.0.4
+correctness	Test CRAM core	2026-10-07T19:45:47.7332431Z [1m[32m   Compiling[0m linux-raw-sys v0.11.0
+correctness	Test CRAM core	2026-10-07T19:45:47.7340315Z [1m[32m   Compiling[0m bitflags v2.10.0
+correctness	Test CRAM core	2026-10-07T19:45:47.7662941Z [1m[32m   Compiling[0m zerocopy v0.8.31
+correctness	Test CRAM core	2026-10-07T19:45:47.9439848Z [1m[32m   Compiling[0m once_cell v1.21.3
+correctness	Test CRAM core	2026-10-07T19:45:48.0995608Z [1m[32m   Compiling[0m fastrand v2.3.0
+correctness	Test CRAM core	2026-10-07T19:45:48.2153757Z [1m[32m   Compiling[0m rustix v1.1.3
+correctness	Test CRAM core	2026-10-07T19:45:48.2752978Z [1m[32m   Compiling[0m bit-vec v0.8.0
+correctness	Test CRAM core	2026-10-07T19:45:48.4502885Z [1m[32m   Compiling[0m quick-error v1.2.3
+correctness	Test CRAM core	2026-10-07T19:45:48.4922981Z [1m[32m   Compiling[0m fnv v1.0.7
+correctness	Test CRAM core	2026-10-07T19:45:48.5252806Z [1m[32m   Compiling[0m bit-set v0.8.0
+correctness	Test CRAM core	2026-10-07T19:45:48.6303121Z [1m[32m   Compiling[0m num-traits v0.2.19
+correctness	Test CRAM core	2026-10-07T19:45:48.8662964Z [1m[32m   Compiling[0m getrandom v0.3.4
+correctness	Test CRAM core	2026-10-07T19:45:49.0173296Z [1m[32m   Compiling[0m rand_core v0.9.3
+correctness	Test CRAM core	2026-10-07T19:45:49.1804337Z [1m[32m   Compiling[0m wait-timeout v0.2.1
+correctness	Test CRAM core	2026-10-07T19:45:49.4141015Z [1m[32m   Compiling[0m rand v0.9.2
+correctness	Test CRAM core	2026-10-07T19:45:49.4973023Z [1m[32m   Compiling[0m ppv-lite86 v0.2.21
+correctness	Test CRAM core	2026-10-07T19:45:49.5372925Z [1m[32m   Compiling[0m rand_xorshift v0.4.0
+correctness	Test CRAM core	2026-10-07T19:45:49.6083024Z [1m[32m   Compiling[0m unarray v0.1.4
+correctness	Test CRAM core	2026-10-07T19:45:49.6518395Z [1m[32m   Compiling[0m regex-syntax v0.8.8
+correctness	Test CRAM core	2026-10-07T19:45:49.8483083Z [1m[32m   Compiling[0m tempfile v3.24.0
+correctness	Test CRAM core	2026-10-07T19:45:49.9593943Z [1m[32m   Compiling[0m rand_chacha v0.9.0
+correctness	Test CRAM core	2026-10-07T19:45:50.2005667Z [1m[32m   Compiling[0m rusty-fork v0.3.1
+correctness	Test CRAM core	2026-10-07T19:45:50.2763324Z [1m[32m   Compiling[0m cram-core v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/cram-core)
+correctness	Test CRAM core	2026-10-07T19:45:51.0804482Z [1m[32m   Compiling[0m proptest v1.9.0
+correctness	Test CRAM core	2026-10-07T19:45:53.8248700Z [1m[32m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 6.13s
+correctness	Test CRAM core	2026-10-07T19:45:53.8275533Z [1m[32m     Running[0m unittests src/lib.rs (target/debug/deps/cram_core-e1022f591dd3ed32)
+correctness	Test CRAM core	2026-10-07T19:45:53.8286196Z 
+correctness	Test CRAM core	2026-10-07T19:45:53.8286365Z running 7 tests
+correctness	Test CRAM core	2026-10-07T19:45:53.8300839Z test anchor::tests::exhaustive_small_coprime_pairs ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.8301334Z test anchor::tests::rejects_non_coprime_pair ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.8302527Z test tests::architecture_gate_detects_prohibited_activity ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.8303053Z test tests::authorized_projection_does_not_mark_internal_projection ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.8303524Z test tests::basis_rejects_non_coprime_moduli ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.8303910Z test tests::lane_arithmetic_is_exact_and_canonical ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.9926333Z test anchor::tests::adjacent_path_matches_general_path ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.9927098Z 
+correctness	Test CRAM core	2026-10-07T19:45:53.9927638Z test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+correctness	Test CRAM core	2026-10-07T19:45:53.9928195Z 
+correctness	Test CRAM core	2026-10-07T19:45:53.9929694Z [1m[32m     Running[0m tests/workload_scales.rs (target/debug/deps/workload_scales-39f8761150e2adc2)
+correctness	Test CRAM core	2026-10-07T19:45:53.9941962Z 
+correctness	Test CRAM core	2026-10-07T19:45:53.9942325Z running 5 tests
+correctness	Test CRAM core	2026-10-07T19:45:53.9952863Z test anchor_phase_winding_is_exhaustively_exact_on_small_pairs ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.9954430Z test architecture_counters_stay_clean_during_scaled_checks ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.9955267Z test bound_rules_remain_sound_at_profile_depth ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.9956140Z test residue_lane_correctness_scales_by_lanes_and_depth ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.9959250Z test anchor_phase_winding_scales_to_large_composite_frame ... ok
+correctness	Test CRAM core	2026-10-07T19:45:53.9959541Z 
+correctness	Test CRAM core	2026-10-07T19:45:53.9959804Z test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+correctness	Test CRAM core	2026-10-07T19:45:53.9960195Z 
+correctness	Clippy exactness gate	﻿2026-10-07T19:45:54.0029411Z ##[group]Run cargo clippy -p cram-core --all-targets -- -D warnings
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0029956Z [36;1mcargo clippy -p cram-core --all-targets -- -D warnings[0m
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0092368Z shell: /usr/bin/bash -e {0}
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0092640Z env:
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0092852Z   CARGO_HOME: /home/runner/.cargo
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0093125Z   CARGO_INCREMENTAL: 0
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0093355Z   CARGO_TERM_COLOR: always
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0093590Z ##[endgroup]
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0763059Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0764131Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+correctness	Clippy exactness gate	2026-10-07T19:45:54.0764941Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+correctness	Clippy exactness gate	2026-10-07T19:45:54.1360385Z [1m[32m    Checking[0m cram-core v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/cram-core)
+correctness	Clippy exactness gate	2026-10-07T19:45:54.2966233Z [1m[32m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 0.23s
+correctness	Post Run actions/checkout@v4	﻿2026-10-07T19:45:54.3155209Z Post job cleanup.
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4027022Z [command]/usr/bin/git version
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4071570Z git version 2.55.0
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4148497Z Temporarily overriding HOME='/home/runner/work/_temp/0f722d9e-8fa6-4950-a076-7d8cd7f246db' before making global git config changes
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4150075Z Adding repository directory to the temporary git global config as a safe directory
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4155323Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4203239Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4239184Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4501391Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4533100Z http.https://github.com/.extraheader
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4545513Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4583276Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4848339Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+correctness	Post Run actions/checkout@v4	2026-10-07T19:45:54.4889230Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+correctness	Complete job	﻿2026-10-07T19:45:54.5331168Z Cleaning up orphan processes
+correctness	Complete job	2026-10-07T19:45:54.5628501Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

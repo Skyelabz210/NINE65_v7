@@ -1,0 +1,176 @@
+{
+  "branch": "HEAD",
+  "commit": "e518c3e2188670dfac8b8880d46692637cacfb83",
+  "dirty": false,
+  "interpretation_rule": "Presence or absence is source evidence only. Runtime behavior and mathematical claims require the corresponding execution harness.",
+  "records": [
+    {
+      "claim_id": "H05",
+      "evidence_id": "evaluation_key_relinearization_components",
+      "expected_presence": true,
+      "interpretation": "Active evaluation-key type contains public relinearization components.",
+      "matches": [
+        {
+          "excerpt": "pub rlk: Vec<",
+          "line": 336
+        },
+        {
+          "excerpt": "pub rlk: Vec<",
+          "line": 359
+        },
+        {
+          "excerpt": "pub rlk: Vec<",
+          "line": 405
+        }
+      ],
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+      "status": "PRESENT"
+    },
+    {
+      "claim_id": "H05",
+      "evidence_id": "evaluation_key_decomposition_base",
+      "expected_presence": true,
+      "interpretation": "Active evaluation-key type contains an explicit decomposition base.",
+      "matches": [
+        {
+          "excerpt": "pub decomp_base: u64",
+          "line": 338
+        },
+        {
+          "excerpt": "pub decomp_base: u64",
+          "line": 407
+        }
+      ],
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+      "status": "PRESENT"
+    },
+    {
+      "claim_id": "H05",
+      "evidence_id": "evaluation_key_digit_count",
+      "expected_presence": true,
+      "interpretation": "Active evaluation-key type contains an explicit decomposition digit count.",
+      "matches": [
+        {
+          "excerpt": "pub num_digits: usize",
+          "line": 340
+        }
+      ],
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+      "status": "PRESENT"
+    },
+    {
+      "claim_id": "H04",
+      "evidence_id": "simulated_refresh_branch",
+      "expected_presence": true,
+      "interpretation": "Benchmark can report a budget reset that is not a real bootstrap.",
+      "matches": [],
+      "path": "crates/nine65/src/bin/nine65_bench.rs",
+      "sha256": "8d181a1938c30af864740f7ee61f248eb8520b3b573db70eee0a48d3816909f8",
+      "status": "ABSENT"
+    },
+    {
+      "claim_id": "H04",
+      "evidence_id": "real_bootstrap_branch",
+      "expected_presence": true,
+      "interpretation": "Benchmark also contains an explicit real-bootstrap path.",
+      "matches": [],
+      "path": "crates/nine65/src/bin/nine65_bench.rs",
+      "sha256": "8d181a1938c30af864740f7ee61f248eb8520b3b573db70eee0a48d3816909f8",
+      "status": "ABSENT"
+    },
+    {
+      "claim_id": "H01",
+      "evidence_id": "noise_budget_is_estimator",
+      "expected_presence": true,
+      "interpretation": "Current noise budget is an integer accounting estimator, not yet a verified winding witness.",
+      "matches": [],
+      "path": "crates/nine65/src/noise/budget.rs",
+      "sha256": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+      "status": "ABSENT"
+    },
+    {
+      "claim_id": "H02",
+      "evidence_id": "addition_has_nonzero_accounting_cost",
+      "expected_presence": true,
+      "interpretation": "Current accounting model assigns a nonzero cost to ciphertext addition.",
+      "matches": [
+        {
+          "excerpt": "pub fn add_cost() -> i64 { 1000",
+          "line": 457
+        }
+      ],
+      "path": "crates/nine65/src/noise/budget.rs",
+      "sha256": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+      "status": "PRESENT"
+    },
+    {
+      "claim_id": "H02",
+      "evidence_id": "plain_add_has_nonzero_accounting_cost",
+      "expected_presence": true,
+      "interpretation": "Current accounting model assigns a nonzero cost to plaintext addition.",
+      "matches": [
+        {
+          "excerpt": "pub fn add_plain_cost() -> i64 { 100",
+          "line": 464
+        }
+      ],
+      "path": "crates/nine65/src/noise/budget.rs",
+      "sha256": "c1254b5ceac05d56e76afd902f2f6b86b7cc078489e6c9dd096c7ee66cace52a",
+      "status": "PRESENT"
+    },
+    {
+      "claim_id": "H06",
+      "evidence_id": "security_estimate_marked_rough",
+      "expected_presence": true,
+      "interpretation": "Repository parameter validator explicitly marks its security estimate as rough.",
+      "matches": [
+        {
+          "excerpt": "rough, use LWE estimator for precise)\", estimated_security_bits )); // 4. Noise Budget Check let delta = q / t; let noise_bits = 64 - delta.leading_zeros(); if noise_bits < 10 { messages.push(format!( \"WARNING: Noise budget: Delta={} (~{} b",
+          "line": 95
+        }
+      ],
+      "path": "crates/nine65/src/params/validation.rs",
+      "sha256": "0078ba7949da07748586eb17e5725b7cffccf41e0ac73ba9ae1e5788e9977eef",
+      "status": "PRESENT"
+    },
+    {
+      "claim_id": "H03",
+      "evidence_id": "benchmark_float_percentage",
+      "expected_presence": true,
+      "interpretation": "Current benchmark derives some display metrics through floating-point conversion.",
+      "matches": [],
+      "path": "crates/nine65/src/bin/nine65_bench.rs",
+      "sha256": "8d181a1938c30af864740f7ee61f248eb8520b3b573db70eee0a48d3816909f8",
+      "status": "ABSENT"
+    },
+    {
+      "claim_id": "H05",
+      "evidence_id": "exact_value_reconstruction_language",
+      "expected_presence": true,
+      "interpretation": "Active source documentation describes forming an exact value after K-Elimination; runtime reachability requires separate tracing.",
+      "matches": [
+        {
+          "excerpt": "reconstruct the EXACT value",
+          "line": 246
+        },
+        {
+          "excerpt": "exact_value = v_main + k \u00d7 M",
+          "line": 248
+        }
+      ],
+      "path": "crates/nine65/src/ops/rns_fhe.rs",
+      "sha256": "425ac32bbb344f4250ac693aa0f1965c0656f67011094b8b7618ea92fee208b1",
+      "status": "PRESENT"
+    }
+  ],
+  "repository": "https://github.com/Skyelabz210/NINE65_v7",
+  "schema": "nine65-cram-claim-inventory-v1",
+  "scope": "source_structure_only",
+  "summary": {
+    "ABSENT": 4,
+    "PRESENT": 7
+  }
+}
