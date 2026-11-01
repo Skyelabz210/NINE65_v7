@@ -50,6 +50,16 @@ class PublicRefreshProofTests(unittest.TestCase):
         with self.assertRaisesRegex(ProofError, "Lean version mismatch"):
             verify(self.package, str(Path(prefix) / "bin/lean"))
 
+    def test_toolchain_installation_stderr_does_not_change_compiler_identity(self):
+        wrapper = self.package / "lean-with-installation-log"
+        wrapper.write_text(
+            "#!/usr/bin/env python3\nimport subprocess, sys\n"
+            "if sys.argv[1:] == ['--version']:\n"
+            "    print('info: installing pinned Lean toolchain', file=sys.stderr)\n"
+            f"raise SystemExit(subprocess.call([{LEAN!r}, *sys.argv[1:]]))\n")
+        wrapper.chmod(0o755)
+        self.assertEqual(verify(self.package, str(wrapper))["status"], "passed")
+
     def test_missing_proof_fails_closed(self):
         (self.package / (MODULES[0].replace(".", "/") + ".lean")).unlink()
         with self.assertRaisesRegex(ProofError, "missing proof input"):

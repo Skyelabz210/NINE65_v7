@@ -30,18 +30,18 @@ class ProofError(RuntimeError):
     """A missing input, compiler failure, or rejected proof dependency."""
 
 
-def run_lean(lean, arguments, package, environment):
+def run_lean(lean, arguments, package, environment, stdout_only=False):
     try:
         result = subprocess.run(
             [lean, *arguments], cwd=package, env=environment,
-            text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             timeout=180, check=False,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         raise ProofError(f"cannot execute Lean: {error}") from error
     if result.returncode:
-        raise ProofError(f"Lean failed ({result.returncode}):\n{result.stdout}")
-    return result.stdout
+        raise ProofError(f"Lean failed ({result.returncode}):\n{result.stdout}{result.stderr}")
+    return result.stdout if stdout_only else result.stdout + result.stderr
 
 
 def verify(package, lean="lean"):
@@ -58,7 +58,10 @@ def verify(package, lean="lean"):
     with tempfile.TemporaryDirectory(prefix="nine65-refresh-proofs-") as directory:
         # Only this fresh output tree and Lean's own standard library are used.
         environment = dict(os.environ, LEAN_PATH=directory)
-        version = run_lean(lean, ["--version"], package, environment).strip()
+        # Elan installs the pinned toolchain on first use and reports progress
+        # on stderr. Compiler identity comes from Lean's stdout only.
+        version = run_lean(lean, ["--version"], package, environment,
+                           stdout_only=True).strip()
         expected = toolchain[len(prefix):]
         if not version.startswith(f"Lean (version {expected},"):
             raise ProofError(f"Lean version mismatch: expected {expected}; got {version}")
