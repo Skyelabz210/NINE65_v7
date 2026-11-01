@@ -140,3 +140,9 @@ fn native_public_refresh_returns_all_8192_coefficients_for_three_cycles() {
 fn native_public_refresh_returns_all_8192_coefficients_for_five_cycles() {
     run_public_api(8192, 96, 128, 49, 5);
 }
+
+#[test]
+#[ignore = "native encrypted refresh; explicit memory and execution evidence run"]
+fn native_public_refresh_current_single_cycle_with_dependent_square() {
+    run_public_api(8192, 96, 128, 49, 1);
+}
