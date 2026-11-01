@@ -20,12 +20,62 @@ The repository has moved beyond the historical “v7 Bootstrap Complete” snaps
 For a runnable, correctness-checked demonstration of the current CRAM public
 evaluator, see [the CRAM showcase](docs/CRAM_SHOWCASE.md).
 
+## Public refresh status
+
+**A complete public refresh works in the explicit research backend, with
+substantial correctness evidence. Production security admission for its
+complete related-key setup remains open.**
+
+The `ops::public_refresh_circuit` evaluator uses public evaluation keys and
+holds no secret key. Its native configuration uses an N=8192 work ring,
+plaintext modulus 65537, and an N=32768 outer ring with a 650-bit modulus.
+
+| Evidence | Verified result |
+|---|---|
+| Repeated native execution | Five refreshes and five following full-polynomial squares; all 8,192 coefficients checked after each operation: **81,920 comparisons passed** |
+| Usable return budget | **562-bit** error bound after slot return, below the **633-bit** threshold; the following square/source conversion has radius 48 within support 49 |
+| Plaintext-root preservation | The current API retains the same canonical plaintext-root capability through refresh and rejects mismatched-root returns; arithmetic issues new roots |
+
+The measured native run took **56.6 minutes including setup** and peaked at
+**8.70 GiB** resident memory. Its source/binary snapshot predates the later
+root and key-inventory additions, which have separate regression coverage.
+The full native run has not been repeated at the latest commit. See the
+[evidence summary](docs/execution/2026-10-31/PUBLIC_REFRESH_EVIDENCE_SUMMARY.md)
+and [native transcript](artifacts/execution/2026-10-28/public-refresh-circuit/native/five-cycle-run.log).
+
+Parameter-level attack assessments provide supporting security evidence, but
+do not establish confidentiality of the entire correlated evaluation-key
+setup. A pinned authors' attack implementation has been executed; conformity
+to the corrected theorem and full quantum-hybrid coverage remain unverified.
+See the [attack assessment](docs/execution/2026-10-31/HOU_JIANG_ASSESSMENT.md)
+and [conditional security reduction](docs/execution/2026-10-31/PUBLIC_REFRESH_SECURITY_REDUCTION.md).
+
+This backend requires `allow_insecure`. The default named-profile public
+refresh APIs in the table below remain disabled. Independent encrypted S8
+remainder outputs and legacy phase-root interfaces are separate from the
+[canonical plaintext-root binding](docs/execution/2026-10-31/CANONICAL_PLAINTEXT_ROOT.md).
+
+Inspect the native plan, key inventory, and parameter screens without generating keys:
+
+```bash
+cargo run --locked -p nine65 --features allow_insecure \
+  --example public_refresh_circuit -- --describe
+```
+
+Run the expensive five-cycle encrypted example, using OS randomness:
+
+```bash
+cargo run --release --locked -p nine65 --features allow_insecure \
+  --example public_refresh_circuit
+```
+
 ## Verified Capability
 
-Correctness columns are checked against a decryption oracle. Everything outside
-this table is outside the claim surface.
+This table covers the shipped named profiles and their dated direct-operation
+measurements. Correctness columns are checked against a decryption oracle.
+The separate research public-refresh evidence is described above.
 
-| Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth † | public refresh |
+| Config | N | main lanes | log2(q) | public mul | symmetric mul | public direct-square depth † | default public refresh |
 |---|---|---|---|---|---|---|---|
 | `secure_128` | 8192 | 4 | 119 | 408.66 ms §§ | 93.14 ms §§ | 2 | disabled §§§ |
 | `secure_128_deep` | 8192 | 4 | 119 | 408.66 ms | 93.14 ms | 2 | disabled §§§ |
@@ -81,7 +131,8 @@ worst-case noise deposit against the 47 bits one subsequent multiply needs, so
 a typed `Nine65Error`
 (`params::secure_configs::ensure_public_refresh_supported`). The recut chain
 carries the same 71-bit headroom `secure_128_deep` has, so both clear the
-capacity screen. Neither currently supports public refresh.
+capacity screen. Neither enables public refresh through the default API; the
+separate research backend above supplies the working refresh path.
 
 Screened security levels for the shipped tuples, measured by
 `params::secure_configs::tests::screened_levels_for_named_configs`:
@@ -102,10 +153,12 @@ lattice-security certificates — see "Parameter and Claim Discipline" below.
 ### Current limits
 
 - **No unbounded-depth capability.** Measured public direct-square depths are
-  2–4. "Unlimited depth", "depth 50", and "bootstrap-free" are on
+  2–4 for the named profiles. The research backend has completed five native
+  refresh/square cycles. "Unlimited depth", "depth 50", and "bootstrap-free" are on
   `docs/LINEAGE.md`'s deprecation list and are not claimed here.
-- **Nonlinear public FHE beyond the direct boundary is not established.** What is
-  measured is direct multiply/square chains, not general circuits.
+- **General refreshed circuits are not established.** The research backend
+  demonstrates repeated refresh/square chains; this is not general-circuit or
+  unbounded-depth acceptance for the default APIs.
 - **No external lattice-estimator attestation** exists for the shipped
   `n = 8192 / 16384` tuples. The numbers above are in-tree screening results.
 - **No public constant-time claim.** Blocked on the CT-NTT/cache gates in
@@ -375,8 +428,10 @@ The browser or device can own key generation and decryption. Secret-key byte exp
 ## Direct Public Evaluation Example
 
 Public multiplication works within the measured direct depth of the chosen
-profile. Public refresh is currently disabled on every profile; check
-`supports_public_refresh` before adding a refresh call when Phase 1 is fixed.
+profile. Default-profile public refresh remains disabled; check
+`supports_public_refresh` before adding a refresh call. The working research
+backend has its own setup and ciphertext API, described under
+[Public refresh status](#public-refresh-status).
 
 ```rust
 use nine65::ops::rns_fhe::RNSFHEContext;
