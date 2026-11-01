@@ -169,6 +169,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.89.0
 
+      - name: Record timing runner and compiler
+        run: |
+          lscpu > ct_runner_environment.txt
+          rustc --version --verbose >> ct_runner_environment.txt
+
       - name: Build test binary
         run: cargo test -p nine65 --lib --release --no-run
 
@@ -204,7 +209,9 @@ jobs:
         with:
           name: ct-dudect-blocking
           if-no-files-found: error
-          path: dudect_blocking_output.txt
+          path: |
+            dudect_blocking_output.txt
+            ct_runner_environment.txt
 
   # ---------------------------------------------------------------------------
   # OPEN FINDINGS — known-red tripwires, scheduled.

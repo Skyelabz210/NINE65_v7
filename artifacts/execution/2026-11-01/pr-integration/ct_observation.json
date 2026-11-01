@@ -1,0 +1,23 @@
+{
+  "observed_head": "5278c024b4a0224e15879245714966b3a8d56d6a",
+  "job_url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41300633935/job/124830621133",
+  "test": "test_ct_dudect_montgomery_reduce_operand_magnitude",
+  "profile": "hosted release",
+  "threshold": 5,
+  "t_signal": 5.2729,
+  "t_control": 0.2606,
+  "median_a_ns": 6399,
+  "median_b_ns": 6390,
+  "interpretation": "Observed association with class; class-specific batch addresses were confounded with operands. Cause not established.",
+  "repair": "Use one preallocated scratch batch at a fixed address; prepare outside the timed interval. Preserve rounds, crop, control and threshold.",
+  "local_diagnostic": {
+    "profile": "test opt-level=2 with debug assertions",
+    "planned_runs": 1,
+    "verdict": "INCONCLUSIVE",
+    "t_signal": 0.6004,
+    "t_control": 7.6369,
+    "median_a_ns": 4957,
+    "median_b_ns": 4957
+  },
+  "constant_time_admitted": false
+}

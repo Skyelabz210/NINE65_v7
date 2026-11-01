@@ -38,3 +38,21 @@ with socket access (28 passed). The repaired nine65 library target passed
 Workspace/all-target Clippy passed with warnings denied. Hosted results are
 attached to PR #201's exact checked head; the native five-cycle archive is not
 presented as a new run of this integration.
+
+
+Further hosted checks exposed an absent `ntt_roundtrip_prime_regression` target
+and an old expanded-phase refusal fixture at the former 512-bit boundary.
+The restored target exercises all 37 current main/anchor `(degree, modulus)`
+pairs, including the distinct N32768 anchor basis. The expanded-phase fixture
+now proves nine squared lanes fit U1024 and that sixteen full-width coprime
+lanes exceed its actual capacity; no capacity threshold changed.
+
+The hosted Montgomery timing observation is preserved in
+[ct_observation.json](../../artifacts/execution/2026-11-01/pr-integration/ct_observation.json).
+The old test confounded input class with separate batch addresses. Its repair
+copies operands into one fixed-address buffer before timing; the threshold,
+sample count, crop and control stay unchanged. An injected class-timing
+negative control checks the sampler. One local optimized diagnostic was
+inconclusive, so it is not presented as resolution of the hosted observation
+or constant-time admission. The new hosted run must evaluate the repaired
+harness; the circuit's constant-time posture remains unestablished.

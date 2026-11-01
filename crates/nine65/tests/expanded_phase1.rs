@@ -160,17 +160,26 @@ fn arithmetic_refuses_invalid_shapes_moduli_and_capacity() {
             MainOnlyBaseExtError::NonCoprimeMain { .. }
         ))
     ));
-    // Pairwise-coprime squared lanes straddle the current 512-bit rank
-    // accumulator at eight/nine lanes. The old 31-bit vector fit even at
-    // nine lanes after the accumulator was widened; it was a stale refusal.
+    // Nine pairwise-coprime squared lanes fit the current 1024-bit rank
+    // accumulator. A separate full-width basis must exceed that actual bound.
     let factors: [u64; 9] = [
         2013265921, 2281701377, 2483027969, 2885681153, 3221225473, 3221422081, 3222306817,
         3222372353, 3222568961,
     ];
     let wide: Vec<u64> = factors.iter().map(|&p| p * p).collect();
     CanonicalScaleRound::new(&wide[..8], 125).expect("eight lanes fit");
+    let wide_scale = CanonicalScaleRound::new(&wide, 125).expect("nine lanes fit U1024");
+    assert_eq!(wide_scale.scale_round(&vec![0; wide.len()]).unwrap(), 0);
+    let mut over_capacity = Vec::new();
+    let mut candidate = u64::MAX;
+    while over_capacity.len() < 16 {
+        if nine65::params::primes::is_prime(candidate) {
+            over_capacity.push(candidate);
+        }
+        candidate -= 2;
+    }
     assert!(matches!(
-        CanonicalScaleRound::new(&wide, 125),
+        CanonicalScaleRound::new(&over_capacity, 125),
         Err(CanonicalScaleRoundError::Projection(
             MainOnlyBaseExtError::FallbackAccumulatorOverCapacity { .. }
         ))

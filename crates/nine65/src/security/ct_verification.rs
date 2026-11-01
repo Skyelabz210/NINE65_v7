@@ -965,7 +965,7 @@ mod constant_time_statistical {
                 Some(false) => println!(
                     "  VERDICT: TIMING DEPENDENCE MEASURED — control t={:.4} is \
                      below threshold but signal t={:.4} is not. The difference \
-                     tracks the input class, not the machine.",
+                     tracks the input class or its measurement context.",
                     self.t_control, self.t_signal
                 ),
             }
@@ -1058,17 +1058,37 @@ mod constant_time_statistical {
     where
         F: FnMut(&I),
     {
+        dudect_two_class_measured(rng, pool_a, pool_a2, pool_b, rounds, |input| {
+            let start = Instant::now();
+            run(input);
+            start.elapsed().as_nanos() as u64
+        })
+    }
+
+    /// Shared sampling and statistics. `measure` may prepare the input before
+    /// starting its timer, but must return only the measured elapsed time.
+    fn dudect_two_class_measured<I, F>(
+        rng: &mut ShadowHarvester,
+        pool_a: &[I],
+        pool_a2: &[I],
+        pool_b: &[I],
+        rounds: usize,
+        mut measure: F,
+    ) -> DudectResult
+    where
+        F: FnMut(&I) -> u64,
+    {
         let mut sa: Vec<u64> = Vec::with_capacity(rounds);
         let mut sa2: Vec<u64> = Vec::with_capacity(rounds);
         let mut sb: Vec<u64> = Vec::with_capacity(rounds);
 
-        // Untimed warmup over both classes so first-touch page faults and
+        // Discard warmup measurements for all classes so first-touch page faults and
         // branch-predictor training are not charged to whichever class runs
         // first.
         for i in 0..pool_a.len().max(pool_b.len()) {
-            run(&pool_a[i % pool_a.len()]);
-            run(&pool_a2[i % pool_a2.len()]);
-            run(&pool_b[i % pool_b.len()]);
+            measure(&pool_a[i % pool_a.len()]);
+            measure(&pool_a2[i % pool_a2.len()]);
+            measure(&pool_b[i % pool_b.len()]);
         }
 
         for _ in 0..rounds {
@@ -1086,10 +1106,7 @@ mod constant_time_statistical {
                 };
                 let idx = (rng.next_u64() as usize) % pool.len();
                 let input = &pool[idx];
-                let start = Instant::now();
-                run(input);
-                let dt = start.elapsed().as_nanos() as u64;
-                sink.push(dt);
+                sink.push(measure(input));
             }
         }
 
@@ -1149,6 +1166,28 @@ mod constant_time_statistical {
                 r.t_signal, r.t_control, r.median_a, r.median_b
             );
         }
+    }
+
+    #[test]
+    fn dudect_shared_sampling_detects_injected_class_timing() {
+        let mut rng = ShadowHarvester::with_seed(812);
+        let mut noise = 0u64;
+        let result =
+            dudect_two_class_measured(&mut rng, &[0u64], &[0u64], &[1u64], 3000, |class| {
+                noise = noise.wrapping_mul(6364136223846793005).wrapping_add(1);
+                100 + ((noise >> 32) % 20) + class * 50
+            });
+        assert!(
+            result.t_control < T_TEST_THRESHOLD,
+            "same-class control: {}",
+            result.t_control
+        );
+        assert!(
+            result.t_signal >= T_TEST_THRESHOLD,
+            "injected signal: {}",
+            result.t_signal
+        );
+        assert_eq!(result.is_constant_time(), Some(false));
     }
 
     // ========================================================================
@@ -2157,19 +2196,27 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        // All classes execute from the same address. Copying the selected
+        // precomputed inputs is outside the measured interval; the timed loop
+        // no longer reads class-specific batch addresses.
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(704);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                scratch.copy_from_slice(batch);
+                let timed_input = std::hint::black_box(scratch.as_slice());
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(t, _) in batch.iter() {
+                for &(t, _) in timed_input.iter() {
                     acc ^= ctx.montgomery_reduce(std::hint::black_box(t));
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
