@@ -305,7 +305,7 @@ def main() -> int:
         "crates/nine65/src/ops/rns_fhe.rs",
         [
             (r"q_product\s*==\s*0", "zero sentinel used as modulus-overflow state"),
-            (r"unwrap_or\s*\(\s*0\s*\)", "zero overflow sentinel construction"),
+            (r"\.\s*q_product\b", "legacy scalar modulus product read in production"),
             (
                 r"map\s*\(\s*\|&p\|\s*\(64\s*-\s*p\.leading_zeros\(\)\).*?\.sum",
                 "summed lane widths used instead of exact product bit length",
@@ -314,6 +314,15 @@ def main() -> int:
             (r"\bmixed[_ -]?radix[A-Za-z0-9_]*\s*(?:::|\()", "mixed-radix call in active RNS FHE path"),
         ],
     )
+
+    for relative in (
+        "crates/nine65/src/ops/gso_fhe.rs",
+        "crates/nine65/src/cram_ct_wrap.rs",
+    ):
+        failures += require_absent(
+            relative,
+            [(r"\.\s*q_product\b", "legacy scalar modulus product read in production")],
+        )
 
     failures += require_absent(
         "crates/nine65/src/arithmetic/rns.rs",

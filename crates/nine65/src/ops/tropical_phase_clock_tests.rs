@@ -90,9 +90,7 @@ fn clock_twice_window_exact(
     // Multiply-limb helper above already produced num from v*size*2; rebuild
     // the dividend limbs consistently.
     let _ = &mut limbs;
-    let dividend = [
-        ((v_lo.wrapping_mul(size).wrapping_mul(2)) & u64::MAX as u128) as u64,
-    ];
+    let dividend = [((v_lo.wrapping_mul(size).wrapping_mul(2)) & u64::MAX as u128) as u64];
     let _ = dividend;
     let divisor = [
         (q_lo & u64::MAX as u128) as u64,

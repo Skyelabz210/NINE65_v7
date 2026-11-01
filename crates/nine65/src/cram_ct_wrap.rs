@@ -124,11 +124,7 @@ fn c0_centered_i128(
 ) -> Result<Vec<i128>, CramLiftError> {
     if !cram_witness_capacity_ok(ctx) {
         return Err(CramLiftError::ModulusTooWideForWitness {
-            q_bits: if ctx.q_product == 0 {
-                128
-            } else {
-                128 - ctx.q_product.leading_zeros()
-            },
+            q_bits: ctx.q_bits as u32,
         });
     }
     let level = ct.c0.main.len();
@@ -418,9 +414,9 @@ mod tests {
 
         match wrap_dual_rns_fpd(&ctx, ct, FPD_AUX_PRIMES) {
             Err(CramLiftError::ModulusTooWideForWitness { q_bits }) => {
-                assert!(
-                    q_bits > 127,
-                    "refusal must report a genuinely over-wide modulus, got {q_bits} bits"
+                assert_eq!(
+                    q_bits, ctx.q_bits as u32,
+                    "refusal must report the exact modulus width"
                 );
             }
             other => panic!("secure_192 must be refused, got {other:?}"),

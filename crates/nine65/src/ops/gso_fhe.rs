@@ -1,22 +1,13 @@
 //! GSO-FHE: Gravitational Swarm Optimization for FHE Noise Bounding
 //!
-//! Integrates GSO attractor-based noise bounding with K-Elimination FHE.
-//! Enables unlimited-depth homomorphic computation via basin collapse instead of bootstrapping.
-//!
-//! # Theorem Reference
-//! - Proof File: `GSOFHE.v`
-//! - Status: VERIFIED
-//!
-//! ## Architecture
-//!
-//! ```text
-//! Traditional BFV: noise grows exponentially → bootstrap (1s) → repeat
-//! GSO-FHE: noise bounded by basin radius → collapse (~1ms) → continue
-//! ```
+//! Experimental GSO bookkeeping around K-Elimination FHE.
+//! Basin collapse updates the model and swarm state only; it does not change
+//! the ciphertext or refresh its noise. The estimates are not certified noise
+//! bounds and cannot establish a supported multiplication depth.
 //!
 //! ## Key Concepts
 //!
-//! 1. **Noise Tracking**: Estimate noise from K-Elimination k values
+//! 1. **Noise Tracking**: Maintain a heuristic estimate
 //! 2. **Basin Assignment**: Each plaintext maps to an attractor basin
 //! 3. **Collapse**: When noise exceeds basin radius, swarm reconverges
 //! 4. **Shadow Entropy**: Byproduct of swarm dynamics for auxiliary randomness
@@ -30,7 +21,9 @@ use crate::arithmetic::integer_math::{
 };
 use crate::arithmetic::U256;
 use crate::entropy::ShadowHarvester;
-use crate::errors::Nine65Result;
+use crate::errors::{Nine65Error, Nine65Result};
+use crate::noise::certified::{CertifiedNoiseBound, ScalarNoiseModel};
+use std::sync::Arc;
 
 fn u256_to_u64_saturating(value: U256) -> u64 {
     if value.hi != 0 || value.lo > u64::MAX as u128 {
@@ -46,8 +39,8 @@ fn u256_to_u64_saturating(value: U256) -> u64 {
 
 /// Noise estimate for a ciphertext
 ///
-/// Tracks cumulative noise growth through homomorphic operations.
-/// When noise exceeds basin_radius, a collapse is triggered.
+/// Heuristic bookkeeping, not a bound on ciphertext noise. A fresh estimate is
+/// zero and therefore remains zero under multiplication of fresh estimates.
 #[derive(Clone, Debug, Default)]
 pub struct NoiseEstimate {
     /// Cumulative noise distance from basin center
@@ -109,18 +102,28 @@ impl NoiseEstimate {
 #[derive(Clone)]
 pub struct GSOCiphertext {
     /// Underlying dual-RNS ciphertext
-    pub inner: DualRNSCiphertext,
+    inner: DualRNSCiphertext,
     /// Noise estimate for this ciphertext
-    pub noise: NoiseEstimate,
+    noise: NoiseEstimate,
+    bound: Option<CertifiedNoiseBound>,
+    domain: Option<Arc<()>>,
 }
 
 impl GSOCiphertext {
-    /// Wrap an existing ciphertext with fresh noise estimate
+    /// Wrap an untracked ciphertext. Checked multiplication refuses it because
+    /// its error bound and producer are unknown.
     pub fn wrap(inner: DualRNSCiphertext, basin_id: u32) -> Self {
         Self {
             inner,
             noise: NoiseEstimate::fresh(basin_id),
+            bound: None,
+            domain: None,
         }
+    }
+
+    /// Read-only access to the underlying ciphertext.
+    pub fn inner(&self) -> &DualRNSCiphertext {
+        &self.inner
     }
 
     /// Get noise distance
@@ -260,7 +263,9 @@ impl GSOSwarm {
 /// Wraps RNSFHEContext with GSO noise bounding capabilities.
 pub struct GSOFHEContext {
     /// Underlying RNS-FHE context
-    pub inner: RNSFHEContext,
+    inner: RNSFHEContext,
+    bound_model: Option<ScalarNoiseModel>,
+    domain: Arc<()>,
     /// GSO swarm for collapse operations
     pub swarm: GSOSwarm,
     /// Basin radius (noise threshold for collapse)
@@ -276,14 +281,14 @@ impl GSOFHEContext {
     pub fn new(inner: RNSFHEContext) -> Self {
         // GSO parameters tuned for FHE
         let n_agents = 64;
-        let (basin_radius, coeff_bound) = if inner.q_product == 0 {
+        let (basin_radius, coeff_bound) = if let Some(q) = inner.q_product_checked {
+            let delta = q / inner.t as u128;
+            ((delta / 4).min(u64::MAX as u128) as u64, q.isqrt() as u64)
+        } else {
             let q = U256::product_u64s(&inner.config.primes);
             let (delta, _) = q.div_mod_u64(inner.t);
             let basin_radius = u256_to_u64_saturating(delta.shr1().shr1());
             (basin_radius, u64::MAX)
-        } else {
-            let delta = inner.q_product / inner.t as u128;
-            ((delta / 4) as u64, (inner.q_product.isqrt()) as u64)
         };
 
         // Create basins for plaintext space (up to 1024 basins)
@@ -293,13 +298,21 @@ impl GSOFHEContext {
             .map(|id| AttractorBasin::new(id as u32, basin_radius, basin_scale))
             .collect();
 
+        let bound_model = ScalarNoiseModel::new(&inner.config, 0, 0).ok();
         Self {
             inner,
+            bound_model,
+            domain: Arc::new(()),
             swarm: GSOSwarm::new(n_agents, basin_radius / 10),
             basin_radius,
             basins,
             coeff_bound,
         }
+    }
+
+    /// Read-only access to the underlying context.
+    pub fn inner(&self) -> &RNSFHEContext {
+        &self.inner
     }
 
     /// Create context with custom basin radius
@@ -310,14 +323,15 @@ impl GSOFHEContext {
         let basins: Vec<AttractorBasin> = (0..num_basins)
             .map(|id| AttractorBasin::new(id as u32, basin_radius, basin_scale))
             .collect();
-        let coeff_bound = if inner.q_product == 0 {
-            u64::MAX
-        } else {
-            (inner.q_product.isqrt()) as u64
-        };
+        let coeff_bound = inner
+            .q_product_checked
+            .map_or(u64::MAX, |q| q.isqrt() as u64);
 
+        let bound_model = ScalarNoiseModel::new(&inner.config, 0, 0).ok();
         Self {
             inner,
+            bound_model,
+            domain: Arc::new(()),
             swarm: GSOSwarm::new(n_agents, basin_radius / 10),
             basin_radius,
             basins,
@@ -363,7 +377,8 @@ impl GSOFHEContext {
     // ENCRYPTION/DECRYPTION
     // ========================================================================
 
-    /// Encrypt with GSO noise tracking
+    /// Encrypt a scalar and issue a local bound, assuming the supplied public
+    /// key is well formed and matches the secret key used for later operations.
     pub fn encrypt(
         &self,
         m: u64,
@@ -372,7 +387,13 @@ impl GSOFHEContext {
     ) -> GSOCiphertext {
         let ct = self.inner.encrypt_dual(m, pk, rng);
         let basin_id = (m as u32) % self.basins.len() as u32;
-        GSOCiphertext::wrap(ct, basin_id)
+        let mut wrapped = GSOCiphertext::wrap(ct, basin_id);
+        wrapped.bound = self
+            .bound_model
+            .as_ref()
+            .and_then(|model| model.fresh().ok());
+        wrapped.domain = Some(self.domain.clone());
+        wrapped
     }
 
     /// Decrypt (noise tracking doesn't affect decryption)
@@ -391,9 +412,17 @@ impl GSOFHEContext {
         let mut noise = ct1.noise.clone();
         noise.add_noise(&ct2.noise);
 
+        let bound = self.bound_model.as_ref().and_then(|model| {
+            if !self.owns(ct1) || !self.owns(ct2) {
+                return None;
+            }
+            model.add(ct1.bound.as_ref()?, ct2.bound.as_ref()?).ok()
+        });
         GSOCiphertext {
             inner: result,
             noise,
+            bound,
+            domain: Some(self.domain.clone()),
         }
     }
 
@@ -404,7 +433,41 @@ impl GSOFHEContext {
         ct2: &GSOCiphertext,
         sk: &DualRNSSecretKey,
     ) -> GSOCiphertext {
-        let result = self.inner.mul_dual_symmetric(&ct1.inner, &ct2.inner, sk);
+        self.try_mul_symmetric(ct1, ct2, sk)
+            .unwrap_or_else(|e| panic!("GSO symmetric multiplication refused: {e}"))
+    }
+
+    /// Multiply only when the local scalar error bound admits the result.
+    /// Assumes keys are well formed and the public key matches `sk`.
+    /// This is a local correctness guard, not a security certificate.
+    pub fn try_mul_symmetric(
+        &mut self,
+        ct1: &GSOCiphertext,
+        ct2: &GSOCiphertext,
+        sk: &DualRNSSecretKey,
+    ) -> Nine65Result<GSOCiphertext> {
+        let refuse = |message: &str| Nine65Error::InvalidParameter {
+            message: message.into(),
+        };
+        if !self.owns(ct1) || !self.owns(ct2) {
+            return Err(refuse("GSO ciphertext context mismatch or unknown origin"));
+        }
+        let model = self
+            .bound_model
+            .as_ref()
+            .ok_or_else(|| refuse("unsupported GSO noise-bound parameters"))?;
+        let a = ct1
+            .bound
+            .as_ref()
+            .ok_or_else(|| refuse("unknown GSO noise bound"))?;
+        let b = ct2
+            .bound
+            .as_ref()
+            .ok_or_else(|| refuse("unknown GSO noise bound"))?;
+        let bound = model.multiply(a, b).map_err(refuse)?;
+        let result = self
+            .inner
+            .try_mul_dual_symmetric(&ct1.inner, &ct2.inner, sk)?;
 
         let mut noise = ct1.noise.clone();
         noise.mul_noise(&ct2.noise, self.coeff_bound);
@@ -423,46 +486,31 @@ impl GSOFHEContext {
             );
         }
 
-        GSOCiphertext {
+        Ok(GSOCiphertext {
             inner: result,
             noise,
-        }
+            bound: Some(bound),
+            domain: Some(self.domain.clone()),
+        })
     }
 
-    /// Homomorphic multiplication (public mode) with noise tracking and collapse
+    /// Refuse public multiplication until a corresponding error bound exists.
     pub fn mul_public(
         &mut self,
         ct1: &GSOCiphertext,
         ct2: &GSOCiphertext,
         evk: &DualRNSEvalKey,
     ) -> Nine65Result<GSOCiphertext> {
-        let result = self.inner.mul_dual_public(&ct1.inner, &ct2.inner, evk)?;
-
-        let mut noise = ct1.noise.clone();
-        noise.mul_noise(&ct2.noise, self.coeff_bound);
-
-        // Add relinearization noise (eval key adds extra noise)
-        let relin_noise = self.estimate_relin_noise(evk);
-        noise.distance = noise.distance.saturating_add(relin_noise);
-
-        // Check for collapse
-        if noise.needs_collapse(self.basin_radius) {
-            let basin = self.basins[noise.basin_id as usize % self.basins.len()];
-            self.swarm.set_target(basin);
-            let _iterations = self.swarm.collapse();
-            noise.collapse();
-
-            #[cfg(debug_assertions)]
-            eprintln!(
-                "[GSO] Basin collapse after public mul (depth {}): {} iterations",
-                noise.mul_depth, _iterations
-            );
-        }
-
-        Ok(GSOCiphertext {
-            inner: result,
-            noise,
+        let _ = (ct1, ct2, evk);
+        Err(Nine65Error::InvalidParameter {
+            message: "GSO public multiplication has no certified error bound".into(),
         })
+    }
+
+    fn owns(&self, ct: &GSOCiphertext) -> bool {
+        ct.domain
+            .as_ref()
+            .is_some_and(|domain| Arc::ptr_eq(domain, &self.domain))
     }
 
     // ========================================================================
@@ -478,19 +526,6 @@ impl GSOFHEContext {
         // Scale down to fit tracking range while preserving relative magnitude
         let k_scaled = (k >> 20) as u64;
         k_scaled.min(self.basin_radius)
-    }
-
-    /// Estimate noise from relinearization (eval key operation)
-    fn estimate_relin_noise(&self, evk: &DualRNSEvalKey) -> u64 {
-        // Relinearization adds noise proportional to:
-        // num_digits * N * base * sigma^2
-        // where N is ring dimension, base is decomposition base
-        let n = self.inner.n as u64;
-        let num_digits = evk.num_digits as u64;
-        let base = evk.decomp_base;
-
-        // Rough estimate (sigma^2 ~ 10 for typical parameters)
-        (num_digits * n * base / 1000).min(self.basin_radius / 4)
     }
 
     /// Get noise statistics for debugging
@@ -554,7 +589,7 @@ mod tests {
     use crate::params::FHEConfig;
 
     fn test_ctx() -> GSOFHEContext {
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = crate::params::secure_configs::SecureConfig::secure_128().into_config();
         let inner = RNSFHEContext::new(&config);
         GSOFHEContext::new(inner)
     }
@@ -626,77 +661,13 @@ mod tests {
     }
 
     #[test]
-    fn test_gso_mul_public_depth1() {
+    fn test_gso_public_multiply_refuses_uncertified_noise() {
         let mut ctx = test_ctx();
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_full_keys(&mut rng);
-
-        let ct1 = ctx.encrypt(3, &keys.public_key, &mut rng);
-        let ct2 = ctx.encrypt(4, &keys.public_key, &mut rng);
-        let ct_prod = ctx.mul_public(&ct1, &ct2, &keys.eval_key).unwrap();
-
-        let result = ctx.decrypt(&ct_prod, &keys.secret_key);
-        let expected = 12u64;
-
-        println!(
-            "Public mul depth-1: result={} (expected {})",
-            result, expected
-        );
-        println!("Noise stats: {}", ctx.noise_stats(&ct_prod));
-
-        // NOTE: Public mode with current light_rns_exact parameters has marginal noise
-        // budget. The result may be off by 1-2 due to rounding at the noise threshold.
-        // This is expected BFV behavior for these parameters.
-        //
-        // For reliable public mode, use larger parameters (N=4096, more primes).
-        // The GSO tracking helps identify when this happens.
-        let error = (result as i64 - expected as i64).unsigned_abs();
-        assert!(
-            error <= 2,
-            "Public depth-1 error {} exceeds tolerance 2",
-            error
-        );
-    }
-
-    #[test]
-    fn test_gso_mul_public_depth2() {
-        let mut ctx = test_ctx();
-        let mut rng = ShadowHarvester::new();
-        let keys = ctx.generate_full_keys(&mut rng);
-
-        // Depth-1
-        let ct1 = ctx.encrypt(2, &keys.public_key, &mut rng);
-        let ct2 = ctx.encrypt(3, &keys.public_key, &mut rng);
-        let ct_6 = ctx.mul_public(&ct1, &ct2, &keys.eval_key).unwrap();
-
-        println!("Depth-1 result: {}", ctx.decrypt(&ct_6, &keys.secret_key));
-        println!("Depth-1 noise: {}", ctx.noise_stats(&ct_6));
-
-        // Depth-2 (this is where traditional public mode fails)
-        let ct3 = ctx.encrypt(5, &keys.public_key, &mut rng);
-        let ct_30 = ctx.mul_public(&ct_6, &ct3, &keys.eval_key).unwrap();
-
-        let result = ctx.decrypt(&ct_30, &keys.secret_key);
-        let expected = 30u64;
-
-        println!("Depth-2 result: {} (expected {})", result, expected);
-        println!("Depth-2 noise: {}", ctx.noise_stats(&ct_30));
-        println!("Collapses: {}", ct_30.collapses());
-
-        // With GSO, depth-2 should work (possibly with collapse)
-        // Note: This may still fail if the underlying FHE noise is too high
-        // The GSO tracking helps us understand when collapse is needed
-        if result != expected {
-            println!("WARN: Depth-2 public mode still failing - noise exceeds threshold");
-            println!(
-                "       Basin radius: {}",
-                format_as_bits(ctx.basin_radius as u128)
-            );
-            println!(
-                "       Noise distance: {}",
-                format_as_bits(ct_30.noise.distance as u128)
-            );
-        }
+        let a = ctx.encrypt(3, &keys.public_key, &mut rng);
+        let b = ctx.encrypt(4, &keys.public_key, &mut rng);
+        assert!(ctx.mul_public(&a, &b, &keys.eval_key).is_err());
     }
 
     #[test]
@@ -704,29 +675,26 @@ mod tests {
         let mut ctx = test_ctx();
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
-
         let mut ct = ctx.encrypt(2, &keys.public_key, &mut rng);
-
-        // 10 multiplications: 2^(2^10) mod t
-        println!("\nDeep symmetric multiplication test (10 muls):");
-        for i in 0..10 {
-            let ct_clone = GSOCiphertext {
-                inner: ct.inner.clone(),
-                noise: ct.noise.clone(),
-            };
-            ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
-
-            let current = ctx.decrypt(&ct, &keys.secret_key);
-            println!(
-                "  Depth {}: result={}, {}",
-                i + 1,
-                current,
-                ctx.noise_stats(&ct)
-            );
+        let mut expected = 2_u64;
+        let mut admitted = 0;
+        let mut refused = false;
+        for _ in 0..10 {
+            match ctx.try_mul_symmetric(&ct, &ct, &keys.secret_key) {
+                Ok(next) => {
+                    expected = ((expected as u128 * expected as u128) % ctx.inner.t as u128) as u64;
+                    assert_eq!(ctx.decrypt(&next, &keys.secret_key), expected);
+                    ct = next;
+                    admitted += 1;
+                }
+                Err(_) => {
+                    refused = true;
+                    break;
+                }
+            }
         }
-
-        assert!(ct.depth() >= 10, "Should complete 10 muls");
-        println!("Total collapses: {}", ct.collapses());
+        assert!(admitted > 0);
+        assert!(refused);
     }
 
     #[test]
@@ -794,6 +762,100 @@ mod depth_benchmarks {
     fn bench_ctx(config: FHEConfig) -> GSOFHEContext {
         let inner = RNSFHEContext::new(&config);
         GSOFHEContext::new(inner)
+    }
+
+    #[test]
+    fn symmetric_cached_key_matches_checked_path_and_rejects_reduced_level() {
+        let ctx = bench_ctx(SecureConfig::secure_128().into_config());
+        let mut rng = ShadowHarvester::new();
+        let keys = ctx.generate_keys(&mut rng);
+        let a = ctx.encrypt(3, &keys.public_key, &mut rng);
+        let b = ctx.encrypt(7, &keys.public_key, &mut rng);
+        let checked = ctx
+            .inner
+            .try_mul_dual_symmetric(&a.inner, &b.inner, &keys.secret_key)
+            .unwrap();
+        let s2 = ctx.inner.precompute_s_squared(&keys.secret_key);
+        let cached =
+            ctx.inner
+                .mul_dual_symmetric_with_s2(&a.inner, &b.inner, &keys.secret_key, &s2);
+        assert_eq!(checked.c0.main, cached.c0.main);
+        assert_eq!(checked.c1.main, cached.c1.main);
+        assert_eq!(ctx.inner.decrypt_dual(&checked, &keys.secret_key), 21);
+
+        let mut reduced = a.inner.clone();
+        reduced.level -= 1;
+        assert!(ctx
+            .inner
+            .try_mul_dual_symmetric(&reduced, &b.inner, &keys.secret_key)
+            .is_err());
+    }
+
+    #[test]
+    fn checked_gso_rejects_unknown_or_foreign_ciphertexts() {
+        let mut ctx = bench_ctx(SecureConfig::secure_128().into_config());
+        let other = bench_ctx(SecureConfig::secure_128().into_config());
+        let mut rng = ShadowHarvester::new();
+        let keys = ctx.generate_keys(&mut rng);
+        let ct = ctx.encrypt(2, &keys.public_key, &mut rng);
+        let wrapped = GSOCiphertext::wrap(ct.inner().clone(), 0);
+        assert!(ctx
+            .try_mul_symmetric(&ct, &wrapped, &keys.secret_key)
+            .is_err());
+        let foreign = other.encrypt(2, &keys.public_key, &mut rng);
+        assert!(ctx
+            .try_mul_symmetric(&ct, &foreign, &keys.secret_key)
+            .is_err());
+    }
+
+    #[test]
+    fn exact_symmetric_product_preserves_nonconstant_coefficients() {
+        use crate::ops::rns_fhe::DualRNSPoly;
+        let ctx = bench_ctx(FHEConfig::light_rns_exact_insecure());
+        let mut rng = ShadowHarvester::new();
+        let keys = ctx.generate_keys(&mut rng);
+        let n = ctx.inner.n;
+        let q = ctx.inner.q_product_checked.unwrap();
+        let delta = q / ctx.inner.t as u128;
+        let main = &ctx.inner.config.primes;
+        let anchor = &ctx.inner.dual_rns.anchor.primes;
+        let make = |coeffs: [u64; 2]| {
+            let make_limbs = |primes: &[u64]| {
+                primes
+                    .iter()
+                    .map(|&p| {
+                        let mut limb = vec![0; n];
+                        for (i, &m) in coeffs.iter().enumerate() {
+                            limb[i] = (delta * m as u128 % p as u128) as u64;
+                        }
+                        limb
+                    })
+                    .collect()
+            };
+            DualRNSCiphertext {
+                c0: DualRNSPoly {
+                    main: make_limbs(main),
+                    anchor: make_limbs(anchor),
+                    n,
+                },
+                c1: DualRNSPoly {
+                    main: vec![vec![0; n]; main.len()],
+                    anchor: vec![vec![0; n]; anchor.len()],
+                    n,
+                },
+                level: main.len(),
+            }
+        };
+        let product = ctx
+            .inner
+            .try_mul_dual_symmetric(&make([1, 2]), &make([3, 4]), &keys.secret_key)
+            .unwrap();
+        for (i, expected) in [3_u64, 10, 8, 0].into_iter().enumerate() {
+            let residues: Vec<_> = product.c0.main.iter().map(|limb| limb[i]).collect();
+            let value = ctx.inner.rns.to_int_level(&residues, main.len());
+            let decoded = ((value * ctx.inner.t as u128 + q / 2) / q % ctx.inner.t as u128) as u64;
+            assert_eq!(decoded, expected, "coefficient {i}");
+        }
     }
 
     /// Diagnostic controls: exact encoding with either c1=0 or c1=1 and
@@ -869,7 +931,9 @@ mod depth_benchmarks {
             let mut expected = seed;
             for depth in 1..=4 {
                 crate::arithmetic::rns::k_probe::start();
-                ct = ctx.mul_symmetric(&ct, &ct.clone(), &keys.secret_key);
+                ct.inner =
+                    ctx.inner
+                        .mul_dual_symmetric(&ct.inner, &ct.inner.clone(), &keys.secret_key);
                 let k_samples = crate::arithmetic::rns::k_probe::stop();
                 let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
                 expected = ((expected as u128 * expected as u128) % ctx.inner.t as u128) as u64;
@@ -892,63 +956,12 @@ mod depth_benchmarks {
     /// Benchmark symmetric mode to maximum depth
     #[test]
     fn benchmark_symmetric_max_depth() {
-        println!("\n╔══════════════════════════════════════════════════════════════╗");
-        println!("║        GSO-FHE SYMMETRIC MODE - MAX DEPTH BENCHMARK          ║");
-        println!("╚══════════════════════════════════════════════════════════════╝\n");
-
         let mut ctx = bench_ctx(FHEConfig::light_rns_exact_insecure());
         let mut rng = ShadowHarvester::new();
         let keys = ctx.generate_keys(&mut rng);
-
-        let mut ct = ctx.encrypt(2, &keys.public_key, &mut rng);
-        let mut depth = 0u32;
-        let mut collapses = 0u32;
-        let max_test_depth = 50;
-
-        let start = Instant::now();
-
-        println!("Depth │ Time    │ Noise%  │ Collapses │ Status");
-        println!("──────┼─────────┼─────────┼───────────┼────────");
-
-        for d in 1..=max_test_depth {
-            let op_start = Instant::now();
-            let ct_clone = ct.clone();
-
-            ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
-            depth = d;
-            let stats = ctx.noise_stats(&ct);
-            collapses = stats.collapses;
-
-            let op_ms = op_start.elapsed().as_millis();
-            println!(
-                "{:5} │ {:6}ms │ {:3}.{}% │ {:9} │ [OK]",
-                d,
-                op_ms,
-                stats.ratio_permille / 10,
-                stats.ratio_permille % 10,
-                collapses
-            );
-
-            // Decrypt and verify every 10 depths
-            if d % 10 == 0 {
-                let decrypted = ctx.decrypt(&ct, &keys.secret_key);
-                println!("       │ DECRYPT CHECK: 2^(2^{}) mod t = {}", d, decrypted);
-            }
-        }
-
-        let total_time = start.elapsed();
-        println!("\n═══════════════════════════════════════════════════════════════");
-        println!("SYMMETRIC MAX DEPTH: {} multiplicative levels", depth);
-        println!("Total collapses: {}", collapses);
-        println!("Total time: {:?}", total_time);
-        let avg_us = total_time.as_micros() / depth as u128;
-        println!("Avg time/mul: {}.{}ms", avg_us / 1000, (avg_us % 1000) / 10);
-        println!("═══════════════════════════════════════════════════════════════\n");
-
-        assert!(
-            depth >= 10,
-            "Should achieve at least depth 10 in symmetric mode"
-        );
+        let ct = ctx.encrypt(2, &keys.public_key, &mut rng);
+        assert_eq!(ctx.decrypt(&ct, &keys.secret_key), 2);
+        assert!(ctx.try_mul_symmetric(&ct, &ct, &keys.secret_key).is_err());
     }
 
     #[test]
@@ -966,13 +979,18 @@ mod depth_benchmarks {
         let mut expected = 2_u64;
 
         let mut multiplication_time = Duration::ZERO;
+        let mut refused = false;
         for d in 1..=max_test_depth {
             let ct_clone = ct.clone();
             let op_start = Instant::now();
-            crate::arithmetic::rns::k_probe::start();
-            ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
-            let k_samples = crate::arithmetic::rns::k_probe::stop();
-            let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
+            ct = match ctx.try_mul_symmetric(&ct, &ct_clone, &keys.secret_key) {
+                Ok(next) => next,
+                Err(err) => {
+                    println!("refused depth {d}: {err}");
+                    refused = true;
+                    break;
+                }
+            };
             multiplication_time += op_start.elapsed();
             depth = d;
             let stats = ctx.noise_stats(&ct);
@@ -986,12 +1004,14 @@ mod depth_benchmarks {
                 .try_decrypt_dual(&ct.inner, &keys.secret_key)
                 .is_ok();
             println!(
-                "STEP step={d} got={got} expected={expected} plaintext_equal={} decoded_margin={decoded_margin} checked_accepts={checked_accepts} max_observed_k_bits={max_k_bits} k_samples={}",
-                got == expected, k_samples.len()
+                "STEP step={d} got={got} expected={expected} plaintext_equal={} decoded_margin={decoded_margin} checked_accepts={checked_accepts}",
+                got == expected
             );
             assert_eq!(got, expected, "secure_128 plaintext mismatch at depth {d}");
         }
 
+        assert!(depth > 0, "at least one multiplication must be admitted");
+        assert!(refused, "expected a conservative refusal before depth 50");
         let total_time = multiplication_time;
         let avg_us = total_time.as_micros() / depth as u128;
         println!("SECURE_128 MAX DEPTH: {} multiplicative levels", depth);
@@ -1015,13 +1035,18 @@ mod depth_benchmarks {
         let mut expected = 2_u64;
 
         let mut multiplication_time = Duration::ZERO;
+        let mut refused = false;
         for d in 1..=max_test_depth {
             let ct_clone = ct.clone();
             let op_start = Instant::now();
-            crate::arithmetic::rns::k_probe::start();
-            ct = ctx.mul_symmetric(&ct, &ct_clone, &keys.secret_key);
-            let k_samples = crate::arithmetic::rns::k_probe::stop();
-            let max_k_bits = k_samples.iter().map(|(_, bits)| *bits).max().unwrap_or(0);
+            ct = match ctx.try_mul_symmetric(&ct, &ct_clone, &keys.secret_key) {
+                Ok(next) => next,
+                Err(err) => {
+                    println!("refused depth {d}: {err}");
+                    refused = true;
+                    break;
+                }
+            };
             multiplication_time += op_start.elapsed();
             depth = d;
             let stats = ctx.noise_stats(&ct);
@@ -1035,12 +1060,14 @@ mod depth_benchmarks {
                 .try_decrypt_dual(&ct.inner, &keys.secret_key)
                 .is_ok();
             println!(
-                "STEP step={d} got={got} expected={expected} plaintext_equal={} decoded_margin={decoded_margin} checked_accepts={checked_accepts} max_observed_k_bits={max_k_bits} k_samples={}",
-                got == expected, k_samples.len()
+                "STEP step={d} got={got} expected={expected} plaintext_equal={} decoded_margin={decoded_margin} checked_accepts={checked_accepts}",
+                got == expected
             );
             assert_eq!(got, expected, "secure_192 plaintext mismatch at depth {d}");
         }
 
+        assert!(depth > 0, "at least one multiplication must be admitted");
+        assert!(refused, "expected a conservative refusal before depth 50");
         let total_time = multiplication_time;
         let avg_us = total_time.as_micros() / depth as u128;
         println!("SECURE_192 MAX DEPTH: {} multiplicative levels", depth);

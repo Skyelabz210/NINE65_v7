@@ -150,7 +150,7 @@ pub mod comprehensive_benchmarks {
 
         let (mut ctx, keys) = create_bench_context("secure_128");
         let mut rng = ShadowHarvester::new();
-        let mut budget = NoiseBudget::from_config(&ctx.inner.config);
+        let mut budget = NoiseBudget::from_config(&ctx.inner().config);
 
         let mut ct = ctx.encrypt(2, &keys.public_key, &mut rng);
 
@@ -164,18 +164,18 @@ pub mod comprehensive_benchmarks {
             let budget_result = budget
                 .consume(
                     NoiseOpType::MulCt,
-                    NoiseBudget::mul_ct_cost(&ctx.inner.config),
+                    NoiseBudget::mul_ct_cost(&ctx.inner().config),
                 )
                 .and_then(|_| {
                     budget.consume(
                         NoiseOpType::Relin,
-                        NoiseBudget::relin_cost(&ctx.inner.config),
+                        NoiseBudget::relin_cost(&ctx.inner().config),
                     )
                 })
                 .and_then(|_| {
                     budget.consume(
                         NoiseOpType::Rescale,
-                        NoiseBudget::rescale_cost(&ctx.inner.config),
+                        NoiseBudget::rescale_cost(&ctx.inner().config),
                     )
                 });
 

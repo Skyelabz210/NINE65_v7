@@ -3,12 +3,13 @@
 Updated 2026-11-01. Read this before diagnosing public refresh from older
 handoffs, issue descriptions, parameter predicates or failure artifacts.
 
-**Ref scope:** this guide describes `fix/public-refresh-research-gates`.
-At this audit, GitHub `main` was `091c4ff` and did not contain the new backend
-or README update. Always identify the branch/commit being analyzed. Publishing
-a review branch does not merge it into `main` or admit production security.
-The published work is tracked in [issue #200](https://github.com/Skyelabz210/NINE65_v7/issues/200)
-and [draft PR #201](https://github.com/Skyelabz210/NINE65_v7/pull/201).
+**Ref scope:** this guide describes the implementation in this checkout.
+The research backend and the older recumbent/CI repairs are integrated through
+[PR #201](https://github.com/Skyelabz210/NINE65_v7/pull/201), which also reconciles
+PRs #187, #195, #197 and #198. Check that PR's merge state and the exact commit
+when comparing a different checkout. Production security admission is separate.
+The stale-diagnosis corrections are tracked in
+[issue #200](https://github.com/Skyelabz210/NINE65_v7/issues/200).
 
 | Scope | Current result | Implementation / evidence |
 | --- | --- | --- |

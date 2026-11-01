@@ -169,6 +169,15 @@ struct Dag {
 }
 
 impl Dag {
+    fn validate(&self) -> Nine65Result<()> {
+        for (index, node) in self.nodes.iter().enumerate() {
+            if node.inputs().iter().any(|&input| input >= index) {
+                return Err(refused("split-digit DAG has an invalid dependency"));
+            }
+        }
+        Ok(())
+    }
+
     fn new(modulus: u64) -> Self {
         Self {
             modulus,
@@ -332,7 +341,11 @@ impl Noise {
             n: ctx.n as u128,
             t: ctx.t,
             q,
-            half: q.div_mod_u64(ctx.t).unwrap().0.shr1(),
+            half: q
+                .div_mod_u64(ctx.t)
+                .ok_or_else(|| refused("split-digit plaintext modulus is zero"))?
+                .0
+                .shr1(),
             switch,
         })
     }
@@ -375,13 +388,18 @@ impl Noise {
         self.admit(result)
     }
     fn dag(&self, dag: &Dag, input: U1024) -> Nine65Result<Vec<U1024>> {
+        dag.validate()?;
         let mut errors: Vec<U1024> = Vec::with_capacity(dag.nodes.len());
         for node in &dag.nodes {
             let error = match *node {
                 Node::Input => input,
                 Node::Constant(c) => {
-                    let numerator =
-                        self.q.mod_u64(self.t).unwrap() as u128 * c.unsigned_abs() as u128;
+                    let numerator = self
+                        .q
+                        .mod_u64(self.t)
+                        .ok_or_else(|| refused("split-digit plaintext modulus is zero"))?
+                        as u128
+                        * c.unsigned_abs() as u128;
                     U1024::from_u128(numerator.div_ceil(self.t as u128))
                 }
                 Node::Add(a, b) => checked(errors[a].checked_add(errors[b]))?,
@@ -660,6 +678,10 @@ fn evaluate_dag(
     stage: &str,
     progress: &mut dyn FnMut(&str, usize, usize),
 ) -> Nine65Result<RNSCiphertext> {
+    dag.validate()?;
+    if output >= dag.nodes.len() {
+        return Err(refused("split-digit DAG output is invalid"));
+    }
     let mut remaining = vec![0usize; dag.nodes.len()];
     for node in &dag.nodes {
         for index in node.inputs() {
@@ -676,17 +698,19 @@ fn evaluate_dag(
     progress(stage, complete, products);
     let mut values: Vec<Option<RNSCiphertext>> = Vec::with_capacity(dag.nodes.len());
     for node in &dag.nodes {
+        let get = |index: usize| {
+            values
+                .get(index)
+                .and_then(Option::as_ref)
+                .ok_or_else(|| refused("split-digit DAG dependency is unavailable"))
+        };
         let value = match *node {
             Node::Input => input.clone(),
             Node::Constant(c) => constant_ciphertext(ctx, c),
-            Node::Add(a, b) => ctx.add(values[a].as_ref().unwrap(), values[b].as_ref().unwrap()),
-            Node::Scale(a, c) => scale_ciphertext(ctx, values[a].as_ref().unwrap(), c),
+            Node::Add(a, b) => ctx.add(get(a)?, get(b)?),
+            Node::Scale(a, c) => scale_ciphertext(ctx, get(a)?, c),
             Node::Product(a, b) => relin
-                .multiply(
-                    exact,
-                    values[a].as_ref().unwrap(),
-                    values[b].as_ref().unwrap(),
-                )
+                .multiply(exact, get(a)?, get(b)?)
                 .map_err(|e| refused(format!("split-digit ciphertext product: {e:?}")))?,
         };
         values.push(Some(value));
@@ -701,12 +725,23 @@ fn evaluate_dag(
             }
         }
     }
-    Ok(values[output].take().unwrap())
+    values[output]
+        .take()
+        .ok_or_else(|| refused("split-digit DAG output is unavailable"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn malformed_dag_dependencies_are_rejected() {
+        let mut dag = Dag::new(17);
+        dag.nodes.push(Node::Add(0, 1));
+        assert!(dag.validate().is_err());
+        dag.nodes[1] = Node::Scale(2, 1);
+        assert!(dag.validate().is_err());
+    }
 
     #[test]
     fn split_digit_exact_identity_covers_every_small_domain_value() {

@@ -60,6 +60,9 @@ jobs:
       - name: Verify exact RNS context metadata patch
         run: python3 .github/scripts/apply_issue29_rns_metadata_patch.py --check
 
+      - name: Verify metadata source-contract negative controls
+        run: python3 scripts/test_rns_metadata_contract.py
+
       - name: Reject floating-point tokens in exact paths
         shell: bash
         run: |

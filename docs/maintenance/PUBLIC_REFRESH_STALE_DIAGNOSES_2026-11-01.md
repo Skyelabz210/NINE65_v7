@@ -59,5 +59,6 @@ published on `fix/public-refresh-research-gates`.
   publishes the complete research branch and the documentation corrections
   for review against main.
 
-Neither publication merges the changes into main nor grants production
-security admission. The issue remains open pending reviewed integration.
+At filing, publication did not merge the changes into main or grant production
+security admission. PR #201 tracks integration and its merge state is authoritative;
+issue #200 tracks completion of these documentation corrections.

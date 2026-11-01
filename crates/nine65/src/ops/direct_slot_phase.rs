@@ -600,7 +600,12 @@ impl DirectSlotPhaseKey {
             .and_then(|v| v.checked_add(1))
             .ok_or_else(|| failure("direct phase error overflow"))?;
         let error = U1024::from_u128(error);
-        if error >= q.div_mod_u64(high.t).unwrap().0.shr1() {
+        let half_delta = q
+            .div_mod_u64(high.t)
+            .ok_or_else(|| failure("direct slot plaintext modulus is zero"))?
+            .0
+            .shr1();
+        if error >= half_delta {
             return Err(failure("direct slot phase lacks decoding headroom"));
         }
         Ok(error)

@@ -30,6 +30,8 @@ class EmissionPolicyTests(unittest.TestCase):
     def run_contract(self, bootstrap, extra_fhe="", legacy=False):
         files = {
             "crates/nine65/src/ops/bootstrap.rs": bootstrap,
+            "crates/nine65/src/ops/gso_fhe.rs": "fn probe() {}",
+            "crates/nine65/src/cram_ct_wrap.rs": "fn probe() {}",
             "crates/nine65/src/ops/rns_fhe.rs": (
                 "struct Context { q_product_checked: Option<u128>, q_product_limbs: Vec<u64> }\n"
                 + extra_fhe

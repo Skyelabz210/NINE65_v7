@@ -5,4 +5,3 @@ edition = "2021"
 license.workspace = true
 authors = ["Anthony Diaz (Acid) <acid@hackfate.us>"]
 description = "Checked signed CRT reference arithmetic with exact eight-lane capacity"
-

@@ -80,7 +80,9 @@ impl ReturnNoisePlan {
     pub(crate) fn output_bound(&self, ideal_error: U1024) -> Nine65Result<U512> {
         let mut scaled = checked(ideal_error.checked_mul_u64(self.t))?;
         for &prime in self.boot_primes[self.work_lanes..].iter().rev() {
-            let (quotient, remainder) = scaled.div_mod_u64(prime).unwrap();
+            let (quotient, remainder) = scaled
+                .div_mod_u64(prime)
+                .ok_or_else(|| refused("public return drop modulus is zero"))?;
             scaled = checked(quotient.checked_add(U1024::from_u64(u64::from(remainder != 0))))?;
             scaled = checked(scaled.checked_add(self.drop_rounding))?;
         }

@@ -240,8 +240,12 @@ impl MainOnlyBaseExt {
         let coef: Vec<Vec<u64>> = aux.iter().map(|&a| build(a)).collect();
         let m_mod: Vec<u64> = aux
             .iter()
-            .map(|&a| m_u1024.mod_u64(a).expect("positive auxiliary modulus"))
-            .collect();
+            .map(|&a| {
+                m_u1024
+                    .mod_u64(a)
+                    .ok_or(MainOnlyBaseExtError::DegenerateModulus { modulus: a })
+            })
+            .collect::<Result<_, _>>()?;
 
         // `ceil(M/2)` = `(M+1) >> 1` for both parities. `M + 1` cannot wrap
         // because the F5 gate above proved `(k+1)*M < 2^1024` with `k >= 1`.
@@ -257,9 +261,9 @@ impl MainOnlyBaseExt {
                     .filter(|&(j, _)| j != i)
                     .map(|(_, &m)| m)
                     .collect();
-                U1024::checked_product_u64s(&others).expect("subproduct fits certified accumulator")
+                U1024::checked_product_u64s(&others).ok_or_else(capacity_error)
             })
-            .collect();
+            .collect::<Result<_, _>>()?;
 
         Ok(MainOnlyBaseExt {
             main: main.to_vec(),
@@ -318,8 +322,16 @@ impl MainOnlyBaseExt {
     /// `rho*M` and `rho*M + ceil(M/2)`. `X = N - rho*M` is never materialized
     /// as a canonical coefficient object; only the two comparisons are made.
     #[inline]
-    fn rank_and_half(&self, c: &[u64; MAX_LANES], need_half: bool) -> (u64, bool, RankPath) {
+    fn rank_and_half(
+        &self,
+        c: &[u64; MAX_LANES],
+        need_half: bool,
+    ) -> Result<(u64, bool, RankPath), MainOnlyBaseExtError> {
         let k = self.main.len();
+        let capacity_error = || MainOnlyBaseExtError::FallbackAccumulatorOverCapacity {
+            lanes: k,
+            required_bits: 1025,
+        };
         // acc = sum_i floor(c_i * 2^F / m_i);  true = sum_i c_i*2^F/m_i.
         // Each floor loses < 1, so true in [acc, acc + k).
         let mut acc: u128 = 0;
@@ -336,13 +348,13 @@ impl MainOnlyBaseExt {
         let rank_decided = residual + (k as u128) <= top;
         if rank_decided {
             if !need_half {
-                return (rho_lo, false, RankPath::CertifiedFixedPoint);
+                return Ok((rho_lo, false, RankPath::CertifiedFixedPoint));
             }
             if residual >= half {
-                return (rho_lo, true, RankPath::CertifiedFixedPoint);
+                return Ok((rho_lo, true, RankPath::CertifiedFixedPoint));
             }
             if residual + (k as u128) <= half {
-                return (rho_lo, false, RankPath::CertifiedFixedPoint);
+                return Ok((rho_lo, false, RankPath::CertifiedFixedPoint));
             }
         }
         // Exact fallback: N = sum_i c_i * M_i; rho = floor(N / M), N < k*M.
@@ -352,9 +364,9 @@ impl MainOnlyBaseExt {
                 .checked_add(
                     self.mi_u1024[i]
                         .checked_mul_u64(c[i])
-                        .expect("certified CRT term"),
+                        .ok_or_else(capacity_error)?,
                 )
-                .expect("certified rank numerator");
+                .ok_or_else(capacity_error)?;
         }
         let mut rho: u64 = 0;
         let mut rho_mul = U1024::ZERO; // rho * M, tracked alongside rho
@@ -365,9 +377,7 @@ impl MainOnlyBaseExt {
                 rho = r;
                 rho_mul = r_mul;
             }
-            r_mul = r_mul
-                .checked_add(self.m_u1024)
-                .expect("certified rank walk");
+            r_mul = r_mul.checked_add(self.m_u1024).ok_or_else(capacity_error)?;
             r += 1;
         }
         // Upper half iff N >= rho*M + ceil(M/2). `rho*M + ceil(M/2) <= k*M`,
@@ -375,8 +385,8 @@ impl MainOnlyBaseExt {
         let upper = need_half
             && n >= rho_mul
                 .checked_add(self.half_up_u1024)
-                .expect("certified half threshold");
-        (rho, upper, RankPath::ExactFallback)
+                .ok_or_else(capacity_error)?;
+        Ok((rho, upper, RankPath::ExactFallback))
     }
 
     /// `r[i] = X mod main[i]` (canonical). Writes `out[j] = X mod aux[j]`.
@@ -431,7 +441,7 @@ impl MainOnlyBaseExt {
             }
         }
         let c = self.coefficients(r);
-        let (rho, upper, path) = self.rank_and_half(&c, centered);
+        let (rho, upper, path) = self.rank_and_half(&c, centered)?;
         // In the upper half the centered lift subtracts exactly one `M`, so it
         // is folded into the same `rho * (M mod a_j)` correction the canonical
         // projection already performs: the whole centering costs one increment

@@ -16,7 +16,7 @@ use nine65::entropy::ShadowHarvester;
 use nine65::kiosk::{KioskLifecycle, KioskUnit, UnitStatus};
 use nine65::noise::budget::{NoiseBudget, NoiseOpType};
 use nine65::ops::bootstrap::ClockworkBootstrap;
-use nine65::ops::gso_fhe::{GSOCiphertext, GSOFHEContext, NoiseEstimate};
+use nine65::ops::gso_fhe::{GSOCiphertext, GSOFHEContext};
 use nine65::ops::rns_fhe::RNSFHEContext;
 use nine65::params::secure_configs::SecureConfig;
 use nine65::prelude::*;
@@ -736,16 +736,11 @@ fn demo_gso(
 
     // Manual noise tracking through multiplication
     let ct_mul = gso
-        .inner
-        .mul_dual_public(&gso_ct1.inner, &gso_ct2.inner, &keys.eval_key)
+        .inner()
+        .mul_dual_public(gso_ct1.inner(), gso_ct2.inner(), &keys.eval_key)
         .expect("GSO mul failed");
 
-    let mut noise = NoiseEstimate::fresh(0);
-    noise.mul_noise(&NoiseEstimate::fresh(0), gso.coeff_bound);
-    let gso_mul = GSOCiphertext {
-        inner: ct_mul,
-        noise,
-    };
+    let gso_mul = GSOCiphertext::wrap(ct_mul, 0);
 
     println!(
         "  After mul: depth={}, noise_distance={}, collapses={}",
@@ -753,7 +748,10 @@ fn demo_gso(
         gso_mul.noise_distance(),
         gso_mul.collapses()
     );
-    check("Multiplication increases depth", gso_mul.depth() >= 1);
+    check(
+        "Wrapped ciphertext has unknown history",
+        gso_mul.depth() == 0,
+    );
 
     let dec_mul = gso.decrypt(&gso_mul, &keys.secret_key);
     let expected_mul = (m1 as u128 * m2 as u128 % config.t as u128) as u64;

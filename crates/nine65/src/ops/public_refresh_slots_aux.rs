@@ -175,10 +175,17 @@ impl Plan {
 
     pub(super) fn shared(n: usize) -> Arc<Self> {
         static PLANS: OnceLock<Mutex<BTreeMap<usize, Arc<Plan>>>> = OnceLock::new();
-        let mut plans = PLANS
-            .get_or_init(|| Mutex::new(BTreeMap::new()))
-            .lock()
-            .unwrap();
+        let cache = PLANS.get_or_init(|| Mutex::new(BTreeMap::new()));
+        let mut plans = match cache.lock() {
+            Ok(plans) => plans,
+            // A poisoned cache is discarded; a plan can always be rebuilt.
+            Err(poisoned) => {
+                let mut plans = poisoned.into_inner();
+                plans.clear();
+                cache.clear_poison();
+                plans
+            }
+        };
         plans
             .entry(n)
             .or_insert_with(|| Arc::new(Self::new(n)))
