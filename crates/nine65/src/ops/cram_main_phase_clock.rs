@@ -395,6 +395,13 @@ mod tests {
     #[test]
     fn certified_refresh_return_multiply_cycles_preserve_scalar_history_and_domain() {
         let config = toy();
+        // Cross-check the live producer against PublicRefreshBounds.Fixture.
+        // These are conservative, kernel-checked envelopes, not observed
+        // errors or a replacement for the existing immutable admission.
+        assert_eq!(config.primes, [998244353, 985661441, 754974721, 469762049]);
+        assert_eq!((config.n, config.t, config.eta), (8, 65537, 3));
+        let proved_return_cap = U512::from_u128(41_914_601_470_491_648);
+        let proved_cycle_cap = U512::from_u128(222_503_661_906_126_014_492_421);
         let actual = plan(&config);
         let mut outer = config.clone();
         outer.n = actual.clock_n();
@@ -421,6 +428,7 @@ mod tests {
         for cycle in 0..cycles {
             let input = eval.phase_clock_input(&current, &actual).unwrap();
             let returned = input.refresh(&clock, &bundle).unwrap();
+            assert!(words(returned.error_bound()) <= words(proved_return_cap));
             if cycle == 0 {
                 let again = clock
                     .refresh_returned(&eval.state.ctx, &returned, &bundle)
@@ -439,6 +447,7 @@ mod tests {
             // keep a varying plaintext and admitted operation history.
             let offset = (cycle as u64 * 29 + 11) % config.t;
             current = eval.add_plain(&current, offset).unwrap();
+            assert!(words(bound_value(current.noise_bound())) <= words(proved_cycle_cap));
             expected = (expected * expected + offset) % config.t;
             assert_eq!(client.decrypt(&current).unwrap(), expected);
         }
@@ -458,6 +467,7 @@ mod tests {
             "certified_roundtrip_cycles={cycles}; same_precharge=true; source_degree={}",
             config.n
         );
+        println!("lean_return_cap=41914601470491648; lean_cycle_cap=222503661906126014492421");
     }
 
     #[test]
