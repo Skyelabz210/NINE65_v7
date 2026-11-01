@@ -1,0 +1,677 @@
+CT source and functional gates	Set up job	﻿2026-10-07T20:13:15.1065668Z Current runner version: '2.337.0'
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1091839Z ##[group]Runner Image Provisioner
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1092806Z Hosted Compute Agent
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1093439Z Version: 20260901.588
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1094115Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1094916Z Build Date: 2026-09-01T19:56:44Z
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1095577Z Worker ID: {7c5729fc-b11b-4382-a4d4-a98c6c0e7752}
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1096341Z Azure Region: eastus
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1096966Z ##[endgroup]
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1098576Z ##[group]Operating System
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1099272Z Ubuntu
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1099811Z 24.04.5
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1100380Z LTS
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1100924Z ##[endgroup]
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1101776Z ##[group]Runner Image
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1102462Z Image: ubuntu-24.04
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1103006Z Version: 20260927.320.1
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1104133Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1105932Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1106999Z ##[endgroup]
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1108095Z ##[group]GITHUB_TOKEN Permissions
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1110250Z Contents: read
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1110863Z Metadata: read
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1111756Z ##[endgroup]
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1113943Z Secret source: Actions
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1115010Z Cache mode: write
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1115737Z Prepare workflow directory
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1442009Z Prepare all required actions
+CT source and functional gates	Set up job	2026-10-07T20:13:15.1490295Z Getting action download info
+CT source and functional gates	Set up job	2026-10-07T20:13:15.3664164Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+CT source and functional gates	Set up job	2026-10-07T20:13:15.4786389Z Download action repository 'dtolnay/rust-toolchain@1.89.0' (SHA:166de8caa14bb03d0e4ce3de7cc787f95ccf7188)
+CT source and functional gates	Set up job	2026-10-07T20:13:15.6157581Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+CT source and functional gates	Set up job	2026-10-07T20:13:15.8644972Z Complete job name: CT source and functional gates
+CT source and functional gates	Run actions/checkout@v4	﻿2026-10-07T20:13:15.9442010Z ##[group]Run actions/checkout@v4
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9442954Z with:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9443399Z   repository: Skyelabz210/NINE65_v7
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9447316Z   token: ***
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9447742Z   ssh-strict: true
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9448169Z   ssh-user: git
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9448607Z   persist-credentials: true
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9449084Z   clean: true
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9449518Z   sparse-checkout-cone-mode: true
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9450037Z   fetch-depth: 1
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9450456Z   fetch-tags: false
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9450891Z   show-progress: true
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9451331Z   lfs: false
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9451923Z   submodules: false
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9452366Z   set-safe-directory: true
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9452866Z   allow-unsafe-pr-checkout: false
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:15.9453634Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0455374Z Syncing repository: Skyelabz210/NINE65_v7
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0458146Z ##[group]Getting Git version info
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0459313Z Working directory is '/home/runner/work/NINE65_v7/NINE65_v7'
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0461055Z [command]/usr/bin/git version
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0531978Z git version 2.55.0
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0554957Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0581266Z Temporarily overriding HOME='/home/runner/work/_temp/8a4653fa-0d52-4c96-b254-1c6bb07c9515' before making global git config changes
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0593518Z Adding repository directory to the temporary git global config as a safe directory
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0595925Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0635223Z Deleting the contents of '/home/runner/work/NINE65_v7/NINE65_v7'
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0640425Z ##[group]Initializing the repository
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0645659Z [command]/usr/bin/git init /home/runner/work/NINE65_v7/NINE65_v7
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0770361Z hint: Using 'master' as the name for the initial branch. This default branch name
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0772344Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0779195Z hint: to use in all of your new repositories, which will suppress this warning,
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0783576Z hint: call:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0784726Z hint:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0785970Z hint: 	git config --global init.defaultBranch <name>
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0787229Z hint:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0788491Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0790366Z hint: 'development'. The just-created branch can be renamed via this command:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0792930Z hint:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0794062Z hint: 	git branch -m <name>
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0795221Z hint:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0796650Z hint: Disable this message with "git config set advice.defaultBranchName false"
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0798646Z Initialized empty Git repository in /home/runner/work/NINE65_v7/NINE65_v7/.git/
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0802527Z [command]/usr/bin/git remote add origin https://github.com/Skyelabz210/NINE65_v7
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0882986Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0884398Z ##[group]Disabling automatic garbage collection
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0888251Z [command]/usr/bin/git config --local gc.auto 0
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0924231Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0925373Z ##[group]Setting up auth
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0931224Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.0965950Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.1434454Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.1475087Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.1760965Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.1803510Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.2055845Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.2101068Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.2102618Z ##[group]Fetching the repository
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.2179533Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +125f60af2bcdb5db1bc6eedafa669afd291384ed:refs/remotes/pull/169/merge
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8365904Z From https://github.com/Skyelabz210/NINE65_v7
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8367255Z  * [new ref]         125f60af2bcdb5db1bc6eedafa669afd291384ed -> pull/169/merge
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8371655Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8373388Z ##[group]Determining the checkout info
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8375348Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8384166Z [command]/usr/bin/git sparse-checkout disable
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8445599Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8487604Z ##[group]Checking out the ref
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.8492534Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/169/merge
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9750667Z Note: switching to 'refs/remotes/pull/169/merge'.
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9752067Z 
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9752724Z You are in 'detached HEAD' state. You can look around, make experimental
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9754197Z changes and commit them, and you can discard any commits you make in this
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9755633Z state without impacting any branches by switching back to a branch.
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9756538Z 
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9757150Z If you want to create a new branch to retain commits you create, you may
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9758475Z do so (now or later) by using -c with the switch command. Example:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9759613Z 
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9759988Z   git switch -c <new-branch-name>
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9760607Z 
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9760978Z Or undo this operation with:
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9762045Z 
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9762650Z   git switch -
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9763167Z 
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9763897Z Turn off this advice by setting config variable advice.detachedHead to false
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9764962Z 
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9766158Z HEAD is now at 125f60a Merge c1a502cafaa90aeeb53b90e9df2c18097c42dab7 into c93a058e2106441029647e69e252d3b410fdeab1
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9770215Z ##[endgroup]
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9810340Z [command]/usr/bin/git log -1 --format=%H
+CT source and functional gates	Run actions/checkout@v4	2026-10-07T20:13:16.9838066Z 125f60af2bcdb5db1bc6eedafa669afd291384ed
+CT source and functional gates	Install Rust	﻿2026-10-07T20:13:17.0539016Z ##[group]Run dtolnay/rust-toolchain@1.89.0
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0540427Z with:
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0541413Z   components: clippy, rustfmt
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0542794Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0638171Z ##[start-action display=Parse toolchain version;id=__dtolnay_rust-toolchain.parse]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0733660Z ##[group]Run if [[ -z $toolchain ]]; then
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0735117Z [36;1mif [[ -z $toolchain ]]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0737255Z [36;1m  # GitHub does not enforce `required: true` inputs itself. https://github.com/actions/runner/issues/1070[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0739514Z [36;1m  echo "'toolchain' is a required input" >&2[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0740812Z [36;1m  exit 1[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0742705Z [36;1melif [[ $toolchain =~ ^stable' '[0-9]+' '(year|month|week|day)s?' 'ago$ ]]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0744488Z [36;1m  if [[ Linux == macOS ]]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0746618Z [36;1m    echo "toolchain=1.$((($(date -v-$(sed 's/stable \([0-9]*\) \(.\).*/\1\2/' <<< $toolchain) +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0748812Z [36;1m  else[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0750484Z [36;1m    echo "toolchain=1.$((($(date --date "${toolchain#stable }" +%s)/60/60/24-16569)/7/6))" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0752739Z [36;1m  fi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0754023Z [36;1melif [[ $toolchain =~ ^stable' 'minus' '[0-9]+' 'releases?$ ]]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0756230Z [36;1m  echo "toolchain=1.$((($(date +%s)/60/60/24-16569)/7/6-${toolchain//[^0-9]/}))" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0758184Z [36;1melif [[ $toolchain =~ ^1\.[0-9]+$ ]]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0760353Z [36;1m  echo "toolchain=1.$((i=${toolchain#1.}, c=($(date +%s)/60/60/24-16569)/7/6, i+9*i*(10*i<=c)+90*i*(100*i<=c)))" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0762687Z [36;1melse[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0763772Z [36;1m  echo "toolchain=$toolchain" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.0765077Z [36;1mfi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1030402Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1032306Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1033193Z   toolchain: 1.89.0
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1034106Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1200719Z ##[end-action id=__dtolnay_rust-toolchain.parse;outcome=success;conclusion=success;duration_ms=55]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1220120Z ##[start-action display=Construct rustup command line;id=__dtolnay_rust-toolchain.flags]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1339588Z ##[group]Run echo "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1342465Z [36;1mecho "targets=$(for t in ${targets//,/ }; do echo -n ' --target' $t; done)" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1345083Z [36;1mecho "components=$(for c in ${components//,/ }; do echo -n ' --component' $c; done)" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1347095Z [36;1mecho "downgrade=" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1412379Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1413777Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1414607Z   targets: 
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1415491Z   components: clippy, rustfmt
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1416537Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1536778Z ##[end-action id=__dtolnay_rust-toolchain.flags;outcome=success;conclusion=success;duration_ms=31]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1544489Z ##[start-action display=Set $CARGO_HOME;id=__dtolnay_rust-toolchain.__run]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1597175Z ##[group]Run echo CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1599083Z [36;1mecho CARGO_HOME=${CARGO_HOME:-"$HOME/.cargo"} >> $GITHUB_ENV[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1665706Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1667122Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1779916Z ##[end-action id=__dtolnay_rust-toolchain.__run;outcome=success;conclusion=success;duration_ms=23]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1787384Z ##[start-action display=Install rustup if needed;id=__dtolnay_rust-toolchain.__run_2]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1850884Z ##[group]Run if ! command -v rustup &>/dev/null; then
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1852836Z [36;1mif ! command -v rustup &>/dev/null; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1855772Z [36;1m  curl --proto '=https' --tlsv1.2 --retry 10 --retry-connrefused --location --silent --show-error --fail https://sh.rustup.rs | sh -s -- --default-toolchain none -y[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1858709Z [36;1m  echo "$CARGO_HOME/bin" >> $GITHUB_PATH[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1859975Z [36;1mfi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1924307Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1925731Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1926639Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.1927747Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2037774Z ##[end-action id=__dtolnay_rust-toolchain.__run_2;outcome=success;conclusion=success;duration_ms=24]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2045507Z ##[start-action display=Install rustup if needed on windows;id=__dtolnay_rust-toolchain.__run_3]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2062539Z ##[end-action id=__dtolnay_rust-toolchain.__run_3;outcome=skipped;conclusion=skipped;duration_ms=0]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2079267Z ##[start-action display=rustup toolchain install 1.89.0;id=__dtolnay_rust-toolchain.__run_4]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2131674Z ##[group]Run log=$(mktemp)
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2132776Z [36;1mlog=$(mktemp)[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2133799Z [36;1mtrap 'rm -f "$log"' EXIT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2134930Z [36;1mfor attempt in 1 2 3 4 5; do[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2137570Z [36;1m  if rustup toolchain install 1.89.0 --component clippy --component rustfmt --profile minimal --no-self-update --force-non-host 2>&1 | tee "$log"; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2140336Z [36;1m    break[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2141233Z [36;1m  else[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2142307Z [36;1m    status=$?[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2143248Z [36;1m  fi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2144437Z [36;1m  if [[ $attempt == 5 ]] || ! grep -Fq 'checksum failed for ' "$log" \[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2146730Z [36;1m      || ! grep -Fq 'this is likely due to an ongoing update of the official release server' "$log"; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2148780Z [36;1m    exit "$status"[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2149782Z [36;1m  fi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2151228Z [36;1m  echo "Retrying rustup toolchain install in 30 seconds (retry $attempt of 4)" >&2[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2153194Z [36;1m  sleep 30[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2154101Z [36;1mdone[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2220061Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2221661Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2222522Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2223627Z   RUSTUP_PERMIT_COPY_RENAME: 1
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.2224667Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.3128315Z info: syncing channel updates for 1.89.0-x86_64-unknown-linux-gnu
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.5886381Z info: latest update on 2025-08-07 for version 1.89.0 (29483883e 2025-08-04)
+CT source and functional gates	Install Rust	2026-10-07T20:13:17.5888341Z info: downloading 5 components
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5210870Z 
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5284423Z   1.89.0-x86_64-unknown-linux-gnu installed - rustc 1.89.0 (29483883e 2025-08-04)
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5286082Z 
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5358796Z ##[end-action id=__dtolnay_rust-toolchain.__run_4;outcome=success;conclusion=success;duration_ms=8327]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5367166Z ##[start-action display=rustup default 1.89.0;id=__dtolnay_rust-toolchain.__run_5]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5425685Z ##[group]Run rustup default 1.89.0 --force-non-host
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5426148Z [36;1mrustup default 1.89.0 --force-non-host[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5493379Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5493796Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5494058Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5494372Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5621104Z info: using existing install for 1.89.0-x86_64-unknown-linux-gnu
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5629176Z info: default toolchain set to 1.89.0-x86_64-unknown-linux-gnu
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5629558Z 
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5703373Z   1.89.0-x86_64-unknown-linux-gnu unchanged - rustc 1.89.0 (29483883e 2025-08-04)
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5704394Z 
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5705815Z info: note that the toolchain '1.89.0-x86_64-unknown-linux-gnu' is currently in use (overridden by '/home/runner/work/NINE65_v7/NINE65_v7/rust-toolchain.toml')
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5722026Z ##[end-action id=__dtolnay_rust-toolchain.__run_5;outcome=success;conclusion=success;duration_ms=35]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5725409Z ##[start-action display=Create cachekey;id=__dtolnay_rust-toolchain.rustc-version]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5759366Z ##[group]Run DATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5760272Z [36;1mDATE=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-date: \(20[0-9][0-9]\)-\([01][0-9]\)-\([0-3][0-9]\)$/\1\2\3/p')[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5761015Z [36;1mHASH=$(rustc +1.89.0 --version --verbose | sed -ne 's/^commit-hash: //p')[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5761970Z [36;1mecho "cachekey=$(echo $DATE$HASH | head -c12)" >> $GITHUB_OUTPUT[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5829021Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5829481Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5829762Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.5830097Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6192677Z ##[end-action id=__dtolnay_rust-toolchain.rustc-version;outcome=success;conclusion=success;duration_ms=46]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6195954Z ##[start-action display=Disable incremental compilation;id=__dtolnay_rust-toolchain.__run_6]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6227819Z ##[group]Run if [ -z "${CARGO_INCREMENTAL+set}" ]; then
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6228482Z [36;1mif [ -z "${CARGO_INCREMENTAL+set}" ]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6229077Z [36;1m  echo CARGO_INCREMENTAL=0 >> $GITHUB_ENV[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6229450Z [36;1mfi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6303137Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6303602Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6303874Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6304189Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6399469Z ##[end-action id=__dtolnay_rust-toolchain.__run_6;outcome=success;conclusion=success;duration_ms=20]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6402292Z ##[start-action display=Enable colors in Cargo output;id=__dtolnay_rust-toolchain.__run_7]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6433030Z ##[group]Run if [ -z "${CARGO_TERM_COLOR+set}" ]; then
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6433493Z [36;1mif [ -z "${CARGO_TERM_COLOR+set}" ]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6433897Z [36;1m  echo CARGO_TERM_COLOR=always >> $GITHUB_ENV[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6434256Z [36;1mfi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6498697Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6499107Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6499378Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6499695Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6499964Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6594416Z ##[end-action id=__dtolnay_rust-toolchain.__run_7;outcome=success;conclusion=success;duration_ms=19]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6596987Z ##[start-action display=Enable Cargo sparse registry;id=__dtolnay_rust-toolchain.__run_8]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6682683Z ##[group]Run # implemented in 1.66, stabilized in 1.68, made default in 1.70
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6683298Z [36;1m# implemented in 1.66, stabilized in 1.68, made default in 1.70[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6684094Z [36;1mif [ -z "${CARGO_REGISTRIES_CRATES_IO_PROTOCOL+set}" -o -f "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol ]; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6685063Z [36;1m  if rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[89]\.'; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6685717Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6686333Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse >> $GITHUB_ENV[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6686907Z [36;1m  elif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.6[67]\.'; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6687542Z [36;1m    touch "/home/runner/work/_temp"/.implicit_cargo_registries_crates_io_protocol || true[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6688146Z [36;1m    echo CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git >> $GITHUB_ENV[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6688716Z [36;1m  fi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6688962Z [36;1mfi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6755163Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6755600Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6755862Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6756173Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6756451Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.6756737Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7091142Z ##[end-action id=__dtolnay_rust-toolchain.__run_8;outcome=success;conclusion=success;duration_ms=49]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7094869Z ##[start-action display=Work around spurious network errors in curl 8.0;id=__dtolnay_rust-toolchain.__run_9]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7128147Z ##[group]Run # https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7129016Z [36;1m# https://rust-lang.zulipchat.com/#narrow/stream/246057-t-cargo/topic/timeout.20investigation[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7129728Z [36;1mif rustc +1.89.0 --version --verbose | grep -q '^release: 1\.7[01]\.'; then[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7130255Z [36;1m  echo CARGO_HTTP_MULTIPLEXING=false >> $GITHUB_ENV[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7130632Z [36;1mfi[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7202838Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7203264Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7203532Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7203851Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7204130Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7204414Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7429378Z ##[end-action id=__dtolnay_rust-toolchain.__run_9;outcome=success;conclusion=success;duration_ms=33]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7434859Z ##[start-action display=rustc +1.89.0 --version --verbose;id=__dtolnay_rust-toolchain.__run_10]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7467033Z ##[group]Run rustc +1.89.0 --version --verbose
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7467444Z [36;1mrustc +1.89.0 --version --verbose[0m
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7538652Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7539102Z env:
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7539379Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7539706Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7539989Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7540315Z ##[endgroup]
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7743502Z rustc 1.89.0 (29483883e 2025-08-04)
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7744324Z binary: rustc
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7744902Z commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7745719Z commit-date: 2025-08-04
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7746098Z host: x86_64-unknown-linux-gnu
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7746451Z release: 1.89.0
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7746729Z LLVM version: 20.1.7
+CT source and functional gates	Install Rust	2026-10-07T20:13:25.7764101Z ##[end-action id=__dtolnay_rust-toolchain.__run_10;outcome=success;conclusion=success;duration_ms=32]
+CT source and functional gates	Source-level CT and public-schedule gate	﻿2026-10-07T20:13:25.7838607Z ##[group]Run python3 scripts/check_ct_ntt_source.py | tee ct_ntt_source_report.json
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.7839325Z [36;1mpython3 scripts/check_ct_ntt_source.py | tee ct_ntt_source_report.json[0m
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.7911292Z shell: /usr/bin/bash -e {0}
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.7912013Z env:
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.7912289Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.7912616Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.7913117Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.7913405Z ##[endgroup]
+CT source and functional gates	Source-level CT and public-schedule gate	2026-10-07T20:13:25.8306328Z {"cache_line_alignment_verified": false, "class_f_prime_guard": true, "class_r_odd_composite_support": true, "compiler_disassembly_verified": false, "empirical_timing_verified": false, "montgomery_branchless_core": true, "ntt_branchless_coefficient_ops": true, "persistent_branchless_core": true, "public_schedule_counts": {"1024": 5120, "16": 32, "8": 12}, "public_schedule_sha256": "39f5651aa4ea44da87192d692ac75db061d6baa0fa03c3d6a71ba13511eb1b59", "schema": 1, "scope": "source_invariants_and_public_schedule_only", "status": "PASS"}
+CT source and functional gates	Existing constant-time source verification	﻿2026-10-07T20:13:25.8401193Z ##[group]Run bash scripts/verify_constant_time.sh --verbose | tee verification_script_output.txt
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8402333Z [36;1mbash scripts/verify_constant_time.sh --verbose | tee verification_script_output.txt[0m
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8473618Z shell: /usr/bin/bash -e {0}
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8473951Z env:
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8474213Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8474543Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8474820Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8475098Z ##[endgroup]
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8614294Z [1/5] NTT and Montgomery source invariants
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8912450Z {"cache_line_alignment_verified": false, "class_f_prime_guard": true, "class_r_odd_composite_support": true, "compiler_disassembly_verified": false, "empirical_timing_verified": false, "montgomery_branchless_core": true, "ntt_branchless_coefficient_ops": true, "persistent_branchless_core": true, "public_schedule_counts": {"1024": 5120, "16": 32, "8": 12}, "public_schedule_sha256": "39f5651aa4ea44da87192d692ac75db061d6baa0fa03c3d6a71ba13511eb1b59", "schema": 1, "scope": "source_invariants_and_public_schedule_only", "status": "PASS"}
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8956413Z [2/5] Explicit public-only variable-time boundaries
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.8998390Z [3/5] CLASS-F / CLASS-R separation
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9047408Z [4/5] Claim boundary and residual-risk language
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9108358Z [5/5] High-risk source pattern checks
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9241194Z Residual gates intentionally OPEN:
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9242116Z   - compiler IR/disassembly review
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9242566Z   - cache-line/alignment and address-trace evidence
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9243026Z   - fixed-vs-random target timing diagnostics
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9243532Z   - speculative execution, scheduler, SMT, power, and EM analysis
+CT source and functional gates	Existing constant-time source verification	2026-10-07T20:13:25.9244136Z PASS source-level CT invariants; target-specific closure remains open
+CT source and functional gates	NTT and persistent-Montgomery correctness	﻿2026-10-07T20:13:25.9306443Z ##[group]Run cargo test -p nine65 --lib --release ntt_fft -- --nocapture
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9307089Z [36;1mcargo test -p nine65 --lib --release ntt_fft -- --nocapture[0m
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9307655Z [36;1mcargo test -p nine65 --lib --release persistent_montgomery -- --nocapture[0m
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9378642Z shell: /usr/bin/bash -e {0}
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9378987Z env:
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9379254Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9379593Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9379888Z   CARGO_TERM_COLOR: always
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9380173Z ##[endgroup]
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9862634Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9864356Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:25.9865337Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.0052371Z [1m[32m    Updating[0m crates.io index
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4222495Z [1m[32m Downloading[0m crates ...
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4607923Z [1m[32m  Downloaded[0m bit-set v0.8.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4628551Z [1m[32m  Downloaded[0m autocfg v1.5.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4653061Z [1m[32m  Downloaded[0m block-buffer v0.10.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4665872Z [1m[32m  Downloaded[0m bitflags v2.10.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4713563Z [1m[32m  Downloaded[0m cast v0.3.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4727266Z [1m[32m  Downloaded[0m bit-vec v0.8.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4748629Z [1m[32m  Downloaded[0m quick-error v1.2.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4766637Z [1m[32m  Downloaded[0m unarray v0.1.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4783531Z [1m[32m  Downloaded[0m sha2 v0.10.9
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4815709Z [1m[32m  Downloaded[0m serde_derive v1.0.228
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4854129Z [1m[32m  Downloaded[0m plotters-backend v0.3.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4873922Z [1m[32m  Downloaded[0m zeroize v1.8.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4896250Z [1m[32m  Downloaded[0m zeroize_derive v1.4.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4908215Z [1m[32m  Downloaded[0m crypto-common v0.1.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.4925140Z [1m[32m  Downloaded[0m rustix v1.1.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5215894Z [1m[32m  Downloaded[0m typenum v1.19.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5254983Z [1m[32m  Downloaded[0m zmij v0.1.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5284693Z [1m[32m  Downloaded[0m same-file v1.0.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5313533Z [1m[32m  Downloaded[0m wait-timeout v0.2.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5343813Z [1m[32m  Downloaded[0m walkdir v2.5.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5369803Z [1m[32m  Downloaded[0m tempfile v3.24.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5402435Z [1m[32m  Downloaded[0m unicode-ident v1.0.22
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5437746Z [1m[32m  Downloaded[0m plotters v0.3.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5554307Z [1m[32m  Downloaded[0m half v2.7.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5599134Z [1m[32m  Downloaded[0m proc-macro2 v1.0.103
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5636879Z [1m[32m  Downloaded[0m getrandom v0.2.16
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5676466Z [1m[32m  Downloaded[0m rand_core v0.9.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5695026Z [1m[32m  Downloaded[0m regex-automata v0.4.13
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5859394Z [1m[32m  Downloaded[0m rand_core v0.6.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5876674Z [1m[32m  Downloaded[0m plotters-svg v0.3.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5888336Z [1m[32m  Downloaded[0m either v1.15.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5907714Z [1m[32m  Downloaded[0m digest v0.10.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.5930695Z [1m[32m  Downloaded[0m zerocopy-derive v0.8.31
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6017157Z [1m[32m  Downloaded[0m regex-syntax v0.8.8
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6098723Z [1m[32m  Downloaded[0m criterion-plot v0.5.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6119920Z [1m[32m  Downloaded[0m thiserror v1.0.69
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6190060Z [1m[32m  Downloaded[0m is-terminal v0.4.17
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6201276Z [1m[32m  Downloaded[0m fnv v1.0.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6214248Z [1m[32m  Downloaded[0m crossbeam-deque v0.8.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6242555Z [1m[32m  Downloaded[0m criterion v0.5.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6325113Z [1m[32m  Downloaded[0m clap_lex v0.7.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6352141Z [1m[32m  Downloaded[0m rand v0.9.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6412162Z [1m[32m  Downloaded[0m serde_json v1.0.147
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6502298Z [1m[32m  Downloaded[0m serde_core v1.0.228
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6513263Z [1m[32m  Downloaded[0m regex v1.12.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.6592217Z [1m[32m  Downloaded[0m linux-raw-sys v0.11.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7188116Z [1m[32m  Downloaded[0m proptest v1.9.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7312480Z [1m[32m  Downloaded[0m rayon v1.11.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7420675Z [1m[32m  Downloaded[0m rand_chacha v0.9.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7438578Z [1m[32m  Downloaded[0m zerocopy v0.8.31
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7720055Z [1m[32m  Downloaded[0m quote v1.0.42
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7757143Z [1m[32m  Downloaded[0m ppv-lite86 v0.2.21
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7774454Z [1m[32m  Downloaded[0m once_cell v1.21.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7807354Z [1m[32m  Downloaded[0m itertools v0.10.5
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7891248Z [1m[32m  Downloaded[0m num-traits v0.2.19
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.7925245Z [1m[32m  Downloaded[0m syn v2.0.111
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8066988Z [1m[32m  Downloaded[0m oorandom v11.1.5
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8079189Z [1m[32m  Downloaded[0m memchr v2.7.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8150788Z [1m[32m  Downloaded[0m errno v0.3.14
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8170534Z [1m[32m  Downloaded[0m crossbeam-epoch v0.9.21
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8202745Z [1m[32m  Downloaded[0m clap v4.5.53
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8305881Z [1m[32m  Downloaded[0m tinytemplate v1.2.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8323358Z [1m[32m  Downloaded[0m thiserror-impl v1.0.69
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8337414Z [1m[32m  Downloaded[0m subtle v2.6.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8349551Z [1m[32m  Downloaded[0m serde v1.0.228
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8385760Z [1m[32m  Downloaded[0m rusty-fork v0.3.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8400913Z [1m[32m  Downloaded[0m rayon-core v1.13.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8439314Z [1m[32m  Downloaded[0m itoa v1.0.16
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8454460Z [1m[32m  Downloaded[0m cpufeatures v0.2.17
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8469053Z [1m[32m  Downloaded[0m rand_xorshift v0.4.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8480371Z [1m[32m  Downloaded[0m ciborium-ll v0.2.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8491389Z [1m[32m  Downloaded[0m version_check v0.9.5
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8509449Z [1m[32m  Downloaded[0m fastrand v2.3.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8518544Z [1m[32m  Downloaded[0m crossbeam-utils v0.8.21
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8546408Z [1m[32m  Downloaded[0m ciborium v0.2.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8570898Z [1m[32m  Downloaded[0m ciborium-io v0.2.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8578902Z [1m[32m  Downloaded[0m rand_chacha v0.3.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8610246Z [1m[32m  Downloaded[0m clap_builder v4.5.53
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8657637Z [1m[32m  Downloaded[0m generic-array v0.14.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.8672173Z [1m[32m  Downloaded[0m libc v0.2.178
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.9053125Z [1m[32m  Downloaded[0m getrandom v0.3.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.9088967Z [1m[32m  Downloaded[0m cfg-if v1.0.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.9102319Z [1m[32m  Downloaded[0m aho-corasick v1.1.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.9156278Z [1m[32m  Downloaded[0m anes v0.1.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:26.9185419Z [1m[32m  Downloaded[0m anstyle v1.0.13
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.5482210Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.5483122Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.5483631Z [1m[32m   Compiling[0m quote v1.0.42
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.5484070Z [1m[32m   Compiling[0m libc v0.2.178
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.6082768Z [1m[32m   Compiling[0m cfg-if v1.0.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.6343469Z [1m[32m   Compiling[0m zerocopy v0.8.31
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.9953448Z [1m[32m   Compiling[0m getrandom v0.3.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:27.9999078Z [1m[32m   Compiling[0m version_check v0.9.5
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.2203013Z [1m[32m   Compiling[0m typenum v1.19.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.2280132Z [1m[32m   Compiling[0m crossbeam-utils v0.8.21
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.4292907Z [1m[32m   Compiling[0m serde_core v1.0.228
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.6452946Z [1m[32m   Compiling[0m syn v2.0.111
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.6874235Z [1m[32m   Compiling[0m generic-array v0.14.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.6914483Z [1m[32m   Compiling[0m autocfg v1.5.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.8193129Z [1m[32m   Compiling[0m crossbeam-epoch v0.9.21
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:28.9893396Z [1m[32m   Compiling[0m num-traits v0.2.19
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:29.6024337Z [1m[32m   Compiling[0m rustix v1.1.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:29.7272879Z [1m[32m   Compiling[0m serde v1.0.228
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:30.3033008Z [1m[32m   Compiling[0m rand_core v0.9.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:30.5403004Z [1m[32m   Compiling[0m once_cell v1.21.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:30.6263080Z [1m[32m   Compiling[0m regex-syntax v0.8.8
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:30.6983130Z [1m[32m   Compiling[0m linux-raw-sys v0.11.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:31.1532942Z [1m[32m   Compiling[0m either v1.15.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:31.3232765Z [1m[32m   Compiling[0m rayon-core v1.13.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:31.4603264Z [1m[32m   Compiling[0m serde_json v1.0.147
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:31.5803302Z [1m[32m   Compiling[0m bitflags v2.10.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:32.6722043Z [1m[32m   Compiling[0m crossbeam-deque v0.8.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:32.8334362Z [1m[32m   Compiling[0m memchr v2.7.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:33.6969138Z [1m[32m   Compiling[0m itoa v1.0.16
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:33.7062833Z [1m[32m   Compiling[0m zerocopy-derive v0.8.31
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:33.8412991Z [1m[32m   Compiling[0m serde_derive v1.0.228
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:34.1054610Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:34.7973009Z [1m[32m   Compiling[0m plotters-backend v0.3.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:35.0342946Z [1m[32m   Compiling[0m fastrand v2.3.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:35.2159486Z [1m[32m   Compiling[0m zmij v0.1.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:35.3505605Z [1m[32m   Compiling[0m clap_lex v0.7.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:35.5112977Z [1m[32m   Compiling[0m anstyle v1.0.13
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:35.5523062Z [1m[32m   Compiling[0m ciborium-io v0.2.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:35.6853238Z [1m[32m   Compiling[0m clap_builder v4.5.53
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:37.2732985Z [1m[32m   Compiling[0m ppv-lite86 v0.2.21
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:37.3093208Z [1m[32m   Compiling[0m half v2.7.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:37.5984855Z [1m[32m   Compiling[0m ciborium-ll v0.2.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:37.6212975Z [1m[32m   Compiling[0m tempfile v3.24.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:37.7603465Z [1m[32m   Compiling[0m plotters-svg v0.3.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:37.9512825Z [1m[32m   Compiling[0m zeroize v1.8.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:38.0533887Z [1m[32m   Compiling[0m regex-automata v0.4.13
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:38.1446693Z [1m[32m   Compiling[0m itertools v0.10.5
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:38.9963039Z [1m[32m   Compiling[0m block-buffer v0.10.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.0713050Z [1m[32m   Compiling[0m crypto-common v0.1.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.1312800Z [1m[32m   Compiling[0m wait-timeout v0.2.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.4158170Z [1m[32m   Compiling[0m cast v0.3.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.5493185Z [1m[32m   Compiling[0m fnv v1.0.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.5652997Z [1m[32m   Compiling[0m quick-error v1.2.3
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.5853236Z [1m[32m   Compiling[0m bit-vec v0.8.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.6040439Z [1m[32m   Compiling[0m thiserror v1.0.69
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.8063169Z [1m[32m   Compiling[0m same-file v1.0.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.8757727Z [1m[32m   Compiling[0m walkdir v2.5.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:39.8784398Z [1m[32m   Compiling[0m bit-set v0.8.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:40.0022853Z [1m[32m   Compiling[0m regex v1.12.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:40.3364527Z [1m[32m   Compiling[0m rusty-fork v0.3.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:40.7536088Z [1m[32m   Compiling[0m criterion-plot v0.5.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:40.8303277Z [1m[32m   Compiling[0m digest v0.10.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:40.9770637Z [1m[32m   Compiling[0m rayon v1.11.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:41.1702903Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:41.3202996Z [1m[32m   Compiling[0m ciborium v0.2.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:41.7575515Z [1m[32m   Compiling[0m tinytemplate v1.2.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:42.0743303Z [1m[32m   Compiling[0m plotters v0.3.7
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:42.1363638Z [1m[32m   Compiling[0m rand_chacha v0.9.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:42.4978069Z [1m[32m   Compiling[0m clap v4.5.53
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:42.5303034Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:42.6792892Z [1m[32m   Compiling[0m rand_xorshift v0.4.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:42.7562714Z [1m[32m   Compiling[0m rand v0.9.2
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.3652927Z [1m[32m   Compiling[0m is-terminal v0.4.17
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.3769240Z [1m[32m   Compiling[0m unarray v0.1.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.4033354Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.4298841Z [1m[32m   Compiling[0m rand_core v0.6.4
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.4378021Z [1m[32m   Compiling[0m oorandom v11.1.5
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.4973514Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.5333430Z [1m[32m   Compiling[0m anes v0.1.6
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.5743519Z [1m[32m   Compiling[0m rand_chacha v0.3.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.6922991Z [1m[32m   Compiling[0m criterion v0.5.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.7035082Z [1m[32m   Compiling[0m sha2 v0.10.9
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:43.9513116Z [1m[32m   Compiling[0m proptest v1.9.0
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:44.1693280Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:44.6059518Z [1m[32m   Compiling[0m getrandom v0.2.16
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:44.6693960Z [1m[32m   Compiling[0m subtle v2.6.1
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:13:44.7373904Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1250003Z [1m[32m    Finished[0m `release` profile [optimized] target(s) in 1m 43s
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1541654Z [1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1561154Z 
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1561471Z running 8 tests
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1572273Z test arithmetic::ntt_fft::tests::branchless_coefficient_ops_match_integer_reference ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1573048Z test arithmetic::ntt_fft::tests::class_f_constructor_rejects_composite_modulus ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1573635Z test arithmetic::ntt_fft::tests::constructor_rejects_incompatible_prime ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1574161Z test arithmetic::ntt_fft::tests::constructor_rejects_non_power_of_two_degree ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1574652Z test arithmetic::ntt_fft::tests::multiply_matches_schoolbook ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1575057Z test arithmetic::ntt_fft::tests::multiply_small ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1575449Z test arithmetic::ntt_fft::tests::negacyclic_wrap ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1575824Z test arithmetic::ntt_fft::tests::ntt_intt_roundtrip ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1576063Z 
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1576312Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1048 filtered out; finished in 0.00s
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1576668Z 
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1988735Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1990015Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.1990990Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2542325Z [1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.06s
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2579421Z [1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-4f32e741721b5fd7)
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2595866Z 
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2596256Z running 8 tests
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2597666Z 
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2598317Z thread 'arithmetic::persistent_montgomery::tests::even_modulus_is_rejected' panicked at crates/nine65/src/arithmetic/persistent_montgomery.rs:26:9:
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2599314Z Montgomery modulus must be odd
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2600904Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2603478Z test arithmetic::persistent_montgomery::tests::branchless_ring_ops_match_integer_reference ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2604823Z test arithmetic::persistent_montgomery::tests::even_modulus_is_rejected - should panic ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2606103Z test arithmetic::persistent_montgomery::tests::field_inverse_accepts_prime_modulus ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2624666Z test arithmetic::persistent_montgomery::tests::fixed_iteration_pow_matches_reference ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2625695Z test arithmetic::persistent_montgomery::tests::montgomery_multiplication ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2626604Z test arithmetic::persistent_montgomery::tests::montgomery_roundtrip ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2627633Z test arithmetic::persistent_montgomery::tests::odd_composite_class_r_modulus_is_supported ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2628470Z test arithmetic::persistent_montgomery::tests::persistent_chain_has_single_entry_and_exit ... ok
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2628856Z 
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2629120Z test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1048 filtered out; finished in 0.00s
+CT source and functional gates	NTT and persistent-Montgomery correctness	2026-10-07T20:15:09.2629471Z 
+CT source and functional gates	Assert the CT timing harness is intact	﻿2026-10-07T20:15:09.2674610Z ##[group]Run set -euo pipefail
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2674961Z [36;1mset -euo pipefail[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2675363Z [36;1mlisting=$(cargo test -p nine65 --lib --release constant_time_statistical -- \[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2675869Z [36;1m  --ignored --list 2>/dev/null | grep ': test$' || true)[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2676214Z [36;1mecho "$listing"[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2676515Z [36;1mcount=$(printf '%s\n' "$listing" | grep -c . || true)[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2676850Z [36;1mif [ "$count" -ne 21 ]; then[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2677454Z [36;1m  echo "::error::expected 21 ignored constant_time_statistical tests, found $count"[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2678008Z [36;1m  echo "::error::(9 robust-CV + 12 dudect two-class; update deliberately if the"[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2678548Z [36;1m  echo "::error:: harness changed, and update docs/CT_VERIFICATION_PLAN.md with it)"[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2678951Z [36;1m  exit 1[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2679146Z [36;1mfi[0m
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2741894Z shell: /usr/bin/bash -e {0}
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2742216Z env:
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2742423Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2742684Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2742903Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.2743127Z ##[endgroup]
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3846866Z security::ct_verification::constant_time_statistical::test_ct_adjacency_vs_general_k_elim_cost: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3848050Z security::ct_verification::constant_time_statistical::test_ct_barrett_reduce: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3849186Z security::ct_verification::constant_time_statistical::test_ct_dudect_adjacency_k_elim_operand_magnitude: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3850492Z security::ct_verification::constant_time_statistical::test_ct_dudect_adjacency_k_elim_operand_order: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3851278Z security::ct_verification::constant_time_statistical::test_ct_dudect_barrett_reduce_operand_magnitude: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3852447Z security::ct_verification::constant_time_statistical::test_ct_dudect_exact_prime_drop_fixed_vs_random: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3853345Z security::ct_verification::constant_time_statistical::test_ct_dudect_exact_prime_drop_small_vs_large_residues: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3854090Z security::ct_verification::constant_time_statistical::test_ct_dudect_k_elim_exact_divide_divisor_classes: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3854813Z security::ct_verification::constant_time_statistical::test_ct_dudect_k_elim_extract_k_operand_magnitude: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3855540Z security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3856254Z security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_sign_classes: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3856955Z security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3857704Z security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_pow_exponent_hamming_weight: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3858446Z security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_reduce_operand_magnitude: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3859104Z security::ct_verification::constant_time_statistical::test_ct_input_class_analysis: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3859710Z security::ct_verification::constant_time_statistical::test_ct_k_elimination_exact_divide: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3860316Z security::ct_verification::constant_time_statistical::test_ct_k_elimination_extract_k: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3860895Z security::ct_verification::constant_time_statistical::test_ct_montgomery_mul: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3861676Z security::ct_verification::constant_time_statistical::test_ct_montgomery_pow: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3862244Z security::ct_verification::constant_time_statistical::test_ct_montgomery_reduce: test
+CT source and functional gates	Assert the CT timing harness is intact	2026-10-07T20:15:09.3862852Z security::ct_verification::constant_time_statistical::test_ct_vs_vartime_comparison: test
+CT source and functional gates	Clippy touched arithmetic modules	﻿2026-10-07T20:15:09.3899671Z ##[group]Run cargo clippy -p nine65 --lib -- -D warnings
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.3900113Z [36;1mcargo clippy -p nine65 --lib -- -D warnings[0m
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.3963276Z shell: /usr/bin/bash -e {0}
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.3963534Z env:
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.3963738Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.3963999Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.3964226Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.3964458Z ##[endgroup]
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.4633103Z [1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.4635197Z package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.4636226Z workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.5262301Z [1m[32m   Compiling[0m proc-macro2 v1.0.103
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.5263274Z [1m[32m   Compiling[0m quote v1.0.42
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.5264259Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.5265137Z [1m[32m   Compiling[0m typenum v1.19.0
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.5884074Z [1m[32m   Compiling[0m version_check v0.9.5
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.7781739Z [1m[32m   Compiling[0m libc v0.2.178
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:09.8376295Z [1m[32m   Compiling[0m generic-array v0.14.7
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.0231917Z [1m[32m   Compiling[0m thiserror v1.0.69
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.2223141Z [1m[32m    Checking[0m cfg-if v1.0.4
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.5214302Z [1m[32m   Compiling[0m syn v2.0.111
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.5332808Z [1m[32m    Checking[0m cpufeatures v0.2.17
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.5533716Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.7893490Z [1m[32m    Checking[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.8542044Z [1m[32m    Checking[0m crypto-common v0.1.7
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.9092675Z [1m[32m    Checking[0m block-buffer v0.10.4
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:10.9722752Z [1m[32m    Checking[0m digest v0.10.7
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:11.0882754Z [1m[32m    Checking[0m sha2 v0.10.9
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:11.2380070Z [1m[32m    Checking[0m getrandom v0.2.16
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:11.3033146Z [1m[32m    Checking[0m subtle v2.6.1
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:13.4322687Z [1m[32m   Compiling[0m zeroize_derive v1.4.2
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:13.4323898Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:13.9363020Z [1m[32m    Checking[0m zeroize v1.8.2
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:13.9915011Z [1m[32m    Checking[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:14.1454367Z [1m[32m    Checking[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+CT source and functional gates	Clippy touched arithmetic modules	2026-10-07T20:15:17.2013444Z [1m[32m    Finished[0m `dev` profile [unoptimized + debuginfo] target(s) in 7.74s
+CT source and functional gates	Upload reports	﻿2026-10-07T20:15:17.2146931Z ##[group]Run actions/upload-artifact@v4
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2147258Z with:
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2147474Z   name: ct-verification-report
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2147733Z   if-no-files-found: error
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2148051Z   path: ct_ntt_source_report.json
+CT source and functional gates	Upload reports	verification_script_output.txt
+CT source and functional gates	Upload reports	
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2148408Z   compression-level: 6
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2148630Z   overwrite: false
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2148848Z   include-hidden-files: false
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2149136Z env:
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2149334Z   CARGO_HOME: /home/runner/.cargo
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2149583Z   CARGO_INCREMENTAL: 0
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2149807Z   CARGO_TERM_COLOR: always
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.2150035Z ##[endgroup]
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.3849966Z (node:4031) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.3851596Z (Use `node --trace-deprecation ...` to show where the warning was created)
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.3903998Z Multiple search paths detected. Calculating the least common ancestor of all paths
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.3906959Z The least common ancestor is /home/runner/work/NINE65_v7/NINE65_v7. This will be the root directory of the artifact
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.3908074Z With the provided path, there will be 2 files uploaded
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.3913716Z Artifact name is valid!
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.3914918Z Root directory input is valid!
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.6103255Z Beginning upload of artifact content to blob storage
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.6369220Z (node:4031) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.6773437Z Uploaded bytes 1213
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.6950870Z Finished uploading artifact content to blob storage!
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.6952328Z SHA256 digest of uploaded artifact zip is 883bb8f321966ce7cf85e1fb203fce0cd1969f8b6ea49d0bf4152e941910f9e3
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.6953794Z Finalizing artifact upload
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.8995979Z Artifact ct-verification-report.zip successfully finalized. Artifact ID 11508353447
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.8997030Z Artifact ct-verification-report has been successfully uploaded! Final size is 1213 bytes. Artifact ID is 11508353447
+CT source and functional gates	Upload reports	2026-10-07T20:15:17.9003390Z Artifact download URL: https://github.com/Skyelabz210/NINE65_v7/actions/runs/37680342677/artifacts/11508353447
+CT source and functional gates	Post Run actions/checkout@v4	﻿2026-10-07T20:15:17.9187132Z Post job cleanup.
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0033435Z [command]/usr/bin/git version
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0078510Z git version 2.55.0
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0122016Z Temporarily overriding HOME='/home/runner/work/_temp/f6b17de1-0429-4c7b-a602-a45e6cb4c6d3' before making global git config changes
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0123588Z Adding repository directory to the temporary git global config as a safe directory
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0128488Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/NINE65_v7/NINE65_v7
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0167026Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0200697Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0473607Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0502979Z http.https://github.com/.extraheader
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0515402Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0552026Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0836580Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+CT source and functional gates	Post Run actions/checkout@v4	2026-10-07T20:15:18.0883138Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+CT source and functional gates	Complete job	﻿2026-10-07T20:15:18.1276631Z Cleaning up orphan processes
+CT source and functional gates	Complete job	2026-10-07T20:15:18.1580277Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

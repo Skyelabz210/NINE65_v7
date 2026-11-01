@@ -4,7 +4,9 @@
 use crate::arithmetic::RNSPolynomial;
 use crate::entropy::FheRng;
 use crate::errors::{Nine65Error, Nine65Result};
-use crate::ops::rns_fhe::exact_mul::{ExactMulEvaluator, ExactTensor3, RNSHybridGadgetKey};
+use crate::ops::rns_fhe::exact_mul::{
+    ExactMulEvaluator, ExactTensor3, PreparedHybridGadgetKey, RNSHybridGadgetKey,
+};
 use crate::ops::rns_fhe::{RNSCiphertext, RNSFHEContext, RNSSecretKey};
 use zeroize::Zeroizing;
 
@@ -21,6 +23,26 @@ pub struct RNSGaloisKey {
     n: usize,
     primes: Vec<u64>,
     switch: RNSHybridGadgetKey,
+}
+
+/// Prepared sigma(s) switch key with private target typing and no raw-key copy.
+/// Its transformed rows can be reused across plaintext trays over the same ring.
+pub struct PreparedRNSGaloisKey {
+    exponent: u64,
+    n: usize,
+    primes: Vec<u64>,
+    switch: PreparedHybridGadgetKey,
+}
+
+impl PreparedRNSGaloisKey {
+    #[cfg(any(test, feature = "allow_insecure"))]
+    pub(crate) fn published_ciphertexts(&self) -> usize {
+        self.switch.published_ciphertexts()
+    }
+
+    pub fn coefficient_storage_bytes(&self) -> usize {
+        self.switch.coefficient_storage_bytes()
+    }
 }
 
 pub struct RNSGaloisEvaluator<'a> {
@@ -151,6 +173,48 @@ impl<'a> RNSGaloisEvaluator<'a> {
             });
         }
         validate_main(self.ctx, ct)?;
+        self.exact
+            .relinearize_tensor(&self.automorphism_tensor(ct, key.exponent), &key.switch)
+            .map_err(|e| failure(format!("native Galois switch: {e:?}")))
+    }
+
+    /// Validate and transform a Galois key once. The caller may then drop the
+    /// raw key; no second key copy is retained in this prepared object.
+    pub fn prepare_key(&self, key: &RNSGaloisKey) -> Nine65Result<PreparedRNSGaloisKey> {
+        if key.n != self.ctx.n || key.primes != self.ctx.config.primes {
+            return Err(Nine65Error::BootstrapConfigMismatch {
+                reason: "native Galois key basis mismatch".into(),
+            });
+        }
+        let switch = self
+            .exact
+            .prepare_hybrid_gadget_key(&key.switch)
+            .map_err(|e| failure(format!("native Galois key preparation: {e:?}")))?;
+        Ok(PreparedRNSGaloisKey {
+            exponent: key.exponent,
+            n: key.n,
+            primes: key.primes.clone(),
+            switch,
+        })
+    }
+
+    pub fn apply_prepared(
+        &self,
+        ct: &RNSCiphertext,
+        key: &PreparedRNSGaloisKey,
+    ) -> Nine65Result<RNSCiphertext> {
+        if key.n != self.ctx.n || key.primes != self.ctx.config.primes {
+            return Err(Nine65Error::BootstrapConfigMismatch {
+                reason: "prepared native Galois key basis mismatch".into(),
+            });
+        }
+        validate_main(self.ctx, ct)?;
+        self.exact
+            .relinearize_tensor_prepared(&self.automorphism_tensor(ct, key.exponent), &key.switch)
+            .map_err(|e| failure(format!("prepared native Galois switch: {e:?}")))
+    }
+
+    fn automorphism_tensor(&self, ct: &RNSCiphertext, exponent: u64) -> ExactTensor3 {
         let from_mont = |poly: RNSPolynomial| RNSPolynomial {
             limbs: self
                 .ctx
@@ -162,18 +226,15 @@ impl<'a> RNSGaloisEvaluator<'a> {
                 .collect(),
             n: self.ctx.n,
         };
-        let tensor = ExactTensor3 {
-            e0: from_mont(sigma(self.ctx, &ct.c0, key.exponent)),
+        ExactTensor3 {
+            e0: from_mont(sigma(self.ctx, &ct.c0, exponent)),
             e1: RNSPolynomial {
                 limbs: vec![vec![0; self.ctx.n]; self.ctx.config.primes.len()],
                 n: self.ctx.n,
             },
-            e2: from_mont(sigma(self.ctx, &ct.c1, key.exponent)),
+            e2: from_mont(sigma(self.ctx, &ct.c1, exponent)),
             num_primes: self.ctx.config.primes.len(),
-        };
-        self.exact
-            .relinearize_tensor(&tensor, &key.switch)
-            .map_err(|e| failure(format!("native Galois switch: {e:?}")))
+        }
     }
 }
 
@@ -200,5 +261,65 @@ pub(crate) fn shift(ctx: &RNSFHEContext, ct: &RNSCiphertext, exponent: usize) ->
         c0: map(&ct.c0),
         c1: map(&ct.c1),
         num_primes: ct.num_primes,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entropy::ShadowHarvester;
+    use crate::params::FHEConfig;
+
+    #[test]
+    fn prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays() {
+        let cfg = FHEConfig {
+            n: 8,
+            primes: vec![998244353, 985661441, 754974721, 469762049],
+            q: 998244353,
+            t: 65537,
+            eta: 3,
+            security_bits: 80,
+            name: "prepared_galois_oracle",
+        };
+        let ctx = RNSFHEContext::new(&cfg);
+        let mut high_cfg = cfg.clone();
+        high_cfg.t = 4295098369;
+        let high = RNSFHEContext::new(&high_cfg);
+        let ev = RNSGaloisEvaluator::new(&ctx).unwrap();
+        let mut rng = ShadowHarvester::with_seed(0x6A1015);
+        let keys = ctx.generate_keys(&mut rng);
+        for exponent in [3, 15] {
+            let raw = ev
+                .generate_key_with_rng(&keys.secret_key, exponent, &mut rng)
+                .unwrap();
+            let prepared = ev.prepare_key(&raw).unwrap();
+            assert!(prepared.coefficient_storage_bytes() > 0);
+            for view in [&ctx, &high] {
+                let eval = RNSGaloisEvaluator::new(view).unwrap();
+                let ct = view.encrypt(19, &keys.public_key, &mut rng);
+                let expected = eval.apply(&ct, &raw).unwrap();
+                let actual = eval.apply_prepared(&ct, &prepared).unwrap();
+                assert_eq!(actual.c0.limbs, expected.c0.limbs);
+                assert_eq!(actual.c1.limbs, expected.c1.limbs);
+                assert_eq!(
+                    view.try_exact_evaluator()
+                        .unwrap()
+                        .try_decrypt_exact(&actual, &keys.secret_key)
+                        .unwrap(),
+                    19
+                );
+                let mut malformed = ct;
+                malformed.c0.limbs[0][0] = cfg.primes[0];
+                assert!(eval.apply_prepared(&malformed, &prepared).is_err());
+            }
+            let mut foreign = cfg.clone();
+            foreign.primes.swap(0, 1);
+            foreign.q = foreign.primes[0];
+            let other = RNSFHEContext::new(&foreign);
+            let eval = RNSGaloisEvaluator::new(&other).unwrap();
+            assert!(eval.prepare_key(&raw).is_err());
+            let ct = ctx.encrypt(19, &keys.public_key, &mut rng);
+            assert!(eval.apply_prepared(&ct, &prepared).is_err());
+        }
     }
 }

@@ -36,13 +36,14 @@ use crate::Vec;
 // real crate would mean editing Cargo.toml, which is outside this fix's
 // permitted file set. These counters mirror cram-core's field names
 // (`garner_calls`, `crt_reconstructions`) so a later rename to the shared
-// type is mechanical. They are incremented at every Garner-style
-// reconstruction call site this file (and `composite_division.rs`, which
-// reuses this static) actually owns: D1's `garner_reconstruct_subset`, D2's
-// `garner_reconstruct`, and D3's `crt_fuse_pairs`.
+// type is mechanical. Direct weighted CRT reads in D1, D2 and D3 increment
+// `crt_reconstructions`. The legacy Garner slot remains for API compatibility;
+// it must not be incremented for an operation that uses no mixed-radix walk.
 #[derive(Default)]
 pub struct CramDivisionCounters {
+    /// Legacy slot, retained for callers of the existing snapshot API.
     pub garner_calls: AtomicU64,
+    /// Direct weighted CRT reads performed by the division paths.
     pub crt_reconstructions: AtomicU64,
 }
 
@@ -62,8 +63,7 @@ impl CramDivisionCounters {
     }
 }
 
-/// Process-wide counters for every Garner-style reconstruction call in the
-/// D1/D2/D3 division lanes this crate implements.
+/// Process-wide reconstruction counters for the D1/D2/D3 division lanes.
 pub static CRAM_DIVISION_COUNTERS: CramDivisionCounters = CramDivisionCounters::new();
 
 // ─── Safe Basis ───────────────────────────────────────────────────────────
@@ -482,13 +482,16 @@ fn signature_lane_hash(sig: &PolynomialS8Signature, op_counter: i128) -> u32 {
     (h % 19) as u32
 }
 
-/// CRT joint residue of (r_a mod p, r_b mod q) into Z/(p*q)Z, computed via
-/// Garner's two-step formula. `p` and `q` must be coprime.
-fn crt_pair(r_a: u32, p: u32, r_b: u32, q: u32) -> u32 {
-    let inv = mod_inv_u32(p % q, q).expect("S8 primes are pairwise coprime");
-    let diff = (r_b as i64 - r_a as i64).rem_euclid(q as i64) as u32;
-    let k = ((diff as u64) * (inv as u64) % q as u64) as u32;
-    (r_a as u64 + (k as u64) * (p as u64)) as u32
+/// Joint residue in `[0,p*q)` from two independent CRT weights. `p` and `q`
+/// must be coprime. u128 intermediates support the complete u32 modulus range,
+/// and the canonical result fits u64 without truncation.
+fn crt_pair(r_a: u32, p: u32, r_b: u32, q: u32) -> u64 {
+    let inverse_q = mod_inv_u32(q % p, p).expect("lane moduli must be pairwise coprime");
+    let inverse_p = mod_inv_u32(p % q, q).expect("lane moduli must be pairwise coprime");
+    let product = p as u128 * q as u128;
+    let left = r_a as u128 * q as u128 * inverse_q as u128;
+    let right = r_b as u128 * p as u128 * inverse_p as u128;
+    ((left + right) % product) as u64
 }
 
 /// K-Elim winding `k = (r_target - r_source) * source^-1 mod target` for one
@@ -536,7 +539,8 @@ impl LockWitnessSet {
                         .map(|s| {
                             let r_s = s.residue_mod(lock.source).unwrap();
                             let r_t = s.residue_mod(lock.target).unwrap();
-                            crt_pair(r_s, lock.source, r_t, lock.target)
+                            u32::try_from(crt_pair(r_s, lock.source, r_t, lock.target))
+                                .expect("S8 agreement modulus fits u32")
                         })
                         .collect();
                     LockEvidence::Agreement { expected_joint }
@@ -635,7 +639,8 @@ fn verify_one(
             for (i, s) in sig.signatures.iter().enumerate() {
                 let r_s = s.residue_mod(lock.source).unwrap();
                 let r_t = s.residue_mod(lock.target).unwrap();
-                let actual = crt_pair(r_s, lock.source, r_t, lock.target);
+                let actual = u32::try_from(crt_pair(r_s, lock.source, r_t, lock.target))
+                    .expect("S8 agreement modulus fits u32");
                 if actual != expected_joint[i] {
                     return Err(LockFailure::AgreementDivergence {
                         source: lock.source,
@@ -719,7 +724,7 @@ pub struct CramWitnessState {
     /// Phase-2 lock evidence — one entry per lock in the graph.
     pub lock_witness: LockWitnessSet,
     /// Optional auxiliary-prime residues for FPD (D3 division) support.
-    pub c0_aux: Option<AuxResidueSet>,
+    c0_aux: Option<AuxResidueSet>,
 }
 
 impl CramWitnessState {
@@ -740,6 +745,14 @@ impl CramWitnessState {
     /// Return the number of c0 coefficients tracked.
     pub fn poly_len(&self) -> usize {
         self.c0_signature.len()
+    }
+
+    /// Return the read-only auxiliary residue witness used by the FPD lane.
+    ///
+    /// Mutation stays private so callers cannot replace or alter residues
+    /// after the construction snapshots and S8 binding have been captured.
+    pub fn c0_aux(&self) -> Option<&AuxResidueSet> {
+        self.c0_aux.as_ref()
     }
 }
 
@@ -800,7 +813,21 @@ impl<C> CramCiphertext<C> {
     /// Reconstruct c0's coefficients (mod S8_PRODUCT) from the witness.
     /// This is a roundtrip check, not the security-bearing decryption.
     pub fn reconstruct_c0_coeffs_signed(&self) -> Vec<i32> {
-        self.witness.c0_signature.reconstruct_signed()
+        self.witness
+            .c0_signature
+            .signatures
+            .iter()
+            .map(|signature| {
+                let (unsigned, product) =
+                    crt_weighted_sum_subset(signature, &[0, 1, 2, 3, 4, 5, 6, 7]);
+                let signed = if unsigned > product / 2 {
+                    unsigned - product
+                } else {
+                    unsigned
+                };
+                signed as i32
+            })
+            .collect()
     }
 }
 
@@ -822,8 +849,8 @@ pub enum CramOpError {
     BasisMismatch,
     /// op_counter would overflow.
     OpCounterOverflow,
-    /// The chimera router selected a lane that Phase 4 has not yet
-    /// implemented (D1 K-Elim, D2 DIV_EXACT, D3 FPD).
+    /// The requested entry point cannot execute the selected lane with the
+    /// witnesses supplied for this operation.
     DivisionLaneNotImplemented {
         primary: crate::chimera_division::ChimeraLane,
         gcd_with_basis: u64,
@@ -1144,14 +1171,23 @@ fn gcd_u64(mut a: u64, mut b: u64) -> u64 {
     a
 }
 
+/// Full-width gcd for classifying an `i128` divisor without truncation.
+fn gcd_u128(mut a: u128, mut b: u128) -> u128 {
+    while b != 0 {
+        let t = b;
+        b = a % b;
+        a = t;
+    }
+    a
+}
+
 /// Recommendation produced by the chimera router for a given divisor.
 ///
 /// The router classifies the divisor against the active CRT basis and
 /// returns which of the four lanes can produce a certified quotient.
 /// `D0` (modular inverse) is the cheap fast path when the divisor is
-/// coprime to the basis product. The other three lanes are recommended
-/// (with a status code) but their full implementation lives in the
-/// `chimera_division` certificate layer.
+/// coprime to the basis product. The other lanes require their dedicated
+/// witness-bearing entry points and eventual certificate-layer completion.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChimeraDivPlan {
     /// The lane the router selects as primary.
@@ -1168,9 +1204,13 @@ pub struct ChimeraDivPlan {
 ///
 /// Phase-4 router covers the static classification:
 ///
-/// * `gcd(d, M_act) == 1` → D0 ModularInverse, status `ModularInverseExact`.
-/// * `d > 0` and shares factors → D3 FusedPiggyback (auxiliary anchors
-///   handle the non-coprime divisor; full FPD requires the aux pool).
+/// * `gcd(d, M_act) == 1` → D0 ModularInverse, status `ModularSolve`.
+/// * on the implemented S8 topology, `abs(d)` divides the active squarefree
+///   basis product → D3 FusedPiggyback can use every divisor prime as an
+///   excluded exactness-witness lane. Division by `+/-1` is tautologically
+///   exact.
+/// * other basis-smooth shared-factor divisors → D2 DivExact; D3 needs
+///   additional prime-power witnesses and is not marked evaluable.
 /// * `d == 0` → no lane evaluable, status `InvalidDivisor`.
 ///
 /// D1 (K-Elim) and D2 (DIV_EXACT absorbent) require additional witnesses
@@ -1187,45 +1227,54 @@ pub fn select_division_lane(divisor: i128, basis: SafeBasis) -> ChimeraDivPlan {
             evaluable: LaneMask::default(),
         };
     }
-    let abs_d = divisor.unsigned_abs() as u64;
-    let m = basis.product();
-    let g = gcd_u64(abs_d, m);
+    let abs_d = divisor.unsigned_abs();
+    let m = basis.product() as u128;
+    let g = gcd_u128(abs_d, m) as u64;
     let mut evaluable = LaneMask::default();
+    let fpd_exactness_witnessed = basis == SafeBasis::S8 && m % abs_d == 0;
     if g == 1 {
         evaluable.modular_inverse = true;
-        evaluable.fused_piggyback = true; // FPD always works for non-zero d
+        evaluable.fused_piggyback = fpd_exactness_witnessed;
         return ChimeraDivPlan {
             primary: ChimeraLane::ModularInverse,
-            primary_status: DivStatus::ModularInverseExact,
+            primary_status: DivStatus::ModularSolve,
             gcd_with_basis: 1,
             evaluable,
         };
     }
-    // Shared factor — D0 is unsafe; recommend D3 with bound-pending status.
-    evaluable.fused_piggyback = true;
+    // Shared factor — D0 is unsafe. D3 is exact only when the complete
+    // divisor is witnessed by distinct S8 prime lanes.
+    evaluable.fused_piggyback = fpd_exactness_witnessed;
     // D2 (DIV_EXACT) is statically applicable when |d| is a product of
     // primes that all live inside the basis (so an absorbent extension
     // could cover it). For Phase 4 we just record evaluability.
     if is_basis_smooth(abs_d, basis) {
         evaluable.div_exact = true;
     }
+    let (primary, primary_status) = if evaluable.fused_piggyback {
+        (ChimeraLane::FusedPiggyback, DivStatus::FusedBounded)
+    } else if evaluable.div_exact {
+        (ChimeraLane::DivExact, DivStatus::DivExact)
+    } else {
+        (ChimeraLane::FusedPiggyback, DivStatus::MissingWitness)
+    };
     ChimeraDivPlan {
-        primary: ChimeraLane::FusedPiggyback,
-        primary_status: DivStatus::FusedBounded,
+        primary,
+        primary_status,
         gcd_with_basis: g,
         evaluable,
     }
 }
 
 /// True iff every prime factor of `d` lies in `basis.moduli()`.
-fn is_basis_smooth(mut d: u64, basis: SafeBasis) -> bool {
+fn is_basis_smooth(mut d: u128, basis: SafeBasis) -> bool {
     if d == 0 {
         return false;
     }
     for &p in basis.moduli() {
-        let p64 = p as u64;
-        while d % p64 == 0 {
-            d /= p64;
+        let p128 = p as u128;
+        while d % p128 == 0 {
+            d /= p128;
         }
     }
     d == 1
@@ -1237,11 +1286,11 @@ fn is_basis_smooth(mut d: u64, basis: SafeBasis) -> bool {
 /// coprime to every S8 prime). Returns `None` if any lane has no inverse,
 /// signalling the router to fall back to D1/D2/D3.
 fn s8_lane_inverses(d: i128) -> Option<[u32; 8]> {
-    let abs_d = d.unsigned_abs() as u64;
+    let abs_d = d.unsigned_abs();
     let sign = d < 0;
     let mut out = [0u32; 8];
     for (i, &p) in crate::triad::S8.iter().enumerate() {
-        let r = (abs_d % p as u64) as u32;
+        let r = (abs_d % p as u128) as u32;
         let inv = mod_inv_u32(r, p)?;
         out[i] = if sign { (p - inv) % p } else { inv };
     }
@@ -1249,8 +1298,12 @@ fn s8_lane_inverses(d: i128) -> Option<[u32; 8]> {
 }
 
 impl<C> CramCiphertext<C> {
-    /// Phase-4 D0 rescale: divide every coefficient by `divisor` lane-wise
-    /// using modular inverses. Requires `gcd(divisor, S8_PRODUCT) == 1`.
+    /// Phase-4 D0 modular solve: multiply every coefficient lane-wise by
+    /// `divisor^-1`. Requires `gcd(divisor, S8_PRODUCT) == 1`.
+    ///
+    /// This returns `q` such that `divisor*q = input (mod S8_PRODUCT)`. It
+    /// makes no exact-integer quotient or floor/rounding claim; those intents
+    /// require a remainder or divisibility witness in D1/D2/D3.
     ///
     /// Returns the rescaled ciphertext + the chimera resolver decision so
     /// callers can inspect which lane was selected and why.
@@ -1343,29 +1396,92 @@ fn apply_lane_inverses(a: &PolynomialS8Signature, inverses: &[u32; 8]) -> Polyno
 /// them at op time.
 #[derive(Debug, Clone)]
 pub struct AuxResidueSet {
-    pub primes: Vec<u32>,
+    primes: Vec<u32>,
     /// `residues[coeff_idx][prime_idx]` — outer index per polynomial
     /// coefficient, inner index aligned with `primes`.
-    pub residues: Vec<Vec<u32>>,
+    residues: Vec<Vec<u32>>,
+    /// S8 projection captured from the same coefficients as `residues`.
+    /// FPD refuses an aux set moved onto a different polynomial witness.
+    s8_binding: Vec<S8Signature>,
+    /// Private construction snapshots make later in-memory mutation fail
+    /// closed. They are an integrity invariant, not cryptographic custody.
+    sealed_primes: Vec<u32>,
+    sealed_residues: Vec<Vec<u32>>,
 }
 
 impl AuxResidueSet {
     /// Project each coefficient into every aux prime in `primes`.
-    pub fn from_coeffs(coeffs: &[i128], primes: &[u32]) -> Self {
+    fn from_coeffs(coeffs: &[i128], primes: &[u32]) -> Self {
         let primes_vec = primes.to_vec();
         let residues: Vec<Vec<u32>> = coeffs
             .iter()
             .map(|&c| {
                 primes_vec
                     .iter()
-                    .map(|&p| c.rem_euclid(p as i128) as u32)
+                    // Retain malformed input for typed refusal at the FPD
+                    // boundary instead of panicking in this infallible
+                    // wrapper constructor.
+                    .map(|&p| {
+                        if p > 1 {
+                            c.rem_euclid(p as i128) as u32
+                        } else {
+                            0
+                        }
+                    })
                     .collect()
             })
             .collect();
         Self {
-            primes: primes_vec,
-            residues,
+            primes: primes_vec.clone(),
+            residues: residues.clone(),
+            s8_binding: coeffs.iter().map(|&c| S8Signature::project(c)).collect(),
+            sealed_primes: primes_vec,
+            sealed_residues: residues,
         }
+    }
+
+    /// Number of polynomial coefficients represented by this witness.
+    pub fn coefficient_count(&self) -> usize {
+        self.residues.len()
+    }
+
+    /// Read one canonical auxiliary residue without exposing mutable storage.
+    pub fn residue(&self, coefficient_index: usize, prime_index: usize) -> Option<u32> {
+        self.residues
+            .get(coefficient_index)
+            .and_then(|row| row.get(prime_index))
+            .copied()
+    }
+
+    /// Validate shape, CRT compatibility, canonical residues, and binding to
+    /// the S8 polynomial carried by the same witness state.
+    fn validate_against(&self, signature: &PolynomialS8Signature) -> Result<(), FpdError> {
+        if self.s8_binding != signature.signatures
+            || self.sealed_primes != self.primes
+            || self.sealed_residues != self.residues
+        {
+            return Err(FpdError::AuxiliaryWitnessBindingMismatch);
+        }
+        if self.residues.len() != signature.signatures.len()
+            || self
+                .residues
+                .iter()
+                .any(|row| row.len() != self.primes.len())
+        {
+            return Err(FpdError::AuxiliaryWitnessMalformed);
+        }
+        for (i, &modulus) in self.primes.iter().enumerate() {
+            if modulus <= 1
+                || gcd_u64(modulus as u64, crate::triad::S8_PRODUCT as u64) != 1
+                || self.primes[..i]
+                    .iter()
+                    .any(|&prior| gcd_u64(prior as u64, modulus as u64) != 1)
+                || self.residues.iter().any(|row| row[i] >= modulus)
+            {
+                return Err(FpdError::AuxiliaryWitnessMalformed);
+            }
+        }
+        Ok(())
     }
 
     /// Pick the smallest set of auxiliary primes from
@@ -1377,12 +1493,12 @@ impl AuxResidueSet {
     /// Returns `None` if the pool can't deliver enough margin.
     pub fn select_for_divisor(divisor: i128, quotient_bound: i128) -> Option<Vec<u32>> {
         let abs_d = divisor.unsigned_abs();
-        if abs_d == 0 {
+        if abs_d == 0 || quotient_bound < 0 {
             return None;
         }
         let s8_good_product: u64 = crate::triad::S8
             .iter()
-            .filter(|&&m| gcd_u64(m as u64, abs_d as u64) == 1)
+            .filter(|&&m| gcd_u128(m as u128, abs_d) == 1)
             .map(|&m| m as u64)
             .product();
         let mut p: u128 = s8_good_product as u128;
@@ -1392,7 +1508,7 @@ impl AuxResidueSet {
             return Some(chosen);
         }
         for &alpha in crate::chimera::AUX_FPD_POOL.iter() {
-            if gcd_u64(alpha as u64, abs_d as u64) != 1 {
+            if gcd_u128(alpha as u128, abs_d) != 1 {
                 continue;
             }
             chosen.push(alpha);
@@ -1405,21 +1521,13 @@ impl AuxResidueSet {
     }
 }
 
-/// Incremental Garner CRT fusion of (modulus, residue) pairs into the
-/// unique integer `Q` in `[0, ∏ moduli)`. Moduli must be pairwise coprime.
-/// Recover the integer pinned by a set of `(modulus, residue)` pairs on a
-/// pairwise-coprime basis, via a single CRT anchor read (K-Elimination ladder).
-///
-/// A2: this replaces the former Garner mixed-radix fusion. Mixed radix emits a
-/// sequential chain of positional digits — synthetic emission that breaks the
-/// i.i.d. structure of residue space and opens a side-channel surface. The CRT
-/// read below forms the value directly from the coprime basis (each lane's
-/// contribution is `r_i · (M/m_i) · (M/m_i)^{-1} mod m_i`), leaving the lane
-/// residues untouched and introducing no positional digit sequence. The
-/// returned value is identical to the retired mixed-radix result.
+/// Direct weighted CRT fusion into `[0, product(moduli))`. The caller verifies
+/// canonical pairwise-coprime lanes and that the product fits positive i128.
+/// This reconstructs an integer explicitly; it performs no Garner/MRC digit
+/// walk and makes no claim about independence of an output distribution.
 fn crt_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
     CRAM_DIVISION_COUNTERS
-        .garner_calls
+        .crt_reconstructions
         .fetch_add(1, Ordering::Relaxed);
     // Basis product M = ∏ m_i.
     let mut modulus: i128 = 1;
@@ -1434,8 +1542,17 @@ fn crt_fuse_pairs(pairs: &[(u32, u32)]) -> i128 {
         let cofactor_mod = cofactor.rem_euclid(m_i) as u32;
         let inv = mod_inv_u32(cofactor_mod, m).expect("FPD: lane moduli must be pairwise coprime")
             as i128;
-        let term = (r as i128) * cofactor % modulus * inv % modulus;
-        value = (value + term).rem_euclid(modulus);
+        // Even when M fits i128, the unreduced weighted term need not fit.
+        let term = crate::k_elim::mulmod(
+            crate::k_elim::mulmod(r as i128, cofactor, modulus),
+            inv,
+            modulus,
+        );
+        value = if value >= modulus - term {
+            value - (modulus - term)
+        } else {
+            value + term
+        };
     }
     value
 }
@@ -1462,6 +1579,12 @@ struct FpdLanePieces {
 /// [`BadLaneDisagreement`]: FpdError::BadLaneDisagreement
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FpdError {
+    /// Auxiliary CRT moduli/residue rows are not a canonical, pairwise
+    /// coprime extension disjoint from S8.
+    AuxiliaryWitnessMalformed,
+    /// The auxiliary residues were not projected from the same coefficient
+    /// vector as the S8 signature carried by this witness state.
+    AuxiliaryWitnessBindingMismatch,
     /// A required per-lane modular inverse of the divisor does not exist,
     /// even though the caller (`cram_rescale_by_scalar_fpd`) already checked
     /// every aux prime for coprimality with `d` before calling here.
@@ -1478,6 +1601,15 @@ pub enum FpdError {
         coeff_index: usize,
         s8_lane_modulus: u32,
     },
+    /// The centered quotient representative lies outside the caller's
+    /// certified inclusive corridor `|q| <= bound`. Capacity alone makes a
+    /// bounded representative unique; it does not prove that the recovered
+    /// value satisfies the declared bound.
+    QuotientBoundExceeded {
+        coeff_index: usize,
+        quotient: i128,
+        bound: i128,
+    },
 }
 
 /// Per-coefficient FPD division: fuse the good S8 lanes and the aux lanes
@@ -1491,6 +1623,7 @@ fn fpd_one_coefficient(
     aux_primes: &[u32],
     divisor: i128,
     fusion_product: i128,
+    quotient_bound: i128,
 ) -> Result<FpdLanePieces, FpdError> {
     let abs_d = divisor.unsigned_abs() as u64;
     let sign: i128 = if divisor < 0 { -1 } else { 1 };
@@ -1533,13 +1666,20 @@ fn fpd_one_coefficient(
     // coefficient's original residue on each such lane; a mismatch proves
     // the numerator was never evenly divisible by `d`.
     for &(i, p) in &bad_lanes {
-        let predicted = (q_signed * divisor).rem_euclid(p as i128) as u32;
+        let predicted = crate::k_elim::mulmod(q_signed, divisor, p as i128) as u32;
         if predicted != s8_residues[i] {
             return Err(FpdError::BadLaneDisagreement {
                 coeff_index,
                 s8_lane_modulus: p,
             });
         }
+    }
+    if q_signed.unsigned_abs() > quotient_bound as u128 {
+        return Err(FpdError::QuotientBoundExceeded {
+            coeff_index,
+            quotient: q_signed,
+            bound: quotient_bound,
+        });
     }
 
     // Re-project onto every S8 lane (including the bad lanes just verified
@@ -1577,6 +1717,17 @@ impl<C> CramCiphertext<C> {
     /// product over S8's good lanes plus the aux primes must exceed
     /// `2 * quotient_bound`; otherwise the lane reports
     /// `BoundInsufficient` and Phase 4 returns `DivisionLaneNotImplemented`.
+    ///
+    /// For `abs(divisor) > 1`, exactness is witnessed by the S8 lanes excluded
+    /// from fusion. This is complete only when `abs(divisor)` divides the
+    /// squarefree S8 product; division by `+/-1` is tautologically exact.
+    /// Prime powers and factors outside S8 require additional divisibility
+    /// witnesses and fail closed here. The caller remains responsible for an
+    /// authentic inclusive bound `|q| <= quotient_bound` on the true
+    /// quotient; the recovered representative is checked against that bound
+    /// before it is emitted. The returned [`ChimeraDivPlan`] is the router's
+    /// static preflight classification (`FusedBounded`), not an executed
+    /// exactness certificate or proof of the bound's provenance.
     pub fn cram_rescale_by_scalar_fpd<F>(
         self,
         divisor: i128,
@@ -1589,19 +1740,33 @@ impl<C> CramCiphertext<C> {
         self.verify().map_err(CramOpError::InputVerifyFailed)?;
         let plan = select_division_lane(divisor, self.topology.basis);
 
+        let abs_d = divisor.unsigned_abs();
+        if quotient_bound < 0
+            || self.topology.basis != SafeBasis::S8
+            || abs_d == 0
+            || (self.topology.basis.product() as u128) % abs_d != 0
+        {
+            return Err(CramOpError::DivisionLaneNotImplemented {
+                primary: plan.primary,
+                gcd_with_basis: plan.gcd_with_basis,
+            });
+        }
+
         let aux_set = self.witness.c0_aux.as_ref().ok_or({
             CramOpError::DivisionLaneNotImplemented {
                 primary: plan.primary,
                 gcd_with_basis: plan.gcd_with_basis,
             }
         })?;
+        aux_set
+            .validate_against(&self.witness.c0_signature)
+            .map_err(CramOpError::Fpd)?;
         // Verify every aux prime is coprime to the divisor.
-        let abs_d = divisor.unsigned_abs() as u64;
-        if abs_d == 0
-            || aux_set
-                .primes
-                .iter()
-                .any(|&alpha| gcd_u64(alpha as u64, abs_d) != 1)
+        let abs_d = abs_d as u64;
+        if aux_set
+            .primes
+            .iter()
+            .any(|&alpha| gcd_u64(alpha as u64, abs_d) != 1)
         {
             return Err(CramOpError::DivisionLaneNotImplemented {
                 primary: plan.primary,
@@ -1614,7 +1779,11 @@ impl<C> CramCiphertext<C> {
             .filter(|&&m| gcd_u64(m as u64, abs_d) == 1)
             .map(|&m| m as i128)
             .product();
-        let aux_prod: i128 = aux_set.primes.iter().map(|&p| p as i128).product();
+        let aux_prod = aux_set
+            .primes
+            .iter()
+            .try_fold(1i128, |product, &p| product.checked_mul(p as i128))
+            .ok_or(CramOpError::Fpd(FpdError::AuxiliaryWitnessMalformed))?;
         let fusion_product = s8_good
             .checked_mul(aux_prod)
             .ok_or(CramOpError::OpCounterOverflow)?;
@@ -1637,6 +1806,7 @@ impl<C> CramCiphertext<C> {
                 &aux_set.primes,
                 divisor,
                 fusion_product,
+                quotient_bound,
             )
             .map_err(|err| match err {
                 // A structural invariant violation (should be unreachable
@@ -1648,7 +1818,10 @@ impl<C> CramCiphertext<C> {
                 },
                 // A genuinely inexact division gets its own typed, specific
                 // error rather than being folded into the generic one above.
-                FpdError::BadLaneDisagreement { .. } => CramOpError::Fpd(err),
+                FpdError::BadLaneDisagreement { .. }
+                | FpdError::QuotientBoundExceeded { .. }
+                | FpdError::AuxiliaryWitnessMalformed
+                | FpdError::AuxiliaryWitnessBindingMismatch => CramOpError::Fpd(err),
             })?;
             new_signatures.push(S8Signature {
                 residues: pieces.new_s8,
@@ -1660,7 +1833,10 @@ impl<C> CramCiphertext<C> {
         };
         let new_aux = AuxResidueSet {
             primes: aux_set.primes.clone(),
-            residues: new_aux_residues,
+            residues: new_aux_residues.clone(),
+            s8_binding: new_c0.signatures.clone(),
+            sealed_primes: aux_set.primes.clone(),
+            sealed_residues: new_aux_residues,
         };
 
         let new_op_counter = self
@@ -1712,7 +1888,7 @@ pub enum DivExactError {
 }
 
 impl<C> CramCiphertext<C> {
-    /// Phase-4 D2 rescale: DIV_EXACT through Garner-lift + exact integer
+    /// Phase-4 D2 rescale: DIV_EXACT through direct weighted CRT + integer
     /// division. Valid only when:
     ///
     ///   * `divisor` is basis-smooth (every prime factor lies in the
@@ -1739,31 +1915,35 @@ impl<C> CramCiphertext<C> {
         if divisor == 0 {
             return Err(CramOpError::DivExact(DivExactError::DivisorIsZero));
         }
-        let abs_d_u64 = divisor.unsigned_abs() as u64;
-        if !is_basis_smooth(abs_d_u64, self.topology.basis) {
+        let abs_d = divisor.unsigned_abs();
+        if !is_basis_smooth(abs_d, self.topology.basis) {
             return Err(CramOpError::DivExact(
                 DivExactError::DivisorNotBasisSmooth { divisor },
             ));
         }
 
-        // Garner-lift each coefficient to a signed integer, divide
+        // Read each coefficient through direct CRT as a signed integer, divide
         // exactly, and re-project onto S8.
         let n = self.witness.c0_signature.signatures.len();
         let mut new_signatures = Vec::with_capacity(n);
         for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
             CRAM_DIVISION_COUNTERS
-                .garner_calls
+                .crt_reconstructions
                 .fetch_add(1, Ordering::Relaxed);
-            let unsigned = crate::lane_projector::garner_reconstruct(sig);
+            let (unsigned, _) = crt_weighted_sum_subset(sig, &[0, 1, 2, 3, 4, 5, 6, 7]);
             let half = (crate::triad::S8_PRODUCT / 2) as i128;
-            let signed = if (unsigned as i128) > half {
-                unsigned as i128 - crate::triad::S8_PRODUCT as i128
+            let signed = if unsigned > half {
+                unsigned - crate::triad::S8_PRODUCT as i128
             } else {
-                unsigned as i128
+                unsigned
             };
             let r = signed.rem_euclid(divisor);
-            let remainder = if r > divisor.abs() / 2 {
-                r - divisor.abs()
+            let remainder = if r as u128 > abs_d / 2 {
+                if divisor < 0 {
+                    r + divisor
+                } else {
+                    r - divisor
+                }
             } else {
                 r
             };
@@ -1855,7 +2035,7 @@ impl<C> CramCiphertext<C> {
         }
 
         // Try D2.
-        if is_basis_smooth(divisor.unsigned_abs() as u64, self.topology.basis) {
+        if is_basis_smooth(divisor.unsigned_abs(), self.topology.basis) {
             if let Ok((result_ct, _)) = self
                 .clone()
                 .cram_rescale_by_scalar_div_exact(divisor, &rescale_base)
@@ -1876,8 +2056,8 @@ impl<C> CramCiphertext<C> {
         // Try D1 (K-Elim) with anchor = 17 (the largest S8 prime that
         // is not the signature lane), if the divisor is coprime to
         // M_main = S8_PRODUCT / 17.
-        let m_main_default: u64 = crate::triad::S8_PRODUCT as u64 / 17;
-        if gcd_u64(divisor.unsigned_abs() as u64, m_main_default) == 1 && divisor != 0 {
+        let m_main_default = crate::triad::S8_PRODUCT as u128 / 17;
+        if gcd_u128(divisor.unsigned_abs(), m_main_default) == 1 && divisor != 0 {
             if let Ok((result_ct, _)) =
                 self.clone()
                     .cram_rescale_by_scalar_kelim(divisor, 17, &rescale_base)
@@ -1955,25 +2135,25 @@ pub enum KElimError {
     DivisorIncompatibleWithMain { divisor: i128 },
 }
 
-/// Garner reconstruction over a chosen subset of S8 lanes (the "main"
-/// reconstruction basis). Returns `(x_main, M_main)` where `x_main` is
-/// the unique non-negative integer in `[0, M_main)` matching the lane
-/// residues.
-fn garner_reconstruct_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
-    let mut x: i128 = sig.residues[main_indices[0]] as i128;
-    let mut radix: i128 = crate::triad::S8[main_indices[0]] as i128;
-    for &idx in &main_indices[1..] {
+/// Direct weighted CRT over a nonempty, distinct subset of S8 indices.
+/// Returns the canonical nonnegative `(x_main, M_main)`; centering happens
+/// only after the caller's full lift. With M_main <=9,699,690 and u32 input
+/// residues, every weighted term and their sum fit i128 by a wide margin.
+fn crt_weighted_sum_subset(sig: &S8Signature, main_indices: &[usize]) -> (i128, i128) {
+    assert!(!main_indices.is_empty(), "CRT subset must be nonempty");
+    let modulus: i128 = main_indices
+        .iter()
+        .map(|&index| crate::triad::S8[index] as i128)
+        .product();
+    let mut sum = 0i128;
+    for &idx in main_indices {
         let m_i = crate::triad::S8[idx] as i128;
-        let a_i = sig.residues[idx] as i128;
-        let x_mod_mi = x.rem_euclid(m_i);
-        let diff = (a_i - x_mod_mi).rem_euclid(m_i);
-        let radix_mod_mi = radix.rem_euclid(m_i) as u32;
-        let inv = mod_inv_u32(radix_mod_mi, m_i as u32).expect("S8 lanes are pairwise coprime");
-        let v = (diff * inv as i128).rem_euclid(m_i);
-        x += v * radix;
-        radix *= m_i;
+        let cofactor = modulus / m_i;
+        let inv = mod_inv_u32(cofactor.rem_euclid(m_i) as u32, m_i as u32)
+            .expect("S8 subset moduli must be pairwise coprime");
+        sum += sig.residues[idx] as i128 * cofactor * inv as i128;
     }
-    (x, radix)
+    (sum.rem_euclid(modulus), modulus)
 }
 
 /// Recover the K-Elim winding `κ ≡ (r_anchor − x_main) · M_main⁻¹
@@ -1998,7 +2178,7 @@ impl<C> CramCiphertext<C> {
     /// Splits S8 into a main reconstruction basis `S8 \ {anchor}` and
     /// an anchor lane `m_anchor`. For each coefficient:
     ///
-    ///   1. Reconstruct `x_main` from the 7 main lanes (smaller Garner).
+    ///   1. Read `x_main` from the 7 main lanes with direct weighted CRT.
     ///   2. Recover the winding `κ ≡ (r_anchor − x_main) · M_main⁻¹
     ///      (mod m_anchor)`, recentred into `(-m_anchor/2, m_anchor/2]`.
     ///   3. Verify the corridor `|κ| < m_anchor / 2`.
@@ -2045,8 +2225,8 @@ impl<C> CramCiphertext<C> {
 
         // gcd(divisor, M_main) must be 1 for the lane-side division to
         // be well-defined.
-        let abs_d = divisor.unsigned_abs() as i128;
-        if gcd_u64(abs_d as u64, m_main as u64) != 1 {
+        let abs_d = divisor.unsigned_abs();
+        if gcd_u128(abs_d, m_main as u128) != 1 {
             return Err(CramOpError::KElim(
                 KElimError::DivisorIncompatibleWithMain { divisor },
             ));
@@ -2061,10 +2241,10 @@ impl<C> CramCiphertext<C> {
         let mut new_signatures = Vec::with_capacity(n);
         for (i, sig) in self.witness.c0_signature.signatures.iter().enumerate() {
             CRAM_DIVISION_COUNTERS
-                .garner_calls
+                .crt_reconstructions
                 .fetch_add(1, Ordering::Relaxed);
             // Main reconstruction.
-            let (x_main, m_main_actual) = garner_reconstruct_subset(sig, &main_indices);
+            let (x_main, m_main_actual) = crt_weighted_sum_subset(sig, &main_indices);
             debug_assert_eq!(m_main_actual, m_main);
 
             // K-Elim winding.
@@ -2082,7 +2262,7 @@ impl<C> CramCiphertext<C> {
 
             // Lift to certified integer.
             let a_certified = x_main + (kappa as i128) * m_main;
-            // Recentre to signed if Garner returned a value > S8_PRODUCT/2.
+            // Recentre the full lifted representative above S8_PRODUCT/2.
             let half = (crate::triad::S8_PRODUCT / 2) as i128;
             let a_signed = if a_certified > half {
                 a_certified - crate::triad::S8_PRODUCT as i128
@@ -2092,8 +2272,12 @@ impl<C> CramCiphertext<C> {
 
             // Exact division.
             let r = a_signed.rem_euclid(divisor);
-            let remainder = if r > divisor.abs() / 2 {
-                r - divisor.abs()
+            let remainder = if r as u128 > abs_d / 2 {
+                if divisor < 0 {
+                    r + divisor
+                } else {
+                    r - divisor
+                }
             } else {
                 r
             };
@@ -2286,6 +2470,7 @@ impl<C> CramCiphertext<C> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::chimera_division::DivStatus;
     use crate::triad::S8;
 
     #[test]
@@ -2669,9 +2854,9 @@ mod tests {
                 for r_a in 0..p {
                     for r_b in 0..q {
                         let joint = crt_pair(r_a, p, r_b, q);
-                        assert!(joint < p * q);
-                        assert_eq!(joint % p, r_a);
-                        assert_eq!(joint % q, r_b);
+                        assert!(joint < p as u64 * q as u64);
+                        assert_eq!(joint % p as u64, r_a as u64);
+                        assert_eq!(joint % q as u64, r_b as u64);
                     }
                 }
             }
@@ -2937,7 +3122,7 @@ mod tests {
         );
         assert_eq!(
             plan.primary_status,
-            crate::chimera_division::DivStatus::ModularInverseExact
+            crate::chimera_division::DivStatus::ModularSolve
         );
         assert_eq!(plan.gcd_with_basis, 1);
         assert!(plan.evaluable.modular_inverse);
@@ -2965,6 +3150,49 @@ mod tests {
     }
 
     #[test]
+    fn router_refuses_d3_when_s8_cannot_witness_the_full_divisor() {
+        for divisor in [4i128, 9, 46] {
+            let plan = select_division_lane(divisor, SafeBasis::S8);
+            assert!(!plan.evaluable.fused_piggyback, "divisor={divisor}");
+        }
+        for divisor in [4i128, 9] {
+            let plan = select_division_lane(divisor, SafeBasis::S8);
+            assert!(plan.evaluable.div_exact, "divisor={divisor}");
+            assert_eq!(plan.primary, crate::chimera_division::ChimeraLane::DivExact);
+            assert_eq!(
+                plan.primary_status,
+                crate::chimera_division::DivStatus::DivExact
+            );
+        }
+    }
+
+    #[test]
+    fn router_uses_the_active_basis_and_does_not_truncate_wide_divisors() {
+        let s6 = select_division_lane(17, SafeBasis::S6);
+        assert_eq!(s6.gcd_with_basis, 1);
+        assert!(s6.evaluable.modular_inverse);
+        assert!(!s6.evaluable.fused_piggyback);
+        assert!(
+            !select_division_lane(6, SafeBasis::S6)
+                .evaluable
+                .fused_piggyback
+        );
+
+        // Truncating this divisor to u64 would turn it into 3 and report a
+        // shared factor. Full-width classification correctly sees a unit.
+        let wide = (1i128 << 64) + 3;
+        let plan = select_division_lane(wide, SafeBasis::S8);
+        assert_eq!(plan.gcd_with_basis, 1);
+        assert_eq!(plan.primary_status, DivStatus::ModularSolve);
+        assert!(plan.evaluable.modular_inverse);
+        assert!(!plan.evaluable.fused_piggyback);
+
+        let ct = CramCiphertext::wrap_default((), &[wide], None);
+        let (rescaled, _) = ct.cram_rescale_by_scalar(wide, |_, _| ()).unwrap();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![1]);
+    }
+
+    #[test]
     fn router_rejects_zero_divisor() {
         let plan = select_division_lane(0, SafeBasis::S8);
         assert_eq!(
@@ -2988,9 +3216,19 @@ mod tests {
     }
 
     #[test]
-    fn cram_rescale_d1_d2_d3_not_yet_implemented() {
-        // 6 shares factors with S8 — only D1/D2/D3 paths apply, none of
-        // which Phase 4 implements yet. Must return DivisionLaneNotImplemented.
+    fn d0_nondivisible_input_is_reported_only_as_a_modular_solve() {
+        let ct = CramCiphertext::wrap_default((), &[8i128], None);
+        let (rescaled, plan) = ct.cram_rescale_by_scalar(23, |_, _| ()).unwrap();
+        assert_eq!(plan.primary_status, DivStatus::ModularSolve);
+        assert!(!plan.primary_status.is_exact_quotient());
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![421_726]);
+        assert_ne!(rescaled.reconstruct_c0_coeffs_signed(), vec![8 / 23]);
+    }
+
+    #[test]
+    fn d0_entry_point_refuses_a_shared_factor_divisor() {
+        // 6 shares factors with S8, so the D0-only entry point refuses it.
+        // Callers must choose a witnessed D1/D2/D3 API or the resolver.
         let ct = CramCiphertext::wrap_default((), &[6i128, 12, 18], None);
         match ct.cram_rescale_by_scalar(6, |_, _| ()) {
             Err(CramOpError::DivisionLaneNotImplemented {
@@ -3024,7 +3262,7 @@ mod tests {
     #[test]
     fn is_basis_smooth_recognises_known_smooth_numbers() {
         // S8 = {2,3,5,7,11,13,17,19}. Smooth examples:
-        for n in [1u64, 2, 3, 5, 7, 30, 42, 9_699_690] {
+        for n in [1u128, 2, 3, 5, 7, 30, 42, 9_699_690] {
             assert!(
                 is_basis_smooth(n, SafeBasis::S8),
                 "{} should be S8-smooth",
@@ -3032,7 +3270,7 @@ mod tests {
             );
         }
         // Non-smooth: contains 23, 29, 31, 37, ...
-        for n in [23u64, 29, 100_003] {
+        for n in [23u128, 29, 100_003] {
             assert!(
                 !is_basis_smooth(n, SafeBasis::S8),
                 "{} should NOT be smooth",
@@ -3125,6 +3363,128 @@ mod tests {
     }
 
     #[test]
+    fn fpd_rejects_coprime_divisor_without_exactness_witness() {
+        // A modular inverse solves 23*q = 8 (mod S8_PRODUCT), but 23 does
+        // not divide 8 as an integer. D3 has no bad S8 lane to witness the
+        // remainder, so an exact-quotient request must refuse this domain.
+        let coeffs = vec![8i128];
+        let aux_primes = AuxResidueSet::select_for_divisor(23, 1_000_000).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        assert!(matches!(
+            ct.cram_rescale_by_scalar_fpd(23, 1_000_000, |_, _| ()),
+            Err(CramOpError::DivisionLaneNotImplemented { .. })
+        ));
+    }
+
+    #[test]
+    fn fpd_rejects_unwitnessed_divisor_multiplicity_or_factor() {
+        // The S8 lane modulo 2 can witness one factor of 2, but cannot
+        // distinguish divisibility by 4. Likewise, it cannot witness the
+        // additional coprime factor 23 in divisor 46.
+        for (coefficient, divisor) in [
+            (2i128, 4i128),
+            (crate::triad::S8_PRODUCT as i128, 4),
+            (crate::triad::S8_PRODUCT as i128, 9),
+            (2, 46),
+        ] {
+            let aux_primes = AuxResidueSet::select_for_divisor(divisor, 100).unwrap();
+            let ct = CramCiphertext::wrap_with_fpd_aux((), &[coefficient], None, &aux_primes);
+            assert!(matches!(
+                ct.cram_rescale_by_scalar_fpd(divisor, 100, |_, _| ()),
+                Err(CramOpError::DivisionLaneNotImplemented { .. })
+            ));
+        }
+    }
+
+    #[test]
+    fn fpd_rejects_quotient_outside_declared_bound() {
+        let coeffs = vec![600i128];
+        let aux_primes = AuxResidueSet::select_for_divisor(6, 10).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+        assert!(matches!(
+            ct.cram_rescale_by_scalar_fpd(6, 10, |_, _| ()),
+            Err(CramOpError::Fpd(FpdError::QuotientBoundExceeded {
+                coeff_index: 0,
+                quotient: 100,
+                bound: 10,
+            }))
+        ));
+    }
+
+    #[test]
+    fn fpd_inclusive_bound_accepts_boundary_and_zero_only_corridor() {
+        let aux_primes = AuxResidueSet::select_for_divisor(6, 10).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &[60i128, -60, 0], None, &aux_primes);
+        let (rescaled, _) = ct.cram_rescale_by_scalar_fpd(6, 10, |_, _| ()).unwrap();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![10, -10, 0]);
+
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &[66i128], None, &aux_primes);
+        assert!(matches!(
+            ct.cram_rescale_by_scalar_fpd(6, 10, |_, _| ()),
+            Err(CramOpError::Fpd(FpdError::QuotientBoundExceeded {
+                quotient: 11,
+                bound: 10,
+                ..
+            }))
+        ));
+
+        let zero_aux = AuxResidueSet::select_for_divisor(6, 0).unwrap();
+        let ct = CramCiphertext::wrap_with_fpd_aux((), &[0i128], None, &zero_aux);
+        let (rescaled, _) = ct.cram_rescale_by_scalar_fpd(6, 0, |_, _| ()).unwrap();
+        assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), vec![0]);
+    }
+
+    #[test]
+    fn fpd_supports_tautological_unit_divisors() {
+        for divisor in [1i128, -1] {
+            let coeffs = [5i128, -5, 0];
+            let aux_primes = AuxResidueSet::select_for_divisor(divisor, 5).unwrap();
+            let ct = CramCiphertext::wrap_with_fpd_aux((), &coeffs, None, &aux_primes);
+            let (rescaled, _) = ct
+                .cram_rescale_by_scalar_fpd(divisor, 5, |_, _| ())
+                .unwrap();
+            let expected: Vec<i32> = coeffs
+                .iter()
+                .map(|&value| (value / divisor) as i32)
+                .collect();
+            assert_eq!(rescaled.reconstruct_c0_coeffs_signed(), expected);
+        }
+    }
+
+    #[test]
+    fn fpd_refuses_malformed_or_mutated_auxiliary_evidence_without_panicking() {
+        let duplicate = CramCiphertext::wrap_with_fpd_aux((), &[6i128], None, &[23, 23]);
+        assert!(matches!(
+            duplicate.cram_rescale_by_scalar_fpd(6, 10, |_, _| ()),
+            Err(CramOpError::Fpd(FpdError::AuxiliaryWitnessMalformed))
+        ));
+
+        let overlap = CramCiphertext::wrap_with_fpd_aux((), &[6i128], None, &[2]);
+        assert!(matches!(
+            overlap.cram_rescale_by_scalar_fpd(6, 10, |_, _| ()),
+            Err(CramOpError::Fpd(FpdError::AuxiliaryWitnessMalformed))
+        ));
+
+        let mut short = CramCiphertext::wrap_with_fpd_aux((), &[6i128], None, &[23]);
+        let aux = short.witness.c0_aux.as_mut().unwrap();
+        aux.residues[0].clear();
+        aux.sealed_residues[0].clear();
+        assert!(matches!(
+            short.cram_rescale_by_scalar_fpd(6, 10, |_, _| ()),
+            Err(CramOpError::Fpd(FpdError::AuxiliaryWitnessMalformed))
+        ));
+
+        // Reproduce the previously possible bound-passing forged quotient:
+        // X=210, d=210 and a modified mod-23 residue selected q=46_190.
+        let mut forged = CramCiphertext::wrap_with_fpd_aux((), &[210i128], None, &[23]);
+        forged.witness.c0_aux.as_mut().unwrap().residues[0][0] = 18;
+        assert!(matches!(
+            forged.cram_rescale_by_scalar_fpd(210, 100_000, |_, _| ()),
+            Err(CramOpError::Fpd(FpdError::AuxiliaryWitnessBindingMismatch))
+        ));
+    }
+
+    #[test]
     fn fpd_handles_negative_divisor() {
         // Negative divisor → quotient flips sign. FPD recovers the
         // signed integer, recentred around zero.
@@ -3200,6 +3560,226 @@ mod tests {
         let pairs = [(5u32, 2u32), (7u32, 0u32), (11u32, 9u32)];
         let q = crt_fuse_pairs(&pairs);
         assert_eq!(q, 42);
+    }
+
+    #[test]
+    fn direct_crt_pair_preserves_full_u32_prime_pair_residues() {
+        let p = 4_294_967_291u32;
+        let q = 4_294_967_279u32;
+        let product = p as u64 * q as u64;
+        for expected in [0, 1, product / 2, product - 2, product - 1] {
+            let r_p = (expected % p as u64) as u32;
+            let r_q = (expected % q as u64) as u32;
+            let joint = crt_pair(r_p, p, r_q, q);
+            assert_eq!(joint, expected);
+            assert_eq!(crt_pair(r_q, q, r_p, p), expected);
+        }
+    }
+
+    #[test]
+    fn direct_crt_subsets_preserve_nonnegative_lifts_and_lane_order() {
+        for mask in 1u16..256 {
+            let indices: Vec<usize> = (0..8).filter(|&i| mask & (1 << i) != 0).collect();
+            let product: i128 = indices
+                .iter()
+                .map(|&i| crate::triad::S8[i] as i128)
+                .product();
+            let mut reordered = indices.clone();
+            reordered.reverse();
+            for x in [
+                -2 * product - 1,
+                -product,
+                -product / 2 - 1,
+                -1,
+                0,
+                1,
+                product / 2,
+                product - 1,
+                product,
+                2 * product + 1,
+            ] {
+                let signature = S8Signature::project(x);
+                assert_eq!(
+                    crt_weighted_sum_subset(&signature, &indices),
+                    (x.rem_euclid(product), product)
+                );
+                assert_eq!(
+                    crt_weighted_sum_subset(&signature, &reordered),
+                    (x.rem_euclid(product), product)
+                );
+            }
+            if product <= 1001 {
+                for x in 0..product {
+                    assert_eq!(
+                        crt_weighted_sum_subset(&S8Signature::project(x), &indices),
+                        (x, product)
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn direct_crt_d2_keeps_full_s8_centering_boundary_convention() {
+        let product = crate::triad::S8_PRODUCT as i128;
+        let half = product / 2;
+        let coefficients = [
+            -product - 1,
+            -product,
+            -half - 1,
+            -half,
+            -half + 1,
+            -1,
+            0,
+            1,
+            half - 1,
+            half,
+            half + 1,
+            product - 1,
+            product,
+            product + 1,
+        ];
+        let input = CramCiphertext::wrap_default((), &coefficients, None);
+        let (output, _) = input
+            .cram_rescale_by_scalar_div_exact(1, |_, _| ())
+            .unwrap();
+        for (signature, x) in output
+            .witness
+            .c0_signature
+            .signatures
+            .iter()
+            .zip(coefficients)
+        {
+            let unsigned = x.rem_euclid(product);
+            let centered = if unsigned > half {
+                unsigned - product
+            } else {
+                unsigned
+            };
+            assert_eq!(signature.residues, S8Signature::project(centered).residues);
+        }
+        assert_eq!(output.reconstruct_c0_coeffs_signed()[3], half as i32);
+        assert_eq!(output.reconstruct_c0_coeffs_signed()[9], half as i32);
+    }
+
+    #[test]
+    fn direct_crt_d1_preserves_signed_exact_quotients_for_every_anchor() {
+        let half = crate::triad::S8_PRODUCT as i128 / 2;
+        let limit = half / 23;
+        let quotients = [-limit, -limit + 1, -1, 0, 1, limit - 1, limit];
+        let coefficients: Vec<i128> = quotients.iter().map(|&q| 23 * q).collect();
+        for anchor in crate::triad::S8 {
+            for divisor in [-23i128, 23] {
+                let input = CramCiphertext::wrap_default((), &coefficients, None);
+                let (output, _) = input
+                    .cram_rescale_by_scalar_kelim(divisor, anchor, |_, _| ())
+                    .unwrap();
+                for (signature, &value) in output
+                    .witness
+                    .c0_signature
+                    .signatures
+                    .iter()
+                    .zip(&coefficients)
+                {
+                    assert_eq!(
+                        signature.residues,
+                        S8Signature::project(value / divisor).residues
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn direct_crt_fpd_large_fusion_product_has_no_intermediate_overflow() {
+        let auxiliary = [1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061];
+        let input = CramCiphertext::wrap_with_fpd_aux((), &[-2], None, &auxiliary);
+        let (output, _) = input.cram_rescale_by_scalar_fpd(2, 1, |_, _| ()).unwrap();
+        assert_eq!(
+            output.witness.c0_signature.signatures[0].residues,
+            S8Signature::project(-1).residues
+        );
+        let auxiliary = output.witness.c0_aux.as_ref().unwrap();
+        for (residues, &prime) in auxiliary.residues[0].iter().zip(&auxiliary.primes) {
+            assert_eq!(*residues, prime - 1);
+        }
+    }
+
+    #[test]
+    fn direct_crt_fpd_refuses_a_fusion_product_outside_i128() {
+        let auxiliary = [
+            1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061, 1063,
+        ];
+        let input = CramCiphertext::wrap_with_fpd_aux((), &[-2], None, &auxiliary);
+        assert!(matches!(
+            input.cram_rescale_by_scalar_fpd(2, 1, |_, _| ()),
+            Err(CramOpError::OpCounterOverflow)
+        ));
+    }
+
+    #[test]
+    fn direct_crt_division_accounting_records_reads_without_mixed_radix_calls() {
+        let before = CRAM_DIVISION_COUNTERS.snapshot();
+        CramCiphertext::wrap_default((), &[23], None)
+            .cram_rescale_by_scalar_kelim(23, 17, |_, _| ())
+            .unwrap();
+        CramCiphertext::wrap_default((), &[6], None)
+            .cram_rescale_by_scalar_div_exact(6, |_, _| ())
+            .unwrap();
+        CramCiphertext::wrap_with_fpd_aux((), &[-2], None, &[23])
+            .cram_rescale_by_scalar_fpd(2, 1, |_, _| ())
+            .unwrap();
+        let after = CRAM_DIVISION_COUNTERS.snapshot();
+        assert_eq!(after.0, before.0);
+        // Other tests can add reconstruction reads concurrently.
+        assert!(after.1 >= before.1 + 3);
+    }
+
+    #[test]
+    fn direct_crt_d2_minimum_signed_divisor_is_exact_or_typed_nonexact() {
+        for value in [-1i128, 1, crate::triad::S8_PRODUCT as i128 / 2] {
+            let input = CramCiphertext::wrap_default((), &[value], None);
+            assert!(matches!(
+                input.cram_rescale_by_scalar_div_exact(i128::MIN, |_, _| ()),
+                Err(CramOpError::DivExact(DivExactError::NonExactRemainder {
+                    coefficient,
+                    divisor: i128::MIN,
+                    ..
+                })) if coefficient == value
+            ));
+        }
+        let zero = CramCiphertext::wrap_default((), &[0], None);
+        let (output, _) = zero
+            .cram_rescale_by_scalar_div_exact(i128::MIN, |_, _| ())
+            .unwrap();
+        assert_eq!(output.witness.c0_signature.signatures[0].residues, [0; 8]);
+    }
+
+    #[test]
+    fn direct_crt_d1_checks_full_width_divisor_compatibility() {
+        // The full divisor has factor3; its low u64 limb23 does not.
+        let divisor = (1i128 << 64) + 23;
+        assert_eq!(divisor % 3, 0);
+        let input = CramCiphertext::wrap_default((), &[0], None);
+        assert!(matches!(
+            input.cram_rescale_by_scalar_kelim(divisor, 17, |_, _| ()),
+            Err(CramOpError::KElim(KElimError::DivisorIncompatibleWithMain { divisor: actual }))
+                if actual == divisor
+        ));
+    }
+
+    #[test]
+    fn direct_crt_router_keeps_a_valid_full_width_kelim_lane() {
+        // Full gcd is1, while truncating this divisor to its low limb3
+        // incorrectly removes D1 from the successful lane mask.
+        let divisor = (1i128 << 64) + 3;
+        assert_eq!(gcd_u128(divisor as u128, 570_570), 1);
+        let input = CramCiphertext::wrap_default((), &[0], None);
+        let (output, _, lanes) = input
+            .cram_rescale_with_chimera_router(divisor, 1, |_, _| ())
+            .unwrap();
+        assert!(lanes.kelim);
+        assert_eq!(output.witness.c0_signature.signatures[0].residues, [0; 8]);
     }
 
     // ---- Phase-4 D2 — DIV_EXACT (absorbent quotient-basis division) -----
@@ -3419,7 +3999,7 @@ mod tests {
             let main_indices: Vec<usize> = (0..crate::triad::S8.len())
                 .filter(|&i| crate::triad::S8[i] != 17)
                 .collect();
-            let (x_main, m_main) = garner_reconstruct_subset(&sig, &main_indices);
+            let (x_main, m_main) = crt_weighted_sum_subset(&sig, &main_indices);
             let r_anchor = sig.residue_mod(17).unwrap();
             let kappa = k_elim_winding(x_main, m_main, r_anchor, 17);
             let lifted = x_main + (kappa as i128) * m_main;

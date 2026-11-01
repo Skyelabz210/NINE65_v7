@@ -1,0 +1,3 @@
+CRAM recumbency contract failed:
+  - crates/nine65/src/ops/rns_fhe.rs: zero sentinel used as modulus-overflow state [q_product\s*==\s*0] at line(s) 1072, 1333, 1351, 2820, 2961, 4503, 5175
+  - crates/nine65/src/ops/rns_fhe.rs: zero overflow sentinel construction [unwrap_or\s*\(\s*0\s*\)] at line(s) 1068, 3947

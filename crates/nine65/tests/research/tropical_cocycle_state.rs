@@ -324,10 +324,10 @@ fn constant_message(ctx: &RNSFHEContext, value: i64) -> Vec<u64> {
     message
 }
 
-// Independent CLIENT oracle for the even-plaintext probe. The production
-// CanonicalScaleRound contract is odd-target-only; do not relax it here or
-// quietly claim an admitted even-target decoder. Reconstruction is confined
-// to this small-Q secret-key test oracle, never the public lifted evaluator.
+// Independent CLIENT oracle for the even-plaintext probe. Cross-check the
+// residue-native CanonicalScaleRound decoder using full integer rounding.
+// Reconstruction stays in this small-Q secret-key test oracle and never
+// enters the public lifted evaluator.
 fn client_decode_small_q(ctx: &RNSFHEContext, ct: &RNSCiphertext, keys: &RNSKeySet) -> Vec<u64> {
     let phases = decrypted_phase_residues(ctx, ct, keys);
     let q: u128 = ctx.config.primes.iter().map(|&p| p as u128).product();
@@ -498,11 +498,35 @@ fn encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots() {
     config.t = 22;
     config.security_bits = 0;
     config.name = "INSECURE constant-coordinate 2/11 cocycle toy";
+    // Even targets are supported when coprime to the odd main basis. Check
+    // every rounding transition for this actual Q, including zero and the
+    // upper endpoint where the rounded value wraps from 22 back to zero.
+    let decoder = CanonicalScaleRound::new(&config.primes, config.t).unwrap();
+    let q: u128 = config
+        .primes
+        .iter()
+        .map(|&prime| u128::from(prime))
+        .product();
+    let mut boundary_inputs = vec![0, 1, q / 2, q / 2 + 1, q - 1];
+    for rounded in 1..=u128::from(config.t) {
+        let first = (rounded * q - q / 2).div_ceil(u128::from(config.t));
+        boundary_inputs.extend([first - 1, first]);
+    }
+    for input in boundary_inputs {
+        let residues: Vec<_> = config
+            .primes
+            .iter()
+            .map(|&prime| (input % u128::from(prime)) as u64)
+            .collect();
+        let expected = ((u128::from(config.t) * input + q / 2) / q) % u128::from(config.t);
+        assert_eq!(decoder.scale_round(&residues).unwrap(), expected as u64);
+    }
     assert!(matches!(
-        CanonicalScaleRound::new(&config.primes, 22),
+        CanonicalScaleRound::new(&[11, 13], config.t),
         Err(
-            nine65::arithmetic::canonical_scale_round::CanonicalScaleRoundError::InvalidTarget {
-                target: 22
+            nine65::arithmetic::canonical_scale_round::CanonicalScaleRoundError::NonCoprimeTarget {
+                main: 11,
+                target: 22,
             }
         )
     ));
@@ -557,9 +581,12 @@ fn encrypted_cocycle_works_over_composite_two_eleven_without_plaintext_roots() {
             (&paired, expected_k),
             (&square, 1),
         ] {
+            let client_decoded = client_decode_small_q(&ctx, ct, &keys);
+            assert_eq!(client_decoded, constant_message(&ctx, expected));
             assert_eq!(
-                client_decode_small_q(&ctx, ct, &keys),
-                constant_message(&ctx, expected)
+                decrypt_coefficients(&ctx, ct, &keys),
+                client_decoded,
+                "residue-native even-target decoding must match the independent client oracle"
             );
             let v = super::tropical_chart_transition::observed_scaled_error(
                 &ctx,

@@ -95,7 +95,7 @@
 //! not a Garner/MRC walk; evaluator kernels must not use it as a reconstruction
 //! shortcut.
 
-use super::{barrett::BarrettContext, rns::U256};
+use super::{barrett::BarrettContext, rns::U256, wide::U1024};
 
 /// Guard bits for the fixed-point fast path. `B = 64` keeps every per-lane
 /// product `c_i * 2^B` inside u128 (`c_i < m_i < 2^64`) and makes the
@@ -305,6 +305,95 @@ impl CompareBit {
     }
 }
 
+/// Wide counterpart of the fixed-work D2 centering kernel. This only serves
+/// secret-holder decryption; public evaluator arithmetic uses base extension.
+/// Its constructor checks the complete idempotent sum fits before any query.
+pub(crate) struct WideCompareBit {
+    main: Vec<u64>,
+    inv: Vec<u64>,
+    reducers: Vec<BarrettContext>,
+    cofactors: Vec<U1024>,
+    modulus: U1024,
+    ceil_half: U1024,
+}
+
+impl WideCompareBit {
+    pub(crate) fn new(main: &[u64]) -> Option<Self> {
+        if main.len() < 2 || main.len() > 16 {
+            return None;
+        }
+        for (i, &a) in main.iter().enumerate() {
+            if a < 3
+                || a % 2 == 0
+                || a >= (1 << 63)
+                || main[..i].iter().any(|&b| gcd_u64(a, b) != 1)
+            {
+                return None;
+            }
+        }
+        let modulus = U1024::checked_product_u64s(main)?;
+        modulus.checked_mul_u64(main.len() as u64)?;
+        let ceil_half = modulus.checked_sub(modulus.shr1())?;
+        let mut cofactors = Vec::with_capacity(main.len());
+        let mut inv = Vec::with_capacity(main.len());
+        for &prime in main {
+            let cofactor = modulus.div_mod_u64(prime)?.0;
+            inv.push(inv_mod_u64(cofactor.mod_u64(prime)?, prime));
+            cofactors.push(cofactor);
+        }
+        Some(Self {
+            main: main.to_vec(),
+            inv,
+            reducers: main.iter().map(|&p| BarrettContext::new(p)).collect(),
+            cofactors,
+            modulus,
+            ceil_half,
+        })
+    }
+
+    /// Fixed public loop bounds, masked conditional reductions, no division
+    /// or early return on coefficient values. This source-level property is
+    /// not an additional machine-code constant-time certification.
+    pub(crate) fn decide_ct(&self, residues: &[u64]) -> bool {
+        assert_eq!(residues.len(), self.main.len());
+        let mut sum = U1024::ZERO;
+        for (i, &residue) in residues.iter().enumerate() {
+            debug_assert!(residue < self.main[i]);
+            let coefficient = self.reducers[i].mul_ct(residue, self.inv[i]);
+            let mut multiply_carry = 0u128;
+            let mut add_carry = 0u128;
+            for limb in 0..16 {
+                let product =
+                    self.cofactors[i].limbs[limb] as u128 * coefficient as u128 + multiply_carry;
+                multiply_carry = product >> 64;
+                let addition = sum.limbs[limb] as u128 + product as u64 as u128 + add_carry;
+                sum.limbs[limb] = addition as u64;
+                add_carry = addition >> 64;
+            }
+        }
+        for _ in 1..self.main.len() {
+            let (reduced, borrow) = Self::subtract(sum, self.modulus);
+            let mask = u64::from(!borrow).wrapping_neg();
+            for limb in 0..16 {
+                sum.limbs[limb] = (sum.limbs[limb] & !mask) | (reduced.limbs[limb] & mask);
+            }
+        }
+        !Self::subtract(sum, self.ceil_half).1
+    }
+
+    fn subtract(left: U1024, right: U1024) -> (U1024, bool) {
+        let mut out = U1024::ZERO;
+        let mut borrow = false;
+        for limb in 0..16 {
+            let (difference, first) = left.limbs[limb].overflowing_sub(right.limbs[limb]);
+            let (difference, second) = difference.overflowing_sub(u64::from(borrow));
+            out.limbs[limb] = difference;
+            borrow = first | second;
+        }
+        (out, borrow)
+    }
+}
+
 // ============================================================================
 // Regime 2 of the Sign Trichotomy: sign of a LIFTED value X = r + K*M vs Q/2,
 // when the winding K is held explicitly (manufactured path, SignedK256).
@@ -418,6 +507,61 @@ fn inv_mod_u64(a: u64, m: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[allow(dead_code)]
+    mod external_wide_vectors {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/main_only_q650_vectors.rs"
+        ));
+
+        #[test]
+        fn wide_centering_matches_independent_python_integers() {
+            let kernel = super::WideCompareBit::new(&Q650_MAIN).unwrap();
+            assert_eq!(Q650_VECTORS.len(), 29);
+            for &(name, residues, _, _, upper) in Q650_VECTORS {
+                assert_eq!(kernel.decide_ct(&residues), upper, "{name}");
+            }
+        }
+    }
+
+    #[test]
+    fn wide_fixed_work_centering_covers_boundary_and_rejects_overflow() {
+        let primes = [
+            998244353,
+            985661441,
+            754974721,
+            469762049,
+            576460752301785089,
+            576460752301391873,
+            576460752300015617,
+            576460752298835969,
+            576460752298180609,
+            576460752293134337,
+            576460752291954689,
+            576460752290775041,
+            575870995836829697,
+        ];
+        let kernel = WideCompareBit::new(&primes).unwrap();
+        let q = kernel.modulus;
+        let half = q.shr1();
+        for (value, expected) in [
+            (U1024::ZERO, false),
+            (U1024::ONE, false),
+            (half.checked_sub(U1024::ONE).unwrap(), false),
+            (half, false),
+            (half.checked_add(U1024::ONE).unwrap(), true),
+            (half.checked_add(U1024::from_u64(2)).unwrap(), true),
+            (q.checked_sub(U1024::ONE).unwrap(), true),
+        ] {
+            let residues: Vec<_> = primes.iter().map(|&p| value.mod_u64(p).unwrap()).collect();
+            assert_eq!(kernel.decide_ct(&residues), expected);
+        }
+        assert!(WideCompareBit::new(&[17, 17]).is_none());
+        assert!(WideCompareBit::new(&[17, 18]).is_none());
+        assert!(WideCompareBit::new(&[17; 17]).is_none());
+        assert!(WideCompareBit::new(&[17, 1u64 << 63]).is_none());
+    }
 
     /// Ground truth by direct full-width reconstruction (test oracle only;
     /// the same `X = sum c_i (M/m_i) - t'M` identity the kernel falls back

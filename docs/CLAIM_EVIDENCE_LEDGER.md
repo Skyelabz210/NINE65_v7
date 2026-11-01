@@ -31,6 +31,66 @@ The CSV registry is the machine-enforced index. This ledger supplies the scope a
 
 ## Active claim interpretations
 
+### Public-refresh routing
+
+Read [current status and notation](PUBLIC_REFRESH_STATUS.md). The existing
+`params.public_refresh_admissibility` entry describes the legacy named-profile
+predicates, not absence of the separate working research backend.
+
+### `refresh.research_native_correctness`
+
+- **Status:** `executable_checked` for the identified native snapshot; later
+  root/inventory additions have separate regression coverage.
+- **Mode/profile:** experimental; registry classification is `internal/exploratory`,
+  not a production or externally named security claim.
+- **Artifact:** the current status guide links the hashed five-cycle native
+  transcript, 81,920 coefficient comparisons, and exact return bounds.
+- **Scope:** native tuple and tested histories; no unbounded depth, latest-head
+  full native rerun, independent protected remainder emission or security grant.
+
+### `refresh.joint_key_security_admission`
+
+- **Status:** `open`.
+- **Artifact:** current status guide, exact key graph, and conditional reduction.
+- **Scope:** full related-key setup confidentiality remains unadmitted. This
+  does not retract functional evidence or demonstrate an attack.
+
+### `refresh.security_model`
+
+- **Status:** `source_integrated` as a written model. Not a proof.
+- **Artifact:** `docs/security/SECURITY_MODEL_PUBLIC_REFRESH.md`.
+- **Scope:** adversary view, native key graph, and explicit exclusions. The joint-setup premise stays open.
+
+### `refresh.circuit_correctness_observed`
+
+- **Status:** `measured` on the identified 2026-10-28 native snapshot only.
+- **Artifact:** `docs/security/CORRECTNESS_EVIDENCE_PUBLIC_REFRESH.md`.
+- **Scope:** five refreshes, five following squares, 81,920 coefficient comparisons. Not a latest-head rerun and not security.
+
+### `refresh.circuit_correctness_bounded`
+
+- **Status:** `prose_proven` for the published infinity-norm certificate. A probabilistic failure bound is `open`.
+- **Artifact:** `docs/security/NOISE_BOUND_PUBLIC_REFRESH.md`.
+- **Scope:** native plan only. Documented 562-bit return bound against a 633-bit threshold. Not recomputed here.
+
+### `refresh.related_key_confidentiality`
+
+- **Status:** `open`. Route D.
+- **Artifact:** `docs/security/RELATED_KEY_ANALYSIS.md`.
+- **Scope:** confidentiality of the related-key setup is not established. Routes A–C are not completed. This does not retract the conditional simulation lemma.
+
+### `refresh.production_security`
+
+- **Status:** `open`.
+- **Artifact:** `docs/security/EXTERNAL_PARAMETER_ATTESTATION.md`.
+- **Scope:** production admission is not established. External parameter attestation is not obtained. `secure_256` stays a 240-bit in-tree MATZOV screen, 16 bits short of its name.
+
+### `refresh.constant_time_posture`
+
+- **Status:** `open`.
+- **Artifact:** `docs/security/CT_PUBLIC_REFRESH.md`.
+- **Scope:** no constant-time measurement of `public_refresh_circuit.rs`. Adjacent F-2 history is not adopted as a result about this circuit.
+
 ### `readme.current_functionality_scope`
 
 - **Status:** `source_integrated`; combined-head Rust/WASM/Lean execution pending.

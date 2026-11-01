@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/workspace/NINE65_v7/target/debug/deps/nine65-5dd4d9097cfbe4f0",
+    "ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_five_cycles",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 3393.1872575390003,
+  "maxrss_kib": 9125340,
+  "user_seconds": 8012.614788,
+  "system_seconds": 20.587858,
+  "binary_sha256": "0caa6267bf99498ca76a6a76f3e9696be11a95126ef76ebf4c63121c5d8b3282"
+}

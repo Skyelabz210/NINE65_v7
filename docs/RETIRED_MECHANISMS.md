@@ -1,6 +1,18 @@
 # Retired Mechanisms: Modulus Switching, the Noise Budget, and Bootstrap
 
-**Status:** authoritative. **Date:** 2026-08-09. **Scope:** `crates/nine65` test suite.
+**Status:** historical quarantine rationale, not the current capability contract.
+**Original date:** 2026-08-09. **Scope:** `crates/nine65` test suite.
+
+**Correction, 2026-10-28:** the unbounded-depth and zero-noise-cost conclusions
+below have not been established for the live encrypted evaluator. Exact integer
+coefficient division does not by itself prove preservation of the secret-dependent
+BFV phase or eliminate encryption noise. Current executable paths enforce finite
+capacity; public refresh remains disabled at its Phase-1 soundness gate. The
+fixed-basis CRAM objective remains the intended engineering direction.
+See the [system analysis and remediation](execution/2026-10-28/SYSTEM_ANALYSIS.md)
+and [current capability statement](../README.md). Preserve the historical test
+inventory below as evidence; its quarantine labels are not evidence of passing
+end-to-end acceptance tests.
 
 - **Part I** (§1–§6) — modulus switching and the noise budget.
 - **Part II** (§7–§12) — bootstrap, including the production call-site map.
@@ -599,3 +611,17 @@ All five annotated integration targets compile
 Pre-existing and untouched: `tests/rns_context_metadata_regression.rs` fails to
 compile with `E0609: no field q_product_checked / q_product_limbs on type
 RNSFHEContext`. That target was not modified in this phase.
+
+
+## 2026-10-26 correction packet reconciliation
+
+The public claims “unlimited depth”, “bootstrap-free FHE”, “256-bit secure” for
+all models, and library-wide “constant-time” remain retired/unestablished.
+K-Elimination is a classical mixed-radix identity; architectural inversion of
+Garner is an architecture description, not a solution to a new “60-year problem”.
+Blanket centering is not reinstated by the correction program.
+
+The attached packet's signed certificate `|K| < A` is insufficient: `K=-1` and
+`K=A-1` alias. Likewise its `p-1,p+1` anchors share factor two for every odd prime.
+These are construction blockers, not permissions to bypass validation. See
+[the execution status](execution/2026-10-26/STATUS.md) and its exact counterexamples.

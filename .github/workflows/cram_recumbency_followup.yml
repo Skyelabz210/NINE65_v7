@@ -60,6 +60,9 @@ jobs:
       - name: Verify exact RNS context metadata patch
         run: python3 .github/scripts/apply_issue29_rns_metadata_patch.py --check
 
+      - name: Verify metadata source-contract negative controls
+        run: python3 scripts/test_rns_metadata_contract.py
+
       - name: Reject floating-point tokens in exact paths
         shell: bash
         run: |
@@ -77,10 +80,8 @@ jobs:
             crates/nine65/tests/refresh_preflight_regression.rs
             crates/nine65/tests/rns_context_metadata_regression.rs
           )
-          if grep -nE '\bf(32|64)\b|as[[:space:]]+f(32|64)|[0-9]+\.[0-9]+' "${files[@]}"; then
-            echo "floating-point token found in exact-integer paths" >&2
-            exit 1
-          fi
+          for file in "${files[@]}"; do test -s "$file"; done
+          python3 scripts/check_no_floats_benches_and_tests.py "${files[@]}"
 
       - name: Verify current benchmark correctness contract
         shell: bash
@@ -123,7 +124,7 @@ jobs:
       - name: Verify committed modulus-class evidence
         run: |
           python3 scripts/audit_modulus_classes.py
-          git diff --exit-code -- artifacts/security/modulus_class_audit_2026-07-13.json
+          git diff --exit-code -- artifacts/security/modulus_class_audit_current.json
 
       - name: Rust formatting
         run: cargo fmt --all -- --check
@@ -171,7 +172,7 @@ jobs:
         run: cargo test -p nine65 --lib --release ops::bootstrap -- --nocapture
 
       - name: Bootstrap residue-shape regression
-        run: cargo test -p nine65 --release --test bootstrap_residue_shape_regression -- --nocapture
+        run: cargo test -p nine65 --config profile.test.package.nine65.opt-level=2 --features allow_insecure --test bootstrap_residue_shape_regression -- --nocapture
 
       - name: DualRNS leveled smoke test
         # Deterministic correctness evidence runs in debug; release builds

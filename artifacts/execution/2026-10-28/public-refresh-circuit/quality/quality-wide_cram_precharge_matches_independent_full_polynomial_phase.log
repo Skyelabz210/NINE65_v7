@@ -1,0 +1,6 @@
+
+running 1 test
+test ops::rns_fhe::cram_precharge::tests::wide_cram_precharge_matches_independent_full_polynomial_phase ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.00s
+

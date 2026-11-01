@@ -1,0 +1,15 @@
+{
+  "exit_code": 0,
+  "elapsed_seconds": 2122.9586310386658,
+  "max_rss_kib": 9125484,
+  "user_seconds": 4864.023191,
+  "system_seconds": 14.754582,
+  "command": [
+    "/workspace/work/public-refresh/native/pinned-final",
+    "ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_three_cycles",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ]
+}

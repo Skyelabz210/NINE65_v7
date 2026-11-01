@@ -1,0 +1,519 @@
+Fuzz · fuzz_deserialize	Short bounded fuzz run	﻿2026-10-07T19:17:25.4045170Z ##[group]Run set -euo pipefail
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4045496Z [36;1mset -euo pipefail[0m
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4045697Z [36;1mseconds=''[0m
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4045896Z [36;1mseconds="${seconds:-60}"[0m
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4046161Z [36;1mcargo fuzz run 'fuzz_deserialize' --release -- \[0m
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4046445Z [36;1m  -max_total_time="$seconds"[0m
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4105390Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4105685Z env:
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4105881Z   RUSTUP_TOOLCHAIN: nightly-2025-08-04
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4106118Z   CARGO_HOME: /home/runner/.cargo
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4106334Z   CARGO_INCREMENTAL: 0
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4106527Z   CARGO_TERM_COLOR: always
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.4106723Z ##[endgroup]
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.5220013Z [1m[32m   Compiling[0m proc-macro2 v1.0.106
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.5220648Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.5221207Z [1m[32m   Compiling[0m quote v1.0.44
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.5221582Z [1m[32m   Compiling[0m version_check v0.9.5
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.5722385Z [1m[32m   Compiling[0m typenum v1.19.0
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.6602300Z [1m[32m   Compiling[0m libc v0.2.180
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.7539518Z [1m[32m   Compiling[0m generic-array v0.14.7
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:25.8448751Z [1m[32m   Compiling[0m serde_core v1.0.228
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.1864454Z [1m[32m   Compiling[0m syn v2.0.114
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.2655712Z [1m[32m   Compiling[0m zmij v1.0.16
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.4147409Z [1m[32m   Compiling[0m find-msvc-tools v0.1.8
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.5722695Z [1m[32m   Compiling[0m shlex v1.3.0
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.7437918Z [1m[32m   Compiling[0m jobserver v0.1.34
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.8022844Z [1m[32m   Compiling[0m block-buffer v0.10.4
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.8706230Z [1m[32m   Compiling[0m cc v1.2.54
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:26.9067282Z [1m[32m   Compiling[0m crypto-common v0.1.7
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:27.0027972Z [1m[32m   Compiling[0m virtue v0.0.18
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:27.5312157Z [1m[32m   Compiling[0m thiserror v1.0.69
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:27.6729430Z [1m[32m   Compiling[0m serde v1.0.228
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:27.8253106Z [1m[32m   Compiling[0m serde_json v1.0.149
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:27.9022752Z [1m[32m   Compiling[0m cfg-if v1.0.4
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:27.9682400Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:28.2622609Z [1m[32m   Compiling[0m libfuzzer-sys v0.4.10
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:28.4134499Z [1m[32m   Compiling[0m digest v0.10.7
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:28.6663504Z [1m[32m   Compiling[0m itoa v1.0.17
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:28.8899358Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:28.9201906Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:29.0545666Z [1m[32m   Compiling[0m memchr v2.7.6
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:29.1631550Z [1m[32m   Compiling[0m unty v0.0.4
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:29.2062572Z [1m[32m   Compiling[0m bincode v2.0.1
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:29.3932716Z [1m[32m   Compiling[0m getrandom v0.2.17
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:29.9542670Z [1m[32m   Compiling[0m sha2 v0.10.9
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:30.6729837Z [1m[32m   Compiling[0m zeroize_derive v1.4.3
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:31.0453039Z [1m[32m   Compiling[0m zeroize v1.8.2
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:31.1590034Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:31.2234002Z [1m[32m   Compiling[0m serde_derive v1.0.228
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:31.7984716Z [1m[32m   Compiling[0m derive_arbitrary v1.4.2
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:32.1613580Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:32.3712561Z [1m[32m   Compiling[0m arbitrary v1.4.2
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:33.1149085Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:33.3724840Z [1m[32m   Compiling[0m subtle v2.6.1
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:17:33.4763596Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.7043908Z [1m[32m   Compiling[0m nine65-fuzz v0.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/fuzz)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.8791372Z [1m[32m    Finished[0m `release` profile [optimized + debuginfo] target(s) in 42.42s
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9287555Z [1m[32m    Finished[0m `release` profile [optimized + debuginfo] target(s) in 0.02s
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9303145Z [1m[32m     Running[0m `fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize -artifact_prefix=/home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_deserialize/ -max_total_time=60 /home/runner/work/NINE65_v7/NINE65_v7/fuzz/corpus/fuzz_deserialize`
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9363300Z INFO: Running with entropic power schedule (0xFF, 100).
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9365608Z INFO: Seed: 919857101
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9402346Z INFO: Loaded 1 modules   (4979 inline 8-bit counters): 4979 [0x556586400250, 0x5565864015c3), 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9403246Z INFO: Loaded 1 PC tables (4979 PCs): 4979 [0x5565864015c8,0x556586414cf8), 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9405635Z INFO:        0 files found in /home/runner/work/NINE65_v7/NINE65_v7/fuzz/corpus/fuzz_deserialize
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9406344Z INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9410421Z INFO: A corpus is not provided, starting from an empty corpus
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9416740Z #2	INITED cov: 105 ft: 106 corp: 1/1b exec/s: 0 rss: 43Mb
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9418703Z #3	NEW    cov: 112 ft: 119 corp: 2/3b lim: 4 exec/s: 0 rss: 43Mb L: 2/2 MS: 1 CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9428661Z 	NEW_FUNC[1/2]: 0x55658631f540  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x14e540) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9453134Z 	NEW_FUNC[2/2]: 0x556586321f70  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x150f70) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9461756Z #4	NEW    cov: 125 ft: 134 corp: 3/5b lim: 4 exec/s: 0 rss: 45Mb L: 2/2 MS: 1 InsertByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9462529Z #8	NEW    cov: 129 ft: 138 corp: 4/6b lim: 4 exec/s: 0 rss: 45Mb L: 1/2 MS: 4 CrossOver-EraseBytes-CrossOver-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9463144Z #14	NEW    cov: 132 ft: 145 corp: 5/9b lim: 4 exec/s: 0 rss: 45Mb L: 3/3 MS: 1 InsertByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9463825Z #16	NEW    cov: 133 ft: 151 corp: 6/10b lim: 4 exec/s: 0 rss: 45Mb L: 1/3 MS: 2 ChangeByte-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9464900Z 	NEW_FUNC[1/3]: 0x5565863252e0  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x1542e0) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9465981Z 	NEW_FUNC[2/3]: 0x55658634dd60  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x17cd60) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9467164Z #20	NEW    cov: 148 ft: 168 corp: 7/11b lim: 4 exec/s: 0 rss: 45Mb L: 1/3 MS: 4 ChangeBinInt-CopyPart-EraseBytes-ChangeBinInt-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9467811Z #35	NEW    cov: 148 ft: 174 corp: 8/15b lim: 4 exec/s: 0 rss: 45Mb L: 4/4 MS: 5 InsertByte-ChangeBinInt-EraseBytes-CrossOver-CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9468438Z #75	NEW    cov: 149 ft: 175 corp: 9/17b lim: 4 exec/s: 0 rss: 46Mb L: 2/4 MS: 5 InsertByte-InsertByte-EraseBytes-EraseBytes-InsertByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9469266Z 	NEW_FUNC[1/1]: 0x556586325450  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x154450) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9470068Z #78	NEW    cov: 161 ft: 193 corp: 10/19b lim: 4 exec/s: 0 rss: 46Mb L: 2/4 MS: 3 ShuffleBytes-CrossOver-CMP- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9470532Z #79	REDUCE cov: 161 ft: 193 corp: 10/18b lim: 4 exec/s: 0 rss: 46Mb L: 1/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9471820Z 	NEW_FUNC[1/1]: 0x5565863236a0  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x1526a0) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9472817Z #92	NEW    cov: 171 ft: 212 corp: 11/21b lim: 4 exec/s: 0 rss: 46Mb L: 3/4 MS: 3 CrossOver-EraseBytes-CMP- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9473343Z #94	NEW    cov: 179 ft: 226 corp: 12/24b lim: 4 exec/s: 0 rss: 46Mb L: 3/4 MS: 2 ChangeByte-PersAutoDict- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9474229Z 	NEW_FUNC[1/14]: 0x55658631bc90  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x14ac90) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9476475Z 	NEW_FUNC[2/14]: 0x55658631c930  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x14b930) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9492248Z #98	NEW    cov: 251 ft: 300 corp: 13/26b lim: 4 exec/s: 0 rss: 46Mb L: 2/4 MS: 4 CrossOver-ShuffleBytes-ChangeBinInt-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9511764Z #100	NEW    cov: 252 ft: 301 corp: 14/28b lim: 4 exec/s: 0 rss: 46Mb L: 2/4 MS: 2 ShuffleBytes-ChangeASCIIInt-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9531839Z #106	NEW    cov: 252 ft: 314 corp: 15/32b lim: 4 exec/s: 0 rss: 46Mb L: 4/4 MS: 1 CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9553620Z #110	NEW    cov: 256 ft: 324 corp: 16/36b lim: 4 exec/s: 0 rss: 46Mb L: 4/4 MS: 4 CopyPart-PersAutoDict-CrossOver-CMP- DE: "\000\000"-"\001\000\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9575410Z #117	NEW    cov: 259 ft: 336 corp: 17/40b lim: 4 exec/s: 0 rss: 46Mb L: 4/4 MS: 2 ShuffleBytes-CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9601851Z #118	NEW    cov: 259 ft: 343 corp: 18/42b lim: 4 exec/s: 0 rss: 46Mb L: 2/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9620606Z #125	REDUCE cov: 259 ft: 344 corp: 19/45b lim: 4 exec/s: 0 rss: 46Mb L: 3/4 MS: 2 PersAutoDict-ShuffleBytes- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9642120Z #150	NEW    cov: 262 ft: 347 corp: 20/48b lim: 4 exec/s: 0 rss: 46Mb L: 3/4 MS: 5 InsertByte-ShuffleBytes-PersAutoDict-CopyPart-CMP- DE: "\000\000"-"\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9658682Z #158	NEW    cov: 265 ft: 350 corp: 21/51b lim: 4 exec/s: 0 rss: 47Mb L: 3/4 MS: 3 ChangeBinInt-EraseBytes-PersAutoDict- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9680099Z #179	NEW    cov: 268 ft: 353 corp: 22/55b lim: 4 exec/s: 0 rss: 47Mb L: 4/4 MS: 1 ShuffleBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9701867Z #190	NEW    cov: 270 ft: 355 corp: 23/58b lim: 4 exec/s: 0 rss: 47Mb L: 3/4 MS: 1 PersAutoDict- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9702652Z #196	NEW    cov: 270 ft: 356 corp: 24/62b lim: 4 exec/s: 0 rss: 47Mb L: 4/4 MS: 1 PersAutoDict- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9703636Z #200	REDUCE cov: 270 ft: 356 corp: 24/60b lim: 4 exec/s: 0 rss: 47Mb L: 1/4 MS: 4 ShuffleBytes-PersAutoDict-EraseBytes-EraseBytes- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9704564Z #202	NEW    cov: 273 ft: 360 corp: 25/64b lim: 4 exec/s: 0 rss: 47Mb L: 4/4 MS: 2 ChangeByte-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9705289Z #233	NEW    cov: 274 ft: 361 corp: 26/65b lim: 4 exec/s: 0 rss: 47Mb L: 1/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9706324Z #248	NEW    cov: 278 ft: 365 corp: 27/69b lim: 4 exec/s: 0 rss: 47Mb L: 4/4 MS: 5 ShuffleBytes-PersAutoDict-ChangeByte-PersAutoDict-CrossOver- DE: "\001\000"-"\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9707377Z #254	REDUCE cov: 278 ft: 365 corp: 27/68b lim: 4 exec/s: 0 rss: 47Mb L: 3/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9708074Z #280	NEW    cov: 280 ft: 369 corp: 28/69b lim: 4 exec/s: 0 rss: 47Mb L: 1/4 MS: 1 ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9708825Z #307	NEW    cov: 280 ft: 371 corp: 29/73b lim: 4 exec/s: 0 rss: 47Mb L: 4/4 MS: 2 CopyPart-PersAutoDict- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9709715Z #366	NEW    cov: 282 ft: 373 corp: 30/75b lim: 4 exec/s: 0 rss: 48Mb L: 2/4 MS: 4 ChangeBit-ChangeByte-ChangeBit-ChangeBinInt-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9710533Z #397	NEW    cov: 282 ft: 374 corp: 31/79b lim: 4 exec/s: 0 rss: 48Mb L: 4/4 MS: 1 CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9711320Z #418	NEW    cov: 283 ft: 375 corp: 32/80b lim: 4 exec/s: 0 rss: 48Mb L: 1/4 MS: 1 ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9712383Z #422	NEW    cov: 285 ft: 378 corp: 33/82b lim: 4 exec/s: 0 rss: 48Mb L: 2/4 MS: 4 ShuffleBytes-ShuffleBytes-ChangeASCIIInt-CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9713558Z #432	NEW    cov: 287 ft: 380 corp: 34/86b lim: 4 exec/s: 0 rss: 48Mb L: 4/4 MS: 5 ShuffleBytes-CrossOver-ChangeBit-ShuffleBytes-CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9714416Z #443	NEW    cov: 288 ft: 381 corp: 35/88b lim: 4 exec/s: 0 rss: 48Mb L: 2/4 MS: 1 ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9715227Z #477	NEW    cov: 289 ft: 383 corp: 36/91b lim: 4 exec/s: 0 rss: 48Mb L: 3/4 MS: 4 ChangeBit-InsertByte-CrossOver-CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9716029Z #494	NEW    cov: 289 ft: 389 corp: 37/95b lim: 4 exec/s: 0 rss: 48Mb L: 4/4 MS: 2 CrossOver-CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9717284Z 	NEW_FUNC[1/3]: 0x5565863217f0  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x1507f0) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9718920Z 	NEW_FUNC[2/3]: 0x556586328d80  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x157d80) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9720027Z #535	NEW    cov: 315 ft: 422 corp: 38/97b lim: 4 exec/s: 0 rss: 48Mb L: 2/4 MS: 1 InsertByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9720856Z #613	NEW    cov: 316 ft: 423 corp: 39/101b lim: 4 exec/s: 0 rss: 49Mb L: 4/4 MS: 3 ChangeBit-EraseBytes-PersAutoDict- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9721883Z #649	REDUCE cov: 316 ft: 423 corp: 39/100b lim: 4 exec/s: 0 rss: 49Mb L: 1/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9722640Z #716	NEW    cov: 317 ft: 424 corp: 40/103b lim: 4 exec/s: 0 rss: 49Mb L: 3/4 MS: 2 ShuffleBytes-ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9723361Z #752	NEW    cov: 317 ft: 425 corp: 41/105b lim: 4 exec/s: 0 rss: 49Mb L: 2/4 MS: 1 CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9724086Z #773	REDUCE cov: 317 ft: 425 corp: 41/104b lim: 4 exec/s: 0 rss: 49Mb L: 2/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9725299Z 	NEW_FUNC[1/1]: 0x5565863403f0  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x16f3f0) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9726517Z #775	REDUCE cov: 327 ft: 435 corp: 42/105b lim: 4 exec/s: 0 rss: 49Mb L: 1/4 MS: 2 InsertByte-EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9727284Z #802	NEW    cov: 328 ft: 436 corp: 43/106b lim: 4 exec/s: 0 rss: 49Mb L: 1/4 MS: 2 ShuffleBytes-ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9727999Z #808	NEW    cov: 328 ft: 440 corp: 44/109b lim: 4 exec/s: 0 rss: 49Mb L: 3/4 MS: 1 CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9728943Z #813	NEW    cov: 330 ft: 442 corp: 45/111b lim: 4 exec/s: 0 rss: 49Mb L: 2/4 MS: 5 EraseBytes-ChangeByte-ChangeBit-PersAutoDict-ChangeBinInt- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9729867Z #890	NEW    cov: 330 ft: 447 corp: 46/115b lim: 4 exec/s: 0 rss: 50Mb L: 4/4 MS: 2 ChangeByte-CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9730473Z #976	NEW    cov: 333 ft: 450 corp: 47/119b lim: 4 exec/s: 0 rss: 50Mb L: 4/4 MS: 1 ChangeBinInt-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9731041Z #1032	NEW    cov: 336 ft: 453 corp: 48/121b lim: 4 exec/s: 0 rss: 50Mb L: 2/4 MS: 1 CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9739616Z #1053	NEW    cov: 340 ft: 462 corp: 49/122b lim: 4 exec/s: 0 rss: 50Mb L: 1/4 MS: 1 ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9740356Z #1074	NEW    cov: 342 ft: 466 corp: 50/124b lim: 4 exec/s: 0 rss: 50Mb L: 2/4 MS: 1 CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9741034Z #1085	REDUCE cov: 342 ft: 466 corp: 50/123b lim: 4 exec/s: 0 rss: 50Mb L: 3/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9741873Z #1091	NEW    cov: 345 ft: 469 corp: 51/127b lim: 4 exec/s: 0 rss: 50Mb L: 4/4 MS: 1 ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9742665Z #1119	NEW    cov: 347 ft: 471 corp: 52/130b lim: 4 exec/s: 0 rss: 50Mb L: 3/4 MS: 3 InsertByte-ShuffleBytes-ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9743746Z #1139	NEW    cov: 349 ft: 473 corp: 53/134b lim: 4 exec/s: 0 rss: 51Mb L: 4/4 MS: 5 PersAutoDict-InsertByte-ShuffleBytes-CrossOver-ChangeBit- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9744718Z #1205	NEW    cov: 351 ft: 481 corp: 54/137b lim: 4 exec/s: 0 rss: 51Mb L: 3/4 MS: 1 CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9745781Z #1234	NEW    cov: 353 ft: 483 corp: 55/139b lim: 4 exec/s: 0 rss: 51Mb L: 2/4 MS: 4 EraseBytes-ChangeBinInt-ShuffleBytes-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9747330Z 	NEW_FUNC[1/1]: 0x556586322250  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x151250) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9748477Z #1255	NEW    cov: 354 ft: 485 corp: 56/141b lim: 4 exec/s: 0 rss: 51Mb L: 2/4 MS: 1 CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9749283Z #1259	REDUCE cov: 354 ft: 485 corp: 56/140b lim: 4 exec/s: 0 rss: 51Mb L: 1/4 MS: 4 ChangeBit-ShuffleBytes-ChangeBit-EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9750511Z 	NEW_FUNC[1/4]: 0x556586319100  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x148100) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9752175Z 	NEW_FUNC[2/4]: 0x5565863220f0  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x1510f0) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9753485Z #1296	NEW    cov: 372 ft: 503 corp: 57/142b lim: 4 exec/s: 0 rss: 51Mb L: 2/4 MS: 2 ShuffleBytes-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9754729Z 	NEW_FUNC[1/1]: 0x55658633e000  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x16d000) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9755929Z #1298	NEW    cov: 377 ft: 508 corp: 58/145b lim: 4 exec/s: 0 rss: 51Mb L: 3/4 MS: 2 InsertByte-ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9756648Z #1339	REDUCE cov: 377 ft: 508 corp: 58/144b lim: 4 exec/s: 0 rss: 51Mb L: 1/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9757411Z #1406	NEW    cov: 381 ft: 512 corp: 59/147b lim: 4 exec/s: 0 rss: 52Mb L: 3/4 MS: 2 ChangeByte-CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9758131Z #1408	NEW    cov: 382 ft: 513 corp: 60/149b lim: 4 exec/s: 0 rss: 52Mb L: 2/4 MS: 2 CrossOver-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9759504Z #1541	NEW    cov: 382 ft: 515 corp: 61/153b lim: 4 exec/s: 0 rss: 52Mb L: 4/4 MS: 3 ShuffleBytes-CopyPart-ChangeBinInt-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9774511Z #1594	NEW    cov: 383 ft: 517 corp: 62/157b lim: 4 exec/s: 0 rss: 53Mb L: 4/4 MS: 3 CopyPart-ShuffleBytes-CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9776986Z #1608	NEW    cov: 385 ft: 519 corp: 63/159b lim: 4 exec/s: 0 rss: 53Mb L: 2/4 MS: 4 CrossOver-CrossOver-ShuffleBytes-CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9779079Z #1614	NEW    cov: 386 ft: 520 corp: 64/163b lim: 4 exec/s: 0 rss: 53Mb L: 4/4 MS: 1 ShuffleBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9783051Z 	NEW_FUNC[1/1]: 0x55658634eef0  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x17def0) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9784525Z #1623	NEW    cov: 393 ft: 530 corp: 65/166b lim: 4 exec/s: 0 rss: 53Mb L: 3/4 MS: 4 ShuffleBytes-EraseBytes-ShuffleBytes-CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9785539Z #1628	NEW    cov: 395 ft: 532 corp: 66/168b lim: 4 exec/s: 0 rss: 53Mb L: 2/4 MS: 5 CopyPart-EraseBytes-InsertByte-EraseBytes-ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9800739Z #1633	NEW    cov: 395 ft: 533 corp: 67/171b lim: 4 exec/s: 0 rss: 53Mb L: 3/4 MS: 5 ChangeBit-CopyPart-CopyPart-ChangeByte-PersAutoDict- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9821538Z 	NEW_FUNC[1/2]: 0x556586322200  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x151200) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9823172Z 	NEW_FUNC[2/2]: 0x55658632d930  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x15c930) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9824293Z #1674	NEW    cov: 412 ft: 580 corp: 68/175b lim: 4 exec/s: 0 rss: 53Mb L: 4/4 MS: 1 CopyPart-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9825151Z #1721	NEW    cov: 413 ft: 581 corp: 69/176b lim: 4 exec/s: 0 rss: 53Mb L: 1/4 MS: 2 ChangeBinInt-ChangeByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9826489Z #1736	NEW    cov: 418 ft: 586 corp: 70/179b lim: 4 exec/s: 0 rss: 53Mb L: 3/4 MS: 5 ShuffleBytes-ChangeBinInt-ChangeByte-ChangeBit-CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9827695Z #1762	NEW    cov: 419 ft: 587 corp: 71/182b lim: 4 exec/s: 0 rss: 54Mb L: 3/4 MS: 1 ChangeBinInt-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9841585Z #1958	REDUCE cov: 419 ft: 587 corp: 71/181b lim: 4 exec/s: 0 rss: 55Mb L: 2/4 MS: 1 EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9842428Z #1971	REDUCE cov: 420 ft: 588 corp: 72/185b lim: 4 exec/s: 0 rss: 55Mb L: 4/4 MS: 3 CopyPart-InsertByte-CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9862156Z #2118	NEW    cov: 421 ft: 589 corp: 73/189b lim: 4 exec/s: 0 rss: 56Mb L: 4/4 MS: 2 PersAutoDict-CrossOver- DE: "\001\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9864140Z #2127	NEW    cov: 422 ft: 590 corp: 74/193b lim: 4 exec/s: 0 rss: 56Mb L: 4/4 MS: 4 InsertByte-ChangeBinInt-CrossOver-ChangeBit-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9876436Z #2244	REDUCE cov: 422 ft: 590 corp: 74/192b lim: 4 exec/s: 0 rss: 56Mb L: 3/4 MS: 2 CopyPart-EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9885522Z 	NEW_FUNC[1/2]: 0x556586336000  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x165000) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9887563Z 	NEW_FUNC[2/2]: 0x55658634b2d0  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x17a2d0) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9888779Z #2261	REDUCE cov: 433 ft: 601 corp: 75/194b lim: 4 exec/s: 0 rss: 56Mb L: 2/4 MS: 2 CrossOver-EraseBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9911437Z #2485	NEW    cov: 433 ft: 609 corp: 76/199b lim: 6 exec/s: 0 rss: 58Mb L: 5/5 MS: 4 ChangeByte-CrossOver-ChangeBit-CMP- DE: "\000\000\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9916135Z #2497	NEW    cov: 433 ft: 613 corp: 77/204b lim: 6 exec/s: 0 rss: 58Mb L: 5/5 MS: 2 EraseBytes-InsertRepeatedBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9916995Z #2503	NEW    cov: 433 ft: 614 corp: 78/210b lim: 6 exec/s: 0 rss: 58Mb L: 6/6 MS: 1 PersAutoDict- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9919797Z #2513	NEW    cov: 433 ft: 617 corp: 79/216b lim: 6 exec/s: 0 rss: 58Mb L: 6/6 MS: 5 CrossOver-CopyPart-CrossOver-CrossOver-InsertByte-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9924535Z #2539	NEW    cov: 434 ft: 619 corp: 80/220b lim: 6 exec/s: 0 rss: 58Mb L: 4/6 MS: 1 CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9929279Z #2558	NEW    cov: 436 ft: 636 corp: 81/226b lim: 6 exec/s: 0 rss: 58Mb L: 6/6 MS: 4 ChangeByte-CopyPart-PersAutoDict-CopyPart- DE: "\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9944011Z #2655	NEW    cov: 437 ft: 637 corp: 82/231b lim: 6 exec/s: 0 rss: 59Mb L: 5/6 MS: 2 ChangeBit-CrossOver-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9967476Z #2863	NEW    cov: 437 ft: 638 corp: 83/238b lim: 8 exec/s: 0 rss: 60Mb L: 7/7 MS: 3 ChangeASCIIInt-CopyPart-InsertRepeatedBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9970341Z #2868	NEW    cov: 444 ft: 646 corp: 84/246b lim: 8 exec/s: 0 rss: 60Mb L: 8/8 MS: 5 ChangeBit-CopyPart-InsertByte-ChangeByte-InsertRepeatedBytes-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9975009Z #2873	NEW    cov: 445 ft: 652 corp: 85/254b lim: 8 exec/s: 0 rss: 60Mb L: 8/8 MS: 5 PersAutoDict-CopyPart-PersAutoDict-ShuffleBytes-CopyPart- DE: "\001\000"-"\001\000\000\000"-
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9981010Z =================================================================
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9981805Z ==4304==ERROR: AddressSanitizer: out of memory: allocator is trying to allocate 0x17ee2cd0f0 bytes
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9982944Z     #0 0x5565862e7ef4  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x116ef4) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9984219Z     #1 0x55658632651f  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x15551f) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9985113Z     #2 0x556586334ff4  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x163ff4) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9986276Z     #3 0x556586333c63  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x162c63) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9987274Z     #4 0x556586318c1e  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x147c1e) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9988201Z     #5 0x556586318352  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x147352) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9989091Z     #6 0x5565863515c8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x1805c8) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9990013Z     #7 0x556586352548  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x181548) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9990903Z     #8 0x55658635213d  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x18113d) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9991971Z     #9 0x556586359cc8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x188cc8) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9992872Z     #10 0x556586361349  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x190349) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9993776Z     #11 0x55658636245a  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x19145a) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9994658Z     #12 0x5565863633c7  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x1923c7) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9995592Z     #13 0x556586386b31  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x1b5b31) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9996484Z     #14 0x556586352576  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x181576) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9997212Z     #15 0x7f2a0142a1c9  (/lib/x86_64-linux-gnu/libc.so.6+0x2a1c9) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9997741Z     #16 0x7f2a0142a28a  (/lib/x86_64-linux-gnu/libc.so.6+0x2a28a) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9998456Z     #17 0x55658625c084  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x8b084) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071)
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9998963Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9999148Z ==4304==HINT: if you don't care about these errors you may set allocator_may_return_null=1
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:07.9999911Z SUMMARY: AddressSanitizer: out-of-memory (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_deserialize+0x116ef4) (BuildId: 917c0b48d52d8b8a204d9e334fd2cdad8a7e6071) 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0000534Z ==4304==ABORTING
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0001010Z MS: 5 PersAutoDict-ChangeBinInt-PersAutoDict-CrossOver-ShuffleBytes- DE: "\000\000"-"\001\000"-; base unit: 8cf893bdea0f36b22f60eb9841226a940c7c5538
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0002796Z 0xfc,0xa,0xde,0x41,0xff,0x0,0x1,0x0,
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0003015Z \374\012\336A\377\000\001\000
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0003683Z artifact_prefix='/home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_deserialize/'; Test unit written to /home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_deserialize/crash-bd59d9ab75d3969d864f54532940f27853f9a24a
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0005472Z Base64: /AreQf8AAQA=
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0026666Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0027551Z ────────────────────────────────────────────────────────────────────────────────
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0028046Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0028143Z Failing input:
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0028288Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0028537Z 	fuzz/artifacts/fuzz_deserialize/crash-bd59d9ab75d3969d864f54532940f27853f9a24a
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0028795Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0668283Z Output of `std::fmt::Debug`:
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0668567Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0668690Z 	[252, 10, 222, 65, 255, 0, 1, 0]
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0668895Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0669020Z Reproduce with:
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0669191Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0669645Z 	cargo fuzz run -O fuzz_deserialize fuzz/artifacts/fuzz_deserialize/crash-bd59d9ab75d3969d864f54532940f27853f9a24a
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0670044Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0670134Z Minimize test case with:
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0670256Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0670526Z 	cargo fuzz tmin -O fuzz_deserialize fuzz/artifacts/fuzz_deserialize/crash-bd59d9ab75d3969d864f54532940f27853f9a24a
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0670899Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0671519Z ────────────────────────────────────────────────────────────────────────────────
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0671759Z 
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0671870Z Error: Fuzz target exited with exit status: 1
+Fuzz · fuzz_deserialize	Short bounded fuzz run	2026-10-07T19:18:08.0681740Z ##[error]Process completed with exit code 1.
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	﻿2026-10-07T19:17:20.3821586Z ##[group]Run set -euo pipefail
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3821785Z [36;1mset -euo pipefail[0m
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3821912Z [36;1mseconds=''[0m
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3822032Z [36;1mseconds="${seconds:-60}"[0m
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3822206Z [36;1mcargo fuzz run 'fuzz_encrypt_decrypt' --release -- \[0m
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3822391Z [36;1m  -max_total_time="$seconds"[0m
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3872948Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3873118Z env:
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3873236Z   RUSTUP_TOOLCHAIN: nightly-2025-08-04
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3873387Z   CARGO_HOME: /home/runner/.cargo
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3873520Z   CARGO_INCREMENTAL: 0
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3873639Z   CARGO_TERM_COLOR: always
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.3873760Z ##[endgroup]
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.4670303Z [1m[32m   Compiling[0m proc-macro2 v1.0.106
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.4671665Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.4671943Z [1m[32m   Compiling[0m quote v1.0.44
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.4672213Z [1m[32m   Compiling[0m version_check v0.9.5
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.5063657Z [1m[32m   Compiling[0m typenum v1.19.0
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.5859991Z [1m[32m   Compiling[0m libc v0.2.180
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.6342540Z [1m[32m   Compiling[0m generic-array v0.14.7
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.7052870Z [1m[32m   Compiling[0m serde_core v1.0.228
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:20.9629385Z [1m[32m   Compiling[0m syn v2.0.114
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.2520046Z [1m[32m   Compiling[0m zmij v1.0.16
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.3530601Z [1m[32m   Compiling[0m jobserver v0.1.34
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.3725339Z [1m[32m   Compiling[0m find-msvc-tools v0.1.8
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.3939815Z [1m[32m   Compiling[0m shlex v1.3.0
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.4720728Z [1m[32m   Compiling[0m cc v1.2.54
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.4829754Z [1m[32m   Compiling[0m block-buffer v0.10.4
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.5369906Z [1m[32m   Compiling[0m crypto-common v0.1.7
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.5789817Z [1m[32m   Compiling[0m serde v1.0.228
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.6949994Z [1m[32m   Compiling[0m thiserror v1.0.69
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:21.8039987Z [1m[32m   Compiling[0m virtue v0.0.18
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:22.1930141Z [1m[32m   Compiling[0m cfg-if v1.0.4
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:22.2141126Z [1m[32m   Compiling[0m serde_json v1.0.149
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:22.2864806Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:22.5819916Z [1m[32m   Compiling[0m libfuzzer-sys v0.4.10
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:22.6785154Z [1m[32m   Compiling[0m digest v0.10.7
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:22.9860004Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:23.0589764Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:23.0836149Z [1m[32m   Compiling[0m unty v0.0.4
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:23.0862967Z [1m[32m   Compiling[0m memchr v2.7.6
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:23.1130022Z [1m[32m   Compiling[0m itoa v1.0.17
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:23.2839485Z [1m[32m   Compiling[0m getrandom v0.2.17
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:23.2899375Z [1m[32m   Compiling[0m bincode v2.0.1
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:23.8709764Z [1m[32m   Compiling[0m sha2 v0.10.9
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:24.1350404Z [1m[32m   Compiling[0m zeroize_derive v1.4.3
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:24.2149906Z [1m[32m   Compiling[0m derive_arbitrary v1.4.2
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:24.4340443Z [1m[32m   Compiling[0m zeroize v1.8.2
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:24.5290632Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:24.6449821Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:24.8799794Z [1m[32m   Compiling[0m serde_derive v1.0.228
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:25.1869979Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:25.4231217Z [1m[32m   Compiling[0m arbitrary v1.4.2
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:25.7221588Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:26.1845779Z [1m[32m   Compiling[0m subtle v2.6.1
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.7424265Z [1m[32m   Compiling[0m nine65-fuzz v0.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/fuzz)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9295339Z [1m[32m    Finished[0m `release` profile [optimized + debuginfo] target(s) in 32.51s
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9687149Z [1m[32m    Finished[0m `release` profile [optimized + debuginfo] target(s) in 0.02s
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9696265Z [1m[32m     Running[0m `fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt -artifact_prefix=/home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_encrypt_decrypt/ -max_total_time=60 /home/runner/work/NINE65_v7/NINE65_v7/fuzz/corpus/fuzz_encrypt_decrypt`
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9741018Z INFO: Running with entropic power schedule (0xFF, 100).
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9742295Z INFO: Seed: 3137574543
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9770931Z INFO: Loaded 1 modules   (2567 inline 8-bit counters): 2567 [0x564c6f97a460, 0x564c6f97ae67), 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9771524Z INFO: Loaded 1 PC tables (2567 PCs): 2567 [0x564c6f97ae68,0x564c6f984ed8), 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9773090Z INFO:        0 files found in /home/runner/work/NINE65_v7/NINE65_v7/fuzz/corpus/fuzz_encrypt_decrypt
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9773901Z INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9775313Z INFO: A corpus is not provided, starting from an empty corpus
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9775746Z #2	INITED exec/s: 0 rss: 41Mb
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9776077Z WARNING: no interesting inputs were found so far. Is the code instrumented for coverage?
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:52.9776549Z This may also happen if the target rejected all inputs we tried so far
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0019425Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0019973Z thread '<unnamed>' panicked at fuzz_targets/fuzz_encrypt_decrypt.rs:41:5:
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0020458Z assertion `left == right` failed: Roundtrip failed: encrypted 65292 but decrypted 65289
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0020833Z   left: 65289
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0021002Z  right: 65292
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0021264Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0021617Z ==4306== ERROR: libFuzzer: deadly signal
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0028902Z     #0 0x564c6f886f81  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x10af81) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0029863Z     #1 0x564c6f92544d  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1a944d) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0030801Z     #2 0x564c6f8d7979  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x15b979) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0031563Z     #3 0x7fefbc64532f  (/lib/x86_64-linux-gnu/libc.so.6+0x4532f) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0032135Z     #4 0x7fefbc69ec0b  (/lib/x86_64-linux-gnu/libc.so.6+0x9ec0b) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0032688Z     #5 0x7fefbc64527d  (/lib/x86_64-linux-gnu/libc.so.6+0x4527d) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0033237Z     #6 0x7fefbc6288fe  (/lib/x86_64-linux-gnu/libc.so.6+0x288fe) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0034070Z     #7 0x564c6f94b069  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1cf069) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0034999Z     #8 0x564c6f948548  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1cc548) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0035988Z     #9 0x564c6f8d06f4  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1546f4) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0037111Z     #10 0x564c6f94a5dd  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1ce5dd) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0038106Z     #11 0x564c6f94a3a9  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1ce3a9) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0039102Z     #12 0x564c6f948fa8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1ccfa8) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0039806Z     #13 0x564c6f94a03c  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1ce03c) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0040404Z     #14 0x564c6f9621af  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1e61af) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0041006Z     #15 0x564c6f9624c6  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1e64c6) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0041599Z     #16 0x564c6f962388  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1e6388) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0042191Z     #17 0x564c6f8b2923  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x136923) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0042786Z     #18 0x564c6f8b1d76  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x135d76) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0043390Z     #19 0x564c6f8cf7d8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1537d8) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0043987Z     #20 0x564c6f8d0758  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x154758) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0044577Z     #21 0x564c6f8d034d  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x15434d) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0045170Z     #22 0x564c6f8d7ed8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x15bed8) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0045765Z     #23 0x564c6f8df559  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x163559) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0046359Z     #24 0x564c6f8e066a  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x16466a) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0046956Z     #25 0x564c6f8e15d7  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x1655d7) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0047547Z     #26 0x564c6f904d41  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x188d41) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0048137Z     #27 0x564c6f8d0786  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x154786) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0048739Z     #28 0x7fefbc62a1c9  (/lib/x86_64-linux-gnu/libc.so.6+0x2a1c9) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0049196Z     #29 0x7fefbc62a28a  (/lib/x86_64-linux-gnu/libc.so.6+0x2a28a) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0049750Z     #30 0x564c6f7f2c64  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_encrypt_decrypt+0x76c64) (BuildId: 5f5ac0e5f8132848197c87c77caff80f95c1d943)
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0050073Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0050147Z NOTE: libFuzzer has rudimentary signal handlers.
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0050375Z       Combine libFuzzer with AddressSanitizer or similar for better crash reports.
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0050588Z SUMMARY: libFuzzer: deadly signal
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0050876Z MS: 4 ChangeByte-CrossOver-ShuffleBytes-InsertRepeatedBytes-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0051246Z 0xa,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0051504Z \012\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377\377
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0051995Z artifact_prefix='/home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_encrypt_decrypt/'; Test unit written to /home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_encrypt_decrypt/crash-ccc3e8005260a0e58919dbf84480215a32b196a7
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0052475Z Base64: Cv////////////////////8=
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0054176Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0054613Z ────────────────────────────────────────────────────────────────────────────────
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0054748Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0054796Z Failing input:
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0054865Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0054992Z 	fuzz/artifacts/fuzz_encrypt_decrypt/crash-ccc3e8005260a0e58919dbf84480215a32b196a7
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0055236Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0555593Z Output of `std::fmt::Debug`:
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0555869Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0555974Z 	EncryptInput {
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0556240Z 	    plaintext: 18446744073709551370,
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0556562Z 	    seed: 18446744073709551615,
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0556782Z 	}
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0556878Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0556963Z Reproduce with:
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0557088Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0557513Z 	cargo fuzz run -O fuzz_encrypt_decrypt fuzz/artifacts/fuzz_encrypt_decrypt/crash-ccc3e8005260a0e58919dbf84480215a32b196a7
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0557898Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0557973Z Minimize test case with:
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0558095Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0558606Z 	cargo fuzz tmin -O fuzz_encrypt_decrypt fuzz/artifacts/fuzz_encrypt_decrypt/crash-ccc3e8005260a0e58919dbf84480215a32b196a7
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0559096Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0559561Z ────────────────────────────────────────────────────────────────────────────────
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0559789Z 
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0559894Z Error: Fuzz target exited with exit status: 77
+Fuzz · fuzz_encrypt_decrypt	Short bounded fuzz run	2026-10-07T19:17:53.0569190Z ##[error]Process completed with exit code 1.
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	﻿2026-10-07T19:17:33.9631092Z ##[group]Run set -euo pipefail
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9632226Z [36;1mset -euo pipefail[0m
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9632817Z [36;1mseconds=''[0m
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9633342Z [36;1mseconds="${seconds:-60}"[0m
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9633995Z [36;1mcargo fuzz run 'fuzz_homomorphic' --release -- \[0m
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9634646Z [36;1m  -max_total_time="$seconds"[0m
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9677876Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9678364Z env:
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9678803Z   RUSTUP_TOOLCHAIN: nightly-2025-08-04
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9679226Z   CARGO_HOME: /home/runner/.cargo
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9679598Z   CARGO_INCREMENTAL: 0
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9679986Z   CARGO_TERM_COLOR: always
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:33.9680302Z ##[endgroup]
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.0846862Z [1m[32m   Compiling[0m proc-macro2 v1.0.106
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.0847964Z [1m[32m   Compiling[0m unicode-ident v1.0.22
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.0848732Z [1m[32m   Compiling[0m quote v1.0.44
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.0849264Z [1m[32m   Compiling[0m version_check v0.9.5
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.1498712Z [1m[32m   Compiling[0m typenum v1.19.0
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.2452647Z [1m[32m   Compiling[0m libc v0.2.180
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.3746798Z [1m[32m   Compiling[0m generic-array v0.14.7
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.4708462Z [1m[32m   Compiling[0m serde_core v1.0.228
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:34.6915206Z [1m[32m   Compiling[0m shlex v1.3.0
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.0357647Z [1m[32m   Compiling[0m syn v2.0.114
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.0397579Z [1m[32m   Compiling[0m find-msvc-tools v0.1.8
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.2226593Z [1m[32m   Compiling[0m zmij v1.0.16
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.5136881Z [1m[32m   Compiling[0m jobserver v0.1.34
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.5476870Z [1m[32m   Compiling[0m crypto-common v0.1.7
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.6346639Z [1m[32m   Compiling[0m block-buffer v0.10.4
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.7368721Z [1m[32m   Compiling[0m cc v1.2.54
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:35.8516675Z [1m[32m   Compiling[0m serde v1.0.228
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:36.0286722Z [1m[32m   Compiling[0m thiserror v1.0.69
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:36.2128231Z [1m[32m   Compiling[0m virtue v0.0.18
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:36.8562958Z [1m[32m   Compiling[0m cfg-if v1.0.4
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:36.8849548Z [1m[32m   Compiling[0m serde_json v1.0.149
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:36.9777041Z [1m[32m   Compiling[0m bincode_derive v2.0.1
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:37.5935957Z [1m[32m   Compiling[0m libfuzzer-sys v0.4.10
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:37.6276644Z [1m[32m   Compiling[0m digest v0.10.7
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:38.0768608Z [1m[32m   Compiling[0m itoa v1.0.17
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:38.1896866Z [1m[32m   Compiling[0m cpufeatures v0.2.17
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:38.2206850Z [1m[32m   Compiling[0m nine65 v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/nine65)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:38.3690842Z [1m[32m   Compiling[0m unty v0.0.4
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:38.3746912Z [1m[32m   Compiling[0m memchr v2.7.6
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:38.4186957Z [1m[32m   Compiling[0m bincode v2.0.1
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:38.8216617Z [1m[32m   Compiling[0m getrandom v0.2.17
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:39.4097696Z [1m[32m   Compiling[0m sha2 v0.10.9
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:40.2647426Z [1m[32m   Compiling[0m zeroize_derive v1.4.3
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:40.3967643Z [1m[32m   Compiling[0m derive_arbitrary v1.4.2
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:40.7326770Z [1m[32m   Compiling[0m zeroize v1.8.2
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:40.8836731Z [1m[32m   Compiling[0m mana v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/mana)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:41.0787021Z [1m[32m   Compiling[0m thiserror-impl v1.0.69
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:41.3346941Z [1m[32m   Compiling[0m serde_derive v1.0.228
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:41.9817169Z [1m[32m   Compiling[0m unhal v0.1.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/unhal)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:42.3987591Z [1m[32m   Compiling[0m arbitrary v1.4.2
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:42.8111631Z [1m[32m   Compiling[0m subtle v2.6.1
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:17:42.8952695Z [1m[32m   Compiling[0m exact_transcendentals v1.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:27.9888715Z [1m[32m   Compiling[0m nine65-fuzz v0.0.0 (/home/runner/work/NINE65_v7/NINE65_v7/fuzz)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3002502Z [1m[32m    Finished[0m `release` profile [optimized + debuginfo] target(s) in 54.29s
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3528556Z [1m[32m    Finished[0m `release` profile [optimized + debuginfo] target(s) in 0.02s
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3548280Z [1m[32m     Running[0m `fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic -artifact_prefix=/home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_homomorphic/ -max_total_time=60 /home/runner/work/NINE65_v7/NINE65_v7/fuzz/corpus/fuzz_homomorphic`
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3608664Z INFO: Running with entropic power schedule (0xFF, 100).
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3609273Z INFO: Seed: 4164508544
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3672946Z INFO: Loaded 1 modules   (3027 inline 8-bit counters): 3027 [0x55d785cf1720, 0x55d785cf22f3), 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3674282Z INFO: Loaded 1 PC tables (3027 PCs): 3027 [0x55d785cf22f8,0x55d785cfe028), 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3675491Z INFO:        0 files found in /home/runner/work/NINE65_v7/NINE65_v7/fuzz/corpus/fuzz_homomorphic
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3676704Z INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3682203Z INFO: A corpus is not provided, starting from an empty corpus
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3682877Z #2	INITED exec/s: 0 rss: 42Mb
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3683625Z WARNING: no interesting inputs were found so far. Is the code instrumented for coverage?
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.3684653Z This may also happen if the target rejected all inputs we tried so far
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4170047Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4171710Z thread '<unnamed>' panicked at fuzz_targets/fuzz_homomorphic.rs:46:5:
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4172915Z assertion `left == right` failed: Add failed: 65331 + 0 = 65328 (expected 65331)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4173876Z   left: 65328
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4174624Z  right: 65331
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4175646Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4176642Z ==4525== ERROR: libFuzzer: deadly signal
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4181385Z     #0 0x55d785bf67b1  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x10f7b1) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4183764Z     #1 0x55d785c9bbad  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1b4bad) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4186527Z     #2 0x55d785c4e0d9  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1670d9) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4188331Z     #3 0x7f734e24532f  (/lib/x86_64-linux-gnu/libc.so.6+0x4532f) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4189737Z     #4 0x7f734e29ec0b  (/lib/x86_64-linux-gnu/libc.so.6+0x9ec0b) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4190955Z     #5 0x7f734e24527d  (/lib/x86_64-linux-gnu/libc.so.6+0x4527d) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4192238Z     #6 0x7f734e2288fe  (/lib/x86_64-linux-gnu/libc.so.6+0x288fe) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4193850Z     #7 0x55d785cc17c9  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1da7c9) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4196186Z     #8 0x55d785cbeca8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1d7ca8) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4199030Z     #9 0x55d785c46e54  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x15fe54) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4202046Z     #10 0x55d785cc0d3d  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1d9d3d) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4204207Z     #11 0x55d785cc0b09  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1d9b09) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4206145Z     #12 0x55d785cbf708  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1d8708) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4207412Z     #13 0x55d785cc079c  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1d979c) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4209258Z     #14 0x55d785cd890f  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1f190f) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4210587Z     #15 0x55d785cd8c26  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1f1c26) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4211896Z     #16 0x55d785cd8ae8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1f1ae8) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4213092Z     #17 0x55d785c229dd  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x13b9dd) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4214273Z     #18 0x55d785c217fd  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x13a7fd) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4216601Z     #19 0x55d785c45f38  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x15ef38) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4217830Z     #20 0x55d785c46eb8  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x15feb8) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4219111Z     #21 0x55d785c46aad  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x15faad) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4220351Z     #22 0x55d785c4e638  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x167638) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4221578Z     #23 0x55d785c55cb9  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x16ecb9) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4222906Z     #24 0x55d785c56dca  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x16fdca) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4224677Z     #25 0x55d785c57d37  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x170d37) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4226081Z     #26 0x55d785c7b4a1  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x1944a1) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4227332Z     #27 0x55d785c46ee6  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x15fee6) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4228365Z     #28 0x7f734e22a1c9  (/lib/x86_64-linux-gnu/libc.so.6+0x2a1c9) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4229363Z     #29 0x7f734e22a28a  (/lib/x86_64-linux-gnu/libc.so.6+0x2a28a) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4230414Z     #30 0x55d785b62104  (/home/runner/work/NINE65_v7/NINE65_v7/fuzz/target/x86_64-unknown-linux-gnu/release/fuzz_homomorphic+0x7b104) (BuildId: 5d9db52d5341384382ae2a7d33a0700303f68db1)
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4231144Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4231363Z NOTE: libFuzzer has rudimentary signal handlers.
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4231929Z       Combine libFuzzer with AddressSanitizer or similar for better crash reports.
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4232543Z SUMMARY: libFuzzer: deadly signal
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4233059Z MS: 1 InsertRepeatedBytes-; base unit: adc83b19e793491b1c6ea0fd8b46cd9f32e592fc
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4233966Z 0xa,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,0xd8,
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4235074Z \012\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330\330
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4236301Z artifact_prefix='/home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_homomorphic/'; Test unit written to /home/runner/work/NINE65_v7/NINE65_v7/fuzz/artifacts/fuzz_homomorphic/crash-4a2900a219adf08bdb62f4b6e37f9cdb42377415
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4237486Z Base64: CtjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Ng=
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4237853Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4238430Z ────────────────────────────────────────────────────────────────────────────────
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4238724Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4238924Z Failing input:
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4239124Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4239410Z 	fuzz/artifacts/fuzz_homomorphic/crash-4a2900a219adf08bdb62f4b6e37f9cdb42377415
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4239814Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4974962Z Output of `std::fmt::Debug`:
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4975441Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4975675Z 	HomomorphicInput {
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4976327Z 	    a: 15625477333024561162,
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4976800Z 	    b: 15625477333024561368,
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4977386Z 	    scalar: 15625477333024561368,
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4977901Z 	    seed: 15625477333024561368,
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4978374Z 	}
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4978665Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4978894Z Reproduce with:
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4979122Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4979786Z 	cargo fuzz run -O fuzz_homomorphic fuzz/artifacts/fuzz_homomorphic/crash-4a2900a219adf08bdb62f4b6e37f9cdb42377415
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4980492Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4980723Z Minimize test case with:
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4981050Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4981600Z 	cargo fuzz tmin -O fuzz_homomorphic fuzz/artifacts/fuzz_homomorphic/crash-4a2900a219adf08bdb62f4b6e37f9cdb42377415
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4982335Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4983040Z ────────────────────────────────────────────────────────────────────────────────
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4983545Z 
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.4983827Z Error: Fuzz target exited with exit status: 77
+Fuzz · fuzz_homomorphic	Short bounded fuzz run	2026-10-07T19:18:28.5004802Z ##[error]Process completed with exit code 1.

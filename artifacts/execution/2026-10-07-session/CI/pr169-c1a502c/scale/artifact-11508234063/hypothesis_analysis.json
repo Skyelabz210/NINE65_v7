@@ -1,0 +1,97 @@
+{
+  "claims": [
+    {
+      "claim_id": "H01",
+      "evidence": [],
+      "note": "The current probe marks the budget as an accounting model and the candidate winding counter as unverified. Correlation may be tested, but identity is not established.",
+      "statement": "The reported noise budget is an exact CRAM winding witness.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H02",
+      "evidence": [],
+      "note": "No addition accounting transitions were present in the supplied artifacts.",
+      "statement": "Addition consumes zero units in the current budget ledger.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H03",
+      "evidence": [],
+      "note": "At least two non-refresh multiplication transitions are required.",
+      "statement": "Each multiplication produces one constant budget decrement.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H04",
+      "evidence": [],
+      "note": "No arithmetic failure was present in the supplied traces.",
+      "statement": "Observed arithmetic failures are exactly an off-by-one mismatch.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H05",
+      "evidence": [
+        {
+          "decomposition_base": 65536,
+          "decomposition_digits": 6,
+          "relinearization_components": 6,
+          "source": "artifacts/v7_scale_sweep/dispatched/cases/0000-v6_compat_4096-s42-i2-m1-d2.json"
+        },
+        {
+          "decomposition_base": 65536,
+          "decomposition_digits": 8,
+          "relinearization_components": 8,
+          "source": "artifacts/v7_scale_sweep/dispatched/cases/0001-secure_128-s42-i2-m1-d2.json"
+        }
+      ],
+      "note": "The current runtime key structure contains relinearization components or decomposition digits.",
+      "statement": "The active ciphertext multiplication path uses zero auxiliary relinearization components.",
+      "verdict": "CONTRADICTED_BY_SUPPLIED_EVIDENCE"
+    },
+    {
+      "claim_id": "H06",
+      "evidence": [],
+      "note": "No refresh event was present in the supplied traces.",
+      "statement": "Every reported refresh is a real bootstrap execution.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H07",
+      "evidence": [],
+      "note": "No real refresh latency sample was supplied.",
+      "statement": "Refresh latency is approximately 143 microseconds.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H08",
+      "evidence": [],
+      "note": "The present candidate multiplication counter is explicitly unverified. A wall claim requires a residue-native winding witness and boundary-aligned failure sweep.",
+      "statement": "Depth failure occurs exactly at the CRAM wall p-1.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H09",
+      "evidence": [],
+      "note": "No supplied comparison passed both exact compatibility and correctness gates.",
+      "statement": "A same-machine v6/v7 performance regression can be ranked.",
+      "verdict": "INCONCLUSIVE"
+    },
+    {
+      "claim_id": "H10",
+      "evidence": [],
+      "note": "Security requires a pinned RLWE estimator and declared attack model; timing and residue occupancy do not establish it.",
+      "statement": "The validity product alone establishes the stated RLWE security bits.",
+      "verdict": "REQUIRES_EXTERNAL_VALIDATION"
+    }
+  ],
+  "input_count": 2,
+  "input_errors": [],
+  "interpretation_rule": "Verdicts are limited to supplied artifacts. Accounting correlation is not promoted to a winding theorem, and security claims require external estimator evidence.",
+  "schema": "cram-fhe-hypothesis-analysis-v1",
+  "trace_count": 4,
+  "verdict_counts": {
+    "CONTRADICTED_BY_SUPPLIED_EVIDENCE": 1,
+    "INCONCLUSIVE": 8,
+    "REQUIRES_EXTERNAL_VALIDATION": 1
+  }
+}

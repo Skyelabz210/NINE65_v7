@@ -726,7 +726,8 @@ fn g2_depth1_results_decrypt_with_positive_noise_margin() {
             // margin is tightest. The interior cases are already covered for
             // VALUE by the test above; re-multiplying them here would double
             // the multiply count of this file for no extra discrimination.
-            for (x, y) in [(t - 1, t - 1)] {
+            {
+                let (x, y) = (t - 1, t - 1);
                 let cx = encrypt_seeded(h, x, 0x6220_0001);
                 let cy = encrypt_seeded(h, y, 0x6220_0002);
                 let prod = mul_in_mode(h, mode, &cx, &cy);

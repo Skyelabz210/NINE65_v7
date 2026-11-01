@@ -215,7 +215,7 @@ fn oracle_phases(
 fn encrypted_inner_product_matches_all_coefficients_at_both_precisions() {
     let work = SecureConfig::secure_128().into_config();
     let ctx = RNSFHEContext::try_new(&work).unwrap();
-    let mut rng = ShadowHarvester::with_seed(0x4558_505f_4253_4b);
+    let mut rng = ShadowHarvester::with_seed(0x0045_5850_5f42_534b);
     let keys = ctx.generate_keys_dual_full(&mut rng);
     let mut cases = Vec::new();
     for message in [0, 1, 7, work.t - 1] {
@@ -322,7 +322,7 @@ fn malformed_work_key_is_refused_before_rng_consumption() {
     let ctx = RNSFHEContext::try_new(&work).unwrap();
     let boot = RNSFHEContext::try_new(&boot_config(&work, 2, 4)).unwrap();
     let evaluator = ExpandedPhaseEvaluator::new(&boot, work.t, 2).unwrap();
-    let mut key_rng = ShadowHarvester::with_seed(0x4558_505f_5641_4c);
+    let mut key_rng = ShadowHarvester::with_seed(0x0045_5850_5f56_414c);
     let keys = ctx.generate_keys_dual(&mut key_rng);
     for defect in 0..3 {
         let mut bad = keys.secret_key.clone();
@@ -408,7 +408,7 @@ fn safe_basis_repacking_preserves_the_entire_signed_carry_window() {
     let product = s6.iter().product::<i128>();
     assert_eq!(product, 30030);
     assert_eq!(2 * bound + 1, 16387);
-    assert!(2 * bound + 1 <= product);
+    assert!(2 * bound < product);
     for basis in [&s6[..], &[6i128, 35, 143][..]] {
         let map =
             exact_transcendentals::transduction::TransductionMap::try_new(basis, &s8).unwrap();

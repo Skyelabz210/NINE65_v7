@@ -965,7 +965,7 @@ mod constant_time_statistical {
                 Some(false) => println!(
                     "  VERDICT: TIMING DEPENDENCE MEASURED — control t={:.4} is \
                      below threshold but signal t={:.4} is not. The difference \
-                     tracks the input class, not the machine.",
+                     tracks the input class or its measurement context.",
                     self.t_control, self.t_signal
                 ),
             }
@@ -1058,17 +1058,37 @@ mod constant_time_statistical {
     where
         F: FnMut(&I),
     {
+        dudect_two_class_measured(rng, pool_a, pool_a2, pool_b, rounds, |input| {
+            let start = Instant::now();
+            run(input);
+            start.elapsed().as_nanos() as u64
+        })
+    }
+
+    /// Shared sampling and statistics. `measure` may prepare the input before
+    /// starting its timer, but must return only the measured elapsed time.
+    fn dudect_two_class_measured<I, F>(
+        rng: &mut ShadowHarvester,
+        pool_a: &[I],
+        pool_a2: &[I],
+        pool_b: &[I],
+        rounds: usize,
+        mut measure: F,
+    ) -> DudectResult
+    where
+        F: FnMut(&I) -> u64,
+    {
         let mut sa: Vec<u64> = Vec::with_capacity(rounds);
         let mut sa2: Vec<u64> = Vec::with_capacity(rounds);
         let mut sb: Vec<u64> = Vec::with_capacity(rounds);
 
-        // Untimed warmup over both classes so first-touch page faults and
+        // Discard warmup measurements for all classes so first-touch page faults and
         // branch-predictor training are not charged to whichever class runs
         // first.
         for i in 0..pool_a.len().max(pool_b.len()) {
-            run(&pool_a[i % pool_a.len()]);
-            run(&pool_a2[i % pool_a2.len()]);
-            run(&pool_b[i % pool_b.len()]);
+            measure(&pool_a[i % pool_a.len()]);
+            measure(&pool_a2[i % pool_a2.len()]);
+            measure(&pool_b[i % pool_b.len()]);
         }
 
         for _ in 0..rounds {
@@ -1086,10 +1106,7 @@ mod constant_time_statistical {
                 };
                 let idx = (rng.next_u64() as usize) % pool.len();
                 let input = &pool[idx];
-                let start = Instant::now();
-                run(input);
-                let dt = start.elapsed().as_nanos() as u64;
-                sink.push(dt);
+                sink.push(measure(input));
             }
         }
 
@@ -1151,20 +1168,36 @@ mod constant_time_statistical {
         }
     }
 
+    #[test]
+    fn dudect_shared_sampling_detects_injected_class_timing() {
+        let mut rng = ShadowHarvester::with_seed(812);
+        let mut noise = 0u64;
+        let result =
+            dudect_two_class_measured(&mut rng, &[0u64], &[0u64], &[1u64], 3000, |class| {
+                noise = noise.wrapping_mul(6364136223846793005).wrapping_add(1);
+                100 + ((noise >> 32) % 20) + class * 50
+            });
+        assert!(
+            result.t_control < T_TEST_THRESHOLD,
+            "same-class control: {}",
+            result.t_control
+        );
+        assert!(
+            result.t_signal >= T_TEST_THRESHOLD,
+            "injected signal: {}",
+            result.t_signal
+        );
+        assert_eq!(result.is_constant_time(), Some(false));
+    }
+
     // ========================================================================
     // Exact prime-drop (ops::rns_fhe::exact_modulus_switch_drop_poly)
     // ========================================================================
     //
-    // This is the exact align-and-drop primitive: for each surviving lane
-    //     x_i' = (x_i - r_k) * q_k^{-1}  (mod q_i)
-    // It is branch-free at the source level, but every one of those steps is a
-    // hardware or software DIVISION on a value derived from the ciphertext:
-    // `dropped[c] % q_i`, `src[c] % q_i`, `(x + q_i - r_k) % q_i`, and
-    // `(diff as u128 * inv as u128) % q_i as u128`. The last one is a 128-bit
-    // remainder by a runtime modulus, which LLVM lowers to `__umodti3` — a
-    // shift/subtract loop whose iteration count depends on the operand's bit
-    // length. That is a data-dependent execution path, which is exactly what
-    // these two tests are for.
+    // Each ciphertext coefficient is processed by the Barrett reduction and
+    // subtraction kernels. Modulus-dependent inverse and gcd setup uses only
+    // public parameters. These tests still measure the complete operation,
+    // including setup and output allocation, for both input contrasts.
 
     /// Dual-basis geometry used by the prime-drop tests. `n` is deliberately
     /// small enough that one call is tens of microseconds — far above timer
@@ -1204,6 +1237,54 @@ mod constant_time_statistical {
         }
     }
 
+    /// Reuse the same lane allocations for every class. Shape checks and copies
+    /// happen before the timer; no input lane is resized or replaced.
+    fn copy_drop_input(scratch: &mut DualRNSPoly, input: &DualRNSPoly) {
+        assert_eq!(scratch.n, input.n);
+        assert_eq!(scratch.main.len(), input.main.len());
+        assert_eq!(scratch.anchor.len(), input.anchor.len());
+        for (dst, src) in scratch
+            .main
+            .iter_mut()
+            .zip(&input.main)
+            .chain(scratch.anchor.iter_mut().zip(&input.anchor))
+        {
+            dst.copy_from_slice(src);
+        }
+    }
+
+    #[test]
+    fn prime_drop_scratch_keeps_lane_addresses_and_results() {
+        let basis = drop_basis();
+        let mut rng = ShadowHarvester::with_seed(151);
+        let zero = drop_poly(&basis, |_| 0);
+        let random = drop_poly(&basis, |p| rng.next_u64() % p);
+        let high = drop_poly(&basis, |p| p - 1);
+        let mut scratch = drop_poly(&basis, |_| 0);
+        let addresses: Vec<_> = scratch
+            .main
+            .iter()
+            .chain(&scratch.anchor)
+            .map(|lane| lane.as_ptr())
+            .collect();
+        for input in [&zero, &random, &high, &zero] {
+            let expected =
+                exact_modulus_switch_drop_poly(input, &basis.main, &basis.anchor, 0).unwrap();
+            copy_drop_input(&mut scratch, input);
+            let actual_addresses: Vec<_> = scratch
+                .main
+                .iter()
+                .chain(&scratch.anchor)
+                .map(|lane| lane.as_ptr())
+                .collect();
+            assert_eq!(actual_addresses, addresses);
+            let actual =
+                exact_modulus_switch_drop_poly(&scratch, &basis.main, &basis.anchor, 0).unwrap();
+            assert_eq!(actual.main, expected.main);
+            assert_eq!(actual.anchor, expected.anchor);
+        }
+    }
+
     #[test]
     #[ignore = "Statistical timing test - run in a controlled environment only. WAS finding F-1, \
 now CLOSED and kept as its regression gate: medians 110,927ns vs 110,977ns (+0.045%), t_signal 0.96 \
@@ -1230,17 +1311,26 @@ section 4.8 for the probe-by-probe localisation."]
 
         let main = basis.main.clone();
         let anchor = basis.anchor.clone();
-        let result = dudect_two_class(
+        let mut scratch = drop_poly(&basis, |_| 0);
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_ROUNDS,
             |poly| {
-                let out =
-                    exact_modulus_switch_drop_poly(std::hint::black_box(poly), &main, &anchor, 0)
-                        .expect("prime drop must succeed on the secure_128 dual basis");
+                copy_drop_input(&mut scratch, poly);
+                let start = Instant::now();
+                let out = exact_modulus_switch_drop_poly(
+                    std::hint::black_box(&scratch),
+                    &main,
+                    &anchor,
+                    0,
+                )
+                .expect("prime drop must succeed on the secure_128 dual basis");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1280,17 +1370,26 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
 
         let main = basis.main.clone();
         let anchor = basis.anchor.clone();
-        let result = dudect_two_class(
+        let mut scratch = drop_poly(&basis, |_| 0);
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_ROUNDS,
             |poly| {
-                let out =
-                    exact_modulus_switch_drop_poly(std::hint::black_box(poly), &main, &anchor, 0)
-                        .expect("prime drop must succeed on the secure_128 dual basis");
+                copy_drop_input(&mut scratch, poly);
+                let start = Instant::now();
+                let out = exact_modulus_switch_drop_poly(
+                    std::hint::black_box(&scratch),
+                    &main,
+                    &anchor,
+                    0,
+                )
+                .expect("prime drop must succeed on the secure_128 dual basis");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1352,6 +1451,33 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
         DualRNSPoly { main, anchor, n }
     }
 
+    fn prepare_u512<'a>(scratch: &'a mut U512, input: &U512) -> &'a U512 {
+        *scratch = *input;
+        std::hint::black_box(scratch)
+    }
+
+    #[test]
+    fn u512_scratch_preserves_address_and_reduction() {
+        let inputs = [
+            U512::zero(),
+            U512 {
+                d0: u128::MAX,
+                d1: 42,
+                d2: 0,
+                d3: 0,
+            },
+        ];
+        let mut scratch = U512::zero();
+        let address = &scratch as *const U512;
+        let modulus = U256::from_u64(998244353);
+        for input in [&inputs[0], &inputs[1], &inputs[0]] {
+            let actual = prepare_u512(&mut scratch, input);
+            assert_eq!(actual as *const U512, address);
+            assert_eq!(*actual, *input);
+            assert_eq!(actual.mod_u256(modulus), input.mod_u256(modulus));
+        }
+    }
+
     #[test]
     #[ignore] // Statistical timing test — run in controlled environment only
     fn test_ct_dudect_mod_switch_rescale_sign_classes() {
@@ -1395,8 +1521,9 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
         let (pool_a, pool_a2, pool_b) =
             interleaved_pools(DUDECT_POOL, || one(&mut ra, false), || one(&mut rb, true));
 
+        let mut scratch = pool_a[0].clone();
         let mut rng = ShadowHarvester::with_seed(204);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
@@ -1405,10 +1532,15 @@ they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8."]
             // needed to accumulate the same amount of work.
             DUDECT_ROUNDS / 20,
             |poly| {
+                copy_drop_input(&mut scratch, poly);
+                let timed_input = std::hint::black_box(&scratch);
+                let start = Instant::now();
                 let out = ctx
-                    .mod_switch_down_dual(std::hint::black_box(poly))
+                    .mod_switch_down_dual(timed_input)
                     .expect("secure_128 has 3 main primes, so one level drop is available");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1456,15 +1588,19 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
                 d2: 0,
                 d3: 0,
             });
+        let mut reduction_scratch = U512::zero();
         let mut reduction_order_rng = ShadowHarvester::with_seed(304);
-        let reduction_result = dudect_two_class(
+        let reduction_result = dudect_two_class_measured(
             &mut reduction_order_rng,
             &zero_reductions,
             &zero_reductions2,
             &uniform_reductions,
             DUDECT_ROUNDS,
             |dividend| {
-                std::hint::black_box(dividend.mod_u256(modulus));
+                let timed_input = prepare_u512(&mut reduction_scratch, dividend);
+                let start = Instant::now();
+                std::hint::black_box(timed_input.mod_u256(modulus));
+                start.elapsed().as_nanos() as u64
             },
         );
         assert_dudect(
@@ -1486,18 +1622,24 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
             },
         );
 
+        let mut scratch = zero_pool[0].clone();
         let mut rng = ShadowHarvester::with_seed(302);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &zero_pool,
             &zero_pool2,
             &rand_pool,
             DUDECT_ROUNDS / 20,
             |poly| {
+                copy_drop_input(&mut scratch, poly);
+                let timed_input = std::hint::black_box(&scratch);
+                let start = Instant::now();
                 let out = ctx
-                    .mod_switch_down_dual(std::hint::black_box(poly))
+                    .mod_switch_down_dual(timed_input)
                     .expect("secure_128 has 3 main primes, so one level drop is available");
                 std::hint::black_box(&out);
+                drop(out);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1602,6 +1744,44 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
 
     type OperandPair = (u128, u128);
 
+    /// Prepare one preallocated batch before starting the timer. The black box
+    /// keeps the measured loop reading that same destination for every class.
+    fn prepare_scalar_batch<'a>(
+        scratch: &'a mut [OperandPair],
+        input: &[OperandPair],
+    ) -> &'a [OperandPair] {
+        scratch.copy_from_slice(input);
+        std::hint::black_box(scratch)
+    }
+
+    #[test]
+    fn scalar_batch_preparation_keeps_address_and_results() {
+        let mont = MontgomeryContext::new(998244353);
+        let barrett = BarrettContext::new(998244353);
+        let batches = [
+            [(0u128, 1u128), (12, 17)],
+            [(998244352, u64::MAX as u128), (103, 50)],
+        ];
+        let mut scratch = [(0u128, 0u128); 2];
+        let address = scratch.as_ptr();
+        for input in [&batches[0], &batches[1], &batches[0]] {
+            let actual = prepare_scalar_batch(&mut scratch, input);
+            assert_eq!(actual.as_ptr(), address);
+            assert_eq!(actual, input);
+            for (&(a, b), &(x, y)) in actual.iter().zip(input) {
+                assert_eq!(
+                    mont.montgomery_mul(a as u64, b as u64),
+                    mont.montgomery_mul(x as u64, y as u64)
+                );
+                assert_eq!(
+                    mont.montgomery_pow(a as u64, b as u64),
+                    mont.montgomery_pow(x as u64, y as u64)
+                );
+                assert_eq!(barrett.reduce_ct(a), barrett.reduce_ct(x));
+            }
+        }
+    }
+
     /// Pool count for the batched scalar tests. Each pool entry is a whole
     /// batch, so a handful is plenty.
     const DUDECT_POOLS_BATCHED: usize = 4;
@@ -1618,6 +1798,8 @@ docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md."]
         }
     }
 
+    // This legacy open-finding test uses separate class-specific allocations;
+    // its historical association is not evidence identifying the root cause.
     #[test]
     #[ignore = "OPEN FINDING, and now measured with enough power to be one: KElimination::extract_k \
 shows a small but reproducible operand-magnitude timing dependence, contradicting its docstring \
@@ -1724,14 +1906,13 @@ See docs/CT_VERIFICATION_PLAN.md."]
     /// Sweeping the same batch `ADJ_REGION_REPEATS` times brings the adjacency
     /// region to the same ~2.4 ms, and the test below runs it at
     /// `DUDECT_EXTRACT_K_ROUNDS` — the same 8,000 rounds as the general test,
-    /// not the 2,000 used elsewhere. Equal region duration, equal round count,
-    /// identical operand classes, identical harness.
+    /// not the 2,000 used elsewhere. Region duration, round count and operand
+    /// classes are comparable; unlike the legacy general-form test, these
+    /// adjacency tests use one fixed-address input batch.
     ///
-    /// That also supplies the positive control the null result needs: the
-    /// general test demonstrates that THIS harness, at THIS region size and
-    /// round count, resolves a 0.63% relative effect (t = 25.6). A t below
-    /// threshold here is therefore a measurement made with proven power, not
-    /// an underpowered shrug.
+    /// The historical general-form positive control used class-specific batch
+    /// allocations. Its measured association cannot isolate operands from
+    /// placement; it does not establish the power of this fixed-address test.
     const ADJ_REGION_REPEATS: usize = 340;
 
     /// The adjacency form under the operand classes that make the general form
@@ -1772,22 +1953,26 @@ See docs/CT_VERIFICATION_PLAN.md."]
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(404);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_EXTRACT_K_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u128;
                 for _ in 0..ADJ_REGION_REPEATS {
-                    for &(a, b) in batch.iter() {
+                    for &(a, b) in timed_input.iter() {
                         acc ^= adj.extract_k(std::hint::black_box(a), std::hint::black_box(b));
                     }
                     std::hint::black_box(&acc);
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -1875,22 +2060,26 @@ See docs/CT_VERIFICATION_PLAN.md."]
             || shuffled_batch(&mut rb),
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(804);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_EXTRACT_K_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u128;
                 for _ in 0..ADJ_REGION_REPEATS {
-                    for &(a, b) in batch.iter() {
+                    for &(a, b) in timed_input.iter() {
                         acc ^= adj.extract_k(std::hint::black_box(a), std::hint::black_box(b));
                     }
                     std::hint::black_box(&acc);
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -2103,22 +2292,26 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(604);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(a, b) in batch.iter() {
+                for &(a, b) in timed_input.iter() {
                     acc ^= ctx.montgomery_mul(
                         std::hint::black_box(a as u64),
                         std::hint::black_box(b as u64),
                     );
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -2157,19 +2350,26 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        // All classes execute from the same address. Copying the selected
+        // precomputed inputs is outside the measured interval; the timed loop
+        // no longer reads class-specific batch addresses.
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(704);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(t, _) in batch.iter() {
+                for &(t, _) in timed_input.iter() {
                     acc ^= ctx.montgomery_reduce(std::hint::black_box(t));
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -2189,6 +2389,8 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
         let ctx = BarrettContext::new(TEST_PRIME);
 
         // Class A: 40-bit dividends. Class B: dividends with bit 127 set.
+        // The latter exceed reduce_ct's documented a < q^2 domain: this is a
+        // timing-only stress contrast, not a correctness test for those inputs.
         let mut ra = ShadowHarvester::with_seed(801);
         let mut rb = ShadowHarvester::with_seed(803);
         let (pool_a, pool_a2, pool_b) = interleaved_pools(
@@ -2205,19 +2407,23 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH];
         let mut rng = ShadowHarvester::with_seed(804);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(a, _) in batch.iter() {
+                for &(a, _) in timed_input.iter() {
                     acc ^= ctx.reduce_ct(std::hint::black_box(a));
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 
@@ -2283,22 +2489,26 @@ frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATIO
             },
         );
 
+        let mut scratch = vec![(0u128, 0u128); DUDECT_BATCH / 8];
         let mut rng = ShadowHarvester::with_seed(904);
-        let result = dudect_two_class(
+        let result = dudect_two_class_measured(
             &mut rng,
             &pool_a,
             &pool_a2,
             &pool_b,
             DUDECT_BATCHED_ROUNDS,
             |batch| {
+                let timed_input = prepare_scalar_batch(&mut scratch, batch);
+                let start = Instant::now();
                 let mut acc = 0u64;
-                for &(base, exp) in batch.iter() {
+                for &(base, exp) in timed_input.iter() {
                     acc ^= ctx.montgomery_pow(
                         std::hint::black_box(base as u64),
                         std::hint::black_box(exp as u64),
                     );
                 }
                 std::hint::black_box(acc);
+                start.elapsed().as_nanos() as u64
             },
         );
 

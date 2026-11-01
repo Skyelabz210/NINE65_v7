@@ -1,0 +1,149 @@
+{
+  "scope": "Public research refresh exact-instance inventory; no production security admission",
+  "parameters": [
+    {
+      "id": "work",
+      "n": 8192,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q": "348959453350711275087786864768188417",
+      "q_bits": 119,
+      "t": 65537,
+      "secret": "dense ternary via existing RNS keygen next_u64()%3 mapping",
+      "error": "CenteredBinomial eta=3",
+      "mask": "independent unbiased uniform CRT lanes"
+    },
+    {
+      "id": "source",
+      "n": 8192,
+      "primes": [
+        998244353,
+        985661441
+      ],
+      "q": "983930967448092673",
+      "q_bits": 60,
+      "t": 65537,
+      "secret": "uniform positions without replacement; exactly48 positive and48 negative, hidden support",
+      "error": "CenteredBinomial eta=3",
+      "mask": "independent unbiased uniform CRT lanes"
+    },
+    {
+      "id": "outer",
+      "n": 32768,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        576460752301785089,
+        576460752301391873,
+        576460752300015617,
+        576460752298835969,
+        576460752298180609,
+        576460752293134337,
+        576460752291954689,
+        576460752290775041,
+        575870995836829697
+      ],
+      "q": "2450519297043026530784017971340570014951985121632074702986454462157525270706364094852879576226735969912687516334462104970737581750658613165694144615248489240740832218056472363339254831533321551873",
+      "q_bits": 650,
+      "plaintext_trays": [
+        65537,
+        4295098369
+      ],
+      "q_mod_p_square": 1,
+      "secret": "independent dense ternary via FheRng::ternary_vector; secure RNG uses unbiased bounded sampling",
+      "error": "CenteredBinomial eta=3",
+      "mask": "independent unbiased uniform CRT lanes"
+    },
+    {
+      "id": "return",
+      "n": 32768,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "q_bits": 119,
+      "t": 65537,
+      "secret": "work secret embedded as W(X^4), not a dense N32768 ternary secret",
+      "error": "CenteredBinomial eta=3",
+      "effective_decomposition": "4 degree8192 Ring-LWE channels sharing W; estimate at work N, not outer N"
+    }
+  ],
+  "public_key_relationships": [
+    {
+      "target_secret_function": "0",
+      "encryption_secret": "W",
+      "degree": 8192,
+      "q_bits": 119,
+      "ciphertexts": 1,
+      "purpose": "work public key"
+    },
+    {
+      "target_secret_function": "CRT-gadget * W^2",
+      "encryption_secret": "W",
+      "degree": 8192,
+      "q_bits": 119,
+      "base_bits": 10,
+      "ciphertexts": 12,
+      "purpose": "work relinearization",
+      "kdm_self_relation": true
+    },
+    {
+      "target_secret_function": "CRT-gadget * W",
+      "encryption_secret": "S",
+      "degree": 8192,
+      "q_bits": 60,
+      "base_bits": 3,
+      "ciphertexts": 20,
+      "purpose": "public dense-to-sparse source switch"
+    },
+    {
+      "target_secret_function": "encoded shifted source S in p^2 and p slot trays",
+      "encryption_secret": "B",
+      "degree": 32768,
+      "q_bits": 650,
+      "ciphertexts": 256,
+      "purpose": "coherent phase bank"
+    },
+    {
+      "target_secret_function": "CRT-gadget * B^2",
+      "encryption_secret": "B",
+      "degree": 32768,
+      "q_bits": 650,
+      "base_bits": 10,
+      "ciphertexts": 66,
+      "purpose": "outer relinearization",
+      "kdm_self_relation": true
+    },
+    {
+      "target_secret_function": "CRT-gadget * sigma(B), four automorphisms",
+      "encryption_secret": "B",
+      "degree": 32768,
+      "q_bits": 650,
+      "base_bits": 10,
+      "ciphertexts": 264,
+      "purpose": "phase and inverse Galois keys",
+      "kdm_self_relation": true
+    },
+    {
+      "target_secret_function": "CRT-gadget * B reduced to work Q",
+      "encryption_secret": "W(X^4)",
+      "degree": 32768,
+      "q_bits": 119,
+      "base_bits": 3,
+      "ciphertexts": 40,
+      "degree8192_channel_samples": 160,
+      "purpose": "return to original work key"
+    }
+  ],
+  "dependency_graph": "W -> S -> B -> W, plus W^2->W and B^2/sigma(B)->B",
+  "outer_published_RLWE_ciphertexts": 586,
+  "note": "Prepared NTT caches and temporary arithmetic auxiliary primes add no new encryption-key samples. Repeated ciphertext operations reuse these keys. No ciphertext values or secrets are recorded."
+}

@@ -1,0 +1,53 @@
+Running ops::public_refresh_return::tests::public_return_noise_plan_is_key_free_and_checks_geometry
+Log: /workspace/work/public-refresh/quality/gates/return-boundary/public_return_noise_plan_is_key_free_and_checks_geometry.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_return::tests::public_return_noise_plan_is_key_free_and_checks_geometry ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.14s
+
+Running ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history
+Log: /workspace/work/public-refresh/quality/gates/return-boundary/public_return_restores_dense_work_and_preserves_history.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.01s
+
+Running ops::public_refresh_return::tests::public_return_rejects_foreign_family_and_stale_source_lineage
+Log: /workspace/work/public-refresh/quality/gates/return-boundary/public_return_rejects_foreign_family_and_stale_source_lineage.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_return::tests::public_return_rejects_foreign_family_and_stale_source_lineage ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.01s
+
+Running ops::public_refresh_return::tests::public_return_rejects_malformed_outputs_and_exhausted_bounds
+Log: /workspace/work/public-refresh/quality/gates/return-boundary/public_return_rejects_malformed_outputs_and_exhausted_bounds.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_return::tests::public_return_rejects_malformed_outputs_and_exhausted_bounds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.01s
+
+return-boundary: 4 exact regressions passed; no production refresh admission

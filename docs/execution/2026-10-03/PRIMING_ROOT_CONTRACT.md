@@ -1,7 +1,16 @@
 # S00 draft: intact priming root and bounded phase coordinates
 
-Status: **reference-contract draft; S00 is not accepted**. The owner's live
-2/11 phase construction remains unresolved. The reference profiles below do
+Native refresh update, 2026-10-31: the owner selected **canonical plaintext m**
+as the authoritative root quantity; noise/sheet coordinates are dependent
+representation state. The [native implementation and producer relation](../2026-10-31/CANONICAL_PLAINTEXT_ROOT.md)
+bind that root to the actual encrypted carrier and preserve it through refresh.
+This supplies a specific native canonical-value profile. The legacy phase-
+integer `Root211` and protected residue-emission APIs below remain separate;
+they are not silently relabeled by this update.
+
+Status: **reference-contract draft; S00 is not accepted**. On 2026-10-30, the
+owner selected the winding-successor direction for the live 2/11 sister-tray
+relation. The remaining live profile bindings remain unresolved. The reference profiles below do
 not substitute for it and do not authorize dependent production integration.
 S02-A's independently reproduced composite-inverse correction does not depend
 on choosing that live phase construction.
@@ -312,15 +321,89 @@ their separate observer/source contracts.
 
 ## 7. Unresolved live 2/11 contract
 
+### Owner-selected shadow-prime K-elimination (2026-10-30)
+
+The owner requested K-elimination against the shadow prime. The concrete S8
+arithmetic route uses 11 as anchor outside the primary payload, while retaining
+all eight logical root roles. The payload is `[2,3,5,7,13,17,19]`, giving
+`M=881790`, `M mod 11=8`, and `inverse(M,11)=7`. For a winding-successor
+transition of the internal sheet coordinate, use:
+
+```text
+payload_B[p] = payload_A[p] for every payload lane p
+d11 = (shadow_B-shadow_A) mod 11
+DeltaK11 = d11 * inverse(M,11) mod 11
+0 <= DeltaK <= delta_upper < 11
+0 <= X_A <= source_upper
+source_upper + M*delta_upper < M*11
+```
+
+Under the producer-established interval and same-source hypotheses, this
+recovers the unique increment. `Shadow11Plan::verify_successor` consumes both
+payload views, derives the transient increment using the existing
+`anchor::recover_winding` implementation, checks its bound, and discards it.
+It accepts no caller-supplied scalar increment and stores no winding ledger.
+The fixed S8 path permits the even payload product; it requires coprimality
+with 11, not with 22. Payload equality includes the root2 check.
+
+The native public refresh circuit proves two separate bounds in `x=r+p*K`:
+`|r| <= 49` from the source error certificate, and `|K| <= 48` from the
+H96 source norm and centered public weights. The latter was established on
+2026-10-31; see the [lift refinement](../2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md).
+It corrects the previous inference from the unrestricted digit primitive's
+full `K mod65537` domain. A 36/37 frame of `Y=K+48` in `[0,96]` has enough
+capacity, while a frame of `r+49` would still recover the residual.
+No persistent carry frame or arithmetic epoch quotient is needed. The current
+circuit evaluates K under encryption and uses it immediately. Producing
+protected 36/37 views and binding them to the approved root remains separate;
+source/value provenance is still necessary without an arithmetic epoch ledger.
+
+The `acts.md` attachment supplies the two-coordinate K-elimination formula and
+the independent-anchor interpretation. Its unqualified equality to the full
+quotient requires the range bound above; without that bound the reading is
+only a residue modulo 11. The attached `main.pdf` is background, not an
+instruction to change the runtime or evidence of production authentication.
+No full integer is assembled by the shadow checker. Input production, protected
+phase evaluation, and source/value-epoch binding remain required for refresh integration.
+
+### Earlier joint-anchor relation and remaining integration
+
 Profile `OWNER-LIVE2-11` is `unresolved`. Dependent integration must not silently
-select a reference profile as its replacement. The remaining equations are:
+select a reference profile as its replacement. The owner has selected the
+**winding-successor** interpretation for an internal noise/scale sheet coordinate.
+The plaintext must remain invariant across public refresh. Tray B advances by
+a refresh-produced increment `DeltaK`, which need not equal the source winding
+`K_A`. For a declared payload modulus M and 2/11 coordinates of that internal
+quantity, the checked residue relation is:
+
+```text
+r22_i = r11_i + 11*((r2_i-r11_i) mod 2), for i in {A,B}
+D22 = (r22_B-r22_A-(M mod 22)*(DeltaK mod 22)) mod 22
+admit arithmetic relation only when D22 = 0
+```
+
+This relation has a standalone exact residue check in
+`cram-core/src/phase_lock.rs`, with a caller-supplied public source bound and
+checked successor capacity. It does not establish that the trays were produced
+by the same source or permitted operation, or that the supplied `DeltaK` is the
+actual refresh increment. A zero defect is an arithmetic check, not a
+cryptographic authentication or proof of unchanged plaintext: an arbitrary
+party can choose matching public residues and increment. A lineage tag and
+epoch counter identify claims but do not authenticate them without a binding
+mechanism. The proposed `K=Q*C_s+Khat` decomposition still needs typed domains,
+an exact producer equation, and a proof that no persistent scalar winding is
+introduced into the live state.
+The five-cycle encrypted public refresh test evaluated a separate BFV research
+circuit; it did not evaluate this 2/11 relation.
+
+The remaining decisions and equations are:
 
 1. Exact payload factors/powers M and whether2 is payload, anchor or both by
    separate roles; the monograph already places11 outside its anchor's payload.
 2. `coordinate2 = f2(quantity, state)` and `coordinate11 = f11(quantity, state)`:
    which quantity, quotient, phase or higher-power value does each encode?
-3. The actual cross-tray phase relation and provider equation deriving the
-   requested lift from those coordinates, including auxiliary inputs.
+3. The producer equation and auxiliary inputs that establish this selected
+   successor relation for real sister trays, rather than caller-supplied residues.
 4. Its uniqueness interval and the information distinguishing identical partial
    2/11 observations; its extension and alias-refusal conditions.
 5. Coordinate update equations for each permitted homogeneous/heterogeneous

@@ -1,0 +1,13 @@
+test_audit_cross_check_fails_closed_without_rustc (test_audit_modulus_classes.AnchorCatalogueTests.test_audit_cross_check_fails_closed_without_rustc) ... ok
+test_commented_function_and_literal_digits_do_not_change_the_catalogue (test_audit_modulus_classes.AnchorCatalogueTests.test_commented_function_and_literal_digits_do_not_change_the_catalogue) ... ok
+test_empty_or_duplicate_runtime_basis_is_rejected (test_audit_modulus_classes.AnchorCatalogueTests.test_empty_or_duplicate_runtime_basis_is_rejected) ... ok
+test_mutually_exclusive_replacement_is_not_a_union (test_audit_modulus_classes.AnchorCatalogueTests.test_mutually_exclusive_replacement_is_not_a_union) ... ok
+test_parser_agrees_with_compiled_rust_function (test_audit_modulus_classes.AnchorCatalogueTests.test_parser_agrees_with_compiled_rust_function) ... ok
+test_real_catalogue_preserves_dimension_specific_sets (test_audit_modulus_classes.AnchorCatalogueTests.test_real_catalogue_preserves_dimension_specific_sets) ... ok
+test_runtime_cross_check_rejects_a_wrong_catalogue (test_audit_modulus_classes.AnchorCatalogueTests.test_runtime_cross_check_rejects_a_wrong_catalogue) ... ok
+test_unknown_or_unconsumed_rust_is_refused (test_audit_modulus_classes.AnchorCatalogueTests.test_unknown_or_unconsumed_rust_is_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.333s
+
+OK

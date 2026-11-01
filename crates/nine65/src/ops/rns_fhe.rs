@@ -1045,7 +1045,8 @@ pub struct RNSFHEContext {
     pub ke: KElimination,
     /// Plaintext modulus
     pub t: u64,
-    /// Q = product of main primes (stored as u128, 0 if too large)
+    /// Legacy compatibility projection: Q as u128, or zero when it does not fit.
+    /// Runtime decisions must use `q_product_checked` or the exact limbs.
     pub q_product: u128,
     /// Exact Q when it fits in u128, `None` otherwise — the non-sentinel
     /// counterpart of `q_product` (see rns_context_metadata_regression.rs)
@@ -1055,7 +1056,7 @@ pub struct RNSFHEContext {
     pub q_product_limbs: Vec<u64>,
     /// Exact bit length of the Q product (NOT the sum of per-prime widths,
     /// which can overcount by 1 bit per prime).
-    /// Used for decomposition sizing when q_product=0 sentinel
+    /// Used for decomposition sizing for every modulus size.
     pub q_bits: usize,
     /// Polynomial degree
     pub n: usize,
@@ -1064,11 +1065,40 @@ pub struct RNSFHEContext {
     pub delta_rns: Vec<u64>,
     /// Fixed-work D2 half-modulus decision kernels, indexed by `level - 2`.
     /// Every supported ciphertext level retains at least two main primes.
-    compare_bits_by_level: Vec<CompareBit>,
+    compare_bits_by_level: Vec<DecryptCompareBit>,
     /// Config reference
     pub config: FHEConfig,
     /// Deep diagnostics mode enabled
     pub diagnostics_enabled: bool,
+}
+
+enum DecryptCompareBit {
+    Narrow(CompareBit),
+    Wide(crate::arithmetic::compare_bit::WideCompareBit),
+}
+
+impl DecryptCompareBit {
+    fn new(primes: &[u64]) -> Nine65Result<Self> {
+        // The conservative public width also avoids evaluating a wrapped
+        // U256 product in the legacy constructor.
+        let width: u32 = primes.iter().map(|q| 64 - q.leading_zeros()).sum();
+        if width + 8 <= 256 {
+            Ok(Self::Narrow(CompareBit::new(primes)))
+        } else {
+            crate::arithmetic::compare_bit::WideCompareBit::new(primes)
+                .map(Self::Wide)
+                .ok_or_else(|| Nine65Error::ConfigError {
+                    message: "RNS basis exceeds checked decryption-centering capacity".into(),
+                })
+        }
+    }
+
+    fn decide_ct(&self, residues: &[u64]) -> bool {
+        match self {
+            Self::Narrow(kernel) => kernel.decide_ct(residues),
+            Self::Wide(kernel) => kernel.decide_ct(residues),
+        }
+    }
 }
 
 impl RNSFHEContext {
@@ -1127,26 +1157,22 @@ impl RNSFHEContext {
         // which inflated decomposition digit counts.
         let q_bits = config.rns_product_bit_length() as usize;
 
-        // Compute Q = product of main primes (0 sentinel if overflow)
-        // When Q overflows u128, we use 0 as sentinel and rely on RNS-native paths
-        let q_product: u128 = config
-            .primes
-            .iter()
-            .try_fold(1u128, |acc, &p| acc.checked_mul(p as u128))
-            .unwrap_or(0); // 0 = overflow sentinel
+        let q_product_checked = config.try_rns_product();
+        let q_product_limbs = config.rns_product_limbs();
+        // Preserve the historical public projection for downstream callers only.
+        let q_product = q_product_checked.unwrap_or_default();
 
-        // Compute Δ = floor(Q/t) and store in RNS form
-        // When q_product=0 (overflow), compute delta_rns using RNS-native modular arithmetic
-        let delta_rns: Vec<u64> = if q_product == 0 {
-            compute_delta_rns_overflow_safe(&config.primes, config.t)
-        } else {
-            // Normal path: Q fits in u128
-            let delta_big = q_product / config.t as u128;
-            config
-                .primes
-                .iter()
-                .map(|&p| (delta_big % p as u128) as u64)
-                .collect()
+        // Compute Δ = floor(Q/t) and store in RNS form.
+        let delta_rns: Vec<u64> = match q_product_checked {
+            None => compute_delta_rns_overflow_safe(&config.primes, config.t),
+            Some(q) => {
+                let delta_big = q / config.t as u128;
+                config
+                    .primes
+                    .iter()
+                    .map(|&p| (delta_big % p as u128) as u64)
+                    .collect()
+            }
         };
 
         // Legacy K-Elimination (now using dual_rns internally)
@@ -1155,9 +1181,9 @@ impl RNSFHEContext {
         // Centering decisions are basis-dependent. Build one immutable kernel
         // for every supported main-prime prefix so decryption never performs
         // variable-time basis setup on secret-dependent data.
-        let compare_bits_by_level: Vec<CompareBit> = (2..=config.primes.len())
-            .map(|level| CompareBit::new(&config.primes[..level]))
-            .collect();
+        let compare_bits_by_level = (2..=config.primes.len())
+            .map(|level| DecryptCompareBit::new(&config.primes[..level]))
+            .collect::<Nine65Result<Vec<_>>>()?;
 
         Ok(Self {
             dual_rns,
@@ -1166,8 +1192,8 @@ impl RNSFHEContext {
             ke,
             t: config.t,
             q_product,
-            q_product_checked: config.try_rns_product(),
-            q_product_limbs: config.rns_product_limbs(),
+            q_product_checked,
+            q_product_limbs,
             q_bits,
             delta_rns,
             compare_bits_by_level,
@@ -1265,6 +1291,14 @@ impl RNSFHEContext {
         rng: &mut R,
         main_primes: &[u64],
     ) -> DualRNSPoly {
+        // This legacy sampler must represent the same canonical integer in
+        // both bases. Reject unsupported widths before the U256 product can
+        // wrap; the independent-lane main sampler has no such width limit.
+        let sum_bits: u32 = main_primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
+        assert!(
+            sum_bits <= 256,
+            "sample_uniform_dual_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
+        );
         let modulus = U256::product_u64s(main_primes);
         let bits = modulus.bitlen();
         let anchor_primes = &self.dual_rns.anchor.primes;
@@ -1319,8 +1353,9 @@ impl RNSFHEContext {
     }
 
     /// Single-RNS counterpart of [`Self::sample_uniform_dual_poly`]: a
-    /// polynomial whose every coefficient is drawn **uniformly over `[0, Q)`**
-    /// and then reduced into each main lane independently.
+    /// polynomial drawn uniformly over the main residue ring. Independent
+    /// uniform residues correspond bijectively to uniform integers in `[0,Q)`
+    /// by CRT, because the validated main primes are pairwise coprime.
     ///
     /// Returns standard-domain (non-Montgomery) residues.
     ///
@@ -1336,51 +1371,17 @@ impl RNSFHEContext {
     /// `docs/TRACK1_D3_EXACT_MULTIPLY_IMPLEMENTATION.md` "Security
     /// prerequisites" and in WR-1's own prerequisite list.
     ///
-    /// Rejection sampling gives exact uniformity with no modulo bias; every
-    /// lane is an independent reduction of ONE sampled value, so the lanes
-    /// describe a single integer by construction. Lane-independent
-    /// (`output[i] = f_i(input)`), and not a mixed-radix cascade: no lane reads
-    /// another.
+    /// Each lane uses the RNG's unbiased bounded sampler. No fixed-width
+    /// product or integer reconstruction is needed, so wide refresh moduli
+    /// retain full-width masks. This does not construct an anchor track;
+    /// the dual sampler must additionally preserve canonical winding.
     pub(crate) fn sample_uniform_main_poly<R: FheRng>(&self, rng: &mut R) -> RNSPolynomial {
-        let primes = &self.config.primes;
-        // `U256::product_u64s` wraps silently past 256 bits, and a wrapped
-        // modulus would make the rejection bound meaningless. The sum of the
-        // lanes' bit lengths is an exact upper bound on `bitlen(Q)` computed in
-        // plain integers, so this check cannot itself overflow. Every shipped
-        // chain is at most 175 bits; this is a once-per-keygen guard against a
-        // future chain silently outgrowing the accumulator.
-        let sum_bits: u32 = primes.iter().map(|&p| 64 - p.leading_zeros()).sum();
-        assert!(
-            sum_bits <= 256,
-            "sample_uniform_main_poly: Q needs at most 256 bits, chain sums to {sum_bits}"
-        );
-        let modulus = U256::product_u64s(primes);
-        let bits = modulus.bitlen();
-
-        let mut limbs: Vec<Vec<u64>> = primes.iter().map(|_| Vec::with_capacity(self.n)).collect();
-        for _ in 0..self.n {
-            let value = loop {
-                let mut lo = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
-                let mut hi: u128 = 0;
-                if bits > 128 {
-                    hi = (rng.next_u64() as u128) | ((rng.next_u64() as u128) << 64);
-                    let high_bits = bits - 128;
-                    if high_bits < 128 {
-                        hi &= (1u128 << high_bits) - 1;
-                    }
-                } else if bits < 128 {
-                    lo &= (1u128 << bits) - 1;
-                }
-                let candidate = U256 { lo, hi };
-                if candidate.lt(modulus) {
-                    break candidate;
-                }
-            };
-            for (lane, &prime) in limbs.iter_mut().zip(primes.iter()) {
-                lane.push(value.mod_u64(prime));
-            }
-        }
-
+        let limbs = self
+            .config
+            .primes
+            .iter()
+            .map(|&prime| rng.uniform_vector(self.n, prime))
+            .collect();
         RNSPolynomial { limbs, n: self.n }
     }
 
@@ -1395,18 +1396,13 @@ impl RNSFHEContext {
     ///
     /// Being conservative: any uncertainty → KElimDual
     pub fn mul_route(&self) -> MulRoute {
-        // If Q does not fit in u128 we store q_product = 0 as a sentinel.
-        // Any routing decision based on u128 arithmetic would be invalid in that mode,
-        // so we MUST force the Dual/K-Elimination regime.
-        if self.q_product == 0 {
+        let Some(q_product) = self.q_product_checked else {
             return MulRoute::KElimDual;
-        }
-
-        let delta = self.q_product / self.t as u128;
-
+        };
+        let delta = q_product / self.t as u128;
         match delta.checked_mul(delta) {
-            Some(delta_squared) if delta_squared <= self.q_product => MulRoute::BajardSingle,
-            _ => MulRoute::KElimDual, // Overflow or Δ² > Q
+            Some(delta_squared) if delta_squared <= q_product => MulRoute::BajardSingle,
+            _ => MulRoute::KElimDual,
         }
     }
 
@@ -1416,23 +1412,23 @@ impl RNSFHEContext {
 
         #[cfg(debug_assertions)]
         {
-            if self.q_product == 0 {
-                eprintln!(
-                    "[auto-routing] Q=(overflow sentinel), q_bits={}, t={}, route={:?}",
-                    self.q_bits, self.t, route
-                );
-            } else {
-                let delta = self.q_product / self.t as u128;
+            if let Some(q_product) = self.q_product_checked {
+                let delta = q_product / self.t as u128;
                 let delta_sq_result = delta.checked_mul(delta);
                 eprintln!(
                     "[auto-routing] Q={}, Δ={}, Δ²={}, route={:?}",
-                    sci_notation_u128(self.q_product),
+                    sci_notation_u128(q_product),
                     sci_notation_u128(delta),
                     match delta_sq_result {
                         Some(d2) => format!("{} (fits)", sci_notation_u128(d2)),
                         None => "OVERFLOW".to_string(),
                     },
                     route
+                );
+            } else {
+                eprintln!(
+                    "[auto-routing] Q=(wider than u128), q_bits={}, t={}, route={:?}",
+                    self.q_bits, self.t, route
                 );
             }
         }
@@ -1944,22 +1940,13 @@ impl RNSFHEContext {
     ///
     /// Decoding: round(inner / Δ) mod t = round(inner * t / Q) mod t
     pub fn decrypt(&self, ct: &RNSCiphertext, sk: &RNSSecretKey) -> u64 {
-        // `q_product` carries a 0 sentinel when Q doesn't fit u128 (see
-        // `mul_route`, which forces every such config to the dual-RNS/
-        // K-Elimination regime instead of this single-track path). This
-        // function has no U256 fallback, so calling it directly (bypassing
-        // `decrypt_auto`/`mul_route`) on such a config would otherwise hit a
-        // bare, undiagnosable "divide by zero" a few lines down -- assert
-        // loudly instead, naming the actual problem.
-        assert!(
-            self.q_product != 0,
-            "RNSFHEContext::decrypt: Q does not fit in u128 for this config \
-             (q_bits={}); the single-track path has no U256 fallback. Use \
-             the dual-RNS path (generate_keys_dual/encrypt_dual/decrypt_dual) \
-             or route through generate_keys_auto/encrypt_auto/decrypt_auto, \
-             which select the correct regime automatically.",
-            self.q_bits
-        );
+        let q_product = self.q_product_checked.unwrap_or_else(|| {
+            panic!(
+                "RNSFHEContext::decrypt: Q does not fit in u128 for this config \
+             (q_bits={}); use the dual-RNS path or automatic routing.",
+                self.q_bits
+            )
+        });
 
         // inner = c0 + c1 * s
         let c1_s = self.rns_poly_mul(&ct.c1, &sk.s);
@@ -1981,13 +1968,13 @@ impl RNSFHEContext {
         // = round(inner * t / Q) mod t
         // Handle potential overflow by using u128 carefully
         // For values close to Q, we need centered reduction
-        let q_half = self.q_product / 2;
+        let q_half = q_product / 2;
         if is_negative {
             // Negative value in centered representation
             // inner - Q, but we need to be careful with signs
             // (Q - full_value) * t / Q gives the negative magnitude
-            let neg_magnitude = self.q_product - full_value;
-            let scaled_neg = (neg_magnitude * self.t as u128 + q_half) / self.q_product;
+            let neg_magnitude = q_product - full_value;
+            let scaled_neg = (neg_magnitude * self.t as u128 + q_half) / q_product;
             // Negate mod t
             if scaled_neg == 0 {
                 0
@@ -1996,7 +1983,7 @@ impl RNSFHEContext {
             }
         } else {
             // Positive value
-            let scaled = (full_value * self.t as u128 + q_half) / self.q_product;
+            let scaled = (full_value * self.t as u128 + q_half) / q_product;
             (scaled % self.t as u128) as u64
         }
     }
@@ -2652,12 +2639,15 @@ impl RNSFHEContext {
         rng: &mut R,
     ) -> Nine65Result<DualRNSGadgetKey> {
         crate::entropy::require_secure_rng(rng, "generate_gadget_key_with_rng");
-        if self.q_product % self.t as u128 != 0 {
+        let q_mod_t = self.config.primes.iter().fold(1u128, |acc, &p| {
+            acc * (p as u128 % self.t as u128) % self.t as u128
+        });
+        if q_mod_t != 0 {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
                     "RNS-limb gadget key requires a manufactured chain (t | Q); \
                      Q mod t = {}",
-                    self.q_product % self.t as u128
+                    q_mod_t
                 ),
             });
         }
@@ -2894,21 +2884,24 @@ impl RNSFHEContext {
         // Encode message: m * Δ
         // If Q overflows u128, compute in U256 and reduce per-prime.
         let m_coeffs = vec![0u64; self.n];
-        let (m_main, m_anchor) = if self.q_product == 0 {
-            let q = U256::product_u64s(&self.config.primes);
-            let (delta, _) = q.div_mod_u64(self.t);
-            let encoded = delta.mul_u64(m);
-            (
-                self.to_main_rns_u256(&m_coeffs, encoded),
-                self.to_anchor_rns_u256(&m_coeffs, encoded),
-            )
-        } else {
-            let delta_big = self.q_product / self.t as u128;
-            let encoded = m as u128 * delta_big;
-            (
-                self.to_main_rns_u128(&m_coeffs, encoded),
-                self.to_anchor_rns_u128(&m_coeffs, encoded),
-            )
+        let (m_main, m_anchor) = match self.q_product_checked {
+            Some(q) => {
+                let delta_big = q / self.t as u128;
+                let encoded = m as u128 * delta_big;
+                (
+                    self.to_main_rns_u128(&m_coeffs, encoded),
+                    self.to_anchor_rns_u128(&m_coeffs, encoded),
+                )
+            }
+            None => {
+                let q = U256::product_u64s(&self.config.primes);
+                let (delta, _) = q.div_mod_u64(self.t);
+                let encoded = delta.mul_u64(m);
+                (
+                    self.to_main_rns_u256(&m_coeffs, encoded),
+                    self.to_anchor_rns_u256(&m_coeffs, encoded),
+                )
+            }
         };
         let m_dual = DualRNSPoly {
             main: m_main,
@@ -3035,21 +3028,24 @@ impl RNSFHEContext {
         // Encode message: m * Δ
         // If Q overflows u128, compute in U256 and reduce per-prime.
         let m_coeffs = vec![0u64; self.n];
-        let (m_main, m_anchor) = if self.q_product == 0 {
-            let q = U256::product_u64s(&self.config.primes);
-            let (delta, _) = q.div_mod_u64(self.t);
-            let encoded = delta.mul_u64(m);
-            (
-                self.to_main_rns_u256(&m_coeffs, encoded),
-                self.to_anchor_rns_u256(&m_coeffs, encoded),
-            )
-        } else {
-            let delta_big = self.q_product / self.t as u128;
-            let encoded = m as u128 * delta_big;
-            (
-                self.to_main_rns_u128(&m_coeffs, encoded),
-                self.to_anchor_rns_u128(&m_coeffs, encoded),
-            )
+        let (m_main, m_anchor) = match self.q_product_checked {
+            Some(q) => {
+                let delta_big = q / self.t as u128;
+                let encoded = m as u128 * delta_big;
+                (
+                    self.to_main_rns_u128(&m_coeffs, encoded),
+                    self.to_anchor_rns_u128(&m_coeffs, encoded),
+                )
+            }
+            None => {
+                let q = U256::product_u64s(&self.config.primes);
+                let (delta, _) = q.div_mod_u64(self.t);
+                let encoded = delta.mul_u64(m);
+                (
+                    self.to_main_rns_u256(&m_coeffs, encoded),
+                    self.to_anchor_rns_u256(&m_coeffs, encoded),
+                )
+            }
         };
         let m_dual = DualRNSPoly {
             main: m_main,
@@ -3611,92 +3607,122 @@ impl RNSFHEContext {
         ct2: &DualRNSCiphertext,
         sk: &DualRNSSecretKey,
     ) -> DualRNSCiphertext {
-        // [DEEP DIAGNOSTICS] Audit capacity for tensor product (N * Q^2)
-        if self.diagnostics_enabled {
-            let log2_n = 64 - self.n.leading_zeros() - 1;
-            let q_bits =
-                crate::noise::boundary::rns_product_bit_length(&self.config.primes[..ct1.level]);
-            let required_bits = log2_n + 2 * q_bits;
+        self.try_mul_dual_symmetric(ct1, ct2, sk)
+            .unwrap_or_else(|e| panic!("symmetric exact multiply failed: {e}"))
+    }
 
-            let diag = self.dual_rns.audit_capacity(required_bits, false);
-            if let Err(e) = diag.to_result(true) {
-                emit_diagnostic_warn(&format!(
-                    "[DIAGNOSTIC] mul_dual_symmetric capacity warning: {}",
-                    e
+    /// Centered exact symmetric multiplication on the full main basis.
+    /// This operation does not refresh noise or certify remaining depth.
+    pub fn try_mul_dual_symmetric(
+        &self,
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+        sk: &DualRNSSecretKey,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        if sk.s.n != self.n
+            || sk.s.main.len() != self.config.primes.len()
+            || sk.s.anchor.len() != self.dual_rns.anchor.primes.len()
+            || sk
+                .s
+                .main
+                .iter()
+                .zip(&self.config.primes)
+                .any(|(limb, &q)| limb.len() != self.n || limb.iter().any(|&x| x >= q))
+            || sk
+                .s
+                .anchor
+                .iter()
+                .zip(&self.dual_rns.anchor.primes)
+                .any(|(limb, &q)| limb.len() != self.n || limb.iter().any(|&x| x >= q))
+        {
+            return Err(Nine65Error::InvalidParameter {
+                message: "invalid symmetric secret key".into(),
+            });
+        }
+        let s2 = self.dual_poly_mul(&sk.s, &sk.s);
+        self.try_mul_dual_symmetric_with_s2(ct1, ct2, &s2)
+    }
+
+    fn try_mul_dual_symmetric_with_s2(
+        &self,
+        ct1: &DualRNSCiphertext,
+        ct2: &DualRNSCiphertext,
+        s2: &DualRNSPoly,
+    ) -> Nine65Result<DualRNSCiphertext> {
+        let invalid = |message: String| Nine65Error::InvalidParameter { message };
+        let lanes = self.config.primes.len();
+        if ct1.level != lanes || ct2.level != lanes {
+            return Err(invalid(
+                "symmetric exact multiply requires matching full main bases".into(),
+            ));
+        }
+        for poly in [&ct1.c0, &ct1.c1, &ct2.c0, &ct2.c1, s2] {
+            if poly.n != self.n
+                || poly.main.len() != lanes
+                || poly
+                    .main
+                    .iter()
+                    .zip(&self.config.primes)
+                    .any(|(limb, &q)| limb.len() != self.n || limb.iter().any(|&x| x >= q))
+            {
+                return Err(invalid(
+                    "invalid symmetric multiplication main polynomial".into(),
                 ));
             }
         }
-
-        // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
-        // With 3 anchors (94-bit product), K-Elimination silently overflows for
-        // secure_128 (3 main primes). 5 anchors (158-bit product) provides margin.
+        if s2.anchor.len() != self.dual_rns.anchor.primes.len()
+            || s2
+                .anchor
+                .iter()
+                .zip(&self.dual_rns.anchor.primes)
+                .any(|(limb, &q)| limb.len() != self.n || limb.iter().any(|&x| x >= q))
         {
-            let anchor_count = self.dual_rns.anchor.primes.len();
-            assert!(
-                anchor_count >= 5,
-                "Insufficient anchors for ct×ct multiplication: \
-                 have {anchor_count}, need 5+. Use DualRNSContext::for_fhe() \
-                 which now provides 5 anchors via canonical_anchor_primes_for_n()."
-            );
+            return Err(invalid(
+                "invalid symmetric key-square anchor polynomial".into(),
+            ));
         }
 
-        debug_assert_eq!(
-            ct1.level, ct2.level,
-            "mul_dual_symmetric: level mismatch ({} vs {}) — ciphertexts must be at the same level",
-            ct1.level, ct2.level
-        );
-        #[cfg(feature = "debug_dual_mul")]
-        eprintln!("[DEBUG mul_dual_symmetric] ct1.level={}, ct2.level={}, n={}, main_primes={}, anchor_primes={}",
-            ct1.level, ct2.level, self.n, self.dual_rns.main.primes.len(), self.dual_rns.anchor.primes.len());
+        // The exact evaluator lifts centered input components before forming
+        // the tensor and applies round(t * X / Q) to each degree separately.
+        // Dual ciphertext limbs are standard-domain; its input is Montgomery.
+        let as_main = |ct: &DualRNSCiphertext| {
+            let convert = |poly: &DualRNSPoly| RNSPolynomial {
+                limbs: poly
+                    .main
+                    .iter()
+                    .zip(&self.ntt_engines)
+                    .map(|(limb, ntt)| limb.iter().map(|&x| ntt.mont.to_montgomery(x)).collect())
+                    .collect(),
+                n: self.n,
+            };
+            RNSCiphertext {
+                c0: convert(&ct.c0),
+                c1: convert(&ct.c1),
+                num_primes: ct.level,
+            }
+        };
+        let evaluator = exact_mul::ExactMulEvaluator::new(self)
+            .map_err(|e| invalid(format!("symmetric exact multiply setup: {e:?}")))?;
+        let tensor = evaluator
+            .try_mul_no_relin_exact(&as_main(ct1), &as_main(ct2))
+            .map_err(|e| invalid(format!("symmetric exact multiply: {e:?}")))?;
 
-        // Tensor product in BOTH main and anchor systems
-        let d0 = self.dual_poly_mul(&ct1.c0, &ct2.c0);
-        let c0_1_c1_2 = self.dual_poly_mul(&ct1.c0, &ct2.c1);
-        let c1_1_c0_2 = self.dual_poly_mul(&ct1.c1, &ct2.c0);
-        let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
-        let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
-
-        // CORRECT ORDER: relinearize THEN rescale (not rescale then relinearize!)
-        // Eval key was generated for the UNSCALED tensor product space.
-        // If we rescale first, we feed the wrong scale into relinearization.
-
-        // Step 2: Symmetric relinearization on d2 (BEFORE rescale!)
-        let s2 = self.dual_poly_mul(&sk.s, &sk.s);
-        let d2_s2 = self.dual_poly_mul(&d2, &s2);
-
-        // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
-        let c0_pre = self.dual_poly_add(&d0, &d2_s2);
-        let c1_pre = d1;
-
-        // Step 4: K-Elimination rescale ONCE on the combined result
-        let use_two_stage = self.should_two_stage_rescale(ct1.level);
-        // `mul_dual_symmetric`/`_with_s2` require the secret key, so they are
-        // only ever reachable to a caller who already holds it (single-party
-        // use, per this function's own doc comment) -- never an untrusted
-        // network client of a shared service. Converting a rescale failure
-        // to a panic here is a self-inflicted crash by an already-trusted
-        // caller, not the attacker-reachable DoS surface `mul_dual_public`
-        // is (that path threads `Result` all the way through instead).
-        let c0_new = (if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&c0_pre)
-        } else {
-            self.k_elim_rescale_dual(&c0_pre)
+        // Symmetric relinearization is exact modulo Q after scale-and-round.
+        // Anchor lanes are rebuilt from final main residues.
+        let to_dual = |poly: &RNSPolynomial| DualRNSPoly {
+            main: poly.limbs.clone(),
+            anchor: vec![vec![0; self.n]; self.dual_rns.anchor.primes.len()],
+            n: self.n,
+        };
+        let e0 = to_dual(&tensor.e0);
+        let e1 = to_dual(&tensor.e1);
+        let e2 = to_dual(&tensor.e2);
+        let c0 = self.dual_poly_add(&e0, &self.dual_poly_mul(&e2, s2));
+        Ok(DualRNSCiphertext {
+            c0: self.canonicalize_dual_anchor(&c0),
+            c1: self.canonicalize_dual_anchor(&e1),
+            level: ct1.level,
         })
-        .unwrap_or_else(|e| panic!("mul_dual_symmetric: rescale of c0 failed: {e}"));
-        let c1_new = (if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&c1_pre)
-        } else {
-            self.k_elim_rescale_dual(&c1_pre)
-        })
-        .unwrap_or_else(|e| panic!("mul_dual_symmetric: rescale of c1 failed: {e}"));
-
-        let level = c0_new.main.len();
-
-        DualRNSCiphertext {
-            c0: c0_new,
-            c1: c1_new,
-            level,
-        }
     }
 
     /// Precompute s² = s * s in dual-RNS form for caching.
@@ -3732,86 +3758,8 @@ impl RNSFHEContext {
         _sk: &DualRNSSecretKey,
         s2: &DualRNSPoly,
     ) -> DualRNSCiphertext {
-        // [DEEP DIAGNOSTICS] Audit capacity for tensor product (N * Q^2)
-        if self.diagnostics_enabled {
-            let log2_n = 64 - self.n.leading_zeros() - 1;
-            let q_bits =
-                crate::noise::boundary::rns_product_bit_length(&self.config.primes[..ct1.level]);
-            let required_bits = log2_n + 2 * q_bits;
-
-            let diag = self.dual_rns.audit_capacity(required_bits, false);
-            if let Err(e) = diag.to_result(true) {
-                eprintln!(
-                    "[DIAGNOSTIC] mul_dual_symmetric_with_s2 capacity warning: {}",
-                    e
-                );
-            }
-        }
-
-        // SAFETY: Verify anchor capacity is sufficient for ct×ct multiplication.
-        {
-            let anchor_count = self.dual_rns.anchor.primes.len();
-            assert!(
-                anchor_count >= 5,
-                "Insufficient anchors for ct×ct multiplication: \
-                 have {anchor_count}, need 5+. Use DualRNSContext::for_fhe() \
-                 which now provides 5 anchors via canonical_anchor_primes_for_n()."
-            );
-        }
-
-        debug_assert_eq!(
-            ct1.level, ct2.level,
-            "mul_dual_symmetric_with_s2: level mismatch ({} vs {}) — ciphertexts must be at the same level",
-            ct1.level, ct2.level
-        );
-        #[cfg(feature = "debug_dual_mul")]
-        eprintln!("[DEBUG mul_dual_symmetric_with_s2] ct1.level={}, ct2.level={}, n={}, main_primes={}, anchor_primes={}",
-            ct1.level, ct2.level, self.n, self.dual_rns.main.primes.len(), self.dual_rns.anchor.primes.len());
-
-        // Tensor product in BOTH main and anchor systems
-        let d0 = self.dual_poly_mul(&ct1.c0, &ct2.c0);
-        let c0_1_c1_2 = self.dual_poly_mul(&ct1.c0, &ct2.c1);
-        let c1_1_c0_2 = self.dual_poly_mul(&ct1.c1, &ct2.c0);
-        let d1 = self.dual_poly_add(&c0_1_c1_2, &c1_1_c0_2);
-        let d2 = self.dual_poly_mul(&ct1.c1, &ct2.c1);
-
-        // CORRECT ORDER: relinearize THEN rescale (not rescale then relinearize!)
-        // Step 2: Symmetric relinearization on d2 (BEFORE rescale!)
-        let d2_s2 = self.dual_poly_mul(&d2, s2);
-
-        // Step 3: Combine into degree-1 ciphertext (still at tensor scale)
-        let c0_pre = self.dual_poly_add(&d0, &d2_s2);
-        let c1_pre = d1;
-
-        // Step 4: K-Elimination rescale ONCE on the combined result
-        let use_two_stage = self.should_two_stage_rescale(ct1.level);
-        // `mul_dual_symmetric`/`_with_s2` require the secret key, so they are
-        // only ever reachable to a caller who already holds it (single-party
-        // use, per this function's own doc comment) -- never an untrusted
-        // network client of a shared service. Converting a rescale failure
-        // to a panic here is a self-inflicted crash by an already-trusted
-        // caller, not the attacker-reachable DoS surface `mul_dual_public`
-        // is (that path threads `Result` all the way through instead).
-        let c0_new = (if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&c0_pre)
-        } else {
-            self.k_elim_rescale_dual(&c0_pre)
-        })
-        .unwrap_or_else(|e| panic!("mul_dual_symmetric: rescale of c0 failed: {e}"));
-        let c1_new = (if use_two_stage {
-            self.k_elim_rescale_dual_two_stage(&c1_pre)
-        } else {
-            self.k_elim_rescale_dual(&c1_pre)
-        })
-        .unwrap_or_else(|e| panic!("mul_dual_symmetric: rescale of c1 failed: {e}"));
-
-        let level = c0_new.main.len();
-
-        DualRNSCiphertext {
-            c0: c0_new,
-            c1: c1_new,
-            level,
-        }
+        self.try_mul_dual_symmetric_with_s2(ct1, ct2, s2)
+            .unwrap_or_else(|e| panic!("symmetric exact multiply failed: {e}"))
     }
 
     /// Homomorphic multiplication using K-Elimination - PUBLIC MODE (Standard FHE)
@@ -4577,23 +4525,14 @@ impl RNSFHEContext {
             exact_delta_rescale, DeltaRounding, RescaleChain, RescaleExit,
         };
 
-        if self.q_product == 0 {
-            // 0 is the "Q exceeds u128" sentinel, and `0 % t == 0` would let
-            // it slip through the manufactured-chain guard below and then
-            // divide by zero in `rem_u256`. This path is u128-Q only; say so.
-            return Err(Nine65Error::InvalidParameter {
-                message: "manufactured rescale requires Q within u128 \
-                          (q_product is the overflow sentinel); this chain is \
-                          too wide for this path"
-                    .into(),
-            });
-        }
-        if self.q_product % self.t as u128 != 0 {
+        let q_product = self.q_product_checked.ok_or_else(|| Nine65Error::InvalidParameter {
+            message: "manufactured rescale requires Q within u128; this chain is too wide for this path".into(),
+        })?;
+        if q_product % self.t as u128 != 0 {
             return Err(Nine65Error::InvalidParameter {
                 message: format!(
-                    "manufactured rescale requires t | Q (manufactured chain); \
-                     Q mod t = {} — this is a hunted chain",
-                    self.q_product % self.t as u128
+                    "manufactured rescale requires t | Q (manufactured chain); Q mod t = {} — this is a hunted chain",
+                    q_product % self.t as u128
                 ),
             });
         }
@@ -4674,7 +4613,7 @@ impl RNSFHEContext {
             // `y_star` is its canonical residue mod Q. `|K| ≥ 1` whenever the
             // sign is negative (the lift only flips above C/2 > 0), so
             // `|K|·t ≥ t > γ` and the subtraction cannot underflow.
-            let qq = U256::from_u128(self.q_product);
+            let qq = U256::from_u128(q_product);
             let y_star = if out.winding_k_neg {
                 let y_mag = out
                     .winding_k_mag
@@ -4752,7 +4691,10 @@ impl RNSFHEContext {
             k_bound: _k_bound,
         } = self.manufactured_shift_certificate()?;
         let chain = RescaleChain::new(&lanes, &delta_idx, self.t, &sel)?;
-        let q = U256::from_u128(self.q_product);
+        let q = U256::from_u128(
+            self.q_product_checked
+                .expect("guardrail requires Q within u128"),
+        );
         let all_anchors = &self.dual_rns.anchor.primes;
 
         let n_coeff = poly.n;
@@ -5349,22 +5291,24 @@ impl RNSFHEContext {
         // Then reduce mod each prime to get RNS form.
         // This must match encrypt_dual's encoding exactly.
         let zero_coeffs = vec![0u64; self.n];
-        let (main, anchor) = if self.q_product == 0 {
-            // Q overflows u128, use U256
-            let q = U256::product_u64s(&self.config.primes);
-            let (delta, _) = q.div_mod_u64(self.t);
-            let encoded = delta.mul_u64(m);
-            (
-                self.to_main_rns_u256(&zero_coeffs, encoded),
-                self.to_anchor_rns_u256(&zero_coeffs, encoded),
-            )
-        } else {
-            let delta_big = self.q_product / self.t as u128;
-            let encoded = m as u128 * delta_big;
-            (
-                self.to_main_rns_u128(&zero_coeffs, encoded),
-                self.to_anchor_rns_u128(&zero_coeffs, encoded),
-            )
+        let (main, anchor) = match self.q_product_checked {
+            Some(q) => {
+                let delta_big = q / self.t as u128;
+                let encoded = m as u128 * delta_big;
+                (
+                    self.to_main_rns_u128(&zero_coeffs, encoded),
+                    self.to_anchor_rns_u128(&zero_coeffs, encoded),
+                )
+            }
+            None => {
+                let q = U256::product_u64s(&self.config.primes);
+                let (delta, _) = q.div_mod_u64(self.t);
+                let encoded = delta.mul_u64(m);
+                (
+                    self.to_main_rns_u256(&zero_coeffs, encoded),
+                    self.to_anchor_rns_u256(&zero_coeffs, encoded),
+                )
+            }
         };
         DualRNSPoly {
             main,
@@ -6649,6 +6593,69 @@ const _: () = {
 #[allow(deprecated)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wide_main_masks_cover_more_than_512_bits() {
+        use crate::arithmetic::wide::U1024;
+        let primes = vec![
+            998244353,
+            985661441,
+            754974721,
+            469762049,
+            576460752301785089,
+            576460752301391873,
+            576460752300015617,
+            576460752298835969,
+            576460752298180609,
+            576460752293134337,
+            576460752291954689,
+            576460752290775041,
+            575870995836829697,
+        ];
+        let config = FHEConfig {
+            n: 64,
+            q: primes[0],
+            primes,
+            t: 65537,
+            eta: 3,
+            security_bits: 0,
+            name: "wide uniform mask regression",
+        };
+        assert_eq!(config.rns_product_bit_length(), 650);
+        let ctx = RNSFHEContext::new(&config);
+        let mut rng = crate::entropy::ShadowHarvester::with_seed(0x5749_4445);
+        let mask = ctx.sample_uniform_main_poly(&mut rng);
+        let q = U1024::checked_product_u64s(&config.primes).unwrap();
+        let cofactors: Vec<_> = config
+            .primes
+            .iter()
+            .map(|&p| {
+                let cofactor = q.div_mod_u64(p).unwrap().0;
+                let inverse = crate::arithmetic::rns::mod_inverse(cofactor.mod_u64(p).unwrap(), p);
+                (cofactor, inverse)
+            })
+            .collect();
+        for index in 0..config.n {
+            let mut reconstructed = U1024::ZERO;
+            for (lane, (&prime, &(cofactor, inverse))) in
+                config.primes.iter().zip(&cofactors).enumerate()
+            {
+                let residue = mask.limbs[lane][index];
+                assert!(residue < prime);
+                let coefficient = (residue as u128 * inverse as u128 % prime as u128) as u64;
+                reconstructed = reconstructed
+                    .checked_add(cofactor.checked_mul_u64(coefficient).unwrap())
+                    .unwrap();
+            }
+            while reconstructed >= q {
+                reconstructed = reconstructed.checked_sub(q).unwrap();
+            }
+            assert!(
+                reconstructed.bit_length() > 512,
+                "mask coefficient {index} is restricted to the former accumulator width"
+            );
+        }
+    }
 
     #[test]
     fn decrypt_centering_fixed_work_bit_is_exact_at_every_supported_small_value() {
@@ -8119,11 +8126,30 @@ mod tests {
         assert_eq!(result, expected, "QMNF exact multiplication failed!");
     }
 
+    // These chains require three admitted layers. The old two-prime light
+    // fixture does not fund centered BFV tensor noise; extra CRT anchors cannot
+    // supply missing main-modulus noise capacity.
+    fn funded_symmetric_chain_config() -> FHEConfig {
+        let mut config = FHEConfig::light_rns_exact_insecure();
+        config
+            .primes
+            .extend([754_974_721, 469_762_049, 167_772_161, 595_591_169]);
+        config.name = "funded_symmetric_chain_insecure";
+        config.security_bits = 0;
+        let model = crate::noise::certified::ScalarNoiseModel::new(&config, 0, 0).unwrap();
+        let mut bound = model.fresh().unwrap();
+        for _ in 0..3 {
+            let sum = model.add(&bound, &bound).unwrap();
+            bound = model.multiply(&sum, &sum).unwrap();
+        }
+        config
+    }
+
     #[test]
     fn test_rns_exact_multiplication_chain() {
         // Test multiplication chain with light_rns_exact using DUAL-RNS K-Elimination
         // (not single-RNS Bajard which fails when Δ² >> Q)
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
         let mut rng = ShadowHarvester::with_seed(42);
 
@@ -8225,7 +8251,7 @@ mod tests {
         // M×A capacity comparison using log2 to avoid overflow
         // log2(M×A) = log2(M) + log2(A)
         let log2_m = ilog2_u128(ctx.dual_rns.main_product);
-        let log2_a = ilog2_u128(ctx.dual_rns.anchor_product);
+        let log2_a = ctx.dual_rns.anchor_product_bit_length.saturating_sub(1);
         let log2_ma = log2_m + log2_a;
 
         // log2(Q²×N) = 2×log2(Q) + log2(N)
@@ -8750,8 +8776,8 @@ mod tests {
 
         // Verify it fits in capacity (use log2 comparison to avoid overflow)
         let log2_product = ilog2_u128(product);
-        let log2_capacity =
-            ilog2_u128(ctx.dual_rns.main_product) + ilog2_u128(ctx.dual_rns.anchor_product);
+        let log2_capacity = ilog2_u128(ctx.dual_rns.main_product)
+            + ctx.dual_rns.anchor_product_bit_length.saturating_sub(1);
         let fits = log2_product < log2_capacity;
         println!(
             "Product fits in M×A: 2^{} < 2^{} = {}",
@@ -9308,7 +9334,7 @@ mod tests {
         println!("N = {}", ctx.n);
         println!("Main primes: {:?}", ctx.config.primes);
         println!("M = {}", sci_notation_u128(ctx.q_product));
-        println!("A = {}", ctx.dual_rns.anchor_product);
+        println!("A = {:?}", ctx.dual_rns.anchor_product);
 
         // Create a simple consistent polynomial: p(X) = 1 + X + X^2
         // This has small coefficients that will fit in any modulus
@@ -10710,7 +10736,7 @@ mod tests {
     #[test]
     fn test_random_expressions_depth3() {
         // Deeper expression: ((a * b) + c) * d
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(123);
@@ -10761,7 +10787,7 @@ mod tests {
     #[test]
     fn test_chain_via_auto() {
         // Mirror the working chain test but via auto interface
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config); // Use new() like the working test
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -10798,7 +10824,7 @@ mod tests {
     fn test_result_times_fresh() {
         // Verify that (result × fresh) works correctly - SAME fresh each time
         // This matches the pattern in test_chain_via_auto which passes
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -10834,7 +10860,7 @@ mod tests {
     fn test_result_times_different_fresh() {
         // Test with different fresh values each time
         // This may have different noise characteristics
-        let config = FHEConfig::light_rns_exact_insecure();
+        let config = funded_symmetric_chain_config();
         let ctx = RNSFHEContext::new(&config);
 
         let mut rng = ShadowHarvester::with_seed(42);
@@ -11368,7 +11394,7 @@ mod tests {
 
         println!("=== Anchor NTT Multiplication Correctness Test ===");
         println!("M (main product) = {}", sci_notation_u128(ctx.q_product));
-        println!("A (anchor product) = {}", ctx.dual_rns.anchor_product);
+        println!("A (anchor product) = {:?}", ctx.dual_rns.anchor_product);
 
         let n = ctx.n;
 

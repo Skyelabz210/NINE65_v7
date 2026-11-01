@@ -1541,6 +1541,25 @@ fn check_scale_jacobian_lift(n: usize, weight: usize, phase_denominator: u128) {
     );
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum SisterScaleRefusal {
+    InvalidPlaintextModulus,
+    NonDivisiblePlaintextScale { high: u64, sister: u64 },
+}
+
+// Reusing the same phase in a sister encoding is exact only when its
+// rational scales agree: high = multiplier * sister. A truncated quotient
+// does not establish that identity and cannot certify the sister view.
+fn exact_sister_scale(high: u64, sister: u64) -> Result<u64, SisterScaleRefusal> {
+    if high < 2 || sister < 2 {
+        return Err(SisterScaleRefusal::InvalidPlaintextModulus);
+    }
+    if high % sister != 0 {
+        return Err(SisterScaleRefusal::NonDivisiblePlaintextScale { high, sister });
+    }
+    Ok(high / sister)
+}
+
 fn check_p_locked_scale_jacobian_lift(n: usize, weight: usize, phase_denominator: u128) {
     check_scale_jacobian_lift_with(
         n,
@@ -2039,586 +2058,224 @@ fn check_scale_jacobian_lift_with(
                     (WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY - 1) / 2,
                 );
 
-                // The high ciphertext has plaintext e+pJ modulo T=pL.
-                // Since this composite tray M divides L, multiplying its raw
-                // components by L/M changes the BFV encoding scale and gives
-                // a same-history sister view modulo p*M. Pair it with the
-                // p-view of e to check whether the tray uniquely recovers J.
-                let sister_scale = step / WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
-                assert_eq!(step % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY, 0);
-                let winding_view = signed_scale(&high, &lifted_e, sister_scale as i64);
-                let winding_view_plain =
-                    decrypt_coefficients(&winding_tray, &winding_view, &high_keys);
-                let e_p_view = decrypt_coefficients(
-                    &common_p,
-                    &signed_scale(&high, &lifted_e, step as i64),
-                    &high_keys,
-                );
-                let p_inverse_mod_winding = inverse(
-                    PHASE_P % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
-                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
-                );
-                let expected_winding_view: Vec<_> = expected_e
-                    .iter()
-                    .zip(&windings)
-                    .map(|(&e, &winding)| {
-                        (e as i128 + PHASE_P as i128 * winding).rem_euclid(winding_tray.t as i128)
-                            as u64
-                    })
-                    .collect();
-                let winding_view_error = observe_polynomial_wide(
-                    &winding_tray,
-                    &winding_view,
-                    &high_keys,
-                    &expected_winding_view,
-                );
-                let winding_view_capacity = q_outer.div_u64(2);
-                assert!(words(winding_view_error) < words(winding_view_capacity));
-                let winding_view_mismatches = winding_view_plain
-                    .iter()
-                    .zip(&expected_winding_view)
-                    .filter(|(actual, expected)| actual != expected)
-                    .count();
-                eprintln!(
-                    "sister-view decode diagnostic: error={} bits, capacity={} bits, plaintext mismatches={}/{}",
-                    bits_u512(winding_view_error),
-                    bits_u512(winding_view_capacity),
-                    winding_view_mismatches,
-                    winding_view_plain.len(),
-                );
-                assert_eq!(winding_view_mismatches, 0);
-                let mut recovered_winding_mismatches = 0;
-                for (index, &winding) in windings.iter().enumerate() {
-                    let p_residue = e_p_view[index] as i128;
-                    assert_eq!(
-                        p_residue,
-                        expected_e[index].rem_euclid(PHASE_P as i64) as i128,
-                        "the same-history p view must agree on the centered e residue"
+                let sister_scale = exact_sister_scale(scale_t, winding_tray.t);
+                if let Ok(sister_scale) = sister_scale {
+                    // The high ciphertext has plaintext e+pJ modulo T=pL.
+                    // Since this composite tray M divides L, multiplying its raw
+                    // components by L/M changes the BFV encoding scale and gives
+                    // a same-history sister view modulo p*M. Pair it with the
+                    // p-view of e to check whether the tray uniquely recovers J.
+                    let winding_view = signed_scale(&high, &lifted_e, sister_scale as i64);
+                    let winding_view_plain =
+                        decrypt_coefficients(&winding_tray, &winding_view, &high_keys);
+                    let e_p_view = decrypt_coefficients(
+                        &common_p,
+                        &signed_scale(&high, &lifted_e, step as i64),
+                        &high_keys,
                     );
-                    let centered_e = if p_residue > PHASE_P as i128 / 2 {
-                        p_residue - PHASE_P as i128
-                    } else {
-                        p_residue
-                    };
-                    let observed_winding = ((winding_view_plain[index] as i128 - centered_e)
-                        * p_inverse_mod_winding as i128)
-                        .rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128);
-                    let expected_winding =
-                        winding.rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128);
-                    recovered_winding_mismatches +=
-                        usize::from(observed_winding != expected_winding);
-                }
-                eprintln!(
-                    "same-history p*M sister view: M={}, scale=L/M={}, view-error={} bits, winding-residue mismatches={}/{}, centered radius={}, observed max |J|={}",
-                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
-                    sister_scale,
-                    bits_u512(winding_view_error),
-                    recovered_winding_mismatches,
-                    windings.len(),
-                    (WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY - 1) / 2,
-                    max_winding,
-                );
-                assert_eq!(recovered_winding_mismatches, 0);
-
-                // Turn the residue reference above into a ciphertext-only
-                // winding extraction. Offset e by its public bound so every
-                // phase representative is nonnegative and below p/2. Since
-                // M=p+1, the same p-encoded offset view also decodes under M
-                // with <1/2 unit of scale mismatch. The M-view of e+pJ minus
-                // that offset view is pJ; p is a unit modulo M, so one public
-                // scalar operation yields J mod M from this exact history.
-                let mut offset_plain = vec![0i64; high.n];
-                for j in 0..n {
-                    offset_plain[2 * j] = residual_bound as i64;
-                }
-                let offset_candidate = add(&high, &lifted_e, &public_plain(&high, &offset_plain));
-                let offset_p_view = signed_scale(&high, &offset_candidate, step as i64);
-                let offset_modulus_tray = context_for(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY);
-                let offset_e_plain: Vec<_> = expected_e
-                    .iter()
-                    .zip(&offset_plain)
-                    .map(|(&e, &offset)| {
-                        (e as i128 + offset as i128)
-                            .rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128)
-                            as u64
-                    })
-                    .collect();
-                assert_eq!(
-                    decrypt_coefficients(&common_p, &offset_p_view, &high_keys),
-                    offset_e_plain
+                    let p_inverse_mod_winding = inverse(
+                        PHASE_P % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                        WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                    );
+                    let expected_winding_view: Vec<_> = expected_e
                         .iter()
-                        .map(|&e| e % PHASE_P)
-                        .collect::<Vec<_>>(),
-                    "publicly offset residual must remain in the centered p chart"
-                );
-                assert_eq!(
-                    decrypt_coefficients(&offset_modulus_tray, &offset_p_view, &high_keys),
-                    offset_e_plain,
-                    "p-to-(p+1) phase lock must preserve the bounded offset residual"
-                );
-                let offset_with_winding = signed_scale(
-                    &high,
-                    &offset_candidate,
-                    (scale_t / offset_modulus_tray.t) as i64,
-                );
-                let expected_offset_with_winding: Vec<_> = expected_e
-                    .iter()
-                    .zip(&offset_plain)
-                    .zip(&windings)
-                    .map(|((&e, &offset), &winding)| {
-                        (e as i128 + offset as i128 + PHASE_P as i128 * winding)
-                            .rem_euclid(offset_modulus_tray.t as i128)
-                            as u64
-                    })
-                    .collect();
-                assert_eq!(
-                    decrypt_coefficients(&offset_modulus_tray, &offset_with_winding, &high_keys),
-                    expected_offset_with_winding
-                );
-                let p_winding = add(
-                    &offset_modulus_tray,
-                    &offset_with_winding,
-                    &signed_scale(&offset_modulus_tray, &offset_p_view, -1),
-                );
-                let expected_p_winding: Vec<_> = windings
-                    .iter()
-                    .map(|&winding| {
-                        (PHASE_P as i128 * winding).rem_euclid(offset_modulus_tray.t as i128) as u64
-                    })
-                    .collect();
-                assert_eq!(
-                    decrypt_coefficients(&offset_modulus_tray, &p_winding, &high_keys),
-                    expected_p_winding
-                );
-                let p_inverse_residue = inverse(
-                    PHASE_P % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
-                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
-                );
-                let p_inverse_centered =
-                    if p_inverse_residue > WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY / 2 {
-                        p_inverse_residue as i64 - WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i64
-                    } else {
-                        p_inverse_residue as i64
-                    };
-                let winding_ciphertext =
-                    signed_scale(&offset_modulus_tray, &p_winding, p_inverse_centered);
-                let expected_winding_plain: Vec<_> = windings
-                    .iter()
-                    .map(|&winding| {
-                        winding.rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128) as u64
-                    })
-                    .collect();
-                let winding_ciphertext_error = observe_polynomial_wide(
-                    &offset_modulus_tray,
-                    &winding_ciphertext,
-                    &high_keys,
-                    &expected_winding_plain,
-                );
-                eprintln!(
-                    "same-history ciphertext-only winding extraction: M=p+1={}, offset={}, view-error={} bits, p-to-M recovered e, pJ subtraction and p^-1 recovered J for {}/{} coefficients",
-                    WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
-                    residual_bound,
-                    bits_u512(winding_ciphertext_error),
-                    windings.len(),
-                    windings.len(),
-                );
+                        .zip(&windings)
+                        .map(|(&e, &winding)| {
+                            (e as i128 + PHASE_P as i128 * winding)
+                                .rem_euclid(winding_tray.t as i128)
+                                as u64
+                        })
+                        .collect();
+                    let winding_view_error = observe_polynomial_wide(
+                        &winding_tray,
+                        &winding_view,
+                        &high_keys,
+                        &expected_winding_view,
+                    );
+                    let winding_view_capacity = q_outer.div_u64(2);
+                    assert!(words(winding_view_error) < words(winding_view_capacity));
+                    let winding_view_mismatches = winding_view_plain
+                        .iter()
+                        .zip(&expected_winding_view)
+                        .filter(|(actual, expected)| actual != expected)
+                        .count();
+                    eprintln!(
+                        "sister-view decode diagnostic: error={} bits, capacity={} bits, plaintext mismatches={}/{}",
+                        bits_u512(winding_view_error),
+                        bits_u512(winding_view_capacity),
+                        winding_view_mismatches,
+                        winding_view_plain.len(),
+                    );
+                    assert_eq!(winding_view_mismatches, 0);
+                    let mut recovered_winding_mismatches = 0;
+                    for (index, &winding) in windings.iter().enumerate() {
+                        let p_residue = e_p_view[index] as i128;
+                        assert_eq!(
+                            p_residue,
+                            expected_e[index].rem_euclid(PHASE_P as i64) as i128,
+                            "the same-history p view must agree on the centered e residue"
+                        );
+                        let centered_e = if p_residue > PHASE_P as i128 / 2 {
+                            p_residue - PHASE_P as i128
+                        } else {
+                            p_residue
+                        };
+                        let observed_winding = ((winding_view_plain[index] as i128 - centered_e)
+                            * p_inverse_mod_winding as i128)
+                            .rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128);
+                        let expected_winding =
+                            winding.rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128);
+                        recovered_winding_mismatches +=
+                            usize::from(observed_winding != expected_winding);
+                    }
+                    eprintln!(
+                        "same-history p*M sister view: M={}, scale=L/M={}, view-error={} bits, winding-residue mismatches={}/{}, centered radius={}, observed max |J|={}",
+                        WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                        sister_scale,
+                        bits_u512(winding_view_error),
+                        recovered_winding_mismatches,
+                        windings.len(),
+                        (WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY - 1) / 2,
+                        max_winding,
+                    );
+                    assert_eq!(recovered_winding_mismatches, 0);
 
-                // First test the missing M->T encoding conversion on the
-                // already encrypted bounded winding. T is an exact multiple
-                // of M, so componentwise K-Elimination division by T/M gives
-                // the right scale without a fresh encryption. Any residual
-                // plaintext offset is the hidden component-scale winding we
-                // must remove before this can feed the carry correction.
-                assert_eq!(scale_t % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY, 0);
-                let expected_e_t: Vec<_> = expected_e
-                    .iter()
-                    .map(|&e| (e as i128).rem_euclid(scale_t as i128) as u64)
-                    .collect();
-                let winding_to_high_divisor = scale_t / WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
-                let lifted_winding_high = exact_centered_quotient(
-                    &offset_modulus_tray,
-                    &winding_ciphertext,
-                    winding_to_high_divisor,
-                );
-                let expected_winding_high: Vec<_> = windings
-                    .iter()
-                    .map(|&winding| winding.rem_euclid(scale_t as i128) as u64)
-                    .collect();
-                let converted_winding_plain =
-                    decrypt_coefficients(&high, &lifted_winding_high, &high_keys);
-                let mut conversion_mismatches = 0usize;
-                let mut max_conversion_offset = 0u64;
-                for (&actual, &expected) in
-                    converted_winding_plain.iter().zip(&expected_winding_high)
-                {
-                    let difference =
-                        (actual as i128 - expected as i128).rem_euclid(scale_t as i128);
-                    let centered = if difference > scale_t as i128 / 2 {
-                        difference - scale_t as i128
-                    } else {
-                        difference
-                    };
-                    max_conversion_offset =
-                        max_conversion_offset.max(centered.unsigned_abs() as u64);
-                    conversion_mismatches += usize::from(centered != 0);
-                }
-                let converted_winding_error = observe_polynomial_wide(
-                    &high,
-                    &lifted_winding_high,
-                    &high_keys,
-                    &expected_winding_high,
-                );
-                eprintln!(
-                    "K-Elimination M->T winding conversion: divisor=T/M={}, encrypted J plaintext mismatches={}/{}, max centered conversion offset={}, error={} bits",
-                    winding_to_high_divisor,
-                    conversion_mismatches,
-                    converted_winding_plain.len(),
-                    max_conversion_offset,
-                    bits_u512(converted_winding_error),
-                );
-                let encrypted_p_winding_high =
-                    signed_scale(&high, &lifted_winding_high, PHASE_P as i64);
-                let encrypted_corrected_e = add(
-                    &high,
-                    &lifted_e,
-                    &signed_scale(&high, &encrypted_p_winding_high, -1),
-                );
-                let encrypted_corrected_e_plain =
-                    decrypt_coefficients(&high, &encrypted_corrected_e, &high_keys);
-                let encrypted_correction_mismatches = encrypted_corrected_e_plain
-                    .iter()
-                    .zip(&expected_e_t)
-                    .filter(|(actual, expected)| actual != expected)
-                    .count();
-                eprintln!(
-                    "ciphertext-only pJ correction after M->T lift: plaintext mismatches={}/{}, scalar p={} noise amplification is now exposed",
-                    encrypted_correction_mismatches,
-                    encrypted_corrected_e_plain.len(),
-                    PHASE_P,
-                );
-
-                // A larger composite tray can carry pJ itself as a bounded
-                // integer, avoiding the noisy multiplication by p after J is
-                // lifted. Here M_pj=A*(p+1) divides T and T/M_pj=p^2 when
-                // step=p*A*(p+1). The offset producer below evaluates the
-                // same public component weights against a key-holder
-                // precharged source directly in M_pJ.
-                let p_winding_tray_modulus = odd_tray_modulus * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
-                let observed_p_winding_bound = u128::from(PHASE_P) * u128::from(max_winding);
-                let certified_p_winding_bound =
-                    u128::from(PHASE_P) * u128::from(public_winding_bound);
-                let p_winding_tray_radius = (p_winding_tray_modulus - 1) / 2;
-                let offset_span = u128::from(2 * residual_bound);
-                let full_bound_pj_fits =
-                    u128::from(p_winding_tray_radius) >= certified_p_winding_bound + offset_span;
-                if step % p_winding_tray_modulus == 0
-                    && u128::from(p_winding_tray_radius) >= observed_p_winding_bound + offset_span
-                {
-                    let p_winding_tray = context_for(p_winding_tray_modulus);
-                    let p_winding_scale = scale_t / p_winding_tray_modulus;
-                    let p_winding_view =
-                        signed_scale(&high, &offset_candidate, p_winding_scale as i64);
-                    let expected_offset_mpj: Vec<_> = expected_e
+                    // Turn the residue reference above into a ciphertext-only
+                    // winding extraction. Offset e by its public bound so every
+                    // phase representative is nonnegative and below p/2. Since
+                    // M=p+1, the same p-encoded offset view also decodes under M
+                    // with <1/2 unit of scale mismatch. The M-view of e+pJ minus
+                    // that offset view is pJ; p is a unit modulo M, so one public
+                    // scalar operation yields J mod M from this exact history.
+                    let mut offset_plain = vec![0i64; high.n];
+                    for j in 0..n {
+                        offset_plain[2 * j] = residual_bound as i64;
+                    }
+                    let offset_candidate =
+                        add(&high, &lifted_e, &public_plain(&high, &offset_plain));
+                    let offset_p_view = signed_scale(&high, &offset_candidate, step as i64);
+                    let offset_modulus_tray = context_for(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY);
+                    let offset_e_plain: Vec<_> = expected_e
                         .iter()
                         .zip(&offset_plain)
-                        .map(|(&e, &offset)| e + offset)
-                        .collect();
-                    let expected_offset_mpj_residues: Vec<_> = expected_offset_mpj
-                        .iter()
-                        .map(|&value| {
-                            (value as i128).rem_euclid(p_winding_tray_modulus as i128) as u64
-                        })
-                        .collect();
-                    let expected_pj_mpj: Vec<_> = windings
-                        .iter()
-                        .map(|&winding| {
-                            (i128::from(PHASE_P) * winding)
-                                .rem_euclid(p_winding_tray_modulus as i128)
+                        .map(|(&e, &offset)| {
+                            (e as i128 + offset as i128)
+                                .rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128)
                                 as u64
                         })
                         .collect();
-                    assert_eq!(expected_pj_mpj.len(), high.n);
-                    // Produce the bounded offset from the original
-                    // same-history high_delta components. Since
-                    // `e = Delta - step*K` and M_pJ divides `step`,
-                    // `Delta+B` is `e+B mod M_pJ`. Scaling by T/M_pJ
-                    // changes only the encoding, so the offset and pJ views
-                    // share their component noise and the public B terms
-                    // cancel at the component level.
-                    let offset_delta_mpj = signed_scale(&high, &high_delta, p_winding_scale as i64);
-                    let offset_bias: Vec<_> = (0..high.n)
-                        .map(|index| {
-                            if index % 2 == 0 {
-                                residual_bound as i64
-                            } else {
-                                0
-                            }
-                        })
-                        .collect();
-                    let direct_offset_mpj = add(
-                        &p_winding_tray,
-                        &offset_delta_mpj,
-                        &public_plain(&p_winding_tray, &offset_bias),
-                    );
-                    let direct_offset_error = observe_polynomial_wide(
-                        &p_winding_tray,
-                        &direct_offset_mpj,
-                        &high_keys,
-                        &expected_offset_mpj_residues,
-                    );
-                    let p_winding_view_error = observe_polynomial_wide(
-                        &p_winding_tray,
-                        &p_winding_view,
-                        &high_keys,
-                        &expected_offset_mpj_residues
+                    assert_eq!(
+                        decrypt_coefficients(&common_p, &offset_p_view, &high_keys),
+                        offset_e_plain
                             .iter()
-                            .zip(&expected_pj_mpj)
-                            .map(|(&offset, &pj)| {
-                                ((offset as u128 + pj as u128) % p_winding_tray_modulus as u128)
-                                    as u64
-                            })
+                            .map(|&e| e % PHASE_P)
                             .collect::<Vec<_>>(),
-                    );
-                    let p_winding_error_bound = direct_offset_error.add(p_winding_view_error);
-                    assert!(
-                        words(p_winding_error_bound.mul_u128(2))
-                            < words(U512::product_u64s(&p_winding_tray.config.primes))
-                    );
-                    let p_winding_ciphertext = add(
-                        &p_winding_tray,
-                        &p_winding_view,
-                        &signed_scale(&p_winding_tray, &direct_offset_mpj, -1),
+                        "publicly offset residual must remain in the centered p chart"
                     );
                     assert_eq!(
-                        decrypt_coefficients(&p_winding_tray, &p_winding_ciphertext, &high_keys,),
-                        expected_pj_mpj,
-                        "the composite tray must retain the bounded pJ representative"
+                        decrypt_coefficients(&offset_modulus_tray, &offset_p_view, &high_keys),
+                        offset_e_plain,
+                        "p-to-(p+1) phase lock must preserve the bounded offset residual"
                     );
-                    let p_winding_observed = observe_polynomial_wide(
-                        &p_winding_tray,
-                        &p_winding_ciphertext,
-                        &high_keys,
-                        &expected_pj_mpj,
+                    let offset_with_winding = signed_scale(
+                        &high,
+                        &offset_candidate,
+                        (scale_t / offset_modulus_tray.t) as i64,
                     );
-                    assert!(words(p_winding_observed) <= words(p_winding_error_bound));
-                    eprintln!(
-                        "same-history composite offset producer: direct Delta+B sibling error={} bits, pJ difference error={} bits, sum of measured input errors={} bits",
-                        bits_u512(direct_offset_error),
-                        bits_u512(p_winding_observed),
-                        bits_u512(p_winding_error_bound),
-                    );
-                    let direct_lifted_p_winding = exact_centered_quotient(
-                        &p_winding_tray,
-                        &p_winding_ciphertext,
-                        p_winding_scale,
-                    );
-                    // Lift the centered signed representative, not the
-                    // nonnegative residue in [0, M_pJ). For negative pJ,
-                    // those differ by exactly M_pJ.
-                    let expected_pj_high: Vec<_> = windings
+                    let expected_offset_with_winding: Vec<_> = expected_e
                         .iter()
-                        .map(|&winding| {
-                            (i128::from(PHASE_P) * winding).rem_euclid(scale_t as i128) as u64
-                        })
-                        .collect();
-                    let lifted_pj_plain =
-                        decrypt_coefficients(&high, &direct_lifted_p_winding, &high_keys);
-                    let mut p_j_lift_mismatches = 0usize;
-                    let mut p_j_mod_p_mismatches = 0usize;
-                    let mut max_p_j_lift_offset = 0u64;
-                    let mut max_lift_carry = 0u64;
-                    let mut lift_carries = Vec::with_capacity(high.n);
-                    for (&actual, &expected) in lifted_pj_plain.iter().zip(&expected_pj_high) {
-                        let difference =
-                            (actual as i128 - expected as i128).rem_euclid(scale_t as i128);
-                        let centered = if difference > scale_t as i128 / 2 {
-                            difference - scale_t as i128
-                        } else {
-                            difference
-                        };
-                        max_p_j_lift_offset =
-                            max_p_j_lift_offset.max(centered.unsigned_abs() as u64);
-                        assert_eq!(
-                            centered % p_winding_tray_modulus as i128,
-                            0,
-                            "the incorrect high lift must differ by a whole M_pJ winding"
-                        );
-                        let lift_carry = centered / p_winding_tray_modulus as i128;
-                        max_lift_carry = max_lift_carry.max(lift_carry.unsigned_abs() as u64);
-                        lift_carries.push(lift_carry);
-                        p_j_lift_mismatches += usize::from(centered != 0);
-                        p_j_mod_p_mismatches += usize::from(actual % PHASE_P != expected % PHASE_P);
-                    }
-                    eprintln!(
-                        "composite pJ sister tray: M_pJ={} (=A*(p+1)), radius={}, observed p*|J|={}, full derived pJ bound={} fits={}, T/M_pJ={}, tray plaintext exact; raw K-Elimination adds a hidden M_pJ carry in {}/{} slots (max |carry|={}), max lift offset={}, mod-p mismatches={}",
-                        p_winding_tray_modulus,
-                        (p_winding_tray_modulus - 1) / 2,
-                        observed_p_winding_bound,
-                        certified_p_winding_bound,
-                        full_bound_pj_fits,
-                        p_winding_scale,
-                        p_j_lift_mismatches,
-                        high.n,
-                        max_lift_carry,
-                        max_p_j_lift_offset,
-                        p_j_mod_p_mismatches,
-                    );
-                    assert!(p_j_lift_mismatches > 0);
-                    assert!(max_lift_carry <= (high.n / 2 + 1) as u64);
-                    // Since pJ vanishes modulo p and M_pJ=A*(p+1),
-                    // the same quotient ciphertext exposes A*K in its p
-                    // view. This recovers the hidden K-Elimination winding
-                    // as an encrypted bounded residue, without decrypting it.
-                    let direct_lifted_p_winding_p_view = signed_scale(
-                        &common_p,
-                        &direct_lifted_p_winding,
-                        (scale_t / PHASE_P) as i64,
-                    );
-                    let lift_carry_view_p = decrypt_coefficients(
-                        &common_p,
-                        &direct_lifted_p_winding_p_view,
-                        &high_keys,
-                    );
-                    let expected_carry_view_p: Vec<_> = lift_carries
-                        .iter()
-                        .map(|&carry| {
-                            (i128::from(odd_tray_modulus) * carry).rem_euclid(PHASE_P as i128)
+                        .zip(&offset_plain)
+                        .zip(&windings)
+                        .map(|((&e, &offset), &winding)| {
+                            (e as i128 + offset as i128 + PHASE_P as i128 * winding)
+                                .rem_euclid(offset_modulus_tray.t as i128)
                                 as u64
                         })
                         .collect();
-                    let carry_view_mismatches = lift_carry_view_p
-                        .iter()
-                        .zip(&expected_carry_view_p)
-                        .filter(|(actual, expected)| actual != expected)
-                        .count();
-                    assert_eq!(carry_view_mismatches, 0);
-                    let inverse_factor = inverse(odd_tray_modulus % PHASE_P, PHASE_P) as i64;
-                    let encrypted_lift_carry_p =
-                        signed_scale(&common_p, &direct_lifted_p_winding_p_view, inverse_factor);
-                    let encrypted_lift_carry_plain =
-                        decrypt_coefficients(&common_p, &encrypted_lift_carry_p, &high_keys);
-                    let expected_lift_carry_plain: Vec<_> = lift_carries
-                        .iter()
-                        .map(|&carry| carry.rem_euclid(PHASE_P as i128) as u64)
-                        .collect();
-                    let encrypted_carry_mismatches = encrypted_lift_carry_plain
-                        .iter()
-                        .zip(&expected_lift_carry_plain)
-                        .filter(|(actual, expected)| actual != expected)
-                        .count();
                     assert_eq!(
-                        encrypted_carry_mismatches, 0,
-                        "the p-locked sibling must encode the K-Elimination carry"
+                        decrypt_coefficients(
+                            &offset_modulus_tray,
+                            &offset_with_winding,
+                            &high_keys
+                        ),
+                        expected_offset_with_winding
                     );
-                    let carry_p_error = observe_polynomial_wide(
-                        &common_p,
-                        &encrypted_lift_carry_p,
-                        &high_keys,
-                        &expected_lift_carry_plain,
+                    let p_winding = add(
+                        &offset_modulus_tray,
+                        &offset_with_winding,
+                        &signed_scale(&offset_modulus_tray, &offset_p_view, -1),
                     );
-                    let high_q = U512::product_u64s(&high.config.primes);
-                    eprintln!(
-                        "same-history p carry view: A*K and A^-1 recovery mismatches={}/{}, centered |K|<= {}, A^-1 mod p={}, carry V bits={}, Q bits={}, Q/16 chart input cap={}",
-                        carry_view_mismatches + encrypted_carry_mismatches,
-                        high.n,
-                        max_lift_carry,
-                        inverse_factor,
-                        bits_u512(carry_p_error),
-                        bits_u512(high_q),
-                        words(carry_p_error.mul_u128(16)) < words(high_q),
-                    );
-                    // Test whether the remaining high-lift carry can simply
-                    // be tolerated in the p view. Its contribution is K/p
-                    // of a plaintext step, so the message may decode while
-                    // the phase budget still fails dependent products.
-                    let uncorrected_e = add(
-                        &high,
-                        &lifted_e,
-                        &signed_scale(&high, &direct_lifted_p_winding, -1),
-                    );
-                    let uncorrected_carry = add(
-                        &common_p,
-                        &high_delta,
-                        &signed_scale(&common_p, &uncorrected_e, -1),
-                    );
-                    let uncorrected_phase = add(&common_p, &affine, &uncorrected_carry);
-                    let uncorrected_plain =
-                        decrypt_coefficients(&common_p, &uncorrected_phase, &high_keys);
-                    let uncorrected_mismatches = uncorrected_plain
+                    let expected_p_winding: Vec<_> = windings
                         .iter()
-                        .zip(&expected_message)
-                        .filter(|(actual, expected)| actual != expected)
-                        .count();
-                    let mut uncorrected_phase_bits = None;
-                    let mut uncorrected_square_mismatches = None;
-                    let mut uncorrected_cube_mismatches = None;
-                    if uncorrected_mismatches == 0 {
-                        uncorrected_phase_bits = Some(bits_u512(observe_polynomial_wide(
-                            &common_p,
-                            &uncorrected_phase,
-                            &high_keys,
-                            &expected_message,
-                        )));
-                        let expected_square = square_plain(&expected_message, PHASE_P);
-                        let uncorrected_square = exact
-                            .try_mul_exact(&uncorrected_phase, &uncorrected_phase, &relin)
-                            .unwrap();
-                        let uncorrected_square_plain =
-                            decrypt_coefficients(&common_p, &uncorrected_square, &high_keys);
-                        let square_mismatches = uncorrected_square_plain
-                            .iter()
-                            .zip(&expected_square)
-                            .filter(|(actual, expected)| actual != expected)
-                            .count();
-                        uncorrected_square_mismatches = Some(square_mismatches);
-                        if square_mismatches == 0 {
-                            let expected_cube = negacyclic_plain_multiply(
-                                &expected_square,
-                                &expected_message,
-                                PHASE_P,
-                            );
-                            let uncorrected_cube = exact
-                                .try_mul_exact(&uncorrected_square, &uncorrected_phase, &relin)
-                                .unwrap();
-                            let uncorrected_cube_plain =
-                                decrypt_coefficients(&common_p, &uncorrected_cube, &high_keys);
-                            uncorrected_cube_mismatches = Some(
-                                uncorrected_cube_plain
-                                    .iter()
-                                    .zip(&expected_cube)
-                                    .filter(|(actual, expected)| actual != expected)
-                                    .count(),
-                            );
-                        }
-                    }
-                    eprintln!(
-                        "uncorrected pJ lift follow-up: plaintext mismatches={uncorrected_mismatches}/{}, phase V bits={uncorrected_phase_bits:?}, square mismatches={uncorrected_square_mismatches:?}, cube mismatches={uncorrected_cube_mismatches:?}; high-lift carry still present",
-                        high.n,
-                    );
-                    // Probe the next K-Elimination layer: lifting Enc_p(K)
-                    // to T divides the component coefficients by T/p. The
-                    // p residue survives, but the component quotient can
-                    // add a second hidden p-multiple winding. Measure that
-                    // winding before trying to use this as the M_pJ*K
-                    // correction; the Safe-Basis root must remove it.
-                    let carry_to_high_divisor = scale_t / PHASE_P;
-                    assert_eq!(PHASE_P * carry_to_high_divisor, scale_t);
-                    let lifted_lift_carry_high = exact_centered_quotient(
-                        &common_p,
-                        &encrypted_lift_carry_p,
-                        carry_to_high_divisor,
-                    );
-                    let expected_lift_carry_high: Vec<_> = lift_carries
-                        .iter()
-                        .map(|&carry| carry.rem_euclid(scale_t as i128) as u64)
+                        .map(|&winding| {
+                            (PHASE_P as i128 * winding).rem_euclid(offset_modulus_tray.t as i128)
+                                as u64
+                        })
                         .collect();
-                    let lifted_lift_carry_plain =
-                        decrypt_coefficients(&high, &lifted_lift_carry_high, &high_keys);
-                    let mut max_quotient_winding = 0u64;
-                    let mut quotient_windings = Vec::with_capacity(high.n);
-                    for (&actual, &expected) in lifted_lift_carry_plain
+                    assert_eq!(
+                        decrypt_coefficients(&offset_modulus_tray, &p_winding, &high_keys),
+                        expected_p_winding
+                    );
+                    let p_inverse_residue = inverse(
+                        PHASE_P % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                        WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                    );
+                    let p_inverse_centered =
+                        if p_inverse_residue > WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY / 2 {
+                            p_inverse_residue as i64 - WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i64
+                        } else {
+                            p_inverse_residue as i64
+                        };
+                    let winding_ciphertext =
+                        signed_scale(&offset_modulus_tray, &p_winding, p_inverse_centered);
+                    let expected_winding_plain: Vec<_> = windings
                         .iter()
-                        .zip(&expected_lift_carry_high)
+                        .map(|&winding| {
+                            winding.rem_euclid(WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY as i128) as u64
+                        })
+                        .collect();
+                    let winding_ciphertext_error = observe_polynomial_wide(
+                        &offset_modulus_tray,
+                        &winding_ciphertext,
+                        &high_keys,
+                        &expected_winding_plain,
+                    );
+                    eprintln!(
+                        "same-history ciphertext-only winding extraction: M=p+1={}, offset={}, view-error={} bits, p-to-M recovered e, pJ subtraction and p^-1 recovered J for {}/{} coefficients",
+                        WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+                        residual_bound,
+                        bits_u512(winding_ciphertext_error),
+                        windings.len(),
+                        windings.len(),
+                    );
+
+                    // First test the missing M->T encoding conversion on the
+                    // already encrypted bounded winding. T is an exact multiple
+                    // of M, so componentwise K-Elimination division by T/M gives
+                    // the right scale without a fresh encryption. Any residual
+                    // plaintext offset is the hidden component-scale winding we
+                    // must remove before this can feed the carry correction.
+                    assert_eq!(scale_t % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY, 0);
+                    let expected_e_t: Vec<_> = expected_e
+                        .iter()
+                        .map(|&e| (e as i128).rem_euclid(scale_t as i128) as u64)
+                        .collect();
+                    let winding_to_high_divisor = scale_t / WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+                    let lifted_winding_high = exact_centered_quotient(
+                        &offset_modulus_tray,
+                        &winding_ciphertext,
+                        winding_to_high_divisor,
+                    );
+                    let expected_winding_high: Vec<_> = windings
+                        .iter()
+                        .map(|&winding| winding.rem_euclid(scale_t as i128) as u64)
+                        .collect();
+                    let converted_winding_plain =
+                        decrypt_coefficients(&high, &lifted_winding_high, &high_keys);
+                    let mut conversion_mismatches = 0usize;
+                    let mut max_conversion_offset = 0u64;
+                    for (&actual, &expected) in
+                        converted_winding_plain.iter().zip(&expected_winding_high)
                     {
                         let difference =
                             (actual as i128 - expected as i128).rem_euclid(scale_t as i128);
@@ -2627,646 +2284,1074 @@ fn check_scale_jacobian_lift_with(
                         } else {
                             difference
                         };
-                        assert_eq!(centered % PHASE_P as i128, 0);
-                        let winding = centered / PHASE_P as i128;
-                        max_quotient_winding =
-                            max_quotient_winding.max(winding.unsigned_abs() as u64);
-                        quotient_windings.push(winding);
+                        max_conversion_offset =
+                            max_conversion_offset.max(centered.unsigned_abs() as u64);
+                        conversion_mismatches += usize::from(centered != 0);
                     }
-                    assert!(max_quotient_winding <= (high.n / 2 + 1) as u64);
-                    assert!(lifted_lift_carry_plain
-                        .iter()
-                        .zip(&expected_lift_carry_plain)
-                        .all(|(actual, expected)| actual % PHASE_P == *expected));
-                    eprintln!(
-                        "second K-Elimination winding: divisor=T/p={}, Enc_p(K)->Enc_T(K+p*J_q) preserves all {} p residues; max |J_q|={} within degree bound {}; this new p-multiple carry still needs live Safe-Basis correction",
-                        carry_to_high_divisor,
-                        high.n,
-                        max_quotient_winding,
-                        high.n / 2 + 1,
-                    );
-                    if n <= 512 {
-                        let first_lane = ordinary(&common_p, &high_keys.secret_key.s)
-                            .into_iter()
-                            .next()
-                            .unwrap();
-                        let prime = common_p.config.primes[0];
-                        let high_secret: Vec<i8> = first_lane
-                            .into_iter()
-                            .map(|digit| match digit {
-                                0 => 0,
-                                1 => 1,
-                                value if value == prime - 1 => -1,
-                                _ => panic!("unexpected high-key secret coefficient"),
-                            })
-                            .collect();
-                        let q_wrap =
-                            exact_source_q_wrap(&common_p, &encrypted_lift_carry_p, &high_secret);
-                        let q_wrap_mismatches = q_wrap
-                            .iter()
-                            .zip(&quotient_windings)
-                            .filter(|(actual, expected)| actual != expected)
-                            .count();
-                        eprintln!(
-                            "second-winding Q-wrap oracle: exact centered Q source wrap differs from J_q in {q_wrap_mismatches}/{} coefficients; high-key support={} of {}",
-                            high.n,
-                            high_secret.iter().filter(|&&digit| digit != 0).count(),
-                            high.n,
-                        );
-                        assert_eq!(q_wrap_mismatches, 0);
-
-                        let clock_n = 1usize << 18;
-                        let chart_t = PHASE_P * (2 * clock_n as u64 + 1);
-                        let mut chart_config = high.config.clone();
-                        chart_config.n = 2 * high.n;
-                        chart_config.t = chart_t;
-                        chart_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
-                        chart_config.name = "UNADMITTED Q189 second-winding chart";
-                        let chart_context = RNSFHEContext::try_new(&chart_config).unwrap();
-                        let mut embedded_secret = vec![0i8; chart_context.n];
-                        for (j, &digit) in high_secret.iter().enumerate() {
-                            embedded_secret[2 * j] = digit;
-                        }
-                        let chart_keys =
-                            sparse_keys(&chart_context, &embedded_secret, &mut rng_for_view);
-                        let encrypted_high_secret = encrypt_polynomial(
-                            &chart_context,
-                            &chart_keys,
-                            &embedded(
-                                &high_secret
-                                    .iter()
-                                    .map(|&digit| (digit as i64).rem_euclid(chart_t as i64) as u64)
-                                    .collect::<Vec<_>>(),
-                            ),
-                            &mut rng_for_view,
-                        );
-                        let chart_q = U512::product_u64s(&chart_context.config.primes);
-                        let chart_precharge_v = chart_t as u128
-                            * (2 * chart_context.n + 1) as u128
-                            * chart_context.config.eta as u128
-                            + chart_q.mod_u64(chart_t) as u128 * (chart_t - 1) as u128;
-                        let producer = BatchedPhase {
-                            source: &common_p,
-                            outer: &chart_context,
-                            clock_n,
-                            encrypted_source: encrypted_high_secret,
-                            precharge_v: chart_precharge_v,
-                            source_norm: high.n,
-                            coordinate: 99,
-                            phase_cap: 0, // The centered wide producer supplies its cap explicitly.
-                        };
-                        let carry_error_cap = high_q.div_u64(16);
-                        assert!(words(carry_p_error) <= words(carry_error_cap));
-                        let centered_phase_bound = high_q
-                            .div_u64(PHASE_P)
-                            .mul_u128((high.n / 2 + 1) as u128)
-                            .add(carry_error_cap);
-                        let chart_cap = high_q.div_u64(8);
-                        assert!(words(centered_phase_bound) < words(chart_cap));
-                        let chart = producer.apply_centered_wide(
-                            &encrypted_lift_carry_p,
-                            centered_phase_bound,
-                            chart_cap,
-                        );
-                        let public0 = preprocess_centered_for_clock(
-                            &common_p,
-                            &encrypted_lift_carry_p.c0,
-                            99,
-                            clock_n,
-                        );
-                        let public1 = preprocess_centered_for_clock(
-                            &common_p,
-                            &encrypted_lift_carry_p.c1,
-                            99,
-                            clock_n,
-                        );
-                        let coarse0 = preprocess_for_clock(
-                            &common_p,
-                            &encrypted_lift_carry_p.c0,
-                            99,
-                            clock_n,
-                        );
-                        let coarse1 = preprocess_for_clock(
-                            &common_p,
-                            &encrypted_lift_carry_p.c1,
-                            99,
-                            clock_n,
-                        );
-                        let mut expected_chart = vec![0; chart_context.n];
-                        let mut expected_winding = vec![0; chart_context.n];
-                        let mut clear_chart_mismatches = 0usize;
-                        let mut coarse_chart_mismatches = 0usize;
-                        let mut max_chart_residual = 0u128;
-                        for j in 0..high.n {
-                            let mut z = public0.clock[j] as i128;
-                            let mut coarse_z = coarse0.clock[j] as i128;
-                            for (i, &digit) in high_secret.iter().enumerate() {
-                                let index = (j + high.n - i) % high.n;
-                                let sign = if i > j { -1i128 } else { 1i128 };
-                                z += sign * digit as i128 * public1.clock[index] as i128;
-                                coarse_z += sign * digit as i128 * coarse1.clock[index] as i128;
-                            }
-                            let winding =
-                                (99 * z + clock_n as i128).div_euclid((2 * clock_n) as i128);
-                            let coarse_winding =
-                                (99 * coarse_z + clock_n as i128).div_euclid((2 * clock_n) as i128);
-                            clear_chart_mismatches += usize::from(winding != q_wrap[j]);
-                            coarse_chart_mismatches += usize::from(coarse_winding != q_wrap[j]);
-                            max_chart_residual = max_chart_residual.max(
-                                (99 * z - (2 * clock_n as i128 + 1) * q_wrap[j]).unsigned_abs(),
-                            );
-                            expected_chart[2 * j] = z.rem_euclid(chart_t as i128) as u64;
-                            expected_winding[2 * j] = q_wrap[j].rem_euclid(PHASE_P as i128) as u64;
-                        }
-                        assert_eq!(clear_chart_mismatches, 0);
-                        assert!(coarse_chart_mismatches > 0);
-                        let chart_observed = observe_polynomial(
-                            &chart_context,
-                            &chart.ciphertext,
-                            &chart_keys,
-                            &expected_chart,
-                        );
-                        assert!(chart_observed <= chart.bound);
-                        let scaled = signed_scale(&chart_context, &chart.ciphertext, 99);
-                        let scaled_bound = chart.bound * 99;
-                        let scaled_admitted =
-                            words(U512::from_u128(scaled_bound).mul_u128(2)) < words(chart_q);
-                        let chart_reader_config = nine65::params::FHEConfig {
-                            t: PHASE_P,
-                            ..chart_context.config.clone()
-                        };
-                        let chart_reader = RNSFHEContext::try_new(&chart_reader_config).unwrap();
-                        let decoded_winding =
-                            decrypt_coefficients(&chart_reader, &scaled, &chart_keys);
-                        let winding_mismatches = decoded_winding
-                            .iter()
-                            .zip(&expected_winding)
-                            .filter(|(actual, expected)| actual != expected)
-                            .count();
-                        eprintln!(
-                            "live Q189 tropical second-winding chart: centered 99-clock/J_q mismatches={clear_chart_mismatches}/{}, coarse-control mismatches={coarse_chart_mismatches}/{}, encrypted p-view mismatches={winding_mismatches}/{}, outer Q={} bits, chart V observed/bound={}/{}, scaled bound admitted={scaled_admitted}, max |99Z-AJ_q|={max_chart_residual}, source H public bound={}",
-                            high.n,
-                            high.n,
-                            chart_context.n,
-                            bits_u512(chart_q),
-                            bits(chart_observed),
-                            bits(chart.bound),
-                            high.n,
-                        );
-                        if scaled_admitted {
-                            assert_eq!(winding_mismatches, 0);
-                        }
-                        let mut returned_config = common_p.config.clone();
-                        returned_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
-                        returned_config.name = "UNADMITTED same-key Q126 winding return";
-                        let returned_context = RNSFHEContext::try_new(&returned_config).unwrap();
-                        let returned_keys =
-                            sparse_keys(&returned_context, &high_secret, &mut rng_for_view);
-                        let even = |poly: &RNSPolynomial| RNSPolynomial {
-                            n: returned_context.n,
-                            limbs: poly
-                                .limbs
-                                .iter()
-                                .map(|lane| lane.iter().step_by(2).copied().collect())
-                                .collect(),
-                        };
-                        let returned = RNSCiphertext {
-                            c0: even(&scaled.c0),
-                            c1: even(&scaled.c1),
-                            num_primes: SECOND_WINDING_OUTER_PRIMES.len(),
-                        };
-                        let expected_returned: Vec<_> = q_wrap
-                            .iter()
-                            .map(|&winding| winding.rem_euclid(PHASE_P as i128) as u64)
-                            .collect();
-                        let returned_mismatches =
-                            decrypt_coefficients(&returned_context, &returned, &returned_keys)
-                                .iter()
-                                .zip(&expected_returned)
-                                .filter(|(actual, expected)| actual != expected)
-                                .count();
-                        eprintln!(
-                            "same-key even ring return of J_q: mismatches={returned_mismatches}/{}, original high secret retained on two common Q lanes; high-T encoding still open",
-                            high.n,
-                        );
-                        assert_eq!(returned_mismatches, 0);
-                        assert!(expected_returned.iter().any(|&winding| winding != 0));
-                        let returned_observed = observe_polynomial(
-                            &returned_context,
-                            &returned,
-                            &returned_keys,
-                            &expected_returned,
-                        );
-                        let exact_returned = returned_context.try_exact_evaluator().unwrap();
-                        let returned_relin = exact_returned.generate_hybrid_gadget_key_with_rng(
-                            &returned_keys.secret_key,
-                            &mut rng_for_view,
-                        );
-                        let returned_square_result =
-                            exact_returned.try_mul_exact(&returned, &returned, &returned_relin);
-                        let returned_square_status = match returned_square_result {
-                            Ok(returned_square) => {
-                                let expected_returned_square =
-                                    square_plain(&expected_returned, PHASE_P);
-                                let returned_square_plain = decrypt_coefficients(
-                                    &returned_context,
-                                    &returned_square,
-                                    &returned_keys,
-                                );
-                                let mismatches = returned_square_plain
-                                    .iter()
-                                    .zip(&expected_returned_square)
-                                    .filter(|(actual, expected)| actual != expected)
-                                    .count();
-                                format!("{mismatches}/{} mismatches", high.n)
-                            }
-                            Err(error) => format!("refused: {error}"),
-                        };
-                        eprintln!(
-                            "same-key winding follow-up: returned p-view V={} bits against Q={} bits; first dependent square {returned_square_status}",
-                            bits(returned_observed),
-                            bits(U512::product_u64s(&returned_context.config.primes).d0),
-                        );
-                    }
-                    if n == 8192 {
-                        let first_lane = ordinary(&common_p, &high_keys.secret_key.s)
-                            .into_iter()
-                            .next()
-                            .unwrap();
-                        let prime = common_p.config.primes[0];
-                        let high_secret: Vec<i8> = first_lane
-                            .into_iter()
-                            .map(|digit| match digit {
-                                0 => 0,
-                                1 => 1,
-                                value if value == prime - 1 => -1,
-                                _ => panic!("unexpected native high-key secret coefficient"),
-                            })
-                            .collect();
-                        let clock_n = 1usize << 24;
-                        let chart_t = PHASE_P * (2 * clock_n as u64 + 1);
-                        let screened = SecureConfig::custom_screened(
-                            2 * high.n,
-                            SECOND_WINDING_OUTER_PRIMES.to_vec(),
-                            chart_t,
-                            high.config.eta,
-                            128,
-                        )
-                        .expect("native Q189 second-winding chart must clear the security screen");
-                        assert!(screened.is_production_safe_under_all_models());
-                        let effective_secret_screen = SecureConfig::custom_screened(
-                            high.n,
-                            SECOND_WINDING_OUTER_PRIMES.to_vec(),
-                            chart_t,
-                            high.config.eta,
-                            128,
-                        )
-                        .expect("embedded high key must also clear the source-dimension screen");
-                        assert!(effective_secret_screen.is_production_safe_under_all_models());
-                        let mut chart_config = screened.into_config();
-                        chart_config.name = "UNADMITTED native Q189 second-winding chart";
-                        let chart_context = RNSFHEContext::try_new(&chart_config).unwrap();
-                        let mut embedded_secret = vec![0i8; chart_context.n];
-                        for (j, &digit) in high_secret.iter().enumerate() {
-                            embedded_secret[2 * j] = digit;
-                        }
-                        let chart_keys =
-                            sparse_keys(&chart_context, &embedded_secret, &mut rng_for_view);
-                        let encrypted_high_secret = encrypt_polynomial(
-                            &chart_context,
-                            &chart_keys,
-                            &embedded(
-                                &high_secret
-                                    .iter()
-                                    .map(|&digit| (digit as i64).rem_euclid(chart_t as i64) as u64)
-                                    .collect::<Vec<_>>(),
-                            ),
-                            &mut rng_for_view,
-                        );
-                        let chart_q = U512::product_u64s(&chart_context.config.primes);
-                        let chart_precharge_v = chart_t as u128
-                            * (2 * chart_context.n + 1) as u128
-                            * chart_context.config.eta as u128
-                            + chart_q.mod_u64(chart_t) as u128 * (chart_t - 1) as u128;
-                        let producer = BatchedPhase {
-                            source: &common_p,
-                            outer: &chart_context,
-                            clock_n,
-                            encrypted_source: encrypted_high_secret,
-                            precharge_v: chart_precharge_v,
-                            source_norm: high.n,
-                            coordinate: 99,
-                            phase_cap: 0,
-                        };
-                        let carry_error_cap = high_q.div_u64(16);
-                        assert!(words(carry_p_error) <= words(carry_error_cap));
-                        let centered_phase_bound = high_q
-                            .div_u64(PHASE_P)
-                            .mul_u128((high.n / 2 + 1) as u128)
-                            .add(carry_error_cap);
-                        let chart_cap = high_q.div_u64(5);
-                        assert!(words(centered_phase_bound) < words(chart_cap));
-                        let chart = producer.apply_centered_wide(
-                            &encrypted_lift_carry_p,
-                            centered_phase_bound,
-                            chart_cap,
-                        );
-                        let scaled = signed_scale(&chart_context, &chart.ciphertext, 99);
-                        let scaled_bound = chart.bound * 99;
-                        let scaled_admitted =
-                            words(U512::from_u128(scaled_bound).mul_u128(2)) < words(chart_q);
-                        let reader_config = nine65::params::FHEConfig {
-                            t: PHASE_P,
-                            ..chart_context.config.clone()
-                        };
-                        let reader = RNSFHEContext::try_new(&reader_config).unwrap();
-                        let mut expected_winding = vec![0; chart_context.n];
-                        for (j, &winding) in quotient_windings.iter().enumerate() {
-                            expected_winding[2 * j] = winding.rem_euclid(PHASE_P as i128) as u64;
-                        }
-                        let decoded_winding = decrypt_coefficients(&reader, &scaled, &chart_keys);
-                        let winding_mismatches = decoded_winding
-                            .iter()
-                            .zip(&expected_winding)
-                            .filter(|(actual, expected)| actual != expected)
-                            .count();
-                        let observed_bits = if winding_mismatches == 0 {
-                            Some(bits(observe_polynomial(
-                                &reader,
-                                &scaled,
-                                &chart_keys,
-                                &expected_winding,
-                            )))
-                        } else {
-                            None
-                        };
-                        eprintln!(
-                            "native Q189 tropical second-winding chart: sourceN{}, outerN{}, clock={clock_n}, screened 128-bit tuple, ciphertext p-view/J_q mismatches={winding_mismatches}/{}, outer Q={} bits, p-view V observed bits={observed_bits:?}, scaled bound bits={}, admitted={scaled_admitted}; work-key and common-T return remain open",
-                            high.n,
-                            chart_context.n,
-                            chart_context.n,
-                            bits_u512(chart_q),
-                            bits(scaled_bound),
-                        );
-                        assert!(scaled_admitted);
-                        assert_eq!(winding_mismatches, 0);
-                        let mut returned_config = common_p.config.clone();
-                        returned_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
-                        returned_config.name = "UNADMITTED native same-key winding return";
-                        let returned_context = RNSFHEContext::try_new(&returned_config).unwrap();
-                        let returned_keys =
-                            sparse_keys(&returned_context, &high_secret, &mut rng_for_view);
-                        let even = |poly: &RNSPolynomial| RNSPolynomial {
-                            n: returned_context.n,
-                            limbs: poly
-                                .limbs
-                                .iter()
-                                .map(|lane| lane.iter().step_by(2).copied().collect())
-                                .collect(),
-                        };
-                        let returned = RNSCiphertext {
-                            c0: even(&scaled.c0),
-                            c1: even(&scaled.c1),
-                            num_primes: SECOND_WINDING_OUTER_PRIMES.len(),
-                        };
-                        let expected_returned: Vec<_> = quotient_windings
-                            .iter()
-                            .map(|&winding| winding.rem_euclid(PHASE_P as i128) as u64)
-                            .collect();
-                        let returned_mismatches =
-                            decrypt_coefficients(&returned_context, &returned, &returned_keys)
-                                .iter()
-                                .zip(&expected_returned)
-                                .filter(|(actual, expected)| actual != expected)
-                                .count();
-                        let returned_observed_bits = if returned_mismatches == 0 {
-                            Some(bits(observe_polynomial(
-                                &returned_context,
-                                &returned,
-                                &returned_keys,
-                                &expected_returned,
-                            )))
-                        } else {
-                            None
-                        };
-                        eprintln!(
-                            "native same-key even ring return of J_q: mismatches={returned_mismatches}/{}, p-view V bits={returned_observed_bits:?}, two common Q lanes; high-T encoding still open",
-                            high.n,
-                        );
-                        assert_eq!(returned_mismatches, 0);
-                    }
-                    // Oracle control preserves the prior successful pJ
-                    // consumer result and isolates the missing encrypted
-                    // correction: replacing Enc_MpJ(e+B) by a fresh public
-                    // encoding removes the residual M_pJ winding.
-                    let oracle_p_winding_ciphertext = add(
-                        &p_winding_tray,
-                        &p_winding_view,
-                        &signed_scale(
-                            &p_winding_tray,
-                            &public_plain(&p_winding_tray, &expected_offset_mpj),
-                            -1,
-                        ),
-                    );
-                    let oracle_lifted_p_winding = exact_centered_quotient(
-                        &p_winding_tray,
-                        &oracle_p_winding_ciphertext,
-                        p_winding_scale,
-                    );
-                    let oracle_lifted_plain =
-                        decrypt_coefficients(&high, &oracle_lifted_p_winding, &high_keys);
-                    assert_eq!(oracle_lifted_plain, expected_pj_high);
-                    let carry_correction_plain: Vec<i64> = lift_carries
-                        .iter()
-                        .map(|&carry| (p_winding_tray_modulus as i128 * carry) as i64)
-                        .collect();
-                    let carry_corrected_pj = add(
+                    let converted_winding_error = observe_polynomial_wide(
                         &high,
-                        &direct_lifted_p_winding,
-                        &signed_scale(&high, &public_plain(&high, &carry_correction_plain), -1),
+                        &lifted_winding_high,
+                        &high_keys,
+                        &expected_winding_high,
                     );
-                    let carry_corrected_pj_plain =
-                        decrypt_coefficients(&high, &carry_corrected_pj, &high_keys);
-                    assert_eq!(carry_corrected_pj_plain, oracle_lifted_plain);
-                    let corrected_e_from_tray = add(
+                    eprintln!(
+                        "K-Elimination M->T winding conversion: divisor=T/M={}, encrypted J plaintext mismatches={}/{}, max centered conversion offset={}, error={} bits",
+                        winding_to_high_divisor,
+                        conversion_mismatches,
+                        converted_winding_plain.len(),
+                        max_conversion_offset,
+                        bits_u512(converted_winding_error),
+                    );
+                    let encrypted_p_winding_high =
+                        signed_scale(&high, &lifted_winding_high, PHASE_P as i64);
+                    let encrypted_corrected_e = add(
                         &high,
                         &lifted_e,
-                        &signed_scale(&high, &carry_corrected_pj, -1),
+                        &signed_scale(&high, &encrypted_p_winding_high, -1),
                     );
-                    let corrected_tray_plain =
-                        decrypt_coefficients(&high, &corrected_e_from_tray, &high_keys);
-                    let corrected_tray_mismatches = corrected_tray_plain
+                    let encrypted_corrected_e_plain =
+                        decrypt_coefficients(&high, &encrypted_corrected_e, &high_keys);
+                    let encrypted_correction_mismatches = encrypted_corrected_e_plain
                         .iter()
                         .zip(&expected_e_t)
                         .filter(|(actual, expected)| actual != expected)
                         .count();
                     eprintln!(
-                        "bounded K-oracle correction gives corrected-e mismatches={}/{}; its high lift matches the clear-offset consumer control",
-                        corrected_tray_mismatches,
-                        high.n,
+                        "ciphertext-only pJ correction after M->T lift: plaintext mismatches={}/{}, scalar p={} noise amplification is now exposed",
+                        encrypted_correction_mismatches,
+                        encrypted_corrected_e_plain.len(),
+                        PHASE_P,
                     );
-                    if corrected_tray_mismatches == 0 {
-                        let corrected_tray_error = observe_polynomial_wide(
-                            &high,
-                            &corrected_e_from_tray,
+
+                    // A larger composite tray can carry pJ itself as a bounded
+                    // integer, avoiding the noisy multiplication by p after J is
+                    // lifted. Here M_pj=A*(p+1) divides T and T/M_pj=p^2 when
+                    // step=p*A*(p+1). The offset producer below evaluates the
+                    // same public component weights against a key-holder
+                    // precharged source directly in M_pJ.
+                    let p_winding_tray_modulus =
+                        odd_tray_modulus * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+                    let observed_p_winding_bound = u128::from(PHASE_P) * u128::from(max_winding);
+                    let certified_p_winding_bound =
+                        u128::from(PHASE_P) * u128::from(public_winding_bound);
+                    let p_winding_tray_radius = (p_winding_tray_modulus - 1) / 2;
+                    let offset_span = u128::from(2 * residual_bound);
+                    let full_bound_pj_fits = u128::from(p_winding_tray_radius)
+                        >= certified_p_winding_bound + offset_span;
+                    if step % p_winding_tray_modulus == 0
+                        && u128::from(p_winding_tray_radius)
+                            >= observed_p_winding_bound + offset_span
+                    {
+                        let p_winding_tray = context_for(p_winding_tray_modulus);
+                        let p_winding_scale = scale_t / p_winding_tray_modulus;
+                        let p_winding_view =
+                            signed_scale(&high, &offset_candidate, p_winding_scale as i64);
+                        let expected_offset_mpj: Vec<_> = expected_e
+                            .iter()
+                            .zip(&offset_plain)
+                            .map(|(&e, &offset)| e + offset)
+                            .collect();
+                        let expected_offset_mpj_residues: Vec<_> = expected_offset_mpj
+                            .iter()
+                            .map(|&value| {
+                                (value as i128).rem_euclid(p_winding_tray_modulus as i128) as u64
+                            })
+                            .collect();
+                        let expected_pj_mpj: Vec<_> = windings
+                            .iter()
+                            .map(|&winding| {
+                                (i128::from(PHASE_P) * winding)
+                                    .rem_euclid(p_winding_tray_modulus as i128)
+                                    as u64
+                            })
+                            .collect();
+                        assert_eq!(expected_pj_mpj.len(), high.n);
+                        // Produce the bounded offset from the original
+                        // same-history high_delta components. Since
+                        // `e = Delta - step*K` and M_pJ divides `step`,
+                        // `Delta+B` is `e+B mod M_pJ`. Scaling by T/M_pJ
+                        // changes only the encoding, so the offset and pJ views
+                        // share their component noise and the public B terms
+                        // cancel at the component level.
+                        let offset_delta_mpj =
+                            signed_scale(&high, &high_delta, p_winding_scale as i64);
+                        let offset_bias: Vec<_> = (0..high.n)
+                            .map(|index| {
+                                if index % 2 == 0 {
+                                    residual_bound as i64
+                                } else {
+                                    0
+                                }
+                            })
+                            .collect();
+                        let direct_offset_mpj = add(
+                            &p_winding_tray,
+                            &offset_delta_mpj,
+                            &public_plain(&p_winding_tray, &offset_bias),
+                        );
+                        let direct_offset_error = observe_polynomial_wide(
+                            &p_winding_tray,
+                            &direct_offset_mpj,
                             &high_keys,
-                            &expected_e_t,
+                            &expected_offset_mpj_residues,
                         );
-                        eprintln!(
-                            "composite pJ tray corrected-residual error={} bits",
-                            bits_u512(corrected_tray_error),
+                        let p_winding_view_error = observe_polynomial_wide(
+                            &p_winding_tray,
+                            &p_winding_view,
+                            &high_keys,
+                            &expected_offset_mpj_residues
+                                .iter()
+                                .zip(&expected_pj_mpj)
+                                .map(|(&offset, &pj)| {
+                                    ((offset as u128 + pj as u128) % p_winding_tray_modulus as u128)
+                                        as u64
+                                })
+                                .collect::<Vec<_>>(),
                         );
-                        if check_dependent_product {
-                            let composite_tray_carry = add(
-                                &high,
-                                &high_delta,
-                                &signed_scale(&high, &corrected_e_from_tray, -1),
-                            );
-                            let composite_tray_carry_error = observe_polynomial_wide(
-                                &common_p,
-                                &composite_tray_carry,
+                        let p_winding_error_bound = direct_offset_error.add(p_winding_view_error);
+                        assert!(
+                            words(p_winding_error_bound.mul_u128(2))
+                                < words(U512::product_u64s(&p_winding_tray.config.primes))
+                        );
+                        let p_winding_ciphertext = add(
+                            &p_winding_tray,
+                            &p_winding_view,
+                            &signed_scale(&p_winding_tray, &direct_offset_mpj, -1),
+                        );
+                        assert_eq!(
+                            decrypt_coefficients(
+                                &p_winding_tray,
+                                &p_winding_ciphertext,
                                 &high_keys,
-                                &expected_k,
+                            ),
+                            expected_pj_mpj,
+                            "the composite tray must retain the bounded pJ representative"
+                        );
+                        let p_winding_observed = observe_polynomial_wide(
+                            &p_winding_tray,
+                            &p_winding_ciphertext,
+                            &high_keys,
+                            &expected_pj_mpj,
+                        );
+                        assert!(words(p_winding_observed) <= words(p_winding_error_bound));
+                        eprintln!(
+                            "same-history composite offset producer: direct Delta+B sibling error={} bits, pJ difference error={} bits, sum of measured input errors={} bits",
+                            bits_u512(direct_offset_error),
+                            bits_u512(p_winding_observed),
+                            bits_u512(p_winding_error_bound),
+                        );
+                        let direct_lifted_p_winding = exact_centered_quotient(
+                            &p_winding_tray,
+                            &p_winding_ciphertext,
+                            p_winding_scale,
+                        );
+                        // Lift the centered signed representative, not the
+                        // nonnegative residue in [0, M_pJ). For negative pJ,
+                        // those differ by exactly M_pJ.
+                        let expected_pj_high: Vec<_> = windings
+                            .iter()
+                            .map(|&winding| {
+                                (i128::from(PHASE_P) * winding).rem_euclid(scale_t as i128) as u64
+                            })
+                            .collect();
+                        let lifted_pj_plain =
+                            decrypt_coefficients(&high, &direct_lifted_p_winding, &high_keys);
+                        let mut p_j_lift_mismatches = 0usize;
+                        let mut p_j_mod_p_mismatches = 0usize;
+                        let mut max_p_j_lift_offset = 0u64;
+                        let mut max_lift_carry = 0u64;
+                        let mut lift_carries = Vec::with_capacity(high.n);
+                        for (&actual, &expected) in lifted_pj_plain.iter().zip(&expected_pj_high) {
+                            let difference =
+                                (actual as i128 - expected as i128).rem_euclid(scale_t as i128);
+                            let centered = if difference > scale_t as i128 / 2 {
+                                difference - scale_t as i128
+                            } else {
+                                difference
+                            };
+                            max_p_j_lift_offset =
+                                max_p_j_lift_offset.max(centered.unsigned_abs() as u64);
+                            assert_eq!(
+                                centered % p_winding_tray_modulus as i128,
+                                0,
+                                "the incorrect high lift must differ by a whole M_pJ winding"
                             );
-                            let composite_tray_phase =
-                                add(&common_p, &affine, &composite_tray_carry);
-                            let composite_tray_phase_error = observe_polynomial_wide(
+                            let lift_carry = centered / p_winding_tray_modulus as i128;
+                            max_lift_carry = max_lift_carry.max(lift_carry.unsigned_abs() as u64);
+                            lift_carries.push(lift_carry);
+                            p_j_lift_mismatches += usize::from(centered != 0);
+                            p_j_mod_p_mismatches +=
+                                usize::from(actual % PHASE_P != expected % PHASE_P);
+                        }
+                        eprintln!(
+                            "composite pJ sister tray: M_pJ={} (=A*(p+1)), radius={}, observed p*|J|={}, full derived pJ bound={} fits={}, T/M_pJ={}, tray plaintext exact; raw K-Elimination adds a hidden M_pJ carry in {}/{} slots (max |carry|={}), max lift offset={}, mod-p mismatches={}",
+                            p_winding_tray_modulus,
+                            (p_winding_tray_modulus - 1) / 2,
+                            observed_p_winding_bound,
+                            certified_p_winding_bound,
+                            full_bound_pj_fits,
+                            p_winding_scale,
+                            p_j_lift_mismatches,
+                            high.n,
+                            max_lift_carry,
+                            max_p_j_lift_offset,
+                            p_j_mod_p_mismatches,
+                        );
+                        assert!(p_j_lift_mismatches > 0);
+                        assert!(max_lift_carry <= (high.n / 2 + 1) as u64);
+                        // Since pJ vanishes modulo p and M_pJ=A*(p+1),
+                        // the same quotient ciphertext exposes A*K in its p
+                        // view. This recovers the hidden K-Elimination winding
+                        // as an encrypted bounded residue, without decrypting it.
+                        let direct_lifted_p_winding_p_view = signed_scale(
+                            &common_p,
+                            &direct_lifted_p_winding,
+                            (scale_t / PHASE_P) as i64,
+                        );
+                        let lift_carry_view_p = decrypt_coefficients(
+                            &common_p,
+                            &direct_lifted_p_winding_p_view,
+                            &high_keys,
+                        );
+                        let expected_carry_view_p: Vec<_> = lift_carries
+                            .iter()
+                            .map(|&carry| {
+                                (i128::from(odd_tray_modulus) * carry).rem_euclid(PHASE_P as i128)
+                                    as u64
+                            })
+                            .collect();
+                        let carry_view_mismatches = lift_carry_view_p
+                            .iter()
+                            .zip(&expected_carry_view_p)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        assert_eq!(carry_view_mismatches, 0);
+                        let inverse_factor = inverse(odd_tray_modulus % PHASE_P, PHASE_P) as i64;
+                        let encrypted_lift_carry_p = signed_scale(
+                            &common_p,
+                            &direct_lifted_p_winding_p_view,
+                            inverse_factor,
+                        );
+                        let encrypted_lift_carry_plain =
+                            decrypt_coefficients(&common_p, &encrypted_lift_carry_p, &high_keys);
+                        let expected_lift_carry_plain: Vec<_> = lift_carries
+                            .iter()
+                            .map(|&carry| carry.rem_euclid(PHASE_P as i128) as u64)
+                            .collect();
+                        let encrypted_carry_mismatches = encrypted_lift_carry_plain
+                            .iter()
+                            .zip(&expected_lift_carry_plain)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        assert_eq!(
+                            encrypted_carry_mismatches, 0,
+                            "the p-locked sibling must encode the K-Elimination carry"
+                        );
+                        let carry_p_error = observe_polynomial_wide(
+                            &common_p,
+                            &encrypted_lift_carry_p,
+                            &high_keys,
+                            &expected_lift_carry_plain,
+                        );
+                        let high_q = U512::product_u64s(&high.config.primes);
+                        eprintln!(
+                            "same-history p carry view: A*K and A^-1 recovery mismatches={}/{}, centered |K|<= {}, A^-1 mod p={}, carry V bits={}, Q bits={}, Q/16 chart input cap={}",
+                            carry_view_mismatches + encrypted_carry_mismatches,
+                            high.n,
+                            max_lift_carry,
+                            inverse_factor,
+                            bits_u512(carry_p_error),
+                            bits_u512(high_q),
+                            words(carry_p_error.mul_u128(16)) < words(high_q),
+                        );
+                        // Test whether the remaining high-lift carry can simply
+                        // be tolerated in the p view. Its contribution is K/p
+                        // of a plaintext step, so the message may decode while
+                        // the phase budget still fails dependent products.
+                        let uncorrected_e = add(
+                            &high,
+                            &lifted_e,
+                            &signed_scale(&high, &direct_lifted_p_winding, -1),
+                        );
+                        let uncorrected_carry = add(
+                            &common_p,
+                            &high_delta,
+                            &signed_scale(&common_p, &uncorrected_e, -1),
+                        );
+                        let uncorrected_phase = add(&common_p, &affine, &uncorrected_carry);
+                        let uncorrected_plain =
+                            decrypt_coefficients(&common_p, &uncorrected_phase, &high_keys);
+                        let uncorrected_mismatches = uncorrected_plain
+                            .iter()
+                            .zip(&expected_message)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        let mut uncorrected_phase_bits = None;
+                        let mut uncorrected_square_mismatches = None;
+                        let mut uncorrected_cube_mismatches = None;
+                        if uncorrected_mismatches == 0 {
+                            uncorrected_phase_bits = Some(bits_u512(observe_polynomial_wide(
                                 &common_p,
-                                &composite_tray_phase,
+                                &uncorrected_phase,
                                 &high_keys,
                                 &expected_message,
-                            );
-                            let exact = common_p.try_exact_evaluator().unwrap();
-                            let relin = exact.generate_hybrid_gadget_key_with_rng(
-                                &high_keys.secret_key,
-                                &mut rng_for_view,
-                            );
-                            let composite_tray_square = exact
-                                .try_mul_exact(&composite_tray_phase, &composite_tray_phase, &relin)
-                                .unwrap();
-                            let composite_tray_square_plain =
-                                decrypt_coefficients(&common_p, &composite_tray_square, &high_keys);
+                            )));
                             let expected_square = square_plain(&expected_message, PHASE_P);
-                            let composite_tray_square_mismatches = composite_tray_square_plain
+                            let uncorrected_square = exact
+                                .try_mul_exact(&uncorrected_phase, &uncorrected_phase, &relin)
+                                .unwrap();
+                            let uncorrected_square_plain =
+                                decrypt_coefficients(&common_p, &uncorrected_square, &high_keys);
+                            let square_mismatches = uncorrected_square_plain
                                 .iter()
                                 .zip(&expected_square)
                                 .filter(|(actual, expected)| actual != expected)
                                 .count();
-                            let composite_tray_cube = exact
-                                .try_mul_exact(
-                                    &composite_tray_square,
-                                    &composite_tray_phase,
-                                    &relin,
-                                )
+                            uncorrected_square_mismatches = Some(square_mismatches);
+                            if square_mismatches == 0 {
+                                let expected_cube = negacyclic_plain_multiply(
+                                    &expected_square,
+                                    &expected_message,
+                                    PHASE_P,
+                                );
+                                let uncorrected_cube = exact
+                                    .try_mul_exact(&uncorrected_square, &uncorrected_phase, &relin)
+                                    .unwrap();
+                                let uncorrected_cube_plain =
+                                    decrypt_coefficients(&common_p, &uncorrected_cube, &high_keys);
+                                uncorrected_cube_mismatches = Some(
+                                    uncorrected_cube_plain
+                                        .iter()
+                                        .zip(&expected_cube)
+                                        .filter(|(actual, expected)| actual != expected)
+                                        .count(),
+                                );
+                            }
+                        }
+                        eprintln!(
+                            "uncorrected pJ lift follow-up: plaintext mismatches={uncorrected_mismatches}/{}, phase V bits={uncorrected_phase_bits:?}, square mismatches={uncorrected_square_mismatches:?}, cube mismatches={uncorrected_cube_mismatches:?}; high-lift carry still present",
+                            high.n,
+                        );
+                        // Probe the next K-Elimination layer: lifting Enc_p(K)
+                        // to T divides the component coefficients by T/p. The
+                        // p residue survives, but the component quotient can
+                        // add a second hidden p-multiple winding. Measure that
+                        // winding before trying to use this as the M_pJ*K
+                        // correction; the Safe-Basis root must remove it.
+                        let carry_to_high_divisor = scale_t / PHASE_P;
+                        assert_eq!(PHASE_P * carry_to_high_divisor, scale_t);
+                        let lifted_lift_carry_high = exact_centered_quotient(
+                            &common_p,
+                            &encrypted_lift_carry_p,
+                            carry_to_high_divisor,
+                        );
+                        let expected_lift_carry_high: Vec<_> = lift_carries
+                            .iter()
+                            .map(|&carry| carry.rem_euclid(scale_t as i128) as u64)
+                            .collect();
+                        let lifted_lift_carry_plain =
+                            decrypt_coefficients(&high, &lifted_lift_carry_high, &high_keys);
+                        let mut max_quotient_winding = 0u64;
+                        let mut quotient_windings = Vec::with_capacity(high.n);
+                        for (&actual, &expected) in lifted_lift_carry_plain
+                            .iter()
+                            .zip(&expected_lift_carry_high)
+                        {
+                            let difference =
+                                (actual as i128 - expected as i128).rem_euclid(scale_t as i128);
+                            let centered = if difference > scale_t as i128 / 2 {
+                                difference - scale_t as i128
+                            } else {
+                                difference
+                            };
+                            assert_eq!(centered % PHASE_P as i128, 0);
+                            let winding = centered / PHASE_P as i128;
+                            max_quotient_winding =
+                                max_quotient_winding.max(winding.unsigned_abs() as u64);
+                            quotient_windings.push(winding);
+                        }
+                        assert!(max_quotient_winding <= (high.n / 2 + 1) as u64);
+                        assert!(lifted_lift_carry_plain
+                            .iter()
+                            .zip(&expected_lift_carry_plain)
+                            .all(|(actual, expected)| actual % PHASE_P == *expected));
+                        eprintln!(
+                            "second K-Elimination winding: divisor=T/p={}, Enc_p(K)->Enc_T(K+p*J_q) preserves all {} p residues; max |J_q|={} within degree bound {}; this new p-multiple carry still needs live Safe-Basis correction",
+                            carry_to_high_divisor,
+                            high.n,
+                            max_quotient_winding,
+                            high.n / 2 + 1,
+                        );
+                        if n <= 512 {
+                            let first_lane = ordinary(&common_p, &high_keys.secret_key.s)
+                                .into_iter()
+                                .next()
                                 .unwrap();
-                            let composite_tray_cube_plain =
-                                decrypt_coefficients(&common_p, &composite_tray_cube, &high_keys);
-                            let expected_cube = negacyclic_plain_multiply(
-                                &expected_square,
-                                &expected_message,
-                                PHASE_P,
+                            let prime = common_p.config.primes[0];
+                            let high_secret: Vec<i8> = first_lane
+                                .into_iter()
+                                .map(|digit| match digit {
+                                    0 => 0,
+                                    1 => 1,
+                                    value if value == prime - 1 => -1,
+                                    _ => panic!("unexpected high-key secret coefficient"),
+                                })
+                                .collect();
+                            let q_wrap = exact_source_q_wrap(
+                                &common_p,
+                                &encrypted_lift_carry_p,
+                                &high_secret,
                             );
-                            let composite_tray_cube_mismatches = composite_tray_cube_plain
+                            let q_wrap_mismatches = q_wrap
                                 .iter()
-                                .zip(&expected_cube)
+                                .zip(&quotient_windings)
                                 .filter(|(actual, expected)| actual != expected)
                                 .count();
                             eprintln!(
-                                "composite pJ same-history products: carry error={} bits, corrected phase error={} bits, square mismatches={}/{}, cube mismatches={}/{}",
-                                bits_u512(composite_tray_carry_error),
-                                bits_u512(composite_tray_phase_error),
-                                composite_tray_square_mismatches,
-                                composite_tray_square_plain.len(),
-                                composite_tray_cube_mismatches,
-                                composite_tray_cube_plain.len(),
+                                "second-winding Q-wrap oracle: exact centered Q source wrap differs from J_q in {q_wrap_mismatches}/{} coefficients; high-key support={} of {}",
+                                high.n,
+                                high_secret.iter().filter(|&&digit| digit != 0).count(),
+                                high.n,
+                            );
+                            assert_eq!(q_wrap_mismatches, 0);
+
+                            let clock_n = 1usize << 18;
+                            let chart_t = PHASE_P * (2 * clock_n as u64 + 1);
+                            let mut chart_config = high.config.clone();
+                            chart_config.n = 2 * high.n;
+                            chart_config.t = chart_t;
+                            chart_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
+                            chart_config.name = "UNADMITTED Q189 second-winding chart";
+                            let chart_context = RNSFHEContext::try_new(&chart_config).unwrap();
+                            let mut embedded_secret = vec![0i8; chart_context.n];
+                            for (j, &digit) in high_secret.iter().enumerate() {
+                                embedded_secret[2 * j] = digit;
+                            }
+                            let chart_keys =
+                                sparse_keys(&chart_context, &embedded_secret, &mut rng_for_view);
+                            let encrypted_high_secret = encrypt_polynomial(
+                                &chart_context,
+                                &chart_keys,
+                                &embedded(
+                                    &high_secret
+                                        .iter()
+                                        .map(|&digit| {
+                                            (digit as i64).rem_euclid(chart_t as i64) as u64
+                                        })
+                                        .collect::<Vec<_>>(),
+                                ),
+                                &mut rng_for_view,
+                            );
+                            let chart_q = U512::product_u64s(&chart_context.config.primes);
+                            let chart_precharge_v = chart_t as u128
+                                * (2 * chart_context.n + 1) as u128
+                                * chart_context.config.eta as u128
+                                + chart_q.mod_u64(chart_t) as u128 * (chart_t - 1) as u128;
+                            let producer = BatchedPhase {
+                                source: &common_p,
+                                outer: &chart_context,
+                                clock_n,
+                                encrypted_source: encrypted_high_secret,
+                                precharge_v: chart_precharge_v,
+                                source_norm: high.n,
+                                coordinate: 99,
+                                phase_cap: 0, // The centered wide producer supplies its cap explicitly.
+                            };
+                            let carry_error_cap = high_q.div_u64(16);
+                            assert!(words(carry_p_error) <= words(carry_error_cap));
+                            let centered_phase_bound = high_q
+                                .div_u64(PHASE_P)
+                                .mul_u128((high.n / 2 + 1) as u128)
+                                .add(carry_error_cap);
+                            let chart_cap = high_q.div_u64(8);
+                            assert!(words(centered_phase_bound) < words(chart_cap));
+                            let chart = producer.apply_centered_wide(
+                                &encrypted_lift_carry_p,
+                                centered_phase_bound,
+                                chart_cap,
+                            );
+                            let public0 = preprocess_centered_for_clock(
+                                &common_p,
+                                &encrypted_lift_carry_p.c0,
+                                99,
+                                clock_n,
+                            );
+                            let public1 = preprocess_centered_for_clock(
+                                &common_p,
+                                &encrypted_lift_carry_p.c1,
+                                99,
+                                clock_n,
+                            );
+                            let coarse0 = preprocess_for_clock(
+                                &common_p,
+                                &encrypted_lift_carry_p.c0,
+                                99,
+                                clock_n,
+                            );
+                            let coarse1 = preprocess_for_clock(
+                                &common_p,
+                                &encrypted_lift_carry_p.c1,
+                                99,
+                                clock_n,
+                            );
+                            let mut expected_chart = vec![0; chart_context.n];
+                            let mut expected_winding = vec![0; chart_context.n];
+                            let mut clear_chart_mismatches = 0usize;
+                            let mut coarse_chart_mismatches = 0usize;
+                            let mut max_chart_residual = 0u128;
+                            for j in 0..high.n {
+                                let mut z = public0.clock[j] as i128;
+                                let mut coarse_z = coarse0.clock[j] as i128;
+                                for (i, &digit) in high_secret.iter().enumerate() {
+                                    let index = (j + high.n - i) % high.n;
+                                    let sign = if i > j { -1i128 } else { 1i128 };
+                                    z += sign * digit as i128 * public1.clock[index] as i128;
+                                    coarse_z += sign * digit as i128 * coarse1.clock[index] as i128;
+                                }
+                                let winding =
+                                    (99 * z + clock_n as i128).div_euclid((2 * clock_n) as i128);
+                                let coarse_winding = (99 * coarse_z + clock_n as i128)
+                                    .div_euclid((2 * clock_n) as i128);
+                                clear_chart_mismatches += usize::from(winding != q_wrap[j]);
+                                coarse_chart_mismatches += usize::from(coarse_winding != q_wrap[j]);
+                                max_chart_residual = max_chart_residual.max(
+                                    (99 * z - (2 * clock_n as i128 + 1) * q_wrap[j]).unsigned_abs(),
+                                );
+                                expected_chart[2 * j] = z.rem_euclid(chart_t as i128) as u64;
+                                expected_winding[2 * j] =
+                                    q_wrap[j].rem_euclid(PHASE_P as i128) as u64;
+                            }
+                            assert_eq!(clear_chart_mismatches, 0);
+                            assert!(coarse_chart_mismatches > 0);
+                            let chart_observed = observe_polynomial(
+                                &chart_context,
+                                &chart.ciphertext,
+                                &chart_keys,
+                                &expected_chart,
+                            );
+                            assert!(chart_observed <= chart.bound);
+                            let scaled = signed_scale(&chart_context, &chart.ciphertext, 99);
+                            let scaled_bound = chart.bound * 99;
+                            let scaled_admitted =
+                                words(U512::from_u128(scaled_bound).mul_u128(2)) < words(chart_q);
+                            let chart_reader_config = nine65::params::FHEConfig {
+                                t: PHASE_P,
+                                ..chart_context.config.clone()
+                            };
+                            let chart_reader =
+                                RNSFHEContext::try_new(&chart_reader_config).unwrap();
+                            let decoded_winding =
+                                decrypt_coefficients(&chart_reader, &scaled, &chart_keys);
+                            let winding_mismatches = decoded_winding
+                                .iter()
+                                .zip(&expected_winding)
+                                .filter(|(actual, expected)| actual != expected)
+                                .count();
+                            eprintln!(
+                                "live Q189 tropical second-winding chart: centered 99-clock/J_q mismatches={clear_chart_mismatches}/{}, coarse-control mismatches={coarse_chart_mismatches}/{}, encrypted p-view mismatches={winding_mismatches}/{}, outer Q={} bits, chart V observed/bound={}/{}, scaled bound admitted={scaled_admitted}, max |99Z-AJ_q|={max_chart_residual}, source H public bound={}",
+                                high.n,
+                                high.n,
+                                chart_context.n,
+                                bits_u512(chart_q),
+                                bits(chart_observed),
+                                bits(chart.bound),
+                                high.n,
+                            );
+                            if scaled_admitted {
+                                assert_eq!(winding_mismatches, 0);
+                            }
+                            let mut returned_config = common_p.config.clone();
+                            returned_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
+                            returned_config.name = "UNADMITTED same-key Q126 winding return";
+                            let returned_context =
+                                RNSFHEContext::try_new(&returned_config).unwrap();
+                            let returned_keys =
+                                sparse_keys(&returned_context, &high_secret, &mut rng_for_view);
+                            let even = |poly: &RNSPolynomial| RNSPolynomial {
+                                n: returned_context.n,
+                                limbs: poly
+                                    .limbs
+                                    .iter()
+                                    .map(|lane| lane.iter().step_by(2).copied().collect())
+                                    .collect(),
+                            };
+                            let returned = RNSCiphertext {
+                                c0: even(&scaled.c0),
+                                c1: even(&scaled.c1),
+                                num_primes: SECOND_WINDING_OUTER_PRIMES.len(),
+                            };
+                            let expected_returned: Vec<_> = q_wrap
+                                .iter()
+                                .map(|&winding| winding.rem_euclid(PHASE_P as i128) as u64)
+                                .collect();
+                            let returned_mismatches =
+                                decrypt_coefficients(&returned_context, &returned, &returned_keys)
+                                    .iter()
+                                    .zip(&expected_returned)
+                                    .filter(|(actual, expected)| actual != expected)
+                                    .count();
+                            eprintln!(
+                                "same-key even ring return of J_q: mismatches={returned_mismatches}/{}, original high secret retained on two common Q lanes; high-T encoding still open",
+                                high.n,
+                            );
+                            assert_eq!(returned_mismatches, 0);
+                            assert!(expected_returned.iter().any(|&winding| winding != 0));
+                            let returned_observed = observe_polynomial(
+                                &returned_context,
+                                &returned,
+                                &returned_keys,
+                                &expected_returned,
+                            );
+                            let exact_returned = returned_context.try_exact_evaluator().unwrap();
+                            let returned_relin = exact_returned
+                                .generate_hybrid_gadget_key_with_rng(
+                                    &returned_keys.secret_key,
+                                    &mut rng_for_view,
+                                );
+                            let returned_square_result =
+                                exact_returned.try_mul_exact(&returned, &returned, &returned_relin);
+                            let returned_square_status = match returned_square_result {
+                                Ok(returned_square) => {
+                                    let expected_returned_square =
+                                        square_plain(&expected_returned, PHASE_P);
+                                    let returned_square_plain = decrypt_coefficients(
+                                        &returned_context,
+                                        &returned_square,
+                                        &returned_keys,
+                                    );
+                                    let mismatches = returned_square_plain
+                                        .iter()
+                                        .zip(&expected_returned_square)
+                                        .filter(|(actual, expected)| actual != expected)
+                                        .count();
+                                    format!("{mismatches}/{} mismatches", high.n)
+                                }
+                                Err(error) => format!("refused: {error}"),
+                            };
+                            eprintln!(
+                                "same-key winding follow-up: returned p-view V={} bits against Q={} bits; first dependent square {returned_square_status}",
+                                bits(returned_observed),
+                                bits(U512::product_u64s(&returned_context.config.primes).d0),
                             );
                         }
-                    }
-
-                    // Keep the failing raw M1->M_pJ K-Elimination conversion
-                    // as a negative control. The direct same-history producer
-                    // above supplies the offset without this conversion.
-                    let same_history_offset_mpj = exact_centered_quotient(
-                        &offset_modulus_tray,
-                        &offset_p_view,
-                        odd_tray_modulus,
-                    );
-                    let same_history_offset_plain =
-                        decrypt_coefficients(&p_winding_tray, &same_history_offset_mpj, &high_keys);
-                    let offset_mpj_mismatches = same_history_offset_plain
-                        .iter()
-                        .zip(&expected_offset_mpj_residues)
-                        .filter(|(actual, expected)| actual != expected)
-                        .count();
-                    let p_winding_same_history = add(
-                        &p_winding_tray,
-                        &p_winding_view,
-                        &signed_scale(&p_winding_tray, &same_history_offset_mpj, -1),
-                    );
-                    let p_winding_same_history_plain =
-                        decrypt_coefficients(&p_winding_tray, &p_winding_same_history, &high_keys);
-                    let same_history_pj_mismatches = p_winding_same_history_plain
-                        .iter()
-                        .zip(&expected_pj_mpj)
-                        .filter(|(actual, expected)| actual != expected)
-                        .count();
-                    let lifted_same_history_pj = exact_centered_quotient(
-                        &p_winding_tray,
-                        &p_winding_same_history,
-                        p_winding_scale,
-                    );
-                    let corrected_e_same_history = add(
-                        &high,
-                        &lifted_e,
-                        &signed_scale(&high, &lifted_same_history_pj, -1),
-                    );
-                    let corrected_e_same_history_plain =
-                        decrypt_coefficients(&high, &corrected_e_same_history, &high_keys);
-                    let same_history_corrected_mismatches = corrected_e_same_history_plain
-                        .iter()
-                        .zip(&expected_e_t)
-                        .filter(|(actual, expected)| actual != expected)
-                        .count();
-                    eprintln!(
-                        "same-history e+B offset via M1->M_pJ K-Elimination: offset mismatches={}/{}, pJ-tray mismatches={}/{}, final corrected-e mismatches={}/{}",
-                        offset_mpj_mismatches,
-                        high.n,
-                        same_history_pj_mismatches,
-                        high.n,
-                        same_history_corrected_mismatches,
-                        high.n,
-                    );
-                    if same_history_corrected_mismatches == 0 {
-                        let same_history_corrected_error = observe_polynomial_wide(
+                        if n == 8192 {
+                            let first_lane = ordinary(&common_p, &high_keys.secret_key.s)
+                                .into_iter()
+                                .next()
+                                .unwrap();
+                            let prime = common_p.config.primes[0];
+                            let high_secret: Vec<i8> = first_lane
+                                .into_iter()
+                                .map(|digit| match digit {
+                                    0 => 0,
+                                    1 => 1,
+                                    value if value == prime - 1 => -1,
+                                    _ => panic!("unexpected native high-key secret coefficient"),
+                                })
+                                .collect();
+                            let clock_n = 1usize << 24;
+                            let chart_t = PHASE_P * (2 * clock_n as u64 + 1);
+                            let screened = SecureConfig::custom_screened(
+                                2 * high.n,
+                                SECOND_WINDING_OUTER_PRIMES.to_vec(),
+                                chart_t,
+                                high.config.eta,
+                                128,
+                            )
+                            .expect(
+                                "native Q189 second-winding chart must clear the security screen",
+                            );
+                            assert!(screened.is_production_safe_under_all_models());
+                            let effective_secret_screen = SecureConfig::custom_screened(
+                                high.n,
+                                SECOND_WINDING_OUTER_PRIMES.to_vec(),
+                                chart_t,
+                                high.config.eta,
+                                128,
+                            )
+                            .expect(
+                                "embedded high key must also clear the source-dimension screen",
+                            );
+                            assert!(effective_secret_screen.is_production_safe_under_all_models());
+                            let mut chart_config = screened.into_config();
+                            chart_config.name = "UNADMITTED native Q189 second-winding chart";
+                            let chart_context = RNSFHEContext::try_new(&chart_config).unwrap();
+                            let mut embedded_secret = vec![0i8; chart_context.n];
+                            for (j, &digit) in high_secret.iter().enumerate() {
+                                embedded_secret[2 * j] = digit;
+                            }
+                            let chart_keys =
+                                sparse_keys(&chart_context, &embedded_secret, &mut rng_for_view);
+                            let encrypted_high_secret = encrypt_polynomial(
+                                &chart_context,
+                                &chart_keys,
+                                &embedded(
+                                    &high_secret
+                                        .iter()
+                                        .map(|&digit| {
+                                            (digit as i64).rem_euclid(chart_t as i64) as u64
+                                        })
+                                        .collect::<Vec<_>>(),
+                                ),
+                                &mut rng_for_view,
+                            );
+                            let chart_q = U512::product_u64s(&chart_context.config.primes);
+                            let chart_precharge_v = chart_t as u128
+                                * (2 * chart_context.n + 1) as u128
+                                * chart_context.config.eta as u128
+                                + chart_q.mod_u64(chart_t) as u128 * (chart_t - 1) as u128;
+                            let producer = BatchedPhase {
+                                source: &common_p,
+                                outer: &chart_context,
+                                clock_n,
+                                encrypted_source: encrypted_high_secret,
+                                precharge_v: chart_precharge_v,
+                                source_norm: high.n,
+                                coordinate: 99,
+                                phase_cap: 0,
+                            };
+                            let carry_error_cap = high_q.div_u64(16);
+                            assert!(words(carry_p_error) <= words(carry_error_cap));
+                            let centered_phase_bound = high_q
+                                .div_u64(PHASE_P)
+                                .mul_u128((high.n / 2 + 1) as u128)
+                                .add(carry_error_cap);
+                            let chart_cap = high_q.div_u64(5);
+                            assert!(words(centered_phase_bound) < words(chart_cap));
+                            let chart = producer.apply_centered_wide(
+                                &encrypted_lift_carry_p,
+                                centered_phase_bound,
+                                chart_cap,
+                            );
+                            let scaled = signed_scale(&chart_context, &chart.ciphertext, 99);
+                            let scaled_bound = chart.bound * 99;
+                            let scaled_admitted =
+                                words(U512::from_u128(scaled_bound).mul_u128(2)) < words(chart_q);
+                            let reader_config = nine65::params::FHEConfig {
+                                t: PHASE_P,
+                                ..chart_context.config.clone()
+                            };
+                            let reader = RNSFHEContext::try_new(&reader_config).unwrap();
+                            let mut expected_winding = vec![0; chart_context.n];
+                            for (j, &winding) in quotient_windings.iter().enumerate() {
+                                expected_winding[2 * j] =
+                                    winding.rem_euclid(PHASE_P as i128) as u64;
+                            }
+                            let decoded_winding =
+                                decrypt_coefficients(&reader, &scaled, &chart_keys);
+                            let winding_mismatches = decoded_winding
+                                .iter()
+                                .zip(&expected_winding)
+                                .filter(|(actual, expected)| actual != expected)
+                                .count();
+                            let observed_bits = if winding_mismatches == 0 {
+                                Some(bits(observe_polynomial(
+                                    &reader,
+                                    &scaled,
+                                    &chart_keys,
+                                    &expected_winding,
+                                )))
+                            } else {
+                                None
+                            };
+                            eprintln!(
+                                "native Q189 tropical second-winding chart: sourceN{}, outerN{}, clock={clock_n}, screened 128-bit tuple, ciphertext p-view/J_q mismatches={winding_mismatches}/{}, outer Q={} bits, p-view V observed bits={observed_bits:?}, scaled bound bits={}, admitted={scaled_admitted}; work-key and common-T return remain open",
+                                high.n,
+                                chart_context.n,
+                                chart_context.n,
+                                bits_u512(chart_q),
+                                bits(scaled_bound),
+                            );
+                            assert!(scaled_admitted);
+                            assert_eq!(winding_mismatches, 0);
+                            let mut returned_config = common_p.config.clone();
+                            returned_config.primes = SECOND_WINDING_OUTER_PRIMES.to_vec();
+                            returned_config.name = "UNADMITTED native same-key winding return";
+                            let returned_context =
+                                RNSFHEContext::try_new(&returned_config).unwrap();
+                            let returned_keys =
+                                sparse_keys(&returned_context, &high_secret, &mut rng_for_view);
+                            let even = |poly: &RNSPolynomial| RNSPolynomial {
+                                n: returned_context.n,
+                                limbs: poly
+                                    .limbs
+                                    .iter()
+                                    .map(|lane| lane.iter().step_by(2).copied().collect())
+                                    .collect(),
+                            };
+                            let returned = RNSCiphertext {
+                                c0: even(&scaled.c0),
+                                c1: even(&scaled.c1),
+                                num_primes: SECOND_WINDING_OUTER_PRIMES.len(),
+                            };
+                            let expected_returned: Vec<_> = quotient_windings
+                                .iter()
+                                .map(|&winding| winding.rem_euclid(PHASE_P as i128) as u64)
+                                .collect();
+                            let returned_mismatches =
+                                decrypt_coefficients(&returned_context, &returned, &returned_keys)
+                                    .iter()
+                                    .zip(&expected_returned)
+                                    .filter(|(actual, expected)| actual != expected)
+                                    .count();
+                            let returned_observed_bits = if returned_mismatches == 0 {
+                                Some(bits(observe_polynomial(
+                                    &returned_context,
+                                    &returned,
+                                    &returned_keys,
+                                    &expected_returned,
+                                )))
+                            } else {
+                                None
+                            };
+                            eprintln!(
+                                "native same-key even ring return of J_q: mismatches={returned_mismatches}/{}, p-view V bits={returned_observed_bits:?}, two common Q lanes; high-T encoding still open",
+                                high.n,
+                            );
+                            assert_eq!(returned_mismatches, 0);
+                        }
+                        // Oracle control preserves the prior successful pJ
+                        // consumer result and isolates the missing encrypted
+                        // correction: replacing Enc_MpJ(e+B) by a fresh public
+                        // encoding removes the residual M_pJ winding.
+                        let oracle_p_winding_ciphertext = add(
+                            &p_winding_tray,
+                            &p_winding_view,
+                            &signed_scale(
+                                &p_winding_tray,
+                                &public_plain(&p_winding_tray, &expected_offset_mpj),
+                                -1,
+                            ),
+                        );
+                        let oracle_lifted_p_winding = exact_centered_quotient(
+                            &p_winding_tray,
+                            &oracle_p_winding_ciphertext,
+                            p_winding_scale,
+                        );
+                        let oracle_lifted_plain =
+                            decrypt_coefficients(&high, &oracle_lifted_p_winding, &high_keys);
+                        assert_eq!(oracle_lifted_plain, expected_pj_high);
+                        let carry_correction_plain: Vec<i64> = lift_carries
+                            .iter()
+                            .map(|&carry| (p_winding_tray_modulus as i128 * carry) as i64)
+                            .collect();
+                        let carry_corrected_pj = add(
                             &high,
-                            &corrected_e_same_history,
+                            &direct_lifted_p_winding,
+                            &signed_scale(&high, &public_plain(&high, &carry_correction_plain), -1),
+                        );
+                        let carry_corrected_pj_plain =
+                            decrypt_coefficients(&high, &carry_corrected_pj, &high_keys);
+                        assert_eq!(carry_corrected_pj_plain, oracle_lifted_plain);
+                        let corrected_e_from_tray = add(
+                            &high,
+                            &lifted_e,
+                            &signed_scale(&high, &carry_corrected_pj, -1),
+                        );
+                        let corrected_tray_plain =
+                            decrypt_coefficients(&high, &corrected_e_from_tray, &high_keys);
+                        let corrected_tray_mismatches = corrected_tray_plain
+                            .iter()
+                            .zip(&expected_e_t)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        eprintln!(
+                            "bounded K-oracle correction gives corrected-e mismatches={}/{}; its high lift matches the clear-offset consumer control",
+                            corrected_tray_mismatches,
+                            high.n,
+                        );
+                        if corrected_tray_mismatches == 0 {
+                            let corrected_tray_error = observe_polynomial_wide(
+                                &high,
+                                &corrected_e_from_tray,
+                                &high_keys,
+                                &expected_e_t,
+                            );
+                            eprintln!(
+                                "composite pJ tray corrected-residual error={} bits",
+                                bits_u512(corrected_tray_error),
+                            );
+                            if check_dependent_product {
+                                let composite_tray_carry = add(
+                                    &high,
+                                    &high_delta,
+                                    &signed_scale(&high, &corrected_e_from_tray, -1),
+                                );
+                                let composite_tray_carry_error = observe_polynomial_wide(
+                                    &common_p,
+                                    &composite_tray_carry,
+                                    &high_keys,
+                                    &expected_k,
+                                );
+                                let composite_tray_phase =
+                                    add(&common_p, &affine, &composite_tray_carry);
+                                let composite_tray_phase_error = observe_polynomial_wide(
+                                    &common_p,
+                                    &composite_tray_phase,
+                                    &high_keys,
+                                    &expected_message,
+                                );
+                                let exact = common_p.try_exact_evaluator().unwrap();
+                                let relin = exact.generate_hybrid_gadget_key_with_rng(
+                                    &high_keys.secret_key,
+                                    &mut rng_for_view,
+                                );
+                                let composite_tray_square = exact
+                                    .try_mul_exact(
+                                        &composite_tray_phase,
+                                        &composite_tray_phase,
+                                        &relin,
+                                    )
+                                    .unwrap();
+                                let composite_tray_square_plain = decrypt_coefficients(
+                                    &common_p,
+                                    &composite_tray_square,
+                                    &high_keys,
+                                );
+                                let expected_square = square_plain(&expected_message, PHASE_P);
+                                let composite_tray_square_mismatches = composite_tray_square_plain
+                                    .iter()
+                                    .zip(&expected_square)
+                                    .filter(|(actual, expected)| actual != expected)
+                                    .count();
+                                let composite_tray_cube = exact
+                                    .try_mul_exact(
+                                        &composite_tray_square,
+                                        &composite_tray_phase,
+                                        &relin,
+                                    )
+                                    .unwrap();
+                                let composite_tray_cube_plain = decrypt_coefficients(
+                                    &common_p,
+                                    &composite_tray_cube,
+                                    &high_keys,
+                                );
+                                let expected_cube = negacyclic_plain_multiply(
+                                    &expected_square,
+                                    &expected_message,
+                                    PHASE_P,
+                                );
+                                let composite_tray_cube_mismatches = composite_tray_cube_plain
+                                    .iter()
+                                    .zip(&expected_cube)
+                                    .filter(|(actual, expected)| actual != expected)
+                                    .count();
+                                eprintln!(
+                                    "composite pJ same-history products: carry error={} bits, corrected phase error={} bits, square mismatches={}/{}, cube mismatches={}/{}",
+                                    bits_u512(composite_tray_carry_error),
+                                    bits_u512(composite_tray_phase_error),
+                                    composite_tray_square_mismatches,
+                                    composite_tray_square_plain.len(),
+                                    composite_tray_cube_mismatches,
+                                    composite_tray_cube_plain.len(),
+                                );
+                            }
+                        }
+
+                        // Keep the failing raw M1->M_pJ K-Elimination conversion
+                        // as a negative control. The direct same-history producer
+                        // above supplies the offset without this conversion.
+                        let same_history_offset_mpj = exact_centered_quotient(
+                            &offset_modulus_tray,
+                            &offset_p_view,
+                            odd_tray_modulus,
+                        );
+                        let same_history_offset_plain = decrypt_coefficients(
+                            &p_winding_tray,
+                            &same_history_offset_mpj,
+                            &high_keys,
+                        );
+                        let offset_mpj_mismatches = same_history_offset_plain
+                            .iter()
+                            .zip(&expected_offset_mpj_residues)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        let p_winding_same_history = add(
+                            &p_winding_tray,
+                            &p_winding_view,
+                            &signed_scale(&p_winding_tray, &same_history_offset_mpj, -1),
+                        );
+                        let p_winding_same_history_plain = decrypt_coefficients(
+                            &p_winding_tray,
+                            &p_winding_same_history,
+                            &high_keys,
+                        );
+                        let same_history_pj_mismatches = p_winding_same_history_plain
+                            .iter()
+                            .zip(&expected_pj_mpj)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        let lifted_same_history_pj = exact_centered_quotient(
+                            &p_winding_tray,
+                            &p_winding_same_history,
+                            p_winding_scale,
+                        );
+                        let corrected_e_same_history = add(
+                            &high,
+                            &lifted_e,
+                            &signed_scale(&high, &lifted_same_history_pj, -1),
+                        );
+                        let corrected_e_same_history_plain =
+                            decrypt_coefficients(&high, &corrected_e_same_history, &high_keys);
+                        let same_history_corrected_mismatches = corrected_e_same_history_plain
+                            .iter()
+                            .zip(&expected_e_t)
+                            .filter(|(actual, expected)| actual != expected)
+                            .count();
+                        eprintln!(
+                            "same-history e+B offset via M1->M_pJ K-Elimination: offset mismatches={}/{}, pJ-tray mismatches={}/{}, final corrected-e mismatches={}/{}",
+                            offset_mpj_mismatches,
+                            high.n,
+                            same_history_pj_mismatches,
+                            high.n,
+                            same_history_corrected_mismatches,
+                            high.n,
+                        );
+                        if same_history_corrected_mismatches == 0 {
+                            let same_history_corrected_error = observe_polynomial_wide(
+                                &high,
+                                &corrected_e_same_history,
+                                &high_keys,
+                                &expected_e_t,
+                            );
+                            eprintln!(
+                                "same-history composite-tray corrected residual error={} bits",
+                                bits_u512(same_history_corrected_error),
+                            );
+                        }
+                    } else {
+                        eprintln!(
+                            "composite pJ sister tray skipped: M_pJ={} cannot uniquely represent observed p*|J|={} plus offset span={} or does not divide T",
+                            p_winding_tray_modulus,
+                            observed_p_winding_bound,
+                            offset_span,
+                        );
+                    }
+                    if encrypted_correction_mismatches == 0 {
+                        let encrypted_correction_error = observe_polynomial_wide(
+                            &high,
+                            &encrypted_corrected_e,
                             &high_keys,
                             &expected_e_t,
                         );
                         eprintln!(
-                            "same-history composite-tray corrected residual error={} bits",
-                            bits_u512(same_history_corrected_error),
+                            "ciphertext-only corrected residual error={} bits",
+                            bits_u512(encrypted_correction_error),
                         );
                     }
                 } else {
-                    eprintln!(
-                        "composite pJ sister tray skipped: M_pJ={} cannot uniquely represent observed p*|J|={} plus offset span={} or does not divide T",
-                        p_winding_tray_modulus,
-                        observed_p_winding_bound,
-                        offset_span,
+                    // The original L=4999*p fixture has no p+1 factor.
+                    // Retain its carry/residual/product and winding controls,
+                    // but explicitly refuse this later encoding conversion.
+                    assert_eq!(
+                        sister_scale,
+                        Err(SisterScaleRefusal::NonDivisiblePlaintextScale {
+                            high: scale_t,
+                            sister: winding_tray.t,
+                        })
                     );
-                }
-                if encrypted_correction_mismatches == 0 {
-                    let encrypted_correction_error = observe_polynomial_wide(
-                        &high,
-                        &encrypted_corrected_e,
-                        &high_keys,
-                        &expected_e_t,
-                    );
-                    eprintln!(
-                        "ciphertext-only corrected residual error={} bits",
-                        bits_u512(encrypted_correction_error),
-                    );
+                    assert_ne!(step % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY, 0);
+                    eprintln!("p+1 sister encoding refused: {sister_scale:?}");
                 }
 
                 // Clear J enters only this final correction control. The
@@ -3448,6 +3533,37 @@ fn scale_jacobian_sister_trays_recover_the_small_phase_residual() {
 #[ignore = "opt-in native scale-Jacobian sister-tray carry producer; p lift remains a client diagnostic"]
 fn scale_jacobian_sister_trays_recover_native_phase_residuals() {
     check_scale_jacobian_lift(8192, 96, 64);
+}
+
+#[test]
+fn p_locked_sister_scale_requires_exact_divisibility() {
+    let sister = PHASE_P * WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY;
+    assert_eq!(
+        P_LOCKED_JACOBIAN_STEP % WIDE_P_LOCKED_JACOBIAN_WINDING_TRAY,
+        60_539
+    );
+    assert_eq!(
+        exact_sister_scale(P_LOCKED_JACOBIAN_SCALE_T, sister),
+        Err(SisterScaleRefusal::NonDivisiblePlaintextScale {
+            high: P_LOCKED_JACOBIAN_SCALE_T,
+            sister,
+        })
+    );
+    for high in [WIDE_P_LOCKED_JACOBIAN_SCALE_T, FULL_BOUND_PJ_SCALE_T] {
+        let scale = exact_sister_scale(high, sister).unwrap();
+        assert_eq!(u128::from(scale) * u128::from(sister), u128::from(high));
+        assert!(exact_sister_scale(high - 1, sister).is_err());
+        assert!(exact_sister_scale(high + 1, sister).is_err());
+    }
+    assert_eq!(
+        exact_sister_scale(0, sister),
+        Err(SisterScaleRefusal::InvalidPlaintextModulus)
+    );
+    assert_eq!(
+        exact_sister_scale(sister, 0),
+        Err(SisterScaleRefusal::InvalidPlaintextModulus)
+    );
+    assert_eq!(exact_sister_scale(sister, sister), Ok(1));
 }
 
 #[test]

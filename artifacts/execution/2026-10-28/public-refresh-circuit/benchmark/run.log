@@ -1,0 +1,9 @@
+
+running 1 test
+test ops::rns_fhe::exact_mul::tests::prepared_hybrid_native_timing_and_exact_equality ... native hybrid raw key generated: 3606791082 ns
+native hybrid prepared: 1810311023 ns
+prepared hybrid N32768/Q650/base10: workers=4 key_bytes=456654848 prepare_ns=1810311023 raw_ns=5417950882 serial_ns=1077819524 prepared_ns=446471724
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1171 filtered out; finished in 16.20s
+

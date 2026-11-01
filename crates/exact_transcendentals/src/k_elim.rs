@@ -156,6 +156,13 @@ pub fn powmod(mut base: i128, mut exp: u64, m: i128) -> i128 {
     result
 }
 
+#[inline]
+fn valid_lane_shape(basis: &[i128], operands: &[&[i128]]) -> bool {
+    !basis.is_empty()
+        && basis.iter().all(|&modulus| modulus > 1)
+        && operands.iter().all(|operand| operand.len() == basis.len())
+}
+
 /// GCD for i128 (absolute values).
 pub fn gcd(a: i128, b: i128) -> i128 {
     let (mut a, mut b) = (a.unsigned_abs(), b.unsigned_abs());
@@ -455,8 +462,13 @@ pub fn k_elim_divide_named(
 ///
 /// Returns `a^{-1} mod p_i` on each lane. Requires `a` to be a unit on every
 /// lane (gcd(a, M) = 1). Pure per-lane inversion — no reconstruction, no
-/// cross-lane carry. Building block for [`div_lanewise`] and [`mul_via_div`].
+/// cross-lane carry. Returns `None` for an empty or mismatched vector, an
+/// invalid modulus, or a nonunit. Building block for [`div_lanewise`] and
+/// [`mul_via_div`].
 pub fn reciprocal_lanewise(residues: &[i128], basis: &[i128]) -> Option<Vec<i128>> {
+    if !valid_lane_shape(basis, &[residues]) {
+        return None;
+    }
     let mut out = Vec::with_capacity(basis.len());
     for (&r, &p) in residues.iter().zip(basis.iter()) {
         out.push(mod_inv(modd(r, p), p)?);
@@ -469,11 +481,15 @@ pub fn reciprocal_lanewise(residues: &[i128], basis: &[i128]) -> Option<Vec<i128
 /// Computes `x_i · y_i^{-1} mod p_i` on each lane. Requires `y` to be a unit on
 /// every lane. Exact when `y | x`; otherwise the modular quotient (a ring
 /// element). No reconstruction, no cross-lane carry — division is a native
-/// residue operation here, not a base-extension detour.
+/// residue operation here, not a base-extension detour. Returns `None` for an
+/// empty or mismatched vector, an invalid modulus, or a nonunit denominator.
 pub fn div_lanewise(x: &[i128], y: &[i128], basis: &[i128]) -> Option<Vec<i128>> {
+    if !valid_lane_shape(basis, &[x, y]) {
+        return None;
+    }
     let mut out = Vec::with_capacity(basis.len());
     for ((&xr, &yr), &p) in x.iter().zip(y.iter()).zip(basis.iter()) {
-        out.push(modd(xr * mod_inv(modd(yr, p), p)?, p));
+        out.push(mulmod(xr, mod_inv(modd(yr, p), p)?, p));
     }
     Some(out)
 }
@@ -486,8 +502,12 @@ pub fn div_lanewise(x: &[i128], y: &[i128], basis: &[i128]) -> Option<Vec<i128>>
 /// identity: where a residue system would normally avoid division, DIV³ turns
 /// it into the multiply primitive itself. Requires `a` and `b` to be units on
 /// every lane (gcd(a, M) = gcd(b, M) = 1); the ordinary lanewise product is the
-/// direct route when units are not guaranteed.
+/// direct route when units are not guaranteed. Returns `None` for malformed
+/// lane shapes or invalid moduli.
 pub fn mul_via_div(a: &[i128], b: &[i128], basis: &[i128]) -> Option<Vec<i128>> {
+    if !valid_lane_shape(basis, &[a, b]) {
+        return None;
+    }
     let one: Vec<i128> = basis.iter().map(|&p| modd(1, p)).collect();
     let inv_a = div_lanewise(&one, a, basis)?; // 1/a
     let inv_ab = div_lanewise(&inv_a, b, basis)?; // 1/(a·b)
@@ -948,6 +968,42 @@ mod tests {
             let want: Vec<i128> = basis.iter().map(|&p| (a * b) % p).collect();
             assert_eq!(got, want, "DIV³ mul mismatch for a={a} b={b}");
         }
+    }
+
+    #[test]
+    fn div3_rejects_empty_mismatched_and_invalid_lane_shapes() {
+        assert!(reciprocal_lanewise(&[], &[]).is_none());
+        assert!(reciprocal_lanewise(&[2], &[15, 17]).is_none());
+        assert!(reciprocal_lanewise(&[2], &[0]).is_none());
+        assert!(reciprocal_lanewise(&[2], &[1]).is_none());
+
+        assert!(div_lanewise(&[], &[], &[]).is_none());
+        assert!(div_lanewise(&[2], &[4, 7], &[15, 17]).is_none());
+        assert!(div_lanewise(&[2, 3], &[4], &[15, 17]).is_none());
+        assert!(div_lanewise(&[2], &[4], &[0]).is_none());
+        assert!(div_lanewise(&[2], &[4], &[1]).is_none());
+
+        assert!(mul_via_div(&[], &[], &[]).is_none());
+        assert!(mul_via_div(&[2], &[4, 7], &[15, 17]).is_none());
+        assert!(mul_via_div(&[2, 3], &[4], &[15, 17]).is_none());
+        assert!(mul_via_div(&[2], &[4], &[0]).is_none());
+        assert!(mul_via_div(&[2], &[4], &[1]).is_none());
+    }
+
+    #[test]
+    fn div3_handles_full_width_modular_products_without_overflow() {
+        let modulus = i128::MAX;
+        let a = modulus - 1;
+        let b = 2;
+
+        assert_eq!(
+            div_lanewise(&[a], &[b], &[modulus]),
+            Some(vec![mulmod(a, mod_inv(b, modulus).unwrap(), modulus)])
+        );
+        assert_eq!(
+            mul_via_div(&[a], &[b], &[modulus]),
+            Some(vec![mulmod(a, b, modulus)])
+        );
     }
 
     #[test]

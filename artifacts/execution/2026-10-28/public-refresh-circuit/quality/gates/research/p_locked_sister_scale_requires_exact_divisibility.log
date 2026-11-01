@@ -1,0 +1,11 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/coefficient_slot_gate.rs (target/debug/deps/coefficient_slot_gate-047e117fa8db94f0)
+
+running 1 test
+test phase_clock_compaction::public_bootstrap_pipeline::outer_ring_return::sparse_source_encapsulation::batched_lift_phase::p_locked_sister_scale_requires_exact_divisibility ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 60 filtered out; finished in 0.00s
+

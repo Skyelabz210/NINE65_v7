@@ -18,6 +18,13 @@ enum TrayRefusal {
     InvalidCompositeBudget,
     NoCompositeFits,
     InvalidLiftBound,
+    MissingSourcePhaseBinding,
+}
+
+// The component-remainder root below does not bind the source phase and its
+// encoding-scale residue or Q winding. It cannot authorize a lift correction.
+fn require_lifted_quotient_binding() -> Result<(), TrayRefusal> {
+    Err(TrayRefusal::MissingSourcePhaseBinding)
 }
 
 // A per-output error cap, NOT a pool of BFV headroom and not a new Q lane.
@@ -1247,7 +1254,7 @@ fn full_bound_root_unscales_encrypted_selector_mod_quotient_period() {
     );
 }
 
-fn run_second_k_elimination_quotient_winding(degree: usize) {
+fn run_second_k_elimination_quotient_winding(degree: usize, historical_unbound_probe: bool) {
     assert!(degree >= 2 && degree.is_power_of_two());
     // This research normalizer retains one candidate per ternary word.
     // Refuse an oversized probe before contexts, keys, or selector products.
@@ -1411,6 +1418,76 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
     };
     assert_eq!(centered_delta % P as i128, 0);
     let expected_quotient_winding = centered_delta / P as i128;
+    if !historical_unbound_probe {
+        // These are independent quantities: the raw centered component
+        // remainder carry and the quotient inferred from the decoded lift.
+        // The full-Q sampler produces an executable counterexample to their
+        // former identification. Verify the underlying modular identity on
+        // every Q lane before refusing the unsupported correction.
+        assert_ne!(expected_quotient_winding, expected_from_remainders);
+        let mut raw_sum = r0[0] as i128;
+        for key_coefficient in 0..degree {
+            let index = (degree - key_coefficient) % degree;
+            let term = if key_coefficient == 0 {
+                r1[index]
+            } else {
+                -r1[index]
+            };
+            raw_sum += term as i128 * secret[key_coefficient] as i128;
+        }
+        let mut source_phase_residues = Vec::with_capacity(PRIMES.len());
+        for (lane, &prime) in PRIMES.iter().enumerate() {
+            let phase = |ct: &RNSCiphertext| {
+                let mont = &p2_ctx.rns.mont_contexts[lane];
+                let c1: Vec<_> = ct.c1.limbs[lane]
+                    .iter()
+                    .map(|&v| mont.from_montgomery(v))
+                    .collect();
+                let product = p2_ctx.ntt_engines[lane].multiply(&c1, &keys.secret_key.s.main[lane]);
+                ((mont.from_montgomery(ct.c0.limbs[lane][0]) as u128 + product[0] as u128)
+                    % prime as u128) as u64
+            };
+            let source_phase = phase(&encrypted_k_p);
+            source_phase_residues.push(source_phase);
+            let lhs = phase(&lifted_k) as u128 * P as u128 % prime as u128;
+            let rhs = (source_phase as i128 - raw_sum).rem_euclid(prime as i128) as u128;
+            assert_eq!(lhs, rhs, "component division identity in lane {lane}");
+        }
+        let source_phase = p2_ctx
+            .rns
+            .to_u256_level(&source_phase_residues, PRIMES.len());
+        let source_mod_p = source_phase.mod_u64(P);
+        let q = U256::product_u64s(&PRIMES);
+        let q_mod_p = q.mod_u64(P);
+        assert_eq!(q_mod_p, 64_184);
+        let scale_mod_p = q.div_mod_u64(P).0.mod_u64(P);
+        assert_eq!(scale_mod_p, 60_465);
+        let encoded_mod_p = (scale_mod_p as i128 * input[0] as i128).rem_euclid(P as i128) as u64;
+        let error_mod_p = (source_mod_p + P - encoded_mod_p) % P;
+        assert!(error_mod_p <= config.eta as u64 || error_mod_p >= P - config.eta as u64);
+        let raw_mod_p = raw_sum.rem_euclid(P as i128) as u64;
+        let missing_q_winding = ((raw_mod_p as u128 + P as u128 - source_mod_p as u128)
+            * inverse(q_mod_p, P) as u128
+            % P as u128) as u64;
+        assert_eq!(
+            (source_mod_p as u128 + missing_q_winding as u128 * q_mod_p as u128) % P as u128,
+            raw_mod_p as u128,
+            "the source phase and Q-winding close the modulo-p identity"
+        );
+        assert_eq!(
+            (encoded_mod_p as u128
+                + error_mod_p as u128
+                + missing_q_winding as u128 * q_mod_p as u128)
+                % P as u128,
+            raw_mod_p as u128,
+            "source phase decomposition includes scale, error, and Q-winding terms"
+        );
+        assert_eq!(
+            require_lifted_quotient_binding(),
+            Err(TrayRefusal::MissingSourcePhaseBinding)
+        );
+        return;
+    }
     assert_eq!(expected_quotient_winding, expected_from_remainders);
     assert_ne!(expected_quotient_winding, 0);
     let expected_quotient_windings: Vec<_> = (0..degree)
@@ -2398,12 +2475,18 @@ fn run_second_k_elimination_quotient_winding(degree: usize) {
 
 #[test]
 fn safe_basis_root_projects_second_k_elimination_quotient_winding() {
-    run_second_k_elimination_quotient_winding(4);
+    run_second_k_elimination_quotient_winding(4, false);
 }
 
 #[test]
 fn safe_basis_root_projects_second_k_elimination_quotient_winding_at_degree_eight() {
-    run_second_k_elimination_quotient_winding(8);
+    run_second_k_elimination_quotient_winding(8, false);
+}
+
+#[test]
+#[ignore = "historical 2026-11-01 unbound quotient claim fails with full-Q masks; preserved for opt-in reproduction"]
+fn historical_unbound_second_quotient_winding_claim() {
+    run_second_k_elimination_quotient_winding(4, true);
 }
 
 #[test]

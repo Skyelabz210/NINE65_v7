@@ -1,5 +1,10 @@
 # Start here: one bounded task per coding session
 
+For public-refresh work, first read [current status and notation](../../PUBLIC_REFRESH_STATUS.md).
+A planned or unaccepted historical packet is not evidence that the later
+research backend is absent. Keep packet acceptance separate from actual
+implementation and execution evidence.
+
 The owner’s target is the architecture in [PLAN.md](PLAN.md). This package is
 designed for different coding models to make small changes without rediscovering
 or silently changing the cryptographic design. It cannot guarantee that an

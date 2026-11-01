@@ -1,5 +1,11 @@
 # Native nonlinear section at the 11 anchor
 
+**Capacity correction (2026-10-28):** the U512 rank fallback now admits the
+Q241 exact plan. The [current checkpoint](../2026-10-28/PUBLIC_REFRESH_STATUS.md)
+records its all-coefficient encrypted-square oracle and the retained Q211
+section checks. The U256 capacity refusal described below is historical;
+the canonical-lift and public-refresh limitations still apply.
+
 The native research path now evaluates a nonlinear 11-adic ring section on
 the actual K-eliminated chart residue. The accepted N16384 run checks all
 16384 coefficients, including a dense perturbation by11H, and verifies a

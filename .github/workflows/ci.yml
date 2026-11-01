@@ -39,10 +39,8 @@ name: CI
 # Test categorization (issue #78): the workspace test suite is split into a
 # fast/medium/slow tiering documented in full at docs/TEST_TIERS.md, backed by
 # scripts/run_tests_{fast,medium,slow}.sh and scripts/check_test_tier_drift.py.
-#   - MEDIUM is exactly what `full-test` below already ran before this
-#     comment was added — scripts/run_tests_medium.sh is a byte-for-byte
-#     wrapper of the same `cargo test --workspace --verbose ...` command, so
-#     wiring it in below is a zero-behavior-change substitution.
+#   - MEDIUM runs every workspace/default-feature target with --no-fail-fast.
+#     nine65 uses test opt-level=2; debug assertions and overflow checks remain on.
 #   - SLOW is wired into T4 as a new, purely additive job below, gated on the
 #     same `if:` this file already uses for the other T4 jobs.
 #   - FAST (scripts/run_tests_fast.sh) is NOT wired into T1 here. See the
@@ -166,7 +164,7 @@ jobs:
         run: bash scripts/check_no_panics.sh ratchet
 
       - name: Scan for float usage in runtime paths
-        run: bash scripts/check_no_floats_runtime.sh
+        run: bash scripts/check_no_floats_runtime.sh --self-test
 
       - name: Scan for float usage in benches/tests/audit binaries
         run: python3 scripts/check_no_floats_benches_and_tests.py
@@ -285,41 +283,9 @@ jobs:
       # See the clippy step: the three --exclude flags were no-ops, the packages
       # are excluded from the workspace itself.
       #
-      # This is the MEDIUM test tier (issue #78, docs/TEST_TIERS.md).
-      # scripts/run_tests_medium.sh wraps the exact command this step ran
-      # before this line was added (`cargo test --workspace --verbose
-      # --exclude nine65-python --exclude nine65-wasm --no-fail-fast`) — same
-      # flags, same profile (no --release, matching this step's prior
-      # behavior exactly) — so this substitution is a zero-behavior-change
-      # refactor, not a new invocation.
-      #
-      # `--no-fail-fast` (issue #64): plain `cargo test --workspace` stops at
-      # the FIRST package with a failing test and never builds or runs
-      # anything after it. Measured directly (2026-09-04, this exact command
-      # reproduced live): with nine65's `--lib` carrying 5 pre-existing
-      # failures (tracked separately, issue #95 — public bootstrap refresh
-      # corruption), the run stopped right there, silently skipping every one
-      # of nine65's ~28 `tests/*.rs` integration binaries, nine65-extreme-tests,
-      # private-feedback-core, private-feedback-nine65 and unhal — none of
-      # which report as failed, because none of them ran. `--no-fail-fast`
-      # does not change what fails; it changes whether "required, complete
-      # suite" (this job's own name) is true. With it added, the same host
-      # reached every package and every test file in 26m53s wall-clock,
-      # including all the previously-unreached compilation — under this
-      # sandbox's typical shared-host contention (load average ~10-31 on 4
-      # vCPUs for most of that run, from unrelated concurrent sessions, not
-      # this workflow). See docs/OPEN_WORK_2026-08-26.md-adjacent tracking:
-      # this run surfaced 15 additional pre-existing failures beyond the 5
-      # known ones (noise_profile.rs x9 — all one root cause, a Q*t>=2^128
-      # precondition the current 4-lane secure_128 now violates;
-      # k_elimination_basis_regression.rs, residue_space_ciphertext.rs,
-      # full_system_exercise.rs, basis_invariance.rs,
-      # bootstrap_integration.rs, depth_and_noise.rs — one test each). None
-      # of these are introduced or touched by this change; they simply could
-      # not be seen before because the run never reached them. Not
-      # investigated or fixed here — out of scope for a test-runtime
-      # reproducibility fix. run_tests_medium.sh carries this flag too, so
-      # the MEDIUM substitution above stays a zero-behavior-change swap.
+      # Complete default-feature suite, with nine65 test arithmetic optimized.
+      # --no-fail-fast preserves downstream execution and every failure.
+      # See docs/TEST_TIERS.md for the current profile and historical timings.
       - name: Run all workspace tests (MEDIUM test tier)
         run: bash scripts/run_tests_medium.sh
 

@@ -1,0 +1,175 @@
+{
+  "generated_utc": "2026-10-28T00:13:40.555710+00:00",
+  "base_commit": "31bb5b4bfad692e9d74fa45588103ddf84e56171",
+  "source_sha256": {
+    ".github/workflows/exactness_focused.yml": "0c22c8456443277f4f3eb2748b1a77770bc1fac760d2af0b46c5ec9d2f403d56",
+    "crates/nine65/src/noise/budget.rs": "1e2292d9d86a884fd4df36781374dd63f7a394677ed6bef78ce2dbe7dd1f5414",
+    "crates/nine65/src/ops/homomorphic.rs": "144be4cc61f33ecce5c57d98191b981cbcb09da2e4bbb8050ec10ee66427e52e",
+    "crates/nine65/tests/single_modulus_admission.rs": "3406eb30dbd21f02f3f38d03ca80350c97859dfb94ca290a7506d70f6100f09d",
+    "fuzz/fuzz_targets/fuzz_homomorphic.rs": "f5e20f5da1eab127447f9ed28795fe055a25573d074c301a4e55c0e5d4287dd9",
+    "crates/nine65/src/arithmetic/k_elimination.rs": "a4ab73c072f7359b08e723eeb0376d11cd7b0a1af595b1f60b83678a5b8ca760",
+    "crates/nine65/src/security/ct_verification.rs": "6e659274f92fd515d16f8ca87ba4b2de3dd05387e08ec439d866ec3a92328982"
+  },
+  "environment": {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+    "rustc": "rustc 1.89.0 (29483883e 2025-08-04)"
+  },
+  "results": [
+    {
+      "log": "single-modulus-before.log.gz",
+      "exit_code": 101,
+      "uncompressed_sha256": "778ccd46e311a05235e3a68e79a9e4e78d98c1dbeac5b49971b6fb4f053c1430",
+      "archive_sha256": "3ae48db8129cd133a5ddd86ffecf76036b6e649ef9a935ec22a44b3b349d16b4",
+      "test_summaries": [
+        "test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s"
+      ]
+    },
+    {
+      "log": "noise-capacity-before.log.gz",
+      "exit_code": 101,
+      "uncompressed_sha256": "9a030df636048e5028315854c2d6f778adadb0a49ed291666254a1d6410ba367",
+      "archive_sha256": "9430eb72b7c887dd136ac190da82f20fd3c9818c82f23124394f9d8a02dd1b11",
+      "test_summaries": [
+        "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1156 filtered out; finished in 0.00s"
+      ]
+    },
+    {
+      "log": "single-modulus-debug-final.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "c3ccb6d1db0d78e59786b97f30176e2799d637691882c62479181acc32402865",
+      "archive_sha256": "406d5b8fa8cd784f9c54ce6c9bfbde507aed03df659d4d3f95504d21541df516",
+      "test_summaries": [
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s"
+      ]
+    },
+    {
+      "log": "single-modulus-release.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "60f732668817f9f46231fc39234c20af3948a19273bc82faa0feb0c8930f5d3e",
+      "archive_sha256": "2d12bed0ce3aba3e6df555365ac045fea1d15c7200f362716b38f3174dd7e0e9",
+      "test_summaries": [
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+      ]
+    },
+    {
+      "log": "noise-budget-debug-final.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "d52719e080eab7cc611940f0386b22d394f229221c81d03097159cc025990928",
+      "archive_sha256": "57bb5f4ebaa650a1c717fc17babed4ddeec5ec1ffcd6acd53fc54ab4b3d9abfb",
+      "test_summaries": [
+        "test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 1139 filtered out; finished in 4.04s"
+      ]
+    },
+    {
+      "log": "homomorphic-after.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "7cd372282b87fb957c784c2f36ea0e489ba2f635e2def5e07fe56250203aa6ef",
+      "archive_sha256": "39889b5540382fb7fd356f5625487091581cce1de41936c61ea1f0b8ce0755d1",
+      "test_summaries": [
+        "test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 1133 filtered out; finished in 2.49s"
+      ]
+    },
+    {
+      "log": "system-analysis-full-lib-release.log.gz",
+      "exit_code": 101,
+      "uncompressed_sha256": "27b847cac7c35be486c2698840c756d9a173ddc288fbde0feb06a79e02037e9e",
+      "archive_sha256": "6357d07b4b0cf1ef88b829b04651f06fca48a5c8b412dccfcf8e46f68e72799d",
+      "test_summaries": [
+        "test result: FAILED. 1017 passed; 4 failed; 135 ignored; 0 measured; 0 filtered out; finished in 295.81s"
+      ]
+    },
+    {
+      "log": "system-analysis-clippy.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "437637a2141a90941002ffa0c264165276ec4dc5e40ed4fcc6da671c1aa647c5",
+      "archive_sha256": "3e75115c678265e52c7a0bcec785a9e6fd017557dd2d0f4b4e312ef57e7dd541",
+      "test_summaries": []
+    },
+    {
+      "log": "system-analysis-panic-ratchet.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "59f7c4eed6dab281a7286838b751739f590ca6bc049200e6af585746f0c82d1b",
+      "archive_sha256": "2aea9cfcca2ceb36d5d67ad4728cd39900b72065b305e887e1e7946c8715eac1",
+      "test_summaries": []
+    },
+    {
+      "log": "system-analysis-architecture.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "660c88708a5f1b8b5d3ec046ce1ac4051d5a01ed2893b37c253eeb347632745d",
+      "archive_sha256": "5184e83bd051fafb0ad6ded4d9d03e0805ba920cd690ce19e62dda250957990f",
+      "test_summaries": []
+    },
+    {
+      "log": "system-analysis-recumbency.log.gz",
+      "exit_code": 1,
+      "uncompressed_sha256": "b14e87c8c11b8f7d7e2eaa21f8276382d1cebeabca052f1d07f5a09440ed1d0f",
+      "archive_sha256": "f2b20630cfaf41d4be91125086384f0bce34907214d0ba947878b48d7dccb279",
+      "test_summaries": []
+    },
+    {
+      "log": "adjacency-before.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "d9dcb560e157089a54a6b1062293871c4ce29c58fc69548044e7fdf718772c03",
+      "archive_sha256": "5205ed087a92ce366356e884d03519d30481e7f5127323f3da75ce666ea84edf",
+      "test_summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1154 filtered out; finished in 31.63s"
+      ]
+    },
+    {
+      "log": "adjacency-order-before.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "d4dcf8dc4efaceb067e14c0a0587bc925f923183061bc7f83313299ca0ba523d",
+      "archive_sha256": "7e46dd2f7af85a3c25dde27750c3256f0cbcf61219a4d74c9acd822bb636d166",
+      "test_summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1154 filtered out; finished in 29.59s"
+      ]
+    },
+    {
+      "log": "fuzz-homomorphic-seeded.log.gz",
+      "exit_code": 0,
+      "uncompressed_sha256": "b4f523f96ec182d46400e8c9def149edd07abbaf2ef5feadfbfeb0c3c17328f3",
+      "archive_sha256": "5f861c79d3d91f669051de181a1996d68691b473838b431c383d608ee078cb1a",
+      "test_summaries": []
+    }
+  ],
+  "release_library": {
+    "passed": 1017,
+    "failed": 4,
+    "ignored": 135,
+    "failure_names": [
+      "ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_terminal_plan_preflights_all_views_and_limits",
+      "ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128",
+      "ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_192",
+      "ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128"
+    ],
+    "failure_names_equal_prior_baseline": true
+  },
+  "capacity_oracle_cases": 3905,
+  "timing": {
+    "kernel_changed": false,
+    "threshold": 5,
+    "magnitude": {
+      "signal_t": 1.9837,
+      "control_t": 0.7853
+    },
+    "operand_order": {
+      "signal_t": 1.0384,
+      "control_t": 1.0084
+    },
+    "scope": "Local null results only; earlier CI signal remains unresolved."
+  },
+  "fuzz_smoke": {
+    "valid_seed_files": 64,
+    "invocation_iterations": 256,
+    "instrumented": false,
+    "scope": "Stable seeded arithmetic smoke; Arbitrary may reject mutations; not a coverage-guided or sanitizer claim. Nightly instrumented job remains in CI.",
+    "corpus": "homomorphic-seed-corpus.tar.gz",
+    "corpus_sha256": "229d82c682734884f9450bd620e26216f33ff5c8e197bbcdd961a702d5470f52"
+  },
+  "limits": [
+    "Public refresh disabled; encrypted carry not implemented by this change.",
+    "Raw tracked APIs still require trusted ciphertext history.",
+    "Recumbency capacity scanner still fails two sentinel pattern classes.",
+    "Full workspace integration suite not rerun in this continuation."
+  ]
+}

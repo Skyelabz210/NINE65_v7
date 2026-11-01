@@ -1,5 +1,11 @@
 # Public refresh variables and the remaining lift gate
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](../../PUBLIC_REFRESH_STATUS.md) first.
+
 This is the current variable map for issue #95, combining the source phase,
 the tropical sheet, the native paired chart, the 11-adic section, and the
 candidate K-Elimination consumer. It keeps the CRAM-native route in scope.

@@ -1,0 +1,47 @@
+{
+  "binary_sha256": "567a4ef07593556a7da234bbb57b9b108fc2e0d8bd46b2bd2f6452ef46c7bd5e",
+  "results": [
+    {
+      "name": "ops::rns_fhe::exact_mul::tests::prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays",
+      "exit_code": 0,
+      "positive_one": true,
+      "seconds": 0.26837459600028524,
+      "command": [
+        "target/debug/deps/nine65-c522d0392dda675a",
+        "ops::rns_fhe::exact_mul::tests::prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/wide/reference-prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays.log"
+    },
+    {
+      "name": "ops::rns_fhe::exact_mul::tests::prepared_hybrid_key_refuses_malformed_input_and_foreign_plans",
+      "exit_code": 0,
+      "positive_one": true,
+      "seconds": 0.007873960999859264,
+      "command": [
+        "target/debug/deps/nine65-c522d0392dda675a",
+        "ops::rns_fhe::exact_mul::tests::prepared_hybrid_key_refuses_malformed_input_and_foreign_plans",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/wide/reference-prepared_hybrid_key_refuses_malformed_input_and_foreign_plans.log"
+    },
+    {
+      "name": "ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays",
+      "exit_code": 0,
+      "positive_one": true,
+      "seconds": 0.007715994000136561,
+      "command": [
+        "target/debug/deps/nine65-c522d0392dda675a",
+        "ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "log": "/workspace/work/public-refresh/wide/reference-prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays.log"
+    }
+  ]
+}

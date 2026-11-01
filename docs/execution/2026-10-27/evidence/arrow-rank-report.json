@@ -1,0 +1,60 @@
+{
+  "name": "recumbent_rank",
+  "status": "FAIL",
+  "scope": "exhaustive finite product",
+  "input_states": 210,
+  "output_states": 210,
+  "gates": [
+    {
+      "gate": "G1",
+      "verdict": "PASS",
+      "detail": "injective observed image and actual inverse restores every input; domain scope only",
+      "checks": 210
+    },
+    {
+      "gate": "G2",
+      "verdict": "PASS",
+      "detail": "actual outputs agree for the supplied lane schedules; no universal schedule proof",
+      "checks": 1260
+    },
+    {
+      "gate": "G3",
+      "verdict": "FAIL",
+      "detail": "actual full joint factorization=False; uniform declared-lane marginals=False; exhaustive finite input product",
+      "checks": 210
+    },
+    {
+      "gate": "G4",
+      "verdict": "PASS",
+      "detail": "0 mismatches against independently supplied operation semantics",
+      "checks": 210
+    },
+    {
+      "gate": "G5",
+      "verdict": "PASS",
+      "detail": "0 policy-prohibited observed emissions; supplied structural evidence only",
+      "checks": 0
+    },
+    {
+      "gate": "G6",
+      "verdict": "PASS",
+      "detail": "observed lineage matches independently supplied authorized sequence",
+      "checks": 3
+    }
+  ],
+  "limitations": "Finite operation evidence; structural trace and lineage authenticity are external obligations. No universal IID, no-synthetic-emission, or cryptographic-custody proof.",
+  "profile": "logical-state reversal and joint-output uniformity diagnostic",
+  "carry_process_scope": "This trace does not construct a Holte carry chain; driving-digit IID and detailed balance are checked separately.",
+  "lineage_scope": "Known deterministic test fixture only; no authenticated ciphertext history or custody claim.",
+  "source_policy_evidence": {
+    "observed_emissions": [],
+    "allowed_emissions": [],
+    "observed_ref": "lexical-source-audit:12c8e5e5fc1548c72fed1778bf35abc68cc4e3f12e94415dae13ee383bd528e5",
+    "policy_ref": "user-clarification:2026-10-27:forbid-Garner-and-mixed-radix",
+    "source_hashes": {
+      "crates/nine65/src/arithmetic/recumbent.rs": "f5ef292ff438157dcc6668691f968d6fa96db45f7a8b4b448a126edd0dd31078",
+      "crates/nine65/src/arithmetic/rank_residue_divider.rs": "cd08cde88c834e102290db2402832a772ff0b3658de1879cf9eb8101ce09ce37"
+    },
+    "scope": "Named executable calls in the two implementation files; aliases and hidden emissions require separate review."
+  }
+}

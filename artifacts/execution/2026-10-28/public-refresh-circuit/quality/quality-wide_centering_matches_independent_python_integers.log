@@ -1,0 +1,6 @@
+
+running 1 test
+test arithmetic::compare_bit::tests::external_wide_vectors::wide_centering_matches_independent_python_integers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.00s
+

@@ -1,0 +1,9 @@
+
+running 4 tests
+test ops::public_refresh_slots::auxiliary::tests::native_batch_capacity_matches_closed_form_at_extreme_words ... ok
+test ops::public_refresh_slots::auxiliary::tests::signed_batched_convolution_matches_schoolbook ... ok
+test ops::public_refresh_slots::tests::centered_diagonal_reduces_into_main_primes_smaller_than_plaintext ... ok
+test ops::public_refresh_slots::tests::streamed_slot_return_recovers_embedded_coefficients_with_three_keys ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1170 filtered out; finished in 0.07s
+

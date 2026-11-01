@@ -15,3 +15,12 @@ docs.claim_evidence_ledger,internal,exploratory,docs/CLAIM_EVIDENCE_LEDGER.md
 readme.verified_capability_2026_08_22,public,secure,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
 params.public_refresh_admissibility,public,secure,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
 params.screened_security_disclosure,internal,exploratory,docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md
+refresh.research_native_correctness,internal,exploratory,docs/PUBLIC_REFRESH_STATUS.md
+refresh.joint_key_security_admission,internal,exploratory,docs/PUBLIC_REFRESH_STATUS.md
+correction.packet_reconciliation_2026_10_26,internal,exploratory,docs/execution/2026-10-26/STATUS.md
+refresh.security_model,internal,exploratory,docs/security/SECURITY_MODEL_PUBLIC_REFRESH.md
+refresh.circuit_correctness_observed,internal,exploratory,docs/security/CORRECTNESS_EVIDENCE_PUBLIC_REFRESH.md
+refresh.circuit_correctness_bounded,internal,exploratory,docs/security/NOISE_BOUND_PUBLIC_REFRESH.md
+refresh.related_key_confidentiality,internal,exploratory,docs/security/RELATED_KEY_ANALYSIS.md
+refresh.production_security,internal,exploratory,docs/security/EXTERNAL_PARAMETER_ATTESTATION.md
+refresh.constant_time_posture,internal,exploratory,docs/security/CT_PUBLIC_REFRESH.md

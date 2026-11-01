@@ -1,0 +1,12 @@
+=== No-Floats Quality Gate ===
+Scanning: crates/nine65/src
+
+  [PASS] '\bf32\b' — all occurrences in test/comment code
+  [PASS] '\bf64\b' — all occurrences in test/comment code
+  [PASS] No '[0-9]+\.[0-9]+[^."]' found
+  [PASS] No 'as f32' found
+  [PASS] 'as f64' — all occurrences in test/comment code
+  [PASS] No 'f32::' found
+  [PASS] 'f64::' — all occurrences in test/comment code
+
+RESULT: No floating-point in production code

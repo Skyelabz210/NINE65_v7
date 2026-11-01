@@ -1,0 +1,8 @@
+{
+  "source": "/workspace/work/nine65/materials2/skill/a2-arrow-emission-suite/scripts/a2_suite.py",
+  "gate": "G3 i.i.d.",
+  "verdict": "PASS",
+  "detail": "every lane pair factorizes exactly (6 states enumerated)",
+  "actual_operation": "maps every state to (0,0)",
+  "expected": "FAIL"
+}

@@ -1,0 +1,9 @@
+
+running 4 tests
+test ops::public_refresh_return::tests::public_return_noise_plan_is_key_free_and_checks_geometry ... ok
+test ops::public_refresh_return::tests::public_return_rejects_foreign_family_and_stale_source_lineage ... ok
+test ops::public_refresh_return::tests::public_return_rejects_malformed_outputs_and_exhausted_bounds ... ok
+test ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1170 filtered out; finished in 0.20s
+

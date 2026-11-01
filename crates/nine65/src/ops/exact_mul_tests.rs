@@ -186,21 +186,20 @@ impl Big {
         }
     }
 
-    /// Magnitude division by a small `u64` divisor (< 2^32 assumed for the
-    /// remainder path; used only with 32-bit primes).
-    fn divmod_small_mag(mag: &[u32], d: u32) -> (Vec<u32>, u32) {
+    /// Independent base-2^32 long division by a u64 divisor.
+    fn divmod_small_mag(mag: &[u32], d: u64) -> (Vec<u32>, u64) {
         let mut out = vec![0u32; mag.len()];
-        let mut rem: u64 = 0;
+        let mut rem: u128 = 0;
         for i in (0..mag.len()).rev() {
-            let cur = (rem << 32) | mag[i] as u64;
-            out[i] = (cur / d as u64) as u32;
-            rem = cur % d as u64;
+            let cur = (rem << 32) | mag[i] as u128;
+            out[i] = (cur / d as u128) as u32;
+            rem = cur % d as u128;
         }
-        (Big::trim(out), rem as u32)
+        (Big::trim(out), rem as u64)
     }
 
-    /// Euclidean remainder `self mod m` in `[0, m)` for a 32-bit modulus.
-    fn rem_u32(&self, m: u32) -> u32 {
+    /// Euclidean remainder `self mod m` in `[0, m)` for a u64 modulus.
+    fn rem_u64(&self, m: u64) -> u64 {
         let (_, r) = Big::divmod_small_mag(&self.mag, m);
         if self.neg && r != 0 {
             m - r
@@ -210,7 +209,7 @@ impl Big {
     }
 
     /// Exact `floor(self / d)` for a positive small `d`, on the magnitude only.
-    fn div_small_mag_exact(&self, d: u32) -> Big {
+    fn div_small_mag_exact(&self, d: u64) -> Big {
         let (q, _) = Big::divmod_small_mag(&self.mag, d);
         Big {
             neg: self.neg,
@@ -227,7 +226,7 @@ impl Big {
         if !self.neg {
             let mut acc = self.clone();
             for &d in divisors {
-                acc = acc.div_small_mag_exact(d as u32);
+                acc = acc.div_small_mag_exact(d);
             }
             return acc;
         }
@@ -242,7 +241,7 @@ impl Big {
         let numerator = a.add(&d_big).sub(&Big::from_u64(1));
         let mut acc = numerator;
         for &d in divisors {
-            acc = acc.div_small_mag_exact(d as u32);
+            acc = acc.div_small_mag_exact(d);
         }
         acc.negate()
     }
@@ -329,7 +328,7 @@ impl BigOracle {
                 .enumerate()
                 .filter(|&(j, _)| j != i)
                 .fold(Big::from_u64(1), |a, (_, &pj)| a.mul(&Big::from_u64(pj)));
-            let mi_mod_p = mi.rem_u32(p as u32) as u64;
+            let mi_mod_p = mi.rem_u64(p);
             let inv = mod_inv_u64(mi_mod_p, p);
             let coeff = (r as u128 * inv as u128 % p as u128) as u64;
             acc = acc.add(&mi.mul(&Big::from_u64(coeff)));
@@ -371,10 +370,7 @@ impl BigOracle {
     }
 
     fn residues(&self, x: &Big) -> Vec<u64> {
-        self.primes
-            .iter()
-            .map(|&p| x.rem_u32(p as u32) as u64)
-            .collect()
+        self.primes.iter().map(|&p| x.rem_u64(p)).collect()
     }
 }
 
@@ -434,7 +430,7 @@ fn ciphertext_from_centered(
             .config
             .primes
             .iter()
-            .map(|&p| coeffs.iter().map(|c| c.rem_u32(p as u32) as u64).collect())
+            .map(|&p| coeffs.iter().map(|c| c.rem_u64(p)).collect())
             .collect();
         ctx.to_montgomery_form(&RNSPolynomial { limbs, n: ctx.n })
     };
@@ -555,9 +551,8 @@ fn auxiliary_basis_certificates_hold_for_named_configs() {
 /// A capacity shortfall must be a typed refusal, never a silently-wrong
 /// kernel.
 ///
-/// Non-vacuous by construction: the only difference between the refused call
-/// and the accepted one is four extra main primes, so what is being refused is
-/// the capacity certificate and not some unrelated validation firing first.
+/// Existing named tuples keep their narrow auxiliary bases, wider tuples
+/// use the new pool, and a genuine excess still fails before allocation.
 #[test]
 fn insufficient_auxiliary_capacity_is_a_typed_refusal() {
     let cfg = SecureConfig::secure_256().into_config();
@@ -570,20 +565,38 @@ fn insufficient_auxiliary_capacity_is_a_typed_refusal() {
     // ~294; with s_mult ~ 2^29 the requirement passes the pool's ~315 bits.
     let mut wider = cfg.primes.clone();
     wider.extend_from_slice(&[1004535809, 1224736769, 377487361, 645922817]);
-    match ExactMulPlan::new(&wider, cfg.n, cfg.t) {
+    let wide = ExactMulPlan::new(&wider, cfg.n, cfg.t).expect("wide fallback extends old pool");
+    assert!(wide.certificate().aux_bits > 315);
+    assert!(wide.auxiliary_basis().iter().all(|&a| a > (1u64 << 60)));
+
+    // Sixteen distinct 61-bit primes still fit the bounded main accumulator,
+    // but the genuine required capacity exceeds the 976-bit auxiliary pool.
+    let mut over_capacity = Vec::new();
+    let mut candidate = (1u64 << 60) + 1;
+    while over_capacity.len() < 16 {
+        if crate::params::primes::is_prime(candidate) {
+            over_capacity.push(candidate);
+        }
+        candidate += 65536;
+    }
+    match ExactMulPlan::new(&over_capacity, 32768, 4295098369) {
         Err(ExactMulError::AuxiliaryBasisUnavailable {
             required_bits,
             pool_bits,
             pool_lanes,
         }) => {
-            assert!(
-                pool_bits <= required_bits,
-                "refusal must report a genuine shortfall: {pool_bits} vs {required_bits}"
-            );
-            assert_eq!(pool_lanes, 10);
+            assert!(pool_bits < required_bits);
+            assert_eq!(pool_bits, 976);
+            assert_eq!(pool_lanes, 16);
         }
-        other => panic!("expected AuxiliaryBasisUnavailable, got {other:?}"),
+        other => panic!("expected true AuxiliaryBasisUnavailable, got {other:?}"),
     }
+    assert!(matches!(
+        ExactMulPlan::new(&vec![u64::MAX; 17], 32768, 4295098369),
+        Err(ExactMulError::AccumulatorOverCapacity {
+            stage: "main product"
+        })
+    ));
 
     // The full-bound CRAM high tray needs a shift multiplier wider than u64.
     // Its certified product still fits the native-degree transient pool.
@@ -608,6 +621,388 @@ fn insufficient_auxiliary_capacity_is_a_typed_refusal() {
         high_t_certificate.aux_bits,
         high_t_certificate.required_bits,
     );
+}
+
+/// NTT-compatible 650-bit candidate with Q = 1 mod 65537^2. Arithmetic
+/// admission here is separate from the public-refresh security/noise gates.
+const WIDE_TEST_MAIN: [u64; 13] = [
+    998244353,
+    985661441,
+    754974721,
+    469762049,
+    576460752301785089,
+    576460752301391873,
+    576460752300015617,
+    576460752298835969,
+    576460752298180609,
+    576460752293134337,
+    576460752291954689,
+    576460752290775041,
+    575870995836829697,
+];
+
+#[test]
+fn wide_auxiliary_catalog_ntt_matches_schoolbook_in_every_lane() {
+    let n = 16;
+    let mut rng = Lcg(0x61_1024);
+    for q in WIDE_AUXILIARY_PRIMES {
+        assert!(crate::params::primes::is_prime(q));
+        assert_eq!((q - 1) % 65536, 0);
+        let engine = NTTEngine::new(q, n);
+        let a: Vec<u64> = (0..n)
+            .map(|i| if i % 3 == 0 { q - 1 } else { rng.next() % q })
+            .collect();
+        let b: Vec<u64> = (0..n)
+            .map(|i| if i % 2 == 0 { q - 1 } else { rng.next() % q })
+            .collect();
+        let mut want = vec![0u64; n];
+        for (i, &x) in a.iter().enumerate() {
+            for (j, &y) in b.iter().enumerate() {
+                let term = x as u128 * y as u128 % q as u128;
+                let index = (i + j) % n;
+                let signed = if i + j < n {
+                    term
+                } else {
+                    (q as u128 - term) % q as u128
+                };
+                want[index] = ((want[index] as u128 + signed) % q as u128) as u64;
+            }
+        }
+        assert_eq!(engine.multiply(&a, &b), want, "auxiliary prime {q}");
+    }
+}
+
+#[test]
+fn wide_native_plans_prove_exact_capacity_for_both_plaintext_trays() {
+    for t in [65537, 4295098369] {
+        let plan = ExactMulPlan::new_with_gadget_base_bits(&WIDE_TEST_MAIN, 32768, t, 30)
+            .expect("checked native wide plan");
+        let oracle = BigOracle::new(&WIDE_TEST_MAIN, 32768, t);
+        let required = oracle.q.mul(&Big::from_u64(32768 * t + 2));
+        let aux = plan
+            .auxiliary_basis()
+            .iter()
+            .fold(Big::from_u64(1), |p, &a| {
+                assert!(crate::params::primes::is_prime(a));
+                assert_eq!((a - 1) % 65536, 0);
+                p.mul(&Big::from_u64(a))
+            });
+        assert_eq!(oracle.q.bit_length(), 650);
+        assert_eq!(oracle.q.rem_u64(4295098369), 1);
+        assert_eq!(plan.certificate().q_bits as usize, oracle.q.bit_length());
+        assert_eq!(
+            plan.certificate().required_bits as usize,
+            required.bit_length()
+        );
+        assert_eq!(plan.certificate().aux_bits as usize, aux.bit_length());
+        assert_eq!(
+            Big::cmp_mag(&aux.mag, &required.mag),
+            std::cmp::Ordering::Greater
+        );
+        let last = *plan.auxiliary_basis().last().unwrap();
+        let previous = aux.div_small_mag_exact(last);
+        assert_ne!(
+            Big::cmp_mag(&previous.mag, &required.mag),
+            std::cmp::Ordering::Greater
+        );
+        assert_eq!(plan.certificate().base_bits, 30);
+        println!("wide native exact plan: {:?}", plan.certificate());
+    }
+}
+
+#[test]
+fn explicit_gadget_radices_bind_keys_and_keep_exact_multiplication() {
+    let cfg = small_ring_config(vec![998244353, 985661441, 754974721, 469762049], 8);
+    let ctx = RNSFHEContext::new(&cfg);
+    let mut rng = ShadowHarvester::with_seed(0xB453_0030);
+    let keys = ctx.generate_keys(&mut rng);
+    let a = ctx.encrypt(7, &keys.public_key, &mut rng);
+    let b = ctx.encrypt(3, &keys.public_key, &mut rng);
+    let default = ctx.try_exact_evaluator().unwrap();
+    let default_key = default.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    assert_eq!(default_key.base_bits, 10);
+    for bits in [2, 30] {
+        let ev = ExactMulEvaluator::new_with_gadget_base_bits(&ctx, bits).unwrap();
+        let key = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+        assert_eq!(key.base_bits, bits);
+        let tensor = ev.try_mul_no_relin_exact(&a, &b).unwrap();
+        assert!(matches!(
+            ev.relinearize_tensor(&tensor, &default_key),
+            Err(ExactMulError::GadgetKeyShape {
+                what: "base_bits",
+                ..
+            })
+        ));
+        let product = ev.relinearize_tensor(&tensor, &key).unwrap();
+        let clear = ev.try_decrypt_exact(&product, &keys.secret_key).unwrap();
+        assert_eq!(clear, 21);
+    }
+    for bits in [0, 31, 64, u32::MAX] {
+        assert!(
+            matches!(ExactMulPlan::new_with_gadget_base_bits(&cfg.primes, 8, cfg.t, bits),
+            Err(ExactMulError::InvalidGadgetBaseBits { base_bits }) if base_bits == bits)
+        );
+    }
+    for n in [0, 1, 3, usize::MAX] {
+        assert!(matches!(
+            ExactMulPlan::new(&cfg.primes, n, cfg.t),
+            Err(ExactMulError::InvalidRingDegree { .. })
+        ));
+    }
+}
+
+#[test]
+fn prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays() {
+    let cfg = small_ring_config(WIDE_TEST_MAIN.to_vec(), 8);
+    let ctx = RNSFHEContext::new(&cfg);
+    let mut high_cfg = cfg.clone();
+    high_cfg.t = 4295098369;
+    let high = RNSFHEContext::new(&high_cfg);
+    let mut rng = ShadowHarvester::with_seed(0xCAC4_E650);
+    let keys = ctx.generate_keys(&mut rng);
+    let mut lcg = Lcg(0xB453_2130);
+    for bits in [2, 10, 30] {
+        let ev = ExactMulEvaluator::new_with_gadget_base_bits(&ctx, bits).unwrap();
+        let raw = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+        let prepared = ev.prepare_hybrid_gadget_key(&raw).unwrap();
+        let terms: usize = raw.digits_per_lane.iter().sum();
+        assert_eq!(
+            prepared.coefficient_storage_bytes(),
+            (2 * terms + 2) * cfg.primes.len() * cfg.n * 8
+        );
+        for corner in 0..4 {
+            let mut poly = || RNSPolynomial {
+                limbs: cfg
+                    .primes
+                    .iter()
+                    .map(|&q| {
+                        (0..cfg.n)
+                            .map(|_| match corner {
+                                0 => 0,
+                                1 => q - 1,
+                                2 => q / 2,
+                                _ => lcg.next() % q,
+                            })
+                            .collect()
+                    })
+                    .collect(),
+                n: cfg.n,
+            };
+            let tensor = ExactTensor3 {
+                e0: poly(),
+                e1: poly(),
+                e2: poly(),
+                num_primes: cfg.primes.len(),
+            };
+            let expected = ev.relinearize_tensor(&tensor, &raw).unwrap();
+            let actual = ev.relinearize_tensor_prepared(&tensor, &prepared).unwrap();
+            // Force both schedules even on the reduced ring, where the
+            // public prepared path intentionally defaults to one worker.
+            let serial = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 1);
+            let parallel = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 4);
+            assert_eq!(serial.0.limbs, parallel.0.limbs);
+            assert_eq!(serial.1.limbs, parallel.1.limbs);
+            assert_eq!(
+                actual.c0.limbs, expected.c0.limbs,
+                "radix={bits}, corner={corner}"
+            );
+            assert_eq!(
+                actual.c1.limbs, expected.c1.limbs,
+                "radix={bits}, corner={corner}"
+            );
+        }
+        for view in [&ctx, &high] {
+            let ev = ExactMulEvaluator::new_with_gadget_base_bits(view, bits).unwrap();
+            let a = view.encrypt(7, &keys.public_key, &mut rng);
+            let b = view.encrypt(11, &keys.public_key, &mut rng);
+            let expected = ev.try_mul_exact(&a, &b, &raw).unwrap();
+            let actual = ev.try_mul_exact_prepared(&a, &b, &prepared).unwrap();
+            assert_eq!(actual.c0.limbs, expected.c0.limbs);
+            assert_eq!(actual.c1.limbs, expected.c1.limbs);
+            assert_eq!(ev.try_decrypt_exact(&actual, &keys.secret_key).unwrap(), 77);
+        }
+    }
+}
+
+#[test]
+fn prepared_hybrid_key_refuses_malformed_input_and_foreign_plans() {
+    let cfg = small_ring_config(vec![998244353, 985661441, 754974721, 469762049], 8);
+    let ctx = RNSFHEContext::new(&cfg);
+    let ev = ctx.try_exact_evaluator().unwrap();
+    let mut rng = ShadowHarvester::with_seed(0xCAC4_E000);
+    let keys = ctx.generate_keys(&mut rng);
+    let good = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    let mut malformed = good.clone();
+    malformed.rlk[0][0].0.limbs[0].pop();
+    assert!(matches!(
+        ev.prepare_hybrid_gadget_key(&malformed),
+        Err(ExactMulError::GadgetKeyShape {
+            what: "key limb length",
+            ..
+        })
+    ));
+    let mut malformed = good.clone();
+    malformed.rlk[0][0].1.limbs[0][0] = cfg.primes[0];
+    assert!(matches!(
+        ev.prepare_hybrid_gadget_key(&malformed),
+        Err(ExactMulError::NonCanonicalMainResidue { .. })
+    ));
+    let prepared = ev.prepare_hybrid_gadget_key(&good).unwrap();
+    let tensor = ExactTensor3 {
+        e0: RNSPolynomial::zero(&ctx.rns),
+        e1: RNSPolynomial::zero(&ctx.rns),
+        e2: RNSPolynomial::zero(&ctx.rns),
+        num_primes: cfg.primes.len(),
+    };
+    let radix = ExactMulEvaluator::new_with_gadget_base_bits(&ctx, 2).unwrap();
+    assert!(matches!(
+        radix.relinearize_tensor_prepared(&tensor, &prepared),
+        Err(ExactMulError::PreparedGadgetPlanMismatch { what: "base_bits" })
+    ));
+    for (mut foreign, expected) in [(cfg.clone(), "main basis"), (cfg.clone(), "ring degree")] {
+        if expected == "main basis" {
+            foreign.primes.swap(0, 1);
+            foreign.q = foreign.primes[0];
+        } else {
+            foreign.n *= 2;
+        }
+        let other = RNSFHEContext::new(&foreign);
+        assert!(
+            matches!(other.try_exact_evaluator().unwrap().relinearize_tensor_prepared(&tensor, &prepared),
+            Err(ExactMulError::PreparedGadgetPlanMismatch { what }) if what == expected)
+        );
+    }
+    let mut malformed = tensor;
+    malformed.e2.limbs[0][0] = cfg.primes[0];
+    assert!(matches!(
+        ev.relinearize_tensor_prepared(&malformed, &prepared),
+        Err(ExactMulError::NonCanonicalMainResidue { .. })
+    ));
+}
+
+#[test]
+#[ignore = "native N32768 Q650 transform-cache measurement; run explicitly"]
+fn prepared_hybrid_native_timing_and_exact_equality() {
+    let cfg = small_ring_config(WIDE_TEST_MAIN.to_vec(), 32768);
+    let ctx = RNSFHEContext::new(&cfg);
+    let ev = ctx.try_exact_evaluator().unwrap();
+    let mut rng = ShadowHarvester::with_seed(0x00CA_C4E3_2768);
+    let keys = ctx.generate_keys(&mut rng);
+    let start = std::time::Instant::now();
+    let raw = ev.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+    println!(
+        "native hybrid raw key generated: {} ns",
+        start.elapsed().as_nanos()
+    );
+    let start = std::time::Instant::now();
+    let prepared = ev.prepare_hybrid_gadget_key(&raw).unwrap();
+    let prepare_ns = start.elapsed().as_nanos();
+    println!("native hybrid prepared: {prepare_ns} ns");
+    let mut lcg = Lcg(0x000C_AC4E);
+    let tensor = ExactTensor3 {
+        e0: RNSPolynomial::zero(&ctx.rns),
+        e1: RNSPolynomial::zero(&ctx.rns),
+        e2: RNSPolynomial {
+            limbs: cfg
+                .primes
+                .iter()
+                .map(|&q| (0..cfg.n).map(|_| lcg.next() % q).collect())
+                .collect(),
+            n: cfg.n,
+        },
+        num_primes: cfg.primes.len(),
+    };
+    let start = std::time::Instant::now();
+    let expected = ev.relinearize_tensor(&tensor, &raw).unwrap();
+    let raw_ns = start.elapsed().as_nanos();
+    let start = std::time::Instant::now();
+    let serial = ev.hybrid_relinearize_prepared_with_workers(&tensor.e2, &prepared, 1);
+    let serial_ns = start.elapsed().as_nanos();
+    let start = std::time::Instant::now();
+    let actual = ev.relinearize_tensor_prepared(&tensor, &prepared).unwrap();
+    let prepared_ns = start.elapsed().as_nanos();
+    assert_eq!(actual.c0.limbs, expected.c0.limbs);
+    assert_eq!(actual.c1.limbs, expected.c1.limbs);
+    assert_eq!(actual.c0.limbs, serial.0.limbs);
+    assert_eq!(actual.c1.limbs, serial.1.limbs);
+    println!("prepared hybrid N32768/Q650/base10: workers={} key_bytes={} prepare_ns={prepare_ns} raw_ns={raw_ns} serial_ns={serial_ns} prepared_ns={prepared_ns}", prepared.workers, prepared.coefficient_storage_bytes());
+}
+
+#[test]
+fn wide_exact_tensor_matches_independent_unbounded_integer_oracle() {
+    let n = 8;
+    for t in [65537, 4295098369] {
+        let mut cfg = small_ring_config(WIDE_TEST_MAIN.to_vec(), n);
+        cfg.t = t;
+        let ctx = RNSFHEContext::new(&cfg);
+        let ev = ctx.try_exact_evaluator().unwrap();
+        let oracle = BigOracle::new(&cfg.primes, n, t);
+        let corners = corner_coefficients(&oracle, n);
+        let mut cases = vec![
+            (
+                corners[3].clone(),
+                corners[4].clone(),
+                corners[4].clone(),
+                corners[3].clone(),
+            ),
+            (
+                corners[7].clone(),
+                corners[8].clone(),
+                corners[8].clone(),
+                corners[7].clone(),
+            ),
+        ];
+        let mut rng = Lcg(0x1024_0650 ^ t);
+        let draw = |rng: &mut Lcg| -> Vec<Big> {
+            (0..n)
+                .map(|_| {
+                    let residues: Vec<u64> = cfg.primes.iter().map(|&p| rng.next() % p).collect();
+                    oracle.center(&oracle.crt(&residues))
+                })
+                .collect()
+        };
+        for _ in 0..4 {
+            cases.push((
+                draw(&mut rng),
+                draw(&mut rng),
+                draw(&mut rng),
+                draw(&mut rng),
+            ));
+        }
+        let mut checks = 0;
+        let mut above_1024 = 0;
+        for (a0, a1, b0, b1) in cases {
+            let a = ciphertext_from_centered(&ctx, &a0, &a1, &oracle);
+            let b = ciphertext_from_centered(&ctx, &b0, &b1, &oracle);
+            let got = ev.try_mul_no_relin_exact(&a, &b).unwrap();
+            let d0 = oracle.negacyclic(&a0, &b0);
+            let d1: Vec<Big> = oracle
+                .negacyclic(&a0, &b1)
+                .iter()
+                .zip(oracle.negacyclic(&a1, &b0).iter())
+                .map(|(x, y)| x.add(y))
+                .collect();
+            let d2 = oracle.negacyclic(&a1, &b1);
+            for (expected, actual) in [(d0, &got.e0), (d1, &got.e1), (d2, &got.e2)] {
+                for (index, x) in expected.iter().enumerate() {
+                    above_1024 += usize::from(x.bit_length() > 1024);
+                    let residues: Vec<u64> = actual.limbs.iter().map(|lane| lane[index]).collect();
+                    assert_eq!(
+                        residues,
+                        oracle.residues(&oracle.scale_round(x)),
+                        "t={t}, coefficient={index}"
+                    );
+                    checks += 1;
+                }
+            }
+        }
+        assert_eq!(checks, 144);
+        assert!(
+            above_1024 > 100,
+            "must exercise tensors beyond the setup integer width"
+        );
+        println!("Q650 exact tensor: t={t}, checks={checks}, tensor coefficients above 1024 bits={above_1024}");
+    }
 }
 
 // ===========================================================================
@@ -807,7 +1202,7 @@ fn exact_rounding_ties_follow_the_bfv_half_up_rule() {
                     neg: false,
                     mag: q_mag,
                 };
-                let (q2, _) = Big::divmod_small_mag(&acc.mag, cfg.t as u32);
+                let (q2, _) = Big::divmod_small_mag(&acc.mag, cfg.t);
                 acc = Big {
                     neg: false,
                     mag: q2,

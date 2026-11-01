@@ -283,7 +283,12 @@ this point). `hardware_opt()` no longer has a constructor in
 `secure_configs.rs` as of this writing; its continued presence in older docs
 is a separate, unresolved discrepancy.
 
-**Public bootstrap is currently fail-closed.** Per
+For refresh scope and symbol definitions, read [current status](PUBLIC_REFRESH_STATUS.md).
+The separate `PublicRefreshCircuit` research backend has repeated native
+correctness evidence. The legacy default API described in this section is
+still fail-closed; its failure is not a repository-wide absence of refresh.
+
+**Legacy Clockwork bootstrap is currently fail-closed.** Per
 `docs/NINE65_LIVE_STATE_ADDENDUM_2026-09-03.md` and
 `docs/NINE65_CURRENT_STATE_AND_WORK_REQUESTS_2026-09-03.md` §1.1 item 6,
 `bootstrap()` and `bootstrap_with_ksk()` reach
@@ -302,8 +307,8 @@ satisfied by construction, deriving its target security from the same primes
 it then validated against). WR-5B is scoped to security-screening validity
 only and, per its own acceptance criteria, makes "no change to public
 bootstrap availability" — it does not touch, and does not resolve, the
-Phase-1 issue #95 defect below. Public refresh remains fail-closed on every
-config.
+Phase-1 issue #95 defect below. The default Clockwork refresh remains
+fail-closed on every named config.
 
 **Measured Phase-1 failure.** A 2026-09-03 finding
 (`docs/PUBLIC_REFRESH_CORRUPTS_ADMITTED_CONFIGS_2026-09-03.md`) measured
@@ -692,8 +697,8 @@ of settled questions not to re-derive). Load-bearing open items, condensed:
   provider (`pub mod lifted_transduction`, `LiftEvidenceProvider`/
   `LiftEvidence`, `transduct_with_lift_provider`); see
   `docs/work_requests/WR4_LIFTED_TRANSDUCTION_PROVIDER.md`.
-- **WR-5 (A–D)** — rebuild public bootstrap (#95) around a valid encrypted
-  Phase-1 correction; public refresh remains fail-closed until this lands
+- **WR-5 (A–D)** — rebuild legacy public bootstrap (#95) around a valid encrypted
+  Phase-1 correction; that default route remains fail-closed until integrated
   (§4). **WR-5B has landed** (`docs/work_requests/WR5B_BOOTSTRAP_SECURITY_VALIDATION.md`,
   issue #83) but is scoped to security-screening validity only and does not
   touch the Phase-1 defect; WR-5A/5C/5D remain open.

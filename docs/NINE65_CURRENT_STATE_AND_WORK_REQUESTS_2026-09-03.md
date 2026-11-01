@@ -1,5 +1,11 @@
 # NINE65 v7 — Current State, Direction, and Next-Wave Work Requests
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 **Snapshot date:** 2026-09-03  
 **Canonical source snapshot:** `main@2547cf0d8c3d618c0c3fe39bf122c902c763e8ff`  
 **Purpose:** execution control plane for the next completion wave. This document is a work request, not a capability claim.

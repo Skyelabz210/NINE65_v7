@@ -51,7 +51,8 @@ impl CramPrechargedSecret {
                 reason: "CRAM precharge source secret must have N ternary coefficients".into(),
             });
         }
-        let plaintext: Vec<i64> = source_trits.iter().map(|&value| value as i64).collect();
+        let plaintext: Zeroizing<Vec<i64>> =
+            Zeroizing::new(source_trits.iter().map(|&value| value as i64).collect());
         let encrypted = precharge_centered_polynomial_with_rng(ctx, &plaintext, boot_secret, rng)?;
         Ok(Self {
             encrypted,
@@ -81,15 +82,13 @@ pub(crate) fn precharge_centered_polynomial_with_rng<R: FheRng>(
         });
     }
     validate_ternary_secret(ctx, boot_secret)?;
-    let sum_bits: u32 = ctx
-        .config
-        .primes
-        .iter()
-        .map(|&q| 64 - q.leading_zeros())
-        .sum();
-    if sum_bits > 256 || ctx.config.eta as u128 > i64::MAX as u128 {
+    // The main mask sampler draws independent uniform residues, so its
+    // support is the full CRT product at every width admitted by the context.
+    // No U256 reconstruction is used here. Keep the separate signed-error
+    // capacity check: wide modulus support does not widen the sampler's eta.
+    if ctx.config.eta as u128 > i64::MAX as u128 {
         return Err(Nine65Error::KeyGenFailed {
-            reason: "CRAM precharge sampler or error exceeds its integer capacity".into(),
+            reason: "CRAM precharge error exceeds its signed integer capacity".into(),
         });
     }
     require_secure_rng(rng, "precharge_centered_polynomial_with_rng");
@@ -133,4 +132,192 @@ pub(crate) fn precharge_centered_polynomial_with_rng<R: FheRng>(
         c1: a,
         num_primes: ctx.config.primes.len(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::entropy::ShadowHarvester;
+    use crate::params::FHEConfig;
+
+    const MAIN: [u64; 13] = [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        576460752301785089,
+        576460752301391873,
+        576460752300015617,
+        576460752298835969,
+        576460752298180609,
+        576460752293134337,
+        576460752291954689,
+        576460752290775041,
+        575870995836829697,
+    ];
+    // Independent Python integer oracle: [(prod(MAIN)//t) % q for q in MAIN].
+    const DELTA_P: [u64; 13] = [
+        468285463,
+        616931387,
+        669704982,
+        363906640,
+        247746975743962629,
+        457794472042941261,
+        323049179085442934,
+        418714027063818738,
+        194302730034435657,
+        565175537144560381,
+        271293757464344698,
+        106026487451561749,
+        271604932806146237,
+    ];
+    const DELTA_P2: [u64; 13] = [
+        962883334,
+        606879194,
+        616608811,
+        422423684,
+        138777622351358886,
+        39351309024156870,
+        313791963726289616,
+        379895053863641767,
+        130103991485304848,
+        343068609128797015,
+        236228409254469986,
+        96246999070038483,
+        499780066758383338,
+    ];
+
+    fn context(t: u64) -> RNSFHEContext {
+        RNSFHEContext::new(&FHEConfig {
+            n: 16,
+            primes: MAIN.to_vec(),
+            q: MAIN[0],
+            t,
+            eta: 3,
+            security_bits: 0,
+            name: "wide CRAM precharge arithmetic fixture",
+        })
+    }
+
+    fn secret(ctx: &RNSFHEContext) -> (RNSSecretKey, Vec<i64>) {
+        let values: Vec<_> = (0..ctx.n).map(|j| (j % 3) as i64 - 1).collect();
+        let limbs = MAIN
+            .iter()
+            .map(|&q| {
+                values
+                    .iter()
+                    .map(|&v| (v as i128).rem_euclid(q as i128) as u64)
+                    .collect()
+            })
+            .collect();
+        (
+            RNSSecretKey {
+                s: ctx.to_montgomery_form(&RNSPolynomial { n: ctx.n, limbs }),
+            },
+            values,
+        )
+    }
+
+    fn check_phase(
+        ctx: &RNSFHEContext,
+        ct: &RNSCiphertext,
+        sk: &[i64],
+        message: &[i64],
+        expected_delta: &[u64; 13],
+    ) {
+        let mut common_errors = vec![0i64; ctx.n];
+        for (lane, &q) in MAIN.iter().enumerate() {
+            let mont = &ctx.rns.mont_contexts[lane];
+            let c0: Vec<_> = ct.c0.limbs[lane]
+                .iter()
+                .map(|&v| mont.from_montgomery(v))
+                .collect();
+            let c1: Vec<_> = ct.c1.limbs[lane]
+                .iter()
+                .map(|&v| mont.from_montgomery(v))
+                .collect();
+            // Independent signed schoolbook phase; no evaluator NTT used.
+            let mut phase: Vec<i128> = c0.iter().map(|&v| v as i128).collect();
+            for (i, &a) in c1.iter().enumerate() {
+                for (j, &s) in sk.iter().enumerate() {
+                    let product = a as i128 * s as i128;
+                    if i + j < ctx.n {
+                        phase[i + j] += product;
+                    } else {
+                        phase[i + j - ctx.n] -= product;
+                    }
+                }
+            }
+            for (j, value) in phase.iter().enumerate() {
+                let residue = (value - expected_delta[lane] as i128 * message[j] as i128)
+                    .rem_euclid(q as i128);
+                let error = if residue > q as i128 / 2 {
+                    residue - q as i128
+                } else {
+                    residue
+                };
+                assert!(
+                    error.unsigned_abs() <= ctx.config.eta as u128,
+                    "lane {lane}, coefficient {j}"
+                );
+                if lane == 0 {
+                    common_errors[j] = error as i64;
+                } else {
+                    assert_eq!(
+                        error, common_errors[j] as i128,
+                        "coherent error in every lane"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn wide_cram_precharge_matches_independent_full_polynomial_phase() {
+        for (t, delta) in [(65537, DELTA_P), (65537 * 65537, DELTA_P2)] {
+            let ctx = context(t);
+            assert_eq!(ctx.config.rns_product_bit_length(), 650);
+            let (key, signed_key) = secret(&ctx);
+            let mut rng = ShadowHarvester::with_seed(0x4352_414d_6500 + t);
+            let trits: Vec<_> = (0..ctx.n).map(|j| (j % 3) as i8 - 1).collect();
+            let precharge =
+                CramPrechargedSecret::generate_with_rng(&ctx, &trits, &key, &mut rng).unwrap();
+            assert_eq!(precharge.phase_error_bound(), 3);
+            let message: Vec<_> = trits.iter().map(|&s| s as i64).collect();
+            check_phase(
+                &ctx,
+                precharge.encrypted_secret(),
+                &signed_key,
+                &message,
+                &delta,
+            );
+
+            let boundary: Vec<_> = (0..ctx.n)
+                .map(|j| match j % 5 {
+                    0 => -(t as i64 / 2),
+                    1 => t as i64 / 2,
+                    2 => -1,
+                    3 => 0,
+                    _ => 1,
+                })
+                .collect();
+            let ct =
+                precharge_centered_polynomial_with_rng(&ctx, &boundary, &key, &mut rng).unwrap();
+            check_phase(&ctx, &ct, &signed_key, &boundary, &delta);
+        }
+    }
+
+    #[test]
+    fn wide_cram_precharge_keeps_shape_secret_and_message_refusals() {
+        let ctx = context(65537);
+        let (mut key, _) = secret(&ctx);
+        let mut rng = ShadowHarvester::with_seed(0x4352_414d_0001);
+        assert!(CramPrechargedSecret::generate_with_rng(&ctx, &[0; 15], &key, &mut rng).is_err());
+        assert!(CramPrechargedSecret::generate_with_rng(&ctx, &[2; 16], &key, &mut rng).is_err());
+        assert!(
+            precharge_centered_polynomial_with_rng(&ctx, &[32769; 16], &key, &mut rng).is_err()
+        );
+        key.s.limbs[0][0] = ctx.rns.mont_contexts[0].to_montgomery(2);
+        assert!(CramPrechargedSecret::generate_with_rng(&ctx, &[0; 16], &key, &mut rng).is_err());
+    }
 }

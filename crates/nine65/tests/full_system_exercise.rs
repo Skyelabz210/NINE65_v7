@@ -249,8 +249,7 @@ fn test_custom_config_validation() {
     // Testing that it at least doesn't panic:
     let result = FHEConfig::custom(1024, vec![998244353], 998244354, 2);
     println!("t >= q accepted (known gap): {:?}", result.is_ok());
-    if result.is_ok() {
-        let cfg = result.unwrap();
+    if let Ok(cfg) = result {
         println!(
             "  delta = {} (should be 0, which breaks encryption)",
             cfg.delta()
@@ -485,7 +484,7 @@ fn test_dual_public_mode_roundtrip() {
     ];
 
     for (name, cfg) in &configs {
-        let ctx = match RNSFHEContext::try_new(&cfg) {
+        let ctx = match RNSFHEContext::try_new(cfg) {
             Ok(c) => c,
             Err(e) => {
                 println!("[SKIP] {}: {}", name, e);
@@ -535,7 +534,7 @@ fn test_auto_mode_roundtrip() {
     ];
 
     for (name, cfg) in &configs {
-        let ctx = match RNSFHEContext::try_new(&cfg) {
+        let ctx = match RNSFHEContext::try_new(cfg) {
             Ok(c) => c,
             Err(e) => {
                 println!("[SKIP] {}: {}", name, e);
@@ -1152,7 +1151,7 @@ fn test_mod_switch_down() {
             println!("  Decrypted after switch: {}", dec);
             println!("  Correct: {}", dec == m);
             // Mod switch may introduce small error — allow tolerance
-            let error = if dec > m { dec - m } else { m - dec };
+            let error = dec.abs_diff(m);
             assert!(
                 error <= 1,
                 "Mod switch error too large: {} (expected {}, got {})",
@@ -1198,7 +1197,7 @@ fn test_gso_fhe_roundtrip() {
     let mut all_ok = true;
     for &m in &values {
         let ct = ctx.encrypt(m, &keys.public_key, &mut rng);
-        let noise = ct.noise.distance;
+        let noise = ct.noise_distance();
         let dec = ctx.decrypt(&ct, &keys.secret_key);
         let ok = dec == m;
         if !ok {
@@ -1225,7 +1224,7 @@ fn test_gso_fhe_mul_symmetric() {
 
     use nine65::ops::gso_fhe::GSOFHEContext;
 
-    let cfg = FHEConfig::light_rns_exact_insecure();
+    let cfg = SecureConfig::secure_128().into_config();
     let inner = RNSFHEContext::new(&cfg);
     let mut ctx = GSOFHEContext::new(inner);
     let mut rng = ShadowHarvester::with_seed(1100);
@@ -1241,17 +1240,10 @@ fn test_gso_fhe_mul_symmetric() {
     let expected = (a * b) % cfg.t;
 
     println!("  {} * {} = {} (expected {})", a, b, dec, expected);
-    println!("  Noise after mul: {}", ct_prod.noise.distance);
-    println!("  Mul depth: {}", ct_prod.noise.mul_depth);
+    println!("  Noise after mul: {}", ct_prod.noise_distance());
+    println!("  Mul depth: {}", ct_prod.depth());
 
-    // Allow small error for GSO mul
-    let error = if dec > expected {
-        dec - expected
-    } else {
-        expected - dec
-    };
-    println!("  Error: {}", error);
-    assert!(error <= 2, "GSO mul error too large: {}", error);
+    assert_eq!(dec, expected, "GSO product must match the plaintext oracle");
 
     println!("\nGSO-FHE mul: VERIFIED.");
 }

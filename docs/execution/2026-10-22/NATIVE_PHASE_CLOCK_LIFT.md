@@ -1,6 +1,12 @@
 # Native-period lift through an encrypted phase clock
 
-Research only. Native public refresh remains fail-closed. This is a
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](../../PUBLIC_REFRESH_STATUS.md) first.
+
+Research only. The legacy/default refresh remains fail-closed; this report tests a historical clock route. This is a
 source-bound way to preserve the Q-sheet information lost by the earlier
 period13/S8 projection, not a complete full-ring refresh.
 

@@ -1,0 +1,114 @@
+[
+  {
+    "name": " cram beta synthesis v1  .pdf",
+    "bytes": 476419,
+    "pages": 24,
+    "sha256": "1dc89cbdcbc88417a68d9d93a0377169b4d2a0379e0e482c4241bcba0c9afbbf",
+    "text_lines": 899
+  },
+  {
+    "name": "K_Elimination_Formalization.pdf",
+    "bytes": 180812,
+    "pages": 12,
+    "sha256": "31479328d12f00fc12aac7226325846b5156b165ddb9ec34468bdf3a584fa193",
+    "text_lines": 589
+  },
+  {
+    "name": "CRAM Lift, K-Elimination, and Reconstruction Inventory.md",
+    "bytes": 9962,
+    "pages": null,
+    "sha256": "938fd8e7a97713aa8c6dc09ca6fa7ab76f40f28c1157073b243b9775dfe98782",
+    "text_lines": 82
+  },
+  {
+    "name": "Adelic landouer principal .txt",
+    "bytes": 30971,
+    "pages": null,
+    "sha256": "d7b8de84d9703e01a974cae20fbec7cde120a47af99c717d961a9cf281728836",
+    "text_lines": 225
+  },
+  {
+    "name": "Hidden_Carry_Formalization_DRAFT.md",
+    "bytes": 25584,
+    "pages": null,
+    "sha256": "ab4620a377c543d5a0f662e5fecb4fb4c463fa4c8086f4a74a7392bb9bbbeaf8",
+    "text_lines": 462
+  },
+  {
+    "name": "Recumbent bootstrap .txt",
+    "bytes": 57349,
+    "pages": null,
+    "sha256": "0d845d808b632454390861e672b77f60624cc47fe06afebbcc6cdddc432c2815",
+    "text_lines": 1266
+  },
+  {
+    "name": "recumbent_crt_bigint.rs",
+    "bytes": 24753,
+    "pages": null,
+    "sha256": "f10f49b95a4b36e6588ee1a0debb154918229a6f174f10582cc52527a336ff74",
+    "text_lines": 675
+  },
+  {
+    "name": "recumbent_weights.rs",
+    "bytes": 9352,
+    "pages": null,
+    "sha256": "fbb3106c48bd0911f0c0ae10ec4a46eb5e6ede073ea17658406c6bd3e902e167",
+    "text_lines": 250
+  },
+  {
+    "name": "the safe basis.pdf",
+    "bytes": 168050,
+    "pages": 11,
+    "sha256": "2fc0df63afbbd2502842314257e03d1a385f55ec4163239afec169908ea58ff0",
+    "text_lines": 508
+  },
+  {
+    "name": "RECOMBINANT_CRT_BRIDGE_TECHNICAL_PACKET.docx",
+    "bytes": 26668,
+    "pages": null,
+    "sha256": "1d19fbd4e59770a3d788fb69abb850844e59800fa49d219d82ad1a4024394bb9",
+    "text_lines": 235
+  },
+  {
+    "name": "KELIMINATIONPAPER2.pdf",
+    "bytes": 173362,
+    "pages": 16,
+    "sha256": "af4c3aa87048b8d6415a213c28189ea2ab714b6375500675ba7872b33ff93cb8",
+    "text_lines": 766
+  },
+  {
+    "name": "test recumbent.pdf",
+    "bytes": 37299,
+    "pages": 4,
+    "sha256": "91bd8ddfbc7b8970b1c4a0fa72a13bf5bd4dc426fa965db7c319a9eddaed6210",
+    "text_lines": 184
+  },
+  {
+    "name": "main.pdf",
+    "bytes": 202268,
+    "pages": 7,
+    "sha256": "b2372f15e0efb3e5fa27a43de014918a7bfe29b69862f9bbc836b89efe634b9a",
+    "text_lines": 335
+  },
+  {
+    "name": "main (1).pdf",
+    "bytes": 249070,
+    "pages": 13,
+    "sha256": "d2defd5711c6ad28555c2970b4aff9da4e553752fcf71b5bfe8cb0ccd116dcfb",
+    "text_lines": 664
+  },
+  {
+    "name": "recumbent.rs",
+    "bytes": 30738,
+    "pages": null,
+    "sha256": "2a54cae5b029e118815fc067e7820a8e7a5e852c788f18f63a7a9553cbd89cc3",
+    "text_lines": 751
+  },
+  {
+    "name": "A clockwork prime .txt",
+    "bytes": 20683,
+    "pages": null,
+    "sha256": "fceef589177c3c0532841705b222548242b96e6558690722436ff8273c737b73",
+    "text_lines": 106
+  }
+]

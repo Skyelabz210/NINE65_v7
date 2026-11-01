@@ -178,7 +178,7 @@ def normalize_probe_manifest(
                         "refresh_kind": metadata.get("refresh_kind"),
                         "hardware_fingerprint": hardware_fingerprint,
                         "threads": 1,
-                        "build_profile": manifest.get("cargo_profile", "UNVERIFIED"),
+                        "build_profile": metadata.get("build_profile", manifest.get("cargo_profile", manifest.get("build_profile", "UNVERIFIED"))),
                         "sample_policy": (
                             f"chain:{metadata.get('workload')}:"
                             f"refresh={metadata.get('refresh_mode')}:"

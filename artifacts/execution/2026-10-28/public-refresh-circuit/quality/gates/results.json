@@ -1,0 +1,72 @@
+[
+  {
+    "suite": "production-boundary",
+    "exit_code": 0,
+    "seconds": 0.5290054259994577,
+    "command": [
+      "python3",
+      "scripts/run_public_refresh_research_gates.py",
+      "--suite",
+      "production-boundary",
+      "--log-dir",
+      "/workspace/work/public-refresh/quality/gates/production-boundary"
+    ],
+    "runner_log": "/workspace/work/public-refresh/quality/gates/production-boundary-runner.log"
+  },
+  {
+    "suite": "research",
+    "exit_code": 0,
+    "seconds": 81.33252554199953,
+    "command": [
+      "python3",
+      "scripts/run_public_refresh_research_gates.py",
+      "--suite",
+      "research",
+      "--log-dir",
+      "/workspace/work/public-refresh/quality/gates/research"
+    ],
+    "runner_log": "/workspace/work/public-refresh/quality/gates/research-runner.log"
+  },
+  {
+    "suite": "native-arithmetic",
+    "exit_code": 0,
+    "seconds": 18.640261814999576,
+    "command": [
+      "python3",
+      "scripts/run_public_refresh_research_gates.py",
+      "--suite",
+      "native-arithmetic",
+      "--log-dir",
+      "/workspace/work/public-refresh/quality/gates/native-arithmetic"
+    ],
+    "runner_log": "/workspace/work/public-refresh/quality/gates/native-arithmetic-runner.log"
+  },
+  {
+    "suite": "source-preparation",
+    "exit_code": 0,
+    "seconds": 4.43800992100023,
+    "command": [
+      "python3",
+      "scripts/run_public_refresh_research_gates.py",
+      "--suite",
+      "source-preparation",
+      "--log-dir",
+      "/workspace/work/public-refresh/quality/gates/source-preparation"
+    ],
+    "runner_log": "/workspace/work/public-refresh/quality/gates/source-preparation-runner.log"
+  },
+  {
+    "suite": "return-boundary",
+    "exit_code": 0,
+    "seconds": 0.7674078520003604,
+    "command": [
+      "python3",
+      "scripts/run_public_refresh_research_gates.py",
+      "--suite",
+      "return-boundary",
+      "--log-dir",
+      "/workspace/work/public-refresh/quality/gates/return-boundary"
+    ],
+    "runner_log": "/workspace/work/public-refresh/quality/gates/return-boundary-runner.log"
+  }
+]

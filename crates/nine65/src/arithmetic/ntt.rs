@@ -93,18 +93,29 @@ impl NTTEngine {
     /// let engine = NTTEngine::try_new(998244353, 1024)?;
     /// ```
     pub fn try_new(q: u64, n: usize) -> Nine65Result<Self> {
+        if q <= 2 || q % 2 == 0 || q >= (1u64 << 63) {
+            return Err(Nine65Error::NTTConfigError {
+                message: format!("NTT modulus must be odd and in (2, 2^63), got {q}"),
+            });
+        }
         if !n.is_power_of_two() {
             return Err(Nine65Error::NTTConfigError {
                 message: format!("N must be a power of 2, got {}", n),
             });
         }
 
-        if (q - 1) % (2 * n as u64) != 0 {
+        let order = n
+            .checked_mul(2)
+            .and_then(|value| u64::try_from(value).ok())
+            .ok_or_else(|| Nine65Error::NTTConfigError {
+                message: format!("NTT degree {n} exceeds the supported root-order range"),
+            })?;
+        if (q - 1) % order != 0 {
             return Err(Nine65Error::NTTConfigError {
                 message: format!(
                     "q-1 ({}) must be divisible by 2N ({}) for NTT",
                     q - 1,
-                    2 * n
+                    order
                 ),
             });
         }
@@ -1066,6 +1077,21 @@ mod tests {
     // =========================================================================
     // FALLIBLE CONSTRUCTOR TESTS
     // =========================================================================
+
+    #[test]
+    fn try_new_rejects_invalid_moduli_and_root_order_without_panicking() {
+        for modulus in [0, 1, 2, 4, 16] {
+            assert!(matches!(
+                NTTEngine::try_new(modulus, 8),
+                Err(Nine65Error::NTTConfigError { .. })
+            ));
+        }
+        let overflowing_degree = 1usize << (usize::BITS - 1);
+        assert!(matches!(
+            NTTEngine::try_new(TEST_PRIME, overflowing_degree),
+            Err(Nine65Error::NTTConfigError { .. })
+        ));
+    }
 
     #[test]
     fn test_try_new_valid_params() {

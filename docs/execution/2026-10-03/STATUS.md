@@ -1,4 +1,10 @@
-# Live execution update — 2026-10-21
+# Historical execution checkpoint — 2026-10-21
+
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](../../PUBLIC_REFRESH_STATUS.md) first.
 
 ## Whole-system public-refresh diagnosis (after `9800fd1`)
 

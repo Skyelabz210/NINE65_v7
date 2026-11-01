@@ -219,8 +219,8 @@ fn print_config(ctx: &RNSFHEContext) {
 
 fn header() {
     println!(
-        "{:>6} | {:>5} {:>6} {:>5} | {:>11} | {:>9} | {:>11} | {}",
-        "depth", "lanes", "anchor", "level", "noise bits", "d(noise)", "margin sign", "decrypt"
+        "{:>6} | {:>5} {:>6} {:>5} | {:>11} | {:>9} | {:>11} | decrypt",
+        "depth", "lanes", "anchor", "level", "noise bits", "d(noise)", "margin sign"
     );
     println!("-------+-------------------+-------------+-----------+-------------+---------------");
 }
@@ -553,8 +553,8 @@ fn noise_profile_1_fresh_encryption_baseline() {
     print_config(&ctx);
     println!();
     println!(
-        "{:>8} | {:>12} | {:>14} | {:>10} | {}",
-        "m", "noise bits", "noise/(delta/2)", "margin>0", "decrypt"
+        "{:>8} | {:>12} | {:>14} | {:>10} | decrypt",
+        "m", "noise bits", "noise/(delta/2)", "margin>0"
     );
     println!("---------+--------------+----------------+------------+---------");
 
@@ -723,11 +723,10 @@ fn noise_profile_4_squaring_chain() {
 /// the divisor?
 ///
 /// Protocol per divisor `d`:
-///   1. `Enc(m)`                  -> measure  (noise `e`)
-///   2. `mul_plain_dual(., d)`    -> measure  (the underlying integer is now
-///                                             exactly `d·(Δm + e)`, hence
-///                                             exactly divisible by `d`)
-///   3. `exact_divide(., d)`      -> measure
+/// 1. `Enc(m)` -> measure (noise `e`)
+/// 2. `mul_plain_dual(., d)` -> measure (the underlying integer is now
+///    exactly `d·(Δm + e)`, hence exactly divisible by `d`)
+/// 3. `exact_divide(., d)` -> measure
 ///
 /// The hypothesis says step 3 is step 2 minus exactly `log2(d)` bits, with NO
 /// rounding term — i.e. `noise_abs` returns to its step-1 value bit for bit.
@@ -749,8 +748,8 @@ fn noise_profile_5_exact_division_vs_divisor() {
     print_config(&ctx);
     println!();
     println!(
-        "{:>7} | {:>11} | {:>11} | {:>11} | {:>10} | {:>10} | {:>8} | {}",
-        "d", "noise e", "after x d", "after / d", "d(x d)", "d(/ d)", "log2 d", "bit-exact"
+        "{:>7} | {:>11} | {:>11} | {:>11} | {:>10} | {:>10} | {:>8} | bit-exact",
+        "d", "noise e", "after x d", "after / d", "d(x d)", "d(/ d)", "log2 d"
     );
     println!(
         "--------+-------------+-------------+-------------+------------+------------+----------+-----------"
@@ -1039,8 +1038,7 @@ fn noise_profile_8_verdict() {
     let last = r
         .samples
         .iter()
-        .filter(|s| s.correct)
-        .last()
+        .rfind(|s| s.correct)
         .expect("no correct sample");
 
     println!("\n  ============================================================");
@@ -1084,9 +1082,9 @@ fn noise_profile_8_verdict() {
 /// completely different consequences for depth:
 ///
 /// * additive `e_k = k·c`      -> `log2` rises like `log2(depth)`, ceiling at
-///                                depth `~ (Δ/2)/c`  — huge but finite
+///   depth `~ (Δ/2)/c` — huge but finite
 /// * multiplicative `e_k = f^k` -> `log2` rises LINEARLY in depth, ceiling at
-///                                depth `~ log2(Δ/2)/log2(f)` — small
+///   depth `~ log2(Δ/2)/log2(f)` — small
 ///
 /// So this measures the increment in RAW units. If `e_{k+1} - e_k` is constant
 /// the term is additive; if `e_{k+1} / e_k` is constant it is multiplicative.
@@ -1111,8 +1109,8 @@ fn noise_profile_9_per_multiply_increment() {
     let mut samples = vec![prev.clone()];
 
     println!(
-        "\n{:>6} | {:>11} | {:>16} | {:>16} | {}",
-        "depth", "log2 e_k", "log2(e_k - e_k-1)", "log2(e_k / e_k-1)", "decrypt"
+        "\n{:>6} | {:>11} | {:>16} | {:>16} | decrypt",
+        "depth", "log2 e_k", "log2(e_k - e_k-1)", "log2(e_k / e_k-1)"
     );
     println!("-------+-------------+------------------+------------------+---------");
 
@@ -1192,8 +1190,8 @@ fn noise_profile_10_public_mode_t_sweep() {
     println!("(10) PUBLIC MODE — per-level noise increment across t");
     println!("================================================================");
     println!(
-        "\n{:>7} | {:>10} | {:>8} | {:>36} | {:>7} | {:>9} | {}",
-        "t", "ceiling", "max depth", "first 6 d(log2 noise)", "last d", "end noise", "stop"
+        "\n{:>7} | {:>10} | {:>8} | {:>36} | {:>7} | {:>9} | stop",
+        "t", "ceiling", "max depth", "first 6 d(log2 noise)", "last d", "end noise"
     );
     println!(
         "--------+------------+----------+--------------------------------------+---------+-----------+-------"
@@ -1327,8 +1325,8 @@ fn noise_profile_11_public_mode_raw_increment() {
     assert!(prev.correct);
 
     println!(
-        "\n{:>6} | {:>11} | {:>18} | {:>18} | {}",
-        "depth", "log2 e_k", "log2(e_k - e_k-1)", "log2(e_k / e_k-1)", "decrypt"
+        "\n{:>6} | {:>11} | {:>18} | {:>18} | decrypt",
+        "depth", "log2 e_k", "log2(e_k - e_k-1)", "log2(e_k / e_k-1)"
     );
     println!("-------+-------------+--------------------+--------------------+---------");
 

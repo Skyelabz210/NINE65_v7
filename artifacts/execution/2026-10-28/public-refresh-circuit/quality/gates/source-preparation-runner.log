@@ -1,0 +1,68 @@
+Running ops::public_refresh_source::tests::source_preparation_tracks_full_polynomial_history_and_ring_embedding
+Log: /workspace/work/public-refresh/quality/gates/source-preparation/source_preparation_tracks_full_polynomial_history_and_ring_embedding.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_source::tests::source_preparation_tracks_full_polynomial_history_and_ring_embedding ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.00s
+
+Running ops::public_refresh_source::tests::source_preparation_rejects_wrong_families_and_invalid_parameters
+Log: /workspace/work/public-refresh/quality/gates/source-preparation/source_preparation_rejects_wrong_families_and_invalid_parameters.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_source::tests::source_preparation_rejects_wrong_families_and_invalid_parameters ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.00s
+
+Running ops::public_refresh_source::tests::source_preparation_refuses_exhausted_switch_margin_without_resetting_input
+Log: /workspace/work/public-refresh/quality/gates/source-preparation/source_preparation_refuses_exhausted_switch_margin_without_resetting_input.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_source::tests::source_preparation_refuses_exhausted_switch_margin_without_resetting_input ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.01s
+
+Running ops::public_refresh_source::tests::source_preparation_native_same_ring_h96_checks_all_coefficients
+Log: /workspace/work/public-refresh/quality/gates/source-preparation/source_preparation_native_same_ring_h96_checks_all_coefficients.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_source::tests::source_preparation_native_same_ring_h96_checks_all_coefficients ... public source preparation: denseN8192 -> sparseN8192/H96, base_bits=3, all 8192 coefficients and actual expanded radii checked; certified radius=48; security/refresh admission remains false
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.84s
+
+Running ops::public_refresh_source::tests::source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros
+Log: /workspace/work/public-refresh/quality/gates/source-preparation/source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros.log
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_source::tests::source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros ... public source preparation: denseN8192 -> sparseN32768/H32, base_bits=2, all 32768 coefficients and actual expanded radii checked; certified radius=16; security/refresh admission remains false
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 2.92s
+
+source-preparation: 5 exact regressions passed; no production refresh admission

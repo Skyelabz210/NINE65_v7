@@ -3,7 +3,15 @@
 
 from __future__ import annotations
 
-from cram_compare_results import COMPATIBILITY_FIELDS, group_report
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from cram_compare_results import (
+    COMPATIBILITY_FIELDS,
+    group_report,
+    normalize_probe_manifest,
+)
 
 
 def record(implementation: str, failures: int) -> dict[str, object]:
@@ -54,6 +62,41 @@ def main() -> int:
     blocked = group_report([record("left", 0), empty_trials])
     comparison = blocked[0]["comparisons"][0]
     assert comparison["ranking_allowed"] is False
+
+    with TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        result_path = root / "cases" / "debug.json"
+        result_path.parent.mkdir(parents=True)
+        result_path.write_text(
+            json.dumps(
+                {
+                    "schema": "nine65-cram-exploratory-probe-v1",
+                    "metadata": {
+                        "build_profile": "debug",
+                        "claimed_security_bits": 128,
+                        "full_log_q_bits_upper_sum": 120,
+                        "n": 256,
+                        "plaintext_modulus": 65_537,
+                        "refresh_kind": "none",
+                        "workload": "add_only",
+                        "refresh_mode": "none",
+                        "refresh_timing": "pre",
+                    },
+                    "trace": [{"operation": "add", "operation_ns": 17, "correct": True}],
+                }
+            ),
+            encoding="utf-8",
+        )
+        manifest_path = root / "manifest.json"
+        manifest = {
+            "commit": "test-commit",
+            "hardware": {},
+            "records": [{"result_path": "cases/debug.json", "command": ["probe"]}],
+        }
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        normalized = normalize_probe_manifest(manifest_path, manifest)
+        assert normalized[0]["compatibility"]["build_profile"] == "debug"
+
     return 0
 
 

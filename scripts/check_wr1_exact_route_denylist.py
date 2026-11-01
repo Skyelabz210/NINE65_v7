@@ -23,7 +23,7 @@ floating-point type or literal.
 
 Explicitly PERMITTED, per §F's own carve-out and §B1:
 
-  * the bounded `U256` / `U512` parallel idempotent-sum fallback used solely to
+  * the bounded `U1024` parallel idempotent-sum fallback used solely to
     certify the rank and half decisions in `MainOnlyBaseExt` — it compares
     against multiples of `M` and never materializes a canonical coefficient;
   * `DualRNSContext::canonical_anchor_primes_for_n`, read NUMERICALLY as the
@@ -57,6 +57,7 @@ ROUTE_SOURCES = (
     ROOT / "crates" / "nine65" / "src" / "ops" / "exact_mul.rs",
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "main_only_base_ext.rs",
     ROOT / "crates" / "nine65" / "src" / "arithmetic" / "exact_scale_round.rs",
+    ROOT / "crates" / "nine65" / "src" / "arithmetic" / "wide.rs",
 )
 
 # Split identifiers so this scanner does not match itself when it is, in turn,

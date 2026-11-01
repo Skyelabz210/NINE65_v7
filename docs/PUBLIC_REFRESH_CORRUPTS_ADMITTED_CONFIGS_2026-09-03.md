@@ -1,5 +1,11 @@
 # Public refresh corrupts plaintext on configs CLAUDE.md lists as admitted
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 > **Status update (2026-10-17):** This document preserves the original
 > measurement at `2547cf0`. The support predicates now include the existing
 > Phase-1 soundness gate, so no named config is admitted while that gate is

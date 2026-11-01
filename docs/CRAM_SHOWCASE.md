@@ -21,12 +21,13 @@ manufactured-chain elimination-first rescale and relinearization path, see
 [CRAM Public Mode](CRAM_PUBLIC_MODE.md). The example is a small executable
 tour, not a throughput benchmark or a general circuit-depth claim.
 
-Native public refresh is currently blocked. The older `nine65_v7_demo`
-retains a historical “Bootstrap Complete” title; use the example above for a
-current CRAM demonstration. The [README claim surface](../README.md#current-limits)
-and [public FHE solution route](PUBLIC_FHE_SOLUTION_2026-09-28.md) describe
-the refresh gap and the independent reference results. Those reference results
-do not establish a native NINE65 refresh or production security claim.
+The showcase above exercises the default public arithmetic API, whose legacy
+Clockwork refresh remains gated. A separate native research refresh now works
+through `PublicRefreshCircuit`; see [current status and notation](PUBLIC_REFRESH_STATUS.md)
+and the [README commands](../README.md#public-refresh-status). It has five-cycle
+native correctness evidence and remains unadmitted for production security.
+The older `nine65_v7_demo` retains a historical “Bootstrap Complete” title;
+neither that title nor this arithmetic showcase is the refresh evidence.
 
 To run the public-mode acceptance suite:
 

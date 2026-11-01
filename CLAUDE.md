@@ -9,6 +9,18 @@ It provides finite leveled computation plus low-depth refresh paths. **It is not
 
 ## Open Work — read this first
 
+For public refresh, read [current status and notation](docs/PUBLIC_REFRESH_STATUS.md)
+first. The explicit `ops::public_refresh_circuit` research backend has a real
+encrypted carry producer, original-key return and five-cycle native evidence.
+Legacy `ClockworkBootstrap` entry points remain gated; joint-key production
+security is still unadmitted. Older handoffs below are dated snapshots.
+`docs/execution/2026-10-27/IMPLEMENTATION.md` records the current commissioned
+recumbent work and the user's emission-policy clarification. Reconstruction is
+permitted; Garner/mixed-radix synthetic emissions remain forbidden in residue
+compute. Use actual-operation arrow checks for the stated independence and
+reversibility domain, separately from structural source checks. Earlier blanket
+reconstruction bans do not supersede this clarification.
+
 `docs/REPOSITION_EXECUTION_2026-09-24.md` reconciles the September branch
 inventory and completion plan with the current main tree. Read its verified
 state changes, transduction-capacity finding, dependency gates, and benchmark
@@ -92,14 +104,17 @@ Core FHE tests only:
 
 Bootstrap-specific tests:
   cargo test -p nine65 --lib --release -- bootstrap
-  cargo test -p nine65 --test bootstrap_integration --release --features allow_insecure
-  cargo test -p nine65 --test bootstrap_parameter_exploration --release --features allow_insecure
+  cargo test -p nine65 --test bootstrap_integration --features allow_insecure
+  cargo test -p nine65 --test bootstrap_parameter_exploration --features allow_insecure
 
-(Standalone `-p nine65` runs of integration-test and bench targets need
-`--features allow_insecure`: those targets link the library without cfg(test),
-so the release-mode secure-RNG gate would otherwise reject their seeded
-ShadowHarvester. The workspace-wide command above needs nothing extra. Each
-affected target declares this via required-features in crates/nine65/Cargo.toml.)
+(Feature-gated integration targets with seeded test RNGs require
+`--features allow_insecure` and a **debug** build. `src/lib.rs` deliberately
+rejects `allow_insecure` in a release library build, even when Cargo is building
+an integration test. The default workspace release command therefore skips
+those feature-gated targets; it is not evidence that every integration target
+ran. Record executed targets separately from `cargo metadata` discovery.
+See `docs/execution/2026-10-26/STATUS.md` for the measured inventory and the
+reproduced release-feature refusal.)
 
 Security tests:
   cargo test -p nine65 security::tests -- --nocapture
@@ -116,7 +131,14 @@ full scheme, rationale and measured counts/timings:
 ---
 
 ## Bootstrap Paths
-All three are **public** refresh paths (evaluator-side, public bootstrap key
+
+The working research path is `PublicRefreshCircuit`, opt-in with
+`allow_insecure`; see [current status](docs/PUBLIC_REFRESH_STATUS.md). Its
+native run checked 81,920 coefficient comparisons across five refresh/square
+cycles. Later root/inventory changes have separate regression coverage; do not
+describe that earlier full native snapshot as a latest-head rerun.
+
+The following three are **legacy public** refresh entry points (evaluator-side, public bootstrap key
 material only). None of their roundtrip tests currently runs: the suites in
 `ops/bootstrap.rs`, `tests/bootstrap_integration.rs`,
 `tests/bootstrap_parameter_exploration.rs` and
@@ -127,7 +149,7 @@ VESTIGIAL/RETIRED, so "verified exact" cannot be sourced to the running suite.
 - Non-Circular (KSK): `bootstrap_with_ksk()` — independent boot_sk, gadget key switch
 - Auto-Bootstrap: `AutoBootstrapEvaluator::mul_auto()` — auto trigger on noise threshold
 
-**Public refresh is disabled on every config.** The circular and KSK support
+**Default legacy Clockwork refresh remains disabled on every named config.** The circular and KSK support
 predicates require both enough post-refresh noise headroom and a sound Phase 1.
 The headroom screens clear for the four named configs, but Phase 1 still omits
 a secret-dependent quotient/carry. `ensure_public_refresh_supported` and its
@@ -205,7 +227,7 @@ n=8192/16384. See `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 - ZERO floats in crypto/arithmetic hot paths — no f32/f64 in K-Elimination, Montgomery, NTT, RNS, or any encrypt/decrypt/eval code path, ever. (`compiler.rs::NoiseModel` is a planning-only noise estimator with `pub f64` fields — it never touches ciphertext coefficients — and is the one documented exception; do not extend float usage beyond it.)
 - Integer-only arithmetic throughout (K-Elimination, Montgomery, NTT)
 - Constant-time operations required for all security-sensitive code paths
-- Test configs (allow_insecure) are blocked in release builds — never use in production
+- `allow_insecure` enables unadmitted research in debug library builds and test-only builds. Release library/example builds reject it; it does not grant production-security approval.
 - Deterministic execution — bit-identical results across all platforms required
 - All bootstrap paths must produce exact plaintext recovery
 
@@ -218,7 +240,7 @@ n=8192/16384. See `docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md`.
 - adaptive-threading: Entropy-based adaptive threads (requires shadow-entropy)
 - accelerated: MANA + UNHAL integration
 - deterministic_rng: Reproducible testing
-- allow_insecure: Test-only configs (blocked in release)
+- allow_insecure: Explicit opt-in for unadmitted research/test configs; release library/example builds reject it
 
 ---
 
@@ -264,7 +286,7 @@ decrypts and asserts exactness, so no timing comes from a wrong answer.
 | secure_256 | 22.41ms | 5.943ms | 1017.91ms | 262.96ms | 7.78ms |
 
 Reproduce:
-  cargo test -p nine65 --test op_timings --release --features allow_insecure -- --ignored --nocapture
+  cargo test -p nine65 --test op_timings --config profile.test.package.nine65.opt-level=2 --features allow_insecure -- --ignored --nocapture
 
 On the figures previously recorded here (secure_128 Encrypt 23.56ms | Add 0.83ms
 | Mul 152.13ms | Decrypt 11.06ms): the commit that wrote them, 364bd6a

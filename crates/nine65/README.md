@@ -3,13 +3,18 @@
 The FHE core: BFV over a dual-RNS ciphertext, with the CRAM substrate reached
 through `src/cram_ct_wrap.rs`.
 
+For public refresh, read the [current status and notation](../../docs/PUBLIC_REFRESH_STATUS.md).
+The explicit research backend has encrypted carry extraction and repeated
+native execution; the default legacy Clockwork route remains gated.
+
 Build and test from the workspace root:
 
 ```
 cargo test -p nine65 --lib
 ```
 
-Current baseline: **652 passed / 3 failed / 103 ignored**. The three failures
+Historical 2026-08 baseline: **652 passed / 3 failed / 103 ignored**; this is
+not a current-head test result. The three failures
 are pre-existing and named in `docs/AUDIT_FINDINGS_2026-08-09.md` §5:
 `noise::budget::tests::exact_delta_size_does_not_sum_lane_widths`,
 `noise::budget::tests::exact_delta_size_handles_products_above_u128`,

@@ -1,0 +1,138 @@
+{
+  "scope": "pinned authors' implementation; optimized primal Babai, no MITM",
+  "parameters": {
+    "n": 8192,
+    "positive": 48,
+    "negative": 48,
+    "primes": [
+      998244353,
+      985661441
+    ],
+    "purpose": "internal source candidate",
+    "q": 983930967448092673,
+    "error": {
+      "distribution": "CenteredBinomial",
+      "eta": 3
+    },
+    "samples": "infinity (conservative)",
+    "source_support_public": false,
+    "production_admitted": false
+  },
+  "source_lock": {
+    "repository": "https://github.com/identitymapping/enhanced_hybrid_attack",
+    "revision": "d60cac04dea5a397b8489cce7171f3fe38b277d8",
+    "files": {
+      "lattice-estimator/estimator/__init__.py": "e002e825d7245ce39c9a388456b9ffb2a3ec326d39c14c4efb8f964843907cdd",
+      "lattice-estimator/estimator/conf.py": "d326ee57db121ab64b44508a20a7176e56f9ec1b6c56c6d8a0666632e2a30f5f",
+      "lattice-estimator/estimator/cost.py": "2604c5a7f08e8898839d58a12f5a4efe3dd6480cefe8a871572e86bd301d3970",
+      "lattice-estimator/estimator/errors.py": "6ffd53eb82f27233c0dd3612b3b6139da28b48e5c128885cf1211e16154086f5",
+      "lattice-estimator/estimator/gb.py": "d785ee73ad40a470422d1ddc21d76e9f32b8ab1d85d88ae2539590b32bbd7edc",
+      "lattice-estimator/estimator/io.py": "316d7ec3c0371ebf4f83d301030a935e7b89774cf7366bc7d5237348124a057e",
+      "lattice-estimator/estimator/lwe.py": "2475fe006ad9961dc076dda91e85720ff87a0c05319097ae26e15e3f60fe0d4c",
+      "lattice-estimator/estimator/lwe_bkw.py": "6caf4a9a1301a173a3c28863c39535d13c4927d7e870f37d68ad4b09e894a9f2",
+      "lattice-estimator/estimator/lwe_dual.py": "872a8ebd1377ca64592e06032286283c3a24e1abd9a36a37e0fc64d252be1f74",
+      "lattice-estimator/estimator/lwe_guess.py": "c6668c45b75887c55cd4595681586a01de706031a30ce2a98f09114ee0d945dc",
+      "lattice-estimator/estimator/lwe_parameters.py": "72bde0ae3bdd89a4de02b249a1da144256b8d84d009b28b59bde6364b0bc8ecc",
+      "lattice-estimator/estimator/lwe_primal.py": "14bd0e68796a56bc8da574221d1756650a1d0a45d4c4f7b3f853a10b3f453a3f",
+      "lattice-estimator/estimator/nd.py": "bb14c12043be7311d9e777eb34945516e22f853bcf23d633f65f57193fdf1c2c",
+      "lattice-estimator/estimator/ntru.py": "1b3b6441ca96d9bd3938db57f76002d548dea836572dac1a463b7287201650d4",
+      "lattice-estimator/estimator/ntru_parameters.py": "4d4964ccaad895e5387606f8e7d6d069347736a39b432ffd88bdbee503764011",
+      "lattice-estimator/estimator/ntru_primal.py": "6abc65c706011d229aa108dfd9e805a49fe5686501b41074ea9c2572d0f6b0e5",
+      "lattice-estimator/estimator/prob.py": "75abb2c4a8cd197f9479510808913c4adc4a4306d023719458470b8501c26a84",
+      "lattice-estimator/estimator/reduction.py": "093a066e48ff52463b015fc8edf859fed797abb4d2926731ada66466c7fa3f20",
+      "lattice-estimator/estimator/schemes.py": "e0a50aee0d9da7cdbf526fb990e5e5d7e2bbd85041262e496b9c90529a5c50e2",
+      "lattice-estimator/estimator/simulator.py": "92973eb91856cb93851de3de016fc34c0be0f9d647ec04026f581203c8432213",
+      "lattice-estimator/estimator/sis.py": "6d162840e0b62d46612774945e9e7ad6c2bb5a2e8d1666468738374428e357ba",
+      "lattice-estimator/estimator/sis_lattice.py": "2581c71cd82f776b23601977c243e62f96b789a51da03c9dacfa306b13061d02",
+      "lattice-estimator/estimator/sis_parameters.py": "726ae10ed711cf8f9a42efa07b6d7ed00c67dbb28f0f4f97bbac3bb7c8d59b4c",
+      "lattice-estimator/estimator/util.py": "0da1e981bc56db2a008e46709d50b9b326673e04aecf406cb180fe18b437af01"
+    }
+  },
+  "driver_sha256": "869f3d2c040edb6d660cdfab6c364173e9716802023c7391fda18bd0ccc7e620",
+  "profile_driver_sha256": "fa170d5c3d4ddd5f345b04288526f9d22c9e1483d97a93723eb34d081f72d593",
+  "required_tasks": [
+    [
+      "matzov_classical",
+      "baseline"
+    ],
+    [
+      "matzov_classical",
+      "enhanced"
+    ],
+    [
+      "adps16_quantum_lattice",
+      "baseline"
+    ],
+    [
+      "adps16_quantum_lattice",
+      "enhanced"
+    ]
+  ],
+  "results": [
+    {
+      "status": "finite",
+      "bits": 258.05009001127144,
+      "cost": "         rop: \u22482^258.1\n         red: \u22482^257.4\n         svp: \u22482^256.5\n           \u03b2:      536\n           \u03b7:        2\n           \u03b6: \u22482^12.3\n         |S|: \u22482^159.9\n          h_:       15\n  prob_babai:    0.590\n           d:     5042\n        prob: \u22482^-72.4\n single_prob: \u22482^-72.4\n           \u21bb: \u22482^74.6\n         tag:   hybrid\n          xi:    6.833\n         tau:        1",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "sage_version": "10.6",
+      "red_shape_model": "gsa",
+      "babai": true,
+      "mitm": false,
+      "structure_leverage": false,
+      "transcript": "Saved profile to: saved_profiles/prof_b536_n8192.npy\nCRAM_RESULT={\"status\": \"finite\", \"bits\": 258.05009001127144, \"cost\": \"         rop: \\u22482^258.1\\n         red: \\u22482^257.4\\n         svp: \\u22482^256.5\\n           \\u03b2:      536\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.3\\n         |S|: \\u22482^159.9\\n          h_:       15\\n  prob_babai:    0.590\\n           d:     5042\\n        prob: \\u22482^-72.4\\n single_prob: \\u22482^-72.4\\n           \\u21bb: \\u22482^74.6\\n         tag:   hybrid\\n          xi:    6.833\\n         tau:        1\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"sage_version\": \"10.6\", \"red_shape_model\": \"gsa\", \"babai\": true, \"mitm\": false, \"structure_leverage\": false}\nTimeout (0:01:00)!\nThread 0x00007f8bfc7f7b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 117 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007f8bfc7f7b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 117 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007f8bfc7f7b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 498 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\n",
+      "model": "matzov_classical",
+      "variant": "baseline",
+      "elapsed_seconds": 238.6847530659943
+    },
+    {
+      "status": "finite",
+      "bits": 249.72810376633086,
+      "cost": "         rop: \u22482^249.7\n         red: \u22482^249.4\n         svp: \u22482^247.6\n           \u03b2:      551\n           \u03b7:        2\n           \u03b6: \u22482^12.3\n         |S|: \u22482^150.2\n          h_:       14\n  prob_babai:    0.520\n           d:     5222\n        prob: \u22482^-60.1\n single_prob: \u22482^-60.1\n           \u21bb: \u22482^62.3\n         tag:   hybrid\n          xi:    6.921\n         tau:        1",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "sage_version": "10.6",
+      "red_shape_model": "gsa",
+      "babai": true,
+      "mitm": false,
+      "structure_leverage": true,
+      "transcript": "Saved profile to: saved_profiles/prof_b551_n8192.npy\nCRAM_RESULT={\"status\": \"finite\", \"bits\": 249.72810376633086, \"cost\": \"         rop: \\u22482^249.7\\n         red: \\u22482^249.4\\n         svp: \\u22482^247.6\\n           \\u03b2:      551\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.3\\n         |S|: \\u22482^150.2\\n          h_:       14\\n  prob_babai:    0.520\\n           d:     5222\\n        prob: \\u22482^-60.1\\n single_prob: \\u22482^-60.1\\n           \\u21bb: \\u22482^62.3\\n         tag:   hybrid\\n          xi:    6.921\\n         tau:        1\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"sage_version\": \"10.6\", \"red_shape_model\": \"gsa\", \"babai\": true, \"mitm\": false, \"structure_leverage\": true}\nTimeout (0:01:00)!\nThread 0x00007fe388a3cb80 (most recent call first):\n  File \"<shim>\", line ??? in <interpreter trampoline>\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007fe388a3cb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 498 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007fe388a3cb80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 498 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 587 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\n",
+      "model": "matzov_classical",
+      "variant": "enhanced",
+      "elapsed_seconds": 238.99849168200308
+    },
+    {
+      "status": "finite",
+      "bits": 223.26653444438816,
+      "cost": "         rop: \u22482^223.3\n         red: \u22482^222.6\n         svp: \u22482^221.9\n           \u03b2:      592\n           \u03b7:        2\n           \u03b6: \u22482^12.3\n         |S|: \u22482^120.7\n          h_:       11\n  prob_babai:    0.580\n           d:     5682\n        prob: \u22482^-63.5\n single_prob: \u22482^-63.5\n           \u21bb: \u22482^65.7\n         tag:   hybrid\n          xi:    7.132\n         tau:        1",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "sage_version": "10.6",
+      "red_shape_model": "gsa",
+      "babai": true,
+      "mitm": false,
+      "structure_leverage": true,
+      "transcript": "Saved profile to: saved_profiles/prof_b592_n8192.npy\nCRAM_RESULT={\"status\": \"finite\", \"bits\": 223.26653444438816, \"cost\": \"         rop: \\u22482^223.3\\n         red: \\u22482^222.6\\n         svp: \\u22482^221.9\\n           \\u03b2:      592\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.3\\n         |S|: \\u22482^120.7\\n          h_:       11\\n  prob_babai:    0.580\\n           d:     5682\\n        prob: \\u22482^-63.5\\n single_prob: \\u22482^-63.5\\n           \\u21bb: \\u22482^65.7\\n         tag:   hybrid\\n          xi:    7.132\\n         tau:        1\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"sage_version\": \"10.6\", \"red_shape_model\": \"gsa\", \"babai\": true, \"mitm\": false, \"structure_leverage\": true}\nTimeout (0:01:00)!\nThread 0x00007f0484fb6b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 498 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007f0484fb6b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 510 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007f0484fb6b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\n",
+      "model": "adps16_quantum_lattice",
+      "variant": "enhanced",
+      "elapsed_seconds": 230.144181757998
+    },
+    {
+      "status": "finite",
+      "bits": 231.53011836933317,
+      "cost": "         rop: \u22482^231.5\n         red: \u22482^230.7\n         svp: \u22482^230.3\n           \u03b2:      579\n           \u03b7:        2\n           \u03b6: \u22482^12.3\n         |S|: \u22482^130.6\n          h_:       12\n  prob_babai:    0.580\n           d:     5538\n        prob: \u22482^-75.1\n single_prob: \u22482^-75.1\n           \u21bb: \u22482^77.3\n         tag:   hybrid\n          xi:    7.066\n         tau:        1",
+      "parameters": "LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\u03c3=1.22), m=+Infinity, tag=None)",
+      "sage_version": "10.6",
+      "red_shape_model": "gsa",
+      "babai": true,
+      "mitm": false,
+      "structure_leverage": false,
+      "transcript": "Saved profile to: saved_profiles/prof_b579_n8192.npy\nCRAM_RESULT={\"status\": \"finite\", \"bits\": 231.53011836933317, \"cost\": \"         rop: \\u22482^231.5\\n         red: \\u22482^230.7\\n         svp: \\u22482^230.3\\n           \\u03b2:      579\\n           \\u03b7:        2\\n           \\u03b6: \\u22482^12.3\\n         |S|: \\u22482^130.6\\n          h_:       12\\n  prob_babai:    0.580\\n           d:     5538\\n        prob: \\u22482^-75.1\\n single_prob: \\u22482^-75.1\\n           \\u21bb: \\u22482^77.3\\n         tag:   hybrid\\n          xi:    7.066\\n         tau:        1\", \"parameters\": \"LWEParameters(n=8192, q=983930967448092673, Xs=T(p=48, m=48, n=8192), Xe=D(\\u03c3=1.22), m=+Infinity, tag=None)\", \"sage_version\": \"10.6\", \"red_shape_model\": \"gsa\", \"babai\": true, \"mitm\": false, \"structure_leverage\": false}\nTimeout (0:01:00)!\nThread 0x00007f1141250b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/simulator.py\", line 118 in GSA\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 410 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007f1141250b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 510 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 587 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\nTimeout (0:01:00)!\nThread 0x00007f1141250b80 (most recent call first):\n  File \"/hou/lattice-estimator/estimator/prob.py\", line 109 in babai\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 510 in cost\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 585 in cost_zeta\n  File \"/hou/lattice-estimator/estimator/lwe_primal.py\", line 738 in __call__\n  File \"/driver/cram_hou_jiang_screen.py\", line 69 in worker\n  File \"/driver/cram_hou_jiang_screen.py\", line 126 in main\n  File \"/driver/cram_hou_jiang_screen.py\", line 161 in <module>\n",
+      "model": "adps16_quantum_lattice",
+      "variant": "baseline",
+      "elapsed_seconds": 230.8550748589987
+    }
+  ],
+  "pinned_implementation_run_complete": true,
+  "corrected_theorem_3_1_validated": false,
+  "quantum_hybrid_coverage_complete": false,
+  "joint_key_security_proven": false,
+  "production_admitted": false
+}

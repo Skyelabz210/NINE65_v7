@@ -1,0 +1,15 @@
+
+running 10 tests
+test arithmetic::exact_scale_round::tests::corners_and_rounding_ties_are_exact ... ok
+test arithmetic::exact_scale_round::tests::even_auxiliary_lane_is_refused_before_modular_halving ... ok
+test arithmetic::exact_scale_round::tests::full_u64_auxiliary_lane_matches_signed_integer_oracle ... ok
+test arithmetic::exact_scale_round::tests::insufficient_aux_capacity_is_refused ... ok
+test arithmetic::exact_scale_round::tests::output_shift_is_a_multiple_of_q ... ok
+test arithmetic::exact_scale_round::tests::production_main_primes_match_reference ... ok
+test arithmetic::exact_scale_round::tests::production_primes_full_range_against_u512_oracle ... ok
+test arithmetic::exact_scale_round::tests::small_basis_matches_reference_over_full_operand_range ... ok
+test arithmetic::exact_scale_round::tests::typed_rejections ... ok
+test arithmetic::exact_scale_round::tests::under_capacity_bases_are_unreachable ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 1164 filtered out; finished in 0.04s
+

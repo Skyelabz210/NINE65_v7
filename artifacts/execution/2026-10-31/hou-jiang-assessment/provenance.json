@@ -1,0 +1,47 @@
+{
+  "status": "pinned_implementation_completed_security_unadmitted",
+  "recorded_at_utc": "2026-10-31T23:52:29.097723+00:00",
+  "base_commit": "cbb2372ad79e4bd4fa8b8d2cc656c0463e78e0c8",
+  "upstream_revision": "d60cac04dea5a397b8489cce7171f3fe38b277d8",
+  "upstream_commit_date": "2026-02-23T17:59:35+08:00",
+  "sage_image": "sagemath/sagemath@sha256:19995db6194f4a4bab18ce9a88556fd15b9ed5e916b4504fefe618a7796ddbdb",
+  "container_limits": {
+    "network": "none",
+    "read_only_root": true,
+    "capabilities": "all dropped",
+    "memory_gib": 6,
+    "cpus": 2,
+    "pids": 128
+  },
+  "immutable_driver_snapshot": true,
+  "native_key_graph_fingerprint": "85f81c7b08a2eef491729b9a0d472dda28504fce812b28c6d808cd438678d94e",
+  "native_source_parameters_match": true,
+  "assessment_sha256": "20d01ebe17e2b95166c1d6aa382b7734664804b0463e6ffb5ecd8b9542a7635a",
+  "native_plan_sha256": "1a0eeb0a9605f4cf154c3095c364014ddbe88a8234fd7347c86c0b55b1087187",
+  "previous_source_assessment": {
+    "path": "artifacts/execution/2026-10-23/shared-digit-kernel/complete-balanced96_low_q.json",
+    "sha256": "65fc15bc1f77504b2c15550a5db8658ebbd6db29731cc82c7d65c638ea21b5cb",
+    "finite_results": 24,
+    "minimum_reported_bits": 161.33894242424722
+  },
+  "combined_28_results_minimum_reported_bits": 161.33894242424722,
+  "source_pages": {
+    "eprint_landing_url": "https://eprint.iacr.org/2026/366",
+    "eprint_landing_sha256": "a123c61717e7605b4bd5176872c77962c693a0ca03fedd2ef5984d9198075d59",
+    "eprint_latest_revision": "2026-08-30",
+    "revision_note": "Corrected Theorem 3.1",
+    "publisher_url": "https://doi.org/10.1007/978-3-032-35377-1_15",
+    "publisher_preview_sha256": "9b41f2545fc2ca3cb65f5d1bc232a049e1f98b26996dfe5fc2f3c4da272a127f",
+    "subscription_fulltext_obtained": false
+  },
+  "corrected_theorem_3_1_validated": false,
+  "quantum_hybrid_coverage_complete": false,
+  "joint_key_security_proven": false,
+  "production_admitted": false,
+  "verification": {
+    "python_checks": 44,
+    "workflow_yaml_parsed": true,
+    "native_estimator_tasks_completed": 4,
+    "native_encrypted_refresh_rerun": false
+  }
+}

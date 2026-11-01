@@ -1,0 +1,25 @@
+use qmnf_crtbigint::CRTBigInt;
+use std::io::{self, BufRead};
+fn parse(s: &str) -> CRTBigInt {
+    let (sign, hex) = if let Some(h) = s.strip_prefix('-') {(-1,h)} else {(1,s)};
+    let mut limbs = [0u64;8];
+    for (i,h) in hex.as_bytes().rchunks(16).enumerate() {limbs[i]=u64::from_str_radix(std::str::from_utf8(h).unwrap(),16).unwrap();}
+    CRTBigInt::try_from_magnitude_limbs(if limbs==[0;8] {0} else {sign},limbs).unwrap()
+}
+fn out(x: CRTBigInt) {
+    print!("{} ", x.sign());
+    for l in x.magnitude_limbs().iter().rev() {print!("{l:016x}");}
+    println!();
+}
+fn main() {
+    for l in io::stdin().lock().lines() {
+        let l=l.unwrap();let v:Vec<_>=l.split_whitespace().collect();let a=parse(v[1]);
+        match v[0] {
+            "a"|"s"|"m" => {let b=parse(v[2]); let r=match v[0] {"a"=>a.checked_add(&b),"s"=>a.checked_sub(&b),_=>a.checked_mul(&b)};match r {Ok(x)=>out(x),Err(e)=>println!("E {e}")}}
+            "p"=>out(a.mod_pow(v[2].parse().unwrap())),
+            "i"=>match a.mod_inverse(){Some(x)=>out(x),None=>println!("N")},
+            "r"=>out(CRTBigInt::try_from_residues(a.sign(),*a.residues()).unwrap()),
+            _=>panic!()
+        }
+    }
+}

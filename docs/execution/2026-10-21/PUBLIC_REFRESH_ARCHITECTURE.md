@@ -1,5 +1,11 @@
 # Public refresh: whole-system diagnosis and solution requirements
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](../../PUBLIC_REFRESH_STATUS.md) first.
+
 Analysis baseline: `main@9800fd1839e85ad92875b3c88812081a5fbb8998`.
 Scope: native public BFV refresh, including the preserved Safe Basis / sister
 tray substrate. This report supersedes treating the next carry experiment as

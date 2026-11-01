@@ -1,10 +1,16 @@
 # Same-prime bootstrap phase and contraction
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 Revision: 2026-09-27. The authentic encrypted `t/t^2` phase pair is
 implemented. The subtraction kernel requires a certified canonical low-digit
 lift in the high encoding. A public polynomial producer now exists with
 complete noise admission, but the current four-prime tuple fails its
-multiplication bound; public refresh remains disabled.
+multiplication bound; the legacy/default refresh at this snapshot remained disabled.
 
 ## Which winding can disappear
 

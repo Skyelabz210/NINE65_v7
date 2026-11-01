@@ -169,6 +169,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.89.0
 
+      - name: Record timing runner and compiler
+        run: |
+          lscpu | tee ct_runner_environment.txt
+          rustc --version --verbose >> ct_runner_environment.txt
+
       - name: Build test binary
         run: cargo test -p nine65 --lib --release --no-run
 
@@ -179,6 +184,7 @@ jobs:
         run: |
           set -euo pipefail
           prefix=security::ct_verification::constant_time_statistical
+          failed=0
           for t in \
             test_ct_dudect_montgomery_pow_exponent_hamming_weight \
             test_ct_dudect_montgomery_reduce_operand_magnitude \
@@ -192,11 +198,14 @@ jobs:
             test_ct_dudect_adjacency_k_elim_operand_order
           do
             echo "::group::$t"
-            cargo test -p nine65 --lib --release -- \
+            if ! cargo test -p nine65 --lib --release -- \
               --ignored --exact --nocapture --test-threads 1 "$prefix::$t" \
-              2>&1 | tee -a dudect_blocking_output.txt
+              2>&1 | tee -a dudect_blocking_output.txt; then
+              failed=1
+            fi
             echo "::endgroup::"
           done
+          exit "$failed"
 
       - name: Upload measurements
         if: always()
@@ -204,7 +213,9 @@ jobs:
         with:
           name: ct-dudect-blocking
           if-no-files-found: error
-          path: dudect_blocking_output.txt
+          path: |
+            dudect_blocking_output.txt
+            ct_runner_environment.txt
 
   # ---------------------------------------------------------------------------
   # OPEN FINDINGS — known-red tripwires, scheduled.

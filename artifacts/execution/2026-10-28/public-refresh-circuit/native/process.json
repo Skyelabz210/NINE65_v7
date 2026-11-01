@@ -1,0 +1,13 @@
+{
+  "pid": 29619,
+  "command": [
+    "/workspace/work/public-refresh/native/pinned-final",
+    "ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_three_cycles",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "started_epoch": 1793190119.5911787,
+  "binary_sha256": "4aa97059f58ee847396dd593a9a6bf6aacde447edc4a87ee049133d12513d067"
+}

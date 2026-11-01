@@ -1,0 +1,50 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/nine65-5dd4d9097cfbe4f0)
+
+running 1 test
+test ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles ... public-refresh N=8 certificate=PublicRefreshCircuitCertificate { ring_degree: 32, work_degree: 8, carry_radius: 3, ciphertext_products: 9, inverse_ciphertext_babies: 8, inverse_plaintext_diagonals: 32, inverse_galois_calls: 10, phase_error_bound: U1024 { limbs: [7530305, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, carry_error_bound: U1024 { limbs: [16996638155652337202, 7974051860901440217, 67808196343329, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, restored_error_bound: U1024 { limbs: [12932932012933166528, 15463994795526439008, 6315992178621240075, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }, returned_scaled_error_bound: U512 { d0: 1762715922, d1: 0, d2: 0, d3: 0 }, next_square_source_radius: 2 }
+public-refresh N=8 key generation started
+public-refresh N=8 key generation complete elapsed=27.391981ms
+public-refresh N=8 cycle=0 high carry phase 2/2 elapsed=28.251241ms
+public-refresh N=8 cycle=0 low carry phase 2/2 elapsed=29.173435ms
+public-refresh N=8 cycle=0 affine phase 2/2 elapsed=30.249911ms
+public-refresh N=8 cycle=0 high digit product 0/4 elapsed=31.746608ms
+public-refresh N=8 cycle=0 high digit product 4/4 elapsed=36.365522ms
+public-refresh N=8 cycle=0 low correction polynomial 0/4 elapsed=36.385843ms
+public-refresh N=8 cycle=0 low correction polynomial 4/4 elapsed=40.745507ms
+public-refresh N=8 cycle=0 quotient product 0/1 elapsed=40.788442ms
+public-refresh N=8 cycle=0 quotient product 1/1 elapsed=41.811648ms
+public-refresh N=8 cycle=0 inverse babies 8/8 elapsed=48.257805ms
+public-refresh N=8 cycle=0 inverse giants 4/4 elapsed=51.062846ms
+public-refresh N=8 cycle=0 all coefficients and dependent square passed elapsed=52.065251ms
+public-refresh N=8 cycle=1 high carry phase 2/2 elapsed=52.511771ms
+public-refresh N=8 cycle=1 low carry phase 2/2 elapsed=53.389298ms
+public-refresh N=8 cycle=1 affine phase 2/2 elapsed=54.275779ms
+public-refresh N=8 cycle=1 high digit product 0/4 elapsed=55.379126ms
+public-refresh N=8 cycle=1 high digit product 4/4 elapsed=59.69203ms
+public-refresh N=8 cycle=1 low correction polynomial 0/4 elapsed=59.710057ms
+public-refresh N=8 cycle=1 low correction polynomial 4/4 elapsed=64.097694ms
+public-refresh N=8 cycle=1 quotient product 0/1 elapsed=64.192806ms
+public-refresh N=8 cycle=1 quotient product 1/1 elapsed=65.452868ms
+public-refresh N=8 cycle=1 inverse babies 8/8 elapsed=71.014547ms
+public-refresh N=8 cycle=1 inverse giants 4/4 elapsed=73.552397ms
+public-refresh N=8 cycle=1 all coefficients and dependent square passed elapsed=74.682293ms
+public-refresh N=8 cycle=2 high carry phase 2/2 elapsed=75.339129ms
+public-refresh N=8 cycle=2 low carry phase 2/2 elapsed=76.313462ms
+public-refresh N=8 cycle=2 affine phase 2/2 elapsed=77.446112ms
+public-refresh N=8 cycle=2 high digit product 0/4 elapsed=78.721087ms
+public-refresh N=8 cycle=2 high digit product 4/4 elapsed=83.768073ms
+public-refresh N=8 cycle=2 low correction polynomial 0/4 elapsed=83.790146ms
+public-refresh N=8 cycle=2 low correction polynomial 4/4 elapsed=87.984528ms
+public-refresh N=8 cycle=2 quotient product 0/1 elapsed=88.032781ms
+public-refresh N=8 cycle=2 quotient product 1/1 elapsed=89.140714ms
+public-refresh N=8 cycle=2 inverse babies 8/8 elapsed=94.931257ms
+public-refresh N=8 cycle=2 inverse giants 4/4 elapsed=97.718061ms
+public-refresh N=8 cycle=2 all coefficients and dependent square passed elapsed=98.865673ms
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1173 filtered out; finished in 0.10s
+

@@ -1,5 +1,11 @@
 # NINE65 Live-State Addendum — 2026-09-03
 
+> **Historical refresh scope:** this is a dated snapshot or circuit-specific
+> analysis, not the current repository-wide capability verdict. The separate
+> research backend now has encrypted carry extraction and native repeated
+> execution. Legacy default gates remain closed; production security remains
+> unadmitted. Read [current status and notation](PUBLIC_REFRESH_STATUS.md) first.
+
 Observed head: main@4b3c9f6295411d9bb9f54c83c7dfd6e7d88ede55.
 
 ## Reconciled state

@@ -123,7 +123,9 @@ fn basis_bytes(ctx: &RNSFHEContext, ct: &DualRNSCiphertext) -> Vec<u8> {
     out.extend_from_slice(&ctx.q_product.to_le_bytes());
     out.extend_from_slice(&(ctx.q_bits as u64).to_le_bytes());
     out.extend_from_slice(&ctx.dual_rns.main_product.to_le_bytes());
-    out.extend_from_slice(&ctx.dual_rns.anchor_product.to_le_bytes());
+    for limb in &ctx.dual_rns.anchor_product_limbs {
+        out.extend_from_slice(&limb.to_le_bytes());
+    }
 
     // (C) The ciphertext's occupancy of the chain. THIS is what a classical
     //     rescale decrements, and what `mod_switch_ct_down` decrements today.
@@ -263,7 +265,7 @@ fn basis_is_byte_identical_before_and_after_exact_division() {
         let (ctx, keys) = ctx_and_keys(&cfg);
         for (i, &d) in DIVISORS.iter().enumerate() {
             let m = (ctx.t - 1) / d;
-            let m = m.min(7).max(1);
+            let m = m.clamp(1, 7);
             let (ct, _big) = encrypt_divisible(&ctx, &keys, 1000 + i as u64, m, d);
 
             let before_bytes = basis_bytes(&ctx, &ct);
@@ -334,7 +336,7 @@ fn exact_division_recovers_the_quotient_on_every_parameter_set() {
     for (name, cfg) in parameter_sets() {
         let (ctx, keys) = ctx_and_keys(&cfg);
         for (i, &d) in DIVISORS.iter().enumerate() {
-            let m = ((ctx.t - 1) / d).min(7).max(1);
+            let m = ((ctx.t - 1) / d).clamp(1, 7);
             let (ct_big, big) = encrypt_divisible(&ctx, &keys, 2000 + i as u64, m, d);
             assert_eq!(big % d, 0, "test setup: d must divide M");
 
@@ -479,12 +481,12 @@ fn division_router_selects_kelim_and_fpd_without_touching_the_basis() {
             "d={d} was expected coprime to the S8 basis"
         );
         assert_eq!(plan.primary, ChimeraLane::ModularInverse, "d={d}");
-        assert_eq!(plan.primary_status, DivStatus::ModularInverseExact, "d={d}");
-        assert!(plan.primary_status.is_exact_quotient(), "d={d}");
+        assert_eq!(plan.primary_status, DivStatus::ModularSolve, "d={d}");
+        assert!(!plan.primary_status.is_exact_quotient(), "d={d}");
     }
 
-    // Sharing a factor with S8 → Fused Piggyback.
-    for (d, expected_gcd) in [(6i128, 6u64), (10, 10), (210, 210), (4, 2), (9, 3)] {
+    // A squarefree divisor fully witnessed by distinct S8 lanes can use FPD.
+    for (d, expected_gcd) in [(6i128, 6u64), (10, 10), (210, 210)] {
         let plan = select_division_lane(d, basis);
         assert_eq!(plan.gcd_with_basis, expected_gcd, "d={d}");
         assert_eq!(
@@ -496,6 +498,16 @@ fn division_router_selects_kelim_and_fpd_without_touching_the_basis() {
             plan.evaluable.fused_piggyback,
             "d={d}: FPD lane must be evaluable"
         );
+    }
+
+    // S8 contains only one lane for each prime. Prime powers need D2's scalar
+    // exactness witness until a p-adic FPD lane is supplied.
+    for (d, expected_gcd) in [(4i128, 2u64), (9, 3)] {
+        let plan = select_division_lane(d, basis);
+        assert_eq!(plan.gcd_with_basis, expected_gcd, "d={d}");
+        assert_eq!(plan.primary, ChimeraLane::DivExact, "d={d}");
+        assert!(plan.evaluable.div_exact, "d={d}");
+        assert!(!plan.evaluable.fused_piggyback, "d={d}");
     }
 
     assert_eq!(

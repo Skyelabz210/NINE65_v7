@@ -278,8 +278,8 @@ fn print_row(s: &Sample, prev: Option<&Sample>) {
 
 fn print_table_header() {
     println!(
-        "{:>6} | {:>5} {:>6} {:>5} | {:>10} | {:>9} | {}",
-        "depth", "lanes", "anchor", "level", "noise bits", "delta", "decrypt"
+        "{:>6} | {:>5} {:>6} {:>5} | {:>10} | {:>9} | decrypt",
+        "depth", "lanes", "anchor", "level", "noise bits", "delta"
     );
     println!("-------|-------------------|------------|-----------|--------------------");
 }

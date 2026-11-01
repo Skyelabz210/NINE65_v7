@@ -610,6 +610,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "qmnf_crtbigint"
+version = "3.1.1"
+
+[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

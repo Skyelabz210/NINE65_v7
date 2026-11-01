@@ -35,7 +35,7 @@ pub use validation::{assert_params_valid, validate_params, ParameterValidator, V
 ///
 /// The vector grows as required, so no saturation, wrapping, fixed product cap,
 /// Garner reconstruction, or mixed-radix conversion is involved.
-fn exact_product_limbs(factors: &[u64]) -> Vec<u64> {
+pub(crate) fn exact_product_limbs(factors: &[u64]) -> Vec<u64> {
     let mut limbs = vec![1u64];
 
     for &factor in factors {
@@ -67,7 +67,7 @@ fn limbs_bit_length(limbs: &[u64]) -> u32 {
 }
 
 /// Exact division of a little-endian multi-limb integer by one nonzero `u64`.
-fn divide_limbs_by_u64(limbs: &[u64], divisor: u64) -> Vec<u64> {
+pub(crate) fn divide_limbs_by_u64(limbs: &[u64], divisor: u64) -> Vec<u64> {
     assert!(divisor != 0, "multi-limb divisor must be nonzero");
     let mut quotient = vec![0u64; limbs.len()];
     let mut remainder = 0u128;
@@ -246,6 +246,12 @@ impl FHEConfig {
         self.primes
             .iter()
             .try_fold(1u128, |acc, &prime| acc.checked_mul(prime as u128))
+    }
+
+    /// Exact fixed-width view for consumers with a 256-bit capacity limit.
+    /// Wider configurations retain their exact `rns_product_limbs` metadata.
+    pub fn try_rns_product_u256(&self) -> Option<crate::arithmetic::rns::U256> {
+        crate::arithmetic::rns::U256::checked_product_u64s(&self.primes)
     }
 
     /// Return the exact modulus product as little-endian 64-bit limbs.
@@ -916,5 +922,21 @@ mod tests {
         let light = FHEConfig::standard_128_insecure();
         let deep = FHEConfig::deep_128_insecure();
         assert!(deep.estimated_depth() >= light.estimated_depth());
+    }
+}
+
+#[cfg(test)]
+mod wide_product_tests {
+    use super::*;
+
+    #[test]
+    fn checked_fixed_width_view_matches_named_and_overwide_configs() {
+        let mut config = SecureConfig::secure_256().config;
+        assert!(config.try_rns_product().is_none());
+        let exact = config.try_rns_product_u256().unwrap();
+        assert_eq!(exact.bitlen(), config.rns_product_bit_length());
+        config.primes = vec![u64::MAX; 5];
+        assert!(config.try_rns_product_u256().is_none());
+        assert!(config.rns_product_bit_length() > 256);
     }
 }

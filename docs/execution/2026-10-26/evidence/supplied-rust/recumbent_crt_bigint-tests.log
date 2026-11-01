@@ -1,0 +1,27 @@
+
+running 23 tests
+test tests::test_add_mixed_sign ... ok
+test tests::test_add_same_sign ... ok
+test tests::test_bit_capacity ... ok
+test tests::test_cmp_abs ... ok
+test tests::test_div ... ok
+test tests::test_div_by_zero ... ok
+test tests::test_div_pow2 ... ok
+test tests::test_from_i128_roundtrip ... ok
+test tests::test_from_i64_roundtrip ... ok
+test tests::test_i128_roundtrip ... ok
+test tests::test_large_mul_does_not_overflow ... ok
+test tests::test_mul ... ok
+test tests::test_neg ... ok
+test tests::test_one ... ok
+test tests::test_ordering ... ok
+test tests::test_property_add_commutative_10k ... ok
+test tests::test_property_add_zero_identity_10k ... ok
+test tests::test_property_mul_by_zero_is_zero_10k ... ok
+test tests::test_property_sub_is_add_neg_10k ... ok
+test tests::test_rem ... ok
+test tests::test_scale_pow2 ... ok
+test tests::test_sub ... ok
+test tests::test_zero ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s

@@ -43,6 +43,11 @@ impl NTTEngineFFT {
 
     /// Construct an NTT engine after enforcing the CLASS-F field conditions.
     pub fn try_new(q: u64, n: usize) -> Nine65Result<Self> {
+        if q >= (1u64 << 63) {
+            return Err(Nine65Error::NTTConfigError {
+                message: format!("NTT modulus exceeds the Montgomery range below 2^63: {q}"),
+            });
+        }
         if !n.is_power_of_two() {
             return Err(Nine65Error::NTTConfigError {
                 message: format!("N must be a nonzero power of 2, got {n}"),
