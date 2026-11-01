@@ -1,0 +1,41 @@
+{
+  "schema": "nine65-public-refresh-proof-checker-followup-v1",
+  "source_commit": "e44ba19d6f4f0ef025efbd904334974dcbc27182",
+  "reason": "First-use elan installation diagnostics on stderr were mistaken for compiler identity. The checker now uses version stdout and retains both streams on errors.",
+  "negative_controls_and_positive_regressions_passed": 10,
+  "proof_sources_unchanged_from_initial_validation": true,
+  "runtime_sources_unchanged_from_initial_validation": true,
+  "kernel_audit": "Public refresh axiom audit OK: 135 theorems; no custom axioms or sorryAx",
+  "source_sha256": {
+    "scripts/check_public_refresh_proofs.py": "ee56ccf96417beb2ae3d82ddb5ca833ce769f405ec258ae34d68402a484b9156",
+    "scripts/test_public_refresh_proofs.py": "f073e3859de7ec31d3bc81fc562feec5b7d90e689019a24560ded8a33999282e"
+  },
+  "hosted_full_proof_job": {
+    "commit": "5d52ca30052f938c8ffaa74a03b8d3ad942a3421",
+    "run": 41320132852,
+    "job": 124888354361,
+    "conclusion": "success",
+    "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41320132852/job/124888354361",
+    "build": "Build completed successfully (7823 jobs).",
+    "whole_library_axiom_audit": "Axiom audit OK: only ahop_hardness",
+    "scope": "Existing complete Mathlib-based package, including all five new modules; the documented AHOP axiom is outside the new assumption-free arithmetic slice."
+  },
+  "initial_hosted_checker_failure": {
+    "run": 41320132852,
+    "job": 124888354476,
+    "scope": "Elan installation logging; no theorem or admission condition changed"
+  },
+  "followup_evidence_sha256": {
+    "ci-repair-kernel-verification.json": "64d99d59d0184fa831426a8dd64a2e12f236f7def8a64aaeea5c14f2ac91959b",
+    "gate-controls-ci-repair.log.gz": "12e0cb118856019f71684594b070660af19a59280c903d9684cad169dd3aeb82",
+    "ci-repair-verification.log.gz": "ce68f00097041d0a5ce5b84c26460f0eea3180b55a35a284da8b2758670bffa1"
+  },
+  "hosted_fixed_checker_job": {
+    "commit": "e44ba19d6f4f0ef025efbd904334974dcbc27182",
+    "run": 41320375971,
+    "job": 124889082370,
+    "conclusion": "success",
+    "url": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41320375971/job/124889082370",
+    "scope": "All five kernel modules, every owned declaration axiom audit, and all ten proof-gate controls"
+  }
+}

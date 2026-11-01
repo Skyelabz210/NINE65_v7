@@ -124,3 +124,19 @@ scan, panic ratchet, and status/security claim checks pass. The full workspace
 test suite was not rerun locally. The source commits and hashes in
 [`validation.json`](proof-evidence/validation.json) distinguish these results
 from the unchanged historical full native execution.
+
+Hosted verification also completes the **full Mathlib-based package build**
+and its existing library-wide axiom audit at `5d52ca3`
+([job](https://github.com/Skyelabz210/NINE65_v7/actions/runs/41320132852/job/124888354361)).
+The latter retains the separately documented AHOP hardness assumption; none
+of the five new modules depends on it. This resolves the full-build check on
+GitHub despite the local cache restriction described above.
+
+The first hosted core-checker invocation exposed Elan's first-use installation
+messages on stderr contaminating the version string. Commit `e44ba19` fixes
+that parser and adds a tenth passing control. The pinned-version comparison,
+all proof statements and both axiom audits remain enforced. The original
+nine-control evidence is preserved; the additional accepted checks and hashes
+are in [`ci-checker-followup.json`](proof-evidence/ci-checker-followup.json).
+The corrected [hosted refresh proof job](https://github.com/Skyelabz210/NINE65_v7/actions/runs/41320375971/job/124889082370)
+passes all five modules and all ten controls at that commit.
