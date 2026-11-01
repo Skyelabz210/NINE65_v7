@@ -20,6 +20,8 @@ MODULES = (
     "KElimination.PublicRefreshReturn",
     "KElimination.PublicRefreshBounds",
     "KElimination.PublicRefreshGeometry",
+    "KElimination.PublicRefreshNativeLift",
+    "KElimination.PublicRefreshDigit",
 )
 AUDIT = "scripts/PublicRefreshAudit.lean"
 

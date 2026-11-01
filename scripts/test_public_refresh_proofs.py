@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -39,6 +40,15 @@ class PublicRefreshProofTests(unittest.TestCase):
     def test_missing_compiler_fails_closed(self):
         with self.assertRaisesRegex(ProofError, "cannot execute Lean"):
             verify(self.package, str(self.package / "absent-lean"))
+
+    def test_wrong_compiler_version_fails_closed(self):
+        # Resolve elan's pinned compiler before changing the copied pin;
+        # otherwise elan would legitimately install the requested version.
+        prefix = subprocess.check_output(
+            [LEAN, "--print-prefix"], cwd=PACKAGE, text=True).strip()
+        (self.package / "lean-toolchain").write_text("leanprover/lean4:v4.26.0\n")
+        with self.assertRaisesRegex(ProofError, "Lean version mismatch"):
+            verify(self.package, str(Path(prefix) / "bin/lean"))
 
     def test_missing_proof_fails_closed(self):
         (self.package / (MODULES[0].replace(".", "/") + ".lean")).unlink()

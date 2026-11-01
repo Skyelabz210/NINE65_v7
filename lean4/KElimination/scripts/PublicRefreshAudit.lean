@@ -1,6 +1,8 @@
 import KElimination.PublicRefreshReturn
 import KElimination.PublicRefreshBounds
 import KElimination.PublicRefreshGeometry
+import KElimination.PublicRefreshNativeLift
+import KElimination.PublicRefreshDigit
 import Lean.Util.CollectAxioms
 import Lean.Elab.Command
 
@@ -14,7 +16,9 @@ run_cmd do
   let env ← getEnv
   let modules := #[`KElimination.PublicRefreshReturn,
                    `KElimination.PublicRefreshBounds,
-                   `KElimination.PublicRefreshGeometry]
+                   `KElimination.PublicRefreshGeometry,
+                   `KElimination.PublicRefreshNativeLift,
+                   `KElimination.PublicRefreshDigit]
   let foundational := #[`propext, `Quot.sound, `Classical.choice]
   let required := #[
     `KElimination.PublicRefreshReturn.residue_zero_iff,
@@ -32,7 +36,18 @@ run_cmd do
     `KElimination.PublicRefreshBounds.Fixture.arbitrary_cycles,
     `KElimination.PublicRefreshGeometry.complete_chart_integer_lower_bound,
     `KElimination.PublicRefreshGeometry.dense_8192_complete_chart_refuses,
-    `KElimination.PublicRefreshGeometry.sparse_96_coordinate_99_window]
+    `KElimination.PublicRefreshGeometry.sparse_96_coordinate_99_window,
+    `KElimination.PublicRefreshNativeLift.native_source_norm,
+    `KElimination.PublicRefreshNativeLift.signed_quotient_radius,
+    `KElimination.PublicRefreshNativeLift.signed_quotient_lift_unique,
+    `KElimination.PublicRefreshNativeLift.pair_query_exact,
+    `KElimination.PublicRefreshNativeLift.pair_query_target_residue,
+    `KElimination.PublicRefreshDigit.taylor_remainder,
+    `KElimination.PublicRefreshDigit.derivative_evaluation,
+    `KElimination.PublicRefreshDigit.rooted_quotient_mod,
+    `KElimination.PublicRefreshDigit.canonical_p_square_quotient,
+    `KElimination.PublicRefreshDigit.split_digit_correct,
+    `KElimination.PublicRefreshDigit.certified_split_digit]
   for name in required do
     match env.find? name with
     | some (.thmInfo _) => pure ()

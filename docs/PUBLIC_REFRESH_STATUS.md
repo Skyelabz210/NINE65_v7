@@ -87,3 +87,9 @@ Key-free inspection and the expensive encrypted example are documented in
 [README](../README.md#public-refresh-status). See the
 [stale-diagnosis correction record](maintenance/PUBLIC_REFRESH_STALE_DIAGNOSES_2026-11-01.md)
 for affected paths and dispositions.
+
+The [machine-checked arithmetic proofs](execution/2026-11-01/PUBLIC_REFRESH_PROOFS.md)
+cover the G/H digit identity, bounded native quotient lift, and conditional
+phase-clock return/error model. They do not establish Rust refinement or
+security of the full key setup. They add no new latest-head native execution
+claim and preserve the archived five-cycle snapshot above.
