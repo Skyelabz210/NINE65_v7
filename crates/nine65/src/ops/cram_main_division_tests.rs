@@ -86,13 +86,14 @@ fn encrypted_divisor_sharing_a_ciphertext_lane() {
         .extend_from_slice(&crate::keys::bootstrap::BOOTSTRAP_PRIMES[..7]);
     config.q = 17;
     for seed in [0xfac701, 0xfac702, 0xfac703] {
-        let (client, eval) =
-            CramMainEvaluator::generate_with_rng(&config, &mut ShadowHarvester::with_seed(seed))
-                .unwrap();
+        let mut public = crate::ops::cram_public::CramPublicEvaluator::new(&config);
+        let (eval, client) = public
+            .integer_keygen_with_rng(&mut ShadowHarvester::with_seed(seed))
+            .unwrap();
         for (n, d) in [(31, 17), (17, 17), (16, 17), (31, 0)] {
             let a = eval.encrypt_uint(n, 5).unwrap();
             let b = eval.encrypt_uint(d, 5).unwrap();
-            let result = eval.divide_integer(&a, &b).unwrap();
+            let result = public.divide_integer(&a, &b, &eval).unwrap();
             let expected = if d == 0 {
                 UnsignedDivRem {
                     quotient: 0,
@@ -109,6 +110,12 @@ fn encrypted_divisor_sharing_a_ciphertext_lane() {
             assert_eq!(client.decrypt_division(&result).unwrap(), expected);
             check_all_coefficients(&client, &result, &expected);
         }
+        assert_eq!(public.ledger().events().len(), 4);
+        assert!(public
+            .ledger()
+            .events()
+            .iter()
+            .all(|event| event.op == "divide_integer"));
     }
 }
 
@@ -190,6 +197,47 @@ fn integer_ingress_checks_width_and_key_domain() {
         Err(CramMainError::DomainMismatch)
     ));
     assert_eq!(client.decrypt_uint(&a).unwrap(), 7);
+    let mut wrong_config = eval.config().clone();
+    wrong_config.t = 5;
+    let mut public = crate::ops::cram_public::CramPublicEvaluator::new(&wrong_config);
+    assert!(matches!(
+        public.divide_integer(&a, &a, &eval),
+        Err(IntegerDivisionError::Evaluator(
+            CramMainError::DomainMismatch
+        ))
+    ));
+    assert!(public.ledger().events().is_empty());
+}
+
+#[test]
+fn native_encrypted_integer_division_checks_every_plaintext_coefficient() {
+    let mut config = SecureConfig::secure_128().into_config();
+    config.t = 3;
+    config.name = "native integer division t3";
+    let mut public = crate::ops::cram_public::CramPublicEvaluator::new(&config);
+    let (eval, client) = public
+        .integer_keygen_with_rng(&mut ShadowHarvester::with_seed(0x8192))
+        .unwrap();
+    for (n, d) in [(14, 3), (15, 0)] {
+        let a = eval.encrypt_uint(n, 4).unwrap();
+        let b = eval.encrypt_uint(d, 4).unwrap();
+        let result = public.divide_integer(&a, &b, &eval).unwrap();
+        let expected = if d == 0 {
+            UnsignedDivRem {
+                quotient: 0,
+                remainder: n,
+                divide_by_zero: true,
+            }
+        } else {
+            UnsignedDivRem {
+                quotient: n / d,
+                remainder: n % d,
+                divide_by_zero: false,
+            }
+        };
+        assert_eq!(client.decrypt_division(&result).unwrap(), expected);
+        check_all_coefficients(&client, &result, &expected);
+    }
 }
 
 #[test]
