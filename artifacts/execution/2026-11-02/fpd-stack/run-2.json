@@ -1,0 +1,279 @@
+{
+  "build": {
+    "debug_assertions": false,
+    "source_commit": "dde5ea20ecff8198d0eb3353ec038243b42b188f"
+  },
+  "configs": [
+    {
+      "config": "secure_128",
+      "correctness": {
+        "failures": 0,
+        "raw_prepared_all_limbs_equal": true,
+        "trials_including_warmup": 6
+      },
+      "eta": 3,
+      "n": 8192,
+      "operations": {
+        "fpd_prepared_public_mul": {
+          "median_ns": 41218990,
+          "samples_ns": [
+            40619264,
+            38740766,
+            41218990,
+            42047294,
+            49915820
+          ]
+        },
+        "fpd_raw_public_mul": {
+          "median_ns": 86465020,
+          "samples_ns": [
+            86616587,
+            86465020,
+            86534828,
+            82920574,
+            85766346
+          ]
+        },
+        "service_add": {
+          "median_ns": 53020,
+          "samples_ns": [
+            53020,
+            53134,
+            53622,
+            52497,
+            51198
+          ]
+        },
+        "service_decrypt": {
+          "median_ns": 2309296,
+          "samples_ns": [
+            2378146,
+            2391852,
+            2072059,
+            2309296,
+            2293088
+          ]
+        },
+        "service_encrypt": {
+          "median_ns": 34163758,
+          "samples_ns": [
+            36891946,
+            34163758,
+            32457786,
+            33464746,
+            34327134
+          ]
+        },
+        "service_public_mul": {
+          "median_ns": 63112699,
+          "samples_ns": [
+            60640970,
+            65151612,
+            63112699,
+            61414781,
+            64602811
+          ]
+        }
+      },
+      "preparation_ns": 16172680,
+      "prepared_key_bytes": 6815744,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049
+      ],
+      "service_setup_ns": 739112526,
+      "t": 65537
+    },
+    {
+      "config": "secure_192",
+      "correctness": {
+        "failures": 0,
+        "raw_prepared_all_limbs_equal": true,
+        "trials_including_warmup": 6
+      },
+      "eta": 4,
+      "n": 16384,
+      "operations": {
+        "fpd_prepared_public_mul": {
+          "median_ns": 126447757,
+          "samples_ns": [
+            128904227,
+            122541667,
+            127288785,
+            126447757,
+            123278893
+          ]
+        },
+        "fpd_raw_public_mul": {
+          "median_ns": 281679355,
+          "samples_ns": [
+            278164955,
+            277143029,
+            281679355,
+            282766385,
+            302584573
+          ]
+        },
+        "service_add": {
+          "median_ns": 221369,
+          "samples_ns": [
+            221369,
+            168681,
+            453127,
+            159715,
+            286364
+          ]
+        },
+        "service_decrypt": {
+          "median_ns": 5691758,
+          "samples_ns": [
+            7883388,
+            5691758,
+            5689036,
+            5606621,
+            5928387
+          ]
+        },
+        "service_encrypt": {
+          "median_ns": 89428687,
+          "samples_ns": [
+            89379525,
+            90096610,
+            89370381,
+            89428687,
+            102046186
+          ]
+        },
+        "service_public_mul": {
+          "median_ns": 181675497,
+          "samples_ns": [
+            176562914,
+            180461538,
+            182787382,
+            182057846,
+            181675497
+          ]
+        }
+      },
+      "preparation_ns": 64366410,
+      "prepared_key_bytes": 20971520,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161
+      ],
+      "service_setup_ns": 2335265852,
+      "t": 65537
+    },
+    {
+      "config": "secure_256",
+      "correctness": {
+        "failures": 0,
+        "raw_prepared_all_limbs_equal": true,
+        "trials_including_warmup": 6
+      },
+      "eta": 5,
+      "n": 16384,
+      "operations": {
+        "fpd_prepared_public_mul": {
+          "median_ns": 148209209,
+          "samples_ns": [
+            149263675,
+            165311132,
+            145906069,
+            143384762,
+            148209209
+          ]
+        },
+        "fpd_raw_public_mul": {
+          "median_ns": 374360338,
+          "samples_ns": [
+            374360338,
+            370036608,
+            374900388,
+            379322051,
+            367534353
+          ]
+        },
+        "service_add": {
+          "median_ns": 275351,
+          "samples_ns": [
+            306433,
+            195736,
+            421947,
+            223312,
+            275351
+          ]
+        },
+        "service_decrypt": {
+          "median_ns": 6655636,
+          "samples_ns": [
+            6429541,
+            7768500,
+            6655636,
+            6576341,
+            7136039
+          ]
+        },
+        "service_encrypt": {
+          "median_ns": 111122903,
+          "samples_ns": [
+            111122903,
+            114173277,
+            112156629,
+            110200469,
+            110636233
+          ]
+        },
+        "service_public_mul": {
+          "median_ns": 218039456,
+          "samples_ns": [
+            218039456,
+            216121183,
+            217192189,
+            222236043,
+            222763993
+          ]
+        }
+      },
+      "preparation_ns": 77676928,
+      "prepared_key_bytes": 29884416,
+      "primes": [
+        998244353,
+        985661441,
+        754974721,
+        469762049,
+        167772161,
+        595591169
+      ],
+      "service_setup_ns": 3130296430,
+      "t": 65537
+    }
+  ],
+  "features": {
+    "accelerated": true,
+    "adaptive_threading": true,
+    "allow_insecure": false,
+    "clockwork": true,
+    "exact_rational": true,
+    "exact_transcendentals_backend": true,
+    "parallel": false,
+    "reference_ntt": false,
+    "sequential": false,
+    "shadow_entropy": true
+  },
+  "host": {
+    "arch": "x86_64",
+    "available_parallelism": 4,
+    "os": "linux"
+  },
+  "refreshes": 0,
+  "route": "CramMainEvaluator -> ExactMulEvaluator -> ExactScaleRound + prepared hybrid",
+  "schema": "nine65-fpd-stack-v1",
+  "timestamp_unix_seconds": 1793641731,
+  "unit": "nanoseconds"
+}

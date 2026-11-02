@@ -1,0 +1,49 @@
+{
+  "source_commit": "dde5ea20ecff8198d0eb3353ec038243b42b188f",
+  "source_tree_clean": true,
+  "toolchain": [
+    "rustc 1.89.0 (29483883e 2025-08-04)",
+    "binary: rustc",
+    "commit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2",
+    "commit-date: 2025-08-04",
+    "host: x86_64-unknown-linux-gnu",
+    "release: 1.89.0",
+    "LLVM version: 20.1.7"
+  ],
+  "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+  "kernel": "6.18.57",
+  "os_release": [
+    "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"",
+    "NAME=\"Debian GNU/Linux\"",
+    "VERSION_ID=\"13\"",
+    "VERSION=\"13 (trixie)\"",
+    "VERSION_CODENAME=trixie",
+    "DEBIAN_VERSION_FULL=13.6",
+    "ID=debian",
+    "HOME_URL=\"https://www.debian.org/\"",
+    "SUPPORT_URL=\"https://www.debian.org/support\"",
+    "BUG_REPORT_URL=\"https://bugs.debian.org/\""
+  ],
+  "build_command": "cargo build --offline --locked -p nine65 --release --features serde --example fpd_stack_timings",
+  "run_command": "NINE65_BENCH_COMMIT=<source_commit> NINE65_BENCH_JSON_OUT=<run-path> target/release/examples/fpd_stack_timings",
+  "execution": "Sequential runs after all task-owned tests and builds finished; shared host; no CPU pinning.",
+  "scope": "Same-input raw/prepared main-Q FPD multiply; separate service API operation timings. No refreshes. One warmup and five samples per profile per run.",
+  "runs": [
+    {
+      "file": "run-1.json",
+      "start_utc": "2026-11-02T17:47:57.906592+00:00",
+      "end_utc": "2026-11-02T17:48:23.958386+00:00"
+    },
+    {
+      "file": "run-2.json",
+      "start_utc": "2026-11-02T17:48:23.958533+00:00",
+      "end_utc": "2026-11-02T17:48:51.354821+00:00"
+    }
+  ],
+  "sha256": {
+    "run-1.json": "2a49c3fe637cbaf6a65aad3b4c46dc4d937aaebabc639240601f4a6256f2c533",
+    "run-1.log": "2fa8970e690ab6749492d945c3364b802e512f69c80f38b57195a67f71370f4a",
+    "run-2.json": "d66c335371c003ac11480b433e91b40c5e700362ab6fdc05c1fa194c33c220b4",
+    "run-2.log": "3c19ce7adba60813cff44a04e0066b974ecc3e2b39210e0fe108b3e6d66785e7"
+  }
+}

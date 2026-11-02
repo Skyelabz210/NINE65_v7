@@ -193,6 +193,51 @@ lattice-security certificates — see "Parameter and Claim Discipline" below.
 
 ## Measured performance
 
+### Current FPD stack (enabled 2026-11-02)
+
+`CramMainEvaluator`, including the service's evaluator, uses the main-Q
+remainder-adjusted FPD route with persistent Montgomery and prepared hybrid
+relinearization keys. Public key transforms are prepared once at setup and
+reused across multiplications. The default build also enables `exact_rational`,
+`clockwork` integrity helpers and `adaptive-threading` (including
+`shadow-entropy`), alongside MANA/UNHAL and exact transcendentals. These flags
+make their APIs available; they do not imply that every evaluator invokes them.
+
+Two release runs on 2026-11-02 measured **2.10–2.53× faster FPD multiplication**
+with prepared keys versus raw keys on identical ciphertext inputs across the
+three parameter profiles. Each run used one warmup and five samples per
+profile; all ciphertext-equality and decryption checks passed. This is the
+prepared-key comparison, not a speedup attributed to every enabled feature.
+See [current measurements and provenance](docs/FEATURE_ACTIVATION_2026-11-02.md#measured-fpd-comparison)
+for per-profile medians, service API timings and setup costs.
+
+Measure the current service path and a same-input unprepared/prepared FPD
+comparison with OS randomness and a release build:
+
+```bash
+cargo run --locked -p nine65 --release --features serde \
+  --example fpd_stack_timings
+```
+
+The capture at `bench-results/fpd_stack_timings.json` records raw samples,
+integer medians, exact parameter tuples, compiled features and separate key
+preparation/setup costs. All prepared/unprepared ciphertext limbs must match,
+and every sample must decrypt correctly. `NINE65_BENCH_CONFIG=secure_128`
+selects one profile; `NINE65_BENCH_JSON_OUT` selects an output file. The
+`secure_128_deep` tuple is identical to `secure_128` and is not measured twice.
+Run without concurrent tests or builds. The dated DualRNS measurements below
+remain historical evidence of their own route.
+
+Public research refresh is available through the explicit
+[`public_refresh_circuit` example](#public-refresh-status), using
+`--features allow_insecure` in an optimized development build. It already uses
+prepared outer-ring keys and the fused lift restoration. Default feature
+activation does not enable the incorrect legacy Clockwork refresh path.
+See [the activation inventory](docs/FEATURE_ACTIVATION_2026-11-02.md) for the
+remaining feature choices and validation commands.
+
+### Historical DualRNS operation timings
+
 Every figure below was produced by `crates/nine65/tests/op_timings.rs` on
 **2026-08-23**, on the machine described under Method. Nothing here is
 inherited.
@@ -317,9 +362,10 @@ config matching within noise.
 
 ### MANA and UNHAL are the default, and are verified to engage
 
-`nine65`'s default feature set is
-`["exact_transcendentals_backend", "accelerated"]`, and `accelerated = ["mana",
-"unhal"]`. Rayon is not in any default graph: `unhal` is consumed with
+The August measurements used the then-default feature set
+`["exact_transcendentals_backend", "accelerated"]`; the current default also
+enables the extensions listed above. `accelerated = ["mana", "unhal"]`.
+Rayon is not in any default graph: `unhal` is consumed with
 `default-features = false` specifically so its own `parallel` default cannot
 pull rayon in behind the acceleration flag.
 
