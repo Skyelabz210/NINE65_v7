@@ -1,0 +1,200 @@
+{
+  "schema": "nine65-ct-dudect-evidence-v1",
+  "threshold": "5",
+  "evidence_status": "inconclusive",
+  "observations": {
+    "below_threshold": 8,
+    "inconclusive": 3,
+    "timing_dependence": 0
+  },
+  "blocking_gate_pass": true,
+  "all_observations_conclusive": false,
+  "constant_time_established": false,
+  "statistics_scope": "rounded display values; classification preserves the Rust verdict",
+  "status_ledger_sha256": "7180528d16e99893c8a33b1955d8028cdcadc56816b04c2a02a127803f837e01",
+  "tests": [
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_pow_exponent_hamming_weight",
+      "observations": [
+        {
+          "label": "MontgomeryContext::montgomery_pow \u2014 exponent Hamming weight 8 vs 56 (batched)",
+          "verdict": "inconclusive",
+          "t_control_display": "6.3406",
+          "t_signal_display": "2.0117",
+          "samples_kept": 5401,
+          "samples_total": 6000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "d379b556a400300235d6913a0845da0d23033556ef466c2ff493b7aff6e4bb0e",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_reduce_operand_magnitude",
+      "observations": [
+        {
+          "label": "MontgomeryContext::montgomery_reduce \u2014 small cofactor vs top-bit cofactor (batched)",
+          "verdict": "inconclusive",
+          "t_control_display": "6.3649",
+          "t_signal_display": "4.0619",
+          "samples_kept": 5536,
+          "samples_total": 6000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "2ab090d431e7c682b96d0da35ac0829db1ae2f8671979683241537179c71d78b",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude",
+      "observations": [
+        {
+          "label": "MontgomeryContext::montgomery_mul \u2014 small operands vs near-modulus operands (batched)",
+          "verdict": "below_threshold",
+          "t_control_display": "4.8804",
+          "t_signal_display": "4.1648",
+          "samples_kept": 5405,
+          "samples_total": 6000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "2c51ab73c3edf57f7e92329c83c5ed29822bc1f4d2b60198c445f8cde40b9f0b",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_barrett_reduce_operand_magnitude",
+      "observations": [
+        {
+          "label": "BarrettContext::reduce_ct \u2014 40-bit dividends vs 128-bit dividends (batched)",
+          "verdict": "inconclusive",
+          "t_control_display": "11.2538",
+          "t_signal_display": "12.2974",
+          "samples_kept": 5443,
+          "samples_total": 6000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "8b42c8771f96d4cd44dd21491f0c1dc9c458063596a96478b53af735d95b9204",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_sign_classes",
+      "observations": [
+        {
+          "label": "mod_switch_down_dual \u2014 positive-centred vs negative-centred coefficients              (magnitude-matched)",
+          "verdict": "below_threshold",
+          "t_control_display": "1.1210",
+          "t_signal_display": "0.3637",
+          "samples_kept": 406,
+          "samples_total": 450
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "439cde2ac97439e297ea4f5b569a771877c1a4cf1500ab121d74a401ca93bb8f",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random",
+      "observations": [
+        {
+          "label": "U512::mod_u256 \u2014 zero vs uniform 128-bit dividends",
+          "verdict": "below_threshold",
+          "t_control_display": "1.7095",
+          "t_signal_display": "0.3482",
+          "samples_kept": 8737,
+          "samples_total": 9000
+        },
+        {
+          "label": "mod_switch_down_dual \u2014 all-zero coefficients vs uniform coefficients",
+          "verdict": "below_threshold",
+          "t_control_display": "2.6404",
+          "t_signal_display": "1.4432",
+          "samples_kept": 406,
+          "samples_total": 450
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "d5eda2c2ad9aff934a1898538e82f800dd1bc3e27a2ec3bd6128a3a6ee3aa4c2",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_exact_prime_drop_fixed_vs_random",
+      "observations": [
+        {
+          "label": "exact_modulus_switch_drop_poly \u2014 all-zero residues vs uniform residues",
+          "verdict": "below_threshold",
+          "t_control_display": "1.6588",
+          "t_signal_display": "1.5862",
+          "samples_kept": 8103,
+          "samples_total": 9000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "61b180247af66deb0f4b203e9c2e8ef2bc841109c6071a96b97c63a4e98ba202",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_exact_prime_drop_small_vs_large_residues",
+      "observations": [
+        {
+          "label": "exact_modulus_switch_drop_poly \u2014 small residues vs near-modulus residues",
+          "verdict": "below_threshold",
+          "t_control_display": "1.0383",
+          "t_signal_display": "0.1279",
+          "samples_kept": 8106,
+          "samples_total": 9000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "702ddccbdcf6f31a26921da7d59e24aff07f226bafa2f20feaa09a18cef70adf",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_adjacency_k_elim_operand_magnitude",
+      "observations": [
+        {
+          "label": "AdjacencyKElim::extract_k \u2014 small operands vs near-cap operands (batched)",
+          "verdict": "below_threshold",
+          "t_control_display": "2.1644",
+          "t_signal_display": "2.2745",
+          "samples_kept": 21601,
+          "samples_total": 24000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "0afd50aa4c48e6ac8c2db916909de0f44b8a8bf6781ea508ebec638bc3aac6ea",
+      "executed_tests": 1
+    },
+    {
+      "test": "security::ct_verification::constant_time_statistical::test_ct_dudect_adjacency_k_elim_operand_order",
+      "observations": [
+        {
+          "label": "AdjacencyKElim::extract_k \u2014 sorted operands vs randomised order (batched)",
+          "verdict": "below_threshold",
+          "t_control_display": "0.7019",
+          "t_signal_display": "0.3939",
+          "samples_kept": 21601,
+          "samples_total": 24000
+        }
+      ],
+      "process_exit": 0,
+      "capture_exit": 0,
+      "log_sha256": "dfe2636e78c23446c056223d5fdb4ccb25c5ae35b0ed6b3d2d555714ea1a59d4",
+      "executed_tests": 1
+    }
+  ],
+  "errors": [],
+  "source_sha": "a186dd8cf71b91f852732dacba192a568509abe6",
+  "hosted_job_id": 124989710783,
+  "collection_mode": "retrospective_hosted_log_replay",
+  "exit_status_origin": "inferred from Rust test result; original per-process exit ledger unavailable"
+}

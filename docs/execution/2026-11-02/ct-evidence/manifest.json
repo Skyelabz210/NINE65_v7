@@ -1,0 +1,81 @@
+{
+  "schema": "nine65-timing-evidence-continuation-v1",
+  "collector_source_commit": "b31f3fe8a3791bf400b1fd1fff464213e8582c73",
+  "collector_source_sha256": {
+    "scripts/summarize_ct_verdicts.py": "9f606c5b62e285efebedea3b226d0faffecb3cb45bbc56a4d1b2c169ad6fa5a6",
+    "scripts/test_summarize_ct_verdicts.py": "af12f16545daa38f25e7e2874e26a9f4fdd8887a1f556fa3b1fa8339d88d25c7",
+    ".github/workflows/ct_verification.yml": "af6fa2dbd3c1bfeeff401088a72217c32f6a91bf9488b65f8f7fec3b224f490c"
+  },
+  "controls_passed": 16,
+  "controls_scope": "deterministic parser controls and actual workflow shell with synthetic transcripts; no kernel timing executed in these controls",
+  "observed_hosted_commit": "a186dd8cf71b91f852732dacba192a568509abe6",
+  "observed_workflows": {
+    "success": 13,
+    "failure": 1,
+    "strict_sweep_failure": "unsupported legacy multiplication; zero actual arithmetic/process failures"
+  },
+  "replayed_current": {
+    "job_id": 124989710783,
+    "tests": 10,
+    "observables": 11,
+    "below_threshold": 8,
+    "inconclusive": 3,
+    "timing_dependence": 0
+  },
+  "replayed_original_main_failure": {
+    "commit": "924f52edfbcbb52345bfae42de5f244a3a93ffbc",
+    "job_id": 124862982875,
+    "tests": 10,
+    "observables": 11,
+    "below_threshold": 10,
+    "inconclusive": 0,
+    "timing_dependence": 1
+  },
+  "replay_provenance": "Original timestamped job logs retained; group/timestamp wrappers stripped for per-test replay. Old per-process exits were not recorded and are inferred from Rust test-result summaries. Replays are not new measurements.",
+  "production_admitted": false,
+  "constant_time_established": false,
+  "original_montgomery_finding": "open",
+  "rust_arithmetic_or_timing_assertions_changed": false,
+  "evidence_sha256": {
+    "collector-hosted-step.json": "0c24246f7ca9225be524d64c7570aa21e17c67f32895ca0e3010a729bfb49d8f",
+    "controls-final.log.gz": "882d1ff66716dec627df0bfb46809f808a27296412150a4b2cafdfa271ceda7a",
+    "controls-red.log.gz": "e33291ad3d1a243c0111bea9a92b17f102c4a3e52e66ce6a1772ed9e71eb7204",
+    "ct-source-check.json": "d55a819e16ae59893ecd422678f9d29ed32f7b9ccadf0771ea76a716af0c1ecc",
+    "current/replayed-summary.json": "8f2a0c77be789cb973cbe86d406ca5f7b84de1700bac5236b60ee0f5283cfe2c",
+    "current/replayed-summary.md": "ed6690ee9fd0020381715615664d111fec19521f93f6715907088618bdc91a2b",
+    "current/status.tsv": "7180528d16e99893c8a33b1955d8028cdcadc56816b04c2a02a127803f837e01",
+    "current/test_ct_dudect_adjacency_k_elim_operand_magnitude.log": "0afd50aa4c48e6ac8c2db916909de0f44b8a8bf6781ea508ebec638bc3aac6ea",
+    "current/test_ct_dudect_adjacency_k_elim_operand_order.log": "dfe2636e78c23446c056223d5fdb4ccb25c5ae35b0ed6b3d2d555714ea1a59d4",
+    "current/test_ct_dudect_barrett_reduce_operand_magnitude.log": "8b42c8771f96d4cd44dd21491f0c1dc9c458063596a96478b53af735d95b9204",
+    "current/test_ct_dudect_exact_prime_drop_fixed_vs_random.log": "61b180247af66deb0f4b203e9c2e8ef2bc841109c6071a96b97c63a4e98ba202",
+    "current/test_ct_dudect_exact_prime_drop_small_vs_large_residues.log": "702ddccbdcf6f31a26921da7d59e24aff07f226bafa2f20feaa09a18cef70adf",
+    "current/test_ct_dudect_mod_switch_rescale_fixed_vs_random.log": "d5eda2c2ad9aff934a1898538e82f800dd1bc3e27a2ec3bd6128a3a6ee3aa4c2",
+    "current/test_ct_dudect_mod_switch_rescale_sign_classes.log": "439cde2ac97439e297ea4f5b569a771877c1a4cf1500ab121d74a401ca93bb8f",
+    "current/test_ct_dudect_montgomery_mul_operand_magnitude.log": "2c51ab73c3edf57f7e92329c83c5ed29822bc1f4d2b60198c445f8cde40b9f0b",
+    "current/test_ct_dudect_montgomery_pow_exponent_hamming_weight.log": "d379b556a400300235d6913a0845da0d23033556ef466c2ff493b7aff6e4bb0e",
+    "current/test_ct_dudect_montgomery_reduce_operand_magnitude.log": "2ab090d431e7c682b96d0da35ac0829db1ae2f8671979683241537179c71d78b",
+    "hosted-124989710720.log.gz": "bd1b120b0ea8576a084e1c15e95f35e8c6814275d4b66890a2e119e549d0abc7",
+    "hosted-124989710783.log.gz": "221abc73cf92a401c261a762e996e48584fde4219b6a74150d17f2694f7416fe",
+    "hosted-main-failure.log.gz": "b1edab8c1aaca81e9068317abc640d3f92e05914acfcb47846a0357bec2fedb3",
+    "hosted-results.json": "3c444110c4044ccdf12666e104480fe7aa57a4358892661044a010808c7875d6",
+    "main-failure/replayed-summary.json": "febec8ba85d2a9e0d77d6be592b4857c7eea83562f536e8b6f163fddf534d4fa",
+    "main-failure/replayed-summary.md": "c2e0a5436f7836f7299f4b39cce3fd8dd701ad7b9aac00f51ad65444079ff626",
+    "main-failure/status.tsv": "49fe137b25b7e661a2bd272fea43cc603b2c6f9ebcb45c922598a9530861b371",
+    "main-failure/test_ct_dudect_adjacency_k_elim_operand_magnitude.log": "28d9560bee3ed100323541e90e445aa556b4cc63bef548850e91b14c13657e85",
+    "main-failure/test_ct_dudect_adjacency_k_elim_operand_order.log": "c369da1aa21a013921b747829e2c1696d1d363d69bf95b17deae5febed4842e2",
+    "main-failure/test_ct_dudect_barrett_reduce_operand_magnitude.log": "30179c334c6d38ddfe18ea8bd38fa1eb9d7a61633f1f4ad7b50a81701b6caa9d",
+    "main-failure/test_ct_dudect_exact_prime_drop_fixed_vs_random.log": "d308231d3640698cd6b11e9d8bfa29583fc6e14518d8f6628b8301a557e24930",
+    "main-failure/test_ct_dudect_exact_prime_drop_small_vs_large_residues.log": "f4886b0c998cd086a145fe2b34aa96b36aff12197bc21ff76943968e19c3adef",
+    "main-failure/test_ct_dudect_mod_switch_rescale_fixed_vs_random.log": "beb5e5a421f7af33793ebb290357c5ff769c4241ba9e139c1196262dc0c6d498",
+    "main-failure/test_ct_dudect_mod_switch_rescale_sign_classes.log": "446ba669e09e3b231faeb5f850bb6e35dc63128497f18e072a1486066b493ecb",
+    "main-failure/test_ct_dudect_montgomery_mul_operand_magnitude.log": "ab9d1f6980cd66bd0539725a3081d60f295b1597680773e26a083c70b4403266",
+    "main-failure/test_ct_dudect_montgomery_pow_exponent_hamming_weight.log": "c822508510a16593e47839d7bc43a3b471f118d28726f6d5d8474acaeb545a7f",
+    "main-failure/test_ct_dudect_montgomery_reduce_operand_magnitude.log": "2dde968c2b0c338843ef0c284982636752f8e7a09b39406c45186c5455001500"
+  },
+  "new_collector_hosted_controls": {
+    "job_id": 125135590970,
+    "step": "Timing evidence collector controls",
+    "conclusion": "success",
+    "complete_timing_job": "pending_at_evidence_capture"
+  }
+}

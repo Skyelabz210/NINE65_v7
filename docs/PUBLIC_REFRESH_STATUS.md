@@ -17,6 +17,11 @@ scoped real-FHE architecture counters and comparison classification repair.
 Its unsigned exact-input packet prepares independent review; joint-key
 confidentiality and external attestation remain unestablished.
 
+The [November 2 hosted follow-up](execution/2026-11-02/CT_EVIDENCE_CONTINUATION.md)
+confirms the smoke/audit repairs at `a186dd8`: 13 of 14 workflows pass, with
+the strict comparison still unsupported. Timing-job success includes three
+inconclusive observations; it does not close the original measurement finding.
+
 | Scope | Current result | Implementation / evidence |
 | --- | --- | --- |
 | Explicit research refresh | Working encrypted correction, message restoration and original-key return | `ops::public_refresh_circuit::PublicRefreshCircuit`; requires `allow_insecure` |

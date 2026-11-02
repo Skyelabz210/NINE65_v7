@@ -7,6 +7,14 @@ archives five local repeats (four below threshold, one inconclusive) and
 compiled-loop inspection. The finding remains open; no threshold was changed.
 The older dated measurements below retain their original scope.
 
+**Evidence follow-up, 2026-11-02:** the timing workflow at `a186dd8` passes
+with eight below-threshold and three inconclusive observable reports across
+ten exact tests. Montgomery multiplication is below threshold in that run;
+the earlier finding remains open. The
+[three-valued evidence collector](execution/2026-11-02/CT_EVIDENCE_CONTINUATION.md)
+now publishes these distinctions and rejects missing/zero-test evidence.
+The Rust threshold and inconclusive policy are unchanged.
+
 **Restoration 2026-10-12:** The October 7 reducer and modulus-switch fixes from
 merged PRs #168/#169 were absent from remote `main`. This restoration preserves
 their final reviewed source from local `main@47fc49c`, including the corrected

@@ -1,0 +1,37 @@
+[1m[33mwarning[0m[1m:[0m profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/runner/work/NINE65_v7/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /home/runner/work/NINE65_v7/NINE65_v7/Cargo.toml
+[1m[32m    Finished[0m `release` profile [optimized] target(s) in 0.06s
+[1m[32m     Running[0m unittests src/lib.rs (target/release/deps/nine65-397b81f19c5df834)
+
+running 1 test
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude ... === Environment Information ===
+Timer floor (empty measured region): median 30 ns
+Timing Method: Instant (high-resolution)
+Sample Size: 100000
+Warmup Iterations: 100000
+Discard Top: 10%
+Robust CV Threshold: 5.0%
+T-Test Threshold: 5
+=================================
+
+--- dudect: MontgomeryContext::montgomery_mul — small operands vs near-modulus operands (batched) ---
+  samples kept 5481/6000 after 90th-percentile crop
+  median class A = 7464.0ns, median class B = 7464.0ns
+  t_control (A vs A', same class) = 1.4003
+  t_signal  (A vs B,  cross class) = 8.6550
+  VERDICT: TIMING DEPENDENCE MEASURED — control t=1.4003 is below threshold but signal t=8.6550 is not. The difference tracks the input class or its measurement context.
+
+thread 'security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude' panicked at crates/nine65/src/security/ct_verification.rs:1170:13:
+MontgomeryContext::montgomery_mul — small operands vs near-modulus operands (batched): MEASURED timing dependence on input class — t_signal=8.6550 >= 5 while the same-class control t_control=1.4003 stayed below it. medians: A=7464.0ns B=7464.0ns.
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1252 filtered out; finished in 0.09s
+
+[1m[31merror[0m[1m:[0m test failed, to rerun pass `-p nine65 --lib`
