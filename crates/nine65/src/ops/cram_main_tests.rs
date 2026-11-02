@@ -15,6 +15,39 @@ fn pair(config: &FHEConfig) -> (CramMainClient, CramMainEvaluator) {
 }
 
 #[test]
+fn prepared_main_multiply_is_identical_to_unprepared_fpd() {
+    for n in [8, 1024] {
+        let mut config = toy();
+        config.n = n;
+        let ctx = RNSFHEContext::new(&config);
+        let exact = ctx.try_exact_evaluator().unwrap();
+        let mut rng = ShadowHarvester::with_seed(0xc001);
+        let keys = ctx.generate_keys_with_rng(&mut rng);
+        let raw_key = exact.generate_hybrid_gadget_key_with_rng(&keys.secret_key, &mut rng);
+        let (client, eval) = pair(&config);
+        for (a, b) in [(0, 7), (6, 7), (config.t - 1, 7)] {
+            let left = eval.encrypt(a).unwrap();
+            let right = eval.encrypt(b).unwrap();
+            let reference = exact
+                .try_mul_exact(&left.raw, &right.raw, &raw_key)
+                .unwrap();
+            let actual = eval.multiply(&left, &right).unwrap();
+            assert_eq!(actual.raw.c0.limbs, reference.c0.limbs);
+            assert_eq!(actual.raw.c1.limbs, reference.c1.limbs);
+            assert_eq!(client.decrypt(&actual).unwrap(), a * b % config.t);
+            assert_eq!(
+                actual.noise_bound(),
+                &eval
+                    .state
+                    .noise
+                    .multiply(left.noise_bound(), right.noise_bound())
+                    .unwrap()
+            );
+        }
+    }
+}
+
+#[test]
 fn certified_main_scalar_operations_and_signed_boundaries() {
     let config = toy();
     let (client, eval) = pair(&config);
