@@ -1290,9 +1290,10 @@ impl<'a> ExactMulEvaluator<'a> {
             key_ntt,
             twist_mont,
             untwist_mont,
-            // Small rings keep the sequential path. Native rings use at most
-            // four workers, bounded by the OS quota/affinity and lane count.
-            workers: if self.plan.n < 1024 {
+            // Explicit sequential builds and small rings use one worker.
+            // Other native rings use at most four workers, bounded by the
+            // OS quota/affinity and lane count.
+            workers: if cfg!(feature = "sequential") || self.plan.n < 1024 {
                 1
             } else {
                 std::thread::available_parallelism()
@@ -1339,7 +1340,11 @@ impl<'a> ExactMulEvaluator<'a> {
     ) -> (RNSPolynomial, RNSPolynomial) {
         let mut r0 = RNSPolynomial::zero(&self.ctx.rns);
         let mut r1 = RNSPolynomial::zero(&self.ctx.rns);
-        let workers = workers.clamp(1, 4).min(self.plan.main.len());
+        let workers = if cfg!(feature = "sequential") {
+            1
+        } else {
+            workers.clamp(1, 4).min(self.plan.main.len())
+        };
         if workers == 1 {
             self.hybrid_relinearize_prepared_lanes(e2, key, 0, &mut r0.limbs, &mut r1.limbs);
         } else {
