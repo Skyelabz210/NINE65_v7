@@ -43,6 +43,8 @@ REQUIRED_ROWS = {
 }
 
 REQUIRED_PHRASES = {
+    "SECURITY.md": ["not independently", "not production admitted",
+                    "investigation and controlled repeats are required"],
     "docs/security/SECURITY_MODEL_PUBLIC_REFRESH.md": [
         "K_0",
         "K_native",
@@ -138,7 +140,13 @@ def check(root: Path) -> list[str]:
         errors.append("external attestation must stay not_obtained")
     if status["claims"]["refresh.constant_time_posture"]["status"] != "not_established":
         errors.append("constant-time posture must stay not_established")
+    policy = (root / "SECURITY.md").read_text().lower() if (root / "SECURITY.md").is_file() else ""
+    for obsolete in ("only the following are validated for production use",
+                     "constant-time hardening for montgomery multiplication and k-elimination paths is complete"):
+        if obsolete in policy:
+            errors.append("unsupported production/timing assertion in SECURITY.md")
     surfaces = [
+        root / "SECURITY.md",
         root / "docs/security",
         root / "docs/status",
         root / "docs/PUBLIC_REFRESH_STATUS.md",
@@ -230,7 +238,15 @@ def self_test() -> None:
                 "refresh.constant_time_posture": {"status": "not_established"},
             },
         }))
+        policy = root / "SECURITY.md"
+        policy.write_text("not independently certified; not production admitted; investigation and controlled repeats are required")
         assert not check(root), check(root)
+        original_policy = policy.read_text()
+        policy.write_text(original_policy + " Only the following are validated for production use")
+        assert any("SECURITY.md" in error for error in check(root))
+        policy.write_text(original_policy + " Constant-time hardening for Montgomery multiplication and K-Elimination paths is COMPLETE")
+        assert any("SECURITY.md" in error for error in check(root))
+        policy.write_text(original_policy)
         (root / "README.md").write_text("public refresh is disabled on every config.\n")
         assert any("Clockwork" in error for error in check(root))
         (root / "README.md").write_text("legacy Clockwork public refresh is disabled on every named profile.\n")

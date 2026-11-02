@@ -43,6 +43,16 @@ class SmokeValidationTests(unittest.TestCase):
         self.assertEqual(result["dual_rns_depth"], "PASS")
         self.assertIs(result["security_equivalent_comparison"], False)
 
+    def test_explicit_unsupported_probe_contract(self):
+        document = fixture()
+        document["status"] = "UNSUPPORTED"
+        self.assertEqual(validate(document, probe_exit=2)["status"], "UNSUPPORTED")
+
+    def test_status_and_exit_must_match_the_same_contract(self):
+        for status, code in (("FAIL", 2), ("UNSUPPORTED", 1)):
+            with self.subTest(status=status, code=code):
+                self.assert_rejected(lambda d: d.__setitem__("status", status), code=code)
+
     def assert_rejected(self, mutate, code=1):
         document = fixture()
         mutate(document)

@@ -11,10 +11,24 @@ when comparing a different checkout. Production security admission is separate.
 The stale-diagnosis corrections are tracked in
 [issue #200](https://github.com/Skyelabz210/NINE65_v7/issues/200).
 
+The [November 1 assessment remediation](execution/2026-11-01/ASSESSMENT_REMEDIATION.md)
+records the security-policy correction, open Montgomery timing finding,
+scoped real-FHE architecture counters and comparison classification repair.
+Its unsigned exact-input packet prepares independent review; joint-key
+confidentiality and external attestation remain unestablished.
+
+The [November 2 hosted follow-up](execution/2026-11-02/CT_EVIDENCE_CONTINUATION.md)
+confirms the smoke/audit repairs at `a186dd8`: 13 of 14 workflows pass, with
+the strict comparison still unsupported. Timing-job success includes three
+inconclusive observations; it does not close the original measurement finding.
+
 | Scope | Current result | Implementation / evidence |
 | --- | --- | --- |
 | Explicit research refresh | Working encrypted correction, message restoration and original-key return | `ops::public_refresh_circuit::PublicRefreshCircuit`; requires `allow_insecure` |
 | Native execution | Five refreshes and five following squares, all 8,192 coefficients checked after each: 81,920 comparisons | [Native evidence manifest](../artifacts/execution/2026-10-28/public-refresh-circuit/manifest.json), `extended_native_run` |
+| Memory-optimized native execution | One N8192 refresh and following square at commit 4fc4328: 16,384 coefficient comparisons, within an 8 GiB environment | [Native memory result](execution/2026-11-01/NATIVE_REFRESH_MEMORY.md) |
+| Native error-renewal observation | At commit 2352435, 24,576 phase-error checks pass alongside the native plaintext checks; measured maximum scaled error contracts from 762490188487606471 to 1043073383 | [Independent phase-error witness](execution/2026-11-01/NATIVE_PHASE_ERROR_OBSERVER.md) |
+| Assessment integration rerun | At source commit 1c553f6, one native refresh and following square pass 16,384 plaintext comparisons and 24,576 phase-error checks in 579.60 seconds | [Assessment acceptance](execution/2026-11-01/ASSESSMENT_REMEDIATION.md) |
 | Current return certificate | 562 error bits after slot return below a 633-bit threshold; next square/source radius 48 within support 49 | [Lift/return proof](execution/2026-10-31/PUBLIC_REFRESH_LIFT_REFINEMENT.md) |
 | Canonical plaintext-root binding | Same sealed value-root capability survives refresh; ciphertext lineage advances | [Canonical root](execution/2026-10-31/CANONICAL_PLAINTEXT_ROOT.md) |
 | Legacy/default Clockwork entry points | Still fail closed; their component-rounding path lacks its correction | `ops::bootstrap`; `params::secure_configs` support predicates |
@@ -22,7 +36,9 @@ The stale-diagnosis corrections are tracked in
 
 The native five-cycle snapshot predates the later root/inventory additions.
 Those have separate current regressions; do not claim a new latest-head full
-native run. The measured five-cycle run took 56.6 minutes including setup and
+five-cycle native run. The single-cycle result linked above includes the root
+checks on its own identified memory-optimized snapshot. The measured
+five-cycle run took 56.6 minutes including setup and
 8.70 GiB peak RSS. It is functionality evidence, not low-latency evidence.
 
 The [evidence summary](execution/2026-10-31/PUBLIC_REFRESH_EVIDENCE_SUMMARY.md)
@@ -87,3 +103,9 @@ Key-free inspection and the expensive encrypted example are documented in
 [README](../README.md#public-refresh-status). See the
 [stale-diagnosis correction record](maintenance/PUBLIC_REFRESH_STALE_DIAGNOSES_2026-11-01.md)
 for affected paths and dispositions.
+
+The [machine-checked arithmetic proofs](execution/2026-11-01/PUBLIC_REFRESH_PROOFS.md)
+cover the G/H digit identity, bounded native quotient lift, and conditional
+phase-clock return/error model. They do not establish Rust refinement or
+security of the full key setup. They add no new latest-head native execution
+claim and preserve the archived five-cycle snapshot above.

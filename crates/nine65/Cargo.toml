@@ -12,6 +12,8 @@ autobenches = false
 license = "LicenseRef-Proprietary-AllRightsReserved"
 
 [features]
+# Optional diagnostic instrumentation; absent from default timing paths.
+architecture-meter = ["dep:cram-core"]
 # Default build: O(N log N) FFT-based NTT + exact transcendentals backend +
 # MANA/UNHAL acceleration (purpose-built for this integer-only FHE
 # architecture). Rayon is strictly opt-in via `parallel`/`generic-rayon` and
@@ -91,6 +93,7 @@ generic-rayon = ["rayon"]
 sequential = []
 
 [dependencies]
+cram-core = { path = "../cram-core", optional = true }
 mana = { path = "../mana", optional = true }
 # default-features = false: unhal's `parallel` default would silently pull
 # rayon (and mana/parallel) into `--features accelerated`, contradicting the
@@ -345,3 +348,11 @@ required-features = ["allow_insecure"]
 [[example]]
 name = "canonical_lift_feasibility"
 required-features = ["serde"]
+
+[[example]]
+name = "public_refresh_review_packet"
+required-features = ["allow_insecure", "serde"]
+
+[[test]]
+name = "architecture_meter"
+required-features = ["architecture-meter", "allow_insecure"]

@@ -101,6 +101,8 @@ def classify_result(payload: dict[str, Any] | None, returncode: int) -> tuple[st
     ):
         return "UNRUN", depth.get("first_error") or "incomplete depth evidence"
     if unsupported is not None:
+        if returncode not in (0, 1, 2):
+            return "UNRUN", "abnormal process exit despite capability refusal evidence"
         return "UNSUPPORTED", unsupported
     if returncode != 0 or payload.get("status") != "PASS":
         return "UNRUN", "process or reported status failed despite recorded checks"

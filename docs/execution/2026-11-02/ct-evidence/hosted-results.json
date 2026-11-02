@@ -1,0 +1,767 @@
+{
+  "source_commit": "a186dd8cf71b91f852732dacba192a568509abe6",
+  "review_date": "2026-11-02",
+  "workflow_runs": [
+    {
+      "id": 41353893972,
+      "name": "NINE65 v6 v7 comparative harness",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 66,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893972/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893972/logs",
+      "workflow_id": 332249300
+    },
+    {
+      "id": 41353893958,
+      "name": "NINE65 v7 comparative scale sweep",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 48,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893958/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893958/logs",
+      "workflow_id": 332249301
+    },
+    {
+      "id": 41353894033,
+      "name": "Lean Formal Verification",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 17,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353894033/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353894033/logs",
+      "workflow_id": 288999426
+    },
+    {
+      "id": 41353894022,
+      "name": "Application Platform Gates",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 92,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353894022/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353894022/logs",
+      "workflow_id": 313562835
+    },
+    {
+      "id": 41353893941,
+      "name": "CRAM exploratory FHE matrix",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 63,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893941/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893941/logs",
+      "workflow_id": 313562838
+    },
+    {
+      "id": 41353893939,
+      "name": "Fuzz Smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 101,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893939/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893939/logs",
+      "workflow_id": 337510651
+    },
+    {
+      "id": 41353893954,
+      "name": "Audit Remediation Gate",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 89,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893954/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893954/logs",
+      "workflow_id": 313562837
+    },
+    {
+      "id": 41353893962,
+      "name": "Public Refresh Research and Boundary Evidence",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 73,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893962/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893962/logs",
+      "workflow_id": 313562839
+    },
+    {
+      "id": 41353893987,
+      "name": "CRAM Recumbency Follow-up Gate",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 102,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893987/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893987/logs",
+      "workflow_id": 313562841
+    },
+    {
+      "id": 41353893957,
+      "name": "CRAM residue-native gates",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 73,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893957/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893957/logs",
+      "workflow_id": 313562843
+    },
+    {
+      "id": 41353893968,
+      "name": "Exactness Focused Gates",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 77,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893968/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893968/logs",
+      "workflow_id": 383969330
+    },
+    {
+      "id": 41353893978,
+      "name": "Constant-Time Verification",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 63,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893978/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893978/logs",
+      "workflow_id": 240728463
+    },
+    {
+      "id": 41353893988,
+      "name": "CI",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 201,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893988/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893988/logs",
+      "workflow_id": 236596835
+    },
+    {
+      "id": 41353893969,
+      "name": "CRAM-public gates",
+      "status": "completed",
+      "conclusion": "success",
+      "run_number": 83,
+      "jobs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893969/jobs",
+      "logs_url": "https://api.github.com/repos/Skyelabz210/NINE65_v7/actions/runs/41353893969/logs",
+      "workflow_id": 342939540
+    }
+  ],
+  "inspected_jobs": [
+    {
+      "run_id": 41353893958,
+      "jobs": [
+        {
+          "id": 124989710720,
+          "name": "quick-correctness",
+          "status": "completed",
+          "conclusion": "failure",
+          "run_id": 41353893958,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Run dtolnay/rust-toolchain@1.89.0",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Parse harness sources",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Normalize Rust probe",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Reject floating point",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run quick scale correctness matrix",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Run actions/upload-artifact@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Enforce quick matrix after evidence capture",
+              "status": "completed",
+              "conclusion": "failure",
+              "number": 9
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19
+            }
+          ]
+        },
+        {
+          "id": 124989712127,
+          "name": "dispatched-scale",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893958,
+          "logs_url": null,
+          "steps": null
+        }
+      ]
+    },
+    {
+      "run_id": 41353893978,
+      "jobs": [
+        {
+          "id": 124989710639,
+          "name": "CT source and functional gates",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41353893978,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Install Rust",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Source-level CT and public-schedule gate",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Existing constant-time source verification",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "NTT and persistent-Montgomery correctness",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Assert the CT timing harness is intact",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Clippy touched arithmetic modules",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Upload reports",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 18
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 19
+            }
+          ]
+        },
+        {
+          "id": 124989710783,
+          "name": "CT dudect gate (blocking, t < 5)",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41353893978,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Install Rust",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Record timing runner and compiler",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Build test binary",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run blocking dudect tests",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Capture actual timing-function assembly",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Upload measurements",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Post Run actions/checkout@v4",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17
+            }
+          ]
+        },
+        {
+          "id": 124989711537,
+          "name": "CT open findings (scheduled state tripwire)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893978,
+          "logs_url": null,
+          "steps": null
+        },
+        {
+          "id": 124989711825,
+          "name": "CT robust-CV diagnostics (scheduled, recorded)",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893978,
+          "logs_url": null,
+          "steps": null
+        }
+      ]
+    },
+    {
+      "run_id": 41353893988,
+      "jobs": [
+        {
+          "id": 124989779571,
+          "name": "T1 · Static Analysis & Proofs",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Reject actor-dependent required-job bypasses",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Verify comparison profile and evidence contract",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Test required-job bypass scanner",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Validate claim registry",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Detect stale claims",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Scan for panic patterns (ratchet)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Scan for float usage in runtime paths",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 9
+            },
+            {
+              "name": "Scan for float usage in benches/tests/audit binaries",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10
+            },
+            {
+              "name": "Test the benches/tests/audit-binaries no-floats scanner",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11
+            },
+            {
+              "name": "Check Coq proof files present",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 12
+            },
+            {
+              "name": "Check Lean4 proof modules present",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 13
+            },
+            {
+              "name": "Post Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 26
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 27
+            }
+          ]
+        },
+        {
+          "id": 124989779784,
+          "name": "T3 · Gemini AI Review",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Generate diff for review",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Call Gemini Flash",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Post Gemini review to PR",
+              "status": "completed",
+              "conclusion": "skipped",
+              "number": 5
+            },
+            {
+              "name": "Post Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 10
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 11
+            }
+          ]
+        },
+        {
+          "id": 124989779854,
+          "name": "T1 · Fast Gate (fmt + clippy + deny)",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Install Rust toolchain",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Cache cargo registry",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Check formatting",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run clippy",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Install dependency auditor",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Check licenses and advisories",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Post Cache cargo registry",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            },
+            {
+              "name": "Post Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17
+            }
+          ]
+        },
+        {
+          "id": 124989780303,
+          "name": "T4 · Slow Test Tier",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": null
+        },
+        {
+          "id": 124989780764,
+          "name": "T4 · Benchmark Regression",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": null
+        },
+        {
+          "id": 124989804640,
+          "name": "T4 · Qwen Claim Semantic Audit",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": null
+        },
+        {
+          "id": 124989811605,
+          "name": "T4 · Code Coverage",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": null
+        },
+        {
+          "id": 124989820951,
+          "name": "T4 · Timing Tests",
+          "status": "completed",
+          "conclusion": "skipped",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": null
+        },
+        {
+          "id": 124990263064,
+          "name": "T2 · Full Test Suite",
+          "status": "completed",
+          "conclusion": "success",
+          "run_id": 41353893988,
+          "logs_url": null,
+          "steps": [
+            {
+              "name": "Set up job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 1
+            },
+            {
+              "name": "Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 2
+            },
+            {
+              "name": "Install Rust toolchain",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 3
+            },
+            {
+              "name": "Cache cargo registry",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 4
+            },
+            {
+              "name": "Cache target directory",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 5
+            },
+            {
+              "name": "Run all workspace tests (MEDIUM test tier)",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 6
+            },
+            {
+              "name": "Run error variant coverage tests",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 7
+            },
+            {
+              "name": "Test clockwork feature",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 8
+            },
+            {
+              "name": "Post Cache target directory",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 14
+            },
+            {
+              "name": "Post Cache cargo registry",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 15
+            },
+            {
+              "name": "Post Checkout code",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 16
+            },
+            {
+              "name": "Complete job",
+              "status": "completed",
+              "conclusion": "success",
+              "number": 17
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -56,6 +56,8 @@ on:
       - 'crates/nine65/src/security/**'
       - 'scripts/check_ct_ntt_source.py'
       - 'scripts/verify_constant_time.sh'
+      - 'scripts/summarize_ct_verdicts.py'
+      - 'scripts/test_summarize_ct_verdicts.py'
       - '.github/workflows/ct_verification.yml'
   pull_request:
     branches: [main]
@@ -65,6 +67,8 @@ on:
       - 'crates/nine65/src/security/**'
       - 'scripts/check_ct_ntt_source.py'
       - 'scripts/verify_constant_time.sh'
+      - 'scripts/summarize_ct_verdicts.py'
+      - 'scripts/test_summarize_ct_verdicts.py'
       - '.github/workflows/ct_verification.yml'
   schedule:
     # Sunday 04:00 UTC — timing diagnostics on an otherwise idle runner.
@@ -91,6 +95,9 @@ jobs:
 
       - name: Existing constant-time source verification
         run: bash scripts/verify_constant_time.sh --verbose | tee verification_script_output.txt
+
+      - name: Timing evidence collector controls
+        run: python3 scripts/test_summarize_ct_verdicts.py
 
       - name: NTT and persistent-Montgomery correctness
         run: |
@@ -190,6 +197,9 @@ jobs:
           set -euo pipefail
           prefix=security::ct_verification::constant_time_statistical
           failed=0
+          mkdir -p ct_dudect_tests
+          : > ct_dudect_tests/status.tsv
+          : > dudect_blocking_output.txt
           for t in \
             test_ct_dudect_montgomery_pow_exponent_hamming_weight \
             test_ct_dudect_montgomery_reduce_operand_magnitude \
@@ -203,14 +213,34 @@ jobs:
             test_ct_dudect_adjacency_k_elim_operand_order
           do
             echo "::group::$t"
-            if ! cargo test -p nine65 --lib --release -- \
+            : > "ct_dudect_tests/$t.log"
+            set +e
+            cargo test -p nine65 --lib --release -- \
               --ignored --exact --nocapture --test-threads 1 "$prefix::$t" \
-              2>&1 | tee -a dudect_blocking_output.txt; then
+              2>&1 | tee -a "ct_dudect_tests/$t.log" dudect_blocking_output.txt
+            statuses=("${PIPESTATUS[@]}")
+            set -e
+            printf '%s\t%s\t%s\n' "$t" "${statuses[0]}" "${statuses[1]}" \
+              >> ct_dudect_tests/status.tsv
+            if [ "${statuses[0]}" -ne 0 ] || [ "${statuses[1]}" -ne 0 ]; then
               failed=1
             fi
             echo "::endgroup::"
           done
           exit "$failed"
+
+      - name: Publish three-valued timing evidence
+        if: always()
+        env:
+          CT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          status=0
+          python3 scripts/summarize_ct_verdicts.py \
+            --input-dir ct_dudect_tests --output ct_dudect_summary.json \
+            --markdown ct_dudect_summary.md \
+            --source-sha "$CT_HEAD_SHA" --checkout-sha "$GITHUB_SHA" || status=$?
+          cat ct_dudect_summary.md >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
       - name: Capture actual timing-function assembly
         if: always()
@@ -229,6 +259,9 @@ jobs:
             ct_runner_environment.txt
             ct_build.jsonl
             ct_kernel_assembly.txt
+            ct_dudect_tests/
+            ct_dudect_summary.json
+            ct_dudect_summary.md
 
   # ---------------------------------------------------------------------------
   # OPEN FINDINGS — known-red tripwires, scheduled.

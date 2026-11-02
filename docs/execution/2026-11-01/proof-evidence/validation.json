@@ -1,0 +1,75 @@
+{
+  "schema": "nine65-public-refresh-proof-acceptance-v1",
+  "proof_source_commit": "5d52ca30052f938c8ffaa74a03b8d3ad942a3421",
+  "runtime_source_commit": "3a5d97fa2fe6156b3f2e72d44ff5d70fa467026f",
+  "integration_base": "924f52edfbcbb52345bfae42de5f244a3a93ffbc",
+  "runtime_sources_unchanged_between_recorded_commits": true,
+  "explicit_theorems": 50,
+  "kernel_audit": "Public refresh axiom audit OK: 135 theorems; no custom axioms or sorryAx",
+  "commands": {
+    "kernel": "python3 scripts/check_public_refresh_proofs.py --output /tmp/public-refresh-proofs.json",
+    "proof_gate_controls": "python3 scripts/test_public_refresh_proofs.py",
+    "release_library": "cargo test -p nine65 --lib --release -- --test-threads=2",
+    "debug_focused": "cargo test -p nine65 --lib phase_clock -- --skip ops::rns_fhe::tropical_phase_clock_tests --nocapture",
+    "clippy": "cargo clippy --workspace --all-targets -- -D warnings"
+  },
+  "results": {
+    "proof_gate_controls_passed": 9,
+    "release_library": {
+      "passed": 1114,
+      "failed": 0,
+      "ignored": 139,
+      "measured": 0,
+      "filtered": 0,
+      "seconds": "303.82"
+    },
+    "debug_focused": {
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 1238,
+      "seconds": "65.46"
+    },
+    "release_roundtrip_cycles": 100,
+    "debug_roundtrip_cycles": 2,
+    "workspace_all_targets_clippy": "passed",
+    "formatting": "passed",
+    "architecture_scan": "passed (20 files)",
+    "panic_ratchet": "passed (existing backlog unchanged)",
+    "security_claim_gate": "passed",
+    "status_evidence_gate": "passed",
+    "workflow_parse": "passed"
+  },
+  "limits": [
+    "arithmetic/model proofs; not Rust refinement",
+    "full existing Mathlib build unverified locally (cache 403; alternate missing objects)",
+    "full workspace tests not rerun locally",
+    "no new full native 8192-degree encrypted execution",
+    "no joint-key confidentiality, constant-time, or production-security admission"
+  ],
+  "source_sha256": {
+    "scripts/check_public_refresh_proofs.py": "e332c7f87350ab8e9139cc0070f9b2027aee687cece406a145f52befab8ce4f5",
+    "scripts/test_public_refresh_proofs.py": "5a32b765b975a40aac1af50157a8ec53e593e8577d2a6deabeb23b18fe164419",
+    ".github/workflows/lean_proofs.yml": "76c2969ca2e0df743b70e956b8418cb1477051757590359d068bb4994559a779",
+    "crates/nine65/src/ops/cram_main_phase_clock.rs": "0853a87c814a658dc45415d3f9b94bfc922cca7a2cad4fe25dcc1051c321f308",
+    "crates/nine65/src/ops/public_phase_clock.rs": "fcdfbb97ce17ea938a6af41613c136007f75768ae5069373620ae15141ce09d1",
+    "crates/nine65/src/ops/phase_clock_return.rs": "7fb0e1d22ce8a1c40a324aeb108339e7faad24f544029b1b3624230947fab1f8",
+    "crates/nine65/src/noise/certified.rs": "6d67d65fe1b66cdb7527e5e2e8274c6a2a3bf10004d7b42d33565e8145b2465a",
+    "crates/nine65/src/arithmetic/phase_clock_plan.rs": "7a2ea30a13c4510279317a384e33e9f9bd3d7e649f8a0494561d96de585e253f",
+    "crates/nine65/src/ops/bounded_digit_circuit.rs": "92fe09431f13b1f165d8586f706127eff1d533323df6130f01aeaae4ab251c76",
+    "crates/nine65/src/ops/public_refresh_circuit.rs": "7401cb1c508644fd86d3671a488b284765dd2a12091456381c1dbb978adb8c37",
+    "crates/nine65/src/ops/public_refresh_source_plan.rs": "f436f3e62c0330d85d1e98cc5599cf200955435997f3e5c6795101e32052d120",
+    "crates/nine65/src/ops/public_refresh_source.rs": "712f6e0f6a974267b8c7a4629540d9967c5755822116ba99a6dd3a46282a903c",
+    "crates/nine65/src/ops/public_refresh_circuit_tests.rs": "e4ce486b0103a83afec1118f66fb67a8d7714b85e64c38da7ff58ac74c676fbe",
+    "Cargo.lock": "ab860d5a7d6d7c602fbb02a63b6b9c058596169f0448fdfa56394da8db1d0b34"
+  },
+  "evidence_sha256": {
+    "current-main-clippy.log.gz": "d6a140dff37e072daf7c505ed2fce6820da3d26f6f5bde394118d062911f16b8",
+    "current-main-library-release.log.gz": "a667e368dd8f466c37840c085a88f98fd364754978871e0de3e3502665a4c086",
+    "current-main-phase-clock-debug.log.gz": "07b55d2f325e0589f39900189f8cb390eceb4cf327a4d07c4adadb302156f6b0",
+    "gate-controls-final.log.gz": "6412b29a30a82b8fbe3fdd0e4ff0c67d07e4d7d35cf2412a3b2bfa9b5db8321e",
+    "kernel-verification.json": "64d99d59d0184fa831426a8dd64a2e12f236f7def8a64aaeea5c14f2ac91959b",
+    "verification.log.gz": "ce68f00097041d0a5ce5b84c26460f0eea3180b55a35a284da8b2758670bffa1"
+  }
+}

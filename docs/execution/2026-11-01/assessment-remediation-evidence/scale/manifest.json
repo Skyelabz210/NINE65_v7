@@ -1,0 +1,165 @@
+{
+  "branch": "codex/public-refresh-proofs-2026-11-01",
+  "build": {
+    "skipped": true
+  },
+  "commit": "7ddb2b4b0f301a78c56e322192281a27c36afe6b",
+  "created_utc": "20261101T212831Z",
+  "depth_policy": "required",
+  "dirty": true,
+  "evidence_contract": {
+    "allocation_tracking": "UNMEASURED",
+    "binary_sha256": "04137116ffaa22d7fd92f57152471b22ad132ad279176f40c2a54fcc795660e3",
+    "cargo_lock_sha256": "cfe3bdbced103df767be8d03ec7c57aefb0e84a878dc1ee6f7a2a099ac5003f5",
+    "cargo_profile": "debug",
+    "features": [
+      "serde",
+      "allow_insecure"
+    ],
+    "harness_source_sha256": {
+      "crates/nine65/src/bin/cram_comparative_probe.rs": "68fc9534dc475fd567d70e4cf102db244f98b400205c89aee3cb897bc41d908d",
+      "scripts/benchmark_contract.py": "0f99e53c85ff860e6406ff42e2e6dbd5b4294fbfbc94df048f8280ce1b0723d9",
+      "scripts/cram_compare_results.py": "e6399a008a83fb7adc48b6d10866d24d7cd13d7ae16a8956a2b8c8faa27f1d6d",
+      "scripts/run_nine65_v6_v7_compare.py": "63e7f2b75a4a1d1098ec637b3ba40de92d0a446f37cc4b0eef719f7a00f4beb2",
+      "scripts/run_nine65_v7_scale_sweep.py": "81386330da9ff30bb9c75a323e230e5d122330037de185c703c31aa496f04410"
+    },
+    "performance_ranking_allowed": false,
+    "purpose": "comparison-only correctness",
+    "security_equivalence": "NON_SECURITY_EQUIVALENT",
+    "timing_sample_policy": "integer per-process operation averages; depth entries individually timed",
+    "worker_count": "UNMEASURED"
+  },
+  "hardware": {
+    "kernel": "Linux cc0f75080ae2 6.18.57 #1 SMP Tue Oct 20 21:56:04 UTC 2026 x86_64 GNU/Linux",
+    "logical_cpus": 3,
+    "lscpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           46 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  3\nOn-line CPU(s) list:                     0-2\nVendor ID:                               AuthenticAMD\nModel name:                              AMD EPYC 9V45 96-Core Processor\nCPU family:                              26\nModel:                                   2\nThread(s) per core:                      1\nCore(s) per socket:                      3\nSocket(s):                               1\nStepping:                                1\nBogoMIPS:                                5192.24\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm avx512_vp2intersect arch_capabilities\nHypervisor vendor:                       KVM\nVirtualization type:                     full\nL1d cache:                               96 KiB (2 instances)\nL1i cache:                               64 KiB (2 instances)\nL2 cache:                                2 MiB (2 instances)\nL3 cache:                                32 MiB (1 instance)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-2\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Vulnerable\nVulnerability Spec store bypass:         Vulnerable\nVulnerability Spectre v1:                Vulnerable: __user pointer sanitization and usercopy barriers only; no swapgs barriers\nVulnerability Spectre v2:                Vulnerable; STIBP: disabled; PBRSB-eIBRS: Not affected; BHI: Not affected\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Not affected",
+    "machine": "x86_64",
+    "memory_total": "10207480 kB",
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "processor": ""
+  },
+  "hardware_fingerprint": "f9ef3d9cdf1e54f8e3cf06220278798f9e252d310440340f7fb3a91659dad9bb",
+  "profile": "quick",
+  "records": [
+    {
+      "case": {
+        "a": 8,
+        "b": 8,
+        "case_id": "0000-v6_compat_4096-s42-i1-m1-d2",
+        "config": "v6_compat_4096",
+        "ct_mul_depth": 2,
+        "iterations": 1,
+        "mul_iterations": 1,
+        "seed": 42
+      },
+      "command": [
+        "/workspace/work/nine65/rank-divider/clippy-target/debug/cram_comparative_probe",
+        "--config",
+        "v6_compat_4096",
+        "--iterations",
+        "1",
+        "--mul-iterations",
+        "1",
+        "--ct-mul-depth",
+        "2",
+        "--seed",
+        "42",
+        "--a",
+        "8",
+        "--b",
+        "8",
+        "--output",
+        "/workspace/work/nine65/assessment/scale/cases/0000-v6_compat_4096-s42-i1-m1-d2.json"
+      ],
+      "command_display": "/workspace/work/nine65/rank-divider/clippy-target/debug/cram_comparative_probe --config v6_compat_4096 --iterations 1 --mul-iterations 1 --ct-mul-depth 2 --seed 42 --a 8 --b 8 --output /workspace/work/nine65/assessment/scale/cases/0000-v6_compat_4096-s42-i1-m1-d2.json",
+      "depth_complete": true,
+      "depth_completed": 2,
+      "depth_first_error": null,
+      "depth_requested": 2,
+      "duration_ns": 3962102156,
+      "first_divergence": {
+        "operation": "mul_ct",
+        "path": "legacy",
+        "reason": "refused-#135"
+      },
+      "operation_correctness_pass": true,
+      "parse_error": null,
+      "reported_status": "UNSUPPORTED",
+      "result_path": "cases/0000-v6_compat_4096-s42-i1-m1-d2.json",
+      "returncode": 2,
+      "schema": "nine65-comparative-probe-v1",
+      "status": "UNSUPPORTED",
+      "stderr_path": "logs/0000-v6_compat_4096-s42-i1-m1-d2.stderr.log",
+      "stdout_path": "logs/0000-v6_compat_4096-s42-i1-m1-d2.stdout.log",
+      "tuple_fingerprint": "82057db5f228c60853650747115004b82bc0bce6d8d4c746e98d4a2116099446"
+    },
+    {
+      "case": {
+        "a": 8,
+        "b": 8,
+        "case_id": "0001-secure_128-s42-i1-m1-d2",
+        "config": "secure_128",
+        "ct_mul_depth": 2,
+        "iterations": 1,
+        "mul_iterations": 1,
+        "seed": 42
+      },
+      "command": [
+        "/workspace/work/nine65/rank-divider/clippy-target/debug/cram_comparative_probe",
+        "--config",
+        "secure_128",
+        "--iterations",
+        "1",
+        "--mul-iterations",
+        "1",
+        "--ct-mul-depth",
+        "2",
+        "--seed",
+        "42",
+        "--a",
+        "8",
+        "--b",
+        "8",
+        "--output",
+        "/workspace/work/nine65/assessment/scale/cases/0001-secure_128-s42-i1-m1-d2.json"
+      ],
+      "command_display": "/workspace/work/nine65/rank-divider/clippy-target/debug/cram_comparative_probe --config secure_128 --iterations 1 --mul-iterations 1 --ct-mul-depth 2 --seed 42 --a 8 --b 8 --output /workspace/work/nine65/assessment/scale/cases/0001-secure_128-s42-i1-m1-d2.json",
+      "depth_complete": true,
+      "depth_completed": 2,
+      "depth_first_error": null,
+      "depth_requested": 2,
+      "duration_ns": 15372119285,
+      "first_divergence": {
+        "operation": "mul_ct",
+        "path": "legacy",
+        "reason": "refused-#135"
+      },
+      "operation_correctness_pass": true,
+      "parse_error": null,
+      "reported_status": "UNSUPPORTED",
+      "result_path": "cases/0001-secure_128-s42-i1-m1-d2.json",
+      "returncode": 2,
+      "schema": "nine65-comparative-probe-v1",
+      "status": "UNSUPPORTED",
+      "stderr_path": "logs/0001-secure_128-s42-i1-m1-d2.stderr.log",
+      "stdout_path": "logs/0001-secure_128-s42-i1-m1-d2.stdout.log",
+      "tuple_fingerprint": "d0c160c6e00179d2452bc7276971e0d7cfb1008d1454f17bae205031f96c7a35"
+    }
+  ],
+  "repository": "https://github.com/Skyelabz210/NINE65_v7.git",
+  "rustc": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7",
+  "schema": "nine65-v7-scale-sweep-v1",
+  "summary": {
+    "cases": 2,
+    "depth_complete": 2,
+    "depth_stops": 0,
+    "missing_or_invalid_results": 0,
+    "nonzero_exits": 2,
+    "operation_correctness_failures": 0,
+    "process_failures": 0,
+    "unrun": 0,
+    "unsupported": 2,
+    "unverified_operation_evidence": 0,
+    "wrong_plaintext": 0
+  }
+}

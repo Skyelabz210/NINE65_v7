@@ -34,6 +34,12 @@ fn power(mut a: u64, mut e: usize, q: u64) -> u64 {
     y
 }
 
+// Minimize 2*B+G for B*G=cyclic. When the two power-of-two
+// choices tie, keep the smaller B to halve the cached baby payload.
+fn inverse_baby_count(cyclic: usize) -> usize {
+    1usize << ((cyclic.ilog2() - 1) / 2)
+}
+
 /// Deterministic ideal-grid phase-error bound Eout <= factor*Ein + added.
 /// The caller must apply its wide-integer decoding and return certificates.
 #[derive(Clone, Debug)]
@@ -90,7 +96,7 @@ impl<'a> PublicSlotReturn<'a> {
         }
         let encoding = SlotEncoding::new(ctx.n, ctx.t)?;
         let cyclic = ctx.n / 2;
-        let baby_count = 1usize << (cyclic.ilog2() / 2);
+        let baby_count = inverse_baby_count(cyclic);
         let giant_count = cyclic / baby_count;
         let exact = ctx
             .try_exact_evaluator()
@@ -459,21 +465,42 @@ mod tests {
     }
 
     #[test]
+    fn balanced_inverse_partition_halves_cache_without_more_switches() {
+        let n = 32768usize;
+        let cyclic = n / 2;
+        let baby = inverse_baby_count(cyclic);
+        assert_eq!(baby, 64);
+        assert_eq!(2 * baby + cyclic / baby - 2, 382);
+        // Native Q650: four 30-bit and nine 59-bit primes, two components.
+        let chunks = 2 * (4 * 2 + 9 * 3);
+        assert_eq!(2 * baby * chunks * n * 8, 2_348_810_240);
+    }
+
+    #[test]
     fn streamed_slot_return_recovers_embedded_coefficients_with_three_keys() {
+        verify_streamed_return(64);
+    }
+
+    #[test]
+    fn reduced_cache_partition_preserves_every_coefficient() {
+        verify_streamed_return(128);
+    }
+
+    fn verify_streamed_return(outer_n: usize) {
         let mut config = SecureConfig::secure_128().into_config();
-        config.n = 64;
+        config.n = outer_n;
         config.security_bits = 0;
         config.name = "INSECURE streamed slot-return test";
         // Exercise the auxiliary backend's third 24-bit word as well as
         // ordinary 31-bit lanes in the same exact ciphertext comparison.
         config.primes.push(576_460_752_301_785_089);
         let ctx = RNSFHEContext::try_new(&config).unwrap();
-        let plan = PublicSlotReturn::new(&ctx, 16).unwrap();
+        let plan = PublicSlotReturn::new(&ctx, outer_n / 4).unwrap();
         let mut rng = ShadowHarvester::with_seed(0x5354_4f43_5245_5455);
         let keys = ctx.generate_keys(&mut rng);
         let return_keys = plan.generate_keys(&keys.secret_key, &mut rng).unwrap();
         // Populate every slot, including the unused three quarters. The
-        // independently specified output must depend only on the first 16.
+        // independently specified output must depend only on the source coefficient slots.
         let values: Vec<u64> = (0..ctx.n)
             .map(|j| ((j * j * 7 + 13 * j + 3) % ctx.t as usize) as u64)
             .collect();
@@ -504,15 +531,24 @@ mod tests {
             .unwrap();
         assert_eq!(auxiliary.c0.limbs, output.c0.limbs);
         assert_eq!(auxiliary.c1.limbs, output.c1.limbs);
-        assert_eq!(stages.last().unwrap(), &("inverse giants".into(), 8, 8));
+        assert_eq!(
+            stages.last().unwrap(),
+            &("inverse giants".into(), plan.giant_count, plan.giant_count)
+        );
         let mut expected = vec![0; ctx.n];
-        for j in 0..16 {
+        for j in 0..outer_n / 4 {
             expected[4 * j] = values[j];
         }
         assert_eq!(decrypt(&ctx, &output, &keys), expected);
         assert_eq!(plan.certificate().plaintext_diagonals, ctx.n);
         assert_eq!(plan.certificate().ciphertext_babies, 8);
-        assert_eq!(plan.certificate().galois_calls, 14);
-        assert_eq!(plan.certificate().input_error_factor, 64 * 64 * 32768);
+        assert_eq!(
+            plan.certificate().galois_calls,
+            if outer_n == 64 { 14 } else { 22 }
+        );
+        assert_eq!(
+            plan.certificate().input_error_factor,
+            outer_n as u128 * outer_n as u128 * 32768
+        );
     }
 }

@@ -125,8 +125,16 @@ jobs:
       - name: Run clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
+      # Run the same audit version on the host's already-installed Rust.
+      # The Docker action carries Rust 1.85/musl and tries to download the
+      # repository's Rust 1.89/musl override before it can inspect metadata.
+      - name: Install dependency auditor
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny@0.20.2
+
       - name: Check licenses and advisories
-        uses: EmbarkStudios/cargo-deny-action@v2
+        run: cargo deny --all-features check
 
   # ---------------------------------------------------------------------------
   # T1b — Static Analysis and Proofs

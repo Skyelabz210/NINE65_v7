@@ -1,0 +1,12 @@
+[package]
+name = "pasted-refresh-validation"
+version = "0.1.0"
+edition = "2021"
+[workspace]
+[dependencies]
+num-bigint = "0.4"
+num-integer = "0.1"
+num-traits = "0.2"
+[[bin]]
+name = "ledger"
+path = "harness.rs"

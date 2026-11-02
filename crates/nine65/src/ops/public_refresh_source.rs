@@ -511,3 +511,6 @@ impl PublicRefreshSourceClient {
 #[cfg(test)]
 #[path = "public_refresh_source_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+pub(crate) use tests::observed_work_error;

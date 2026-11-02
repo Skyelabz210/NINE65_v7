@@ -1,0 +1,34 @@
+{
+  "source_commit": "0ccdf5559eb214e3757fd4f8ebfdc6dd7a0095c7",
+  "unique_encrypted_pairs": 85,
+  "ciphertext_batches": 11,
+  "slots_per_batch": 8,
+  "padding_comparisons": 3,
+  "setup_count": 1,
+  "target_tests": {
+    "passed": 43,
+    "failed": 0,
+    "ignored": 19
+  },
+  "cargo_deny_version": "0.20.2",
+  "cargo_deny_result": "advisories ok, bans ok, licenses ok, sources ok",
+  "audit_failure_repaired": {
+    "ci_run": 41338551086,
+    "job": 124943450068,
+    "reason": "Docker Rust1.85/musl image attempted to install repository Rust1.89/musl and network failed before policy evaluation"
+  },
+  "audit_policy_unchanged": true,
+  "source_sha256": {
+    ".github/workflows/ci.yml": "21cfd1c4cc2dc2099e31e06962b3f44f0166eabfef1e3fd1f7d65240affe04c4",
+    "crates/nine65/tests/coefficient_slot_gate.rs": "b5fb5e1a5341c618199834de9b2099ddb2ba11ffd23ac06a3a1f13615abf8283",
+    "deny.toml": "a5464ea1802390ebde60c5f1551529e4d48caa6891732d6a9636eada56ce8861",
+    "Cargo.lock": "ab860d5a7d6d7c602fbb02a63b6b9c058596169f0448fdfa56394da8db1d0b34"
+  },
+  "evidence_sha256": {
+    "bounded-digit-exhaustive-matrix.json.gz": "91696054859f5ee0874bf7959d962234f8874e614871a921be3d4b39c46f7f71",
+    "bounded-digit-exhaustive-target.log.gz": "11e11f193cdde481f379c0a36f67619ea08681358ab050096ba112876b3b46d3",
+    "exhaustive-bridge-clippy.log.gz": "269e371c49048aac16e3b04ffa3503ca1dd8e703d0943dbb0de7285de88a619b",
+    "host-deny-check.log.gz": "7a7a1ffa9985358bc9ad714ec90d2657a8b7b37e7824498ee3d3731d8187db1e"
+  },
+  "scope": "exhaustive finite p17/B2 encrypted digit/slot bridge; not full native refresh or production security admission"
+}
