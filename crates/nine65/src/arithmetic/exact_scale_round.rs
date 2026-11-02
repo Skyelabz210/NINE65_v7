@@ -67,15 +67,16 @@
 //! decorative: the tests show a sharp transition from exact to
 //! near-universally wrong as `A` crosses it.
 //!
-//! For the BFV tensor with centered coefficients, `|Xc| <= N * (Q/2)^2`, so the
-//! caller passes `x_bound_over_q_sq = N / 4`.
+//! For one BFV tensor product with centered coefficients,
+//! `|Xc| <= N * (Q/2)^2`, giving `N / 4`. The summed middle component contains
+//! two products; the live evaluator uses the larger `N / 2` bound.
 //!
 //! ## Scope
 //!
-//! This is the coefficient-level kernel for T1.3. It is **not yet wired into
-//! the evaluator** — that is T1.4, which additionally needs the tensor product
-//! and relinearization carried in the extended base. Nothing here changes any
-//! existing production path.
+//! This coefficient kernel is wired into `ExactMulEvaluator` and the main-Q
+//! service evaluator. Its fixed-divisor BFV rescaling contract is separate from
+//! a general encrypted division API. `CramPublicEvaluator::exact_divide` still
+//! accepts only divisors invertible on every main and anchor lane.
 
 use super::main_only_base_ext::{MainOnlyBaseExt, MainOnlyBaseExtError, RankPath};
 #[cfg(test)]
@@ -230,7 +231,8 @@ impl ExactScaleRound {
     ///
     /// `x_bound_over_q_sq` declares the caller's operand bound as
     /// `|Xc| <= x_bound_over_q_sq * Q^2`. For a BFV tensor over centered
-    /// coefficients of a degree-`N` ring that is `N / 4`.
+    /// coefficients of a degree-`N` ring that is `N / 4` for one product, or
+    /// `N / 2` for the summed middle component.
     pub fn new(
         main: &[u64],
         aux: &[u64],

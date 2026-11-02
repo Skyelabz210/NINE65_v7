@@ -367,7 +367,8 @@ impl AdaptiveFHEContext {
                 .entropy_monitor
                 .update_workload_and_check_adaptation(_batch_size)
             {
-                let recommended_threads = self.entropy_monitor.adapt_threading(_batch_size) as usize;
+                let recommended_threads =
+                    self.entropy_monitor.adapt_threading(_batch_size) as usize;
                 let cached_threads = self
                     .last_recommended_threads
                     .load(std::sync::atomic::Ordering::Relaxed);
