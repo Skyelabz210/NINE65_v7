@@ -2,6 +2,12 @@
 
 2026-11-02. Implementation note and review guide; no external attestation.
 
+**Subsequent implementation:** the separate `feat/encrypted-integer-division`
+branch adds [unsigned quotient/remainder on encrypted bit words](ENCRYPTED_INTEGER_DIVISION_2026-11-02.md).
+It uses an explicit Boolean representation and noise admission. The measured
+FPD activation snapshot below did not contain that API; its statements about
+the legacy scalar `exact_divide` gate still apply.
+
 ## Result and scope
 
 The activation branch accelerates the existing main-Q BFV multiplication

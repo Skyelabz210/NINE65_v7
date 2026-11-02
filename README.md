@@ -419,6 +419,26 @@ source-level constant-time paths do not close hardware channels; see
 
 ## Execution Contract
 
+### Encrypted integer quotient and remainder
+
+The current checkout provides `CramPublicEvaluator::divide_integer` and
+`CramMainEvaluator::divide_integer` for sealed encrypted unsigned words.
+Both operands, quotient, remainder and divide-by-zero status are encrypted.
+The circuit uses Boolean arithmetic and needs no inverse of the divisor.
+Native N=8192/t=3 four-bit execution and a reduced-ring shared-lane divisor-17
+case have passed end-to-end checks. Wider words remain subject to the existing
+noise budget; this is not unrestricted 64-bit or unlimited-depth execution.
+
+```bash
+cargo run --locked -p nine65 --release --example encrypted_integer_division
+```
+
+See [the integer-division contract, evidence and limits](docs/ENCRYPTED_INTEGER_DIVISION_2026-11-02.md).
+This explicit bit-word ingress is separate from the older scalar ciphertext
+representation and its lane-wise `exact_divide` operation.
+
+### Residue operation contracts
+
 NINE65 applications follow the Recumbent CRAM rule:
 
 ```text
@@ -443,9 +463,10 @@ K-Elimination is used only under its coprimality, exact-divisibility,
 anchor-capacity, and uniqueness-range preconditions. The main-Q evaluator
 already uses remainder-adjusted FPD for its fixed-divisor BFV rescaling.
 This is separate from `CramPublicEvaluator::exact_divide`, which still rejects
-divisors sharing a factor with any main or anchor lane; the general encrypted
-division adapter is not enabled. Exact-rational API availability does not
-change that restriction.
+divisors sharing a factor with any main or anchor lane. That legacy component
+operation does not implement the integer contract above. Exact-rational API
+availability does not change its restriction, and arbitrary scalar ciphertexts
+cannot be cast into bit words without a valid conversion.
 
 The public [`feat/enable-fpd-stack` branch](https://github.com/Skyelabz210/NINE65_v7/tree/feat/enable-fpd-stack)
 ([PR #204](https://github.com/Skyelabz210/NINE65_v7/pull/204))

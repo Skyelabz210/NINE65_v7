@@ -18,6 +18,9 @@ pub mod wire_q;
 #[path = "cram_main_phase_clock.rs"]
 pub mod phase_clock;
 
+#[path = "cram_main_division.rs"]
+pub mod division;
+
 #[derive(Debug, thiserror::Error)]
 pub enum CramMainError {
     #[error("invalid main-Q parameters: {0}")]
