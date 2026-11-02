@@ -448,6 +448,7 @@ division adapter is not enabled. Exact-rational API availability does not
 change that restriction.
 
 The public [`feat/enable-fpd-stack` branch](https://github.com/Skyelabz210/NINE65_v7/tree/feat/enable-fpd-stack)
+([PR #204](https://github.com/Skyelabz210/NINE65_v7/pull/204))
 contains prepared-key acceleration, default-feature activation, and
 [reproducible benchmark evidence](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FEATURE_ACTIVATION_2026-11-02.md).
 Its [division scope note and coefficient-level vectors](https://github.com/Skyelabz210/NINE65_v7/blob/feat/enable-fpd-stack/docs/FPD_DIVISION_SCOPE_2026-11-02.md)
