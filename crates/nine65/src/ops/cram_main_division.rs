@@ -20,6 +20,8 @@ pub enum IntegerDivisionError {
     InputRange,
     #[error("integer division preflight at gate {gate}: {reason}")]
     Noise { gate: usize, reason: &'static str },
+    #[error("invalid internal integer division circuit: {0}")]
+    InternalCircuit(&'static str),
     #[error(transparent)]
     Evaluator(#[from] CramMainError),
 }
@@ -158,7 +160,9 @@ impl CramMainEvaluator {
             .chain(std::iter::once(&circuit.zero))
             .map(|&wire| model.remaining_millibits(&bounds[wire]))
             .min()
-            .unwrap();
+            .ok_or(IntegerDivisionError::InternalCircuit(
+                "missing output bounds",
+            ))?;
         Ok(IntegerDivisionPlan {
             circuit,
             multiplications,
@@ -193,7 +197,7 @@ impl CramMainEvaluator {
         }
         let mut values: Vec<Option<CramMainCiphertext>> = vec![None; circuit.nodes.len()];
         for (gate, &node) in circuit.nodes.iter().enumerate() {
-            let value = |i: usize| values[i].as_ref().expect("live circuit dependency");
+            let value = |i: usize| live_value(&values, i);
             let result = match node {
                 Node::Constant(v) => {
                     self.add_plain(&self.mul_plain(&numerator.bits[0], 0)?, u64::from(v))?
@@ -204,19 +208,19 @@ impl CramMainEvaluator {
                     &denominator.bits[i]
                 })
                 .clone(),
-                Node::Not(a) => self.add_plain(&self.negate(value(a))?, 1)?,
-                Node::DisjointOr(a, b) => self.add(value(a), value(b))?,
-                Node::And(a, b) => self.multiply(value(a), value(b))?,
+                Node::Not(a) => self.add_plain(&self.negate(value(a)?)?, 1)?,
+                Node::DisjointOr(a, b) => self.add(value(a)?, value(b)?)?,
+                Node::And(a, b) => self.multiply(value(a)?, value(b)?)?,
                 Node::Xor(a, b) => {
-                    let product = self.multiply(value(a), value(b))?;
+                    let product = self.multiply(value(a)?, value(b)?)?;
                     self.sub(
-                        &self.add(value(a), value(b))?,
+                        &self.add(value(a)?, value(b)?)?,
                         &self.scale_signed(&product, 2)?,
                     )?
                 }
                 Node::Select(c, a, b) => {
-                    let difference = self.sub(value(a), value(b))?;
-                    self.add(value(b), &self.multiply(value(c), &difference)?)?
+                    let difference = self.sub(value(a)?, value(b)?)?;
+                    self.add(value(b)?, &self.multiply(value(c)?, &difference)?)?
                 }
             };
             values[gate] = Some(result);
@@ -227,18 +231,30 @@ impl CramMainEvaluator {
                 }
             }
         }
-        let word = |wires: &[usize]| EncryptedUint {
-            bits: wires
-                .iter()
-                .map(|&w| values[w].as_ref().unwrap().clone())
-                .collect(),
+        let word = |wires: &[usize]| -> Result<EncryptedUint, IntegerDivisionError> {
+            Ok(EncryptedUint {
+                bits: wires
+                    .iter()
+                    .map(|&w| live_value(&values, w).cloned())
+                    .collect::<Result<_, _>>()?,
+            })
         };
         Ok(EncryptedDivRem {
-            quotient: word(&circuit.quotient),
-            remainder: word(&circuit.remainder),
-            divide_by_zero: values[circuit.zero].as_ref().unwrap().clone(),
+            quotient: word(&circuit.quotient)?,
+            remainder: word(&circuit.remainder)?,
+            divide_by_zero: live_value(&values, circuit.zero)?.clone(),
         })
     }
+}
+
+fn live_value(
+    values: &[Option<CramMainCiphertext>],
+    wire: usize,
+) -> Result<&CramMainCiphertext, IntegerDivisionError> {
+    values
+        .get(wire)
+        .and_then(Option::as_ref)
+        .ok_or(IntegerDivisionError::InternalCircuit("missing live wire"))
 }
 
 impl CramMainClient {
