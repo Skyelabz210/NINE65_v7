@@ -734,6 +734,15 @@ fn sixty_four_divisions_still_do_not_move_the_basis() {
 
     let bytes_at_start = basis_bytes(&ctx, &ct);
     let residues_at_start = (ct.c0.main.clone(), ct.c1.main.clone());
+    // The invariant is "the level never moves", not a literal lane count:
+    // secure_128 was re-cut from three to four main primes (OPEN_WORK
+    // 2026-08-26 A3), so pin the level to the config the context was built from.
+    let level_at_start = ct.level;
+    assert_eq!(
+        level_at_start,
+        ctx.config.primes.len(),
+        "a fresh ciphertext starts at the full chain"
+    );
 
     for round in 1..=ROUNDS {
         // Each round: scale up by d, then divide it back out exactly. The
@@ -761,7 +770,7 @@ fn sixty_four_divisions_still_do_not_move_the_basis() {
         "after {ROUNDS} divisions the residues should be exactly the originals"
     );
     assert_eq!(
-        ct.level, 3,
+        ct.level, level_at_start,
         "level must not have moved across {ROUNDS} divisions"
     );
 }

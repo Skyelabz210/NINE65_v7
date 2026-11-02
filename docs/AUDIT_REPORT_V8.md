@@ -17,9 +17,10 @@
 >   the current suite and are not in `docs/CLAIM_REGISTRY.csv`. For
 >   currently-passing, test-named depth evidence see CLAUDE.md's "Bootstrap
 >   Paths" / depth-benchmark sections and
->   `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_unbounded`
->   (CI-asserted floor of 128, secure_128, symmetric mul-by-fresh-operand,
->   no bootstrap).
+>   `crates/nine65/tests/time_crystal_verification.rs::symmetric_depth_is_finite_and_noise_limited`
+>   (CI-asserted floor of 3 and a required noise-limited stop, secure_128,
+>   symmetric mul-by-fresh-operand, no bootstrap; the earlier floor of 128 was
+>   withdrawn 2026-11-01 with the unbounded-depth claim).
 
 ## 1. Build and Test Summary
 - **Build Result**: SUCCESS (Release builds optimized for performance)

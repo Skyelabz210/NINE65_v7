@@ -89,8 +89,9 @@ Build all crates (release):
 Run all tests:
   cargo test --release --workspace --exclude nine65-python --exclude nine65-wasm --no-fail-fast
 
-(`--no-fail-fast` matters whenever nine65's `--lib` has any failing test, which
-it currently does — see "Bootstrap Paths" below. Without it, plain `cargo test
+(`--no-fail-fast` matters whenever any package has a failing test. As of
+2026-11-01 `cargo test -p nine65 --lib` passes (1120 passed, 0 failed, 142
+ignored), but the flag is still the safe default. Without it, plain `cargo test
 --workspace` stops at the first failing package and silently never builds or
 runs anything after it: none of nine65's ~28 `tests/*.rs` integration
 binaries, nine65-extreme-tests, private-feedback-core, private-feedback-nine65
@@ -175,9 +176,12 @@ bypassed, `decrypt(refresh(ct)) == (m - K_0) mod t` exactly, `K_0` being the
 displaced Phase-1 carry (`diag_refresh_error_is_exactly_the_displaced_phase1_carry`).
 The four `auto_bootstrap` squaring acceptance tests are `#[ignore]`d until
 issue #95 closes; `auto_refresh_boundary_is_exact_then_typed_refusal_*` pins
-the behavior that holds today. The remaining red lib tests
-(`gso_fhe::depth_benchmarks::*`, a symmetric depth-4 plaintext mismatch) are a
-separate defect from public refresh.
+the behavior that holds today. The `gso_fhe::depth_benchmarks::*` lib tests that
+used to be red now pass (measured 2026-11-01). Capacity is finite: on `secure_128`
+a symmetric ct x Enc(1) chain decrypts correctly to depth 3 and fails at depth 4
+(about 28 noise bits per multiply against a ~101-bit budget); the depth-regression
+floors in `depth_and_noise.rs` and `time_crystal_verification.rs` are 3, not the
+withdrawn 32/128.
 
 ## Security Configs
 Screened 2026-08-22 by `params::secure_configs::tests::screened_levels_for_named_configs`

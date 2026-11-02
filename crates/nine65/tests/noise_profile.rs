@@ -801,6 +801,24 @@ fn noise_profile_5_exact_division_vs_divisor() {
         all_bit_exact &= bit_exact;
         worst_dev_mb = worst_dev_mb.max((div_delta + log2d).abs());
 
+        // The multiply side in exact integers. Scaling by d scales the phase
+        // error by d, except that the ideal point for message d*m is measured
+        // against the encoding scale, which differs from d*delta by
+        // d*(Q mod t)/t. That remainder belongs to the chain's Q (the 4-prime
+        // secure_128 has Q mod t = 27312), not to the division, which is why a
+        // fixed few-millibit tolerance tuned on another Q drifts.
+        let q_level: u128 = ctx.config.primes[..ct.level]
+            .iter()
+            .fold(1u128, |acc, &p| acc * p as u128);
+        let slack = (d as u128 * (q_level % ctx.t as u128)).div_ceil(ctx.t as u128) + 1;
+        let expected_mul = d as u128 * before.noise_abs;
+        assert!(
+            after_mul.noise_abs.abs_diff(expected_mul) <= slack,
+            "d={d}: multiply gave noise {} but d*noise is {expected_mul} \
+             (allowed encoding-remainder slack {slack})",
+            after_mul.noise_abs
+        );
+
         println!(
             "{:>7} | {:>11} | {:>11} | {:>11} | {:>10} | {:>10} | {:>8} | {}",
             d,
@@ -824,9 +842,14 @@ fn noise_profile_5_exact_division_vs_divisor() {
         with no rounding term at all. This is the lossless-rescale mechanism."
     );
 
+    // The exact statements are asserted above and below: the multiply scaled
+    // the noise by d up to the Q-dependent encoding remainder, and the round
+    // trip restores the noise bit-for-bit. This millibit bound only catches a
+    // gross drift from log2(d).
     assert!(
-        worst_dev_mb <= 5,
-        "division did NOT reduce noise by log2(d): worst deviation {} bits",
+        worst_dev_mb <= 100,
+        "scaling/division drifted from log2(d) by {} bits - beyond any \
+         encoding remainder",
         mb(worst_dev_mb)
     );
     assert!(all_bit_exact, "division added a rounding term somewhere");
@@ -1066,11 +1089,49 @@ fn noise_profile_8_verdict() {
     for s in r.samples.iter().take(r.max_correct_depth + 1) {
         assert!(s.correct, "depth {} counted but decrypted wrong", s.depth);
     }
-    assert_ne!(
-        curve.shape,
-        Shape::NotMeasurable,
-        "not enough usable depths to classify the curve"
-    );
+    if curve.shape == Shape::NotMeasurable {
+        // The classifier needs >= 4 usable depths. On the shipped tuple the
+        // capacity is finite (~28 noise bits per multiply against a ~101-bit
+        // budget), so fewer points exist; that is the verdict, not a failure
+        // to measure - but it must be CONSISTENT: the chain has to have ended
+        // on exhausted noise, at the depth the measured growth predicts.
+        assert_eq!(
+            r.stop,
+            Stop::Noise,
+            "too few usable depths, and the chain did not end on noise ({:?})",
+            r.stop
+        );
+        let steps: Vec<i64> = r
+            .samples
+            .windows(2)
+            .filter(|w| w[0].correct && w[1].correct)
+            .map(|w| w[1].noise_mb - w[0].noise_mb)
+            .collect();
+        assert!(
+            !steps.is_empty(),
+            "no correct consecutive depths to measure"
+        );
+        let (inc_min, inc_max) = (*steps.iter().min().unwrap(), *steps.iter().max().unwrap());
+        assert!(inc_min > 0, "noise must grow with every multiply");
+        let headroom = ceiling_mb - r.samples[0].noise_mb;
+        let (low, high) = (
+            (headroom / inc_max) as usize,
+            (headroom / inc_min) as usize + 1,
+        );
+        println!(
+            "  FINITE CAPACITY: per-multiply growth {}..{} bits against {} bits of headroom \
+             predicts depth {low}..={high}; measured {}",
+            mb(inc_min),
+            mb(inc_max),
+            mb(headroom),
+            r.max_correct_depth
+        );
+        assert!(
+            (low..=high).contains(&r.max_correct_depth),
+            "measured max depth {} is outside the {low}..={high} the growth predicts",
+            r.max_correct_depth
+        );
+    }
 }
 
 // ===========================================================================
@@ -1137,9 +1198,12 @@ fn noise_profile_9_per_multiply_increment() {
     }
 
     // Spread of the raw increment over the settled part of the chain.
+    // Skip only the fresh-ciphertext transient (depth 0 -> 1). The chain is
+    // finite (~3 correct depths on the shipped tuple), so there is no longer
+    // tail to wait for.
     let settled: Vec<i64> = samples
         .windows(2)
-        .skip(3)
+        .skip(1)
         .filter(|w| w[1].correct)
         .map(|w| log2_mb(w[1].noise_abs.saturating_sub(w[0].noise_abs)))
         .collect();
@@ -1148,9 +1212,9 @@ fn noise_profile_9_per_multiply_increment() {
     let hi = *settled.iter().max().unwrap();
 
     println!(
-        "\n  raw per-multiply increment over depths 4..{}: log2 in [{}, {}] bits\n  \
+        "\n  raw per-multiply increment over depths 2..{}: log2 in [{}, {}] bits\n  \
            spread = {} bits",
-        settled.len() + 3,
+        settled.len() + 1,
         mb(lo),
         mb(hi),
         mb(hi - lo)
@@ -1171,6 +1235,32 @@ fn noise_profile_9_per_multiply_increment() {
     } else {
         println!("  => NOT a constant additive term; see the ratio column.");
     }
+
+    // The answer, asserted: multiplicative. The per-multiply RATIO is constant
+    // (log-growth steady to a few bits) while the raw increment is not, which
+    // is exactly why capacity is finite: depth ~ headroom / log2(factor).
+    let ratio_steps: Vec<i64> = samples
+        .windows(2)
+        .skip(1)
+        .filter(|w| w[1].correct)
+        .map(|w| w[1].noise_mb - w[0].noise_mb)
+        .collect();
+    let (r_lo, r_hi) = (
+        *ratio_steps.iter().min().unwrap(),
+        *ratio_steps.iter().max().unwrap(),
+    );
+    assert!(
+        r_hi - r_lo < 4000,
+        "per-multiply log-ratio is not steady: {}..{} bits",
+        mb(r_lo),
+        mb(r_hi)
+    );
+    assert!(
+        hi - lo >= 2000,
+        "raw per-multiply increment is constant (spread {} bits): the noise \
+         would be additive, which contradicts finite measured depth",
+        mb(hi - lo)
+    );
 }
 
 // ===========================================================================

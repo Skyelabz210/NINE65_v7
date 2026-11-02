@@ -744,7 +744,8 @@ fn bounded_digit_polynomial(p: i64, bound: i64) -> Vec<i64> {
         }
         o
     };
-    let eval = |c: &Vec<i64>, x: i64, m: i64| c.iter().rev().fold(0i64, |o, &k| (o * x + k).rem_euclid(m));
+    let eval =
+        |c: &Vec<i64>, x: i64, m: i64| c.iter().rev().fold(0i64, |o, &k| (o * x + k).rem_euclid(m));
     let mut g = vec![1i64];
     for r in -bound..=bound {
         g = mul(&g, &vec![(-r).rem_euclid(m2), 1], m2);
@@ -774,23 +775,38 @@ fn bounded_digit_polynomial(p: i64, bound: i64) -> Vec<i64> {
 
 fn centered_mod(v: i64, m: i64) -> i64 {
     let r = v.rem_euclid(m);
-    if 2 * r > m { r - m } else { r }
+    if 2 * r > m {
+        r - m
+    } else {
+        r
+    }
 }
 
 fn ntt_primes_below(n: usize, count: usize) -> Vec<u64> {
     fn is_prime(x: u64) -> bool {
-        if x < 2 { return false }
+        if x < 2 {
+            return false;
+        }
         for sp in [2u64, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37] {
-            if x % sp == 0 { return x == sp }
+            if x % sp == 0 {
+                return x == sp;
+            }
         }
         let (mut d, mut r) = (x - 1, 0);
-        while d % 2 == 0 { d /= 2; r += 1 }
+        while d % 2 == 0 {
+            d /= 2;
+            r += 1
+        }
         'w: for a in [2u64, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37] {
             let mut y = mod_pow(a, d, x);
-            if y == 1 || y == x - 1 { continue }
+            if y == 1 || y == x - 1 {
+                continue;
+            }
             for _ in 0..r - 1 {
                 y = (y as u128 * y as u128 % x as u128) as u64;
-                if y == x - 1 { continue 'w }
+                if y == x - 1 {
+                    continue 'w;
+                }
             }
             return false;
         }
@@ -801,7 +817,9 @@ fn ntt_primes_below(n: usize, count: usize) -> Vec<u64> {
     let mut c = ((1u64 << 31) / step) * step + 1;
     while out.len() < count {
         c -= step;
-        if is_prime(c) { out.push(c) }
+        if is_prime(c) {
+            out.push(c)
+        }
     }
     out
 }
@@ -830,10 +848,16 @@ fn evaluate_bounded_digit(
 fn encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_message() {
     // p = 17, t = p^2, N = 8. Input coefficients W_j = p*m_j + eps_j, |eps_j| <= B.
     const P: i64 = 17;
-    let bound: i64 = std::env::var("BDG_B").ok().and_then(|v| v.parse().ok()).unwrap_or(2);
+    let bound: i64 = std::env::var("BDG_B")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2);
     #[allow(non_snake_case)]
     let BOUND = bound;
-    let lanes: usize = std::env::var("BDG_LANES").ok().and_then(|v| v.parse().ok()).unwrap_or(8);
+    let lanes: usize = std::env::var("BDG_LANES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(8);
     let mut config = SecureConfig::secure_128().into_config();
     config.n = 8;
     config.t = (P * P) as u64;
@@ -850,39 +874,85 @@ fn encrypted_slot_bridge_removes_bounded_digit_error_and_recovers_p_times_messag
     let (baby_exponents, giant_exponents) = automorphism_factor_sets(ctx.n);
     let mut galois_keys = BTreeMap::new();
     for exponent in required_galois_exponents(&baby_exponents, &giant_exponents) {
-        galois_keys.insert(exponent, galois.generate_key_with_rng(&keys.secret_key, exponent, &mut rng).unwrap());
+        galois_keys.insert(
+            exponent,
+            galois
+                .generate_key_with_rng(&keys.secret_key, exponent, &mut rng)
+                .unwrap(),
+        );
     }
     let root_values = roots(ctx.n, ctx.t);
-    let (coefficient_to_slot, slot_to_coefficient) = coefficient_matrices(ctx.n, ctx.t, &root_values);
+    let (coefficient_to_slot, slot_to_coefficient) =
+        coefficient_matrices(ctx.n, ctx.t, &root_values);
     let f = bounded_digit_polynomial(P, BOUND);
     // exhaustive clear check of the construction over the whole domain
     for r in -BOUND..=BOUND {
         for m in 0..P {
             let w = (r + P * m).rem_euclid(P * P);
-            let v = f.iter().rev().fold(0i64, |o, &c| (o * w + c).rem_euclid(P * P));
+            let v = f
+                .iter()
+                .rev()
+                .fold(0i64, |o, &c| (o * w + c).rem_euclid(P * P));
             assert_eq!(centered_mod(v, P * P), r);
         }
     }
     let messages: Vec<i64> = vec![0, 1, 5, 9, 16, 3, 11, 14];
-    let eps: Vec<i64> = (0..8).map(|j| (j as i64 % (2 * BOUND + 1)) - BOUND).collect();
-    let input: Vec<u64> = (0..ctx.n).map(|j| (P * messages[j] + eps[j]).rem_euclid(P * P) as u64).collect();
+    let eps: Vec<i64> = (0..8)
+        .map(|j| (j as i64 % (2 * BOUND + 1)) - BOUND)
+        .collect();
+    let input: Vec<u64> = (0..ctx.n)
+        .map(|j| (P * messages[j] + eps[j]).rem_euclid(P * P) as u64)
+        .collect();
     let encrypted = encrypt_polynomial(&ctx, &keys, &input, &mut rng);
-    let slots = linear_map_from_slots_bsgs(&ctx, &encrypted, &slot_to_coefficient, &root_values, &galois, &galois_keys, &baby_exponents, &giant_exponents);
+    let slots = linear_map_from_slots_bsgs(
+        &ctx,
+        &encrypted,
+        &slot_to_coefficient,
+        &root_values,
+        &galois,
+        &galois_keys,
+        &baby_exponents,
+        &giant_exponents,
+    );
     let slot_values = |ct: &RNSCiphertext| -> Vec<u64> {
         let coeffs = decrypt_coefficients(&ctx, ct, &keys);
-        (0..ctx.n).map(|slot| coeffs.iter().enumerate().fold(0u128, |sum, (c, &v)| (sum + v as u128 * mod_pow(root_values[slot], c as u64, ctx.t) as u128) % ctx.t as u128) as u64).collect()
+        (0..ctx.n)
+            .map(|slot| {
+                coeffs.iter().enumerate().fold(0u128, |sum, (c, &v)| {
+                    (sum + v as u128 * mod_pow(root_values[slot], c as u64, ctx.t) as u128)
+                        % ctx.t as u128
+                }) as u64
+            })
+            .collect()
     };
-    assert_eq!(slot_values(&slots), input, "stage 1: coefficient->slot bridge");
+    assert_eq!(
+        slot_values(&slots),
+        input,
+        "stage 1: coefficient->slot bridge"
+    );
     let digits = evaluate_bounded_digit(&ctx, &slots, &f, &relin);
     let want_digits: Vec<u64> = eps.iter().map(|e| e.rem_euclid(P * P) as u64).collect();
     let got_digits = slot_values(&digits);
     eprintln!("stage 2 digits got {:?} want {:?}", got_digits, want_digits);
     // p*m = W - F(W) on every slot, then back to coefficient form
     let p_times_m = {
-        let neg = multiply_plain(&ctx, &digits, &{ let mut c = vec![0u64; ctx.n]; c[0] = ctx.t - 1; c });
+        let neg = multiply_plain(&ctx, &digits, &{
+            let mut c = vec![0u64; ctx.n];
+            c[0] = ctx.t - 1;
+            c
+        });
         add(&ctx, &slots, &neg)
     };
-    let output = linear_map_from_slots_bsgs(&ctx, &p_times_m, &coefficient_to_slot, &root_values, &galois, &galois_keys, &baby_exponents, &giant_exponents);
+    let output = linear_map_from_slots_bsgs(
+        &ctx,
+        &p_times_m,
+        &coefficient_to_slot,
+        &root_values,
+        &galois,
+        &galois_keys,
+        &baby_exponents,
+        &giant_exponents,
+    );
     let got = decrypt_coefficients(&ctx, &output, &keys);
     let want: Vec<u64> = messages.iter().map(|&m| (P * m) as u64).collect();
     assert_eq!(got, want);

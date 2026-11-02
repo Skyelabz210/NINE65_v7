@@ -113,9 +113,18 @@ const DEFAULT_MAX_DEPTH: usize = 256;
 /// dev profile and about two minutes in release.
 const DEFAULT_WALL_SECS: u64 = 300;
 
-/// Floor below which the retirement must be considered regressed. The crash it
-/// removed bit at depth 2-3.
-const DEPTH_REGRESSION_FLOOR: usize = 32;
+/// Floor below which the chain must be considered regressed. The crash this
+/// guards against (the retired auto modulus-switch / SBNI out-of-bounds) bit at
+/// depth 2-3, so the chain must clear depth 3.
+///
+/// This was 32 under the withdrawn "depth is not budget-bounded" claim. That
+/// claim is retracted (docs/RETIRED_MECHANISMS.md, correction 2026-10-28):
+/// current paths enforce finite capacity. The arithmetic is the reason: each
+/// ct x ct multiply adds about log2(N*t) = 28-29 noise bits (measured 28.1,
+/// 28.3, 25.9 on secure_128) against a budget of log2(delta/2) ~ 101 bits from a
+/// ~7-bit fresh start, i.e. floor((101 - 7)/28) = 3 levels, and depth 4 fails
+/// decryption. A floor above 3 needs more modulus, not a different test.
+const DEPTH_REGRESSION_FLOOR: usize = 3;
 
 fn max_depth() -> usize {
     std::env::var("NINE65_DEPTH_MAX")
@@ -631,8 +640,17 @@ fn depth_and_noise_curve_deep_chain() {
         r.max_correct_depth >= DEPTH_REGRESSION_FLOOR,
         "REGRESSION: chain reached only depth {} (floor {DEPTH_REGRESSION_FLOOR}). \
          The retired auto modulus-switch / SBNI crash bit at depth 2-3; \
-         anything near that means it is back.",
+         anything below the noise-budget depth means it is back.",
         r.max_correct_depth
+    );
+    // Finite capacity is the contract: the chain must end because the noise
+    // budget is spent (a wrong decryption), not by a panic, a timeout, or by
+    // running out of requested depth with capacity to spare.
+    assert_eq!(
+        r.stop,
+        Stop::Noise,
+        "the chain must stop on exhausted noise budget, not {:?}",
+        r.stop
     );
 }
 
@@ -809,6 +827,23 @@ fn exact_division_reduces_noise_in_proportion_to_the_divisor() {
             after_div.noise_abs, before.noise_abs,
             "d={d}: exact division did not restore the pre-scaling noise exactly"
         );
+
+        // The multiply side, in exact integers. Scaling by d scales the phase
+        // error by d, except that the ideal point for message d*m is measured
+        // against the encoding scale, which differs from d*delta by
+        // d*(Q mod t)/t. That encoding remainder depends on the chain's Q
+        // (the 4-prime secure_128 has Q mod t = 27312), not on the division,
+        // and is why a fixed millibit tolerance tuned on another Q drifts.
+        let q_mod_t = q_at_level(&ctx, ct.level) % ctx.t as u128;
+        let slack = (d as u128 * q_mod_t).div_ceil(ctx.t as u128) + 1;
+        let expected_mul = d as u128 * before.noise_abs;
+        let mul_gap = after_mul.noise_abs.abs_diff(expected_mul);
+        assert!(
+            mul_gap <= slack,
+            "d={d}: multiply moved the noise by {} but d*noise is {expected_mul} \
+             (allowed encoding-remainder slack {slack})",
+            after_mul.noise_abs
+        );
     }
 
     println!(
@@ -820,10 +855,14 @@ fn exact_division_reduces_noise_in_proportion_to_the_divisor() {
          reduction is proportional to the divisor, with no rounding term."
     );
 
+    // Informational millibit summary only. The checks above are the exact
+    // statements: division restores the pre-scaling noise bit-for-bit, and the
+    // multiply scaled it by d up to the Q-dependent encoding remainder. A bound
+    // of a few millibits would just re-encode one particular Q.
     assert!(
-        worst_dev_mb <= 5,
-        "exact division did NOT reduce noise in proportion to d \
-         (worst deviation {} bits)",
+        worst_dev_mb <= 100,
+        "exact division/scaling drifted from log2(d) by {} bits - far beyond \
+         any encoding remainder; something real moved",
         mb(worst_dev_mb)
     );
 }

@@ -1351,6 +1351,31 @@ fn test_rns_multi_modulus_mul_bajard() {
     let mut rng = ShadowHarvester::with_seed(1400);
     let keys = ctx.generate_keys(&mut rng);
 
+    // The legacy single-RNS multiply is now certified only where delta^2 <= Q
+    // (MulRoute::BajardSingle). Everywhere else it refuses by design instead of
+    // returning a ciphertext from an uncertified rescale. This config needs the
+    // dual route, so the contract to pin is that typed refusal, not a result.
+    if ctx.mul_route() != nine65::ops::rns_fhe::MulRoute::BajardSingle {
+        let ct_a = ctx.encrypt(2, &keys.public_key, &mut rng);
+        let ct_b = ctx.encrypt(3, &keys.public_key, &mut rng);
+        let refused = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            ctx.mul(&ct_a, &ct_b, &keys.eval_key)
+        }));
+        let payload =
+            refused.expect_err("legacy mul must refuse a config that needs the dual route");
+        let message = payload
+            .downcast_ref::<String>()
+            .cloned()
+            .or_else(|| payload.downcast_ref::<&str>().map(|s| s.to_string()))
+            .unwrap_or_default();
+        assert!(
+            message.contains("unavailable when the configuration requires K-Elimination"),
+            "refusal must name the K-Elimination requirement, got: {message}"
+        );
+        println!("  legacy ctx.mul refused as designed on a dual-route config: {message}");
+        return;
+    }
+
     let pairs: Vec<(u64, u64)> = vec![(2, 3), (7, 11), (0, 100), (1, cfg.t - 1)];
 
     let mut correct = 0usize;

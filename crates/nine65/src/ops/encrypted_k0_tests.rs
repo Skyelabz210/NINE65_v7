@@ -451,11 +451,22 @@ fn encrypted_k(
             }
             let window = certified_twice_window(ctx.n, coordinate, q, v, r0, weights)?;
             let outputs: Vec<i64> = (0..coordinate as i64)
-                .map(|k| if k > coordinate as i64 / 2 { k - coordinate as i64 } else { k })
+                .map(|k| {
+                    if k > coordinate as i64 / 2 {
+                        k - coordinate as i64
+                    } else {
+                        k
+                    }
+                })
                 .collect();
             let clock = LaneClock::new(ctx.n, coordinate, window, &outputs)?;
             let (ct, bound) = run_clock(ctx, exact, &clock, q, r0, weights, keys, trace);
-            Ok(Evaluated { ct, bound, window, clocks: 1 })
+            Ok(Evaluated {
+                ct,
+                bound,
+                window,
+                clocks: 1,
+            })
         }
         Mode::Lanes(solution) => {
             assert_eq!(solution.kmax, kmax);
@@ -465,7 +476,12 @@ fn encrypted_k(
             for (lane, &p) in solution.primes.iter().enumerate() {
                 let window = certified_twice_window(ctx.n, p as usize, q, v, r0, weights)?;
                 worst = worst.max(window);
-                clocks.push(LaneClock::new(ctx.n, p as usize, window, &solution.outputs[lane])?);
+                clocks.push(LaneClock::new(
+                    ctx.n,
+                    p as usize,
+                    window,
+                    &solution.outputs[lane],
+                )?);
             }
             let mut total = public_constant(ctx, solution.constant);
             let mut bound = solution.constant.unsigned_abs() as u128
@@ -475,7 +491,12 @@ fn encrypted_k(
                 total = ctx.add(&total, &ct);
                 bound += b;
             }
-            Ok(Evaluated { ct: total, bound, window: worst, clocks: clocks.len() })
+            Ok(Evaluated {
+                ct: total,
+                bound,
+                window: worst,
+                clocks: clocks.len(),
+            })
         }
     }
 }
@@ -530,7 +551,10 @@ fn dense_source(n: usize, seed: u64, full_weight: bool) -> DenseSource {
         }
     }
     let sk = RNSSecretKey {
-        s: source.to_montgomery_form(&RNSPolynomial { limbs: secret_limbs, n }),
+        s: source.to_montgomery_form(&RNSPolynomial {
+            limbs: secret_limbs,
+            n,
+        }),
     };
     let a = source.to_montgomery_form(&source.sample_uniform_main_poly(&mut rng));
     let as_product = source.rns_poly_mul(&a, &sk.s);
@@ -539,17 +563,26 @@ fn dense_source(n: usize, seed: u64, full_weight: bool) -> DenseSource {
     let stress = SOURCE_Q / (128 * p as i128);
     let messages: Vec<u64> = (0..n).map(|_| prng.next() % p).collect();
     let errors: Vec<i128> = (0..n)
-        .map(|_| if prng.next() & 1 == 0 { stress } else { -stress })
+        .map(|_| {
+            if prng.next() & 1 == 0 {
+                stress
+            } else {
+                -stress
+            }
+        })
         .collect();
     let mut added_limbs = vec![vec![0u64; n]; source_config.primes.len()];
     for (lane, &prime) in source_config.primes.iter().enumerate() {
         for position in 0..n {
-            let value = messages[position] as i128 * source.delta_rns[lane] as i128
-                + errors[position];
+            let value =
+                messages[position] as i128 * source.delta_rns[lane] as i128 + errors[position];
             added_limbs[lane][position] = value.rem_euclid(prime as i128) as u64;
         }
     }
-    let added = source.to_montgomery_form(&RNSPolynomial { limbs: added_limbs, n });
+    let added = source.to_montgomery_form(&RNSPolynomial {
+        limbs: added_limbs,
+        n,
+    });
     let input = RNSCiphertext {
         c0: added.sub(&as_product, &source.rns),
         c1: a,
@@ -557,19 +590,28 @@ fn dense_source(n: usize, seed: u64, full_weight: bool) -> DenseSource {
     };
     let phase = standard(
         &source,
-        &source.rns_poly_mul(&input.c1, &sk.s).add(&input.c0, &source.rns),
+        &source
+            .rns_poly_mul(&input.c1, &sk.s)
+            .add(&input.c0, &source.rns),
     );
     let decoder = CanonicalScaleRound::new(&source_config.primes, p).unwrap();
     for j in 0..n {
         let residues: Vec<_> = phase.limbs.iter().map(|lane| lane[j]).collect();
-        assert_eq!(decoder.scale_round(&residues).unwrap(), messages[j], "slot {j}");
+        assert_eq!(
+            decoder.scale_round(&residues).unwrap(),
+            messages[j],
+            "slot {j}"
+        );
     }
     let split = |poly: &RNSPolynomial| -> Vec<(u64, i128)> {
         let poly = standard(&source, poly);
         (0..n)
             .map(|j| {
                 let residues: Vec<_> = poly.limbs.iter().map(|lane| lane[j]).collect();
-                let scaled = source.rns.to_u256_level(&residues, residues.len()).mul_u64(p);
+                let scaled = source
+                    .rns
+                    .to_u256_level(&residues, residues.len())
+                    .mul_u64(p);
                 let (whole, remainder) = scaled.div_mod_u256(source_q);
                 assert_eq!((whole.hi, remainder.hi), (0, 0));
                 if remainder.gt(source_q.shr1()) {
@@ -673,7 +715,13 @@ fn outer_context(n_out: usize, trits: &[i8], seed: u64) -> Outer {
             plus: precharge_bit(&exact, &ctx, &outer.secret_key, trit == 1, &mut rng),
         })
         .collect();
-    Outer { ctx, sk: outer.secret_key, keys, trace, relin }
+    Outer {
+        ctx,
+        sk: outer.secret_key,
+        keys,
+        trace,
+        relin,
+    }
 }
 
 fn bits(v: u128) -> u32 {
@@ -682,13 +730,27 @@ fn bits(v: u128) -> u32 {
 
 /// Encrypted K plus the full coefficient refresh for slot `j`, checked against
 /// the clear-text oracle. Returns (certified window, K bound bits).
-fn check_slot(outer: &Outer, source: &DenseSource, j: usize, mode: Mode<'_>, kmax: i64) -> (u64, u32) {
+fn check_slot(
+    outer: &Outer,
+    source: &DenseSource,
+    j: usize,
+    mode: Mode<'_>,
+    kmax: i64,
+) -> (u64, u32) {
     let ctx = &outer.ctx;
     let exact = ctx.try_exact_evaluator().unwrap();
     let s = slot(source, j);
     let evaluated = encrypted_k(
-        ctx, &exact, mode, kmax, SOURCE_Q, SOURCE_Q as u128 / 16, s.r0, &s.weights,
-        &outer.keys, &outer.trace,
+        ctx,
+        &exact,
+        mode,
+        kmax,
+        SOURCE_Q,
+        SOURCE_Q as u128 / 16,
+        s.r0,
+        &s.weights,
+        &outer.keys,
+        &outer.trace,
     )
     .unwrap_or_else(|r| panic!("slot {j}: certificate refused {r:?}"));
     let q_boot = U256::product_u64s(&ctx.config.primes);
@@ -709,7 +771,9 @@ fn check_slot(outer: &Outer, source: &DenseSource, j: usize, mode: Mode<'_>, kma
         (message - s.k).rem_euclid(ctx.t as i64) as u64,
         "slot {j}: affine part must decode to m-K"
     );
-    let square = exact.try_mul_exact(&refreshed, &refreshed, &outer.relin).unwrap();
+    let square = exact
+        .try_mul_exact(&refreshed, &refreshed, &outer.relin)
+        .unwrap();
     observe(
         ctx,
         &square,
@@ -770,7 +834,10 @@ fn k0_window_certificate_and_dense_scaling_table() {
     let q = SOURCE_Q;
     let v = SOURCE_Q as u128 / 16;
     eprintln!("dense worst-case outer ring needed (V<=Q/16, H=N terms), power of two:");
-    eprintln!("{:>6} {:>8} {:>14} {:>9} {:>14}", "N_src", "kmax", "direct(m)", "lanes", "lane ring");
+    eprintln!(
+        "{:>6} {:>8} {:>14} {:>9} {:>14}",
+        "N_src", "kmax", "direct(m)", "lanes", "lane ring"
+    );
     for ns in [16usize, 32, 34, 64, 68, 128, 8192] {
         let kmax = ns / 2;
         let direct = ns + 1; // odd, >= 2*kmax+1
@@ -779,9 +846,9 @@ fn k0_window_certificate_and_dense_scaling_table() {
         } else {
             min_ring_worst(direct, q, v, ns).to_string()
         };
-        let lanes: &[u64] = if 2 * kmax as i64 + 1 <= 35 {
+        let lanes: &[u64] = if 2 * (kmax as i64) < 35 {
             &T_PRIMES_S6
-        } else if 2 * kmax as i64 + 1 <= 69 {
+        } else if 2 * (kmax as i64) < 69 {
             &T_PRIMES_S8
         } else {
             &[]
@@ -795,7 +862,10 @@ fn k0_window_certificate_and_dense_scaling_table() {
                 min_ring_worst(pmax, q, v, ns).to_string(),
             )
         };
-        eprintln!("{ns:>6} {kmax:>8} {:>6}->{direct_ring:>7} {lane_name:>9} {lane_ring:>14}", direct);
+        eprintln!(
+            "{ns:>6} {kmax:>8} {:>6}->{direct_ring:>7} {lane_name:>9} {lane_ring:>14}",
+            direct
+        );
     }
     // Pinned numbers (worst case, no per-input knowledge):
     assert_eq!(min_ring_worst(33, q, v, 32), 2048); // direct, N=32
@@ -808,7 +878,9 @@ fn k0_window_certificate_and_dense_scaling_table() {
     let s = slot(&source, 0);
     let w_worst = worst_twice_window(512, 17, q, v, 16).unwrap();
     let w_cert = certified_twice_window(512, 17, q, v, s.r0, &s.weights).unwrap();
-    eprintln!("N=16 direct m=17 @ring512: worst-case window2={w_worst}, certified window2={w_cert}");
+    eprintln!(
+        "N=16 direct m=17 @ring512: worst-case window2={w_worst}, certified window2={w_cert}"
+    );
     assert!(w_cert < w_worst);
     assert_eq!(
         certified_twice_window(32, 17, q, SOURCE_Q as u128 / 128, s.r0, &s.weights),
@@ -821,7 +893,10 @@ fn k0_lane_plateaus_exhaustive() {
     let t = 65537;
     let q = SOURCE_Q;
     let v = SOURCE_Q as u128 / 16;
-    for (primes, ns, n_out) in [(&T_PRIMES_S6[..], 32usize, 1024usize), (&T_PRIMES_S8[..], 64, 2048)] {
+    for (primes, ns, n_out) in [
+        (&T_PRIMES_S6[..], 32usize, 1024usize),
+        (&T_PRIMES_S8[..], 64, 2048),
+    ] {
         let kmax = (ns / 2) as i64;
         let solution = lane_solution(primes, kmax, t).unwrap();
         let mut checked = 0u64;
@@ -860,7 +935,13 @@ fn k0_dense_source_all_slots_direct_and_safe_basis_lanes_n16() {
     for j in 0..ns {
         let k = slot(&source, j).k;
         ks.push(k);
-        let (w_direct, _) = check_slot(&outer, &source, j, Mode::Direct { coordinate: ns + 1 }, kmax);
+        let (w_direct, _) = check_slot(
+            &outer,
+            &source,
+            j,
+            Mode::Direct { coordinate: ns + 1 },
+            kmax,
+        );
         let (w_lanes, b) = check_slot(&outer, &source, j, Mode::Lanes(&solution), kmax);
         windows.push((w_direct, w_lanes));
         if j < 3 {
@@ -878,7 +959,9 @@ fn extreme_carry(ns: usize, n_out: usize, lanes: &[u64], with_direct: bool, seed
     let t = 65537u64;
     let kmax = (ns / 2) as i64;
     let mut prng = Xs(seed | 1);
-    let trits: Vec<i8> = (0..ns).map(|_| if prng.next() & 1 == 0 { -1 } else { 1 }).collect();
+    let trits: Vec<i8> = (0..ns)
+        .map(|_| if prng.next() & 1 == 0 { -1 } else { 1 })
+        .collect();
     let outer = outer_context(n_out, &trits, seed);
     let exact = outer.ctx.try_exact_evaluator().unwrap();
     let solution = lane_solution(lanes, kmax, t).unwrap();
@@ -920,14 +1003,23 @@ fn extreme_carry(ns: usize, n_out: usize, lanes: &[u64], with_direct: bool, seed
                 affine.push(t - a);
             }
         }
-        let sum = r0 + weights.iter().zip(&trits).map(|(&w, &s)| w * s as i128).sum::<i128>();
+        let sum = r0
+            + weights
+                .iter()
+                .zip(&trits)
+                .map(|(&w, &s)| w * s as i128)
+                .sum::<i128>();
         let k = (sum + SOURCE_Q / 2).div_euclid(SOURCE_Q);
         assert_eq!(k.unsigned_abs() as usize, ns / 2, "extreme carry reached");
         let v = (sum - SOURCE_Q * k).unsigned_abs();
         assert!(v <= SOURCE_Q as u128 / 16);
         // Independent source decode from canonical components.
         let phase = (c0 as i128
-            + comps.iter().zip(&trits).map(|(&c, &s)| c * s as i128).sum::<i128>())
+            + comps
+                .iter()
+                .zip(&trits)
+                .map(|(&c, &s)| c * s as i128)
+                .sum::<i128>())
         .rem_euclid(SOURCE_Q) as u128;
         let q_source = U256::from_u128(SOURCE_Q as u128);
         let message = U256::from_u128(phase)
@@ -942,18 +1034,34 @@ fn extreme_carry(ns: usize, n_out: usize, lanes: &[u64], with_direct: bool, seed
         }
         for mode in modes {
             let evaluated = encrypted_k(
-                &outer.ctx, &exact, mode, kmax, SOURCE_Q, SOURCE_Q as u128 / 16, r0,
-                &weights, &outer.keys, &outer.trace,
+                &outer.ctx,
+                &exact,
+                mode,
+                kmax,
+                SOURCE_Q,
+                SOURCE_Q as u128 / 16,
+                r0,
+                &weights,
+                &outer.keys,
+                &outer.trace,
             )
             .unwrap_or_else(|r| panic!("extreme sign={sign} {mode:?}: refused {r:?}"));
             let measured = observe(&outer.ctx, &evaluated.ct, &outer.sk, k as i64);
             assert!(measured <= evaluated.bound);
-            let (affine_ct, affine_v) = affine_message(&outer.ctx, &exact, a0, &affine, &outer.keys);
+            let (affine_ct, affine_v) =
+                affine_message(&outer.ctx, &exact, a0, &affine, &outer.keys);
             let refreshed = outer.ctx.add(&affine_ct, &evaluated.ct);
             let out = observe(&outer.ctx, &refreshed, &outer.sk, message);
             assert!(out <= affine_v + evaluated.bound);
-            let square = exact.try_mul_exact(&refreshed, &refreshed, &outer.relin).unwrap();
-            observe(&outer.ctx, &square, &outer.sk, (message * message).rem_euclid(t as i64));
+            let square = exact
+                .try_mul_exact(&refreshed, &refreshed, &outer.relin)
+                .unwrap();
+            observe(
+                &outer.ctx,
+                &square,
+                &outer.sk,
+                (message * message).rem_euclid(t as i64),
+            );
             eprintln!(
                 "extreme carry N={ns} ring={n_out} sign={sign:+}: K={k} (kmax {kmax}), {} clock(s), window2={}, exact + refreshed message {message} + dependent square exact",
                 evaluated.clocks, evaluated.window
@@ -964,7 +1072,7 @@ fn extreme_carry(ns: usize, n_out: usize, lanes: &[u64], with_direct: bool, seed
 
 #[test]
 fn k0_extreme_carries_both_signs_n16() {
-    extreme_carry(16, 512, &T_PRIMES_S6, true, 0x4558_5431_36);
+    extreme_carry(16, 512, &T_PRIMES_S6, true, 0x0045_5854_3136);
 }
 
 #[test]
@@ -982,16 +1090,21 @@ fn k0_refuses_when_its_own_certificate_fails() {
     // Same source, same error bound V, both readers: smallest certified ring.
     // Measured, not assumed: at N=32 the two coincide; the lane reader's gain
     // is confined to the worst-case (input-blind) table above.
-    for (label, v) in [("V=Q/128 (live stress)", SOURCE_Q as u128 / 128), ("V=Q/16 (admission)", SOURCE_Q as u128 / 16)] {
-        let direct = (1..=14).map(|e| 1usize << e).find(|&n| {
-            certified_twice_window(n, 33, SOURCE_Q, v, s.r0, &s.weights).is_ok()
-        });
+    for (label, v) in [
+        ("V=Q/128 (live stress)", SOURCE_Q as u128 / 128),
+        ("V=Q/16 (admission)", SOURCE_Q as u128 / 16),
+    ] {
+        let direct = (1..=14)
+            .map(|e| 1usize << e)
+            .find(|&n| certified_twice_window(n, 33, SOURCE_Q, v, s.r0, &s.weights).is_ok());
         let lanes = (1..=14).map(|e| 1usize << e).find(|&n| {
             T_PRIMES_S6.iter().all(|&p| {
                 certified_twice_window(n, p as usize, SOURCE_Q, v, s.r0, &s.weights).is_ok()
             })
         });
-        let worst_direct = (1..=14).map(|e| 1usize << e).find(|&n| worst_twice_window(n, 33, SOURCE_Q, v, 32).is_some());
+        let worst_direct = (1..=14)
+            .map(|e| 1usize << e)
+            .find(|&n| worst_twice_window(n, 33, SOURCE_Q, v, 32).is_some());
         eprintln!("dense N=32 slot 0, {label}: smallest ring certified per-input: direct m=33 -> {direct:?}, S6 lanes -> {lanes:?}; input-blind worst case direct -> {worst_direct:?}");
         assert!(lanes.unwrap() <= direct.unwrap());
         assert!(direct.unwrap() <= worst_direct.unwrap());
@@ -1009,7 +1122,13 @@ fn k0_dense_source_all_slots_n32() {
     let mut ks = Vec::new();
     for j in 0..ns {
         ks.push(slot(&source, j).k);
-        check_slot(&outer, &source, j, Mode::Direct { coordinate: ns + 1 }, kmax);
+        check_slot(
+            &outer,
+            &source,
+            j,
+            Mode::Direct { coordinate: ns + 1 },
+            kmax,
+        );
         check_slot(&outer, &source, j, Mode::Lanes(&solution), kmax);
     }
     eprintln!("dense N=32 ring 1024: all 32 slots exact, direct m=33 and S6 lanes, carries {ks:?}");
@@ -1025,7 +1144,10 @@ fn k0_dense_source_n64_s8_lanes() {
     let solution = lane_solution(&T_PRIMES_S8, kmax, 65537).unwrap();
     for j in [0usize, 63] {
         let (w, b) = check_slot(&outer, &source, j, Mode::Lanes(&solution), kmax);
-        eprintln!("dense N=64 S8 lanes slot {j}: K={}, window2={w}, refreshed bound {b} bits", slot(&source, j).k);
+        eprintln!(
+            "dense N=64 S8 lanes slot {j}: K={}, window2={w}, refreshed bound {b} bits",
+            slot(&source, j).k
+        );
     }
 }
 
