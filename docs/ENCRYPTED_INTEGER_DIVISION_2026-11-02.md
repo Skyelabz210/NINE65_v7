@@ -1,5 +1,8 @@
 # Encrypted unsigned division: public API and admission limits
 
+The [integration follow-up](FPD_INTEGRATION_FOLLOWUP_2026-11-02.md) records
+later panic-policy and benchmark-harness corrections at their own snapshots.
+
 ## Implemented contract
 
 `CramPublicEvaluator::divide_integer` now accepts an encrypted numerator and

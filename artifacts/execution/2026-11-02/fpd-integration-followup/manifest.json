@@ -1,0 +1,58 @@
+{
+  "original_source": "5ede1648737b240bcfcaf311c02f07f9fbc83aec",
+  "paired_source": "e4b9168c6f485d7d949e121e22daf86becfe7708",
+  "division_error_fix": "5ede1648737b240bcfcaf311c02f07f9fbc83aec",
+  "source_sha256": {
+    "5ede1648737b240bcfcaf311c02f07f9fbc83aec": "fa9160b59ad8e50b7ce04b8a08125c9b4c13b88dbe27975bc550667a9f9f81d4",
+    "e4b9168c6f485d7d949e121e22daf86becfe7708": "be648313d55bffabe352cf11dcddc3372b0e798f8dc1eff125b1f58d8ff7f486"
+  },
+  "commands": [
+    "cargo test --offline --locked -p nine65 --lib --release --features clockwork entropy::crt_shadow::tests::test_benchmark_signature_overhead -- --exact --nocapture",
+    "cargo test --offline --locked -p nine65 --lib --release --features clockwork signature_overhead -- --nocapture",
+    "python3 repeat_signature_benchmark.py <build-log> <signature-original|signature-paired>",
+    "cargo test --offline --locked -p nine65 --lib --release --features clockwork entropy::crt_shadow::tests -- --test-threads=4",
+    "cargo clippy --offline --locked -p nine65 --lib --tests -- -D warnings"
+  ],
+  "results": {
+    "original_serial": {
+      "runs": 20,
+      "failures": 0
+    },
+    "original_contended": {
+      "runs": 40,
+      "failures": 24
+    },
+    "paired_serial": {
+      "runs": 20,
+      "failures": 0
+    },
+    "paired_contended": {
+      "runs": 40,
+      "failures": 0
+    },
+    "paired_guard_controls_and_benchmark_passed": 2,
+    "shadow_module_passed": 21,
+    "division_regressions_passed": 8
+  },
+  "contention": {
+    "workers": 4,
+    "cpu": 0,
+    "same_cpu": true,
+    "serial_scope": "No injected competitors; ordinary host and concurrent build activity were not excluded."
+  },
+  "scope": "Benchmark harness correction only; threshold remains strict <100% overhead. Nine paired median ratios with opaque inputs/outputs and longer batches. No constant-time or zero-overhead claim. Earlier division performance evidence remains attributed to its original snapshot.",
+  "hosted_failure_job": "https://github.com/Skyelabz210/NINE65_v7/actions/runs/41516571729/job/125522057763",
+  "artifact_sha256": {
+    "followup-benchmark-clippy.log.gz": "ff62aab0aca4cde855cde03cfb12b7d2499d1a657f3b29cefa9eb065e3312bc5",
+    "followup-division-tests.log.gz": "037e439e25286c9f7f492ee1c24873e221029f0943b0094158a3f19bdf7ab806",
+    "followup-shadow-tests.log.gz": "39c3743034bf515b8cca3b2f92e2eb337fc0d486271da624b701a83732250fec",
+    "panic-ratchet-paired.log.gz": "f717d72483e6e1d3a84917f221ac9b3f1ab6f608720d310ffc500f278bbc6a2d",
+    "repeat_signature_benchmark.py": "4bce70baff39221653c89fa806534ad481cd9a54fd370975024c07f4910547ea",
+    "signature-original-runs.log.gz": "d9d2dcd9a40390c87ebfd76f5fa8fdff4d8358d74e0247ceb2c14b4810b80aeb",
+    "signature-original-summary.json": "4a3b746df89fd72b658be71ce0bdb0d9ec68ae1bbd254c7aa33cdf13aa54f3a0",
+    "signature-overhead-original-isolated.log.gz": "846e658df266af962ece7e888f7e48be7cfbda27748a87d2a645da5225eee92b",
+    "signature-overhead-paired-isolated.log.gz": "c4350fd93523312266d31ba93aad8d8566cc7ddedc1fd8c6c9b12cadd9267f3a",
+    "signature-paired-runs.log.gz": "b021b299c12a8afee8d6324f6431fa9cbeb301f02aa1456330b9de7c033a81ad",
+    "signature-paired-summary.json": "3f85b601807e85e3adec97d36e0f327d52505a1dbb63e6f09528b782744f3421"
+  }
+}

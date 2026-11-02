@@ -1,0 +1,542 @@
+[
+  {
+    "phase": "isolated",
+    "index": 0,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 1,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 2,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 3,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 4,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 5,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 6,
+    "returncode": 0,
+    "reported_overhead": [
+      "14.3%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 7,
+    "returncode": 0,
+    "reported_overhead": [
+      "14.1%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 8,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 9,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 10,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 11,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 12,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 13,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 14,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 15,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 16,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 17,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 18,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "isolated",
+    "index": 19,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": null
+  },
+  {
+    "phase": "contended",
+    "index": 0,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 1,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 2,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 3,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 4,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 5,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 6,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 7,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 8,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 9,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 10,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 11,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 12,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 13,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 14,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 15,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 16,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 17,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 18,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 19,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 20,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 21,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 22,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 23,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 24,
+    "returncode": 0,
+    "reported_overhead": [
+      "35.6%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 25,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 26,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 27,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 28,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 29,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 30,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 31,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 32,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 33,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 34,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 35,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 36,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 37,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 38,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  },
+  {
+    "phase": "contended",
+    "index": 39,
+    "returncode": 0,
+    "reported_overhead": [
+      "0.0%"
+    ],
+    "cpu": 0
+  }
+]
