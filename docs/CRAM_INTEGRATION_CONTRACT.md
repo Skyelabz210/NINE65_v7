@@ -83,8 +83,23 @@ K-Elimination operates from residue and anchor phase information and returns a r
 
 Shared-factor divisors route to Fused Piggyback Division when that production path is enabled. The auxiliary modulus must be coprime to both the primary basis product and the divisor. The auxiliary lane is ephemeral, participates only for the division, and is discarded after residue-native quotient projection.
 
-Until a shared-factor FHE divider is implemented and gated, an application must
-reject that division rather than silently use an unvalidated quotient path.
+The legacy scalar/component adapter still rejects shared-factor division;
+applications must not silently substitute an unvalidated quotient path.
+
+### 4.3 Encrypted unsigned words
+
+`CramPublicEvaluator::divide_integer` and the main-Q evaluator implement
+unsigned quotient/remainder on sealed encrypted bit words. No divisor inverse
+is required. For d>0, n=q*d+r and 0<=r<d; for d=0, q=0, r=n and the returned
+encrypted zero predicate is 1. A public, value-independent Boolean circuit
+runs only after every gate passes the existing noise model. Immutable histories
+and key domains are preserved. Width and prior-history limits remain binding.
+
+Ingress supplies the integer bits; arbitrary scalar residues are not silently
+assigned an integer lift. This is a separate declared representation, not
+component division on a raw DualRNS ciphertext. The denominator and remainder
+remain available when the quotient operation is used reversibly. See
+[the implementation and measured scope](ENCRYPTED_INTEGER_DIVISION_2026-11-02.md).
 
 ## 5. Winding, anchor, and shadow state
 

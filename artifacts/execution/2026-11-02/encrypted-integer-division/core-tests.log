@@ -1,0 +1,1362 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /workspace/NINE65_v7/crates/exact_transcendentals/Cargo.toml
+workspace: /workspace/NINE65_v7/Cargo.toml
+   Compiling nine65 v0.1.0 (/workspace/NINE65_v7/crates/nine65)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.88s
+     Running unittests src/lib.rs (target/debug/deps/nine65-7d39435c44844b81)
+
+running 1348 tests
+test accelerated::tests::test_rns_stream_roundtrip ... ok
+test arithmetic::barrett::tests::branchless_masks_match_the_comparisons_they_replace ... ok
+test arithmetic::barrett::tests::test_barrett_add_ct ... ok
+test arithmetic::barrett::tests::test_barrett_mul ... ok
+test arithmetic::barrett::tests::test_barrett_mul_ct ... ok
+test arithmetic::barrett::tests::test_barrett_pow ... ok
+test arithmetic::barrett::tests::test_barrett_reduce ... ok
+test arithmetic::barrett::tests::sub_ct_and_add_ct_are_exhaustively_exact_on_a_small_modulus ... ok
+test arithmetic::barrett::tests::test_barrett_reduce_ct ... ok
+test arithmetic::barrett::tests::test_barrett_reduce_large ... ok
+test arithmetic::barrett::tests::test_barrett_sub_ct ... ok
+test arithmetic::barrett::tests::test_barrett_vs_naive ... ok
+test arithmetic::base_ext::tests::kernel_speed_vs_shipped_path ... ignored
+test arithmetic::barrett::tests::test_hybrid_context ... ok
+test arithmetic::barrett::tests::test_barrett_benchmark ... ok
+test arithmetic::base_ext::tests::overshoot_t_stays_below_lane_count_on_the_real_chain ... ok
+test arithmetic::base_ext::tests::refuses_a_redundant_lane_not_exceeding_the_lane_count ... ok
+test arithmetic::boundary::tests::test_capacity_proximity_critical ... ok
+test arithmetic::boundary::tests::test_capacity_proximity_safe ... ok
+test arithmetic::boundary::tests::test_capacity_proximity_warn80 ... ok
+test arithmetic::boundary::tests::test_capacity_proximity_warn90 ... ok
+test arithmetic::boundary::tests::test_post_switch_margin_critical ... ok
+test arithmetic::boundary::tests::test_post_switch_margin_healthy ... ok
+test arithmetic::boundary::tests::test_post_switch_margin_marginal ... ok
+test arithmetic::boundary::tests::test_u128_bit_length ... ok
+test arithmetic::bounded_rns::tests::bounded_add_asymmetric ... ok
+test arithmetic::bounded_rns::tests::bounded_add_tracks_width ... ok
+test arithmetic::bounded_rns::tests::bounded_mul_asymmetric ... ok
+test arithmetic::bounded_rns::tests::bounded_mul_tracks_width ... ok
+test arithmetic::bounded_rns::tests::bounded_rescale_reduces_width ... ok
+test arithmetic::bounded_rns::tests::bounded_rescale_saturates_at_zero ... ok
+test arithmetic::bounded_rns::tests::dot_product_tighter_than_chain ... ok
+test arithmetic::bounded_rns::tests::fhe_chain_simulation ... ok
+test arithmetic::bounded_rns::tests::from_value_tracking ... ok
+test arithmetic::bounded_rns::tests::overflow_detection ... ok
+test arithmetic::bounded_rns::tests::promotion_check ... ok
+test arithmetic::canonical_scale_round::tests::binary_target_is_a_valid_public_rounding_view ... ok
+test arithmetic::canonical_scale_round::tests::checked_rounding_refuses_invalid_parameters_and_inputs ... ok
+test arithmetic::canonical_scale_round::tests::endpoint_aware_rounding_matches_exhaustive_integer_oracle ... ok
+test arithmetic::canonical_scale_round::tests::even_target_matches_integer_rounding ... ok
+test arithmetic::canonical_scale_round::tests::preserving_the_upper_endpoint_keeps_the_public_residual_signed ... ok
+test arithmetic::canonical_scale_round::tests::wide_main_endpoint_rounding_matches_python_integer_vectors ... ok
+test arithmetic::compare_bit::tests::boundary_regions_adversarial_on_42_bit_prime_bases ... ok
+test arithmetic::compare_bit::tests::exhaustive_every_x_on_a_five_lane_small_basis ... ok
+test arithmetic::compare_bit::tests::external_wide_vectors::wide_centering_matches_independent_python_integers ... ok
+test arithmetic::compare_bit::tests::fixed_work_decision_is_exact_for_every_small_basis_value ... ok
+test arithmetic::compare_bit::tests::fixed_work_decision_matches_oracle_at_wide_unsigned_boundaries ... ok
+test arithmetic::compare_bit::tests::impossibility_identity_locks_the_wall ... ok
+test arithmetic::compare_bit::tests::lifted_sign_chimera_scale_random_and_boundary ... ok
+test arithmetic::compare_bit::tests::lifted_sign_exhaustive_small_frames ... ok
+test arithmetic::base_ext::tests::matches_crt_ground_truth_on_a_small_synthetic_basis ... ok
+test arithmetic::compare_bit::tests::wide_fixed_work_centering_covers_boundary_and_rejects_overflow ... ok
+test arithmetic::compare_bit::tests::x_near_m_is_never_misdecided_through_the_wrap_band ... ok
+test arithmetic::compare_bit_verify::tests::compare_bit_speed_vs_the_shipped_reconstruction ... ignored
+test arithmetic::compare_bit_verify::tests::matches_external_oracle_on_the_real_shipped_chains ... ok
+test accelerated::tests::test_accelerated_add ... ok
+test arithmetic::ct_mul_exact::tests::test_exact_poly_mul_constant ... ok
+test arithmetic::ct_mul_exact::tests::test_exact_rescale ... ok
+test arithmetic::cyclotomic_phase::tests::test_modular_distance ... ok
+test arithmetic::cyclotomic_phase::tests::test_sine_cosine_extraction ... ok
+test arithmetic::exact_coeff::tests::test_add ... ok
+test arithmetic::exact_coeff::tests::test_delta_squared_scaling ... ok
+test arithmetic::exact_coeff::tests::test_encode_reconstruct ... ok
+test arithmetic::exact_coeff::tests::test_exact_div ... ok
+test arithmetic::exact_coeff::tests::test_mul ... ok
+test arithmetic::exact_divider::tests::test_exact_divide ... ok
+test arithmetic::exact_divider::tests::test_fhe_params ... ok
+test arithmetic::exact_divider::tests::test_reconstruct_basic ... ok
+test arithmetic::exact_divider::tests::test_roundtrip ... ok
+test arithmetic::exact_divider::tests::test_scale_and_round ... ok
+test arithmetic::exact_scale_round::tests::corners_and_rounding_ties_are_exact ... ok
+test arithmetic::exact_scale_round::tests::even_auxiliary_lane_is_refused_before_modular_halving ... ok
+test arithmetic::exact_scale_round::tests::full_u64_auxiliary_lane_matches_signed_integer_oracle ... ok
+test arithmetic::exact_scale_round::tests::insufficient_aux_capacity_is_refused ... ok
+test arithmetic::exact_scale_round::tests::output_shift_is_a_multiple_of_q ... ok
+test arithmetic::exact_scale_round::tests::production_main_primes_match_reference ... ok
+test arithmetic::exact_scale_round::tests::production_primes_full_range_against_u512_oracle ... ok
+test arithmetic::base_ext::tests::matches_crt_ground_truth_on_the_real_manufactured_chain ... ok
+test arithmetic::exact_scale_round::tests::typed_rejections ... ok
+test arithmetic::exact_scale_round::tests::under_capacity_bases_are_unreachable ... ok
+test arithmetic::integer_math::tests::test_checked_scaled_ratio_basic ... ok
+test arithmetic::integer_math::tests::test_checked_scaled_ratio_overflow_returns_none_not_panic ... ok
+test arithmetic::integer_math::tests::test_checked_scaled_ratio_rounding_boundary ... ok
+test arithmetic::integer_math::tests::test_checked_scaled_ratio_zero_denominator ... ok
+test arithmetic::integer_math::tests::test_cos_sin_table_properties ... ok
+test arithmetic::integer_math::tests::test_cos_sin_table_unit_circle ... ok
+test arithmetic::integer_math::tests::test_fixed_cos_sin ... ok
+test arithmetic::integer_math::tests::test_format_as_bits ... ok
+test arithmetic::integer_math::tests::test_format_millibits ... ok
+test arithmetic::integer_math::tests::test_format_ops ... ok
+test arithmetic::integer_math::tests::test_format_ratio ... ok
+test arithmetic::integer_math::tests::test_format_ratio_matches_previous_float_formatting ... ok
+test arithmetic::integer_math::tests::test_golden_angle_q30 ... ok
+test arithmetic::integer_math::tests::test_integer_log2 ... ok
+test arithmetic::integer_math::tests::test_integer_log2_u128 ... ok
+test arithmetic::integer_math::tests::test_integer_sqrt ... ok
+test arithmetic::integer_math::tests::test_integer_sqrt_correctness ... ok
+test arithmetic::integer_math::tests::test_integer_sqrt_u128 ... ok
+test arithmetic::integer_softmax::tests::test_softmax_all_negative ... ok
+test arithmetic::integer_softmax::tests::test_softmax_all_zero ... ok
+test arithmetic::integer_softmax::tests::test_softmax_empty ... ok
+test arithmetic::integer_softmax::tests::test_softmax_equal_logits ... ok
+test arithmetic::integer_softmax::tests::test_softmax_large_gap_preserves_separability ... ok
+test arithmetic::integer_softmax::tests::test_softmax_monotonic_large_dynamic_range ... ok
+test arithmetic::integer_softmax::tests::test_softmax_ordering ... ok
+test arithmetic::integer_softmax::tests::test_softmax_single ... ok
+test arithmetic::integer_softmax::tests::test_softmax_sum_exact ... ok
+test arithmetic::integer_softmax::tests::test_softmax_temperature_empty ... ok
+test arithmetic::integer_softmax::tests::test_softmax_top_k_empty ... ok
+test arithmetic::integer_softmax::tests::test_softmax_top_k_zero ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_capacity_is_m_times_m_plus_one ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_covers_the_extremes_of_the_range ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_inverse_is_the_partner_itself ... ok
+test arithmetic::exact_scale_round::tests::small_basis_matches_reference_over_full_operand_range ... ok
+test arithmetic::compare_bit::tests::random_trials_match_u128_ground_truth ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_rejects_a_non_class_f_alpha_family ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_sign_is_minus_not_plus ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_validates_residue_ranges ... ok
+test arithmetic::k_elimination::bench_compat::benchmark_anchor_generation ... ignored
+test arithmetic::k_elimination::tests::constant_and_variable_extractors_agree ... ok
+test arithmetic::k_elimination::tests::exact_capacity_bits_match_presets ... ok
+test arithmetic::k_elimination::tests::exact_capacity_metadata ... ok
+test arithmetic::k_elimination::tests::extraction_and_division_match_reference_values ... ok
+test arithmetic::k_elimination::tests::inverse_handles_public_moduli_above_i128 ... ok
+test arithmetic::k_elimination::tests::modular_addition_handles_u128_wrap_boundary ... ok
+test arithmetic::k_elimination::tests::modular_multiplication_matches_reference ... ok
+test arithmetic::k_elimination::tests::safe_basis_validation ... ok
+test arithmetic::k_elimination::tests::scale_and_round_matches_integer_reference ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_matches_general_exhaustively ... ok
+test arithmetic::k_elimination::tests::test_all_configs_work_for_reconstruction ... ok
+test arithmetic::k_elimination::tests::test_class_f_moduli_are_prime ... ok
+test arithmetic::k_elimination::tests::test_class_r_moduli_are_coprime ... ok
+test arithmetic::k_elimination::tests::test_exact_divide_validated_not_divisible ... ok
+test arithmetic::k_elimination::tests::test_exact_divide_validated_success ... ok
+test arithmetic::k_elimination::tests::test_exact_divide_validated_zero_divisor ... ok
+test arithmetic::k_elimination::tests::test_kelim_all_configs_exhaustive ... ignored
+test arithmetic::k_elimination::tests::test_kelim_builder_missing_primes ... ok
+test arithmetic::k_elimination::tests::test_kelim_builder_success ... ok
+test arithmetic::k_elimination::tests::test_kelim_try_new_coprime ... ok
+test arithmetic::k_elimination::tests::test_kelim_try_new_not_coprime ... ok
+test arithmetic::k_elimination::tests::sub_mod_u128_matches_full_width_oracle ... ok
+test arithmetic::k_elimination::tests::test_try_for_degree ... ok
+test arithmetic::k_elimination::tests::test_validate_residues_out_of_range ... ok
+test arithmetic::k_elimination::tests::test_try_from_config_all_valid ... ok
+test arithmetic::k_elimination::tests::test_validate_residues_valid ... ok
+test arithmetic::k_elimination::tests::test_validate_value_exceeds_capacity ... ok
+test arithmetic::k_elimination::tests::test_validate_value_within_capacity ... ok
+test arithmetic::k_elimination::tests::validated_division_rejects_range_and_inexactness ... ok
+test arithmetic::kelim_residue_divider::tests::coupled_anchor_resolution_matches_brute_force_reduced_case ... ok
+test arithmetic::k_elimination::wide_capacity_tests::extended_capacity_has_exact_wide_view ... ok
+test arithmetic::kelim_residue_divider::tests::hot_path_counters_increment_on_successful_projection ... ok
+test arithmetic::kelim_residue_divider::tests::plain_per_lane_inverse_fails_where_this_divider_succeeds ... ok
+test arithmetic::kelim_residue_divider::tests::rejects_divisor_whose_claimed_residues_disagree_with_its_factors ... ok
+test arithmetic::kelim_residue_divider::tests::rejects_quotient_bound_exceeding_coupled_anchor_resolution ... ok
+test arithmetic::kelim_residue_divider::tests::resolution_collapses_to_anchor_product_when_coprime ... ok
+test arithmetic::kelim_residue_divider::tests::resolutions_compose_by_lcm ... ok
+test arithmetic::main_only_base_ext::tests::centered_projection_exhaustive_small_bases ... ok
+test arithmetic::ct_mul_exact::tests::test_exact_ct_mul_simple ... ok
+test arithmetic::main_only_base_ext::tests::centered_projection_turns_canonical_m_minus_one_into_minus_one ... ok
+test arithmetic::main_only_base_ext::tests::exhaustive_small_bases_are_exact ... ok
+test arithmetic::k_elimination::adjacency_tests::adjacency_matches_general_on_the_standard_basis ... ok
+test arithmetic::main_only_base_ext::tests::permutation_invariance ... ok
+test arithmetic::main_only_base_ext::tests::production_prefix_random_plus_small_x_and_both_paths ... ok
+test arithmetic::main_only_base_ext::tests::fallback_accumulator_supports_over_256_bits_and_refuses_over_1024 ... ok
+test arithmetic::main_only_base_ext::tests::q650_projection_matches_independent_python_integer_vectors ... ok
+test arithmetic::main_only_base_ext::tests::typed_rejections ... ok
+test arithmetic::mobius_int::tests::test_addition ... ok
+test arithmetic::mobius_int::tests::test_chained_operations ... ok
+test arithmetic::mobius_int::tests::test_checked_div_rem ... ok
+test arithmetic::mobius_int::tests::test_comparison ... ok
+test arithmetic::mobius_int::tests::test_from_i64 ... ok
+test arithmetic::mobius_int::tests::test_many_chained_operations ... ok
+test arithmetic::mobius_int::tests::test_multiplication ... ok
+test arithmetic::mobius_int::tests::test_polynomial_arithmetic ... ok
+test arithmetic::mobius_int::tests::test_polynomial_eval ... ok
+test arithmetic::mobius_int::tests::test_polynomial_multiplication ... ok
+test arithmetic::mobius_int::tests::test_subtraction ... ok
+test arithmetic::mobius_int::tests::test_vector_operations ... ok
+test arithmetic::montgomery::tests::coefficient_ops_match_integer_reference ... ok
+test arithmetic::montgomery::tests::even_modulus_is_rejected - should panic ... ok
+test arithmetic::montgomery::tests::fixed_iteration_power_matches_reference ... ok
+test arithmetic::montgomery::tests::montgomery_multiplication ... ok
+test arithmetic::montgomery::tests::montgomery_roundtrip ... ok
+test arithmetic::montgomery::tests::odd_composite_class_r_modulus_is_supported ... ok
+test arithmetic::mq_relu::tests::test_polynomial_relu ... ok
+test arithmetic::mq_relu::tests::test_relu_application ... ok
+test arithmetic::mq_relu::tests::test_sign_detection ... ok
+test arithmetic::mq_relu::tests::test_signed_conversion ... ok
+test arithmetic::ntt::tests::test_intt_ct_matches_intt ... ok
+test arithmetic::ntt::tests::test_intt_ct_matches_intt_large ... ok
+test arithmetic::ntt::tests::test_multiply_ct_matches_multiply ... ok
+test arithmetic::ntt::tests::test_multiply_ct_matches_multiply_large ... ok
+test arithmetic::ntt::tests::test_multiply_ct_negacyclic ... ok
+test arithmetic::kelim_residue_divider::tests::exhaustive_matches_direct_integer_division_including_non_coprime_divisors ... ok
+test arithmetic::ntt::tests::test_ntt_ct_matches_ntt ... ok
+test arithmetic::ntt::tests::test_ntt_ct_matches_ntt_large ... ok
+test arithmetic::ntt::tests::test_ntt_ct_roundtrip ... ok
+test arithmetic::ntt::tests::test_ntt_multiply_correctness_small ... ok
+test arithmetic::ntt::tests::test_ntt_multiply_random ... ok
+test arithmetic::ntt::tests::test_ntt_negacyclic ... ok
+test arithmetic::ntt::tests::test_ntt_roundtrip ... ok
+test arithmetic::ntt::tests::test_polynomial_add ... ok
+test arithmetic::ntt::tests::test_polynomial_sub ... ok
+test arithmetic::ntt::tests::test_try_new_1024_degree ... ok
+test arithmetic::ntt::tests::test_try_new_incompatible_modulus ... ok
+test arithmetic::ntt::tests::test_try_new_non_power_of_two ... ok
+test arithmetic::ntt::tests::test_try_new_valid_params ... ok
+test arithmetic::ntt::tests::try_new_rejects_invalid_moduli_and_root_order_without_panicking ... ok
+test arithmetic::ntt_fft::tests::branchless_coefficient_ops_match_integer_reference ... ok
+test arithmetic::ntt_fft::tests::class_f_constructor_rejects_composite_modulus ... ok
+test arithmetic::ntt_fft::tests::constructor_rejects_incompatible_prime ... ok
+test arithmetic::ntt_fft::tests::constructor_rejects_non_power_of_two_degree ... ok
+test arithmetic::ntt_fft::tests::multiply_matches_schoolbook ... ok
+test arithmetic::ntt_fft::tests::multiply_small ... ok
+test arithmetic::ntt_fft::tests::negacyclic_wrap ... ok
+test arithmetic::ntt_fft::tests::ntt_intt_roundtrip ... ok
+test arithmetic::order_finding::tests::test_additional_semiprimes ... ok
+test arithmetic::order_finding::tests::test_factorization_via_order ... ok
+test arithmetic::order_finding::tests::test_k_elimination_verification ... ok
+test arithmetic::order_finding::tests::test_mod_inverse ... ok
+test arithmetic::order_finding::tests::test_non_circularity ... ok
+test arithmetic::order_finding::tests::test_order_finding_basic ... ok
+test arithmetic::order_finding::tests::test_order_finding_semiprimes ... ok
+test arithmetic::order_finding::tests::test_prime_modulus ... ok
+test arithmetic::pade_engine::tests::test_cos_at_zero ... ok
+test arithmetic::pade_engine::tests::test_exp_at_zero ... ok
+test arithmetic::pade_engine::tests::test_sigmoid_at_zero ... ok
+test arithmetic::pade_engine::tests::test_sin_at_zero ... ok
+test arithmetic::pade_engine::tests::test_tanh_symmetry ... ok
+test arithmetic::persistent_montgomery::tests::branchless_ring_ops_match_integer_reference ... ok
+test arithmetic::persistent_montgomery::tests::even_modulus_is_rejected - should panic ... ok
+test arithmetic::persistent_montgomery::tests::field_inverse_accepts_prime_modulus ... ok
+test arithmetic::persistent_montgomery::tests::fixed_iteration_pow_matches_reference ... ok
+test arithmetic::persistent_montgomery::tests::montgomery_multiplication ... ok
+test arithmetic::persistent_montgomery::tests::montgomery_roundtrip ... ok
+test arithmetic::persistent_montgomery::tests::odd_composite_class_r_modulus_is_supported ... ok
+test arithmetic::persistent_montgomery::tests::persistent_chain_has_single_entry_and_exit ... ok
+test arithmetic::phase_clock_plan::tests::carry_lut_matches_every_small_signed_trit_tuple ... ok
+test arithmetic::phase_clock_plan::tests::invalid_metadata_and_full_width_noise_fail_before_lookup_allocation ... ok
+test arithmetic::phase_clock_plan::tests::native_sparse_window_uses_actual_source_product_and_dense_refuses ... ok
+test arithmetic::phase_clock_plan::tests::wide_named_modulus_and_product_capacity_are_exact ... ok
+test arithmetic::main_only_base_ext::tests::production_prefixes_u512_oracle_4_5_6_lanes ... ok
+test arithmetic::plaintext_scale_round::tests::rejects_output_anchor_shared_with_a_main_lane ... ok
+test arithmetic::plaintext_scale_round::tests::scale_conversion_is_k_elimination_not_full_crt_reconstruction ... ok
+test arithmetic::rank_residue_divider::tests::fractional_rank_resolves_points_next_to_integer_boundaries ... ok
+test arithmetic::rank_residue_divider::tests::full_width_targets_and_signed_extrema_match_integer_oracle ... ok
+test arithmetic::rank_residue_divider::tests::malformed_inputs_and_aliasing_are_refused ... ok
+test arithmetic::rank_residue_divider::tests::modular_products_above_signed_u128_boundary_do_not_overflow ... ok
+test arithmetic::rank_residue_divider::tests::repeated_shared_factor_divisions_preserve_quotient_anchors ... ok
+test arithmetic::rank_residue_divider::tests::shared_factor_divisors_keep_every_quotient_lane ... ok
+test arithmetic::rank_residue_divider::tests::shifted_signed_intervals_determine_the_lift ... ok
+test arithmetic::main_only_base_ext::tests::centered_projection_production_prefixes_u512_oracle ... ok
+test arithmetic::rational_bridge::tests::bridge_arithmetic_ops ... ok
+test arithmetic::rational_bridge::tests::bridge_exact_division_trichotomy ... ok
+test arithmetic::rational_bridge::tests::bridge_from_kelim_reconstruction ... ok
+test arithmetic::rational_bridge::tests::bridge_rational_to_residues ... ok
+test arithmetic::rational_bridge::tests::bridge_to_residues_multiple_primes ... ok
+test arithmetic::rational_bridge::tests::bridge_zero_denominator_rejected ... ok
+test arithmetic::rational_bridge::tests::mod_inverse_basic ... ok
+test arithmetic::rational_bridge::tests::mod_inverse_no_inverse ... ok
+test arithmetic::recumbent::tests::aliasing_intervals_and_unproven_values_are_refused_at_ingress ... ok
+test arithmetic::recumbent::tests::analytic_bounds_propagate_and_fail_closed_before_capacity_aliases ... ok
+test arithmetic::recumbent::tests::arithmetic_dag_joins_keep_maximum_division_event_depth ... ok
+test arithmetic::recumbent::tests::debug_provenance_oracle_detects_internal_anchor_corruption - should panic ... ok
+test arithmetic::recumbent::tests::division_event_exhaustion_refuses_without_mutating_input ... ok
+test arithmetic::recumbent::tests::experimental_projection_retains_shared_factor_anchors_and_division_history ... ok
+test arithmetic::rank_residue_divider::tests::ten_thousand_signed_inputs_match_independent_integer_division ... ok
+test arithmetic::recumbent::tests::full_u64_moduli_and_full_i128_interval_have_no_sentinel_or_signed_overflow ... ok
+test arithmetic::recumbent::tests::inclusive_capacity_boundary_and_rounded_output_capacity_are_checked ... ok
+test arithmetic::recumbent::tests::invalid_bases_mismatches_and_invalid_drop_are_refused ... ok
+test arithmetic::recumbent::tests::negative_rounding_and_even_ties_have_declared_semantics ... ok
+test arithmetic::recumbent::tests::observed_remainder_division_matches_ten_thousand_independent_oracles ... ok
+test arithmetic::recumbent::tests::public_bound_overflow_refuses_before_residue_arithmetic ... ok
+test arithmetic::recumbent::tests::repeated_division_preserves_signed_value_and_event_depth ... ok
+test arithmetic::recumbent::tests::retained_anchor_residues_name_the_signed_quotient ... ok
+test arithmetic::recumbent::tests::signed_ingress_and_arithmetic_match_scalar_oracle ... ok
+test arithmetic::residue_division::tests::anchor_capacity_must_cover_quotient_bound ... ok
+test arithmetic::residue_division::tests::class_f_and_class_r_rules_are_enforced ... ok
+test arithmetic::residue_division::tests::incomplete_certificate_is_rejected ... ok
+test arithmetic::residue_division::tests::shape_and_reduction_errors_fail_closed ... ok
+test arithmetic::residue_division::tests::valid_safe_basis_and_shapes_pass ... ok
+test arithmetic::rns::checked_capacity_tests::fixed_width_product_distinguishes_128_and_256_bit_limits ... ok
+test arithmetic::rns::checked_capacity_tests::wide_anchor_metadata_has_no_zero_sentinel ... ok
+test arithmetic::plaintext_scale_round::tests::adjacent_and_output_scale_conversion_match_every_toy_centered_value ... ok
+test arithmetic::rns::tests::exact_divide_panics_instead_of_wrapping_when_the_answer_exceeds_u128 - should panic ... ok
+test arithmetic::rns::tests::reconstruct_panics_instead_of_wrapping_when_the_answer_exceeds_u128 - should panic ... ok
+test arithmetic::rns::tests::reconstruct_succeeds_on_wide_basis_when_the_value_fits ... ok
+test arithmetic::rns::tests::test_4prime_crt_large_k ... ok
+test arithmetic::recumbent::tests::experimental_rank_projection_matches_ten_thousand_broad_interval_oracles ... ok
+test arithmetic::rns::tests::test_4prime_crt_near_u128_limit ... ok
+test arithmetic::rns::tests::test_crt_reconstruct_u256_handles_zero_residues ... ok
+test arithmetic::rns::tests::test_crt_reconstruct_u256_roundtrip ... ok
+test arithmetic::rns::tests::test_crt_reconstruct_u256_wraps_past_prime_subset_capacity ... ok
+test arithmetic::rns::tests::test_div_mod_u64_ct_iteration_count_is_input_independent ... ok
+test arithmetic::rns::tests::test_dual_rns_exact_division ... ok
+test arithmetic::rns::tests::test_dual_rns_fhe_capacity ... ok
+test arithmetic::rns::tests::test_dual_rns_fhe_full_chain ... ok
+test arithmetic::rns::tests::test_dual_rns_k_elimination_basic ... ok
+test arithmetic::rns::tests::test_dual_rns_polynomial_operations ... ok
+test arithmetic::rns::tests::test_anchor_capacity_insufficient - should panic ... ok
+test arithmetic::rns::tests::test_k_elim_rescale ... ok
+test arithmetic::rns::tests::test_k_elim_rescale_full_nearest_integer ... ok
+test arithmetic::rns::tests::test_mod_u64_ct_iteration_count_is_input_independent ... ok
+test arithmetic::rns::tests::test_mod_u64_word_ct_matches_native_across_magnitudes ... ok
+test arithmetic::rns::tests::test_mul_low_kelim_scale_values ... ok
+test arithmetic::rns::tests::test_mul_low_large_lo_triggers_wide_mul_overflow ... ok
+test arithmetic::rns::tests::test_mul_u64_kelim_rescale_scale ... ok
+test arithmetic::rns::tests::test_product_u64s_large_prime_set ... ok
+test arithmetic::rns::tests::test_rns_add ... ok
+test arithmetic::rns::tests::test_rns_mul ... ok
+test arithmetic::rns::tests::test_rns_polynomial_add ... ok
+test arithmetic::rns::tests::test_rns_polynomial_mul ... ok
+test arithmetic::rns::tests::test_rns_roundtrip ... ok
+test arithmetic::rns::tests::test_signed_k_boundary ... ok
+test arithmetic::rns::tests::test_try_to_int_level_matches_to_int_level ... ok
+test arithmetic::rns::tests::doubled_native_fhe_anchor_basis_constructs_with_63_bit_main_lanes ... ok
+test arithmetic::rns::tests::test_extract_k_rns_level_recovers_depth2_k_beyond_4anchor_capacity_secure_128_deep ... ok
+test arithmetic::rns::tests::test_try_to_int_level_returns_some_for_valid_configs ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u256_basic ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u256_large ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u256_self ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u64_ct_matches_vartime_across_magnitude_classes ... ok
+test arithmetic::rns::tests::test_u256_div_mod_u64_ct_matches_vartime_random ... ok
+test arithmetic::rns::tests::test_u256_mod_u64_ct ... ok
+test arithmetic::rns::tests::test_u256_mod_u64_ct_matches_vartime_across_magnitude_classes ... ok
+test arithmetic::rns::tests::test_try_to_int_level_partial_overflow_chain_works ... ok
+test arithmetic::rns::tests::test_wide_mul_256_cross_term_boundary ... ok
+test arithmetic::rns::tests::test_wide_mul_256_mid_carry_overflow ... ok
+test arithmetic::rns::tests::u256_fixed_work_compare_matches_unsigned_order_at_word_boundaries ... ok
+test arithmetic::rns::tests::u256_fixed_work_mul_u64_matches_checked_helper_under_proved_bound ... ok
+test arithmetic::transcendental_backend::tests::test_exact_exp_at_zero ... ok
+test arithmetic::transcendental_backend::tests::test_exact_ln_at_one ... ok
+test arithmetic::ntt::tests::test_ntt_benchmark_1024 ... ok
+test arithmetic::unified_rescale::tests::adjacency_read_is_minus_not_plus ... ok
+test arithmetic::unified_rescale::tests::adjacency_agrees_with_universal_projection_on_the_chain ... ok
+test arithmetic::rns::tests::test_u512_mod_u256_matches_reference_for_sparse_and_dense_values ... ok
+test arithmetic::rns::tests::test_try_to_int_level_returns_none_for_overflow_chain ... ok
+test arithmetic::unified_rescale::tests::delta_half_mod_matches_direct_halving ... ok
+test arithmetic::unified_rescale::tests::decisive_exhaustive_exact_over_full_range_small ... ok
+test arithmetic::unified_rescale::tests::floor_mode_is_exact_floor_division ... ok
+test arithmetic::unified_rescale::tests::cram_public_guardrail_manufactured_multiply_never_calls_garner ... ok
+test arithmetic::unified_rescale::tests::hunted_chain_classical_divisor_carries_a_nonzero_rounding_term ... ok
+test arithmetic::unified_rescale::tests::manufactured_chain_has_exact_delta_and_zero_residual ... ok
+test arithmetic::unified_rescale::tests::merge_inverses_match_fresh_computation ... ok
+test arithmetic::unified_rescale::tests::no_anchor_chain_has_zero_winding ... ok
+test arithmetic::unified_rescale::tests::parallel_summation_matches_garner_oracle ... ok
+test arithmetic::unified_rescale::tests::precomputed_inverses_match_fresh_computation_on_the_real_chain ... ok
+test arithmetic::unified_rescale::tests::refuses_hunted_chain_where_t_does_not_divide_q ... ok
+test arithmetic::unified_rescale::tests::refuses_non_invertible_drop_lane ... ok
+test arithmetic::unified_rescale::tests::refuses_residue_shape_mismatch ... ok
+test arithmetic::unified_rescale::tests::refuses_target_lane_below_two ... ok
+test arithmetic::unified_rescale::tests::refuses_when_delta_is_not_a_product_of_lanes ... ok
+test arithmetic::unified_rescale::tests::star_lanes_give_message_transparency_and_the_inverse_by_construction ... ok
+test arithmetic::unified_rescale::tests::two_exits_are_one_primitive ... ok
+test arithmetic::unified_rescale::tests::universal_project_matches_direct_reduction_standalone ... ok
+test arithmetic::unified_rescale::tests::universal_projection_needs_no_coprimality_or_primality ... ok
+test arithmetic::valuation::tests::test_add_conservative ... ok
+test arithmetic::valuation::tests::test_can_divide ... ok
+test arithmetic::valuation::tests::test_checked_div ... ok
+test arithmetic::valuation::tests::test_checked_div_uncertain ... ok
+test arithmetic::valuation::tests::test_div_exact_panics - should panic ... ok
+test arithmetic::valuation::tests::test_fhe_rescale_flow ... ok
+test arithmetic::valuation::tests::test_from_integer ... ok
+test arithmetic::valuation::tests::test_from_moduli_product ... ok
+test arithmetic::valuation::tests::test_mul ... ok
+test arithmetic::valuation::tests::test_one ... ok
+test arithmetic::valuation::tests::test_overflow_protection ... ok
+test arithmetic::valuation::tests::test_suggest_rescale_deterministic ... ok
+test arithmetic::valuation::tests::test_unfactored_uncertainty ... ok
+test arithmetic::valuation::tests::test_zero ... ok
+test arithmetic::wide::tests::agrees_with_existing_u512_when_all_results_fit ... ok
+test arithmetic::wide::tests::checked_boundaries_refuse_overflow_underflow_and_zero_divisors ... ok
+test arithmetic::wide::tests::python_integer_vectors_cover_full_width_arithmetic ... ok
+test arithmetic::wide::tests::shifts_and_order_cross_every_limb_boundary ... ok
+test bootstrap::clockwork::tests::test_bootstrap_produces_fresh_noise ... ignored, VESTIGIAL: asserts a bootstrap_protected output sits below 10 percent of the noise budget, i.e. that the refresh actually reset the budget. Nothing depletes the budget here, so there is nothing to reset. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::clockwork::tests::test_bootstrap_randomness_independence ... ignored, VESTIGIAL: asserts two bootstrap_protected runs over the same ciphertext with different masks produce different c0 coefficients. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::clockwork::tests::test_can_bootstrap_check ... ignored, VESTIGIAL: asserts ClockworkBootstrap::can_bootstrap is true just below q/(2t) and false just above — a noise-threshold predicate gating when a refresh is still possible. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::clockwork::tests::test_end_to_end_protected_bootstrap ... ignored, VESTIGIAL: asserts encrypt(42) -> CiphertextMask -> cw.bootstrap_protected -> decrypt returns 42, the Three-Lock protected re-encryption path end to end. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::clockwork::tests::test_mask_contribution_correctness ... ignored, VESTIGIAL: asserts that raw_masked minus mask.decrypt_contribution equals the clean decrypted polynomial — algebraic mask removal inside the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::clockwork::tests::test_protected_bootstrap_multiple_messages ... ignored, VESTIGIAL: asserts cw.bootstrap_protected roundtrips eight messages spanning 0..9000 through the Three-Lock mask. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::clockwork::tests::test_three_lock_key_generation ... ignored, VESTIGIAL: asserts BootstrapKey::generate produces n entries and that secret_key_poly() has dimension n — structural coverage of bootstrap key material. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::mask::tests::test_ciphertext_mask_roundtrip ... ignored, VESTIGIAL: asserts CiphertextMask apply/remove roundtrips the (c0, c1) pair. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::mask::tests::test_mask_different_inputs_same_mask ... ignored, VESTIGIAL: asserts one MaskLayer masks two distinct polynomials to distinct outputs and removes cleanly from both. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::mask::tests::test_mask_roundtrip ... ignored, VESTIGIAL: asserts MaskLayer apply/remove is the identity. MaskLayer lives under crate::bootstrap and has no consumer outside the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::mask::tests::test_mask_scalar_tracking ... ignored, VESTIGIAL: asserts MaskLayer::track_scalar_mul lets the mask follow a scalar multiply so removal still recovers the scaled original — mask bookkeeping across the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::mask::tests::test_mask_uniformity ... ignored, VESTIGIAL: asserts masking a constant polynomial produces diverse coefficients — a statistical property of the Three-Lock mask, which only shields the momentary plaintext inside a refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::mask::tests::test_mask_zeroize_on_drop ... ignored, VESTIGIAL: asserts a fresh MaskLayer has non-zero coefficients before drop, standing in for the ZeroizeOnDrop guarantee. NOTE: this is the only zeroization coverage for MaskLayer; if the Three-Lock mask is ever reused outside bootstrap it must come back with a real post-drop observation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::outer::tests::test_outer_different_encryptions ... ignored, VESTIGIAL: asserts two OuterLayer encryptions of the same plaintext differ, i.e. the outer envelope is randomized. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::outer::tests::test_outer_encrypt_decrypt_roundtrip ... ignored, VESTIGIAL: asserts OuterLayer RLWE encrypt/decrypt recovers each coefficient to within the small error e. OuterLayer lives under crate::bootstrap and has no consumer outside the Three-Lock refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::outer::tests::test_outer_key_rotation ... ignored, VESTIGIAL: asserts OuterLayer::rotate_key makes the old ciphertext decrypt to garbage while new encryptions still work — the Tier1 key-rotation property of the Three-Lock outer layer. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::outer::tests::test_outer_pair_roundtrip ... ignored, VESTIGIAL: asserts OuterCiphertextPair encrypt/decrypt roundtrips a (c0, c1) pair through the outer envelope. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_mask_never_removed_from_ciphertext ... ignored, VESTIGIAL: asserts data stays masked across the outer Montgomery round-trip and that the mask is then algebraically removable — the Three-Lock confidentiality property for the momentary plaintext inside a refresh. Note: this mask is the Three-Lock intermediate-plaintext shield, NOT the CRAM winding of D-030 6.1; the winding side-channel story is unaffected by this quarantine. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_outer_layer_bounded_noise ... ignored, VESTIGIAL: asserts the OuterLayer RLWE encrypt/decrypt round-trip keeps max noise below q/4 — the Three-Lock outer envelope that only wraps the refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_refreshed_ciphertext_is_fresh ... ignored, VESTIGIAL: asserts a Three-Lock refreshed ciphertext carries under 10 percent noise usage, i.e. that the refresh reset a budget. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_three_lock_benchmark ... ignored, VESTIGIAL: times five ThreeLockBootstrap::bootstrap iterations and asserts the final refreshed ciphertext still decrypts to 42 — a benchmark of the vestigial path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_three_lock_end_to_end_multiple ... ignored, VESTIGIAL: asserts ThreeLockBootstrap::bootstrap roundtrips eight messages spanning 0..9000. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_three_lock_end_to_end_single ... ignored, VESTIGIAL: asserts ThreeLockBootstrap::bootstrap_timed at Tier2Production roundtrips 42 through the full three-layer refresh. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_three_lock_fast_path ... ignored, VESTIGIAL: asserts ThreeLockBootstrap::bootstrap_fast at Tier3Commodity roundtrips 42. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test bootstrap::three_lock::tests::test_tier1_key_rotation ... ignored, VESTIGIAL: asserts Tier1Maximum rotates the outer key on every refresh (stats.key_rotated) and that bootstrap_count reaches 2 — key lifecycle bookkeeping that exists only because a refresh occurs. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test compiler::tests::test_deep_circuit_compilation ... ok
+test compiler::tests::test_depth_50_bootstrap_free ... ok
+test compiler::tests::test_parameter_scaling ... ok
+test compiler::tests::test_polynomial_circuit_compilation ... ok
+test arithmetic::unified_rescale::tests::drop_only_agrees_with_full_pipeline_exhaustively ... ok
+test arithmetic::unified_rescale::tests::headline_manufactured_is_exact_and_hunted_is_not ... ok
+test comprehensive_benchmarks::comprehensive_benchmarks::benchmark_depth_specific_operations_secure_128 ... ok
+test comprehensive_benchmarks::comprehensive_benchmarks::benchmark_batch_operations_secure_128 ... ok
+test comprehensive_benchmarks::comprehensive_benchmarks::benchmark_noise_growth_secure_128 ... ok
+test comprehensive_benchmarks::comprehensive_benchmarks::benchmark_noise_budget_accuracy ... ok
+test cram_ct_wrap::tests::aux_selection_excludes_primes_sharing_a_factor_with_the_divisor ... ok
+test cram_ct_wrap::checked_witness_tests::witness_admission_reads_checked_metadata ... ok
+test cram_ct_wrap::tests::centered_projection_round_trips_exactly_on_every_coefficient ... ok
+test cram_ct_wrap::tests::centered_projection_uses_the_active_ciphertext_level ... ok
+test comprehensive_benchmarks::comprehensive_benchmarks::benchmark_memory_usage_patterns ... ok
+test cram_ct_wrap::tests::cram_add_dual_round_trip_decrypts_to_sum ... ok
+test cram_ct_wrap::tests::cram_add_dual_chain_keeps_op_counter_in_sync ... ok
+test cram_ct_wrap::tests::cram_add_dual_signature_changes_after_op ... ok
+test cram_ct_wrap::tests::fpd_wrap_populates_the_division_lane_and_default_wrap_does_not ... ok
+test cram_ct_wrap::tests::wrap_dual_rns_after_encrypt_passes_metadata_check ... ok
+test entropy::crt_shadow::tests::test_benchmark_signature_overhead ... ok
+test cram_ct_wrap::tests::wide_config_is_refused_rather_than_truncated ... ok
+test entropy::crt_shadow::tests::test_compare_magnitudes_via_signature ... ok
+test entropy::crt_shadow::tests::test_crt_basic ... ok
+test entropy::crt_shadow::tests::test_entropy_quality ... ok
+test entropy::crt_shadow::tests::test_entropy_throughput ... ok
+test entropy::crt_shadow::tests::test_integrated_rns ... ok
+test entropy::crt_shadow::tests::test_large_numbers ... ok
+test entropy::crt_shadow::tests::test_mul_with_shadows ... ok
+test entropy::crt_shadow::tests::test_mul_with_signature ... ok
+test entropy::crt_shadow::tests::test_quotient_signature_add ... ok
+test entropy::crt_shadow::tests::test_quotient_signature_basic ... ok
+test entropy::crt_shadow::tests::test_quotient_signature_comparison ... ok
+test entropy::crt_shadow::tests::test_quotient_signature_magnitude_class ... ok
+test entropy::crt_shadow::tests::test_quotient_signature_mul ... ok
+test entropy::crt_shadow::tests::test_shadow_accumulator ... ok
+test entropy::crt_shadow::tests::test_shadow_determinism ... ok
+test entropy::crt_shadow::tests::test_shadow_variation ... ok
+test entropy::crt_shadow::tests::test_signature_is_small_large ... ok
+test entropy::crt_shadow::tests::test_signature_ordering_consistency ... ok
+test entropy::deterministic::tests::test_deterministic ... ok
+test entropy::deterministic::tests::test_uniform_bounds ... ok
+test entropy::rng_trait::tests::test_deterministic_rng ... ok
+test entropy::rng_trait::tests::test_secure_implements_fhe_rng ... ok
+test entropy::rng_trait::tests::test_shadow_implements_fhe_rng ... ok
+test entropy::rng_trait::tests::test_ternary_vector ... ok
+test entropy::secure::tests::test_entropy_health_check_multiple_calls ... ok
+test entropy::secure::tests::test_entropy_health_check_passes ... ok
+test entropy::secure::tests::test_secure_bytes ... ok
+test entropy::secure::tests::test_secure_cbd ... ok
+test entropy::secure::tests::test_secure_ternary_distribution ... ok
+test entropy::secure::tests::test_secure_u64_bounded ... ok
+test entropy::secure::tests::test_secure_vectors ... ok
+test entropy::shadow::tests::test_bounded_uniform ... ok
+test entropy::shadow::tests::test_cbd_mean ... ok
+test entropy::shadow::tests::test_cbd_range ... ok
+test entropy::shadow::tests::test_deterministic ... ok
+test entropy::shadow::tests::test_different_seeds ... ok
+test entropy::shadow::tests::test_no_obvious_patterns ... ok
+test entropy::shadow::tests::test_signed_to_unsigned ... ok
+test entropy::shadow::tests::test_ternary_distribution ... ok
+test entropy::shadow_entropy_monitor::tests::single_modulus_adaptive_mul_refuses ... ok
+test entropy::shadow_entropy_monitor::tests::test_adapt_threading_up_and_down ... ok
+test entropy::shadow_entropy_monitor::tests::test_adaptive_add_parallel ... ok
+test entropy::shadow_entropy_monitor::tests::test_adaptive_add_sequential ... ok
+test entropy::shadow_entropy_monitor::tests::test_adaptive_boundary_sizes ... ok
+test entropy::crt_shadow::tests::test_benchmark_throughput ... ok
+test entropy::shadow_entropy_monitor::tests::test_adaptive_encrypt_decrypt_sequential ... ok
+test entropy::shadow_entropy_monitor::tests::test_adaptive_single_element ... ok
+test entropy::shadow_entropy_monitor::tests::test_concurrent_entropy_measurement ... ok
+test entropy::shadow_entropy_monitor::tests::test_adaptive_encrypt_decrypt_parallel ... ok
+test entropy::shadow_entropy_monitor::tests::test_entropy_different_polys_differ ... ok
+test entropy::shadow_entropy_monitor::tests::test_entropy_evolves_during_encrypt ... ok
+test entropy::shadow_entropy_monitor::tests::test_entropy_measurement_from_ciphertext ... ok
+test entropy::shadow_entropy_monitor::tests::test_entropy_measurement_from_poly ... ok
+test entropy::shadow_entropy_monitor::tests::test_decrypt_roundtrip ... ok
+test entropy::shadow_entropy_monitor::tests::test_entropy_zero_poly_is_zero ... ok
+test entropy::shadow_entropy_monitor::tests::test_medium_entropy_holds_steady ... ok
+test entropy::shadow_entropy_monitor::tests::test_shadow_entropy_monitor_creation ... ok
+test entropy::shadow_entropy_monitor::tests::test_thread_count_clamped_to_bounds ... ok
+test entropy::shadow_entropy_monitor::tests::test_threshold_update ... ok
+test errors::tests::test_entropy_failure_error ... ok
+test errors::tests::test_error_display ... ok
+test errors::tests::test_error_recoverable ... ok
+test errors::tests::test_noise_budget_exhausted_error ... ok
+test errors::tests::test_regime_mismatch_error ... ok
+test integration_tests::test_benchmarks ... ok
+test integration_tests::test_full_fhe_workflow ... ok
+test kat::tests::test_all_kats ... ok
+test kat::tests::test_kat_deterministic ... ok
+test integration_tests::test_production_128bit ... ok
+test kat::tests::test_kat_homomorphic_ops ... ok
+test kat::tests::test_kat_encrypt_decrypt ... ok
+test keys::bootstrap::tests::bootstrap_tuple_fingerprint_differs_for_different_tuples ... ok
+test keys::bootstrap::tests::bootstrap_tuple_fingerprint_is_deterministic_across_calls ... ok
+test arithmetic::unified_rescale::tests::decisive_exhaustive_exact_over_full_range_composite ... ok
+test keys::bootstrap::tests::every_shipped_config_boot_chain_screens_against_its_own_claim ... ok
+test keys::bootstrap::tests::screen_bootstrap_security_exact_bit_length_matches_known_prefixes ... ok
+test keys::bootstrap::tests::screen_bootstrap_security_refuses_a_non_prime_lane ... ok
+test keys::bootstrap::tests::screen_bootstrap_security_refuses_typed_not_a_guess_for_an_unscreenable_chain ... ok
+test keys::bootstrap::tests::screen_bootstrap_security_target_is_independent_of_q_boot ... ok
+test keys::bootstrap::tests::screen_bootstrap_security_uses_exact_product_bit_length_not_summed_widths ... ok
+test keys::bootstrap::tests::test_bootstrap_key_generation_validates_primes ... ignored, VESTIGIAL: asserts BootstrapKey::generate succeeds against a config built from BOOTSTRAP_PRIMES — generation of bootstrap key material itself. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test keys::bootstrap::tests::test_crt_reconstruct_2_all_bootstrap_prime_pairs ... ok
+test keys::bootstrap::tests::test_crt_reconstruct_2_boundary_values ... ok
+test keys::bootstrap::tests::test_crt_reconstruct_2_commutativity ... ok
+test keys::bootstrap::tests::test_crt_reconstruct_2_large_values ... ok
+test keys::bootstrap::tests::test_gcd_u64_basic ... ok
+test keys::bootstrap::tests::test_gcd_u64_bootstrap_primes_coprime ... ok
+test keys::bootstrap::tests::test_mod_inverse_all_bootstrap_primes ... ok
+test keys::bootstrap::tests::test_mod_inverse_identity_and_self_inverse ... ok
+test keys::bootstrap::tests::test_mod_inverse_known_answers ... ok
+test keys::bootstrap::tests::test_mod_inverse_no_inverse_exists ... ok
+test keys::bootstrap::tests::test_validate_bootstrap_primes_empty_array ... ignored, VESTIGIAL: asserts validate_bootstrap_primes rejects an empty bootstrap prime array with InvalidParameter. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test keys::bootstrap::tests::test_validate_bootstrap_primes_multiple_degrees ... ignored, VESTIGIAL: asserts BOOTSTRAP_PRIMES either validate or fail only with NTTConfigError across N in [1024, 2048, 4096, 8192]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test keys::bootstrap::tests::test_validate_bootstrap_primes_not_coprime ... ignored, VESTIGIAL: asserts validate_bootstrap_primes rejects gcd(9, 21) = 3 with NotCoprime — bootstrap-basis validation. Coprimality itself remains architecturally live; only its application to the bootstrap prime set is quarantined. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test keys::bootstrap::tests::test_validate_bootstrap_primes_ntt_incompatible ... ignored, VESTIGIAL: asserts validate_bootstrap_primes rejects a prime not congruent to 1 mod 2N with NTTConfigError — bootstrap-basis validation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test keys::bootstrap::tests::test_validate_bootstrap_primes_valid_set ... ignored, VESTIGIAL: asserts validate_bootstrap_primes accepts BOOTSTRAP_PRIMES at N=4096. The validator and the constant it validates exist only to gate bootstrap key material. NOTE: the NTT-compatibility and coprimality checks inside it are generic and live; if BOOTSTRAP_PRIMES is retired, re-express those checks against the work basis under a non-bootstrap name rather than restoring this test. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test keys::bootstrap::tests::test_validate_bootstrap_primes_zero_prime ... ignored, VESTIGIAL: asserts validate_bootstrap_primes rejects a zero entry in the bootstrap prime array with NTTConfigError. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test keys::bootstrap::tests::validate_bootstrap_primes_is_purely_structural_now ... ok
+test keys::tests::test_encrypt_decrypt_with_secure_keys ... ok
+test keys::tests::test_gated_keygen_encrypt_decrypt_roundtrip ... ok
+test keys::tests::test_gated_keygen_succeeds_in_window ... ok
+test keys::tests::test_gated_keygen_timing_variance ... ok
+test keys::tests::test_keygen_basic ... ok
+test keys::bootstrap::tests::every_shipped_config_maps_to_its_exact_boot_tuple_and_fingerprint ... ok
+test keys::tests::test_keygen_deterministic ... ok
+test keys::tests::test_keygen_secure ... ok
+test keys::tests::test_keygen_benchmark ... ok
+test keys::tests::test_secure_key_is_ternary ... ok
+test kiosk::destruction::tests::test_destruction_is_fast ... ok
+test kiosk::destruction::tests::test_destruction_receipt_verifiable ... ok
+test kiosk::destruction::tests::test_destruction_sequence_basic ... ok
+test kiosk::destruction::tests::test_double_destruction_prevented ... ok
+test kiosk::destruction::tests::test_operation_counter ... ok
+test kiosk::fold::tests::test_different_seeds_different_masks ... ok
+test kiosk::fold::tests::test_fold_unfold_multiple_cycles ... ok
+test kiosk::fold::tests::test_fold_unfold_roundtrip ... ok
+test kiosk::fold::tests::test_fold_wrong_size_rejected ... ok
+test kiosk::fold::tests::test_mod_inverse ... ok
+test kiosk::fold::tests::test_permanent_fold_irreversible ... ok
+test kiosk::fold::tests::test_zero_state ... ok
+test kiosk::fuse::tests::test_fuse_batch_consume ... ok
+test kiosk::fuse::tests::test_fuse_batch_partial_trigger ... ok
+test kiosk::fuse::tests::test_fuse_consume_single ... ok
+test kiosk::fuse::tests::test_fuse_creation ... ok
+test kiosk::fuse::tests::test_fuse_different_quotients_different_entropy ... ok
+test kiosk::fuse::tests::test_fuse_entropy_accumulator ... ok
+test kiosk::fuse::tests::test_fuse_for_operations ... ok
+test kiosk::fuse::tests::test_fuse_mark_spent ... ok
+test kiosk::fuse::tests::test_fuse_remaining_percent ... ok
+test kiosk::fuse::tests::test_fuse_triggered_stays_triggered ... ok
+test kiosk::inv8::tests::test_gcd ... ok
+test kiosk::inv8::tests::test_inv8_check_modulus_coprime ... ok
+test kiosk::inv8::tests::test_inv8_clean_addition ... ok
+test kiosk::inv8::tests::test_inv8_clean_multiplication ... ok
+test kiosk::inv8::tests::test_inv8_detects_tampered_addition ... ok
+test kiosk::inv8::tests::test_inv8_detects_tampered_result ... ok
+test kiosk::inv8::tests::test_inv8_disabled_after_detection ... ok
+test kiosk::inv8::tests::test_inv8_multiple_clean_operations ... ok
+test kiosk::receipt::tests::test_batch_verification ... ok
+test kiosk::receipt::tests::test_batch_verification_one_bad ... ok
+test kiosk::receipt::tests::test_ct_eq_constant_time ... ok
+test kiosk::receipt::tests::test_hex_encoding ... ok
+test kiosk::receipt::tests::test_receipt_hash_deterministic ... ok
+test kiosk::receipt::tests::test_receipt_hash_different_data ... ok
+test kiosk::receipt::tests::test_receipt_verification ... ok
+test kiosk::receipt::tests::test_receipt_verification_fails_on_tamper ... ok
+test kiosk::unit::tests::test_bullet_single_use ... ok
+test kiosk::unit::tests::test_capsule_exhaustion ... ok
+test kiosk::unit::tests::test_capsule_multi_use ... ok
+test kiosk::unit::tests::test_check_add_operation ... ok
+test kiosk::unit::tests::test_double_destruction_prevented ... ok
+test kiosk::unit::tests::test_fuse_type_unit ... ok
+test kiosk::unit::tests::test_load_wrong_size_rejected ... ok
+test kiosk::unit::tests::test_operations_on_unloaded_rejected ... ok
+test kiosk::unit::tests::test_remaining_operations ... ok
+test kiosk::unit::tests::test_unit_destruction_produces_receipt ... ok
+test kiosk::unit::tests::test_unit_id ... ok
+test noise::budget::capacity_regression::decryption_capacity_rounds_down_to_half_delta ... ok
+test noise::budget::tests::bootstrap_reset_uses_exact_delta_size ... ok
+test noise::budget::tests::checked_refund_rejects_i64_overflow ... ok
+test noise::budget::tests::consume_is_exact_and_fail_closed ... ok
+test noise::budget::tests::encryption_is_not_charged_twice ... ok
+test noise::budget::tests::exact_delta_size_does_not_sum_lane_widths ... ok
+test noise::budget::tests::exact_delta_size_handles_products_above_u128 ... ok
+test noise::budget::tests::invalid_threshold_panics - should panic ... ok
+test noise::budget::tests::multiplication_cycle_includes_k_elimination_credit ... ok
+test noise::budget::tests::percentage_trigger_tracks_the_current_cycle_not_the_fresh_budget ... ok
+test noise::budget::tests::prime_drop_credit_is_never_larger_than_the_true_credit ... ok
+test noise::budget::tests::production_budgets_are_positive ... ok
+test noise::budget::tests::refresh_output_is_strictly_worse_than_fresh_encryption ... ok
+test noise::budget::tests::refresh_reserve_is_withheld_before_the_boundary_not_after ... ok
+test noise::budget::tests::relin_bound_never_dominates_the_multiply_bound ... ok
+test noise::budget::tests::reserve_aware_multiplication_count_never_exceeds_decryption_bound ... ok
+test cram_ct_wrap::tests::cram_mul_dual_round_trip_decrypts_to_product ... ok
+test noise::budget::tests::threshold_boundary_is_inclusive ... ok
+test noise::certified::refresh_radius_tests::certified_refresh_radius_matches_small_integer_quotients ... ok
+test noise::certified::refresh_radius_tests::certified_refresh_radius_native_history_cannot_assume_small_support ... ok
+test noise::exact_noise::tests::exact_noise_encrypt_has_initial_budget ... ok
+test noise::exact_noise::tests::exact_noise_mul_reduces_budget ... ok
+test noise::exact_noise::tests::exact_noise_remaining_depth_estimate ... ok
+test noise::exact_noise::tests::exact_noise_tracks_additions_cheaply ... ok
+test noise::tests::test_budget_utilization ... ok
+test noise::tests::test_ema_calculation ... ok
+test noise::tests::test_integer_sqrt ... ok
+test noise::tests::test_multi_window_detector ... ok
+test noise::tests::test_noise_budget_exhaustion ... ok
+test noise::tests::test_noise_budget_tracker ... ok
+test noise::tests::test_noise_distribution ... ok
+test noise::tests::test_noise_window ... ok
+test noise::tests::test_p2_large_stream ... ok
+test noise::tests::test_p2_o1_memory ... ok
+test noise::tests::test_p2_quantile_median ... ok
+test noise::tests::test_p2_quantile_p95 ... ok
+test noise::tests::test_remaining_muls_estimate ... ok
+test ops::auto_bootstrap::tests::a_refresh_cycle_never_funds_more_than_one_multiply ... ok
+test ops::auto_bootstrap::tests::a_refreshed_budget_funds_at_least_one_multiply_where_headroom_clears ... ok
+test keys::tests::test_keygen_secure_benchmark ... ok
+test noise::budget::tests::scalar_multiply_grows_noise_by_the_scalar_not_by_n ... ok
+test keys::bootstrap::tests::bootstrap_key_generation_still_succeeds_for_every_admitted_config ... ok
+test ops::auto_bootstrap::tests::auto_refresh_boundary_is_exact_then_typed_refusal_secure_128_deep ... ok
+test ops::auto_bootstrap::tests::clone_then_diverge_produces_independent_ledgers ... ok
+test ops::auto_bootstrap::tests::auto_refresh_boundary_is_exact_then_typed_refusal_secure_192 ... ok
+test ops::auto_bootstrap::tests::refresh_targets_only_the_operand_that_needs_it ... ok
+test ops::auto_bootstrap::tests::repeated_squaring_is_exact_under_auto_refresh_secure_128_deep ... ignored, blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*
+test ops::auto_bootstrap::tests::repeated_squaring_is_exact_under_auto_refresh_secure_192 ... ignored, blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*
+test ops::auto_bootstrap::tests::repeated_squaring_is_exact_under_auto_refresh_secure_256 ... ignored, blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*
+test ops::auto_bootstrap::tests::branch_and_reuse_after_unrelated_branch_changes_evaluator_activity ... ok
+test ops::auto_bootstrap::tests::squaring_refresh_costs_exactly_one_bootstrap ... ignored, blocked on issue #95: public refresh is fail-closed until the exact encrypted Phase-1 carry exists; boundary pinned by auto_refresh_boundary_is_exact_then_typed_refusal_*
+test ops::auto_bootstrap::tests::trigger_fires_before_the_refresh_window_closes_not_after ... ok
+test ops::auto_bootstrap::tests::trigger_threshold_accepts_closed_legal_interval ... ignored, VESTIGIAL: asserts assert_valid_trigger_threshold accepts 0, 250 and 1000 permille — the legal interval of the auto-bootstrap refresh trigger. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::auto_bootstrap::tests::trigger_threshold_rejects_values_above_one_hundred_percent ... ignored, VESTIGIAL: asserts assert_valid_trigger_threshold(1001) panics — argument validation for the auto-bootstrap refresh trigger. A refresh trigger threshold only means something if there is a budget to be at 25 percent of. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::auto_bootstrap::tests::same_ciphertext_accepts_identity_and_bit_identical_clones ... ok
+test ops::batch::tests::test_batch_encoder_creation ... ok
+test ops::batch::tests::test_boundary_values ... ok
+test ops::batch::tests::test_decode_all ... ok
+test ops::batch::tests::test_encode_decode_full_capacity ... ok
+test ops::batch::tests::test_encode_decode_single ... ok
+test ops::batch::tests::test_encode_decode_vector ... ok
+test ops::batch::tests::test_encode_too_many_values ... ok
+test ops::batch::tests::test_encode_value_out_of_range ... ok
+test ops::batch::tests::test_light_config ... ok
+test ops::batch::tests::test_simd_support_check ... ok
+test ops::batch::tests::test_zero_values ... ok
+test ops::auto_bootstrap::tests::combining_branches_of_different_noise_histories_derives_output_from_the_worse_operand ... ok
+test ops::auto_bootstrap::tests::auto_refresh_boundary_is_exact_then_typed_refusal_secure_256 ... ok
+test ops::bootstrap::tests::bootstrap_pk_mask_is_uniform_over_full_q_boot ... ok
+test ops::auto_bootstrap::tests::unrelated_fresh_operations_cannot_consume_anothers_remaining_budget ... ok
+test ops::bootstrap::tests::displaced_state_is_negacyclic_and_exactly_representable ... ok
+test ops::bootstrap::tests::displaced_state_scalar_counterexample_is_the_missing_carry ... ok
+test ops::bootstrap::tests::encrypted_ciphertext_exhibits_missing_phase1_carry ... ok
+test ops::bootstrap::tests::expanded_plaintext_phase_recovers_scalar_carry ... ok
+test ops::bootstrap::tests::ksk_gadget_mask_is_uniform_over_full_q_boot ... ok
+test ops::bootstrap::tests::old_narrow_sampler_pattern_never_exceeds_min_prime_regression ... ok
+test ops::bootstrap::tests::phase1_raw_crt_lift_is_not_bfv_refresh ... ok
+test ops::bootstrap::tests::phase2_affine_inner_product_cannot_supply_missing_carry ... ok
+test ops::bootstrap::tests::public_phase1_is_typed_fail_closed ... ok
+test ops::bootstrap::tests::q_boot_representability_typed_refusal ... ok
+test ops::bootstrap::tests::test_auto_bootstrap_chained_muls ... ignored, VESTIGIAL: drives AutoBootstrapEvaluator::mul_auto over ten chained multiplies at a 500-permille trigger and asserts evaluator.bootstrap_count > 0 — it demands that a refresh actually fire, which is the budget-bounded-depth premise stated as an assertion. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_boot_anchor_primes_match_canonical ... ignored, VESTIGIAL: asserts boot_ctx anchor primes equal DualRNSContext::canonical_anchor_primes_for_n — an invariant of the bootstrap context's anchor lanes. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_boot_primes_subset_and_single_drop_prime ... ignored, VESTIGIAL: asserts the boot prime set is a superset of the work primes with exactly one extra 'drop prime'. A drop prime is basis-movement bookkeeping and has no referent when the basis does not move. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_bootstrap_context_creation ... ignored, VESTIGIAL: constructs ClockworkBootstrap::new(secure_128) and asserts boot.t == 65537, boot.bootstrap_depth == 2 and boot_config.primes.len() >= 4 — that a bootstrap context with spare prime headroom exists at all. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_bootstrap_output_anchor_consistency ... ignored, VESTIGIAL: asserts post-bootstrap anchor limbs equal CRT(main) mod each anchor prime, reconstructing through crt_reconstruct_n over the refreshed ciphertext. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_circular_bootstrap_roundtrip ... ignored, VESTIGIAL: asserts encrypt -> boot.bootstrap -> decrypt recovers m for m in [0, 1, 2, 7, 42, 100, 1000]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_circular_security_keygen_roundtrip ... ignored, VESTIGIAL: asserts boot.generate_keys (circular bootstrap key generation) returns Ok. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_circular_security_sk_identity ... ignored, VESTIGIAL: asserts boot.lift_sk_to_boot preserves the ternary secret key across work and boot modular spaces — the circular-security premise of bootstrap key material. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_config_matrix_invariants_128_192_256 ... ignored, VESTIGIAL: asserts boot-prime superset, single drop prime and canonical anchors across the secure_128 / secure_192 / secure_256 bootstrap contexts. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_config_matrix_roundtrip_secure_128 ... ignored, VESTIGIAL: asserts encrypt -> boot.bootstrap -> decrypt recovers m across the secure_128 message range including t-1. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_crt_boundary_exhaustive ... ok
+test ops::bootstrap::tests::test_crt_n_boundary_exhaustive ... ok
+test ops::bootstrap::tests::test_crt_reconstruct_correctness ... ok
+test ops::bootstrap::tests::test_crt_reconstruct_n_correctness ... ok
+test ops::bootstrap::tests::test_crt_reconstruct_n_matches_2 ... ok
+test ops::bootstrap::tests::test_ksk_bootstrap_roundtrip ... ignored, VESTIGIAL: asserts encrypt -> boot.bootstrap_with_ksk -> decrypt recovers m under non-circular (key-switch) bootstrap. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_modswitch_1m_values_zero_error ... ok
+test ops::bootstrap::tests::test_modswitch_boundary_values ... ok
+test ops::bootstrap::tests::test_modswitch_exact_rounding ... ok
+test ops::bootstrap::tests::test_modswitch_overflow_safety ... ok
+test ops::bootstrap::tests::test_modswitch_roundtrip_all_messages ... ok
+test ops::bootstrap::tests::test_modswitch_u256_widening_handles_overflow_band ... ok
+test ops::bootstrap::tests::test_modswitch_u256_widening_matches_u128_formula_when_safe ... ok
+test ops::bootstrap::tests::test_modswitch_zero_always_maps_to_zero ... ok
+test ops::bootstrap::tests::test_mul_then_bootstrap_then_mul ... ignored, VESTIGIAL: asserts the chain 2*3=6 -> bootstrap -> 6*5=30 decrypts correctly. Its premise is that the refresh in the middle is what makes the second multiply reachable; with exact division the second multiply needs nothing refreshed. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase1_all_coefficients_in_range ... ignored, VESTIGIAL: sweeps m over [0, 1, 42, 1000, 65536] and asserts every Phase 1 modswitch_to_t coefficient lands below t. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase1_crt_from_rns_limbs ... ignored, VESTIGIAL: asserts bootstrap Phase 1's precondition that crt_reconstruct_2 over the first two ciphertext limbs agrees with each limb residue. Reconstruction is separately an A2 concern (it materialises the integer and destroys the winding); here it exists only to feed Phase 1. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase1_fresh_ciphertext_modswitch ... ignored, VESTIGIAL: asserts bootstrap Phase 1 (boot.modswitch_to_t) drives every coefficient of a fresh ciphertext below t. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase1_requires_two_rns_limbs ... ignored, VESTIGIAL: asserts boot.modswitch_to_t rejects a ciphertext carrying fewer than two RNS limbs — a precondition that only bootstrap Phase 1 imposes. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase2_delta_boot_scaling ... ignored, VESTIGIAL: asserts bootstrap Phase 2's Delta_boot * m stays in range for every boot prime. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase2_result_bounded_by_boot_primes ... ignored, VESTIGIAL: asserts the output of boot.homomorphic_inner_product (bootstrap Phase 2) is bounded by the boot primes. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase3_accumulation_bounded ... ignored, VESTIGIAL: asserts every coefficient of boot.bootstrap output is bounded by its work prime after Phase 3 accumulation. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase3_decompose_roundtrip ... ignored, VESTIGIAL: reimplements bootstrap Phase 3's base-B digit decomposition inline and asserts it roundtrips; it exercises no library code at all, only the Phase 3 key-switch premise. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_phase3_output_has_work_prime_count ... ignored, VESTIGIAL: asserts boot.bootstrap output carries exactly config.primes.len() main limbs, i.e. that Phase 3 key-switch returned the ciphertext to work-prime space after the boot-prime detour. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_secure_192_bootstrap_roundtrip_u256 ... ignored, VESTIGIAL: asserts the U256 CRT fallback carries a full secure_192 encrypt -> bootstrap -> decrypt roundtrip. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_secure_256_bootstrap_roundtrip_u256 ... ignored, VESTIGIAL: asserts the U256 CRT fallback carries a full secure_256 encrypt -> bootstrap -> decrypt roundtrip. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_verified_modswitch_agrees_with_unverified_valid_input ... ignored, RETIRED MECHANISM: pins two modulus-switch implementations against each other — assert_eq!(c0_unverified[j], c0_verified[j]) across modswitch_to_t and modswitch_to_t_verified. modswitch_to_t_verified is textbook rounded modulus switching (((c0_val * t128 + q_level_half) / q_level) % t128), inexact division FUSED with a full basis drop to a bare Vec<u64> mod t. That fusion is exactly what this substrate retires: exact division in residue space divides the value without moving the basis, so there is no rounding term to agree on and no drop to t. CAVEAT — the proximate panic is unrelated to the retirement: ke.capacity() (deprecated, k_elimination.rs:393) does try_capacity().expect(...) and KElimConfig::Extended is now 138-bit (alpha 3x16 + beta 2x45), overflowing u128; sibling tests on Minimal/Standard still pass. Fixing that overflow would only restore a test of the retired ladder. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_verified_modswitch_all_coefficients_in_range ... ignored, RETIRED MECHANISM: asserts the post-modulus-switch coefficients have landed in the reduced modulus — assert!(c0_small[j] < t) / assert!(c1_small[j] < t) over the output of modswitch_to_t_verified. 'Coefficients now live mod t' IS the basis-drop semantics: the ciphertext left its RNS basis for a single small modulus. This substrate does not move the basis — exact division reduces the value in place across the same lanes and the same Q, so no post-switch range predicate exists to check. CAVEAT — the proximate panic is unrelated to the retirement: the deprecated ke.capacity() overflows u128 under KElimConfig::Extended (138-bit capacity); the Minimal/Standard siblings still pass. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_verified_modswitch_boundary_messages ... ignored, RETIRED MECHANISM: mod-switch validation semantics at the plaintext boundaries — for m in [0, 1, t-1] it asserts assert!(result.is_ok(), "Boundary message m={} should pass verification") on modswitch_to_t_verified and then assert!(c0_small[j] < t). Both halves describe the rounded divide-and-drop-lanes step: that it accepts edge plaintexts, and that its output has landed in the reduced modulus t. This substrate divides exactly in residue space with the basis held fixed, so there is no switch to verify and no reduced modulus to land in; boundary plaintexts are covered by ordinary encrypt/decrypt round-trip tests instead. CAVEAT — the proximate panic is the deprecated ke.capacity() u128 overflow under KElimConfig::Extended, not the retirement. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_verified_modswitch_capacity_overflow_detected ... ignored, VESTIGIAL: asserts ClockworkBootstrap::modswitch_to_t_verified returns RangeOverflow when KElimConfig::Minimal cannot hold the reconstructed value. Same block as the four already-quarantined RETIRED MECHANISM modswitch tests; quarantined here because it needs a live bootstrap context to construct the call. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_verified_modswitch_requires_two_rns_limbs ... ignored, VESTIGIAL: asserts ClockworkBootstrap::modswitch_to_t_verified returns BootstrapConfigMismatch on a one-limb ciphertext. Four siblings in this same block are already quarantined as RETIRED MECHANISM (modulus switching); this one is quarantined here instead because reaching the error path requires a live bootstrap context. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::test_verified_modswitch_validates_residues ... ignored, RETIRED MECHANISM: literally asserts mod-switch validation succeeds — assert!(result.is_ok(), "Valid ciphertext should pass K-Elimination validation") on boot.modswitch_to_t_verified(&ct, &ke). The thing being validated is the rounded divide-and-drop-the-basis step, which this substrate does not perform: exact division in residue space divides the value without moving the basis, so no level is consumed and there is no switch whose residues need validating. K-Elimination itself is NOT retired — it is the exact-division primitive; only its use as a guard on a modulus switch is. CAVEAT — the proximate panic is the deprecated ke.capacity() u128 overflow under KElimConfig::Extended, not the retirement. See docs/RETIRED_MECHANISMS.md
+test ops::bootstrap::tests::zero_noise_phase1_carry_witness_secure128 ... ok
+test ops::bootstrap::tests::zero_noise_phase1_carry_witness_two_prime ... ok
+test ops::bounded_digit_circuit::protected_adjacent_view_tests::bounded_adjacency_correction_evaluates_under_encryption_on_all_97_values ... ok
+test ops::bounded_digit_circuit::protected_adjacent_view_tests::derived_defect_is_tautological_and_zero_plaintext_need_not_have_zero_error ... ok
+test ops::bounded_digit_circuit::protected_adjacent_view_tests::linear_adjacency_consumes_compatible_views_but_cannot_change_plaintext_modulus ... ok
+test ops::bootstrap::tests::diag_refresh_error_is_exactly_the_displaced_phase1_carry ... ok
+test ops::bounded_digit_circuit::tests::malformed_dag_dependencies_are_rejected ... ok
+test ops::bounded_digit_circuit::tests::split_digit_encrypted_slots_recover_signed_quotients_with_independent_oracle ... ok
+test ops::bounded_digit_circuit::tests::split_digit_exact_identity_covers_every_small_domain_value ... ok
+test ops::bounded_digit_circuit::tests::split_digit_native_schedule_has_checked_identity_and_68_products ... ok
+test ops::bounded_digit_circuit::protected_adjacent_view_tests::native_adjacency_consumer_budget_is_conditional_and_does_not_fund_slot_return ... ok
+test ops::direct_slot_phase::tests::antiperiodic_baby_horner_is_full_negacyclic_convolution ... ok
+test ops::direct_slot_phase::tests::batched_signed_weights_match_per_term_modular_oracle_on_wide_lanes ... ok
+test ops::direct_slot_phase::tests::coherent_source_phases_extract_all_carries_and_restore_affine_message ... ok
+test ops::direct_slot_phase::tests::native_plaintext_fast_transform_matches_direct_root_evaluation ... ok
+test ops::bounded_digit_circuit::tests::split_digit_native_width_noise_ledger_matches_integer_oracle ... ok
+test ops::direct_slot_phase::tests::slot_encoding_roundtrips_prime_and_square_and_negacyclic_product ... ok
+test ops::encrypt::tests::test_depth_aware_plaintext_scale_roundtrips_all_messages ... ok
+test ops::encrypt::tests::test_encode_decode ... ok
+test ops::direct_slot_phase::tests::native_weighted_bank_parallel_matches_sequential_reference_exactly ... ok
+test ops::encrypt::tests::test_encrypt_decrypt_random ... ok
+test ops::encrypt::tests::test_encrypt_decrypt_roundtrip ... ok
+test ops::encrypt::tests::test_encrypt_deterministic ... ok
+test ops::encrypt::tests::test_encrypt_secure ... ok
+test ops::encrypt::tests::test_encrypt_secure_produces_different_ciphertexts ... ok
+test ops::encrypt::tests::test_encrypt_with_rng_secure ... ok
+test ops::encrypt::tests::test_encrypt_with_rng_shadow ... ok
+test ops::encrypt::tests::test_error_category ... ok
+test ops::encrypt::tests::test_fhe_rng_trait_is_secure ... ok
+test ops::encrypt::tests::test_encrypt_benchmark ... ok
+test ops::encrypt::tests::test_gated_decrypt_succeeds ... ok
+test ops::encrypt::tests::test_gated_decrypt_multiple_messages ... ok
+test ops::encrypt::tests::test_saved_fuzz_roundtrip_seed ... ok
+test ops::encrypt::tests::test_try_encode_message_out_of_bounds ... ok
+test ops::encrypt::tests::test_try_encode_success ... ok
+test ops::encrypt::tests::test_try_encode_vector_message_out_of_bounds ... ok
+test ops::encrypt::tests::test_try_encode_vector_success ... ok
+test ops::encrypt::tests::test_try_encrypt_message_out_of_bounds ... ok
+test ops::encrypt::tests::test_try_encrypt_success ... ok
+test ops::encrypt::tests::test_try_encrypt_secure_success ... ok
+test ops::expanded_bootstrap::safe_basis_carry_tests::five_prime_small_offset_square_diagnostic_keeps_preflight_refusal ... ignored, expensive native diagnostic; enable slow_tests or run this filter with --include-ignored
+test ops::expanded_bootstrap::safe_basis_carry_tests::five_prime_square_preflight_pins_the_input_error_ceiling ... ok
+test ops::expanded_bootstrap::safe_basis_carry_tests::five_prime_subnoise_offset_square_is_admitted_and_correct ... ignored, expensive native diagnostic; enable slow_tests or run this filter with --include-ignored
+test ops::expanded_bootstrap::safe_basis_carry_tests::five_prime_tiny_offset_square_diagnostic_keeps_preflight_refusal ... ignored, expensive native diagnostic; enable slow_tests or run this filter with --include-ignored
+test ops::bootstrap::tests::bootstrap_keygen_succeeds_and_gate_one_still_refuses_across_configs_and_seeds ... ok
+test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_local_ternary_carry_gate_removes_residual_at_native_ring_size ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::distinct_weight_carry_support_hits_state_cap_before_ciphertext_work ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::precharged_pairs_extend_carry_and_refresh_four_term_coefficient ... ignored, expensive native pair-precharge research probe; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::precharged_pairs_public_support_covers_arbitrary_centered_terms ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_readout_mixed_differences_recover_every_small_assignment ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_readout_native_refreshes_non_cancelling_four_term_sources ... ignored, expensive native terminal readout probe; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_readout_plans_without_joint_state_and_refuses_before_execution ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_three_pair_carry_and_additive_211_phase_are_exact ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_three_pair_carry_and_phase_bounds_preflight ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::terminal_three_pair_native_carry_phase_and_sister_views ... ignored, expensive native three-pair terminal readout; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_bivariate_readouts_match_every_small_assignment ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_native_readouts_refresh_and_square ... ignored, expensive native triple-precharge terminal readout and refresh; enable slow_tests or use --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::pair_precharge::terminal::triple_precharge::triple_precharge_terminal_plan_preflights_all_views_and_limits ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_profiles_check_security_and_noise_before_keys ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_composition_uses_packed_selectors_and_updated_encrypted_remainder ... ignored, expensive native research probe; enable slow_tests or run this filter with --include-ignored
+test ops::expanded_bootstrap::safe_basis_composition_tests::precharged_full_refresh_bound_refuses_followup_square_at_four_prime_scale ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::full_bound_root_unscales_encrypted_selector_mod_quotient_period ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::full_bound_sister_runtime_initializes_at_native_degree ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::historical_unbound_second_quotient_winding_claim ... ignored, historical 2026-11-01 unbound quotient claim fails with full-Q masks; preserved for opt-in reproduction
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_emits_adjacent_residual_at_common_composite_t_and_k_eliminates ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_projects_bounded_offset_into_composite_pj_tray ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_projects_pj_from_even_p_plus_one_winding_tray_into_high_t ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::one_root_recovers_ultradiscrete_carry_in_small_phase_locked_composite_t ... ok
+test ops::bootstrap::tests::diag_measure_noise_growth ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::safe_basis_root_projects_second_k_elimination_quotient_winding ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::safe_basis_root_projects_second_k_elimination_quotient_winding_at_degree_eight ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_211_phase_transition_carries_the_parity_crossing ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_composite_budget_is_exact_nonmonotone_and_preserves_support ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_one_root_accepts_arbitrary_views_and_refuses_snapshot_rebinding ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::sister_tray_update_plan_is_bound_to_its_parent_and_refuses_before_execution ... ok
+test ops::expanded_bootstrap::safe_basis_carry_tests::precharged_aligned_frame_encodes_native_carry_and_retains_input_residual ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::symbolic_selectors_project_bounded_k_elimination_carry_into_high_mpj_correction ... ok
+test ops::expanded_bootstrap::safe_basis_precharge_tests::key_holder_precharge_has_exact_eta_phase_error ... ok
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_clear_rank_bridge_recovers_every_native_carry ... ok
+test ops::expanded_bootstrap::safe_basis_precharge_tests::precharged_safe_basis_encrypts_native_residual_coordinates ... ok
+test ops::galois::tests::test_automorphism_identity ... ok
+test ops::galois::tests::test_automorphism_involution ... ok
+test ops::galois::tests::test_automorphism_preserves_structure ... ok
+test ops::galois::tests::test_decomposition ... ok
+test ops::galois::tests::test_galois_engine_creation ... ok
+test ops::galois::tests::test_galois_key_generation ... ok
+test ops::galois::tests::test_galois_key_set ... ok
+test ops::galois::tests::test_rotation_exponents ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::paired_chart_k_elimination_uses_one_root_and_common_encoding ... ok
+test ops::expanded_bootstrap::safe_basis_composition_tests::sister_tray::symbolic_scale_jacobian_residual_lifts_through_one_root_into_common_p ... ok
+test ops::gso_fhe::arithmetic_benchmarks::benchmark_full_arithmetic ... ok
+test ops::gso_fhe::depth_benchmarks::benchmark_entropy_during_fhe ... ok
+test ops::gso_fhe::depth_benchmarks::benchmark_full_system_integration ... ok
+test ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth ... ok
+test ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_128 ... ok
+test ops::gso_fhe::depth_benchmarks::benchmark_symmetric_max_depth_secure_192 ... ok
+test ops::gso_fhe::depth_benchmarks::checked_gso_rejects_unknown_or_foreign_ciphertexts ... ok
+test ops::expanded_bootstrap::safe_basis_carry_tests::five_prime_full_refresh_supports_one_followup_square ... ok
+test ops::gso_fhe::depth_benchmarks::exact_symmetric_product_preserves_nonconstant_coefficients ... ok
+test ops::gso_fhe::depth_benchmarks::symmetric_cached_key_matches_checked_path_and_rejects_reduced_level ... ok
+test ops::gso_fhe::tests::test_basin_geometry ... ok
+test ops::gso_fhe::tests::test_collapse_time ... ok
+test ops::gso_fhe::tests::test_gso_add ... ok
+test ops::gso_fhe::depth_benchmarks::diagnostic_zero_noise_constant_self_square_secure_128 ... ok
+test ops::gso_fhe::tests::test_gso_encrypt_decrypt ... ok
+test ops::gso_fhe::tests::test_gso_deep_symmetric ... ok
+test ops::gso_fhe::tests::test_gso_mul_symmetric ... ok
+test ops::gso_fhe::tests::test_gso_public_multiply_refuses_uncertified_noise ... ok
+test ops::homomorphic::tests::test_add_plain ... ok
+test ops::homomorphic::tests::test_can_perform_checks ... ok
+test ops::homomorphic::tests::test_degree2_mul_multiple_values ... ok
+test ops::homomorphic::tests::test_degree2_mul_without_relinearization ... ok
+test ops::homomorphic::tests::test_encrypt_decrypt_light_mul ... ok
+test ops::homomorphic::tests::test_homo_add_benchmark ... ok
+test ops::homomorphic::tests::test_homo_mul_benchmark ... ok
+test ops::homomorphic::tests::test_homomorphic_add ... ok
+test ops::homomorphic::tests::test_homomorphic_mul_diagnostic ... ok
+test ops::homomorphic::tests::test_homomorphic_mul_no_relin ... ok
+test ops::homomorphic::tests::test_mul_degree2_decrypt ... ok
+test ops::homomorphic::tests::test_mul_plain ... ok
+test ops::gso_fhe::tests::test_gso_mul_symmetric_depth2 ... ok
+test ops::homomorphic::tests::test_negate ... ok
+test ops::homomorphic::tests::test_ntt_basic_multiply ... ok
+test ops::homomorphic::tests::test_saved_fuzz_addition_at_plaintext_boundary ... ok
+test ops::homomorphic::tests::test_scaling_comparison ... ok
+test ops::homomorphic::tests::test_relinearization_trace ... ok
+test ops::homomorphic::tests::test_subtraction ... ok
+test ops::homomorphic::tests::test_tensor_product_trace ... ok
+test ops::homomorphic::tests::test_tracked_evaluator_add ... ok
+test ops::homomorphic::tests::test_tracked_evaluator_mul_plain ... ok
+test ops::homomorphic::tests::test_tracked_evaluator_exhaustion ... ok
+test ops::homomorphic::tests::test_tracked_evaluator_remaining_depth ... ok
+test ops::neural::tests::test_dense_layer_identity ... ok
+test ops::neural::tests::test_relu_negative ... ok
+test ops::neural::tests::test_relu_positive ... ok
+test ops::neural::tests::test_sigmoid_at_zero ... ok
+test ops::neural::tests::test_signed_conversion_roundtrip ... ok
+test ops::neural::tests::test_softmax_exact_sum ... ok
+test ops::homomorphic::tests::tracked_evaluator_new_derives_its_budget_from_the_config_ledger ... ok
+test ops::parallel::tests::test_parallel_encrypt_deterministic ... ok
+test ops::parallel::tests::test_parallel_encrypt_secure ... ok
+test ops::parallel::tests::test_parallel_encrypt_decrypt_roundtrip ... ok
+test ops::parallel::tests::test_try_encrypt_batch_error ... ok
+test ops::phase_clock_return::tests::admitted_receipt_cannot_return_to_a_different_registered_work_domain ... ok
+test ops::phase_clock_return::tests::independent_dense_boot_key_returns_embedded_polynomial_and_supports_square ... ok
+test ops::phase_clock_return::tests::return_refuses_wrong_domain_metadata_and_impossible_bounds ... ok
+test ops::parallel::tests::test_parallel_throughput_benchmark ... ok
+test ops::gso_fhe::arithmetic_benchmarks::benchmark_fhe_ops_secure_128 ... ok
+test ops::prime_power_phase::digit_lift::tests::public_prime_power_lift_four_prime_noise_gate_refuses_before_keys ... ok
+test ops::prime_power_phase::digit_lift::tests::public_prime_power_lift_polynomial_is_an_exact_canonical_section ... ok
+test ops::prime_power_phase::digit_lift::tests::public_prime_power_lift_encrypted_toy_cases_use_no_digit_oracle ... ok
+test ops::prime_power_phase::digit_lift::tests::public_prime_power_lift_native_galois_preserves_full_size_phase ... ok
+test ops::prime_power_phase::tests::contraction_with_oracle_lift_refreshes_boundary_input_and_supports_multiply ... ok
+test ops::public_phase_clock::tests::encrypted_lookup_uses_opaque_signed_controls_and_erases_nonconstant_terms ... ok
+test ops::public_phase_clock::tests::malformed_or_understated_source_keys_are_refused_before_rng ... ok
+test ops::public_phase_clock::tests::poisoned_encoding_metadata_is_refused_at_construction ... ok
+test ops::public_phase_clock::tests::actual_ciphertext_carries_are_read_publicly_in_every_coefficient ... ok
+test ops::public_phase_clock::tests::full_polynomial_returns_to_work_key_and_repeats_after_products ... ok
+test ops::public_refresh_circuit::key_graph::tests::breaking_return_cycle_still_leaves_self_key_dependencies ... ok
+test ops::public_refresh_circuit::tests::fused_adjacent_restore_covers_every_native_lift_and_rejects_aliases ... ok
+test ops::public_refresh_circuit::key_graph::tests::native_inventory_is_exact_and_requires_joint_key_review ... ok
+test ops::public_refresh_circuit::tests::fused_native_lift_query_funds_slot_return_and_next_refresh ... ok
+test ops::public_refresh_circuit::tests::public_refresh_conforms_on_full_polynomials_histories_and_forks_across_seeds ... ok
+test ops::public_refresh_circuit::tests::public_refresh_plan_refuses_invalid_geometry_scale_support_basis_and_resources ... ok
+test ops::public_refresh_circuit::tests::public_refresh_preserves_plaintext_root_across_representation_changes_and_forks ... ok
+test ops::public_refresh_circuit::tests::public_refresh_refuses_wrong_families_and_exhausted_history_without_counting ... ok
+test ops::public_refresh_native::complete_public_refresh_returns_original_key_for_three_cycles ... ok
+test ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_five_cycles ... ignored, native encrypted refresh, explicit resource and duration evidence run
+test ops::public_refresh_native::native_public_refresh_returns_all_8192_coefficients_for_three_cycles ... ignored, native encrypted refresh, explicit resource and duration evidence run
+test ops::public_refresh_circuit::key_graph::tests::publication_fingerprint_binds_order_and_key_schedule ... ok
+test ops::public_refresh_return::tests::public_return_rejects_foreign_family_and_stale_source_lineage ... ok
+test ops::public_refresh_return::tests::public_return_rejects_malformed_outputs_and_exhausted_bounds ... ok
+test ops::public_refresh_return::tests::public_return_restores_dense_work_and_preserves_history ... ok
+test ops::public_refresh_slots::auxiliary::tests::native_batch_capacity_matches_closed_form_at_extreme_words ... ok
+test ops::public_refresh_slots::auxiliary::tests::signed_batched_convolution_matches_schoolbook ... ok
+test ops::public_refresh_slots::tests::centered_diagonal_reduces_into_main_primes_smaller_than_plaintext ... ok
+test ops::public_refresh_slots::tests::streamed_slot_return_recovers_embedded_coefficients_with_three_keys ... ok
+test ops::public_refresh_source::tests::direct_phase_quotient_bound_covers_signed_lifts_and_native_endpoints ... ok
+test ops::public_refresh_return::tests::public_return_noise_plan_is_key_free_and_checks_geometry ... ok
+test ops::public_refresh_source::tests::source_preparation_native_same_ring_h96_checks_all_coefficients ... ok
+test ops::public_refresh_source::tests::source_preparation_refuses_exhausted_switch_margin_without_resetting_input ... ok
+test ops::public_refresh_source::tests::source_preparation_rejects_wrong_families_and_invalid_parameters ... ok
+test ops::public_refresh_source::tests::source_preparation_tracks_full_polynomial_history_and_ring_embedding ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::exhaustive_unsigned_division_with_unequal_widths ... ok
+test ops::rns_fhe::cram_main::division::circuit::tests::full_u64_boundaries_and_random_inputs ... ok
+test ops::rns_fhe::cram_main::division::tests::division_preserves_history_and_hides_zero_in_public_metadata ... ok
+test ops::public_refresh_circuit::tests::native_plan_certifies_signed_carry_separately_from_residual_support ... ok
+test ops::rns_fhe::cram_main::division::tests::encrypted_division_small_words_and_zero_status ... ok
+test ops::rns_fhe::cram_main::division::tests::encrypted_divisor_sharing_a_ciphertext_lane ... ok
+test ops::rns_fhe::cram_main::division::tests::integer_ingress_checks_width_and_key_domain ... ok
+test ops::gso_fhe::arithmetic_benchmarks::benchmark_fhe_ops_secure_192 ... ok
+test ops::public_refresh_source::tests::source_preparation_native_embedded_h32_checks_all_coefficients_and_zeros ... ok
+test ops::rns_fhe::cram_main::phase_clock::tests::immutable_ingress_rejects_foreign_domain_basis_prefix_and_understated_envelope ... ok
+test ops::rns_fhe::cram_main::phase_clock::tests::registered_client_key_transduces_and_foreign_or_untagged_keys_refuse ... ok
+test ops::rns_fhe::cram_main::phase_clock::tests::repeated_boot_family_cannot_redirect_an_admitted_return_to_another_client ... ok
+test ops::rns_fhe::cram_main::tests::certified_main_depth_refuses_before_wrong_plaintext_and_preserves_branches ... ok
+test ops::rns_fhe::cram_main::tests::certified_main_production_128_roundtrip_and_early_refusal ... ok
+test ops::rns_fhe::cram_main::tests::certified_main_refresh_radius_tracks_live_history_and_transport ... ok
+test ops::rns_fhe::cram_main::tests::certified_main_rejects_foreign_key_and_context ... ok
+test ops::rns_fhe::cram_main::tests::certified_main_scalar_operations_and_signed_boundaries ... ok
+test ops::rns_fhe::cram_main::tests::certified_main_wire_rejects_tampering_and_never_resets_bound ... ok
+test ops::rns_fhe::cram_main::tests::prepared_main_multiply_is_identical_to_unprepared_fpd ... ok
+test ops::rns_fhe::cram_precharge::tests::wide_cram_precharge_keeps_shape_secret_and_message_refusals ... ok
+test ops::rns_fhe::cram_precharge::tests::wide_cram_precharge_matches_independent_full_polynomial_phase ... ok
+test ops::rns_fhe::exact_mul::tests::aux_lane_counts_match_the_integer_oracle ... ok
+test ops::rns_fhe::exact_mul::tests::auxiliary_basis_certificates_hold_for_named_configs ... ok
+test ops::rns_fhe::cram_main::division::tests::native_integer_division_preflight_profiles ... ok
+test ops::rns_fhe::exact_mul::tests::end_to_end_centered_plaintexts_secure_128 ... ok
+test ops::rns_fhe::exact_mul::tests::exact_decrypt_agrees_with_production_decrypt ... ok
+test ops::rns_fhe::exact_mul::tests::exact_rounding_ties_follow_the_bfv_half_up_rule ... ok
+test ops::rns_fhe::cram_main::phase_clock::tests::certified_refresh_return_multiply_cycles_preserve_scalar_history_and_domain ... ok
+test ops::rns_fhe::exact_mul::tests::exact_route_stage_timings_integer_nanoseconds ... ignored, DIAGNOSTIC: prints raw integer stage timings for the WR-1 evidence section
+test ops::rns_fhe::exact_mul::tests::exact_tensor_is_bit_identical_to_the_bigint_oracle ... ok
+test ops::rns_fhe::exact_mul::tests::exact_vs_dual_public_repeated_square_depth ... ignored, DIAGNOSTIC: prints a depth comparison for the WR-1 evidence section; asserts nothing about the dual-RNS route
+test ops::rns_fhe::exact_mul::tests::explicit_gadget_radices_bind_keys_and_keep_exact_multiplication ... ok
+test ops::rns_fhe::exact_mul::tests::hybrid_gadget_key_messages_are_the_crt_idempotent_images ... ok
+test ops::rns_fhe::exact_mul::tests::hybrid_relinearization_matches_the_bigint_oracle ... ok
+test ops::rns_fhe::exact_mul::tests::insufficient_auxiliary_capacity_is_a_typed_refusal ... ok
+test ops::rns_fhe::exact_mul::tests::legacy_mul_guard_is_still_fail_closed - should panic ... ok
+test ops::rns_fhe::exact_mul::tests::malformed_ciphertext_shapes_are_refused ... ok
+test ops::rns_fhe::exact_mul::tests::malformed_gadget_key_shapes_are_refused ... ok
+test ops::rns_fhe::exact_mul::tests::malformed_tensor_shapes_are_refused ... ok
+test ops::rns_fhe::exact_mul::tests::n_over_4_operand_bound_is_load_bearing_for_d1 ... ok
+test ops::rns_fhe::exact_mul::tests::named_exact_mul_door_small_ring ... ok
+test ops::rns_fhe::exact_mul::tests::oracle_rejects_the_wrapped_tensor_shortcut ... ok
+test ops::rns_fhe::exact_mul::tests::prepared_hybrid_key_refuses_malformed_input_and_foreign_plans ... ok
+test ops::rns_fhe::exact_mul::tests::prepared_hybrid_native_timing_and_exact_equality ... ignored, native N32768 Q650 transform-cache measurement; run explicitly
+test ops::rns_fhe::exact_mul::tests::end_to_end_seeded_random_pairs_secure_128 ... ok
+test ops::rns_fhe::exact_mul::tests::prepared_hybrid_switch_is_bit_identical_across_radices_and_plaintext_trays ... ok
+test ops::rns_fhe::exact_mul::tests::exact_route_is_never_auto_selected ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_128 ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_128_deep ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_256 ... ok
+test ops::rns_fhe::exact_mul::tests::single_rns_uniform_sampler_covers_the_whole_main_modulus ... ok
+test ops::rns_fhe::exact_mul::tests::wide_auxiliary_catalog_ntt_matches_schoolbook_in_every_lane ... ok
+test ops::rns_fhe::exact_mul::tests::wide_exact_tensor_matches_independent_unbounded_integer_oracle ... ok
+test ops::rns_fhe::exact_mul::tests::production_configs_end_to_end_secure_192 ... ok
+test ops::rns_fhe::exact_mul::tests::wire_q_gadget_key_carries_only_main_lanes ... ok
+test ops::rns_fhe::exact_mul::tests::wide_native_plans_prove_exact_capacity_for_both_plaintext_trays ... ok
+test ops::rns_fhe::exact_mul::tests::wire_q_output_shape_is_identical_to_a_fresh_ciphertext ... ok
+test ops::rns_fhe::tests::accelerated_dual_poly_mul_is_bit_identical_to_sequential_reference ... ok
+test ops::rns_fhe::tests::cram_public_guardrail_no_centering_regression_measurably_fails ... ok
+test ops::rns_fhe::tests::decrypt_centering_fixed_work_bit_is_exact_at_every_supported_small_value ... ok
+test ops::rns_fhe::exact_mul::tests::repeated_squaring_depth_is_measured_not_assumed ... ok
+test ops::rns_fhe::tests::diag_depth2_k_capacity_probe_secure_128_deep ... ok
+test ops::rns_fhe::tests::diag_public_square_depth_seed_survey_secure_128_deep ... ignored, SURVEY: 12 keygens + 48 public multiplies at n=8192. Answers §4 of docs/CLAIM_SURFACE_AND_LIMITS_2026-08-22.md; run with --ignored --nocapture
+test ops::rns_fhe::tests::diagnostic_export_depth4_zero_error_residue_pairs ... ignored, diagnostic: writes deterministic test-key residues to /tmp
+test ops::rns_fhe::tests::direct_single_mul_route_is_rejected_when_exact_route_is_required - should panic ... ok
+test ops::rns_fhe::tests::exact_modulus_switch_drop_ct_applies_to_both_components ... ok
+test ops::rns_fhe::tests::exact_modulus_switch_drop_matches_integer_division_exhaustive ... ok
+test ops::rns_fhe::tests::exact_modulus_switch_drop_rejects_bad_shape ... ok
+test ops::rns_fhe::tests::exact_modulus_switch_drop_rejects_noncoprime_lane ... ok
+test ops::rns_fhe::tests::f2_step1_lanewise_rounding_vs_mod_switch_down_dual_exhaustive ... ok
+test ops::rns_fhe::tests::k_elim_rescale_large_winding_oracle_and_output_phase ... ok
+test ops::rns_fhe::tests::k_elim_rescale_preserves_upper_half_phase ... ok
+test ops::rns_fhe::tests::m3_guardrail_gadget_relin_never_calls_to_u256_level ... ok
+test ops::rns_fhe::tests::m3_rns_limb_relin_depth2_squaring_chain ... ok
+test ops::rns_fhe::tests::m3_rns_limb_relin_matches_digit_relin_at_plaintext_level ... ok
+test ops::rns_fhe::tests::manufactured_operand_magnitude_stays_within_the_measured_bound ... ok
+test ops::rns_fhe::tests::manufactured_rescale_matches_ground_truth_on_known_values ... ok
+test ops::rns_fhe::tests::diag_depth2_k_capacity_probe_all_configs ... ok
+test ops::rns_fhe::tests::manufactured_winding_stays_below_half_capacity ... ok
+test ops::rns_fhe::tests::negative_branch_margin_matches_independent_oracle_u128 ... ok
+test ops::rns_fhe::tests::negative_branch_margin_matches_independent_oracle_u256 ... ok
+test ops::rns_fhe::cram_main::division::tests::native_encrypted_integer_division_checks_every_plaintext_coefficient has been running for over 60 seconds
+test ops::rns_fhe::tests::accel_timing_probe_mul_dual_public ... ok
+test ops::rns_fhe::tests::prime_drop_credit_is_only_earned_by_an_actual_level_drop ... ok
+test ops::rns_fhe::tests::sampled_mask_anchor_lanes_agree_with_the_main_lanes ... ok
+test ops::rns_fhe::tests::test_add_dual_aligns_mixed_levels ... ok
+test ops::rns_fhe::tests::test_add_plain_dual_basic ... ok
+test ops::rns_fhe::tests::test_add_plain_dual_matches_ct_add ... ok
+test ops::rns_fhe::tests::test_add_plain_dual_multiple_additions ... ok
+test ops::rns_fhe::tests::test_add_plain_dual_to_zero ... ok
+test ops::rns_fhe::tests::test_add_plain_dual_wrap_mod_t ... ok
+test ops::rns_fhe::tests::test_add_plain_dual_zero ... ok
+test ops::rns_fhe::tests::test_anchor_ntt_multiplication_correctness ... ok
+test ops::rns_fhe::tests::test_anchor_ntt_roundtrip ... ok
+test ops::rns_fhe::tests::test_auto_routing ... ok
+test ops::rns_fhe::tests::test_auto_routing_chained_operations ... ok
+test ops::rns_fhe::tests::test_centered_representative_invariant ... ok
+test ops::rns_fhe::tests::test_chain_via_auto ... ok
+test ops::rns_fhe::tests::test_ciphertext_consistency ... ok
+test ops::rns_fhe::tests::test_ciphertext_validate_catches_inconsistency ... ok
+test ops::rns_fhe::tests::test_coeff_domain_capacity_analysis ... ok
+test ops::rns_fhe::tests::test_coeff_domain_full_ct_mul ... ok
+test ops::rns_fhe::tests::test_coeff_domain_trivial_ct_mul ... ok
+test ops::rns_fhe::tests::test_compare_symmetric_vs_public ... ok
+test ops::rns_fhe::tests::test_context_validate_dual_ciphertext_catches_noncanonical_residue ... ok
+test ops::rns_fhe::tests::test_decrypt_dual_u256_margin_matches_u128_path ... ok
+test ops::rns_fhe::tests::test_depth3_128_encrypt_decrypt_roundtrip ... ok
+test ops::rns_fhe::tests::test_dual_poly_mul_consistency ... ok
+test ops::rns_fhe::tests::test_dual_rns_ciphertext_validation_invalid_level ... ok
+test ops::rns_fhe::tests::test_dual_rns_ciphertext_validation_level_exceeds_limbs ... ok
+test ops::rns_fhe::tests::test_dual_rns_ciphertext_validation_mismatched_degree ... ok
+test ops::rns_fhe::tests::test_dual_rns_ciphertext_validation_mismatched_limb_count ... ok
+test ops::rns_fhe::tests::test_dual_rns_ciphertext_validation_valid ... ok
+test ops::rns_fhe::tests::test_dual_rns_ct_mul_capacity_analysis ... ok
+test ops::rns_fhe::tests::test_dual_rns_encrypt_decrypt ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validate_residues_accepts_canonical ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validate_residues_rejects_out_of_range_anchor ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validate_residues_rejects_out_of_range_main ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validate_residues_rejects_prime_count_mismatch ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validation_inconsistent_limb_length ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validation_non_power_of_two ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validation_valid ... ok
+test ops::rns_fhe::tests::test_dual_rns_poly_validation_zero_degree ... ok
+test ops::rns_fhe::tests::test_dual_rns_trivial_ct_mul ... ok
+test ops::rns_fhe::tests::test_e2_s2_k_source ... ok
+test ops::rns_fhe::tests::test_e2e_native_dual_rns_5x7_equals_35 ... ok
+test ops::rns_fhe::tests::test_k_elim_rescale_direct ... ok
+test ops::rns_fhe::tests::test_mixed_add_sub_dual ... ok
+test ops::rns_fhe::tests::test_mixed_mul_plain_then_add ... ok
+test ops::rns_fhe::tests::test_mixed_sub_then_mul_plain ... ok
+test ops::rns_fhe::tests::test_modulus_switching_basic ... ignored, RETIRED MECHANISM: exercises mod_switch_down_dual and level-aware decrypt, observing the basis shrink from 4 main primes to 3 ('Fresh ct2 has 4 main primes' -> 'After mul_dual_public: ct6 has 3 main primes') so that a depth-2 multiply becomes reachable. This substrate does not implement modulus switching. Exact division in residue space divides the value by d WITHOUT moving the basis: the main-prime count is invariant, so there is nothing for this test to observe. Repairing it would mean restoring the descending level chain. See docs/RETIRED_MECHANISMS.md
+test ops::rns_fhe::tests::test_mul_dual_anchor_consistency_trace ... ignored, TEST-ONLY ASSUMPTION invalidated by G12 (not a production bug): asserts `k_ct2_c0 < 1000` ('Expect k approx 0 for fresh ciphertexts'). That held only because `a` (pk1) used to be sampled from `[0, min_prime)` -- confined, for this 2-prime ~60-bit `light_rns_exact_insecure` config, to a small fraction of its true ~30-32 bit-per-lane range. G12 fixed that (a uniform RLWE public sample must range over each lane's FULL modulus, not a fraction of it), so a fresh ciphertext's winding relative to M is now legitimately large for this tiny-M config -- decode is still exact (K-Elimination is designed to read values regardless of winding magnitude, and this config's anchor capacity is far more than sufficient), just not 'approx 0' anymore. Verified via `test_tracked_multiplication`, `test_coeff_domain_full_ct_mul`, and the full fhe-service test suite, all passing with real decrypt correctness.
+test ops::rns_fhe::tests::test_mul_dual_debug ... ok
+test ops::rns_fhe::tests::test_mul_dual_public_auto_mod_switch_depth2 ... ignored, RETIRED MECHANISM: its stated premise is that depth-2 is reachable only once mul_dual_public 'automatically applies modulus switching when enough levels exist' — 'Without auto mod-switch in mul_dual_public, noise overwhelms at depth-2' — i.e. depth bought by consuming a level from the 4-prime depth2_128 ladder. This substrate does not implement modulus switching, and the auto_mod_switch marker this test is named for is retired. Exact division in residue space scales noise by 1/d without dropping a prime, so depth-2 costs nothing and 'enough levels exist' is not a precondition anything can fail. Repairing this test would reintroduce the ladder. See docs/RETIRED_MECHANISMS.md
+test ops::rns_fhe::tests::test_mul_dual_public_depth3_chain ... ignored, RETIRED MECHANISM (weakest of this file's four modswitch classifications — see docs/RETIRED_MECHANISMS.md): the test's own assertions are plain correctness (assert_eq!(dec, expected)), but its setup is level-supply reasoning — it sits under the PUBLIC-MODE AUTO MOD-SWITCH banner and sizes depth-3 against depth3_128's 5 primes 'for sufficient headroom', i.e. depth bounded by prime count with a level spent per multiply. That accounting is retired: exact division in residue space divides the value without moving the basis, so prime count does not gate depth. UN-QUARANTINE CANDIDATE: this one may return as a straight depth-3 correctness test once it is re-expressed without the auto-mod-switch premise and passes on unbounded-depth semantics.
+test ops::rns_fhe::tests::test_mul_dual_public_mode ... ok
+test ops::rns_fhe::tests::test_mul_dual_public_mode_deep ... ok
+test ops::rns_fhe::tests::test_mul_dual_public_with_mod_switch ... ignored, RETIRED MECHANISM: asserts that mul_dual_public auto-drops the last prime ('primes after switch', ct6_deep.c0.main.len()) and that depth-2 decrypts only because that level was spent ('=== MODULUS SWITCHING SUCCESS ==='). This substrate does not implement modulus switching. Exact division in residue space (K-Elimination for gcd(d,M)=1, Fused Piggyback Division otherwise) divides the ciphertext value by d WITHOUT moving the basis: same lanes, same Q, noise scaled by 1/d with no rounding term. No level is consumed, so no prime is ever dropped and 'primes after switch' has no referent. Repairing this test would reintroduce the level ladder. See docs/RETIRED_MECHANISMS.md
+test ops::rns_fhe::tests::test_mul_dual_symmetric_depth2_secure_128_deep ... ok
+test ops::rns_fhe::tests::test_mul_dual_symmetric_large_values_secure_128 ... ok
+test ops::rns_fhe::tests::public_relin_gadget_identity_is_exact_at_every_depth ... ok
+test ops::rns_fhe::tests::test_mul_dual_trace_smoke ... ok
+test ops::rns_fhe::tests::test_mul_plain_dual_basic ... ok
+test ops::rns_fhe::tests::test_mul_plain_dual_by_one ... ok
+test ops::rns_fhe::tests::test_mul_plain_dual_by_zero ... ok
+test ops::rns_fhe::tests::test_mul_plain_dual_chained ... ok
+test ops::rns_fhe::tests::test_mul_dual_symmetric_secure_192_u256_path ... ok
+test ops::rns_fhe::tests::test_mul_plain_dual_wrap_mod_t ... ok
+test ops::rns_fhe::tests::test_mul_plain_dual_small_values ... ok
+test ops::rns_fhe::tests::test_negate_dual_add_to_zero ... ok
+test ops::rns_fhe::tests::test_negate_dual_basic ... ok
+test ops::rns_fhe::tests::test_negate_dual_double_negate_identity ... ok
+test ops::rns_fhe::tests::test_negate_dual_one ... ok
+test ops::rns_fhe::tests::test_negate_dual_zero ... ok
+test ops::rns_fhe::tests::test_ntt_domain_capacity_analysis ... ok
+test ops::rns_fhe::tests::test_negate_then_add_plain ... ok
+test ops::rns_fhe::tests::test_ntt_domain_trivial_ct_mul ... ok
+test ops::rns_fhe::tests::test_ntt_domain_full_ct_mul ... ok
+test ops::rns_fhe::tests::test_ntt_mul_residues ... ignored, TEST-ONLY BUG (not production): its helper `assert_main_anchor_consistent` centers `pk1` (the RLWE public sample `a`) around M/2 before checking anchor agreement, i.e. it assumes `a` is a small signed value like a secret/error term. `a` is not: it is a uniform ring element with no smallness requirement, and since G12 fixed its sampling to be genuinely uniform per-lane (previously confined to `[0, min_prime)`, which accidentally kept it under M/2 for this 2-prime ~60-bit `light_rns_exact_insecure` config), `a` now legitimately lands above M/2 about half the time, which this test's centering wrongly reads as 'a is negative'. Production paths (`mul_dual_public`, `mul_dual_symmetric`, `mul_coeff_domain`) never make this assumption and are unaffected -- see `test_tracked_multiplication`, `test_coeff_domain_full_ct_mul`, and the full fhe-service test suite, all passing.
+test ops::rns_fhe::tests::test_ntt_main_anchor_consistency ... ok
+test ops::rns_fhe::tests::test_ntt_roundtrip_consistency ... ok
+test ops::rns_fhe::tests::test_ntt_ternary_mul ... ignored, TEST-ONLY BUG (not production): the manual reference computation (`expected_as_0`) extracts `a_coeffs[i] = ctx.rns.to_int(&a_res) as i128` directly, uncentered, then uses it as a SIGNED value in a naive negacyclic convolution -- `s_coeffs` right next to it IS properly centered. `a` (pk1) is a uniform ring element, not a small signed value, so treating its raw unsigned-mod-M residue as already-signed is only correct while `a` stays below M/2. Before G12 fixed `a`-sampling (previously confined to `[0, min_prime)`, which for this 2-prime ~60-bit `light_rns_exact_insecure` config accidentally kept it under M/2), that held by luck; the corrected uniform sampling makes it false about half the time, so this test's own naive convolution now disagrees with the correct production result. Production paths are unaffected -- see `test_tracked_multiplication`, `test_coeff_domain_full_ct_mul`, and the full fhe-service test suite, all passing.
+test ops::rns_fhe::tests::test_poly_validate_catches_oversized ... ok
+test ops::rns_fhe::tests::test_ntt_multiply_consistency ... ok
+test ops::rns_fhe::tests::test_public_mode_depth2_phase_trace ... ok
+test ops::rns_fhe::cram_main::division::tests::native_encrypted_integer_division_checks_every_plaintext_coefficient ... ok
+test ops::rns_fhe::tests::test_random_expressions_depth3 ... ok
+test ops::rns_fhe::tests::test_regime_mismatch_add_mixed_ciphertexts ... ok
+test ops::rns_fhe::tests::test_regime_mismatch_encrypt_single_keys_dual_route ... ok
+test ops::rns_fhe::tests::test_regime_mismatch_mul_mixed_ciphertexts ... ok
+test ops::rns_fhe::tests::test_relinearize_rejects_undersized_eval_key - should panic ... ok
+test ops::rns_fhe::tests::test_result_times_different_fresh ... ok
+test ops::rns_fhe::tests::test_random_expressions_kelim_dual ... ok
+test ops::rns_fhe::tests::test_rns_exact_encrypt_decrypt ... ok
+test ops::rns_fhe::tests::test_rns_exact_multiplication ... ok
+test ops::rns_fhe::tests::test_result_times_fresh ... ok
+test ops::rns_fhe::tests::test_rns_multiplication_chain ... ignored, WIRE-Q fail-closed (PR #107): light_rns_insecure's mul_route() is KElimDual (Delta^2 > Q); see test_rns_native_multiplication for the full reason. Re-point once PR #108 WR-1 lands a certified public multiply route for this regime.
+test ops::rns_fhe::tests::test_rns_native_addition ... ok
+test ops::rns_fhe::tests::test_rns_native_encrypt_decrypt ... ok
+test ops::rns_fhe::tests::test_rns_native_multiplication ... ignored, WIRE-Q fail-closed (PR #107): light_rns_insecure's mul_route() is KElimDual (Delta^2 > Q), so the direct .mul() call below now correctly panics via require_bajard_single_mul_route instead of silently returning a wrong plaintext. There is currently no certified public/eval-key multiply route for a KElimDual config -- mul_auto's KElimDual arm calls mul_dual_symmetric, a secret-holder operation requiring >=5 anchor primes that light_rns_insecure does not configure, so it is not a drop-in replacement. Swapping to a config whose mul_route() is BajardSingle would need its own noise-budget/depth verification rather than an unverified parameter substitution here. Re-point once the Track 1 T1.4 derived-transient evaluator integration (PR #108 WR-1) lands a certified public route for this regime.
+test ops::rns_fhe::tests::test_rns_simple_add_mul ... ok
+test ops::rns_fhe::tests::test_rns_exact_multiplication_chain ... ok
+test ops::rns_fhe::tests::test_secure_128_mul_dual_symmetric ... ok
+test ops::rns_fhe::tests::test_secure_192_encrypt_decrypt_roundtrip ... ok
+test ops::rns_fhe::tests::mul_dual_public_winding_margin_measured_directly has been running for over 60 seconds
+test ops::rns_fhe::tests::test_secure_192_mul_dual_symmetric ... ok
+test ops::rns_fhe::tests::test_secure_192_routes_to_kelim_dual ... ok
+test ops::rns_fhe::tests::test_secure_256_encrypt_decrypt_roundtrip ... ok
+test ops::rns_fhe::tests::test_secure_256_routes_to_kelim_dual ... ok
+test ops::rns_fhe::tests::test_secure_256_u256_path_reports_nonzero_margin ... ok
+test ops::rns_fhe::tests::test_sub_dual_basic ... ok
+test ops::rns_fhe::tests::test_sub_dual_from_zero ... ok
+test ops::rns_fhe::tests::test_sub_dual_multiple_values ... ok
+test ops::rns_fhe::tests::test_sub_dual_same_value ... ok
+test ops::rns_fhe::tests::test_sub_dual_underflow_wraps ... ok
+test ops::rns_fhe::tests::test_tracked_addition ... ok
+test ops::rns_fhe::tests::test_secure_128_deep_public_square_depth_2_floor ... ok
+test ops::rns_fhe::tests::test_tracked_multiplication ... ok
+test ops::rns_fhe::tests::test_tree_mul_light_diagnostic ... ok
+test ops::rns_fhe::tests::test_tree_mul_phase_error_trace ... ok
+test ops::rns_fhe::tests::test_try_decrypt_dual_returns_err_on_noise_exhaustion ... ignored, RETIRED MECHANISM (noise budget): the test chains multiplies over `for depth in 2..=20` and then demands exhaustion actually occur — assert!(found_error, "try_decrypt_dual must return Err when noise is exhausted"). That assertion specifies a depleting budget. This substrate has none: exact division in residue space scales noise by 1/d with no rounding term added and without dropping a lane, so nothing is spent per multiply and the Err this test waits for never arrives at any depth. The audit finding it encodes (Section 2.7 — decrypt_dual must not silently return garbage) is still live, but must be re-tested against a corrupted/invalid ciphertext rather than against depth. Repairing this test by making depth exhaust something would reintroduce the ladder. See docs/RETIRED_MECHANISMS.md
+test ops::rns_fhe::tests::test_try_decrypt_dual_returns_ok_for_valid_ciphertext ... ok
+test ops::rns_fhe::tests::validate_dual_ciphertext_rejects_mismatched_anchor_count ... ok
+test ops::rns_fhe::tests::validate_dual_ciphertext_rejects_oversized_level_without_panicking ... ok
+test ops::rns_fhe::tests::validate_rejects_level_strictly_below_main_limb_count ... ok
+test ops::rns_fhe::tests::wide_main_masks_cover_more_than_512_bits ... ok
+test ops::rns_fhe::track1_exact_multiply_lock::bajard_rescale_disagrees_with_exact_oracle_when_delta_squared_exceeds_q ... ok
+test ops::rns_fhe::track1_exact_multiply_lock::exact_oracle_recovers_message_from_delta_scaled_coefficient ... ok
+test ops::rns_fhe::track1_exact_multiply_lock::main_only_reproduces_base_ext_without_the_redundant_residue ... ok
+test ops::rns_fhe::track1_exact_multiply_lock::oracle_intermediates_fit_u128 ... ok
+test ops::rns_fhe::track1_exact_multiply_lock::public_mul_fails_closed_instead_of_returning_wrong_plaintext_off_contract - should panic ... ok
+test ops::rns_fhe::track1_exact_multiply_lock::wire_q_lock_dual_ciphertext_publishes_anchor_lanes_coprime_to_q ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::exact_clock_window_covers_wide_modulus_and_boundary_refusals ... ok
+test ops::rns_fhe::tests::test_tracked_deep_multiplication_chain ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_encrypted_native_q_without_chart_or_winding_oracle ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_native_8192_alias_and_dependent_squares ... ignored, opt-in native N8192 two-term source probe; not full dense-source refresh
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_public_quantization_distinguishes_native_alias ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_decoy_cover_preserves_sparse_window_and_resets_noise ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_refreshes_two_coefficients_of_a_live_sparse_source ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_resets_eight_term_source_without_word_enumeration ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_sparse96_fits_doubled_outer_ring ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_windows_composite_budget_and_dense_refusal ... ok
+test ops::rns_galois::tests::prepared_galois_is_bit_identical_and_reusable_across_plaintext_trays ... ok
+test ops::symmetric_bootstrap::tests::independent_per_lane_draws_do_not_encode_one_integer ... ok
+test ops::symmetric_bootstrap::tests::symmetric_encrypt_mask_is_uniform_over_full_q ... ok
+test ops::symmetric_bootstrap::tests::test_contract_1_prime_superset_all_configs ... ignored, VESTIGIAL: CONTRACT 1 — asserts the boot prime set is a strict superset of the work primes for all three secure configs. Strictly-more-primes is spare-basis bookkeeping for a switch that no longer happens. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_2_single_drop_prime_all_configs ... ignored, VESTIGIAL: CONTRACT 2 — asserts exactly one boot prime is absent from the work primes (the drop prime) across all three secure configs. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_3_canonical_anchors_all_configs ... ignored, VESTIGIAL: CONTRACT 3 — asserts each bootstrap context's anchor primes match the canonical anchor list for N. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_4_anchor_recomputation_post_bootstrap ... ignored, VESTIGIAL: CONTRACT 4 — asserts that after Phase 3 the anchor limbs equal CRT(main) mod anchor_prime, i.e. anchors were correctly recomputed after the prime drop. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_5_ksk_full_crt_reconstruction ... ignored, VESTIGIAL: CONTRACT 5 — asserts boot.bootstrap_with_ksk roundtrips m through full CRT reconstruction in the key-switch. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_6_ksk_output_in_work_space ... ignored, VESTIGIAL: CONTRACT 6 — asserts the non-circular bootstrap output has work-prime limb count and work-prime-bounded coefficients, i.e. it came back out of boot space. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_7_u128_ceiling_guard ... ignored, VESTIGIAL: CONTRACT 7 — asserts the secure_192 and secure_256 prime products overflow u128 and that ClockworkBootstrap::new still succeeds via the U256 fallback. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_7_u256_roundtrip_192 ... ignored, VESTIGIAL: CONTRACT 7 (continued) — asserts a full secure_192 encrypt -> bootstrap -> decrypt roundtrip through the U256 CRT path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_contract_8_depth_budget_all_configs ... ignored, VESTIGIAL: CONTRACT 8 — asserts boot_primes >= bootstrap_depth + 2 and boot_primes >= work_primes + 1. This is a depth budget expressed directly as a prime count; it is the exact accounting this substrate retires. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_depth_analysis_all_configs ... ignored, VESTIGIAL: prints analyze_depth_budget for four configs. The depth-budget model it renders presumes depth is a consumable quantity. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_hybrid_full_reencrypt_chain ... ignored, VESTIGIAL: asserts the chain 3*5=15 -> symmetric bootstrap -> 15*15=225 -> symmetric bootstrap -> 225*3=675, with each refresh presented as what buys the next multiply. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_hybrid_skip_phase23_direct_decrypt ... ignored, VESTIGIAL: asserts that boot.modswitch_to_t (Phase 1) followed by a hand-rolled negacyclic decrypt in Z_t recovers m, i.e. that Phases 2 and 3 of bootstrap can be skipped when sk is on hand. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_noise_budget_is_conservative ... ignored, VESTIGIAL: asserts analyze_depth_budget reports a positive initial budget and that the symmetric net cost is below the public net cost — a comparison between two per-multiply depletion rates. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_public_depth_matches_prediction ... ignored, VESTIGIAL: asserts analyze_depth_budget's conservative_pub_depth falls in [1, 15] — a prediction of how many multiplies fit before a refresh is required. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_symmetric_bootstrap_after_mul ... ignored, VESTIGIAL: asserts 3*7=21 -> symmetric bootstrap -> 21*5=105, with the refresh in the middle as the stated reason the second multiply has budget. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_symmetric_bootstrap_roundtrip ... ignored, VESTIGIAL: asserts SymmetricBootstrap::bootstrap roundtrips m for m in [0, 1, 42, 1000, 65536]. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_symmetric_bootstrap_timing ... ignored, VESTIGIAL: asserts SymmetricBootstrap::bootstrap_timed roundtrips 42 and reports non-zero total/decrypt/encrypt nanoseconds — an instrumentation test of the refresh path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_symmetric_depth_50_no_bootstrap ... ignored, VESTIGIAL: surveys how deep secure_128 gets without a refresh, and its loop is driven by the retired ladder: it calls ctx.mod_switch_ct_to_level(&ct_2, ct.level) each iteration and breaks when that returns None, then asserts only max_correct_depth >= 1. Both the level alignment and the 'for unlimited depth use AutoBootstrapEvaluator or SymmetricBootstrap' framing are retired premises. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_symmetric_reencrypt_roundtrip ... ignored, VESTIGIAL: asserts SymmetricBootstrap::reencrypt_symmetric roundtrips m without a public key. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test ops::symmetric_bootstrap::tests::test_symmetric_vs_public_bootstrap_perf ... ignored, VESTIGIAL: times ten SymmetricBootstrap::bootstrap calls against ten ClockworkBootstrap::bootstrap calls and prints the ratio; it asserts nothing, and both arms are the vestigial path. Bootstrap is a fallback, not the critical path. Exact division in residue space divides the value without moving the basis, so no level is consumed and depth is not budget-bounded. See docs/RETIRED_MECHANISMS.md
+test params::exact_params::tests::exact_delta_computation ... ok
+test params::exact_params::tests::exact_delta_for_secure_config ... ok
+test params::exact_params::tests::exact_delta_scale_and_round ... ok
+test params::manufactured::tests::adjacency_read_cannot_underflow_when_k_exceeds_gamma ... ok
+test params::manufactured::tests::adjacency_read_matches_exact_projection ... ok
+test params::manufactured::tests::adjacency_rejects_degenerate_and_overflow ... ok
+test params::manufactured::tests::adjacency_self_inverse_matches_extended_euclid ... ok
+test params::manufactured::tests::chain_bit_length_is_exact_beyond_u128_and_u256 ... ok
+test params::manufactured::tests::exact_magnitude_bridges_to_u256_and_agrees_with_it ... ok
+test params::manufactured::tests::exact_magnitude_div_rem_fails_closed_on_zero_divisor ... ok
+test params::manufactured::tests::manufacture_chain_rejects_degenerate_requests ... ok
+test params::manufactured::tests::manufactured_delta_exact_for_composite_plaintext_modulus ... ok
+test params::manufactured::tests::manufactured_delta_is_exact_with_no_floor ... ok
+test params::manufactured::tests::published_adjacency_form_is_wrong_and_stays_wrong ... ok
+test params::manufactured::tests::published_anchor_form_is_identically_zero ... ok
+test params::manufactured::tests::raising_the_bound_only_adds_refusals_and_they_are_real ... ok
+test params::manufactured::tests::screen_accepts_a_clean_chain ... ok
+test params::manufactured::tests::screen_bound_is_validated_not_assumed ... ok
+test params::manufactured::tests::screen_flags_non_pairwise_coprime_lanes_without_refusing ... ok
+test params::manufactured::tests::screen_refuses_a_lane_with_a_small_prime_factor ... ok
+test params::manufactured::tests::screen_refuses_a_power_of_two_lane ... ok
+test params::manufactured::tests::smallest_factor_search_is_correct ... ok
+test params::manufactured::tests::star_family_free_inverse_matches_extended_euclid ... ok
+test params::manufactured::tests::star_family_rejects_degenerate_input ... ok
+test params::manufactured::tests::star_family_rejects_overflow_without_panicking ... ok
+test params::primes::tests::test_find_primitive_root ... ok
+test params::primes::tests::test_gcd ... ok
+test params::primes::tests::test_mod_inverse ... ok
+test params::primes::tests::test_mod_pow ... ok
+test params::primes::tests::test_primes_are_prime ... ok
+test params::primes::tests::test_primes_ntt_compatible_4096 ... ok
+test params::primes::tests::test_primes_ntt_compatible_8192 ... ok
+test params::primes::tests::test_primes_pairwise_coprime ... ok
+test params::primes::tests::test_product_security_128bit ... ok
+test params::production::tests::test_modulus_chain ... ok
+test params::production::tests::test_primes_are_coprime ... ok
+test params::production::tests::test_primes_are_ntt_compatible ... ok
+test params::production::tests::test_production_30bit_ntt_compatible_n32768 ... ok
+test params::production::tests::test_production_30bit_primes_are_prime ... ok
+test params::production::tests::test_production_config_128 ... ok
+test params::production::tests::test_production_config_deep ... ok
+test params::production::tests::test_verified_51bit_ntt_compatible ... ok
+test params::production::tests::test_verified_51bit_primes_are_prime ... ok
+test params::secure_configs::tests::custom_screened_admits_a_well_formed_wide_prime_chain ... ok
+test params::secure_configs::tests::custom_screened_never_panics_on_malformed_input ... ok
+test params::secure_configs::tests::custom_screened_refuses_a_narrow_prime_lane ... ok
+test params::secure_configs::tests::custom_screened_rejects_a_non_prime_lane ... ok
+test params::secure_configs::tests::custom_screened_rejects_a_tuple_that_screens_below_its_claim ... ok
+test params::secure_configs::tests::error_width_bits_bound_the_sampler_that_produces_them ... ok
+test params::secure_configs::tests::every_other_named_config_has_full_model_agreement ... ok
+test params::secure_configs::tests::every_production_prime_is_ntt_compatible ... ok
+test params::secure_configs::tests::exact_product_bit_length_matches_known_chains ... ok
+test params::secure_configs::tests::external_attestation_binds_only_to_its_own_fingerprint ... ok
+test params::secure_configs::tests::fingerprint_changes_when_a_single_lane_changes ... ok
+test params::secure_configs::tests::fingerprint_is_independent_of_construction_path_and_feature_gating ... ok
+test params::secure_configs::tests::fingerprint_pins_across_all_named_and_insecure_tier_configs ... ok
+test params::secure_configs::tests::fingerprint_would_have_caught_the_secure_128_recut ... ok
+test params::secure_configs::tests::insecure_tier_configs_are_typed_as_such ... ok
+test params::secure_configs::tests::ksk_bound_tracks_the_boot_chain_clockwork_actually_builds ... ok
+test params::secure_configs::tests::named_production_configs_meet_their_internal_claims ... ok
+test params::secure_configs::tests::production_safety_checks_accepts_every_named_secure_config ... ok
+test params::secure_configs::tests::production_safety_checks_refuses_a_structurally_refused_shape_with_a_typed_error ... ok
+test params::secure_configs::tests::production_safety_checks_rejects_a_config_that_screens_below_its_claim ... ok
+test params::secure_configs::tests::production_safety_checks_rejects_a_modulus_over_the_he_standard_bound ... ok
+test params::secure_configs::tests::production_safety_checks_rejects_dimension_below_the_audited_floor ... ok
+test params::secure_configs::tests::public_refresh_headroom_screen_is_not_a_name_match ... ok
+test ops::rns_fhe::tropical_phase_clock_tests::phase_clock_resets_sixteen_term_source_without_word_enumeration ... ok
+test params::secure_configs::tests::public_refresh_support_requires_sound_phase1 ... ok
+test params::secure_configs::tests::raw_custom_never_asserts_a_security_number ... ok
+test params::secure_configs::tests::screened_levels_for_named_configs ... ok
+test params::secure_configs::tests::screened_security_dual_matches_the_pinned_structural_table ... ok
+test params::secure_configs::tests::secure_128_uses_audited_dimension_floor ... ok
+test params::secure_configs::tests::secure_256_is_typed_as_a_model_gap_not_full_agreement ... ok
+test params::secure_configs::tests::security_product_width_is_exact_beyond_512_bits ... ok
+test params::secure_configs::tests::security_summary_table_is_consistent ... ok
+test params::secure_configs::tests::test_configs_are_not_production_safe ... ok
+test params::secure_configs::tests::test_production_safe_trait ... ok
+test params::secure_configs::tests::test_production_safety_verification ... ok
+test params::secure_configs::tests::verify_production_safe_fhe_config_never_panics_on_hostile_input ... ok
+test params::security_estimator::tests::factored_screen_catches_the_plaintext_modulus_lane_of_a_manufactured_q ... ok
+test params::security_estimator::tests::factored_screen_leaves_every_secure_config_unchanged ... ok
+test params::security_estimator::tests::factored_screen_refuses_a_malformed_factorization ... ok
+test params::security_estimator::tests::factored_screen_refuses_power_of_two_2_pow_90_at_n_8192 ... ok
+test params::security_estimator::tests::factored_screen_reports_non_pairwise_coprime_lanes ... ok
+test params::security_estimator::tests::factored_screen_reports_prime_power_basis_as_unscreened_regime ... ok
+test params::security_estimator::tests::factored_screen_reproduces_todays_numbers_for_three_30_bit_primes ... ok
+test params::security_estimator::tests::factored_screen_separates_the_four_measurement_6_constructions ... ok
+test params::security_estimator::tests::min_modelled_lane_bits_brackets_the_documented_interval ... ok
+test params::security_estimator::tests::narrow_prime_lane_is_recorded_narrow_and_never_as_a_screenable_field ... ok
+test params::security_estimator::tests::structural_screen_integer_helpers_are_exact ... ok
+test params::security_estimator::tests::test_cost_model_methods_integer_correctness ... ok
+test params::security_estimator::tests::test_delta_to_beta_lookup_ranges ... ok
+test params::security_estimator::tests::test_dual_estimate_both_models_populated ... ok
+test params::security_estimator::tests::test_dual_estimate_matzov_more_aggressive ... ok
+test params::security_estimator::tests::test_dual_estimate_meets_claim_under_both ... ok
+test params::security_estimator::tests::test_dual_estimate_production_configs ... ok
+test params::security_estimator::tests::test_he_standard_bounds ... ok
+test params::security_estimator::tests::test_hybrid_attack_cost_ternary_mitm ... ok
+test params::security_estimator::tests::test_integer_log2 ... ok
+test params::security_estimator::tests::test_matzov_he_standard_boundary_agreement ... ok
+test params::security_estimator::tests::test_matzov_production_configs_meet_claims ... ok
+test params::security_estimator::tests::test_matzov_vs_coresvp_10_percent_reduction ... ok
+test params::security_estimator::tests::test_min_n_calculation ... ok
+test params::security_estimator::tests::test_no_floating_point ... ok
+test params::security_estimator::tests::test_secret_distribution_penalty_ordering ... ok
+test params::security_estimator::tests::test_security_estimation_integer ... ok
+test params::tests::checked_rns_product_covers_u128_boundaries ... ok
+test params::tests::custom_rejects_invalid_plaintext_lane_relationships ... ok
+test params::tests::custom_screened_wrapper_validates_shape_then_screens ... ok
+test params::tests::custom_security_bits_is_always_zero ... ok
+test params::tests::exact_noise_budget_accepts_large_products_without_scalar_projection ... ok
+test params::secure_configs::tests::public_refresh_refusal_fires_at_the_bootstrap_entry_points ... ok
+test params::tests::for_depth_screened_reproduces_secure_128_deep ... ok
+test params::tests::for_depth_succeeds_for_a_modest_depth ... ok
+test params::tests::scalar_rns_product_fails_closed_above_u128 - should panic ... ok
+test params::tests::test_all_configs_valid ... ok
+test params::tests::test_custom_config ... ok
+test params::tests::test_estimated_depth ... ok
+test params::tests::test_he_standard_compliance ... ok
+test params::validation::tests::test_assert_invalid_panics - should panic ... ok
+test params::validation::tests::test_he_standard_compliance ... ok
+test params::validation::tests::test_large_n_valid ... ok
+test params::validation::tests::test_large_q_fails ... ok
+test params::validation::tests::test_max_safe_n ... ok
+test params::validation::tests::test_standard_params_valid ... ok
+test params::wide_product_tests::checked_fixed_width_view_matches_named_and_overwide_configs ... ok
+test ring::polynomial::tests::test_add_assign_poly ... ok
+test ring::polynomial::tests::test_add_assign_poly_wraps ... ok
+test ring::polynomial::tests::test_add_scalar_assign ... ok
+test ring::polynomial::tests::test_add_scalar_assign_wraps ... ok
+test ring::polynomial::tests::test_exact_scalar_div ... ok
+test ring::polynomial::tests::test_infinity_norm ... ok
+test ring::polynomial::tests::test_inplace_add_then_sub_roundtrip ... ok
+test ring::polynomial::tests::test_inplace_neg_neg_roundtrip ... ok
+test ring::polynomial::tests::test_mul_scalar_assign ... ok
+test ring::polynomial::tests::test_neg_assign ... ok
+test ring::polynomial::tests::test_neg_assign_zero ... ok
+test ring::polynomial::tests::test_negation ... ok
+test ring::polynomial::tests::test_ring_add_commutative ... ok
+test ring::polynomial::tests::test_ring_mul_associative ... ok
+test ring::polynomial::tests::test_ring_negacyclic ... ok
+test ring::polynomial::tests::test_scalar_mul ... ok
+test ring::polynomial::tests::test_signed_coeffs ... ok
+test ring::polynomial::tests::test_sub_assign_poly ... ok
+test ring::polynomial::tests::test_sub_assign_poly_wraps ... ok
+test ring::polynomial::tests::test_ternary_polynomial ... ok
+test ring::pool::tests::test_hit_ratio ... ok
+test ring::pool::tests::test_pool_acquire_release ... ok
+test ring::pool::tests::test_pool_different_sizes ... ok
+test ring::pool::tests::test_pool_guard_auto_release ... ok
+test ring::pool::tests::test_pool_guard_take ... ok
+test ring::pool::tests::test_pool_max_capacity ... ok
+test ring::pool::tests::test_pool_prewarm ... ok
+test ring::pool::tests::test_pool_zeroing ... ok
+test ring::pool::tests::test_pooled_polynomial_conversion ... ok
+test ring::pool::tests::test_thread_local_pool ... ok
+test security::ct_verification::constant_time_statistical::dudect_detects_noise_free_class_timing_difference ... ok
+test security::ct_verification::constant_time_statistical::dudect_schedule_preserves_random_draws_and_measured_stream ... ok
+test security::ct_verification::constant_time_statistical::dudect_shared_sampling_detects_injected_class_timing ... ok
+test security::ct_verification::constant_time_statistical::dudect_shared_sampling_rejects_a_spurious_class_signal ... ok
+test params::tests::for_depth_fails_closed_when_not_enough_ntt_primes_exist ... ok
+test security::ct_verification::constant_time_statistical::scalar_batch_preparation_keeps_address_and_results ... ok
+test security::ct_verification::constant_time_statistical::test_ct_adjacency_vs_general_k_elim_cost ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_barrett_reduce ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_dudect_adjacency_k_elim_operand_magnitude ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_dudect_adjacency_k_elim_operand_order ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_dudect_barrett_reduce_operand_magnitude ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_dudect_exact_prime_drop_fixed_vs_random ... ignored, Statistical timing test - run in a controlled environment only. WAS finding F-1, now CLOSED and kept as its regression gate: medians 110,927ns vs 110,977ns (+0.045%), t_signal 0.96 against control 1.16. It previously measured 128.2us vs 150.1us (+17%) at t = 71.9-129.6. The recorded cause was wrong: removing every division made the function 2x faster and the leak LARGER. The real cause was BarrettContext::sub_ct, whose ((a < b) as u64).wrapping_neg() mask compiled to a conditional branch whose prediction rate depends on the operands. See docs/CT_VERIFICATION_PLAN.md section 4.8 for the probe-by-probe localisation.
+test security::ct_verification::constant_time_statistical::test_ct_dudect_exact_prime_drop_small_vs_large_residues ... ignored, Statistical timing test - run in a controlled environment only. WAS finding F-1's magnitude contrast, now CLOSED and kept as its regression gate: medians 110,782ns vs 110,798ns (+0.014%), t_signal 0.45 against control 0.11. It previously measured 128.4us vs 138.4us (+7.8%) at t = 48.4. This contrast is the one that exposed the sign flip during the fix - under the original divisions small residues were faster, and once division was removed branch prediction dominated and they became slower. See docs/CT_VERIFICATION_PLAN.md section 4.8.
+test security::ct_verification::constant_time_statistical::test_ct_dudect_k_elim_exact_divide_divisor_classes ... ignored, OPEN FINDING with an UNSTABLE VERDICT: KElimination::exact_divide shows a real divisor-dependent timing dependence (divisor 3 consistently slower than divisor 2 by ~1-3us per 4096-call batch, sign stable across every clean run, |t| growing with round count: mean ~3 at 2000 rounds, ~6.6 at 8000, 11.4 at the one clean 32000-round run, against controls of 0.46-1.27). It is therefore NOT promotable into the dudect-blocking job as a passing gate. It is also not placeable in the inverted open-findings tripwire, which needs a stable DEPENDENCE verdict: at 8000 rounds it read DEPENDENCE in only 2 of 3 runs, and at 32000 rounds this machine's own control arm exceeded the threshold (9.2-11.2) so the harness correctly reported INCONCLUSIVE. Neither CI job can gate this deterministically today; it is collected and reported, and settling it needs a quiesced, frequency-pinned runner. See DUDECT_DIVISOR_CLASS_ROUNDS and docs/CT_VERIFICATION_PLAN.md.
+test security::ct_verification::constant_time_statistical::test_ct_dudect_k_elim_extract_k_operand_magnitude ... ignored, OPEN FINDING, and now measured with enough power to be one: KElimination::extract_k shows a small but reproducible operand-magnitude timing dependence, contradicting its docstring claim of fixed-cost, branch-free execution. Interleaved class allocation, 8000 rounds (DUDECT_EXTRACT_K_ROUNDS): t_signal = 18.5 / 20.5 / 29.3 over three runs, against controls of 0.07-1.17; medians differ by ~13-15us per 4096-call batch, i.e. ~3.5ns on a ~590ns call (0.6%). |t| grows with round count (4.4-13.6 at 2000 rounds, 18.5-29.3 at 8000), the signature of a real effect rather than noise. CORRECTION to the earlier reason string: at 2000 rounds the VERDICT was not stable (one of three runs read 4.35 and reported CONSTANT-TIME), so 'not a flake' was not established until the round count was raised; and the SIGN of the median difference is not stable either - near-cap operands were slower in some runs and faster in others - so only the magnitude of the dependence is established, not its direction. Effect size is small enough that a quiesced, frequency-pinned machine should confirm it before any code change. See docs/CT_VERIFICATION_PLAN.md.
+test security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_fixed_vs_random ... ignored, Statistical timing test - run in a controlled environment only. WAS finding F-2, now CLOSED and kept as its regression gate: medians 76.87ms vs 78.22ms, t_signal 2.14 against control 0.54. It previously measured 25.4ms (all-zero) vs 80.1ms (uniform) at t = 202-701 over 5 runs - a 3.2x, not a percentage. Cause: U256::div_mod_u64 is hardware limb division whose cost scales with the dividend's magnitude. Fix: RNSFHEContext::mod_switch_down_dual now calls the new U256::div_mod_u64_ct, a fixed-256-iteration constant-time division (same mask-select + black_box barrier idiom as BarrettContext::sub_ct's F-1 fix, see section 4.8) computing the identical (quotient, remainder) pair. The companion test test_ct_dudect_mod_switch_rescale_sign_classes still passes (t_signal 0.78), confirming the sign branches were never the leak. See docs/CT_VERIFICATION_PLAN.md section 4.9 and docs/F2_SCOPE_2026-08-25.md.
+test security::ct_verification::constant_time_statistical::test_ct_dudect_mod_switch_rescale_sign_classes ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_mul_operand_magnitude ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_pow_exponent_hamming_weight ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_dudect_montgomery_reduce_operand_magnitude ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_input_class_analysis ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_k_elimination_exact_divide ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_k_elimination_extract_k ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_montgomery_mul ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_montgomery_pow ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_montgomery_reduce ... ignored
+test security::ct_verification::constant_time_statistical::test_ct_vs_vartime_comparison ... ignored
+test security::ct_verification::constant_time_statistical::u512_scratch_preserves_address_and_reduction ... ok
+test security::ct_verification::workflow_correspondence::every_ct_timing_test_is_named_by_the_workflow_and_vice_versa ... ok
+test security::gro_gate::tests::gro_gate_controls_execution ... ok
+test security::gro_gate::tests::gro_gate_has_maximal_period ... ok
+test security::gro_gate::tests::gro_gate_rejects_invalid ... ok
+test security::gro_gate::tests::gro_gate_various_sizes ... ok
+test security::gro_gate::tests::gro_gate_window_equidistribution ... ok
+test security::integrity::tests::checked_limb_round_trip ... ok
+test security::integrity::tests::checked_limb_update ... ok
+test security::integrity::tests::empty_limb ... ok
+test security::integrity::tests::integrity_detects_corruption ... ok
+test security::integrity::tests::integrity_detects_length_change ... ok
+test security::integrity::tests::integrity_detects_single_bit_flip ... ok
+test security::integrity::tests::integrity_passes_for_valid_data ... ok
+test security::integrity::tests::large_limb_performance ... ok
+test security::key_manager::tests::key_manager_large_prime_modulus ... ok
+test security::key_manager::tests::key_manager_multiple_reshares ... ok
+test security::key_manager::tests::key_manager_rejects_double_init ... ok
+test security::key_manager::tests::key_manager_reshares_on_schedule ... ok
+test security::key_manager::tests::key_manager_split_and_reconstruct ... ok
+test security::key_manager::tests::key_manager_zeros_on_drop ... ok
+test security::secret_data::tests::test_secret_key_path_is_secret_data ... ok
+test security::secret_data::tests::test_secret_key_path_trait ... ok
+test security::secret_data::tests::test_secret_poly_zeroize ... ok
+test security::secret_data::tests::test_secret_scalar_ct_eq ... ok
+test security::secret_data::tests::test_secret_scalar_ct_select ... ok
+test security::tests::test_all_configs_security ... ok
+test security::tests::test_he_standard_estimate ... ok
+test security::tests::test_lwe_params_from_config ... ok
+test security::tests::test_max_log_q ... ok
+test security::tests::test_security_levels ... ok
+test v2_integration_tests::v2_integration_tests::test_fft_1024_benchmark ... ok
+test v2_integration_tests::v2_integration_tests::test_fft_matches_dft ... ok
+test v2_integration_tests::v2_integration_tests::test_fft_negacyclic ... ok
+test v2_integration_tests::v2_integration_tests::test_fft_ntt_roundtrip ... ok
+test security::ct_verification::constant_time_statistical::prime_drop_scratch_keeps_lane_addresses_and_results ... ok
+test v2_integration_tests::v2_integration_tests::test_v2_speedup_summary ... ok
+test ops::rns_fhe::tests::test_public_mode_depth_sweep has been running for over 60 seconds
+test ops::rns_fhe::tests::test_public_mode_depth_sweep ... ok
+test ops::rns_fhe::tests::mul_dual_public_winding_margin_measured_directly ... ok
+
+test result: ok. 1209 passed; 0 failed; 139 ignored; 0 measured; 0 filtered out; finished in 318.82s
+
